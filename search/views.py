@@ -99,7 +99,7 @@ def suggestionItem(s):
   performs es search in index aliased 'whg'
 """
 def suggester(q, idx):
-  print('key', settings.ES_APIKEY_ID, settings.ES_APIKEY_KEY)
+  # print('key', settings.ES_APIKEY_ID, settings.ES_APIKEY_KEY)
   # returns only parents; children retrieved into place portal
   print('suggester q',q)
   es = settings.ES_CONN
