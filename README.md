@@ -20,6 +20,7 @@ WHG is an open-source project. Please see [this document](docs/contributing_dev.
 #### v2.0.1 (1 Feb 2022)
 
 - Added 'Teaching' section of the site. Eight lesson plans included to start, primarily high school level
+- 
 #### v2.0 (4 Aug 2021)
 
 - New "Collection" feature added, with two early examples: "Dutch History" and "HGIS de las Indias"
@@ -91,15 +92,16 @@ WHG is an open-source project. Please see [this document](docs/contributing_dev.
 
 ### Software libraries and packages
 
-- Django 2.2.10
-- Python 3.7.4
-- PostgreSQL 10
-- Elasticsearch 7.17
-- Nginx 1.14.0
-- Gunicorn 19.9.0
-- Celery 4.2.1
-- Bootstrap 4
-- JQuery 3.3.1
-- MapLibre.js
+- Django 4.1.7
+- Python 3.10.7
+- PostgreSQL 15
+- Elasticsearch 8.6.2
+- Nginx 1.22.0
+- Gunicorn 20.1.0
+- Celery 4.4.7
+- Bootstrap 5
+- JQuery 3.6.3
+- maplibre-gl 1.15.2
+- mapbox-gl-js 2.14.1
 - Leaflet 1.3.1
 
