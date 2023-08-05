@@ -33,7 +33,6 @@
 	    box-shadow: 3px 3px #c3c3c3;
 	    {#display: none;#}
     }
-    #dataset_tabs { position: relative;}
     #selection_status { position: absolute; top:10px; right:10px; display:none;}
     .dataTables_scroll {border-right: 1px solid gainsboro;}
 		#dataset_content {
@@ -54,6 +53,7 @@
 		    top: 8px;
 		    left: 10px;
 				width: 65%;
+				border: 1px solid gainsboro;
 		}
 		#ds_table {
 		    top: 8px;
@@ -65,8 +65,13 @@
 		    bottom: 4px;
 		    right: 10px;
 				width: 32%;
-				height: 22%
+				height: 22%;
+				z-index: 10;
 		}
+		.title {
+        font-weight: bold;
+        color: darkblue;
+    }
 	</style>
 {% endblock %}
 
@@ -77,7 +82,7 @@
 	<div id="map" style="height:100%;"></div>
 	<div id="ds_info" class="overlay">
 		<div>
-			<span class="fs-5 text-success bold">{{ ds.title }}</span>
+			<span class="fs-5 title">{{ ds.title }}</span>
 			<span class="fs-6">a place dataset from {{ ds.owner.name }}</span>
 		</div>
 	</div>
