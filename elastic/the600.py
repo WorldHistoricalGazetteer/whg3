@@ -20,7 +20,7 @@ from places.models import Place
 ##
 import shapely.geometry as sgeo
 from geopy import distance
-from elasticsearch import Elasticsearch
+from elasticsearch7 import Elasticsearch
 es = settings.ES_CONN
 ##
 
