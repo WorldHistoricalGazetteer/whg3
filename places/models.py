@@ -284,18 +284,19 @@ class PlaceDepiction(models.Model):
     managed = True
     db_table = 'place_depiction'
 
-# class CloseMatch(models.Model):
-#   place_a = models.ForeignKey(Place, on_delete=models.CASCADE, related_name="close_match1")
-#   place_b = models.ForeignKey(Place, on_delete=models.CASCADE, related_name="close_match2")
-#   created_at = models.DateTimeField(auto_now_add=True)
-#   updated_at = models.DateTimeField(auto_now=True)
-#   task = models.ForeignKey(TaskResult, on_delete=models.CASCADE, related_name="task",
-#                            null=True, blank=True)
-#   created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="matcher")
-#   basis = models.CharField(max_length=200,
-#       choices=[('authid', 'authority id'), ('reviewed', 'reviewed'), ('imported', 'imported')],
-#       null=True, blank=True)
-#
-#   class Meta:
-#     managed = True
-#     db_table = 'close_matches'
+class CloseMatch(models.Model):
+  place_a = models.ForeignKey(Place, on_delete=models.CASCADE, related_name="close_match1")
+  place_b = models.ForeignKey(Place, on_delete=models.CASCADE, related_name="close_match2")
+  created_at = models.DateTimeField(auto_now_add=True)
+  updated_at = models.DateTimeField(auto_now=True)
+  task = models.ForeignKey(TaskResult, on_delete=models.CASCADE, related_name="task",
+                           null=True, blank=True)
+  created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="matcher")
+  basis = models.CharField(max_length=200,
+      choices=[('authid', 'authority id'), ('reviewed', 'reviewed'), ('imported', 'imported')],
+      null=True, blank=True)
+
+  class Meta:
+    managed = True
+    db_table = 'close_matches'
+
