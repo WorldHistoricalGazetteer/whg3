@@ -2952,7 +2952,8 @@ class DatasetPlacesView(DetailView):
   redirect_field_name = 'redirect_to'
 
   model = Dataset
-  template_name = 'datasets/ds_places.html'
+  # template_name = 'datasets/ds_places.html'
+  template_name = 'datasets/ds_places_new.html'
 
   def get_object(self):
     id_ = self.kwargs.get("id")

@@ -36,7 +36,37 @@
     #dataset_tabs { position: relative;}
     #selection_status { position: absolute; top:10px; right:10px; display:none;}
     .dataTables_scroll {border-right: 1px solid gainsboro;}
-    {#.dataTables_scrollHead, .dataTables_scrollBody {width:99% !important;}#}
+		#dataset_content {
+			position: relative;
+			{#border: 1px dashed orange;#}
+			height: calc(98vh - 60px);
+			overflow-y: auto;
+		}
+		.overlay {
+		    position: absolute; /* Positioning relative to the #dataset_content div */
+		    z-index: 1; /* This will ensure that it is above the #map div */
+				background-color: #fff;
+				box-shadow: 3px 3px gainsboro;
+				padding: .3rem;
+				border-radius: 5px;
+		}
+		#ds_info {
+		    top: 8px;
+		    left: 10px;
+				width: 65%;
+		}
+		#ds_table {
+		    top: 8px;
+		    right: 10px;
+				width: 32%;
+				height: 75%
+		}
+		#detail {
+		    bottom: 4px;
+		    right: 10px;
+				width: 32%;
+				height: 22%
+		}
 	</style>
 {% endblock %}
 
@@ -44,118 +74,38 @@
 
 {% block content %}
 <div id="dataset_content" class="container mt-1 px-1">
-	{% comment %}
-  {% with last=request.META.HTTP_REFERER %}
-	  <p class="small">
-		  <a href="{{ last }}">
-			  <i class="fas fa-arrow-left linky"></i> back
-		  </a> / {{ object.title }}
-	  </p>
-  {% endwith %}{% endcomment %}
-  <ul id="dataset_tabs" class="nav nav-tabs" role="tablist">
-			<span class="ds-title ms-1 me-3">{{ object.title }}</span>
-      <li class="nav-item">
-          <a class="nav-link" id="summary-tab" data-link="summary" href="{% url 'datasets:ds_meta' pk=object.id %}" role="tab">Summary</a>
-      </li>
-      <li class="nav-item">
-          <a class="nav-link active" id="browse-tab" href="#" role="tab">Browse</a>
-      </li>
-	    <div id="addtocoll_popup" class="p-2 hidden">
-        <div style="position:relative;">
-	        <div class="closer" style="position:absolute; top:-6px; right:-2px">x</div>
-        </div>
-	      <ul id="my_collections" class="no-bullets">
-					{% for c in collections %}
-						<li><a class="a_addtocoll" href="#" ref="{{ c.id }}">{{ c.title }}</a></li>
-		      {% endfor %}
-	      </ul>
-        <hr/>
-	      <p class="mb-0 ital">
-		      <a id="create_coll_link" href="#"><i class="fas fa-plus-square linky"></i> create new</a>
-	      </p>
-        <p id="title_form" class="small hidden">
-          <input id="title_input" type="text" placeholder="Collection title" width="20"/>
-	        <button id="b_create_coll" type="button">create</button>
-        </p>
-      </div>
-      <span id="added_flash" class="me-2 hidden" style="background-color: yellow; position:absolute; top:10px; right:10px;"> added! </span>
-      <div id="selection_status" style="position:absolute; right:20px;">
-	      <span id="actions">
-		      <span id="addtocoll" class="float-end ">
-			      <a id="addchecked" href="#">add<mark id="sel_count"></mark>to collection <i class="fa fa-plus"></i></a>
-		      </span>
-	      </span>
-	    </div>
-  </ul>
-  <div class="tab-content">
-    <div id="browse" class="tab-pane fade show active" role="tabpanel" aria-labelledby="browse-tab">
-        <div class="container mt-3 ps-0">
-          <div class="row">
-            <div id="drftable_detail" class="col-sm-5">
-              {{ filter }}
-              <div class="toomany"></div>
-              <div id="map" style="height:300px;"></div>
-	            {% if beta_or_better %}
-		            <div class="small">
-			            <span class=""><a href="#" id="clearlines">clear lines</a></span>
-		            </div>
-	            {% endif %}
-              <div id="row_detail">
-                <div id="detail" class="small"></div>
-              </div>
-            </div> <!-- drftable_detail -->
-            <div id="drftable_list" class="col-sm-7">
-              <table id="placetable" class="table table-striped table-bordered" style="width:100%">
-                <thead>
-                  <tr>
-                    <th>pid</th>
-                    <th>src_id</th>
-                    <th>title</th>
-                    <th>ccodes</th>
-                    <th>geo</th>
-	                  <th>select <a href="#" rel="tooltip" title="add one or more rows to a collection">
-		                  <i class="fas fa-question-circle linkypop"></i></a></th>
-                  </tr>
-                </thead>
-              </table>
-            </div>
-          </div>
-        </div>
-      <div id="ext_site" class="modal fade" role="dialog">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span></button>
-            </div>
-            <div id="ext_content" class="modal-body">foo</div>
-          </div>
-        </div>
-      </div> <!-- ext_site -->
-    </div> <!-- browse -->
-  </div> <!-- .tab-content -->
-
-  <div class="modal fade" id="updateModal" tabindex="-1" role="dialog" aria-labelledby="updateModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="updateModalLabel">
-          </h5>
-        </div>
-        <div class="modal-body">
-        </div> <!-- .modal-body -->      
-        <div class="modal-footer">
-          <div id="buttons_pre">
-            <button id="btn_cancel" type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
-            <button id="btn_update" type="button" data-dsid={{ds.id}} class="btn btn-primary btn-sm hidden">
-              Proceed</button>
-          </div>
-          <button id="btn_done" type="button" class="btn btn-secondary btn-sm hidden" data-dismiss="modal">Done</button>
-        </div>
-      </div>
-    </div>
-  </div>
+	<div id="map" style="height:100%;"></div>
+	<div id="ds_info" class="overlay">
+		<div>
+			<span class="fs-5 text-success bold">{{ ds.title }}</span>
+			<span class="fs-6">a place dataset from {{ ds.owner.name }}</span>
+		</div>
+	</div>
+	<div id="ds_table" class="overlay">table</div>
+	<div id="detail" class="overlay">record detail</div>
 </div>
+
+{#  <div class="modal fade" id="updateModal" tabindex="-1" role="dialog"#}
+{#       aria-labelledby="updateModalLabel" aria-hidden="true">#}
+{#    <div class="modal-dialog" role="document">#}
+{#      <div class="modal-content">#}
+{#        <div class="modal-header">#}
+{#          <h5 class="modal-title" id="updateModalLabel">#}
+{#          </h5>#}
+{#        </div>#}
+{#        <div class="modal-body">#}
+{#        </div> <!-- .modal-body -->      #}
+{#        <div class="modal-footer">#}
+{#          <div id="buttons_pre">#}
+{#            <button id="btn_cancel" type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>#}
+{#            <button id="btn_update" type="button" data-dsid={{ds.id}} class="btn btn-primary btn-sm hidden">#}
+{#              Proceed</button>#}
+{#          </div>#}
+{#          <button id="btn_done" type="button" class="btn btn-secondary btn-sm hidden" data-dismiss="modal">Done</button>#}
+{#        </div>#}
+{#      </div>#}
+{#    </div>#}
+{#  </div>#}
 
 <script type="text/javascript">
 	$("#clearlines").click(function(){
@@ -347,8 +297,8 @@
     whgtask = false
 
 
-    startTableSpinner()
-    startDetailSpinner()
+    {#startTableSpinner()#}
+    {#startDetailSpinner()#}
 
 
 	  loggedin = {{ loggedin }}
@@ -370,23 +320,24 @@
       }
       ,scrollY: 400
       ,select: true
-      ,order: [[2, 'asc']]
-      ,columns: 
+      {#,order: [[2, 'asc']]#}
+      ,order: [[0, 'asc']]
+      ,columns:
       [
           {"data": "id"},
-          {"data": "src_id"},
+          {#{"data": "src_id"},#}
           {"data": "title"},
-          {"data": "ccodes"},
+          {#{"data": "ccodes"},#}
           {"data": "geo"},
-		      check_column,
-          {#{"data": "chk"},#}
+		      check_column
       ]
       ,columnDefs:[
         {#{ className: "browse-task-col", "targets": [8,9,10] },#}
-        { orderable: false, "targets": [4, 5]},
-        {#{ searchable: false, "targets": [0,1,3,4,8,9,10]}#}
-        { searchable: false, "targets": [0,1,3,4,5]}
+        {#{ orderable: false, "targets": [4, 5]},#}
+        { orderable: false, "targets": [0,2,3]},
+        {#{ searchable: false, "targets": [0,1,3,4,5]}#}
         {#, {visible: false, "targets": [5]}#}
+        {#, {visible: false, "targets": [0]}#}
       ]
     })
 
@@ -542,7 +493,7 @@
   
   // fetch and render
   function renderData(dsid){
-    startMapSpinner()
+    {#startMapSpinner()#}
     // clear any data layers and 'places' source
     if(!!mappy.getLayer('gl_active_point')){
       mappy.removeLayer('gl_active_point')
@@ -621,7 +572,7 @@
       }, 'z-index-1');
         
       mappy.fitBounds(envelope.bbox, {padding: 30})
-      spinner_map.stop()
+      {#spinner_map.stop()#}
       
     }) // get
   } //highlightFeatureGL
@@ -701,7 +652,7 @@
     }      
       
   }
-
+  
   // generic 
   function zoomTo(pid) {
     console.log('zoomTo()',pid)
@@ -741,115 +692,6 @@
     }    
   }
   
-  // initiate map, fetch data -> renderMap()
-  {#addEventListener('map:init', function (e) {#}
-  {#  console.log('map:init begin')#}
-  {#  startMapSpinner()#}
-  {#  var token_mb = '{{ mbtoken }}',#}
-  {#    token_whg = '{{ mbtoken }}',#}
-  {#    mbstyle_url = 'https://api.mapbox.com/styles/v1/{id}/tiles/256/{z}/{x}/{y}?access_token={token}';#}
-  {#    #}
-  {#  var satellite  = L.tileLayer(mbstyle_url, {id:'mapbox/satellite-streets-v11', token:token_mb})#}
-  {#  var osm  = L.tileLayer(mbstyle_url, {id:'mapbox/light-v10', token:token_mb})#}
-	{##}
-  {#  var baseLayers = {#}
-  {#    "OSM": osm,#}
-  {#    "Satellite": satellite#}
-  {#  };#}
-  {#  //startMapSpinner()-->#}
-  {#  // call it mappy (a harmless artifact of earlier version)#}
-  {#  window.mappy = e.detail.map#}
-  {#  mappy.setMaxBounds(null)#}
-  {#  L.control.layers(baseLayers).addTo(mappy);#}
-  {#  baseLayers['OSM'].addTo(mappy)#}
-  {#  #}
-  {#  var printer = L.easyPrint({#}
-  {#    tileLayer: osm,#}
-  {#    sizeModes: ['Current'],#}
-  {#    filename: 'myMap',#}
-  {#    exportOnly: true,#}
-  {#    hideControlContainer: true#}
-  {#  }).addTo(mappy)#}
-  {#  #}
-  {#  #}
-  {#  // get dataset features -> renderMap() if < 15,000#}
-  {#  $.get("/api/geoms", {ds: "{{ ds.label }}", f: "{{ filter }}" },#}
-  {#    function(data){#}
-  {#      //console.log('feature count:',data.count)-->#}
-  {#      geom = {"type":"FeatureCollection","features":data.results}#}
-  {#      if(geom.features.length >= 15000) {#}
-  {#        $(".toomany").html('for performance reasons, mapping only the first 15,000 features - sorry!')#}
-  {#      }#}
-  {#      if(geom.features.length <= 15000) {#}
-  {#        renderMap(geom,'browse')#}
-  {#      } else {#}
-  {#        $(".toomany").html('too many features to map (> '+geom.features.length+'), sorry!')#}
-  {#      }#}
-  {#  })#}
-  {#  //spinner_map.stop()-->#}
-	{##}
-  {#  function manualPrint () {#}
-  {#      printer.printMap('CurrentSize', 'MyManualPrint')#}
-  {#  }#}
-  {# }, false);#}
-  {##}
-  // dual purpose for browse and recon
-  function renderMap(geom, tab){
-    // call the map being rendered 'mappo'
-    mappo = tab=='browse' ? mappy : mappyr
-    if (geom.features.length==0) {
-      console.log('no features in renderMap() call')
-    } else {
-      // clear existing if any
-      if(typeof(features)!=='undefined'){
-        mappo.removeLayer(features)
-      }
-      idToFeature = {}  // for feature lookup
-      features = L.geoJSON(geom, {
-      // feature here is a geometry
-      // TODO: LPF should allow single geometry, not only GeometryCollection
-        pointToLayer: function (feature, latlng) {
-          matchid = feature.place_id
-          //console.log('feature',feature)-->
-          marker = L.circleMarker(latlng,styles.Point.default).bindPopup(feature.title+
-            //'<br>pid: <a href="'+window.location.origin+'/api/db?id='+matchid+'" target="_blank">'+matchid+'</a>'-->
-            '<br>pid: <a href="javascript:getPlace('+matchid+')">'+matchid+'</a>'
-            );
-          idToFeature[matchid] = marker
-          return marker
-        }
-        ,onEachFeature: function(feature,layer) {
-          f=feature; l=layer;
-          //console.log('f,l',feature,layer)-->
-          identifier = f.place_id;
-          if(f.type != 'Point'){
-            layer.setStyle(styles[f.type].default).bindPopup(
-              f.title+'<br>pid: <a href="'+
-              window.location.origin+'/api/db?id='+
-              identifier+'" target="_blank">'+identifier+'</a>'
-            )
-            idToFeature[identifier] = layer
-          }
-        }
-      }).addTo(mappo);
-      spinner_map.stop()
-    }
-    //highlightFeature(pid)-->
-    mappo.fitBounds(features.getBounds())
-    mappo.on('zoomend', function() {
-      var currentZoom = mappo.getZoom();
-      //console.log('on zoomend', currentZoom)-->
-      var myRadius = currentZoom*(1); //or whatever ratio you prefer
-      var myWeight = currentZoom*(1/5); //or whatever ratio you prefer
-      features.setStyle({radius: myRadius, weight: myWeight});
-      opt = Object.values(idToFeature)[0].options
-      foptions = { ...opt };
-      //console.log('zoomend() idToFeature',opt)-->
-    });
-    opt = Object.values(idToFeature)[0].options
-    foptions = { ...opt };
-  }
-
   function getPlace(pid){
     //console.log('getPlace()', pid)-->
     $.ajax({
