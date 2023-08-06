@@ -359,11 +359,9 @@
     table = $('#placetable').DataTable({
       {#dom:  "<'row small'<'col-sm-12 col-md-4'l>"+#}
       dom:  "<'row small'<'col-sm-7'f>"+
-		          {#"<'col-sm-12 col-md-2'>"+#}
               "<'col-sm-5'>>" +
             "<'row'<'col-sm-12'tr>>" +
             "<'row small'<'col-sm-12'p>>"
-            {#"<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>"#}
       ,serverSide: true
       ,ajax: {
         url: "/api/placetable/?format=datatables&ds={{ ds.label }}"
@@ -372,7 +370,8 @@
       ,select: true
       ,order: [[0, 'asc']]
 	    ,pageLength: 25
-      ,columns:
+      ,LengthMenu: [25, 50, 100]
+	    ,columns:
       [
           {"data": "id"},
           {#{"data": "src_id"},#}
