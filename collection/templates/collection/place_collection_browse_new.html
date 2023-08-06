@@ -67,7 +67,7 @@
 		    top: 8px;
 		    right: 10px;
 				width: 32%;
-				height: 75%;
+				height: 65%;
 				opacity: 85%;
 		}
 		#detail {
@@ -75,7 +75,7 @@
 	    bottom: 4px;
 	    right: 10px;
 			width: 32%;
-			height: 22%;
+			height: 32%;
 			z-index: 10;
 			opacity: 85%;
 		}
@@ -95,7 +95,7 @@
 		  width: auto;
 		  position:absolute;
 		  top: 40%;
-		  right: 40%;
+		  right: 50%;
 		  transform: translate(50%, -50%);
 		}
 		.paginate_button { padding: 0 !important;}
@@ -178,14 +178,25 @@
         <tr>
           <th>pid</th>
           <th>title</th>
-          <th>geo</th>
-          <th class="hidden">dataset_id</th>
+          <th>country</th>
+          <th class="hidden">seq</th>
           <!--<th>ds</th>-->
         </tr>
       </thead>
     </table>
 	</div>
-	<div id="detail" class="overlay"></div>
+	<div id="detail" class="overlay">
+		<div class="row">
+			<div class="col-sm-7">
+				<span id="row_title"></span>
+				<div id="anno_body"></div>
+			</div>
+			<div id="" class="col-sm-5" style="position: relative;">
+				<img id="anno_img" class="img-dscoll thumbnail float-end"
+		           src="" width="100px" />
+			</div>
+		</div>
+	</div>
 
 	<div id="downloadModal" class="modal fade" tabindex="-1" aria-labelledby="downloadModalLabel" aria-hidden="true">
 	  <div class="modal-dialog">
@@ -404,15 +415,15 @@
     table = $('#placetable').DataTable({
       dom: "<'row'<'ps-3'f>>" +
       "<'row'<'col-sm-12'tr>>" +
-      "<'row mt-1'<'col-sm-12 col-md-5'l><'col-sm-12 col-md-7'p>>"
+      "<'row mt-1'<'col-sm-12 col-md-5'><'col-sm-12 col-md-7'p>>"
       ,serverSide: true
       ,ajax: {
         url: "/api/placetable_coll/?format=datatables&id={{ object.id }}"
       }
-      ,scrollY: 430
+      ,scrollY: 330
 	    {#,paging: false#}
-	    ,pageLength: 20
-      ,lengthMenu: [20, 40, 100]
+	    ,pageLength: 10
+      ,lengthMenu: [10, 25, 500]
       {#,scrollY: 430#}
       ,select: true
       ,order: [[3, 'asc']]
@@ -421,7 +432,7 @@
           {"data": "id"},
           {"data": "title"},
           {"data": "ccodes"},
-          {"data": "annos", "name": "seq"}
+          {"data": "annos", "name": "seq"},
           {#{"data": "dataset.title"},#}
           {#{"data": "<dataset></dataset>l", "name":"dataset.label"},#}
       ]
@@ -437,10 +448,6 @@
       spinner_table.stop()
       setRowEvents();
     })
-
-		{#if(table.rows()[0].length >0){#}
-    {#  startDetailSpinner()#}
-		{# }#}
 
     // help popups
     $(".help-matches").click(function(){
@@ -551,15 +558,14 @@
   function setRowEvents(){
     $("#placetable tbody tr").click(function() {
       thisy=$(this)
-	    console.log(thisy)
       // get id
       pid=$(this)[0].cells[0].textContent
       {#ds_src=table.row(thisy.index()).data().dataset.label#}
-      {#console.log('clicked row pid', pid, ds_src)#}
+      console.log('clicked row pid', pid)
 
+	    // why geom here?
       geom = all_feats.find(function(f){return f.properties.pid==pid}).geometry
       coords = geom.coordinates
-      {#console.log('pid, geom, coords', pid, geom, coords)#}
 
       // fetch its detail
       getPlace(pid, 'clicked')
@@ -575,14 +581,14 @@
 	    // only one source for this map: all collection features
       highlightFeatureGL(pid, geom, coords, 'all')
 
-    }) 
-        
+    })
+
     row = $("#pcoll_table table tbody")[0].rows[0]
     pid = parseInt(row.cells[0].textContent)
 
 	  // highlight first row if there is one, fetch detail, but don't zoomTo() it
     if(pid) {
-	    $("#placetable tbody").find('tr').eq(0).addClass('highlight-row')
+	    {#$("#placetable tbody").find('tr').eq(0).addClass('highlight-row')#}
 	    // fetch place details for 1st row
 	    getPlace(pid, 'row0')
     }
@@ -633,7 +639,7 @@
       type: 'symbol',
       source: 'empty'
     }, 'z-index-3');
-    
+
     const zIndex1 = mappy.addLayer({
       id: 'z-index-1',
       type: 'symbol',
@@ -832,7 +838,7 @@
   function highlightFeatureGL(pid, geom, coords, src){
     {#console.log('highlightFeatureGL()')#}
     {#console.log('pid, geom, coords', pid, geom, coords. src)#}
-    
+
     //mappy.getLayer(layer_list[4]).getPaintProperty('circle-color')
     mappy.setPaintProperty(
       'gl_active_point', 'circle-radius',
@@ -897,8 +903,8 @@
       mappy.flyTo({'center': flycoords, 'zoom': 6})
     } else {
       bbox=turf.envelope(geom).bbox
-      mappy.fitBounds(bbox, { padding: 30})      
-    }    
+      mappy.fitBounds(bbox, { padding: 30})
+    }
   }
 
   // activate all tooltips
@@ -910,11 +916,12 @@
       url: "/api/place/"+pid+"?cid={{ object.id }}",
       }).done(function( data ) {
         window.payload = data
-		    $("#detail").html(parseAnno(data))
-		    {#$("#row_title").html('<b>'+data.title+'</b>')#}
+		    $("#row_title").html('<b>'+data.title+'</b>')
+		    console.log('img',data.traces.image_file)
         {#// if geom is polygon, make feature & add to map if not initial table.draw()#}
         {#$("#detail").html(parsePlace(data))#}
-		    {#$("#anno_body").html(parseAnno(data.traces))#}
+		    $("#anno_body").html(parseAnno(data.traces))
+		    $("#anno_img").html(data.traces.image_file)
 		    {#delete data.traces#}
 		    {#$("#place_body").html(parsePlace(data))#}
 		    {#// TODO: usability? filter table on 'fetch info' from marker popup but not on initial load#}
@@ -932,7 +939,7 @@
             url = str
           } else {
             var re = /(http|bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wdlocal|whg|wp):(.*?)$/;
-            url=base_urls[str.match(re)[1]]+str.match(re)[2] 
+            url=base_urls[str.match(re)[1]]+str.match(re)[2]
             {#console.log('url',url)#}
           }
           window.open(url, '_blank');
@@ -979,22 +986,26 @@
         descrip += '<i>none yet</i>'
       } else {
         if (t.relation) {
-            descrip += "<p><b><u>Relation</u></b>: " + JSON.parse(t.relation)[0] + "</p>"
+            descrip += "<p><b><u>Relation</u></b>: " +
+		            JSON.parse(t.relation)[0] + "</p>"
         }
         if (t.note) {
             // find & format embedded markdown link syntax
-		        linkish = t.note.replace(/\[(.*)\]\((.*)\)/gim,'<a href="$2" target="_blank">$1</a>')
+		        linkish = t.note.replace(/\[(.*)\]\((.*)\)/gim,
+				        '<a href="$2" target="_blank">$1</a>')
 		        {#console.log('linkish', linkish)#}
 		        // index of link, -1 is none
 		        linkindex = linkish.search(/<a href/gim)
 		        if(linkindex == -1){
               // no links, truncate if > 250 chars
-              descrip += '<p><b><u>Notes</u></b>: ' + readMore(linkish, 250) + '</p>'
+              descrip += '<p><b><u>Notes</u></b>: ' +
+		              readMore(linkish, 250) + '</p>'
 		        } else {
               // has a link, get initial text
 			        text = linkish.slice(0, linkindex)
 			        innerlink = linkish.slice(linkindex,)
-			        descrip += '<p><b><u>Notes</u></b>: ' + readMore(text, 250, innerlink) + '</p>'
+			        descrip += '<p><b><u>Notes</u></b>: ' +
+					        readMore(text, 250, innerlink) + '</p>'
 		        }
         }
         if (t.start) {
@@ -1004,7 +1015,8 @@
       }
       if (imgpath !=""){
 		    // display annotation image if any
-	      $("#active_img").attr('src','/media/'+imgpath)
+	      $("#anno_img").attr('src','/media/'+imgpath)
+	      {#$("#active_img").attr('src','/media/'+imgpath)#}
       } else {
         // trace has no image
         {#console.log('trace has no image')#}

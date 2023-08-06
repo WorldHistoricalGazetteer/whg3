@@ -285,7 +285,6 @@
         $(this).addClass("highlight-row");
 
       // highlight marker, zoomTo()
-      <!--highlightFeatureGL(pid, coords)-->
       highlightFeatureGL(pid, geom, coords, ds_src)
 
     })
@@ -738,8 +737,7 @@
   }
 
   function getPlace(pid, from){
-    // from = ['row0'|'clicked'|'popup']
-    // console.trace('getPlace()')
+    {#console.log('getPlace()')#}
     $.ajax({
       url: "/api/place/"+pid,
       }).done(function( data ) {
