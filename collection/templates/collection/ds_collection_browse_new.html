@@ -68,13 +68,14 @@
 				opacity: 85%;
 		}
 		#detail {
-		    bottom: 4px;
-		    right: 10px;
-				width: 32%;
-				height: 22%;
-				z-index: 10;
-				opacity: 85%;
+			font-size: .8rem;
+	    bottom: 4px;
+	    right: 10px;
+			width: 32%;
+			height: 22%;
+			z-index: 10;
 		}
+		#detail p {margin-bottom: .2rem;}
 		.title {
 			font-weight: bold;
 			color: #993333;
@@ -110,7 +111,10 @@
 	<div id="map" style="height:100%;"></div>
 	<div id="dscoll_info" class="overlay">
 		<div id="dscoll_header">
-			<span class="fs-5 title">{{ object.title }}</span>
+			<span class="fs-5 title">
+				<img src="{% static 'images/010-jigsaw.png'%}" class="" height=28 alt=""/>
+				{{ object.title }}
+			</span>
 {#			<span class="fs-6">a WHG dataset collection</span>#}
 	    <span id="toggleIcon" class="float-end">
 	        <span id="iconLabel" class="small">Hide</span>
@@ -180,7 +184,7 @@
       </thead>
     </table>
 	</div>
-	<div id="detail" class="overlay">record detail</div>
+	<div id="detail" class="overlay"></div>
 
   <div id="ext_site" class="modal fade" role="dialog">
     <div class="modal-dialog">
@@ -192,8 +196,10 @@
         <div id="ext_content" class="modal-body">foo</div>
       </div>
     </div>
-  </div> <!-- ext_site -->
-  <div class="modal fade" id="" tabindex="-1" role="dialog" aria-labelledby="updateModalLabel" aria-hidden="true">
+  </div>
+  <div class="modal fade" id="" tabindex="-1"
+       role="dialog" aria-labelledby="updateModalLabel"
+       aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">
         <div class="modal-header">
@@ -213,7 +219,7 @@
       </div>
     </div>
   </div>
-</div>
+</div> <!-- dscoll_content -->
 
 <script type="text/javascript">
 
