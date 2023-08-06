@@ -551,6 +551,7 @@
   function setRowEvents(){
     $("#placetable tbody tr").click(function() {
       thisy=$(this)
+	    console.log(thisy)
       // get id
       pid=$(this)[0].cells[0].textContent
       {#ds_src=table.row(thisy.index()).data().dataset.label#}
@@ -909,16 +910,17 @@
       url: "/api/place/"+pid+"?cid={{ object.id }}",
       }).done(function( data ) {
         window.payload = data
-		    $("#row_title").html('<b>'+data.title+'</b>')
-        // if geom is polygon, make feature & add to map if not initial table.draw()
+		    $("#detail").html(parseAnno(data))
+		    {#$("#row_title").html('<b>'+data.title+'</b>')#}
+        {#// if geom is polygon, make feature & add to map if not initial table.draw()#}
         {#$("#detail").html(parsePlace(data))#}
-		    $("#anno_body").html(parseAnno(data.traces))
-		    delete data.traces
-		    $("#place_body").html(parsePlace(data))
-		    // TODO: usability? filter table on 'fetch info' from marker popup but not on initial load
-		    if(from=="popup"){
-          $("#placetable_filter input").val(data.title).keyup()
-		    }
+		    {#$("#anno_body").html(parseAnno(data.traces))#}
+		    {#delete data.traces#}
+		    {#$("#place_body").html(parsePlace(data))#}
+		    {#// TODO: usability? filter table on 'fetch info' from marker popup but not on initial load#}
+		    {#if(from=="popup"){#}
+        {#  $("#placetable_filter input").val(data.title).keyup()#}
+		    {# }#}
         {#spinner_detail.stop()#}
         // events on detail items
         $('.ext').on('click', function(e) {
