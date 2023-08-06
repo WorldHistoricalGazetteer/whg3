@@ -761,7 +761,7 @@ class GeoJSONAPIView(generics.ListAPIView):
     return qs
 
 """
-    populates drf table in ds_browse.html
+    populates drf table in ds_browse.html, ds_places.html
 """
 class PlaceTableViewSet(viewsets.ModelViewSet):
   # print('hit PlaceTableViewSet()')

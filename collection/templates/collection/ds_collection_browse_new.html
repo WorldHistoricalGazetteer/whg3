@@ -49,17 +49,23 @@
 				padding: .3rem;
 				border-radius: 5px;
 		}
-		#ds_info {
+		#dscoll_info {
 		    top: 8px;
 		    left: 10px;
 				width: 65%;
 				border: 1px solid gainsboro;
+				{#height: 75%;#}
+				height: fit-content;
+				transition: height 0.5s;
+				opacity: 85%;
+				overflow: hidden;
 		}
 		#ds_table {
 		    top: 8px;
 		    right: 10px;
 				width: 32%;
-				height: 75%
+				height: 75%;
+				opacity: 85%;
 		}
 		#detail {
 		    bottom: 4px;
@@ -67,13 +73,27 @@
 				width: 32%;
 				height: 22%;
 				z-index: 10;
+				opacity: 85%;
 		}
 		.title {
 			font-weight: bold;
 			color: #993333;
 		}
+		#toggleIcon {
+				cursor: pointer;
+				color: #336699;
+		}
+	.img-dscoll {
+	  max-width: 80%;
+	  max-height: 100%;
+	  height: auto;
+	  width: auto;
+	  position:absolute;
+	  top: 40%;
+	  right: 40%;
+	  transform: translate(50%, -50%);
+	}
 	</style>
-
 
 {% endblock %}
 
@@ -85,12 +105,64 @@
   {{ bboxes|json_script:"bboxes" }}
 
 	<div id="map" style="height:100%;"></div>
-	<div id="ds_info" class="overlay">
-		<div>
+	<div id="dscoll_info" class="overlay">
+		<div id="dscoll_header">
 			<span class="fs-5 title">{{ object.title }}</span>
-			<span class="fs-6">a dataset collection from {{ object.owner.name }}</span>
+{#			<span class="fs-6">a WHG dataset collection</span>#}
+	    <span id="toggleIcon" class="float-end">
+	        <span id="iconLabel" class="small">Hide</span>
+	        <i id="expandIcon" class="fas fa-chevron-down" style="display: none;"></i>
+	        <i id="collapseIcon" class="fas fa-chevron-up"></i>
+	    </span>
 		</div>
-	</div>
+		<div id="metadata" class="mt-2">
+			<div class="row">
+				<div class="col-sm-8">
+					<p>{{ object.description|safe }}</p>
+				</div>
+				<div class="col-sm-4" style="position: relative;">
+		      {% if object.image_file %}
+		        <a href="#" class="pop">
+		            <img id="active_img" class="img-responsive thumbnail float-end"
+		           src="/media/{{ object.image_file.name }}" width="220px" /></a>
+		      {% else %}
+		      <span><i>image here</i></span>
+		      {% endif %}
+				</div>
+			</div>
+      <table>
+        <tr><td><b>Keywords</b></td><td>{{ object.keywords|join:', ' }}</td></tr>
+        {% if links|length > 0 %}
+	        <tr><td><b>Links</b></td>
+		        <td>
+			        {% for l in links %}
+				        <a href="{{ l.uri }}" target="_blank">{{ l.label }}</a>;
+			        {% endfor %}
+		        </td></tr>
+        {% endif %}
+        {% if object.webpage %}
+        <tr><td><b>Webpage</b></td><td>
+          <a href="{{object.webpage }}" target="_blank">link <i class="fas fa-external-link-alt linky"></i></a>
+        </td></tr>
+        {% endif %}
+        <tr>
+	        <td><b>Essay(s)</b></td>
+	        <td><a href="/media/{{ object.file }}" target="_blank"> <i class="fas fa-file-pdf linky"></i>
+				        {{ object.file.name|filename }}</a></td>
+        </tr>
+        {% if object.creator %}
+          <tr><td><b>Creator(s)</b></td><td>{{ object.creator }}</td></tr>
+        {% endif %}
+        {% if object.contact %}
+          <tr><td><b>Contact</b></td><td>{{ object.contact|url_it|safe }}</td></tr>
+        {% endif %}
+      </table>
+			<div class="float-end">
+        <label for="checkbox" class="small">Close intro by default</label>
+        <input type="checkbox" id="checkbox">
+      </div>
+		</div>
+	</div> <!-- ds_info -->
 	<div id="ds_table" class="overlay">
 		<div id="ds_filter" class="small"></div>
 		<p>multi-dataset table</p>
@@ -219,6 +291,46 @@
   }
 
   $(function(){
+
+    // START ds_info controls
+	  var isCollapsed = localStorage.getItem('isCollapsed') === 'true';
+
+    // Set initial height and icon
+    if (isCollapsed) {
+        $('#dscoll_info').css('height', '40px');
+        $('#expandIcon').show();
+        $('#collapseIcon').hide();
+        $('#iconLabel').text('Show Detail');
+    }
+
+    $('#toggleIcon').click(function() {
+        if (isCollapsed) {
+            // if the div is collapsed, expand it to fit its content
+            $('#dscoll_info').css('height', 'fit-content');
+            $('#expandIcon').hide();
+            $('#collapseIcon').show();
+            $('#iconLabel').text('Hide');
+            isCollapsed = false;
+        } else {
+            // if the div is not collapsed, animate it to 40px height
+            $('#dscoll_info').css('height', '40px');
+            $('#expandIcon').show();
+            $('#collapseIcon').hide();
+            $('#iconLabel').text('Show Detail');
+            isCollapsed = true;
+        }
+
+        // Store the state in local storage
+        localStorage.setItem('isCollapsed', isCollapsed);
+    });
+
+    // Update the state when the checkbox is checked
+    $('#checkbox').change(function() {
+        localStorage.setItem('isCollapsed', $(this).is(':checked'));
+    });
+    // END ds_info controls
+
+
     window.ds_list = JSON.parse(document.getElementById('ds_list').textContent);
     source_list = ds_list.map(function(d){ return d.label})
     window.layer_list = getLoadedLayers()
@@ -792,69 +904,6 @@
     return link
   }
 
-  // render heatmap layer
-  function heat(dataset, ramp) {
-	  {#console.log('heat('+dataset+', '+ramp+')')#}
-	  mappy.addLayer({
-      "id": "heat_"+dataset,
-      "type": "heatmap",
-      "source": dataset,
-      "maxzoom": 9,
-      "paint": {
-          // Increase the heatmap weight based on frequency and property magnitude
-        "heatmap-weight": ["interpolate", ["linear"], ["get", "mag"], 0, 0, 6, 1 ],
-        // Increase the heatmap color weight weight by zoom level
-        // heatmap-intensity is a multiplier on top of heatmap-weight
-        "heatmap-intensity": ["interpolate", ["linear"],["zoom"], 0, 1, 9, 3 ],
-        // Color ramp for heatmap.  Domain is 0 (low) to 1 (high).
-        // Begin color ramp at 0-stop with a 0-transparancy color
-        // to create a blur-like effect.
-        "heatmap-color": heatramps[ramp],
-        // Adjust the heatmap radius by zoom level
-        "heatmap-radius": ["interpolate", ["linear"], ["zoom"], 0, 2, 9, 20 ],
-        // Transition from heatmap to circle layer by zoom level
-        "heatmap-opacity": ["interpolate", ["linear"], ["zoom"], 7, 1, 9, 0 ],
-      }
-    });
-  }
-
-  // add heatmap source for each dataset unless it's a polygon layer
-  function addHeatSources(ds_list){
-    heatsources=[]
-    for(d in ds_list){
-      ds = ds_list[d]
-      if(ds.geotypes['poly'] < 200){
-        gl.addSource(ds.label, {
-          'type': 'geojson',
-          'data': '/datasets/'+ds.id+'/geojson'
-        });
-        heatsources.push(ds.label)
-        // different color ramps by index
-        heat(ds.label, d)
-      }
-    }
-    spinner_map.stop()
-  }
-
-  // [ greenish, redish]
-  var heatramps = [
-    ["interpolate",["linear"],["heatmap-density"],
-    0,"rgba(237,248,251,0)",0.2,"rgb(204,236,230)",0.4,"rgb(153,216,201)",0.6,
-    "rgb(102,194,164)",0.8,"rgb(44,162,95)",1,"rgb(0,109,44)"],
-
-    ["interpolate",["linear"],["heatmap-density"],
-    0,'rgba(254,240,217,0)',0.2,'rgb(253,212,158)',0.4,'rgb(253,187,132)',0.6,
-    'rgb(252,141,89)',0.8,'rgb(227,74,51)',1,'rgb(179,0,0)'],
-
-    ["interpolate",["linear"],["heatmap-density"],
-    0,'rgba(246,239,247,0)',0.2,'rgb(208,209,230)',0.4,'rgb(166,189,219)',0.6,
-    'rgb(103,169,207)',0.8,'rgb(28,144,153)',1,'rgb(1,108,89)'],
-
-    ["interpolate",["linear"],["heatmap-density"],
-    0,'rgba(237,248,251,0)',0.2,'rgb(191,211,230)',0.4,'rgb(158,188,218)',0.6,
-    'rgb(140,150,198)',0.8,'rgb(136,86,167)',1,'rgb(129,15,124)'],
-  ]
-
   styles = {
     "Point": {
       "default": {radius: 2, fillColor:"#ff9900", fillOpacity: 0.8, stroke: false},
@@ -910,7 +959,6 @@
     $(".toomany").append(spinner_map.el);
   }
   //*
-
 
 </script>
 {% endblock %}

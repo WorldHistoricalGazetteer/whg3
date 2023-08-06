@@ -740,59 +740,7 @@
       }
     }    
   }
-  
-  // initiate map, fetch data -> renderMap()
-  {#addEventListener('map:init', function (e) {#}
-  {#  console.log('map:init begin')#}
-  {#  startMapSpinner()#}
-  {#  var token_mb = '{{ mbtoken }}',#}
-  {#    token_whg = '{{ mbtoken }}',#}
-  {#    mbstyle_url = 'https://api.mapbox.com/styles/v1/{id}/tiles/256/{z}/{x}/{y}?access_token={token}';#}
-  {#    #}
-  {#  var satellite  = L.tileLayer(mbstyle_url, {id:'mapbox/satellite-streets-v11', token:token_mb})#}
-  {#  var osm  = L.tileLayer(mbstyle_url, {id:'mapbox/light-v10', token:token_mb})#}
-	{##}
-  {#  var baseLayers = {#}
-  {#    "OSM": osm,#}
-  {#    "Satellite": satellite#}
-  {#  };#}
-  {#  //startMapSpinner()-->#}
-  {#  // call it mappy (a harmless artifact of earlier version)#}
-  {#  window.mappy = e.detail.map#}
-  {#  mappy.setMaxBounds(null)#}
-  {#  L.control.layers(baseLayers).addTo(mappy);#}
-  {#  baseLayers['OSM'].addTo(mappy)#}
-  {#  #}
-  {#  var printer = L.easyPrint({#}
-  {#    tileLayer: osm,#}
-  {#    sizeModes: ['Current'],#}
-  {#    filename: 'myMap',#}
-  {#    exportOnly: true,#}
-  {#    hideControlContainer: true#}
-  {#  }).addTo(mappy)#}
-  {#  #}
-  {#  #}
-  {#  // get dataset features -> renderMap() if < 15,000#}
-  {#  $.get("/api/geoms", {ds: "{{ ds.label }}", f: "{{ filter }}" },#}
-  {#    function(data){#}
-  {#      //console.log('feature count:',data.count)-->#}
-  {#      geom = {"type":"FeatureCollection","features":data.results}#}
-  {#      if(geom.features.length >= 15000) {#}
-  {#        $(".toomany").html('for performance reasons, mapping only the first 15,000 features - sorry!')#}
-  {#      }#}
-  {#      if(geom.features.length <= 15000) {#}
-  {#        renderMap(geom,'browse')#}
-  {#      } else {#}
-  {#        $(".toomany").html('too many features to map (> '+geom.features.length+'), sorry!')#}
-  {#      }#}
-  {#  })#}
-  {#  //spinner_map.stop()-->#}
-	{##}
-  {#  function manualPrint () {#}
-  {#      printer.printMap('CurrentSize', 'MyManualPrint')#}
-  {#  }#}
-  {# }, false);#}
-  {##}
+
   // dual purpose for browse and recon
   function renderMap(geom, tab){
     // call the map being rendered 'mappo'
