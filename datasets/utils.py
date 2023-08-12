@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.gis.geos import GEOSGeometry
+from django.core.exceptions import ValidationError
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives
 from django.http import FileResponse, JsonResponse, HttpResponse
@@ -8,6 +9,7 @@ from django.views.generic import View
 
 
 import codecs, csv, datetime, sys, openpyxl, os, pprint, re, time
+import pandas as pd
 import simplejson as json
 from chardet import detect
 from django_celery_results.models import TaskResult
@@ -24,6 +26,66 @@ from datasets.static.hashes import aliases as al
 from main.models import Log
 from places.models import PlaceGeom, Type
 pp = pprint.PrettyPrinter(indent=1)
+
+# ***
+# NEW insert function Aug 2023
+# intended to replace ds_insert_tsv() and ds_insert_lpf()
+# ***
+
+def insert_delim():
+  return
+
+def insert_lpf():
+  return
+
+def sniff_file_type():
+  return
+
+def validator_delim(df):
+  df = pd.read_csv('your_file.csv')
+  # check for required fields
+  required_fields = ['id', 'title', 'title_source', 'start']
+  for field in required_fields:
+    if field not in df.columns:
+      return f"Required field missing: {field}"
+
+  # require either "start" or "attestation_year"
+  if not ("start" in df.columns or "attestation_year" in df.columns):
+    return "Either 'start' or 'attestation_year' must be present"
+
+  if not ("aat_types" in df.columns or "fclasses" in df.columns):
+    return "Either 'aat_types' or 'fclasses' must be present"
+
+  # check for pattern constraints
+  pattern_constraints = {
+    'attestation_year': "",
+    'ccodes': "([a-zA-Z]{2};?)+",
+    'fclasses': "",
+    'matches': "(https?:\\/\\/.*\\..*;?)+|([a-z]{1,8}:.*;?)+",
+    'parent_id': "(https?:\/\/.*\\..*|#\\d*)",
+    'start': "(-?\\d{1,4}(-\\d{2})?(-\\d{2})?)(\/(-?\\d{1,4}(-\\d{2})?(-\\d{2})?))?",
+    'end': "(-?\\d{1,4}(-\\d{2})?(-\\d{2})?)(\/(-?\\d{1,4}(-\\d{2})?(-\\d{2})?))?"
+  }
+
+  # TODO: not all fields have contraints !?
+  # for field, pattern in pattern_constraints.items():
+  #   if field in df.columns and not df[field].str.contains(pattern).all():
+  #     return f"Field {field} contains values that do not match the required pattern"
+
+  # check for numerical range constraints
+  range_constraints = {
+    'lon': (-180, 180),
+    'lat': (-90, 90)
+  }
+
+  for field, (min_val, max_val) in range_constraints.items():
+    if field in df.columns and (df[field].min() < min_val or df[field].max() > max_val):
+      return f"Field {field} contains values outside the required range"
+
+  return "Validation passed"
+
+# def validator_lpf():
+#   return
 
 # ***
 # DOWNLOAD FILES
@@ -549,7 +611,6 @@ def parsedates_lpf(feat):
 # validate Linked Places json-ld (w/jsonschema)
 # format ['coll' (FeatureCollection) | 'lines' (json-lines)]
 def validate_lpf(tempfn,format):
-  #wd = '/Users/karlg/Documents/Repos/_whgazetteer/'
   schema = json.loads(codecs.open('datasets/static/validate/schema_lpf_v1.2.json','r','utf8').read())
   # rename tempfn
   newfn = tempfn+'.jsonld'
@@ -567,7 +628,6 @@ def validate_lpf(tempfn,format):
   else:
     for feat in jdata['features']:
       countrows +=1
-      #print(feat['properties']['title'])
       try:
         validate(
           instance=feat,
@@ -575,11 +635,13 @@ def validate_lpf(tempfn,format):
           format_checker=draft7_format_checker
         )
         count_ok +=1
-      except:
-        err = sys.exc_info()
-        print('res: some kinda error',err[1].args)
-        #result["errors"].append({"feat":countrows,'error':err[1].args[0]})
-        result["errors"].append({"feat":countrows,'error':err[1]})
+      except ValidationError as e:
+          # Extract detailed error information
+          path = " -> ".join([str(p) for p in e.absolute_path])
+          message = e.message
+          detailed_error = f"Error at {path}: {message}"
+          print('Validation error:', detailed_error)
+          result["errors"].append({"feat": countrows, 'error': detailed_error})
     result['count'] = countrows
   return result
 

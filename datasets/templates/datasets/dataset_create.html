@@ -101,18 +101,6 @@
             <td>&nbsp;<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a></td>
           </tr>
         </table>
-        {% comment %}
-          <table class="mt-2" style="background-color:aliceblue;">
-          <tr style="">
-            <td style="vertical-align:top; padding-top:3px;"><b>Featured rank</b></td>
-            <td style="vertical-align:top; padding-top:3px;">{{ form.featured }} </td>
-          </tr>
-          <tr>
-            <td style="vertical-align:top;"><b>Image</b></td>
-            <td>{{ form.image_file }}</td>
-          </tr>
-        </table>
-        {% endcomment %}
         <!-- status, format, delimiter, numrows, header  -->
         <input type="hidden" name="owner" value='{{ user.id }}'></input>
         <input type="hidden" name="datatype" value="place"></input>

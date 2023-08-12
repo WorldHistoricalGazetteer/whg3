@@ -54,6 +54,11 @@
 		    left: 10px;
 				width: 65%;
 				border: 1px solid gainsboro;
+				{#height: 75%;#}
+				height: fit-content;
+				transition: height 0.5s;
+				opacity: 85%;
+				overflow: hidden;
 		}
 		#ds_table {
 		    top: 8px;
@@ -70,13 +75,15 @@
 				height: 22%;
 				z-index: 10;
 		}
-		#detail p {
-				margin-bottom: .2rem;
-		}
+		#detail p {margin-bottom: .2rem;}
 		.title {
         font-weight: bold;
         color: darkblue;
     }
+		#toggleIcon {
+				cursor: pointer;
+				color: #336699;
+		}
 		.paginate_button { padding: 0 !important;}
 		.dataTables_filter {float: left !important;}
 		.dataTables_filter input {padding: 2px;}
@@ -90,14 +97,42 @@
 <div id="dataset_content" class="container mt-1 px-1">
 	<div id="map" style="height:100%;"></div>
 	<div id="ds_info" class="overlay">
-		<div>
-			<img src="{% static 'images/spreadsheet.png'%}" class="" height=28 alt=""/>
-			<span class="fs-5 title">{{ ds.title }}</span>
-			<span class="fs-6">a place dataset from {{ ds.owner.name }}</span>
+		<div id="ds_header">
+			<span class="fs-5 title">
+				<img src="{% static 'images/spreadsheet.png'%}" height=28 alt=""/>
+				{{ ds.title }}
+			</span>
+			<span class="fs-6">a WHG dataset</span>
+	    <span id="toggleIcon" class="float-end">
+	        <span id="iconLabel" class="small">Hide</span>
+	        <i id="expandIcon" class="fas fa-chevron-down" style="display: none;"></i>
+	        <i id="collapseIcon" class="fas fa-chevron-up"></i>
+	    </span>
+		</div> <!-- ds_header -->
+		<div id="metadata" class="mt-2">
+			<div class="row">
+				<div class="col-sm-8">
+					<p>{{ ds.description|safe }}</p>
+				</div>
+				<div class="col-sm-4" style="position: relative;">
+		      {% if ds.image_file %}
+		        <a href="#" class="pop">
+		            <img id="active_img" class="img-responsive thumbnail float-end"
+		           src="/media/{{ ds.image_file.name }}" width="220px" /></a>
+		      {% else %}
+		      <span><i>image here</i></span>
+		      {% endif %}
+				</div>
+			</div>
+			<div class="float-end">
+        <label for="checkbox" class="small">Close intro by default</label>
+        <input type="checkbox" id="checkbox">
+      </div>
 		</div>
-	</div>
+	</div> <!-- ds_info -->
 	<div id="ds_table" class="overlay">
-    <table id="placetable" class="table table-striped table-bordered small" style="width:100%">
+    <table id="placetable"
+           class="table table-striped table-bordered small" style="width:100%">
       <thead>
         <tr>
           <th>pid</th>
@@ -135,31 +170,32 @@
 	  </div>
 	</div>
 	<div id="detail" class="overlay"></div>
-</div>
 
-{#  <div class="modal fade" id="updateModal" tabindex="-1" role="dialog"#}
-{#       aria-labelledby="updateModalLabel" aria-hidden="true">#}
-{#    <div class="modal-dialog" role="document">#}
-{#      <div class="modal-content">#}
-{#        <div class="modal-header">#}
-{#          <h5 class="modal-title" id="updateModalLabel">#}
-{#          </h5>#}
-{#        </div>#}
-{#        <div class="modal-body">#}
-{#        </div> <!-- .modal-body -->      #}
-{#        <div class="modal-footer">#}
-{#          <div id="buttons_pre">#}
-{#            <button id="btn_cancel" type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>#}
-{#            <button id="btn_update" type="button" data-dsid={{ds.id}} class="btn btn-primary btn-sm hidden">#}
-{#              Proceed</button>#}
-{#          </div>#}
-{#          <button id="btn_done" type="button" class="btn btn-secondary btn-sm hidden" data-dismiss="modal">Done</button>#}
-{#        </div>#}
-{#      </div>#}
-{#    </div>#}
-{#  </div>#}
+  <div class="modal fade" id="" tabindex="-1" role="dialog"
+       aria-labelledby="updateModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="updateModalLabel">
+          </h5>
+        </div>
+        <div class="modal-body">
+        </div> <!-- .modal-body -->
+        <div class="modal-footer">
+          <div id="buttons_pre">
+            <button id="btn_cancel" type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
+            <button id="btn_update" type="button" data-dsid={{ds.id}} class="btn btn-primary btn-sm hidden">
+              Proceed</button>
+          </div>
+          <button id="btn_done" type="button" class="btn btn-secondary btn-sm hidden" data-dismiss="modal">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> <!-- dataset_content -->
 
 <script type="text/javascript">
+
 	$("#clearlines").click(function(){
     mappy.removeLayer('gl_active_poly')
     mappy.removeLayer('outline')
@@ -342,6 +378,44 @@
   })
 
   $(function(){
+    // START ds_info controls
+	  var isCollapsed = localStorage.getItem('isCollapsed') === 'true';
+
+    // Set initial height and icon
+    if (isCollapsed) {
+        $('#ds_info').css('height', '40px');
+        $('#expandIcon').show();
+        $('#collapseIcon').hide();
+        $('#iconLabel').text('Show Detail');
+    }
+
+    $('#toggleIcon').click(function() {
+        if (isCollapsed) {
+            // if the div is collapsed, expand it to fit its content
+            $('#ds_info').css('height', 'fit-content');
+            $('#expandIcon').hide();
+            $('#collapseIcon').show();
+            $('#iconLabel').text('Hide');
+            isCollapsed = false;
+        } else {
+            // if the div is not collapsed, animate it to 40px height
+            $('#ds_info').css('height', '40px');
+            $('#expandIcon').show();
+            $('#collapseIcon').hide();
+            $('#iconLabel').text('Show Detail');
+            isCollapsed = true;
+        }
+
+        // Store the state in local storage
+        localStorage.setItem('isCollapsed', isCollapsed);
+    });
+
+    // Update the state when the checkbox is checked
+    $('#checkbox').change(function() {
+        localStorage.setItem('isCollapsed', $(this).is(':checked'));
+    });
+    // END ds_info controls
+
     checked_rows = []
     localStorage.setItem('filter', '99')
     wdtask = false
