@@ -1,0 +1,87 @@
+{% extends "main/base.html" %}
+
+{% block extra_head %}
+    <style>
+        /* Custom styles for the dashboard */
+        .sidebar {
+            border-right: 1px solid #ddd;
+            height: 100vh; /* Full viewport height */
+            padding-top: 20px;
+        }
+
+        .profile-info {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .sidebar-nav-item {
+            display: block;
+            padding: 10px;
+            margin: 5px 0;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 5px;
+        }
+
+        .sidebar-nav-item:hover,
+        .sidebar-nav-item.active {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+        }
+
+        .main-content {
+            padding: 20px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 sidebar">
+                <!-- Profile Info -->
+                <div class="profile-info">
+                    <img src="{{ user.profile_image_url }}" alt="User Profile Image" width="100">
+                    <h5>{{ user.name }}</h5>
+                </div>
+
+                <!-- Sidebar Navigation -->
+                <a href="{% url 'main:dataset-list' %}" class="sidebar-nav-item">Datasets</a>
+                <a href="{% url 'main:collection-list' %}" class="sidebar-nav-item">Collections</a>
+                {% if user.is_group_leader %}
+                    <a href="{% url 'main:group-list' %}" class="sidebar-nav-item">Groups</a>
+                {% endif %}
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 main-content">
+                <!-- Content for the selected sidebar item goes here -->
+                {# Use Django template tags to load the content based on selected item #}
+            </div>
+        </div>
+    </div>
+
+<script>
+$(document).ready(function() {
+    $('.sidebar-nav-item').on('click', function(e) {
+        e.preventDefault();  // Prevent default navigation
+
+        var targetUrl = $(this).attr('href');
+				console.log('targetUrl',targetUrl )
+
+        // Fetch content via AJAX
+        $.get(targetUrl, function(data) {
+            $('.main-content').html(data);  // Update the main content div
+        });
+
+        // Highlight the active sidebar item
+        $('.sidebar-nav-item').removeClass('active');
+        $(this).addClass('active');
+    });
+});
+</script>
+
+{% endblock %}
+

@@ -1,0 +1,1694 @@
+9ce12500 three new "published data" pages
+86de3d61 pcoll nearly there
+1cacc433 pcoll needs detail parsing
+7d8de561 pcoll begun
+9ce5eca7 dscoll closer
+0c3cab28 dscoll progress
+5f706d57 dscoll new
+60114e1b first public display template
+224d1343 place_closematch
+d841f079 gnis alias
+64462c6a unsquash migrations; PlaceGeom.s2
+0675383d recommit all migrations files
+c8f18f1f squashed migrations
+e4073552 tidying
+37f8200e initial commit whg3
+d36c56ef area map tokens
+bfcfb1fe dscoll tabs in place
+4997db1c dscoll builder, progress
+b48d9d61 dscoll builder, progress
+817f2224 ds collection builder stubbed
+3b1e5b06 skip traces for non-collection calls to Place serializer
+1cadd820 tested: adding, annotating, deleting dataset places
+46f8054f post-deploy tweaks
+b7d6bb72 migrations
+fb204ba2 home map search stub
+6a15c475 home modal content now django templates
+2e27a9d8 home page modals in, basic content
+db30cfa6 home page modals in, basic content
+f6e152c6 teaching modal;  collections stub
+32eff22d links in dynamic modal content
+8eb4c04e home modals loading
+87027c43 collection page; site-wide gallery
+5ba7b118 got accordion now
+e3406d8c sidetrack: collab permissions
+ff6dfc61 restrict anno to that for collection
+cd201a17 unsubmit
+9a1a62a3 home page bits
+62c477dd collection owner/member roles
+04991571 links for collection bugfix
+6e7f770c home tweaks; collection flags
+7357f83e home page; flag reviewed, nominated
+76a815f2 add links to group; status change stubs
+c145a5b7 gallery & nominate checkboxes stubbed
+247b0f79 home page stub links, styles
+c22b892e home page stub links
+8a8ad0df mobile homepage sidetrack
+7e30a26b dataset collection queryset
+a11add54 submit, unsubmit collection
+6a66f1cf submit, unsubmit collection
+56b5946d map symbol legends
+6839bf96 map symbol legends
+c1bd6511 mid-review
+6edcdc41 mergeback to group
+28823757 color per relation type
+c667c5d7 color per relation type
+019050cc sequenced annotations ok
+427f8881 stable but for redundancy; explore refactor next
+274fc55b ok *now* places added indiv & from datasets
+66677415 redux begun; add_places()
+c76b4943 mergeback sequence
+4686e484 place collection browse, places sorted by sequence
+e3334b35 drf table sorted
+e206def6 sequence annotation in queryset
+ca89a1a8 drag-drop updates sequence
+59cf03d3 drag and drop, no db update
+30e026a1 sequenced places in builder
+cd15f9a6 traces flagged "saved"
+40f90246 ds places added to CollPlace, w/sequence
+9ca44ae8 added sequence to collection.places
+e508dc92 collection browse images simple
+5646412f changing anno image
+bc2b84da changing anno image
+fb9cad2f adding image ok but not updating
+cd0627cc adding image to annotation
+daf34910 links for collection groups
+326d7b43 collection submit nearly there
+6cd026f6 place collection links ok
+5ba584ef main.Link model for PlaceCollection
+09a3dc92 CollectionGroupLink model
+6023942c navigating annotations; improved form
+3fecc7df new "build" tab functions as before
+72d08de7 builder layout all but annotate
+f3984048 builder layout basic
+27f77817 new builder stubbed
+6dfbbf5a home grid
+d93bafc7 home grid begun
+931b3372 home grid begun
+e746c26f builder changes begun
+a0fb2539 cg lesson file in create & detail
+7c9d92ca cg detail page stubbed
+763206cc solid; cg detail page next
+88291e33 user profile group list; cg detail page stub
+d65fd4c8 adding collection to a group
+323440bd adding collection to a group
+8b751838 square1 ec321dfc
+ec321dfc return gallery page
+07f20ce6 My Collection Groups
+a8daeac7 My Collection Groups
+0f813415 public data tabs; start/end spacing
+02efe629 collection group add users solid-ish
+499940a8 add users nearly done
+57c858c6 gallery & type fields
+944fae1f adding users with file
+0f793a3d validate user file
+da003b0c addusers: all but create
+23816f7e stable-ish
+c5ec03d7 recovered...it seems
+8d9d48cb custom users done right; needs lost data
+8b7571c5 pre-migration mightmare
+5d1c4136 excising username _seems_ stable
+09806f93 excising username midstream
+8f05807e upload user file, return preview
+2920f41e view, navigate collection group from profile
+21e5c8e0 add/edit coll group
+83bcf7ad add/edit coll group
+0e7cdc11 coll groups, profile
+f887f528 base menu updated
+da0aa3b5 stable, closer
+e3d3337c more custom user tweaks
+30be7b6b custom user in progress
+2795736e so far so good; email as login
+0621047f remove celery "task" reference
+5e523e09 es changes from main
+612084a4 fclasses issue settled
+4b486826 fclass issues settled?
+edf5bcfd incoming from main 2Apr
+2b3e1ffc post-es trouble
+65d59081 es trouble bits
+4ed2e658 approaching ok
+5a85c7f3 add 'X' to fclasses
+e7ad1483 update bootstrap, jquery
+54186098 update bootstrap, jquery
+a1856602 dj4 pre-custom user
+4d6fab0c allauth is out
+97f1c1f8 removed allauth
+842b0a83 local pg15 empty
+4a67c0f7 clear home page
+d749618e Create dj4 worktree
+99d84386 1st worktree commit: version in title
+e0c9136b JSONField switch
+77e268b0 version, menu bkgd
+9997b618 JSONField
+546a93ad running whgdev dj4 branch clone
+8f24322e authids, links issue
+390ba8b4 collaborator screens
+baf90fa4 collaborator screens
+5e6d459a mapbox tokens
+51188ab7 mapbox token repair
+7294bd66 task kwargs repairs
+cd246827 pretty solid; no elasticsearch tests yet
+bc662b5c dataset and collection screens ok
+ab4422b1 review, accession html ok
+b01d8b8a ds_reconcile ok
+e58ee3d8 api, about pages load
+5286b594 guide, search pages load
+0a248c1a home page loads
+ef85336d test only option for accession
+01499db1 index recon testing option seems ok
+9a3e5069 messages for test tasks
+2a24b151 review disabled for tests; messages
+8311053f next: disable review writes if test
+1ef49799 test-only index recon - no seed writes
+cb2ff8e4 stubbed in option, dropdowns
+d790b602 new aat_type; live ds webpage link
+f1312815 tsv schema fix; coll status
+bedc9677 admin edit status in gui
+986fece8 admin edit status in gui
+557dcafc coll admin tweaks
+1df4833f collection status & list filter
+e549657e misc fixes
+11ccb906 list all, needs dropdown now
+f7132f22 first take at inactive collections
+b785905a ds create, validate tinkering
+508003b0 field adds
+6df28e38 removed trace references; repaired search api
+8b69fa04 resource admin; download lpf bug
+0e408fc1 CollectionGroup model
+f27d5e45 download lpf fix
+4e95f2e3 lpf download fix
+24062a4a CollectionGroup model; misc
+f43e430e Update contributing_dev.md
+0db83f33 cloning; new analytics code
+005ef025 remove reference to index suggest.input
+2fda727b ds status on task delete
+2603295d new empty ds
+80a8f773 new empty ds
+62e39719 new empty ds form
+2c544ffb stubbed url, view, form
+dae244e6 various tweaks for widget integration
+391de7bc remote srcids, descriptions
+f78b29df tidying
+aa53e84a cloning docs
+ea6d5f3b docs/cloning
+02608e38 cloning guide 0.1
+04e4b6ef dummy files
+96ce1ee7 adjustments for cloning
+b86aa159 ES_CONN
+7e09d96d requirements tweaks
+db46148e turf.js cdn update
+926af8f5 place.src_id generation; ajax tester
+c12fff01 ok, now auto src_id for remote is in
+be8543a8 remote datasets and places w/ or w/o label or src_id
+5593bf92 remote datasets and places w/ or w/o label or src_id
+0dba403c tuning ds_update(); pid link in ds_browse
+853733c2 update indexed dataset; flag need checking tho
+45ca4452 inching forward; need to confirm accessioning results
+833efba7 removeDatasetFromIndex()
+f69f4a4a sample7g tests out
+491bb3bf geo_source, geo_id
+ec3b8840 readier to test
+c7b97692 ready to test
+b3d8aecf update near test-ready
+e05694ff download file delimiter
+4d05fbfd undo last
+47ad6b1f mergeback updates3
+d10af665 give it a rest for a bit
+f345f81c task stats display; Dataset.public bug fixed
+0a340621 status=indexed
+c3245675 Place.review_wd fix
+0ff2c3c1 cleanup from updates merge
+dcc802d0 recon bounds label
+be522092 tangent: add_task map
+bf6f3e22 working for "uploaded"
+f30dff25 should work for reconciling and wd-complete; probably doesn't
+0a098a8b new algo related comments
+e88c2263 uploaded > updated ok
+4ea55e56 controlling update messages
+c61f859b sample7 works
+7b389135 leave title out of variants in browse
+9989fd99 klugey fix to review link for idx
+046c6258 validate_tsv errors
+671a1e78 updates geoms selectively
+fc83e6c5 updating lptsv seems stable; further testing nec.
+c39d83fa sample7 compare/update ok
+0d708af0 test_compare
+855d9b4f fclasses split bug
+c8331c1d encoding validation
+0634cb68 encoding error message
+6f7e5504 lptsv validate logic, messages
+efd3d431 missing column error bug fixed
+5b1ed19b in progress
+7f1f7ed5 first step analysis ok
+24f727c8 stable; update dataset next
+992781a0 single base.html
+31c46ce7 error trapping; logging
+daae2413 dbsearch fclasses exception
+73ca1a97 fclass filtering
+51e6cbf9 permissions, errors
+a36abc09 minmax for place_when in ds_insert_lpf
+9c065500 AUTH_USER_MODEL throughout
+f2777ce0 place types for list and place create
+283fcf6d add fclasses to index search items
+b2c46dd1 remote search api
+98c93096 index whg07 mappings with normalizer
+3229cb58 RemoteIndexAPIView() inching forward
+e533de64 RemoteIndexAPIView() in progress
+1140c063 writing full place record via curl
+8f552089 add place with link
+74c1a832 removed extra paren in review()
+4f7221ff pause before review adjustments
+40e9390c dummy file for new remote ds
+333f8cfc ds_status
+b05929c9 Update .gitignore
+19ba4549 Update place_portal.html
+1756b56f status notifications
+efeff2ed add ds_status wdcomplete
+a6914637 accession globe hover
+216b901d concurrent review for whg
+638bb989 src_id link for external page
+4c0571ae collaborator fix
+d76db358 queryset filter for idx
+38b9b85b removeDataset/removePlacesFromIndex() ok locally
+83770543 remote app
+1cee6407 mergeback
+62aae0c6 'remote' namespace; drf ok
+8006dc04 new remote app
+51a5bd41 tests work, drf tables do not
+ce7fdfca remove collection.content field
+d6687add tests work, drf table broken
+763b2951 datasets, collections, places
+3556d968 4 dataset tests pass
+f3e1879b add drf router for remote views/serializers
+9212c42a start discrete new remote api for integrations
+58e32091 minor nits
+3e9212ea indexing logic
+c07bc992 index_admin remove dataset
+9764c24c tests stable
+e55ddfde accession fixes
+2e3e23cf tidying
+956dcb7d further tests ok
+1e5b96bd collection list columns; misc
+4f76345f mergeback, finally
+9666f4bf damn close; need to undo index edits on delete
+a361ed5d fixed minor issue
+374da342 seems right; mergeback to accession
+4ebe4dff indexMultiMatch() draft ready for test
+72f5d9fb basic ok; need multimatch logic
+8f11d03c pause spot before proper refactor for accessioning
+fcc14806 pause spot before proper refactor for accessioning
+3be38005 review totals fixed(?)
+28f21c4b pass logic progress
+0e1a5763 deleteDatasetFromIndex() for admin page
+ed65f3be deleteDatasetFromIndex() wrapper
+a212262c cleared some comment-out
+5aeb258e sidetrack: direct access to deferred; needs testing
+77be581b review defer sidetracks pushed independently
+7b41cc9c sidetrack:review defering; pushed directly
+09af93d9 credits.hrml update
+183f8983 save&exit place coll; stop dataset bounds for place coll ds_list
+0391a874 public datasets in top menu; misc tweaks
+67d45e50 place collection tweaks
+bf19c0ac tangent: place coll prep for workshop
+789bdca7 accession in progress; stub index-admin
+a4e51199 accession test on owt ok
+3b757def mergeback
+b8671e56 study areas saves refined
+438bdc57 study areas saves
+8a2b854d fixed comment/note for place portal v. review
+85659213 gitignore media/collections
+2d6a3934 remove dataset from place collection details
+4d5473fd fitBounds for ds coll reset filter
+e6345a08 more/less for ds collections
+b1734639 more/less for anno note cases
+b54ffff0 more/less for collection anno & descrip
+41ba8857 mergeback
+ff6cf7b1 place collection map styles
+6d1a3014 public ds map marker select
+3bdf31ee links in annotation notes
+61b5556d place collection map marker popups
+9f996645 refactor place_collection_browse
+68dbe582 coll_placelist scrolling
+46520c79 post-release fixes
+0318f191 post-release fixes
+c7a02a5e Update README.md
+7b67475f index REST api bug fixed
+763a9051 add to collection only for logged in users
+1df9332c pre-deploy v2.1
+a6e362ff pre-deploy for real
+060675db pre-deploy 2.1
+a167e000 mergeback to main, pre-deploy
+f2b82b74 bbox for mixed geometries; thanks, turf.js
+aa73d9cc ds collection image bug
+1adace3e image resizing
+7fbc2322 closer issue, tooltip for single place
+838f6ce9 guide
+91e7e3f8 calling it a day; push tmw
+a59c46e2 preliminarily final
+4b6e37b2 status messages for adds in dataset browse
+fafcf4f9 adding multiple places from dataset browse
+dab5b137 place portal collection links
+651bec33 coll description popup
+be739f0a better "added" msg in place portal
+4c0c66c5 collections mapped in place portal
+5c951abb collections mapped in place portal
+c782538f collections in place portal
+01145818 dataset titles not ids
+5b8791b4 dates placeholer, tooltip help
+873d236f removing/omitting dataset places from collection
+139dd45f marking place cards as annotated
+9a4ea336 download entire collection or dataset subsets
+9809c374 place collection download modal stubbed; need customization
+0f76dee4 Browse place record formatting
+15caa9d1 removing links
+c13684a4 builder actions and look in progress
+077408a6 builder panels and tabs actions...progress
+637ed789 todo list bits
+7fb350f5 home banner tweaks, splash, stub in walkthrough
+280a8d3b adding, displaying groups in profile
+2b2f7172 various tweaks; add places to new collection
+6d56c76c pre dev deploy
+5d3bffd1 adding collection_link records, not displaying though
+1f0471f7 cleaner coll place display
+a25c1f90 stable, take a break
+261c30b6 css for builder screen
+78afb4a8 zoom to collection features
+45d62ca3 adding trace_annotation records from public dataset browsing
+829e3e0b inching forward
+d9c9ab18 checked_rows array in ds_places.html
+b05fffa2 checkboxes checkable in ds_places.html
+0ca93379 public ds browse removed review columns
+010ba872 place portal radio selections, messages
+8d7fe635 place portal radio selections, messages
+1be315dd stable so far
+2f48844b removing iindiv place & its annotation from collection and list
+3f253b86 looking better, take a break
+a45662a6 collection browse no tabs
+42517c57 collection brose: this and that
+0246f794 restablizing
+bea2e765 new fileds, new coll image/file paths
+f982d31b looks like create and update trace_annotation records works via AJAX
+01c05b94 inching forward
+65b3b717 *almost* submitting; save this spot
+597e5b02 fetching place in form html, now render properly
+04bf9a40 getting somewhere: fetch form w/ or w/o data
+8c8d135b pre-coll21a sub-branch
+bf2abec5 basic functionality in, minus remove-from-dataset
+c61ad05a list places in collection summary
+b1e46441 adding and removing datasets, listing/de-listing their places
+4429e7db getting somewhere
+8da9609a creating trace_annotation records but not displaying if exist
+11ccd66a new traces and collection fields
+3481b79c getPlace() in ds_browse: whether geom or not
+4b4d62dd solid, pre-place-remove
+1dd067c5 single image for collections solid, changeable
+be51bde0 stable, w/single image
+cc0d73ee in progress: image file uploads; ok in ds collection
+c4cc6d3d fixed resource admin child record issue
+810b25f1 place collection builder layout
+2327ae10 dataset and collection access for whg_team
+84c71535 stable; pause to consider
+ac8e7b6d link>url>correct form
+7e373cdd collection urls, views consistent naming
+20c3fe60 add places to collection; display in edit collection screen
+a556bc24 adding places to collection essentially in
+c918a0c7 checkboxes, popup stubbed in
+f832dccd checkboxes stubbed in place_portal.html
+0b77f1a1 data_collections.html
+a1c8a441 contributing doc
+9a0f2c09 contributing page
+2c007eba bboxes in coll view (beta)
+c6121eaa tidy reqs and branches
+3e494866 anno body place preview
+3affeea9 access to beta collection create/edit
+0d908de9 auto-generate GEOSGeometry geom field for place_geom
+9f4c4a70 rendering wikidata multipoints
+49817d24 req397 for reference
+44036c64 tidying
+d787a816 filter dataset status if whgteam
+14b3d8e1 Update models.py
+d5bf8b79 correct redirect urls for former "dashboard"
+ba07a6ec filter datasets by status
+9190000e data tabs to separate pages
+f0e4de4d prelim tests w/coll beta links
+9954d530 Merge branch 'colltraces'
+2898b5f3 banished .DS_Store
+b0add4b9 disable tgn recon
+05421138 tidying; es auth for traces
+422ccd92 augmented geom bug fixed
+24121839 added patch for local/dev hully() function
+93589968 fixed GEOS bug for hully() on M1
+2781120b area count; award
+bec3c2e4 filtering for dataset in collection
+5bb13cd4 displaying polygons in collections
+1fef56a7 counting places in study area
+8245d2fc counting places in study area stubbed in
+5f1587d6 es7 references; removed es doc_type
+179da8fd Squashed commit of the following:
+07e52e93 gdal config in settings
+c9fc236a ES dropped doc_type
+566bbad3 collection bbox solved
+6e652f84 collection bbox solved
+04977854 back to main for xfer diagnostics
+3a2b20bc restore gitignore
+3f7cde53 restored teaching resources, admin screens tweaked
+6146ee06 back to main for a bit
+d94e45f4 annotate collection with place stubbed in
+9632e33b returning existing annos to create/update form
+a5166da3 annotation-add logic
+f66602b2 "create" to "add" dataset
+d9c23fef "create" to "add" dataset
+755df05e "create" > "upload" dataset
+31820c0b TraceAnnotation model & related refactor; next: form in builder
+b104d336 "blog" to "news"
+a83d5f5a trace refactor pause
+544da739 TraceAnnotation, Collection refactor
+1fbbc40b pre collection.places refactor
+9179439e collection places from datasets and indiv selection
+c88d7aac reverting collection places to original
+f2a3b1b4 rendering collection places per dataset
+e90f453f better dev env (beta tags)
+97d5f4f5 merged places, browse needs geom filter
+c9fedf2d collection model @property places_ds
+d832ea17 create submit returns to update
+39c4671e create/edit styles
+49df1945 getPlace() in edit form
+decfa52c create/edit page misc
+41f8bf02 right column stubbed in
+d8a8dfe3 ds/place tabs in create/edit html
+e37170f3 update README change log
+d9de6f91 update README change log
+3dbb7362 update README change log
+2f67fe77 update README change log
+e090f373 beta update page listing coll.place_list
+5bf0d2ee collection.places m2m field
+f9c15c10 teachng button
+d26158ce tidying
+4410fcc7 place portal and modal links
+6086a246 public full record page links
+a3f750dc tidier
+6922beea tidier
+63221412 tidy
+20086ee3 Merge branch 'main' of github.com:WorldHistoricalGazetteer/whgazetteer
+04d6a5a7 tidying before new coll dev
+a08a55de tidying before new coll dev
+46072961 Create LICENSE.md
+b310fa7d Delete LICENSE.md
+735f88f9 Create LICENSE.md
+59861e7b pycharm nits
+9d11b9a7 teaching.html complete
+af0d78bd misc teaching fixes
+42858e9d pre-launch
+b3bbcde1 launch teaching
+e5acfb1e pre-deploy
+fe80423f nearby API ordered, spatial refactored
+17e22791 nearby ordered, refactor required
+41169374 sorted nearby places via PlaceGeom
+1627b434 distance sorting in progress
+4fc36f3b spatial API
+122f35fa spatial API
+f1db0444 sidetrack: spatial API
+1180ba84 spatial api begun
+a559b547 spatial api begun
+2acf378d beta page and links
+8cb17799 begun collections (beta)
+042d6ebc teaching beta
+96dc1960 region reset link
+ec943bbf pre-deploy 18jan
+2d384338 map interactions begun
+9ad8fc4e map w/regions in
+f75454c6 adding map to teaching.html
+669a6269 adding regions to resource, in progress
+adf3763e nits
+2ceb6924 teaching.html layout, css
+228d19ea teaching.html layout, css
+0a2cd51a teaching.html layout, css
+8d9a5430 teaching.html layout, css
+4b320784 css teaching.html
+50c5bda3 clean up dashboard resource list
+47139895 requirements
+e0aceab8 nits
+02a5a05c deployed for alpha test
+ee4620c8 basic functionality stubbed in; pre-deploy
+cc346e44 basic functionality stubbed in; pre-deploy
+cbb5abdc resource model save - inching forward
+37130262 teaching page layout progress
+462a3039 css for wrapping resource cards
+bf998c10 style teaching page
+e793c380 test group membership, organize urls
+2955c27a paused todo: handle multiple files
+b99238b9 Resource create link and form stubbed in
+207e375e ready to run migrations
+7e2928ec ready to run migrations
+46c38b4f resources model, form, etc
+3bf843d7 teaching resource models
+cc47ab22 descriptions in review.html
+6b6f774b lp7 bits
+ec752fff pre-workshop
+961dacd4 example data file
+1bc034fe allauth fixes, example_data
+80a1f425 fixed anonymous downloads
+da65670c commented search param display
+e97d417d fixes to password reset & contact form
+1f09797b bits in display of small polygons
+49f337af bits post-UZ
+d51fb1ac insert errors consistent
+3d9db708 conditional minmax per place
+1586948b minmax per place conditional
+04924acd tinymce support added, widget not working; defer action
+6ef529dc added tinymce stubs
+06ef1f4e misc fixes to ds_reconcile and review
+fb1f11a4 conform ds_places and ds_browse maps
+51b240d8 add UK to GB
+dc0ca2a6 ds_delete bug squashed
+84daf2ee libre.html gl tests
+65ff42c7 libre_ex for bug report
+25a0d407 ds_browse map styling; getting there +1
+f9725b58 ds_browse map styling; getting there
+4146777b ds_browse map styling
+4911c463 libre, ds_browse maps better
+33a1ae21 format changes with VS Code transition
+b08effbd libre.html
+430e9eed popups stable
+20073bc2 popupMaker() for points, lines
+6ba95064 place_relocate.html and fetch() stubbed in (not visible)
+432dc14a Merge branch 'main' into es
+301139ab reset place.review_xxx flag on review undo
+e9ff3d81 lon/lat into augmented tsv download (make_download task)
+f0a90651 ds_summary and ds_browse security
+f96ae12e moving along
+77c9ed4e relocate place page and function stubbed in; needs parsing, ES actions
+fc395ee8 nits; now es
+724ac442 fixed re-display of idx results
+7b205a3c cleaned up edit permissions
+73ddda95 ds_places highlight to match ds_browse; also play on untracked libre.html
+38e37707 fetch ds.minmax as range for gl maps
+e0ea813d fetch ds.minmax as range for gl maps
+22773095 commented out stubs for ds_browse time slider and search session params
+f7746472 sessions stub for search
+b1a2a907 nouislider stub better
+bc16cbcd nouislider stub
+b8ffba68 slider stubbed
+e2d03363 downloads from collection using celery task
+99061546 cleaned up src_label issue
+1e57e5a0 ds_browse symbolizing all types much better
+a40d7510 ds_browse symbolizing all types, zoomTo
+9c26b6f7 review screen map <> card interaction
+fdf69671 place_modal skip minmax for core; css
+f04f8f4c misplaced() start
+edfb1c26 misplaced() start
+cc9da6e8 comment form in place_portal; place_modal map max-height
+956ec192 restored comment for place portal cards
+02345d24 ccs tweak for ds card lists
+86ad215d css tweaks
+cdcae545 misc tweaks
+2fc754a0 no backlink in place portal from traces
+542b0000 README
+47b02c38 here we go
+e0a34b19 pre v2 push
+143646d1 ds download options, private and public
+87d1486f dataet model bounds property skip empty geom
+1fd78a6f ds_create: public field display-value-only fix
+09cd579d ds create responsive
+af1f9af4 css03
+f3dd40e0 coll_dslist style tweaking; needs further
+d56440bf more content editing; done for now
+72ad2d8c more content editing
+cfd97947 content pages
+5015e729 stopped tracking migration files
+3645ce1f trace on zoomend better, not great
+968ce13f zoomend-for-db-search bug fixed
+eaa6ea6a css for collection page
+7e502af3 tidying; deleted examples
+c2f36ab7 better gl map symbols
+aaa51794 tokens
+46d065fe several bugs fixed
+444e130f bugfix: collection creation misc.
+6bf42a28 download est. for core file-less datasets
+0d8bbc0f collection_detail flex column width fixed
+27fc3e1d sort collection table by title; spinner stop logic
+dee08ab8 collection map essentially ready
+66a44e72 fixed place portal context and phys. geog. layers
+063205c0 creating geom field on ds_insert_xxx
+a2785325 break from the gl issue now; data, css
+56bfae49 row-select highlighting in progress
+eb7f40a8 flyTo point or polygon bounds
+d33db2b9 recovered broken uploads w/ ds_insert_** from server
+398ecf87 recovered broken uploads; merge this back
+61b39815 midstream, with polygon issues
+a832bc5a ok but highlight action remains
+d51ee5a8 glory be...I think
+dcb51faf inching forward; on idle get source features
+aa1e6bd2 fetch_geojson_coll
+08954d5e fitBounds of layer from select dropdown
+35fc40cd gl map for collections displaying/styling points, poly
+d41fc673 gl map for collections displaying heat
+3058cee1 gl map for collection_places stubbed in
+d0541c08 gl map for ds_browse; zoomin, highlighting
+5d396129 map in a box
+adfdadfe histogram scaling fixed
+ea50db34 place_detail includes related
+b5ede194 review help
+67160e86 tab spacing; reconciliation -> linking
+a76f32c4 search inputs ok
+101eb228 trace search button ok; minor tweaks still nec.
+5b4efa76 place search butto ok
+099baf27 false start with search magnifiers; stable here
+f99bd393 bug in ccFilter fixed
+169fa783 updated search figure
+e928c812 histogram ok in place_detail & modal, for real
+16277b59 histogram ok in place_detail & modal
+c7cd0450 histogram ok; further tweaking to follow
+c303309c overflow-y:auto
+2e3f5ac4 place_detail modals ok
+cf026a0a place detail modal from place portal; local static jquery base_modal
+78902339 place_detail ok; on to place_portal
+4b4264c7 place_detail, home
+c7eff81e tweaking marker symbols
+4030c37d tweaking marker symbols
+9cb0487b libre.html progress: adding/replace highlight marker, dim others
+8d549f7c place_detail midway
+402fbdd0 css for featured on home
+f39308a0 css for featured on home
+9390fea9 start tweaking css, visuals
+5af58190 stubbed in, commented filtering only visible result rows
+689edfb0 nice demo
+aa338502 getting there
+ddb05822 trace table shows no geom, interaction ok; no results on return from nav, I tried
+b75e6d6b trace table shows no geom, interaction ok; no results on return from nav, I tried
+9479832a search appears done, pending more tests *WITHOUT MODAL*
+7befd86b ccode_hash
+b36a71e0 sidetrack to update guide.html
+e2646cfc css tweak
+216da93c clearing filters, map and result list
+4410a4d9 keeping last_results after >=1 nav away, idx and db
+454d6d4c keeping last_results after >=1 nav away
+cb43816a map<>table interactions
+65047870 home page img modals
+9e0aef63 ds_addtask, ds_recon css & nits
+8148da40 little nits
+03a156d3 recovered edited guide doc
+2b64be76 post-merge with main; fingers crossed
+976d9fb6 Merge branch 'main' into dev20
+c438ae49 restored and filering reconcile messages
+786b6c7e collections nearly there; moving on
+78cea49f collections nearly there
+d054ca43 filtering collections table and map together
+491557af getting there
+97ad071e collection browse loading, row clicks ok; no heatmaps here
+98753faf collection browse data map action in progress
+dfc29fb7 filtering, sorting collection places; needs map interaction
+0d1f5c23 collection place table filter
+344c2d95 heat map to public collections
+578509ee browse/lite search of collections
+ab685a4d better links in ds_places; stub in download all in collections modal
+45c17e38 tidying
+ba6f858e insert in DataasetCreateView() seems ok; debugged fclass issue
+3ee58144 better error trapping for wrong file type, broken validation
+213c7bac better error trapping for wrong file type, broken validation
+1be3e166 download filenames consistent
+fccf5a28 dl time estimates from collection modal
+7f267995 mergeback; better tables, misc
+14a65ed5 browse map popup runs getPlace()
+960bd5e6 auth tables appearance
+e2f5d6b6 back breadcrumb from ds_meta public view
+765d3194 nits
+18436049 make public modal
+96210133 stubbed in going public modal
+40a399d6 citationn to clipboard in collection modal
+29fed8c9 pre-mergeback
+664f9637 ds & coll tables sorting, scrolling, sticky header
+7174d0d5 ds and area lists scrolling
+26ef2afe area_list scrolling
+482f9ba3 collection add dataset, change mind
+3d9ae4a1 scrolling datasets ok
+de4189a1 improved profile, comments scrolling
+fc571d30 ds metadata into forms
+868b6092 gui nits
+fca3760d downloads basically ok; coll. modal & prog bar improvements deferred
+ec397dee roundtrip tsv out to lpf, back in w/dates, aat types
+ee3c47cf something boogered here; back to dlreal
+606753f3 glory be; out-in tsv; parse aat improved
+bbbcedf5 ds_insert_tsv ok; utils.aat_lookup() missing
+bd7e3955 new utils.aat_lookup(); new Types algo in ds_insert_tsv
+cb5ccd5b rewrite of tsv option in make_download() task tested in _scratch
+51be08a2 stable; on to tsv/geom issue
+35bb53fc leaving well enough alone
+266b24a9 many odd bits completed
+308255d3 bits and pieces
+f348023f sorted out the no-file issue
+27fbfa7a looking stable-ish; now to test a bit
+43ab02b0 popup lpf explainer
+c77b7f4f removed/excluded download files
+dbb279d6 new ajax tsv ok, needs styling
+465a77a8 new ajax tsv ok, needs styling
+4b094dbf branch to instantiate ajax downloads w/progress bars
+ac1c3700 lpf w/ajax kluge works ok; tsv direct toview but no spinner
+926b8a33 tidying after progress bar false start
+0358cba3 added, then commented first pass of celery_progress
+c0cb1d37 dashboard updates
+a6066c55 on pause; midstream for dl strategy
+5512ab25 download dialog ok but two files generated
+64232fed download behaviors in progress
+c2e8d2d0 download w/spinner from modal for collection datasets
+f79e6d5b well it looks good (download modal); now to wire it
+ba77f0a0 public ds list nit; branching for downloads
+1115276c clear area_input on switch to "db"
+10e422e6 filters and scope ok so far; now mapFilter
+d66ce3a4 hding spatial for db queries now
+5565ca7b back button from place pages; dynamic type_select labels
+bd5eaee9 map clear actually fixed
+0f972703 result_title, map clear fixed
+3099f6e3 typeFilter() seems ok for index
+b07619e3 begin state tests
+9a345ebf keep/kept seems ok
+6a719f42 inching forward
+02dde977 refactored state extensively; idx search works
+db9b65b1 filters progress: remove, not hide rows on bbox
+d5be4bd0 type filter <> map filter confusion; not fixed
+163bcbb4 splash modal
+444fbd39 sort is ok; now dropdowns
+0c9d82f1 one-way sort in, idx & db
+8d7617ed sort stubbed in
+dfa05841 style scope switch
+287f4b1c search inching forward; now sorts
+327071f1 db search <> map ok
+5a1d143e map filter, results list for idx ok
+b4f855d6 map bbox filter: not remove geometry-less rows
+2a7f2335 map bbox filter for index
+107c0d4e result table fixed header; sort stubs
+ce79013b pre-push 23 Jun
+a7cb2524 place detail page begun
+4af6b445 db search _seems_ ok
+d9680384 db search _seems_ ok; type filter needs help
+36bf66af dbicon size, position
+fce6bb74 ok, idx search seems ok
+965a709e ok, idx search seems ok
+db582644 search idx/db pretty dang close
+72ef41d4 show/hide result_filters div
+78b535ea trace search results table ok; now for filters
+92c752e1 trace search results table ok
+15eff0fe place search results table ok
+0791a01c results below ok; now to table form
+813a9a71 relocated results
+ee8e1afb steady; detour now to search
+aaed0b85 copying citation from public dataset page
+c3535c2c redesigned public collection page
+8012b9ab redesigned public collection page
+ee7560cf new fields in collections, datasets, place_geom, place_link; update forms, displays
+2bc39cb5 sorting out collection migrations
+dfbe452f mergeback
+4075cf92 updated Collection model
+67d9da56 pause dev; back to main
+e81e18dd home button text; show/hide coll descrips
+a84578ea add asian history curriculum
+60fab415 add asian history curriculum
+5a42eeb5 knaw home page tweaks
+d137efb4 db search result to info box
+fd119c6a result_list <> map hilight
+0a60eaa2 area filter
+608fee84 area filter
+71c00e23 debugged db results count
+0a8b72e6 place_detail page stubbed in
+39e570bc links to place pages; need place_detail.html
+d008f3ac good progress, much remains
+637c0732 better db search: views.SearchDatabaseView(); need bounds, rendering
+74b69d32 place/trace search basics ok w/tab
+dc4ac46c place/trace inputs kluge
+e6ff6d99 search imput pre-fix
+e096c987 search db w/ api/db (slow)
+9615b21e db search ok from console
+49d7ee9b search scope tabs toggle ds_select
+ad005b08 8 june push tidying
+85b14fe8 search page; pre-ship for mtg
+7bf51714 dynamic projects in featured w/images
+a12399bc added featured field to datasets, collections; updated forms
+7c80487e Merge branch 'todo' into main
+706325a3 public lists, pages
+2d3e2b2a download modal (less action); truncate/more descriptions
+30a1b12c modal form opens
+e40d59cd trying to enable modal form
+a29605c2 begun download consolidate to modal
+accd4d2f collection_detail bbox zoom, hover
+6766314d ds bboxes to collection_detail map
+11dc2813 dataset.bounds avail in collections screens
+735b096a adding, updating collection.datasets w/hidden form field
+6949ea12 remove ds from coll w/link + refresh
+b507af0c add ds to coll w/select
+95543192 new tute on lptsv
+cf90a463 reset coll create ds_select
+157513b2 fetching ds from select
+4dc74b06 collections refactor in progress
+861d48ff almost there (recon wd * tgn)
+7aa1134f align_wdlocal scenarios tested
+408695cf Dataset.collections field; needs refactor now
+ba8a3b05 auto-accept wd pass0
+1a070266 pretty stable; collections need refactor
+5f919da7 new home page pretty nice; pre-branch for new collection model
+b3f62c24 home-right better
+fcba7b44 home-right better
+5dac680f home page edits
+6343e9df bits for search, etc.
+11065427 public collection page w/o bboxes
+8755a523 better home "buttons"
+e2b14312 misc recon workflow fixes; mergeback
+cce77908 wd, tgn status reflected in ds_addtask.html
+394e5b07 tgn task sequence, counts ok
+6c147f4f task counts spinner
+4ff8806b wikidata task sequence ok
+95096a68 browse task column filter
+cbd0c5df align_idx, align_tgn scenarios
+daec07f2 clear browse search on dropdown select
+94766e3e tidying; ds.on delete warning
+2d627de6 stopping point
+2cef3aeb collection, dataset pages stubbed in
+52bf5064 public collection page
+feaedf51 search.html progress
+95ed18a2 collection progress
+84905c24 collection progress
+de5d3195 mystery 404s
+85b4dfb1 trapping server errors for insert and lpf validate
+857d6855 trapping server errors for insert and lpf validate
+4666304b trapping server errors
+69be9ab8 trapping server errors
+3e100beb repo location references
+4bb8b9b6 readme change log
+bb7b17b6 home page in shouting distance
+2fedfd49 home gui css progress
+012ddaab gui work-in-progress
+2daa6b2a comment test lines
+86ad9e15 home css
+5638f68b split home & search
+ff520511 place model migration
+fc7352de pre-deploy 1.2.1
+30b7c40c steady for now, needs models
+f9609da3 initial dev13 branch commit
+6d31cce2 master renamed main
+3575a6c5 pre-mergeback
+35ce7643 addtask option text
+1a217408 UpdateCountsView() getting records, not hits
+d5bdd53f split out added links from original in browse
+5f703ac3 tidying bits
+744c6968 stable; "prior" and "scope" in addtask
+8f94daef task status to addtask view
+ecc017d2 task status to addtask view
+9194ca8d conditional columns
+83889026 boolean task vars in js
+1d1acb8c dopdown filtering
+5fca0f3d filter dropdown w/o action
+28b74ee3 filter dropdown w/o action
+0455bda6 browse status filter dropdown
+cfea0fb6 ds_reconcile counts
+0635f944 review deferred stubbed; need hit to appear + misc gui conditionals
+9f5725e5 deferred counts
+47b449ea accession.html stable; ready to manage defer queue
+2e653d5a review.html ok, accession.html not
+8435fcf5 wd review ok
+b0cd6ce5 browse filter-button functions stubbed in
+202ad035 review nav css
+e09d4ecd sort ccodes fix
+010dc6ee place review status in browse
+6ecc0f07 review2() 3-col; PlaceTableSerializer
+05bbf976 3-col review2(); faster browse
+49b85e32 review2.html
+baf694c5 review 3rd column
+797a79eb ds browse work begun
+c7c63ff6 refactored dataset pages
+d27bfdfd dataset tabs refactor near complete
+954cca63 pause for gui
+c7d5f03d pause for internal linking decision
+3be2ef98 interim misc.; stub write_idx_pass0()
+0c0de8bf align_idx() functional; needs counts
+9d86d0e4 pass0, pass1 distinct
+9a94ced3 stable snap pre-cluster
+0164d9cf needs review display, pass0 auto-accept?
+fd1641f3 accession.html
+33ddf8b6 initial; payload ok, display & actions remain
+933aea67 _tests.align_idx_testy() writing parent/child hits
+7328302a align_idx in progress; renamed place_id_id for hits
+cd304d5a progress on groomy()
+ae72790d create, edit, delete stubbed in, functional
+d9f82f3b re-display search results after place portal
+8d3383ff collections models in
+58bd3c07 mixed bag pre-mergeback
+8ab5a343 home gui tangent v2beta
+2659594d groom midstream
+1c0f90ad new accessioning algo  midstream
+668ec298 refactored post recon task update & log
+6538992c fixed post-task status update and log entry
+7f44f9e4 import augmented lpf export of tsv original
+14c63fff single geoms of all types
+455e7d20 cleaned up dupe sitelinks; browse table behaviors; accept single geom
+26183b39 parsing single geom; export valid lpf
+f735491c browse map symbols; validation bugs
+1238b9db pre-mergeback
+f80f7b41 polygon symbols
+4a205a77 starting dataset.htm refactor again
+0b3a4904 email user not owner; bigger csv size limit
+ac62f3e1 mid-stream; browse map load needs testing
+f3feb240 ds browse map; mixed map symbols
+9c2f69b9 ds browse map symbols ok; need to fetch record
+03d565e2 begun: refactor dataset.html; browse table-row <> map interaction
+937eb375 render single FeatureGroup per row in browse
+ee56599c render single FeatureGroup per row in browse
+d97f86a2 browse table geometry in progress
+95687724 readme
+76ae1b2b pre-deploy 1.2a
+ff8af754 help popup clarifications
+df52471b function call working; needs re-design of non-accession action
+92569a5a align name changes: whg_pre->whg; whg->idx
+489e42d3 wdlocal ready
+5c2f9ec4 skip previously reviewed logic & msg
+48090bc7 skip previously reviewed
+3a7695e5 Merge branch 'master' of ssh://github.com/kgeographer/whgazetteer
+bdaed1ec allauth, readme
+9fbf77ad allauth okay; needs error raised on dupe email
+152a67b2 allauth tweaks
+1a837c9b allauth tests
+bcd35293 requirements
+ae63d106 pre-mergeback
+93986d67 misc recon bug fixes
+3ced3d7c multiple task workflow in progress
+39c6947a sidetrack: offer filter previously reviewed
+b4415f33 bug sidetrack: collaborator.id
+cc05b81d bug sidetrack: collaborator.id
+e1ae213a pre-test allauth, captcha
+e7072c08 allauth, profile, captcha damn near done; test further
+8bfdd7a8 allauth, captcha near-complete; needs profile fields
+dfe3b530 allauth installed; needs tests
+5d2c27a6 allauth basics ok; needs styling
+60bb1d37 sidetrack: handle no variants in wikidata record
+0db5fe96 initial
+867b61cb pre-deploy v1.2
+97f41c20 Merge branch 'master' of ssh://github.com/kgeographer/whgazetteer
+0f813c4e pre-mergeback; wdlocal ok
+a3a32f60 new wdlocal; further tests now
+ddd59c6d inching closer
+ed7c7e89 wdlocal tests ok for now; new tgn idx
+0fc8fd91 wdlocal nearly set
+156fefb5 many fine tweaks to wdlocal & related
+df4ac75a testy_wdlocal.py
+5327bdc1 Merge pull request #28 from kgeographer/dependabot/pip/lxml-4.6.2
+491790c7 collaboration roles
+543eb565 delete all assigned roles per ds
+fcb285b2 roles in DatasetUser activated; TODO: form action
+e2912d23 beta_or_better permission
+46882f0f Merge branch 'master' of ssh://github.com/kgeographer/whgazetteer Unknown why master has changes not reflected locally Backup .zip on local Desktop
+1669afa2 wdlocal prelim tests ok; mergeback
+78ea5a93 capture, use browser language for review title
+81ec3679 validate_lpf errors improved; won't take null geoms though
+f986b3f0 wdlocal: closing in; MultiPoint rendering?
+c37e22b3 write_wd_pass0(taskid) working
+536b8f73 wdlocal pass0 hits queued for review; PlaceLink records written on manual match
+18550be8 pass0 authids written, not displayed
+edb68b5f incoming matches aliases (lpf)
+64687484 incoming matches aliases (tsv)
+b3fe85e5 wdlocal in progress; now add links
+8c689d2f refactoring wdlocal queries; need repr_point
+8770ed96 tweaks and bugs in wdlocal task, review, PlaceLink writing
+ca9733d6 wdlocal functional; needs tweaking, tests
+79fd7a35 sidetrack: file extensions on upload bugfix
+8cdde833 closer
+b80dfefe progress on wdlocal
+546b79e7 wikidata scripts; misc
+a63d3210 Update README.md
+a6db6b6e readme
+b58d7447 pre-deploy 1.1a
+d9ac9fde pre-deploy
+5be7aa5f validation ok; pre-mergeback
+a3ea8061 validation works; errors need parsing
+4e02b31f test_validation.py ok
+b6b9bd1e Bump lxml from 4.6.1 to 4.6.2
+e44697aa ValidateDelimited() tests ok
+f54f4988 excel validation progress
+607699cf test CallViews()
+2eb94ec7 ValidateTSV()
+5666c1d9 pre-mergeback
+bc2334b5 wikidata query: always display types
+0b9c1080 wikidata placetype
+e1d4b8cc live links to hit external id
+1572b6ec better ds download links
+f5ab1317 better checkbox toggle
+b625e229 filter checkboxes; ds create format radios
+317045c1 csv support; temporal attrib handling
+f6aa8400 pre-mergeback
+c269400b mb tokens
+dbf1d8b6 mapbox tokens
+ba4c9400 sensing, validating csv,tsv,json; minmax,timespans,fclasses,ccodes
+27ebcec2 sensing, validating csv nearly there
+e2929d34 parsedates_lpf() seems solid; needs further testsa
+1c43af87 PlacePortalView -> place_portal.html refactored
+603402f2 building abbreviated attrib objects in PlacePortalView()
+b72097ec refactoring PlacePortalView()->place_portal.html
+52339e42 place portal histogram from Place.timespans
+4cbd44d5 absent ccodes from geometry
+ee4db241 pre-mergeback
+ecebf5d0 generating fclasses from aat_ids in TSV
+4e460ed3 browse map tweaks
+0523551f handle all geom cases; browse map popups
+bed00e7b ccodes calc begun
+58b9ccc4 upload large files better
+f592afb3 @task align_wd working but flawed; pre-fixes
+7e7bf2d0 improved recon result email
+232b530b misc bits, tidy
+2d098e82 misc bits
+b20ded01 readme update
+fba30518 pre-demo
+28a91367 ccodes .upper()
+ed08d197 map references, external links
+41fd732c pre-deploy 1.1
+168fb9df mapbox-served ne basemap
+1ae4945a ne tiles
+e229e14c area create redirects
+2c489012 various DatasetCreate() related
+28705764 deleting file on DatasetDelete()
+a16d3e35 task_emailer() for tgn
+7c0dd866 sidetrack:better sourceLabels logic
+2fe70099 sidetrack:better sourceLabels logic
+50502238 newvalid stable in progress
+34ab78ad bare start
+9904e1ab tidy
+4858606a create area redirect fix
+4570cea6 mb token; v3 awmc tiles
+7650f9f7 @context in dataset dump; lose @id in tsv descriptions
+3d5a4b58 pre-deploy
+8774e056 new basemap + misc bits
+ce036d04 contact email tweak
+1ab1a879 parse full iso8601 in tsv
+e4abc41d pre-mergeback
+4cd7b0b0 tests in progress
+0e3fe7ed insert_tsv
+a7e8a2db ccodes areas fix
+13c4e652 update looking stable...
+8fba7ed2 fix update, aat_types
+4f4c628d align_whg_pre stubbed in, working; needs testing
+b2857933 mappings tweak
+e73b7577 place modal working
+04a7abb1 stub alt
+4d749015 place_modal from link stubbed in
+e6d7acd4 typos
+cd303c64 credits edit
+a3c654aa credits edit
+d11cdab3 misc bits
+971bda02 pre-deploy 26jul
+a4882b93 misc gui
+f6afb7e9 docs pages - various
+2fc0cd3f docs pages - various
+75552d6f misc fixs, tweaks
+42198f75 misc fixs, tweaks
+ff7555ca misc fixs, tweaks
+751feca9 misc fixs, tweaks
+34246a96 geo constraint fix
+9a8c0d21 misc fixes
+d3204641 password change, reset ok
+45833c93 password change, reset ok; need links
+87397496 password handling in progress
+8a846b9c pre-mergeback
+a3872632 added align_whg_pre
+e716f569 credits
+faf614a0 credits edits
+0ac74acf random colors for ecoregions, watersheds
+3502e789 cleaner trace results
+bb5b29ab splash box tweaks
+1678abd2 credits; euratlas heatmap
+86a3ab3c faq
+ef0a111a added traces
+40b5495e owtrad review task set
+36501fe3 gathered pleiades review tasks
+826a43dc icons, pleiades fclases
+b7184b67 guide in progress
+cffaca84 css tweaks; owtrad partial index
+40da221b euratlas in
+de3c67ee guide reorg
+062b96ce list public datasets
+71f15b48 splash nav display solid
+f57869f5 splash nav
+2c7fb027 contact form and mailing
+e5c3e67b interim mergeback
+c24dc0c9 force pill #0
+a724ad36 review map popup id
+9b3a4a64 nav responsiver
+2561119e responsive main nav ok-ish
+f7f31a6e responsive time histogram, good for now
+c3943098 responsive time histogram, part 1
+4b2ed7da page-by-page complete
+05c0a916 guide & css
+44cee3a3 guide & css
+68edd439 dataset download lpf raw sql
+c5c1b05c heat map display
+ac385c87 started heat-mapping datasets
+49dbb86b started heat-mapping datasets
+7b4ea7d1 unique ds label error
+cfe1bb70 comments added to dataset log tab
+b263eac4 dataset popovers, external links to webpages; creator, webpage fields
+8aa1c224 datsets, profile gui
+28bb985c datsets, profile gui
+d5e6ab6f attestation card headers
+e1ad0fa4 aug geom sources to tsv download
+140a7d3a display states & css in search panel pretty good
+8bb8732c countries added to regions in spatial filter
+5ca89648 aug geom citation added to download tsv
+a4048e67 api good for now
+b896a5eb api nearing completion (for now); trace examples remain
+f8387ad8 api/area/ endpoint
+c2d3f18e api/datasets/ endpoint
+0204f596 db: minmax, timespans in serializer
+3020850c db: id_
+54b72c1b traces markers display toggle
+3016194f traces markers display toggle
+5b0a636c modal comment form width: place portal
+b9fb455e feedback form; search filter popovers
+b2bea2e5 navbar ok; mergeback
+6be7c89b higlight selected navbar item
+97626ffd higlight selected navbar item
+012e39a7 rebuilt dashboard
+f00a7944 dashboard tabs stubbed
+16af83ec fitBounds() for place portal traces
+3f9e61b9 switch to gl tiles
+dd6ae3e8 api midstream
+60b261ab api midstream; pre-deploy
+db3aa044 refactoring API, midstream
+029853ed api to db essentially in
+e09f10db stopped re-insert tsv if place count for ds is not 0
+7e4233d5 fixed recon error - misplaced area list builder
+3ca4e94c usingapi page now a TODO list
+051fb023 begun usingapi page
+d4084939 document, tidy endpoints
+78639a7a django 2.2.13
+b64e63f3 traces03 index in, okay
+ab1dc8b8 trace search result list format ok, geoms displayed
+6bd0143e searching trace titles, returning list & geom
+7aa7fcd2 managing traces take 2 - in progress, stable
+649592e4 timespans in place portal pages ok for now
+b1df504a stable after false starts fixing timespan issue; now to trace models, import, indexing
+745a4327 raleway font
+933e3e43 merging back
+629b2f09 pretty solid; needs more testing
+4843fad1 area filtering *seems* ok; search icon click()
+76251dd6 area filtering *seems* ok
+0dcc1927 area load & filter refactor nearly done
+dcc527c2 regions search stubbed; not quite
+1e659637 more efficient area dropdowns for recon>add_task
+b31087fd fetching, highlighting areas; now to filter index search
+3acc353f fetching areas in map init, listing in autocomplete, highlighting; some missing
+a0d4b020 fetching areas, highlighting; some missing
+faff07db fetching area labels and IDs; now highlight, zoom to, filter on them
+8be5d1af autocomplete areas stubbed in
+bec1e384 index parents got child timespans; ui year filter ok; needs handling empty fclass, year
+9831c7ed 1st attempt @ temporal search reversed; seems stable
+dd5029e2 css nits- tooltips
+e8f3d59c css nits
+ff46e84e toggle advance search div
+2b683020 more css
+83c30843 css for search input
+9dc1038f some tuning of align_wd
+36e1bc9b filtering fclasses
+1d32386a fclasses filter stubbed in
+a1de0675 home page columns
+164e308e pre-mergeback; detour to home page UI
+41304f54 api index "bundle" (conflation) record
+9a422536 separate search from fetch in index api
+764ab0ab index api
+bded84d7 stubbed in api.IndexAPIView() and supporting functions for external call to index
+3fe98c9b &year= option
+e9467e79 "whg02" > "whg" index alias
+39369b90 pre-whg_as alias implementation
+9e76d88b stable histogram w/old method + years from related
+76bd6752 stable histogram w/old method
+23f70258 intervals as req
+ac13efe9 initial
+4e5ad1a7 pre-deploy 0.5
+4b076044 pre-mergeback for deploy
+d15dbbf9 adjust augmented tsv output; fixed areas.create geometry
+133e8a3b pleiades ccode mess fixed
+7eef4192 add Type model, populate; minmax in serializer
+e6e88d47 tweak minmax() in Place model
+69fa1973 geonames classes into api
+e74120a8 parsing potentially multiple links from recon through review
+a94b7284 duplicate link issue 1/2 fixed
+6ca080f9 wd base query tweak; midstream
+c4d7c10e tweaking align_wd to show types better
+271573ca pre-deploy b0.4
+c17e2ee6 pre-mergeback for deploy 0.4
+4c46c397 consistent mapbox layer info
+ddb131cd place_type fclasses in place for api
+2da7e6f0 changed place_id FK to place EXCEPT FOR hits
+4626c2a6 api in progress pre-place_id_id global change
+77e436b2 SearchAPIView() q,ccodes,dataset as result object w/count, parameters
+db1012b0 SearchAPIView() q,ccodes,dataset
+0c33bdd5 SearchAPIView() q,ccodes,dataset
+015acf96 SearchAPIView() under way
+9b007be2 begun api?q=
+01ead6d8 tidy search urls
+02dc42dc download links in dataset.html#summary; conditional on file format
+fe30bd9e download augmented dataset as lpf or tsv file
+e562d1bf download augmented dataset as tsv
+8cabd247 download augmented dataset as tsv > in progress
+e6b9c0e3 download augmented dataset as lpf
+893cb2f4 updated MapBox urls
+aff1adc3 place_geom foreign key
+7cfe6e80 FeatureSerializer
+31463aa5 download gis (crude, no title)
+6a16e0d9 downloads in progress
+babf1aa5 apparently fixed recon errors
+3f7e4d7d recon boogered somehow
+9db2e891 pagination & title query for places by dataset
+5dee5448 refactoring drf views
+96ac1045 place-list
+e3d26da5 begun download views
+21d464e8 api in-progress stasis
+eb4b68cd refactored api/[datasets,places,geoms,users,areas]
+10a96c40 refactored api/[datasets,places,geoms,users]
+211cba5e req updates
+a0856cb4 dataset browse links, markers
+a492fea3 minmax computation midstream
+fcc1cb54 marker.bringToFront()
+a16d80d7 browse map markers improved
+04192bd3 browse map markers improved
+0f6a0cbc browse fitBounds fix
+0599c76d fixed browse display of whens
+24a12ee2 fixed ds_insert_lpf "when" objects
+4b1b4ed4 minmax in browse record panel
+83b572b9 indicate geom in browse row
+4d1a3d1e fixed flash whg marker bug
+372f799c validation tweaks for pleiades
+9eca3e34 parsing placetypes in browse for lpf format
+0e96bdc9 fixed bug: multiple reviewers stepping on link/geom writes
+f6267bec accessioning and updating "appears" ok
+bd69f7a1 align_whg repaired; further testing of update now
+5ddef416 review enabled for collaborators bugfix
+1e9018c1 pass1 refactor in progress; need chooseHit()
+b511f6b2 pre: pass1 refactor
+c96e4a33 update + indexing testing
+1d3b56ed scope filters queryset for align_tgn; remain unindexed though!
+458c0619 pre- incoporating scope in ds_recon, etc
+01be214d ds.unindexed following update-add
+e80cf792 update redux
+f2ed2a9d delete dataset gets index too
+0fe50242 tests for dataset lifecycle
+e84b4926 start tests for dataset lifecycle
+07672d9c pre-test-dev
+77aad4a9 logging; update numrows bef and after updates; update diamonds ok incl. index
+917997e7 log updates; log tab for dataset page
+8132611d review counts to summary
+21739223 logging recon tasks
+accd5c3d trapping celery down error
+11365023 dataset event logging
+3cb4598e log model
+f5c50289 tsv validation errors trapped consistently during create & update
+84c578bd trap, report back validation errors from ds_compare
+8f7d89ed mergeback for file clean
+d4933b24 ds_update() appears ok; rows_add[] left hanging
+379714b4 ready for full lptsv update tests
+2825f8ed replaceInIndex() - start anyway
+eb11a7e0 mid-refactor of align_whg/accessioning routine
+247abc49 pulling threads of update lp-tsv; refactoring es interactions
+5e599f75 grooming; pleiades.py
+2780ea16 continuing ds_update & related
+f15fe2bb minor v0.3 bits
+28a7a5f1 minor v0.3 bits
+6ade2f6a validate_lpf() tempfn filename extension
+c651803d pre-deploy
+7ebffb9f deleteFromIndex() working, removes set of pids
+0366281d inching ahead; left off at update.py line 170
+afaa0a97 inching ahead; index surgery tests in update.py
+cb878f63 updating database stable; now to ES
+99996701 initial idxupdate
+3cebc2c0 align_whg accessioning tested ok
+24475d14 new align_whg testing ok
+d7951e22 misc, incl start at es update & refactor align_whg accessioning function
+c658ef65 update delimited; not cleaning index yet
+b3603c36 update link conditional: delimited only
+481e5014 choice to keep links and/or geoms
+a48e4ec9 tsv update ok; errors not tested; needs preserve logic
+f9d179b9 updating lp-tsv data, prelim for test
+e742ab7c mid-stream replacing rows
+84027bb3 refactoring pretty solid
+b7b60f27 post-model changes; dashboard, dataset html ok
+631f7318 reopening old & new files in ds_update
+7e2124c1 writing new fileand DatasetFile instance, not updating db and index yet
+62ca7c91 pre-refactor ds_insert_tsv
+8e2b9e4e fixed missing tgn loc error; roundtrip tempfn to ds_update()
+39b32b77 pre-Django update
+d8d79216 compare_text() prettify comparison results
+7bc9811c stable; lost ground with ds_compare result formatter
+bf4bfb33 fallback spot
+784cbdc0 compare_results round-tripping to ds_update
+af533a01 tidy
+12d65172 validating and comparing -> modal; now to update()
+b74e1bec initiating update() after compare() within modal
+cce683fc reading new file and validating
+a6784df8 submitting new file with ajax, response to modal...progress
+6bc339f9 modal approach, good start; now compare and return results & btn to proceed
+1d97e3d9 update from in-place form ok, short of compare(); now try modal alternate
+a351924c compare.py inching forward; +/- rows, +columns
+a539dd9a chunk/save update DatasetFile in DatasetDetailView(); need analysis now
+b87ab3b5 chunk/save initial DatasetFile in DatasetCreateView()
+c7fd602c in-place file updater: validation in progress
+4dec5e05 in-place file updater: form_valid if logic
+1aac8166 dataset.html->dataset_20200202.html; in-place file updater begun
+bfad25ce form within modal
+9b9ecd70 pre- updater algo
+e7373523 update modal formatting; upload form next
+fa575f45 modal button initiates view function
+0a61aa52 modal button initiates view function
+1e5018aa modal for update begun
+7f1adb0a beginning file update routine
+90a722c1 stable-ish; needs file update algorithm now
+0b35e663 editing dataset title and description
+40ad809a displaying correctly, not editing right
+3873d0e2 new dataset functions (ds + file) linked detail, not update; works though??
+7b74f608 new dataset functions (ds + file) in but not linked
+7aea2529 inching toward new dataset create with separate files
+e6de915e DatasetFile model, appearing in template
+d90211ba pre-model changes
+9d67b956 stubbed in tab
+8d514dec dataset tabs ok for now
+12eb8821 area maps appear for addtask
+20cfb5fe some css tweaks
+6869550a ds tabset updates ongoing; stable, a few remain
+b784d998 ds tabset updates ongoing; stable, a few remain
+56ead2d8 ds reconciliation tab nav "location" hack
+d9fbdc41 'add  reconciliation task' tab separate maps
+c9666f47 tabs 'essentially' functional
+97618075 reworking datasets tabset; all but browse
+b8b20b21 reworking datasets tabset; midstream
+75358a0d dataset tabs stubbed, nav ok
+79fbecca teams function ok; needs gui
+3161f5fd add, remove collaborator functionality solid
+bbd94aa9 add, remove collaborator functionality
+e8678fd9 in progress
+12bc71b0 in progress
+efa43651 show recon tasks to user authorized in DatasetUser
+b91138c2 slimmer navbar
+dca4e088 create DatasetUser model for teams
+3da749d6 1-step undo of review save
+a990435a 1-step undo of review save
+93fc9540 undo last match(es) save
+f1103923 undo last match(s) save
+feb1e75a place portal name whens sorted
+de2bf3f9 whens from names added to histogram vis
+8714a859 repaired area.draw function
+534c106e pause api work
+bc6f5d4b starting drf experiments
+efd41ff4 restored task imports
+d331abd9 post-deploy
+c858c46f formatted, sorted intervals in attestation cards
+31c5fc9a sorted timespans in attestation cards
+0b6df337 including geometry 'when' in summing histogram
+3f950df7 added name geometry when to summing histogram
+babd8b0c css, format tweaks
+ed28ad83 css tweaks
+66039bc3 user+profile form
+d9102b84 conversion of profile page to form under way; needs extended fields
+fffb10d8 histogram done for now, mergeback
+43475cf6 catch no temporal data
+55d9d235 temporal histogram ok
+3036a9e1 temporal histogram ok except last tick
+81ed0b29 creating hist_array, now to visualize it
+94c81527 parsing all whens for temporal objects
+f666f513 place portal css
+d3eddd6f areas essentially set
+296dffdb adding, editing FeatureCollections; existing geometry loads
+8c90a354 area draw function near complete
+611eb199 area draw function stubbed in
+03208f51 map-result_list interactivity
+b7600d95 interactivity between marker and result list
+3bfa4dfe expanded user profile; nothing on teams
+0e65a31a pre-mergeback
+98e3513b add geom in recon now default; remove option
+24ef15f8 trap celery errors
+db37f57d fix goodtables output error
+c9d13cec validate_lpf tuneup; needs test and pattern constraints
+7cd7658e goodtables: adjust constraints
+77aabf72 goodtables for lp-tsv working; no test yet
+4c2fab6e goodtables ok; needs full schema
+336ba619 goodtables for TSV nearly there; needs output formatting
+ea3993f8 status page
+172bdd13 goodtables start; ds create redirect start
+62ebbe91 bare beginning
+66496b2a inching forward
+f8b1c3e6 rivers
+1efee83f bdrc tweaks
+8c771e35 blank ccodes issue solved
+745742c7 tidy
+e18a7e5e pre-deploy
+7c097df5 licensing, README
+5b4e3347 licensing
+81fe2387 licensing
+d9e1faec beta 0.2 as deployed
+4372dd25 pre-deploy take 2
+792f1789 pre-deploy
+e54a4154 system page
+0350d66b batten down generic api root
+cf093262 css; tutorials
+120da595 reorganize, reformat card title info
+d1955256 post-recon direct to first non-zero pass
+283c4308 parsing ccodes/countries for dataset browse
+d7e6d927 restred saving of intial match link
+887b7e08 ds_insert_tsv review; no substantive changes
+032c17c1 pre-deploy for ams
+dea1a2df beta data update
+f7f40442 phrase search
+4fa97a67 map zoom offset on filter
+98e974a9 pre-demo tweaks
+d4408390 demo prep tweaks
+0ea3f292 zoom to filtered extents
+fd524c51 review whg behavior for core
+89cc2500 disabled typeahead for places
+7d63e922 add names.toponym to search
+e01d32bb disabled typeahead for now
+b6cbce31 dynamic query name
+4f544091 filtering result list AND map features
+5ed4f690 filtering result list, not map yet
+491bc799 search result filtering (nearly)
+3b9f146f stubbed in api/union uri and view
+d7600491 gui bits
+e227c72b contextSearch() ccodes issue fixed
+e1af03c6 contextSearch() index choice
+2a6c83b6 map marker flashing, misc
+6bdd9313 home map symboliztion
+f1c32b73 trace links to place portals from map and list
+101be58f getting there; next: load trace geom properties as req.
+7e457cb8 Trace models stubbed in
+44d9104f begun type filtering; search behavior tweaks
+a83e8c4a autocomplete spinner; search behavior mvp
+cfa5ea9a search behavior better; still needs autocomplet removed
+b26c0e29 merged back from reindex
+b15881d9 tgn in; tuning now
+3f27ef88 core set & indexed except for full tgn
+2cc574cb finishing black->wikidata recon review
+3deff5b8 matcher script to cut recon chore
+4c3b2cd9 more geonames
+86582646 tgn2000 testing
+b698dfa3 tgn2000 testing
+c9121fa5 tgn100 testing
+11cb5f0d pre-tgn
+fb2257d1 filtering suggest for highlighted
+3babc515 filtering suggest for highlighted
+9314d9cd countries in, indexed
+d81888a0 countries in, not indexed
+292f9f88 fixed link type for gn500 records
+723dc639 accessioning basically works
+3078d80e creating whg02 parent matches; so far so good
+150a08e3 creating whg02 child matches; now parents
+70fc4b9c fixing align_whg(), normalize(); stable
+62b24e64 tidy
+2bc912ff groom example_data folder
+62fa6ce9 refactored align_whg indexing process
+eed5e2c4 align_whg misc; stable
+88d03b01 wikidata indexing wip
+1b1c0877 browse map geometry augmentation
+f1ee95f4 tuning wikidata reconciliation; exceptions
+1bd91e6c tuning wikidata queries
+7b1e7da5 fixed aat type prefix
+227f6edc various post-deploy
+794db6cd wikdata issues
+8bffd1e4 attempted fixes to wikidata recon
+d562bc96 spinners okay; example data
+c50a4120 example data
+232207d0 beta badge; feedback & walkthrough links
+d0996af9 help screen id case
+c6ece87d feedback form nearly there
+0a39a2fe requirements
+753a5d98 earliest/latest vs. in for place portal timespans
+11fca815 misc bits
+46882f0e users can view some core; placetype fixes for browse
+0cdd010e src_id field length
+cbb72908 spinner for dataset browse map
+93720ef1 choosing tutorial
+1d4cab4b map styling, mergeback
+2bc1505e map feature styling
+a5bfd3d8 map feature styling
+aa9f9f28 highlighting varied feature types from result_list
+3e64cff4 bsic help ok for reconciliation and matches
+c2ae1319 help pages edits
+20ad368e css tweaks
+9fb16a93 help system in place; pages begun
+2d53b425 rudimentary dynamic help dialogs
+7f40bc61 aborted attempt at styling non-points on search
+7ca9a019 place css
+7add5c00 place portal css: scrolling
+42dbc6ac modal for comments; new tab for extrnal links; oh well
+66c3ee9f modal windows in place portal ok-ish
+b4ad1320 still stable but not working
+e535ecf7 begun place portal commenting
+60f8a8ea comment modal
+8c72932f review form authority comments conditional
+b2a9ce07 css bits for recon
+b43709f9 accept geometry flag
+f5d392e2 hack to deal with src_label vs. sourceLabel in whg index
+fdb6f44b clear map when switching betw place and trace search
+35db50ed tutorials: Beta; accordion template
+b755a62f beta tutorial progress
+c1b22a6c pre-deploy
+d17c082c css on recon page
+97bc92ce ds_insert_tsv(); one shot!
+5ef86674 updated some dependencies
+ff2ae06b map markers scale for dataset browse page
+a266b245 tidying
+c4abbd1d validation for tsv complete for now
+6ab91e1b validation for tsv
+e637a973 midstream reporting errors from tsv import
+bd1244bc requirements -> python 3.7.4; begun better LP-TSV validation workflow
+99609da5 updated python > 3.7.4; begun better validation of tsv
+dacbfa85 tidy
+0805e559 pathing to tutorials
+9d5b1f9d okay...EXCEPT nested <a> onclick
+c40fc39b okay...EXCEPT nested <a> onclick
+188695ac typeahead cursor select ok for traces
+40a5c16e traces near complete; needs map interaction
+24db1ae9 traces near complete; needs map interaction
+ce6d9fb7 midstream: formatting trace body list; highlist on hover
+20a2f863 getting trace geometries; needs further testing
+8093a2db getting trace suggestions; now act on them
+4b0be8e3 trace typeahead begun
+5860c783 search/suggest behaviors better
+08ee30dd click or enter on sugg item performs search
+d5b4217d fixed map bounds bouncing
+37356507 tweaking suggest/search behaviors
+6f78b799 suggest using twitter typeahead
+040c077b browse map basics ok; needs non-point hover/click behavior, tweking
+370e5e78 browse mapping basically ok
+2a55d306 rendering map w/REST page size limit; need id + dataset in properties
+632621b1 rendering map w/all data
+326e9460 fetching all geometry (for better or worse)
+fd34a38c table css better
+1117b38b pre- map entire dataset
+09bf72d9 highlight first row
+dc295139 tabs working minimally
+5421f77f pre- forms under tabs
+adecff2e bigger map, cleaner format
+e2ba9114 start dataset_detail_02; name, descrip editing
+31ffe7db menu redesign; tutorials page
+8c2e566d search results to map, a start anyway
+2cea9a77 cleaning up var terms
+9e1ece8d filter search to only parents...huh?
+8f9b01f1 place-item links to portal page
+5ca34413 getting 1st snippet
+c7d507fb needs onClick actions
+4c575dea search & suggest separate; need correct action for each item-type
+3bd84372 separate search results
+280c9398 progress w/search v. suggest
+d93bdda6 cleaned up migrations mess, I think
+bcdb4209 pre-repair
+63f3a678 new search functionality begun
+ea37ef18 pre-mergeback
+82da0db7 place card link to dataset detail page
+c1f5376f progress on time in attestation cards in place portal
+218712ed summing per-attestation timespans for viz
+a364a0cc fix external links for viaf, loc
+b2744f6e filter out whg links
+9dcda631 django update, 2.2.4
+c70f684b tidy files
+2817404a misc
+0002fbea misc
+601c4616 add camps data
+dfc7ba94 add camps data
+90e85445 aat placetypes spreadsheet
+43115a75 data examples
+b5138a5c pre-pre-deploy for beta
+18803cf3 parsing whens for related elements
+2bf29d73 spark image
+9551a61a updated static content
+8a0c59bd updated example data
+b4ebedb6 auto-add new users to review group
+177b40c3 stubbed country typeahead for areas
+680e21d3 recon for lugares20,terr3,epirus ok for tgn; bug for epirus-wd
+cda75f0c study area display better; defaults to tgn
+4092452e gave up on slug, fixed upload/insert issues; permissions on places in api
+57a8d398 pre-sluglabel
+431c4040 left mapbox_id out of form
+081a15e4 disabled trace, source as dataset options
+58639d17 fixed delete permission for API
+ee727974 profile field affiliation; filtering datasets properly
+7d2885e5 misc display bugs
+e98426a6 related into portal
+e345fc10 align_whg script tweaked; dplace, rivers indexed
+de496e0a attempted place json download code
+f07f7d39 review step viz improved
+293e6583 community page
+41a7ef70 user menu dropdown
+569bf82b db insert automatically follows format_ok
+35813a1a pretty solid; pre-GUI refinements
+de809633 bits re: data munging
+68df89b3 trace list formatting
+1c48c667 display original types in drftable; ui tweaks
+d388e009 source IDs for reviewed geometries
+30f9d885 req update
+d71027a0 validate housekeeping
+a9d7bb06 drf_table appearance
+dba3cfae drf_table appearance
+7138d8d6 un-reviewed counts by pass
+d804a33f un-reviewed counts by pass, nearly done
+4ef9f24e pass# dropdown nav fixed
+933cbffb review environment improvements
+b66c8dae toggle geo constraint for tgn
+00fdedc5 external links; no modal iframes
+553e8934 validating lpf
+de87be47 requirements
+e20d2dee update lpf validatation
+d782592a validating lpf_coll
+0349122b modals for external links: review,portal,drf_table,home/trace
+847163c6 modal for external links in review.html
+cf5fa037 wd recon good for now
+41202305 pre-wikidata-recon
+a4e663e7 passnum dropdown ok(?)
+08bd053c recon wikidata worked for lugares and black samples
+07495b47 wikidata recon okay
+beb6f928 wikidata recon working but counts are boogered
+721a14a0 align_wd in progress
+b297652c portal order cards -temporally
+9d807662 portal map nearby popup links
+77056101 portal map nearby popup links
+7d4b5bf0 homepage map popup info
+a10e40c6 pause to deploy
+85dcf3d3 pre-recon_dbp
+e4a1403b pre-mergeback
+e947eb6c dataset heat maps ok, need more datasets
+3446a46c dataset heat maps basics; needs zoom, more sets
+16f43c9c review of tgn okay except for pass2, pass3
+1e614a26 fixed save of validated hit
+8e896024 map settled for now
+2cc768c8 flashing place geoms on map from search result
+5d8bca7a fixed no-when in trace bug
+a7911948 fixed france; trace result css
+d50e192d trace mapping pretty solid
+32289159 trace detail
+fc365940 advanced show/hide; drf_table map styles
+4872720b external pages in modal; close stops player
+328b1695 external pages in modal; stopping players
+d553dec9 traces stable for now
+161ecfec dropdown css
+4d0775b1 zooming to okay
+0eb25ff7 rendering trace geometry
+559e4f74 render trace geom link; inactive
+f0e478de dropdown ok
+810d0854 restored traces in place portal
+c543f2be urllib3 update
+bf952f83 black is in, dammit
+ba848f96 midstream getting "black 600" in
+946955a4 midstream: tweak align_whg to get black children indexed
+96b99781 autocomplete trace target title field
+2b244809 validation tweaks for Athens, lose whg_id for context HitRecord()
+d1bec9c4 initial, rebase

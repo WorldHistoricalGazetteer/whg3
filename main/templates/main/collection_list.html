@@ -1,0 +1,13 @@
+{% if collections %}
+	{% for coll in collections %}
+		<div class="collection-item">
+		    <p>{{ coll.title }}</p>
+		    <!-- Other details -->
+		</div>
+	{% endfor %}
+{% else %}
+    <p>You have no collections. Create one now?</p>
+		<p><a href="{% url 'collection:place-collection-create' %}">Place Collection builder</a></p>
+		<p><a href="{% url 'collection:ds-collection-create' %}">Dataset Collection builder</a></p>
+{% endif %}
+

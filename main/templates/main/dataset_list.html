@@ -1,0 +1,7 @@
+{% if datasets %}
+    {% for ds in datasets %}
+        <p>{{  ds.title }}</p>
+    {% endfor %}
+{% else %}
+    <p>You have no datasets. <a href="{% url 'datasets:dataset-create' %}">Create one now!</a></p>
+{% endif %}

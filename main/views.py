@@ -7,7 +7,7 @@ from django.shortcuts import render, get_object_or_404, redirect #, render_to_re
 from django.urls import reverse_lazy
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import TemplateView
-from collection.models import Collection
+from collection.models import Collection, CollectionGroup
 from datasets.models import Dataset
 from datasets.tasks import testAdd
 from main.models import Link
@@ -15,12 +15,24 @@ from places.models import Place
 from bootstrap_modal_forms.generic import BSModalCreateView
 
 from .forms import CommentModalForm, ContactForm
-from elasticsearch7 import Elasticsearch
 es = settings.ES_CONN
 from random import shuffle
 from urllib.parse import urlparse
 import sys
 from datetime import datetime
+
+
+def dataset_list(request):
+  user_datasets = Dataset.objects.filter(owner=request.user)
+  return render(request, 'main/dataset_list.html', {'datasets': user_datasets})
+
+def collection_list(request):
+  user_collections = Collection.objects.filter(owner=request.user)
+  return render(request, 'main/collection_list.html', {'collections': user_collections})
+
+def group_list(request):
+  user_groups = CollectionGroup.objects.filter(owner=request.user)
+  return render(request, 'maingroup_list.html', {'groups': user_groups})
 
 @csrf_exempt
 def home_modal(request):
