@@ -46,11 +46,10 @@
                     <img src="{{ user.profile_image_url }}" alt="User Profile Image" width="100">
                     <h5>{{ user.name }}</h5>
                 </div>
-
                 <!-- Sidebar Navigation -->
                 <a href="{% url 'main:dataset-list' %}" class="sidebar-nav-item">Datasets</a>
                 <a href="{% url 'main:collection-list' %}" class="sidebar-nav-item">Collections</a>
-                {% if user.is_group_leader %}
+                {% if user.role == 'group_leader' %}
                     <a href="{% url 'main:group-list' %}" class="sidebar-nav-item">Groups</a>
                 {% endif %}
             </div>

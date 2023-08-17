@@ -32,7 +32,8 @@ def collection_list(request):
 
 def group_list(request):
   user_groups = CollectionGroup.objects.filter(owner=request.user)
-  return render(request, 'maingroup_list.html', {'groups': user_groups})
+  print('user_groups', user_groups)
+  return render(request, 'main/group_list.html', {'groups': user_groups})
 
 @csrf_exempt
 def home_modal(request):

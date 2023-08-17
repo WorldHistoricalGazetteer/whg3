@@ -1,7 +1,8 @@
+<h5>Datasets</h5>
 {% if datasets %}
     {% for ds in datasets %}
-        <p>{{  ds.title }}</p>
+	    <p><a href="{% url 'datasets:ds_summary' ds.id %}">{{ ds.title }}</a></p>
     {% endfor %}
 {% else %}
-    <p>You have no datasets. <a href="{% url 'datasets:dataset-create' %}">Create one now!</a></p>
+    <p>You have no datasets. <a href="{% url 'datasets:dataset-create' %}">Create one?</a></p>
 {% endif %}

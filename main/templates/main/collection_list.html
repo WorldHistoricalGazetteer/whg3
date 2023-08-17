@@ -1,7 +1,8 @@
+<h5>Collections</h5>
 {% if collections %}
 	{% for coll in collections %}
 		<div class="collection-item">
-		    <p>{{ coll.title }}</p>
+			<p><a href="{ url '' ds.id %}">{{ coll.title }}</a></p>
 		    <!-- Other details -->
 		</div>
 	{% endfor %}
