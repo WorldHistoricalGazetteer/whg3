@@ -46,16 +46,18 @@ def group_list(request, role):
   print('user_groups', user_groups)
   return render(request, 'lists/group_list.html', {'groups': user_groups, 'role': role})
 
-# def dashboard_view(request):
-#   user_datasets_count = Dataset.objects.filter(owner=request.user).count()
-#   user_collections_count = Collection.objects.filter(owner=request.user).count()
-#
-#   context = {
-#     'has_datasets': user_datasets_count > 0,
-#     'has_collections': user_collections_count > 0,
-#     # ... any other context data ...
-#   }
-#   return render(request, 'main/dashboard.html', context)
+def dashboard_view(request):
+  user_datasets_count = Dataset.objects.filter(owner=request.user).count()
+  user_collections_count = Collection.objects.filter(owner=request.user).count()
+
+  context = {
+    'datasets': Dataset.objects.filter(owner=request.user),
+    'collections': Collection.objects.filter(owner=request.user),
+    'has_datasets': user_datasets_count > 0,
+    'has_collections': user_collections_count > 0,
+    # ... any other context data ...
+  }
+  return render(request, 'main/dashboard.html', context)
 
 @csrf_exempt
 def home_modal(request):

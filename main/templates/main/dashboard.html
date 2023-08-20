@@ -65,8 +65,14 @@
 
             <!-- Main Content -->
             <div class="col-md-9 main-content">
+					    {% if has_datasets %}
+					        {% include "lists/dataset_list.html" %}
+					    {% elif has_collections %}
+					        {% include "lists/collection_list.html" %}
+					    {% else %}
+					        {% include "lists/dataset_list.html" %}
+					    {% endif %}
                 <!-- Content for the selected sidebar item goes here -->
-                {# Use Django template tags to load the content based on selected item #}
             </div>
         </div>
     </div>

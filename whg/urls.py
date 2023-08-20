@@ -40,8 +40,8 @@ urlpatterns = [
     path('public_data/', PublicListsView.as_view(), name='public-lists'),
 
     # static content
-    # path('dashboard/', views.dashboard_view, name="dashboard"),
-    path('dashboard/', TemplateView.as_view(template_name="main/dashboard.html"), name="dashboard"),
+    path('dashboard/', views.dashboard_view, name="dashboard"),
+    # path('dashboard/', TemplateView.as_view(template_name="main/dashboard.html"), name="dashboard"),
 
     path('about/', TemplateView.as_view(template_name="main/about.html"), name="about"),
     path('contributing/', TemplateView.as_view(template_name="main/contributing.html"), name="contributing"),
