@@ -14,7 +14,8 @@ urlpatterns = [
     # new 'dashboard' LIST VIEWS
     path('dataset_list/', views.dataset_list, name='dataset-list'),
     path('collection_list/', views.collection_list, name='collection-list'),
-    path('group_list/', views.group_list, name='group-list'),
+    path('area_list/', views.area_list, name='area-list'),
+    path('group_list/<str:role>/', views.group_list, name='group-list'),
 
     path('modal/', TemplateView.as_view(template_name="main/modal.html"), name="dynamic-modal"),
 ]

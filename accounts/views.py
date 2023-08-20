@@ -68,10 +68,10 @@ def validate_usersfile(tempfn, cg):
   # print('validate result', result)
   return result
 
-def add_to_group(cg,member):
+def add_to_group(cg, member):
   print('add_to_group', cg, member)
   cguser = CollectionGroupUser.objects.create(
-    role='normal',
+    role='member',
     collectiongroup=cg,
     user=member
   )

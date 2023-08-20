@@ -1,8 +1,0 @@
-<h5>Groups</h5>
-{% if groups %}
-    {% for g in groups %}
-	    <p><a href="{ url '' %}">{{ g.title }}</a></p>
-    {% endfor %}
-{% else %}
-    <p>You have no groups <a href="{ url '' %}">Create one?</a></p>
-{% endif %}

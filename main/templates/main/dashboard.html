@@ -8,12 +8,10 @@
             height: 100vh; /* Full viewport height */
             padding-top: 20px;
         }
-
         .profile-info {
             margin-bottom: 20px;
             text-align: center;
         }
-
         .sidebar-nav-item {
             display: block;
             padding: 10px;
@@ -23,16 +21,23 @@
             border: 1px solid transparent;
             border-radius: 5px;
         }
-
         .sidebar-nav-item:hover,
         .sidebar-nav-item.active {
             background-color: #f8f9fa;
             border: 1px solid #ddd;
         }
-
-        .main-content {
-            padding: 20px;
-        }
+      .main-content {
+          padding: 20px;
+      }
+			.profile-placeholder {
+			    width: 100px;
+			    height: 100px;
+			    background-color: palegoldenrod;  /* Change this to your desired color */
+			    border-radius: 50%;  /* This makes it a circle; remove if you prefer a square */
+			    display: inline-block;
+			    vertical-align: middle;
+					margin-bottom: 1rem;
+			}
     </style>
 {% endblock %}
 
@@ -43,14 +48,18 @@
             <div class="col-md-3 sidebar">
                 <!-- Profile Info -->
                 <div class="profile-info">
-                    <img src="{{ user.profile_image_url }}" alt="User Profile Image" width="100">
+	                <div class="profile-placeholder"></div>
+{#                    <img src="{{ user.profile_image_url }}" alt="User Profile Image" width="100">#}
                     <h5>{{ user.name }}</h5>
                 </div>
                 <!-- Sidebar Navigation -->
                 <a href="{% url 'main:dataset-list' %}" class="sidebar-nav-item">Datasets</a>
                 <a href="{% url 'main:collection-list' %}" class="sidebar-nav-item">Collections</a>
+                <a href="{% url 'main:area-list' %}" class="sidebar-nav-item">Study Areas</a>
                 {% if user.role == 'group_leader' %}
-                    <a href="{% url 'main:group-list' %}" class="sidebar-nav-item">Groups</a>
+                  <a href="{% url 'main:group-list' role='leader' %}" class="sidebar-nav-item">Groups</a>
+                {% else %}
+	                <a href="{% url 'main:group-list' role='member' %}" class="sidebar-nav-item">Groups</a>
                 {% endif %}
             </div>
 

@@ -7,7 +7,8 @@ from django.shortcuts import render, get_object_or_404, redirect #, render_to_re
 from django.urls import reverse_lazy
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import TemplateView
-from collection.models import Collection, CollectionGroup
+from areas.models import Area
+from collection.models import Collection, CollectionGroup, CollectionGroupUser
 from datasets.models import Dataset
 from datasets.tasks import testAdd
 from main.models import Link
@@ -24,16 +25,37 @@ from datetime import datetime
 
 def dataset_list(request):
   user_datasets = Dataset.objects.filter(owner=request.user)
-  return render(request, 'main/dataset_list.html', {'datasets': user_datasets})
+  return render(request, 'lists/dataset_list.html', {'datasets': user_datasets})
+  # return render(request, 'main/templates/lists/dataset_list.html', {'datasets': user_datasets})
 
 def collection_list(request):
   user_collections = Collection.objects.filter(owner=request.user)
-  return render(request, 'main/collection_list.html', {'collections': user_collections})
+  return render(request, 'lists/collection_list.html', {'collections': user_collections})
 
-def group_list(request):
-  user_groups = CollectionGroup.objects.filter(owner=request.user)
+def area_list(request):
+  user_areas = Area.objects.filter(owner=request.user)
+  return render(request, 'lists/area_list.html', {'areas': user_areas})
+
+def group_list(request, role):
+  if role == 'member':
+    mygroups = CollectionGroupUser.objects.filter(user=request.user)
+    user_groups = [cg.collectiongroup for cg in mygroups]
+  else:
+    role = "leader"
+    user_groups = CollectionGroup.objects.filter(owner=request.user)
   print('user_groups', user_groups)
-  return render(request, 'main/group_list.html', {'groups': user_groups})
+  return render(request, 'lists/group_list.html', {'groups': user_groups, 'role': role})
+
+# def dashboard_view(request):
+#   user_datasets_count = Dataset.objects.filter(owner=request.user).count()
+#   user_collections_count = Collection.objects.filter(owner=request.user).count()
+#
+#   context = {
+#     'has_datasets': user_datasets_count > 0,
+#     'has_collections': user_collections_count > 0,
+#     # ... any other context data ...
+#   }
+#   return render(request, 'main/dashboard.html', context)
 
 @csrf_exempt
 def home_modal(request):

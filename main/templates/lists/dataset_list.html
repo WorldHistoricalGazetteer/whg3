@@ -1,0 +1,55 @@
+<h5>My Datasets</h5>
+<!--
+id, title, label, created, format, #rows, ds_status (if)owner
+-->
+{% if datasets %}
+  {% if datasets|length == 0 %}<p class="smaller"><i>None yet...</i></p>
+  {% else %}
+  <table id="table_ds" class="table table-striped">
+    <thead class="small strong">
+      <th>id</th>
+      <th>name <i class="fa fa-sort ms-1" data-id=1 ref=asc></i></th>
+      <th>label <i class="fa fa-sort ms-1" data-id=2 ref=asc></i></th>
+      <th>created <i class="fa fa-sort ms-1" data-id=3 title="UTC"></i></th>
+      <th>format</th>
+      <th># rows</th>
+      <th>status <i class="fa fa-sort ms-1" data-id=6 ref=asc></i></th>
+      <!--{ if user.is_superuser %}-->
+      {% if beta_or_better %}
+      <th>owner <i class="fa fa-sort ms-1" data-id=7 ref=asc></i></th>{% endif %}
+    </thead>
+    <tbody>
+      {% for d in datasets %}
+        <tr class="place-row">
+          <td>{{ d.id }}</td>
+          <td>
+          <a href="{% url 'datasets:ds_summary' d.id %}" title="Dataset details" rel="tooltip">
+            {{ d.title }}</a>
+            {% if not user == d.owner %}
+              <span class="smaller ms-3">
+                <i class="small fa fa-users" style="color:grey;"></i></span>
+            {% endif %}
+          </td>
+          <td>{% if d.core == True %}
+                {{ d.label }} <span class="corerow"> (core)</span>
+              {% else %}{{ d.label }}{% endif %}
+          </td>
+          <td class="small">{{ d.create_date|date:"Y-m-d, H:i" }}</td>
+          <td>{{ d.format }}</td>
+          <td>{{ d.numrows }}</td>
+          <td>{{ d.ds_status }}</td>
+          <!--{ if user.is_superuser %}-->
+          {% if beta_or_better %}
+          <td>{{ d.owner|truncatechars:20 }}</td>
+          {% endif %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+{#    {% for ds in datasets %}#}
+{#	    <p><a href="{% url 'datasets:ds_summary' ds.id %}">{{ ds.title }}</a></p>#}
+{#    {% endfor %}#}
+{% else %}
+    <p>You have no datasets yet. <a href="{% url 'datasets:dataset-create' %}">Create one?</a></p>
+{% endif %}

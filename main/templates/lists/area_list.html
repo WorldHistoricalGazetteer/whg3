@@ -1,0 +1,17 @@
+<h5>My Study Areas</h5>
+<!--
+id, title, label, created, format, #rows, ds_status (if)owner
+-->
+{% if areas %}
+  {% if areas|length == 0 %}<p class="smaller"><i>None yet...</i></p>
+  {% else %}
+	  {% for a in areas %}
+	    <p>a</p>
+	  {% endfor %}
+  {% endif %}
+{#    {% for ds in datasets %}#}
+{#	    <p><a href="{% url 'datasets:ds_summary' ds.id %}">{{ ds.title }}</a></p>#}
+{#    {% endfor %}#}
+{% else %}
+    <p>You have no Study Areas yet. <a href="{% url 'areas:area-create' %}">Create one?</a></p>
+{% endif %}
