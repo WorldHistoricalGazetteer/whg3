@@ -93,14 +93,20 @@
                 {% for c in coll_list %}
                   <tr class="place-row">
                     <td>{{ c.id }}</td>
-                    <td><span class="{{ c.collection_class }} p-1">{{ c.collection_class }}</span></td>
+                    <td>
+	                    <span class="{{ c.collection_class }} p-1">{{ c.collection_class }}</span>
+                    </td>
 	                  {% if c.collection_class == 'dataset' %}
-                    <td><a href="{% url 'collection:ds-collection-summary' c.id %}">{{ c.title }}</a></td>
+                    <td>
+	                    <a href="{% url 'collection:ds-collection-summary' c.id %}">{{ c.title }}</a>
+                    </td>
 	                  {% else %}
-		                  <td><a href="{% url 'collection:place-collection-browse' c.id %}">{{ c.title }}</a></td>
+		                  <td>
+			                  <a href="{% url 'collection:place-collection-browse' c.id %}">
+				                  {{ c.title }}</a>
+		                  </td>
 	                  {% endif %}
                     <td>{{ c.rowcount }}</td>
-{#                    <td>{{ c.created }}</td>#}
                     <td>{{ c.last_modified_iso  }}</td>
                     <td>{{ c.owner.name }}</td>
                   </tr>
