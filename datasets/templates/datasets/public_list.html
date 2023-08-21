@@ -67,7 +67,7 @@
                     <td>{{ ds.numrows|floatformat:"0" }}</td>
                     <td class="w-50">{{ ds.description|readmore:200|safe }}</td>
                     <td>{{ ds.last_modified_iso }}</td>
-                    <td>{{ ds.owner }}</td>
+                    <td>{{ ds.owner.name }}</td>
                     <td><b>{% if ds.core %}C{%else%}H{%endif%}</b></td>
                   </tr>
                 {% endfor %}
@@ -102,7 +102,7 @@
                     <td>{{ c.rowcount }}</td>
 {#                    <td>{{ c.created }}</td>#}
                     <td>{{ c.last_modified_iso  }}</td>
-                    <td>{{ c.owner }}</td>
+                    <td>{{ c.owner.name }}</td>
                   </tr>
                 {% endfor %}
               </tbody>

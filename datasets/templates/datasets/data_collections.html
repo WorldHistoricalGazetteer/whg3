@@ -138,7 +138,7 @@
                     </td>
                     <td>{{ c.rowcount }}</td>
 										<td class="small">{{ c.created|date:"Y-m-d, H:i" }}</td>
-                    <td>{{ c.owner }}</td>
+                    <td>{{ c.owner.name }}</td>
                     <td>{{ c.status }}</td>
                   </tr>
                 {% endfor %}
