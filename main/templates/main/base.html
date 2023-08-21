@@ -58,80 +58,87 @@
 		      <span class="navbar-toggler-icon"></span>
 		    </button>
 		    <div class="collapse navbar-collapse smallish pt-2" id="navbarSupportedContent">
-		        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-		        <div id="links_home">
-		            <span id="version_badge" class="badge text-bg-success">v3.0a</span>
-		            <span id="beta_links">
-		                <a href="{% url 'tutorials:tute-guide' %}" class="text-decoration-none">guide</a> |
-		                <a href="#" class="feedback text-decoration-none">contact us</a> |
-		                <a href="https://twitter.com/whgazetteer" target="_blank">
-		                <img src="{% static 'images/twitter30h.png'%}" height=14></a>
-		            </span>
-		        </div>
-		        <div id="links_other" class="d-none">
-		            <a class="navbar-brand me-0" href="{% url 'home' %}">&nbsp;World Historical Gazetteer</a>
-		            <a href="#" class="feedback text-decoration-none">contact us</a> |
-		            <a href="https://twitter.com/whgazetteer" target="_blank"><img src="{% static 'images/twitter30h.png'%}" height=14></a>
-		        </div>
-		        </ul>
+	        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+	        <div id="links_home">
+            <span id="version_badge" class="badge text-bg-success">v3.0a</span>
+            <span id="beta_links">
+              <a href="{% url 'tutorials:tute-guide' %}" class="text-decoration-none">guide</a> |
+              <a href="#" class="feedback text-decoration-none">contact us</a> |
+              <a href="https://twitter.com/whgazetteer" target="_blank">
+              <img src="{% static 'images/twitter30h.png'%}" height=14></a>
+            </span>
+	        </div>
+	        <div id="links_other" class="d-none">
+            <a class="navbar-brand me-0" href="{% url 'home' %}">&nbsp;World Historical Gazetteer</a>
+            <a href="#" class="feedback text-decoration-none">contact us</a> |
+            <a href="https://twitter.com/whgazetteer" target="_blank"><img src="{% static 'images/twitter30h.png'%}" height=14></a>
+	        </div>
+	        </ul>
 		        <ul class="navbar-nav">
-		            <li class="nav-item">
-		              <a class="nav-link" href="{% url 'search-page' %}">Search</a>
-		            </li>
-		            <li class="nav-item">
-		              <a class="nav-link" href="{% url 'tutorials:teaching-page' %}">Teaching</a>
-		            </li>
-		            <li class="nav-item">
-		              <a class="nav-link" href="{% url 'tutorials:tutorials' %}">Guides</a>
-		            </li>
-		            <li class="nav-item">
-		              <a class="nav-link" href="{% url 'usingapi' %}">API</a>
-		            </li>
-		        <li class="nav-item dropdown">
-		            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+	            <li class="nav-item">
+	              <a class="nav-link" href="{% url 'search-page' %}">Search</a>
+	            </li>
+	            <li class="nav-item">
+	              <a class="nav-link" href="{% url 'tutorials:teaching-page' %}">Teaching</a>
+	            </li>
+	            <li class="nav-item">
+	              <a class="nav-link" href="{% url 'tutorials:tutorials' %}">Guides</a>
+	            </li>
+	            <li class="nav-item">
+	              <a class="nav-link" href="{% url 'usingapi' %}">API</a>
+	            </li>
+		          <li class="nav-item dropdown">
+		            <a class="nav-link dropdown-toggle" href="#" role="button"
+		               data-bs-toggle="dropdown" aria-expanded="false">
 		            About
 		            </a>
 		            <ul class="dropdown-menu">
-		                <li><a class="dropdown-item" href="{% url 'about' %}">Introduction</a></li>
-		                <li><a class="dropdown-item" href="{% url 'system' %}">System details</a></li>
-		                <li><a class="dropdown-item" href="{% url 'licensing' %}">Licensing, Terms</a></li>
-		                <li><a class="dropdown-item" href="{% url 'credits' %}">Credits & Contacts</a></li>
-		                <li><hr class="dropdown-divider"></li>
-		                <li><a class="dropdown-item" href="http://blog.whgazetteer.org" target="_blank">News</a></li>
+	                <li><a class="dropdown-item" href="{% url 'about' %}">Introduction</a></li>
+	                <li><a class="dropdown-item" href="{% url 'system' %}">System details</a></li>
+	                <li><a class="dropdown-item" href="{% url 'licensing' %}">Licensing, Terms</a></li>
+	                <li><a class="dropdown-item" href="{% url 'credits' %}">Credits & Contacts</a></li>
+	                <li><hr class="dropdown-divider"></li>
+	                <li><a class="dropdown-item" href="http://blog.whgazetteer.org" target="_blank">News</a></li>
 		            </ul>
 		        </li>
 		        {% if user.is_authenticated %}
-		            <li class="nav-item dropdown">
-		                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-		                Data
-		                </a>
-		                <ul class="dropdown-menu">
-		                    <li><a class="dropdown-item" href="{% url 'data-datasets' %}">My datasets</a></li>
-		                    <li><a class="dropdown-item" href="{% url 'data-collections' %}">My collections</a></li>
-		                    <li><a class="dropdown-item" href="{% url 'data-areas' %}">My study areas</a></li>
-		                    {% if user.role == 'group_leader' or user|has_group:"beta30" or user.is_superuser %}
-		                    <li><a class="dropdown-item" href="{% url 'data-collgroups' %}">My groups</a></li>
-		                    {% endif %}
-		                    <li><a class="dropdown-item" href="{% url 'public-lists' %}">Public data</a></li>
-		                  {% if user|has_group:'whg_team' or user|has_group:'teaching' %}
-		                        <li><a class="dropdown-item" href="{% url 'data-resources' %}">Teaching Resources</a></li>
-		                  {% endif %}
-		                </ul>
-		            </li>
-		            <li class="nav-item larger">
-		            <a class="nav-link" rel="tooltip" title="{{ user.name }}'s profile" href="{% url 'accounts:profile' %}">
-		                <i class="fas fa-user" style="color:#336699;"></i></a>
-		            </li>
-		            <li class="nav-item">
-		                <a class="nav-link `ms-5" href="javascript:{document.getElementById('logout').submit()}">Logout</a>
-		                <form id="logout" method="post" action="{% url 'accounts:logout' %}">
-		                  {% csrf_token %}</form>
-		            </li>
+	            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Data
+                </a>
+                <ul class="dropdown-menu">
+                  {% comment %}
+                  <li><a class="dropdown-item" href="{% url 'data-datasets' %}">My datasets</a></li>
+                  <li><a class="dropdown-item" href="{% url 'data-collections' %}">My collections</a></li>
+                  <li><a class="dropdown-item" href="{% url 'data-areas' %}">My study areas</a></li>
+                  {% if user.role == 'group_leader' or user|has_group:"beta30" or user.is_superuser %}
+                  <li><a class="dropdown-item" href="{% url 'data-collgroups' %}">My groups</a></li>
+                  {% endif %}
+                  {% if user|has_group:'whg_team' or user|has_group:'teaching' %}
+                  <li><a class="dropdown-item" href="{% url 'data-resources' %}">Teaching Resources</a></li>
+                  {% endif %}
+                  {% endcomment %}
+                  <li><a class="dropdown-item" href="{% url 'public-lists' %}">Public data</a></li>
+                </ul>
+	            </li>
+	            <li class="nav-item larger">
+	            <a class="nav-link" rel="tooltip" title="{{ user.name }}'s dashboard"
+	               href="{% url 'dashboard' %}">
+{#	               href="{% url 'accounts:profile' %}">#}
+	                <i class="fas fa-user" style="color:#336699;"></i></a>
+	            </li>
+	            <li class="nav-item">
+		            <a class="nav-link `ms-5"
+		               href="javascript:{document.getElementById('logout').submit()}">Logout</a>
+		              <form id="logout" method="post" action="{% url 'accounts:logout' %}">
+			              {% csrf_token %}
+		              </form>
+	            </li>
 		        {% else %}
-		            <li class="nav-item">
-		                <a class="nav-link ms-5" href="{% url 'accounts:register' %}">Register</a>
-		            </li>
-		            <li class="nav-item">
+	            <li class="nav-item">
+	                <a class="nav-link ms-5" href="{% url 'accounts:register' %}">Register</a>
+	            </li>
+	            <li class="nav-item">
 		                <a class="nav-link" href="{% url 'accounts:login' %}">Login</a>
 		            </li>
 		        {% endif %}
@@ -153,7 +160,6 @@
             $("#links_other").removeClass('d-none')
         }
       language = window.navigator.language.substr(0,2)
-      // abouts = ['/about/','/community/','/system/','/licensing/','/credits/']
       abouts = ['/about/','/system/','/licensing/','/credits/']
       clicked = window.location.pathname
     

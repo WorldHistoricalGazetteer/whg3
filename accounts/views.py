@@ -200,7 +200,7 @@ def update_profile(request):
     context['group_leader'] = group_leader
     context['comments'] = 'get comments associated with projects I own'
 
-  return render(request, 'accounts/profile.html', {
+    return render(request, 'accounts/profile.html', {
       'user_form': user_form,
         # 'profile_form': profile_form,
       'context': context
@@ -232,14 +232,11 @@ def register(request):
 def login(request):
   if request.method == 'POST':
     user = auth.authenticate(email=request.POST['email'],password=request.POST['password'])
-    # user = auth.authenticate(username=request.POST['username'],password=request.POST['password'])
-
     if user is not None:
       auth.login(request,user, backend='django.contrib.auth.backends.ModelBackend')
-      return redirect('data-datasets')
+      return redirect('home')
     else:
       raise forms.ValidationError("Sorry, that login was invalid. Please try again.")
-
   else:
     return render(request, 'accounts/login.html')
 
