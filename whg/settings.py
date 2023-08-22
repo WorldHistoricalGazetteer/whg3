@@ -5,6 +5,18 @@ import os
 from celery.schedules import crontab
 from django.contrib.messages import constants as messages
 
+# Load the environment variables (used here and in local_settings)
+env_file = '.env/.dev-whg3'
+# Check if the file exists
+if not os.path.exists(env_file):
+    raise FileNotFoundError(f"The settings file '{env_file}' does not exist.")
+with open(env_file, 'r') as f:
+    for line in f:
+        line = line.strip()
+        if line and not line.startswith('#'):
+            key, value = line.split('=', 1)
+            os.environ[key] = value
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE_ID = 1
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -19,6 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.sites',
+    'livereload', # https://github.com/tjwalch/django-livereload-server
     'django.contrib.staticfiles',
 
     # django-allauth 17 Feb 2021
@@ -75,6 +88,7 @@ MIDDLEWARE = [
   'django.middleware.locale.LocaleMiddleware',
   'django.middleware.security.SecurityMiddleware',
   'django_user_agents.middleware.UserAgentMiddleware',
+  'livereload.middleware.LiveReloadScript', # https://github.com/tjwalch/django-livereload-server
 ]
 
 ROOT_URLCONF = 'whg.urls'
@@ -91,8 +105,10 @@ MESSAGE_TAGS = {
         messages.ERROR: 'alert-danger',
  }
 
-CELERY_BROKER_URL = 'redis://localhost:6379'
-CELERY_RESULT_BACKEND = 'django-db'
+# CELERY_BROKER_URL = 'redis://localhost:6379'
+# CELERY_RESULT_BACKEND = 'django-db'
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://127.0.0.1:6379/0")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", "redis://127.0.0.1:6379/0")
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -169,7 +185,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': 'whg/logs/debug.log',
+            'filename': '/whg/logs/debug.log',
         },
     },
     'loggers': {
