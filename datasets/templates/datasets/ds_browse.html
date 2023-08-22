@@ -833,7 +833,7 @@
           if(str.substring(0,4).toLowerCase() == 'http'){
             url = str
           } else {
-            var re = /(http|bnf|cerl|dbp|gn|gnd|gnis|gov|loc|pl|tgn|viaf|wd|wdlocal|whg|wp):(.*?)$/;
+            var re = /(http|bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wdlocal|whg|wp):(.*?)$/;
             url=base_urls[str.match(re)[1]]+str.match(re)[2] 
             console.log('getPlace() url', url, encodeURI(url))
           }

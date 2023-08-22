@@ -18,8 +18,8 @@ media/resources/
 media/scratch/
 media/user*
 
-#*/migrations/0*.py
-#*/*/migrations/0*.py
+*/migrations/0*.py
+*/*/migrations/0*.py
 
 sent_emails/
 
@@ -57,3 +57,16 @@ __pycache__/
 whg/__pycache__/
 db.sqlite3
 
+### Private Environment Variables ###
+.env/
+
+### Eclipse Project ###
+.settings/org.eclipse.wst.jsdt.ui.superType.name
+.project
+.pydevproject
+.settings/.jsdtscope
+.settings/org.eclipse.wst.jsdt.ui.superType.container
+
+### Local Docker Network ###
+celerybeat-schedule
+dbeaver-data/

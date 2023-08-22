@@ -180,13 +180,9 @@ class PlaceGeom(models.Model):
   task_id = models.CharField(max_length=100, blank=True, null=True)
   geom_src = models.ForeignKey(Source, null=True, db_column='geom_src',
                                  to_field='src_id', on_delete=models.SET_NULL)
-  #
+  # TODO: 
   geom = geomodels.GeometryField(null=True, blank=True, srid=4326)
-  # s2 = ArrayField(models.BigIntegerField(), null=True)
-  s2 = ArrayField(
-    models.DecimalField(max_digits=20, decimal_places=0),
-    size=None, blank=True, null=True
-  )
+
   # informs dataset last_update
   created = models.DateTimeField(null=True, auto_now_add=True)
 
