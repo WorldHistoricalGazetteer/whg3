@@ -18,6 +18,12 @@ media/resources/
 media/scratch/
 media/user*
 
+whg/media/*
+whg/media_old/*
+
+# Mac OS files
+*DS_Store
+
 */migrations/0*.py
 */*/migrations/0*.py
 
@@ -70,3 +76,7 @@ db.sqlite3
 ### Local Docker Network ###
 celerybeat-schedule
 dbeaver-data/
+whg/media/.DS_Store
+whg/media/.DS_Store
+whg/media/collections/.DS_Store
+whg/media/.DS_Store
