@@ -29,8 +29,7 @@ whg/media_old/*
 
 sent_emails/
 
-*/.DS_Store
-*/*/.DS_Store
+**/.DS_Store
 .python-version
 
 nohup.out
