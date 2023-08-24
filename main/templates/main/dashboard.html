@@ -32,12 +32,27 @@
 			.profile-placeholder {
 			    width: 100px;
 			    height: 100px;
-			    background-color: palegoldenrod;  /* Change this to your desired color */
-			    border-radius: 50%;  /* This makes it a circle; remove if you prefer a square */
-			    display: inline-block;
+			    background-color: #f2f2f2;
+			    border-radius: 50%;  /* circle */
+			    display: flex;
+			    align-items: center;
+			    justify-content: center;
+			    font-size: 50px;  /* Adjust based on your preference */
+			    font-weight: bold;  /* Makes the letter thicker */
+			    line-height: 1;  /* Ensures the letter is vertically centered */
 			    vertical-align: middle;
-					margin-bottom: 1rem;
+			    margin-bottom: 1rem;
+					margin-left: auto;
+          margin-right: auto;
 			}
+
+			#dashboard_header {
+					{#text-align: center;#}
+					background-color: #F9EAD7;
+					border-radius: 5px;
+					box-shadow: #e5e5e5;
+			}
+
     </style>
 {% endblock %}
 
@@ -48,13 +63,21 @@
             <div class="col-md-3 sidebar">
                 <!-- Profile Info -->
                 <div class="profile-info">
-	                <div class="profile-placeholder"></div>
-{#                    <img src="{{ user.profile_image_url }}" alt="User Profile Image" width="100">#}
+	                <div class="profile-placeholder">{{ user.name|first }}</div>
                     <h5>{{ user.name }}</h5>
                 </div>
                 <!-- Sidebar Navigation -->
                 <a href="{% url 'main:dataset-list' %}" class="sidebar-nav-item">Datasets</a>
                 <a href="{% url 'main:collection-list' %}" class="sidebar-nav-item">Collections</a>
+
+{#								<a href="{% url 'main:dataset-list' %}"#}
+{#								   class="sidebar-nav-item datasets {% if section == 'datasets' %}active{% endif %}">Datasets</a>#}
+{#								<a href="{% url 'main:collection-list' %}"#}
+{#								   class="sidebar-nav-item collections {% if section == 'collections' %}active{% endif %}">Collections</a>#}
+{#								<a href="{% url 'main:area-list' %}"#}
+{#								   class="sidebar-nav-item areas {% if section == 'areas' %}active{% endif %}">Study Areas</a>#}
+
+
                 <a href="{% url 'main:area-list' %}" class="sidebar-nav-item">Study Areas</a>
                 {% if user.role == 'group_leader' %}
                   <a href="{% url 'main:group-list' role='leader' %}" class="sidebar-nav-item">Groups</a>
@@ -64,21 +87,44 @@
             </div>
 
             <!-- Main Content -->
-            <div class="col-md-9 main-content">
-					    {% if has_datasets %}
-					        {% include "lists/dataset_list.html" %}
-					    {% elif has_collections %}
-					        {% include "lists/collection_list.html" %}
-					    {% else %}
-					        {% include "lists/dataset_list.html" %}
-					    {% endif %}
+            <div class="col-md-9 ">
+{#              {{ section }}#}
+              <div id="dashboard_header" class="fs-4 text-center">Dashboard</div>
+              <div class="main-content">
+						    {% if has_datasets %}
+						        {% include "lists/dataset_list.html" %}
+						    {% elif has_collections %}
+						        {% include "lists/collection_list.html" %}
+						    {% else %}
+						        {% include "lists/dataset_list.html" %}
+						    {% endif %}
                 <!-- Content for the selected sidebar item goes here -->
+              </div>
             </div>
         </div>
     </div>
 
 <script>
 $(document).ready(function() {
+    activeSection = "{{ section }}";
+
+    {#$('.sidebar-nav-item.' + activeSection).trigger('click');#}
+
+    {#console.log("Document is ready");#}
+
+    var activeSection = "{{ section }}";
+    {#console.log("Active section:", activeSection);#}
+
+    // Log the element you are trying to click on
+    {#console.log($('.sidebar-nav-item.' + activeSection));#}
+
+    // Trigger the click after a delay
+    {#setTimeout(function() {#}
+    {#    console.log("Attempting to trigger click for section:", activeSection);#}
+    {#    $('.sidebar-nav-item.' + activeSection).trigger('click');#}
+    {# }, 100);#}
+
+
     $('.sidebar-nav-item').on('click', function(e) {
         e.preventDefault();  // Prevent default navigation
 

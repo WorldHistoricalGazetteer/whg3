@@ -50,11 +50,14 @@ def dashboard_view(request):
   user_datasets_count = Dataset.objects.filter(owner=request.user).count()
   user_collections_count = Collection.objects.filter(owner=request.user).count()
 
+  section = request.GET.get('section', 'datasets')
+
   context = {
     'datasets': Dataset.objects.filter(owner=request.user),
     'collections': Collection.objects.filter(owner=request.user),
     'has_datasets': user_datasets_count > 0,
     'has_collections': user_collections_count > 0,
+    'section': section,
     # ... any other context data ...
   }
   return render(request, 'main/dashboard.html', context)
