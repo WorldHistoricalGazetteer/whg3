@@ -1,11 +1,13 @@
-<h5>Groups</h5>
 {% if groups %}
-    {% for g in groups %}
-	    {% if role == "leader" %}
-	    <p><a href="{% url 'collection:collection-group-update' g.id %}">{{ g.title }}</a> ({{ role }})</p>
-	    {% else %}
-      <p><a href="{% url 'collection:collection-group-detail' g.id %}">{{ g.title }}</a> ({{ role }})</p>
-	    {% endif %}
+    {% for group in groups %}
+	    <p><b class="large">{{ group.title }}</b> (<i>owner: {{ group.owner.name }}</i>)
+		    <span class="ms-2">
+			    <a href="{% url 'collection:collection-group-detail' group.id %}">view</a>
+			    {% if user == group.owner or is_admin %}
+		      <a href="{% url 'collection:collection-group-update' group.id %}" class="ms-1">manage</a>
+			    {% endif %}
+		    </span>
+	    </p>
     {% endfor %}
 {% else %}
     <p>You have no groups yet <a href="{% url 'collection:collection-group-create' %}">Create one?</a></p>

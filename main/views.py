@@ -22,39 +22,75 @@ from urllib.parse import urlparse
 import sys
 from datetime import datetime
 
+def get_objects_for_user(model, user, filter_criteria, is_admin=False):
+  if is_admin:
+    return model.objects.all()
+  return model.objects.filter(**filter_criteria)
 
 def dataset_list(request):
-  user_datasets = Dataset.objects.filter(owner=request.user)
-  return render(request, 'lists/dataset_list.html', {'datasets': user_datasets})
-  # return render(request, 'main/templates/lists/dataset_list.html', {'datasets': user_datasets})
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
+  user_datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+  return render(request, 'lists/dataset_list.html',
+                {'datasets': user_datasets, 'is_admin': is_admin})
 
 def collection_list(request):
-  user_collections = Collection.objects.filter(owner=request.user)
-  return render(request, 'lists/collection_list.html', {'collections': user_collections})
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
+  user_collections = get_objects_for_user(Collection, request.user, {'owner': request.user}, is_admin)
+  return render(request, 'lists/collection_list.html',
+                {'collections': user_collections, 'is_admin': is_admin})
 
 def area_list(request):
-  user_areas = Area.objects.filter(owner=request.user)
-  return render(request, 'lists/area_list.html', {'areas': user_areas})
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
+  user_areas = get_objects_for_user(Area, request.user, {'owner': request.user}, is_admin)
+  return render(request, 'lists/area_list.html', {'areas': user_areas,
+                                                  'is_admin': is_admin})
 
 def group_list(request, role):
-  if role == 'member':
-    mygroups = CollectionGroupUser.objects.filter(user=request.user)
-    user_groups = [cg.collectiongroup for cg in mygroups]
+  user = request.user
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
+  # Check for admin
+  if user.groups.filter(name='whg_admins').exists():
+    groups = CollectionGroup.objects.all()
+    # return early
+    context = {'groups': groups, 'is_admin': is_admin}
+    return render(request, 'lists//group_list.html', context)
+
+  # This will fetch groups where the user is a member
+  member_groups = CollectionGroup.objects.filter(members__user=user)
+
+  # If they are a leader, add the groups they own
+  if role == 'leader':
+    owned_groups = CollectionGroup.objects.filter(owner=user)
+    groups = (owned_groups | member_groups).distinct()
   else:
-    role = "leader"
-    user_groups = CollectionGroup.objects.filter(owner=request.user)
-  print('user_groups', user_groups)
-  return render(request, 'lists/group_list.html', {'groups': user_groups, 'role': role})
+    groups = member_groups.distinct()
+
+  context = {
+      'groups': groups,
+      'role': role,
+      'is_admin': is_admin,
+  }
+  return render(request, 'lists/group_list.html', context)
 
 def dashboard_view(request):
+  # is_admin = user.groups.filter(name='whg_admins').exists()
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
+
   user_datasets_count = Dataset.objects.filter(owner=request.user).count()
   user_collections_count = Collection.objects.filter(owner=request.user).count()
 
+  section = request.GET.get('section', 'datasets')
+
+  datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+  collections = get_objects_for_user(Collection, request.user, {'owner': request.user}, is_admin)
+
   context = {
-    'datasets': Dataset.objects.filter(owner=request.user),
-    'collections': Collection.objects.filter(owner=request.user),
+    'datasets': datasets,
+    'collections': collections,
     'has_datasets': user_datasets_count > 0,
     'has_collections': user_collections_count > 0,
+    'section': section,
+    'is_admin': is_admin,
     # ... any other context data ...
   }
   return render(request, 'main/dashboard.html', context)

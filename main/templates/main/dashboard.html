@@ -2,6 +2,10 @@
 
 {% block extra_head %}
     <style>
+			.no-wrap {
+			    white-space: nowrap;
+			}
+      .my {color: #993300;}
         /* Custom styles for the dashboard */
         .sidebar {
             border-right: 1px solid #ddd;
@@ -26,18 +30,30 @@
             background-color: #f8f9fa;
             border: 1px solid #ddd;
         }
-      .main-content {
-          padding: 20px;
-      }
 			.profile-placeholder {
 			    width: 100px;
 			    height: 100px;
-			    background-color: palegoldenrod;  /* Change this to your desired color */
-			    border-radius: 50%;  /* This makes it a circle; remove if you prefer a square */
-			    display: inline-block;
+			    background-color: #f2f2f2;
+			    border-radius: 50%;  /* circle */
+			    display: flex;
+			    align-items: center;
+			    justify-content: center;
+			    font-size: 50px;  /* Adjust based on your preference */
+			    font-weight: bold;  /* Makes the letter thicker */
+			    line-height: 1;  /* Ensures the letter is vertically centered */
 			    vertical-align: middle;
-					margin-bottom: 1rem;
+			    margin-bottom: 1rem;
+					margin-left: auto;
+          margin-right: auto;
 			}
+
+			#dashboard_header {
+					{#text-align: center;#}
+					background-color: #F9EAD7;
+					border-radius: 5px;
+					box-shadow: #e5e5e5;
+			}
+
     </style>
 {% endblock %}
 
@@ -48,14 +64,14 @@
             <div class="col-md-3 sidebar">
                 <!-- Profile Info -->
                 <div class="profile-info">
-	                <div class="profile-placeholder"></div>
-{#                    <img src="{{ user.profile_image_url }}" alt="User Profile Image" width="100">#}
+	                <div class="profile-placeholder">{{ user.name|first }}</div>
                     <h5>{{ user.name }}</h5>
                 </div>
                 <!-- Sidebar Navigation -->
                 <a href="{% url 'main:dataset-list' %}" class="sidebar-nav-item">Datasets</a>
                 <a href="{% url 'main:collection-list' %}" class="sidebar-nav-item">Collections</a>
                 <a href="{% url 'main:area-list' %}" class="sidebar-nav-item">Study Areas</a>
+
                 {% if user.role == 'group_leader' %}
                   <a href="{% url 'main:group-list' role='leader' %}" class="sidebar-nav-item">Groups</a>
                 {% else %}
@@ -64,23 +80,36 @@
             </div>
 
             <!-- Main Content -->
-            <div class="col-md-9 main-content">
-					    {% if has_datasets %}
-					        {% include "lists/dataset_list.html" %}
-					    {% elif has_collections %}
-					        {% include "lists/collection_list.html" %}
-					    {% else %}
-					        {% include "lists/dataset_list.html" %}
-					    {% endif %}
+            <div class="col-md-9 ">
+              <div id="dashboard_header" class="fs-4 text-center">Dashboard</div>
+
+							<p class="fs-6 mb-1 my">
+					        {% if is_admin %}All{% else %}My{% endif %} <span id="section-title">Datasets</span>
+					    </p>
+
+              <div class="main-content py-1">
+						    {% if has_datasets %}
+						        {% include "lists/dataset_list.html" %}
+						    {% elif has_collections %}
+						        {% include "lists/collection_list.html" %}
+						    {% else %}
+						        {% include "lists/dataset_list.html" %}
+						    {% endif %}
                 <!-- Content for the selected sidebar item goes here -->
+              </div>
             </div>
         </div>
     </div>
 
 <script>
 $(document).ready(function() {
+    {#var activeSection = "{{ section }}";#}
+
     $('.sidebar-nav-item').on('click', function(e) {
         e.preventDefault();  // Prevent default navigation
+
+		    // set section variable
+		    var sectionName = $(this).text();
 
         var targetUrl = $(this).attr('href');
 				console.log('targetUrl',targetUrl )
@@ -89,6 +118,9 @@ $(document).ready(function() {
         $.get(targetUrl, function(data) {
             $('.main-content').html(data);  // Update the main content div
         });
+
+		    // insert
+        $('#section-title').text(sectionName);
 
         // Highlight the active sidebar item
         $('.sidebar-nav-item').removeClass('active');
