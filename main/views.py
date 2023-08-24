@@ -1,6 +1,7 @@
 # main.views
 from django.apps import apps
 from django.conf import settings
+from django.contrib.auth.models import Group
 from django.core.mail import send_mail, BadHeaderError
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect #, render_to_response
@@ -22,42 +23,59 @@ from urllib.parse import urlparse
 import sys
 from datetime import datetime
 
+def get_objects_for_user(model, user, filter_criteria, is_admin=False):
+  if is_admin:
+    return model.objects.all()
+  return model.objects.filter(**filter_criteria)
+
 
 def dataset_list(request):
-  user_datasets = Dataset.objects.filter(owner=request.user)
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
+  user_datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
   return render(request, 'lists/dataset_list.html', {'datasets': user_datasets})
-  # return render(request, 'main/templates/lists/dataset_list.html', {'datasets': user_datasets})
 
 def collection_list(request):
-  user_collections = Collection.objects.filter(owner=request.user)
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
+  user_collections = get_objects_for_user(Collection, request.user, {'owner': request.user}, is_admin)
   return render(request, 'lists/collection_list.html', {'collections': user_collections})
 
 def area_list(request):
-  user_areas = Area.objects.filter(owner=request.user)
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
+  user_areas = get_objects_for_user(Area, request.user, {'owner': request.user}, is_admin)
   return render(request, 'lists/area_list.html', {'areas': user_areas})
 
+
 def group_list(request, role):
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
   if role == 'member':
-    mygroups = CollectionGroupUser.objects.filter(user=request.user)
+    mygroups = get_objects_for_user(CollectionGroupUser, request.user, {'user': request.user}, is_admin)
     user_groups = [cg.collectiongroup for cg in mygroups]
   else:
     role = "leader"
-    user_groups = CollectionGroup.objects.filter(owner=request.user)
+    user_groups = get_objects_for_user(CollectionGroup, request.user, {'owner': request.user}, is_admin)
   print('user_groups', user_groups)
   return render(request, 'lists/group_list.html', {'groups': user_groups, 'role': role})
 
+
 def dashboard_view(request):
+  # is_admin = user.groups.filter(name='whg_admins').exists()
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
+
   user_datasets_count = Dataset.objects.filter(owner=request.user).count()
   user_collections_count = Collection.objects.filter(owner=request.user).count()
 
   section = request.GET.get('section', 'datasets')
 
+  datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+  collections = get_objects_for_user(Collection, request.user, {'owner': request.user}, is_admin)
+
   context = {
-    'datasets': Dataset.objects.filter(owner=request.user),
-    'collections': Collection.objects.filter(owner=request.user),
+    'datasets': datasets,
+    'collections': collections,
     'has_datasets': user_datasets_count > 0,
     'has_collections': user_collections_count > 0,
     'section': section,
+    'is_admin': is_admin,
     # ... any other context data ...
   }
   return render(request, 'main/dashboard.html', context)

@@ -2,6 +2,7 @@
 
 {% block extra_head %}
     <style>
+      .my {color: #993300;}
         /* Custom styles for the dashboard */
         .sidebar {
             border-right: 1px solid #ddd;
@@ -26,9 +27,6 @@
             background-color: #f8f9fa;
             border: 1px solid #ddd;
         }
-      .main-content {
-          padding: 20px;
-      }
 			.profile-placeholder {
 			    width: 100px;
 			    height: 100px;
@@ -69,16 +67,8 @@
                 <!-- Sidebar Navigation -->
                 <a href="{% url 'main:dataset-list' %}" class="sidebar-nav-item">Datasets</a>
                 <a href="{% url 'main:collection-list' %}" class="sidebar-nav-item">Collections</a>
-
-{#								<a href="{% url 'main:dataset-list' %}"#}
-{#								   class="sidebar-nav-item datasets {% if section == 'datasets' %}active{% endif %}">Datasets</a>#}
-{#								<a href="{% url 'main:collection-list' %}"#}
-{#								   class="sidebar-nav-item collections {% if section == 'collections' %}active{% endif %}">Collections</a>#}
-{#								<a href="{% url 'main:area-list' %}"#}
-{#								   class="sidebar-nav-item areas {% if section == 'areas' %}active{% endif %}">Study Areas</a>#}
-
-
                 <a href="{% url 'main:area-list' %}" class="sidebar-nav-item">Study Areas</a>
+
                 {% if user.role == 'group_leader' %}
                   <a href="{% url 'main:group-list' role='leader' %}" class="sidebar-nav-item">Groups</a>
                 {% else %}
@@ -88,9 +78,14 @@
 
             <!-- Main Content -->
             <div class="col-md-9 ">
-{#              {{ section }}#}
+{#              admin? {{ is_admin }}#}
               <div id="dashboard_header" class="fs-4 text-center">Dashboard</div>
-              <div class="main-content">
+
+							<p class="fs-6 mb-1 my">
+					        {% if is_admin %}All{% else %}My{% endif %} <span id="section-title">Datasets</span>
+					    </p>
+
+              <div class="main-content py-1">
 						    {% if has_datasets %}
 						        {% include "lists/dataset_list.html" %}
 						    {% elif has_collections %}
@@ -106,27 +101,13 @@
 
 <script>
 $(document).ready(function() {
-    activeSection = "{{ section }}";
-
-    {#$('.sidebar-nav-item.' + activeSection).trigger('click');#}
-
-    {#console.log("Document is ready");#}
-
-    var activeSection = "{{ section }}";
-    {#console.log("Active section:", activeSection);#}
-
-    // Log the element you are trying to click on
-    {#console.log($('.sidebar-nav-item.' + activeSection));#}
-
-    // Trigger the click after a delay
-    {#setTimeout(function() {#}
-    {#    console.log("Attempting to trigger click for section:", activeSection);#}
-    {#    $('.sidebar-nav-item.' + activeSection).trigger('click');#}
-    {# }, 100);#}
-
+    {#var activeSection = "{{ section }}";#}
 
     $('.sidebar-nav-item').on('click', function(e) {
         e.preventDefault();  // Prevent default navigation
+
+		    // set section variable
+		    var sectionName = $(this).text();
 
         var targetUrl = $(this).attr('href');
 				console.log('targetUrl',targetUrl )
@@ -135,6 +116,9 @@ $(document).ready(function() {
         $.get(targetUrl, function(data) {
             $('.main-content').html(data);  // Update the main content div
         });
+
+		    // insert
+        $('#section-title').text(sectionName);
 
         // Highlight the active sidebar item
         $('.sidebar-nav-item').removeClass('active');
