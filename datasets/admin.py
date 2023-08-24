@@ -7,7 +7,7 @@ class DatasetAdmin(admin.ModelAdmin):
     list_display = ('title', 'label', 'id', 'ds_status', 'public', 'create_date')
     list_filter = ('ds_status',)
     fields = ('id','label','title','owner','ds_status',
-              ('public','core',), 'featured',
+              ('public','core',), 'featured', 'image_file',
               'creator', 'numrows','numlinked','total_links')
     readonly_fields = ('id','label','owner','create_date','numrows','numlinked','total_links',)
     search_fields = ('title','label')

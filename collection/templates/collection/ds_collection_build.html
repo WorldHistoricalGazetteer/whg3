@@ -43,7 +43,7 @@
 	    {% if action == 'update' %}<span class="text-secondary">Dataset Collection Builder: </span>
 		    <span class="text-bold red-head">{{ form.title.value }}</span>
 		    <span class="float-end fs-6">
-			    <a href="{% url 'collection:ds-collection-summary' object.id %}">
+			    <a href="{% url 'collection:ds-collection-browse' object.id %}">
 				    view</a> <i class="fas fa-eye linky"></i>
 			    <a href="{% url 'collection:collection-delete' object.id %}"
 		      title="Delete collection" rel="tooltip" style="margin-top:-2px;">

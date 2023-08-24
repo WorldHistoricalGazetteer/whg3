@@ -1,8 +1,13 @@
 {% if areas %}
   {% if areas|length == 0 %}<p class="smaller"><i>None yet...</i></p>
   {% else %}
-	  {% for a in areas %}
-	    <p>{{ a.title }}</p>
+	  {% for area in areas %}
+		  <p>
+			  <a href="{% url 'areas:area-update' area.id %}">{{ area.title }}</a>
+			  {% if is_admin %}
+		      (creator: {{ area.owner.name }})
+		    {% endif %}
+		  </p>
 	  {% endfor %}
   {% endif %}
 {% else %}

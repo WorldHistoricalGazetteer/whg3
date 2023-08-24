@@ -2,6 +2,9 @@
 
 {% block extra_head %}
     <style>
+			.no-wrap {
+			    white-space: nowrap;
+			}
       .my {color: #993300;}
         /* Custom styles for the dashboard */
         .sidebar {
@@ -78,7 +81,6 @@
 
             <!-- Main Content -->
             <div class="col-md-9 ">
-{#              admin? {{ is_admin }}#}
               <div id="dashboard_header" class="fs-4 text-center">Dashboard</div>
 
 							<p class="fs-6 mb-1 my">

@@ -15,31 +15,27 @@
         <tr class="place-row">
           <td>
             {{ c.id }}
-            {% if not user == c.owner %}
-              <span class="smaller ml-3">
-                <i class="small fa fa-users" style="color:grey;"></i></span>
-            {% endif %}
           </td>
           <td><span class="{{ c.collection_class }} p-1">{{ c.collection_class }}</span></td>
           <td>
             {{ c.title }}
-          </td>
-          <td>
-            {# TODO: you can do better #}
-            {% if c.collection_class == 'dataset' %}
-              <a href="{% url 'collection:ds-collection-summary' c.id %}">view</a>&nbsp;
-            {% elif c.collection_class == 'place' %}
-              <a href="{% url 'collection:place-collection-browse' c.id %}">view</a>&nbsp;
-            {% endif %}
-            {% if c.collection_class == 'dataset' %}
-              <a href="{% url 'collection:ds-collection-update' c.id %}">edit</a>&nbsp;
-            {% elif c.collection_class == 'place' %}
-              <a href="{% url 'collection:place-collection-update' c.id %}">edit</a>&nbsp;
+            {% if not user == c.owner %}
+              <span class="smaller ms-2">
+                <i class="small fa fa-users" style="color:grey;"></i></span>
             {% endif %}
           </td>
+					<td class="no-wrap">
+				    {% if c.collection_class == 'dataset' %}
+			        <a href="{% url 'collection:ds-collection-browse' c.id %}">view</a>&nbsp;
+			        <a href="{% url 'collection:ds-collection-update' c.id %}">edit</a>
+				    {% elif c.collection_class == 'place' %}
+			        <a href="{% url 'collection:place-collection-browse' c.id %}">view</a>&nbsp;
+			        <a href="{% url 'collection:place-collection-update' c.id %}">edit</a>
+				    {% endif %}
+					</td>
           <td>{{ c.rowcount }}</td>
 					<td class="small">{{ c.created|date:"Y-m-d, H:i" }}</td>
-          <td>{{ c.owner }}</td>
+          <td>{{ c.owner.name }}</td>
           <td>{{ c.status }}</td>
         </tr>
       {% endfor %}

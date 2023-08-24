@@ -62,7 +62,7 @@
                 {% for ds in dataset_list %}
                   <tr class="place-row">
                     <td style="font-size:.8rem !important;">
-                        <a href="{% url 'datasets:ds_meta' ds.id %}">{{ ds.title }}</a>
+                        <a href="{% url 'datasets:ds_places' ds.id %}">{{ ds.title }}</a>
                     </td>
                     <td>{{ ds.numrows|floatformat:"0" }}</td>
                     <td class="w-50">{{ ds.description|readmore:200|safe }}</td>
@@ -98,7 +98,7 @@
                     </td>
 	                  {% if c.collection_class == 'dataset' %}
                     <td>
-	                    <a href="{% url 'collection:ds-collection-summary' c.id %}">{{ c.title }}</a>
+	                    <a href="{% url 'collection:ds-collection-browse' c.id %}">{{ c.title }}</a>
                     </td>
 	                  {% else %}
 		                  <td>

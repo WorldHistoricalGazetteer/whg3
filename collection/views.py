@@ -725,12 +725,11 @@ class CollectionGroupGalleryView(ListView):
 
 """ DATASET COLLECTIONS """
 """ datasets only collection 
-    uses ds_collection_builder.html
+    uses ds_collection_build.html
 """
 class DatasetCollectionCreateView(LoginRequiredMixin, CreateView):
   # print('hit DatasetCollectionCreateView()')
   form_class = CollectionModelForm
-  # template_name = 'collection/ds_collection_builder.html'
   # TODO: new ds collection builder
   template_name = 'collection/ds_collection_build.html'
   queryset = Collection.objects.all()
@@ -777,11 +776,10 @@ class DatasetCollectionCreateView(LoginRequiredMixin, CreateView):
     return context
 
 """ update dataset collection 
-    uses ds_collection_builder.html
+    uses ds_collection_build.html
 """
 class DatasetCollectionUpdateView(UpdateView):
   form_class = CollectionModelForm
-  # template_name = 'collection/ds_collection_builder.html'
   template_name = 'collection/ds_collection_build.html'
   success_url = '/mycollections'
 
