@@ -474,7 +474,7 @@ function zoomTo(pid) {
 		mappy.setView(l._latlng, 7)
 	} else {
 		mappy.fitBounds(l.getBounds(), {
-			padding: [100, 100]
+			padding: mapPadding
 		})
 	}
 }
