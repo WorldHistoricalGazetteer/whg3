@@ -59,6 +59,7 @@
 
 .range_container {
   position: relative;
+  left: 3px;
   flex-grow: 1;
   -webkit-user-select: none;
   -moz-user-select: none;

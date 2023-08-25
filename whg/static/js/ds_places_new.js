@@ -19,6 +19,10 @@ $("#create_coll_link").click(function() {
 	$("#title_form").show()
 })
 
+function dateRangeChanged(fromValue, toValue){
+	console.log(fromValue, toValue)
+}
+
 function resetSearch() {
 	var e = $.Event('keyup')
 	e.which(13)
@@ -448,12 +452,13 @@ function highlightFeatureGL(pid, geom, coords) {
 		flycoords = typeof(coords[0]) == 'number' ? coords : coords[0]
 		mappy.flyTo({
 			'center': flycoords,
-			'zoom': 7
+			'zoom': 7,
+			'padding': mapPadding
 		})
 	} else {
 		bbox = turf.envelope(geom).bbox
 		mappy.fitBounds(bbox, {
-			padding: 30
+			padding: mapPadding
 		})
 	}
 
