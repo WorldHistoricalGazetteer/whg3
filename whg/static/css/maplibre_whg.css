@@ -25,6 +25,10 @@
 	max-height: 250px;
 }
 
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib:not(:last-child) {
+    display: none;
+}
+
 .maplibregl-ctrl-attrib {
   opacity: 0;
   transition: opacity 1s ease;

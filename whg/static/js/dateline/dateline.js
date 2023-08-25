@@ -59,6 +59,7 @@ class Dateline {
 		this.toValue = toValue;
 		this.minValue = minValue;
 		this.maxValue = maxValue;
+		this.open = open;
 		this.epochs = epochs;
 		this.automate = automate;
 
@@ -68,6 +69,8 @@ class Dateline {
 		this.addGoogleFont();
 
 		this.observeResize();
+		
+		this.onChangeCallback = onChange;
 	}
 
 	addGoogleFont() {
@@ -193,7 +196,7 @@ class Dateline {
 			});
 		});
 
-		if (open) {
+		if (this.open) {
 			const datelineButton = document.querySelector('.dateline-button');
 			datelineButton.click();
 			this.rangeContainer.classList.add('transitioned');
@@ -293,5 +296,9 @@ class Dateline {
 		this.rangeContainer.querySelector('.control_container.from .year_button').textContent = this.fromValue;
 		this.rangeContainer.querySelector('.control_container.to .year_button').textContent = this.toValue;
 		fillSlider(this.fromSlider, this.toSlider);
+		
+		if (typeof this.onChangeCallback === 'function') {
+            this.onChangeCallback(this.fromValue, this.toValue);
+        }
 	}
 }

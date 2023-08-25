@@ -121,7 +121,15 @@ mappy.on('load', function() {
 		if (side == 'left') column.appendChild(controlContainer);
 	})
 
-	fitPaddedBounds(mappy.getBounds());
+	setMapPadding();
+	// Recalculate mapPadding whenever its viewport changes size
+	resizeObserver.observe(document.getElementById('mapControls'));
+	resizeObserver.observe(document.getElementById('mapOverlays'));
+	
+	mappy.fitBounds(mappy.getBounds(), {
+		mapPadding,
+		duration: 0
+	});
 	whgMap.style.opacity = 1;
 
 	/* Close attribution button? */
@@ -141,10 +149,11 @@ mappy.on('load', function() {
 		const datelineContainer = document.createElement('div');
 		datelineContainer.id = 'dateline';
 		document.getElementById('mapControls').appendChild(datelineContainer);
-		const myDateline = new Dateline(dateline);
+		const myDateline = new Dateline({
+		    ...mapParameters.controls.temporal,
+		    onChange: dateRangeChanged
+		});
 	};
-
-
 
 	hilited = null;
 
@@ -207,6 +216,9 @@ mappy.on('load', function() {
 		})
 	}
 });
+/*
+
+// Not used at present: calculates the coordinate bounds of the map within the mapControls area
 
 let mapPaddedBounds;
 
@@ -220,22 +232,23 @@ function getPaddedBounds() {
 	const topRightLngLat = map.unproject(topRightPixel);
 	mapPaddedBounds = [lowerLeftLngLat, topRightLngLat];
 }
+*/
 
-function fitPaddedBounds(bounds) {
+// Control positioning of map, clear of overlays
+let mapPadding;
+function setMapPadding() {
 	const ControlsRect = document.getElementById('mapControls').getBoundingClientRect();
 	const OverlaysRect = document.getElementById('mapOverlays').getBoundingClientRect();
-	const padding = {
+	mapPadding = {
 		top: ControlsRect.top - OverlaysRect.top,
 		bottom: OverlaysRect.bottom - ControlsRect.bottom,
 		left: ControlsRect.left - OverlaysRect.left,
 		right: OverlaysRect.right - ControlsRect.right,
 	};
-	console.log('Map padding calculated:', padding);
-	mappy.fitBounds(bounds, {
-		padding,
-		duration: 0
-	});
 }
+const resizeObserver = new ResizeObserver(entries => {
+	setMapPadding();
+});
 
 // fetch and render
 function renderData(dsid) {
@@ -344,8 +357,11 @@ function renderData(dsid) {
 			},
 			'filter': ['==', '$type', 'LineString']
 		}, 'z-index-1');
-
-		fitPaddedBounds(envelope.bbox);
+		
+		mappy.fitBounds(envelope.bbox, {
+			mapPadding,
+			duration: 0
+		});
 		/*spinner_map.stop()*/
 
 	}) // get
