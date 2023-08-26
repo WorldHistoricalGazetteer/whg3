@@ -12,7 +12,7 @@ from datasets.static.hashes.parents import ccodes as cc
 from main.choices import FEATURE_CLASSES, STATUS_REVIEW
 from django_celery_results.models import TaskResult
 from traces.models import TraceAnnotation
-#from edtf import parse_edtf
+# from edtf import parse_edtf
 
 def yearPadder(y):
   year = str(y).zfill(5) if str(y)[0] == '-' else str(y).zfill(4)
@@ -298,3 +298,4 @@ class CloseMatch(models.Model):
 
   class Meta:
     managed = True
+    db_table = 'close_matches'
