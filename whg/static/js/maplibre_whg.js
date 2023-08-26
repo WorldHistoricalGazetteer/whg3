@@ -11,6 +11,9 @@ var mappy = new maptilersdk.Map({
 	navigationControl: false,
 });
 
+let mapPadding;
+let mapBounds;
+
 if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
 
 class StyleControl {
@@ -121,17 +124,66 @@ mappy.on('load', function() {
 		if (side == 'left') column.appendChild(controlContainer);
 	})
 
+	// Control positioning of map, clear of overlays
+	function setMapPadding() {
+		const ControlsRect = document.getElementById('mapControls').getBoundingClientRect();
+		const OverlaysRect = document.getElementById('mapOverlays').getBoundingClientRect();
+		mapPadding = {
+			top: ControlsRect.top - OverlaysRect.top,
+			bottom: OverlaysRect.bottom - ControlsRect.bottom,
+			left: ControlsRect.left - OverlaysRect.left,
+			right: OverlaysRect.right - ControlsRect.right,
+		};
+		if (mapBounds) {
+			if (Array.isArray(mapBounds) || !mapBounds.hasOwnProperty('center')) { // mapBounds might be a coordinate pair object returned by mappy.getBounds();
+				mappy.fitBounds(mapBounds, {
+					padding: mapPadding,
+					duration: 0
+				});
+			}
+			else { // mapBounds has been set based on a center point and zoom
+				mappy.flyTo({
+					...mapBounds,
+					padding: mapPadding,
+					duration: 0
+				})
+			}
+		}
+		// console.log('mapPadding calculated:', mapBounds, mapPadding);
+	}
+	const resizeObserver = new ResizeObserver(entries => {
+		setMapPadding();
+	});
+
 	setMapPadding();
 	// Recalculate mapPadding whenever its viewport changes size
 	resizeObserver.observe(document.getElementById('mapControls'));
 	resizeObserver.observe(document.getElementById('mapOverlays'));
 	
-	mappy.fitBounds(mappy.getBounds(), {
-		mapPadding,
+	mapBounds = mappy.getBounds();
+	mappy.fitBounds(mapBounds, {
+		padding: mapPadding,
 		duration: 0
 	});
 	whgMap.style.opacity = 1;
-
+/*
+	// Not sufficiently precise
+	function getPaddedBounds() {
+		const ControlsRect = document.getElementById('mapControls').getBoundingClientRect();
+		const MapRect = document.getElementById(mapParameters.container).getBoundingClientRect();
+		const lowerLeftPixel = [MapRect.left - ControlsRect.left, MapRect.height - (MapRect.bottom - ControlsRect.bottom)];
+		const topRightPixel = [ControlsRect.width + (MapRect.left - ControlsRect.left), MapRect.height - ControlsRect.height];
+		// Convert pixel coordinates to map coordinates
+	    const lowerLeftLngLat = mappy.unproject(lowerLeftPixel).toArray();
+	    const topRightLngLat = mappy.unproject(topRightPixel).toArray();
+	    return [...lowerLeftLngLat, ...topRightLngLat];
+	}
+	mappy.on('moveend', function() {
+	    console.log('Old mapBounds:', mapBounds);
+	    mapBounds = getPaddedBounds();
+	    console.log('New mapBounds:', mapBounds);
+	});
+*/
 	/* Close attribution button? */
 	if (mapParameters.controls.attribution.open == false) setTimeout(() => {
 		var attributionButton = document.querySelector('.maplibregl-ctrl-attrib-button');
@@ -215,39 +267,6 @@ mappy.on('load', function() {
 				.addTo(mappy);
 		})
 	}
-});
-/*
-
-// Not used at present: calculates the coordinate bounds of the map within the mapControls area
-
-let mapPaddedBounds;
-
-function getPaddedBounds() {
-	const ControlsRect = document.getElementById('mapControls').getBoundingClientRect();
-	const MapRect = document.getElementById('whgMap').getBoundingClientRect();
-	const lowerLeftPixel = [MapRect.left - ControlsRect.left, MapRect.height - (MapRect.bottom - ControlsRect.bottom)];
-	const topRightPixel = [ControlsRect.width + (MapRect.left - ControlsRect.left), MapRect.height - ControlsRect.height];
-	// Convert pixel coordinates to map coordinates
-	const lowerLeftLngLat = map.unproject(lowerLeftPixel);
-	const topRightLngLat = map.unproject(topRightPixel);
-	mapPaddedBounds = [lowerLeftLngLat, topRightLngLat];
-}
-*/
-
-// Control positioning of map, clear of overlays
-let mapPadding;
-function setMapPadding() {
-	const ControlsRect = document.getElementById('mapControls').getBoundingClientRect();
-	const OverlaysRect = document.getElementById('mapOverlays').getBoundingClientRect();
-	mapPadding = {
-		top: ControlsRect.top - OverlaysRect.top,
-		bottom: OverlaysRect.bottom - ControlsRect.bottom,
-		left: ControlsRect.left - OverlaysRect.left,
-		right: OverlaysRect.right - ControlsRect.right,
-	};
-}
-const resizeObserver = new ResizeObserver(entries => {
-	setMapPadding();
 });
 
 // fetch and render
@@ -358,10 +377,12 @@ function renderData(dsid) {
 			'filter': ['==', '$type', 'LineString']
 		}, 'z-index-1');
 		
-		mappy.fitBounds(envelope.bbox, {
-			mapPadding,
+		mapBounds = envelope.bbox; // Used if map is resized
+		mappy.fitBounds(mapBounds, {
+			padding: mapPadding,
 			duration: 0
 		});
+		console.log('Data layers added, map fitted.', mapBounds, mapPadding);
 		/*spinner_map.stop()*/
 
 	}) // get

@@ -450,14 +450,17 @@ function highlightFeatureGL(pid, geom, coords) {
 	// zoom to feature
 	if (geom.type.toLowerCase() == 'point') {
 		flycoords = typeof(coords[0]) == 'number' ? coords : coords[0]
-		mappy.flyTo({
+		mapBounds = {
 			'center': flycoords,
-			'zoom': 7,
-			'padding': mapPadding
+			'zoom': 7
+		}
+		mappy.flyTo({
+			...mapBounds,
+			padding: mapPadding
 		})
 	} else {
-		bbox = turf.envelope(geom).bbox
-		mappy.fitBounds(bbox, {
+		mapBounds = turf.envelope(geom).bbox
+		mappy.fitBounds(mapBounds, {
 			padding: mapPadding
 		})
 	}
@@ -477,6 +480,8 @@ function zoomTo(pid) {
 			padding: mapPadding
 		})
 	}
+	mapBounds = getPaddedBounds();
+	console.log('New mapBounds:', mapBounds);
 }
 
 // highlight on select in table
