@@ -1,0 +1,13 @@
+# Use a Node.js image as the base
+FROM node:16
+
+RUN mkdir -p /webpack
+
+WORKDIR /webpack/
+
+# Copy configuration files from project root into container, then install listed dependencies
+COPY package.json webpack.config.js ./
+RUN npm install
+
+# Start Webpack: watch mode should be set to 'true' in `webpack.config.js`
+CMD ["npx", "webpack", "--config", "webpack.config.js"]

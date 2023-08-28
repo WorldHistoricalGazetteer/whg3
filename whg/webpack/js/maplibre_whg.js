@@ -1,6 +1,11 @@
+// /whg/webpack/js/maplibre_whg.js
+
+import Dateline from './dateline';
+import { dateRangeChanged, getPlace } from './ds_places_new'; // Import the function from ds_places_new.js
+
 maptilersdk.config.apiKey = mapParameters.mapTilerKey;
 
-var mappy = new maptilersdk.Map({
+export var mappy = new maptilersdk.Map({
 	container: mapParameters.container,
 	center: mapParameters.center,
 	zoom: mapParameters.zoom,
@@ -11,8 +16,9 @@ var mappy = new maptilersdk.Map({
 	navigationControl: false,
 });
 
-let mapPadding;
-let mapBounds;
+export let mapPadding;
+export let mapBounds;
+export let features;
 
 if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
 
@@ -207,15 +213,15 @@ mappy.on('load', function() {
 		});
 	};
 
-	hilited = null;
+	//let hilited = null;
 
 	renderData(pageData);
 
-	layer_list = ['outline', 'gl_active_point', 'gl_active_line', 'gl_active_poly']
+	const layer_list = ['outline', 'gl_active_point', 'gl_active_line', 'gl_active_poly']
 
 	// popup generating events per layer
 	// TODO: polygons?
-	for (l in layer_list) {
+	for (var l in layer_list) {
 		mappy.on('mouseenter', layer_list[l], function() {
 			mappy.getCanvas().style.cursor = 'pointer';
 		});
@@ -226,23 +232,23 @@ mappy.on('load', function() {
 		});
 
 		mappy.on('click', layer_list[l], function(e) {
-			ftype = e.features[0].layer.type
-			gtype = e.features[0].geometry.type
-			geom = e.features[0].geometry
-			coords = e.features[0].geometry.coordinates
-			place = e.features[0]
+			const ftype = e.features[0].layer.type
+			const gtype = e.features[0].geometry.type
+			const geom = e.features[0].geometry
+			const coords = e.features[0].geometry.coordinates
+			const place = e.features[0]
 			// console.log('geom, coords', geom, coords)
 			if (ftype == 'point') {
 				var coordinates = geom.coordinates.slice();
 			} else if (ftype == 'line') {
 				// could be simple linestring
 				if (gtype == 'LineString') {
-					len = Math.round(geom.coordinates.length / 2)
+					const len = Math.round(geom.coordinates.length / 2)
 					var coordinates = geom.coordinates[len]
 				} else {
 					// MultiLineString
-					segment = turf.lineString(coords[Math.round(coords.length / 2)])
-					len = turf.length(segment)
+					const segment = turf.lineString(coords[Math.round(coords.length / 2)])
+					const len = turf.length(segment)
 					var coordinates = turf.along(segment, len / 2).geometry.coordinates
 				}
 			} else {
@@ -259,14 +265,24 @@ mappy.on('load', function() {
 			}
 
 			// popup
-			new maplibregl.Popup()
+			new maptilersdk.Popup()
 				.setLngLat(coordinates)
 				.setHTML('<b>' + title + '</b><br/>' +
-					'<a href="javascript:getPlace(' + pid + ')">fetch info</a><br/>' +
-					'start, end: ' + minmax)
+					// Cannot use href="javascript:<function>" in module. EventListener added to class instead.
+			        '<a href="#" class="fetch-info-link" data-pid="' + pid + '">fetch info</a><br/>' +
+			        'start, end: ' + minmax)
 				.addTo(mappy);
 		})
 	}
+	
+	document.addEventListener('click', function(event) {
+	    if (event.target && event.target.classList.contains('fetch-info-link')) {
+	        const pid = event.target.getAttribute('data-pid');
+	        getPlace(pid);
+	        event.preventDefault();
+	    }
+	});
+	
 });
 
 // fetch and render
@@ -285,10 +301,10 @@ function renderData(dsid) {
 	// fetch data
 	$.get('/datasets/' + dsid + '/geojson', function(data) {
 		features = data.collection.features
-		/*console.log('data', data.collection)*/
+		// console.log('data', data.collection)
 		// get bounds w/turf
-		envelope = turf.envelope(data.collection)
-		range = data.minmax
+		const envelope = turf.envelope(data.collection)
+		// range = data.minmax
 
 		// add source 'places' w/retrieved data
 		mappy.addSource('places', {
@@ -387,3 +403,5 @@ function renderData(dsid) {
 
 	}) // get
 } //highlightFeatureGL
+
+import './ds_places_new.js';

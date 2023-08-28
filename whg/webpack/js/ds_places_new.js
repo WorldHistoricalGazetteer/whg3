@@ -1,3 +1,9 @@
+// /whg/webpack/js/ds_places_new.js
+
+import { mappy, mapPadding, mapBounds, features } from './maplibre_whg';
+
+let checked_rows;
+
 $("[rel='tooltip']").tooltip();
 
 var clip_cite = new ClipboardJS('#a_clipcite');
@@ -19,7 +25,7 @@ $("#create_coll_link").click(function() {
 	$("#title_form").show()
 })
 
-function dateRangeChanged(fromValue, toValue){
+export function dateRangeChanged(fromValue, toValue){
 	console.log(fromValue, toValue)
 }
 
@@ -136,9 +142,9 @@ function clearFilters() {
 // TODO: use datatables methods?
 function setRowEvents() {
 	$("#placetable tbody tr").click(function() {
-		thisy = $(this)
+		const thisy = $(this)
 		// get id
-		pid = $(this)[0].cells[0].textContent
+		const pid = $(this)[0].cells[0].textContent
 		// is checkbox checked?
 		// if not, ensure row pid is not in checked_rows
 		if (loggedin == true) {
@@ -163,10 +169,10 @@ function setRowEvents() {
 			}
 		}
 
-		geom = features.find(function(f) {
+		const geom = features.find(function(f) {
 			return f.properties.pid == pid
 		}).geometry
-		coords = geom.coordinates
+		const coords = geom.coordinates
 
 		// highlight this row, clear others
 		var selected = $(this).hasClass("highlight-row");
@@ -184,8 +190,8 @@ function setRowEvents() {
 
 	})
 
-	row = $("#ds_table table tbody")[0].rows[0]
-	pid = parseInt(row.cells[0].textContent)
+	const row = $("#ds_table table tbody")[0].rows[0]
+	const pid = parseInt(row.cells[0].textContent)
 	// highlight first row, fetch detail, but don't zoomTo() it
 	$("#placetable tbody").find('tr').eq(0).addClass('highlight-row')
 
@@ -239,12 +245,12 @@ $(function() {
 
 	checked_rows = []
 	localStorage.setItem('filter', '99')
-	wdtask = false
-	tgntask = false
-	whgtask = false
+	var wdtask = false
+	var tgntask = false
+	var whgtask = false
 
 	/*loggedin = {{ loggedin }}*/
-	check_column = loggedin == true ? {
+	const check_column = loggedin == true ? {
 		"data": "chk"
 	} : {
 		"data": "chk",
@@ -255,7 +261,7 @@ $(function() {
 	startDetailSpinner()
 
 	// task columns are inoperable in this public view
-	table = $('#placetable').DataTable({
+	const table = $('#placetable').DataTable({
 		/*dom:  "<'row small'<'col-sm-12 col-md-4'l>"+*/
 		dom: "<'row small'<'col-sm-7'f>" +
 			"<'col-sm-5'>>" +
@@ -449,8 +455,8 @@ function highlightFeatureGL(pid, geom, coords) {
 
 	// zoom to feature
 	if (geom.type.toLowerCase() == 'point') {
-		flycoords = typeof(coords[0]) == 'number' ? coords : coords[0]
-		mapBounds = {
+		const flycoords = typeof(coords[0]) == 'number' ? coords : coords[0]
+		const mapBounds = {
 			'center': flycoords,
 			'zoom': 7
 		}
@@ -470,8 +476,8 @@ function highlightFeatureGL(pid, geom, coords) {
 // generic 
 function zoomTo(pid) {
 	console.log('zoomTo()', pid)
-	l = idToFeature[pid]
-	ftype = l.feature.geometry.type
+	const l = idToFeature[pid]
+	const ftype = l.feature.geometry.type
 	//console.log('zoomTo() pid, ftype',pid, ftype)
 	if (ftype == 'Point') {
 		mappy.setView(l._latlng, 7)
@@ -489,8 +495,8 @@ function highlightFeature(pid) {
 	console.log('highlightFeature()', pid)
 	if (typeof(idToFeature) != 'undefined') {
 		if (pid in idToFeature) {
-			feat = idToFeature[pid]
-			ftype = feat.feature.geometry.type
+			const feat = idToFeature[pid]
+			const ftype = feat.feature.geometry.type
 
 			// reset style of last if there is a last
 			if (typeof(last) != 'undefined') {
@@ -510,7 +516,7 @@ function highlightFeature(pid) {
 	}
 }
 
-function getPlace(pid) {
+export function getPlace(pid) {
 	console.log('getPlace()', pid)
 	$.ajax({
 		url: "/api/place/" + pid,
@@ -567,11 +573,11 @@ function parsePlace(data) {
 	//timespan_arr = []-->
 	//
 	// TITLE 
-	descrip = '<p><b>Title</b>: <span id="row_title" class="larger text-danger">' + data.title + '</span>'
+	var descrip = '<p><b>Title</b>: <span id="row_title" class="larger text-danger">' + data.title + '</span>'
 	//
 	// NAME VARIANTS
 	descrip += '<p class="scroll65"><b>Variants</b>: '
-	for (n in data.names) {
+	for (var n in data.names) {
 		let name = data.names[n]
 		descrip += '<p>' + name.toponym != '' ? name.toponym + '; ' : ''
 	}
@@ -581,9 +587,9 @@ function parsePlace(data) {
 	// console.log('data.types',data.types)
 	//{"label":"","identifier":"aat:___","sourceLabels":[{"label":" ","lang":"en"}]}
 	descrip += '</p><p><b>Types</b>: '
-	typeids = ''
-	for (t in data.types) {
-		str = ''
+	var typeids = ''
+	for (var t in data.types) {
+		var str = ''
 		var type = data.types[t]
 		if ('sourceLabels' in type) {
 			srclabels = type.sourceLabels
@@ -605,8 +611,8 @@ function parsePlace(data) {
 	// LINKS
 	// 
 	descrip += '<p class="mb-0"><b>Links</b>: '
-	close_count = added_count = related_count = 0
-	html = ''
+	//close_count = added_count = related_count = 0
+	var html = ''
 	if (data.links.length > 0) {
 		links = data.links
 		links_arr = onlyUnique(data.links)
@@ -683,12 +689,12 @@ function url_extplace(identifier) {
 
 // builds link for external placetype record
 function url_exttype(type) {
-	link = ' <a href="#" class="exttab" data-id=' + type.identifier +
+	const link = ' <a href="#" class="exttab" data-id=' + type.identifier +
 		'>(' + type.label + ' <i class="fas fa-external-link-alt linky"></i>)</a>'
 	return link
 }
 
-styles = {
+const styles = {
 	"Point": {
 		"default": {
 			radius: 1,
@@ -794,7 +800,7 @@ function minmaxer(timespans) {
 }
 
 // spinners
-spin_opts = {
+const spin_opts = {
 	scale: .5,
 	top: '50%'
 }

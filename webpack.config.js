@@ -1,0 +1,43 @@
+const path = require('path');
+const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
+
+module.exports = {
+  mode: 'production',
+  watch: true,
+  watchOptions: {
+    poll: 1000, // Check for changes every second
+  },
+  entry: {
+    whg: '/app/whg/webpack/js/whg.js'/*,
+    styles: '/app/whg/webpack/css/styles.css'*/
+  },
+  output: {
+    filename: '[name].bundle.js',
+    path: '/app/whg/static/webpack',
+  },
+  module: {
+    rules: [
+      {
+        test: /\.css$/,
+        use: [MiniCssExtractPlugin.loader, 'css-loader'],
+      },
+      {
+        test: /\.scss$/,
+        use: [MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader'],
+      },
+    ],
+  },
+  plugins: [
+    new MiniCssExtractPlugin({
+      filename: '[name].bundle.css',
+    }),
+  ],
+  optimization: {
+    minimizer: [
+      new TerserPlugin(), // Minimize JavaScript using TerserPlugin
+      new CssMinimizerPlugin(), // Minimize CSS using CssMinimizerPlugin
+    ],
+  },
+};
