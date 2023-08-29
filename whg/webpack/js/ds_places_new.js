@@ -1,7 +1,7 @@
 // /whg/webpack/js/ds_places_new.js
 
 import ClipboardJS from '/webpack/node_modules/clipboard'; 
-import { mappy, mapPadding, mapBounds, features } from './maplibre_whg';
+import { mappy, mapPadding, mapBounds, features, datasetLayers, filteredLayer } from './maplibre_whg';
 import * as turf from './6.5.0_turf.min.js'
 
 let checked_rows;
@@ -29,6 +29,9 @@ $("#create_coll_link").click(function() {
 
 export function dateRangeChanged(fromValue, toValue){
 	console.log(fromValue, toValue)
+    datasetLayers.forEach(function(layer){
+		mappy.setFilter(layer.id, filteredLayer(layer).filter);
+	});
 }
 
 function resetSearch() {

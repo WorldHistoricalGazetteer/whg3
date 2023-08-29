@@ -24,6 +24,7 @@ export var mappy = new maptilersdk.Map({
 export let mapPadding;
 export let mapBounds;
 export let features;
+let dateline;
 
 if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
 
@@ -212,7 +213,7 @@ mappy.on('load', function() {
 		const datelineContainer = document.createElement('div');
 		datelineContainer.id = 'dateline';
 		document.getElementById('mapControls').appendChild(datelineContainer);
-		const myDateline = new Dateline({
+		dateline = new Dateline({
 		    ...mapParameters.controls.temporal,
 		    onChange: dateRangeChanged
 		});
@@ -290,18 +291,93 @@ mappy.on('load', function() {
 	
 });
 
+export const datasetLayers = [
+	{
+		'id': 'gl_active_line',
+		'type': 'line',
+		'source': 'places',
+		'paint': {
+			'line-color': '#336699',
+			'line-width': {
+				stops: [
+					[1, 1],
+					[4, 2],
+					[16, 4]
+				]
+			}
+		},
+		'filter': ['==', '$type', 'LineString']
+	},
+	{
+		'id': 'gl_active_poly',
+		'type': 'fill',
+		'source': 'places',
+		'paint': {
+			'fill-color': '#ddd',
+			'fill-opacity': 0.3,
+			'fill-outline-color': '#666'
+		},
+		'filter': ['==', '$type', 'Polygon']
+	},
+	{
+		'id': 'outline',
+		'type': 'line',
+		'source': 'places',
+		'layout': {},
+		'paint': {
+			'line-color': '#999',
+			'line-width': 1,
+			'line-dasharray': [4, 2],
+			'line-opacity': 0.5,
+		},
+		'filter': ['==', '$type', 'Polygon']
+	},
+	{
+		'id': 'gl_active_point',
+		'type': 'circle',
+		'source': 'places',
+		'paint': {
+			'circle-opacity': 1,
+			'circle-color': '#ff9900',
+			'circle-radius': {
+				stops: [
+					[1, 2],
+					[3, 3],
+					[16, 10]
+				]
+			}
+		},
+		'filter': ['==', '$type', 'Point'],
+	}
+]
+
+export function filteredLayer(layer) {
+	if ( $('.range_container.expanded').length > 0) { // Is dateline active?
+		const modifiedLayer = ({... layer});
+		const existingFilter = modifiedLayer.filter;
+		modifiedLayer.filter = [
+            'all',
+            existingFilter,
+            ['has', 'max'],
+            ['has', 'min'],
+            ['>=', 'max', dateline.fromValue],
+            ['<=', 'min', dateline.toValue]
+        ];
+        return modifiedLayer;
+	}
+	else return layer;
+}
+
 // fetch and render
 function renderData(dsid) {
 	/*startMapSpinner()*/
-
+		
 	// clear any data layers and 'places' source
-	if (!!mappy.getLayer('gl_active_point')) {
-		mappy.removeLayer('gl_active_point')
-		mappy.removeLayer('gl_active_line')
-		mappy.removeLayer('gl_active_poly')
-		mappy.removeLayer('outline')
-		mappy.removeSource('places')
-	}
+	datasetLayers.forEach(function(layer, z){
+		if (!!mappy.getLayer(layer.id)) mappy.removeLayer(layer.id);
+		if (!!mappy.getLayer('z-index-' + z)) mappy.removeLayer('z-index-' + z);
+	});
+	if (!!mappy.getSource('places')) mappy.removeSource('places')
 
 	// fetch data
 	$.get('/datasets/' + dsid + '/geojson', function(data) {
@@ -324,79 +400,15 @@ function renderData(dsid) {
 				features: []
 			}
 		});
-		for (let z = 4; z > 0; z--) {
-			if (!mappy.getLayer('z-index-' + z)) {
-				mappy.addLayer({
-					id: 'z-index-' + z,
-					type: 'symbol',
-					source: 'empty'
-				}, z == 4 ? '' : 'z-index-' + (z + 1)); //top
-			}
-		}
-
-		// render to map
-		// z-index points:4, poly-outlines:3. poly:2, lines:1       
-		mappy.addLayer({
-			'id': 'gl_active_point',
-			'type': 'circle',
-			'source': 'places',
-			'paint': {
-				'circle-opacity': 1,
-				'circle-color': '#ff9900',
-				'circle-radius': {
-					stops: [
-						[1, 2],
-						[3, 3],
-						[16, 10]
-					]
-				}
-			},
-			'filter': ['==', '$type', 'Point']
-		}, 'z-index-4');
-
-		// dashed outline for polygons
-		mappy.addLayer({
-			'id': 'outline',
-			'type': 'line',
-			'source': 'places',
-			'layout': {},
-			'paint': {
-				'line-color': '#999',
-				'line-width': 1,
-				'line-dasharray': [4, 2],
-				'line-opacity': 0.5,
-			},
-			'filter': ['==', '$type', 'Polygon']
-		}, 'z-index-3');
-
-		mappy.addLayer({
-			'id': 'gl_active_poly',
-			'type': 'fill',
-			'source': 'places',
-			'paint': {
-				'fill-color': '#ddd',
-				'fill-opacity': 0.3,
-				'fill-outline-color': '#666'
-			},
-			'filter': ['==', '$type', 'Polygon']
-		}, 'z-index-2');
-
-		mappy.addLayer({
-			'id': 'gl_active_line',
-			'type': 'line',
-			'source': 'places',
-			'paint': {
-				'line-color': '#336699',
-				'line-width': {
-					stops: [
-						[1, 1],
-						[4, 2],
-						[16, 4]
-					]
-				}
-			},
-			'filter': ['==', '$type', 'LineString']
-		}, 'z-index-1');
+		
+		datasetLayers.forEach(function(layer, z){
+			mappy.addLayer( filteredLayer(layer) );
+			mappy.addLayer({
+				id: 'z-index-' + (z + 1),
+				type: 'symbol',
+				source: 'empty'
+			});
+		});
 		
 		mapBounds = envelope.bbox; // Used if map is resized
 		mappy.fitBounds(mapBounds, {
