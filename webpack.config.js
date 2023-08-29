@@ -35,8 +35,16 @@ module.exports = {
     }),
   ],
   optimization: {
+    minimize: true,
     minimizer: [
-      new TerserPlugin(), // Minimize JavaScript using TerserPlugin
+      new TerserPlugin({
+        terserOptions: {
+          format: {
+            comments: false,
+          },
+        },
+        extractComments: false,
+      }), // Minimize JavaScript using TerserPlugin
       new CssMinimizerPlugin(), // Minimize CSS using CssMinimizerPlugin
     ],
   },

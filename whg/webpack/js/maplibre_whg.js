@@ -1,7 +1,12 @@
 // /whg/webpack/js/maplibre_whg.js
 
+import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.css';
+import '../css/maplibre_whg.css';
+import '../css/dateline.css';
+import * as turf from './6.5.0_turf.min.js'
+import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.umd.min.js';
 import Dateline from './dateline';
-import { dateRangeChanged, getPlace } from './ds_places_new'; // Import the function from ds_places_new.js
+import { dateRangeChanged, getPlace } from './ds_places_new';
 
 maptilersdk.config.apiKey = mapParameters.mapTilerKey;
 

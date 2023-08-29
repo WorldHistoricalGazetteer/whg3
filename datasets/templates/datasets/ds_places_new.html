@@ -4,18 +4,11 @@
 {% load mathfilters %} 
 {% load dataset_extras %} 
 {% block extra_head %} 
-	{% leaflet_js %} 
-	{% leaflet_css %} 
-	<script src="{% static 'js/aliases.js' %}"></script>
-	<script src="{% static 'js/easyprint.js' %}"></script>
-	<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
-	<link rel="stylesheet" href="{% static 'css/spin.css' %}" />
+	<!-- Datatables does not function with Webpack except in browsers >~ 2021 - see https://datatables.net/blog/2022-11-10-esm -->
 	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.24/b-1.7.0/b-colvis-1.7.0/b-html5-1.7.0/cr-1.5.3/fh-3.1.8/sc-2.0.3/sp-1.2.2/sl-1.3.3/datatables.min.css" />
 	<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.24/b-1.7.0/b-colvis-1.7.0/b-html5-1.7.0/cr-1.5.3/fh-3.1.8/sc-2.0.3/sp-1.2.2/sl-1.3.3/datatables.min.js"></script>
-	<script src="https://cdn.maptiler.com/maptiler-sdk-js/v1.1.1/maptiler-sdk.umd.min.js"></script>
-	<link href='https://cdn.maptiler.com/maptiler-sdk-js/v1.1.1/maptiler-sdk.css' rel='stylesheet' />
+	
 	<link href="{% static 'webpack/whg.bundle.css' %}" rel="stylesheet" />
-	<script src="{% static 'js/clipboard.min.js' %}"></script>
 	<style>
 	  #actions {
 	    padding-top: 0.2rem;
@@ -277,9 +270,6 @@
 	    styleFilter: [ /* 'TOPO.PASTEL','BASIC.DEFAULT' */ ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
 	  }
 	  const pageData = "{{ ds.id }}";
-	</script>
-	<!-- Pass variables to external script -->
-	<script type="text/javascript">
 	  window.loggedin = "{{ loggedin }}"
 	  window.dslabel = "{{ ds.label }}"
 	  window.filter = "{{ filter }}"

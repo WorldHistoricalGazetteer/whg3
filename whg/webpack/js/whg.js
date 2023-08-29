@@ -1,4 +1,4 @@
-import '../css/maplibre_whg.css';
-import '../css/dateline.css';
+import '../../../static/css/spin.css';
 
+import '../../../static/js/aliases.js';
 import './maplibre_whg.js';

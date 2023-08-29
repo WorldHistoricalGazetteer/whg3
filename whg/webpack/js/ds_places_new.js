@@ -1,6 +1,8 @@
 // /whg/webpack/js/ds_places_new.js
 
+import ClipboardJS from '/webpack/node_modules/clipboard'; 
 import { mappy, mapPadding, mapBounds, features } from './maplibre_whg';
+import * as turf from './6.5.0_turf.min.js'
 
 let checked_rows;
 
@@ -204,7 +206,7 @@ $(".table-chk").click(function(e) {
 	/*console.log('checked_rows',checked_rows)*/
 })
 
-$(function() {
+$(document).ready(function () {
 	// START ds_info controls
 	var isCollapsed = localStorage.getItem('isCollapsed') === 'true';
 
