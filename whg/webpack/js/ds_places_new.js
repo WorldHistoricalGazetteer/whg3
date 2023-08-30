@@ -1,8 +1,9 @@
 // /whg/webpack/js/ds_places_new.js
 
+import'./gis_resources';
+import { envelope } from './6.5.0_turf.min.js' 
+import { mappy, mapPadding, mapBounds, features, datasetLayers, filteredLayer, dateline } from './maplibre_whg';
 import ClipboardJS from '/webpack/node_modules/clipboard'; 
-import { mappy, mapPadding, mapBounds, features, datasetLayers, filteredLayer } from './maplibre_whg';
-import * as turf from './6.5.0_turf.min.js'
 
 let checked_rows;
 
@@ -28,10 +29,19 @@ $("#create_coll_link").click(function() {
 })
 
 export function dateRangeChanged(fromValue, toValue){
-	console.log(fromValue, toValue)
-    datasetLayers.forEach(function(layer){
-		mappy.setFilter(layer.id, filteredLayer(layer).filter);
-	});
+	function applyFilters(){
+	    datasetLayers.forEach(function(layer){
+			mappy.setFilter(layer.id, filteredLayer(layer).filter);
+		});
+	}
+	// Throttle date slider changes using debouncing
+	// Ought to be possible to use promises on the `render` event
+	let debounceTimeout;
+    function debounceFilterApplication() {
+        clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(applyFilters, 300);
+    }
+    debounceFilterApplication(); 
 }
 
 function resetSearch() {
@@ -470,7 +480,7 @@ function highlightFeatureGL(pid, geom, coords) {
 			padding: mapPadding
 		})
 	} else {
-		mapBounds = turf.envelope(geom).bbox
+		mapBounds = envelope(geom).bbox
 		mappy.fitBounds(mapBounds, {
 			padding: mapPadding
 		})

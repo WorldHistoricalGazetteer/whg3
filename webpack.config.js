@@ -10,8 +10,8 @@ module.exports = {
     poll: 1000, // Check for changes every second
   },
   entry: {
-    whg: '/app/whg/webpack/js/whg.js'/*,
-    styles: '/app/whg/webpack/css/styles.css'*/
+    whg: '/app/whg/webpack/js/whg.js',
+    gis_resources: '/app/whg/webpack/js/gis_resources.js'
   },
   output: {
     filename: '[name].bundle.js',

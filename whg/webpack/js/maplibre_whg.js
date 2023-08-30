@@ -1,10 +1,9 @@
 // /whg/webpack/js/maplibre_whg.js
 
-import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.css';
+import'./gis_resources';
+import { envelope, lineString, length, along, centroid } from './6.5.0_turf.min.js'
 import '../css/maplibre_whg.css';
 import '../css/dateline.css';
-import * as turf from './6.5.0_turf.min.js'
-import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.umd.min.js';
 import Dateline from './dateline';
 import { dateRangeChanged, getPlace } from './ds_places_new';
 
@@ -24,7 +23,7 @@ export var mappy = new maptilersdk.Map({
 export let mapPadding;
 export let mapBounds;
 export let features;
-let dateline;
+export let dateline;
 
 if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
 
@@ -253,12 +252,12 @@ mappy.on('load', function() {
 					var coordinates = geom.coordinates[len]
 				} else {
 					// MultiLineString
-					const segment = turf.lineString(coords[Math.round(coords.length / 2)])
-					const len = turf.length(segment)
-					var coordinates = turf.along(segment, len / 2).geometry.coordinates
+					const segment = lineString(coords[Math.round(coords.length / 2)])
+					const len = length(segment)
+					var coordinates = along(segment, len / 2).geometry.coordinates
 				}
 			} else {
-				var coordinates = turf.centroid(geom).geometry.coordinates
+				var coordinates = centroid(geom).geometry.coordinates
 			}
 			var pid = e.features[0].properties.pid;
 			var title = e.features[0].properties.title;
@@ -384,7 +383,7 @@ function renderData(dsid) {
 		features = data.collection.features
 		// console.log('data', data.collection)
 		// get bounds w/turf
-		const envelope = turf.envelope(data.collection)
+		const dcEnvelope = envelope(data.collection)
 		// range = data.minmax
 
 		// add source 'places' w/retrieved data
@@ -410,7 +409,7 @@ function renderData(dsid) {
 			});
 		});
 		
-		mapBounds = envelope.bbox; // Used if map is resized
+		mapBounds = dcEnvelope.bbox; // Used if map is resized
 		mappy.fitBounds(mapBounds, {
 			padding: mapPadding,
 			duration: 0
