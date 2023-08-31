@@ -1,11 +1,11 @@
 // /whg/webpack/js/maplibre_whg.js
 
-import'./gis_resources';
+//import'./gis_resources';
 import { envelope, lineString, length, along, centroid } from './6.5.0_turf.min.js'
 import '../css/maplibre_whg.css';
 import '../css/dateline.css';
 import Dateline from './dateline';
-import { dateRangeChanged, getPlace } from './ds_places_new';
+import { dateRangeChanged, getPlace, initialiseTable } from './ds_places_new';
 
 maptilersdk.config.apiKey = mapParameters.mapTilerKey;
 
@@ -23,7 +23,8 @@ export var mappy = new maptilersdk.Map({
 export let mapPadding;
 export let mapBounds;
 export let features;
-export let dateline;
+export let dateline = null;
+let datelineContainer = null;
 
 if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
 
@@ -207,16 +208,6 @@ mappy.on('load', function() {
 			document.querySelector('.maplibregl-ctrl-attrib').classList.add('fade-in');
 		}
 	}, 0);
-		
-	if (!!mapParameters.controls.temporal) {
-		const datelineContainer = document.createElement('div');
-		datelineContainer.id = 'dateline';
-		document.getElementById('mapControls').appendChild(datelineContainer);
-		dateline = new Dateline({
-		    ...mapParameters.controls.temporal,
-		    onChange: dateRangeChanged
-		});
-	};
 
 	//let hilited = null;
 
@@ -296,14 +287,16 @@ export const datasetLayers = [
 		'type': 'line',
 		'source': 'places',
 		'paint': {
-			'line-color': '#336699',
-			'line-width': {
-				stops: [
-					[1, 1],
-					[4, 2],
-					[16, 4]
-				]
-			}
+			'line-color': [
+				'case',
+	            ['boolean', ['feature-state', 'highlight'], false], 'green', 
+	            'lightgreen'
+			],
+			'line-width': [
+				'case',
+	            ['boolean', ['feature-state', 'highlight'], false], 2, 
+	            1
+			]
 		},
 		'filter': ['==', '$type', 'LineString']
 	},
@@ -312,8 +305,21 @@ export const datasetLayers = [
 		'type': 'fill',
 		'source': 'places',
 		'paint': {
-			'fill-color': '#ddd',
-			'fill-opacity': 0.3,
+			'fill-color': [
+				'case',
+	            ['boolean', ['feature-state', 'highlight'], false], 'rgba(0,128,0)', 
+	            '#ddd'
+			],
+			'fill-opacity': [
+				'case',
+	            ['boolean', ['feature-state', 'highlight'], false], .8, 
+	            .3
+			],
+			'fill-outline-color': [
+				'case',
+	            ['boolean', ['feature-state', 'highlight'], false], 'red', 
+	            '#666'
+			],
 			'fill-outline-color': '#666'
 		},
 		'filter': ['==', '$type', 'Polygon']
@@ -336,15 +342,30 @@ export const datasetLayers = [
 		'type': 'circle',
 		'source': 'places',
 		'paint': {
-			'circle-opacity': 1,
-			'circle-color': '#ff9900',
-			'circle-radius': {
-				stops: [
-					[1, 2],
-					[3, 3],
-					[16, 10]
-				]
-			}
+			'circle-opacity': [
+	            'case',
+	            ['boolean', ['feature-state', 'highlight'], false], .8,
+	            .5
+	        ],
+			'circle-stroke-color': 'red',
+			'circle-stroke-opacity': .8,
+			'circle-stroke-width': [ // Simulate larger radius - zoom-based radius cannot operate together with feature-state switching
+	            'case',
+	            ['boolean', ['feature-state', 'highlight'], false], 5,
+	            0
+	        ],
+			'circle-radius': [
+	            'interpolate',
+	            ['linear'],
+	            ['zoom'],
+	            0, 1, // zoom, radius
+	            16, 20,
+	        ],
+			'circle-color': [
+				'case',
+	            ['boolean', ['feature-state', 'highlight'], false], 'red', 
+	            'orange'
+			],
 		},
 		'filter': ['==', '$type', 'Point'],
 	}
@@ -380,7 +401,8 @@ function renderData(dsid) {
 
 	// fetch data
 	$.get('/datasets/' + dsid + '/geojson', function(data) {
-		features = data.collection.features
+		features = data.collection.features;
+		initialiseTable();
 		// console.log('data', data.collection)
 		// get bounds w/turf
 		const dcEnvelope = envelope(data.collection)
@@ -389,8 +411,10 @@ function renderData(dsid) {
 		// add source 'places' w/retrieved data
 		mappy.addSource('places', {
 			'type': 'geojson',
-			'data': data.collection
-		})
+			'data': data.collection,
+			'generateId': true // Required because otherwise-inserted ids are not recognised by style logic
+		})		
+		
 		// The 'empty' source and layers need to be reset after a change of map style
 		if (!mappy.getSource('empty')) mappy.addSource('empty', {
 			type: 'geojson',
@@ -414,10 +438,44 @@ function renderData(dsid) {
 			padding: mapPadding,
 			duration: 0
 		});
+		
+		if (dateline) {
+	        dateline.destroy();
+	        dateline = null;
+	    }
+	    if (datelineContainer) {
+	        datelineContainer.remove();
+	        datelineContainer = null;
+	    }
+		
+		if (!!mapParameters.controls.temporal) {
+			datelineContainer = document.createElement('div');
+			datelineContainer.id = 'dateline';
+			document.getElementById('mapControls').appendChild(datelineContainer);
+			
+		    if (data.minmax) {
+		        const [minValue, maxValue] = data.minmax;
+		        const range = maxValue - minValue;
+		        const buffer = range * 0.1; // 10% buffer
+		
+		        // Update the temporal settings
+		        mapParameters.controls.temporal.fromValue = minValue;
+		        mapParameters.controls.temporal.toValue = maxValue;
+		        mapParameters.controls.temporal.minValue = minValue - buffer;
+		        mapParameters.controls.temporal.maxValue = maxValue + buffer;
+		    }
+			
+			dateline = new Dateline({
+			    ...mapParameters.controls.temporal,
+			    onChange: dateRangeChanged
+			});
+		};
+		
 		console.log('Data layers added, map fitted.', mapBounds, mapPadding);
 		/*spinner_map.stop()*/
 
+		
 	}) // get
-} //highlightFeatureGL
+}
 
 import './ds_places_new.js';
