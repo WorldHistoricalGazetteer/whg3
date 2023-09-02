@@ -1,0 +1,25 @@
+{
+  "name": "whg-webpack",
+  "version": "1.0.0",
+  "description": "Webpack configuration for WHG project",
+  "main": "webpack.config.js",
+  "scripts": {
+    "build": "webpack",
+    "watch": "webpack --watch"
+  },
+  "dependencies": {
+    "@maptiler/sdk": "^1.1.2",
+    "express": "^4.18.2",
+    "jquery": "^3.7.0",
+    "jquery-ui": "^1.13.2",
+    "maplibre-gl": "^3.2.1",
+    "moment": "^2.29.4",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4",
+    "css-loader": "^6.8.1",
+    "mini-css-extract-plugin": "^2.7.6",
+    "css-minimizer-webpack-plugin": "^1.0.0",
+    "terser-webpack-plugin": "^5.3.9",
+    "clipboard": "^2.0.11"
+  }
+}

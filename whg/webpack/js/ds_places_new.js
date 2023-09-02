@@ -1,3 +1,14 @@
+// /whg/webpack/js/ds_places_new.js
+
+import'./gis_resources';
+import { envelope } from './6.5.0_turf.min.js' 
+import { mappy, mapPadding, mapBounds, features, datasetLayers, filteredLayer, dateline } from './maplibre_whg';
+import ClipboardJS from '/webpack/node_modules/clipboard'; 
+
+let checked_rows;
+let highlightedFeatureIndex;
+let table;
+
 $("[rel='tooltip']").tooltip();
 
 var clip_cite = new ClipboardJS('#a_clipcite');
@@ -19,8 +30,52 @@ $("#create_coll_link").click(function() {
 	$("#title_form").show()
 })
 
-function dateRangeChanged(fromValue, toValue){
-	console.log(fromValue, toValue)
+// Apply/Remove filters when dateline control is toggled
+$("body").on("click", ".dateline-button", function() {
+	toggleFilters( $('.range_container.expanded').length > 0 );
+});
+
+// Custom search function to filter table based on dateline.fromValue and dateline.toValue
+$.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+	if ( $('.range_container.expanded').length == 0) { // Is dateline inactive?
+		return true;
+	}
+	
+    const fromValue = dateline.fromValue;
+    const toValue = dateline.toValue;
+    
+    // Get the min and max values from the data attributes of the row
+    const row = $(settings.aoData[dataIndex].nTr);
+    const minData = row.attr('data-min');
+    const maxData = row.attr('data-max');
+
+    // Convert minData and maxData to numbers for comparison
+    const min = parseFloat(minData);
+    const max = parseFloat(maxData);
+
+    // Filter logic
+	if ((!isNaN(fromValue) && !isNaN(toValue)) && (min <= toValue && max >= fromValue)) {
+        return true; // Include row in the result
+    }
+    return false; // Exclude row from the result
+});
+
+function toggleFilters(on){
+    datasetLayers.forEach(function(layer){
+		mappy.setFilter(layer.id, on ? filteredLayer(layer).filter : layer.filter);
+	});
+	table.draw();
+}
+
+export function dateRangeChanged(fromValue, toValue){
+	// Throttle date slider changes using debouncing
+	// Ought to be possible to use promises on the `render` event
+	let debounceTimeout;
+    function debounceFilterApplication() {
+        clearTimeout(debounceTimeout);
+        debounceTimeout = setTimeout(toggleFilters(true), 300);
+    }
+    debounceFilterApplication(); 
 }
 
 function resetSearch() {
@@ -132,64 +187,109 @@ function clearFilters() {
 	$("#status_select").val('99')
 }
 
-// table events
-// TODO: use datatables methods?
-function setRowEvents() {
-	$("#placetable tbody tr").click(function() {
-		thisy = $(this)
-		// get id
-		pid = $(this)[0].cells[0].textContent
-		// is checkbox checked?
-		// if not, ensure row pid is not in checked_rows
-		if (loggedin == true) {
-			chkbox = thisy[0].cells[3].firstChild
-			if (chkbox.checked) {
-				console.log('chkbox.checked')
-				checked_rows.push(pid)
-				$("#selection_status").fadeIn()
-				/*$("#addtocoll").fadeIn()*/
-				console.log('checked_rows', checked_rows)
-				$("#sel_count").html(' ' + checked_rows.length + ' ')
-			} else {
-				const index = checked_rows.indexOf(pid);
-				if (index > -1) {
-					checked_rows.splice(index, 1)
-					if (checked_rows.length == 0) {
-						$("#addtocoll").fadeOut()
-						$("#addtocoll_popup").hide()
-					}
-				}
-				console.log(pid + ' removed from checked_rows[]', checked_rows)
+function highlightFeature(pid) {
+	
+	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(pid)); // .addSource 'generateId': true doesn't create a findable .id property
+	if (featureIndex !== -1) {
+	    var feature = features[featureIndex];
+		const geom = feature.geometry;
+		const coords = geom.coordinates;
+		if (highlightedFeatureIndex !== undefined) mappy.setFeatureState({ source: 'places', id: highlightedFeatureIndex }, { highlight: false });
+		highlightedFeatureIndex = featureIndex;
+		mappy.setFeatureState({ source: 'places', id: featureIndex }, { highlight: true });
+		
+		// zoom to feature
+		if (geom.type.toLowerCase() == 'point') {
+			const flycoords = typeof(coords[0]) == 'number' ? coords : coords[0]
+			const mapBounds = {
+				'center': flycoords,
+				'zoom': 7
 			}
+			mappy.flyTo({
+				...mapBounds,
+				padding: mapPadding
+			})
+		} else {
+			mapBounds = envelope(geom).bbox
+			mappy.fitBounds(mapBounds, {
+				padding: mapPadding
+			})
 		}
+	} else {
+	    console.log(`Feature ${pid} not found.`);
+	}
+	
+}
 
-		geom = features.find(function(f) {
-			return f.properties.pid == pid
-		}).geometry
-		coords = geom.coordinates
+// TODO: use datatables methods?
+// Listen for table row click (assigned using event delegation to allow for redrawing)
+$("body").on("click", "#placetable tbody tr", function() {
+	const thisy = $(this)
+	// get id
+	const pid = $(this)[0].cells[0].textContent
+	// is checkbox checked?
+	// if not, ensure row pid is not in checked_rows
+	if (loggedin == true) {
+		chkbox = thisy[0].cells[3].firstChild
+		if (chkbox.checked) {
+			console.log('chkbox.checked')
+			checked_rows.push(pid)
+			$("#selection_status").fadeIn()
+			/*$("#addtocoll").fadeIn()*/
+			console.log('checked_rows', checked_rows)
+			$("#sel_count").html(' ' + checked_rows.length + ' ')
+		} else {
+			const index = checked_rows.indexOf(pid);
+			if (index > -1) {
+				checked_rows.splice(index, 1)
+				if (checked_rows.length == 0) {
+					$("#addtocoll").fadeOut()
+					$("#addtocoll_popup").hide()
+				}
+			}
+			console.log(pid + ' removed from checked_rows[]', checked_rows)
+		}
+	}
+	
+	// highlight this row, clear others
+	var selected = $(this).hasClass("highlight-row");
+	$("#placetable tr").removeClass("highlight-row");
 
-		// highlight this row, clear others
-		var selected = $(this).hasClass("highlight-row");
-		$("#placetable tr").removeClass("highlight-row");
+	if (!selected)
+		$(this).removeClass("rowhover");
+	$(this).addClass("highlight-row");
+	
+	// fetch its detail
+	getPlace(pid);
+	
+	highlightFeature(pid);
 
-		if (!selected)
-			$(this).removeClass("rowhover");
-		$(this).addClass("highlight-row");
+});
 
-		// highlight marker, zoomTo()
-		highlightFeatureGL(pid, geom, coords)
-
-		// fetch its detail
-		getPlace(pid)
-
-	})
-
-	row = $("#ds_table table tbody")[0].rows[0]
-	pid = parseInt(row.cells[0].textContent)
+function highlightFirstRow() {
+	$("#placetable tr").removeClass("highlight-row");
+	const row = $("#ds_table table tbody")[0].rows[0]
+	const pid = parseInt(row.cells[0].textContent)
 	// highlight first row, fetch detail, but don't zoomTo() it
 	$("#placetable tbody").find('tr').eq(0).addClass('highlight-row')
-
 	getPlace(pid)
+}
+
+// Adjust the DataTable's page length to avoid scrolling where possible
+function adjustPageLength() {
+    const dsTable = document.getElementById('ds_table');
+    const tableFilter = document.getElementById('placetable_filter');
+    const tablePaginate = document.getElementById('placetable_paginate');
+    const theadRow = document.querySelector('#placetable thead tr');
+    const tbody = document.querySelector('#placetable tbody');
+    const availableHeight = dsTable.clientHeight - (2 * 10 /*padding*/) - tableFilter.clientHeight - tablePaginate.clientHeight - theadRow.clientHeight;
+    const averageRowHeight = 2 + ( tbody.clientHeight / document.querySelectorAll('#placetable tr:not(thead tr)').length );
+    let estimatedRowsPerPage = Math.floor(availableHeight / ( averageRowHeight ));
+  	// Ensure a minimum of 5 rows
+  	estimatedRowsPerPage = Math.max(estimatedRowsPerPage, 5);
+	console.log(`Changing table length to ${estimatedRowsPerPage} rows @${averageRowHeight} pixels.`);
+  	const DataTable = $('#placetable').DataTable();
+  	DataTable.page.len(estimatedRowsPerPage).draw();
 }
 
 $(".table-chk").click(function(e) {
@@ -198,7 +298,10 @@ $(".table-chk").click(function(e) {
 	/*console.log('checked_rows',checked_rows)*/
 })
 
-$(function() {
+export function initialiseTable() {
+	
+	console.log('initialiseTable', features);
+	
 	// START ds_info controls
 	var isCollapsed = localStorage.getItem('isCollapsed') === 'true';
 
@@ -239,15 +342,18 @@ $(function() {
 
 	checked_rows = []
 	localStorage.setItem('filter', '99')
-	wdtask = false
-	tgntask = false
-	whgtask = false
+	var wdtask = false
+	var tgntask = false
+	var whgtask = false
 
 	/*loggedin = {{ loggedin }}*/
-	check_column = loggedin == true ? {
-		"data": "chk"
+	const check_column = loggedin == true ? {
+		data: "properties.pid",
+      	render: function (data, type, row) {
+        	return `<input type="checkbox" name="addme" class="table-chk" data-id="${data}"/>`;
+      	},
 	} : {
-		"data": "chk",
+		"data": "properties.pid",
 		"visible": false
 	}
 
@@ -261,29 +367,31 @@ $(function() {
 			"<'col-sm-5'>>" +
 			"<'row'<'col-sm-12'tr>>" +
 			"<'row small'<'col-sm-12'p>>",
-		serverSide: true,
-		ajax: {
-			url: "/api/placetable/?format=datatables&ds=" + dslabel
-		},
 		// scrollY: 400,
 		select: true,
 		order: [
 			[0, 'asc']
 		],
-		pageLength: 25,
+		pageLength: 250,
 		LengthMenu: [25, 50, 100],
-		columns: [{
-				"data": "id"
-			},
-			/*{"data": "src_id"},*/
+		data: features,
+		columns: [
 			{
-				"data": "title"
-			},
-			/*{"data": "ccodes"},*/
-			{
-				"data": "geo"
-			},
-			check_column,
+		      data: "properties.pid",
+		      render: function (data, type, row) {
+		        return `<a href="http://localhost:8000//api/db/?id=${data}" target="_blank">${data}</a>`;
+		      }
+		    },
+		    {
+		      data: "properties.title"
+		    },
+		    {
+		      data: "geometry.type",
+		      render: function (data, type, row) {
+		        return `<img src="/static/images/geo_${data.toLowerCase()}.svg" width=12/>`; // CHECK - DOES THIS WORK FOR ALL GEOMETRY TYPES?
+		      }
+		    },
+		    check_column
 		],
 		columnDefs: [
 			/*{ className: "browse-task-col", "targets": [8,9,10] },*/
@@ -298,7 +406,28 @@ $(function() {
 			}
 			/*, {visible: false, "targets": [5]}*/
 			/*, {visible: false, "targets": [0]}*/
-		]
+		],
+	    createdRow: function (row, data, dataIndex) {
+	        // Attach temporal min and max properties as data attributes
+	        $(row).attr('data-min', data.properties.min);
+	        $(row).attr('data-max', data.properties.max);
+	    },
+	    initComplete: function(settings, json) {
+	        adjustPageLength();
+	    },
+	    drawCallback: function(settings) {
+			console.log('table drawn')
+			spinner_table.stop()
+			// recheck inputs in checked_rows
+			if (checked_rows.length > 0) {
+				for (i in checked_rows) {
+					$('[data-id=' + checked_rows[i] + ']').prop('checked', true)
+				}
+				// make sure selection_status is visible
+				$("#selection_status").show()
+			}
+			highlightFirstRow();
+	    }
 	})
 
 	$("#addchecked").click(function() {
@@ -308,19 +437,6 @@ $(function() {
 
 	$(".closer").click(function() {
 		$("#addtocoll_popup").hide()
-	})
-	table.on('draw', function() {
-		console.log('table drawn')
-		spinner_table.stop()
-		// recheck inputs in checked_rows
-		if (checked_rows.length > 0) {
-			for (i in checked_rows) {
-				$('[data-id=' + checked_rows[i] + ']').prop('checked', true)
-			}
-			// make sure selection_status is visible
-			$("#selection_status").show()
-		}
-		setRowEvents();
 	})
 
 	// help popups
@@ -354,159 +470,17 @@ $(function() {
 			duration: 400
 		}
 	});
-}) //** end onload()
+}
 
 // activate all tooltips
 $("[rel='tooltip']").tooltip();
 
-// called by table row click
-function highlightFeatureGL(pid, geom, coords) {
-	/*console.log('pid, coords',pid, coords)*/
-	// TODO: 
-	if (geom.type.includes('Point')) {
-		mappy.setPaintProperty('gl_active_point', 'circle-opacity', 1.0);
-		mappy.setPaintProperty(
-			'gl_active_point', 'circle-radius', {
-				'property': 'pid',
-				'type': 'categorical',
-				'default': 3,
-				'stops': [
-					[Number(pid), 8]
-				]
-			}
-		);
-		mappy.setPaintProperty(
-			'gl_active_point', 'circle-stroke-color', {
-				'property': 'pid',
-				'type': 'categorical',
-				'stops': [
-					[Number(pid), '#666']
-				]
-			}
-		);
-		mappy.setPaintProperty(
-			'gl_active_point', 'circle-stroke-width', {
-				'property': 'pid',
-				'type': 'categorical',
-				'stops': [
-					[Number(pid), 1]
-				]
-			}
-		);
-		mappy.setPaintProperty(
-			'gl_active_point', 'circle-color', {
-				'property': 'pid',
-				'default': '#ff9900',
-				'type': 'categorical',
-				'stops': [
-					[Number(pid), 'red']
-				]
-			}
-		);
-	} else if (geom.type.includes('Polygon')) {
-		mappy.setPaintProperty(
-			'gl_active_poly', 'fill-outline-color', {
-				'property': 'pid',
-				'default': 'grey',
-				'type': 'categorical',
-				'stops': [
-					[Number(pid), 'red']
-				]
-			}
-		);
-		mappy.setPaintProperty(
-			'gl_active_poly', 'fill-color', {
-				'property': 'pid',
-				'default': "rgba(255,255,255,0.0)",
-				'type': 'categorical',
-				'stops': [
-					[Number(pid), 'rgba(0,128,0,1.0)']
-				]
-			}
-		);
-	} else if (geom.type.includes('Line')) {
-		mappy.setPaintProperty(
-			'gl_active_line', 'line-color', {
-				'property': 'pid',
-				'default': "lightgreen",
-				'type': 'categorical',
-				'stops': [
-					[Number(pid), 'green']
-				]
-			}
-		);
-		mappy.setPaintProperty(
-			'gl_active_line', 'line-width', {
-				'property': 'pid',
-				'default': 1,
-				'type': 'categorical',
-				'stops': [
-					[Number(pid), 2]
-				]
-			}
-		);
-	}
-
-	// zoom to feature
-	if (geom.type.toLowerCase() == 'point') {
-		flycoords = typeof(coords[0]) == 'number' ? coords : coords[0]
-		mappy.flyTo({
-			'center': flycoords,
-			'zoom': 7,
-			'padding': mapPadding
-		})
-	} else {
-		bbox = turf.envelope(geom).bbox
-		mappy.fitBounds(bbox, {
-			padding: mapPadding
-		})
-	}
-
-}
-
-// generic 
-function zoomTo(pid) {
-	console.log('zoomTo()', pid)
-	l = idToFeature[pid]
-	ftype = l.feature.geometry.type
-	//console.log('zoomTo() pid, ftype',pid, ftype)
-	if (ftype == 'Point') {
-		mappy.setView(l._latlng, 7)
-	} else {
-		mappy.fitBounds(l.getBounds(), {
-			padding: mapPadding
-		})
-	}
-}
-
-// highlight on select in table
-function highlightFeature(pid) {
-	console.log('highlightFeature()', pid)
-	if (typeof(idToFeature) != 'undefined') {
-		if (pid in idToFeature) {
-			feat = idToFeature[pid]
-			ftype = feat.feature.geometry.type
-
-			// reset style of last if there is a last
-			if (typeof(last) != 'undefined') {
-				last[0].setStyle(styles[last[1]].default)
-			}
-
-			// highlight this one
-			feat.setStyle(styles[ftype].focus)
-			feat.bringToFront()
-
-			zoomTo(pid)
-
-			last = [feat, ftype]
-		} else {
-			features.setStyle(foptions)
-		}
-	}
-}
-
-function getPlace(pid) {
-	console.log('getPlace()', pid)
+export function getPlace(pid) {
+	console.log('getPlace()', pid);
+    if (isNaN(pid)) {
+        console.log('Invalid pid');
+        return;
+    }
 	$.ajax({
 		url: "/api/place/" + pid,
 	}).done(function(data) {
@@ -562,11 +536,11 @@ function parsePlace(data) {
 	//timespan_arr = []-->
 	//
 	// TITLE 
-	descrip = '<p><b>Title</b>: <span id="row_title" class="larger text-danger">' + data.title + '</span>'
+	var descrip = '<p><b>Title</b>: <span id="row_title" class="larger text-danger">' + data.title + '</span>'
 	//
 	// NAME VARIANTS
 	descrip += '<p class="scroll65"><b>Variants</b>: '
-	for (n in data.names) {
+	for (var n in data.names) {
 		let name = data.names[n]
 		descrip += '<p>' + name.toponym != '' ? name.toponym + '; ' : ''
 	}
@@ -576,9 +550,9 @@ function parsePlace(data) {
 	// console.log('data.types',data.types)
 	//{"label":"","identifier":"aat:___","sourceLabels":[{"label":" ","lang":"en"}]}
 	descrip += '</p><p><b>Types</b>: '
-	typeids = ''
-	for (t in data.types) {
-		str = ''
+	var typeids = ''
+	for (var t in data.types) {
+		var str = ''
 		var type = data.types[t]
 		if ('sourceLabels' in type) {
 			srclabels = type.sourceLabels
@@ -600,8 +574,8 @@ function parsePlace(data) {
 	// LINKS
 	// 
 	descrip += '<p class="mb-0"><b>Links</b>: '
-	close_count = added_count = related_count = 0
-	html = ''
+	//close_count = added_count = related_count = 0
+	var html = ''
 	if (data.links.length > 0) {
 		links = data.links
 		links_arr = onlyUnique(data.links)
@@ -678,100 +652,9 @@ function url_extplace(identifier) {
 
 // builds link for external placetype record
 function url_exttype(type) {
-	link = ' <a href="#" class="exttab" data-id=' + type.identifier +
+	const link = ' <a href="#" class="exttab" data-id=' + type.identifier +
 		'>(' + type.label + ' <i class="fas fa-external-link-alt linky"></i>)</a>'
 	return link
-}
-
-styles = {
-	"Point": {
-		"default": {
-			radius: 1,
-			fillColor: "#ff9900",
-			fillOpacity: 0.8,
-			stroke: false
-		},
-		"focus": {
-			radius: 8,
-			fillColor: "#ffff00",
-			fillOpacity: 1,
-			stroke: true,
-			weight: 1,
-			color: "#000"
-		}
-	},
-	"MultiPoint": {
-		"default": {
-			radius: 1,
-			fillColor: "#ff9900",
-			fillOpacity: 0.8,
-			stroke: false
-		},
-		"focus": {
-			radius: 8,
-			fillColor: "#ffff00",
-			fillOpacity: 1,
-			stroke: true,
-			weight: 1,
-			color: "#000"
-		}
-	},
-	"LineString": {
-		"default": {
-			opacity: 1,
-			weight: 1,
-			color: "#336699"
-		},
-		"focus": {
-			opacity: 1,
-			weight: 2,
-			color: "blue"
-		}
-	},
-	"MultiLineString": {
-		"default": {
-			opacity: 1,
-			weight: 1,
-			color: "#336699"
-		},
-		"focus": {
-			opacity: 1,
-			weight: 2,
-			color: "blue"
-		}
-	},
-	"MultiPolygon": {
-		"default": {
-			fillOpacity: 0.3,
-			opacity: 1,
-			color: "#000",
-			weight: 1,
-			fillColor: "#ff9999"
-		},
-		"focus": {
-			fillOpacity: 0.3,
-			opacity: 1,
-			color: "red",
-			weight: 2,
-			fillColor: "#ff9999"
-		}
-	},
-	"Polygon": {
-		"default": {
-			fillOpacity: 0.3,
-			opacity: .5,
-			color: "#666",
-			weight: 1,
-			fillColor: "#ff9999"
-		},
-		"focus": {
-			fillOpacity: 0.3,
-			opacity: .5,
-			color: "red",
-			weight: 2,
-			fillColor: "#ff9999"
-		}
-	}
 }
 
 function minmaxer(timespans) {
@@ -789,7 +672,7 @@ function minmaxer(timespans) {
 }
 
 // spinners
-spin_opts = {
+const spin_opts = {
 	scale: .5,
 	top: '50%'
 }

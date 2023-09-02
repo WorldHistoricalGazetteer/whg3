@@ -28,6 +28,17 @@ services:
       - db
       - livereload # Required before web
 #      - elasticsearch
+
+  webpack:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./compose/local/webpack/Dockerfile-webpack
+    image: whg3_webpack
+    volumes:
+      - .:/app
       
   livereload: # https://github.com/tjwalch/django-livereload-server
     networks:
@@ -43,7 +54,7 @@ services:
         --port=35729
         --ignore-template-dirs
         --ignore-static-dirs
-        /app/whg/static/css/ /app/whg/static/js/
+        /app/whg/static/css/ /app/whg/static/js/ /app/whg/static/webpack/ /app/datasets/templates/datasets/
     volumes:
       - .:/app
     env_file:
