@@ -22,10 +22,7 @@ whg/media/*
 whg/media_old/*
 
 # Mac OS files
-*DS_Store
-
-*/migrations/0*.py
-*/*/migrations/0*.py
+**/.DS_Store
 
 sent_emails/
 
