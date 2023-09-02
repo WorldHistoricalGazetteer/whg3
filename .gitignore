@@ -79,3 +79,5 @@ whg/media/.DS_Store
 whg/media/.DS_Store
 whg/media/collections/.DS_Store
 whg/media/.DS_Store
+node_modules/
+package-lock.json
