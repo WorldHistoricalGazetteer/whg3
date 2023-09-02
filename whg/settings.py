@@ -183,19 +183,22 @@ LOGGING = {
     'disable_existing_loggers': False,
     'handlers': {
         'file': {
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'class': 'logging.FileHandler',
-            'filename': '/whg/logs/debug.log',
+            'filename': 'whg/logs/debug.log',
         },
     },
     'loggers': {
         'django': {
             'handlers': ['file'],
-            'level': 'DEBUG',
+            'level': 'WARNING',
             'propagate': True,
         },
     },
 }
+
+GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
+GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
 
 LEAFLET_CONFIG = {
   'TILES':[],
