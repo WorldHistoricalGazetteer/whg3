@@ -320,7 +320,7 @@ export const datasetLayers = [
 	            ['boolean', ['feature-state', 'highlight'], false], 'red', 
 	            '#666'
 			],
-			'fill-outline-color': '#666'
+			// 'fill-outline-color': '#666'
 		},
 		'filter': ['==', '$type', 'Polygon']
 	},
