@@ -27,7 +27,6 @@ services:
       - redis
       - db
       - livereload # Required before web
-#      - elasticsearch
 
   webpack:
     networks:
@@ -40,6 +39,7 @@ services:
     volumes:
       - .:/app
       
+
   livereload: # https://github.com/tjwalch/django-livereload-server
     networks:
       - WHG3
@@ -142,5 +142,3 @@ services:
 volumes:
   app:
   dev-db-data:
-#  dbeaver-data:
-#  pgadmin-data:

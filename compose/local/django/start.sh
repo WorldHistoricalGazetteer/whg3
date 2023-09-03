@@ -11,7 +11,7 @@ export POSTGRES_HOST_AUTH_METHOD="trust"
 # NB: there should be no need for makemigrations here; it generates migration files from changes to models
 # if anyone changes a model they would have to run makemigrations in their local environment in order
 # to make use of the change, and when they submit a pull request for that branch, migration files would be part of it
-PGUSER=${DB_USER} python manage.py makemigrations
+#PGUSER=${DB_USER} python manage.py makemigrations
 PGUSER=${DB_USER} python manage.py migrate
 
 # NB: file names are prefixed with fixture_

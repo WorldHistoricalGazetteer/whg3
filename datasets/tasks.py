@@ -15,8 +15,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 User = get_user_model()
 
-# from django.contrib.gis.geos import Polygon, Point, LineString
-
 import codecs, csv, datetime, itertools, re, sys, time
 import pandas as pd
 import simplejson as json
@@ -35,16 +33,12 @@ from datasets.utils import bestParent, elapsed, getQ, \
 
 from main.models import Log
 
-#from places.models import Place
-##
-from elasticsearch7 import Elasticsearch
-
-## global for all es connections in this file?
+## global for all es connections in this file
 es = settings.ES_CONN
 
-@shared_task(name="testy")
-def testy():
-  print("I'm testy...who wouldn't be?")
+# @shared_task(name="testy")
+# def testy():
+#   print("I'm testy...who wouldn't be?")
 
 """ 
   called by utils.downloader()
