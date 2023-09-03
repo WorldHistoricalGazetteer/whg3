@@ -78,10 +78,8 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust  # Allow all connections without password authentication
     ports:
-      - 5433:5432
-#      - 5432:5432
-    command: -p 5433
-#    command: -p 5432
+      - 5432:5432
+    command: -p 5432
 
   redis:
     networks:
@@ -89,8 +87,7 @@ services:
     platform: linux/amd64
     image: redis:bullseye
     container_name: redis
-    ports: [6380:6379]
-#    ports: [6379:6379]
+    ports: [6379:6379]
 
   celery_worker:
     networks:
