@@ -7,7 +7,7 @@ import pandas as pd
 from places.models import *
 from datasets.models import Dataset, Hit, DatasetFile
 from datasets.utils import validate_lpf, validate_tsv
-from elasticsearch7 import Elasticsearch
+from elasticsearch8 import Elasticsearch
 from elastic.es_utils import makeDoc, fetch_pids
 es = settings.ES_CONN
 idx='whg'

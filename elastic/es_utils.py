@@ -5,11 +5,10 @@
 from django.contrib.auth import get_user_model
 User = get_user_model()
 from django.conf import settings
+es = settings.ES_CONN
 from django.http import JsonResponse
 from places.models import Place
 from datasets.static.hashes.parents import ccodes as cchash
-from elasticsearch7 import Elasticsearch
-es = settings.ES_CONN
 from copy import deepcopy
 import sys
 # given pid, gets db and index records
@@ -621,7 +620,6 @@ def esq_children(_id):
 # count of dataset docs in index
 # ***
 def escount_ds(idx,label):
-  from elasticsearch7 import Elasticsearch
   es = settings.ES_CONN
   q = {"match":{"dataset": label }}
   # TODO: match new pattern query={} across platform

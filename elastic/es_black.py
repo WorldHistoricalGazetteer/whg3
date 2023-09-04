@@ -118,7 +118,6 @@ def init():
   dataset = input('dataset: ')
   idx = 'whg' 
 
-  from elasticsearch7 import Elasticsearch
   es = settings.ES_CONN
   # zap dataset from index
   q_del = {"query": {"match": {"dataset": dataset}}}

@@ -13,13 +13,9 @@ from django.db.models import Q
 from django.http import JsonResponse, HttpResponse#, FileResponse
 from django.shortcuts import get_object_or_404
 from django.views.generic import View
-#from django.views.decorators.csrf import csrf_exempt
-from django_filters.rest_framework import DjangoFilterBackend
-from elasticsearch7 import Elasticsearch
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import permissions
-#from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import api_view
@@ -28,7 +24,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework.reverse import reverse
-from rest_framework.views import APIView
 from accounts.permissions import IsOwnerOrReadOnly
 from api.serializers import (
   UserSerializer, DatasetSerializer, PlaceSerializer,

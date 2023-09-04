@@ -3,7 +3,7 @@
 
 from copy import deepcopy
 from elastic.es_utils import *
-from elasticsearch7 import Elasticsearch, RequestError
+from elasticsearch8 import RequestError
 es = settings.ES_CONN
 idx='whg'
 # owt10 places

@@ -2,7 +2,6 @@
 # can't run with manage.py test; must use existing database
 from django.test import TestCase
 
-from elasticsearch7 import Elasticsearch
 from django.conf import settings
 from django.db.models import Q
 from datasets.models import Dataset, Hit

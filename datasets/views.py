@@ -26,7 +26,6 @@ from copy import deepcopy
 import ast, shutil, tempfile, codecs, math, mimetypes, os, re, sys
 from deepdiff import DeepDiff as diff
 import numpy as np
-from elasticsearch7 import Elasticsearch
 es = settings.ES_CONN
 import pandas as pd
 from pathlib import Path
@@ -80,7 +79,6 @@ def link_uri(auth,id):
 """
 def indexMatch(pid, hit_pid=None):
   print('indexMatch(): pid '+str(pid)+' w/hit_pid '+str(hit_pid))
-  from elasticsearch7 import Elasticsearch
   es = settings.ES_CONN
   idx='whg'
   place = get_object_or_404(Place, id=pid)
@@ -182,7 +180,7 @@ def indexMatch(pid, hit_pid=None):
 """
 def indexMultiMatch(pid, matchlist):
   print('indexMultiMatch(): pid '+str(pid)+' matches '+str(matchlist))
-  from elasticsearch7 import Elasticsearch, RequestError
+  from elasticsearch8 import RequestError
   es = settings.ES_CONN
   idx='whg'
   place = Place.objects.get(id=pid)

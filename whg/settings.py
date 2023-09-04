@@ -296,7 +296,6 @@ STATICFILES_DIRS = [
   os.path.join(BASE_DIR, 'whg/static/'),
 ]
 
-
 ## GIS Libraries
 GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
 GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'

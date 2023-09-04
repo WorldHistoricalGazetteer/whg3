@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django.views.generic import DetailView
 
 from datetime import datetime
-from elasticsearch7 import Elasticsearch
+from elasticsearch8 import Elasticsearch
 import itertools, re
 
 from collection.models import Collection

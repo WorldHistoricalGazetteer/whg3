@@ -7,7 +7,7 @@ def init_geotest():
     global es, idx, rows
     idx = 'geotest' 
     import json, codecs, os
-    from elasticsearch7 import Elasticsearch
+    from elasticsearch8 import Elasticsearch
     es = settings.ES_CONN
     os.chdir('/Users/karlg/Documents/Repos/_whgdata')
     mappings = codecs.open('data/elastic/mappings/mappings_geo2.json', 'r', 'utf8').read()

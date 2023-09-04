@@ -12,7 +12,6 @@ from areas.models import Area
 from collection.models import Collection
 from datasets.models import Dataset, Hit
 from datasets.tasks import normalize, get_bounds_filter
-from elasticsearch7 import Elasticsearch
 from places.models import Place, PlaceGeom
 
     
