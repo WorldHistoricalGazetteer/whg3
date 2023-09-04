@@ -48,13 +48,7 @@ services:
       context: .
       dockerfile: ./compose/local/django/Dockerfile-django
     image: whg3_livereload
-    command: &livereload_command >
-      python manage.py livereload
-        --host=livereload
-        --port=35729
-        --ignore-template-dirs
-        --ignore-static-dirs
-        /app/whg/static/css/ /app/whg/static/js/ /app/whg/static/webpack/ /app/datasets/templates/datasets/
+    command: /start-livereload
     volumes:
       - .:/app
     env_file:
@@ -78,8 +72,9 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust  # Allow all connections without password authentication
     ports:
-      - 5432:5432
-    command: -p 5432
+      - 5433:5432
+    # this was messing things up
+    # I blame the bot
 
   redis:
     networks:
@@ -87,7 +82,7 @@ services:
     platform: linux/amd64
     image: redis:bullseye
     container_name: redis
-    ports: [6379:6379]
+    ports: [6380:6379]
 
   celery_worker:
     networks:

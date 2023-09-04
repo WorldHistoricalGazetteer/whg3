@@ -22,6 +22,10 @@ RUN apt-get update && \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
     && rm -rf /var/lib/apt/lists/*
 
+RUN mkdir -p /app/whg/logs && \
+    touch /app/whg/logs/debug.log && \
+    chmod 777 /app/whg/logs/debug.log
+
 COPY ./requirements.txt /tmp/requirements.txt
 RUN python -m venv /py && \
     /py/bin/pip install --upgrade pip && \
@@ -41,6 +45,10 @@ COPY ./compose/local/django/start.sh /start
 RUN sed -i 's/\r$//g' /start
 RUN chmod +x /start
 
+COPY ./compose/local/django/start-livereload.sh /start-livereload
+RUN sed -i 's/\r$//g' /start-livereload
+RUN chmod +x /start-livereload
+
 COPY ./compose/local/django/celery/worker/start.sh /start-celeryworker
 RUN sed -i 's/\r$//g' /start-celeryworker
 RUN chmod +x /start-celeryworker
@@ -53,12 +61,16 @@ COPY ./compose/local/django/celery/flower/start.sh /start-flower
 RUN sed -i 's/\r$//g' /start-flower
 RUN chmod +x /start-flower
 
-# Create debug log file
-RUN mkdir -p /whg/logs
-RUN touch /whg/logs/debug.log
-RUN chmod 777 /whg/logs/debug.log
+## Create debug log file
+#RUN mkdir -p /whg/logs
+#RUN touch /whg/logs/debug.log
+#RUN chmod 777 /whg/logs/debug.log
 
 WORKDIR /app
+
+RUN mkdir -p /app/whg/logs && \
+    touch /app/whg/logs/debug.log && \
+    chmod 777 /app/whg/logs/debug.log
 
 ENV PATH="/py/bin:$PATH"
 

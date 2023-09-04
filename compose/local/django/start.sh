@@ -20,6 +20,11 @@ for fixture in "${FIXTURES[@]}"; do
     PGUSER=${DB_USER} python manage.py loaddata "$fixture"
 done
 
+# relocated from Dockerfile-django; it wasn't being created
+mkdir -p /whg/logs
+touch /whg/logs/debug.log
+chmod 777 /whg/logs/debug.log
+
 # NB: the superuser account 'whgadmin' is provided by the fixture_users.json file now
 # Run Django management command to create the superuser
 #python manage.py createsuperuser --noinput --name=${DB_USER} --email=${DB_USER}@whgazetteer.org
