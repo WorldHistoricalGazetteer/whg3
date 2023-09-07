@@ -50,8 +50,8 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
   display: flex;
   padding: 2px;
   pointer-events: none;
-  height: 100%
-}
+  height: 100%;
+  }
 
 #mapOverlays .column {
   display: flex;
@@ -79,13 +79,17 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
   margin-bottom: 0px;
 }
 
-#mapOverlays.fullscreen {
-  width: 100%;
-  display: block;
+#mapOverlays .column,
+#mapOverlays .overlay.left.item {
+  transition: flex 0.5s ease-in-out, max-height 0.5s ease-in-out, margin 0.5s ease-in-out, padding 0.5s ease-in-out, border 0.5s ease-in-out;
+}
+
+#mapOverlays.fullscreen .column.left {
+  flex: 1 0 100%;
 }
 
 #mapOverlays.fullscreen .column.right {
-  max-width: 0;
+  flex: 1 0 0%;
 }
 
 #mapOverlays.fullscreen .overlay.left.item {
