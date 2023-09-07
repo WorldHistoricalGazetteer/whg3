@@ -295,20 +295,19 @@ mappy.on('load', function() {
 	        event.preventDefault();
 	    }
 	    
-	    if (event.target && event.target.parentNode.classList.contains('maplibregl-ctrl-fullscreen')) {
-			console.log('Switching to fullscreen.');
-			event.target.parentNode.classList.remove('maplibregl-ctrl-fullscreen');
-    		event.target.parentNode.classList.add('maplibregl-ctrl-shrink');
-			const mapOverlays = document.getElementById('mapOverlays');
-    		mapOverlays.classList.add('fullscreen');
-	    }
-	    else if (event.target && event.target.parentNode.classList.contains('maplibregl-ctrl-shrink')) {
-			console.log('Switching off fullscreen.');
-			event.target.parentNode.classList.remove('maplibregl-ctrl-shrink');
-    		event.target.parentNode.classList.add('maplibregl-ctrl-fullscreen');
-			const mapOverlays = document.getElementById('mapOverlays');
-    		mapOverlays.classList.remove('fullscreen');
-	    }
+		if (event.target && event.target.parentNode) {
+		    const parentNodeClassList = event.target.parentNode.classList;
+		
+		    if (parentNodeClassList.contains('maplibregl-ctrl-fullscreen')) {
+		        console.log('Switching to fullscreen.');
+		        parentNodeClassList.replace('maplibregl-ctrl-fullscreen', 'maplibregl-ctrl-shrink');
+		        document.getElementById('mapOverlays').classList.add('fullscreen');
+		    } else if (parentNodeClassList.contains('maplibregl-ctrl-shrink')) {
+		        console.log('Switching off fullscreen.');
+		        parentNodeClassList.replace('maplibregl-ctrl-shrink', 'maplibregl-ctrl-fullscreen');
+		        document.getElementById('mapOverlays').classList.remove('fullscreen');
+		    }
+		}
 	    
 	});
 	
