@@ -79,6 +79,22 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
   margin-bottom: 0px;
 }
 
+#mapOverlays.fullscreen {
+  width: 100%;
+  display: block;
+}
+
+#mapOverlays.fullscreen .column.right {
+  max-width: 0;
+}
+
+#mapOverlays.fullscreen .overlay.left.item {
+	max-height: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
 #mapControls.item {
   border: none;
   pointer-events: none; /* Make the #mapControls transparent for map interaction */
