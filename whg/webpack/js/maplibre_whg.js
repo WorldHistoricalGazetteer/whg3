@@ -28,6 +28,20 @@ let datelineContainer = null;
 
 if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
 
+class fullScreenControl {
+	onAdd() {
+		this._map = map;
+		this._container = document.createElement('div');
+		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+		this._container.textContent = 'Basemap';
+		this._container.innerHTML =
+			'<button type="button" class="maplibregl-ctrl-fullscreen" aria-label="Enter fullscreen" title="Enter fullscreen">' +
+			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
+			'</button>';
+		return this._container;
+	}
+}
+
 class StyleControl {
 	onAdd() {
 		this._map = map;
@@ -95,6 +109,8 @@ class StyleControl {
 		}
 	}
 }
+
+mappy.addControl(new fullScreenControl(), 'top-left');
 
 let style_code;
 if (mapParameters.styleFilter.length !== 1) {
@@ -272,11 +288,28 @@ mappy.on('load', function() {
 	}
 	
 	document.addEventListener('click', function(event) {
+		
 	    if (event.target && event.target.classList.contains('fetch-info-link')) {
 	        const pid = event.target.getAttribute('data-pid');
 	        getPlace(pid);
 	        event.preventDefault();
 	    }
+	    
+	    if (event.target && event.target.parentNode.classList.contains('maplibregl-ctrl-fullscreen')) {
+			console.log('Switching to fullscreen.');
+			event.target.parentNode.classList.remove('maplibregl-ctrl-fullscreen');
+    		event.target.parentNode.classList.add('maplibregl-ctrl-shrink');
+			const mapOverlays = document.getElementById('mapOverlays');
+    		mapOverlays.classList.add('fullscreen');
+	    }
+	    else if (event.target && event.target.parentNode.classList.contains('maplibregl-ctrl-shrink')) {
+			console.log('Switching off fullscreen.');
+			event.target.parentNode.classList.remove('maplibregl-ctrl-shrink');
+    		event.target.parentNode.classList.add('maplibregl-ctrl-fullscreen');
+			const mapOverlays = document.getElementById('mapOverlays');
+    		mapOverlays.classList.remove('fullscreen');
+	    }
+	    
 	});
 	
 });
