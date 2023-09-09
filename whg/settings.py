@@ -296,4 +296,5 @@ STATICFILES_DIRS = [
 try:
   from .local_settings import *
 except ImportError:
+  print('Error importing from .local_settings')
   pass

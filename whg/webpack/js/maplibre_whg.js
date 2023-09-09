@@ -464,7 +464,7 @@ function renderData(dsid) {
 	$.get('/datasets/' + dsid + '/geojson', function(data) {
 		features = data.collection.features;
 		initialiseTable();
-		// console.log('data', data.collection)
+		//console.log('data', data);
 		// get bounds w/turf
 		const dcEnvelope = envelope(data.collection)
 		// range = data.minmax
@@ -473,7 +473,7 @@ function renderData(dsid) {
 		mappy.addSource('places', {
 			'type': 'geojson',
 			'data': data.collection,
-			'attribution': '&copy; World Historical Gazetteer & contributors', // TO DO: This ought to be added in more detail by the API
+			'attribution': data.collection.attribution || '&copy; World Historical Gazetteer & contributors', // TO DO: This ought to be added in more detail by the API
 			'generateId': true // Required because otherwise-inserted ids are not recognised by style logic
 		})
 
