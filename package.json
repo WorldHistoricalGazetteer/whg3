@@ -9,17 +9,21 @@
   },
   "dependencies": {
     "@maptiler/sdk": "^1.1.2",
+    "canvas-toBlob": "^1.0.0",
+    "canvg": "^4.0.1",
+    "clipboard": "^2.0.11",
+    "css-loader": "^6.8.1",
+    "css-minimizer-webpack-plugin": "^1.0.0",
     "express": "^4.18.2",
+    "FileSaver": "^0.10.0",
     "jquery": "^3.7.0",
     "jquery-ui": "^1.13.2",
+    "jspdf": "^2.5.1",
     "maplibre-gl": "^3.2.1",
-    "moment": "^2.29.4",
-    "webpack": "^5.88.2",
-    "webpack-cli": "^5.1.4",
-    "css-loader": "^6.8.1",
     "mini-css-extract-plugin": "^2.7.6",
-    "css-minimizer-webpack-plugin": "^1.0.0",
+    "moment": "^2.29.4",
     "terser-webpack-plugin": "^5.3.9",
-    "clipboard": "^2.0.11"
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
   }
 }

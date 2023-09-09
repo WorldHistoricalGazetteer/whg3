@@ -6,6 +6,8 @@ _scratch/
 _tests/
 _testdata/
 
+node_modules/
+
 datasets/static/_older/
 static/_older/
 

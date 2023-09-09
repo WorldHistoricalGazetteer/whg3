@@ -1,6 +1,5 @@
 // /whg/webpack/js/ds_places_new.js
 
-import'./gis_resources';
 import { envelope } from './6.5.0_turf.min.js' 
 import { mappy, mapPadding, mapBounds, features, datasetLayers, filteredLayer, dateline } from './maplibre_whg';
 import ClipboardJS from '/webpack/node_modules/clipboard'; 
