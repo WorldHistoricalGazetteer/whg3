@@ -50,7 +50,7 @@ export default function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 		if (navigator.clipboard) {
 			navigator.clipboard.writeText(textToCopy)
 				.then(() => {
-					alert('Attribution text copied to clipboard.');
+					//alert('Attribution text copied to clipboard.');
 					// Make the "Download" button visible after copying
 					downloadButton.show();
 				})
@@ -65,7 +65,7 @@ export default function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 			tempInput.select();
 			document.execCommand('copy');
 			tempInput.remove();
-			alert('Attribution text copied to clipboard (fallback).');
+			//alert('Attribution text copied to clipboard (fallback).');
 			// Make the "Download" button visible after copying
 			downloadButton.show();
 		}
@@ -130,11 +130,11 @@ export default function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 	function cleanUp() {
 		renderMap.remove();
 		container.remove();
-		/*	  Object.defineProperty(window, 'devicePixelRatio', {
+			  Object.defineProperty(window, 'devicePixelRatio', {
 			    get: function () {
 			      return actualPixelRatio;
 			    },
-			  });*/
+			  });
 		modal.dialog('close');
 		modal.remove();
 
