@@ -291,4 +291,5 @@ GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
 try:
   from .local_settings import *
 except ImportError:
+  print('Error importing from .local_settings')
   pass
