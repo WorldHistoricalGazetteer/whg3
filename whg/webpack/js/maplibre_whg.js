@@ -461,20 +461,40 @@ function renderData(dsid) {
 	if (!!mappy.getSource('places')) mappy.removeSource('places')
 
 	// fetch data
-	$.get('/datasets/' + dsid + '/geojson', function(data) {
-		features = data.collection.features;
+	$.get('/datasets/' + dsid + '/mapdata', function(data) {
+		features = data.features;
+		
+		// Log features with invalid geometry
+	    const invalidFeatures = features.filter(feature => {
+	        return !feature.geometry;
+	    });
+	    console.log('Invalid Features:', invalidFeatures);
+		
+		
 		initialiseTable();
 		//console.log('data', data);
 		// get bounds w/turf
-		const dcEnvelope = envelope(data.collection)
+		const dcEnvelope = envelope(data)
 		// range = data.minmax
+		
+		let attributionParts = [];
+		if (data.attribution) {
+		    attributionParts.push(data.attribution);
+		}
+		if (data.citation) {
+		    attributionParts.push(data.citation);
+		}
+		let attribution = '';
+		if (attributionParts.length > 0) attribution = attributionParts.join(', ');
+		
+		let attributionStringParts = ['&copy; World Historical Gazetteer & contributors'];
+		attributionStringParts.push(data.attribution || data.citation || attribution);
 
 		// add source 'places' w/retrieved data
 		mappy.addSource('places', {
 			'type': 'geojson',
-			'data': data.collection,
-			'attribution': data.collection.attribution || '&copy; World Historical Gazetteer & contributors', // TO DO: This ought to be added in more detail by the API
-			'generateId': true // Required because otherwise-inserted ids are not recognised by style logic
+			'data': data,
+			'attribution': attributionStringParts.join(' | '),
 		})
 
 		// The 'empty' source and layers need to be reset after a change of map style

@@ -190,29 +190,34 @@ function highlightFeature(pid) {
 	
 	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(pid)); // .addSource 'generateId': true doesn't create a findable .id property
 	if (featureIndex !== -1) {
+		if (highlightedFeatureIndex !== undefined) mappy.setFeatureState({ source: 'places', id: highlightedFeatureIndex }, { highlight: false });
 	    var feature = features[featureIndex];
 		const geom = feature.geometry;
-		const coords = geom.coordinates;
-		if (highlightedFeatureIndex !== undefined) mappy.setFeatureState({ source: 'places', id: highlightedFeatureIndex }, { highlight: false });
-		highlightedFeatureIndex = featureIndex;
-		mappy.setFeatureState({ source: 'places', id: featureIndex }, { highlight: true });
-		
-		// zoom to feature
-		if (geom.type.toLowerCase() == 'point') {
-			const flycoords = typeof(coords[0]) == 'number' ? coords : coords[0]
-			const mapBounds = {
-				'center': flycoords,
-				'zoom': 7
+		if (geom) {
+			const coords = geom.coordinates;
+			highlightedFeatureIndex = featureIndex;
+			mappy.setFeatureState({ source: 'places', id: featureIndex }, { highlight: true });
+			
+			// zoom to feature
+			if (geom.type.toLowerCase() == 'point') {
+				const flycoords = typeof(coords[0]) == 'number' ? coords : coords[0]
+				const mapBounds = {
+					'center': flycoords,
+					'zoom': 7
+				}
+				mappy.flyTo({
+					...mapBounds,
+					padding: mapPadding
+				})
+			} else {
+				mapBounds = envelope(geom).bbox
+				mappy.fitBounds(mapBounds, {
+					padding: mapPadding
+				})
 			}
-			mappy.flyTo({
-				...mapBounds,
-				padding: mapPadding
-			})
-		} else {
-			mapBounds = envelope(geom).bbox
-			mappy.fitBounds(mapBounds, {
-				padding: mapPadding
-			})
+		}
+		else {
+			console.log('Feature in clicked row has no geometry.');
 		}
 	} else {
 	    console.log(`Feature ${pid} not found.`);
@@ -385,10 +390,14 @@ export function initialiseTable() {
 		      data: "properties.title"
 		    },
 		    {
-		      data: "geometry.type",
-		      render: function (data, type, row) {
-		        return `<img src="/static/images/geo_${data.toLowerCase()}.svg" width=12/>`; // CHECK - DOES THIS WORK FOR ALL GEOMETRY TYPES?
-		      }
+				data: "geometry",
+	            render: function (data, type, row) {
+	                if (data) {
+	                    return `<img src="/static/images/geo_${data.type.toLowerCase()}.svg" width=12/>`;
+	                } else {
+	                    return "<i>none</i>";
+	                }
+	            }
 		    },
 		    check_column
 		],
@@ -410,6 +419,9 @@ export function initialiseTable() {
 	        // Attach temporal min and max properties as data attributes
 	        $(row).attr('data-min', data.properties.min);
 	        $(row).attr('data-max', data.properties.max);
+			if (!data.geometry) {
+		        $(row).addClass('no-geometry');
+		    }
 	    },
 	    initComplete: function(settings, json) {
 	        adjustPageLength();
