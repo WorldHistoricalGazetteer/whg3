@@ -51,6 +51,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
   padding: 2px;
   pointer-events: none;
   height: 100%;
+  width: 100%;
   }
 
 #mapOverlays .column {
@@ -61,6 +62,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 
 #mapOverlays .column.left {
   min-width: 50%; /* Do not allow map to be over-squeezed by .column.right flex width */
+  width: 100%;
 }
 
 #mapOverlays .column.right {
@@ -208,6 +210,10 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 
 #placetable_wrapper {
 	overflow: hidden;
+}
+
+#placetable tr.no-geometry {
+	background-color: #dc35451c;
 }
 
 .dataTables_scrollBody {

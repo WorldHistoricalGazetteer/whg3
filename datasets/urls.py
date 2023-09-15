@@ -6,7 +6,7 @@ from django.conf import settings
 
 from . import views
 from datasets.utils import download_file, UpdateCountsView, download_augmented, \
-  fetch_geojson_ds, downloader, fetch_geojson_flat, downloadLP7
+  fetch_mapdata_ds, fetch_geojson_ds, downloader, fetch_geojson_flat, downloadLP7
 
 # dataset actions
 app_name='datasets'
@@ -85,6 +85,7 @@ urlpatterns = [
   path('collab-delete/<int:uid>/<int:dsid>/<str:v>', views.collab_delete, name="collab-delete"),
 
   ## GEOMETRY
+  path('<int:dsid>/mapdata/', fetch_mapdata_ds, name="mapdata"),
   path('<int:dsid>/geojson/', fetch_geojson_ds, name="geojson"),
   path('<int:dsid>/geojson_flat/', fetch_geojson_flat, name="geojson-flat"),
 

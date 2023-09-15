@@ -7,7 +7,6 @@ from django.http import FileResponse, JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, render #, redirect
 from django.views.generic import View
 
-
 import codecs, csv, datetime, sys, openpyxl, os, pprint, re, time
 import pandas as pd
 import simplejson as json
@@ -411,6 +410,44 @@ def download_augmented_slow(request, *args, **kwargs):
 
     return response
   # *** /end DOWNLOAD FILES
+  
+# GeoJSON for all places in a dataset INCLUDING those without geometry
+def fetch_mapdata_ds(request, *args, **kwargs):
+    print('fetch_mapdata_ds kwargs', kwargs)
+    dsid = kwargs['dsid']
+    ds = get_object_or_404(Dataset, pk=dsid)
+    
+    places = ds.places.prefetch_related('geoms')
+
+    feature_collection = {
+        "title": ds.title,
+        "contributors": ds.contributors,
+        "citation": ds.citation,
+        "creator": ds.creator,
+        "minmax": ds.minmax,
+        "type": "FeatureCollection", 
+        "features": [], 
+    }
+
+    for index, place in enumerate(places):
+        geometries = place.geoms.all()
+        geometry = json.loads(geometries[0].geom.json) if geometries and geometries[0].geom else None
+
+        feature = {
+            "type": "Feature",
+            "properties": {
+                "pid": place.id,
+                "title": place.title,
+                "min": place.minmax[0] if place.minmax is not None else None,
+                "max": place.minmax[1] if place.minmax is not None else None,
+            },
+            "geometry": geometry,
+            "id": index # Required for MapLibre conditional styling 
+        }
+    
+        feature_collection["features"].append(feature)
+    
+    return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii': False})
 
 # GeoJSON for all places in a dataset
 # feeds ds_browse (owner view); ds_places, collection_places (public)
