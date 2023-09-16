@@ -257,17 +257,11 @@ mappy.on('load', function() {
 
 	// popup generating events per layer
 	// TODO: polygons?
+	let activePopup;
 	for (var l in layer_list) {
-		mappy.on('mouseenter', layer_list[l], function() {
+		mappy.on('mouseenter', layer_list[l], function(e) {
 			mappy.getCanvas().style.cursor = 'pointer';
-		});
-
-		// Change it back to a pointer when it leaves.
-		mappy.on('mouseleave', layer_list[l], function() {
-			mappy.getCanvas().style.cursor = '';
-		});
-
-		mappy.on('click', layer_list[l], function(e) {
+			
 			const ftype = e.features[0].layer.type
 			const gtype = e.features[0].geometry.type
 			const geom = e.features[0].geometry
@@ -293,21 +287,70 @@ mappy.on('load', function() {
 			var pid = e.features[0].properties.pid;
 			var title = e.features[0].properties.title;
 			var src_id = e.features[0].properties.src_id;
-			var minmax = e.features[0].properties.minmax;
+			var min = e.features[0].properties.min;
+			var max = e.features[0].properties.max;
 			var fc = e.features[0].properties.fclasses;
 
 			while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
 				coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
 			}
-
-			// popup
-			new maptilersdk.Popup()
+			
+			activePopup = new maptilersdk.Popup({ closeButton: false })
 				.setLngLat(coordinates)
 				.setHTML('<b>' + title + '</b><br/>' +
 					// Cannot use href="javascript:<function>" in module. EventListener added to class instead.
-					'<a href="#" class="fetch-info-link" data-pid="' + pid + '">fetch info</a><br/>' +
-					'start, end: ' + minmax)
+					// '<a href="#" class="fetch-info-link" data-pid="' + pid + '">fetch info</a><br/>' +
+					// 'start, end: ' + minmax +
+					'Temporality: ' + (min ? min : '?') + '/' + (max ? max : '?') + '<br/>' +
+					'Click to focus'
+					)
 				.addTo(mappy);
+			
+		});
+
+		// Change it back to a pointer when it leaves.
+		mappy.on('mouseleave', layer_list[l], function() {
+			mappy.getCanvas().style.cursor = '';
+			
+		    if (activePopup) {
+		      activePopup.remove();
+		    }
+		    
+		});
+
+		mappy.on('click', layer_list[l], function(e) {
+			
+			var pid = e.features[0].properties.pid;
+			var table = $('#placetable').DataTable();
+		    
+		    // Search for the row within the sorted and filtered view
+		    var pageInfo = table.page.info();
+		    var rowPosition = -1;
+			var rows = table.rows({ search: 'applied', order: 'current' }).nodes();
+			let selectedRow;
+			for (var i = 0; i < rows.length; i++) {
+			    var rowData = table.row(rows[i]).data();
+			    rowPosition++;
+			    if (rowData.properties.pid == pid) {
+			        selectedRow = rows[i];
+			        break; // Stop the loop when the row is found
+			    }
+			}
+
+		    if (rowPosition !== -1) {
+		        // Calculate the page number based on the row's position
+		        var pageNumber = Math.floor(rowPosition / pageInfo.length);
+		        console.log(`Feature ${pid} selected at table row ${rowPosition} on page ${pageNumber + 1} (current page ${pageInfo.page + 1}).`);
+		        
+		        // Check if the row is on the current page
+		        if (pageInfo.page !== pageNumber) {
+		            table.page(pageNumber).draw('page');
+		        }
+		
+		        selectedRow.scrollIntoView();
+		        $(selectedRow).trigger('click');
+		    }
+			
 		})
 	}
 

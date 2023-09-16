@@ -376,8 +376,8 @@ export function initialiseTable() {
 		order: [
 			[0, 'asc']
 		],
-		pageLength: 250,
-		LengthMenu: [25, 50, 100],
+		//pageLength: 250,
+		//LengthMenu: [25, 50, 100],
 		data: features,
 		columns: [
 			{
@@ -415,6 +415,7 @@ export function initialiseTable() {
 			/*, {visible: false, "targets": [5]}*/
 			/*, {visible: false, "targets": [0]}*/
 		],
+		rowId: 'properties.pid',
 	    createdRow: function (row, data, dataIndex) {
 	        // Attach temporal min and max properties as data attributes
 	        $(row).attr('data-min', data.properties.min);
