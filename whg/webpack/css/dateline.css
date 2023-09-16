@@ -197,6 +197,7 @@ input[type="range"]::-moz-range-thumb:hover {
 }
 
 .year_button,
+.undated_button,
 .epochs_button,
 .automate_button {
   background-color: #f2f2f2;
@@ -210,11 +211,27 @@ input[type="range"]::-moz-range-thumb:hover {
   transition: background-color 0.2s, color 0.2s, border-color 0.2s;
 }
 
+
+.undated_button,
 .epochs_button,
 .automate_button {
   margin-left: 4px;
   color: var(--year-text);
   border-color: var(--slider-background-darker);
+}
+
+.undated_button {
+	padding: 2px 6px;
+    top: -1px;
+    position: relative;
+  	font-weight: normal;
+}
+
+.undated_button input {
+	margin: 0 3px 0 0;
+    padding: 0;
+    top: 3px;
+    position: relative;
 }
 
 .year_button:hover {
@@ -268,4 +285,5 @@ input[type="range"]::-moz-range-thumb:hover {
   font-size: 12px;
   pointer-events: none;
   opacity: 0;
+  pointer-events: none!important;
 }

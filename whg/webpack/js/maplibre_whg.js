@@ -480,14 +480,74 @@ export function filteredLayer(layer) {
 			...layer
 		});
 		const existingFilter = modifiedLayer.filter;
-		modifiedLayer.filter = [
-			'all',
-			existingFilter,
-			['has', 'max'],
-			['has', 'min'],
-			['>=', 'max', dateline.fromValue],
-			['<=', 'min', dateline.toValue]
-		];
+		
+		const isUndatedChecked = $('#undated_checkbox').is(':checked');
+		let undatedFilter;
+		if (isUndatedChecked) {
+		  undatedFilter = ['any', ['!', ['has', 'max']], ['!', ['has', 'min']]];
+		} else {
+		  undatedFilter = ['==', ['boolean', true], true];
+		}
+		
+		if (isUndatedChecked) { // Include features within the range AND undated features
+		  modifiedLayer.filter = [
+		    'all',
+		    existingFilter,
+		    [
+				'any',
+				[
+				    'all',
+				    ['!=', 'max', 'null'],
+				    ['!=', 'min', 'null'],
+				    ['>=', 'max', dateline.fromValue],
+				    ['<=', 'min', dateline.toValue],
+				],
+				[
+					'any',
+                    ['==', 'max', 'null'],
+                    ['==', 'min', 'null']
+				]
+			]
+		  ];
+		} else { // Include features within the range BUT NOT undated features
+		  modifiedLayer.filter = [
+		    'all',
+		    existingFilter,
+		    ['has', 'max'],
+		    ['has', 'min'],
+		    ['>=', 'max', dateline.fromValue],
+		    ['<=', 'min', dateline.toValue],
+		  ];
+		}
+
+		console.log(modifiedLayer.filter);
+        /*modifiedLayer.filter = [
+            'all',
+            existingFilter,
+            [
+                'any',
+                [
+                    'all',
+                    ['has', 'max'],
+                    ['has', 'min'],
+                    ['>=', ['get', 'max'], dateline.fromValue],
+                    ['<=', ['get', 'min'], dateline.toValue]
+                ],
+                [
+                    'all',
+                    [
+                        'any',
+                        ['!', ['has', 'max']],
+                        ['!', ['has', 'min']]
+                    ],
+                    [
+                        '==',
+                        ['boolean', isUndatedChecked],
+                        true
+                    ]
+                ]
+            ]
+        ];*/
 		return modifiedLayer;
 	} else return layer;
 }
