@@ -52,6 +52,7 @@ export default class Dateline {
 		maxValue = 2000,
 		onChange = null,
 		open = false,
+		includeUndated = true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
 		epochs = true,
 		automate = true
 	}) {
@@ -60,6 +61,7 @@ export default class Dateline {
 		this.minValue = minValue;
 		this.maxValue = maxValue;
 		this.open = open;
+		this.includeUndated = includeUndated;
 		this.epochs = epochs;
 		this.automate = automate;
 
@@ -93,8 +95,9 @@ export default class Dateline {
 		const rangeContainerHTML = `
 			<div class="range_container">
 				<div class="form_control">
-					<div class="control_container from">
+					<div class="control_container from"> 
 						<button class="year_button">${this.fromValue}</button>
+						${this.includeUndated !== null ? `<button class="undated_button" title="Include features without temporal data."><input type="checkbox" id="undated_checkbox"${this.includeUndated ? ' checked' : ''} /><label for="undated_checkbox">Undated</label></button>` : ''}
 						${this.epochs ? '<button class="epochs_button" title="Set range from a defined epoch.">Epochs</button>' : ''}
 						${this.automate ? '<button class="automate_button" title="Automate slider movement.">Automate</button>' : ''}
 					</div>
@@ -195,6 +198,13 @@ export default class Dateline {
 				this.updateFormInputs();
 			});
 		});
+		
+		const undatedCheckbox = document.getElementById('undated_checkbox');
+	    if (undatedCheckbox) {
+	        undatedCheckbox.addEventListener('change', () => {
+	            this.updateFormInputs();
+	        });
+	    }
 
 		if (this.open) {
 			const datelineButton = document.querySelector('.dateline-button');
@@ -291,14 +301,16 @@ export default class Dateline {
 			tickValue += tickStep;
 		}
 	}
-
+	
 	updateFormInputs() {
 		this.rangeContainer.querySelector('.control_container.from .year_button').textContent = this.fromValue;
 		this.rangeContainer.querySelector('.control_container.to .year_button').textContent = this.toValue;
 		fillSlider(this.fromSlider, this.toSlider);
 		
+		this.includeUndated = $('#undated_checkbox').length > 0 && $('#undated_checkbox').is(':checked');
+		
 		if (typeof this.onChangeCallback === 'function') {
-            this.onChangeCallback(this.fromValue, this.toValue);
+            this.onChangeCallback(this.fromValue, this.toValue, this.includeUndated);
         }
 	}
 }

@@ -42,6 +42,7 @@ $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
 	
     const fromValue = dateline.fromValue;
     const toValue = dateline.toValue;
+    const includeUndated = dateline.includeUndated
     
     // Get the min and max values from the data attributes of the row
     const row = $(settings.aoData[dataIndex].nTr);
@@ -49,11 +50,11 @@ $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
     const maxData = row.attr('data-max');
 
     // Convert minData and maxData to numbers for comparison
-    const min = parseFloat(minData);
-    const max = parseFloat(maxData);
+    const min = minData === 'null' ? 'null' : parseFloat(minData);
+	const max = maxData === 'null' ? 'null' : parseFloat(maxData);
 
     // Filter logic
-	if ((!isNaN(fromValue) && !isNaN(toValue)) && (min <= toValue && max >= fromValue)) {
+	if (((!isNaN(fromValue) && !isNaN(toValue)) && (min !== 'null' && max !== 'null' && min <= toValue && max >= fromValue)) || (includeUndated && (min === 'null' || max === 'null'))) {
         return true; // Include row in the result
     }
     return false; // Exclude row from the result
