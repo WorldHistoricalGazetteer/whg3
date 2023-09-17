@@ -92,6 +92,7 @@ export default class Dateline {
 	}
 
 	createSliderElements() {
+		const datelineDiv = document.getElementById("dateline");
 		const rangeContainerHTML = `
 			<div class="range_container">
 				<div class="form_control">
@@ -114,7 +115,7 @@ export default class Dateline {
 		`;
 		const parser = new DOMParser();
 		this.rangeContainer = parser.parseFromString(rangeContainerHTML, 'text/html').body.firstChild;
-		document.getElementById("dateline").appendChild(this.rangeContainer);
+		datelineDiv.appendChild(this.rangeContainer);
 
 		const datelineButton = document.querySelector('.dateline-button');
 		this.rangeContainer.parentNode.insertBefore(datelineButton, this.rangeContainer);
@@ -123,6 +124,7 @@ export default class Dateline {
 				this.rangeContainer.classList.remove('transitioned');
 			}
 			this.rangeContainer.classList.toggle('expanded');
+			datelineDiv.classList.toggle('expanded');
 			const onTransitionEnd = (event) => {
 				if ((event.propertyName === 'max-width') && this.rangeContainer.classList.contains('expanded')) {
 					if (!this.scaleContainer.hasChildNodes()) {
