@@ -450,25 +450,33 @@ export const datasetLayers = [{
 				['boolean', ['feature-state', 'highlight'], false], .8,
 				.5
 			],
-			'circle-stroke-color': 'red',
-			'circle-stroke-opacity': .8,
+			'circle-stroke-color': [
+	            'case',
+				['boolean', ['feature-state', 'highlight'], false], 'red',			
+				'orange'
+	        ],
+			'circle-stroke-opacity': [
+	            'case',
+				['any', ['==', ['get', 'min'], 'null'], ['==', ['get', 'max'], 'null']], .5,			
+				.8
+	        ],
 			'circle-stroke-width': [ // Simulate larger radius - zoom-based radius cannot operate together with feature-state switching
 				'case',
 				['boolean', ['feature-state', 'highlight'], false], 5,
-				0
+				2
 			],
 			'circle-radius': [
 				'interpolate',
 				['linear'],
 				['zoom'],
-				0, 1, // zoom, radius
+				0, .5, // zoom, radius
 				16, 20,
 			],
-			'circle-color': [
-				'case',
-				['boolean', ['feature-state', 'highlight'], false], 'red',
+	        'circle-color': [
+	            'case',
+				['boolean', ['feature-state', 'highlight'], false], 'red',		
 				'orange'
-			],
+	        ],
 		},
 		'filter': ['==', '$type', 'Point'],
 	}
@@ -482,12 +490,6 @@ export function filteredLayer(layer) {
 		const existingFilter = modifiedLayer.filter;
 		
 		const isUndatedChecked = $('#undated_checkbox').is(':checked');
-		let undatedFilter;
-		if (isUndatedChecked) {
-		  undatedFilter = ['any', ['!', ['has', 'max']], ['!', ['has', 'min']]];
-		} else {
-		  undatedFilter = ['==', ['boolean', true], true];
-		}
 		
 		if (isUndatedChecked) { // Include features within the range AND undated features
 		  modifiedLayer.filter = [
@@ -519,35 +521,7 @@ export function filteredLayer(layer) {
 		    ['<=', 'min', dateline.toValue],
 		  ];
 		}
-
-		console.log(modifiedLayer.filter);
-        /*modifiedLayer.filter = [
-            'all',
-            existingFilter,
-            [
-                'any',
-                [
-                    'all',
-                    ['has', 'max'],
-                    ['has', 'min'],
-                    ['>=', ['get', 'max'], dateline.fromValue],
-                    ['<=', ['get', 'min'], dateline.toValue]
-                ],
-                [
-                    'all',
-                    [
-                        'any',
-                        ['!', ['has', 'max']],
-                        ['!', ['has', 'min']]
-                    ],
-                    [
-                        '==',
-                        ['boolean', isUndatedChecked],
-                        true
-                    ]
-                ]
-            ]
-        ];*/
+		
 		return modifiedLayer;
 	} else return layer;
 }

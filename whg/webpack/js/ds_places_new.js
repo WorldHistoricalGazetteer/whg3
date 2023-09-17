@@ -424,6 +424,9 @@ export function initialiseTable() {
 			if (!data.geometry) {
 		        $(row).addClass('no-geometry');
 		    }
+			if (data.properties.min === 'null' || data.properties.max === 'null') {
+		        $(row).addClass('no-temporal');
+		    }
 	    },
 	    initComplete: function(settings, json) {
 	        adjustPageLength();
