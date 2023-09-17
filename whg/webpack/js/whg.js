@@ -1,7 +1,5 @@
 // /whg/webpack/whg.js
 
-import '../../../static/css/spin.css';
+import'./gis_resources'; // MapTiler SDK, aliases.js, and various .css files
 
-import '../../../static/js/aliases.js';
-import'./gis_resources';
-import './maplibre_whg.js';
+import './mapAndTable.js';
