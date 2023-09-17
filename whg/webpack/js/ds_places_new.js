@@ -394,7 +394,7 @@ export function initialiseTable() {
 				data: "geometry",
 	            render: function (data, type, row) {
 	                if (data) {
-	                    return `<img src="/static/images/geo_${data.type.toLowerCase()}.svg" width=12/>`;
+	                    return `<img src="/static/images/geo_${data.type.toLowerCase().replace('multi','')}.svg" width=12/>`;
 	                } else {
 	                    return "<i>none</i>";
 	                }
