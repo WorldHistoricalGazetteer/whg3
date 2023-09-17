@@ -370,8 +370,8 @@ export const datasetLayers = [{
 		'paint': {
 			'line-color': [
 				'case',
-				['boolean', ['feature-state', 'highlight'], false], 'green',
-				'lightgreen'
+				['boolean', ['feature-state', 'highlight'], false], 'rgba(0,128,0,.8)', // green
+				'rgba(144,238,144,.8)' // lightgreen
 			],
 			'line-width': [
 				'case',
@@ -388,18 +388,14 @@ export const datasetLayers = [{
 		'paint': {
 			'fill-color': [
 				'case',
-				['boolean', ['feature-state', 'highlight'], false], 'rgb(0,128,0)',
-				'#ddd'
-			],
-			'fill-opacity': [
-				'case',
-				['boolean', ['feature-state', 'highlight'], false], .8,
-				.3
+				['boolean', ['feature-state', 'highlight'], false], 'rgba(0,128,0,.8)', // green
+				'rgba(221,221,221,.3)' // pale-gray
 			],
 			'fill-outline-color': [
 				'case',
 				['boolean', ['feature-state', 'highlight'], false], 'red',
-				'#666'
+				['any', ['==', ['get', 'min'], 'null'], ['==', ['get', 'max'], 'null']], 'rgba(102,102,102,.5)', // dark-gray
+				'rgba(102,102,102,.8)' // dark-gray
 			],
 		},
 		'filter': ['==', '$type', 'Polygon']
@@ -410,10 +406,9 @@ export const datasetLayers = [{
 		'source': 'places',
 		'layout': {},
 		'paint': {
-			'line-color': '#999',
+			'line-color': 'rgba(153,153,153,.5)', // mid-gray
 			'line-width': 1,
 			'line-dasharray': [4, 2],
-			'line-opacity': 0.5,
 		},
 		'filter': ['==', '$type', 'Polygon']
 	},
@@ -422,15 +417,10 @@ export const datasetLayers = [{
 		'type': 'circle',
 		'source': 'places',
 		'paint': {
-			'circle-opacity': [
-				'case',
-				['boolean', ['feature-state', 'highlight'], false], .8,
-				.5
-			],
 			'circle-stroke-color': [
 	            'case',
-				['boolean', ['feature-state', 'highlight'], false], 'red',			
-				'orange'
+				['boolean', ['feature-state', 'highlight'], false], 'rgb(255,0,0)',	// red			
+				'rgb(255,165,0)' // orange
 	        ],
 			'circle-stroke-opacity': [
 	            'case',
@@ -451,8 +441,8 @@ export const datasetLayers = [{
 			],
 	        'circle-color': [
 	            'case',
-				['boolean', ['feature-state', 'highlight'], false], 'red',		
-				'orange'
+				['boolean', ['feature-state', 'highlight'], false], 'rgba(255,0,0,.8)',	// red
+				'rgba(255,165,0,.5)' // orange
 	        ],
 		},
 		'filter': ['==', '$type', 'Point'],
