@@ -216,6 +216,10 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 	background-color: #dc35451c;
 }
 
+#placetable tr.no-temporal {
+	font-style: italic;
+}
+
 .dataTables_scrollBody {
 	height: auto!important;
 	max-height: 100%;
