@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.db.models import Extent
 from django.core.exceptions import ValidationError
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives
@@ -418,6 +419,7 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     ds = get_object_or_404(Dataset, pk=dsid)
     
     places = ds.places.prefetch_related('geoms')
+    extent = list(ds.places.aggregate(Extent('geoms__geom')).values())[0]
 
     feature_collection = {
         "title": ds.title,
@@ -425,6 +427,7 @@ def fetch_mapdata_ds(request, *args, **kwargs):
         "citation": ds.citation,
         "creator": ds.creator,
         "minmax": ds.minmax,
+        "extent": extent,
         "type": "FeatureCollection", 
         "features": [], 
     }
