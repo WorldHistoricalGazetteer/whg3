@@ -1,0 +1,98 @@
+#actions {
+  padding-top: 0.2rem;
+}
+
+#addtocoll_popup {
+  font-size: 0.8rem;
+  position: absolute;
+  top: 16px;
+  right: 195px;
+  width: 170px;
+  background-color: #fff;
+  border: 1px solid #336699;
+  z-index: 2000;
+  box-shadow: 3px 3px #c3c3c3;
+}
+
+#selection_status {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: none;
+}
+
+.dataTables_scroll {
+  border-right: 1px solid gainsboro;
+}
+
+#dataset_content {
+  position: relative;
+  height: calc(98vh - 60px);
+  overflow-y: auto;
+}
+
+#ds_info {
+  transition: height 0.5s;
+  overflow: hidden;
+}
+
+#detail {
+  font-size: 0.8rem;
+  z-index: 10;
+  height: 30% !important;
+}
+
+#detail p {
+  margin-bottom: 0.2rem;
+}
+
+.title {
+  font-weight: bold;
+  color: #021691; /* darkblue - WAS #993333 FOR DS_COLLECTION_NEW*/
+}
+
+#toggleIcon {
+  cursor: pointer;
+  color: #336699;
+}
+
+.img-dscoll {
+  max-width: 80%;
+  max-height: 100%;
+  height: auto;
+  width: auto;
+  position: absolute;
+  top: 40%;
+  right: 40%;
+  transform: translate(50%, -50%);
+}
+
+#metadata p {
+  font-size: 0.9rem;
+}
+
+.paginate_button {
+  padding: 0 !important;
+}
+
+.dataTables_filter {
+  float: left !important;
+}
+
+.dataTables_filter input {
+  padding: 2px;
+}
+
+.addtocoll {
+  background-color: aliceblue;
+}
+
+/* padding to the left side of the second column */
+td:nth-child(2) {
+  padding-left: 10px;
+}
+
+/* bold first column */
+td:first-child {
+  font-weight: bold;
+}
