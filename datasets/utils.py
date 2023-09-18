@@ -441,8 +441,8 @@ def fetch_mapdata_ds(request, *args, **kwargs):
             "properties": {
                 "pid": place.id,
                 "title": place.title,
-                "min": "null" if place.minmax is None or place.minmax[0] is None else place.minmax[0], # String require by Maplibre filter test
-                "max": "null" if place.minmax is None or place.minmax[1] is None else place.minmax[1], # String require by Maplibre filter test
+                "min": "null" if place.minmax is None or place.minmax[0] is None else place.minmax[0], # String required by Maplibre filter test
+                "max": "null" if place.minmax is None or place.minmax[1] is None else place.minmax[1], # String required by Maplibre filter test
             },
             "geometry": geometry,
             "id": index # Required for MapLibre conditional styling 
