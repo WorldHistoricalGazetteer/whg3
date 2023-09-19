@@ -1,5 +1,6 @@
 // /whg/webpack/js/mapControls.js
 
+import Dateline from './dateline';
 import generateMapImage from './saveMapImage';
 
 class fullScreenControl {
@@ -104,7 +105,98 @@ class StyleControl {
 	}
 }
 
-function init_mapControls(mappy){
+class CustomAttributionControl extends maptilersdk.AttributionControl {
+    constructor(options) {
+        super(options);
+        this.autoClose = options.autoClose !== false;
+    }
+    onAdd(map) {
+        const container = super.onAdd(map);
+        // Automatically close the AttributionControl if autoClose is enabled
+        if (this.autoClose) {
+            const attributionButton = container.querySelector('.maplibregl-ctrl-attrib-button');
+            if (attributionButton) {
+                attributionButton.dispatchEvent(new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                }));
+                container.classList.add('fade-in');
+            }
+        }
+        return container;
+    }
+}
+
+function initMapStyleControl(mappy, renderData, mapParameters){
+
+	let style_code;
+	if (mapParameters.styleFilter.length !== 1) {
+		mappy.addControl(new StyleControl(mappy, renderData), 'top-right');
+	}
+	if (mapParameters.styleFilter.length == 0) {
+		style_code = ['DATAVIZ', 'DEFAULT']
+	} else {
+		style_code = mapParameters.styleFilter[0].split(".");
+	}
+	mappy.setStyle(maptilersdk.MapStyle[style_code[0]][style_code[1]]);
+	
+}
+
+function init_mapControls(mappy, dateline, datelineContainer, toggleFilters, mapParameters, data){
+
+	if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
+	
+	mappy.addControl(new fullScreenControl(), 'top-left');
+	mappy.addControl(new downloadMapControl(), 'top-left');
+	
+	mappy.addControl(new CustomAttributionControl({
+		compact: true,
+    	autoClose: mapParameters.controls.attribution.open === false,
+	}), 'bottom-right');
+
+	function dateRangeChanged(fromValue, toValue){
+		// Throttle date slider changes using debouncing
+		// Ought to be possible to use promises on the `render` event
+		let debounceTimeout;
+	    function debounceFilterApplication() {
+	        clearTimeout(debounceTimeout);
+	        debounceTimeout = setTimeout(toggleFilters(true), 300);
+	    }
+	    debounceFilterApplication(); 
+	}
+
+	if (dateline) {
+		dateline.destroy();
+		dateline = null;
+	}
+	if (datelineContainer) {
+		datelineContainer.remove();
+		datelineContainer = null;
+	}
+
+	if (!!mapParameters.controls.temporal) {
+		datelineContainer = document.createElement('div');
+		datelineContainer.id = 'dateline';
+		document.getElementById('mapControls').appendChild(datelineContainer);
+
+		if (data.minmax) {
+			const [minValue, maxValue] = data.minmax;
+			const range = maxValue - minValue;
+			const buffer = range * 0.1; // 10% buffer
+
+			// Update the temporal settings
+			mapParameters.controls.temporal.fromValue = minValue;
+			mapParameters.controls.temporal.toValue = maxValue;
+			mapParameters.controls.temporal.minValue = minValue - buffer;
+			mapParameters.controls.temporal.maxValue = maxValue + buffer;
+		}
+
+		dateline = new Dateline({
+			...mapParameters.controls.temporal,
+			onChange: dateRangeChanged
+		});
+	};
 	
 	document.addEventListener('click', function(event) {
 
@@ -129,6 +221,8 @@ function init_mapControls(mappy){
 
 	});
 	
+	return { dateline, datelineContainer, mapParameters }
+	
 }
 
-export { fullScreenControl, downloadMapControl, StyleControl, init_mapControls };
+export { initMapStyleControl, init_mapControls };

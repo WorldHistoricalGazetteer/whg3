@@ -14,18 +14,19 @@
 {% endblock %} 
 {% block content %} 
 	<div id="dataset_content" class="container mt-1 px-1">
-	  <div id="map" style="height:100%;"></div>
+	  <div id="map" style="opacity: 0; height:100%;"></div>
 	  <div id="ds_info" class="overlay left">
 	    <div id="ds_header">
 	      <span class="fs-5 title">
 	        <img src="{% static 'images/spreadsheet.png'%}" height=28 alt="" />
 	        {{ ds.title }}
 	      </span>
-	      <span class="fs-6"> a WHG dataset</span>
-	      <span id="toggleIcon" class="float-end">
-	        <span id="iconLabel" class="small">Hide</span>
-	        <i id="expandIcon" class="fas fa-chevron-down" style="display: none;"></i>
-	        <i id="collapseIcon" class="fas fa-chevron-up"></i>
+	      <span class="fs-6"> a WHG dataset </span>
+	      <span id="collapseExpand" class="float-end">
+	        <span class="info-collapse small">Hide</span>
+	        <i class="info-collapse fas fa-chevron-up"></i>
+	        <span class="info-expand small">Show Detail</span>
+	        <i class="info-expand fas fa-chevron-down"></i>
 	      </span>
 	    </div>
 	    <!-- ds_header -->
@@ -164,7 +165,7 @@
 	
 	<!-- Set up MapLibre map using Maptiler SDK -->
 	<script type="text/javascript">
-	  const mapParameters = {
+	  let mapParameters = {
 	    container: 'map',
 	    center: [9.2, 33],
 	    zoom: 0.2, // starting zoom

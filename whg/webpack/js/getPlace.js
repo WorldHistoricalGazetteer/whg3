@@ -116,10 +116,10 @@ function parsePlace(data) {
 	// RELATED
 	//right=''-->
 	if (data.related.length > 0) {
-		parent = '<p class="mb-0"><b>Parent(s)</b>: ';
-		related = '<p class="mb-0"><b>Related</b>: ';
-		for (r in data.related) {
-			rel = data.related[r]
+		let parent = '<p class="mb-0"><b>Parent(s)</b>: ';
+		let related = '<p class="mb-0"><b>Related</b>: ';
+		for (var r in data.related) {
+			const rel = data.related[r]
 			//console.log('rel',rel)-->
 			if (rel.relation_type == 'gvp:broaderPartitive') {
 				parent += '<span class="small h1em">' + rel.label
@@ -162,6 +162,20 @@ function parsePlace(data) {
 	descrip += '</div>'
 	return descrip
 }
+
+function minmaxer(timespans) {
+	//console.log('got to minmax()',JSON.stringify(timespans))-->
+	let starts = [];
+	let ends = []
+	for (var t in timespans) {
+		// gets 'in', 'earliest' or 'latest'
+		starts.push(Object.values(timespans[t].start)[0])
+		ends.push(!!timespans[t].end ? Object.values(timespans[t].end)[0] : -1)
+	}
+	//console.log('starts',starts,'ends',ends)-->
+	return [Math.max.apply(null, starts), Math.max.apply(null, ends)]
+}
+
 // builds link for external place record
 function url_extplace(identifier) {
 	// abbreviate links not in aliases.base_urls

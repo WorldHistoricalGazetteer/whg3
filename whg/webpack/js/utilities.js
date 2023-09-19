@@ -1,5 +1,25 @@
 import ClipboardJS from '/webpack/node_modules/clipboard';
 
+export function initInfoOverlay() {
+	
+	var isCollapsed = localStorage.getItem('isCollapsed') === 'true';
+	
+	// Initialize checkbox, metadata, and toggle switch, based on isCollapsed
+    $('#checkbox').prop('checked', isCollapsed);
+	$('#metadata').toggle(!isCollapsed);
+	$('#ds_info').toggleClass('info-collapsed', isCollapsed);
+
+	$('#collapseExpand').click(function() {
+		$('#metadata').slideToggle(300, function(){ $('#ds_info').toggleClass('info-collapsed'); });
+	});
+
+	// Update the state when the checkbox is checked
+	$('#checkbox').change(function() {
+		localStorage.setItem('isCollapsed', $(this).is(':checked'));
+	});
+
+}
+
 export function attributionString(data) {
 	let attributionParts = [];
 	if (data.attribution) {
@@ -15,20 +35,6 @@ export function attributionString(data) {
 	attributionStringParts.push(data.attribution || data.citation || attribution);
 	
 	return attributionStringParts.join(' | ');
-}
-
-export function minmaxer(timespans) {
-	//console.log('got to minmax()',JSON.stringify(timespans))-->
-	starts = [];
-	ends = []
-	for (t in timespans) {
-		// gets 'in', 'earliest' or 'latest'
-		starts.push(Object.values(timespans[t].start)[0])
-		ends.push(!!timespans[t].end ? Object.values(timespans[t].end)[0] : -1)
-	}
-	//console.log('starts',starts,'ends',ends)-->
-	minmax = [Math.max.apply(null, starts), Math.max.apply(null, ends)]
-	return minmax
 }
 
 export function startSpinner(spinnerId) {

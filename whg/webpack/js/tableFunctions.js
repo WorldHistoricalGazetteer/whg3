@@ -1,6 +1,7 @@
 import { envelope } from './6.5.0_turf.min.js'
 import { getPlace } from './getPlace';
 import { startSpinner } from './utilities';
+import { recenterMap } from './mapFunctions';
 
 function highlightFirstRow() {
 	$("#placetable tr").removeClass("highlight-row");
@@ -54,7 +55,7 @@ export function clearFilters() {
 	$("#status_select").val('99')
 }
 
-export function highlightFeature(pid, highlightedFeatureIndex, features, mappy, mapBounds, mapPadding) {
+export function highlightFeature(pid, highlightedFeatureIndex, features, mappy) {
 	
 	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(pid)); // .addSource 'generateId': true doesn't create a findable .id property
 	if (featureIndex !== -1) {
@@ -70,19 +71,14 @@ export function highlightFeature(pid, highlightedFeatureIndex, features, mappy, 
 			// zoom to feature
 			if (geom.type.toLowerCase() == 'point') {
 				const flycoords = typeof(coords[0]) == 'number' ? coords : coords[0]
-				const mapBounds = {
+				window.mapBounds = {
 					'center': flycoords,
 					'zoom': 7
 				}
-				mappy.flyTo({
-					...mapBounds,
-					padding: mapPadding
-				})
+				recenterMap(mappy, 'lazy');
 			} else {
-				mapBounds = envelope(geom).bbox
-				mappy.fitBounds(mapBounds, {
-					padding: mapPadding
-				})
+				window.mapBounds = envelope(geom).bbox;
+				recenterMap(mappy, 'lazy');
 			}
 		}
 		else {
@@ -99,44 +95,6 @@ export function highlightFeature(pid, highlightedFeatureIndex, features, mappy, 
 export function initialiseTable(features, checked_rows, spinner_table, spinner_detail) {
 	
 	console.log('initialiseTable', features);
-	
-	// START ds_info controls
-	var isCollapsed = localStorage.getItem('isCollapsed') === 'true';
-
-	// Set initial height and icon
-	if (isCollapsed) {
-		$('#ds_info').css('height', '40px');
-		$('#expandIcon').show();
-		$('#collapseIcon').hide();
-		$('#iconLabel').text('Show Detail');
-	}
-
-	$('#toggleIcon').click(function() {
-		if (isCollapsed) {
-			// if the div is collapsed, expand it to fit its content
-			$('#ds_info').css('height', 'fit-content');
-			$('#expandIcon').hide();
-			$('#collapseIcon').show();
-			$('#iconLabel').text('Hide');
-			isCollapsed = false;
-		} else {
-			// if the div is not collapsed, animate it to 40px height
-			$('#ds_info').css('height', '40px');
-			$('#expandIcon').show();
-			$('#collapseIcon').hide();
-			$('#iconLabel').text('Show Detail');
-			isCollapsed = true;
-		}
-
-		// Store the state in local storage
-		localStorage.setItem('isCollapsed', isCollapsed);
-	});
-
-	// Update the state when the checkbox is checked
-	$('#checkbox').change(function() {
-		localStorage.setItem('isCollapsed', $(this).is(':checked'));
-	});
-	// END ds_info controls
 
 	checked_rows = []
 	localStorage.setItem('filter', '99')
