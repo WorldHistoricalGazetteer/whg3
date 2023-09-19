@@ -1,10 +1,9 @@
 // /whg/webpack/js/mapAndTable.js
 
-import Dateline from './dateline';
 import datasetLayers from './mapLayerStyles';
-import { fullScreenControl, downloadMapControl, StyleControl, init_mapControls } from './mapControls';
-import { getMapPadding, filteredLayer, initPopups } from './mapFunctions';
-import { attributionString, minmaxer, startSpinner, initUtils } from './utilities';
+import { initMapStyleControl, init_mapControls } from './mapControls';
+import { recenterMap, filteredLayer, initObservers, initOverlays, initPopups } from './mapFunctions';
+import { attributionString, startSpinner, initUtils, initInfoOverlay } from './utilities';
 import { initialiseTable, highlightFeature, resetSearch, filterColumn, clearFilters } from './tableFunctions';
 import { init_collection_listeners } from './collections';
 import { getPlace } from './getPlace';
@@ -15,21 +14,10 @@ if (ds_list) {
 }
 console.log('ds_list',ds_list);
 
-maptilersdk.config.apiKey = mapParameters.mapTilerKey;
+const whgMap = document.getElementById(mapParameters.container);
 
-var mappy = new maptilersdk.Map({
-	container: mapParameters.container,
-	center: mapParameters.center,
-	zoom: mapParameters.zoom,
-	minZoom: mapParameters.minZoom,
-	maxZoom: mapParameters.maxZoom,
-	attributionControl: false,
-	geolocateControl: false,
-	navigationControl: false
-});
-
-let mapPadding;
-let mapBounds;
+window.mapPadding;
+window.mapBounds;
 let features;
 let highlightedFeatureIndex;
 
@@ -45,84 +33,26 @@ let spinner_table;
 let spinner_detail;
 let spinner_map;
 
-if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
-
-mappy.addControl(new fullScreenControl(), 'top-left');
-mappy.addControl(new downloadMapControl(), 'top-left');
-
-let style_code;
-if (mapParameters.styleFilter.length !== 1) {
-	mappy.addControl(new StyleControl(mappy, renderData), 'top-right');
-}
-if (mapParameters.styleFilter.length == 0) {
-	style_code = ['DATAVIZ', 'DEFAULT']
-} else {
-	style_code = mapParameters.styleFilter[0].split(".");
-}
-mappy.setStyle(maptilersdk.MapStyle[style_code[0]][style_code[1]]);
-
-mappy.addControl(new maptilersdk.AttributionControl({
-	compact: true
-}), 'bottom-right');
+maptilersdk.config.apiKey = mapParameters.mapTilerKey;
+var mappy = new maptilersdk.Map({
+	container: mapParameters.container,
+	center: mapParameters.center,
+	zoom: mapParameters.zoom,
+	minZoom: mapParameters.minZoom,
+	maxZoom: mapParameters.maxZoom,
+	attributionControl: false,
+	geolocateControl: false,
+	navigationControl: false
+});
 
 mappy.on('load', function() {
-
-	const whgMap = document.getElementById(mapParameters.container);
-
-	const controlContainer = document.querySelector('.maplibregl-control-container');
-	controlContainer.setAttribute('id', 'mapControls');
-	controlContainer.classList.add('item');
-
-	const mapOverlays = document.createElement('div');
-	mapOverlays.id = 'mapOverlays';
-	whgMap.appendChild(mapOverlays);
-
-	['left', 'right'].forEach(function(side) {
-		const column = document.createElement('div');
-		column.classList.add('column', side);
-		mapOverlays.appendChild(column);
-		const overlays = document.querySelectorAll('.overlay.' + side);
-		overlays.forEach(function(overlay) {
-			column.appendChild(overlay);
-			overlay.classList.add('item');
-		})
-		if (side == 'left') column.appendChild(controlContainer);
-	})
-	
-	const resizeObserver = new ResizeObserver(entries => {
-		mapPadding = getMapPadding(mappy, mapBounds);
-	});
-
-	// Recalculate mapPadding whenever its viewport changes size
-	resizeObserver.observe(document.getElementById('mapControls'));
-	resizeObserver.observe(document.getElementById('mapOverlays'));
-
-	mapBounds = mappy.getBounds();
-	mapPadding = getMapPadding(mappy, mapBounds);
-	
-	whgMap.style.opacity = 1;
-	
-	/* Close attribution button? */
-	if (mapParameters.controls.attribution.open == false) setTimeout(() => {
-		var attributionButton = document.querySelector('.maplibregl-ctrl-attrib-button');
-		if (attributionButton) {
-			attributionButton.dispatchEvent(new MouseEvent('click', {
-				bubbles: true,
-				cancelable: true,
-				view: window
-			}));
-			document.querySelector('.maplibregl-ctrl-attrib').classList.add('fade-in');
-		}
-	}, 0);
-
-	//let hilited = null;
-
-	renderData();
-
+	initMapStyleControl(mappy, renderData, mapParameters);
+	initOverlays(whgMap);
+	renderData(true);
 });
 
 // fetch and render
-function renderData() {
+function renderData(initialise = false) {
 	const dsid = pageData;
 	// const spinner_map = startSpinner("map_browse");
 
@@ -137,10 +67,16 @@ function renderData() {
 	$.get('/datasets/' + dsid + '/mapdata', function(data) {
 		features = data.features;
 		
-		const tableInit = initialiseTable(features, checked_rows, spinner_table, spinner_detail);
-		table = tableInit.table;
-		checked_rows = tableInit.checked_rows;
-
+		if (initialise) {
+			// Initialise Info Box state
+			initInfoOverlay();
+			
+			// Initialise Data Table
+			const tableInit = initialiseTable(features, checked_rows, spinner_table, spinner_detail);
+			table = tableInit.table;
+			checked_rows = tableInit.checked_rows;
+		}
+		
 		// add source 'places' w/retrieved data
 		mappy.addSource('places', {
 			'type': 'geojson',
@@ -165,53 +101,31 @@ function renderData() {
 				source: 'empty'
 			});
 		});
-
-		mapBounds = data.extent; // Used if map is resized
-		mappy.fitBounds(mapBounds, {
-			padding: mapPadding,
-			duration: 0
-		});
-
-		if (dateline) {
-			dateline.destroy();
-			dateline = null;
+		
+		window.mapBounds = data.extent;
+		recenterMap(mappy);
+		
+		if (initialise) {
+		
+			initObservers(mappy);
+			
+			whgMap.style.opacity = 1;
+		
+			// Initialise Map Popups
+			initPopups(mappy, datasetLayers, activePopup, table);
+			
+			// Initialise Map Controls
+			const mapControlsInit = init_mapControls(mappy, dateline, datelineContainer, toggleFilters, mapParameters, data);
+			dateline = mapControlsInit.dateline;
+			datelineContainer = mapControlsInit.datelineContainer;
+			mapParameters = mapControlsInit.mapParameters;
+			
 		}
-		if (datelineContainer) {
-			datelineContainer.remove();
-			datelineContainer = null;
-		}
-
-		if (!!mapParameters.controls.temporal) {
-			datelineContainer = document.createElement('div');
-			datelineContainer.id = 'dateline';
-			document.getElementById('mapControls').appendChild(datelineContainer);
-
-			if (data.minmax) {
-				const [minValue, maxValue] = data.minmax;
-				const range = maxValue - minValue;
-				const buffer = range * 0.1; // 10% buffer
-
-				// Update the temporal settings
-				mapParameters.controls.temporal.fromValue = minValue;
-				mapParameters.controls.temporal.toValue = maxValue;
-				mapParameters.controls.temporal.minValue = minValue - buffer;
-				mapParameters.controls.temporal.maxValue = maxValue + buffer;
-			}
-
-			dateline = new Dateline({
-				...mapParameters.controls.temporal,
-				onChange: dateRangeChanged
-			});
-		};
-	
-		initPopups(mappy, datasetLayers, activePopup, table);
-		init_mapControls(mappy);
-
+		
 		console.log('Data layers added, map fitted.');
-		console.log('Bounds:', mapBounds);
-		console.log('Padding:', mapPadding);
+		console.log('Bounds:', window.mapBounds);
+		console.log('Padding:', window.mapPadding);
 		/*spinner_map.stop()*/
-
 
 	}) // get
 }
@@ -258,17 +172,6 @@ function toggleFilters(on){
 	table.draw();
 }
 
-function dateRangeChanged(fromValue, toValue){
-	// Throttle date slider changes using debouncing
-	// Ought to be possible to use promises on the `render` event
-	let debounceTimeout;
-    function debounceFilterApplication() {
-        clearTimeout(debounceTimeout);
-        debounceTimeout = setTimeout(toggleFilters(true), 300);
-    }
-    debounceFilterApplication(); 
-}
-
 // TODO: use datatables methods?
 // Listen for table row click (assigned using event delegation to allow for redrawing)
 $("body").on("click", "#placetable tbody tr", function() {
@@ -285,6 +188,6 @@ $("body").on("click", "#placetable tbody tr", function() {
 	// fetch its detail
 	getPlace(pid, spinner_detail);
 	
-	highlightedFeatureIndex = highlightFeature(pid, highlightedFeatureIndex, features, mappy, mapBounds, mapPadding);
+	highlightedFeatureIndex = highlightFeature(pid, highlightedFeatureIndex, features, mappy);
 
 });

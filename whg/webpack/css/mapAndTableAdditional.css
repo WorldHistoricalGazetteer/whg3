@@ -32,8 +32,13 @@
 }
 
 #ds_info {
-  transition: height 0.5s;
-  overflow: hidden;
+    height: fit-content!important;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+#ds_info.info-collapsed .info-collapse, #ds_info:not(.info-collapsed) .info-expand {
+	display: none;
 }
 
 #detail {
@@ -51,7 +56,7 @@
   color: #021691; /* darkblue - WAS #993333 FOR DS_COLLECTION_NEW*/
 }
 
-#toggleIcon {
+#collapseExpand {
   cursor: pointer;
   color: #336699;
 }

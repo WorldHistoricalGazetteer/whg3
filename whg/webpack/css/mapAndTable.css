@@ -6,7 +6,6 @@
   overflow: hidden;
   border: 1px solid lightgrey;
   border-radius: 4px;
-  opacity: 0;
   transition: opacity 2s ease;
 }
 
@@ -25,7 +24,7 @@
 	max-height: 250px;
 }
 
-.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib:not(:last-child) {
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib:not(.fade-in) {
     display: none;
 }
 
