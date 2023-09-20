@@ -39,7 +39,7 @@ export function attributionString(data) {
 
 export function startSpinner(spinnerId) {
 	const spin_opts = {
-		scale: .5,
+		scale: 3,
 		top: '50%'
 	}
     const newSpinner = new Spin.Spinner(spin_opts).spin();
