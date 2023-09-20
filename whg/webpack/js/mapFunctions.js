@@ -1,7 +1,6 @@
 import datasetLayers from './mapLayerStyles';
 import { attributionString } from './utilities';
 import { filteredLayer } from './mapFilters';
-let blockMoveend = false;
 
 export function addMapSources(mappy, data) {
 		
@@ -17,19 +16,37 @@ export function addMapSources(mappy, data) {
 	
 }
 
+let mapParams;
+	
+export function updatePadding() {
+	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
+	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
+	window.mapPadding = {
+		top: ControlsRect.top - MapRect.top - mapParams.ControlsRectMargin,
+		bottom: MapRect.bottom - ControlsRect.bottom - mapParams.ControlsRectMargin,
+		left: ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin,
+		right: MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin,
+	};
+	console.log('mapPadding recalculated:', window.mapPadding);
+}
+
+function updateBounds() {
+	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
+	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
+	const centerX = - mapParams.MapRectBorder + ControlsRect.left - MapRect.left + ControlsRect.width / 2;
+	const centerY = - mapParams.MapRectBorder + ControlsRect.top - MapRect.top + ControlsRect.height / 2;
+	const pseudoCenter = mapParams.mappy.unproject([centerX, centerY]);
+	window.mapBounds = {
+		'center': pseudoCenter
+	}
+	console.log('window.mapBounds updated:', window.mapBounds);
+}
+
 // Control positioning of map, clear of overlays
 export function recenterMap(mappy, duration) {
 	duration = duration ==  'lazy' ? 1000 : 0 // Set duration of movement
-	const ControlsRect = document.getElementById('mapControls').getBoundingClientRect();
-	const OverlaysRect = document.getElementById('mapOverlays').getBoundingClientRect();
-	window.mapPadding = {
-		top: ControlsRect.top - OverlaysRect.top,
-		bottom: OverlaysRect.bottom - ControlsRect.bottom,
-		left: ControlsRect.left - OverlaysRect.left,
-		right: OverlaysRect.right - ControlsRect.right,
-	};
+	window.blockBoundsUpdate = true;
 	
-	blockMoveend = true;
 	if (window.mapBounds) {
 		if (Array.isArray(window.mapBounds) || !window.mapBounds.hasOwnProperty('center')) { // mapBounds might be a coordinate pair object returned by mappy.getBounds();
 			mappy.fitBounds(window.mapBounds, {
@@ -44,33 +61,38 @@ export function recenterMap(mappy, duration) {
 			})
 		}
 	}
-	// console.log('mapPadding calculated:', window.mapBounds, window.mapPadding);
 }
 
 export function initObservers(mappy) {
-	const resizeObserver = new ResizeObserver(function(){ recenterMap(mappy) });
-	// Recenter map whenever its viewport changes size
-	resizeObserver.observe(document.getElementById('mapControls'));
-	resizeObserver.observe(document.getElementById('mapOverlays'));
 	
-	mappy.on('moveend', function() {
-		if (blockMoveend) {
-			blockMoveend = false;
+	mapParams = {
+		mappy: mappy,
+		ControlsRectEl: document.getElementById('mapControls'),
+		MapRectEl: document.querySelector('div.maplibregl-map'),
+		ControlsRectMargin: 4,
+		MapRectBorder: 1
+	}
+	
+	window.blockBoundsUpdate = false;
+	const resizeObserver = new ResizeObserver(function() { 
+		updatePadding();
+		recenterMap(mappy);
+	});
+
+	// Recenter map whenever its viewport changes size
+	resizeObserver.observe(mapParams.ControlsRectEl);
+	resizeObserver.observe(mapParams.MapRectEl);
+	
+	mappy.on('zoomend', function() { // Triggered by `flyTo` and `fitBounds` - must be blocked to prevent misalignment 
+		if (window.blockBoundsUpdate) {
+			window.blockBoundsUpdate = false;
+			console.log('blockBoundsUpdate released.');
 		}
 		else {
-			const MapRectBorder = 1;
-			const ControlsRect = document.getElementById('mapControls').getBoundingClientRect();
-			const MapRect = document.querySelector('div.maplibregl-map').getBoundingClientRect();
-			const centerX = - MapRectBorder + ControlsRect.left - MapRect.left + ControlsRect.width / 2;
-			const centerY = - MapRectBorder + ControlsRect.top - MapRect.top + ControlsRect.height / 2;
-			const pseudoCenter = mappy.unproject([centerX, centerY]);
-			window.mapBounds = {
-				'center': pseudoCenter
-			}
-			console.log('window.mapBounds updated:',window.mapBounds);
+			updateBounds();
 		}
-		
 	});
+	mappy.on('dragend', function() { updateBounds(); });
 	
 }
 

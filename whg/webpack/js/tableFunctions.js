@@ -1,7 +1,7 @@
 import { envelope } from './6.5.0_turf.min.js'
 import { getPlace } from './getPlace';
 import { startSpinner } from './utilities';
-import { recenterMap } from './mapFunctions';
+import { updatePadding, recenterMap } from './mapFunctions';
 
 function highlightFirstRow() {
 	$("#placetable tr").removeClass("highlight-row");
@@ -67,7 +67,7 @@ export function highlightFeature(pid, features, mappy) {
 			const coords = geom.coordinates;
 			window.highlightedFeatureIndex = featureIndex;
 			mappy.setFeatureState({ source: 'places', id: featureIndex }, { highlight: true });
-			
+			updatePadding();
 			// zoom to feature
 			if (geom.type.toLowerCase() == 'point') {
 				const flycoords = typeof(coords[0]) == 'number' ? coords : coords[0]
