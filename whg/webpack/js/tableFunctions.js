@@ -100,15 +100,18 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 	var tgntask = false
 	var whgtask = false
 
-	const check_column = window.loggedin == true ? {
+	const check_column = window.loggedin ? {
 		data: "properties.pid",
       	render: function (data, type, row) {
         	return `<input type="checkbox" name="addme" class="table-chk" data-id="${data}"/>`;
       	},
+		visible: true
 	} : {
-		"data": "properties.pid",
-		"visible": false
+		data: "properties.pid",
+		visible: false
 	}
+	
+	console.log(window.loggedin, check_column);
 
 	spinner_table = startSpinner("drftable_list");
 	spinner_detail = startSpinner("row_detail");
