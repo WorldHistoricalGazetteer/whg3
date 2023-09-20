@@ -143,7 +143,7 @@ function initMapStyleControl(mappy, renderData, mapParameters){
 	
 }
 
-function init_mapControls(mappy, dateline, datelineContainer, toggleFilters, mapParameters, data){
+function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, data, datasetLayers, table){
 
 	if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
 	
@@ -161,14 +161,14 @@ function init_mapControls(mappy, dateline, datelineContainer, toggleFilters, map
 		let debounceTimeout;
 	    function debounceFilterApplication() {
 	        clearTimeout(debounceTimeout);
-	        debounceTimeout = setTimeout(toggleFilters(true), 300);
+	        debounceTimeout = setTimeout(toggleFilters(true, mappy, datasetLayers, table), 300);
 	    }
 	    debounceFilterApplication(); 
 	}
 
-	if (dateline) {
-		dateline.destroy();
-		dateline = null;
+	if (window.dateline) {
+		window.dateline.destroy();
+		window.dateline = null;
 	}
 	if (datelineContainer) {
 		datelineContainer.remove();
@@ -192,36 +192,39 @@ function init_mapControls(mappy, dateline, datelineContainer, toggleFilters, map
 			mapParameters.controls.temporal.maxValue = maxValue + buffer;
 		}
 
-		dateline = new Dateline({
+		window.dateline = new Dateline({
 			...mapParameters.controls.temporal,
 			onChange: dateRangeChanged
 		});
 	};
 	
 	document.addEventListener('click', function(event) {
-
-		if (event.target && event.target.parentNode && event.target.parentNode.classList.contains('download-map-button')) {
-			generateMapImage(mappy);
-		}
-
-		if (event.target && event.target.parentNode) {
+        
+        if (event.target && event.target.parentNode) {
 			const parentNodeClassList = event.target.parentNode.classList;
-
+			
 			if (parentNodeClassList.contains('maplibregl-ctrl-fullscreen')) {
 				console.log('Switching to fullscreen.');
 				parentNodeClassList.replace('maplibregl-ctrl-fullscreen', 'maplibregl-ctrl-shrink');
 				document.getElementById('mapOverlays').classList.add('fullscreen');
-
-			} else if (parentNodeClassList.contains('maplibregl-ctrl-shrink')) {
+			} 
+			else if (parentNodeClassList.contains('maplibregl-ctrl-shrink')) {
 				console.log('Switching off fullscreen.');
 				parentNodeClassList.replace('maplibregl-ctrl-shrink', 'maplibregl-ctrl-fullscreen');
 				document.getElementById('mapOverlays').classList.remove('fullscreen');
 			}
+			else if (parentNodeClassList.contains('dateline-button')) {
+	            toggleFilters($('.range_container.expanded').length > 0, mappy, datasetLayers, table);
+	        }
+			else if (parentNodeClassList.contains('download-map-button')) {
+				generateMapImage(mappy);
+			}
+			
 		}
 
 	});
 	
-	return { dateline, datelineContainer, mapParameters }
+	return { datelineContainer, mapParameters }
 	
 }
 

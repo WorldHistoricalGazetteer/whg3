@@ -55,17 +55,17 @@ export function clearFilters() {
 	$("#status_select").val('99')
 }
 
-export function highlightFeature(pid, highlightedFeatureIndex, features, mappy) {
+export function highlightFeature(pid, features, mappy) {
 	
 	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(pid)); // .addSource 'generateId': true doesn't create a findable .id property
 	if (featureIndex !== -1) {
-		console.log('highlightedFeatureIndex',highlightedFeatureIndex);
-		if (highlightedFeatureIndex !== undefined) mappy.setFeatureState({ source: 'places', id: highlightedFeatureIndex }, { highlight: false });
+		console.log('window.highlightedFeatureIndex',window.highlightedFeatureIndex);
+		if (window.highlightedFeatureIndex !== undefined) mappy.setFeatureState({ source: 'places', id: window.highlightedFeatureIndex }, { highlight: false });
 	    var feature = features[featureIndex];
 		const geom = feature.geometry;
 		if (geom) {
 			const coords = geom.coordinates;
-			highlightedFeatureIndex = featureIndex;
+			window.highlightedFeatureIndex = featureIndex;
 			mappy.setFeatureState({ source: 'places', id: featureIndex }, { highlight: true });
 			
 			// zoom to feature
@@ -88,13 +88,11 @@ export function highlightFeature(pid, highlightedFeatureIndex, features, mappy) 
 	    console.log(`Feature ${pid} not found.`);
 	}
 	
-	return highlightedFeatureIndex;
-	
 }
 
-export function initialiseTable(features, checked_rows, spinner_table, spinner_detail) {
+export function initialiseTable(features, checked_rows, spinner_table, spinner_detail, mappy) {
 	
-	console.log('initialiseTable', features);
+	//console.log('initialiseTable', features);
 
 	checked_rows = []
 	localStorage.setItem('filter', '99')
@@ -242,6 +240,50 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 			effect: "fade",
 			duration: 400
 		}
+	});
+
+	$("body").on("click", "#placetable tbody tr", function() {
+		const pid = $(this)[0].cells[0].textContent
+		
+		// highlight this row, clear others
+		var selected = $(this).hasClass("highlight-row");
+		$("#placetable tr").removeClass("highlight-row");
+	
+		if (!selected)
+			$(this).removeClass("rowhover");
+		$(this).addClass("highlight-row");
+		
+		// fetch its detail
+		getPlace(pid, spinner_detail);
+		
+		window.highlightedFeatureIndex = highlightFeature(pid, features, mappy);
+	
+	});
+			
+	// Custom search function to filter table based on dateline.fromValue and dateline.toValue
+	$.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+		if ( $('.range_container.expanded').length == 0) { // Is dateline inactive?
+			return true;
+		}
+		
+	    const fromValue = window.dateline.fromValue;
+	    const toValue = window.dateline.toValue;
+	    const includeUndated = window.dateline.includeUndated
+	    
+	    // Get the min and max values from the data attributes of the row
+	    const row = $(settings.aoData[dataIndex].nTr);
+	    const minData = row.attr('data-min');
+	    const maxData = row.attr('data-max');
+	
+	    // Convert minData and maxData to numbers for comparison
+	    const min = minData === 'null' ? 'null' : parseFloat(minData);
+		const max = maxData === 'null' ? 'null' : parseFloat(maxData);
+	
+	    // Filter logic
+		if (((!isNaN(fromValue) && !isNaN(toValue)) && (min !== 'null' && max !== 'null' && min <= toValue && max >= fromValue)) || (includeUndated && (min === 'null' || max === 'null'))) {
+	        return true; // Include row in the result
+	    }
+	    return false; // Exclude row from the result
 	});
 	
 	return {table, checked_rows}

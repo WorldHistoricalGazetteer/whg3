@@ -2,7 +2,8 @@
 
 import datasetLayers from './mapLayerStyles';
 import { initMapStyleControl, init_mapControls } from './mapControls';
-import { recenterMap, filteredLayer, initObservers, initOverlays, initPopups } from './mapFunctions';
+import { recenterMap, initObservers, initOverlays, initPopups } from './mapFunctions';
+import { filteredLayer, toggleFilters } from './mapFilters';
 import { attributionString, startSpinner, initUtils, initInfoOverlay } from './utilities';
 import { initialiseTable, highlightFeature, resetSearch, filterColumn, clearFilters } from './tableFunctions';
 import { init_collection_listeners } from './collections';
@@ -18,12 +19,12 @@ const whgMap = document.getElementById(mapParameters.container);
 
 window.mapPadding;
 window.mapBounds;
+window.highlightedFeatureIndex;
 let features;
-let highlightedFeatureIndex;
 
 let activePopup;
 
-let dateline = null;
+window.dateline = null;
 let datelineContainer = null;
 
 let table;
@@ -72,7 +73,7 @@ function renderData(initialise = false) {
 			initInfoOverlay();
 			
 			// Initialise Data Table
-			const tableInit = initialiseTable(features, checked_rows, spinner_table, spinner_detail);
+			const tableInit = initialiseTable(features, checked_rows, spinner_table, spinner_detail, mappy);
 			table = tableInit.table;
 			checked_rows = tableInit.checked_rows;
 		}
@@ -94,7 +95,7 @@ function renderData(initialise = false) {
 		});
 
 		datasetLayers.forEach(function(layer, z) {
-			mappy.addLayer(filteredLayer(layer, dateline));
+			mappy.addLayer(filteredLayer(layer));
 			mappy.addLayer({
 				id: 'z-index-' + (z + 1),
 				type: 'symbol',
@@ -108,86 +109,24 @@ function renderData(initialise = false) {
 		if (initialise) {
 		
 			initObservers(mappy);
-			
-			whgMap.style.opacity = 1;
 		
 			// Initialise Map Popups
 			initPopups(mappy, datasetLayers, activePopup, table);
 			
 			// Initialise Map Controls
-			const mapControlsInit = init_mapControls(mappy, dateline, datelineContainer, toggleFilters, mapParameters, data);
-			dateline = mapControlsInit.dateline;
+			const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, data, datasetLayers, table);
 			datelineContainer = mapControlsInit.datelineContainer;
 			mapParameters = mapControlsInit.mapParameters;
 			
+			whgMap.style.opacity = 1;
+			
+			initUtils(mappy); // Tooltips, ClipboardJS, clearlines
+			
+			init_collection_listeners(checked_rows);
+
 		}
 		
-		console.log('Data layers added, map fitted.');
-		console.log('Bounds:', window.mapBounds);
-		console.log('Padding:', window.mapPadding);
 		/*spinner_map.stop()*/
 
 	}) // get
 }
-
-initUtils(mappy); // Tooltips, ClipboardJS, clearlines
-
-init_collection_listeners(checked_rows);
-
-// Apply/Remove filters when dateline control is toggled
-$("body").on("click", ".dateline-button", function() {
-	toggleFilters( $('.range_container.expanded').length > 0 );
-});
-
-// Custom search function to filter table based on dateline.fromValue and dateline.toValue
-$.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-	if ( $('.range_container.expanded').length == 0) { // Is dateline inactive?
-		return true;
-	}
-	
-    const fromValue = dateline.fromValue;
-    const toValue = dateline.toValue;
-    const includeUndated = dateline.includeUndated
-    
-    // Get the min and max values from the data attributes of the row
-    const row = $(settings.aoData[dataIndex].nTr);
-    const minData = row.attr('data-min');
-    const maxData = row.attr('data-max');
-
-    // Convert minData and maxData to numbers for comparison
-    const min = minData === 'null' ? 'null' : parseFloat(minData);
-	const max = maxData === 'null' ? 'null' : parseFloat(maxData);
-
-    // Filter logic
-	if (((!isNaN(fromValue) && !isNaN(toValue)) && (min !== 'null' && max !== 'null' && min <= toValue && max >= fromValue)) || (includeUndated && (min === 'null' || max === 'null'))) {
-        return true; // Include row in the result
-    }
-    return false; // Exclude row from the result
-});
-
-function toggleFilters(on){
-    datasetLayers.forEach(function(layer){
-		mappy.setFilter(layer.id, on ? filteredLayer(layer, dateline).filter : layer.filter);
-	});
-	table.draw();
-}
-
-// TODO: use datatables methods?
-// Listen for table row click (assigned using event delegation to allow for redrawing)
-$("body").on("click", "#placetable tbody tr", function() {
-	const pid = $(this)[0].cells[0].textContent
-	
-	// highlight this row, clear others
-	var selected = $(this).hasClass("highlight-row");
-	$("#placetable tr").removeClass("highlight-row");
-
-	if (!selected)
-		$(this).removeClass("rowhover");
-	$(this).addClass("highlight-row");
-	
-	// fetch its detail
-	getPlace(pid, spinner_detail);
-	
-	highlightedFeatureIndex = highlightFeature(pid, highlightedFeatureIndex, features, mappy);
-
-});
