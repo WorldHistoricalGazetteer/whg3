@@ -1,13 +1,11 @@
 // /whg/webpack/js/mapAndTable.js
 
-import datasetLayers from './mapLayerStyles';
 import { initMapStyleControl, init_mapControls } from './mapControls';
-import { recenterMap, initObservers, initOverlays, initPopups } from './mapFunctions';
-import { filteredLayer, toggleFilters } from './mapFilters';
-import { attributionString, startSpinner, initUtils, initInfoOverlay } from './utilities';
-import { initialiseTable, highlightFeature, resetSearch, filterColumn, clearFilters } from './tableFunctions';
+import { addMapSources, recenterMap, initObservers, initOverlays, initPopups } from './mapFunctions';
+import { toggleFilters } from './mapFilters';
+import { initUtils, initInfoOverlay } from './utilities';
+import { initialiseTable } from './tableFunctions';
 import { init_collection_listeners } from './collections';
-import { getPlace } from './getPlace';
 
 let ds_list = document.getElementById('ds_list_data') || false;
 if (ds_list) {
@@ -47,86 +45,47 @@ var mappy = new maptilersdk.Map({
 });
 
 mappy.on('load', function() {
-	initMapStyleControl(mappy, renderData, mapParameters);
+	initMapStyleControl(mappy, mapParameters);
 	initOverlays(whgMap);
-	renderData(true);
-});
-
-// fetch and render
-function renderData(initialise = false) {
-	const dsid = pageData;
 	// const spinner_map = startSpinner("map_browse");
-
-	// clear any data layers and 'places' source
-	datasetLayers.forEach(function(layer, z) {
-		if (!!mappy.getLayer(layer.id)) mappy.removeLayer(layer.id);
-		if (!!mappy.getLayer('z-index-' + z)) mappy.removeLayer('z-index-' + z);
-	});
-	if (!!mappy.getSource('places')) mappy.removeSource('places')
+	
+	const dsid = pageData;
 
 	// fetch data
 	$.get('/datasets/' + dsid + '/mapdata', function(data) {
 		features = data.features;
 		
-		if (initialise) {
-			// Initialise Info Box state
-			initInfoOverlay();
-			
-			// Initialise Data Table
-			const tableInit = initialiseTable(features, checked_rows, spinner_table, spinner_detail, mappy);
-			table = tableInit.table;
-			checked_rows = tableInit.checked_rows;
-		}
+		// Initialise Info Box state
+		initInfoOverlay();
 		
-		// add source 'places' w/retrieved data
-		mappy.addSource('places', {
-			'type': 'geojson',
-			'data': data,
-			'attribution': attributionString(data),
-		})
-
-		// The 'empty' source and layers need to be reset after a change of map style
-		if (!mappy.getSource('empty')) mappy.addSource('empty', {
-			type: 'geojson',
-			data: {
-				type: 'FeatureCollection',
-				features: []
-			}
-		});
-
-		datasetLayers.forEach(function(layer, z) {
-			mappy.addLayer(filteredLayer(layer));
-			mappy.addLayer({
-				id: 'z-index-' + (z + 1),
-				type: 'symbol',
-				source: 'empty'
-			});
-		});
+		// Initialise Data Table
+		const tableInit = initialiseTable(features, checked_rows, spinner_table, spinner_detail, mappy);
+		table = tableInit.table;
+		checked_rows = tableInit.checked_rows;
 		
+		addMapSources(mappy, data);
+	
 		window.mapBounds = data.extent;
 		recenterMap(mappy);
 		
-		if (initialise) {
+		initObservers(mappy);
+	
+		// Initialise Map Popups
+		initPopups(mappy, activePopup, table);
 		
-			initObservers(mappy);
+		// Initialise Map Controls
+		const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, data, table);
+		datelineContainer = mapControlsInit.datelineContainer;
+		mapParameters = mapControlsInit.mapParameters;
 		
-			// Initialise Map Popups
-			initPopups(mappy, datasetLayers, activePopup, table);
-			
-			// Initialise Map Controls
-			const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, data, datasetLayers, table);
-			datelineContainer = mapControlsInit.datelineContainer;
-			mapParameters = mapControlsInit.mapParameters;
-			
-			whgMap.style.opacity = 1;
-			
-			initUtils(mappy); // Tooltips, ClipboardJS, clearlines
-			
-			init_collection_listeners(checked_rows);
-
-		}
+		whgMap.style.opacity = 1;
+		
+		initUtils(mappy); // Tooltips, ClipboardJS, clearlines
+		
+		init_collection_listeners(checked_rows);
 		
 		/*spinner_map.stop()*/
 
 	}) // get
-}
+});
+

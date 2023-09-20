@@ -2,6 +2,7 @@
 
 import Dateline from './dateline';
 import generateMapImage from './saveMapImage';
+import datasetLayers from './mapLayerStyles';
 
 class fullScreenControl {
 	onAdd() { 
@@ -33,9 +34,8 @@ class downloadMapControl {
 
 class StyleControl {
 	
-	constructor(mappy, renderDataFn) {
+	constructor(mappy) {
         this._mappy = mappy;
-        this._renderData = renderDataFn;
     }
 	
 	onAdd() {
@@ -93,11 +93,26 @@ class StyleControl {
 	}
 
 	_onVariantClick(event) {
+	
+		let mappy = this._mappy;
+	
 		const variantValue = event.target.dataset.value;
 		console.log('Selected variant: ', variantValue);
 		const style_code = variantValue.split(".");
-		this._mappy.setStyle(maptilersdk.MapStyle[style_code[0]][style_code[1]]);
-		this._renderData();
+		mappy.setStyle(maptilersdk.MapStyle[style_code[0]][style_code[1]], {
+		  transformStyle: (previousStyle, nextStyle) => ({
+		      ...nextStyle,
+		      sources: {
+		          ...nextStyle.sources,
+		          'places': previousStyle.sources.places
+		      },
+		      layers: [
+		          ...nextStyle.layers,
+		          ...previousStyle.layers.filter(layer => datasetLayers.map(dslayer => dslayer.id).includes(layer.id))
+		      ]
+		  })
+		});
+
 		const styleList = document.getElementById('mapStyleList');
 		if (styleList) {
 			styleList.classList.remove('show');
@@ -128,11 +143,11 @@ class CustomAttributionControl extends maptilersdk.AttributionControl {
     }
 }
 
-function initMapStyleControl(mappy, renderData, mapParameters){
+function initMapStyleControl(mappy, mapParameters){
 
 	let style_code;
 	if (mapParameters.styleFilter.length !== 1) {
-		mappy.addControl(new StyleControl(mappy, renderData), 'top-right');
+		mappy.addControl(new StyleControl(mappy), 'top-right');
 	}
 	if (mapParameters.styleFilter.length == 0) {
 		style_code = ['DATAVIZ', 'DEFAULT']
@@ -143,7 +158,7 @@ function initMapStyleControl(mappy, renderData, mapParameters){
 	
 }
 
-function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, data, datasetLayers, table){
+function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, data, table){
 
 	if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
 	
@@ -161,7 +176,7 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 		let debounceTimeout;
 	    function debounceFilterApplication() {
 	        clearTimeout(debounceTimeout);
-	        debounceTimeout = setTimeout(toggleFilters(true, mappy, datasetLayers, table), 300);
+	        debounceTimeout = setTimeout(toggleFilters(true, mappy, table), 300);
 	    }
 	    debounceFilterApplication(); 
 	}
@@ -214,7 +229,7 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 				document.getElementById('mapOverlays').classList.remove('fullscreen');
 			}
 			else if (parentNodeClassList.contains('dateline-button')) {
-	            toggleFilters($('.range_container.expanded').length > 0, mappy, datasetLayers, table);
+	            toggleFilters($('.range_container.expanded').length > 0, mappy, table);
 	        }
 			else if (parentNodeClassList.contains('download-map-button')) {
 				generateMapImage(mappy);
