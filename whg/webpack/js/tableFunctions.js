@@ -59,7 +59,7 @@ export function highlightFeature(pid, features, mappy) {
 	
 	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(pid)); // .addSource 'generateId': true doesn't create a findable .id property
 	if (featureIndex !== -1) {
-		console.log('window.highlightedFeatureIndex',window.highlightedFeatureIndex);
+		//console.log(`Switching highlight from ${window.highlightedFeatureIndex} to ${featureIndex}.`);
 		if (window.highlightedFeatureIndex !== undefined) mappy.setFeatureState({ source: 'places', id: window.highlightedFeatureIndex }, { highlight: false });
 	    var feature = features[featureIndex];
 		const geom = feature.geometry;
@@ -80,6 +80,7 @@ export function highlightFeature(pid, features, mappy) {
 				window.mapBounds = envelope(geom).bbox;
 				recenterMap(mappy, 'lazy');
 			}
+			//console.log(`Highlight now on ${window.highlightedFeatureIndex}.`);
 		}
 		else {
 			console.log('Feature in clicked row has no geometry.');
@@ -259,7 +260,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		// fetch its detail
 		getPlace(pid, spinner_detail);
 		
-		window.highlightedFeatureIndex = highlightFeature(pid, features, mappy);
+		highlightFeature(pid, features, mappy);
 	
 	});
 			

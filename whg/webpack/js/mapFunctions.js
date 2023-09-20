@@ -58,11 +58,11 @@ export function initObservers(mappy) {
 			blockMoveend = false;
 		}
 		else {
-			const correction = -1; // Required to reduce small error in mappy.unproject
+			const MapRectBorder = 1;
 			const ControlsRect = document.getElementById('mapControls').getBoundingClientRect();
 			const MapRect = document.querySelector('div.maplibregl-map').getBoundingClientRect();
-			const centerX = correction + ControlsRect.left - MapRect.left + ControlsRect.width / 2;
-			const centerY = correction + ControlsRect.top - MapRect.top + ControlsRect.height / 2;
+			const centerX = - MapRectBorder + ControlsRect.left - MapRect.left + ControlsRect.width / 2;
+			const centerY = - MapRectBorder + ControlsRect.top - MapRect.top + ControlsRect.height / 2;
 			const pseudoCenter = mappy.unproject([centerX, centerY]);
 			window.mapBounds = {
 				'center': pseudoCenter
