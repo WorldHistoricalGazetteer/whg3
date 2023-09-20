@@ -13,7 +13,6 @@ export function addMapSources(mappy, data) {
 
 	datasetLayers.forEach(function(layer) {
 		mappy.addLayer(filteredLayer(layer));
-		console.log(filteredLayer(layer));
 	});
 	
 }
