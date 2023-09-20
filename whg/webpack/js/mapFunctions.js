@@ -1,4 +1,22 @@
+import datasetLayers from './mapLayerStyles';
+import { attributionString } from './utilities';
+import { filteredLayer } from './mapFilters';
 let blockMoveend = false;
+
+export function addMapSources(mappy, data) {
+		
+	mappy.addSource('places', {
+		'type': 'geojson',
+		'data': data,
+		'attribution': attributionString(data),
+	})
+
+	datasetLayers.forEach(function(layer) {
+		mappy.addLayer(filteredLayer(layer));
+		console.log(filteredLayer(layer));
+	});
+	
+}
 
 // Control positioning of map, clear of overlays
 export function recenterMap(mappy, duration) {
@@ -79,7 +97,7 @@ export function initOverlays(whgMap) {
 	})
 }
 
-export function initPopups(mappy, datasetLayers, activePopup, table) {
+export function initPopups(mappy, activePopup, table) {
 
 	datasetLayers.forEach(function(layer) {
 

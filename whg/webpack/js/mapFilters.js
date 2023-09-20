@@ -1,3 +1,5 @@
+import datasetLayers from './mapLayerStyles';
+
 export function filteredLayer(layer) {
 	if ($('.range_container.expanded').length > 0) { // Is dateline active?
 		const modifiedLayer = ({
@@ -42,7 +44,7 @@ export function filteredLayer(layer) {
 	} else return layer;
 }
 
-export function toggleFilters(on, mappy, datasetLayers, table){
+export function toggleFilters(on, mappy, table){
     datasetLayers.forEach(function(layer){
 		mappy.setFilter(layer.id, on ? filteredLayer(layer).filter : layer.filter);
 	});

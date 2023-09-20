@@ -1,21 +1,4 @@
-const datasetLayers = [{
-		'id': 'gl_active_line',
-		'type': 'line',
-		'source': 'places',
-		'paint': {
-			'line-color': [
-				'case',
-				['boolean', ['feature-state', 'highlight'], false], 'rgba(0,128,0,.8)', // green
-				'rgba(144,238,144,.8)' // lightgreen
-			],
-			'line-width': [
-				'case',
-				['boolean', ['feature-state', 'highlight'], false], 2,
-				1
-			]
-		},
-		'filter': ['==', '$type', 'LineString']
-	},
+const datasetLayers = [ // IMPORTANT: Listed in order of addition to the map
 	{
 		'id': 'gl_active_poly',
 		'type': 'fill',
@@ -34,6 +17,24 @@ const datasetLayers = [{
 			],
 		},
 		'filter': ['==', '$type', 'Polygon']
+	},
+	{
+		'id': 'gl_active_line',
+		'type': 'line',
+		'source': 'places',
+		'paint': {
+			'line-color': [
+				'case',
+				['boolean', ['feature-state', 'highlight'], false], 'rgba(0,128,0,.8)', // green
+				'rgba(144,238,144,.8)' // lightgreen
+			],
+			'line-width': [
+				'case',
+				['boolean', ['feature-state', 'highlight'], false], 2,
+				1
+			]
+		},
+		'filter': ['==', '$type', 'LineString']
 	},
 	{
 		'id': 'outline',
