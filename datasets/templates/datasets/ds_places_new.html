@@ -7,95 +7,14 @@
 	<!-- Datatables does not function with Webpack except in browsers >~ 2021 - see https://datatables.net/blog/2022-11-10-esm -->
 	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.24/b-1.7.0/b-colvis-1.7.0/b-html5-1.7.0/cr-1.5.3/fh-3.1.8/sc-2.0.3/sp-1.2.2/sl-1.3.3/datatables.min.css" />
 	<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.24/b-1.7.0/b-colvis-1.7.0/b-html5-1.7.0/cr-1.5.3/fh-3.1.8/sc-2.0.3/sp-1.2.2/sl-1.3.3/datatables.min.js"></script>
-	<!--<script src="https://cdn.maptiler.com/maptiler-sdk-js/v1.1.1/maptiler-sdk.umd.min.js"></script>
-  	<link href="https://cdn.maptiler.com/maptiler-sdk-js/v1.1.1/maptiler-sdk.css" rel="stylesheet" />-->
 	<link href="{% static 'webpack/whg.bundle.css' %}" rel="stylesheet" />
-	<style>
-	  #actions {
-	    padding-top: 0.2rem;
-	  }
-	
-	  #addtocoll_popup {
-	    font-size: 0.8rem;
-	    position: absolute;
-	    top: 16px;
-	    right: 195px;
-	    width: 170px;
-	    background-color: #fff;
-	    border: 1px solid #336699;
-	    z-index: 2000;
-	    box-shadow: 3px 3px #c3c3c3;
-	  }
-	
-	  #selection_status {
-	    position: absolute;
-	    top: 10px;
-	    right: 10px;
-	    display: none;
-	  }
-	
-	  .dataTables_scroll {
-	    border-right: 1px solid gainsboro;
-	  }
-	
-	  #dataset_content {
-	    position: relative;
-	    height: calc(98vh - 60px);
-	    overflow-y: auto;
-	  }
-	
-	  #ds_info {
-	    transition: height 0.5s;
-	    overflow: hidden;
-	  }
-	
-	  #detail {
-	    font-size: .8rem;
-	    z-index: 10;
-	    height: 30% !important;
-	  }
-	
-	  #detail p {
-	    margin-bottom: .2rem;
-	  }
-	
-	  .title {
-	    font-weight: bold;
-	    color: darkblue;
-	  }
-	
-	  #toggleIcon {
-	    cursor: pointer;
-	    color: #336699;
-	  }
-	
-	  #metadata p {
-	    font-size: .9rem;
-	  }
-	
-	  .paginate_button {
-	    padding: 0 !important;
-	  }
-	
-	  .dataTables_filter {
-	    float: left !important;
-	  }
-	
-	  .dataTables_filter input {
-	    padding: 2px;
-	  }
-	
-	  .addtocoll {
-	    background-color: aliceblue;
-	  }
-	</style> 
 {% endblock %} 
 {% block title %} 
 	<title>Dataset::{{ ds.label }}</title>
 {% endblock %} 
 {% block content %} 
 	<div id="dataset_content" class="container mt-1 px-1">
-	  <div id="map" style="height:100%;"></div>
+	  <div id="map" style="opacity: 0; height:100%;"></div>
 	  <div id="ds_info" class="overlay left">
 	    <div id="ds_header">
 	      <span class="fs-5 title">
@@ -103,10 +22,11 @@
 	        {{ ds.title }}
 	      </span>
 	      <span class="fs-6"> a WHG dataset </span>
-	      <span id="toggleIcon" class="float-end">
-	        <span id="iconLabel" class="small">Hide</span>
-	        <i id="expandIcon" class="fas fa-chevron-down" style="display: none;"></i>
-	        <i id="collapseIcon" class="fas fa-chevron-up"></i>
+	      <span id="collapseExpand" class="float-end">
+	        <span class="info-collapse small">Hide</span>
+	        <i class="info-collapse fas fa-chevron-up"></i>
+	        <span class="info-expand small">Show Detail</span>
+	        <i class="info-expand fas fa-chevron-down"></i>
 	      </span>
 	    </div>
 	    <!-- ds_header -->
@@ -245,7 +165,7 @@
 	
 	<!-- Set up MapLibre map using Maptiler SDK -->
 	<script type="text/javascript">
-	  const mapParameters = {
+	  let mapParameters = {
 	    container: 'map',
 	    center: [9.2, 33],
 	    zoom: 0.2, // starting zoom
@@ -276,6 +196,7 @@
 	  window.loggedin = "{{ loggedin }}"
 	  window.dslabel = "{{ ds.label }}"
 	  window.filter = "{{ filter }}"
+	  window.ds_list = ["{{ ds }}"]
 	</script>
 	
 	<script type="module">
