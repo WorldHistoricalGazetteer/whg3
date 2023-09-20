@@ -3,7 +3,7 @@
 import { initMapStyleControl, init_mapControls } from './mapControls';
 import { addMapSources, recenterMap, initObservers, initOverlays, initPopups } from './mapFunctions';
 import { toggleFilters } from './mapFilters';
-import { initUtils, initInfoOverlay } from './utilities';
+import { initUtils, initInfoOverlay, startSpinner } from './utilities';
 import { initialiseTable } from './tableFunctions';
 import { init_collection_listeners } from './collections';
 
@@ -47,7 +47,7 @@ var mappy = new maptilersdk.Map({
 mappy.on('load', function() {
 	initMapStyleControl(mappy, mapParameters);
 	initOverlays(whgMap);
-	// const spinner_map = startSpinner("map_browse");
+	const spinner_map = startSpinner("dataset_content");
 	
 	const dsid = pageData;
 
@@ -84,7 +84,7 @@ mappy.on('load', function() {
 		
 		init_collection_listeners(checked_rows);
 		
-		/*spinner_map.stop()*/
+		spinner_map.stop();
 
 	}) // get
 });
