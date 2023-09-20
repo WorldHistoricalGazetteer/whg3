@@ -30,50 +30,6 @@ export function recenterMap(mappy, duration) {
 	// console.log('mapPadding calculated:', window.mapBounds, window.mapPadding);
 }
 
-export function filteredLayer(layer, dateline) {
-	if ($('.range_container.expanded').length > 0) { // Is dateline active?
-		const modifiedLayer = ({
-			...layer
-		});
-		const existingFilter = modifiedLayer.filter;
-
-		const isUndatedChecked = $('#undated_checkbox').is(':checked');
-
-		if (isUndatedChecked) { // Include features within the range AND undated features
-			modifiedLayer.filter = [
-				'all',
-				existingFilter,
-				[
-					'any',
-					[
-						'all',
-						['!=', 'max', 'null'],
-						['!=', 'min', 'null'],
-						['>=', 'max', dateline.fromValue],
-						['<=', 'min', dateline.toValue],
-					],
-					[
-						'any',
-						['==', 'max', 'null'],
-						['==', 'min', 'null']
-					]
-				]
-			];
-		} else { // Include features within the range BUT NOT undated features
-			modifiedLayer.filter = [
-				'all',
-				existingFilter,
-				['has', 'max'],
-				['has', 'min'],
-				['>=', 'max', dateline.fromValue],
-				['<=', 'min', dateline.toValue],
-			];
-		}
-
-		return modifiedLayer;
-	} else return layer;
-}
-
 export function initObservers(mappy) {
 	const resizeObserver = new ResizeObserver(function(){ recenterMap(mappy) });
 	// Recenter map whenever its viewport changes size
