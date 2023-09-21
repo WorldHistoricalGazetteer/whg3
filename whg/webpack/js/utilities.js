@@ -37,12 +37,9 @@ export function attributionString(data) {
 	return attributionStringParts.join(' | ');
 }
 
-export function startSpinner(spinnerId) {
-	const spin_opts = {
-		scale: 3,
-		top: '50%'
-	}
-    const newSpinner = new Spin.Spinner(spin_opts).spin();
+export function startSpinner(spinnerId = 'body', scale = .5) {
+	// TODO: scale could be set automatically based on size of the container element
+    const newSpinner = new Spin.Spinner({scale: scale, color: '#004080'}).spin();
     $("#" + spinnerId).append(newSpinner.el);
     return newSpinner;
 }

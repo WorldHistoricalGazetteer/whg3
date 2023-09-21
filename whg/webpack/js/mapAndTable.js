@@ -47,7 +47,7 @@ var mappy = new maptilersdk.Map({
 mappy.on('load', function() {
 	initMapStyleControl(mappy, mapParameters);
 	initOverlays(whgMap);
-	const spinner_map = startSpinner("dataset_content");
+	const spinner_map = startSpinner("dataset_content", 3);
 	
 	const dsid = pageData;
 
