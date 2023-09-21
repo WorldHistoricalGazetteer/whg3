@@ -1,7 +1,7 @@
 import { envelope } from './6.5.0_turf.min.js'
 import { getPlace } from './getPlace';
 import { startSpinner } from './utilities';
-import { updatePadding, recenterMap } from './mapFunctions';
+import { updatePadding, recenterMap, listSourcesAndLayers } from './mapFunctions';
 
 function highlightFirstRow() {
 	$("#placetable tr").removeClass("highlight-row");
@@ -80,7 +80,9 @@ function filterMap(){} // Placeholder - must be implemented for ds_collection
 
 export function highlightFeature(pid, features, mappy) {
 	
-	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(pid));
+	listSourcesAndLayers(mappy);
+	
+	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(pid)); 
 	if (featureIndex !== -1) {
 		//console.log(`Switching highlight from ${window.highlightedFeatureIndex} to ${featureIndex}.`);
 		if (window.highlightedFeatureIndex !== undefined) mappy.setFeatureState({ source: 'places', id: window.highlightedFeatureIndex }, { highlight: false });

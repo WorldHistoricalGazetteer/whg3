@@ -3,6 +3,8 @@ import { attributionString } from './utilities';
 import { filteredLayer } from './mapFilters';
 
 export function addMapSources(mappy, data) {
+	
+	console.log('addMapSources',data);
 		
 	mappy.addSource('places', {
 		'type': 'geojson',
@@ -201,4 +203,12 @@ export function initPopups(mappy, activePopup, table) {
 		})
 
 	});
+}
+
+export function listSourcesAndLayers(mappy) {	
+	const style = mappy.getStyle();
+	const sources = style.sources;
+	console.log('Sources:', Object.keys(sources));
+	const layers = style.layers;
+	console.log('Layers:', layers.map(layer => layer.id));
 }
