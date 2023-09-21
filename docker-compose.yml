@@ -72,7 +72,7 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust  # Allow all connections without password authentication
     ports:
-      - 5433:5432
+      - 5432:5432
     # this was messing things up
     # I blame the bot
 
