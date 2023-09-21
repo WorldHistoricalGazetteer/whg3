@@ -35,7 +35,27 @@ export function resetSearch() {
 	$("#placetable_filter input").trigger(e)
 }
 
-export function filterColumn(i, v) {
+function filterColumn(i, v) {
+    // clear then search
+    table
+    .search('')
+    .columns(i)
+    .search(v)
+    .draw();
+    $("#ds_select").val(localStorage.getItem('filter'))
+}
+
+function clearFilters() {
+    // clear
+    table
+    .columns([5, 6, 7, 11])
+    .search('')
+    .draw();
+    $("#ds_select").val('-1')
+}
+
+// TODO: ? Remove this version, which was apparently redundant in ds_places ?
+/*export function filterColumn(i, v) {
 	// clear then search
 	table
 		.columns([1])
@@ -44,20 +64,23 @@ export function filterColumn(i, v) {
 		.search(v)
 		.draw();
 	$("#status_select").val(localStorage.getItem('filter'))
-}
+}*/
 
-export function clearFilters() {
+//  TODO: ? Remove this version, which was apparently redundant in ds_places ?
+/*export function clearFilters() {
 	// clear
 	table
 		.columns([1])
 		.search('')
 		.draw();
 	$("#status_select").val('99')
-}
+}*/
+
+function filterMap(){} // Placeholder - must be implemented for ds_collection
 
 export function highlightFeature(pid, features, mappy) {
 	
-	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(pid)); // .addSource 'generateId': true doesn't create a findable .id property
+	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(pid));
 	if (featureIndex !== -1) {
 		//console.log(`Switching highlight from ${window.highlightedFeatureIndex} to ${featureIndex}.`);
 		if (window.highlightedFeatureIndex !== undefined) mappy.setFeatureState({ source: 'places', id: window.highlightedFeatureIndex }, { highlight: false });
@@ -111,8 +134,6 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		data: "properties.pid",
 		visible: false
 	}
-	
-	console.log(window.loggedin, check_column);
 
 	spinner_table = startSpinner("drftable_list");
 	spinner_detail = startSpinner("row_detail");
@@ -197,6 +218,11 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 			highlightFirstRow();
 	    }
 	})
+	
+	$(".a-dl").click(function (e) {
+	    e.preventDefault()
+	    alert('not yet')
+	})
 
 	$("#addchecked").click(function() {
 		console.log('clicked #addchecked')
@@ -219,6 +245,23 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		console.log('adding', $(this).data('id'))
 		/*console.log('checked_rows',checked_rows)*/
 	})
+	
+    $("#ds_select").change(function (e) {
+        // filter table
+        val = $(this).val()
+            localStorage.setItem('filter', val)
+            window.spinner_map = startSpinner("dataset_content", 3);
+            if (val == -1) {
+                // clear search
+                window.spinner_filter = startSpinner("status_filter");
+                clearFilters()
+            } else {
+                clearFilters()
+                filterColumn(11, val)
+            }
+            // also filter map
+            filterMap(val)
+    })
 	
 	$(".selector").dialog({
 		resizable: false,
@@ -246,7 +289,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		}
 	});
 
-	$("body").on("click", "#placetable tbody tr", function() {
+	$("#placetable tbody tr").click(function () {
 		const pid = $(this)[0].cells[0].textContent
 		
 		// highlight this row, clear others
