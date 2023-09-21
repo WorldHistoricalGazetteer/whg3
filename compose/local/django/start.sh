@@ -13,7 +13,7 @@ export POSTGRES_HOST_AUTH_METHOD="trust"
 #PGUSER=${DB_USER} python manage.py makemigrations
 
 # Update pre-existing database tables using Django migrations
-PGUSER=${DB_USER} python manage.py migrate
+#PGUSER=${DB_USER} python manage.py migrate
 
 # NB: file names are prefixed with fixture_
 # FIXTURES=("fixtures/fixture_users.json" "fixtures/fixture_datasets.json" "fixtures/fixture_places.json" "fixtures/fixture_collection.json" "fixtures/fixture_areas.json")
