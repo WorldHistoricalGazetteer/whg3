@@ -3080,19 +3080,19 @@ function highlightFirstRow() {
 
 // Adjust the DataTable's page length to avoid scrolling where possible
 function adjustPageLength() {
-    const dsTable = document.getElementById('ds_table');
-    const tableFilter = document.getElementById('placetable_filter');
-    const tablePaginate = document.getElementById('placetable_paginate');
-    const theadRow = document.querySelector('#placetable thead tr');
-    const tbody = document.querySelector('#placetable tbody');
-    const availableHeight = dsTable.clientHeight - (2 * 10 /*padding*/) - tableFilter.clientHeight - tablePaginate.clientHeight - theadRow.clientHeight;
-    const averageRowHeight = 2 + ( tbody.clientHeight / document.querySelectorAll('#placetable tr:not(thead tr)').length );
-    let estimatedRowsPerPage = Math.floor(availableHeight / ( averageRowHeight ));
-  	// Ensure a minimum of 5 rows
-  	estimatedRowsPerPage = Math.max(estimatedRowsPerPage, 5);
+	const dsTable = document.getElementById('ds_table');
+	const tableFilter = document.getElementById('placetable_filter');
+	const tablePaginate = document.getElementById('placetable_paginate');
+	const theadRow = document.querySelector('#placetable thead tr');
+	const tbody = document.querySelector('#placetable tbody');
+	const availableHeight = dsTable.clientHeight - (2 * 10 /*padding*/ ) - tableFilter.clientHeight - tablePaginate.clientHeight - theadRow.clientHeight;
+	const averageRowHeight = 2 + (tbody.clientHeight / document.querySelectorAll('#placetable tr:not(thead tr)').length);
+	let estimatedRowsPerPage = Math.floor(availableHeight / (averageRowHeight));
+	// Ensure a minimum of 5 rows
+	estimatedRowsPerPage = Math.max(estimatedRowsPerPage, 5);
 	console.log(`Changing table length to ${estimatedRowsPerPage} rows @${averageRowHeight} pixels.`);
-  	const DataTable = $('#placetable').DataTable();
-  	DataTable.page.len(estimatedRowsPerPage).draw();
+	const DataTable = $('#placetable').DataTable();
+	DataTable.page.len(estimatedRowsPerPage).draw();
 }
 
 function resetSearch() {
@@ -3102,22 +3102,22 @@ function resetSearch() {
 }
 
 function filterColumn(i, v) {
-    // clear then search
-    table
-    .search('')
-    .columns(i)
-    .search(v)
-    .draw();
-    $("#ds_select").val(localStorage.getItem('filter'))
+	// clear then search
+	table
+		.search('')
+		.columns(i)
+		.search(v)
+		.draw();
+	$("#ds_select").val(localStorage.getItem('filter'))
 }
 
 function clearFilters() {
-    // clear
-    table
-    .columns([5, 6, 7, 11]) // TODO: Check these values?
-    .search('')
-    .draw();
-    $("#ds_select").val('-1')
+	// clear
+	table
+		.columns([3, 5, 6, 7, 11]) // TODO: Check these values?
+		.search('')
+		.draw();
+	$("#ds_select").val('-1')
 }
 
 // TODO: ? Remove this version, which was apparently redundant in ds_places ?
@@ -3142,7 +3142,7 @@ function clearFilters() {
 	$("#status_select").val('99')
 }*/
 
-function filterMap(mappy, val){
+function filterMap(mappy, val) {
 	let recentered = false;
 	mapLayerStyles.forEach(function(layer) {
 		window.ds_list.forEach(function(ds) {
@@ -3157,21 +3157,28 @@ function filterMap(mappy, val){
 }
 
 function highlightFeature(ds_pid, features, mappy) {
-	
+
 	//listSourcesAndLayers(mappy);
-	
+
 	features = features.filter(f => f.properties.dsid === ds_pid.ds);
-	
-	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(ds_pid.pid)); 
+
+	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(ds_pid.pid));
 	if (featureIndex !== -1) {
 		//console.log(`Switching highlight from ${window.highlightedFeatureIndex} to ${featureIndex}.`);
-		if (window.highlightedFeatureIndex !== undefined) mappy.setFeatureState(window.highlightedFeatureIndex, { highlight: false });
-	    var feature = features[featureIndex];
+		if (window.highlightedFeatureIndex !== undefined) mappy.setFeatureState(window.highlightedFeatureIndex, {
+			highlight: false
+		});
+		var feature = features[featureIndex];
 		const geom = feature.geometry;
 		if (geom) {
 			const coords = geom.coordinates;
-			window.highlightedFeatureIndex = {source: ds_pid.ds.toString(), id: featureIndex};
-			mappy.setFeatureState(window.highlightedFeatureIndex, { highlight: true });
+			window.highlightedFeatureIndex = {
+				source: ds_pid.ds.toString(),
+				id: featureIndex
+			};
+			mappy.setFeatureState(window.highlightedFeatureIndex, {
+				highlight: true
+			});
 			updatePadding();
 			// zoom to feature
 			if (geom.type.toLowerCase() == 'point') {
@@ -3186,31 +3193,30 @@ function highlightFeature(ds_pid, features, mappy) {
 				recenterMap(mappy, 'lazy');
 			}
 			//console.log(`Highlight now on ${window.highlightedFeatureIndex}.`);
-		}
-		else {
+		} else {
 			console.log('Feature in clicked row has no geometry.');
 		}
 	} else {
-	    console.log(`Feature ${ds_pid.pid} not found.`);
+		console.log(`Feature ${ds_pid.pid} not found.`);
 	}
-	
+
 }
 
 function initialiseTable(features, checked_rows, spinner_table, spinner_detail, mappy) {
 
 	checked_rows = []
-	
+
 	if (window.ds_list.length > 1) {
 		let select = '<label>Datasets: <select id="ds_select">' +
-        	'<option value="-1" data="all" selected="selected">All</option>';
-        for (let ds of window.ds_list) {
-            select += '<option value="' + ds.label + '" data="' + ds.id + '">' +
-            ds.title + '</option>'
-        }
-        select += '</select></label>';
+			'<option value="-1" data="all" selected="selected">All</option>';
+		for (let ds of window.ds_list) {
+			select += '<option value="' + ds.label + '" data="' + ds.id + '">' +
+				ds.title + '</option>'
+		}
+		select += '</select></label>';
 		$("#ds_filter").html(select);
 	}
-	
+
 	// TODO: remove these artifacts of table used for review
 	localStorage.setItem('filter', '99')
 	var wdtask = false
@@ -3219,9 +3225,9 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 
 	const check_column = window.loggedin ? {
 		data: "properties.pid",
-      	render: function (data, type, row) {
-        	return `<input type="checkbox" name="addme" class="table-chk" data-id="${data}"/>`;
-      	},
+		render: function(data, type, row) {
+			return `<input type="checkbox" name="addme" class="table-chk" data-id="${data}"/>`;
+		},
 		visible: true
 	} : {
 		data: "properties.pid",
@@ -3246,30 +3252,29 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 		//pageLength: 250,
 		//LengthMenu: [25, 50, 100],
 		data: features,
-		columns: [
+		columns: [{
+				data: "properties.pid",
+				render: function(data, type, row) {
+					return `<a href="http://localhost:8000//api/db/?id=${data}" target="_blank">${data}</a>`;
+				}
+			},
 			{
-		      data: "properties.pid",
-		      render: function (data, type, row) {
-		        return `<a href="http://localhost:8000//api/db/?id=${data}" target="_blank">${data}</a>`;
-		      }
-		    },
-		    {
-		      data: "properties.title"
-		    },
-		    {
+				data: "properties.title"
+			},
+			{
 				data: "geometry",
-	            render: function (data, type, row) {
-	                if (data) {
-	                    return `<img src="/static/images/geo_${data.type.toLowerCase().replace('multi','')}.svg" width=12/>`;
-	                } else {
-	                    return "<i>none</i>";
-	                }
-	            }
-		    },
-		    {
-		      data: "properties.dslabel"
-		    },
-		    check_column
+				render: function(data, type, row) {
+					if (data) {
+						return `<img src="/static/images/geo_${data.type.toLowerCase().replace('multi','')}.svg" width=12/>`;
+					} else {
+						return "<i>none</i>";
+					}
+				}
+			},
+			{
+				data: "properties.dslabel"
+			},
+			check_column
 		],
 		columnDefs: [
 			/*{ className: "browse-task-col", "targets": [8,9,10] },*/
@@ -3290,24 +3295,27 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 			/*, {visible: false, "targets": [0]}*/
 		],
 		rowId: 'properties.pid',
-	    createdRow: function (row, data, dataIndex) {
-	        // Attach temporal min and max properties as data attributes
-	        $(row).attr('data-min', data.properties.min);
-	        $(row).attr('data-max', data.properties.max);
-	        $(row).attr('dsid', data.properties.dsid);
-	        $(row).attr('pid', data.properties.pid);
-	        $(row).data('ds_pid', {ds: data.properties.dsid, pid: data.properties.pid});
+		createdRow: function(row, data, dataIndex) {
+			// Attach temporal min and max properties as data attributes
+			$(row).attr('data-min', data.properties.min);
+			$(row).attr('data-max', data.properties.max);
+			$(row).attr('dsid', data.properties.dsid);
+			$(row).attr('pid', data.properties.pid);
+			$(row).data('ds_pid', {
+				ds: data.properties.dsid,
+				pid: data.properties.pid
+			});
 			if (!data.geometry) {
-		        $(row).addClass('no-geometry');
-		    }
+				$(row).addClass('no-geometry');
+			}
 			if (data.properties.min === 'null' || data.properties.max === 'null') {
-		        $(row).addClass('no-temporal');
-		    }
-	    },
-	    initComplete: function(settings, json) {
-	        adjustPageLength();
-	    },
-	    drawCallback: function(settings) {
+				$(row).addClass('no-temporal');
+			}
+		},
+		initComplete: function(settings, json) {
+			adjustPageLength();
+		},
+		drawCallback: function(settings) {
 			console.log('table drawn')
 			spinner_table.stop()
 			// recheck inputs in checked_rows
@@ -3319,7 +3327,7 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 				$("#selection_status").show()
 			}
 			highlightFirstRow();
-	    }
+		}
 	})
 
 	$("#addchecked").click(function() {
@@ -3337,26 +3345,33 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 		console.log('help:', page)
 		$('.selector').dialog('open');
 	})
-	
-    $("#ds_select").change(function (e) {
-        // filter table
-        let val = $(this).val()
-        localStorage.setItem('filter', val)
-        window.spinner_map = startSpinner("dataset_content", 3);
-        if (val == -1) {
-            // clear search
-            window.spinner_filter = startSpinner("status_filter");
-            clearFilters()
-        } else {
-            clearFilters()
-            filterColumn(3, val)
-        }
-        // also filter map
-        filterMap(mappy, $(this).find(":selected").attr("data"));
-        
-        window.spinner_map.stop();
-    })
-	
+
+	$("#ds_select").change(function(e) {
+		
+		// filter table
+		let val = $(this).val();
+		localStorage.setItem('filter', val)
+		window.spinner_map = startSpinner("dataset_content", 3);
+		if (val == -1) {
+			// clear search
+			window.spinner_filter = startSpinner("status_filter");
+			clearFilters()
+		} else {
+			clearFilters()
+			filterColumn(3, val)
+		}
+		
+		// filter map
+		let ds_id = $(this).find(":selected").attr("data");
+		const dsItem = window.ds_list.find(ds => ds.id === ds_id);
+		if (dsItem) window.mapBounds = dsItem.extent;
+		else window.mapBounds = window.ds_list_stats.extent;
+		recenterMap(mappy, 'lazy');
+		filterMap(mappy, ds_id);
+
+		window.spinner_map.stop();
+	})
+
 	$(".selector").dialog({
 		resizable: false,
 		autoOpen: false,
@@ -3382,12 +3397,12 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 			duration: 400
 		}
 	});
-	
+
 	// The following have to use delegation from $("body") to cope with datatable page switching
-	
+
 	$("body").on("click", ".a-dl", function() {
-	    e.preventDefault()
-	    alert('not yet')
+		e.preventDefault()
+		alert('not yet')
 	})
 
 	$("body").on("click", ".table-chk", function() {
@@ -3396,51 +3411,54 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 		/*console.log('checked_rows',checked_rows)*/
 	})
 
-	$("body").on("click", "#placetable tbody tr", function() { 
+	$("body").on("click", "#placetable tbody tr", function() {
 		const ds_pid = $(this).data('ds_pid');
-		
+
 		// highlight this row, clear others
 		var selected = $(this).hasClass("highlight-row");
 		$("#placetable tr").removeClass("highlight-row");
-	
+
 		if (!selected)
 			$(this).removeClass("rowhover");
 		$(this).addClass("highlight-row");
-		
+
 		// fetch its detail
 		getPlace(ds_pid.pid, spinner_detail);
-		
+
 		highlightFeature(ds_pid, features, mappy);
-	
+
 	});
-			
+
 	// Custom search function to filter table based on dateline.fromValue and dateline.toValue
-	$.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-		if ( $('.range_container.expanded').length == 0) { // Is dateline inactive?
+	$.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+		if ($('.range_container.expanded').length == 0) { // Is dateline inactive?
 			return true;
 		}
-		
-	    const fromValue = window.dateline.fromValue;
-	    const toValue = window.dateline.toValue;
-	    const includeUndated = window.dateline.includeUndated
-	    
-	    // Get the min and max values from the data attributes of the row
-	    const row = $(settings.aoData[dataIndex].nTr);
-	    const minData = row.attr('data-min');
-	    const maxData = row.attr('data-max');
-	
-	    // Convert minData and maxData to numbers for comparison
-	    const min = minData === 'null' ? 'null' : parseFloat(minData);
+
+		const fromValue = window.dateline.fromValue;
+		const toValue = window.dateline.toValue;
+		const includeUndated = window.dateline.includeUndated
+
+		// Get the min and max values from the data attributes of the row
+		const row = $(settings.aoData[dataIndex].nTr);
+		const minData = row.attr('data-min');
+		const maxData = row.attr('data-max');
+
+		// Convert minData and maxData to numbers for comparison
+		const min = minData === 'null' ? 'null' : parseFloat(minData);
 		const max = maxData === 'null' ? 'null' : parseFloat(maxData);
-	
-	    // Filter logic
+
+		// Filter logic
 		if (((!isNaN(fromValue) && !isNaN(toValue)) && (min !== 'null' && max !== 'null' && min <= toValue && max >= fromValue)) || (includeUndated && (min === 'null' || max === 'null'))) {
-	        return true; // Include row in the result
-	    }
-	    return false; // Exclude row from the result
+			return true; // Include row in the result
+		}
+		return false; // Exclude row from the result
 	});
-	
-	return {table, checked_rows}
+
+	return {
+		table,
+		checked_rows
+	}
 }
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/collections.js
 // pids generate new CollPlace (collection_collplace) and
