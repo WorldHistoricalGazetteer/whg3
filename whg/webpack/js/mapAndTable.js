@@ -93,7 +93,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	});
 	
 	window.ds_list_stats = get_ds_list_stats(allFeatures);
-	console.log('window.ds_list_stats', window.ds_list_stats);
+	//console.log('window.ds_list_stats', window.ds_list_stats);
 	
 	datasetLayers.forEach(function(layer) { // Ensure proper layer order for multiple datasets
 		window.ds_list.forEach(function(ds) {
@@ -109,6 +109,8 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	const tableInit = initialiseTable(allFeatures, checked_rows, spinner_table, spinner_detail, mappy);
 	table = tableInit.table;
 	checked_rows = tableInit.checked_rows;
+	
+	allFeatures = null; // release memory
 
 	window.mapBounds = window.ds_list_stats.extent;
 	recenterMap(mappy);
@@ -133,14 +135,12 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	init_collection_listeners(checked_rows);
 	
 	spinner_map.stop();
-	
-	// TODO: Clean up - delete window.ds_list ?
 });
 
 // TODO: This functionality not yet implemented in modularisation
 /*
 // TODO: add a 'big?' boolean to ds_list based on count of polygons
-mappy.on('sourcedata', function (e) { // SG Fix Cursor
+mappy.on('sourcedata', function (e) {
     // console.log('source_list', source_list)
     if (source_list.includes('territorios892')) {
         // big polygons

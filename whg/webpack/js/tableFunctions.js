@@ -108,7 +108,6 @@ export function highlightFeature(ds_pid, features, mappy) {
 		if (geom) {
 			const coords = geom.coordinates;
 			window.highlightedFeatureIndex = {source: ds_pid.ds.toString(), id: featureIndex};
-	    	console.log(feature,window.highlightedFeatureIndex);
 			mappy.setFeatureState(window.highlightedFeatureIndex, { highlight: true });
 			updatePadding();
 			// zoom to feature
