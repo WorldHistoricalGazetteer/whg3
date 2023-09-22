@@ -46,7 +46,12 @@ export function filteredLayer(layer) {
 
 export function toggleFilters(on, mappy, table){
     datasetLayers.forEach(function(layer){
-		mappy.setFilter(layer.id, on ? filteredLayer(layer).filter : layer.filter);
+		window.ds_list.forEach(function(ds) {
+			const modifiedLayer = { ...layer };
+		    modifiedLayer.id = `${layer.id}_${ds.id}`;
+		    modifiedLayer.source = ds.id.toString();
+			mappy.setFilter(modifiedLayer.id, on ? filteredLayer(modifiedLayer).filter : modifiedLayer.filter);
+		});
 	});
 	table.draw();
 }
