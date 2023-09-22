@@ -16,7 +16,8 @@ echo "Default superuser $DB_USER created."
 # Restore data if DB_LOAD_DATA is set to True
 if [[ "$DB_LOAD_DATA" == "True" ]]; then
     echo "Restoring data from dump..."
-    psql -U $DB_USER -d $DB_NAME < /app/data/base_data.sql
+    gunzip -c data/base_data.sql.gz | psql -h localhost -U $DB_USER -d $DB_NAME
+#    psql -U $DB_USER -d $DB_NAME < /app/data/base_data.sql
 #    pg_restore -U $DB_USER -d $DB_NAME -F c /app/data/base_data.dump
     echo "Data restored."
 fi
