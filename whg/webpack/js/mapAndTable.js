@@ -1,11 +1,12 @@
 // /whg/webpack/js/mapAndTable.js
 
 import { init_mapControls } from './mapControls';
-import { addMapSources, recenterMap, initObservers, initOverlays, initPopups, listSourcesAndLayers } from './mapFunctions';
+import { addMapSource, addMapLayer, recenterMap, initObservers, initOverlays, initPopups, listSourcesAndLayers } from './mapFunctions';
 import { toggleFilters } from './mapFilters';
 import { initUtils, initInfoOverlay, startSpinner } from './utilities';
 import { initialiseTable } from './tableFunctions';
 import { init_collection_listeners } from './collections';
+import datasetLayers from './mapLayerStyles';
 
 let ds_listJSON = document.getElementById('ds_list_data') || false;
 if (ds_listJSON) {
@@ -39,7 +40,7 @@ if (mapParameters.styleFilter.length == 0) {
 }
 		
 maptilersdk.config.apiKey = mapParameters.mapTilerKey;
-var mappy = new maptilersdk.Map({
+let mappy = new maptilersdk.Map({
 	container: mapParameters.container,
 	center: mapParameters.center,
 	zoom: mapParameters.zoom,
@@ -80,11 +81,21 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	initOverlays(whgMap);
 	
 	let allFeatures = [];
+	
 	window.ds_list.forEach(function(ds) {
-		// TODO: Fix function to include dataset identifier in source and layer names
-		addMapSources(mappy, ds);
-		// TODO: Add dataset identifier to each feature
+		addMapSource(mappy, ds);
+		ds.features.forEach(feature => {
+		    feature.properties = feature.properties || {};
+		    feature.properties.dsid = ds.id;
+		    feature.properties.dslabel = ds.label;
+		});
 		allFeatures.push(...ds.features);
+	});
+	
+	datasetLayers.forEach(function(layer) { // Ensure proper layer order for multiple datasets
+		window.ds_list.forEach(function(ds) {
+			addMapLayer(mappy, layer, ds);
+		});
 	});
 	
 	mappy.removeSource('maptiler_attribution');

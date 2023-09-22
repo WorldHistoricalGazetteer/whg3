@@ -78,20 +78,23 @@ function clearFilters() {
 
 function filterMap(){} // Placeholder - must be implemented for ds_collection
 
-export function highlightFeature(pid, features, mappy) {
+export function highlightFeature(ds_pid, features, mappy) {
 	
-	listSourcesAndLayers(mappy);
+	//listSourcesAndLayers(mappy);
 	
-	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(pid)); 
+	features = features.filter(f => f.properties.dsid === ds_pid.ds);
+	
+	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(ds_pid.pid)); 
 	if (featureIndex !== -1) {
 		//console.log(`Switching highlight from ${window.highlightedFeatureIndex} to ${featureIndex}.`);
-		if (window.highlightedFeatureIndex !== undefined) mappy.setFeatureState({ source: 'places', id: window.highlightedFeatureIndex }, { highlight: false });
+		if (window.highlightedFeatureIndex !== undefined) mappy.setFeatureState(window.highlightedFeatureIndex, { highlight: false });
 	    var feature = features[featureIndex];
 		const geom = feature.geometry;
 		if (geom) {
 			const coords = geom.coordinates;
-			window.highlightedFeatureIndex = featureIndex;
-			mappy.setFeatureState({ source: 'places', id: featureIndex }, { highlight: true });
+			window.highlightedFeatureIndex = {source: ds_pid.ds.toString(), id: featureIndex};
+	    	console.log(feature,window.highlightedFeatureIndex);
+			mappy.setFeatureState(window.highlightedFeatureIndex, { highlight: true });
 			updatePadding();
 			// zoom to feature
 			if (geom.type.toLowerCase() == 'point') {
@@ -111,7 +114,7 @@ export function highlightFeature(pid, features, mappy) {
 			console.log('Feature in clicked row has no geometry.');
 		}
 	} else {
-	    console.log(`Feature ${pid} not found.`);
+	    console.log(`Feature ${ds_pid.pid} not found.`);
 	}
 	
 }
@@ -175,6 +178,9 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 	                }
 	            }
 		    },
+		    {
+		      data: "properties.dslabel"
+		    },
 		    check_column
 		],
 		columnDefs: [
@@ -182,11 +188,15 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 			/*{ orderable: false, "targets": [4, 5]},*/
 			{
 				orderable: false,
-				"targets": [0, 2, 3]
+				"targets": [0, 2, 4]
 			},
 			{
 				searchable: false,
-				"targets": [0, 2, 3]
+				"targets": [0, 2, 4]
+			},
+			{
+				visible: window.ds_list.length > 1,
+				"targets": [3]
 			}
 			/*, {visible: false, "targets": [5]}*/
 			/*, {visible: false, "targets": [0]}*/
@@ -196,6 +206,9 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 	        // Attach temporal min and max properties as data attributes
 	        $(row).attr('data-min', data.properties.min);
 	        $(row).attr('data-max', data.properties.max);
+	        $(row).attr('dsid', data.properties.dsid);
+	        $(row).attr('pid', data.properties.pid);
+	        $(row).data('ds_pid', {ds: data.properties.dsid, pid: data.properties.pid});
 			if (!data.geometry) {
 		        $(row).addClass('no-geometry');
 		    }
@@ -220,11 +233,6 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 			highlightFirstRow();
 	    }
 	})
-	
-	$(".a-dl").click(function (e) {
-	    e.preventDefault()
-	    alert('not yet')
-	})
 
 	$("#addchecked").click(function() {
 		console.log('clicked #addchecked')
@@ -240,12 +248,6 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		page = $(this).data('id')
 		console.log('help:', page)
 		$('.selector').dialog('open');
-	})
-
-	$(".table-chk").click(function(e) {
-		e.preventDefault()
-		console.log('adding', $(this).data('id'))
-		/*console.log('checked_rows',checked_rows)*/
 	})
 	
     $("#ds_select").change(function (e) {
@@ -290,9 +292,22 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 			duration: 400
 		}
 	});
+	
+	// The following have to use delegation from $("body") to cope with datatable page switching
+	
+	$("body").on("click", ".a-dl", function() {
+	    e.preventDefault()
+	    alert('not yet')
+	})
 
-	$("#placetable tbody tr").click(function () {
-		const pid = $(this)[0].cells[0].textContent
+	$("body").on("click", ".table-chk", function() {
+		e.preventDefault()
+		console.log('adding', $(this).data('id'))
+		/*console.log('checked_rows',checked_rows)*/
+	})
+
+	$("body").on("click", "#placetable tbody tr", function() { 
+		const ds_pid = $(this).data('ds_pid');
 		
 		// highlight this row, clear others
 		var selected = $(this).hasClass("highlight-row");
@@ -303,9 +318,9 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		$(this).addClass("highlight-row");
 		
 		// fetch its detail
-		getPlace(pid, spinner_detail);
+		getPlace(ds_pid.pid, spinner_detail);
 		
-		highlightFeature(pid, features, mappy);
+		highlightFeature(ds_pid, features, mappy);
 	
 	});
 			

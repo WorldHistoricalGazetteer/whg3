@@ -100,17 +100,20 @@ class StyleControl {
 		const style_code = variantValue.split(".");
 		console.log('Selected variant: ', variantValue, maptilersdk.MapStyle[style_code[0]][style_code[1]]);
 		mappy.setStyle(maptilersdk.MapStyle[style_code[0]][style_code[1]], {
-		  transformStyle: (previousStyle, nextStyle) => ({
+		  transformStyle: (previousStyle, nextStyle) => {
+		    const newSources = { ...nextStyle.sources };
+		    window.ds_list.forEach(ds => {
+		      newSources[ds.id.toString()] = previousStyle.sources[ds.id.toString()];
+		    });
+		    return {
 		      ...nextStyle,
-		      sources: {
-		          ...nextStyle.sources,
-		          'places': previousStyle.sources.places
-		      },
+		      sources: newSources,
 		      layers: [
-		          ...nextStyle.layers,
-		          ...previousStyle.layers.filter(layer => datasetLayers.map(dslayer => dslayer.id).includes(layer.id))
+		        ...nextStyle.layers,
+		        ...previousStyle.layers.filter(layer => datasetLayers.some(dslayer => layer.id.startsWith(dslayer.id)))
 		      ]
-		  })
+		    };
+		  }
 		});
 
 		const styleList = document.getElementById('mapStyleList');

@@ -2,20 +2,19 @@ import datasetLayers from './mapLayerStyles';
 import { attributionString } from './utilities';
 import { filteredLayer } from './mapFilters';
 
-export function addMapSources(mappy, data) {
-	
-	console.log('addMapSources',data);
-		
-	mappy.addSource('places', {
+export function addMapSource(mappy, ds) {
+	mappy.addSource(ds.id.toString(), {
 		'type': 'geojson',
-		'data': data,
-		'attribution': attributionString(data),
+		'data': ds,
+		'attribution': attributionString(ds),
 	})
+}
 
-	datasetLayers.forEach(function(layer) {
-		mappy.addLayer(filteredLayer(layer));
-	});
-	
+export function addMapLayer(mappy, layer, ds) {
+	const modifiedLayer = { ...layer };
+    modifiedLayer.id = `${layer.id}_${ds.id}`;
+    modifiedLayer.source = ds.id.toString();
+    mappy.addLayer(filteredLayer(modifiedLayer));
 }
 
 let mapParams;
@@ -123,84 +122,94 @@ export function initOverlays(whgMap) {
 export function initPopups(mappy, activePopup, table) {
 
 	datasetLayers.forEach(function(layer) {
-
-		mappy.on('mouseenter', layer.id, function(e) {
-			mappy.getCanvas().style.cursor = 'pointer';
-
-			var pid = e.features[0].properties.pid;
-			var title = e.features[0].properties.title;
-			var min = e.features[0].properties.min;
-			var max = e.features[0].properties.max;
-
-			if (activePopup) {
-				activePopup.remove();
-			}
-			activePopup = new maptilersdk.Popup({
-					closeButton: false
-				})
-				.setLngLat(e.lngLat)
-				.setHTML('<b>' + title + '</b><br/>' +
-					'Temporality: ' + (min ? min : '?') + '/' + (max ? max : '?') + '<br/>' +
-					'Click to focus'
-				)
-				.addTo(mappy);
-			activePopup.pid = pid;
-		});
-
-		mappy.on('mousemove', layer.id, function(e) {
-			if (activePopup) {
-				activePopup.setLngLat(e.lngLat);
-			}
-		});
-
-		mappy.on('mouseleave', layer.id, function() {
-			mappy.getCanvas().style.cursor = '';
-			if (activePopup) {
-				activePopup.remove();
-			}
-
-		});
-
-		mappy.on('click', layer.id, function(e) {
-
-			var pid;
-			if (activePopup && activePopup.pid) {
-				pid = activePopup.pid;
-				activePopup.remove();
-			} else pid = e.features[0].properties.pid;
-
-			// Search for the row within the sorted and filtered view
-			var pageInfo = table.page.info();
-			var rowPosition = -1;
-			var rows = table.rows({
-				search: 'applied',
-				order: 'current'
-			}).nodes();
-			let selectedRow;
-			for (var i = 0; i < rows.length; i++) {
-				var rowData = table.row(rows[i]).data();
-				rowPosition++;
-				if (rowData.properties.pid == pid) {
-					selectedRow = rows[i];
-					break; // Stop the loop when the row is found
+		
+		window.ds_list.forEach(function(ds) {
+			const modifiedLayer = { ...layer };
+		    modifiedLayer.id = `${layer.id}_${ds.id}`;
+		    modifiedLayer.source = ds.id.toString();
+	
+			mappy.on('mouseenter', modifiedLayer.id, function(e) {
+				mappy.getCanvas().style.cursor = 'pointer';
+	
+				var pid = e.features[0].properties.pid;
+				var title = e.features[0].properties.title;
+				var min = e.features[0].properties.min;
+				var max = e.features[0].properties.max;
+	
+				if (activePopup) {
+					activePopup.remove();
 				}
-			}
-
-			if (rowPosition !== -1) {
-				// Calculate the page number based on the row's position
-				var pageNumber = Math.floor(rowPosition / pageInfo.length);
-				console.log(`Feature ${pid} selected at table row ${rowPosition} on page ${pageNumber + 1} (current page ${pageInfo.page + 1}).`);
-
-				// Check if the row is on the current page
-				if (pageInfo.page !== pageNumber) {
-					table.page(pageNumber).draw('page');
+				activePopup = new maptilersdk.Popup({
+						closeButton: false
+					})
+					.setLngLat(e.lngLat)
+					.setHTML('<b>' + title + '</b><br/>' +
+						'Temporality: ' + (min ? min : '?') + '/' + (max ? max : '?') + '<br/>' +
+						'Click to focus'
+					)
+					.addTo(mappy);
+				activePopup.pid = pid;
+			});
+	
+			mappy.on('mousemove', modifiedLayer.id, function(e) {
+				if (activePopup) {
+					activePopup.setLngLat(e.lngLat);
 				}
-
-				selectedRow.scrollIntoView();
-				$(selectedRow).trigger('click');
-			}
-
-		})
+			});
+	
+			mappy.on('mouseleave', modifiedLayer.id, function() {
+				mappy.getCanvas().style.cursor = '';
+				if (activePopup) {
+					activePopup.remove();
+				}
+	
+			});
+	
+			mappy.on('click', modifiedLayer.id, function(e) {
+	
+				var pid;
+				if (activePopup && activePopup.pid) {
+					pid = activePopup.pid;
+					activePopup.remove();
+				} else pid = e.features[0].properties.pid;
+	
+				// Search for the row within the sorted and filtered view
+				var pageInfo = table.page.info();
+				var rowPosition = -1;
+				var rows = table.rows({
+					search: 'applied',
+					order: 'current'
+				}).nodes();
+				let selectedRow;
+				for (var i = 0; i < rows.length; i++) {
+					var rowData = table.row(rows[i]).data();
+					rowPosition++;
+					if (rowData.properties.pid == pid) {
+						selectedRow = rows[i];
+						break; // Stop the loop when the row is found
+					}
+				}
+	
+				if (rowPosition !== -1) {
+					// Calculate the page number based on the row's position
+					var pageNumber = Math.floor(rowPosition / pageInfo.length);
+					console.log(`Feature ${pid} selected at table row ${rowPosition} on page ${pageNumber + 1} (current page ${pageInfo.page + 1}).`);
+	
+					// Check if the row is on the current page
+					if (pageInfo.page !== pageNumber) {
+						table.page(pageNumber).draw('page');
+					}
+	
+					selectedRow.scrollIntoView();
+					$(selectedRow).trigger('click');
+				}
+	
+			})
+		    
+		    
+		    
+		    
+		});
 
 	});
 }
