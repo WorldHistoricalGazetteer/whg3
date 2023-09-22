@@ -6,6 +6,8 @@ set -o nounset
 
 export POSTGRES_HOST_AUTH_METHOD="trust"
 
+# Start the development server
+python manage.py runserver 0.0.0.0:8000
 
 # NB: there is no need for makemigrations here; it generates migration files from changes to models
 # if anyone changes a model they would have to run makemigrations in their local environment in order
@@ -40,5 +42,3 @@ export POSTGRES_HOST_AUTH_METHOD="trust"
 # Gather static files into the 'static/' directory
 # python manage.py collectstatic --no-input
 
-# Start the development server
-python manage.py runserver 0.0.0.0:8000
