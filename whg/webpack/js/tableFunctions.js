@@ -2,6 +2,9 @@ import { envelope } from './6.5.0_turf.min.js'
 import { getPlace } from './getPlace';
 import { startSpinner } from './utilities';
 import { updatePadding, recenterMap, listSourcesAndLayers } from './mapFunctions';
+import datasetLayers from './mapLayerStyles';
+
+let table;
 
 function highlightFirstRow() {
 	$("#placetable tr").removeClass("highlight-row");
@@ -48,7 +51,7 @@ function filterColumn(i, v) {
 function clearFilters() {
     // clear
     table
-    .columns([5, 6, 7, 11])
+    .columns([5, 6, 7, 11]) // TODO: Check these values?
     .search('')
     .draw();
     $("#ds_select").val('-1')
@@ -76,7 +79,19 @@ function clearFilters() {
 	$("#status_select").val('99')
 }*/
 
-function filterMap(){} // Placeholder - must be implemented for ds_collection
+function filterMap(mappy, val){
+	let recentered = false;
+	datasetLayers.forEach(function(layer) {
+		window.ds_list.forEach(function(ds) {
+			mappy.setLayoutProperty(`${layer.id}_${ds.id}`, 'visibility', (val == 'all' || ds.id.toString() === val.toString()) ? 'visible' : 'none');
+			if (!recentered && ds.id.toString() === val.toString()) {
+				recentered = true;
+				window.mapBounds = ds.extent;
+				recenterMap(mappy, 'lazy');
+			}
+		});
+	});
+}
 
 export function highlightFeature(ds_pid, features, mappy) {
 	
@@ -120,10 +135,21 @@ export function highlightFeature(ds_pid, features, mappy) {
 }
 
 export function initialiseTable(features, checked_rows, spinner_table, spinner_detail, mappy) {
-	
-	//console.log('initialiseTable', features);
 
 	checked_rows = []
+	
+	if (window.ds_list.length > 1) {
+		let select = '<label>Datasets: <select id="ds_select">' +
+        	'<option value="-1" data="all" selected="selected">All</option>';
+        for (let ds of window.ds_list) {
+            select += '<option value="' + ds.label + '" data="' + ds.id + '">' +
+            ds.title + '</option>'
+        }
+        select += '</select></label>';
+		$("#ds_filter").html(select);
+	}
+	
+	// TODO: remove these artifacts of table used for review
 	localStorage.setItem('filter', '99')
 	var wdtask = false
 	var tgntask = false
@@ -144,7 +170,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 	spinner_detail = startSpinner("row_detail");
 
 	// task columns are inoperable in this public view
-	const table = $('#placetable').DataTable({
+	table = $('#placetable').DataTable({
 		/*dom:  "<'row small'<'col-sm-12 col-md-4'l>"+*/
 		dom: "<'row small'<'col-sm-7'f>" +
 			"<'col-sm-5'>>" +
@@ -153,7 +179,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		// scrollY: 400,
 		select: true,
 		order: [
-			[0, 'asc']
+			[1, 'asc']
 		],
 		//pageLength: 250,
 		//LengthMenu: [25, 50, 100],
@@ -252,19 +278,21 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 	
     $("#ds_select").change(function (e) {
         // filter table
-        val = $(this).val()
-            localStorage.setItem('filter', val)
-            window.spinner_map = startSpinner("dataset_content", 3);
-            if (val == -1) {
-                // clear search
-                window.spinner_filter = startSpinner("status_filter");
-                clearFilters()
-            } else {
-                clearFilters()
-                filterColumn(11, val)
-            }
-            // also filter map
-            filterMap(val)
+        let val = $(this).val()
+        localStorage.setItem('filter', val)
+        window.spinner_map = startSpinner("dataset_content", 3);
+        if (val == -1) {
+            // clear search
+            window.spinner_filter = startSpinner("status_filter");
+            clearFilters()
+        } else {
+            clearFilters()
+            filterColumn(3, val)
+        }
+        // also filter map
+        filterMap(mappy, $(this).find(":selected").attr("data"));
+        
+        window.spinner_map.stop();
     })
 	
 	$(".selector").dialog({
