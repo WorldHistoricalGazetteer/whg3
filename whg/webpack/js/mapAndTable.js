@@ -3,7 +3,7 @@
 import { init_mapControls } from './mapControls';
 import { addMapSource, addMapLayer, recenterMap, initObservers, initOverlays, initPopups, listSourcesAndLayers } from './mapFunctions';
 import { toggleFilters } from './mapFilters';
-import { initUtils, initInfoOverlay, startSpinner } from './utilities';
+import { initUtils, initInfoOverlay, startSpinner, minmaxer, get_ds_list_stats } from './utilities';
 import { initialiseTable } from './tableFunctions';
 import { init_collection_listeners } from './collections';
 import datasetLayers from './mapLayerStyles';
@@ -92,6 +92,9 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 		allFeatures.push(...ds.features);
 	});
 	
+	window.ds_list_stats = get_ds_list_stats(allFeatures);
+	console.log('window.ds_list_stats', window.ds_list_stats);
+	
 	datasetLayers.forEach(function(layer) { // Ensure proper layer order for multiple datasets
 		window.ds_list.forEach(function(ds) {
 			addMapLayer(mappy, layer, ds);
@@ -107,8 +110,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	table = tableInit.table;
 	checked_rows = tableInit.checked_rows;
 
-	// TODO: FIX DS_LIST REFERENCE
-	window.mapBounds = window.ds_list[0].extent;
+	window.mapBounds = window.ds_list_stats.extent;
 	recenterMap(mappy);
 	
 	initObservers(mappy);
@@ -117,8 +119,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	initPopups(mappy, activePopup, table);
 	
 	// Initialise Map Controls
-	// TODO: FIX DS_LIST REFERENCE
-	const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, window.ds_list[0], table);
+	const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table);
 	datelineContainer = mapControlsInit.datelineContainer;
 	mapParameters = mapControlsInit.mapParameters;
 	

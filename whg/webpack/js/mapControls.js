@@ -146,7 +146,7 @@ class CustomAttributionControl extends maptilersdk.AttributionControl {
     }
 }
 
-function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, data, table){
+function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table){
 
 	if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
 	
@@ -187,17 +187,14 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 		datelineContainer.id = 'dateline';
 		document.getElementById('mapControls').appendChild(datelineContainer);
 
-		if (data.minmax) {
-			const [minValue, maxValue] = data.minmax;
-			const range = maxValue - minValue;
-			const buffer = range * 0.1; // 10% buffer
+		const range = window.ds_list_stats.max - window.ds_list_stats.min;
+		const buffer = range * 0.1; // 10% buffer
 
-			// Update the temporal settings
-			mapParameters.controls.temporal.fromValue = minValue;
-			mapParameters.controls.temporal.toValue = maxValue;
-			mapParameters.controls.temporal.minValue = minValue - buffer;
-			mapParameters.controls.temporal.maxValue = maxValue + buffer;
-		}
+		// Update the temporal settings
+		mapParameters.controls.temporal.fromValue = window.ds_list_stats.min;
+		mapParameters.controls.temporal.toValue = window.ds_list_stats.max;
+		mapParameters.controls.temporal.minValue = window.ds_list_stats.min - buffer;
+		mapParameters.controls.temporal.maxValue = window.ds_list_stats.max + buffer;
 
 		window.dateline = new Dateline({
 			...mapParameters.controls.temporal,
