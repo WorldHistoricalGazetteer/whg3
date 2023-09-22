@@ -3400,12 +3400,12 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 
 	// The following have to use delegation from $("body") to cope with datatable page switching
 
-	$("body").on("click", ".a-dl", function() {
+	$("body").on("click", ".a-dl", function(e) {
 		e.preventDefault()
 		alert('not yet')
 	})
 
-	$("body").on("click", ".table-chk", function() {
+	$("body").on("click", ".table-chk", function(e) {
 		e.preventDefault()
 		console.log('adding', $(this).data('id'))
 		/*console.log('checked_rows',checked_rows)*/
