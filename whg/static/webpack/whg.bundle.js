@@ -2393,7 +2393,7 @@ class CustomAttributionControl extends maptilersdk.AttributionControl {
     }
 }
 
-function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, data, table){
+function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table){
 
 	if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
 	
@@ -2434,17 +2434,14 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 		datelineContainer.id = 'dateline';
 		document.getElementById('mapControls').appendChild(datelineContainer);
 
-		if (data.minmax) {
-			const [minValue, maxValue] = data.minmax;
-			const range = maxValue - minValue;
-			const buffer = range * 0.1; // 10% buffer
+		const range = window.ds_list_stats.max - window.ds_list_stats.min;
+		const buffer = range * 0.1; // 10% buffer
 
-			// Update the temporal settings
-			mapParameters.controls.temporal.fromValue = minValue;
-			mapParameters.controls.temporal.toValue = maxValue;
-			mapParameters.controls.temporal.minValue = minValue - buffer;
-			mapParameters.controls.temporal.maxValue = maxValue + buffer;
-		}
+		// Update the temporal settings
+		mapParameters.controls.temporal.fromValue = window.ds_list_stats.min;
+		mapParameters.controls.temporal.toValue = window.ds_list_stats.max;
+		mapParameters.controls.temporal.minValue = window.ds_list_stats.min - buffer;
+		mapParameters.controls.temporal.maxValue = window.ds_list_stats.max + buffer;
 
 		window.dateline = new Dateline({
 			...mapParameters.controls.temporal,
@@ -2484,10 +2481,13 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 
 
 
+// EXTERNAL MODULE: ../app/whg/webpack/js/6.5.0_turf.min.js
+var _6_5_0_turf_min = __webpack_require__(301);
 // EXTERNAL MODULE: ./node_modules/clipboard/dist/clipboard.js
 var clipboard = __webpack_require__(152);
 var clipboard_default = /*#__PURE__*/__webpack_require__.n(clipboard);
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/utilities.js
+
 
 
 function initInfoOverlay() {
@@ -2555,6 +2555,40 @@ function initUtils(mappy){
 	
 }
 
+function minmaxer(timespans) {
+	//console.log('got to minmax()',JSON.stringify(timespans))-->
+	let starts = [];
+	let ends = []
+	for (var t in timespans) {
+		// gets 'in', 'earliest' or 'latest'
+		starts.push(Object.values(timespans[t].start)[0])
+		ends.push(!!timespans[t].end ? Object.values(timespans[t].end)[0] : -1)
+	}
+	//console.log('starts',starts,'ends',ends)-->
+	return [Math.max.apply(null, starts), Math.max.apply(null, ends)]
+}
+
+function get_ds_list_stats(allFeatures) {
+    let min = Infinity;
+    let max = -Infinity;
+    for (let i = 0; i < allFeatures.length; i++) {
+        const featureMin = allFeatures[i].properties.min;
+        const featureMax = allFeatures[i].properties.max;
+        if (!isNaN(featureMin) && !isNaN(featureMax)) {
+            min = Math.min(min, featureMin);
+            max = Math.max(max, featureMax);
+        }
+    }
+    if (!isFinite(min)) min = -3000;
+	if (!isFinite(max)) max = 2000;
+    
+    const geojson = {
+	    "type": "FeatureCollection",
+	    "features": allFeatures
+	};
+	
+	return {min: min, max: max, extent: (0,_6_5_0_turf_min.bbox)(geojson)}
+}
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/mapFilters.js
 
 
@@ -2840,9 +2874,9 @@ function listSourcesAndLayers(mappy) {
 	console.log('Layers:', layers.map(layer => layer.id));
 }
 
-// EXTERNAL MODULE: ../app/whg/webpack/js/6.5.0_turf.min.js
-var _6_5_0_turf_min = __webpack_require__(301);
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/getPlace.js
+
+
 function getPlace(pid, spinner_detail) {
 	console.log('getPlace()', pid);
     if (isNaN(pid)) {
@@ -3006,19 +3040,6 @@ function parsePlace(data) {
 	}
 	descrip += '</div>'
 	return descrip
-}
-
-function minmaxer(timespans) {
-	//console.log('got to minmax()',JSON.stringify(timespans))-->
-	let starts = [];
-	let ends = []
-	for (var t in timespans) {
-		// gets 'in', 'earliest' or 'latest'
-		starts.push(Object.values(timespans[t].start)[0])
-		ends.push(!!timespans[t].end ? Object.values(timespans[t].end)[0] : -1)
-	}
-	//console.log('starts',starts,'ends',ends)-->
-	return [Math.max.apply(null, starts), Math.max.apply(null, ends)]
 }
 
 // builds link for external place record
@@ -3642,6 +3663,9 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 		allFeatures.push(...ds.features);
 	});
 	
+	window.ds_list_stats = get_ds_list_stats(allFeatures);
+	console.log('window.ds_list_stats', window.ds_list_stats);
+	
 	mapLayerStyles.forEach(function(layer) { // Ensure proper layer order for multiple datasets
 		window.ds_list.forEach(function(ds) {
 			addMapLayer(mappy, layer, ds);
@@ -3657,8 +3681,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	mapAndTable_table = tableInit.table;
 	mapAndTable_checked_rows = tableInit.checked_rows;
 
-	// TODO: FIX DS_LIST REFERENCE
-	window.mapBounds = window.ds_list[0].extent;
+	window.mapBounds = window.ds_list_stats.extent;
 	recenterMap(mappy);
 	
 	initObservers(mappy);
@@ -3667,8 +3690,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	initPopups(mappy, activePopup, mapAndTable_table);
 	
 	// Initialise Map Controls
-	// TODO: FIX DS_LIST REFERENCE
-	const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, window.ds_list[0], mapAndTable_table);
+	const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, mapAndTable_table);
 	datelineContainer = mapControlsInit.datelineContainer;
 	mapParameters = mapControlsInit.mapParameters;
 	

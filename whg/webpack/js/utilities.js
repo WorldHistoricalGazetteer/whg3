@@ -1,3 +1,4 @@
+import { bbox } from './6.5.0_turf.min.js'
 import ClipboardJS from '/webpack/node_modules/clipboard';
 
 export function initInfoOverlay() {
@@ -63,4 +64,39 @@ export function initUtils(mappy){
 		mappy.removeLayer('outline')
 	})
 	
+}
+
+export function minmaxer(timespans) {
+	//console.log('got to minmax()',JSON.stringify(timespans))-->
+	let starts = [];
+	let ends = []
+	for (var t in timespans) {
+		// gets 'in', 'earliest' or 'latest'
+		starts.push(Object.values(timespans[t].start)[0])
+		ends.push(!!timespans[t].end ? Object.values(timespans[t].end)[0] : -1)
+	}
+	//console.log('starts',starts,'ends',ends)-->
+	return [Math.max.apply(null, starts), Math.max.apply(null, ends)]
+}
+
+export function get_ds_list_stats(allFeatures) {
+    let min = Infinity;
+    let max = -Infinity;
+    for (let i = 0; i < allFeatures.length; i++) {
+        const featureMin = allFeatures[i].properties.min;
+        const featureMax = allFeatures[i].properties.max;
+        if (!isNaN(featureMin) && !isNaN(featureMax)) {
+            min = Math.min(min, featureMin);
+            max = Math.max(max, featureMax);
+        }
+    }
+    if (!isFinite(min)) min = -3000;
+	if (!isFinite(max)) max = 2000;
+    
+    const geojson = {
+	    "type": "FeatureCollection",
+	    "features": allFeatures
+	};
+	
+	return {min: min, max: max, extent: bbox(geojson)}
 }

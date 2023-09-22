@@ -1,3 +1,5 @@
+import { minmaxer } from './utilities';
+
 export function getPlace(pid, spinner_detail) {
 	console.log('getPlace()', pid);
     if (isNaN(pid)) {
@@ -161,19 +163,6 @@ function parsePlace(data) {
 	}
 	descrip += '</div>'
 	return descrip
-}
-
-function minmaxer(timespans) {
-	//console.log('got to minmax()',JSON.stringify(timespans))-->
-	let starts = [];
-	let ends = []
-	for (var t in timespans) {
-		// gets 'in', 'earliest' or 'latest'
-		starts.push(Object.values(timespans[t].start)[0])
-		ends.push(!!timespans[t].end ? Object.values(timespans[t].end)[0] : -1)
-	}
-	//console.log('starts',starts,'ends',ends)-->
-	return [Math.max.apply(null, starts), Math.max.apply(null, ends)]
 }
 
 // builds link for external place record
