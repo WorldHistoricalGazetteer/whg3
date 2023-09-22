@@ -136,3 +136,20 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	// TODO: Clean up - delete window.ds_list ?
 });
 
+// TODO: This functionality not yet implemented in modularisation
+/*
+// TODO: add a 'big?' boolean to ds_list based on count of polygons
+mappy.on('sourcedata', function (e) { // SG Fix Cursor
+    // console.log('source_list', source_list)
+    if (source_list.includes('territorios892')) {
+        // big polygons
+        if (e.sourceId == 'territorios892' && e.isSourceLoaded) {
+            spinner_map.stop()
+            $(".toomany").html('').hide()
+        }
+    } else {
+        spinner_map.stop()
+        $(".toomany").html('').hide()
+    }
+});
+*/
