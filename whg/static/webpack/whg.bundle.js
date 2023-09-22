@@ -2680,7 +2680,7 @@ function updatePadding() {
 		left: ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin,
 		right: MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin,
 	};
-	console.log('mapPadding recalculated:', window.mapPadding);
+	//console.log('mapPadding recalculated:', window.mapPadding);
 }
 
 function updateBounds() {
@@ -2692,7 +2692,7 @@ function updateBounds() {
 	window.mapBounds = {
 		'center': pseudoCenter
 	}
-	console.log('window.mapBounds updated:', window.mapBounds);
+	//console.log('window.mapBounds updated:', window.mapBounds);
 }
 
 // Control positioning of map, clear of overlays
@@ -2739,7 +2739,7 @@ function initObservers(mappy) {
 	mappy.on('zoomend', function() { // Triggered by `flyTo` and `fitBounds` - must be blocked to prevent misalignment 
 		if (window.blockBoundsUpdate) {
 			window.blockBoundsUpdate = false;
-			console.log('blockBoundsUpdate released.');
+			//console.log('blockBoundsUpdate released.');
 		}
 		else {
 			updateBounds();
@@ -2845,7 +2845,7 @@ function initPopups(mappy, activePopup, table) {
 				if (rowPosition !== -1) {
 					// Calculate the page number based on the row's position
 					var pageNumber = Math.floor(rowPosition / pageInfo.length);
-					console.log(`Feature ${pid} selected at table row ${rowPosition} on page ${pageNumber + 1} (current page ${pageInfo.page + 1}).`);
+					//console.log(`Feature ${pid} selected at table row ${rowPosition} on page ${pageNumber + 1} (current page ${pageInfo.page + 1}).`);
 	
 					// Check if the row is on the current page
 					if (pageInfo.page !== pageNumber) {
@@ -2878,7 +2878,7 @@ function listSourcesAndLayers(mappy) {
 
 
 function getPlace(pid, spinner_detail) {
-	console.log('getPlace()', pid);
+	//console.log('getPlace()', pid);
     if (isNaN(pid)) {
         console.log('Invalid pid');
         return;
@@ -2900,17 +2900,17 @@ function getPlace(pid, spinner_detail) {
 				var re = /(http|bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wdlocal|whg|wp):(.*?)$/;
 				const matches = str.match(re);
 				url = base_urls[matches[1]] + matches[2]
-				console.log('url', url)
+				//console.log('url', url)
 			}
 			window.open(url, '_blank');
 		});
 		$('.exttab').on('click', function(e) {
 			e.preventDefault();
 			id = $(this).data('id')
-			console.log('id', id)
+			//console.log('id', id)
 			var re = /(http|dbp|gn|tgn|wd|loc|viaf|aat):(.*?)$/;
 			url = id.match(re)[1] == 'http' ? id : base_urls[id.match(re)[1]] + id.match(re)[2]
-			console.log('url', url)
+			//console.log('url', url)
 			window.open(url, '_blank')
 		});
 	});
@@ -3171,7 +3171,6 @@ function highlightFeature(ds_pid, features, mappy) {
 		if (geom) {
 			const coords = geom.coordinates;
 			window.highlightedFeatureIndex = {source: ds_pid.ds.toString(), id: featureIndex};
-	    	console.log(feature,window.highlightedFeatureIndex);
 			mappy.setFeatureState(window.highlightedFeatureIndex, { highlight: true });
 			updatePadding();
 			// zoom to feature
@@ -3664,7 +3663,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	});
 	
 	window.ds_list_stats = get_ds_list_stats(allFeatures);
-	console.log('window.ds_list_stats', window.ds_list_stats);
+	//console.log('window.ds_list_stats', window.ds_list_stats);
 	
 	mapLayerStyles.forEach(function(layer) { // Ensure proper layer order for multiple datasets
 		window.ds_list.forEach(function(ds) {
@@ -3680,6 +3679,8 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	const tableInit = initialiseTable(allFeatures, mapAndTable_checked_rows, spinner_table, spinner_detail, mappy);
 	mapAndTable_table = tableInit.table;
 	mapAndTable_checked_rows = tableInit.checked_rows;
+	
+	allFeatures = null; // release memory
 
 	window.mapBounds = window.ds_list_stats.extent;
 	recenterMap(mappy);
@@ -3704,14 +3705,12 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	init_collection_listeners(mapAndTable_checked_rows);
 	
 	spinner_map.stop();
-	
-	// TODO: Clean up - delete window.ds_list ?
 });
 
 // TODO: This functionality not yet implemented in modularisation
 /*
 // TODO: add a 'big?' boolean to ds_list based on count of polygons
-mappy.on('sourcedata', function (e) { // SG Fix Cursor
+mappy.on('sourcedata', function (e) {
     // console.log('source_list', source_list)
     if (source_list.includes('territorios892')) {
         // big polygons

@@ -1,7 +1,7 @@
 import { minmaxer } from './utilities';
 
 export function getPlace(pid, spinner_detail) {
-	console.log('getPlace()', pid);
+	//console.log('getPlace()', pid);
     if (isNaN(pid)) {
         console.log('Invalid pid');
         return;
@@ -23,17 +23,17 @@ export function getPlace(pid, spinner_detail) {
 				var re = /(http|bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wdlocal|whg|wp):(.*?)$/;
 				const matches = str.match(re);
 				url = base_urls[matches[1]] + matches[2]
-				console.log('url', url)
+				//console.log('url', url)
 			}
 			window.open(url, '_blank');
 		});
 		$('.exttab').on('click', function(e) {
 			e.preventDefault();
 			id = $(this).data('id')
-			console.log('id', id)
+			//console.log('id', id)
 			var re = /(http|dbp|gn|tgn|wd|loc|viaf|aat):(.*?)$/;
 			url = id.match(re)[1] == 'http' ? id : base_urls[id.match(re)[1]] + id.match(re)[2]
-			console.log('url', url)
+			//console.log('url', url)
 			window.open(url, '_blank')
 		});
 	});

@@ -28,7 +28,7 @@ export function updatePadding() {
 		left: ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin,
 		right: MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin,
 	};
-	console.log('mapPadding recalculated:', window.mapPadding);
+	//console.log('mapPadding recalculated:', window.mapPadding);
 }
 
 function updateBounds() {
@@ -40,7 +40,7 @@ function updateBounds() {
 	window.mapBounds = {
 		'center': pseudoCenter
 	}
-	console.log('window.mapBounds updated:', window.mapBounds);
+	//console.log('window.mapBounds updated:', window.mapBounds);
 }
 
 // Control positioning of map, clear of overlays
@@ -87,7 +87,7 @@ export function initObservers(mappy) {
 	mappy.on('zoomend', function() { // Triggered by `flyTo` and `fitBounds` - must be blocked to prevent misalignment 
 		if (window.blockBoundsUpdate) {
 			window.blockBoundsUpdate = false;
-			console.log('blockBoundsUpdate released.');
+			//console.log('blockBoundsUpdate released.');
 		}
 		else {
 			updateBounds();
@@ -193,7 +193,7 @@ export function initPopups(mappy, activePopup, table) {
 				if (rowPosition !== -1) {
 					// Calculate the page number based on the row's position
 					var pageNumber = Math.floor(rowPosition / pageInfo.length);
-					console.log(`Feature ${pid} selected at table row ${rowPosition} on page ${pageNumber + 1} (current page ${pageInfo.page + 1}).`);
+					//console.log(`Feature ${pid} selected at table row ${rowPosition} on page ${pageNumber + 1} (current page ${pageInfo.page + 1}).`);
 	
 					// Check if the row is on the current page
 					if (pageInfo.page !== pageNumber) {
