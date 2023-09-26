@@ -2873,12 +2873,12 @@ class DatasetSummaryView(LoginRequiredMixin, UpdateView):
     context['whgteam'] = User.objects.filter(groups__name='whg_team')
     context['editorial'] = True if me.groups.filter(name__in=['editorial']).exists() else False
 
-    # excludes datasets uploaded directly (1 & 2)
-    if file.file:
+    # excludes datasets w/o an associated DatasetFile
+    if file and hasattr(file, 'file') and os.path.exists(file.file.path):
       context['current_file'] = file
       context['format'] = file.format
       context['numrows'] = file.numrows
-      context['filesize'] = round(file.file.size/1000000, 1)
+      context['filesize'] = round(file.file.size / 1000000, 1)
 
     # initial (non-task)
     context['num_names'] = PlaceName.objects.filter(place_id__in = placeset).count()

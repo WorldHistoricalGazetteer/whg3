@@ -26,7 +26,7 @@ services:
     depends_on:
       - redis
       - db
-      - livereload # Required before web
+      - livereload
 
   webpack:
     networks:
@@ -38,7 +38,6 @@ services:
     image: whg3_webpack
     volumes:
       - .:/app
-      
 
   livereload: # https://github.com/tjwalch/django-livereload-server
     networks:
@@ -63,7 +62,6 @@ services:
     build:
       context: ./compose/local/postgres
       dockerfile: Dockerfile-postgres
-    container_name: postgres
     volumes:
       - dev-db-data:/var/lib/postgresql/data
       - ./data:/app/data
@@ -73,8 +71,6 @@ services:
       POSTGRES_HOST_AUTH_METHOD: trust  # Allow all connections without password authentication
     ports:
       - 5432:5432
-    # this was messing things up
-    # I blame the bot
 
   redis:
     networks:

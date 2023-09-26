@@ -10,16 +10,14 @@ datasets/static/_older/
 static/_older/
 
 # leave server versions intact
-media/collections/
-media/data/
-media/datasets/
-media/downloads/
-media/resources/
 media/scratch/
 media/user*
+#media/resources/
+#media/collections/
+#media/datasets/
 
-whg/media/*
-whg/media_old/*
+#whg/media/*
+#whg/media_old/*
 
 # Mac OS files
 **/.DS_Store

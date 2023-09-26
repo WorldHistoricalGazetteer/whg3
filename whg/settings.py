@@ -118,10 +118,10 @@ CELERY_TASK_EAGER_PROPAGATES = True
 # required per https://github.com/celery/django-celery-results/issues/334
 CELERY_RESULT_EXTENDED = True
 
-CELERY_BEAT_SCHEDULE = {
-  'task01': {
-      'task': 'datasets.tasks.testy','schedule': crontab(minute='*/2')
-    }}
+# CELERY_BEAT_SCHEDULE = {
+#   'task01': {
+#       'task': 'datasets.tasks.testy','schedule': crontab(minute='*/2')
+#     }}
 
 CAPTCHA_NOISE_FUNCTIONS = (
   #'captcha.helpers.noise_arcs',

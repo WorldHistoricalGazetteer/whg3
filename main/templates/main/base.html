@@ -1,6 +1,7 @@
 {% load i18n %}
 {% load static %}
 {% load dataset_extras %}
+{% load livereload_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -54,7 +55,9 @@
 		    <a href="{% url 'home' %}">
 		        <img src="{% static 'images/whg_logo_38h.png'%}" alt="WHG" width="50" height="38">
 		    </a>
-		    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+		    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+		            data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+		            aria-expanded="false" aria-label="Toggle navigation">
 		      <span class="navbar-toggler-icon"></span>
 		    </button>
 		    <div class="collapse navbar-collapse smallish pt-2" id="navbarSupportedContent">
