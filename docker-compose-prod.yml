@@ -1,0 +1,142 @@
+version: '2.19'
+
+networks:
+  WHG3:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+services:
+  web:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile-django
+      args:
+        - WHGADMIN_PASSWORD
+    image: whg3_web
+    command: /start
+    volumes:
+      - .:/app
+      - /home/whgadmin/sites/whgv3/media:/app/media
+      - /home/whgadmin/sites/whgv3/static:/app/static
+    env_file:
+      - ./.env/.prod-whg3
+    ports:
+      - 8001:8003
+    user: "1000:1000"
+    depends_on:
+      - redis
+      - db
+      - livereload # Required before web
+
+  webpack:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./compose/local/webpack/Dockerfile-webpack
+    image: whg3_webpack
+    volumes:
+      - .:/app
+
+
+  livereload: # https://github.com/tjwalch/django-livereload-server
+    networks:
+      - WHG3
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile-django
+    image: whg3_livereload
+    command: /start-livereload
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env/.dev-whg3
+    ports:
+      - 35729:35729
+
+  db:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    build:
+      context: ./compose/local/postgres
+      dockerfile: Dockerfile-postgres
+    container_name: postgres
+    volumes:
+      - dev-db-data:/var/lib/postgresql/data
+      - ./data:/app/data
+    env_file:
+      - ./.env/.dev-whg3
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust  # Allow all connections without password authentication
+    ports:
+      - 5433:5432
+
+  redis:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    image: redis:bullseye
+    container_name: redis
+    ports: [6380:6379]
+
+  celery_worker:
+    networks:
+      - WHG3
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile-django
+    image: whg3_celery_worker
+    command: /start-celeryworker
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env/.dev-whg3
+    depends_on:
+      - redis
+      - db
+
+  celery_beat:
+    networks:
+      - WHG3
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile-django
+    image: whg3_celery_beat
+    command: /start-celerybeat
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env/.dev-whg3
+    depends_on:
+      - redis
+      - db
+
+  flower:
+    networks:
+      - WHG3
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile-django
+    image: whg3_celery_flower
+    command: /start-flower
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env/.dev-whg3
+    ports:
+      - 5557:5555
+    depends_on:
+      - redis
+      - db
+
+volumes:
+  app:
+  dev-db-data:

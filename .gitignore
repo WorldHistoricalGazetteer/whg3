@@ -16,9 +16,6 @@ media/user*
 #media/collections/
 #media/datasets/
 
-#whg/media/*
-#whg/media_old/*
-
 # Mac OS files
 **/.DS_Store
 
@@ -57,7 +54,8 @@ __pycache__/
 whg/__pycache__/
 db.sqlite3
 
-### Private Environment Variables ###
+
+### Private Environment Variables (dev and prod) ###
 .env/
 
 ### Eclipse Project ###
