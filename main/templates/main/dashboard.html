@@ -56,9 +56,8 @@
 
     </style>
 {% endblock %}
-
 {% block content %}
-    <div class="container mt-4">
+    <div id="container" class="container mt-4" >
         <div class="row">
             <!-- Sidebar -->
             <div class="col-md-3 sidebar">
@@ -69,9 +68,11 @@
                 </div>
                 <!-- Sidebar Navigation -->
                 <a href="{% url 'main:dataset-list' %}" class="sidebar-nav-item">Datasets</a>
-                <a href="{% url 'main:collection-list' %}" class="sidebar-nav-item">Collections</a>
+                <a href="{% url 'main:collection-list' collection_class='place' %}"
+                   class="sidebar-nav-item">Place Collections</a>
+                <a href="{% url 'main:collection-list' collection_class='dataset' %}"
+                   class="sidebar-nav-item">Dataset Collections</a>
                 <a href="{% url 'main:area-list' %}" class="sidebar-nav-item">Study Areas</a>
-
                 {% if user.role == 'group_leader' %}
                   <a href="{% url 'main:group-list' role='leader' %}" class="sidebar-nav-item">Groups</a>
                 {% else %}
@@ -84,7 +85,20 @@
               <div id="dashboard_header" class="fs-4 text-center">Dashboard</div>
 
 							<p class="fs-6 mb-1 my">
-					        {% if is_admin %}All{% else %}My{% endif %} <span id="section-title">Datasets</span>
+								{% if is_admin %}All{% else %}My{% endif %}
+								<span id="section_title" rel="Datasets">Datasets</span>
+								<span class="ps-3 small">
+									<a href="{% url 'datasets:dataset-create' %}"
+									   id="add_dataset">Add Dataset</a>
+									<a href="{% url 'collection:place-collection-create' %}"
+									   id="add_place_collection" style="display: none;">Add Place Collection</a>
+									<a href="{% url 'collection:ds-collection-create' %}"
+									   id="add_dataset_collection" style="display: none;">Add Dataset Collection</a>
+									<a href="{% url 'collection:collection-group-create' %}"
+									   id="add_group" style="display: none;">Add Group</a>
+									<a href="{% url 'areas:area-create' %}"
+									   id="add_area" style="display: none;">Add Study Area</a>
+								</span>
 					    </p>
 
               <div class="main-content py-1">
@@ -95,7 +109,6 @@
 						    {% else %}
 						        {% include "lists/dataset_list.html" %}
 						    {% endif %}
-                <!-- Content for the selected sidebar item goes here -->
               </div>
             </div>
         </div>
@@ -103,30 +116,70 @@
 
 <script>
 $(document).ready(function() {
-    {#var activeSection = "{{ section }}";#}
+    var userGroups = {{ user_groups|safe }};
+    console.log('groups:', userGroups)
 
     $('.sidebar-nav-item').on('click', function(e) {
         e.preventDefault();  // Prevent default navigation
 
-		    // set section variable
-		    var sectionName = $(this).text();
-
+        // set section variable
+        var sectionName = $(this).text();
         var targetUrl = $(this).attr('href');
-				console.log('targetUrl',targetUrl )
+				console.log('sectionName', sectionName)
+				console.log('targetUrl', targetUrl)
+
+        if (sectionName == "Datasets") {
+            $('#add_dataset').show();
+            $('#add_place_collection').hide();
+            $('#add_dataset_collection').hide();
+            $('#add_group').hide();
+            $('#add_area').hide();
+        } if (sectionName == "Place Collections") {
+            $('#add_dataset').hide();
+            $('#add_place_collection').show();
+            $('#add_dataset_collection').hide();
+            $('#add_group').hide();
+            $('#add_area').hide();
+        } else if (sectionName == "Dataset Collections") {
+            $('#add_dataset').hide();
+            $('#add_place_collection').hide();
+            $('#add_dataset_collection').show();
+            $('#add_group').hide();
+            $('#add_area').hide();
+        } else if (sectionName == "Groups" && userGroups.includes('group_leader')) {
+            $('#add_dataset').hide();
+            $('#add_place_collection').hide();
+            $('#add_dataset_collection').hide();
+            $('#add_group').show();
+            $('#add_area').hide();
+        } else if (sectionName == "Study Areas") {
+            $('#add_dataset').hide();
+            $('#add_place_collection').hide();
+            $('#add_dataset_collection').hide();
+            $('#add_group').hide();
+            $('#add_area').show();
+        } else {
+            {#$('#add_dataset').hide();#}
+            $('#add_place_collection').hide();
+            $('#add_dataset_collection').hide();
+            $('#add_group').hide();
+            $('#add_area').hide();
+        }
 
         // Fetch content via AJAX
         $.get(targetUrl, function(data) {
             $('.main-content').html(data);  // Update the main content div
         });
 
-		    // insert
-        $('#section-title').text(sectionName);
+        // Update the section title
+        $('#section_title').text(sectionName).attr('rel', sectionName);
 
         // Highlight the active sidebar item
         $('.sidebar-nav-item').removeClass('active');
         $(this).addClass('active');
     });
 });
+
 </script>
 
 {% endblock %}
