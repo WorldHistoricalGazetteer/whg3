@@ -14,11 +14,11 @@ services:
     platform: linux/amd64
     build:
       context: .
-      dockerfile: ./compose/local/django/Dockerfile-django
+      dockerfile: ./compose/production/django/Dockerfile-django.prod
       args:
         - WHGADMIN_PASSWORD
     image: whg3_web
-    command: /start
+    command: /start-prod
     volumes:
       - .:/app
       - /home/whgadmin/sites/whgv3/media:/app/media
@@ -31,7 +31,7 @@ services:
     depends_on:
       - redis
       - db
-      - livereload # Required before web
+      - livereload
 
   webpack:
     networks:
@@ -77,7 +77,7 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust  # Allow all connections without password authentication
     ports:
-      - 5433:5432
+      - 5433:5432 # v2 is on 5432
 
   redis:
     networks:
