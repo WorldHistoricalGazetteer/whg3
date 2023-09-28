@@ -53,21 +53,16 @@ const datasetLayers = [ // IMPORTANT: Listed in order of addition to the map
 		'type': 'circle',
 		'source': 'places',
 		'paint': {
-			'circle-stroke-color': [
+	        'circle-color': [
 	            'case',
-				['boolean', ['feature-state', 'highlight'], false], 'rgb(255,0,0)',	// red			
-				'rgb(255,165,0)' // orange
+				['boolean', ['feature-state', 'highlight'], false], 'rgba(255,0,0)',	// red
+				'rgba(255,165,0)' // orange
 	        ],
-			'circle-stroke-opacity': [
+	        'circle-opacity': [
 	            'case',
-				['any', ['==', ['get', 'min'], 'null'], ['==', ['get', 'max'], 'null']], .5,			
-				.8
+				['boolean', ['feature-state', 'highlight'], false], .9,
+				.7
 	        ],
-			'circle-stroke-width': [ // Simulate larger radius - zoom-based radius cannot operate together with feature-state switching
-				'case',
-				['boolean', ['feature-state', 'highlight'], false], 5,
-				2
-			],
 			'circle-radius': [
 				'interpolate',
 				['linear'],
@@ -75,11 +70,22 @@ const datasetLayers = [ // IMPORTANT: Listed in order of addition to the map
 				0, .5, // zoom, radius
 				16, 20,
 			],
-	        'circle-color': [
+			'circle-stroke-color': [
 	            'case',
-				['boolean', ['feature-state', 'highlight'], false], 'rgba(255,0,0,.8)',	// red
-				'rgba(255,165,0,.5)' // orange
+				['boolean', ['feature-state', 'highlight'], false], 'rgb(255,0,0)',	// red			
+				'rgb(255,165,0)' // orange
 	        ],
+			'circle-stroke-opacity': [
+	            'case',
+				['any', ['==', ['get', 'min'], 'null'], ['==', ['get', 'max'], 'null']], .3,
+				['boolean', ['feature-state', 'highlight'], false], .9,			
+				.7
+	        ],
+			'circle-stroke-width': [ // Simulate larger radius - zoom-based radius cannot operate together with feature-state switching
+				'case',
+				['boolean', ['feature-state', 'highlight'], false], 7,
+				3
+			],
 		},
 		'filter': ['==', '$type', 'Point'],
 	}

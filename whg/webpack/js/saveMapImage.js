@@ -1,3 +1,5 @@
+import ClipboardJS from '/webpack/node_modules/clipboard';
+
 export default function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 
 	// Create a modal dialog for copyright attribution and acknowledgment
@@ -39,36 +41,20 @@ export default function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 				});
 				const fullAttributionText = attributions.join('\n');
 				attributionText.text(fullAttributionText);
+	
+				new ClipboardJS(copyAttributionButton[0], {
+				  text: function(trigger) {
+				    return $('#map-download-dialog #attribution-text').text();
+				  },
+	    		  container: document.getElementById('map-download-dialog')
+				}).on('success', function(e) {
+				  console.log('Attribution text copied to clipboard.');
+				  downloadButton.show();
+				}).on('error', function(e) {
+				  console.error('Unable to copy attribution text: ', e);
+				});
 			}
 		},
-	});
-
-	// Copy attribution text to clipboard when the button is clicked
-	copyAttributionButton.on('click', () => {
-		const textToCopy = attributionText.text();
-
-		if (navigator.clipboard) {
-			navigator.clipboard.writeText(textToCopy)
-				.then(() => {
-					//alert('Attribution text copied to clipboard.');
-					// Make the "Download" button visible after copying
-					downloadButton.show();
-				})
-				.catch(err => {
-					console.error('Unable to copy attribution text: ', err);
-				});
-		} else {
-			// Fallback for browsers that do not support the Clipboard API
-			const tempInput = $('<textarea>');
-			tempInput.val(textToCopy);
-			$('body').append(tempInput);
-			tempInput.select();
-			document.execCommand('copy');
-			tempInput.remove();
-			//alert('Attribution text copied to clipboard (fallback).');
-			// Make the "Download" button visible after copying
-			downloadButton.show();
-		}
 	});
 
 	const originalCanvas = map.getCanvas();

@@ -18,11 +18,12 @@ let table;
 
 function highlightFirstRow() {
 	$("#placetable tr").removeClass("highlight-row");
-	const row = $("#ds_table table tbody")[0].rows[0]
-	const pid = parseInt(row.cells[0].textContent)
-	// highlight first row, fetch detail, but don't zoomTo() it
-	$("#placetable tbody").find('tr').eq(0).addClass('highlight-row')
-	getPlace(pid)
+	const firstrow = $("#placetable tbody tr:first");
+	const pid = firstrow.data('ds_pid').pid;
+	const cid = firstrow.data('cid');
+	// highlight first row and fetch detail, but don't fly map to it
+	firstrow.addClass('highlight-row');
+	getPlace(pid, cid);
 }
 
 // Adjust the DataTable's page length to avoid scrolling where possible
@@ -151,9 +152,20 @@ export function highlightFeature(ds_pid, features, mappy) {
 
 export function initialiseTable(features, checked_rows, spinner_table, spinner_detail, mappy) {
 
+	// TODO: remove these artifacts of table used for review
+	localStorage.setItem('filter', '99')
+	var wdtask = false
+	var tgntask = false
+	var whgtask = false
+
+	spinner_table = startSpinner("drftable_list");
+	spinner_detail = startSpinner("row_detail");
+
+	const isCollection = window.ds_list[0].ds_type == 'collections';
+
 	checked_rows = []
 
-	if (window.ds_list.length > 1) {
+	if (window.ds_list.length > 1) { // Initialise dataset selector
 		let select = '<label>Datasets: <select id="ds_select">' +
 			'<option value="-1" data="all" selected="selected">All</option>';
 		for (let ds of window.ds_list) {
@@ -164,42 +176,22 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		$("#ds_filter").html(select);
 	}
 
-	// TODO: remove these artifacts of table used for review
-	localStorage.setItem('filter', '99')
-	var wdtask = false
-	var tgntask = false
-	var whgtask = false
+	// Define Datatable columns based on ds_type
+	let columns;
+	if (!isCollection) { // Datasets
 
-	const check_column = window.loggedin ? {
-		data: "properties.pid",
-		render: function(data, type, row) {
-			return `<input type="checkbox" name="addme" class="table-chk" data-id="${data}"/>`;
-		},
-		visible: true
-	} : {
-		data: "properties.pid",
-		visible: false
-	}
+		const check_column = window.loggedin ? {
+			data: "properties.pid",
+			render: function(data, type, row) {
+				return `<input type="checkbox" name="addme" class="table-chk" data-id="${data}"/>`;
+			},
+			visible: true
+		} : {
+			data: "properties.pid",
+			visible: false
+		}
 
-	spinner_table = startSpinner("drftable_list");
-	spinner_detail = startSpinner("row_detail");
-
-	// task columns are inoperable in this public view
-	table = $('#placetable').DataTable({
-		/*dom:  "<'row small'<'col-sm-12 col-md-4'l>"+*/
-		dom: "<'row small'<'col-sm-7'f>" +
-			"<'col-sm-5'>>" +
-			"<'row'<'col-sm-12'tr>>" +
-			"<'row small'<'col-sm-12'p>>",
-		// scrollY: 400,
-		select: true,
-		order: [
-			[1, 'asc']
-		],
-		//pageLength: 250,
-		//LengthMenu: [25, 50, 100],
-		data: features,
-		columns: [{
+		columns = [{
 				data: "properties.pid",
 				render: function(data, type, row) {
 					return `<a href="http://localhost:8000//api/db/?id=${data}" target="_blank">${data}</a>`;
@@ -212,21 +204,36 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 				data: "geometry",
 				render: function(data, type, row) {
 					if (data) {
-						return `<img src="/static/images/geo_${data.type.toLowerCase().replace('multi','')}.svg" width=12/>`;
+						return `<img src="/static/images/geo_${data.type.toLowerCase().replace('multi', '')}.svg" width=12/>`;
 					} else {
 						return "<i>none</i>";
 					}
 				}
 			},
 			{
-				data: "properties.dslabel"
+				data: function(row) {
+					return row.properties.dslabel || null;
+				}
 			},
 			check_column
-		],
-		columnDefs: [
-			/*{ className: "browse-task-col", "targets": [8,9,10] },*/
-			/*{ orderable: false, "targets": [4, 5]},*/
-			{
+		];
+	} else { // Collections
+		columns = [{
+                    "data": "properties.pid"
+                }, {
+                    "data": "properties.title"
+                }, {
+                    "data": "properties.ccodes"
+                }, {
+                    "data": "properties.seq"
+                }
+            ];
+	}
+
+	// Define columnDefs based on ds_type
+	let columnDefs;
+	if (!isCollection) { // Datasets
+		columnDefs = [{
 				orderable: false,
 				"targets": [0, 2, 4]
 			},
@@ -238,9 +245,30 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 				visible: window.ds_list.length > 1,
 				"targets": [3]
 			}
-			/*, {visible: false, "targets": [5]}*/
-			/*, {visible: false, "targets": [0]}*/
+		];
+	} else { // Collections
+		columnDefs = [{
+                    visible: false,
+                    "targets": [3]
+                }, {
+                    searchable: false,
+                    "targets": [2]
+                }
+            ];
+	}
+
+	table = $('#placetable').DataTable({
+		dom: "<'row small'<'col-sm-7'f>" +
+			"<'col-sm-5'>>" +
+			"<'row'<'col-sm-12'tr>>" +
+			"<'row small'<'col-sm-12'p>>",
+		select: true,
+		order: [
+			[1, 'asc']
 		],
+		columns: columns,
+		columnDefs: columnDefs,
+		data: features,
 		rowId: 'properties.pid',
 		createdRow: function(row, data, dataIndex) {
 			// Attach temporal min and max properties as data attributes
@@ -252,6 +280,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 				ds: data.properties.dsid,
 				pid: data.properties.pid
 			});
+			$(row).data('cid', data.properties.cid);
 			if (!data.geometry) {
 				$(row).addClass('no-geometry');
 			}
@@ -275,7 +304,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 			}
 			highlightFirstRow();
 		}
-	})
+	});
 
 	$("#addchecked").click(function() {
 		console.log('clicked #addchecked')
@@ -286,15 +315,8 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		$("#addtocoll_popup").hide()
 	})
 
-	// help popups
-	$(".help-matches").click(function() {
-		page = $(this).data('id')
-		console.log('help:', page)
-		$('.selector').dialog('open');
-	})
-
 	$("#ds_select").change(function(e) {
-		
+
 		// filter table
 		let val = $(this).val();
 		localStorage.setItem('filter', val)
@@ -307,7 +329,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 			clearFilters()
 			filterColumn(3, val)
 		}
-		
+
 		// filter map
 		let ds_id = $(this).find(":selected").attr("data");
 		const dsItem = window.ds_list.find(ds => ds.id === ds_id);
@@ -319,41 +341,9 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		window.spinner_map.stop();
 	})
 
-	$(".selector").dialog({
-		resizable: false,
-		autoOpen: false,
-		height: 500,
-		width: 700,
-		title: "WHG Help",
-		modal: true,
-		buttons: {
-			'Close': function() {
-				console.log('close dialog');
-				$(this).dialog('close');
-			}
-		},
-		open: function(event, ui) {
-			$('#helpme').load('/media/help/' + page + '.html')
-		},
-		show: {
-			effect: "fade",
-			duration: 400
-		},
-		hide: {
-			effect: "fade",
-			duration: 400
-		}
-	});
-
-	// The following have to use delegation from $("body") to cope with datatable page switching
-
-	$("body").on("click", ".a-dl", function(e) {
-		e.preventDefault()
-		alert('not yet')
-	})
-
 	$("body").on("click", ".table-chk", function(e) {
-		e.preventDefault()
+		// e.preventDefault();
+		e.stopPropagation(); // Prevents row-click functionality
 		console.log('adding', $(this).data('id'))
 		/*console.log('checked_rows',checked_rows)*/
 	})
@@ -370,7 +360,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		$(this).addClass("highlight-row");
 
 		// fetch its detail
-		getPlace(ds_pid.pid, spinner_detail);
+		getPlace(ds_pid.pid, $(this).data('cid'), spinner_detail);
 
 		highlightFeature(ds_pid, features, mappy);
 

@@ -11,6 +11,9 @@ from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import (View, CreateView, UpdateView, DetailView, DeleteView, ListView )
 
+from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.db.models import Extent
+
 from .forms import CollectionModelForm, CollectionGroupModelForm
 from .models import *
 from main.models import Log, Link
@@ -228,6 +231,59 @@ def stringer(str):
     return None
 def when_format(ts):
   return [stringer(ts[0]), stringer(ts[1])]; print(result)
+def year_from_string(ts):
+  if ts:
+    return isoparse(ts).strftime('%Y')
+  else:
+    return None
+  
+# GeoJSON for all places in a dataset INCLUDING those without geometry
+def fetch_mapdata_coll(request, *args, **kwargs):
+  from django.core.serializers import serialize
+  from django.db.models import Min, Max
+  # print('fetch_geojson_coll kwargs',kwargs)
+  id_=kwargs['id']
+  coll=get_object_or_404(Collection, id=id_)
+  rel_keywords = coll.rel_keywords
+  
+  extent = list(coll.places.aggregate(Extent('geoms__geom')).values())[0]
+  
+  annotated_places = coll.places.annotate(seq=Min('annos__sequence')).order_by('seq')
+
+  feature_collection = {
+    "title": coll.title,
+    "creator": coll.creator,
+    "type": "FeatureCollection", 
+    "features": [],
+    "relations": coll.rel_keywords,
+    "extent": extent,
+  }
+  
+  for i, t in enumerate(coll.traces.filter(archived=False)):
+    # Get the first annotation's sequence value
+    first_anno = t.place.annos.first()
+    sequence_value = first_anno.sequence if first_anno else None
+
+    feature = {
+        "type": "Feature",
+        "geometry": t.place.geoms.all()[0].jsonb,
+        "properties": {
+            "pid": t.place.id,
+            "cid": id_,
+            "title": t.place.title,
+            "ccodes": t.place.ccodes,
+            "relation": t.relation[0],
+            "min": year_from_string(t.start),
+            "max": year_from_string(t.end),
+            "note": t.note,
+            "seq": sequence_value,
+        },
+        "id": i,  # Required for MapLibre conditional styling
+    }
+
+    feature_collection['features'].append(feature)
+
+  return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii':False,'indent':2})
 
 """ gl map needs this """
 # TODO:
@@ -235,24 +291,30 @@ def fetch_geojson_coll(request, *args, **kwargs):
   # print('fetch_geojson_coll kwargs',kwargs)
   id_=kwargs['id']
   coll=get_object_or_404(Collection, id=id_)
-  pids = [p.id for p in coll.places_all]
   rel_keywords = coll.rel_keywords
-  # build FeatureCollection
+    
   features_t = [
-    {"type": "Feature", "geometry": t.place.geoms.all()[0].jsonb,
-     "properties":{
-       "pid":t.place.id,
-       "title": t.place.title,
-       # "relation": t.relation,
-       "relation": t.relation[0],
-       "when": when_format([t.start, t.end]),
-       "note": t.note
-     }}
+    {
+        "type": "Feature", 
+        "geometry": t.place.geoms.all()[0].jsonb,
+        "properties":{
+            "pid":t.place.id,
+            "title": t.place.title,
+            "relation": t.relation[0],
+            "when": when_format([t.start, t.end]),
+            "note": t.note
+        }
+    }
     for t in coll.traces.filter(archived=False)
   ]
-  fcoll = {"type":"FeatureCollection","features":features_t,"relations":rel_keywords}
 
-  return JsonResponse(fcoll, safe=False, json_dumps_params={'ensure_ascii':False,'indent':2})
+  feature_collection = {
+    "type": "FeatureCollection", 
+    "features": features_t,
+    "relations": coll.rel_keywords,
+  }
+
+  return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii':False,'indent':2})
 
 """ returns json for display """
 class ListDatasetView(View):
