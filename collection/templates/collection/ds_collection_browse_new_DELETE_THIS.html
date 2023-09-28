@@ -24,12 +24,11 @@
 				<img src="{% static 'images/010-jigsaw.png'%}" class="" height=28 alt=""/>
 				{{ object.title }}
 			</span>
-	      <span id="collapseExpand" class="float-end">
-	        <span class="info-collapse small">Hide</span>
-	        <i class="info-collapse fas fa-chevron-up"></i>
-	        <span class="info-expand small">Show Detail</span>
-	        <i class="info-expand fas fa-chevron-down"></i>
-	      </span>
+	    <span id="toggleIcon" class="float-end">
+	        <span id="iconLabel" class="small">Hide</span>
+	        <i id="expandIcon" class="fas fa-chevron-down" style="display: none;"></i>
+	        <i id="collapseIcon" class="fas fa-chevron-up"></i>
+	    </span>
 		</div> <!-- dscoll_header -->
 		<div id="metadata" class="mt-2">
 			<div class="row">

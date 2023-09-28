@@ -14,6 +14,10 @@
   box-shadow: 3px 3px #c3c3c3;
 }
 
+#dataset_tabs {
+	position: relative;
+}
+
 #selection_status {
   position: absolute;
   top: 10px;
@@ -41,6 +45,12 @@
 	display: none;
 }
 
+#pcoll_content {
+	position: relative;
+	height: calc(98vh - 60px);
+	overflow-y: auto;
+}
+
 #detail {
   font-size: 0.8rem;
   z-index: 10;
@@ -53,10 +63,10 @@
 
 .title {
   font-weight: bold;
-  color: #021691; /* darkblue - WAS #993333 FOR DS_COLLECTION_NEW*/
+  color: #021691; /* darkblue - NOTE: WAS #993333 FOR DS_COLLECTION_NEW & DS_COLLECTION_BROWSE_NEW */
 }
 
-#collapseExpand {
+#collapseExpand, #toggleIcon { /* ARE THESE THE SAME THING BY DIFFERENT IDs? */
   cursor: pointer;
   color: #336699;
 }

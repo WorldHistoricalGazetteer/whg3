@@ -49,7 +49,8 @@ let mappy = new maptilersdk.Map({
 	style: maptilersdk.MapStyle[style_code[0]][style_code[1]],
 	attributionControl: false,
 	geolocateControl: false,
-	navigationControl: false
+	navigationControl: false,
+    userProperties: true
 });
 
 const mapLoadPromise = new Promise(function (resolve, reject) {
@@ -62,7 +63,7 @@ const mapLoadPromise = new Promise(function (resolve, reject) {
 let dataLoadPromises = [];
 window.ds_list.forEach(function (ds) { // fetch data
     const promise = new Promise(function (resolve, reject) {
-        $.get('/datasets/' + ds.id + '/mapdata', function (data) {
+        $.get(`/${ ds.ds_type || 'datasets' }/${ ds.id }/mapdata`, function (data) { // ds_type may alternatively be 'collections'
             for (const prop in data) {
                 if (!ds.hasOwnProperty(prop)) {
                     ds[prop] = data[prop];
@@ -130,14 +131,14 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	
 	whgMap.style.opacity = 1;
 	
-	initUtils(mappy); // Tooltips, ClipboardJS, clearlines
+	initUtils(mappy); // Tooltips, ClipboardJS, clearlines, help-matches
 	
 	init_collection_listeners(checked_rows);
 	
 	spinner_map.stop();
 });
 
-// TODO: This functionality not yet implemented in modularisation
+// TODO: Seemingly-redundant JavaScript not implemented in modularisation
 /*
 // TODO: add a 'big?' boolean to ds_list based on count of polygons
 mappy.on('sourcedata', function (e) {
@@ -153,4 +154,36 @@ mappy.on('sourcedata', function (e) {
         $(".toomany").html('').hide()
     }
 });
+
+    var hideAllPopovers = function () {
+        $('.pop-dataset').each(function () {
+            $(this).popover('hide');
+        });
+    };
+
+    var dspop = $(".pop-dataset").popover({
+        trigger: 'focus',
+        placement: 'right',
+        html: true
+    }).on('show.bs.popover', function () {
+        $.ajax({
+            url: '/api/datasets/',
+            data: {
+                id: $(this).data('id')
+            },
+            dataType: "JSON",
+            async: false,
+            success: function (data) {
+                ds = data.results[0]{
+                     # console.log('ds', ds) #
+                }
+                html = '<p class="thin"><b>Title</b>: ' + ds.title + '</p>'
+                    html += '<p class="thin"><b>Description</b>: ' + ds.description + '</p>'
+                    html += '<p class="thin"><b>WHG Owner</b>: ' + ds.owner + '</p>'
+                    html += '<p class="thin"><b>Creator</b>: ' + ds.creator + '</p>'
+                    dspop.attr('data-content', html);
+            }
+        });
+    })
 */
+

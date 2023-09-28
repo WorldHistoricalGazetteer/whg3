@@ -68,6 +68,7 @@ urlpatterns = [
     # switch off active bit
     path('inactive/', views.inactive, name="collection-inactive"),
 
+    path('<int:id>/mapdata/', views.fetch_mapdata_coll, name="mapdata-coll"),
     path('<int:id>/geojson/', views.fetch_geojson_coll, name="geojson-coll"),
 
 ] + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

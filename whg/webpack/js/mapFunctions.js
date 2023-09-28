@@ -1,13 +1,15 @@
 import datasetLayers from './mapLayerStyles';
-import { attributionString } from './utilities';
+import { attributionString, arrayColors } from './utilities';
 import { filteredLayer } from './mapFilters';
+
+let mapParams;
 
 export function addMapSource(mappy, ds) {
 	mappy.addSource(ds.id.toString(), {
 		'type': 'geojson',
 		'data': ds,
 		'attribution': attributionString(ds),
-	})
+	});
 }
 
 export function addMapLayer(mappy, layer, ds) {
@@ -15,9 +17,23 @@ export function addMapLayer(mappy, layer, ds) {
     modifiedLayer.id = `${layer.id}_${ds.id}`;
     modifiedLayer.source = ds.id.toString();
     mappy.addLayer(filteredLayer(modifiedLayer));
+    if (!!ds.relations && layer.id == 'gl_active_point') {
+    	let circleColors = arrayColors(ds.relations);
+    	console.log(modifiedLayer.id, circleColors);
+		mappy.setPaintProperty(modifiedLayer.id, 'circle-color', [
+		  'match',
+		  ['get', 'relation'],
+		  ...circleColors,
+		  '#ccc',
+		]);
+		mappy.setPaintProperty(modifiedLayer.id, 'circle-stroke-color', [
+		  'match',
+		  ['get', 'relation'],
+		  ...circleColors,
+		  '#ccc',
+		]);
+	}
 }
-
-let mapParams;
 	
 export function updatePadding() {
 	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
@@ -117,6 +133,43 @@ export function initOverlays(whgMap) {
 		})
 		if (side == 'left') column.appendChild(controlContainer);
 	})
+
+	// Initialise Download link listener
+	$(".a-dl, .a-dl-celery").click(function(e) {
+		e.preventDefault();
+		let dsid = $(this).data('id');
+		let collid = $(this).data('collid');
+		let urly = '/datasets/dlcelery/'
+		$.ajax({
+			type: 'POST',
+			url: urly,
+			data: {
+				"format": 'lpf',
+				"dsid": dsid,
+				"collid": collid,
+				"csrfmiddlewaretoken": "{{ csrf_token }}"
+			},
+			datatype: 'json',
+			success: function(response) {
+				window.spinner_download = startSpinner("metadata"); // TODO: window.spinner_download.stop() not yet implemented anywhere?
+				task_id = response.task_id
+				var progressUrl = "/celery-progress/" + task_id + "/";
+				CeleryProgressBar.initProgressBar(progressUrl, {
+					pollingInterval: 500,
+					onResult: customResult,
+				})
+			}
+		})
+	})
+
+	// TODO: Collection download event handlers
+	$(".btn-cancel").click(function() {
+		$("#downloadModal").modal('hide')
+	})
+	let clearEl = function(el) {
+		$("#progress-bar").fadeOut()
+		el.html('')
+	}
 }
 
 export function initPopups(mappy, activePopup, table) {
