@@ -1,5 +1,5 @@
 import datasetLayers from './mapLayerStyles';
-import { attributionString, arrayColors } from './utilities';
+import { attributionString, arrayColors, colorTable } from './utilities';
 import { filteredLayer } from './mapFilters';
 
 let mapParams;
@@ -19,7 +19,7 @@ export function addMapLayer(mappy, layer, ds) {
     mappy.addLayer(filteredLayer(modifiedLayer));
     if (!!ds.relations && layer.id == 'gl_active_point') {
     	let circleColors = arrayColors(ds.relations);
-    	console.log(modifiedLayer.id, circleColors);
+    	colorTable(circleColors, '#coll_detail');
 		mappy.setPaintProperty(modifiedLayer.id, 'circle-color', [
 		  'match',
 		  ['get', 'relation'],

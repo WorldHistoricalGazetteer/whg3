@@ -10,7 +10,7 @@ export function equidistantLCHColors(numColors) {
 	const colors = [];
 	const hue_default = 60; // Default red-orange
 	const hue_avoid = 150; // Avoid greens (150) or reds (30) for colourblindness
-	const hue_avoid_tolerance = 30; // Either side of hue-avoid value
+	const hue_avoid_tolerance = 40; // Either side of hue-avoid value
 	const hueStep = (360 - hue_avoid_tolerance * 2) / numColors;
 	for (let i = 0; i < numColors; i++) {
 		const hueValue_raw = hue_default + i * hueStep;
@@ -18,6 +18,7 @@ export function equidistantLCHColors(numColors) {
 		const hueValue_adjusted = hueValue_adjust ? hueValue_raw + hue_avoid_tolerance * 2 : hueValue_raw
 		const color = lch(50, 70, hueValue_adjusted % 360).hex();
 		colors.push(color);
+		console.log(color, hueValue_adjusted);
 	}
 	return colors;
 }
@@ -33,6 +34,27 @@ export function arrayColors(strings) {
 		result.push(strings[i]);
 	}
 	return result.reverse();
+}
+
+export function colorTable(arrayColors, target) {
+	const colorKeyTable = $('<table>').addClass('color-key-table');
+	const tableBody = $('<tbody>');
+	
+	for (let i = 0; i < arrayColors.length; i += 2) {
+	  const label = i == arrayColors.length - 2 ? '<i>no relation</i>' : arrayColors[i];
+	  const color = arrayColors[i + 1];
+	  const row = $('<tr>');
+	  const colorCell = $('<td>').addClass('color-swatch');
+	  const colorSwatch = $('<div>').addClass('color-swatch');
+	  colorSwatch.css('background-color', color);
+	  colorCell.append(colorSwatch);
+	  const labelCell = $('<td>').html(label);
+	  row.append(colorCell, labelCell);
+	  tableBody.append(row);
+	}
+	
+	colorKeyTable.append(tableBody);
+	$(target).append(colorKeyTable);
 }
 
 export function initInfoOverlay() {
