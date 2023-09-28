@@ -53,7 +53,7 @@
       {% endif %}
         <table class="ds-table">
           <tr>
-            <td><b>Title</b>
+            <td><b>Title foo</b>
               <a href="#" class="edit-title"><i class="fas fa-edit linky fa-xs"></i></a>
             </td>
             <td>
@@ -175,19 +175,8 @@
           {% endif %}
         </table>
         <input class="btn btn-primary btn-sm hidden btn-ds" type="submit" value="Save" />
-        {% if current_file and current_file.df_status != 'dummy'%}
+        {% if current_file and current_file.df_status != 'dummy' and ds.ds_status != 'seed' %}
           <p> <i>Current data file</i>
-	          {% comment %}
-            {% if current_file.format == 'delimited' %}
-	            {# expose update link only to update_beta group #}
-	            {% if user|has_group:'update_beta' or user.is_superuser%}
-		            <span class="float-end me-2">
-		              <a href="#" id="a_update_modal" data-dsid = {{ ds.id }} data-toggle="modal" data-target="#updateModal">update</a>
-		              <span class="help-matches" data-id="updates"><i class="fas fa-question-circle linkypop"></i></span>
-		            </span>
-	            {% endif %}
-            {% endif %}
-	          {% endcomment %}
           </p>
           <div id="div_file">
             <table id="file_metadata" class="ds-table table-striped">
@@ -293,10 +282,13 @@
                 <!-- lptsv originally -->
                 {% if current_file.format == 'delimited' %} 
                   <!-- offer lpf, augmented or not -->
-                  <p><a class="a-dl-celery" href="#" ref="lpf">Linked Places format <i class="fas fa-download linky"></i></a><span id="file_lpf" class="ms-1"></span></p>
+                  <p><a class="a-dl-celery" href="#" ref="lpf">
+	                  Linked Places format <i class="fas fa-download linky"></i></a>
+	                  <span id="file_lpf" class="ms-1"></span></p>
                   {% if links_added > 0 or geoms_added > 0 %}
                     <!-- augmented, offer tsv -->
-                    <p><a class="a-dl-celery" href="#" ref="tsv">LP-TSV (augmented) <i class="fas fa-download linky"></i></a>
+                    <p><a class="a-dl-celery" href="#" ref="tsv">LP-TSV (augmented)
+	                    <i class="fas fa-download linky"></i></a>
                       <span id="file_tsv" class="ms-1"></span></p>
                   {% endif %}
                 <!-- lpf originally -->

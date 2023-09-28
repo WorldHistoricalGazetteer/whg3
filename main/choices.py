@@ -191,6 +191,7 @@ STATUS_COLL = [
 ]
 
 STATUS_DS = [
+    ('seed', 'Seed'),
     ('format_error', 'Invalid format'),
     ('format_ok', 'Valid format'),
     ('remote', 'Created remotely'),

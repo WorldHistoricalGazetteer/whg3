@@ -23,36 +23,55 @@ import sys
 from datetime import datetime
 
 def get_objects_for_user(model, user, filter_criteria, is_admin=False):
-  if is_admin:
-    return model.objects.all()
+  collection_class = filter_criteria.get('collection_class', None)
+
+  if is_admin or user.is_superuser:
+    if collection_class:
+      return model.objects.filter(collection_class=collection_class)
+    else:
+      return model.objects.all()
+
   return model.objects.filter(**filter_criteria)
+
 
 def dataset_list(request):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   user_datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
   return render(request, 'lists/dataset_list.html',
-                {'datasets': user_datasets, 'is_admin': is_admin})
+                {'datasets': user_datasets, 'is_admin': is_admin, 'section': 'datasets'})
 
-def collection_list(request):
+def collection_list(request, collection_class="place"):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
-  user_collections = get_objects_for_user(Collection, request.user, {'owner': request.user}, is_admin)
+
+  # Set filter criteria based on collection_type
+  if collection_class.lower() == 'place':
+    filter_criteria = {'owner': request.user, 'collection_class': 'place'}
+  elif collection_class.lower() == 'dataset':
+    filter_criteria = {'owner': request.user, 'collection_class': 'dataset'}
+  else:
+    filter_criteria = {'owner': request.user}
+
+  user_collections = get_objects_for_user(Collection, request.user, filter_criteria, is_admin)
+
   return render(request, 'lists/collection_list.html',
-                {'collections': user_collections, 'is_admin': is_admin})
+                {'collections': user_collections, 'is_admin': is_admin, 'section': 'collections'})
+
 
 def area_list(request):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   user_areas = get_objects_for_user(Area, request.user, {'owner': request.user}, is_admin)
   return render(request, 'lists/area_list.html', {'areas': user_areas,
-                                                  'is_admin': is_admin})
+                                                  'is_admin': is_admin, 'section':'areas'})
 
 def group_list(request, role):
   user = request.user
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   # Check for admin
-  if user.groups.filter(name='whg_admins').exists():
+  # if user.groups.filter(name='whg_admins').exists() or user.is_superuser:
+  if is_admin or user.is_superuser:
     groups = CollectionGroup.objects.all()
     # return early
-    context = {'groups': groups, 'is_admin': is_admin}
+    context = {'groups': groups, 'is_admin': is_admin, 'section': 'groups'}
     return render(request, 'lists//group_list.html', context)
 
   # This will fetch groups where the user is a member
@@ -66,15 +85,17 @@ def group_list(request, role):
     groups = member_groups.distinct()
 
   context = {
-      'groups': groups,
-      'role': role,
-      'is_admin': is_admin,
+    'groups': groups,
+    'role': role,
+    'is_admin': is_admin,
+    'section': 'groups'
   }
   return render(request, 'lists/group_list.html', context)
 
 def dashboard_view(request):
   # is_admin = user.groups.filter(name='whg_admins').exists()
   is_admin = request.user.groups.filter(name='whg_admins').exists()
+  user_groups = [group.name for group in request.user.groups.all()]
 
   user_datasets_count = Dataset.objects.filter(owner=request.user).count()
   user_collections_count = Collection.objects.filter(owner=request.user).count()
@@ -90,6 +111,7 @@ def dashboard_view(request):
     'has_datasets': user_datasets_count > 0,
     'has_collections': user_collections_count > 0,
     'section': section,
+    'user_groups': user_groups,
     'is_admin': is_admin,
     # ... any other context data ...
   }

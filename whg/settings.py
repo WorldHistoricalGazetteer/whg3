@@ -5,18 +5,6 @@ import os
 from celery.schedules import crontab
 from django.contrib.messages import constants as messages
 
-# Load the environment variables (used here and in local_settings)
-env_file = '.env/.dev-whg3'
-# Check if the file exists
-if not os.path.exists(env_file):
-    raise FileNotFoundError(f"The settings file '{env_file}' does not exist.")
-with open(env_file, 'r') as f:
-    for line in f:
-        line = line.strip()
-        if line and not line.startswith('#'):
-            key, value = line.split('=', 1)
-            os.environ[key] = value
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE_ID = 1
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -118,10 +106,10 @@ CELERY_TASK_EAGER_PROPAGATES = True
 # required per https://github.com/celery/django-celery-results/issues/334
 CELERY_RESULT_EXTENDED = True
 
-CELERY_BEAT_SCHEDULE = {
-  'task01': {
-      'task': 'datasets.tasks.testy','schedule': crontab(minute='*/2')
-    }}
+# CELERY_BEAT_SCHEDULE = {
+#   'task01': {
+#       'task': 'datasets.tasks.testy','schedule': crontab(minute='*/2')
+#     }}
 
 CAPTCHA_NOISE_FUNCTIONS = (
   #'captcha.helpers.noise_arcs',

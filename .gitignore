@@ -10,16 +10,11 @@ datasets/static/_older/
 static/_older/
 
 # leave server versions intact
-media/collections/
-media/data/
-media/datasets/
-media/downloads/
-media/resources/
 media/scratch/
 media/user*
-
-whg/media/*
-whg/media_old/*
+#media/resources/
+#media/collections/
+#media/datasets/
 
 # Mac OS files
 **/.DS_Store
@@ -59,7 +54,8 @@ __pycache__/
 whg/__pycache__/
 db.sqlite3
 
-### Private Environment Variables ###
+
+### Private Environment Variables (dev and prod) ###
 .env/
 
 ### Eclipse Project ###
