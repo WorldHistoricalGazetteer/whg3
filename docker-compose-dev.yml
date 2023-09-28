@@ -16,7 +16,7 @@ services:
       context: .
       dockerfile: ./compose/local/django/Dockerfile-django.dev
     image: whg3_web
-    command: /start-dev
+    command: /start
     volumes:
       - .:/app
     env_file:
