@@ -278,3 +278,24 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 	left: 0;
 	z-index: -1
 }
+
+#coll_detail {
+  	display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(34%, 1fr));
+    grid-gap: 20px;
+}
+
+.color-key-table {
+	width: fit-content;
+	border: 1px solid #ccc;
+}
+
+.color-key-table td {
+	padding: 0 .3rem;
+}
+
+.color-key-table .color-swatch {
+	border-radius: 50%;
+    width: 1rem;
+    height: 1rem;
+}
