@@ -304,7 +304,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 }
 
 .style-button .maplibregl-ctrl-icon {
-	background: url(c4007e4a88d5f00a86ed.svg);
+	background: url(539f97596f2e818b10d1.svg);
 	background-size: contain;
 }
 
@@ -524,7 +524,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
   color: var(--slider-button-color);
   font-size: 12px;
   font-weight: bold;
-  background-image: url(53f999b814cec69c0e89.svg);
+  background-image: url(986060b30f71ea0ed69c.svg);
   background-repeat: no-repeat;
   background-position: center center;
   background-size: 24px;
@@ -611,7 +611,7 @@ input[type="range"]::-webkit-slider-thumb {
   pointer-events: all;
   width: 16px;
   height: 21px;
-  background-image: url(b3feded81307f6defe77.svg);
+  background-image: url(d3da6e6d0eb6ff8f1f93.svg);
   background-repeat: no-repeat;
   background-position: center center;
   background-size: cover;
@@ -628,7 +628,7 @@ input[type="range"]::-moz-range-thumb {
   pointer-events: all;
   width: 16px;
   height: 21px;
-  background-image: url(b3feded81307f6defe77.svg);
+  background-image: url(d3da6e6d0eb6ff8f1f93.svg);
   background-repeat: no-repeat;
   background-position: center center;
   background-size: cover;

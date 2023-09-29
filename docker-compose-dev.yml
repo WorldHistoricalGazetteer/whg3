@@ -86,7 +86,7 @@ services:
       - WHG3
     build:
       context: .
-      dockerfile: ./compose/local/django/Dockerfile-django
+      dockerfile: ./compose/local/django/Dockerfile-django.dev
     image: whg3_celery_worker
     command: /start-celeryworker
     volumes:
@@ -102,7 +102,7 @@ services:
       - WHG3
     build:
       context: .
-      dockerfile: ./compose/local/django/Dockerfile-django
+      dockerfile: ./compose/local/django/Dockerfile-django.dev
     image: whg3_celery_beat
     command: /start-celerybeat
     volumes:
@@ -118,7 +118,7 @@ services:
       - WHG3
     build:
       context: .
-      dockerfile: ./compose/local/django/Dockerfile-django
+      dockerfile: ./compose/local/django/Dockerfile-django.dev
     image: whg3_celery_flower
     command: /start-flower
     volumes:
