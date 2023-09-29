@@ -2270,7 +2270,7 @@ const datasetLayers = [ // IMPORTANT: Listed in order of addition to the map
 	        ],
 	        'circle-opacity': [
 	            'case',
-				['boolean', ['feature-state', 'highlight'], false], .9,
+				['boolean', ['feature-state', 'highlight'], false], 0.2,
 				.7
 	        ],
 			'circle-radius': [
