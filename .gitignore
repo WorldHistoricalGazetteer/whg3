@@ -76,3 +76,7 @@ whg/media/collections/.DS_Store
 whg/media/.DS_Store
 node_modules/
 package-lock.json
+
+# Ignore Webpack generated files
+#whg/static/webpack/*.bundle.*
+#whg/static/webpack/*.svg

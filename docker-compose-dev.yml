@@ -45,7 +45,7 @@ services:
     platform: linux/amd64
     build:
       context: .
-      dockerfile: ./compose/local/django/Dockerfile-django
+      dockerfile: ./compose/local/django/Dockerfile-django.dev
     image: whg3_livereload
     command: /start-livereload
     volumes:
