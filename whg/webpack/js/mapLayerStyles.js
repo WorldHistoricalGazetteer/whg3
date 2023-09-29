@@ -77,8 +77,8 @@ const datasetLayers = [ // IMPORTANT: Listed in order of addition to the map
 	        ],
 			'circle-stroke-opacity': [
 	            'case',
+				['boolean', ['feature-state', 'highlight'], false], .9,
 				['any', ['==', ['get', 'min'], 'null'], ['==', ['get', 'max'], 'null']], .3,
-				['boolean', ['feature-state', 'highlight'], false], .9,			
 				.7
 	        ],
 			'circle-stroke-width': [ // Simulate larger radius - zoom-based radius cannot operate together with feature-state switching
