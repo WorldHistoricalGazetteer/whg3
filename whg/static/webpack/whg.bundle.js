@@ -2270,7 +2270,7 @@ const datasetLayers = [ // IMPORTANT: Listed in order of addition to the map
 	        ],
 	        'circle-opacity': [
 	            'case',
-				['boolean', ['feature-state', 'highlight'], false], .9,
+				['boolean', ['feature-state', 'highlight'], false], 0.2,
 				.7
 	        ],
 			'circle-radius': [
@@ -2287,8 +2287,8 @@ const datasetLayers = [ // IMPORTANT: Listed in order of addition to the map
 	        ],
 			'circle-stroke-opacity': [
 	            'case',
-				['any', ['==', ['get', 'min'], 'null'], ['==', ['get', 'max'], 'null']], .3,
-				['boolean', ['feature-state', 'highlight'], false], .9,			
+				['boolean', ['feature-state', 'highlight'], false], .9,		
+				['any', ['==', ['get', 'min'], 'null'], ['==', ['get', 'max'], 'null']], .3,	
 				.7
 	        ],
 			'circle-stroke-width': [ // Simulate larger radius - zoom-based radius cannot operate together with feature-state switching
@@ -2561,7 +2561,6 @@ function equidistantLCHColors(numColors) {
 		const hueValue_adjusted = hueValue_adjust ? hueValue_raw + hue_avoid_tolerance * 2 : hueValue_raw
 		const color = (0,chroma_min.lch)(50, 70, hueValue_adjusted % 360).hex();
 		colors.push(color);
-		console.log(color, hueValue_adjusted);
 	}
 	return colors;
 }
