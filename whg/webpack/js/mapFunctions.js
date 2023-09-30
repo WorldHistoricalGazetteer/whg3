@@ -2,6 +2,7 @@ import datasetLayers from './mapLayerStyles';
 import { attributionString, arrayColors, colorTable } from './utilities';
 import { filteredLayer } from './mapFilters';
 import SequenceArcs from './mapSequenceArcs';
+import { scrollToRowByProperty } from './tableFunctions';
 
 let mapParams;
 
@@ -229,41 +230,9 @@ export function initPopups(mappy, activePopup, table) {
 					activePopup.remove();
 				} else pid = e.features[0].properties.pid;
 	
-				// Search for the row within the sorted and filtered view
-				var pageInfo = table.page.info();
-				var rowPosition = -1;
-				var rows = table.rows({
-					search: 'applied',
-					order: 'current'
-				}).nodes();
-				let selectedRow;
-				for (var i = 0; i < rows.length; i++) {
-					var rowData = table.row(rows[i]).data();
-					rowPosition++;
-					if (rowData.properties.pid == pid) {
-						selectedRow = rows[i];
-						break; // Stop the loop when the row is found
-					}
-				}
-	
-				if (rowPosition !== -1) {
-					// Calculate the page number based on the row's position
-					var pageNumber = Math.floor(rowPosition / pageInfo.length);
-					//console.log(`Feature ${pid} selected at table row ${rowPosition} on page ${pageNumber + 1} (current page ${pageInfo.page + 1}).`);
-	
-					// Check if the row is on the current page
-					if (pageInfo.page !== pageNumber) {
-						table.page(pageNumber).draw('page');
-					}
-	
-					selectedRow.scrollIntoView();
-					$(selectedRow).trigger('click');
-				}
+				scrollToRowByProperty(table, 'pid', pid);
 	
 			})
-		    
-		    
-		    
 		    
 		});
 

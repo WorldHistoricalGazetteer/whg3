@@ -3,6 +3,7 @@
 import Dateline from './dateline';
 import generateMapImage from './saveMapImage';
 import datasetLayers from './mapLayerStyles';
+import { scrollToRowByProperty } from './tableFunctions';
 
 class fullScreenControl {
 	onAdd() { 
@@ -34,29 +35,99 @@ class downloadMapControl {
 
 class sequencerControl {
 	onAdd() {
+		this.minSeq = window.ds_list_stats.seqmin;
+        this.maxSeq = window.ds_list_stats.seqmax;
+		console.log(`Sequence range (${window.ds_list_stats.seqmin}-${window.ds_list_stats.seqmax}).`);
+        if (this.minSeq == this.maxSeq) {
+			return;
+		}
+        
 		this._map = map;
 		this._container = document.createElement('div');
 		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group sequencer';
 		this._container.textContent = 'Explore sequence';
 		this._container.innerHTML = '';
-		[['skip-backward','First place in sequence'],['skip-start','Previous place in sequence'],['skip-end','Next place in sequence'],['skip-forward','Last place in sequence'],'separator',['play','Play from current place in sequence']].forEach((button) => {
+		this.currentSeq = undefined;
+		this.stepdelay = 3000;
+        this.playInterval = null;
+		
+		[['skip-first','First place in sequence'],['skip-previous','Previous place in sequence'],['skip-next','Next place in sequence'],['skip-last','Last place in sequence'],'separator',['play','Play from current place in sequence']].forEach((button) => {
 			this._container.innerHTML += button == 'separator' ? '<span class="separator"/>' : `<button id = "${button[0]}" type="button" style="background-image: url(/static/images/sequencer/${button[0]}-btn.svg)" aria-label="${button[1]}" title="${button[1]}" />`
 		});
 		
-		$('body').on('click','.sequencer button#play',function(){
+		$('body').on('click','.sequencer button', (e) => {
 		    const sequencer = $('.sequencer');
-			console.log(sequencer);
-		    if (!sequencer.hasClass('playing')) {
-		        sequencer.addClass('playing');
-		        sequencer.find('button:lt(4)').prop('disabled', true);
-		    } else {
-		        sequencer.removeClass('playing');
-		        sequencer.find('button:lt(4)').prop('disabled', false);
-		    }
+		    const action = $(e.target).attr('id');
+		    console.log('action',action,window.highlightedFeatureIndex);
+			if (['skip-previous', 'skip-next', 'play'].includes(action)) {
+				if (window.highlightedFeatureIndex == undefined) { // Nothing yet highlighted - highlight feature selected in table
+					let currentRow = $('#placetable tr.highlight-row');
+					this.currentSeq = currentRow.data('seq');
+					currentRow.click();
+				}
+			}
+			if (action=='play') {
+			    if (!sequencer.hasClass('playing')) {
+			        sequencer.addClass('playing');
+			        sequencer.find('button:not(#play)').prop('disabled', true);
+			        this.startPlayback();
+			    } else {
+			        sequencer.removeClass('playing');
+			        sequencer.find('button:not(#play)').prop('disabled', false);
+			        this.stopPlayback();
+			    }
+			}
+			else {
+				if (action=='skip-first') {
+					this.currentSeq = this.minSeq; 
+				    sequencer.find('button#skip-first,button#skip-previous').prop('disabled', true);
+				    sequencer.find('button#skip-last,button#skip-next').prop('disabled', false);
+				}
+				else if (action=='skip-previous') {
+					this.currentSeq -= 1; 
+					if (this.currentSeq == this.minSeq) {
+				    	sequencer.find('button#skip-first,button#skip-previous').prop('disabled', true);
+					} 
+				    sequencer.find('button#skip-last,button#skip-next').prop('disabled', false);
+				}
+				else if (action=='skip-next') {
+					this.currentSeq += 1; 
+					if (this.currentSeq == this.maxSeq) {
+				    	sequencer.find('button#skip-last,button#skip-next').prop('disabled', true);
+				    	if (sequencer.hasClass('playing')) {
+							this.stopPlayback();
+							sequencer.find('button#play').click();
+						}
+					} 
+				    sequencer.find('button#skip-first,button#skip-previous').prop('disabled', false);
+				}
+				else if (action=='skip-last') {
+					this.currentSeq = this.maxSeq; 
+				    sequencer.find('button#skip-last,button#skip-next').prop('disabled', true);
+				    sequencer.find('button#skip-first,button#skip-previous').prop('disabled', false);
+				}
+				
+				scrollToRowByProperty($('#placetable').DataTable(), 'seq', this.currentSeq);
+			}
+			
 		});
 		
 		return this._container;
 	}
+		
+	startPlayback() {
+		console.log('Starting sequence play...');
+		const skipNextButton = $('.sequencer button#skip-next');
+        this.playInterval = setInterval(() => {
+			console.log('moving...');
+			skipNextButton.prop('disabled', false).click().prop('disabled', true);
+        }, this.stepdelay);
+    }
+
+    stopPlayback() {
+        clearInterval(this.playInterval);
+        this.playInterval = null;
+    }
 }
 
 class StyleControl {

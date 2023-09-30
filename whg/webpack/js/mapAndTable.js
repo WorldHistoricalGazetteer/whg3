@@ -94,7 +94,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	});
 	
 	window.ds_list_stats = get_ds_list_stats(allFeatures);
-	//console.log('window.ds_list_stats', window.ds_list_stats);
+	console.log('window.ds_list_stats', window.ds_list_stats);
 	
 	datasetLayers.forEach(function(layer) { // Ensure proper layer order for multiple datasets
 		window.ds_list.forEach(function(ds) {

@@ -2303,274 +2303,6 @@ const datasetLayers = [ // IMPORTANT: Listed in order of addition to the map
 
 /* harmony default export */ const mapLayerStyles = (datasetLayers);
 
-;// CONCATENATED MODULE: ../app/whg/webpack/js/mapControls.js
-// /whg/webpack/js/mapControls.js
-
-
-
-
-
-class fullScreenControl {
-	onAdd() { 
-		this._map = map;
-		this._container = document.createElement('div');
-		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-		this._container.textContent = 'Fullscreen';
-		this._container.innerHTML =
-			'<button type="button" class="maplibregl-ctrl-fullscreen" aria-label="Enter fullscreen" title="Enter fullscreen">' +
-			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
-			'</button>';
-		return this._container;
-	}
-}
-
-class downloadMapControl {
-	onAdd() {
-		this._map = map;
-		this._container = document.createElement('div');
-		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-		this._container.textContent = 'Download image';
-		this._container.innerHTML =
-			'<button type="button" class="download-map-button" aria-label="Download map image" title="Download map image">' +
-			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
-			'</button>';
-		return this._container;
-	}
-}
-
-class sequencerControl {
-	onAdd() {
-		this._map = map;
-		this._container = document.createElement('div');
-		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group sequencer';
-		this._container.textContent = 'Explore sequence';
-		this._container.innerHTML = '';
-		[['skip-backward','First place in sequence'],['skip-start','Previous place in sequence'],['skip-end','Next place in sequence'],['skip-forward','Last place in sequence'],'separator',['play','Play from current place in sequence']].forEach((button) => {
-			this._container.innerHTML += button == 'separator' ? '<span class="separator"/>' : `<button id = "${button[0]}" type="button" style="background-image: url(/static/images/sequencer/${button[0]}-btn.svg)" aria-label="${button[1]}" title="${button[1]}" />`
-		});
-		
-		$('body').on('click','.sequencer button#play',function(){
-		    const sequencer = $('.sequencer');
-			console.log(sequencer);
-		    if (!sequencer.hasClass('playing')) {
-		        sequencer.addClass('playing');
-		        sequencer.find('button:lt(4)').prop('disabled', true);
-		    } else {
-		        sequencer.removeClass('playing');
-		        sequencer.find('button:lt(4)').prop('disabled', false);
-		    }
-		});
-		
-		return this._container;
-	}
-}
-
-class StyleControl {
-	
-	constructor(mappy) {
-        this._mappy = mappy;
-    }
-	
-	onAdd() {
-		this._map = map;
-		this._container = document.createElement('div');
-		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-		this._container.textContent = 'Basemap';
-		this._container.innerHTML =
-			'<button type="button" class="style-button" aria-label="Change basemap style" title="Change basemap style">' +
-			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
-			'</button>';
-		this._container.querySelector('.style-button').addEventListener('click', this._onClick.bind(this));
-		return this._container;
-	}
-
-	onRemove() {
-		this._container.parentNode.removeChild(this._container);
-		this._map = undefined;
-	}
-
-	_onClick() {
-		let styleList = document.getElementById('mapStyleList');
-		if (!styleList) {
-			styleList = document.createElement('ul');
-			styleList.id = 'mapStyleList';
-			styleList.className = 'maplibre-styles-list';
-			const styleFilterValues = mapParameters.styleFilter.map(value => value.split('.')[0]);
-			for (const group of Object.values(maptilersdk.MapStyle)) {
-				// Check if the group.id is in the styleFilter array
-				if (mapParameters.styleFilter.length == 0 || styleFilterValues.includes(group.id)) {
-					const groupItem = document.createElement('li');
-					groupItem.textContent = group.name;
-					groupItem.className = 'group-item';
-					const variantList = document.createElement('ul');
-					variantList.className = 'variant-list';
-					for (const orderedVariant of group.orderedVariants) {
-						const datasetValue = group.id + '.' + orderedVariant.variantType;
-						if (mapParameters.styleFilter.length == 0 || mapParameters.styleFilter.includes(datasetValue)) {
-							const variantItem = document.createElement('li');
-							variantItem.textContent = orderedVariant.name;
-							variantItem.className = 'variant-item';
-							variantItem.dataset.value = datasetValue;
-							variantItem.addEventListener('click', this._onVariantClick.bind(this));
-							variantList.appendChild(variantItem);
-						}
-					}
-					groupItem.appendChild(variantList);
-					styleList.appendChild(groupItem);
-				}
-			}
-			this._container.appendChild(styleList);
-		}
-
-		styleList.classList.toggle('show');
-	}
-
-	_onVariantClick(event) {
-	
-		let mappy = this._mappy;
-	
-		const variantValue = event.target.dataset.value;
-		const style_code = variantValue.split(".");
-		console.log('Selected variant: ', variantValue, maptilersdk.MapStyle[style_code[0]][style_code[1]]);
-		mappy.setStyle(maptilersdk.MapStyle[style_code[0]][style_code[1]], {
-		  transformStyle: (previousStyle, nextStyle) => {
-		    const newSources = { ...nextStyle.sources };
-		    window.ds_list.forEach(ds => {
-		      newSources[ds.id.toString()] = previousStyle.sources[ds.id.toString()];
-		    });
-		    return {
-		      ...nextStyle,
-		      sources: newSources,
-		      layers: [
-		        ...nextStyle.layers,
-		        ...previousStyle.layers.filter(layer => mapLayerStyles.some(dslayer => layer.id.startsWith(dslayer.id)))
-		      ]
-		    };
-		  }
-		});
-
-		const styleList = document.getElementById('mapStyleList');
-		if (styleList) {
-			styleList.classList.remove('show');
-		}
-	}
-}
-
-class CustomAttributionControl extends maptilersdk.AttributionControl {
-    constructor(options) {
-        super(options);
-        this.autoClose = options.autoClose !== false;
-    }
-    onAdd(map) {
-        const container = super.onAdd(map);
-        // Automatically close the AttributionControl if autoClose is enabled
-        if (this.autoClose) {
-            const attributionButton = container.querySelector('.maplibregl-ctrl-attrib-button');
-            if (attributionButton) {
-                attributionButton.dispatchEvent(new MouseEvent('click', {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window
-                }));
-                container.classList.add('fade-in');
-            }
-        }
-        return container;
-    }
-}
-
-function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table){
-
-	if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
-	
-	if (mapParameters.styleFilter.length !== 1) {
-		mappy.addControl(new StyleControl(mappy), 'top-right');
-	}
-	
-	mappy.addControl(new fullScreenControl(), 'top-left');
-	mappy.addControl(new downloadMapControl(), 'top-left');
-	
-	if (!!mapParameters.controls.sequencer) {
-		mappy.addControl(new sequencerControl(), 'bottom-left');
-	}
-	
-	mappy.addControl(new CustomAttributionControl({
-		compact: true,
-    	autoClose: mapParameters.controls.attribution.open === false,
-	}), 'bottom-right');
-
-	function dateRangeChanged(fromValue, toValue){
-		// Throttle date slider changes using debouncing
-		// Ought to be possible to use promises on the `render` event
-		let debounceTimeout;
-	    function debounceFilterApplication() {
-	        clearTimeout(debounceTimeout);
-	        debounceTimeout = setTimeout(toggleFilters(true, mappy, table), 300);
-	    }
-	    debounceFilterApplication(); 
-	}
-
-	if (window.dateline) {
-		window.dateline.destroy();
-		window.dateline = null;
-	}
-	if (datelineContainer) {
-		datelineContainer.remove();
-		datelineContainer = null;
-	}
-
-	if (!!mapParameters.controls.temporal) {
-		datelineContainer = document.createElement('div');
-		datelineContainer.id = 'dateline';
-		document.getElementById('mapControls').appendChild(datelineContainer);
-
-		const range = window.ds_list_stats.max - window.ds_list_stats.min;
-		const buffer = range * 0.1; // 10% buffer
-
-		// Update the temporal settings
-		mapParameters.controls.temporal.fromValue = window.ds_list_stats.min;
-		mapParameters.controls.temporal.toValue = window.ds_list_stats.max;
-		mapParameters.controls.temporal.minValue = window.ds_list_stats.min - buffer;
-		mapParameters.controls.temporal.maxValue = window.ds_list_stats.max + buffer;
-
-		window.dateline = new Dateline({
-			...mapParameters.controls.temporal,
-			onChange: dateRangeChanged
-		});
-	};
-	
-	document.addEventListener('click', function(event) {
-        
-        if (event.target && event.target.parentNode) {
-			const parentNodeClassList = event.target.parentNode.classList;
-			
-			if (parentNodeClassList.contains('maplibregl-ctrl-fullscreen')) {
-				console.log('Switching to fullscreen.');
-				parentNodeClassList.replace('maplibregl-ctrl-fullscreen', 'maplibregl-ctrl-shrink');
-				document.getElementById('mapOverlays').classList.add('fullscreen');
-			} 
-			else if (parentNodeClassList.contains('maplibregl-ctrl-shrink')) {
-				console.log('Switching off fullscreen.');
-				parentNodeClassList.replace('maplibregl-ctrl-shrink', 'maplibregl-ctrl-fullscreen');
-				document.getElementById('mapOverlays').classList.remove('fullscreen');
-			}
-			else if (parentNodeClassList.contains('dateline-button')) {
-	            toggleFilters($('.range_container.expanded').length > 0, mappy, table);
-	        }
-			else if (parentNodeClassList.contains('download-map-button')) {
-				generateMapImage(mappy);
-			}
-			
-		}
-
-	});
-	
-	return { datelineContainer, mapParameters }
-	
-}
-
-
-
 // EXTERNAL MODULE: ../app/whg/webpack/js/6.5.0_turf.min.js
 var _6_5_0_turf_min = __webpack_require__(301);
 // EXTERNAL MODULE: ../app/whg/webpack/js/chroma.min.js
@@ -2793,13 +2525,20 @@ function minmaxer(timespans) {
 function get_ds_list_stats(allFeatures) {
 	let min = Infinity;
 	let max = -Infinity;
+    let seqMin = Infinity;
+    let seqMax = -Infinity;
 	for (let i = 0; i < allFeatures.length; i++) {
 		const featureMin = allFeatures[i].properties.min;
 		const featureMax = allFeatures[i].properties.max;
+		const seqValue = allFeatures[i].properties.seq;
 		if (!isNaN(featureMin) && !isNaN(featureMax)) {
 			min = Math.min(min, featureMin);
 			max = Math.max(max, featureMax);
 		}
+        if (!isNaN(seqValue)) {
+            seqMin = Math.min(seqMin, seqValue);
+            seqMax = Math.max(seqMax, seqValue);
+        }
 	}
 	if (!isFinite(min)) min = -3000;
 	if (!isFinite(max)) max = 2000;
@@ -2812,477 +2551,10 @@ function get_ds_list_stats(allFeatures) {
 	return {
 		min: min,
 		max: max,
+        seqmin: seqMin,
+        seqmax: seqMax,
 		extent: (0,_6_5_0_turf_min.bbox)(geojson)
 	}
-}
-;// CONCATENATED MODULE: ../app/whg/webpack/js/mapFilters.js
-
-
-function filteredLayer(layer) {
-	if ($('.range_container.expanded').length > 0) { // Is dateline active?
-		const modifiedLayer = ({
-			...layer
-		});
-		const existingFilter = modifiedLayer.filter;
-
-		const isUndatedChecked = $('#undated_checkbox').is(':checked');
-
-		if (isUndatedChecked) { // Include features within the range AND undated features
-			modifiedLayer.filter = [
-				'all',
-				existingFilter,
-				[
-					'any',
-					[
-						'all',
-						['!=', 'max', 'null'],
-						['!=', 'min', 'null'],
-						['>=', 'max', window.dateline.fromValue],
-						['<=', 'min', window.dateline.toValue],
-					],
-					[
-						'any',
-						['==', 'max', 'null'],
-						['==', 'min', 'null']
-					]
-				]
-			];
-		} else { // Include features within the range BUT NOT undated features
-			modifiedLayer.filter = [
-				'all',
-				existingFilter,
-				['has', 'max'],
-				['has', 'min'],
-				['>=', 'max', window.dateline.fromValue],
-				['<=', 'min', window.dateline.toValue],
-			];
-		}
-
-		return modifiedLayer;
-	} else return layer;
-}
-
-function toggleFilters(on, mappy, table){
-    mapLayerStyles.forEach(function(layer){
-		window.ds_list.forEach(function(ds) {
-			const modifiedLayer = { ...layer };
-		    modifiedLayer.id = `${layer.id}_${ds.id}`;
-		    modifiedLayer.source = ds.id.toString();
-			mappy.setFilter(modifiedLayer.id, on ? filteredLayer(modifiedLayer).filter : modifiedLayer.filter);
-		});
-	});
-	table.draw();
-}
-
-
-;// CONCATENATED MODULE: ../app/whg/webpack/js/mapSequenceArcs.js
-// mapSequenceArcs.js
-
-
-
-class SequenceArcs {
-	constructor(map, dataset, { deflectionValue = 1, lineColor = '#888', lineOpacity = .8, lineWidth = 1, dashLength = 8, animationRate = 12 } = {}) { // animationRate = steps per second
-		this.map = map;
-		this.dataset = dataset;
-		this.arcLayerId = 'sequence-arcs-layer';
-		this.deflectionValue = deflectionValue;
-		this.lineColor = lineColor;
-		this.lineOpacity = lineOpacity;
-		this.lineWidth = lineWidth;
-		this.dashLength = dashLength;
-		this.animationInterval = 1000 / animationRate;
-		this.dashArraySequence = animationRate > 0 ? this.generateDashArraySequence() : [[1, 0]]; // Solid line if no animation
-		this.createArcs();
-		this.createArcLayer();
-		if (animationRate > 0) this.animateDashedLine();
-	}
-
-	createArcs() {
-		const arcFeatures = [];
-
-		function calculateControlPoint(start, end, baseDeflection) {
-			const lineLength = (0,_6_5_0_turf_min.distance)(start, end, {
-				units: 'kilometers'
-			});
-			const deflection = baseDeflection * lineLength / 1000;
-
-			const midX = (start[0] + end[0]) / 2;
-			const midY = (start[1] + end[1]) / 2;
-			const angle = Math.atan2(end[1] - start[1], end[0] - start[0]) + Math.PI / 2;
-			const controlX = midX + deflection * Math.cos(angle);
-			const controlY = midY + deflection * Math.sin(angle);
-			return [controlX, controlY];
-		}
-
-		const pointSourceData = this.dataset;
-
-		if (pointSourceData && pointSourceData.type === 'FeatureCollection') {
-			const sortedData = pointSourceData.features.sort((a, b) => {
-				return a.properties.seq - b.properties.seq;
-			});
-
-			for (let i = 0; i < sortedData.length - 1; i++) {
-				const startPoint = sortedData[i];
-				const endPoint = sortedData[i + 1];
-
-				const controlPoint = calculateControlPoint(
-					startPoint.geometry.coordinates,
-					endPoint.geometry.coordinates,
-					this.deflectionValue
-				);
-
-				const line = (0,_6_5_0_turf_min.lineString)([
-					startPoint.geometry.coordinates,
-					controlPoint,
-					endPoint.geometry.coordinates,
-				]);
-
-				const arc = (0,_6_5_0_turf_min.bezierSpline)(line, {
-					sharpness: 1
-				});
-
-				arcFeatures.push(arc);
-			}
-
-			this.arcFeatures = arcFeatures;
-		}
-	}
-
-	createArcLayer() {
-		this.map.addLayer({
-			id: this.arcLayerId,
-			type: 'line',
-			source: {
-				type: 'geojson',
-				data: {
-					type: 'FeatureCollection',
-					features: this.arcFeatures,
-				},
-			},
-			paint: {
-				'line-color': this.lineColor,
-				'line-opacity': this.lineOpacity,
-				'line-width': this.lineWidth,
-				'line-dasharray': this.dashArraySequence[0],
-			},
-		});
-	}
-
-	generateDashArraySequence() {
-		const dashArraySequence = [];
-		const dashLength = this.dashLength; // Maximum dash value in the sequence
-		const gapLength = dashLength / 2; // Gap value between dashes
-
-		for (let i = 0; i <= dashLength; i++) {
-			dashArraySequence.push([i, gapLength, dashLength - i]);
-		}
-
-		for (let i = 0; i <= gapLength; i++) {
-			dashArraySequence.push([0, i, dashLength, gapLength - i]);
-		}
-
-		return dashArraySequence;
-	}
-
-	animateDashedLine() {
-		let step = 0;
-    	let lastTimestamp = 0;
-		const animateDashArray = (timestamp) => {
-        	const elapsedTime = timestamp - lastTimestamp;
-	        if (elapsedTime >= this.animationInterval) {
-	            lastTimestamp = timestamp;
-	            const newStep = (step + 1) % this.dashArraySequence.length;
-	            this.map.setPaintProperty(
-	                this.arcLayerId,
-	                'line-dasharray',
-	                this.dashArraySequence[newStep]
-	            );
-	            step = newStep;
-	        }
-			requestAnimationFrame(animateDashArray);
-		}
-		requestAnimationFrame(animateDashArray);
-	}
-}
-;// CONCATENATED MODULE: ../app/whg/webpack/js/mapFunctions.js
-
-
-
-
-
-let mapParams;
-
-function addMapSource(mappy, ds) {
-	mappy.addSource(ds.id.toString(), {
-		'type': 'geojson',
-		'data': ds,
-		'attribution': attributionString(ds),
-	});
-}
-
-function addMapLayer(mappy, layer, ds) {
-	const modifiedLayer = { ...layer };
-    modifiedLayer.id = `${layer.id}_${ds.id}`;
-    modifiedLayer.source = ds.id.toString();
-    mappy.addLayer(filteredLayer(modifiedLayer));
-    if (!!ds.relations && layer.id == 'gl_active_point') {
-    	let circleColors = arrayColors(ds.relations);
-    	colorTable(circleColors, '#coll_detail');
-		mappy.setPaintProperty(modifiedLayer.id, 'circle-color', [
-		  'match',
-		  ['get', 'relation'],
-		  ...circleColors,
-		  '#ccc',
-		]);
-		mappy.setPaintProperty(modifiedLayer.id, 'circle-stroke-color', [
-		  'match',
-		  ['get', 'relation'],
-		  ...circleColors,
-		  '#ccc',
-		]);
-		const sequenceArcs = new SequenceArcs(mappy, ds, { /*animationRate: 0*/ });
-		mappy.moveLayer(sequenceArcs.arcLayerId, modifiedLayer.id);
-	}
-}
-	
-function updatePadding() {
-	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
-	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
-	window.mapPadding = {
-		top: ControlsRect.top - MapRect.top - mapParams.ControlsRectMargin,
-		bottom: MapRect.bottom - ControlsRect.bottom - mapParams.ControlsRectMargin,
-		left: ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin,
-		right: MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin,
-	};
-	//console.log('mapPadding recalculated:', window.mapPadding);
-}
-
-function updateBounds() {
-	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
-	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
-	const centerX = - mapParams.MapRectBorder + ControlsRect.left - MapRect.left + ControlsRect.width / 2;
-	const centerY = - mapParams.MapRectBorder + ControlsRect.top - MapRect.top + ControlsRect.height / 2;
-	const pseudoCenter = mapParams.mappy.unproject([centerX, centerY]);
-	window.mapBounds = {
-		'center': pseudoCenter
-	}
-	//console.log('window.mapBounds updated:', window.mapBounds);
-}
-
-// Control positioning of map, clear of overlays
-function recenterMap(mappy, duration) {
-	duration = duration ==  'lazy' ? 1000 : 0 // Set duration of movement
-	window.blockBoundsUpdate = true;
-	
-	if (window.mapBounds) {
-		if (Array.isArray(window.mapBounds) || !window.mapBounds.hasOwnProperty('center')) { // mapBounds might be a coordinate pair object returned by mappy.getBounds();
-			mappy.fitBounds(window.mapBounds, {
-				padding: window.mapPadding,
-				duration: duration
-			});
-		} else { // mapBounds has been set based on a center point and zoom
-			mappy.flyTo({
-				...window.mapBounds,
-				padding: window.mapPadding,
-				duration: duration
-			})
-		}
-	}
-}
-
-function initObservers(mappy) {
-	
-	mapParams = {
-		mappy: mappy,
-		ControlsRectEl: document.getElementById('mapControls'),
-		MapRectEl: document.querySelector('div.maplibregl-map'),
-		ControlsRectMargin: 4,
-		MapRectBorder: 1
-	}
-	
-	window.blockBoundsUpdate = false;
-	const resizeObserver = new ResizeObserver(function() { 
-		updatePadding();
-		recenterMap(mappy);
-	});
-
-	// Recenter map whenever its viewport changes size
-	resizeObserver.observe(mapParams.ControlsRectEl);
-	resizeObserver.observe(mapParams.MapRectEl);
-	
-	mappy.on('zoomend', function() { // Triggered by `flyTo` and `fitBounds` - must be blocked to prevent misalignment 
-		if (window.blockBoundsUpdate) {
-			window.blockBoundsUpdate = false;
-			//console.log('blockBoundsUpdate released.');
-		}
-		else {
-			updateBounds();
-		}
-	});
-	mappy.on('dragend', function() { updateBounds(); });
-	
-}
-
-function initOverlays(whgMap) {
-	const controlContainer = document.querySelector('.maplibregl-control-container');	
-	controlContainer.setAttribute('id', 'mapControls');
-	controlContainer.classList.add('item');
-
-	const mapOverlays = document.createElement('div');
-	mapOverlays.id = 'mapOverlays';
-	whgMap.appendChild(mapOverlays);
-
-	['left', 'right'].forEach(function(side) {
-		const column = document.createElement('div');
-		column.classList.add('column', side);
-		mapOverlays.appendChild(column);
-		const overlays = document.querySelectorAll('.overlay.' + side);
-		overlays.forEach(function(overlay) {
-			column.appendChild(overlay);
-			overlay.classList.add('item');
-		})
-		if (side == 'left') column.appendChild(controlContainer);
-	})
-
-	// Initialise Download link listener
-	$(".a-dl, .a-dl-celery").click(function(e) {
-		e.preventDefault();
-		let dsid = $(this).data('id');
-		let collid = $(this).data('collid');
-		let urly = '/datasets/dlcelery/'
-		$.ajax({
-			type: 'POST',
-			url: urly,
-			data: {
-				"format": 'lpf',
-				"dsid": dsid,
-				"collid": collid,
-				"csrfmiddlewaretoken": "{{ csrf_token }}"
-			},
-			datatype: 'json',
-			success: function(response) {
-				window.spinner_download = startSpinner("metadata"); // TODO: window.spinner_download.stop() not yet implemented anywhere?
-				task_id = response.task_id
-				var progressUrl = "/celery-progress/" + task_id + "/";
-				CeleryProgressBar.initProgressBar(progressUrl, {
-					pollingInterval: 500,
-					onResult: customResult,
-				})
-			}
-		})
-	})
-
-	// TODO: Collection download event handlers
-	$(".btn-cancel").click(function() {
-		$("#downloadModal").modal('hide')
-	})
-	let clearEl = function(el) {
-		$("#progress-bar").fadeOut()
-		el.html('')
-	}
-}
-
-function initPopups(mappy, activePopup, table) {
-
-	mapLayerStyles.forEach(function(layer) {
-		
-		window.ds_list.forEach(function(ds) {
-			const modifiedLayer = { ...layer };
-		    modifiedLayer.id = `${layer.id}_${ds.id}`;
-		    modifiedLayer.source = ds.id.toString();
-	
-			mappy.on('mouseenter', modifiedLayer.id, function(e) {
-				mappy.getCanvas().style.cursor = 'pointer';
-	
-				var pid = e.features[0].properties.pid;
-				var title = e.features[0].properties.title;
-				var min = e.features[0].properties.min;
-				var max = e.features[0].properties.max;
-	
-				if (activePopup) {
-					activePopup.remove();
-				}
-				activePopup = new maptilersdk.Popup({
-						closeButton: false
-					})
-					.setLngLat(e.lngLat)
-					.setHTML('<b>' + title + '</b><br/>' +
-						'Temporality: ' + (min ? min : '?') + '/' + (max ? max : '?') + '<br/>' +
-						'Click to focus'
-					)
-					.addTo(mappy);
-				activePopup.pid = pid;
-			});
-	
-			mappy.on('mousemove', modifiedLayer.id, function(e) {
-				if (activePopup) {
-					activePopup.setLngLat(e.lngLat);
-				}
-			});
-	
-			mappy.on('mouseleave', modifiedLayer.id, function() {
-				mappy.getCanvas().style.cursor = '';
-				if (activePopup) {
-					activePopup.remove();
-				}
-	
-			});
-	
-			mappy.on('click', modifiedLayer.id, function(e) {
-	
-				var pid;
-				if (activePopup && activePopup.pid) {
-					pid = activePopup.pid;
-					activePopup.remove();
-				} else pid = e.features[0].properties.pid;
-	
-				// Search for the row within the sorted and filtered view
-				var pageInfo = table.page.info();
-				var rowPosition = -1;
-				var rows = table.rows({
-					search: 'applied',
-					order: 'current'
-				}).nodes();
-				let selectedRow;
-				for (var i = 0; i < rows.length; i++) {
-					var rowData = table.row(rows[i]).data();
-					rowPosition++;
-					if (rowData.properties.pid == pid) {
-						selectedRow = rows[i];
-						break; // Stop the loop when the row is found
-					}
-				}
-	
-				if (rowPosition !== -1) {
-					// Calculate the page number based on the row's position
-					var pageNumber = Math.floor(rowPosition / pageInfo.length);
-					//console.log(`Feature ${pid} selected at table row ${rowPosition} on page ${pageNumber + 1} (current page ${pageInfo.page + 1}).`);
-	
-					// Check if the row is on the current page
-					if (pageInfo.page !== pageNumber) {
-						table.page(pageNumber).draw('page');
-					}
-	
-					selectedRow.scrollIntoView();
-					$(selectedRow).trigger('click');
-				}
-	
-			})
-		    
-		    
-		    
-		    
-		});
-
-	});
-}
-
-function listSourcesAndLayers(mappy) {	
-	const style = mappy.getStyle();
-	const sources = style.sources;
-	console.log('Sources:', Object.keys(sources));
-	const layers = style.layers;
-	console.log('Layers:', layers.map(layer => layer.id));
 }
 
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/getPlace.js
@@ -3720,6 +2992,445 @@ function parsePlace(data) {
 }
 
 */
+;// CONCATENATED MODULE: ../app/whg/webpack/js/mapFilters.js
+
+
+function filteredLayer(layer) {
+	if ($('.range_container.expanded').length > 0) { // Is dateline active?
+		const modifiedLayer = ({
+			...layer
+		});
+		const existingFilter = modifiedLayer.filter;
+
+		const isUndatedChecked = $('#undated_checkbox').is(':checked');
+
+		if (isUndatedChecked) { // Include features within the range AND undated features
+			modifiedLayer.filter = [
+				'all',
+				existingFilter,
+				[
+					'any',
+					[
+						'all',
+						['!=', 'max', 'null'],
+						['!=', 'min', 'null'],
+						['>=', 'max', window.dateline.fromValue],
+						['<=', 'min', window.dateline.toValue],
+					],
+					[
+						'any',
+						['==', 'max', 'null'],
+						['==', 'min', 'null']
+					]
+				]
+			];
+		} else { // Include features within the range BUT NOT undated features
+			modifiedLayer.filter = [
+				'all',
+				existingFilter,
+				['has', 'max'],
+				['has', 'min'],
+				['>=', 'max', window.dateline.fromValue],
+				['<=', 'min', window.dateline.toValue],
+			];
+		}
+
+		return modifiedLayer;
+	} else return layer;
+}
+
+function toggleFilters(on, mappy, table){
+    mapLayerStyles.forEach(function(layer){
+		window.ds_list.forEach(function(ds) {
+			const modifiedLayer = { ...layer };
+		    modifiedLayer.id = `${layer.id}_${ds.id}`;
+		    modifiedLayer.source = ds.id.toString();
+			mappy.setFilter(modifiedLayer.id, on ? filteredLayer(modifiedLayer).filter : modifiedLayer.filter);
+		});
+	});
+	table.draw();
+}
+
+
+;// CONCATENATED MODULE: ../app/whg/webpack/js/mapSequenceArcs.js
+// mapSequenceArcs.js
+
+
+
+class SequenceArcs {
+	constructor(map, dataset, { deflectionValue = 1, lineColor = '#888', lineOpacity = .8, lineWidth = 1, dashLength = 8, animationRate = 12 } = {}) { // animationRate = steps per second
+		this.map = map;
+		this.dataset = dataset;
+		this.arcLayerId = 'sequence-arcs-layer';
+		this.deflectionValue = deflectionValue;
+		this.lineColor = lineColor;
+		this.lineOpacity = lineOpacity;
+		this.lineWidth = lineWidth;
+		this.dashLength = dashLength;
+		this.animationInterval = 1000 / animationRate;
+		this.dashArraySequence = animationRate > 0 ? this.generateDashArraySequence() : [[1, 0]]; // Solid line if no animation
+		this.createArcs();
+		this.createArcLayer();
+		if (animationRate > 0) this.animateDashedLine();
+	}
+
+	createArcs() {
+		const arcFeatures = [];
+
+		function calculateControlPoint(start, end, baseDeflection) {
+			const lineLength = (0,_6_5_0_turf_min.distance)(start, end, {
+				units: 'kilometers'
+			});
+			const deflection = baseDeflection * lineLength / 1000;
+
+			const midX = (start[0] + end[0]) / 2;
+			const midY = (start[1] + end[1]) / 2;
+			const angle = Math.atan2(end[1] - start[1], end[0] - start[0]) + Math.PI / 2;
+			const controlX = midX + deflection * Math.cos(angle);
+			const controlY = midY + deflection * Math.sin(angle);
+			return [controlX, controlY];
+		}
+
+		const pointSourceData = this.dataset;
+
+		if (pointSourceData && pointSourceData.type === 'FeatureCollection') {
+			const sortedData = pointSourceData.features.sort((a, b) => {
+				return a.properties.seq - b.properties.seq;
+			});
+
+			for (let i = 0; i < sortedData.length - 1; i++) {
+				const startPoint = sortedData[i];
+				const endPoint = sortedData[i + 1];
+
+				const controlPoint = calculateControlPoint(
+					startPoint.geometry.coordinates,
+					endPoint.geometry.coordinates,
+					this.deflectionValue
+				);
+
+				const line = (0,_6_5_0_turf_min.lineString)([
+					startPoint.geometry.coordinates,
+					controlPoint,
+					endPoint.geometry.coordinates,
+				]);
+
+				const arc = (0,_6_5_0_turf_min.bezierSpline)(line, {
+					sharpness: 1
+				});
+
+				arcFeatures.push(arc);
+			}
+
+			this.arcFeatures = arcFeatures;
+		}
+	}
+
+	createArcLayer() {
+		this.map.addLayer({
+			id: this.arcLayerId,
+			type: 'line',
+			source: {
+				type: 'geojson',
+				data: {
+					type: 'FeatureCollection',
+					features: this.arcFeatures,
+				},
+			},
+			paint: {
+				'line-color': this.lineColor,
+				'line-opacity': this.lineOpacity,
+				'line-width': this.lineWidth,
+				'line-dasharray': this.dashArraySequence[0],
+			},
+		});
+	}
+
+	generateDashArraySequence() {
+		const dashArraySequence = [];
+		const dashLength = this.dashLength; // Maximum dash value in the sequence
+		const gapLength = dashLength / 2; // Gap value between dashes
+
+		for (let i = 0; i <= dashLength; i++) {
+			dashArraySequence.push([i, gapLength, dashLength - i]);
+		}
+
+		for (let i = 0; i <= gapLength; i++) {
+			dashArraySequence.push([0, i, dashLength, gapLength - i]);
+		}
+
+		return dashArraySequence;
+	}
+
+	animateDashedLine() {
+		let step = 0;
+    	let lastTimestamp = 0;
+		const animateDashArray = (timestamp) => {
+        	const elapsedTime = timestamp - lastTimestamp;
+	        if (elapsedTime >= this.animationInterval) {
+	            lastTimestamp = timestamp;
+	            const newStep = (step + 1) % this.dashArraySequence.length;
+	            this.map.setPaintProperty(
+	                this.arcLayerId,
+	                'line-dasharray',
+	                this.dashArraySequence[newStep]
+	            );
+	            step = newStep;
+	        }
+			requestAnimationFrame(animateDashArray);
+		}
+		requestAnimationFrame(animateDashArray);
+	}
+}
+;// CONCATENATED MODULE: ../app/whg/webpack/js/mapFunctions.js
+
+
+
+
+
+
+let mapParams;
+
+function addMapSource(mappy, ds) {
+	mappy.addSource(ds.id.toString(), {
+		'type': 'geojson',
+		'data': ds,
+		'attribution': attributionString(ds),
+	});
+}
+
+function addMapLayer(mappy, layer, ds) {
+	const modifiedLayer = { ...layer };
+    modifiedLayer.id = `${layer.id}_${ds.id}`;
+    modifiedLayer.source = ds.id.toString();
+    mappy.addLayer(filteredLayer(modifiedLayer));
+    if (!!ds.relations && layer.id == 'gl_active_point') {
+    	let circleColors = arrayColors(ds.relations);
+    	colorTable(circleColors, '#coll_detail');
+		mappy.setPaintProperty(modifiedLayer.id, 'circle-color', [
+		  'match',
+		  ['get', 'relation'],
+		  ...circleColors,
+		  '#ccc',
+		]);
+		mappy.setPaintProperty(modifiedLayer.id, 'circle-stroke-color', [
+		  'match',
+		  ['get', 'relation'],
+		  ...circleColors,
+		  '#ccc',
+		]);
+		const sequenceArcs = new SequenceArcs(mappy, ds, { /*animationRate: 0*/ });
+		mappy.moveLayer(sequenceArcs.arcLayerId, modifiedLayer.id);
+	}
+}
+	
+function updatePadding() {
+	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
+	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
+	window.mapPadding = {
+		top: ControlsRect.top - MapRect.top - mapParams.ControlsRectMargin,
+		bottom: MapRect.bottom - ControlsRect.bottom - mapParams.ControlsRectMargin,
+		left: ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin,
+		right: MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin,
+	};
+	//console.log('mapPadding recalculated:', window.mapPadding);
+}
+
+function updateBounds() {
+	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
+	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
+	const centerX = - mapParams.MapRectBorder + ControlsRect.left - MapRect.left + ControlsRect.width / 2;
+	const centerY = - mapParams.MapRectBorder + ControlsRect.top - MapRect.top + ControlsRect.height / 2;
+	const pseudoCenter = mapParams.mappy.unproject([centerX, centerY]);
+	window.mapBounds = {
+		'center': pseudoCenter
+	}
+	//console.log('window.mapBounds updated:', window.mapBounds);
+}
+
+// Control positioning of map, clear of overlays
+function recenterMap(mappy, duration) {
+	duration = duration ==  'lazy' ? 1000 : 0 // Set duration of movement
+	window.blockBoundsUpdate = true;
+	
+	if (window.mapBounds) {
+		if (Array.isArray(window.mapBounds) || !window.mapBounds.hasOwnProperty('center')) { // mapBounds might be a coordinate pair object returned by mappy.getBounds();
+			mappy.fitBounds(window.mapBounds, {
+				padding: window.mapPadding,
+				duration: duration
+			});
+		} else { // mapBounds has been set based on a center point and zoom
+			mappy.flyTo({
+				...window.mapBounds,
+				padding: window.mapPadding,
+				duration: duration
+			})
+		}
+	}
+}
+
+function initObservers(mappy) {
+	
+	mapParams = {
+		mappy: mappy,
+		ControlsRectEl: document.getElementById('mapControls'),
+		MapRectEl: document.querySelector('div.maplibregl-map'),
+		ControlsRectMargin: 4,
+		MapRectBorder: 1
+	}
+	
+	window.blockBoundsUpdate = false;
+	const resizeObserver = new ResizeObserver(function() { 
+		updatePadding();
+		recenterMap(mappy);
+	});
+
+	// Recenter map whenever its viewport changes size
+	resizeObserver.observe(mapParams.ControlsRectEl);
+	resizeObserver.observe(mapParams.MapRectEl);
+	
+	mappy.on('zoomend', function() { // Triggered by `flyTo` and `fitBounds` - must be blocked to prevent misalignment 
+		if (window.blockBoundsUpdate) {
+			window.blockBoundsUpdate = false;
+			//console.log('blockBoundsUpdate released.');
+		}
+		else {
+			updateBounds();
+		}
+	});
+	mappy.on('dragend', function() { updateBounds(); });
+	
+}
+
+function initOverlays(whgMap) {
+	const controlContainer = document.querySelector('.maplibregl-control-container');	
+	controlContainer.setAttribute('id', 'mapControls');
+	controlContainer.classList.add('item');
+
+	const mapOverlays = document.createElement('div');
+	mapOverlays.id = 'mapOverlays';
+	whgMap.appendChild(mapOverlays);
+
+	['left', 'right'].forEach(function(side) {
+		const column = document.createElement('div');
+		column.classList.add('column', side);
+		mapOverlays.appendChild(column);
+		const overlays = document.querySelectorAll('.overlay.' + side);
+		overlays.forEach(function(overlay) {
+			column.appendChild(overlay);
+			overlay.classList.add('item');
+		})
+		if (side == 'left') column.appendChild(controlContainer);
+	})
+
+	// Initialise Download link listener
+	$(".a-dl, .a-dl-celery").click(function(e) {
+		e.preventDefault();
+		let dsid = $(this).data('id');
+		let collid = $(this).data('collid');
+		let urly = '/datasets/dlcelery/'
+		$.ajax({
+			type: 'POST',
+			url: urly,
+			data: {
+				"format": 'lpf',
+				"dsid": dsid,
+				"collid": collid,
+				"csrfmiddlewaretoken": "{{ csrf_token }}"
+			},
+			datatype: 'json',
+			success: function(response) {
+				window.spinner_download = startSpinner("metadata"); // TODO: window.spinner_download.stop() not yet implemented anywhere?
+				task_id = response.task_id
+				var progressUrl = "/celery-progress/" + task_id + "/";
+				CeleryProgressBar.initProgressBar(progressUrl, {
+					pollingInterval: 500,
+					onResult: customResult,
+				})
+			}
+		})
+	})
+
+	// TODO: Collection download event handlers
+	$(".btn-cancel").click(function() {
+		$("#downloadModal").modal('hide')
+	})
+	let clearEl = function(el) {
+		$("#progress-bar").fadeOut()
+		el.html('')
+	}
+}
+
+function initPopups(mappy, activePopup, table) {
+
+	mapLayerStyles.forEach(function(layer) {
+		
+		window.ds_list.forEach(function(ds) {
+			const modifiedLayer = { ...layer };
+		    modifiedLayer.id = `${layer.id}_${ds.id}`;
+		    modifiedLayer.source = ds.id.toString();
+	
+			mappy.on('mouseenter', modifiedLayer.id, function(e) {
+				mappy.getCanvas().style.cursor = 'pointer';
+	
+				var pid = e.features[0].properties.pid;
+				var title = e.features[0].properties.title;
+				var min = e.features[0].properties.min;
+				var max = e.features[0].properties.max;
+	
+				if (activePopup) {
+					activePopup.remove();
+				}
+				activePopup = new maptilersdk.Popup({
+						closeButton: false
+					})
+					.setLngLat(e.lngLat)
+					.setHTML('<b>' + title + '</b><br/>' +
+						'Temporality: ' + (min ? min : '?') + '/' + (max ? max : '?') + '<br/>' +
+						'Click to focus'
+					)
+					.addTo(mappy);
+				activePopup.pid = pid;
+			});
+	
+			mappy.on('mousemove', modifiedLayer.id, function(e) {
+				if (activePopup) {
+					activePopup.setLngLat(e.lngLat);
+				}
+			});
+	
+			mappy.on('mouseleave', modifiedLayer.id, function() {
+				mappy.getCanvas().style.cursor = '';
+				if (activePopup) {
+					activePopup.remove();
+				}
+	
+			});
+	
+			mappy.on('click', modifiedLayer.id, function(e) {
+	
+				var pid;
+				if (activePopup && activePopup.pid) {
+					pid = activePopup.pid;
+					activePopup.remove();
+				} else pid = e.features[0].properties.pid;
+	
+				scrollToRowByProperty(table, 'pid', pid);
+	
+			})
+		    
+		});
+
+	});
+}
+
+function listSourcesAndLayers(mappy) {	
+	const style = mappy.getStyle();
+	const sources = style.sources;
+	console.log('Sources:', Object.keys(sources));
+	const layers = style.layers;
+	console.log('Layers:', layers.map(layer => layer.id));
+}
+
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/tableFunctions.js
 
 
@@ -3815,6 +3526,38 @@ function filterMap(mappy, val) {
 			}
 		});
 	});
+}
+
+function scrollToRowByProperty(table, propertyName, value) {
+    // Search for the row within the sorted and filtered view
+    var pageInfo = table.page.info();
+    var rowPosition = -1;
+    var rows = table.rows({
+        search: 'applied',
+        order: 'current'
+    }).nodes();
+    let selectedRow;
+    for (var i = 0; i < rows.length; i++) {
+        var rowData = table.row(rows[i]).data();
+        rowPosition++;
+        if (rowData.properties[propertyName] == value) {
+            selectedRow = rows[i];
+            break; // Stop the loop when the row is found
+        }
+    }
+
+    if (rowPosition !== -1) {
+        // Calculate the page number based on the row's position
+        var pageNumber = Math.floor(rowPosition / pageInfo.length);
+
+        // Check if the row is on the current page
+        if (pageInfo.page !== pageNumber) {
+            table.page(pageNumber).draw('page');
+        }
+
+        selectedRow.scrollIntoView();
+        $(selectedRow).trigger('click');
+    }
 }
 
 function highlightFeature(ds_pid, features, mappy) {
@@ -4009,6 +3752,7 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 				pid: data.properties.pid
 			});
 			$(row).data('cid', data.properties.cid);
+			$(row).data('seq', data.properties.seq);
 			if (!data.geometry) {
 				$(row).addClass('no-geometry');
 			}
@@ -4125,6 +3869,345 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 		checked_rows
 	}
 }
+;// CONCATENATED MODULE: ../app/whg/webpack/js/mapControls.js
+// /whg/webpack/js/mapControls.js
+
+
+
+
+
+
+class fullScreenControl {
+	onAdd() { 
+		this._map = map;
+		this._container = document.createElement('div');
+		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+		this._container.textContent = 'Fullscreen';
+		this._container.innerHTML =
+			'<button type="button" class="maplibregl-ctrl-fullscreen" aria-label="Enter fullscreen" title="Enter fullscreen">' +
+			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
+			'</button>';
+		return this._container;
+	}
+}
+
+class downloadMapControl {
+	onAdd() {
+		this._map = map;
+		this._container = document.createElement('div');
+		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+		this._container.textContent = 'Download image';
+		this._container.innerHTML =
+			'<button type="button" class="download-map-button" aria-label="Download map image" title="Download map image">' +
+			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
+			'</button>';
+		return this._container;
+	}
+}
+
+class sequencerControl {
+	onAdd() {
+		this.minSeq = window.ds_list_stats.seqmin;
+        this.maxSeq = window.ds_list_stats.seqmax;
+		console.log(`Sequence range (${window.ds_list_stats.seqmin}-${window.ds_list_stats.seqmax}).`);
+        if (this.minSeq == this.maxSeq) {
+			return;
+		}
+        
+		this._map = map;
+		this._container = document.createElement('div');
+		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group sequencer';
+		this._container.textContent = 'Explore sequence';
+		this._container.innerHTML = '';
+		this.currentSeq = undefined;
+		this.stepdelay = 3000;
+        this.playInterval = null;
+		
+		[['skip-first','First place in sequence'],['skip-previous','Previous place in sequence'],['skip-next','Next place in sequence'],['skip-last','Last place in sequence'],'separator',['play','Play from current place in sequence']].forEach((button) => {
+			this._container.innerHTML += button == 'separator' ? '<span class="separator"/>' : `<button id = "${button[0]}" type="button" style="background-image: url(/static/images/sequencer/${button[0]}-btn.svg)" aria-label="${button[1]}" title="${button[1]}" />`
+		});
+		
+		$('body').on('click','.sequencer button', (e) => {
+		    const sequencer = $('.sequencer');
+		    const action = $(e.target).attr('id');
+		    console.log('action',action,window.highlightedFeatureIndex);
+			if (['skip-previous', 'skip-next', 'play'].includes(action)) {
+				if (window.highlightedFeatureIndex == undefined) { // Nothing yet highlighted - highlight feature selected in table
+					let currentRow = $('#placetable tr.highlight-row');
+					this.currentSeq = currentRow.data('seq');
+					currentRow.click();
+				}
+			}
+			if (action=='play') {
+			    if (!sequencer.hasClass('playing')) {
+			        sequencer.addClass('playing');
+			        sequencer.find('button:not(#play)').prop('disabled', true);
+			        this.startPlayback();
+			    } else {
+			        sequencer.removeClass('playing');
+			        sequencer.find('button:not(#play)').prop('disabled', false);
+			        this.stopPlayback();
+			    }
+			}
+			else {
+				if (action=='skip-first') {
+					this.currentSeq = this.minSeq; 
+				    sequencer.find('button#skip-first,button#skip-previous').prop('disabled', true);
+				    sequencer.find('button#skip-last,button#skip-next').prop('disabled', false);
+				}
+				else if (action=='skip-previous') {
+					this.currentSeq -= 1; 
+					if (this.currentSeq == this.minSeq) {
+				    	sequencer.find('button#skip-first,button#skip-previous').prop('disabled', true);
+					} 
+				    sequencer.find('button#skip-last,button#skip-next').prop('disabled', false);
+				}
+				else if (action=='skip-next') {
+					this.currentSeq += 1; 
+					if (this.currentSeq == this.maxSeq) {
+				    	sequencer.find('button#skip-last,button#skip-next').prop('disabled', true);
+				    	if (sequencer.hasClass('playing')) {
+							this.stopPlayback();
+							sequencer.find('button#play').click();
+						}
+					} 
+				    sequencer.find('button#skip-first,button#skip-previous').prop('disabled', false);
+				}
+				else if (action=='skip-last') {
+					this.currentSeq = this.maxSeq; 
+				    sequencer.find('button#skip-last,button#skip-next').prop('disabled', true);
+				    sequencer.find('button#skip-first,button#skip-previous').prop('disabled', false);
+				}
+				
+				scrollToRowByProperty($('#placetable').DataTable(), 'seq', this.currentSeq);
+			}
+			
+		});
+		
+		return this._container;
+	}
+		
+	startPlayback() {
+		console.log('Starting sequence play...');
+		const skipNextButton = $('.sequencer button#skip-next');
+        this.playInterval = setInterval(() => {
+			console.log('moving...');
+			skipNextButton.prop('disabled', false).click().prop('disabled', true);
+        }, this.stepdelay);
+    }
+
+    stopPlayback() {
+        clearInterval(this.playInterval);
+        this.playInterval = null;
+    }
+}
+
+class StyleControl {
+	
+	constructor(mappy) {
+        this._mappy = mappy;
+    }
+	
+	onAdd() {
+		this._map = map;
+		this._container = document.createElement('div');
+		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+		this._container.textContent = 'Basemap';
+		this._container.innerHTML =
+			'<button type="button" class="style-button" aria-label="Change basemap style" title="Change basemap style">' +
+			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
+			'</button>';
+		this._container.querySelector('.style-button').addEventListener('click', this._onClick.bind(this));
+		return this._container;
+	}
+
+	onRemove() {
+		this._container.parentNode.removeChild(this._container);
+		this._map = undefined;
+	}
+
+	_onClick() {
+		let styleList = document.getElementById('mapStyleList');
+		if (!styleList) {
+			styleList = document.createElement('ul');
+			styleList.id = 'mapStyleList';
+			styleList.className = 'maplibre-styles-list';
+			const styleFilterValues = mapParameters.styleFilter.map(value => value.split('.')[0]);
+			for (const group of Object.values(maptilersdk.MapStyle)) {
+				// Check if the group.id is in the styleFilter array
+				if (mapParameters.styleFilter.length == 0 || styleFilterValues.includes(group.id)) {
+					const groupItem = document.createElement('li');
+					groupItem.textContent = group.name;
+					groupItem.className = 'group-item';
+					const variantList = document.createElement('ul');
+					variantList.className = 'variant-list';
+					for (const orderedVariant of group.orderedVariants) {
+						const datasetValue = group.id + '.' + orderedVariant.variantType;
+						if (mapParameters.styleFilter.length == 0 || mapParameters.styleFilter.includes(datasetValue)) {
+							const variantItem = document.createElement('li');
+							variantItem.textContent = orderedVariant.name;
+							variantItem.className = 'variant-item';
+							variantItem.dataset.value = datasetValue;
+							variantItem.addEventListener('click', this._onVariantClick.bind(this));
+							variantList.appendChild(variantItem);
+						}
+					}
+					groupItem.appendChild(variantList);
+					styleList.appendChild(groupItem);
+				}
+			}
+			this._container.appendChild(styleList);
+		}
+
+		styleList.classList.toggle('show');
+	}
+
+	_onVariantClick(event) {
+	
+		let mappy = this._mappy;
+	
+		const variantValue = event.target.dataset.value;
+		const style_code = variantValue.split(".");
+		console.log('Selected variant: ', variantValue, maptilersdk.MapStyle[style_code[0]][style_code[1]]);
+		mappy.setStyle(maptilersdk.MapStyle[style_code[0]][style_code[1]], {
+		  transformStyle: (previousStyle, nextStyle) => {
+		    const newSources = { ...nextStyle.sources };
+		    window.ds_list.forEach(ds => {
+		      newSources[ds.id.toString()] = previousStyle.sources[ds.id.toString()];
+		    });
+		    return {
+		      ...nextStyle,
+		      sources: newSources,
+		      layers: [
+		        ...nextStyle.layers,
+		        ...previousStyle.layers.filter(layer => mapLayerStyles.some(dslayer => layer.id.startsWith(dslayer.id)))
+		      ]
+		    };
+		  }
+		});
+
+		const styleList = document.getElementById('mapStyleList');
+		if (styleList) {
+			styleList.classList.remove('show');
+		}
+	}
+}
+
+class CustomAttributionControl extends maptilersdk.AttributionControl {
+    constructor(options) {
+        super(options);
+        this.autoClose = options.autoClose !== false;
+    }
+    onAdd(map) {
+        const container = super.onAdd(map);
+        // Automatically close the AttributionControl if autoClose is enabled
+        if (this.autoClose) {
+            const attributionButton = container.querySelector('.maplibregl-ctrl-attrib-button');
+            if (attributionButton) {
+                attributionButton.dispatchEvent(new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                }));
+                container.classList.add('fade-in');
+            }
+        }
+        return container;
+    }
+}
+
+function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table){
+
+	if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
+	
+	if (mapParameters.styleFilter.length !== 1) {
+		mappy.addControl(new StyleControl(mappy), 'top-right');
+	}
+	
+	mappy.addControl(new fullScreenControl(), 'top-left');
+	mappy.addControl(new downloadMapControl(), 'top-left');
+	
+	if (!!mapParameters.controls.sequencer) {
+		mappy.addControl(new sequencerControl(), 'bottom-left');
+	}
+	
+	mappy.addControl(new CustomAttributionControl({
+		compact: true,
+    	autoClose: mapParameters.controls.attribution.open === false,
+	}), 'bottom-right');
+
+	function dateRangeChanged(fromValue, toValue){
+		// Throttle date slider changes using debouncing
+		// Ought to be possible to use promises on the `render` event
+		let debounceTimeout;
+	    function debounceFilterApplication() {
+	        clearTimeout(debounceTimeout);
+	        debounceTimeout = setTimeout(toggleFilters(true, mappy, table), 300);
+	    }
+	    debounceFilterApplication(); 
+	}
+
+	if (window.dateline) {
+		window.dateline.destroy();
+		window.dateline = null;
+	}
+	if (datelineContainer) {
+		datelineContainer.remove();
+		datelineContainer = null;
+	}
+
+	if (!!mapParameters.controls.temporal) {
+		datelineContainer = document.createElement('div');
+		datelineContainer.id = 'dateline';
+		document.getElementById('mapControls').appendChild(datelineContainer);
+
+		const range = window.ds_list_stats.max - window.ds_list_stats.min;
+		const buffer = range * 0.1; // 10% buffer
+
+		// Update the temporal settings
+		mapParameters.controls.temporal.fromValue = window.ds_list_stats.min;
+		mapParameters.controls.temporal.toValue = window.ds_list_stats.max;
+		mapParameters.controls.temporal.minValue = window.ds_list_stats.min - buffer;
+		mapParameters.controls.temporal.maxValue = window.ds_list_stats.max + buffer;
+
+		window.dateline = new Dateline({
+			...mapParameters.controls.temporal,
+			onChange: dateRangeChanged
+		});
+	};
+	
+	document.addEventListener('click', function(event) {
+        
+        if (event.target && event.target.parentNode) {
+			const parentNodeClassList = event.target.parentNode.classList;
+			
+			if (parentNodeClassList.contains('maplibregl-ctrl-fullscreen')) {
+				console.log('Switching to fullscreen.');
+				parentNodeClassList.replace('maplibregl-ctrl-fullscreen', 'maplibregl-ctrl-shrink');
+				document.getElementById('mapOverlays').classList.add('fullscreen');
+			} 
+			else if (parentNodeClassList.contains('maplibregl-ctrl-shrink')) {
+				console.log('Switching off fullscreen.');
+				parentNodeClassList.replace('maplibregl-ctrl-shrink', 'maplibregl-ctrl-fullscreen');
+				document.getElementById('mapOverlays').classList.remove('fullscreen');
+			}
+			else if (parentNodeClassList.contains('dateline-button')) {
+	            toggleFilters($('.range_container.expanded').length > 0, mappy, table);
+	        }
+			else if (parentNodeClassList.contains('download-map-button')) {
+				generateMapImage(mappy);
+			}
+			
+		}
+
+	});
+	
+	return { datelineContainer, mapParameters }
+	
+}
+
+
+
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/collections.js
 // pids generate new CollPlace (collection_collplace) and
 // TraceAnnotation records (trace_annotations
@@ -4347,7 +4430,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	});
 	
 	window.ds_list_stats = get_ds_list_stats(allFeatures);
-	//console.log('window.ds_list_stats', window.ds_list_stats);
+	console.log('window.ds_list_stats', window.ds_list_stats);
 	
 	mapLayerStyles.forEach(function(layer) { // Ensure proper layer order for multiple datasets
 		window.ds_list.forEach(function(ds) {

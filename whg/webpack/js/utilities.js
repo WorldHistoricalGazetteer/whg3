@@ -219,13 +219,20 @@ export function minmaxer(timespans) {
 export function get_ds_list_stats(allFeatures) {
 	let min = Infinity;
 	let max = -Infinity;
+    let seqMin = Infinity;
+    let seqMax = -Infinity;
 	for (let i = 0; i < allFeatures.length; i++) {
 		const featureMin = allFeatures[i].properties.min;
 		const featureMax = allFeatures[i].properties.max;
+		const seqValue = allFeatures[i].properties.seq;
 		if (!isNaN(featureMin) && !isNaN(featureMax)) {
 			min = Math.min(min, featureMin);
 			max = Math.max(max, featureMax);
 		}
+        if (!isNaN(seqValue)) {
+            seqMin = Math.min(seqMin, seqValue);
+            seqMax = Math.max(seqMax, seqValue);
+        }
 	}
 	if (!isFinite(min)) min = -3000;
 	if (!isFinite(max)) max = 2000;
@@ -238,6 +245,8 @@ export function get_ds_list_stats(allFeatures) {
 	return {
 		min: min,
 		max: max,
+        seqmin: seqMin,
+        seqmax: seqMax,
 		extent: bbox(geojson)
 	}
 }
