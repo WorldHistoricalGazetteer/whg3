@@ -1,12 +1,6 @@
-import {
-	envelope
-} from './6.5.0_turf.min.js'
-import {
-	getPlace
-} from './getPlace';
-import {
-	startSpinner
-} from './utilities';
+import { envelope } from './6.5.0_turf.min.js';
+import { getPlace } from './getPlace';
+import { startSpinner } from './utilities';
 import {
 	updatePadding,
 	recenterMap,
@@ -244,18 +238,18 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		];
 	} else { // Collections
 		columns = [{
-                    title: "seq",
-                    data: "properties.seq"
-                }, {
-                    title: "title",
-                    data: "properties.title"
-                }, {
-                    title: "country",
-                    data: "properties.ccodes"
-                }, {
-                    data: "properties.pid"
-                }
-            ];
+                title: "seq",
+                data: "properties.seq"
+            }, {
+                title: "title",
+                data: "properties.title"
+            }, {
+                title: "country",
+                data: "properties.ccodes"
+            }, {
+                data: "properties.pid"
+            }
+        ];
             
 		columnDefs = [{
 				orderable: false,

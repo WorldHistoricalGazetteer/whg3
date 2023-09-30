@@ -2561,7 +2561,6 @@ function equidistantLCHColors(numColors) {
 		const hueValue_adjusted = hueValue_adjust ? hueValue_raw + hue_avoid_tolerance * 2 : hueValue_raw
 		const color = (0,chroma_min.lch)(50, 70, hueValue_adjusted % 360).hex();
 		colors.push(color);
-		console.log(color, hueValue_adjusted);
 	}
 	return colors;
 }
@@ -2844,7 +2843,137 @@ function toggleFilters(on, mappy, table){
 }
 
 
+;// CONCATENATED MODULE: ../app/whg/webpack/js/mapSequenceArcs.js
+// mapSequenceArcs.js
+
+
+
+class SequenceArcs {
+	constructor(map, dataset, { deflectionValue = 1, lineColor = '#888', lineOpacity = .8, lineWidth = 1, dashLength = 8, animationRate = 12 } = {}) { // animationRate = steps per second
+		this.map = map;
+		this.dataset = dataset;
+		this.arcLayerId = 'sequence-arcs-layer';
+		this.deflectionValue = deflectionValue;
+		this.lineColor = lineColor;
+		this.lineOpacity = lineOpacity;
+		this.lineWidth = lineWidth;
+		this.dashLength = dashLength;
+		this.animationInterval = 1000 / animationRate;
+		this.dashArraySequence = animationRate > 0 ? this.generateDashArraySequence() : [[1, 0]]; // Solid line if no animation
+		this.createArcs();
+		this.createArcLayer();
+		if (animationRate > 0) this.animateDashedLine();
+	}
+
+	createArcs() {
+		const arcFeatures = [];
+
+		function calculateControlPoint(start, end, baseDeflection) {
+			const lineLength = (0,_6_5_0_turf_min.distance)(start, end, {
+				units: 'kilometers'
+			});
+			const deflection = baseDeflection * lineLength / 1000;
+
+			const midX = (start[0] + end[0]) / 2;
+			const midY = (start[1] + end[1]) / 2;
+			const angle = Math.atan2(end[1] - start[1], end[0] - start[0]) + Math.PI / 2;
+			const controlX = midX + deflection * Math.cos(angle);
+			const controlY = midY + deflection * Math.sin(angle);
+			return [controlX, controlY];
+		}
+
+		const pointSourceData = this.dataset;
+
+		if (pointSourceData && pointSourceData.type === 'FeatureCollection') {
+			const sortedData = pointSourceData.features.sort((a, b) => {
+				return a.properties.seq - b.properties.seq;
+			});
+
+			for (let i = 0; i < sortedData.length - 1; i++) {
+				const startPoint = sortedData[i];
+				const endPoint = sortedData[i + 1];
+
+				const controlPoint = calculateControlPoint(
+					startPoint.geometry.coordinates,
+					endPoint.geometry.coordinates,
+					this.deflectionValue
+				);
+
+				const line = (0,_6_5_0_turf_min.lineString)([
+					startPoint.geometry.coordinates,
+					controlPoint,
+					endPoint.geometry.coordinates,
+				]);
+
+				const arc = (0,_6_5_0_turf_min.bezierSpline)(line, {
+					sharpness: 1
+				});
+
+				arcFeatures.push(arc);
+			}
+
+			this.arcFeatures = arcFeatures;
+		}
+	}
+
+	createArcLayer() {
+		this.map.addLayer({
+			id: this.arcLayerId,
+			type: 'line',
+			source: {
+				type: 'geojson',
+				data: {
+					type: 'FeatureCollection',
+					features: this.arcFeatures,
+				},
+			},
+			paint: {
+				'line-color': this.lineColor,
+				'line-opacity': this.lineOpacity,
+				'line-width': this.lineWidth,
+				'line-dasharray': this.dashArraySequence[0],
+			},
+		});
+	}
+
+	generateDashArraySequence() {
+		const dashArraySequence = [];
+		const dashLength = this.dashLength; // Maximum dash value in the sequence
+		const gapLength = dashLength / 2; // Gap value between dashes
+
+		for (let i = 0; i <= dashLength; i++) {
+			dashArraySequence.push([i, gapLength, dashLength - i]);
+		}
+
+		for (let i = 0; i <= gapLength; i++) {
+			dashArraySequence.push([0, i, dashLength, gapLength - i]);
+		}
+
+		return dashArraySequence;
+	}
+
+	animateDashedLine() {
+		let step = 0;
+    	let lastTimestamp = 0;
+		const animateDashArray = (timestamp) => {
+        	const elapsedTime = timestamp - lastTimestamp;
+	        if (elapsedTime >= this.animationInterval) {
+	            lastTimestamp = timestamp;
+	            const newStep = (step + 1) % this.dashArraySequence.length;
+	            this.map.setPaintProperty(
+	                this.arcLayerId,
+	                'line-dasharray',
+	                this.dashArraySequence[newStep]
+	            );
+	            step = newStep;
+	        }
+			requestAnimationFrame(animateDashArray);
+		}
+		requestAnimationFrame(animateDashArray);
+	}
+}
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/mapFunctions.js
+
 
 
 
@@ -2879,6 +3008,8 @@ function addMapLayer(mappy, layer, ds) {
 		  ...circleColors,
 		  '#ccc',
 		]);
+		const sequenceArcs = new SequenceArcs(mappy, ds, { /*animationRate: 0*/ });
+		mappy.moveLayer(sequenceArcs.arcLayerId, modifiedLayer.id);
 	}
 }
 	
@@ -3794,18 +3925,18 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 		];
 	} else { // Collections
 		columns = [{
-                    title: "seq",
-                    data: "properties.seq"
-                }, {
-                    title: "title",
-                    data: "properties.title"
-                }, {
-                    title: "country",
-                    data: "properties.ccodes"
-                }, {
-                    data: "properties.pid"
-                }
-            ];
+                title: "seq",
+                data: "properties.seq"
+            }, {
+                title: "title",
+                data: "properties.title"
+            }, {
+                title: "country",
+                data: "properties.ccodes"
+            }, {
+                data: "properties.pid"
+            }
+        ];
             
 		columnDefs = [{
 				orderable: false,

@@ -1,6 +1,7 @@
 import datasetLayers from './mapLayerStyles';
 import { attributionString, arrayColors, colorTable } from './utilities';
 import { filteredLayer } from './mapFilters';
+import SequenceArcs from './mapSequenceArcs';
 
 let mapParams;
 
@@ -32,6 +33,8 @@ export function addMapLayer(mappy, layer, ds) {
 		  ...circleColors,
 		  '#ccc',
 		]);
+		const sequenceArcs = new SequenceArcs(mappy, ds, { /*animationRate: 0*/ });
+		mappy.moveLayer(sequenceArcs.arcLayerId, modifiedLayer.id);
 	}
 }
 	
