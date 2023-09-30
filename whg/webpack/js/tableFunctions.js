@@ -178,9 +178,12 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 
 	// Define Datatable columns based on ds_type
 	let columns;
+	let columnDefs;
+	let order;
 	if (!isCollection) { // Datasets
 
 		const check_column = window.loggedin ? {
+            title: "<a href='#' rel='tooltip' title='add one or more rows to a collection'><i class='fas fa-question-circle linkypop'></i></a>",
 			data: "properties.pid",
 			render: function(data, type, row) {
 				return `<input type="checkbox" name="addme" class="table-chk" data-id="${data}"/>`;
@@ -192,15 +195,18 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		}
 
 		columns = [{
+                title: "pid",
 				data: "properties.pid",
 				render: function(data, type, row) {
 					return `<a href="http://localhost:8000//api/db/?id=${data}" target="_blank">${data}</a>`;
 				}
 			},
 			{
+                title: "title",
 				data: "properties.title"
 			},
 			{
+                title: "geo",
 				data: "geometry",
 				render: function(data, type, row) {
 					if (data) {
@@ -211,28 +217,14 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 				}
 			},
 			{
+                title: "dataset",
 				data: function(row) {
 					return row.properties.dslabel || null;
 				}
 			},
 			check_column
 		];
-	} else { // Collections
-		columns = [{
-                    "data": "properties.pid"
-                }, {
-                    "data": "properties.title"
-                }, {
-                    "data": "properties.ccodes"
-                }, {
-                    "data": "properties.seq"
-                }
-            ];
-	}
-
-	// Define columnDefs based on ds_type
-	let columnDefs;
-	if (!isCollection) { // Datasets
+		
 		columnDefs = [{
 				orderable: false,
 				"targets": [0, 2, 4]
@@ -246,15 +238,40 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 				"targets": [3]
 			}
 		];
+		
+		order = [
+			[1, 'asc']
+		];
 	} else { // Collections
-		columnDefs = [{
-                    visible: false,
-                    "targets": [3]
+		columns = [{
+                    title: "seq",
+                    data: "properties.seq"
                 }, {
-                    searchable: false,
-                    "targets": [2]
+                    title: "title",
+                    data: "properties.title"
+                }, {
+                    title: "country",
+                    data: "properties.ccodes"
+                }, {
+                    data: "properties.pid"
                 }
             ];
+            
+		columnDefs = [{
+				orderable: false,
+				"targets": []
+			},{
+                searchable: false,
+                "targets": [2]
+            },{
+                visible: false,
+                "targets": [3]
+            }
+        ];
+		
+		order = [
+			[0, 'asc']
+		];
 	}
 
 	table = $('#placetable').DataTable({
@@ -263,11 +280,9 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 			"<'row'<'col-sm-12'tr>>" +
 			"<'row small'<'col-sm-12'p>>",
 		select: true,
-		order: [
-			[1, 'asc']
-		],
 		columns: columns,
 		columnDefs: columnDefs,
+		order: order,
 		data: features,
 		rowId: 'properties.pid',
 		createdRow: function(row, data, dataIndex) {
