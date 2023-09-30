@@ -133,10 +133,11 @@ export function initUtils(mappy) {
 	});
 	
 	// image modal
-	$("body").on("click", ".pop", function() {
-	    let url = $(this).find('img').attr('src')
-        let txt = $(this).find('img').attr('alt')
-        let re = /(.png|.jpg|.jpeg|.gif|.tif)/g
+	$("body").on("click", ".pop, #anno_img", function() {
+		let image = $(this).is('img') ? $(this) : $(this).find('img:first');
+	    let url = image.attr('src')
+        let txt = image.attr('alt')
+        // let re = /(.png|.jpg|.jpeg|.gif|.tif)/g // TODO: Remove if not required
         console.log('url', url)
         $("#header_text").html(txt)
         $('.imagepreview').attr('src', url);
