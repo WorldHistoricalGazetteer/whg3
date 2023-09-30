@@ -313,6 +313,34 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 	background-size: 26px;
 }
 
+.sequencer {
+  display: flex;
+  justify-content: space-between;
+  gap: 2px;
+  padding: 4px;
+  opacity: .8;
+}
+
+.sequencer button {
+	border: none!important;
+	background-position: 50%;
+    background-repeat: no-repeat;
+    background-size: 26px;
+    display: block;
+    height: 26px;
+    width: 34px;
+}
+
+.sequencer.playing button#play {
+	background-image: url(ad78a410c14caa3213e6.svg)!important;
+}
+
+.sequencer .separator {
+	border-right: 1px solid #ccc;
+    width: 6px;
+    margin-right: 6px;
+}
+
 /* Reset the default list styles */
 .maplibre-styles-list,
 .maplibre-styles-list ul,

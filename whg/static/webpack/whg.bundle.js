@@ -2315,7 +2315,7 @@ class fullScreenControl {
 		this._map = map;
 		this._container = document.createElement('div');
 		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-		this._container.textContent = 'Basemap';
+		this._container.textContent = 'Fullscreen';
 		this._container.innerHTML =
 			'<button type="button" class="maplibregl-ctrl-fullscreen" aria-label="Enter fullscreen" title="Enter fullscreen">' +
 			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
@@ -2329,11 +2329,38 @@ class downloadMapControl {
 		this._map = map;
 		this._container = document.createElement('div');
 		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-		this._container.textContent = 'Basemap';
+		this._container.textContent = 'Download image';
 		this._container.innerHTML =
 			'<button type="button" class="download-map-button" aria-label="Download map image" title="Download map image">' +
 			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
 			'</button>';
+		return this._container;
+	}
+}
+
+class sequencerControl {
+	onAdd() {
+		this._map = map;
+		this._container = document.createElement('div');
+		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group sequencer';
+		this._container.textContent = 'Explore sequence';
+		this._container.innerHTML = '';
+		[['skip-backward','First place in sequence'],['skip-start','Previous place in sequence'],['skip-end','Next place in sequence'],['skip-forward','Last place in sequence'],'separator',['play','Play from current place in sequence'],/*['pause','Pause'],['stop','Stop']*/].forEach((button) => {
+			this._container.innerHTML += button == 'separator' ? '<span class="separator"/>' : `<button id = "${button[0]}" type="button" style="background-image: url(/static/images/sequencer/${button[0]}-btn.svg)" aria-label="${button[1]}" title="${button[1]}" />`
+		});
+		
+		$('body').on('click','.sequencer button#play',function(){
+		    const sequencer = $('.sequencer');
+			console.log(sequencer);
+		    if (!sequencer.hasClass('playing')) {
+		        sequencer.addClass('playing');
+		        sequencer.find('button:lt(4)').prop('disabled', true);
+		    } else {
+		        sequencer.removeClass('playing');
+		        sequencer.find('button:lt(4)').prop('disabled', false);
+		    }
+		});
+		
 		return this._container;
 	}
 }
@@ -2462,6 +2489,10 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 	
 	mappy.addControl(new fullScreenControl(), 'top-left');
 	mappy.addControl(new downloadMapControl(), 'top-left');
+	
+	if (!!mapParameters.controls.sequencer) {
+		mappy.addControl(new sequencerControl(), 'bottom-left');
+	}
 	
 	mappy.addControl(new CustomAttributionControl({
 		compact: true,

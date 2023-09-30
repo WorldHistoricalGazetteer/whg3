@@ -203,16 +203,8 @@
             attribution: {
                 open: false,
             },
-            temporal: {
-                fromValue: 1550,
-                toValue: 1720,
-                minValue: -2000,
-                maxValue: 2100,
-                open: false,
-                includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
-                epochs: null,
-                automate: null,
-            }
+            temporal: false,
+            sequencer: true,
         },
         styleFilter: [ /* 'TOPO.PASTEL','BASIC.DEFAULT' */ ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
     }
