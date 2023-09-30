@@ -136,8 +136,8 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 }
 
 .download-map-button .maplibregl-ctrl-icon {
-	background: url(../images/map-download.svg);
-	background-size: contain;
+	background: url(../images/camera.svg);
+	background-size: 26px;
 }
 
 /* Reset the default list styles */

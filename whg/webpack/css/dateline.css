@@ -49,10 +49,10 @@
   color: var(--slider-button-color);
   font-size: 12px;
   font-weight: bold;
-  background-image: url(../images/clock-lines.svg);
+  background-image: url(../images/stopwatch.svg);
   background-repeat: no-repeat;
   background-position: center center;
-  background-size: 24px;
+  background-size: 21px;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
 }
 

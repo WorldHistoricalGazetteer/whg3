@@ -309,8 +309,8 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 }
 
 .download-map-button .maplibregl-ctrl-icon {
-	background: url(d44a0484951f174ed6d0.svg);
-	background-size: contain;
+	background: url(b2af296ddc064f436973.svg);
+	background-size: 26px;
 }
 
 /* Reset the default list styles */
@@ -524,10 +524,10 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
   color: var(--slider-button-color);
   font-size: 12px;
   font-weight: bold;
-  background-image: url(986060b30f71ea0ed69c.svg);
+  background-image: url(1bbdf2b9215043fd19f3.svg);
   background-repeat: no-repeat;
   background-position: center center;
-  background-size: 24px;
+  background-size: 21px;
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
 }
 
