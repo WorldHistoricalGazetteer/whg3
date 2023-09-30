@@ -2345,7 +2345,7 @@ class sequencerControl {
 		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group sequencer';
 		this._container.textContent = 'Explore sequence';
 		this._container.innerHTML = '';
-		[['skip-backward','First place in sequence'],['skip-start','Previous place in sequence'],['skip-end','Next place in sequence'],['skip-forward','Last place in sequence'],'separator',['play','Play from current place in sequence'],/*['pause','Pause'],['stop','Stop']*/].forEach((button) => {
+		[['skip-backward','First place in sequence'],['skip-start','Previous place in sequence'],['skip-end','Next place in sequence'],['skip-forward','Last place in sequence'],'separator',['play','Play from current place in sequence']].forEach((button) => {
 			this._container.innerHTML += button == 'separator' ? '<span class="separator"/>' : `<button id = "${button[0]}" type="button" style="background-image: url(/static/images/sequencer/${button[0]}-btn.svg)" aria-label="${button[1]}" title="${button[1]}" />`
 		});
 		
