@@ -1,25 +1,21 @@
 // mapSequenceArcs.js
 
-import {
-	distance,
-	lineString,
-	bezierSpline
-} from './6.5.0_turf.min.js';
+import { distance, lineString, bezierSpline } from './6.5.0_turf.min.js';
 
 export default class SequenceArcs {
-	constructor(map, dataset, { deflectionValue = 1, lineColor = '#888', lineOpacity = .8, lineWidth = 1, dashLength = 8, animationRate = 12 } = {}) { // animationRate = steps per second
+	constructor(map, dataset, { deflectionValue = 1, lineColor = '#888', lineOpacity = .8, lineWidth = 1, dashLength = 8, animationRate = 1 } = {}) { // animationRate = steps per second
 		this.map = map;
 		this.dataset = dataset;
 		this.arcSourceId = 'sequence-arcs-source';
 		this.arcLayerId = 'sequence-arcs-layer';
 		window.additionalLayers.push(['sequence-arcs-source','sequence-arcs-layer']);
-		this.deflectionValue = deflectionValue;
+		this.deflectionValue = deflectionValue; // Defines curvature of arc (displacement of arc's centre-point is proportional to its length)
 		this.lineColor = lineColor;
 		this.lineOpacity = lineOpacity;
 		this.lineWidth = lineWidth;
-		this.dashLength = dashLength;
-		this.animationInterval = 1000 / animationRate;
-		this.dashArraySequence = animationRate > 0 ? this.generateDashArraySequence() : [[1, 0]]; // Solid line if no animation
+		this.dashLength = dashLength; // Must be > 0
+		this.animationInterval = animationRate > 0 ? 1000 / (animationRate * dashLength * 1.5) : null; // animationRate is number of full dash-cycles per second
+		this.dashArraySequence = animationRate > 0 ? this.generateDashArraySequence() : [[1, 0]]; // Draw solid line if no animation
 		this.createArcs();
 		this.createArcLayer();
 		if (animationRate > 0) this.animateDashedLine();

@@ -156,6 +156,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
     display: block;
     height: 26px;
     width: 34px;
+    color: black;
 }
 
 .sequencer button:disabled {
@@ -170,6 +171,35 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 	border-right: 1px solid #ccc;
     width: 6px;
     margin-right: 6px;
+}
+
+.sequencer #stepDelayDropbox {
+	display: none;
+	padding: 0;
+}
+
+.sequencer #stepDelayDropbox select {
+	position: relative;
+    top: 3px;
+    height: 20px;
+    border: 2px solid #2f932d;
+    border-radius: 4px;
+}
+
+.sequencer #stepDelayDropbox select:focus {
+  box-shadow: 0 0 3px rgba(0, 123, 255, 0.5);
+  outline: none;
+  border-radius: 4px;
+}
+
+.sequencer #stepDelayDropbox select::before {
+  content: '▼'; /* Unicode arrow character or custom icon */
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  font-size: 12px; /* Adjust font size as needed */
+  color: #555; /* Color of the arrow */
 }
 
 /* Reset the default list styles */

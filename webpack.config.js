@@ -34,6 +34,11 @@ module.exports = {
       filename: '[name].bundle.css',
     }),
   ],
+  resolve: {
+    alias: {
+      'jquery': path.resolve(__dirname, 'static/admin/js/vendor/jquery/jquery.js'),
+    },
+  },
   optimization: {
     minimize: false,
     minimizer: [

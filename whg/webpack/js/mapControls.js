@@ -49,23 +49,33 @@ class sequencerControl {
 		this._container.innerHTML = '';
 		this.currentSeq = this.minSeq;
 		this.playing = false;
-		this.stepdelay = 3000;
+		this.stepdelay = 3;
         this.playInterval = null;
         
         this.buttons = [
-			['skip-first','First place in sequence','Already at start of sequence','Disabled during play'],
-			['skip-previous','Previous place in sequence','Already at start of sequence','Disabled during play'],
-			['skip-next','Next place in sequence','Already at end of sequence','Disabled during play'],
-			['skip-last','Last place in sequence','Already at end of sequence','Disabled during play'],
+			['skip-first','First waypoint','Already at first waypoint','Disabled during play'],
+			['skip-previous','Previous waypoint','Already at first waypoint','Disabled during play'],
+			['skip-next','Next waypoint','Already at last waypoint','Disabled during play'],
+			['skip-last','Last waypoint','Already at last waypoint','Disabled during play'],
 			'separator',
-			['play','Play from current place in sequence','Cannot play from end of sequence','Stop playing sequence']
+			['play','Play from current waypoint: hold to change speed','Cannot play from last waypoint','Stop playing waypoints']
 		];
 		
 		this.buttons.forEach((button) => {
 			this._container.innerHTML += button == 'separator' ? '<span class="separator"/>' : `<button id = "${button[0]}" type="button" style="background-image: url(/static/images/sequencer/${button[0]}-btn.svg)" ${['skip-first', 'skip-previous'].includes(button[0]) ? 'disabled ' : ''}aria-label="${button[1]}" title="${button[1]}" />`
 		});
 		
-		$('body').on('click','.sequencer button', (e) => {
+		let longClickTimeout;
+		let initialisingSlider = false;
+		$('body').on('mousedown', '.sequencer:not(.playing) button#play', () => {
+		  createSelect.call(this);
+		  longClickTimeout = setTimeout(() => {
+		      $('#stepDelayDropbox').show();
+		      initialisingSlider = true;
+		  }, 1000);
+		});
+		
+		$('body').on('mouseup','.sequencer button', (e) => {
 		    const sequencer = $('.sequencer');
 		    const action = $(e.target).attr('id');
 		    
@@ -76,19 +86,28 @@ class sequencerControl {
 					$('#placetable tr.highlight-row').click();
 					return;
 				}
-				else if (action == 'play') {
+				else if (action == 'play' && !initialisingSlider) {
 					this.currentSeq -= 1; // Play will commence by re-adding 1
 				}
 			}
 			
 			if (action=='play') {
-			    if (!this.playing) {
-			        sequencer.addClass('playing');
-			        this.startPlayback();
-			    } else {
-					this.stopPlayback();
-			        return;
-			    }
+				
+		  		clearTimeout(longClickTimeout);
+				if (initialisingSlider) {
+		  			initialisingSlider = false;
+		  			return;
+				}
+				else {
+					$('#stepDelayDropbox').hide();
+				    if (!this.playing) {
+				        sequencer.addClass('playing');
+				        this.startPlayback();
+				    } else {
+						this.stopPlayback();
+				        return;
+				    }
+				}
 			}
 			else {
 				if (action=='skip-first') {
@@ -114,6 +133,24 @@ class sequencerControl {
 			this.updateButtons();
 			
 		});
+		
+		function createSelect() {
+		  if ($('#stepDelayDropbox').length === 0) {
+		    const $dropboxContainer = $('<div id="stepDelayDropbox" class="sequencer"></div>');
+		    $(this._container).append($dropboxContainer);
+		    const $select = $('<select title="Set delay between waypoints" aria-label="Set delay between waypoints"></select>');
+		    $dropboxContainer.append($select);
+		    for (let i = 1; i <= 20; i++) {
+		      const $option = $(`<option value="${i}">${i}s</option>`);
+		      $select.append($option);
+		    }
+		    $select.val(this.stepdelay);
+		    $select.on('change', (event) => {
+		      const newValue = parseInt(event.target.value);
+		      this.stepdelay = newValue;
+		    });
+		  }
+		}
 
 		return this._container;
 	}
@@ -156,7 +193,7 @@ class sequencerControl {
         if (this.currentSeq < this.maxSeq) {
 			this.playInterval = setInterval(() => {
 				this.clickNext();
-	        }, this.stepdelay);
+	        }, this.stepdelay * 1000);
 		}
     }
 

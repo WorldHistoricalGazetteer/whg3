@@ -36,6 +36,8 @@ services:
       context: .
       dockerfile: ./compose/local/webpack/Dockerfile-webpack
     image: whg3_webpack
+    logging:
+      driver: local
     volumes:
       - .:/app
 

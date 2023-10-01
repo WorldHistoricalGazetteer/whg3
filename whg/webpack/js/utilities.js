@@ -1,10 +1,6 @@
-import {
-	bbox
-} from './6.5.0_turf.min.js'
+import { bbox } from './6.5.0_turf.min.js'
 import ClipboardJS from '/webpack/node_modules/clipboard';
-import {
-	lch
-} from './chroma.min.js'
+import { lch } from './chroma.min.js'
 
 export function equidistantLCHColors(numColors) {
 	const colors = [];
