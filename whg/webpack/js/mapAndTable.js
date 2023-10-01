@@ -19,6 +19,7 @@ const whgMap = document.getElementById(mapParameters.container);
 window.mapPadding;
 window.mapBounds;
 window.highlightedFeatureIndex;
+window.additionalLayers = []; // Keep track of added map sources and layers - required for baselayer switching
 
 let activePopup;
 

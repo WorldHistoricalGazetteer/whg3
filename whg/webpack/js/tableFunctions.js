@@ -1,12 +1,9 @@
 import { envelope } from './6.5.0_turf.min.js';
 import { getPlace } from './getPlace';
 import { startSpinner } from './utilities';
-import {
-	updatePadding,
-	recenterMap,
-	listSourcesAndLayers
-} from './mapFunctions';
+import { updatePadding, recenterMap/*, listSourcesAndLayers*/ } from './mapFunctions';
 import datasetLayers from './mapLayerStyles';
+import { mapSequencer } from './mapControls';
 
 let table;
 
@@ -345,6 +342,9 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 				$("#selection_status").show()
 			}
 			highlightFirstRow();
+			if (!!mapSequencer) {
+				mapSequencer.updateButtons();
+			}
 		}
 	});
 
@@ -405,6 +405,16 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		getPlace(ds_pid.pid, $(this).data('cid'), spinner_detail);
 
 		highlightFeature(ds_pid, features, mappy);
+		
+		if (!!mapSequencer) {
+			mapSequencer.updateButtons();
+			if (mapSequencer.continuePlay) {
+				mapSequencer.continuePlay = false;
+			}
+			else if (mapSequencer.playing) {
+				mapSequencer.stopPlayback();
+			}
+		}
 
 	});
 
@@ -439,3 +449,5 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		checked_rows
 	}
 }
+
+export { table };

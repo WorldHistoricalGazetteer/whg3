@@ -3061,7 +3061,9 @@ class SequenceArcs {
 	constructor(map, dataset, { deflectionValue = 1, lineColor = '#888', lineOpacity = .8, lineWidth = 1, dashLength = 8, animationRate = 12 } = {}) { // animationRate = steps per second
 		this.map = map;
 		this.dataset = dataset;
+		this.arcSourceId = 'sequence-arcs-source';
 		this.arcLayerId = 'sequence-arcs-layer';
+		window.additionalLayers.push(['sequence-arcs-source','sequence-arcs-layer']);
 		this.deflectionValue = deflectionValue;
 		this.lineColor = lineColor;
 		this.lineOpacity = lineOpacity;
@@ -3122,6 +3124,15 @@ class SequenceArcs {
 			}
 
 			this.arcFeatures = arcFeatures;
+			
+			this.map.addSource(this.arcSourceId, {
+				type: 'geojson',
+				data: {
+					type: 'FeatureCollection',
+					features: this.arcFeatures
+				},
+			})
+			
 		}
 	}
 
@@ -3129,13 +3140,7 @@ class SequenceArcs {
 		this.map.addLayer({
 			id: this.arcLayerId,
 			type: 'line',
-			source: {
-				type: 'geojson',
-				data: {
-					type: 'FeatureCollection',
-					features: this.arcFeatures,
-				},
-			},
+			source: this.arcSourceId,
 			paint: {
 				'line-color': this.lineColor,
 				'line-opacity': this.lineOpacity,
@@ -3432,6 +3437,7 @@ function listSourcesAndLayers(mappy) {
 }
 
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/tableFunctions.js
+
 
 
 
@@ -3775,6 +3781,9 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 				$("#selection_status").show()
 			}
 			highlightFirstRow();
+			if (!!mapSequencer) {
+				mapSequencer.updateButtons();
+			}
 		}
 	});
 
@@ -3835,6 +3844,16 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 		getPlace(ds_pid.pid, $(this).data('cid'), spinner_detail);
 
 		highlightFeature(ds_pid, features, mappy);
+		
+		if (!!mapSequencer) {
+			mapSequencer.updateButtons();
+			if (mapSequencer.continuePlay) {
+				mapSequencer.continuePlay = false;
+			}
+			else if (mapSequencer.playing) {
+				mapSequencer.stopPlayback();
+			}
+		}
 
 	});
 
@@ -3869,6 +3888,9 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 		checked_rows
 	}
 }
+
+
+
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/mapControls.js
 // /whg/webpack/js/mapControls.js
 
@@ -3919,86 +3941,126 @@ class sequencerControl {
 		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group sequencer';
 		this._container.textContent = 'Explore sequence';
 		this._container.innerHTML = '';
-		this.currentSeq = undefined;
+		this.currentSeq = this.minSeq;
+		this.playing = false;
 		this.stepdelay = 3000;
         this.playInterval = null;
+        
+        this.buttons = [
+			['skip-first','First place in sequence','Already at start of sequence','Disabled during play'],
+			['skip-previous','Previous place in sequence','Already at start of sequence','Disabled during play'],
+			['skip-next','Next place in sequence','Already at end of sequence','Disabled during play'],
+			['skip-last','Last place in sequence','Already at end of sequence','Disabled during play'],
+			'separator',
+			['play','Play from current place in sequence','Cannot play from end of sequence','Stop playing sequence']
+		];
 		
-		[['skip-first','First place in sequence'],['skip-previous','Previous place in sequence'],['skip-next','Next place in sequence'],['skip-last','Last place in sequence'],'separator',['play','Play from current place in sequence']].forEach((button) => {
-			this._container.innerHTML += button == 'separator' ? '<span class="separator"/>' : `<button id = "${button[0]}" type="button" style="background-image: url(/static/images/sequencer/${button[0]}-btn.svg)" aria-label="${button[1]}" title="${button[1]}" />`
+		this.buttons.forEach((button) => {
+			this._container.innerHTML += button == 'separator' ? '<span class="separator"/>' : `<button id = "${button[0]}" type="button" style="background-image: url(/static/images/sequencer/${button[0]}-btn.svg)" ${['skip-first', 'skip-previous'].includes(button[0]) ? 'disabled ' : ''}aria-label="${button[1]}" title="${button[1]}" />`
 		});
 		
 		$('body').on('click','.sequencer button', (e) => {
 		    const sequencer = $('.sequencer');
 		    const action = $(e.target).attr('id');
-		    console.log('action',action,window.highlightedFeatureIndex);
-			if (['skip-previous', 'skip-next', 'play'].includes(action)) {
-				if (window.highlightedFeatureIndex == undefined) { // Nothing yet highlighted - highlight feature selected in table
-					let currentRow = $('#placetable tr.highlight-row');
-					this.currentSeq = currentRow.data('seq');
-					currentRow.click();
+		    
+		    console.log(`Sequencer action: ${action} from ${this.currentSeq}.`);
+			
+			if (window.highlightedFeatureIndex == undefined) {
+				if (['skip-previous', 'skip-next'].includes(action)) { // Highlight feature selected in table
+					$('#placetable tr.highlight-row').click();
+					return;
+				}
+				else if (action == 'play') {
+					this.currentSeq -= 1; // Play will commence by re-adding 1
 				}
 			}
+			
 			if (action=='play') {
-			    if (!sequencer.hasClass('playing')) {
+			    if (!this.playing) {
 			        sequencer.addClass('playing');
-			        sequencer.find('button:not(#play)').prop('disabled', true);
 			        this.startPlayback();
 			    } else {
-			        sequencer.removeClass('playing');
-			        sequencer.find('button:not(#play)').prop('disabled', false);
-			        this.stopPlayback();
+					this.stopPlayback();
+			        return;
 			    }
 			}
 			else {
 				if (action=='skip-first') {
 					this.currentSeq = this.minSeq; 
-				    sequencer.find('button#skip-first,button#skip-previous').prop('disabled', true);
-				    sequencer.find('button#skip-last,button#skip-next').prop('disabled', false);
 				}
 				else if (action=='skip-previous') {
 					this.currentSeq -= 1; 
-					if (this.currentSeq == this.minSeq) {
-				    	sequencer.find('button#skip-first,button#skip-previous').prop('disabled', true);
-					} 
-				    sequencer.find('button#skip-last,button#skip-next').prop('disabled', false);
 				}
 				else if (action=='skip-next') {
 					this.currentSeq += 1; 
-					if (this.currentSeq == this.maxSeq) {
-				    	sequencer.find('button#skip-last,button#skip-next').prop('disabled', true);
-				    	if (sequencer.hasClass('playing')) {
-							this.stopPlayback();
-							sequencer.find('button#play').click();
-						}
-					} 
-				    sequencer.find('button#skip-first,button#skip-previous').prop('disabled', false);
 				}
 				else if (action=='skip-last') {
 					this.currentSeq = this.maxSeq; 
-				    sequencer.find('button#skip-last,button#skip-next').prop('disabled', true);
-				    sequencer.find('button#skip-first,button#skip-previous').prop('disabled', false);
 				}
 				
-				scrollToRowByProperty($('#placetable').DataTable(), 'seq', this.currentSeq);
+				scrollToRowByProperty(table, 'seq', this.currentSeq);
 			}
 			
+			if (this.playing && this.currentSeq == this.maxSeq) {
+				this.stopPlayback();
+		        return;
+		    }
+			this.updateButtons();
+			
 		});
-		
+
 		return this._container;
+	}
+	
+	updateButtons() {
+		const sequencer = $('.sequencer');
+		this.currentSeq = $('#placetable tr.highlight-row').data('seq');
+        if (!this.playing) {
+            sequencer.find('button').prop('disabled', false);
+            if (this.currentSeq == this.minSeq) {
+			    sequencer.find('button#skip-first,button#skip-previous').prop('disabled', true);
+			}
+			else if (this.currentSeq == this.maxSeq) {
+			    sequencer.find('button#skip-last,button#skip-next,button#play').prop('disabled', true);
+			}
+        } else {
+            sequencer.find('button:not(#play)').prop('disabled', true);
+        }
+        sequencer.find('button').each((i, button) => {
+			button.setAttribute('title', this.buttons[i + (i > 3 ? 1 : 0)][button.disabled ? (this.playing ? 3 : 2) : (this.playing && i == 4 ? 3 : 1)]);
+			button.setAttribute('aria-label', button.getAttribute('title'));
+		});
+	}
+	
+	clickNext() {
+		this.currentSeq += 1;
+		this.continuePlay = true;
+		console.log(`Sequencer action: play ${this.currentSeq}.`);
+		scrollToRowByProperty(table, 'seq', this.currentSeq); // Triggers updateButtons()
+		if (this.currentSeq == this.maxSeq) {
+			this.stopPlayback();
+		}
 	}
 		
 	startPlayback() {
 		console.log('Starting sequence play...');
-		const skipNextButton = $('.sequencer button#skip-next');
-        this.playInterval = setInterval(() => {
-			console.log('moving...');
-			skipNextButton.prop('disabled', false).click().prop('disabled', true);
-        }, this.stepdelay);
+		this.playing = true;
+		$('.sequencer').addClass('playing');
+		this.clickNext();
+        if (this.currentSeq < this.maxSeq) {
+			this.playInterval = setInterval(() => {
+				this.clickNext();
+	        }, this.stepdelay);
+		}
     }
 
     stopPlayback() {
         clearInterval(this.playInterval);
         this.playInterval = null;
+		this.playing = false;
+		$('.sequencer').removeClass('playing');
+        this.updateButtons();
+		console.log('... stopped sequence play.');
     }
 }
 
@@ -4075,13 +4137,17 @@ class StyleControl {
 		    window.ds_list.forEach(ds => {
 		      newSources[ds.id.toString()] = previousStyle.sources[ds.id.toString()];
 		    });
+		    window.additionalLayers.forEach(([sourceId]) => {
+		      newSources[sourceId] = previousStyle.sources[sourceId];
+		    });
+		    const additionalLayers = window.additionalLayers.map(additionalLayer => additionalLayer[1]); // Add any other required sources and layers to window.additionalLayers
 		    return {
 		      ...nextStyle,
 		      sources: newSources,
 		      layers: [
 		        ...nextStyle.layers,
-		        ...previousStyle.layers.filter(layer => mapLayerStyles.some(dslayer => layer.id.startsWith(dslayer.id)))
-		      ]
+		        ...previousStyle.layers.filter(layer => mapLayerStyles.some(dslayer => layer.id.startsWith(dslayer.id) || additionalLayers.includes(layer.id))),
+		      	]
 		    };
 		  }
 		});
@@ -4116,6 +4182,7 @@ class CustomAttributionControl extends maptilersdk.AttributionControl {
     }
 }
 
+let mapSequencer;
 function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table){
 
 	if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
@@ -4128,7 +4195,8 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 	mappy.addControl(new downloadMapControl(), 'top-left');
 	
 	if (!!mapParameters.controls.sequencer) {
-		mappy.addControl(new sequencerControl(), 'bottom-left');
+		mapSequencer = new sequencerControl();
+		mappy.addControl(mapSequencer, 'bottom-left');
 	}
 	
 	mappy.addControl(new CustomAttributionControl({
@@ -4355,6 +4423,7 @@ const whgMap = document.getElementById(mapParameters.container);
 window.mapPadding;
 window.mapBounds;
 window.highlightedFeatureIndex;
+window.additionalLayers = []; // Keep track of added map sources and layers - required for baselayer switching
 
 let activePopup;
 

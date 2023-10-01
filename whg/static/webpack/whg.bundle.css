@@ -331,6 +331,10 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
     width: 34px;
 }
 
+.sequencer button:disabled {
+	opacity: .5;
+}
+
 .sequencer.playing button#play {
 	background-image: url(b6786baca79f1091ac36.svg)!important;
 }

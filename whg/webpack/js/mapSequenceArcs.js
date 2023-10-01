@@ -10,7 +10,9 @@ export default class SequenceArcs {
 	constructor(map, dataset, { deflectionValue = 1, lineColor = '#888', lineOpacity = .8, lineWidth = 1, dashLength = 8, animationRate = 12 } = {}) { // animationRate = steps per second
 		this.map = map;
 		this.dataset = dataset;
+		this.arcSourceId = 'sequence-arcs-source';
 		this.arcLayerId = 'sequence-arcs-layer';
+		window.additionalLayers.push(['sequence-arcs-source','sequence-arcs-layer']);
 		this.deflectionValue = deflectionValue;
 		this.lineColor = lineColor;
 		this.lineOpacity = lineOpacity;
@@ -71,6 +73,15 @@ export default class SequenceArcs {
 			}
 
 			this.arcFeatures = arcFeatures;
+			
+			this.map.addSource(this.arcSourceId, {
+				type: 'geojson',
+				data: {
+					type: 'FeatureCollection',
+					features: this.arcFeatures
+				},
+			})
+			
 		}
 	}
 
@@ -78,13 +89,7 @@ export default class SequenceArcs {
 		this.map.addLayer({
 			id: this.arcLayerId,
 			type: 'line',
-			source: {
-				type: 'geojson',
-				data: {
-					type: 'FeatureCollection',
-					features: this.arcFeatures,
-				},
-			},
+			source: this.arcSourceId,
 			paint: {
 				'line-color': this.lineColor,
 				'line-opacity': this.lineOpacity,
