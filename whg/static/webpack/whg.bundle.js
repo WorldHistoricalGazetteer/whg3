@@ -3973,6 +3973,10 @@ class sequencerControl {
 		    const sequencer = $('.sequencer');
 		    const action = $(e.target).attr('id');
 		    
+		    if (table.search() !== '') { // Clear any table search filter
+				table.search('').draw();
+			}
+		    
 		    console.log(`Sequencer action: ${action} from ${this.currentSeq}.`);
 			
 			if (window.highlightedFeatureIndex == undefined) {
