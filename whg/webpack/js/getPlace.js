@@ -1,6 +1,11 @@
-import {
-	minmaxer
-} from './utilities';
+import { minmaxer } from './utilities';
+
+export function popupFeatureHTML(feature) { // TODO: Improve styling with css and content?
+	let HTML = '<b>' + feature.properties.title + '</b><br/>' +
+    'Temporality: ' + (feature.properties.min ? feature.properties.min : '?') + '/' + (feature.properties.max ? feature.properties.max : '?') + '<br/>' +
+    'Click to focus';
+    return (HTML);
+}
 
 export function getPlace(pid, cid, spinner_detail) {
 	//console.log('getPlace()', pid);

@@ -21,8 +21,6 @@ window.mapBounds;
 window.highlightedFeatureIndex;
 window.additionalLayers = []; // Keep track of added map sources and layers - required for baselayer switching
 
-let activePopup;
-
 window.dateline = null;
 let datelineContainer = null;
 
@@ -120,7 +118,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	initObservers(mappy);
 
 	// Initialise Map Popups
-	initPopups(mappy, activePopup, table);
+	initPopups(mappy, table);
 	
 	// Initialise Map Controls
 	const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table);

@@ -2560,6 +2560,13 @@ function get_ds_list_stats(allFeatures) {
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/getPlace.js
 
 
+function popupFeatureHTML(feature) { // TODO: Improve styling with css and content?
+	let HTML = '<b>' + feature.properties.title + '</b><br/>' +
+    'Temporality: ' + (feature.properties.min ? feature.properties.min : '?') + '/' + (feature.properties.max ? feature.properties.max : '?') + '<br/>' +
+    'Click to focus';
+    return (HTML);
+}
+
 function getPlace(pid, cid, spinner_detail) {
 	//console.log('getPlace()', pid);
 	if (isNaN(pid)) {
@@ -3193,6 +3200,7 @@ class SequenceArcs {
 
 
 
+
 let mapParams;
 
 function addMapSource(mappy, ds) {
@@ -3204,30 +3212,33 @@ function addMapSource(mappy, ds) {
 }
 
 function addMapLayer(mappy, layer, ds) {
-	const modifiedLayer = { ...layer };
-    modifiedLayer.id = `${layer.id}_${ds.id}`;
-    modifiedLayer.source = ds.id.toString();
-    mappy.addLayer(filteredLayer(modifiedLayer));
-    if (!!ds.relations && layer.id == 'gl_active_point') {
-    	let circleColors = arrayColors(ds.relations);
-    	colorTable(circleColors, '#coll_detail');
+	const modifiedLayer = {
+		...layer
+	};
+	modifiedLayer.id = `${layer.id}_${ds.id}`;
+	modifiedLayer.source = ds.id.toString();
+	mappy.addLayer(filteredLayer(modifiedLayer));
+	if (!!ds.relations && layer.id == 'gl_active_point') {
+		let circleColors = arrayColors(ds.relations);
+		colorTable(circleColors, '#coll_detail');
 		mappy.setPaintProperty(modifiedLayer.id, 'circle-color', [
-		  'match',
-		  ['get', 'relation'],
-		  ...circleColors,
-		  '#ccc',
+			'match',
+			['get', 'relation'],
+			...circleColors,
+			'#ccc',
 		]);
 		mappy.setPaintProperty(modifiedLayer.id, 'circle-stroke-color', [
-		  'match',
-		  ['get', 'relation'],
-		  ...circleColors,
-		  '#ccc',
+			'match',
+			['get', 'relation'],
+			...circleColors,
+			'#ccc',
 		]);
-		const sequenceArcs = new SequenceArcs(mappy, ds, { /*animationRate: 0*/ });
+		const sequenceArcs = new SequenceArcs(mappy, ds, {
+			/*animationRate: 0*/ });
 		mappy.moveLayer(sequenceArcs.arcLayerId, modifiedLayer.id);
 	}
 }
-	
+
 function updatePadding() {
 	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
 	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
@@ -3243,8 +3254,8 @@ function updatePadding() {
 function updateBounds() {
 	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
 	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
-	const centerX = - mapParams.MapRectBorder + ControlsRect.left - MapRect.left + ControlsRect.width / 2;
-	const centerY = - mapParams.MapRectBorder + ControlsRect.top - MapRect.top + ControlsRect.height / 2;
+	const centerX = -mapParams.MapRectBorder + ControlsRect.left - MapRect.left + ControlsRect.width / 2;
+	const centerY = -mapParams.MapRectBorder + ControlsRect.top - MapRect.top + ControlsRect.height / 2;
 	const pseudoCenter = mapParams.mappy.unproject([centerX, centerY]);
 	window.mapBounds = {
 		'center': pseudoCenter
@@ -3254,9 +3265,9 @@ function updateBounds() {
 
 // Control positioning of map, clear of overlays
 function recenterMap(mappy, duration) {
-	duration = duration ==  'lazy' ? 1000 : 0 // Set duration of movement
+	duration = duration == 'lazy' ? 1000 : 0 // Set duration of movement
 	window.blockBoundsUpdate = true;
-	
+
 	if (window.mapBounds) {
 		if (Array.isArray(window.mapBounds) || !window.mapBounds.hasOwnProperty('center')) { // mapBounds might be a coordinate pair object returned by mappy.getBounds();
 			mappy.fitBounds(window.mapBounds, {
@@ -3274,7 +3285,7 @@ function recenterMap(mappy, duration) {
 }
 
 function initObservers(mappy) {
-	
+
 	mapParams = {
 		mappy: mappy,
 		ControlsRectEl: document.getElementById('mapControls'),
@@ -3282,9 +3293,9 @@ function initObservers(mappy) {
 		ControlsRectMargin: 4,
 		MapRectBorder: 1
 	}
-	
+
 	window.blockBoundsUpdate = false;
-	const resizeObserver = new ResizeObserver(function() { 
+	const resizeObserver = new ResizeObserver(function() {
 		updatePadding();
 		recenterMap(mappy);
 	});
@@ -3292,22 +3303,23 @@ function initObservers(mappy) {
 	// Recenter map whenever its viewport changes size
 	resizeObserver.observe(mapParams.ControlsRectEl);
 	resizeObserver.observe(mapParams.MapRectEl);
-	
+
 	mappy.on('zoomend', function() { // Triggered by `flyTo` and `fitBounds` - must be blocked to prevent misalignment 
 		if (window.blockBoundsUpdate) {
 			window.blockBoundsUpdate = false;
 			//console.log('blockBoundsUpdate released.');
-		}
-		else {
+		} else {
 			updateBounds();
 		}
 	});
-	mappy.on('dragend', function() { updateBounds(); });
-	
+	mappy.on('dragend', function() {
+		updateBounds();
+	});
+
 }
 
 function initOverlays(whgMap) {
-	const controlContainer = document.querySelector('.maplibregl-control-container');	
+	const controlContainer = document.querySelector('.maplibregl-control-container');
 	controlContainer.setAttribute('id', 'mapControls');
 	controlContainer.classList.add('item');
 
@@ -3365,77 +3377,70 @@ function initOverlays(whgMap) {
 	}
 }
 
-function initPopups(mappy, activePopup, table) {
+let activePopup;
+function initPopups(mappy, table) {
 
-	mapLayerStyles.forEach(function(layer) {
-		
-		window.ds_list.forEach(function(ds) {
-			const modifiedLayer = { ...layer };
-		    modifiedLayer.id = `${layer.id}_${ds.id}`;
-		    modifiedLayer.source = ds.id.toString();
-	
-			mappy.on('mouseenter', modifiedLayer.id, function(e) {
+	function clearPopup(preserveCursor = false) {
+		if (activePopup) {
+			mappy.setFeatureState(activePopup.featureHighlight, { highlight: false });
+			activePopup.remove();
+			if (!preserveCursor) mappy.getCanvas().style.cursor = '';
+		}
+	}
+
+	mappy.on('mousemove', function(e) {
+		const features = mappy.queryRenderedFeatures(e.point);
+
+		if (features.length > 0) {
+			const topFeature = features[0]; // Handle only the top-most feature
+			const topLayerId = topFeature.layer.id;
+
+			// Check if the top feature's layer id starts with the id of any layer in datasetLayers
+			const isTopFeatureInDatasetLayer = mapLayerStyles.some(layer => topLayerId.startsWith(layer.id));
+
+			if (isTopFeatureInDatasetLayer) {
 				mappy.getCanvas().style.cursor = 'pointer';
-	
-				var pid = e.features[0].properties.pid;
-				var title = e.features[0].properties.title;
-				var min = e.features[0].properties.min;
-				var max = e.features[0].properties.max;
-	
-				if (activePopup) {
-					activePopup.remove();
-				}
-				activePopup = new maptilersdk.Popup({
-						closeButton: false
-					})
-					.setLngLat(e.lngLat)
-					.setHTML('<b>' + title + '</b><br/>' +
-						'Temporality: ' + (min ? min : '?') + '/' + (max ? max : '?') + '<br/>' +
-						'Click to focus'
-					)
-					.addTo(mappy);
-				activePopup.pid = pid;
-			});
-	
-			mappy.on('mousemove', modifiedLayer.id, function(e) {
-				if (activePopup) {
-					activePopup.setLngLat(e.lngLat);
-				}
-			});
-	
-			mappy.on('mouseleave', modifiedLayer.id, function() {
-				mappy.getCanvas().style.cursor = '';
-				if (activePopup) {
-					activePopup.remove();
-				}
-	
-			});
-	
-			mappy.on('click', modifiedLayer.id, function(e) {
-	
-				var pid;
-				if (activePopup && activePopup.pid) {
-					pid = activePopup.pid;
-					activePopup.remove();
-				} else pid = e.features[0].properties.pid;
-	
-				scrollToRowByProperty(table, 'pid', pid);
-	
-			})
-		    
-		});
 
+				if (activePopup && activePopup.pid === topFeature.properties.pid) {
+					activePopup.setLngLat(e.lngLat);
+				} else {
+					if (activePopup) {
+						clearPopup(true);
+					}
+					activePopup = new maptilersdk.Popup({
+							closeButton: false,
+						})
+						.setLngLat(e.lngLat)
+						.setHTML(popupFeatureHTML(topFeature))
+						.addTo(mappy);
+					activePopup.pid = topFeature.properties.pid;
+					activePopup.featureHighlight = { source: topFeature.source, sourceLayer: topFeature.sourceLayer, id: topFeature.id };
+					mappy.setFeatureState(activePopup.featureHighlight, { highlight: true });
+				}
+
+			} else {
+				clearPopup();
+			}
+		} else {
+			clearPopup();
+		}
+	});
+
+	mappy.on('click', function() {
+		if (activePopup && activePopup.pid) {
+			clearPopup();
+			scrollToRowByProperty(table, 'pid', activePopup.pid);
+		}
 	});
 }
 
-function listSourcesAndLayers(mappy) {	
+function listSourcesAndLayers(mappy) {
 	const style = mappy.getStyle();
 	const sources = style.sources;
 	console.log('Sources:', Object.keys(sources));
 	const layers = style.layers;
 	console.log('Layers:', layers.map(layer => layer.id));
 }
-
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/tableFunctions.js
 
 
@@ -4466,8 +4471,6 @@ window.mapBounds;
 window.highlightedFeatureIndex;
 window.additionalLayers = []; // Keep track of added map sources and layers - required for baselayer switching
 
-let activePopup;
-
 window.dateline = null;
 let datelineContainer = null;
 
@@ -4565,7 +4568,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	initObservers(mappy);
 
 	// Initialise Map Popups
-	initPopups(mappy, activePopup, mapAndTable_table);
+	initPopups(mappy, mapAndTable_table);
 	
 	// Initialise Map Controls
 	const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, mapAndTable_table);
