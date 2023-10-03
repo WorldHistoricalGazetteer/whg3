@@ -3401,22 +3401,24 @@ function initPopups(mappy, table) {
 			if (isTopFeatureInDatasetLayer) {
 				mappy.getCanvas().style.cursor = 'pointer';
 
-				if (activePopup && activePopup.pid === topFeature.properties.pid) {
-					activePopup.setLngLat(e.lngLat);
-				} else {
-					if (activePopup) {
-						clearPopup(true);
-					}
-					activePopup = new maptilersdk.Popup({
-							closeButton: false,
-						})
-						.setLngLat(e.lngLat)
-						.setHTML(popupFeatureHTML(topFeature))
-						.addTo(mappy);
-					activePopup.pid = topFeature.properties.pid;
-					activePopup.featureHighlight = { source: topFeature.source, sourceLayer: topFeature.sourceLayer, id: topFeature.id };
-					mappy.setFeatureState(activePopup.featureHighlight, { highlight: true });
-				}
+		        if (!activePopup || activePopup.pid !== topFeature.properties.pid) {
+		          // If there is no activePopup or it's a different feature, create a new one ...
+		          if (activePopup) {
+		            clearPopup(true);
+		          }
+		          activePopup = new maptilersdk.Popup({
+		            closeButton: false,
+		          })
+		            .setLngLat(e.lngLat)
+		            .setHTML(popupFeatureHTML(topFeature))
+		            .addTo(mappy);
+		          activePopup.pid = topFeature.properties.pid;
+		          activePopup.featureHighlight = { source: topFeature.source, sourceLayer: topFeature.sourceLayer, id: topFeature.id };
+		          mappy.setFeatureState(activePopup.featureHighlight, { highlight: true });
+		        } else {
+		          // ... otherwise just update its position
+		          activePopup.setLngLat(e.lngLat);
+		        }
 
 			} else {
 				clearPopup();
