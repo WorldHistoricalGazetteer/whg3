@@ -1,23 +1,14 @@
 import datasetLayers from './mapLayerStyles';
-import {
-	attributionString,
-	arrayColors,
-	colorTable
-} from './utilities';
-import {
-	filteredLayer
-} from './mapFilters';
+import { attributionString, arrayColors, colorTable } from './utilities';
+import { filteredLayer } from './mapFilters';
 import SequenceArcs from './mapSequenceArcs';
-import {
-	scrollToRowByProperty
-} from './tableFunctions';
-import {
-	popupFeatureHTML
-} from './getPlace.js';
+import { scrollToRowByProperty } from './tableFunctions';
+import { popupFeatureHTML } from './getPlace.js';
+import { mappy } from './mapAndTable';
 
 let mapParams;
 
-export function addMapSource(mappy, ds) {
+export function addMapSource(ds) {
 	mappy.addSource(ds.id.toString(), {
 		'type': 'geojson',
 		'data': ds,
@@ -25,7 +16,7 @@ export function addMapSource(mappy, ds) {
 	});
 }
 
-export function addMapLayer(mappy, layer, ds) {
+export function addMapLayer(layer, ds) {
 	const modifiedLayer = {
 		...layer
 	};
@@ -56,13 +47,12 @@ export function addMapLayer(mappy, layer, ds) {
 export function updatePadding() {
 	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
 	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
-	window.mapPadding = {
+	mappy.setPadding({
 		top: ControlsRect.top - MapRect.top - mapParams.ControlsRectMargin,
 		bottom: MapRect.bottom - ControlsRect.bottom - mapParams.ControlsRectMargin,
 		left: ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin,
 		right: MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin,
-	};
-	//console.log('mapPadding recalculated:', window.mapPadding);
+	});
 }
 
 function updateBounds() {
@@ -78,27 +68,25 @@ function updateBounds() {
 }
 
 // Control positioning of map, clear of overlays
-export function recenterMap(mappy, duration) {
+export function recenterMap(duration) {
 	duration = duration == 'lazy' ? 1000 : 0 // Set duration of movement
 	window.blockBoundsUpdate = true;
-
+	// mappy.showPadding = true; // Used for debugging - draws coloured lines to indicate padding
 	if (window.mapBounds) {
 		if (Array.isArray(window.mapBounds) || !window.mapBounds.hasOwnProperty('center')) { // mapBounds might be a coordinate pair object returned by mappy.getBounds();
 			mappy.fitBounds(window.mapBounds, {
-				padding: window.mapPadding,
 				duration: duration
 			});
 		} else { // mapBounds has been set based on a center point and zoom
 			mappy.flyTo({
 				...window.mapBounds,
-				padding: window.mapPadding,
 				duration: duration
 			})
 		}
 	}
 }
 
-export function initObservers(mappy) {
+export function initObservers() {
 
 	mapParams = {
 		mappy: mappy,
@@ -111,12 +99,13 @@ export function initObservers(mappy) {
 	window.blockBoundsUpdate = false;
 	const resizeObserver = new ResizeObserver(function() {
 		updatePadding();
-		recenterMap(mappy);
+		recenterMap(false);
 	});
 
 	// Recenter map whenever its viewport changes size
 	resizeObserver.observe(mapParams.ControlsRectEl);
 	resizeObserver.observe(mapParams.MapRectEl);
+	updatePadding();
 
 	mappy.on('zoomend', function() { // Triggered by `flyTo` and `fitBounds` - must be blocked to prevent misalignment 
 		if (window.blockBoundsUpdate) {
@@ -192,7 +181,7 @@ export function initOverlays(whgMap) {
 }
 
 let activePopup;
-export function initPopups(mappy, table) {
+export function initPopups(table) {
 
 	function clearPopup(preserveCursor = false) {
 		if (activePopup) {
@@ -259,7 +248,7 @@ export function initPopups(mappy, table) {
 	});
 }
 
-export function listSourcesAndLayers(mappy) {
+export function listSourcesAndLayers() {
 	const style = mappy.getStyle();
 	const sources = style.sources;
 	console.log('Sources:', Object.keys(sources));

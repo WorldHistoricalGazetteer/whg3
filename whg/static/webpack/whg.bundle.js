@@ -3201,9 +3201,10 @@ class SequenceArcs {
 
 
 
+
 let mapParams;
 
-function addMapSource(mappy, ds) {
+function addMapSource(ds) {
 	mappy.addSource(ds.id.toString(), {
 		'type': 'geojson',
 		'data': ds,
@@ -3211,7 +3212,7 @@ function addMapSource(mappy, ds) {
 	});
 }
 
-function addMapLayer(mappy, layer, ds) {
+function addMapLayer(layer, ds) {
 	const modifiedLayer = {
 		...layer
 	};
@@ -3242,13 +3243,12 @@ function addMapLayer(mappy, layer, ds) {
 function updatePadding() {
 	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
 	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
-	window.mapPadding = {
+	mappy.setPadding({
 		top: ControlsRect.top - MapRect.top - mapParams.ControlsRectMargin,
 		bottom: MapRect.bottom - ControlsRect.bottom - mapParams.ControlsRectMargin,
 		left: ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin,
 		right: MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin,
-	};
-	//console.log('mapPadding recalculated:', window.mapPadding);
+	});
 }
 
 function updateBounds() {
@@ -3264,27 +3264,25 @@ function updateBounds() {
 }
 
 // Control positioning of map, clear of overlays
-function recenterMap(mappy, duration) {
+function recenterMap(duration) {
 	duration = duration == 'lazy' ? 1000 : 0 // Set duration of movement
 	window.blockBoundsUpdate = true;
-
+	// mappy.showPadding = true; // Used for debugging - draws coloured lines to indicate padding
 	if (window.mapBounds) {
 		if (Array.isArray(window.mapBounds) || !window.mapBounds.hasOwnProperty('center')) { // mapBounds might be a coordinate pair object returned by mappy.getBounds();
 			mappy.fitBounds(window.mapBounds, {
-				padding: window.mapPadding,
 				duration: duration
 			});
 		} else { // mapBounds has been set based on a center point and zoom
 			mappy.flyTo({
 				...window.mapBounds,
-				padding: window.mapPadding,
 				duration: duration
 			})
 		}
 	}
 }
 
-function initObservers(mappy) {
+function initObservers() {
 
 	mapParams = {
 		mappy: mappy,
@@ -3297,12 +3295,13 @@ function initObservers(mappy) {
 	window.blockBoundsUpdate = false;
 	const resizeObserver = new ResizeObserver(function() {
 		updatePadding();
-		recenterMap(mappy);
+		recenterMap(false);
 	});
 
 	// Recenter map whenever its viewport changes size
 	resizeObserver.observe(mapParams.ControlsRectEl);
 	resizeObserver.observe(mapParams.MapRectEl);
+	updatePadding();
 
 	mappy.on('zoomend', function() { // Triggered by `flyTo` and `fitBounds` - must be blocked to prevent misalignment 
 		if (window.blockBoundsUpdate) {
@@ -3378,7 +3377,7 @@ function initOverlays(whgMap) {
 }
 
 let activePopup;
-function initPopups(mappy, table) {
+function initPopups(table) {
 
 	function clearPopup(preserveCursor = false) {
 		if (activePopup) {
@@ -3445,7 +3444,7 @@ function initPopups(mappy, table) {
 	});
 }
 
-function listSourcesAndLayers(mappy) {
+function listSourcesAndLayers() {
 	const style = mappy.getStyle();
 	const sources = style.sources;
 	console.log('Sources:', Object.keys(sources));
@@ -3453,6 +3452,7 @@ function listSourcesAndLayers(mappy) {
 	console.log('Layers:', layers.map(layer => layer.id));
 }
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/tableFunctions.js
+
 
 
 
@@ -3536,7 +3536,7 @@ function clearFilters() {
 	$("#status_select").val('99')
 }*/
 
-function filterMap(mappy, val) {
+function toggleMapLayers(mappy, val) {
 	let recentered = false;
 	mapLayerStyles.forEach(function(layer) {
 		window.ds_list.forEach(function(ds) {
@@ -3544,7 +3544,7 @@ function filterMap(mappy, val) {
 			if (!recentered && ds.id.toString() === val.toString()) {
 				recentered = true;
 				window.mapBounds = ds.extent;
-				recenterMap(mappy, 'lazy');
+				recenterMap('lazy');
 			}
 		});
 	});
@@ -3584,7 +3584,7 @@ function scrollToRowByProperty(table, propertyName, value) {
 
 function highlightFeature(ds_pid, features, mappy) {
 
-	//listSourcesAndLayers(mappy);
+	//listSourcesAndLayers();
 
 	features = features.filter(f => f.properties.dsid === ds_pid.ds);
 
@@ -3613,10 +3613,10 @@ function highlightFeature(ds_pid, features, mappy) {
 					'center': flycoords,
 					'zoom': 7
 				}
-				recenterMap(mappy, 'lazy');
+				recenterMap('lazy');
 			} else {
 				window.mapBounds = (0,_6_5_0_turf_min.envelope)(geom).bbox;
-				recenterMap(mappy, 'lazy');
+				recenterMap('lazy');
 			}
 			//console.log(`Highlight now on ${window.highlightedFeatureIndex}.`);
 		} else {
@@ -3830,10 +3830,14 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 		// filter map
 		let ds_id = $(this).find(":selected").attr("data");
 		const dsItem = window.ds_list.find(ds => ds.id === ds_id);
-		if (dsItem) window.mapBounds = dsItem.extent;
-		else window.mapBounds = window.ds_list_stats.extent;
-		recenterMap(mappy, 'lazy');
-		filterMap(mappy, ds_id);
+		if (dsItem) {
+			window.mapBounds = dsItem.extent;
+		}
+		else {
+			window.mapBounds = window.ds_list_stats.extent;
+		}
+		toggleMapLayers(mappy, ds_id); // Also recenters map on selected layer
+		if (ds_id == 'all') recenterMap('lazy');
 
 		window.spinner_map.stop();
 	})
@@ -4477,7 +4481,6 @@ console.log('Dataset list:',window.ds_list);
 
 const whgMap = document.getElementById(mapParameters.container);
 
-window.mapPadding;
 window.mapBounds;
 window.highlightedFeatureIndex;
 window.additionalLayers = []; // Keep track of added map sources and layers - required for baselayer switching
@@ -4544,7 +4547,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	let allFeatures = [];
 	
 	window.ds_list.forEach(function(ds) {
-		addMapSource(mappy, ds);
+		addMapSource(ds);
 		ds.features.forEach(feature => {
 		    feature.properties = feature.properties || {};
 		    feature.properties.dsid = ds.id;
@@ -4558,12 +4561,12 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	
 	mapLayerStyles.forEach(function(layer) { // Ensure proper layer order for multiple datasets
 		window.ds_list.forEach(function(ds) {
-			addMapLayer(mappy, layer, ds);
+			addMapLayer(layer, ds);
 		});
 	});
 	
 	mappy.removeSource('maptiler_attribution');
-	listSourcesAndLayers(mappy);
+	listSourcesAndLayers();
 	// TODO: Adjust attribution elsewhere: © MapTiler © OpenStreetMap contributors
 		
 	// Initialise Data Table
@@ -4574,12 +4577,9 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	allFeatures = null; // release memory
 
 	window.mapBounds = window.ds_list_stats.extent;
-	recenterMap(mappy);
-	
-	initObservers(mappy);
 
 	// Initialise Map Popups
-	initPopups(mappy, mapAndTable_table);
+	initPopups(mapAndTable_table);
 	
 	// Initialise Map Controls
 	const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, mapAndTable_table);
@@ -4589,6 +4589,10 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	// Initialise Info Box state
 	initInfoOverlay();
 	
+	// Initialise resize observers
+	initObservers();
+	
+	recenterMap();
 	whgMap.style.opacity = 1;
 	
 	initUtils(mappy); // Tooltips, ClipboardJS, clearlines, help-matches
@@ -4597,6 +4601,8 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	
 	spinner_map.stop();
 });
+
+
 
 // TODO: Seemingly-redundant JavaScript not implemented in modularisation
 /*

@@ -16,7 +16,6 @@ console.log('Dataset list:',window.ds_list);
 
 const whgMap = document.getElementById(mapParameters.container);
 
-window.mapPadding;
 window.mapBounds;
 window.highlightedFeatureIndex;
 window.additionalLayers = []; // Keep track of added map sources and layers - required for baselayer switching
@@ -83,7 +82,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	let allFeatures = [];
 	
 	window.ds_list.forEach(function(ds) {
-		addMapSource(mappy, ds);
+		addMapSource(ds);
 		ds.features.forEach(feature => {
 		    feature.properties = feature.properties || {};
 		    feature.properties.dsid = ds.id;
@@ -97,12 +96,12 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	
 	datasetLayers.forEach(function(layer) { // Ensure proper layer order for multiple datasets
 		window.ds_list.forEach(function(ds) {
-			addMapLayer(mappy, layer, ds);
+			addMapLayer(layer, ds);
 		});
 	});
 	
 	mappy.removeSource('maptiler_attribution');
-	listSourcesAndLayers(mappy);
+	listSourcesAndLayers();
 	// TODO: Adjust attribution elsewhere: © MapTiler © OpenStreetMap contributors
 		
 	// Initialise Data Table
@@ -113,12 +112,9 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	allFeatures = null; // release memory
 
 	window.mapBounds = window.ds_list_stats.extent;
-	recenterMap(mappy);
-	
-	initObservers(mappy);
 
 	// Initialise Map Popups
-	initPopups(mappy, table);
+	initPopups(table);
 	
 	// Initialise Map Controls
 	const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table);
@@ -128,6 +124,10 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	// Initialise Info Box state
 	initInfoOverlay();
 	
+	// Initialise resize observers
+	initObservers();
+	
+	recenterMap();
 	whgMap.style.opacity = 1;
 	
 	initUtils(mappy); // Tooltips, ClipboardJS, clearlines, help-matches
@@ -136,6 +136,8 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	
 	spinner_map.stop();
 });
+
+export { mappy };
 
 // TODO: Seemingly-redundant JavaScript not implemented in modularisation
 /*

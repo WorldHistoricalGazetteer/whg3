@@ -4,6 +4,7 @@ import { startSpinner } from './utilities';
 import { updatePadding, recenterMap/*, listSourcesAndLayers*/ } from './mapFunctions';
 import datasetLayers from './mapLayerStyles';
 import { mapSequencer } from './mapControls';
+import { mappy } from './mapAndTable';
 
 let table;
 
@@ -81,7 +82,7 @@ function clearFilters() {
 	$("#status_select").val('99')
 }*/
 
-function filterMap(mappy, val) {
+function toggleMapLayers(mappy, val) {
 	let recentered = false;
 	datasetLayers.forEach(function(layer) {
 		window.ds_list.forEach(function(ds) {
@@ -89,7 +90,7 @@ function filterMap(mappy, val) {
 			if (!recentered && ds.id.toString() === val.toString()) {
 				recentered = true;
 				window.mapBounds = ds.extent;
-				recenterMap(mappy, 'lazy');
+				recenterMap('lazy');
 			}
 		});
 	});
@@ -129,7 +130,7 @@ export function scrollToRowByProperty(table, propertyName, value) {
 
 export function highlightFeature(ds_pid, features, mappy) {
 
-	//listSourcesAndLayers(mappy);
+	//listSourcesAndLayers();
 
 	features = features.filter(f => f.properties.dsid === ds_pid.ds);
 
@@ -158,10 +159,10 @@ export function highlightFeature(ds_pid, features, mappy) {
 					'center': flycoords,
 					'zoom': 7
 				}
-				recenterMap(mappy, 'lazy');
+				recenterMap('lazy');
 			} else {
 				window.mapBounds = envelope(geom).bbox;
-				recenterMap(mappy, 'lazy');
+				recenterMap('lazy');
 			}
 			//console.log(`Highlight now on ${window.highlightedFeatureIndex}.`);
 		} else {
@@ -375,10 +376,14 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		// filter map
 		let ds_id = $(this).find(":selected").attr("data");
 		const dsItem = window.ds_list.find(ds => ds.id === ds_id);
-		if (dsItem) window.mapBounds = dsItem.extent;
-		else window.mapBounds = window.ds_list_stats.extent;
-		recenterMap(mappy, 'lazy');
-		filterMap(mappy, ds_id);
+		if (dsItem) {
+			window.mapBounds = dsItem.extent;
+		}
+		else {
+			window.mapBounds = window.ds_list_stats.extent;
+		}
+		toggleMapLayers(mappy, ds_id); // Also recenters map on selected layer
+		if (ds_id == 'all') recenterMap('lazy');
 
 		window.spinner_map.stop();
 	})
