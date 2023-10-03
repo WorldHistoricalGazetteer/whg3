@@ -3382,8 +3382,11 @@ function initPopups(mappy, table) {
 
 	function clearPopup(preserveCursor = false) {
 		if (activePopup) {
-			mappy.setFeatureState(activePopup.featureHighlight, { highlight: false });
+			if (activePopup.featureHighlight !== false) {
+				mappy.setFeatureState(activePopup.featureHighlight, { highlight: false });
+			}
 			activePopup.remove();
+			activePopup = null;
 			if (!preserveCursor) mappy.getCanvas().style.cursor = '';
 		}
 	}
@@ -3413,8 +3416,13 @@ function initPopups(mappy, table) {
 		            .setHTML(popupFeatureHTML(topFeature))
 		            .addTo(mappy);
 		          activePopup.pid = topFeature.properties.pid;
-		          activePopup.featureHighlight = { source: topFeature.source, sourceLayer: topFeature.sourceLayer, id: topFeature.id };
-		          mappy.setFeatureState(activePopup.featureHighlight, { highlight: true });
+		          activePopup.featureHighlight = { source: topFeature.source, id: topFeature.id };
+		          if (!!window.highlightedFeatureIndex && window.highlightedFeatureIndex.id === activePopup.featureHighlight.id && window.highlightedFeatureIndex.source === activePopup.featureHighlight.source) {
+					  activePopup.featureHighlight = false;
+				  }
+				  else {
+		          	  mappy.setFeatureState(activePopup.featureHighlight, { highlight: true });
+				  }
 		        } else {
 		          // ... otherwise just update its position
 		          activePopup.setLngLat(e.lngLat);
@@ -3430,8 +3438,9 @@ function initPopups(mappy, table) {
 
 	mappy.on('click', function() {
 		if (activePopup && activePopup.pid) {
+			let savedPID = activePopup.pid;
 			clearPopup();
-			scrollToRowByProperty(table, 'pid', activePopup.pid);
+			scrollToRowByProperty(table, 'pid', savedPID);
 		}
 	});
 }
