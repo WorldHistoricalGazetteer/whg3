@@ -1,10 +1,6 @@
-import {
-	bbox
-} from './6.5.0_turf.min.js'
+import { bbox } from './6.5.0_turf.min.js'
 import ClipboardJS from '/webpack/node_modules/clipboard';
-import {
-	lch
-} from './chroma.min.js'
+import { lch } from './chroma.min.js'
 
 export function equidistantLCHColors(numColors) {
 	const colors = [];
@@ -18,7 +14,6 @@ export function equidistantLCHColors(numColors) {
 		const hueValue_adjusted = hueValue_adjust ? hueValue_raw + hue_avoid_tolerance * 2 : hueValue_raw
 		const color = lch(50, 70, hueValue_adjusted % 360).hex();
 		colors.push(color);
-		console.log(color, hueValue_adjusted);
 	}
 	return colors;
 }
@@ -134,10 +129,11 @@ export function initUtils(mappy) {
 	});
 	
 	// image modal
-	$("body").on("click", ".pop", function() {
-	    let url = $(this).find('img').attr('src')
-        let txt = $(this).find('img').attr('alt')
-        let re = /(.png|.jpg|.jpeg|.gif|.tif)/g
+	$("body").on("click", ".pop, #anno_img", function() {
+		let image = $(this).is('img') ? $(this) : $(this).find('img:first');
+	    let url = image.attr('src')
+        let txt = image.attr('alt')
+        // let re = /(.png|.jpg|.jpeg|.gif|.tif)/g // TODO: Remove if not required
         console.log('url', url)
         $("#header_text").html(txt)
         $('.imagepreview').attr('src', url);
@@ -219,13 +215,20 @@ export function minmaxer(timespans) {
 export function get_ds_list_stats(allFeatures) {
 	let min = Infinity;
 	let max = -Infinity;
+    let seqMin = Infinity;
+    let seqMax = -Infinity;
 	for (let i = 0; i < allFeatures.length; i++) {
 		const featureMin = allFeatures[i].properties.min;
 		const featureMax = allFeatures[i].properties.max;
+		const seqValue = allFeatures[i].properties.seq;
 		if (!isNaN(featureMin) && !isNaN(featureMax)) {
 			min = Math.min(min, featureMin);
 			max = Math.max(max, featureMax);
 		}
+        if (!isNaN(seqValue)) {
+            seqMin = Math.min(seqMin, seqValue);
+            seqMax = Math.max(seqMax, seqValue);
+        }
 	}
 	if (!isFinite(min)) min = -3000;
 	if (!isFinite(max)) max = 2000;
@@ -238,6 +241,8 @@ export function get_ds_list_stats(allFeatures) {
 	return {
 		min: min,
 		max: max,
+        seqmin: seqMin,
+        seqmax: seqMax,
 		extent: bbox(geojson)
 	}
 }

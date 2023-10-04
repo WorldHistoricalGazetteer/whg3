@@ -2270,7 +2270,7 @@ const datasetLayers = [ // IMPORTANT: Listed in order of addition to the map
 	        ],
 	        'circle-opacity': [
 	            'case',
-				['boolean', ['feature-state', 'highlight'], false], .9,
+				['boolean', ['feature-state', 'highlight'], false], 0.2,
 				.7
 	        ],
 			'circle-radius': [
@@ -2287,8 +2287,8 @@ const datasetLayers = [ // IMPORTANT: Listed in order of addition to the map
 	        ],
 			'circle-stroke-opacity': [
 	            'case',
+				['boolean', ['feature-state', 'highlight'], false], .9,
 				['any', ['==', ['get', 'min'], 'null'], ['==', ['get', 'max'], 'null']], .3,
-				['boolean', ['feature-state', 'highlight'], false], .9,			
 				.7
 	        ],
 			'circle-stroke-width': [ // Simulate larger radius - zoom-based radius cannot operate together with feature-state switching
@@ -2302,243 +2302,6 @@ const datasetLayers = [ // IMPORTANT: Listed in order of addition to the map
 ]
 
 /* harmony default export */ const mapLayerStyles = (datasetLayers);
-
-;// CONCATENATED MODULE: ../app/whg/webpack/js/mapControls.js
-// /whg/webpack/js/mapControls.js
-
-
-
-
-
-class fullScreenControl {
-	onAdd() { 
-		this._map = map;
-		this._container = document.createElement('div');
-		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-		this._container.textContent = 'Basemap';
-		this._container.innerHTML =
-			'<button type="button" class="maplibregl-ctrl-fullscreen" aria-label="Enter fullscreen" title="Enter fullscreen">' +
-			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
-			'</button>';
-		return this._container;
-	}
-}
-
-class downloadMapControl {
-	onAdd() {
-		this._map = map;
-		this._container = document.createElement('div');
-		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-		this._container.textContent = 'Basemap';
-		this._container.innerHTML =
-			'<button type="button" class="download-map-button" aria-label="Download map image" title="Download map image">' +
-			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
-			'</button>';
-		return this._container;
-	}
-}
-
-class StyleControl {
-	
-	constructor(mappy) {
-        this._mappy = mappy;
-    }
-	
-	onAdd() {
-		this._map = map;
-		this._container = document.createElement('div');
-		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-		this._container.textContent = 'Basemap';
-		this._container.innerHTML =
-			'<button type="button" class="style-button" aria-label="Change basemap style" title="Change basemap style">' +
-			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
-			'</button>';
-		this._container.querySelector('.style-button').addEventListener('click', this._onClick.bind(this));
-		return this._container;
-	}
-
-	onRemove() {
-		this._container.parentNode.removeChild(this._container);
-		this._map = undefined;
-	}
-
-	_onClick() {
-		let styleList = document.getElementById('mapStyleList');
-		if (!styleList) {
-			styleList = document.createElement('ul');
-			styleList.id = 'mapStyleList';
-			styleList.className = 'maplibre-styles-list';
-			const styleFilterValues = mapParameters.styleFilter.map(value => value.split('.')[0]);
-			for (const group of Object.values(maptilersdk.MapStyle)) {
-				// Check if the group.id is in the styleFilter array
-				if (mapParameters.styleFilter.length == 0 || styleFilterValues.includes(group.id)) {
-					const groupItem = document.createElement('li');
-					groupItem.textContent = group.name;
-					groupItem.className = 'group-item';
-					const variantList = document.createElement('ul');
-					variantList.className = 'variant-list';
-					for (const orderedVariant of group.orderedVariants) {
-						const datasetValue = group.id + '.' + orderedVariant.variantType;
-						if (mapParameters.styleFilter.length == 0 || mapParameters.styleFilter.includes(datasetValue)) {
-							const variantItem = document.createElement('li');
-							variantItem.textContent = orderedVariant.name;
-							variantItem.className = 'variant-item';
-							variantItem.dataset.value = datasetValue;
-							variantItem.addEventListener('click', this._onVariantClick.bind(this));
-							variantList.appendChild(variantItem);
-						}
-					}
-					groupItem.appendChild(variantList);
-					styleList.appendChild(groupItem);
-				}
-			}
-			this._container.appendChild(styleList);
-		}
-
-		styleList.classList.toggle('show');
-	}
-
-	_onVariantClick(event) {
-	
-		let mappy = this._mappy;
-	
-		const variantValue = event.target.dataset.value;
-		const style_code = variantValue.split(".");
-		console.log('Selected variant: ', variantValue, maptilersdk.MapStyle[style_code[0]][style_code[1]]);
-		mappy.setStyle(maptilersdk.MapStyle[style_code[0]][style_code[1]], {
-		  transformStyle: (previousStyle, nextStyle) => {
-		    const newSources = { ...nextStyle.sources };
-		    window.ds_list.forEach(ds => {
-		      newSources[ds.id.toString()] = previousStyle.sources[ds.id.toString()];
-		    });
-		    return {
-		      ...nextStyle,
-		      sources: newSources,
-		      layers: [
-		        ...nextStyle.layers,
-		        ...previousStyle.layers.filter(layer => mapLayerStyles.some(dslayer => layer.id.startsWith(dslayer.id)))
-		      ]
-		    };
-		  }
-		});
-
-		const styleList = document.getElementById('mapStyleList');
-		if (styleList) {
-			styleList.classList.remove('show');
-		}
-	}
-}
-
-class CustomAttributionControl extends maptilersdk.AttributionControl {
-    constructor(options) {
-        super(options);
-        this.autoClose = options.autoClose !== false;
-    }
-    onAdd(map) {
-        const container = super.onAdd(map);
-        // Automatically close the AttributionControl if autoClose is enabled
-        if (this.autoClose) {
-            const attributionButton = container.querySelector('.maplibregl-ctrl-attrib-button');
-            if (attributionButton) {
-                attributionButton.dispatchEvent(new MouseEvent('click', {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window
-                }));
-                container.classList.add('fade-in');
-            }
-        }
-        return container;
-    }
-}
-
-function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table){
-
-	if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
-	
-	if (mapParameters.styleFilter.length !== 1) {
-		mappy.addControl(new StyleControl(mappy), 'top-right');
-	}
-	
-	mappy.addControl(new fullScreenControl(), 'top-left');
-	mappy.addControl(new downloadMapControl(), 'top-left');
-	
-	mappy.addControl(new CustomAttributionControl({
-		compact: true,
-    	autoClose: mapParameters.controls.attribution.open === false,
-	}), 'bottom-right');
-
-	function dateRangeChanged(fromValue, toValue){
-		// Throttle date slider changes using debouncing
-		// Ought to be possible to use promises on the `render` event
-		let debounceTimeout;
-	    function debounceFilterApplication() {
-	        clearTimeout(debounceTimeout);
-	        debounceTimeout = setTimeout(toggleFilters(true, mappy, table), 300);
-	    }
-	    debounceFilterApplication(); 
-	}
-
-	if (window.dateline) {
-		window.dateline.destroy();
-		window.dateline = null;
-	}
-	if (datelineContainer) {
-		datelineContainer.remove();
-		datelineContainer = null;
-	}
-
-	if (!!mapParameters.controls.temporal) {
-		datelineContainer = document.createElement('div');
-		datelineContainer.id = 'dateline';
-		document.getElementById('mapControls').appendChild(datelineContainer);
-
-		const range = window.ds_list_stats.max - window.ds_list_stats.min;
-		const buffer = range * 0.1; // 10% buffer
-
-		// Update the temporal settings
-		mapParameters.controls.temporal.fromValue = window.ds_list_stats.min;
-		mapParameters.controls.temporal.toValue = window.ds_list_stats.max;
-		mapParameters.controls.temporal.minValue = window.ds_list_stats.min - buffer;
-		mapParameters.controls.temporal.maxValue = window.ds_list_stats.max + buffer;
-
-		window.dateline = new Dateline({
-			...mapParameters.controls.temporal,
-			onChange: dateRangeChanged
-		});
-	};
-	
-	document.addEventListener('click', function(event) {
-        
-        if (event.target && event.target.parentNode) {
-			const parentNodeClassList = event.target.parentNode.classList;
-			
-			if (parentNodeClassList.contains('maplibregl-ctrl-fullscreen')) {
-				console.log('Switching to fullscreen.');
-				parentNodeClassList.replace('maplibregl-ctrl-fullscreen', 'maplibregl-ctrl-shrink');
-				document.getElementById('mapOverlays').classList.add('fullscreen');
-			} 
-			else if (parentNodeClassList.contains('maplibregl-ctrl-shrink')) {
-				console.log('Switching off fullscreen.');
-				parentNodeClassList.replace('maplibregl-ctrl-shrink', 'maplibregl-ctrl-fullscreen');
-				document.getElementById('mapOverlays').classList.remove('fullscreen');
-			}
-			else if (parentNodeClassList.contains('dateline-button')) {
-	            toggleFilters($('.range_container.expanded').length > 0, mappy, table);
-	        }
-			else if (parentNodeClassList.contains('download-map-button')) {
-				generateMapImage(mappy);
-			}
-			
-		}
-
-	});
-	
-	return { datelineContainer, mapParameters }
-	
-}
-
-
 
 // EXTERNAL MODULE: ../app/whg/webpack/js/6.5.0_turf.min.js
 var _6_5_0_turf_min = __webpack_require__(301);
@@ -2561,7 +2324,6 @@ function equidistantLCHColors(numColors) {
 		const hueValue_adjusted = hueValue_adjust ? hueValue_raw + hue_avoid_tolerance * 2 : hueValue_raw
 		const color = (0,chroma_min.lch)(50, 70, hueValue_adjusted % 360).hex();
 		colors.push(color);
-		console.log(color, hueValue_adjusted);
 	}
 	return colors;
 }
@@ -2677,10 +2439,11 @@ function initUtils(mappy) {
 	});
 	
 	// image modal
-	$("body").on("click", ".pop", function() {
-	    let url = $(this).find('img').attr('src')
-        let txt = $(this).find('img').attr('alt')
-        let re = /(.png|.jpg|.jpeg|.gif|.tif)/g
+	$("body").on("click", ".pop, #anno_img", function() {
+		let image = $(this).is('img') ? $(this) : $(this).find('img:first');
+	    let url = image.attr('src')
+        let txt = image.attr('alt')
+        // let re = /(.png|.jpg|.jpeg|.gif|.tif)/g // TODO: Remove if not required
         console.log('url', url)
         $("#header_text").html(txt)
         $('.imagepreview').attr('src', url);
@@ -2762,13 +2525,20 @@ function minmaxer(timespans) {
 function get_ds_list_stats(allFeatures) {
 	let min = Infinity;
 	let max = -Infinity;
+    let seqMin = Infinity;
+    let seqMax = -Infinity;
 	for (let i = 0; i < allFeatures.length; i++) {
 		const featureMin = allFeatures[i].properties.min;
 		const featureMax = allFeatures[i].properties.max;
+		const seqValue = allFeatures[i].properties.seq;
 		if (!isNaN(featureMin) && !isNaN(featureMax)) {
 			min = Math.min(min, featureMin);
 			max = Math.max(max, featureMax);
 		}
+        if (!isNaN(seqValue)) {
+            seqMin = Math.min(seqMin, seqValue);
+            seqMax = Math.max(seqMax, seqValue);
+        }
 	}
 	if (!isFinite(min)) min = -3000;
 	if (!isFinite(max)) max = 2000;
@@ -2781,349 +2551,21 @@ function get_ds_list_stats(allFeatures) {
 	return {
 		min: min,
 		max: max,
+        seqmin: seqMin,
+        seqmax: seqMax,
 		extent: (0,_6_5_0_turf_min.bbox)(geojson)
 	}
-}
-;// CONCATENATED MODULE: ../app/whg/webpack/js/mapFilters.js
-
-
-function filteredLayer(layer) {
-	if ($('.range_container.expanded').length > 0) { // Is dateline active?
-		const modifiedLayer = ({
-			...layer
-		});
-		const existingFilter = modifiedLayer.filter;
-
-		const isUndatedChecked = $('#undated_checkbox').is(':checked');
-
-		if (isUndatedChecked) { // Include features within the range AND undated features
-			modifiedLayer.filter = [
-				'all',
-				existingFilter,
-				[
-					'any',
-					[
-						'all',
-						['!=', 'max', 'null'],
-						['!=', 'min', 'null'],
-						['>=', 'max', window.dateline.fromValue],
-						['<=', 'min', window.dateline.toValue],
-					],
-					[
-						'any',
-						['==', 'max', 'null'],
-						['==', 'min', 'null']
-					]
-				]
-			];
-		} else { // Include features within the range BUT NOT undated features
-			modifiedLayer.filter = [
-				'all',
-				existingFilter,
-				['has', 'max'],
-				['has', 'min'],
-				['>=', 'max', window.dateline.fromValue],
-				['<=', 'min', window.dateline.toValue],
-			];
-		}
-
-		return modifiedLayer;
-	} else return layer;
-}
-
-function toggleFilters(on, mappy, table){
-    mapLayerStyles.forEach(function(layer){
-		window.ds_list.forEach(function(ds) {
-			const modifiedLayer = { ...layer };
-		    modifiedLayer.id = `${layer.id}_${ds.id}`;
-		    modifiedLayer.source = ds.id.toString();
-			mappy.setFilter(modifiedLayer.id, on ? filteredLayer(modifiedLayer).filter : modifiedLayer.filter);
-		});
-	});
-	table.draw();
-}
-
-
-;// CONCATENATED MODULE: ../app/whg/webpack/js/mapFunctions.js
-
-
-
-
-let mapParams;
-
-function addMapSource(mappy, ds) {
-	mappy.addSource(ds.id.toString(), {
-		'type': 'geojson',
-		'data': ds,
-		'attribution': attributionString(ds),
-	});
-}
-
-function addMapLayer(mappy, layer, ds) {
-	const modifiedLayer = { ...layer };
-    modifiedLayer.id = `${layer.id}_${ds.id}`;
-    modifiedLayer.source = ds.id.toString();
-    mappy.addLayer(filteredLayer(modifiedLayer));
-    if (!!ds.relations && layer.id == 'gl_active_point') {
-    	let circleColors = arrayColors(ds.relations);
-    	colorTable(circleColors, '#coll_detail');
-		mappy.setPaintProperty(modifiedLayer.id, 'circle-color', [
-		  'match',
-		  ['get', 'relation'],
-		  ...circleColors,
-		  '#ccc',
-		]);
-		mappy.setPaintProperty(modifiedLayer.id, 'circle-stroke-color', [
-		  'match',
-		  ['get', 'relation'],
-		  ...circleColors,
-		  '#ccc',
-		]);
-	}
-}
-	
-function updatePadding() {
-	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
-	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
-	window.mapPadding = {
-		top: ControlsRect.top - MapRect.top - mapParams.ControlsRectMargin,
-		bottom: MapRect.bottom - ControlsRect.bottom - mapParams.ControlsRectMargin,
-		left: ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin,
-		right: MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin,
-	};
-	//console.log('mapPadding recalculated:', window.mapPadding);
-}
-
-function updateBounds() {
-	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
-	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
-	const centerX = - mapParams.MapRectBorder + ControlsRect.left - MapRect.left + ControlsRect.width / 2;
-	const centerY = - mapParams.MapRectBorder + ControlsRect.top - MapRect.top + ControlsRect.height / 2;
-	const pseudoCenter = mapParams.mappy.unproject([centerX, centerY]);
-	window.mapBounds = {
-		'center': pseudoCenter
-	}
-	//console.log('window.mapBounds updated:', window.mapBounds);
-}
-
-// Control positioning of map, clear of overlays
-function recenterMap(mappy, duration) {
-	duration = duration ==  'lazy' ? 1000 : 0 // Set duration of movement
-	window.blockBoundsUpdate = true;
-	
-	if (window.mapBounds) {
-		if (Array.isArray(window.mapBounds) || !window.mapBounds.hasOwnProperty('center')) { // mapBounds might be a coordinate pair object returned by mappy.getBounds();
-			mappy.fitBounds(window.mapBounds, {
-				padding: window.mapPadding,
-				duration: duration
-			});
-		} else { // mapBounds has been set based on a center point and zoom
-			mappy.flyTo({
-				...window.mapBounds,
-				padding: window.mapPadding,
-				duration: duration
-			})
-		}
-	}
-}
-
-function initObservers(mappy) {
-	
-	mapParams = {
-		mappy: mappy,
-		ControlsRectEl: document.getElementById('mapControls'),
-		MapRectEl: document.querySelector('div.maplibregl-map'),
-		ControlsRectMargin: 4,
-		MapRectBorder: 1
-	}
-	
-	window.blockBoundsUpdate = false;
-	const resizeObserver = new ResizeObserver(function() { 
-		updatePadding();
-		recenterMap(mappy);
-	});
-
-	// Recenter map whenever its viewport changes size
-	resizeObserver.observe(mapParams.ControlsRectEl);
-	resizeObserver.observe(mapParams.MapRectEl);
-	
-	mappy.on('zoomend', function() { // Triggered by `flyTo` and `fitBounds` - must be blocked to prevent misalignment 
-		if (window.blockBoundsUpdate) {
-			window.blockBoundsUpdate = false;
-			//console.log('blockBoundsUpdate released.');
-		}
-		else {
-			updateBounds();
-		}
-	});
-	mappy.on('dragend', function() { updateBounds(); });
-	
-}
-
-function initOverlays(whgMap) {
-	const controlContainer = document.querySelector('.maplibregl-control-container');	
-	controlContainer.setAttribute('id', 'mapControls');
-	controlContainer.classList.add('item');
-
-	const mapOverlays = document.createElement('div');
-	mapOverlays.id = 'mapOverlays';
-	whgMap.appendChild(mapOverlays);
-
-	['left', 'right'].forEach(function(side) {
-		const column = document.createElement('div');
-		column.classList.add('column', side);
-		mapOverlays.appendChild(column);
-		const overlays = document.querySelectorAll('.overlay.' + side);
-		overlays.forEach(function(overlay) {
-			column.appendChild(overlay);
-			overlay.classList.add('item');
-		})
-		if (side == 'left') column.appendChild(controlContainer);
-	})
-
-	// Initialise Download link listener
-	$(".a-dl, .a-dl-celery").click(function(e) {
-		e.preventDefault();
-		let dsid = $(this).data('id');
-		let collid = $(this).data('collid');
-		let urly = '/datasets/dlcelery/'
-		$.ajax({
-			type: 'POST',
-			url: urly,
-			data: {
-				"format": 'lpf',
-				"dsid": dsid,
-				"collid": collid,
-				"csrfmiddlewaretoken": "{{ csrf_token }}"
-			},
-			datatype: 'json',
-			success: function(response) {
-				window.spinner_download = startSpinner("metadata"); // TODO: window.spinner_download.stop() not yet implemented anywhere?
-				task_id = response.task_id
-				var progressUrl = "/celery-progress/" + task_id + "/";
-				CeleryProgressBar.initProgressBar(progressUrl, {
-					pollingInterval: 500,
-					onResult: customResult,
-				})
-			}
-		})
-	})
-
-	// TODO: Collection download event handlers
-	$(".btn-cancel").click(function() {
-		$("#downloadModal").modal('hide')
-	})
-	let clearEl = function(el) {
-		$("#progress-bar").fadeOut()
-		el.html('')
-	}
-}
-
-function initPopups(mappy, activePopup, table) {
-
-	mapLayerStyles.forEach(function(layer) {
-		
-		window.ds_list.forEach(function(ds) {
-			const modifiedLayer = { ...layer };
-		    modifiedLayer.id = `${layer.id}_${ds.id}`;
-		    modifiedLayer.source = ds.id.toString();
-	
-			mappy.on('mouseenter', modifiedLayer.id, function(e) {
-				mappy.getCanvas().style.cursor = 'pointer';
-	
-				var pid = e.features[0].properties.pid;
-				var title = e.features[0].properties.title;
-				var min = e.features[0].properties.min;
-				var max = e.features[0].properties.max;
-	
-				if (activePopup) {
-					activePopup.remove();
-				}
-				activePopup = new maptilersdk.Popup({
-						closeButton: false
-					})
-					.setLngLat(e.lngLat)
-					.setHTML('<b>' + title + '</b><br/>' +
-						'Temporality: ' + (min ? min : '?') + '/' + (max ? max : '?') + '<br/>' +
-						'Click to focus'
-					)
-					.addTo(mappy);
-				activePopup.pid = pid;
-			});
-	
-			mappy.on('mousemove', modifiedLayer.id, function(e) {
-				if (activePopup) {
-					activePopup.setLngLat(e.lngLat);
-				}
-			});
-	
-			mappy.on('mouseleave', modifiedLayer.id, function() {
-				mappy.getCanvas().style.cursor = '';
-				if (activePopup) {
-					activePopup.remove();
-				}
-	
-			});
-	
-			mappy.on('click', modifiedLayer.id, function(e) {
-	
-				var pid;
-				if (activePopup && activePopup.pid) {
-					pid = activePopup.pid;
-					activePopup.remove();
-				} else pid = e.features[0].properties.pid;
-	
-				// Search for the row within the sorted and filtered view
-				var pageInfo = table.page.info();
-				var rowPosition = -1;
-				var rows = table.rows({
-					search: 'applied',
-					order: 'current'
-				}).nodes();
-				let selectedRow;
-				for (var i = 0; i < rows.length; i++) {
-					var rowData = table.row(rows[i]).data();
-					rowPosition++;
-					if (rowData.properties.pid == pid) {
-						selectedRow = rows[i];
-						break; // Stop the loop when the row is found
-					}
-				}
-	
-				if (rowPosition !== -1) {
-					// Calculate the page number based on the row's position
-					var pageNumber = Math.floor(rowPosition / pageInfo.length);
-					//console.log(`Feature ${pid} selected at table row ${rowPosition} on page ${pageNumber + 1} (current page ${pageInfo.page + 1}).`);
-	
-					// Check if the row is on the current page
-					if (pageInfo.page !== pageNumber) {
-						table.page(pageNumber).draw('page');
-					}
-	
-					selectedRow.scrollIntoView();
-					$(selectedRow).trigger('click');
-				}
-	
-			})
-		    
-		    
-		    
-		    
-		});
-
-	});
-}
-
-function listSourcesAndLayers(mappy) {	
-	const style = mappy.getStyle();
-	const sources = style.sources;
-	console.log('Sources:', Object.keys(sources));
-	const layers = style.layers;
-	console.log('Layers:', layers.map(layer => layer.id));
 }
 
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/getPlace.js
 
+
+function popupFeatureHTML(feature) { // TODO: Improve styling with css and content?
+	let HTML = '<b>' + feature.properties.title + '</b><br/>' +
+    'Temporality: ' + (feature.properties.min ? feature.properties.min : '?') + '/' + (feature.properties.max ? feature.properties.max : '?') + '<br/>' +
+    'Click to focus';
+    return (HTML);
+}
 
 function getPlace(pid, cid, spinner_detail) {
 	//console.log('getPlace()', pid);
@@ -3557,7 +2999,461 @@ function parsePlace(data) {
 }
 
 */
+;// CONCATENATED MODULE: ../app/whg/webpack/js/mapFilters.js
+
+
+function filteredLayer(layer) {
+	if ($('.range_container.expanded').length > 0) { // Is dateline active?
+		const modifiedLayer = ({
+			...layer
+		});
+		const existingFilter = modifiedLayer.filter;
+
+		const isUndatedChecked = $('#undated_checkbox').is(':checked');
+
+		if (isUndatedChecked) { // Include features within the range AND undated features
+			modifiedLayer.filter = [
+				'all',
+				existingFilter,
+				[
+					'any',
+					[
+						'all',
+						['!=', 'max', 'null'],
+						['!=', 'min', 'null'],
+						['>=', 'max', window.dateline.fromValue],
+						['<=', 'min', window.dateline.toValue],
+					],
+					[
+						'any',
+						['==', 'max', 'null'],
+						['==', 'min', 'null']
+					]
+				]
+			];
+		} else { // Include features within the range BUT NOT undated features
+			modifiedLayer.filter = [
+				'all',
+				existingFilter,
+				['has', 'max'],
+				['has', 'min'],
+				['>=', 'max', window.dateline.fromValue],
+				['<=', 'min', window.dateline.toValue],
+			];
+		}
+
+		return modifiedLayer;
+	} else return layer;
+}
+
+function toggleFilters(on, mappy, table){
+    mapLayerStyles.forEach(function(layer){
+		window.ds_list.forEach(function(ds) {
+			const modifiedLayer = { ...layer };
+		    modifiedLayer.id = `${layer.id}_${ds.id}`;
+		    modifiedLayer.source = ds.id.toString();
+			mappy.setFilter(modifiedLayer.id, on ? filteredLayer(modifiedLayer).filter : modifiedLayer.filter);
+		});
+	});
+	table.draw();
+}
+
+
+;// CONCATENATED MODULE: ../app/whg/webpack/js/mapSequenceArcs.js
+// mapSequenceArcs.js
+
+
+
+class SequenceArcs {
+	constructor(map, dataset, { deflectionValue = 1, lineColor = '#888', lineOpacity = .8, lineWidth = 1, dashLength = 8, animationRate = 1 } = {}) { // animationRate = steps per second
+		this.map = map;
+		this.dataset = dataset;
+		this.arcSourceId = 'sequence-arcs-source';
+		this.arcLayerId = 'sequence-arcs-layer';
+		window.additionalLayers.push(['sequence-arcs-source','sequence-arcs-layer']);
+		this.deflectionValue = deflectionValue; // Defines curvature of arc (displacement of arc's centre-point is proportional to its length)
+		this.lineColor = lineColor;
+		this.lineOpacity = lineOpacity;
+		this.lineWidth = lineWidth;
+		this.dashLength = dashLength; // Must be > 0
+		this.animationInterval = animationRate > 0 ? 1000 / (animationRate * dashLength * 1.5) : null; // animationRate is number of full dash-cycles per second
+		this.dashArraySequence = animationRate > 0 ? this.generateDashArraySequence() : [[1, 0]]; // Draw solid line if no animation
+		this.createArcs();
+		this.createArcLayer();
+		if (animationRate > 0) this.animateDashedLine();
+	}
+
+	createArcs() {
+		const arcFeatures = [];
+
+		function calculateControlPoint(start, end, baseDeflection) {
+			const lineLength = (0,_6_5_0_turf_min.distance)(start, end, {
+				units: 'kilometers'
+			});
+			const deflection = baseDeflection * lineLength / 1000;
+
+			const midX = (start[0] + end[0]) / 2;
+			const midY = (start[1] + end[1]) / 2;
+			const angle = Math.atan2(end[1] - start[1], end[0] - start[0]) + Math.PI / 2;
+			const controlX = midX + deflection * Math.cos(angle);
+			const controlY = midY + deflection * Math.sin(angle);
+			return [controlX, controlY];
+		}
+
+		const pointSourceData = this.dataset;
+
+		if (pointSourceData && pointSourceData.type === 'FeatureCollection') {
+			const sortedData = pointSourceData.features.sort((a, b) => {
+				return a.properties.seq - b.properties.seq;
+			});
+
+			for (let i = 0; i < sortedData.length - 1; i++) {
+				const startPoint = sortedData[i];
+				const endPoint = sortedData[i + 1];
+
+				const controlPoint = calculateControlPoint(
+					startPoint.geometry.coordinates,
+					endPoint.geometry.coordinates,
+					this.deflectionValue
+				);
+
+				const line = (0,_6_5_0_turf_min.lineString)([
+					startPoint.geometry.coordinates,
+					controlPoint,
+					endPoint.geometry.coordinates,
+				]);
+
+				const arc = (0,_6_5_0_turf_min.bezierSpline)(line, {
+					sharpness: 1
+				});
+
+				arcFeatures.push(arc);
+			}
+
+			this.arcFeatures = arcFeatures;
+			
+			this.map.addSource(this.arcSourceId, {
+				type: 'geojson',
+				data: {
+					type: 'FeatureCollection',
+					features: this.arcFeatures
+				},
+			})
+			
+		}
+	}
+
+	createArcLayer() {
+		this.map.addLayer({
+			id: this.arcLayerId,
+			type: 'line',
+			source: this.arcSourceId,
+			paint: {
+				'line-color': this.lineColor,
+				'line-opacity': this.lineOpacity,
+				'line-width': this.lineWidth,
+				'line-dasharray': this.dashArraySequence[0],
+			},
+		});
+	}
+
+	generateDashArraySequence() {
+		const dashArraySequence = [];
+		const dashLength = this.dashLength; // Maximum dash value in the sequence
+		const gapLength = dashLength / 2; // Gap value between dashes
+
+		for (let i = 0; i <= dashLength; i++) {
+			dashArraySequence.push([i, gapLength, dashLength - i]);
+		}
+
+		for (let i = 0; i <= gapLength; i++) {
+			dashArraySequence.push([0, i, dashLength, gapLength - i]);
+		}
+
+		return dashArraySequence;
+	}
+
+	animateDashedLine() {
+		let step = 0;
+    	let lastTimestamp = 0;
+		const animateDashArray = (timestamp) => {
+        	const elapsedTime = timestamp - lastTimestamp;
+	        if (elapsedTime >= this.animationInterval) {
+	            lastTimestamp = timestamp;
+	            const newStep = (step + 1) % this.dashArraySequence.length;
+	            this.map.setPaintProperty(
+	                this.arcLayerId,
+	                'line-dasharray',
+	                this.dashArraySequence[newStep]
+	            );
+	            step = newStep;
+	        }
+			requestAnimationFrame(animateDashArray);
+		}
+		requestAnimationFrame(animateDashArray);
+	}
+}
+;// CONCATENATED MODULE: ../app/whg/webpack/js/mapFunctions.js
+
+
+
+
+
+
+
+
+let mapParams;
+
+function addMapSource(ds) {
+	mappy.addSource(ds.id.toString(), {
+		'type': 'geojson',
+		'data': ds,
+		'attribution': attributionString(ds),
+	});
+}
+
+function addMapLayer(layer, ds) {
+	const modifiedLayer = {
+		...layer
+	};
+	modifiedLayer.id = `${layer.id}_${ds.id}`;
+	modifiedLayer.source = ds.id.toString();
+	mappy.addLayer(filteredLayer(modifiedLayer));
+	if (!!ds.relations && layer.id == 'gl_active_point') {
+		let circleColors = arrayColors(ds.relations);
+		colorTable(circleColors, '#coll_detail');
+		mappy.setPaintProperty(modifiedLayer.id, 'circle-color', [
+			'match',
+			['get', 'relation'],
+			...circleColors,
+			'#ccc',
+		]);
+		mappy.setPaintProperty(modifiedLayer.id, 'circle-stroke-color', [
+			'match',
+			['get', 'relation'],
+			...circleColors,
+			'#ccc',
+		]);
+		const sequenceArcs = new SequenceArcs(mappy, ds, {
+			/*animationRate: 0*/ });
+		mappy.moveLayer(sequenceArcs.arcLayerId, modifiedLayer.id);
+	}
+}
+
+function updatePadding() {
+	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
+	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
+	mappy.setPadding({
+		top: ControlsRect.top - MapRect.top - mapParams.ControlsRectMargin,
+		bottom: MapRect.bottom - ControlsRect.bottom - mapParams.ControlsRectMargin,
+		left: ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin,
+		right: MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin,
+	});
+}
+
+function updateBounds() {
+	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
+	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
+	const centerX = -mapParams.MapRectBorder + ControlsRect.left - MapRect.left + ControlsRect.width / 2;
+	const centerY = -mapParams.MapRectBorder + ControlsRect.top - MapRect.top + ControlsRect.height / 2;
+	const pseudoCenter = mapParams.mappy.unproject([centerX, centerY]);
+	window.mapBounds = {
+		'center': pseudoCenter
+	}
+	//console.log('window.mapBounds updated:', window.mapBounds);
+}
+
+// Control positioning of map, clear of overlays
+function recenterMap(duration) {
+	duration = duration == 'lazy' ? 1000 : 0 // Set duration of movement
+	window.blockBoundsUpdate = true;
+	// mappy.showPadding = true; // Used for debugging - draws coloured lines to indicate padding
+	if (window.mapBounds) {
+		if (Array.isArray(window.mapBounds) || !window.mapBounds.hasOwnProperty('center')) { // mapBounds might be a coordinate pair object returned by mappy.getBounds();
+			mappy.fitBounds(window.mapBounds, {
+				duration: duration
+			});
+		} else { // mapBounds has been set based on a center point and zoom
+			mappy.flyTo({
+				...window.mapBounds,
+				duration: duration
+			})
+		}
+	}
+}
+
+function initObservers() {
+
+	mapParams = {
+		mappy: mappy,
+		ControlsRectEl: document.getElementById('mapControls'),
+		MapRectEl: document.querySelector('div.maplibregl-map'),
+		ControlsRectMargin: 4,
+		MapRectBorder: 1
+	}
+
+	window.blockBoundsUpdate = false;
+	const resizeObserver = new ResizeObserver(function() {
+		updatePadding();
+		recenterMap(false);
+	});
+
+	// Recenter map whenever its viewport changes size
+	resizeObserver.observe(mapParams.ControlsRectEl);
+	resizeObserver.observe(mapParams.MapRectEl);
+	updatePadding();
+
+	mappy.on('zoomend', function() { // Triggered by `flyTo` and `fitBounds` - must be blocked to prevent misalignment 
+		if (window.blockBoundsUpdate) {
+			window.blockBoundsUpdate = false;
+			//console.log('blockBoundsUpdate released.');
+		} else {
+			updateBounds();
+		}
+	});
+	mappy.on('dragend', function() {
+		updateBounds();
+	});
+
+}
+
+function initOverlays(whgMap) {
+	const controlContainer = document.querySelector('.maplibregl-control-container');
+	controlContainer.setAttribute('id', 'mapControls');
+	controlContainer.classList.add('item');
+
+	const mapOverlays = document.createElement('div');
+	mapOverlays.id = 'mapOverlays';
+	whgMap.appendChild(mapOverlays);
+
+	['left', 'right'].forEach(function(side) {
+		const column = document.createElement('div');
+		column.classList.add('column', side);
+		mapOverlays.appendChild(column);
+		const overlays = document.querySelectorAll('.overlay.' + side);
+		overlays.forEach(function(overlay) {
+			column.appendChild(overlay);
+			overlay.classList.add('item');
+		})
+		if (side == 'left') column.appendChild(controlContainer);
+	})
+
+	// Initialise Download link listener
+	$(".a-dl, .a-dl-celery").click(function(e) {
+		e.preventDefault();
+		let dsid = $(this).data('id');
+		let collid = $(this).data('collid');
+		let urly = '/datasets/dlcelery/'
+		$.ajax({
+			type: 'POST',
+			url: urly,
+			data: {
+				"format": 'lpf',
+				"dsid": dsid,
+				"collid": collid,
+				"csrfmiddlewaretoken": "{{ csrf_token }}"
+			},
+			datatype: 'json',
+			success: function(response) {
+				window.spinner_download = startSpinner("metadata"); // TODO: window.spinner_download.stop() not yet implemented anywhere?
+				task_id = response.task_id
+				var progressUrl = "/celery-progress/" + task_id + "/";
+				CeleryProgressBar.initProgressBar(progressUrl, {
+					pollingInterval: 500,
+					onResult: customResult,
+				})
+			}
+		})
+	})
+
+	// TODO: Collection download event handlers
+	$(".btn-cancel").click(function() {
+		$("#downloadModal").modal('hide')
+	})
+	let clearEl = function(el) {
+		$("#progress-bar").fadeOut()
+		el.html('')
+	}
+}
+
+let activePopup;
+function initPopups(table) {
+
+	function clearPopup(preserveCursor = false) {
+		if (activePopup) {
+			if (activePopup.featureHighlight !== false) {
+				mappy.setFeatureState(activePopup.featureHighlight, { highlight: false });
+			}
+			activePopup.remove();
+			activePopup = null;
+			if (!preserveCursor) mappy.getCanvas().style.cursor = '';
+		}
+	}
+
+	mappy.on('mousemove', function(e) {
+		const features = mappy.queryRenderedFeatures(e.point);
+
+		if (features.length > 0) {
+			const topFeature = features[0]; // Handle only the top-most feature
+			const topLayerId = topFeature.layer.id;
+
+			// Check if the top feature's layer id starts with the id of any layer in datasetLayers
+			const isTopFeatureInDatasetLayer = mapLayerStyles.some(layer => topLayerId.startsWith(layer.id));
+
+			if (isTopFeatureInDatasetLayer) {
+				mappy.getCanvas().style.cursor = 'pointer';
+
+		        if (!activePopup || activePopup.pid !== topFeature.properties.pid) {
+		          // If there is no activePopup or it's a different feature, create a new one ...
+		          if (activePopup) {
+		            clearPopup(true);
+		          }
+		          activePopup = new maptilersdk.Popup({
+		            closeButton: false,
+		          })
+		            .setLngLat(e.lngLat)
+		            .setHTML(popupFeatureHTML(topFeature))
+		            .addTo(mappy);
+		          activePopup.pid = topFeature.properties.pid;
+		          activePopup.featureHighlight = { source: topFeature.source, id: topFeature.id };
+		          if (!!window.highlightedFeatureIndex && window.highlightedFeatureIndex.id === activePopup.featureHighlight.id && window.highlightedFeatureIndex.source === activePopup.featureHighlight.source) {
+					  activePopup.featureHighlight = false;
+				  }
+				  else {
+		          	  mappy.setFeatureState(activePopup.featureHighlight, { highlight: true });
+				  }
+		        } else {
+		          // ... otherwise just update its position
+		          activePopup.setLngLat(e.lngLat);
+		        }
+
+			} else {
+				clearPopup();
+			}
+		} else {
+			clearPopup();
+		}
+	});
+
+	mappy.on('click', function() {
+		if (activePopup && activePopup.pid) {
+			let savedPID = activePopup.pid;
+			clearPopup();
+			scrollToRowByProperty(table, 'pid', savedPID);
+		}
+	});
+}
+
+function listSourcesAndLayers() {
+	const style = mappy.getStyle();
+	const sources = style.sources;
+	console.log('Sources:', Object.keys(sources));
+	const layers = style.layers;
+	console.log('Layers:', layers.map(layer => layer.id));
+}
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/tableFunctions.js
+
+
 
 
 
@@ -3640,7 +3536,7 @@ function clearFilters() {
 	$("#status_select").val('99')
 }*/
 
-function filterMap(mappy, val) {
+function toggleMapLayers(mappy, val) {
 	let recentered = false;
 	mapLayerStyles.forEach(function(layer) {
 		window.ds_list.forEach(function(ds) {
@@ -3648,15 +3544,47 @@ function filterMap(mappy, val) {
 			if (!recentered && ds.id.toString() === val.toString()) {
 				recentered = true;
 				window.mapBounds = ds.extent;
-				recenterMap(mappy, 'lazy');
+				recenterMap('lazy');
 			}
 		});
 	});
 }
 
+function scrollToRowByProperty(table, propertyName, value) {
+    // Search for the row within the sorted and filtered view
+    var pageInfo = table.page.info();
+    var rowPosition = -1;
+    var rows = table.rows({
+        search: 'applied',
+        order: 'current'
+    }).nodes();
+    let selectedRow;
+    for (var i = 0; i < rows.length; i++) {
+        var rowData = table.row(rows[i]).data();
+        rowPosition++;
+        if (rowData.properties[propertyName] == value) {
+            selectedRow = rows[i];
+            break; // Stop the loop when the row is found
+        }
+    }
+
+    if (rowPosition !== -1) {
+        // Calculate the page number based on the row's position
+        var pageNumber = Math.floor(rowPosition / pageInfo.length);
+
+        // Check if the row is on the current page
+        if (pageInfo.page !== pageNumber) {
+            table.page(pageNumber).draw('page');
+        }
+
+        selectedRow.scrollIntoView();
+        $(selectedRow).trigger('click');
+    }
+}
+
 function highlightFeature(ds_pid, features, mappy) {
 
-	//listSourcesAndLayers(mappy);
+	//listSourcesAndLayers();
 
 	features = features.filter(f => f.properties.dsid === ds_pid.ds);
 
@@ -3685,10 +3613,10 @@ function highlightFeature(ds_pid, features, mappy) {
 					'center': flycoords,
 					'zoom': 7
 				}
-				recenterMap(mappy, 'lazy');
+				recenterMap('lazy');
 			} else {
 				window.mapBounds = (0,_6_5_0_turf_min.envelope)(geom).bbox;
-				recenterMap(mappy, 'lazy');
+				recenterMap('lazy');
 			}
 			//console.log(`Highlight now on ${window.highlightedFeatureIndex}.`);
 		} else {
@@ -3728,9 +3656,12 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 
 	// Define Datatable columns based on ds_type
 	let columns;
+	let columnDefs;
+	let order;
 	if (!isCollection) { // Datasets
 
 		const check_column = window.loggedin ? {
+            title: "<a href='#' rel='tooltip' title='add one or more rows to a collection'><i class='fas fa-question-circle linkypop'></i></a>",
 			data: "properties.pid",
 			render: function(data, type, row) {
 				return `<input type="checkbox" name="addme" class="table-chk" data-id="${data}"/>`;
@@ -3742,15 +3673,18 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 		}
 
 		columns = [{
+                title: "pid",
 				data: "properties.pid",
 				render: function(data, type, row) {
 					return `<a href="http://localhost:8000//api/db/?id=${data}" target="_blank">${data}</a>`;
 				}
 			},
 			{
+                title: "title",
 				data: "properties.title"
 			},
 			{
+                title: "geo",
 				data: "geometry",
 				render: function(data, type, row) {
 					if (data) {
@@ -3761,28 +3695,14 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 				}
 			},
 			{
+                title: "dataset",
 				data: function(row) {
 					return row.properties.dslabel || null;
 				}
 			},
 			check_column
 		];
-	} else { // Collections
-		columns = [{
-                    "data": "properties.pid"
-                }, {
-                    "data": "properties.title"
-                }, {
-                    "data": "properties.ccodes"
-                }, {
-                    "data": "properties.seq"
-                }
-            ];
-	}
-
-	// Define columnDefs based on ds_type
-	let columnDefs;
-	if (!isCollection) { // Datasets
+		
 		columnDefs = [{
 				orderable: false,
 				"targets": [0, 2, 4]
@@ -3796,15 +3716,40 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 				"targets": [3]
 			}
 		];
+		
+		order = [
+			[1, 'asc']
+		];
 	} else { // Collections
+		columns = [{
+                title: "seq",
+                data: "properties.seq"
+            }, {
+                title: "title",
+                data: "properties.title"
+            }, {
+                title: "country",
+                data: "properties.ccodes"
+            }, {
+                data: "properties.pid"
+            }
+        ];
+            
 		columnDefs = [{
-                    visible: false,
-                    "targets": [3]
-                }, {
-                    searchable: false,
-                    "targets": [2]
-                }
-            ];
+				orderable: false,
+				"targets": []
+			},{
+                searchable: false,
+                "targets": [2]
+            },{
+                visible: false,
+                "targets": [3]
+            }
+        ];
+		
+		order = [
+			[0, 'asc']
+		];
 	}
 
 	table = $('#placetable').DataTable({
@@ -3813,11 +3758,9 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 			"<'row'<'col-sm-12'tr>>" +
 			"<'row small'<'col-sm-12'p>>",
 		select: true,
-		order: [
-			[1, 'asc']
-		],
 		columns: columns,
 		columnDefs: columnDefs,
+		order: order,
 		data: features,
 		rowId: 'properties.pid',
 		createdRow: function(row, data, dataIndex) {
@@ -3831,6 +3774,7 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 				pid: data.properties.pid
 			});
 			$(row).data('cid', data.properties.cid);
+			$(row).data('seq', data.properties.seq);
 			if (!data.geometry) {
 				$(row).addClass('no-geometry');
 			}
@@ -3853,6 +3797,9 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 				$("#selection_status").show()
 			}
 			highlightFirstRow();
+			if (!!mapSequencer) {
+				mapSequencer.updateButtons();
+			}
 		}
 	});
 
@@ -3883,10 +3830,14 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 		// filter map
 		let ds_id = $(this).find(":selected").attr("data");
 		const dsItem = window.ds_list.find(ds => ds.id === ds_id);
-		if (dsItem) window.mapBounds = dsItem.extent;
-		else window.mapBounds = window.ds_list_stats.extent;
-		recenterMap(mappy, 'lazy');
-		filterMap(mappy, ds_id);
+		if (dsItem) {
+			window.mapBounds = dsItem.extent;
+		}
+		else {
+			window.mapBounds = window.ds_list_stats.extent;
+		}
+		toggleMapLayers(mappy, ds_id); // Also recenters map on selected layer
+		if (ds_id == 'all') recenterMap('lazy');
 
 		window.spinner_map.stop();
 	})
@@ -3913,6 +3864,16 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 		getPlace(ds_pid.pid, $(this).data('cid'), spinner_detail);
 
 		highlightFeature(ds_pid, features, mappy);
+		
+		if (!!mapSequencer) {
+			mapSequencer.updateButtons();
+			if (mapSequencer.continuePlay) {
+				mapSequencer.continuePlay = false;
+			}
+			else if (mapSequencer.playing) {
+				mapSequencer.stopPlayback();
+			}
+		}
 
 	});
 
@@ -3947,6 +3908,435 @@ function initialiseTable(features, checked_rows, spinner_table, spinner_detail, 
 		checked_rows
 	}
 }
+
+
+
+;// CONCATENATED MODULE: ../app/whg/webpack/js/mapControls.js
+// /whg/webpack/js/mapControls.js
+
+
+
+
+
+
+class fullScreenControl {
+	onAdd() { 
+		this._map = map;
+		this._container = document.createElement('div');
+		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+		this._container.textContent = 'Fullscreen';
+		this._container.innerHTML =
+			'<button type="button" class="maplibregl-ctrl-fullscreen" aria-label="Enter fullscreen" title="Enter fullscreen">' +
+			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
+			'</button>';
+		return this._container;
+	}
+}
+
+class downloadMapControl {
+	onAdd() {
+		this._map = map;
+		this._container = document.createElement('div');
+		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+		this._container.textContent = 'Download image';
+		this._container.innerHTML =
+			'<button type="button" class="download-map-button" aria-label="Download map image" title="Download map image">' +
+			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
+			'</button>';
+		return this._container;
+	}
+}
+
+class sequencerControl {
+	onAdd() {
+		this.minSeq = window.ds_list_stats.seqmin;
+        this.maxSeq = window.ds_list_stats.seqmax;
+		console.log(`Sequence range (${window.ds_list_stats.seqmin}-${window.ds_list_stats.seqmax}).`);
+        if (this.minSeq == this.maxSeq) {
+			return;
+		}
+        
+		this._map = map;
+		this._container = document.createElement('div');
+		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group sequencer';
+		this._container.textContent = 'Explore sequence';
+		this._container.innerHTML = '';
+		this.currentSeq = this.minSeq;
+		this.playing = false;
+		this.stepdelay = 3;
+        this.playInterval = null;
+        
+        this.buttons = [
+			['skip-first','First waypoint','Already at first waypoint','Disabled during play'],
+			['skip-previous','Previous waypoint','Already at first waypoint','Disabled during play'],
+			['skip-next','Next waypoint','Already at last waypoint','Disabled during play'],
+			['skip-last','Last waypoint','Already at last waypoint','Disabled during play'],
+			'separator',
+			['play','Play from current waypoint: hold to change speed','Cannot play from last waypoint','Stop playing waypoints']
+		];
+		
+		this.buttons.forEach((button) => {
+			this._container.innerHTML += button == 'separator' ? '<span class="separator"/>' : `<button id = "${button[0]}" type="button" style="background-image: url(/static/images/sequencer/${button[0]}-btn.svg)" ${['skip-first', 'skip-previous'].includes(button[0]) ? 'disabled ' : ''}aria-label="${button[1]}" title="${button[1]}" />`
+		});
+		
+		let longClickTimeout;
+		let initialisingSlider = false;
+		$('body').on('mousedown', '.sequencer:not(.playing) button#play', () => {
+		  createSelect.call(this);
+		  longClickTimeout = setTimeout(() => {
+		      $('#stepDelayDropbox').show();
+		      initialisingSlider = true;
+		  }, 1000);
+		});
+		
+		$('body').on('mouseup','.sequencer button', (e) => {
+		    const sequencer = $('.sequencer');
+		    const action = $(e.target).attr('id');
+		    
+		    if (table.search() !== '') { // Clear any table search filter
+				table.search('').draw();
+			}
+		    
+		    console.log(`Sequencer action: ${action} from ${this.currentSeq}.`);
+			
+			if (window.highlightedFeatureIndex == undefined) {
+				if (['skip-previous', 'skip-next'].includes(action)) { // Highlight feature selected in table
+					$('#placetable tr.highlight-row').click();
+					return;
+				}
+				else if (action == 'play' && !initialisingSlider) {
+					this.currentSeq -= 1; // Play will commence by re-adding 1
+				}
+			}
+			
+			if (action=='play') {
+				
+		  		clearTimeout(longClickTimeout);
+				if (initialisingSlider) {
+		  			initialisingSlider = false;
+		  			return;
+				}
+				else {
+					$('#stepDelayDropbox').hide();
+				    if (!this.playing) {
+				        sequencer.addClass('playing');
+				        this.startPlayback();
+				    } else {
+						this.stopPlayback();
+				        return;
+				    }
+				}
+			}
+			else {
+				if (action=='skip-first') {
+					this.currentSeq = this.minSeq; 
+				}
+				else if (action=='skip-previous') {
+					this.currentSeq -= 1; 
+				}
+				else if (action=='skip-next') {
+					this.currentSeq += 1; 
+				}
+				else if (action=='skip-last') {
+					this.currentSeq = this.maxSeq; 
+				}
+				
+				scrollToRowByProperty(table, 'seq', this.currentSeq);
+			}
+			
+			if (this.playing && this.currentSeq == this.maxSeq) {
+				this.stopPlayback();
+		        return;
+		    }
+			this.updateButtons();
+			
+		});
+		
+		function createSelect() {
+		  if ($('#stepDelayDropbox').length === 0) {
+		    const $dropboxContainer = $('<div id="stepDelayDropbox" class="sequencer"></div>');
+		    $(this._container).append($dropboxContainer);
+		    const $select = $('<select title="Set delay between waypoints" aria-label="Set delay between waypoints"></select>');
+		    $dropboxContainer.append($select);
+		    for (let i = 1; i <= 20; i++) {
+		      const $option = $(`<option value="${i}">${i}s</option>`);
+		      $select.append($option);
+		    }
+		    $select.val(this.stepdelay);
+		    $select.on('change', (event) => {
+		      const newValue = parseInt(event.target.value);
+		      this.stepdelay = newValue;
+		    });
+		  }
+		}
+
+		return this._container;
+	}
+	
+	updateButtons() {
+		const sequencer = $('.sequencer');
+		this.currentSeq = $('#placetable tr.highlight-row').data('seq');
+        if (!this.playing) {
+            sequencer.find('button').prop('disabled', false);
+            if (this.currentSeq == this.minSeq) {
+			    sequencer.find('button#skip-first,button#skip-previous').prop('disabled', true);
+			}
+			else if (this.currentSeq == this.maxSeq) {
+			    sequencer.find('button#skip-last,button#skip-next,button#play').prop('disabled', true);
+			}
+        } else {
+            sequencer.find('button:not(#play)').prop('disabled', true);
+        }
+        sequencer.find('button').each((i, button) => {
+			button.setAttribute('title', this.buttons[i + (i > 3 ? 1 : 0)][button.disabled ? (this.playing ? 3 : 2) : (this.playing && i == 4 ? 3 : 1)]);
+			button.setAttribute('aria-label', button.getAttribute('title'));
+		});
+	}
+	
+	clickNext() {
+		this.currentSeq += 1;
+		this.continuePlay = true;
+		console.log(`Sequencer action: play ${this.currentSeq}.`);
+		scrollToRowByProperty(table, 'seq', this.currentSeq); // Triggers updateButtons()
+		if (this.currentSeq == this.maxSeq) {
+			this.stopPlayback();
+		}
+	}
+		
+	startPlayback() {
+		console.log('Starting sequence play...');
+		this.playing = true;
+		$('.sequencer').addClass('playing');
+		this.clickNext();
+        if (this.currentSeq < this.maxSeq) {
+			this.playInterval = setInterval(() => {
+				this.clickNext();
+	        }, this.stepdelay * 1000);
+		}
+    }
+
+    stopPlayback() {
+        clearInterval(this.playInterval);
+        this.playInterval = null;
+		this.playing = false;
+		$('.sequencer').removeClass('playing');
+        this.updateButtons();
+		console.log('... stopped sequence play.');
+    }
+}
+
+class StyleControl {
+	
+	constructor(mappy) {
+        this._mappy = mappy;
+    }
+	
+	onAdd() {
+		this._map = map;
+		this._container = document.createElement('div');
+		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+		this._container.textContent = 'Basemap';
+		this._container.innerHTML =
+			'<button type="button" class="style-button" aria-label="Change basemap style" title="Change basemap style">' +
+			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
+			'</button>';
+		this._container.querySelector('.style-button').addEventListener('click', this._onClick.bind(this));
+		return this._container;
+	}
+
+	onRemove() {
+		this._container.parentNode.removeChild(this._container);
+		this._map = undefined;
+	}
+
+	_onClick() {
+		let styleList = document.getElementById('mapStyleList');
+		if (!styleList) {
+			styleList = document.createElement('ul');
+			styleList.id = 'mapStyleList';
+			styleList.className = 'maplibre-styles-list';
+			const styleFilterValues = mapParameters.styleFilter.map(value => value.split('.')[0]);
+			for (const group of Object.values(maptilersdk.MapStyle)) {
+				// Check if the group.id is in the styleFilter array
+				if (mapParameters.styleFilter.length == 0 || styleFilterValues.includes(group.id)) {
+					const groupItem = document.createElement('li');
+					groupItem.textContent = group.name;
+					groupItem.className = 'group-item';
+					const variantList = document.createElement('ul');
+					variantList.className = 'variant-list';
+					for (const orderedVariant of group.orderedVariants) {
+						const datasetValue = group.id + '.' + orderedVariant.variantType;
+						if (mapParameters.styleFilter.length == 0 || mapParameters.styleFilter.includes(datasetValue)) {
+							const variantItem = document.createElement('li');
+							variantItem.textContent = orderedVariant.name;
+							variantItem.className = 'variant-item';
+							variantItem.dataset.value = datasetValue;
+							variantItem.addEventListener('click', this._onVariantClick.bind(this));
+							variantList.appendChild(variantItem);
+						}
+					}
+					groupItem.appendChild(variantList);
+					styleList.appendChild(groupItem);
+				}
+			}
+			this._container.appendChild(styleList);
+		}
+
+		styleList.classList.toggle('show');
+	}
+
+	_onVariantClick(event) {
+	
+		let mappy = this._mappy;
+	
+		const variantValue = event.target.dataset.value;
+		const style_code = variantValue.split(".");
+		console.log('Selected variant: ', variantValue, maptilersdk.MapStyle[style_code[0]][style_code[1]]);
+		mappy.setStyle(maptilersdk.MapStyle[style_code[0]][style_code[1]], {
+		  transformStyle: (previousStyle, nextStyle) => {
+		    const newSources = { ...nextStyle.sources };
+		    window.ds_list.forEach(ds => {
+		      newSources[ds.id.toString()] = previousStyle.sources[ds.id.toString()];
+		    });
+		    window.additionalLayers.forEach(([sourceId]) => {
+		      newSources[sourceId] = previousStyle.sources[sourceId];
+		    });
+		    const additionalLayers = window.additionalLayers.map(additionalLayer => additionalLayer[1]); // Add any other required sources and layers to window.additionalLayers
+		    return {
+		      ...nextStyle,
+		      sources: newSources,
+		      layers: [
+		        ...nextStyle.layers,
+		        ...previousStyle.layers.filter(layer => mapLayerStyles.some(dslayer => layer.id.startsWith(dslayer.id) || additionalLayers.includes(layer.id))),
+		      	]
+		    };
+		  }
+		});
+
+		const styleList = document.getElementById('mapStyleList');
+		if (styleList) {
+			styleList.classList.remove('show');
+		}
+	}
+}
+
+class CustomAttributionControl extends maptilersdk.AttributionControl {
+    constructor(options) {
+        super(options);
+        this.autoClose = options.autoClose !== false;
+    }
+    onAdd(map) {
+        const container = super.onAdd(map);
+        // Automatically close the AttributionControl if autoClose is enabled
+        if (this.autoClose) {
+            const attributionButton = container.querySelector('.maplibregl-ctrl-attrib-button');
+            if (attributionButton) {
+                attributionButton.dispatchEvent(new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    view: window
+                }));
+                container.classList.add('fade-in');
+            }
+        }
+        return container;
+    }
+}
+
+let mapSequencer;
+function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table){
+
+	if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
+	
+	if (mapParameters.styleFilter.length !== 1) {
+		mappy.addControl(new StyleControl(mappy), 'top-right');
+	}
+	
+	mappy.addControl(new fullScreenControl(), 'top-left');
+	mappy.addControl(new downloadMapControl(), 'top-left');
+	
+	if (!!mapParameters.controls.sequencer) {
+		mapSequencer = new sequencerControl();
+		mappy.addControl(mapSequencer, 'bottom-left');
+	}
+	
+	mappy.addControl(new CustomAttributionControl({
+		compact: true,
+    	autoClose: mapParameters.controls.attribution.open === false,
+	}), 'bottom-right');
+
+	function dateRangeChanged(fromValue, toValue){
+		// Throttle date slider changes using debouncing
+		// Ought to be possible to use promises on the `render` event
+		let debounceTimeout;
+	    function debounceFilterApplication() {
+	        clearTimeout(debounceTimeout);
+	        debounceTimeout = setTimeout(toggleFilters(true, mappy, table), 300);
+	    }
+	    debounceFilterApplication(); 
+	}
+
+	if (window.dateline) {
+		window.dateline.destroy();
+		window.dateline = null;
+	}
+	if (datelineContainer) {
+		datelineContainer.remove();
+		datelineContainer = null;
+	}
+
+	if (!!mapParameters.controls.temporal) {
+		datelineContainer = document.createElement('div');
+		datelineContainer.id = 'dateline';
+		document.getElementById('mapControls').appendChild(datelineContainer);
+
+		const range = window.ds_list_stats.max - window.ds_list_stats.min;
+		const buffer = range * 0.1; // 10% buffer
+
+		// Update the temporal settings
+		mapParameters.controls.temporal.fromValue = window.ds_list_stats.min;
+		mapParameters.controls.temporal.toValue = window.ds_list_stats.max;
+		mapParameters.controls.temporal.minValue = window.ds_list_stats.min - buffer;
+		mapParameters.controls.temporal.maxValue = window.ds_list_stats.max + buffer;
+
+		window.dateline = new Dateline({
+			...mapParameters.controls.temporal,
+			onChange: dateRangeChanged
+		});
+	};
+	
+	document.addEventListener('click', function(event) {
+        
+        if (event.target && event.target.parentNode) {
+			const parentNodeClassList = event.target.parentNode.classList;
+			
+			if (parentNodeClassList.contains('maplibregl-ctrl-fullscreen')) {
+				console.log('Switching to fullscreen.');
+				parentNodeClassList.replace('maplibregl-ctrl-fullscreen', 'maplibregl-ctrl-shrink');
+				document.getElementById('mapOverlays').classList.add('fullscreen');
+			} 
+			else if (parentNodeClassList.contains('maplibregl-ctrl-shrink')) {
+				console.log('Switching off fullscreen.');
+				parentNodeClassList.replace('maplibregl-ctrl-shrink', 'maplibregl-ctrl-fullscreen');
+				document.getElementById('mapOverlays').classList.remove('fullscreen');
+			}
+			else if (parentNodeClassList.contains('dateline-button')) {
+	            toggleFilters($('.range_container.expanded').length > 0, mappy, table);
+	        }
+			else if (parentNodeClassList.contains('download-map-button')) {
+				generateMapImage(mappy);
+			}
+			
+		}
+
+	});
+	
+	return { datelineContainer, mapParameters }
+	
+}
+
+
+
 ;// CONCATENATED MODULE: ../app/whg/webpack/js/collections.js
 // pids generate new CollPlace (collection_collplace) and
 // TraceAnnotation records (trace_annotations
@@ -4091,11 +4481,9 @@ console.log('Dataset list:',window.ds_list);
 
 const whgMap = document.getElementById(mapParameters.container);
 
-window.mapPadding;
 window.mapBounds;
 window.highlightedFeatureIndex;
-
-let activePopup;
+window.additionalLayers = []; // Keep track of added map sources and layers - required for baselayer switching
 
 window.dateline = null;
 let datelineContainer = null;
@@ -4159,7 +4547,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	let allFeatures = [];
 	
 	window.ds_list.forEach(function(ds) {
-		addMapSource(mappy, ds);
+		addMapSource(ds);
 		ds.features.forEach(feature => {
 		    feature.properties = feature.properties || {};
 		    feature.properties.dsid = ds.id;
@@ -4169,16 +4557,16 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	});
 	
 	window.ds_list_stats = get_ds_list_stats(allFeatures);
-	//console.log('window.ds_list_stats', window.ds_list_stats);
+	console.log('window.ds_list_stats', window.ds_list_stats);
 	
 	mapLayerStyles.forEach(function(layer) { // Ensure proper layer order for multiple datasets
 		window.ds_list.forEach(function(ds) {
-			addMapLayer(mappy, layer, ds);
+			addMapLayer(layer, ds);
 		});
 	});
 	
 	mappy.removeSource('maptiler_attribution');
-	listSourcesAndLayers(mappy);
+	listSourcesAndLayers();
 	// TODO: Adjust attribution elsewhere: © MapTiler © OpenStreetMap contributors
 		
 	// Initialise Data Table
@@ -4189,12 +4577,9 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	allFeatures = null; // release memory
 
 	window.mapBounds = window.ds_list_stats.extent;
-	recenterMap(mappy);
-	
-	initObservers(mappy);
 
 	// Initialise Map Popups
-	initPopups(mappy, activePopup, mapAndTable_table);
+	initPopups(mapAndTable_table);
 	
 	// Initialise Map Controls
 	const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, mapAndTable_table);
@@ -4204,6 +4589,10 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	// Initialise Info Box state
 	initInfoOverlay();
 	
+	// Initialise resize observers
+	initObservers();
+	
+	recenterMap();
 	whgMap.style.opacity = 1;
 	
 	initUtils(mappy); // Tooltips, ClipboardJS, clearlines, help-matches
@@ -4212,6 +4601,8 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	
 	spinner_map.stop();
 });
+
+
 
 // TODO: Seemingly-redundant JavaScript not implemented in modularisation
 /*

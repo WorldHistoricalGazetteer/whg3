@@ -1,10 +1,14 @@
 import datasetLayers from './mapLayerStyles';
 import { attributionString, arrayColors, colorTable } from './utilities';
 import { filteredLayer } from './mapFilters';
+import SequenceArcs from './mapSequenceArcs';
+import { scrollToRowByProperty } from './tableFunctions';
+import { popupFeatureHTML } from './getPlace.js';
+import { mappy } from './mapAndTable';
 
 let mapParams;
 
-export function addMapSource(mappy, ds) {
+export function addMapSource(ds) {
 	mappy.addSource(ds.id.toString(), {
 		'type': 'geojson',
 		'data': ds,
@@ -12,46 +16,50 @@ export function addMapSource(mappy, ds) {
 	});
 }
 
-export function addMapLayer(mappy, layer, ds) {
-	const modifiedLayer = { ...layer };
-    modifiedLayer.id = `${layer.id}_${ds.id}`;
-    modifiedLayer.source = ds.id.toString();
-    mappy.addLayer(filteredLayer(modifiedLayer));
-    if (!!ds.relations && layer.id == 'gl_active_point') {
-    	let circleColors = arrayColors(ds.relations);
-    	colorTable(circleColors, '#coll_detail');
+export function addMapLayer(layer, ds) {
+	const modifiedLayer = {
+		...layer
+	};
+	modifiedLayer.id = `${layer.id}_${ds.id}`;
+	modifiedLayer.source = ds.id.toString();
+	mappy.addLayer(filteredLayer(modifiedLayer));
+	if (!!ds.relations && layer.id == 'gl_active_point') {
+		let circleColors = arrayColors(ds.relations);
+		colorTable(circleColors, '#coll_detail');
 		mappy.setPaintProperty(modifiedLayer.id, 'circle-color', [
-		  'match',
-		  ['get', 'relation'],
-		  ...circleColors,
-		  '#ccc',
+			'match',
+			['get', 'relation'],
+			...circleColors,
+			'#ccc',
 		]);
 		mappy.setPaintProperty(modifiedLayer.id, 'circle-stroke-color', [
-		  'match',
-		  ['get', 'relation'],
-		  ...circleColors,
-		  '#ccc',
+			'match',
+			['get', 'relation'],
+			...circleColors,
+			'#ccc',
 		]);
+		const sequenceArcs = new SequenceArcs(mappy, ds, {
+			/*animationRate: 0*/ });
+		mappy.moveLayer(sequenceArcs.arcLayerId, modifiedLayer.id);
 	}
 }
-	
+
 export function updatePadding() {
 	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
 	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
-	window.mapPadding = {
+	mappy.setPadding({
 		top: ControlsRect.top - MapRect.top - mapParams.ControlsRectMargin,
 		bottom: MapRect.bottom - ControlsRect.bottom - mapParams.ControlsRectMargin,
 		left: ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin,
 		right: MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin,
-	};
-	//console.log('mapPadding recalculated:', window.mapPadding);
+	});
 }
 
 function updateBounds() {
 	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
 	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
-	const centerX = - mapParams.MapRectBorder + ControlsRect.left - MapRect.left + ControlsRect.width / 2;
-	const centerY = - mapParams.MapRectBorder + ControlsRect.top - MapRect.top + ControlsRect.height / 2;
+	const centerX = -mapParams.MapRectBorder + ControlsRect.left - MapRect.left + ControlsRect.width / 2;
+	const centerY = -mapParams.MapRectBorder + ControlsRect.top - MapRect.top + ControlsRect.height / 2;
 	const pseudoCenter = mapParams.mappy.unproject([centerX, centerY]);
 	window.mapBounds = {
 		'center': pseudoCenter
@@ -60,28 +68,26 @@ function updateBounds() {
 }
 
 // Control positioning of map, clear of overlays
-export function recenterMap(mappy, duration) {
-	duration = duration ==  'lazy' ? 1000 : 0 // Set duration of movement
+export function recenterMap(duration) {
+	duration = duration == 'lazy' ? 1000 : 0 // Set duration of movement
 	window.blockBoundsUpdate = true;
-	
+	// mappy.showPadding = true; // Used for debugging - draws coloured lines to indicate padding
 	if (window.mapBounds) {
 		if (Array.isArray(window.mapBounds) || !window.mapBounds.hasOwnProperty('center')) { // mapBounds might be a coordinate pair object returned by mappy.getBounds();
 			mappy.fitBounds(window.mapBounds, {
-				padding: window.mapPadding,
 				duration: duration
 			});
 		} else { // mapBounds has been set based on a center point and zoom
 			mappy.flyTo({
 				...window.mapBounds,
-				padding: window.mapPadding,
 				duration: duration
 			})
 		}
 	}
 }
 
-export function initObservers(mappy) {
-	
+export function initObservers() {
+
 	mapParams = {
 		mappy: mappy,
 		ControlsRectEl: document.getElementById('mapControls'),
@@ -89,32 +95,34 @@ export function initObservers(mappy) {
 		ControlsRectMargin: 4,
 		MapRectBorder: 1
 	}
-	
+
 	window.blockBoundsUpdate = false;
-	const resizeObserver = new ResizeObserver(function() { 
+	const resizeObserver = new ResizeObserver(function() {
 		updatePadding();
-		recenterMap(mappy);
+		recenterMap(false);
 	});
 
 	// Recenter map whenever its viewport changes size
 	resizeObserver.observe(mapParams.ControlsRectEl);
 	resizeObserver.observe(mapParams.MapRectEl);
-	
+	updatePadding();
+
 	mappy.on('zoomend', function() { // Triggered by `flyTo` and `fitBounds` - must be blocked to prevent misalignment 
 		if (window.blockBoundsUpdate) {
 			window.blockBoundsUpdate = false;
 			//console.log('blockBoundsUpdate released.');
-		}
-		else {
+		} else {
 			updateBounds();
 		}
 	});
-	mappy.on('dragend', function() { updateBounds(); });
-	
+	mappy.on('dragend', function() {
+		updateBounds();
+	});
+
 }
 
 export function initOverlays(whgMap) {
-	const controlContainer = document.querySelector('.maplibregl-control-container');	
+	const controlContainer = document.querySelector('.maplibregl-control-container');
 	controlContainer.setAttribute('id', 'mapControls');
 	controlContainer.classList.add('item');
 
@@ -172,102 +180,75 @@ export function initOverlays(whgMap) {
 	}
 }
 
-export function initPopups(mappy, activePopup, table) {
+let activePopup;
+export function initPopups(table) {
 
-	datasetLayers.forEach(function(layer) {
-		
-		window.ds_list.forEach(function(ds) {
-			const modifiedLayer = { ...layer };
-		    modifiedLayer.id = `${layer.id}_${ds.id}`;
-		    modifiedLayer.source = ds.id.toString();
-	
-			mappy.on('mouseenter', modifiedLayer.id, function(e) {
+	function clearPopup(preserveCursor = false) {
+		if (activePopup) {
+			if (activePopup.featureHighlight !== false) {
+				mappy.setFeatureState(activePopup.featureHighlight, { highlight: false });
+			}
+			activePopup.remove();
+			activePopup = null;
+			if (!preserveCursor) mappy.getCanvas().style.cursor = '';
+		}
+	}
+
+	mappy.on('mousemove', function(e) {
+		const features = mappy.queryRenderedFeatures(e.point);
+
+		if (features.length > 0) {
+			const topFeature = features[0]; // Handle only the top-most feature
+			const topLayerId = topFeature.layer.id;
+
+			// Check if the top feature's layer id starts with the id of any layer in datasetLayers
+			const isTopFeatureInDatasetLayer = datasetLayers.some(layer => topLayerId.startsWith(layer.id));
+
+			if (isTopFeatureInDatasetLayer) {
 				mappy.getCanvas().style.cursor = 'pointer';
-	
-				var pid = e.features[0].properties.pid;
-				var title = e.features[0].properties.title;
-				var min = e.features[0].properties.min;
-				var max = e.features[0].properties.max;
-	
-				if (activePopup) {
-					activePopup.remove();
-				}
-				activePopup = new maptilersdk.Popup({
-						closeButton: false
-					})
-					.setLngLat(e.lngLat)
-					.setHTML('<b>' + title + '</b><br/>' +
-						'Temporality: ' + (min ? min : '?') + '/' + (max ? max : '?') + '<br/>' +
-						'Click to focus'
-					)
-					.addTo(mappy);
-				activePopup.pid = pid;
-			});
-	
-			mappy.on('mousemove', modifiedLayer.id, function(e) {
-				if (activePopup) {
-					activePopup.setLngLat(e.lngLat);
-				}
-			});
-	
-			mappy.on('mouseleave', modifiedLayer.id, function() {
-				mappy.getCanvas().style.cursor = '';
-				if (activePopup) {
-					activePopup.remove();
-				}
-	
-			});
-	
-			mappy.on('click', modifiedLayer.id, function(e) {
-	
-				var pid;
-				if (activePopup && activePopup.pid) {
-					pid = activePopup.pid;
-					activePopup.remove();
-				} else pid = e.features[0].properties.pid;
-	
-				// Search for the row within the sorted and filtered view
-				var pageInfo = table.page.info();
-				var rowPosition = -1;
-				var rows = table.rows({
-					search: 'applied',
-					order: 'current'
-				}).nodes();
-				let selectedRow;
-				for (var i = 0; i < rows.length; i++) {
-					var rowData = table.row(rows[i]).data();
-					rowPosition++;
-					if (rowData.properties.pid == pid) {
-						selectedRow = rows[i];
-						break; // Stop the loop when the row is found
-					}
-				}
-	
-				if (rowPosition !== -1) {
-					// Calculate the page number based on the row's position
-					var pageNumber = Math.floor(rowPosition / pageInfo.length);
-					//console.log(`Feature ${pid} selected at table row ${rowPosition} on page ${pageNumber + 1} (current page ${pageInfo.page + 1}).`);
-	
-					// Check if the row is on the current page
-					if (pageInfo.page !== pageNumber) {
-						table.page(pageNumber).draw('page');
-					}
-	
-					selectedRow.scrollIntoView();
-					$(selectedRow).trigger('click');
-				}
-	
-			})
-		    
-		    
-		    
-		    
-		});
 
+		        if (!activePopup || activePopup.pid !== topFeature.properties.pid) {
+		          // If there is no activePopup or it's a different feature, create a new one ...
+		          if (activePopup) {
+		            clearPopup(true);
+		          }
+		          activePopup = new maptilersdk.Popup({
+		            closeButton: false,
+		          })
+		            .setLngLat(e.lngLat)
+		            .setHTML(popupFeatureHTML(topFeature))
+		            .addTo(mappy);
+		          activePopup.pid = topFeature.properties.pid;
+		          activePopup.featureHighlight = { source: topFeature.source, id: topFeature.id };
+		          if (!!window.highlightedFeatureIndex && window.highlightedFeatureIndex.id === activePopup.featureHighlight.id && window.highlightedFeatureIndex.source === activePopup.featureHighlight.source) {
+					  activePopup.featureHighlight = false;
+				  }
+				  else {
+		          	  mappy.setFeatureState(activePopup.featureHighlight, { highlight: true });
+				  }
+		        } else {
+		          // ... otherwise just update its position
+		          activePopup.setLngLat(e.lngLat);
+		        }
+
+			} else {
+				clearPopup();
+			}
+		} else {
+			clearPopup();
+		}
+	});
+
+	mappy.on('click', function() {
+		if (activePopup && activePopup.pid) {
+			let savedPID = activePopup.pid;
+			clearPopup();
+			scrollToRowByProperty(table, 'pid', savedPID);
+		}
 	});
 }
 
-export function listSourcesAndLayers(mappy) {	
+export function listSourcesAndLayers() {
 	const style = mappy.getStyle();
 	const sources = style.sources;
 	console.log('Sources:', Object.keys(sources));

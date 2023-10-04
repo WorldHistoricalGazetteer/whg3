@@ -1,18 +1,10 @@
-import {
-	envelope
-} from './6.5.0_turf.min.js'
-import {
-	getPlace
-} from './getPlace';
-import {
-	startSpinner
-} from './utilities';
-import {
-	updatePadding,
-	recenterMap,
-	listSourcesAndLayers
-} from './mapFunctions';
+import { envelope } from './6.5.0_turf.min.js';
+import { getPlace } from './getPlace';
+import { startSpinner } from './utilities';
+import { updatePadding, recenterMap/*, listSourcesAndLayers*/ } from './mapFunctions';
 import datasetLayers from './mapLayerStyles';
+import { mapSequencer } from './mapControls';
+import { mappy } from './mapAndTable';
 
 let table;
 
@@ -90,7 +82,7 @@ function clearFilters() {
 	$("#status_select").val('99')
 }*/
 
-function filterMap(mappy, val) {
+function toggleMapLayers(mappy, val) {
 	let recentered = false;
 	datasetLayers.forEach(function(layer) {
 		window.ds_list.forEach(function(ds) {
@@ -98,15 +90,47 @@ function filterMap(mappy, val) {
 			if (!recentered && ds.id.toString() === val.toString()) {
 				recentered = true;
 				window.mapBounds = ds.extent;
-				recenterMap(mappy, 'lazy');
+				recenterMap('lazy');
 			}
 		});
 	});
 }
 
+export function scrollToRowByProperty(table, propertyName, value) {
+    // Search for the row within the sorted and filtered view
+    var pageInfo = table.page.info();
+    var rowPosition = -1;
+    var rows = table.rows({
+        search: 'applied',
+        order: 'current'
+    }).nodes();
+    let selectedRow;
+    for (var i = 0; i < rows.length; i++) {
+        var rowData = table.row(rows[i]).data();
+        rowPosition++;
+        if (rowData.properties[propertyName] == value) {
+            selectedRow = rows[i];
+            break; // Stop the loop when the row is found
+        }
+    }
+
+    if (rowPosition !== -1) {
+        // Calculate the page number based on the row's position
+        var pageNumber = Math.floor(rowPosition / pageInfo.length);
+
+        // Check if the row is on the current page
+        if (pageInfo.page !== pageNumber) {
+            table.page(pageNumber).draw('page');
+        }
+
+        selectedRow.scrollIntoView();
+        $(selectedRow).trigger('click');
+    }
+}
+
 export function highlightFeature(ds_pid, features, mappy) {
 
-	//listSourcesAndLayers(mappy);
+	//listSourcesAndLayers();
 
 	features = features.filter(f => f.properties.dsid === ds_pid.ds);
 
@@ -135,10 +159,10 @@ export function highlightFeature(ds_pid, features, mappy) {
 					'center': flycoords,
 					'zoom': 7
 				}
-				recenterMap(mappy, 'lazy');
+				recenterMap('lazy');
 			} else {
 				window.mapBounds = envelope(geom).bbox;
-				recenterMap(mappy, 'lazy');
+				recenterMap('lazy');
 			}
 			//console.log(`Highlight now on ${window.highlightedFeatureIndex}.`);
 		} else {
@@ -178,9 +202,12 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 
 	// Define Datatable columns based on ds_type
 	let columns;
+	let columnDefs;
+	let order;
 	if (!isCollection) { // Datasets
 
 		const check_column = window.loggedin ? {
+            title: "<a href='#' rel='tooltip' title='add one or more rows to a collection'><i class='fas fa-question-circle linkypop'></i></a>",
 			data: "properties.pid",
 			render: function(data, type, row) {
 				return `<input type="checkbox" name="addme" class="table-chk" data-id="${data}"/>`;
@@ -192,15 +219,18 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		}
 
 		columns = [{
+                title: "pid",
 				data: "properties.pid",
 				render: function(data, type, row) {
 					return `<a href="http://localhost:8000//api/db/?id=${data}" target="_blank">${data}</a>`;
 				}
 			},
 			{
+                title: "title",
 				data: "properties.title"
 			},
 			{
+                title: "geo",
 				data: "geometry",
 				render: function(data, type, row) {
 					if (data) {
@@ -211,28 +241,14 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 				}
 			},
 			{
+                title: "dataset",
 				data: function(row) {
 					return row.properties.dslabel || null;
 				}
 			},
 			check_column
 		];
-	} else { // Collections
-		columns = [{
-                    "data": "properties.pid"
-                }, {
-                    "data": "properties.title"
-                }, {
-                    "data": "properties.ccodes"
-                }, {
-                    "data": "properties.seq"
-                }
-            ];
-	}
-
-	// Define columnDefs based on ds_type
-	let columnDefs;
-	if (!isCollection) { // Datasets
+		
 		columnDefs = [{
 				orderable: false,
 				"targets": [0, 2, 4]
@@ -246,15 +262,40 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 				"targets": [3]
 			}
 		];
+		
+		order = [
+			[1, 'asc']
+		];
 	} else { // Collections
+		columns = [{
+                title: "seq",
+                data: "properties.seq"
+            }, {
+                title: "title",
+                data: "properties.title"
+            }, {
+                title: "country",
+                data: "properties.ccodes"
+            }, {
+                data: "properties.pid"
+            }
+        ];
+            
 		columnDefs = [{
-                    visible: false,
-                    "targets": [3]
-                }, {
-                    searchable: false,
-                    "targets": [2]
-                }
-            ];
+				orderable: false,
+				"targets": []
+			},{
+                searchable: false,
+                "targets": [2]
+            },{
+                visible: false,
+                "targets": [3]
+            }
+        ];
+		
+		order = [
+			[0, 'asc']
+		];
 	}
 
 	table = $('#placetable').DataTable({
@@ -263,11 +304,9 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 			"<'row'<'col-sm-12'tr>>" +
 			"<'row small'<'col-sm-12'p>>",
 		select: true,
-		order: [
-			[1, 'asc']
-		],
 		columns: columns,
 		columnDefs: columnDefs,
+		order: order,
 		data: features,
 		rowId: 'properties.pid',
 		createdRow: function(row, data, dataIndex) {
@@ -281,6 +320,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 				pid: data.properties.pid
 			});
 			$(row).data('cid', data.properties.cid);
+			$(row).data('seq', data.properties.seq);
 			if (!data.geometry) {
 				$(row).addClass('no-geometry');
 			}
@@ -303,6 +343,9 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 				$("#selection_status").show()
 			}
 			highlightFirstRow();
+			if (!!mapSequencer) {
+				mapSequencer.updateButtons();
+			}
 		}
 	});
 
@@ -333,10 +376,14 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		// filter map
 		let ds_id = $(this).find(":selected").attr("data");
 		const dsItem = window.ds_list.find(ds => ds.id === ds_id);
-		if (dsItem) window.mapBounds = dsItem.extent;
-		else window.mapBounds = window.ds_list_stats.extent;
-		recenterMap(mappy, 'lazy');
-		filterMap(mappy, ds_id);
+		if (dsItem) {
+			window.mapBounds = dsItem.extent;
+		}
+		else {
+			window.mapBounds = window.ds_list_stats.extent;
+		}
+		toggleMapLayers(mappy, ds_id); // Also recenters map on selected layer
+		if (ds_id == 'all') recenterMap('lazy');
 
 		window.spinner_map.stop();
 	})
@@ -363,6 +410,16 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		getPlace(ds_pid.pid, $(this).data('cid'), spinner_detail);
 
 		highlightFeature(ds_pid, features, mappy);
+		
+		if (!!mapSequencer) {
+			mapSequencer.updateButtons();
+			if (mapSequencer.continuePlay) {
+				mapSequencer.continuePlay = false;
+			}
+			else if (mapSequencer.playing) {
+				mapSequencer.stopPlayback();
+			}
+		}
 
 	});
 
@@ -397,3 +454,5 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		checked_rows
 	}
 }
+
+export { table };
