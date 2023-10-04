@@ -2,32 +2,17 @@
 
 import { init_mapControls } from './mapControls';
 import { addMapSource, addMapLayer, recenterMap, initObservers, initOverlays, initPopups, logSourcesAndLayers } from './mapFunctions';
-import { toggleFilters } from './mapFilters';
-import { initUtils, initInfoOverlay, startSpinner, minmaxer, get_ds_list_stats } from './utilities';
+import { initUtils, initInfoOverlay, startSpinner, get_ds_list_stats } from './utilities';
 import { initialiseTable } from './tableFunctions';
 import { init_collection_listeners } from './collections';
 import datasetLayers from './mapLayerStyles';
 
-let ds_listJSON = document.getElementById('ds_list_data') || false;
-if (ds_listJSON) {
-	window.ds_list = JSON.parse(ds_listJSON.textContent);
-}
-console.log('Dataset list:',window.ds_list);
+console.log('Dataset list:', ds_list); // Embedded in page by Django template
+let ds_list_stats;
+let allFeatures = [];
 
-const whgMap = document.getElementById(mapParameters.container);
+let mapStoredBounds;
 
-window.mapBounds;
-window.highlightedFeatureIndex;
-window.additionalLayers = []; // Keep track of added map sources and layers - required for baselayer switching
-
-window.dateline = null;
-let datelineContainer = null;
-
-let table;
-let checked_rows;
-
-let spinner_table;
-let spinner_detail;
 let spinner_map = startSpinner("dataset_content", 3);
 
 let style_code;
@@ -59,7 +44,7 @@ const mapLoadPromise = new Promise(function (resolve, reject) {
 });
 
 let dataLoadPromises = [];
-window.ds_list.forEach(function (ds) { // fetch data
+ds_list.forEach(function (ds) { // fetch data
     const promise = new Promise(function (resolve, reject) {
         $.get(`/${ ds.ds_type || 'datasets' }/${ ds.id }/mapdata`, function (data) { // ds_type may alternatively be 'collections'
             for (const prop in data) {
@@ -77,11 +62,9 @@ window.ds_list.forEach(function (ds) { // fetch data
 Promise.all([mapLoadPromise, ...dataLoadPromises])
 .then(function () {
 	
-	initOverlays(whgMap);
+	initOverlays();
 	
-	let allFeatures = [];
-	
-	window.ds_list.forEach(function(ds) {
+	ds_list.forEach(function(ds) {
 		addMapSource(ds);
 		ds.features.forEach(feature => {
 		    feature.properties = feature.properties || {};
@@ -91,11 +74,11 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 		allFeatures.push(...ds.features);
 	});
 	
-	window.ds_list_stats = get_ds_list_stats(allFeatures);
-	console.log('window.ds_list_stats', window.ds_list_stats);
+	ds_list_stats = get_ds_list_stats(allFeatures);
+	console.log('ds_list_stats', ds_list_stats);
 	
 	datasetLayers.forEach(function(layer) { // Ensure proper layer order for multiple datasets
-		window.ds_list.forEach(function(ds) {
+		ds_list.forEach(function(ds) {
 			addMapLayer(layer, ds);
 		});
 	});
@@ -105,21 +88,15 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	// TODO: Adjust attribution elsewhere: © MapTiler © OpenStreetMap contributors
 		
 	// Initialise Data Table
-	const tableInit = initialiseTable(allFeatures, checked_rows, spinner_table, spinner_detail, mappy);
-	table = tableInit.table;
-	checked_rows = tableInit.checked_rows;
-	
-	allFeatures = null; // release memory
+	initialiseTable();
 
-	window.mapBounds = window.ds_list_stats.extent;
+	mapStoredBounds = ds_list_stats.extent;
 
 	// Initialise Map Popups
-	initPopups(table);
+	initPopups();
 	
 	// Initialise Map Controls
-	const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table);
-	datelineContainer = mapControlsInit.datelineContainer;
-	mapParameters = mapControlsInit.mapParameters;
+	init_mapControls();
 	
 	// Initialise Info Box state
 	initInfoOverlay();
@@ -128,16 +105,16 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	initObservers();
 	
 	recenterMap();
-	whgMap.style.opacity = 1;
+	mappy.getContainer().style.opacity = 1;
 	
-	initUtils(mappy); // Tooltips, ClipboardJS, clearlines, help-matches
+	initUtils(); // Tooltips, ClipboardJS, clearlines, help-matches
 	
-	init_collection_listeners(checked_rows);
+	init_collection_listeners();
 	
 	spinner_map.stop();
 });
 
-export { mappy };
+export { mappy, mapStoredBounds, ds_list_stats, allFeatures, spinner_map };
 
 // TODO: Seemingly-redundant JavaScript not implemented in modularisation
 /*

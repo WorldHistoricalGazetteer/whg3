@@ -1,4 +1,5 @@
 import { minmaxer, clipDetails } from './utilities';
+import { spinner_detail } from './tableFunctions';
 
 export function popupFeatureHTML(feature) { // TODO: Improve styling with css and content?
 	let HTML = '<b>' + feature.properties.title + '</b><br/>' +
@@ -7,7 +8,7 @@ export function popupFeatureHTML(feature) { // TODO: Improve styling with css an
     return (HTML);
 }
 
-export function getPlace(pid, cid, spinner_detail) {
+export function getPlace(pid, cid) {
 	//console.log('getPlace()', pid);
 	if (isNaN(pid)) {
 		console.log(`Invalid pid (${pid}).`);
@@ -23,7 +24,6 @@ export function getPlace(pid, cid, spinner_detail) {
 		if (cidQueryParam == '') {
 			$("#detail").html(parsePlace(data));
 		} else {
-			window.payload = data;
 			$("#row_title").html('<b>' + data.title + '</b>');
 			console.log('img', data.traces.image_file);
 			$("#anno_body").html(parseAnno(data.traces));
@@ -113,19 +113,18 @@ function parseAnno(data) {
 			$("#anno_img").attr('src', '/media/' + imgpath)
 		} else {
 			// trace has no image
-			$("#active_img").attr('src', `/media/${ window.collimagepath }`)
+			$("#active_img").attr('src', `/media/${ collimagepath }`)
 		}
 	} else {
 		console.log('no trace for selected place')
 		// restore collection image if others have been viewed
-		$("#active_img").attr('src', `/media/${ window.collimagepath }`)
+		$("#active_img").attr('src', `/media/${ collimagepath }`)
 	}
 	return descrip
 }
 
 // Single place
 function parsePlace(data) { // TODO: See also commented code at bottom
-	window.featdata = data
 
 	function onlyUnique(array) {
 		const map = new Map();
@@ -319,7 +318,6 @@ function toggleNames() {
 
 // SINGLE PLACE
 function parsePlace(data) {
-    window.featdata = data
 
     function onlyUnique(array) {
         const map = new Map();

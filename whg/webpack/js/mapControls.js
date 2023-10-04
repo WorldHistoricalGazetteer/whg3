@@ -3,7 +3,12 @@
 import Dateline from './dateline';
 import generateMapImage from './saveMapImage';
 import datasetLayers from './mapLayerStyles';
-import { table, scrollToRowByProperty } from './tableFunctions';
+import { table, scrollToRowByProperty, highlightedFeatureIndex } from './tableFunctions';
+import { mappy, ds_list_stats } from './mapAndTable';
+import { toggleFilters } from './mapFilters';
+
+let datelineContainer = null;
+let additionalLayers = []; // Keep track of added map sources and layers - required for baselayer switching
 
 class fullScreenControl {
 	onAdd() { 
@@ -35,9 +40,9 @@ class downloadMapControl {
 
 class sequencerControl {
 	onAdd() {
-		this.minSeq = window.ds_list_stats.seqmin;
-        this.maxSeq = window.ds_list_stats.seqmax;
-		console.log(`Sequence range (${window.ds_list_stats.seqmin}-${window.ds_list_stats.seqmax}).`);
+		this.minSeq = ds_list_stats.seqmin;
+        this.maxSeq = ds_list_stats.seqmax;
+		console.log(`Sequence range (${ds_list_stats.seqmin}-${ds_list_stats.seqmax}).`);
         if (this.minSeq == this.maxSeq) {
 			return;
 		}
@@ -85,7 +90,7 @@ class sequencerControl {
 		    
 		    console.log(`Sequencer action: ${action} from ${this.currentSeq}.`);
 			
-			if (window.highlightedFeatureIndex == undefined) {
+			if (highlightedFeatureIndex == undefined) {
 				if (['skip-previous', 'skip-next'].includes(action)) { // Highlight feature selected in table
 					$('#placetable tr.highlight-row').click();
 					return;
@@ -127,7 +132,7 @@ class sequencerControl {
 					this.currentSeq = this.maxSeq; 
 				}
 				
-				scrollToRowByProperty(table, 'seq', this.currentSeq);
+				scrollToRowByProperty('seq', this.currentSeq);
 			}
 			
 			if (this.playing && this.currentSeq == this.maxSeq) {
@@ -183,7 +188,7 @@ class sequencerControl {
 		this.currentSeq += 1;
 		this.continuePlay = true;
 		console.log(`Sequencer action: play ${this.currentSeq}.`);
-		scrollToRowByProperty(table, 'seq', this.currentSeq); // Triggers updateButtons()
+		scrollToRowByProperty('seq', this.currentSeq); // Triggers updateButtons()
 		if (this.currentSeq == this.maxSeq) {
 			this.stopPlayback();
 		}
@@ -281,19 +286,19 @@ class StyleControl {
 		mappy.setStyle(maptilersdk.MapStyle[style_code[0]][style_code[1]], {
 		  transformStyle: (previousStyle, nextStyle) => {
 		    const newSources = { ...nextStyle.sources };
-		    window.ds_list.forEach(ds => {
+		    ds_list.forEach(ds => {
 		      newSources[ds.id.toString()] = previousStyle.sources[ds.id.toString()];
 		    });
-		    window.additionalLayers.forEach(([sourceId]) => {
+		    additionalLayers.forEach(([sourceId]) => {
 		      newSources[sourceId] = previousStyle.sources[sourceId];
 		    });
-		    const additionalLayers = window.additionalLayers.map(additionalLayer => additionalLayer[1]); // Add any other required sources and layers to window.additionalLayers
+		    const additionalLayerIDs = additionalLayers.map(additionalLayer => additionalLayer[1]); // Add any other required sources and layers to additionalLayers
 		    return {
 		      ...nextStyle,
 		      sources: newSources,
 		      layers: [
 		        ...nextStyle.layers,
-		        ...previousStyle.layers.filter(layer => datasetLayers.some(dslayer => layer.id.startsWith(dslayer.id) || additionalLayers.includes(layer.id))),
+		        ...previousStyle.layers.filter(layer => datasetLayers.some(dslayer => layer.id.startsWith(dslayer.id) || additionalLayerIDs.includes(layer.id))),
 		      	]
 		    };
 		  }
@@ -330,7 +335,8 @@ class CustomAttributionControl extends maptilersdk.AttributionControl {
 }
 
 let mapSequencer;
-function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table){
+let datelineInstance = null;
+function init_mapControls(){
 
 	if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
 	
@@ -357,14 +363,14 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 		let debounceTimeout;
 	    function debounceFilterApplication() {
 	        clearTimeout(debounceTimeout);
-	        debounceTimeout = setTimeout(toggleFilters(true, mappy, table), 300);
+	        debounceTimeout = setTimeout(toggleFilters(true), 300);
 	    }
 	    debounceFilterApplication(); 
 	}
 
-	if (window.dateline) {
-		window.dateline.destroy();
-		window.dateline = null;
+	if (datelineInstance) {
+		datelineInstance.destroy();
+		datelineInstance = null;
 	}
 	if (datelineContainer) {
 		datelineContainer.remove();
@@ -376,16 +382,16 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 		datelineContainer.id = 'dateline';
 		document.getElementById('mapControls').appendChild(datelineContainer);
 
-		const range = window.ds_list_stats.max - window.ds_list_stats.min;
+		const range = ds_list_stats.max - ds_list_stats.min;
 		const buffer = range * 0.1; // 10% buffer
 
 		// Update the temporal settings
-		mapParameters.controls.temporal.fromValue = window.ds_list_stats.min;
-		mapParameters.controls.temporal.toValue = window.ds_list_stats.max;
-		mapParameters.controls.temporal.minValue = window.ds_list_stats.min - buffer;
-		mapParameters.controls.temporal.maxValue = window.ds_list_stats.max + buffer;
+		mapParameters.controls.temporal.fromValue = ds_list_stats.min;
+		mapParameters.controls.temporal.toValue = ds_list_stats.max;
+		mapParameters.controls.temporal.minValue = ds_list_stats.min - buffer;
+		mapParameters.controls.temporal.maxValue = ds_list_stats.max + buffer;
 
-		window.dateline = new Dateline({
+		datelineInstance = new Dateline({
 			...mapParameters.controls.temporal,
 			onChange: dateRangeChanged
 		});
@@ -407,7 +413,7 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 				document.getElementById('mapOverlays').classList.remove('fullscreen');
 			}
 			else if (parentNodeClassList.contains('dateline-button')) {
-	            toggleFilters($('.range_container.expanded').length > 0, mappy, table);
+	            toggleFilters($('.range_container.expanded').length > 0);
 	        }
 			else if (parentNodeClassList.contains('download-map-button')) {
 				generateMapImage(mappy);
@@ -416,9 +422,6 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 		}
 
 	});
-	
-	return { datelineContainer, mapParameters }
-	
 }
 
-export { init_mapControls, mapSequencer };
+export { init_mapControls, mapSequencer, additionalLayers, datelineInstance };

@@ -1,6 +1,9 @@
 // pids generate new CollPlace (collection_collplace) and
 // TraceAnnotation records (trace_annotations
 // same function in place_portal.html
+
+import { checked_rows } from './tableFunctions';
+
 function add_to_collection(coll, pids) {
 	console.log('add_to_collection()')
 	var formData = new FormData()
@@ -44,7 +47,7 @@ function add_to_collection(coll, pids) {
 	/*resetSearch()*/
 }
 
-export function init_collection_listeners(checked_rows) {
+export function init_collection_listeners() {
 
 	$(".a_addtocoll").click(function() {
 		coll = $(this).attr('ref')
@@ -97,7 +100,7 @@ export function init_collection_listeners(checked_rows) {
 		const pid = $(this)[0].cells[0].textContent
 		// is checkbox checked?
 		// if not, ensure row pid is not in checked_rows
-		if (window.loggedin == true) {
+		if (loggedin == true) {
 			chkbox = thisy[0].cells[3].firstChild
 			if (chkbox.checked) {
 				console.log('chkbox.checked')

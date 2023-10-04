@@ -2,11 +2,13 @@ import datasetLayers from './mapLayerStyles';
 import { attributionString, arrayColors, colorTable } from './utilities';
 import { filteredLayer } from './mapFilters';
 import SequenceArcs from './mapSequenceArcs';
-import { scrollToRowByProperty } from './tableFunctions';
+import { scrollToRowByProperty, highlightedFeatureIndex } from './tableFunctions';
 import { popupFeatureHTML } from './getPlace.js';
-import { mappy } from './mapAndTable';
+import { mappy, mapStoredBounds } from './mapAndTable';
 
 let mapParams;
+let blockBoundsUpdate;
+let spinner_download;
 
 export function addMapSource(ds) {
 	mappy.addSource(ds.id.toString(), {
@@ -61,25 +63,25 @@ function updateBounds() {
 	const centerX = -mapParams.MapRectBorder + ControlsRect.left - MapRect.left + ControlsRect.width / 2;
 	const centerY = -mapParams.MapRectBorder + ControlsRect.top - MapRect.top + ControlsRect.height / 2;
 	const pseudoCenter = mapParams.mappy.unproject([centerX, centerY]);
-	window.mapBounds = {
+	mapStoredBounds = {
 		'center': pseudoCenter
 	}
-	//console.log('window.mapBounds updated:', window.mapBounds);
+	//console.log('mapStoredBounds updated:', mapStoredBounds);
 }
 
 // Control positioning of map, clear of overlays
 export function recenterMap(duration) {
 	duration = duration == 'lazy' ? 1000 : 0 // Set duration of movement
-	window.blockBoundsUpdate = true;
+	blockBoundsUpdate = true;
 	// mappy.showPadding = true; // Used for debugging - draws coloured lines to indicate padding
-	if (window.mapBounds) {
-		if (Array.isArray(window.mapBounds) || !window.mapBounds.hasOwnProperty('center')) { // mapBounds might be a coordinate pair object returned by mappy.getBounds();
-			mappy.fitBounds(window.mapBounds, {
+	if (mapStoredBounds) {
+		if (Array.isArray(mapStoredBounds) || !mapStoredBounds.hasOwnProperty('center')) { // mapBounds might be a coordinate pair object returned by mappy.getBounds();
+			mappy.fitBounds(mapStoredBounds, {
 				duration: duration
 			});
 		} else { // mapBounds has been set based on a center point and zoom
 			mappy.flyTo({
-				...window.mapBounds,
+				...mapStoredBounds,
 				duration: duration
 			})
 		}
@@ -96,7 +98,7 @@ export function initObservers() {
 		MapRectBorder: 1
 	}
 
-	window.blockBoundsUpdate = false;
+	blockBoundsUpdate = false;
 	const resizeObserver = new ResizeObserver(function() {
 		updatePadding();
 		recenterMap(false);
@@ -108,8 +110,8 @@ export function initObservers() {
 	updatePadding();
 
 	mappy.on('zoomend', function() { // Triggered by `flyTo` and `fitBounds` - must be blocked to prevent misalignment 
-		if (window.blockBoundsUpdate) {
-			window.blockBoundsUpdate = false;
+		if (blockBoundsUpdate) {
+			blockBoundsUpdate = false;
 			//console.log('blockBoundsUpdate released.');
 		} else {
 			updateBounds();
@@ -121,14 +123,14 @@ export function initObservers() {
 
 }
 
-export function initOverlays(whgMap) {
+export function initOverlays() {
 	const controlContainer = document.querySelector('.maplibregl-control-container');
 	controlContainer.setAttribute('id', 'mapControls');
 	controlContainer.classList.add('item');
 
 	const mapOverlays = document.createElement('div');
 	mapOverlays.id = 'mapOverlays';
-	whgMap.appendChild(mapOverlays);
+	mappy.getContainer().appendChild(mapOverlays);
 
 	['left', 'right'].forEach(function(side) {
 		const column = document.createElement('div');
@@ -159,7 +161,7 @@ export function initOverlays(whgMap) {
 			},
 			datatype: 'json',
 			success: function(response) {
-				window.spinner_download = startSpinner("metadata"); // TODO: window.spinner_download.stop() not yet implemented anywhere?
+				spinner_download = startSpinner("metadata"); // TODO: spinner_download not yet exported or .stop() implemented anywhere?
 				task_id = response.task_id
 				var progressUrl = "/celery-progress/" + task_id + "/";
 				CeleryProgressBar.initProgressBar(progressUrl, {
@@ -181,7 +183,7 @@ export function initOverlays(whgMap) {
 }
 
 let activePopup;
-export function initPopups(table) {
+export function initPopups() {
 
 	function clearPopup(preserveCursor = false) {
 		if (activePopup) {
@@ -220,7 +222,7 @@ export function initPopups(table) {
 		            .addTo(mappy);
 		          activePopup.pid = topFeature.properties.pid;
 		          activePopup.featureHighlight = { source: topFeature.source, id: topFeature.id };
-		          if (!!window.highlightedFeatureIndex && window.highlightedFeatureIndex.id === activePopup.featureHighlight.id && window.highlightedFeatureIndex.source === activePopup.featureHighlight.source) {
+		          if (!!highlightedFeatureIndex && highlightedFeatureIndex.id === activePopup.featureHighlight.id && highlightedFeatureIndex.source === activePopup.featureHighlight.source) {
 					  activePopup.featureHighlight = false;
 				  }
 				  else {
@@ -243,7 +245,7 @@ export function initPopups(table) {
 		if (activePopup && activePopup.pid) {
 			let savedPID = activePopup.pid;
 			clearPopup();
-			scrollToRowByProperty(table, 'pid', savedPID);
+			scrollToRowByProperty('pid', savedPID);
 		}
 	});
 }

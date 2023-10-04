@@ -3,10 +3,13 @@ import { getPlace } from './getPlace';
 import { startSpinner } from './utilities';
 import { updatePadding, recenterMap/*, logSourcesAndLayers*/ } from './mapFunctions';
 import datasetLayers from './mapLayerStyles';
-import { mapSequencer } from './mapControls';
-import { mappy } from './mapAndTable';
+import { mapSequencer, datelineInstance } from './mapControls';
+import { mappy, ds_list_stats, mapStoredBounds, allFeatures, spinner_map } from './mapAndTable';
 
 let table;
+let checked_rows;
+let spinner_table;
+let spinner_detail;
 
 function highlightFirstRow() {
 	$("#placetable tr").removeClass("highlight-row");
@@ -82,21 +85,21 @@ function clearFilters() {
 	$("#status_select").val('99')
 }*/
 
-function toggleMapLayers(mappy, val) {
+function toggleMapLayers(val) {
 	let recentered = false;
 	datasetLayers.forEach(function(layer) {
-		window.ds_list.forEach(function(ds) {
+		ds_list.forEach(function(ds) {
 			mappy.setLayoutProperty(`${layer.id}_${ds.id}`, 'visibility', (val == 'all' || ds.id.toString() === val.toString()) ? 'visible' : 'none');
 			if (!recentered && ds.id.toString() === val.toString()) {
 				recentered = true;
-				window.mapBounds = ds.extent;
+				mapStoredBounds = ds.extent;
 				recenterMap('lazy');
 			}
 		});
 	});
 }
 
-export function scrollToRowByProperty(table, propertyName, value) {
+export function scrollToRowByProperty(propertyName, value) {
     // Search for the row within the sorted and filtered view
     var pageInfo = table.page.info();
     var rowPosition = -1;
@@ -128,43 +131,44 @@ export function scrollToRowByProperty(table, propertyName, value) {
     }
 }
 
-export function highlightFeature(ds_pid, features, mappy) {
+let highlightedFeatureIndex;
+export function highlightFeature(ds_pid) {
 
 	//logSourcesAndLayers();
 
-	features = features.filter(f => f.properties.dsid === ds_pid.ds);
+	let features = allFeatures.filter(f => f.properties.dsid === ds_pid.ds);
 
 	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(ds_pid.pid));
 	if (featureIndex !== -1) {
-		//console.log(`Switching highlight from ${window.highlightedFeatureIndex} to ${featureIndex}.`);
-		if (window.highlightedFeatureIndex !== undefined) mappy.setFeatureState(window.highlightedFeatureIndex, {
+		//console.log(`Switching highlight from ${highlightedFeatureIndex} to ${featureIndex}.`);
+		if (highlightedFeatureIndex !== undefined) mappy.setFeatureState(highlightedFeatureIndex, {
 			highlight: false
 		});
 		var feature = features[featureIndex];
 		const geom = feature.geometry;
 		if (geom) {
 			const coords = geom.coordinates;
-			window.highlightedFeatureIndex = {
+			highlightedFeatureIndex = {
 				source: ds_pid.ds.toString(),
 				id: featureIndex
 			};
-			mappy.setFeatureState(window.highlightedFeatureIndex, {
+			mappy.setFeatureState(highlightedFeatureIndex, {
 				highlight: true
 			});
 			updatePadding();
 			// zoom to feature
 			if (geom.type.toLowerCase() == 'point') {
 				const flycoords = typeof(coords[0]) == 'number' ? coords : coords[0]
-				window.mapBounds = {
+				mapStoredBounds = {
 					'center': flycoords,
 					'zoom': 7
 				}
 				recenterMap('lazy');
 			} else {
-				window.mapBounds = envelope(geom).bbox;
+				mapStoredBounds = envelope(geom).bbox;
 				recenterMap('lazy');
 			}
-			//console.log(`Highlight now on ${window.highlightedFeatureIndex}.`);
+			//console.log(`Highlight now on ${highlightedFeatureIndex}.`);
 		} else {
 			console.log('Feature in clicked row has no geometry.');
 		}
@@ -174,7 +178,8 @@ export function highlightFeature(ds_pid, features, mappy) {
 
 }
 
-export function initialiseTable(features, checked_rows, spinner_table, spinner_detail, mappy) {
+let spinner_filter;
+export function initialiseTable() {
 
 	// TODO: remove these artifacts of table used for review
 	localStorage.setItem('filter', '99')
@@ -185,14 +190,14 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 	spinner_table = startSpinner("drftable_list");
 	spinner_detail = startSpinner("row_detail");
 
-	const isCollection = window.ds_list[0].ds_type == 'collections';
+	const isCollection = ds_list[0].ds_type == 'collections';
 
 	checked_rows = []
 
-	if (window.ds_list.length > 1) { // Initialise dataset selector
+	if (ds_list.length > 1) { // Initialise dataset selector
 		let select = '<label>Datasets: <select id="ds_select">' +
 			'<option value="-1" data="all" selected="selected">All</option>';
-		for (let ds of window.ds_list) {
+		for (let ds of ds_list) {
 			select += '<option value="' + ds.label + '" data="' + ds.id + '">' +
 				ds.title + '</option>'
 		}
@@ -206,7 +211,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 	let order;
 	if (!isCollection) { // Datasets
 
-		const check_column = window.loggedin ? {
+		const check_column = loggedin ? {
             title: "<a href='#' rel='tooltip' title='add one or more rows to a collection'><i class='fas fa-question-circle linkypop'></i></a>",
 			data: "properties.pid",
 			render: function(data, type, row) {
@@ -258,7 +263,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 				"targets": [0, 2, 4]
 			},
 			{
-				visible: window.ds_list.length > 1,
+				visible: ds_list.length > 1,
 				"targets": [3]
 			}
 		];
@@ -307,7 +312,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		columns: columns,
 		columnDefs: columnDefs,
 		order: order,
-		data: features,
+		data: allFeatures,
 		rowId: 'properties.pid',
 		createdRow: function(row, data, dataIndex) {
 			// Attach temporal min and max properties as data attributes
@@ -363,10 +368,10 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		// filter table
 		let val = $(this).val();
 		localStorage.setItem('filter', val)
-		window.spinner_map = startSpinner("dataset_content", 3);
+		spinner_map = startSpinner("dataset_content", 3);
 		if (val == -1) {
 			// clear search
-			window.spinner_filter = startSpinner("status_filter");
+			spinner_filter = startSpinner("status_filter");
 			clearFilters()
 		} else {
 			clearFilters()
@@ -375,17 +380,17 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 
 		// filter map
 		let ds_id = $(this).find(":selected").attr("data");
-		const dsItem = window.ds_list.find(ds => ds.id === ds_id);
+		const dsItem = ds_list.find(ds => ds.id === ds_id);
 		if (dsItem) {
-			window.mapBounds = dsItem.extent;
+			mapStoredBounds = dsItem.extent;
 		}
 		else {
-			window.mapBounds = window.ds_list_stats.extent;
+			mapStoredBounds = ds_list_stats.extent;
 		}
-		toggleMapLayers(mappy, ds_id); // Also recenters map on selected layer
+		toggleMapLayers(ds_id); // Also recenters map on selected layer
 		if (ds_id == 'all') recenterMap('lazy');
 
-		window.spinner_map.stop();
+		spinner_map.stop();
 	})
 
 	$("body").on("click", ".table-chk", function(e) {
@@ -407,9 +412,9 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		$(this).addClass("highlight-row");
 
 		// fetch its detail
-		getPlace(ds_pid.pid, $(this).data('cid'), spinner_detail);
+		getPlace(ds_pid.pid, $(this).data('cid'));
 
-		highlightFeature(ds_pid, features, mappy);
+		highlightFeature(ds_pid);
 		
 		if (!!mapSequencer) {
 			mapSequencer.updateButtons();
@@ -429,9 +434,9 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 			return true;
 		}
 
-		const fromValue = window.dateline.fromValue;
-		const toValue = window.dateline.toValue;
-		const includeUndated = window.dateline.includeUndated
+		const fromValue = datelineInstance.fromValue;
+		const toValue = datelineInstance.toValue;
+		const includeUndated = datelineInstance.includeUndated
 
 		// Get the min and max values from the data attributes of the row
 		const row = $(settings.aoData[dataIndex].nTr);
@@ -448,11 +453,6 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		}
 		return false; // Exclude row from the result
 	});
-
-	return {
-		table,
-		checked_rows
-	}
 }
 
-export { table };
+export { table, checked_rows, spinner_detail, highlightedFeatureIndex };

@@ -1,4 +1,7 @@
 import datasetLayers from './mapLayerStyles';
+import { table } from './tableFunctions';
+import { mappy } from './mapAndTable';
+import { datelineInstance } from './mapControls';
 
 export function filteredLayer(layer) {
 	if ($('.range_container.expanded').length > 0) { // Is dateline active?
@@ -19,8 +22,8 @@ export function filteredLayer(layer) {
 						'all',
 						['!=', 'max', 'null'],
 						['!=', 'min', 'null'],
-						['>=', 'max', window.dateline.fromValue],
-						['<=', 'min', window.dateline.toValue],
+						['>=', 'max', datelineInstance.fromValue],
+						['<=', 'min', datelineInstance.toValue],
 					],
 					[
 						'any',
@@ -35,8 +38,8 @@ export function filteredLayer(layer) {
 				existingFilter,
 				['has', 'max'],
 				['has', 'min'],
-				['>=', 'max', window.dateline.fromValue],
-				['<=', 'min', window.dateline.toValue],
+				['>=', 'max', datelineInstance.fromValue],
+				['<=', 'min', datelineInstance.toValue],
 			];
 		}
 
@@ -44,9 +47,9 @@ export function filteredLayer(layer) {
 	} else return layer;
 }
 
-export function toggleFilters(on, mappy, table){
+export function toggleFilters(on){
     datasetLayers.forEach(function(layer){
-		window.ds_list.forEach(function(ds) {
+		ds_list.forEach(function(ds) {
 			const modifiedLayer = { ...layer };
 		    modifiedLayer.id = `${layer.id}_${ds.id}`;
 		    modifiedLayer.source = ds.id.toString();

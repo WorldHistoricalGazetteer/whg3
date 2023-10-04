@@ -214,8 +214,9 @@
         styleFilter: [ /* 'TOPO.PASTEL','BASIC.DEFAULT' */ ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
     }
     const pageData = "{{ object.id }}";
-    window.collimagepath = "{{ object.image_file.name }}"
-    window.ds_list = [{
+    const loggedin = false; // Required to prevent table checkboxes
+    collimagepath = "{{ object.image_file.name }}"
+    let ds_list = [{
         ds_type: "collections",
         id: {{ object.id }},
         title: "{{ object.title }}"

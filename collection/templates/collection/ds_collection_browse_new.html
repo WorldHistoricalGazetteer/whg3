@@ -166,12 +166,13 @@
         styleFilter: [ /* 'TOPO.PASTEL','BASIC.DEFAULT' */ ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
     }
     const pageData = "{{ object.id }}";
-    window.loggedin = "{{ loggedin }}"
-    window.dslabel = "{{ object.label }}"
-    window.filter = "{{ filter }}"
+    const loggedin = "{{ loggedin }}";
+	/* // REDUNDANT?
+	window.dslabel = "{{ object.label }}"
+    window.filter = "{{ filter }}" 
+    */
+    let ds_list = {{ ds_list|safe }};
 </script>
-
-{{ ds_list|json_script:"ds_list_data" }}
 
 <script type="module">
     import "{% static 'webpack/whg.bundle.js' %}";

@@ -184,10 +184,12 @@
         styleFilter: [ /* 'TOPO.PASTEL','BASIC.DEFAULT' */ ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
     }
     const pageData = "{{ ds.id }}";
-    window.loggedin = "{{ loggedin }}"
-    window.dslabel = "{{ ds.label }}"
-    window.filter = "{{ filter }}"
-    window.ds_list = [{
+    const loggedin = "{{ loggedin }}"
+	/* // REDUNDANT?
+	window.dslabel = "{{ object.label }}"
+    window.filter = "{{ filter }}" 
+    */
+    let ds_list = [{
         bounds: {{ ds.bounds | safe }},
         id: {{ ds.id }},
         label: "{{ ds.label }}",

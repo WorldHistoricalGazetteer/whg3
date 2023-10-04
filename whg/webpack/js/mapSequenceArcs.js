@@ -1,6 +1,7 @@
 // mapSequenceArcs.js
 
 import { distance, lineString, bezierSpline } from './6.5.0_turf.min.js';
+import { additionalLayers } from './mapControls';
 
 export default class SequenceArcs {
 	constructor(map, dataset, { deflectionValue = 1, lineColor = '#888', lineOpacity = .8, lineWidth = 1, dashLength = 8, animationRate = 1 } = {}) { // animationRate = steps per second
@@ -8,7 +9,7 @@ export default class SequenceArcs {
 		this.dataset = dataset;
 		this.arcSourceId = 'sequence-arcs-source';
 		this.arcLayerId = 'sequence-arcs-layer';
-		window.additionalLayers.push(['sequence-arcs-source','sequence-arcs-layer']);
+		additionalLayers.push(['sequence-arcs-source','sequence-arcs-layer']);
 		this.deflectionValue = deflectionValue; // Defines curvature of arc (displacement of arc's centre-point is proportional to its length)
 		this.lineColor = lineColor;
 		this.lineOpacity = lineOpacity;
