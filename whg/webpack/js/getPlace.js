@@ -1,4 +1,4 @@
-import { minmaxer } from './utilities';
+import { minmaxer, clipDetails } from './utilities';
 
 export function popupFeatureHTML(feature) { // TODO: Improve styling with css and content?
 	let HTML = '<b>' + feature.properties.title + '</b><br/>' +
@@ -10,12 +10,15 @@ export function popupFeatureHTML(feature) { // TODO: Improve styling with css an
 export function getPlace(pid, cid, spinner_detail) {
 	//console.log('getPlace()', pid);
 	if (isNaN(pid)) {
-		console.log('Invalid pid');
-		return;
+		console.log(`Invalid pid (${pid}).`);
+		$("#detail").html('<p class="error">Sorry, no detail found for that place.</p>');
+	    if (spinner_detail) spinner_detail.stop();
+	    return;
 	}
+	
 	const cidQueryParam = Number.isInteger(cid) ? `?cid=${cid}` : '';
 	$.ajax({
-		url: `/api/place/${pid}${cidQueryParam}`,
+		url: `/api/placeTEST/${pid}${cidQueryParam}`,
 	}).done(function(data) {
 		if (cidQueryParam == '') {
 			$("#detail").html(parsePlace(data));
@@ -52,7 +55,13 @@ export function getPlace(pid, cid, spinner_detail) {
 			//console.log('url', url)
 			window.open(url, '_blank')
 		});
-	});
+	})
+	.fail(function(jqXHR, textStatus, errorThrown) {
+	    console.log('AJAX request failed:', textStatus, errorThrown);
+	    $("#detail").html('<p class="error">Sorry, an error occurred while trying to fetch details of this place.</p>');
+	    $("#detail").append(clipDetails([{ key: 'textStatus', value: textStatus },{ key: 'errorThrown', value: errorThrown }]));
+	    if (spinner_detail) spinner_detail.stop();
+	  });
 	//spinner_detail.stop()-->
 }
 

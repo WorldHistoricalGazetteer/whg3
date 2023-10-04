@@ -248,7 +248,7 @@ export function initPopups(table) {
 	});
 }
 
-export function listSourcesAndLayers() {
+export function logSourcesAndLayers() {
 	const style = mappy.getStyle();
 	const sources = style.sources;
 	console.log('Sources:', Object.keys(sources));

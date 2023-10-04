@@ -1,7 +1,7 @@
 import { envelope } from './6.5.0_turf.min.js';
 import { getPlace } from './getPlace';
 import { startSpinner } from './utilities';
-import { updatePadding, recenterMap/*, listSourcesAndLayers*/ } from './mapFunctions';
+import { updatePadding, recenterMap/*, logSourcesAndLayers*/ } from './mapFunctions';
 import datasetLayers from './mapLayerStyles';
 import { mapSequencer } from './mapControls';
 import { mappy } from './mapAndTable';
@@ -130,7 +130,7 @@ export function scrollToRowByProperty(table, propertyName, value) {
 
 export function highlightFeature(ds_pid, features, mappy) {
 
-	//listSourcesAndLayers();
+	//logSourcesAndLayers();
 
 	features = features.filter(f => f.properties.dsid === ds_pid.ds);
 
@@ -332,7 +332,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 			adjustPageLength();
 		},
 		drawCallback: function(settings) {
-			console.log('table drawn')
+			// console.log('table drawn')
 			spinner_table.stop()
 			// recheck inputs in checked_rows
 			if (checked_rows.length > 0) {

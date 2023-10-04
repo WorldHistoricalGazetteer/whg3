@@ -361,3 +361,17 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
     width: 1rem;
     height: 1rem;
 }
+
+.error {
+	font-weight: bold; 
+	font-style: italic; 
+	color: white; 
+	background-color: red;
+	padding: 7px;
+    border-radius: 3px;
+}
+
+#clipDetails-button {
+	float: right;
+	border-radius: 3px;
+}

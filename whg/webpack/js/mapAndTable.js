@@ -1,7 +1,7 @@
 // /whg/webpack/js/mapAndTable.js
 
 import { init_mapControls } from './mapControls';
-import { addMapSource, addMapLayer, recenterMap, initObservers, initOverlays, initPopups, listSourcesAndLayers } from './mapFunctions';
+import { addMapSource, addMapLayer, recenterMap, initObservers, initOverlays, initPopups, logSourcesAndLayers } from './mapFunctions';
 import { toggleFilters } from './mapFilters';
 import { initUtils, initInfoOverlay, startSpinner, minmaxer, get_ds_list_stats } from './utilities';
 import { initialiseTable } from './tableFunctions';
@@ -101,7 +101,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	});
 	
 	mappy.removeSource('maptiler_attribution');
-	listSourcesAndLayers();
+	// logSourcesAndLayers();
 	// TODO: Adjust attribution elsewhere: © MapTiler © OpenStreetMap contributors
 		
 	// Initialise Data Table
