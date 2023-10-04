@@ -167,13 +167,11 @@
 
 #dateline input[type="range"].slider.from::-webkit-slider-thumb {
   transform: rotate(180deg);
-  top: 1px;
   left: -8px;
 }
 
 #dateline input[type="range"].slider.from::-moz-range-thumb {
   transform: rotate(180deg);
-  top: 1px;
   left: -8px;
 }
 

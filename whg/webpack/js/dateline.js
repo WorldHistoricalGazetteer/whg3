@@ -7,43 +7,6 @@
   Licensed under the Creative Commons Attribution 4.0 International License (CC-BY 4.0).
 */
 
-function fillSlider(from, to) {
-	const rangeDistance = to.max - to.min;
-	const fromPosition = from.value - to.min;
-	const toPosition = to.value - to.min;
-	to.style.zIndex = `3`;
-	to.style.background = `linear-gradient(
-    to right,
-    ${"var(--slider-background)"} 0%,
-    ${"var(--slider-background)"} ${(fromPosition / rangeDistance) * 100}%,
-    ${"var(--range-color)"} ${(fromPosition / rangeDistance) * 100}%,
-    ${"var(--range-color)"} ${(toPosition / rangeDistance) * 100}%,
-    ${"var(--slider-background)"} ${(toPosition / rangeDistance) * 100}%,
-    ${"var(--slider-background)"} 100%)`;
-}
-
-function formatTooltipContent(fromValue, toValue) {
-	if (fromValue === toValue) {
-		return `${fromValue}`;
-	} else {
-		return `${fromValue}-${toValue}`;
-	}
-}
-
-function calculateLabelWidth(container, value) {
-	// Create a dummy label element to calculate its width
-	const dummyLabel = document.createElement('div');
-	dummyLabel.classList.add('value-label');
-	dummyLabel.textContent = value;
-	container.appendChild(dummyLabel);
-	const labelWidth = dummyLabel.offsetWidth;
-	container.removeChild(dummyLabel); // Remove the dummy label after measurement
-	return {
-		element: dummyLabel,
-		width: labelWidth
-	};
-}
-
 export default class Dateline {
 	constructor({
 		fromValue = 1300,
@@ -52,7 +15,7 @@ export default class Dateline {
 		maxValue = 2000,
 		onChange = null,
 		open = false,
-		includeUndated = true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
+		includeUndated = true, // null | false | true - 'false/true' determine state of [Undated] select box input; 'null' excludes the button altogether
 		epochs = true,
 		automate = true
 	}) {
@@ -106,9 +69,9 @@ export default class Dateline {
 						<button class="year_button">${this.toValue}</button>
 					</div>
 				</div>
-				<input type="range" value="${this.fromValue}" min="${this.minValue}" max="${this.maxValue}" class="slider from" id="fromSlider">
-				<input type="range" value="${this.toValue}" min="${this.minValue}" max="${this.maxValue}" class="slider to" id="toSlider">
-				<div class="tooltip">${formatTooltipContent(this.fromValue, this.toValue)}</div>
+				<input type="range" data-thumb-width="16" value="${this.fromValue}" min="${this.minValue}" max="${this.maxValue}" step="1" class="slider from" id="fromSlider">
+				<input type="range" data-thumb-width="16" value="${this.toValue}" min="${this.minValue}" max="${this.maxValue}" step="1" class="slider to" id="toSlider">
+				<div class="tooltip">${this.formatTooltipContent(this.fromValue, this.toValue)}</div>
 				<div class="scale-container"></div>
 				<button class="dateline-button expanded" title="Toggle date filtering"><span></span></button>
 			</div>
@@ -142,7 +105,7 @@ export default class Dateline {
 		this.toSlider = this.rangeContainer.querySelector('.slider.to');
 		this.tooltip = this.rangeContainer.querySelector('.tooltip');
 		this.scaleContainer = this.rangeContainer.querySelector('.scale-container');
-		fillSlider(this.fromSlider, this.toSlider);
+		this.fillSlider(this.fromSlider, this.toSlider);
 
 		const updateTooltip = (event) => {
 			const slider = this.fromSlider;
@@ -157,7 +120,7 @@ export default class Dateline {
 			} else {
 				return; // Return early if neither mouse nor touch event
 			}
-			this.tooltip.textContent = formatTooltipContent(this.fromSlider.value, this.toSlider.value);
+			this.tooltip.textContent = this.formatTooltipContent(this.fromSlider.value, this.toSlider.value);
 
 			// Calculate the left offset of the tooltip to center it on the mouse
 			const tooltipWidth = this.tooltip.offsetWidth;
@@ -174,6 +137,8 @@ export default class Dateline {
 		});
 
 		[this.fromSlider, this.toSlider].forEach(slider => {
+			this.alignSlider(slider);
+			
 			slider.addEventListener("mouseenter", () => {
 				this.tooltip.style.opacity = 1;
 			});
@@ -182,22 +147,6 @@ export default class Dateline {
 			});
 			slider.addEventListener("mousemove", (event) => {
 				updateTooltip(event);
-			});
-			slider.addEventListener('input', event => {
-				if (event.target.classList.contains('to')) {
-					this.toValue = parseInt(event.target.value);
-					if (this.toValue <= this.fromValue) {
-						this.fromValue = this.toValue;
-						this.fromSlider.value = this.fromValue;
-					}
-				} else { // from
-					this.fromValue = parseInt(event.target.value);
-					if (this.fromValue >= this.toValue) {
-						this.toValue = this.fromValue;
-						this.toSlider.value = this.toValue;
-					}
-				}
-				this.updateFormInputs();
 			});
 		});
 		
@@ -258,7 +207,7 @@ export default class Dateline {
 			return {};
 		}
 
-		const maxLabels = Math.floor(scaleContainer.offsetWidth / (1.6 * calculateLabelWidth(scaleContainer, this.maxValue).width));
+		const maxLabels = Math.floor(scaleContainer.offsetWidth / (1.6 * this.calculateLabelWidth(scaleContainer, this.maxValue).width));
 		const valueRange = this.maxValue - this.minValue;
 		const divisions = [1, 2, 5, 10, 20, 50];
 		const minStep = Math.floor(valueRange / maxLabels);
@@ -286,7 +235,7 @@ export default class Dateline {
 				const {
 					element: valueLabel,
 					width: labelWidth
-				} = calculateLabelWidth(scaleContainer, tickValue);
+				} = this.calculateLabelWidth(scaleContainer, tickValue);
 				valueLabel.textContent = tickValue;
 				scaleContainer.appendChild(valueLabel);
 
@@ -307,12 +256,96 @@ export default class Dateline {
 	updateFormInputs() {
 		this.rangeContainer.querySelector('.control_container.from .year_button').textContent = this.fromValue;
 		this.rangeContainer.querySelector('.control_container.to .year_button').textContent = this.toValue;
-		fillSlider(this.fromSlider, this.toSlider);
+		this.fillSlider(this.fromSlider, this.toSlider);
 		
 		this.includeUndated = $('#undated_checkbox').length > 0 && $('#undated_checkbox').is(':checked');
 		
 		if (typeof this.onChangeCallback === 'function') {
             this.onChangeCallback(this.fromValue, this.toValue, this.includeUndated);
         }
+	}
+	
+	fillSlider(from, to) {
+		const rangeDistance = to.max - to.min;
+		const fromPosition = from.value - to.min;
+		const toPosition = to.value - to.min;
+		to.style.zIndex = `3`;
+		to.style.background = `linear-gradient(
+	    to right,
+	    ${"var(--slider-background)"} 0%,
+	    ${"var(--slider-background)"} ${(fromPosition / rangeDistance) * 100}%,
+	    ${"var(--range-color)"} ${(fromPosition / rangeDistance) * 100}%,
+	    ${"var(--range-color)"} ${(toPosition / rangeDistance) * 100}%,
+	    ${"var(--slider-background)"} ${(toPosition / rangeDistance) * 100}%,
+	    ${"var(--slider-background)"} 100%)`;
+	}
+	
+	formatTooltipContent(fromValue, toValue) {
+		if (fromValue === toValue) {
+			return `${fromValue}`;
+		} else {
+			return `${fromValue}/${toValue}`;
+		}
+	}
+	
+	calculateLabelWidth(container, value) {
+		// Create a dummy label element to calculate its width
+		const dummyLabel = document.createElement('div');
+		dummyLabel.classList.add('value-label');
+		dummyLabel.textContent = value;
+		container.appendChild(dummyLabel);
+		const labelWidth = dummyLabel.offsetWidth;
+		container.removeChild(dummyLabel); // Remove the dummy label after measurement
+		return {
+			element: dummyLabel,
+			width: labelWidth
+		};
+	}
+
+	alignSlider(el) { // Default behaviour causes slider control to jump if not clicked in its centre
+	  var thumbWidth = parseFloat(el.getAttribute('data-thumb-width'));
+	  if (!thumbWidth) {
+	    return;
+	  }
+	  var dragOrigin = null;
+	
+	  el.addEventListener('mousedown', function (evt) {
+	    evt.preventDefault();
+	    dragOrigin = {
+	      x: evt.clientX,
+	      val: parseFloat(el.value),
+	    };
+	  });
+	
+	  document.addEventListener('mouseup', function () {
+	    dragOrigin = null;
+	  });
+	
+	  document.addEventListener('mousemove', (evt) => {
+	    if (dragOrigin !== null) {
+	      evt.preventDefault();
+	      var rect = el.getBoundingClientRect();
+	      var offsetX = evt.clientX - dragOrigin.x;
+	      var offsetVal = offsetX / (rect.width - thumbWidth);
+	      var max = parseFloat(el.max) || 100;
+	      var min = parseFloat(el.min) || 0;
+	      el.value = dragOrigin.val + offsetVal * (max - min);
+	      
+			if (el.classList.contains('to')) {
+				this.toValue = parseInt(el.value);
+				if (this.toValue <= this.fromValue) {
+					this.fromValue = this.toValue;
+					this.fromSlider.value = this.fromValue;
+				}
+			} else { // from
+				this.fromValue = parseInt(el.value);
+				if (this.fromValue >= this.toValue) {
+					this.toValue = this.fromValue;
+					this.toSlider.value = this.toValue;
+				}
+			}
+			this.updateFormInputs();
+	    }
+	  });
 	}
 }

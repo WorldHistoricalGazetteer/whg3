@@ -12,13 +12,17 @@ let spinner_table;
 let spinner_detail;
 
 function highlightFirstRow() {
-	$("#placetable tr").removeClass("highlight-row");
-	const firstrow = $("#placetable tbody tr:first");
-	const pid = firstrow.data('ds_pid').pid;
-	const cid = firstrow.data('cid');
-	// highlight first row and fetch detail, but don't fly map to it
-	firstrow.addClass('highlight-row');
-	getPlace(pid, cid);
+  const firstrow = $("#placetable tbody tr:first");
+  if (firstrow.length == 1 && !firstrow.find('td:first').hasClass('dataTables_empty')) { // Table may have been filtered leaving no visible rows
+    $("#placetable tr").removeClass("highlight-row");
+    const pid = firstrow.data('ds_pid').pid;
+    const cid = firstrow.data('cid');
+    // Highlight first row and fetch detail, but don't fly map to it
+    firstrow.addClass('highlight-row');
+    getPlace(pid, cid);
+  } else {
+    $("#detail").html("");
+  }
 }
 
 // Adjust the DataTable's page length to avoid scrolling where possible

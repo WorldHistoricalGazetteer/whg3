@@ -383,7 +383,7 @@ function init_mapControls(){
 		document.getElementById('mapControls').appendChild(datelineContainer);
 
 		const range = ds_list_stats.max - ds_list_stats.min;
-		const buffer = range * 0.1; // 10% buffer
+		const buffer = Math.ceil(range * 0.1); // 10% buffer
 
 		// Update the temporal settings
 		mapParameters.controls.temporal.fromValue = ds_list_stats.min;
