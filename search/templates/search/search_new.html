@@ -1,0 +1,99 @@
+{% extends "main/base.html" %}
+{% load leaflet_tags %}
+{% load static %}
+{% block title %}<title>WHG Search</title>{% endblock %}
+{% block extra_head %}
+{#	<style>#}
+{#	  #advanced-search {#}
+{#	    transition: max-height 0.5s ease-out;#}
+{#	    overflow: hidden;#}
+{#	    max-height: 0;#}
+{#	  }#}
+{##}
+	  {##advanced-search.show {#}
+	  {#  max-height: 200px;  /* You can adjust this value */#}
+	  {# }#}
+{#	</style>#}
+{% endblock %}
+
+{% block content %}
+  <div class="container-md" style="height: calc(100vh - 65px); position: relative;">
+
+	<!-- Search bar at the top -->
+	<div id="search-bar" class="bg-light py-2 row position-relative">
+	  <div class="text-center col-12">
+			<div id="input" class="input-group w-50 mx-auto">
+			  <input type="text" id="search-input" class="form-control" placeholder="Enter place name"
+			         aria-label="Search" aria-describedby="search-addon">
+			  <span class="input-group-text" id="search-addon">
+			    <a href="#" id="search-button"><i class="fas fa-search"></i></a>
+			  </span>
+		    <a href="#" id="advanced-search-toggle" class="small ps-2">Advanced Search</a>
+			</div>
+	  </div>
+	  <div id="advanced-search" class="text-center col-12 position-absolute w-100"
+	       style="background-color: #ffffe0; top: 100%;">
+	    <div>some checkboxes and dropdowns</div>
+	    <button id="close-advanced-search" class="btn btn-secondary">Close</button>
+	  </div>
+	</div>
+
+    <!-- Main content grid -->
+    <div class="row">
+      <!-- Left column for facets -->
+      <div class="col-2 p-1" style="background-color: #e6e6e6;">
+        <div class="p-3 bg-light">
+          <label>Facets</label>
+        </div>
+      </div>
+
+      <!-- Center column for search results -->
+      <div class="col-5 p-1" style="background-color: #cccccc;">
+        <div class="p-3 bg-light">
+          <label>Search Results</label>
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div class="col-5 px-0">
+
+        <!-- Map -->
+        <div id="map-container" style="background-color: #999999;">
+          <div class="p-3">
+            <label>Map</label>
+          </div>
+        </div>
+
+        <!-- Detail box -->
+        <div id="detail-box" class="p-1" style="background-color: #666666;">
+          <div class="p-3 bg-light">
+            <label>Detail Box</label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script type="text/javascript">
+
+	$(document).ready(function() {
+    $('#advanced-search').hide();
+
+	  $('#advanced-search-toggle').click(function() {
+	    $('#advanced-search').slideToggle(500);  // 500 milliseconds for the toggle effect
+	  });
+
+	  $('#close-advanced-search').click(function() {
+	    $('#advanced-search').slideUp(500);  // 500 milliseconds for the slide-up effect
+	  });
+	});
+
+	document.getElementById('search-button').addEventListener('click', function(event) {
+	  event.preventDefault();
+	  const searchInput = document.getElementById('search-input').value;
+	  alert("Searching for " + searchInput);
+	});
+  </script>
+{% endblock %}

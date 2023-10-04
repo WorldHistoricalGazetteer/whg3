@@ -85,7 +85,8 @@
 				  </span>
 				</div>
 				<div class="advanced-search-link px-1 py-0">
-					<a href="{% url 'search-page' %}"#>advanced search</a>
+					<a id="a_advanced" href="#">advanced here</a>
+					<a href="{% url 'search-page-new' %}" class="ms-2">new search</a>
 				</div>
 			</div>
 			<div class=" p-1 border bg-white" style="height: 24%;">
@@ -197,7 +198,12 @@ $(function(){
     $("#header_text").html(txt)
     $('.imagepreview').attr('src', url);
     $('#image_modal').modal('show');   
-  });	
+  });
+
+  $("#a_advanced").on('click', function(e){
+    e.preventDefault()
+    alert('gonna drop down advanced...tomorrow')
+  })
 })
 
 homeModal = document.getElementById('homeModal')
