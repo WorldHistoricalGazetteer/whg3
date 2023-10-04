@@ -34,7 +34,7 @@ export default class Dateline {
 		this.addGoogleFont();
 
 		this.observeResize();
-		
+
 		this.onChangeCallback = onChange;
 	}
 
@@ -138,7 +138,7 @@ export default class Dateline {
 
 		[this.fromSlider, this.toSlider].forEach(slider => {
 			this.alignSlider(slider);
-			
+
 			slider.addEventListener("mouseenter", () => {
 				this.tooltip.style.opacity = 1;
 			});
@@ -149,13 +149,13 @@ export default class Dateline {
 				updateTooltip(event);
 			});
 		});
-		
+
 		const undatedCheckbox = document.getElementById('undated_checkbox');
-	    if (undatedCheckbox) {
-	        undatedCheckbox.addEventListener('change', () => {
-	            this.updateFormInputs();
-	        });
-	    }
+		if (undatedCheckbox) {
+			undatedCheckbox.addEventListener('change', () => {
+				this.updateFormInputs();
+			});
+		}
 
 		if (this.open) {
 			const datelineButton = document.querySelector('.dateline-button');
@@ -252,19 +252,19 @@ export default class Dateline {
 			tickValue += tickStep;
 		}
 	}
-	
+
 	updateFormInputs() {
 		this.rangeContainer.querySelector('.control_container.from .year_button').textContent = this.fromValue;
 		this.rangeContainer.querySelector('.control_container.to .year_button').textContent = this.toValue;
 		this.fillSlider(this.fromSlider, this.toSlider);
-		
+
 		this.includeUndated = $('#undated_checkbox').length > 0 && $('#undated_checkbox').is(':checked');
-		
+
 		if (typeof this.onChangeCallback === 'function') {
-            this.onChangeCallback(this.fromValue, this.toValue, this.includeUndated);
-        }
+			this.onChangeCallback(this.fromValue, this.toValue, this.includeUndated);
+		}
 	}
-	
+
 	fillSlider(from, to) {
 		const rangeDistance = to.max - to.min;
 		const fromPosition = from.value - to.min;
@@ -279,7 +279,7 @@ export default class Dateline {
 	    ${"var(--slider-background)"} ${(toPosition / rangeDistance) * 100}%,
 	    ${"var(--slider-background)"} 100%)`;
 	}
-	
+
 	formatTooltipContent(fromValue, toValue) {
 		if (fromValue === toValue) {
 			return `${fromValue}`;
@@ -287,7 +287,7 @@ export default class Dateline {
 			return `${fromValue}/${toValue}`;
 		}
 	}
-	
+
 	calculateLabelWidth(container, value) {
 		// Create a dummy label element to calculate its width
 		const dummyLabel = document.createElement('div');
@@ -303,49 +303,49 @@ export default class Dateline {
 	}
 
 	alignSlider(el) { // Default behaviour causes slider control to jump if not clicked in its centre
-	  var thumbWidth = parseFloat(el.getAttribute('data-thumb-width'));
-	  if (!thumbWidth) {
-	    return;
-	  }
-	  var dragOrigin = null;
-	
-	  el.addEventListener('mousedown', function (evt) {
-	    evt.preventDefault();
-	    dragOrigin = {
-	      x: evt.clientX,
-	      val: parseFloat(el.value),
-	    };
-	  });
-	
-	  document.addEventListener('mouseup', function () {
-	    dragOrigin = null;
-	  });
-	
-	  document.addEventListener('mousemove', (evt) => {
-	    if (dragOrigin !== null) {
-	      evt.preventDefault();
-	      var rect = el.getBoundingClientRect();
-	      var offsetX = evt.clientX - dragOrigin.x;
-	      var offsetVal = offsetX / (rect.width - thumbWidth);
-	      var max = parseFloat(el.max) || 100;
-	      var min = parseFloat(el.min) || 0;
-	      el.value = dragOrigin.val + offsetVal * (max - min);
-	      
-			if (el.classList.contains('to')) {
-				this.toValue = parseInt(el.value);
-				if (this.toValue <= this.fromValue) {
-					this.fromValue = this.toValue;
-					this.fromSlider.value = this.fromValue;
+		var thumbWidth = parseFloat(el.getAttribute('data-thumb-width'));
+		if (!thumbWidth) {
+			return;
+		}
+		var dragOrigin = null;
+
+		el.addEventListener('mousedown', function(evt) {
+			evt.preventDefault();
+			dragOrigin = {
+				x: evt.clientX,
+				val: parseFloat(el.value),
+			};
+		});
+
+		document.addEventListener('mouseup', function() {
+			dragOrigin = null;
+		});
+
+		document.addEventListener('mousemove', (evt) => {
+			if (dragOrigin !== null) {
+				evt.preventDefault();
+				var rect = el.getBoundingClientRect();
+				var offsetX = evt.clientX - dragOrigin.x;
+				var offsetVal = offsetX / (rect.width - thumbWidth);
+				var max = parseFloat(el.max) || 100;
+				var min = parseFloat(el.min) || 0;
+				el.value = dragOrigin.val + offsetVal * (max - min);
+
+				if (el.classList.contains('to')) {
+					this.toValue = parseInt(el.value);
+					if (this.toValue <= this.fromValue) {
+						this.fromValue = this.toValue;
+						this.fromSlider.value = this.fromValue;
+					}
+				} else { // from
+					this.fromValue = parseInt(el.value);
+					if (this.fromValue >= this.toValue) {
+						this.toValue = this.fromValue;
+						this.toSlider.value = this.toValue;
+					}
 				}
-			} else { // from
-				this.fromValue = parseInt(el.value);
-				if (this.fromValue >= this.toValue) {
-					this.toValue = this.fromValue;
-					this.toSlider.value = this.toValue;
-				}
+				this.updateFormInputs();
 			}
-			this.updateFormInputs();
-	    }
-	  });
+		});
 	}
 }
