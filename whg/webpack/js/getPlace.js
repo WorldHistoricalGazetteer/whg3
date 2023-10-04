@@ -18,7 +18,7 @@ export function getPlace(pid, cid, spinner_detail) {
 	
 	const cidQueryParam = Number.isInteger(cid) ? `?cid=${cid}` : '';
 	$.ajax({
-		url: `/api/placeTEST/${pid}${cidQueryParam}`,
+		url: `/api/place/${pid}${cidQueryParam}`,
 	}).done(function(data) {
 		if (cidQueryParam == '') {
 			$("#detail").html(parsePlace(data));
