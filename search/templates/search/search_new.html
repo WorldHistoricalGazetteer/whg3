@@ -3,17 +3,19 @@
 {% load static %}
 {% block title %}<title>WHG Search</title>{% endblock %}
 {% block extra_head %}
-{#	<style>#}
-{#	  #advanced-search {#}
-{#	    transition: max-height 0.5s ease-out;#}
-{#	    overflow: hidden;#}
-{#	    max-height: 0;#}
-{#	  }#}
-{##}
-	  {##advanced-search.show {#}
-	  {#  max-height: 200px;  /* You can adjust this value */#}
-	  {# }#}
-{#	</style>#}
+<style>
+	.result {
+	    border: 1px solid #ccc;
+	    margin: 10px;
+	    padding: 10px;
+	    border-radius: 5px;
+	}
+
+	.result h5 {
+	    margin: 0 0 10px;
+	    padding: 0;
+	}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -21,14 +23,14 @@
 
 	<!-- Search bar at the top -->
 	<div id="search-bar" class="bg-light py-2 row position-relative">
-	  <div class="text-center col-12">
+	  <div id="d_input" class="text-center col-12">
 			<div id="input" class="input-group w-50 mx-auto">
 			  <input type="text" id="search-input" class="form-control" placeholder="Enter place name"
 			         aria-label="Search" aria-describedby="search-addon">
 			  <span class="input-group-text" id="search-addon">
 			    <a href="#" id="search-button"><i class="fas fa-search"></i></a>
 			  </span>
-		    <a href="#" id="advanced-search-toggle" class="small ps-2">Advanced Search</a>
+		    <a href="#" id="advanced-search-toggle" class="small ps-2 hidden">Advanced Search</a>
 			</div>
 	  </div>
 	  <div id="advanced-search" class="text-center col-12 position-absolute w-100"
@@ -42,14 +44,14 @@
     <div class="row">
       <!-- Left column for facets -->
       <div class="col-2 p-1" style="background-color: #e6e6e6;">
-        <div class="p-3 bg-light">
+        <div id=result_facets" class="p-3 bg-light">
           <label>Facets</label>
         </div>
       </div>
 
       <!-- Center column for search results -->
       <div class="col-5 p-1" style="background-color: #cccccc;">
-        <div class="p-3 bg-light">
+        <div id="search_results" class="p-3 bg-light">
           <label>Search Results</label>
         </div>
       </div>
@@ -59,7 +61,7 @@
 
         <!-- Map -->
         <div id="map-container" style="background-color: #999999;">
-          <div class="p-3">
+          <div id=map" class="p-3">
             <label>Map</label>
           </div>
         </div>
@@ -79,6 +81,24 @@
   <script type="text/javascript">
 
 	$(document).ready(function() {
+		// look for last_results
+		const storedResults = localStorage.getItem('last_results');
+		const results = storedResults ? JSON.parse(storedResults) : null;
+
+    // possibly zap them
+		{#localStorage.removeItem('last_results');#}
+
+		// render 'em
+		if (results) {
+		    // Render the results on the page
+		    renderResults(results);
+		} else {
+        alert("got nothin' for ya, sorry")
+		    // Handle the case where no results are found in localStorage
+		    // e.g., display a prompt for a new search or show an empty state
+		}
+
+    // toggler for advanced search
     $('#advanced-search').hide();
 
 	  $('#advanced-search-toggle').click(function() {
@@ -88,7 +108,61 @@
 	  $('#close-advanced-search').click(function() {
 	    $('#advanced-search').slideUp(500);  // 500 milliseconds for the slide-up effect
 	  });
+
+	  // Extract and parse URL parameters
+	  const urlParams = new URLSearchParams(window.location.search);
+	  const query = urlParams.get('query');
+	  const filters = JSON.parse(urlParams.get('filters') || "{}");
+
+	  // Check if query parameter is present
+	  if (query) {
+	    // If query is present, we got here from home page search
+		  // initiate search with the extracted parameters
+	    initiateSearch(query, filters);
+	  }
+
+	  // Set up event listeners for future searches initiated on search_new.html
+	  $('#search-button').on('click', function() {
+	    const newQuery = $('#search-input').val();
+	    const newFilters = {};
+	    initiateSearch(newQuery, newFilters);
+	  });
+
 	});
+
+  // put these in the right div(s)
+  function renderResults(results){
+    console.log('results here first', results)
+    // Select the search_results div
+    const $resultsDiv = $('#search_results');
+
+    // Iterate over the results and append HTML for each
+    results.forEach(result => {
+        const html = `
+            <div class="result">
+                <h5>${result.name}</h5>
+                <p>WHG ID: ${result.whg_id}</p>
+                <p>PID: ${result.pid}</p>
+                <p>Link Count: ${result.linkcount}</p>
+                <p>Variants: ${result.variants.join(', ')}</p>
+                <p>Country Codes: ${result.ccodes.join(', ')}</p>
+                <p>Feature Classes: ${result.fclasses.join(', ')}</p>
+                <p>Types: ${result.types.join(', ')}</p>
+                <p>Coordinates: ${result.geom[0].coordinates.join(', ')}</p>
+            </div>
+        `;
+        $resultsDiv.append(html);
+        $("#d_input input").val(result.name)
+    });
+
+  }
+
+	function initiateSearch(query, filters) {
+    alert("I heard a query ("+query+") so I'll call SearchView() with some ajax.")
+	  // Use query and filters to call your SearchView(), process and display results
+	  // This function should handle searching and rendering the results on the page
+	}
+
 
 	document.getElementById('search-button').addEventListener('click', function(event) {
 	  event.preventDefault();

@@ -14,6 +14,7 @@ from datasets.models import Dataset, Hit
 from datasets.tasks import normalize, get_bounds_filter
 from places.models import Place, PlaceGeom
 
+# new
 class SearchPageViewNew(TemplateView):
   template_name = 'search/search_new.html'
   # template_name = 'search/search_new.html'
@@ -37,6 +38,7 @@ class SearchPageViewNew(TemplateView):
     #context['bboxes'] = bboxes
     return context
 
+# old
 class SearchPageView(TemplateView):
   template_name = 'search/search.html'
   # template_name = 'search/search_new.html'
@@ -59,28 +61,29 @@ class SearchPageView(TemplateView):
     context['search_params'] = self.request.session.get('search_params')
     #context['bboxes'] = bboxes
     return context
-  
-class LookupView(View):
-  @staticmethod
-  def get(request):
-    print('in LookupView, GET =',request.GET)
-    """
-      args in request.GET:
-        [string] idx: latest name for whg index
-        [string] place_id: from a trace body
-    """
-    es = settings.ES_CONN
-    idx = request.GET.get('idx')
-    pid = request.GET.get('place_id')
-    q={"query": {"bool": {"must": [{"match":{"place_id": pid }}]}}}
-    res = es.search(index=idx, body=q)
-    hit = res['hits']['hits'][0]
-    print('hit[_id] from search/lookup',hit['_id'])
-    #print('LookupView pid',pid)
-    print({"whg_id":hit['_id']})
-    return JsonResponse({"whg_id":hit['_id']}, safe=False)
-    #return {"whg_id":hit['_id']}
-  
+
+# DEPRECATED
+# class LookupView(View):
+#   @staticmethod
+#   def get(request):
+#     print('in LookupView, GET =',request.GET)
+#     """
+#       args in request.GET:
+#         [string] idx: latest name for whg index
+#         [string] place_id: from a trace body
+#     """
+#     es = settings.ES_CONN
+#     idx = request.GET.get('idx')
+#     pid = request.GET.get('place_id')
+#     q={"query": {"bool": {"must": [{"match":{"place_id": pid }}]}}}
+#     res = es.search(index=idx, body=q)
+#     hit = res['hits']['hits'][0]
+#     print('hit[_id] from search/lookup',hit['_id'])
+#     #print('LookupView pid',pid)
+#     print({"whg_id":hit['_id']})
+#     return JsonResponse({"whg_id":hit['_id']}, safe=False)
+#     #return {"whg_id":hit['_id']}
+#
 def fetchArea(request):
   aid = request.GET.get('pk')
   area = Area.objects.filter(id=aid)
@@ -118,13 +121,16 @@ def suggestionItem(s):
 
 
 """
-  performs es search in index aliased 'whg'
+  performs the ES search of index aliased 'whg'
 """
 def suggester(q, idx):
-  print('key', settings.ES_APIKEY_ID, settings.ES_APIKEY_KEY)
+  # print('key', settings.ES_APIKEY_ID, settings.ES_APIKEY_KEY)
   # returns only parents; children retrieved into place portal
   print('suggester q',q)
-  es = settings.ES_CONN
+  try:
+    es = settings.ES_CONN
+  except:
+    print('es query failed', sys.exc_info())
   # print('suggester es connector',es)
 
   suggestions = []
@@ -143,9 +149,11 @@ def suggester(q, idx):
   sortedsugs = sorted(suggestions, key=lambda x: x['linkcount'], reverse=True)
   # TODO: there may be parents and children
   return sortedsugs
-    
+
+
 """ 
   /search/index/?
+  performs es search in index aliased 'whg'
   from search.html 
 """
 class SearchView(View):
@@ -196,6 +204,7 @@ class SearchView(View):
             ]
           }}
     }
+    print('q in SearchView()', q)
     if fclasses:
       fclist = fclasses.split(',')
       fclist.append('X')

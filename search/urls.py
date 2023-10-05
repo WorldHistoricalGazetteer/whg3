@@ -10,7 +10,13 @@ from search.views import (
 
 urlpatterns = [
   path('', SearchPageView.as_view(), name='search-page'),
+
+  # simply returns new search page, no results
   path('new/', SearchPageViewNew.as_view(), name='search-page-new'),
+
+  # generic search view, renders search_new.html w/results
+  # path('search_new/', search_new, name='search-new'),
+
   path('index/', SearchView.as_view(), name='search'), # executes index search
   path('db/', SearchDatabaseView.as_view(), name='search-db'), # executes database search
   path('context/', FeatureContextView.as_view(), name='feature_context'), # place portal context
