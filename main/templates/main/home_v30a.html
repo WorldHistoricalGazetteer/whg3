@@ -187,20 +187,14 @@
 
 <script type="text/javascript">
 $(function(){
+  // always clear last_results & last_query
+	localStorage.removeItem('last_results')
+	localStorage.removeItem('last_query')
+
   // listen for search action
   // TODO: handle Enter key also
-	{#$('#a_search').on('click', function() {#}
-  {#  console.log('you searching for ' + $('#input_box').val() + '?')#}
-  {#  initiateSearchHome();#}
-	{# });#}
 	$("#a_search").click(function() {
     initiateSearchHome();
-
-	    {##}
-	    {#$.get("/your-search-url/", searchParams, function(data) {#}
-	    {#    localStorage.setItem('last_results', JSON.stringify(data));#}
-	    {#    window.location.href = "/path-to-search-page/";#}
-	    {# });#}
 	});
 
 	// call views.search_new() with parameters
@@ -208,6 +202,7 @@ $(function(){
 	function initiateSearchHome() {
     const query = $('#search_map input').val();
     const filters = gatherOptions(); // Suppose you have a function to gather filters
+		localStorage.setItem('last_query', query)
 
     $.get("/search/index", filters, function(data){
       window.searchres = data['suggestions']
@@ -215,10 +210,8 @@ $(function(){
       // store locally
       localStorage.setItem('last_results',JSON.stringify(searchres))
 	    console.log(searchres)
-	    // go to search_new.html
+	    // deliver to search_new.html
 	    window.location.href = "{% url 'search-page-new' %}";
-      // render to html NOT HERE
-	    {#showResults(searchres);#}
     });
 	}
 

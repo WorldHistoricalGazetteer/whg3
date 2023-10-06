@@ -106,12 +106,13 @@ def makeGeom(pid,geom):
 """
 def suggestionItem(s):
   h = s['hit']
+  print('a search hit', h)
   item = {
     "whg_id": h['whg_id'] if 'whg_id' in h else '',
     "pid":h['place_id'],
     "linkcount":s['linkcount'],
-    "name": h['title'],
-    "variants":[n for n in h['suggest']['input'] if n != h['title']],
+    "title": h['title'],
+    "variants":[n for n in h['searchy'] if n != h['title']],
     "ccodes": h['ccodes'],
     "fclasses": h['fclasses'],
     "types": [t['label'] for t in h['types'] ],
