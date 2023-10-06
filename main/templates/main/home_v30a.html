@@ -197,6 +197,12 @@ $(function(){
     initiateSearchHome();
 	});
 
+	$("#search_map input").on('keypress', function(event) {
+	    if (event.which == 13) { // 13 is the 'Enter' key code
+	        event.preventDefault();
+	        initiateSearchHome(); // Call the initiateSearch function when 'Enter' is pressed
+	    }
+	});
 	// call views.search_new() with parameters
 	// search_new() will pass these to search_new.html
 	function initiateSearchHome() {
