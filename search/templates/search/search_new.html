@@ -117,7 +117,10 @@
 		  {#const urlParams = new URLSearchParams(window.location.search);#}
 		  {#const query = urlParams.get('query');#}
 		  {#const filters = JSON.parse(urlParams.get('filters') || "{}");#}
-
+			$("#search-button").on('click', function(event) {
+		    event.preventDefault();
+		    initiateSearch(); // Call the initiateSearch function when the button is clicked
+		  });
 			$("#d_input input").on('keypress', function(event) {
 			    if (event.which == 13) {
 			        event.preventDefault();
@@ -129,6 +132,8 @@
     // put these in the right div(s)
 	  function renderResults(results){
 		    console.log('results here first', results)
+			  // clear any
+			  $('#search_results').html(')')
 			  geoms = []
 			  havegeom = 0
 		    // Select the search_results div
@@ -150,7 +155,7 @@
 		                {#<p>Types: ${result.types.join(', ')}</p>#}
 		            </div>
 		        `;
-		        $resultsDiv.append(html);
+		        $resultsDiv.html(html);
 
 		        // search term to search input
 				    const lastQuery = localStorage.getItem('last_query');
@@ -207,21 +212,6 @@
 		        renderResults(searchres);
 		    });
 		}
-
-		// Set up an event listener for the search button
-		{#$("#search-button").on('click', function(event) {#}
-		{#    event.preventDefault();#}
-		{#    initiateSearch(); // Call the initiateSearch function when the button is clicked#}
-		{# });#}
-		{##}
-		{#// Optional: Set up an event listener for the 'Enter' key within the search input#}
-		{#$("#d_input input").on('keypress', function(event) {#}
-		{#    if (event.which == 13) { // 13 is the 'Enter' key code#}
-		{#        event.preventDefault();#}
-		{#        initiateSearch(); // Call the initiateSearch function when 'Enter' is pressed#}
-		{#    }#}
-		{# });#}
-
 		// get option values
 		function gatherOptions() {
 	    // gather and return option values from the UI
