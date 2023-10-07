@@ -97,6 +97,7 @@
   <script type="text/javascript">
 
 		let results = [];
+    let checkboxStates = {};
 		$(document).ready(function() {
 
 			// look for last_results
@@ -134,23 +135,17 @@
 			});
 
 			$('.filter-checkbox').change(function() {
+          // store state
+          checkboxStates[this.value] = this.checked;
 			    // Get all checked checkboxes
-			    let checkedTypes = $('.type-checkbox:checked').map(function() {
-			        return this.value;
-			    }).get();
-			    let checkedCountries = $('.country-checkbox:checked').map(function() {
-			        return this.value;
-			    }).get();
+			    let checkedTypes = getCheckedTypes();
+			    let checkedCountries = getCheckedCountries();
 
 			    // Log the current selected types and countries for debugging
 			    console.log('Selected Types:', checkedTypes);
 			    console.log('Selected Countries:', checkedCountries);
 
-			    // Filter results based on checked checkboxes
-					let filteredResults = results.filter(function(result) {
-					    return (checkedTypes.length === 0 || checkedTypes.some(type => result.types.includes(type))) &&
-					           (checkedCountries.length === 0 || checkedCountries.some(country => result.ccodes.includes(country)));
-					});
+					let filteredResults = filterResults(checkedTypes, checkedCountries);
 
 			    // Log the filtered results for debugging
 			    console.log('Filtered Results:', filteredResults);
@@ -159,6 +154,7 @@
 			    if (filteredResults.length > 0) {
 			        renderResults(filteredResults);
 			        renderDetail(filteredResults[0]); // Render details for the first result
+			        {#renderCheckboxes(filteredResults);#}
 			    } else {
 			        // Handle the case where there are no matching results
 			        $('#search_results').html('<p>No results match the selected filters.</p>');
@@ -167,6 +163,42 @@
 			});
 
 		}); // document ready
+
+		function renderCheckboxes(results) {
+		    // Count the number of results for each type and country
+		    // (similar to what you did before).
+
+		    // Then, for each checkbox...
+		    $('.filter-checkbox').each(function() {
+		        // ... set its checked status based on the stored state.
+		        //let isChecked = /* get the stored checked status of this checkbox */;
+		        {#$(this).prop('checked', isChecked);#}
+            $(this).prop('checked', true);
+		    });
+		}
+
+    // Filter results based on checked checkboxes
+    function filterResults(checkedTypes, checkedCountries){
+			let filteredResults = results.filter(function(result) {
+			    return (checkedTypes.length === 0 || checkedTypes.some(type => result.types.includes(type))) &&
+			           (checkedCountries.length === 0 || checkedCountries.some(country => result.ccodes.includes(country)));
+			 });
+      return filteredResults
+    }
+
+		function getCheckedTypes(){
+	    let checkedTypes = $('.type-checkbox:checked').map(function() {
+	        return this.value;
+	    }).get();
+      return checkedTypes
+		}
+
+		function getCheckedCountries(){
+			let checkedCountries = $('.country-checkbox:checked').map(function() {
+			  return this.value;
+			}).get();
+      return checkedCountries
+		}
 
     // render results and facet checkboxes
 	  function renderResults(results){
@@ -233,9 +265,14 @@
 		    // checkboxes for types in results
 		    $('#type_checkboxes').empty().append('<h5>Place Types</h5>');
 		    types.forEach(type => {
-		        const checkbox = $('<input>', { type: 'checkbox', id: 'type_' + type,
-				        value: type, class: 'filter-checkbox type-checkbox' });
-		        const label = $('<label>', { 'for': 'type_' + type, text: type });
+		        const checkbox = $('<input>', {
+              type: 'checkbox',
+		          id: 'type_' + type,
+		          value: type,
+		          class: 'filter-checkbox type-checkbox',
+		          checked: checkboxStates[type] || false
+            });
+	          const label = $('<label>', { 'for': 'type_' + type, text: type });
 		        $('#type_checkboxes').append(checkbox).append(label).append('<br>');
 		    });
 
@@ -243,8 +280,13 @@
 		    $('#country_checkboxes').empty().append('<h5>Countries</h5>');
 		    countries.forEach(country => {
 		        const cName = ccode_hash[country]['gnlabel'];
-		        const checkbox = $('<input>', { type: 'checkbox', id: 'country_' +
-						        country, value: country, class: 'filter-checkbox country-checkbox' });
+		        const checkbox = $('<input>', {
+              type: 'checkbox',
+              id: 'country_' + country,
+              value: country,
+              class: 'filter-checkbox country-checkbox',
+              checked: checkboxStates[country] || false
+            });
 		        const label = $('<label>', { 'for': 'country_' + country, text: cName + ' (' + country + ')' });
 		        $('#country_checkboxes').append(checkbox).append(label).append('<br>');
 		    });
