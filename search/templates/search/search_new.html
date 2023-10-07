@@ -189,6 +189,7 @@
 		    });
 	      $('.result').first().addClass('selected');
 
+
 		    // Convert sets to arrays
 		    const types = Array.from(typesSet);
 		    const countries = Array.from(countriesSet);
@@ -197,7 +198,7 @@
 		    $('#type_checkboxes').empty().append('<h5>Place Types</h5>');
 		    types.forEach(type => {
 		        const checkbox = $('<input>', { type: 'checkbox', id: 'type_' + type,
-				        value: type, class: 'filter-checkbox' });
+				        value: type, class: 'filter-checkbox type-checkbox' });
 		        const label = $('<label>', { 'for': 'type_' + type, text: type });
 		        $('#type_checkboxes').append(checkbox).append(label).append('<br>');
 		    });
@@ -207,10 +208,12 @@
 		    countries.forEach(country => {
 		        const cName = ccode_hash[country]['gnlabel'];
 		        const checkbox = $('<input>', { type: 'checkbox', id: 'country_' +
-						        country, value: country, class: 'filter-checkbox' });
+						        country, value: country, class: 'filter-checkbox country-checkbox' });
 		        const label = $('<label>', { 'for': 'country_' + country, text: cName + ' (' + country + ')' });
 		        $('#country_checkboxes').append(checkbox).append(label).append('<br>');
 		    });
+
+				updateCheckboxCounts(results)
 
 			  // send some fields to
 			  renderDetail(results[0]);
@@ -225,14 +228,40 @@
 	        // Future: Highlight marker on map corresponding to clicked result
 	      });
 
-		    // Add hover effect to result cards (Optional)
-		    {#$('.result').hover(#}
-		    {#    function() { $(this).css('background-color', '#f0f0f0');}, // On mouse enter#}
-		    {#    function() { $(this).css('background-color', ''); }          // On mouse leave#}
-		    {#);#}
 	      console.log('geoms', geoms)
 				{#renderPlaces(geoms)#}
 	  }
+
+		function updateCheckboxCounts(results) {
+		    // Count the number of results for each type and country
+		    let typeCounts = {};
+		    let countryCounts = {};
+		    results.forEach(result => {
+		        result.types.forEach(type => {
+		            typeCounts[type] = (typeCounts[type] || 0) + 1;
+		        });
+		        result.ccodes.forEach(country => {
+		            countryCounts[country] = (countryCounts[country] || 0) + 1;
+		        });
+		    });
+
+		    // Update the checkbox labels with the counts
+		    $('.type-checkbox').each(function() {
+		        const type = this.value;
+		        console.log('type', this.value)
+		        $(`label[for='type_${type}']`).text(`${type} (${typeCounts[type] || 0})`);
+		        {#$(`label[for='type_${type.replace(' ', '_')}']`).text(`${type} (${typeCounts[type] || 0})`);#}
+		    });
+		    $('.country-checkbox').each(function() {
+		        const country = this.value;
+				    const countryName = ccode_hash[country] ? ccode_hash[country]['gnlabel'] : country;
+				    $(`label[for='country_${country}']`).text(`${countryName} (${countryCounts[country] || 0})`);
+		        {#$(`label[for='country_${country}']`).text(`${country} (${countryCounts[country] || 0})`);#}
+		    });
+
+        console.log('updateCheckboxCounts typeCounts', typeCounts)
+        console.log('updateCheckboxCounts countryCounts', countryCounts)
+		}
 
 		function initiateSearch() {
 				localStorage.removeItem('last_results')
