@@ -134,33 +134,34 @@
 			    }
 			});
 
-			$('.filter-checkbox').change(function() {
-          // store state
-          checkboxStates[this.value] = this.checked;
-			    // Get all checked checkboxes
-			    let checkedTypes = getCheckedTypes();
-			    let checkedCountries = getCheckedCountries();
-
-			    // Log the current selected types and countries for debugging
-			    console.log('Selected Types:', checkedTypes);
-			    console.log('Selected Countries:', checkedCountries);
-
-					let filteredResults = filterResults(checkedTypes, checkedCountries);
-
-			    // Log the filtered results for debugging
-			    console.log('Filtered Results:', filteredResults);
-
-			    // Render the filtered results
-			    if (filteredResults.length > 0) {
-			        renderResults(filteredResults);
-			        renderDetail(filteredResults[0]); // Render details for the first result
+			{#$('.filter-checkbox').change(function() {#}
+      {#    console.log('checkbox changed')#}
+      {#    // store state#}
+      {#    checkboxStates[this.value] = this.checked;#}
+			{#    // Get all checked checkboxes#}
+			{#    let checkedTypes = getCheckedTypes();#}
+			{#    let checkedCountries = getCheckedCountries();#}
+			{##}
+			{#    // Log the current selected types and countries for debugging#}
+			{#    console.log('Selected Types:', checkedTypes);#}
+			{#    console.log('Selected Countries:', checkedCountries);#}
+			{##}
+			{#		let filteredResults = filterResults(checkedTypes, checkedCountries);#}
+			{##}
+			{#    // Log the filtered results for debugging#}
+			{#    console.log('Filtered Results:', filteredResults);#}
+			{##}
+			{#    // Render the filtered results#}
+			{#    if (filteredResults.length > 0) {#}
+			{#        renderResults(filteredResults);#}
+			{#        renderDetail(filteredResults[0]); // Render details for the first result#}
 			        {#renderCheckboxes(filteredResults);#}
-			    } else {
-			        // Handle the case where there are no matching results
-			        $('#search_results').html('<p>No results match the selected filters.</p>');
-			        $('#detail').empty(); // You might also want to clear the detail view
-			    }
-			});
+			{#    } else {#}
+			{#        // Handle the case where there are no matching results#}
+			{#        $('#search_results').html('<p>No results match the selected filters.</p>');#}
+			{#        $('#detail').empty(); // You might also want to clear the detail view#}
+			{#    }#}
+			{# });#}
 
 		}); // document ready
 
@@ -292,6 +293,35 @@
 		    });
 
 				updateCheckboxCounts(results)
+
+				$('.filter-checkbox').change(function() {
+	          console.log('checkbox changed')
+	          // store state
+	          checkboxStates[this.value] = this.checked;
+				    // Get all checked checkboxes
+				    let checkedTypes = getCheckedTypes();
+				    let checkedCountries = getCheckedCountries();
+
+				    // Log the current selected types and countries for debugging
+				    console.log('Selected Types:', checkedTypes);
+				    console.log('Selected Countries:', checkedCountries);
+
+						let filteredResults = filterResults(checkedTypes, checkedCountries);
+
+				    // Log the filtered results for debugging
+				    console.log('Filtered Results:', filteredResults);
+
+				    // Render the filtered results
+				    if (filteredResults.length > 0) {
+				        renderResults(filteredResults);
+				        renderDetail(filteredResults[0]); // Render details for the first result
+				        {#renderCheckboxes(filteredResults);#}
+				    } else {
+				        // Handle the case where there are no matching results
+				        $('#search_results').html('<p>No results match the selected filters.</p>');
+				        $('#detail').empty(); // You might also want to clear the detail view
+				    }
+				});
 
 			  // send some fields to
 			  renderDetail(results[0]);
