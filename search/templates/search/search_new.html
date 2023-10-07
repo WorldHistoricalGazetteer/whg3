@@ -25,10 +25,9 @@
 		.result.selected {
 		    background-color: #e0e0e0; /* Adjust selected color as needed */
 		}
-		#type_checkboxes label {font-size: 0.8rem; margin-left: 0.3rem;}
-		#country_checkboxes label {font-size: 0.8rem; margin-left: 0.3rem;}
-		#type_checkboxes h5 {margin-bottom:0 !important;}
-		#country_checkboxes h5 {margin-bottom:0 !important;}
+		#result_facets label {font-size: 0.8rem; margin-left: 0.3rem;}
+		#type_checkboxes p {margin-bottom:0 !important; font-weight: bold;}
+		#country_checkboxes p {margin-bottom:0 !important; font-weight: bold;}
 	</style>
 {% endblock %}
 
@@ -59,7 +58,7 @@
     <div class="row">
       <!-- Left column for facets -->
       <div class="col-2 p-1" style="background-color: #e6e6e6;">
-        <div id=result_facets" class="p-1 bg-light">
+        <div id="result_facets" class="p-1 bg-light">
 			    <div id="type_checkboxes"></div>
 			    <div id="country_checkboxes" class="mt-2"></div>
         </div>
@@ -134,49 +133,7 @@
 			    }
 			});
 
-			{#$('.filter-checkbox').change(function() {#}
-      {#    console.log('checkbox changed')#}
-      {#    // store state#}
-      {#    checkboxStates[this.value] = this.checked;#}
-			{#    // Get all checked checkboxes#}
-			{#    let checkedTypes = getCheckedTypes();#}
-			{#    let checkedCountries = getCheckedCountries();#}
-			{##}
-			{#    // Log the current selected types and countries for debugging#}
-			{#    console.log('Selected Types:', checkedTypes);#}
-			{#    console.log('Selected Countries:', checkedCountries);#}
-			{##}
-			{#		let filteredResults = filterResults(checkedTypes, checkedCountries);#}
-			{##}
-			{#    // Log the filtered results for debugging#}
-			{#    console.log('Filtered Results:', filteredResults);#}
-			{##}
-			{#    // Render the filtered results#}
-			{#    if (filteredResults.length > 0) {#}
-			{#        renderResults(filteredResults);#}
-			{#        renderDetail(filteredResults[0]); // Render details for the first result#}
-			        {#renderCheckboxes(filteredResults);#}
-			{#    } else {#}
-			{#        // Handle the case where there are no matching results#}
-			{#        $('#search_results').html('<p>No results match the selected filters.</p>');#}
-			{#        $('#detail').empty(); // You might also want to clear the detail view#}
-			{#    }#}
-			{# });#}
-
 		}); // document ready
-
-		function renderCheckboxes(results) {
-		    // Count the number of results for each type and country
-		    // (similar to what you did before).
-
-		    // Then, for each checkbox...
-		    $('.filter-checkbox').each(function() {
-		        // ... set its checked status based on the stored state.
-		        //let isChecked = /* get the stored checked status of this checkbox */;
-		        {#$(this).prop('checked', isChecked);#}
-            $(this).prop('checked', true);
-		    });
-		}
 
     // Filter results based on checked checkboxes
     function filterResults(checkedTypes, checkedCountries){
@@ -264,7 +221,7 @@
 		    const countries = Array.from(countriesSet);
 
 		    // checkboxes for types in results
-		    $('#type_checkboxes').empty().append('<h5>Place Types</h5>');
+		    $('#type_checkboxes').empty().append('<p>Place Types</p>');
 		    types.forEach(type => {
 		        const checkbox = $('<input>', {
               type: 'checkbox',
@@ -278,7 +235,7 @@
 		    });
 
 		    // checkboxes for countries in results
-		    $('#country_checkboxes').empty().append('<h5>Countries</h5>');
+		    $('#country_checkboxes').empty().append('<p>Countries</p>');
 		    countries.forEach(country => {
 		        const cName = ccode_hash[country]['gnlabel'];
 		        const checkbox = $('<input>', {
