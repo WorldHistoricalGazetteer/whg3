@@ -3,27 +3,33 @@
 {% load static %}
 {% block title %}<title>WHG Search</title>{% endblock %}
 {% block extra_head %}
-<style>
-	.result {
-	    border: 1px solid #ccc;
-	    {#margin: 10px;#}
-	    padding: 10px;
-	    border-radius: 5px;
-	}
+  <script src="{% static 'js/aliases.js' %}"></script>
+  <script src="{% static 'js/parents.js' %}"></script>
 
-	.result h5 {
-	    margin: 0 0 10px;
-	    padding: 0;
-	}
-	.result:hover {
-	    background-color: #f0f0f0; /* Adjust hover color as needed */
-	}
+	<style>
+		.result {
+		    border: 1px solid #ccc;
+		    {#margin: 10px;#}
+		    padding: 10px;
+		    border-radius: 5px;
+		}
 
-	.result.selected {
-	    background-color: #e0e0e0; /* Adjust selected color as needed */
-	}
+		.result h5 {
+		    margin: 0 0 10px;
+		    padding: 0;
+		}
+		.result:hover {
+		    background-color: #f0f0f0; /* Adjust hover color as needed */
+		}
 
-</style>
+		.result.selected {
+		    background-color: #e0e0e0; /* Adjust selected color as needed */
+		}
+		#type_checkboxes label {font-size: 0.8rem; margin-left: 0.3rem;}
+		#country_checkboxes label {font-size: 0.8rem; margin-left: 0.3rem;}
+		#type_checkboxes h5 {margin-bottom:0 !important;}
+		#country_checkboxes h5 {margin-bottom:0 !important;}
+	</style>
 {% endblock %}
 
 {% block content %}
@@ -53,8 +59,9 @@
     <div class="row">
       <!-- Left column for facets -->
       <div class="col-2 p-1" style="background-color: #e6e6e6;">
-        <div id=result_facets" class="p-3 bg-light">
-          <h5>Facets</h5>
+        <div id=result_facets" class="p-1 bg-light">
+			    <div id="type_checkboxes"></div>
+			    <div id="country_checkboxes" class="mt-2"></div>
         </div>
       </div>
 
@@ -113,11 +120,7 @@
 		    $('#advanced-search').slideUp(300);
 		  });
 
-		  // Extract and parse URL parameters
-		  {#const urlParams = new URLSearchParams(window.location.search);#}
-		  {#const query = urlParams.get('query');#}
-		  {#const filters = JSON.parse(urlParams.get('filters') || "{}");#}
-			$("#search-button").on('click', function(event) {
+			$("#a_search").on('click', function(event) {
 		    event.preventDefault();
 		    initiateSearch(); // Call the initiateSearch function when the button is clicked
 		  });
@@ -127,25 +130,33 @@
 			        initiateSearch(); // Call the initiateSearch function when 'Enter' is pressed
 			    }
 			});
-		}); // ready
+		}); // document ready
 
-    // put these in the right div(s)
+    // render results and facet checkboxes
 	  function renderResults(results){
 		    console.log('results here first', results)
-			  // clear any
-			  $('#search_results').html(')')
+	      // Clear previous results
+        $('#search_results').empty();
 			  geoms = []
 			  havegeom = 0
+
+			  // Initialize empty sets to store unique types and countries
+		    let typesSet = new Set();
+		    let countriesSet = new Set();
+
 		    // Select the search_results div
 		    const $resultsDiv = $('#search_results');
 
 		    // Iterate over the results and append HTML for each
-			  // hit: [title, whg_id, pid, linkcount, variants, ccodes, fclasses, types, geom]
+			  // NB these are parents only
+			  // hit (delivered): [title, searchy, whg_id, pid, linkcount, variants, ccodes, fclasses, types, geoms]
+			  // hit (also): [uri, names, links, timespans, dataset]
 			  // link to portal: <a href="/places/${result.whg_id}/portal">portal</a>
 		    results.forEach(result => {
+            const count = parseInt(result.linkcount)+1
 		        const html = `
 		            <div class="result">
-		                <h5>${result.title} (${result.linkcount})
+		                <h5>${result.title} (${count} in set)
 											<span class="float-end">
 												<a href="JavaScript:alert('not live in dev')">portal ${result.whg_id}</a>
 											</span>
@@ -155,7 +166,7 @@
 		                {#<p>Types: ${result.types.join(', ')}</p>#}
 		            </div>
 		        `;
-		        $resultsDiv.html(html);
+		        $resultsDiv.append(html);
 
 		        // search term to search input
 				    const lastQuery = localStorage.getItem('last_query');
@@ -171,14 +182,43 @@
 		            geoms.push(g)
 		          })
 		        }
+
+		        result.types.forEach(type => typesSet.add(type));
+		        result.ccodes.forEach(ccode => countriesSet.add(ccode));
+
 		    });
 	      $('.result').first().addClass('selected');
+
+		    // Convert sets to arrays
+		    const types = Array.from(typesSet);
+		    const countries = Array.from(countriesSet);
+
+		    // checkboxes for types in results
+		    $('#type_checkboxes').empty().append('<h5>Place Types</h5>');
+		    types.forEach(type => {
+		        const checkbox = $('<input>', { type: 'checkbox', id: 'type_' + type,
+				        value: type, class: 'filter-checkbox' });
+		        const label = $('<label>', { 'for': 'type_' + type, text: type });
+		        $('#type_checkboxes').append(checkbox).append(label).append('<br>');
+		    });
+
+		    // checkboxes for countries in results
+		    $('#country_checkboxes').empty().append('<h5>Countries</h5>');
+		    countries.forEach(country => {
+		        const cName = ccode_hash[country]['gnlabel'];
+		        const checkbox = $('<input>', { type: 'checkbox', id: 'country_' +
+						        country, value: country, class: 'filter-checkbox' });
+		        const label = $('<label>', { 'for': 'country_' + country, text: cName + ' (' + country + ')' });
+		        $('#country_checkboxes').append(checkbox).append(label).append('<br>');
+		    });
+
 			  // send some fields to
 			  renderDetail(results[0]);
 
 			  $('.result').click(function() {
-	        const index = $(this).index()-1; // Get index of clicked card
+	        const index = $(this).index(); // Get index of clicked card
 				  console.log('card index:', index)
+				  console.log('result', results[index])
 	        renderDetail(results[index]); // Update detail view with clicked result data
 			    $('.result').removeClass('selected');
 			    $(this).addClass('selected');
@@ -210,9 +250,10 @@
 
 		        // Call a function to render the results on the page (implement this as needed)
 		        renderResults(searchres);
+
 		    });
 		}
-		// get option values
+
 		function gatherOptions() {
 	    // gather and return option values from the UI
 	    fclasses = [];
@@ -231,14 +272,32 @@
 		}
 
 		function renderDetail(result) {
-		    const detailHtml = `
-		        <!-- Add appropriate HTML structure and data here -->
-		        <p>Variants: ${result.variants.join(', ')}</p>
-            <p>Country Codes: ${result.ccodes.join(', ')}</p>
-            <p>Feature Classes: ${result.fclasses.join(', ')}</p>
-            <p>Types: ${result.types.join(', ')}</p>
+		    let detailHtml = "";
 
-		    `;
+		    if (result.variants && result.variants.length > 0) {
+		        detailHtml += `<p>Variants: ${result.variants.join(', ')}</p>`;
+		    } else {
+		        detailHtml += `<p>No Variants Available</p>`; // Or you can just skip adding this line
+		    }
+
+		    if (result.ccodes && result.ccodes.length > 0) {
+		        detailHtml += `<p>Country Codes: ${result.ccodes.join(', ')}</p>`;
+		    } else {
+		        detailHtml += `<p>No Country Codes Available</p>`; // Or you can just skip adding this line
+		    }
+
+		    if (result.fclasses && result.fclasses.length > 0) {
+		        detailHtml += `<p>Feature Classes: ${result.fclasses.join(', ')}</p>`;
+		    } else {
+		        detailHtml += `<p>No Feature Classes Available</p>`; // Or you can just skip adding this line
+		    }
+
+		    if (result.types && result.types.length > 0) {
+		        detailHtml += `<p>Types: ${result.types.join(', ')}</p>`;
+		    } else {
+		        detailHtml += `<p>No Types Available</p>`; // Or you can just skip adding this line
+		    }
+
 		    $('#detail').html(detailHtml);
 		}
 
