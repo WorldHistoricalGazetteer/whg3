@@ -96,10 +96,12 @@
 
   <script type="text/javascript">
 
+		let results = [];
 		$(document).ready(function() {
+
 			// look for last_results
 			const storedResults = localStorage.getItem('last_results');
-			const results = storedResults ? JSON.parse(storedResults) : null;
+			results = storedResults ? JSON.parse(storedResults) : null;
 
 			// render 'em
 			if (results) {
@@ -130,11 +132,45 @@
 			        initiateSearch(); // Call the initiateSearch function when 'Enter' is pressed
 			    }
 			});
+
+			$('.filter-checkbox').change(function() {
+			    // Get all checked checkboxes
+			    let checkedTypes = $('.type-checkbox:checked').map(function() {
+			        return this.value;
+			    }).get();
+			    let checkedCountries = $('.country-checkbox:checked').map(function() {
+			        return this.value;
+			    }).get();
+
+			    // Log the current selected types and countries for debugging
+			    console.log('Selected Types:', checkedTypes);
+			    console.log('Selected Countries:', checkedCountries);
+
+			    // Filter results based on checked checkboxes
+					let filteredResults = results.filter(function(result) {
+					    return (checkedTypes.length === 0 || checkedTypes.some(type => result.types.includes(type))) &&
+					           (checkedCountries.length === 0 || checkedCountries.some(country => result.ccodes.includes(country)));
+					});
+
+			    // Log the filtered results for debugging
+			    console.log('Filtered Results:', filteredResults);
+
+			    // Render the filtered results
+			    if (filteredResults.length > 0) {
+			        renderResults(filteredResults);
+			        renderDetail(filteredResults[0]); // Render details for the first result
+			    } else {
+			        // Handle the case where there are no matching results
+			        $('#search_results').html('<p>No results match the selected filters.</p>');
+			        $('#detail').empty(); // You might also want to clear the detail view
+			    }
+			});
+
 		}); // document ready
 
     // render results and facet checkboxes
 	  function renderResults(results){
-		    console.log('results here first', results)
+		    console.log('results (global)', results)
 	      // Clear previous results
         $('#search_results').empty();
 			  geoms = []
@@ -248,7 +284,7 @@
 		    // Update the checkbox labels with the counts
 		    $('.type-checkbox').each(function() {
 		        const type = this.value;
-		        console.log('type', this.value)
+		        {#console.log('type', this.value)#}
 		        $(`label[for='type_${type}']`).text(`${type} (${typeCounts[type] || 0})`);
 		        {#$(`label[for='type_${type.replace(' ', '_')}']`).text(`${type} (${typeCounts[type] || 0})`);#}
 		    });
@@ -259,11 +295,12 @@
 		        {#$(`label[for='country_${country}']`).text(`${country} (${countryCounts[country] || 0})`);#}
 		    });
 
-        console.log('updateCheckboxCounts typeCounts', typeCounts)
-        console.log('updateCheckboxCounts countryCounts', countryCounts)
+        {#console.log('updateCheckboxCounts typeCounts', typeCounts)#}
+        {#console.log('updateCheckboxCounts countryCounts', countryCounts)#}
 		}
 
 		function initiateSearch() {
+
 				localStorage.removeItem('last_results')
 				localStorage.removeItem('last_query')
 
@@ -274,11 +311,12 @@
 				console.log('options', options)
 		    // AJAX GET request to SearchView() with the options (includes qstr)
 		    $.get("/search/index", options, function(data) {
-		        const searchres = data['suggestions']; // Extract results from response
-		        localStorage.setItem('last_results', JSON.stringify(searchres)); // Store results in localStorage
+		        {#const searchres = data['suggestions']; // Extract results from response#}
+		        results = data['suggestions']; // replaces global variable
+		        localStorage.setItem('last_results', JSON.stringify(results)); // Store results in localStorage
 
 		        // Call a function to render the results on the page (implement this as needed)
-		        renderResults(searchres);
+		        renderResults(results);
 
 		    });
 		}
