@@ -157,15 +157,38 @@
 					<h6 class="ds-header p-1 strong">Datasets
 						<span class="float-end small">
 							<a class="linkylite" href="">Gallery</a>
-						</span></h6>
-					<div><p>carousel</p></div>
+						</span>
+                    </h6>
+                    <div id="datasetsCarousel" class="carousel slide" data-ride="carousel">
+                      <div class="carousel-inner">
+                        {% for ds in featured_ds %}
+                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
+{#                          <img src="/media/{{ dataset.image_file.name }}" class="d-block w-100" alt="{{ ds.title }}">#}
+                          <div class="carousel-caption d-none d-md-block">
+                            <h5>{{ ds.title }}</h5>
+                            <p>{{ ds.description }}</p>
+                          </div>
+                        </div>
+                        {% endfor %}
+                      </div>
+                    </div>
 				</div>
 				<div class="h-50 border p-1">
 					<h6 class="coll-header p-1 strong">Collections
 						<span class="float-end small">
 							<a class="linkylite" href="{% url 'collection:collection-gallery' %}">Gallery</a>
 						</span></h6>
-					<div><p>carousel</p></div>
+                    <div id="collectionsCarousel" class="carousel slide" data-ride="carousel">
+                      <div class="carousel-inner">
+                        {% for c in featured_coll %}
+{#                            <img src="/media/{{ c.image_file.name }}" class="d-block w-100" alt="{{ c.title }}">#}
+                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                            <h5>{{ c.title }}</h5>
+                            <p>{{ c.description }}</p>
+                        </div>
+                        {% endfor %}
+                      </div>
+                    </div>
 				</div>
 			</div>
 		</div>
