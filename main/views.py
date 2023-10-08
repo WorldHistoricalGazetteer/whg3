@@ -218,11 +218,14 @@ class Home30a(TemplateView):
         
         # deliver featured datasets and collections
         f_collections = Collection.objects.exclude(featured__isnull=True)
-        f_datasets = list(Dataset.objects.exclude(featured__isnull=True))
-        shuffle(f_datasets)
+        f_datasets = Dataset.objects.exclude(featured__isnull=True)
+
+        # f_datasets = list(Dataset.objects.exclude(featured__isnull=True))
+        # shuffle(f_datasets)
         
         # 2 collections, rotate datasets randomly
-        context['featured_coll'] = f_collections.order_by('featured')[:2]
+        # context['featured_coll'] = f_collections.order_by('featured')[:2]
+        context['featured_coll'] = f_collections
         context['featured_ds'] = f_datasets
         context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
         context['mbtokenmb'] = settings.MAPBOX_TOKEN_MB
