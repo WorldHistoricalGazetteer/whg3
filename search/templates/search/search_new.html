@@ -58,14 +58,13 @@
 {% endblock %}
 
 {% block content %}
-{#  <div class="container-md" style="height: calc(100vh - 65px); position: relative;">#}
   <div class="container-md">
 
 		<!-- Search bar at the top -->
 	  <div id="search-bar" class="bg-light py-2 row position-relative">
 	    <div id="d_input" class="text-center col-12">
 	        <span class="float-start fs-4">Search</span>
-	        <div id="input" class="input-group w-50 mx-auto position-relative"> <!-- Added position-relative -->
+	        <div id="input" class="input-group w-50 mx-auto position-relative">
 	            <input type="text" id="search-input" class="form-control" placeholder="Enter place name"
 	                   aria-label="Search" aria-describedby="search-addon">
 	            <span class="input-group-text" id="search-addon">
@@ -345,29 +344,29 @@
         {#renderPlaces(geoms)#}
     }
 
-function getAllTypes(results) {
-    let typesSet = new Set();
-    let typeCounts = {};
+    function getAllTypes(results) {
+        let typesSet = new Set();
+        let typeCounts = {};
 
-    results.forEach(result => {
-        result.types.forEach(type => {
-            typesSet.add(type);
+        results.forEach(result => {
+            result.types.forEach(type => {
+                typesSet.add(type);
 
-            // Increment count for this type
-            if (!typeCounts[type]) {
-                typeCounts[type] = 0;
-            }
-            typeCounts[type]++;
+                // Increment count for this type
+                if (!typeCounts[type]) {
+                    typeCounts[type] = 0;
+                }
+                typeCounts[type]++;
+            });
         });
-    });
 
-    // Set the global variable for initial type counts
-    initialTypeCounts = typeCounts;
+        // Set the global variable for initial type counts
+        initialTypeCounts = typeCounts;
 
-    return Array.from(typesSet).sort();
-}
+        return Array.from(typesSet).sort();
+    }
 
-function getAllCountries(results) {
+    function getAllCountries(results) {
     let countriesSet = new Set();
     let countryCounts = {};
 
@@ -388,24 +387,6 @@ function getAllCountries(results) {
 
     return Array.from(countriesSet).sort();
 }
-
-    {#function getAllTypes(results) {#}
-    {#    let typesSet = new Set();#}
-    {#    results.forEach(result => {#}
-    {#        result.types.forEach(type => {#}
-    {#            typesSet.add(type);#}
-    {#        });#}
-    {#    });#}
-    {#    return Array.from(typesSet).sort();#}
-    {# }#}
-    {##}
-    {#function getAllCountries(results) {#}
-    {#    let countriesSet = new Set();#}
-    {#    results.forEach(result => {#}
-    {#        result.ccodes.forEach(country => countriesSet.add(country));#}
-    {#    });#}
-    {#    return Array.from(countriesSet).sort();#}
-    {# }#}
 
     function updateCheckboxCounts(results) {
         // Count the number of results for each type and country
