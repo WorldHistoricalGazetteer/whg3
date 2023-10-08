@@ -50,6 +50,7 @@
 		.result.selected {
 		    background-color: #e0e0e0; /* Adjust selected color as needed */
 		}
+		#advanced_search {position:absolute; z-index: 1000; opacity: 80%;}
 		#result_facets label {font-size: 0.8rem; margin-left: 0.3rem;}
 		#type_checkboxes p {margin-bottom:0 !important; font-weight: bold;}
 		#country_checkboxes p {margin-bottom:0 !important; font-weight: bold;}
@@ -70,13 +71,13 @@
 	            <span class="input-group-text" id="search-addon">
 	                <a href="#" id="a_search"><i class="fas fa-search"></i></a>
 	            </span>
-	            <a href="#" id="advanced-search-toggle" class="small ps-2">Advanced Search</a>
+	            <a href="#" id="advanced_search-toggle" class="small ps-2">Advanced Search</a>
 	        </div>
 	    </div>
-	    <div id="advanced-search" class="text-center col-12 position-absolute w-100"
+	    <div id="advanced_search" class="text-center col-12 w-100"
 	         style="background-color: #ffffe0; top: 100%;">
 	        <div>some checkboxes and dropdowns</div>
-	        <button id="close-advanced-search" class="btn btn-secondary">Close</button>
+	        <button id="close-advanced_search" class="btn btn-secondary">Close</button>
 	    </div>
 		</div>
 
@@ -121,45 +122,51 @@
 
   <script type="text/javascript">
 
-		let results = [];
+    let results = [];
     let checkboxStates = {};
-		$(document).ready(function() {
+    let allTypes = [];
+    let allCountries = [];
+    let isInitialLoad = true;
+    let initialTypeCounts = {};
+    let initialCountryCounts = {};
 
-			// look for last_results
-			const storedResults = localStorage.getItem('last_results');
-			results = storedResults ? JSON.parse(storedResults) : null;
+    $(document).ready(function() {
 
-			// render 'em
-			if (results) {
-			    // Render the results on the page
-			    renderResults(results);
-			} else {
-          console.log('no results')
-			}
+        // look for last_results
+        const storedResults = localStorage.getItem('last_results');
+        results = storedResults ? JSON.parse(storedResults) : null;
+
+        // render 'em
+        if (results) {
+            // Render the results on the page
+            renderResults(results);
+        } else {
+            console.log('no results')
+        }
 
 	    // toggler for advanced search
-	    $('#advanced-search').hide();
+	    $('#advanced_search').hide();
 
-		  $('#advanced-search-toggle').click(function() {
-		    $('#advanced-search').slideToggle(300);
-		  });
+        $('#advanced_search-toggle').click(function() {
+            $('#advanced_search').slideToggle(300);
+        });
 
-		  $('#close-advanced-search').click(function() {
-		    $('#advanced-search').slideUp(300);
-		  });
+        $('#close-advanced_search').click(function() {
+            $('#advanced_search').slideUp(300);
+        });
 
-			$("#a_search").on('click', function(event) {
+        $("#a_search").on('click', function(event) {
 		    event.preventDefault();
 		    initiateSearch(); // Call the initiateSearch function when the button is clicked
-		  });
-			$("#d_input input").on('keypress', function(event) {
+        });
+        $("#d_input input").on('keypress', function(event) {
 			    if (event.which == 13) {
 			        event.preventDefault();
 			        initiateSearch(); // Call the initiateSearch function when 'Enter' is pressed
 			    }
 			});
 
-		}); // document ready
+    }); // document ready
 
     // Filter results based on checked checkboxes
     function filterResults(checkedTypes, checkedCountries){
@@ -170,327 +177,402 @@
       return filteredResults
     }
 
-		function getCheckedTypes(){
-	    let checkedTypes = $('.type-checkbox:checked').map(function() {
-	        return this.value;
-	    }).get();
-      return checkedTypes
-		}
+    function getCheckedTypes(){
+    let checkedTypes = $('.type-checkbox:checked').map(function() {
+        return this.value;
+    }).get();
+  return checkedTypes
+    }
 
-		function getCheckedCountries(){
-			let checkedCountries = $('.country-checkbox:checked').map(function() {
-			  return this.value;
-			}).get();
-      return checkedCountries
-		}
+    function getCheckedCountries(){
+        let checkedCountries = $('.country-checkbox:checked').map(function() {
+          return this.value;
+        }).get();
+  return checkedCountries
+    }
 
     // render results and facet checkboxes
-	  function renderResults(results){
-		    console.log('results (global)', results)
-		    $("#result_count").html(results.length)
-	      // Clear previous results
+    function renderResults(results){
+        console.log('results (global)', results)
+        $("#result_count").html(results.length)
+        // Clear previous results
         $('#search_results').empty();
-			  geoms = []
-			  havegeom = 0
+        geoms = []
+        havegeom = 0
 
-			  // Initialize empty sets to store unique types and countries
-		    let typesSet = new Set();
-		    let countriesSet = new Set();
+        // Select the search_results div
+        const $resultsDiv = $('#search_results');
 
-		    // Select the search_results div
-		    const $resultsDiv = $('#search_results');
+        // search term to search input
+        const lastQuery = localStorage.getItem('last_query');
+        $("#d_input input").val(lastQuery);
+            localStorage.removeItem('last_query');
 
-		    // Iterate over the results and append HTML for each
-			  // NB these are parents only
-			  // hit (delivered): [title, searchy, whg_id, pid, linkcount, variants, ccodes, fclasses, types, geoms]
-			  // hit (also): [uri, names, links, timespans, dataset]
-			  // link to portal: <a href="/places/${result.whg_id}/portal">portal</a>
-		    results.forEach(result => {
+        // Iterate over the results and append HTML for each
+          // NB these are parents only
+          // hit (delivers): [title, searchy, whg_id, pid, linkcount, variants,
+          //    ccodes, fclasses, types, geoms]
+          // hit (also): [uri, names, links, timespans, dataset]
+          // link to portal: <a href="/places/${result.whg_id}/portal">portal</a>
+        results.forEach(result => {
             const count = parseInt(result.linkcount)+1
-		        const html = `
-		            <div class="result">
-		                <h5>${result.title} (${count} in set)
-											<span class="float-end">
-												<a href="JavaScript:alert('not live in dev')">portal ${result.whg_id}</a>
-											</span>
-										</h5>
-		                {#<p>Country Codes: ${result.ccodes.join(', ')}</p>#}
-		                {#<p>Feature Classes: ${result.fclasses.join(', ')}</p>#}
-		                {#<p>Types: ${result.types.join(', ')}</p>#}
-		            </div>
-		        `;
-		        $resultsDiv.append(html);
+            const html = `
+                <div class="result">
+                    <h5>${result.title} (${count} in set)
+                                        <span class="float-end">
+                                            <a href="JavaScript:alert('not live in dev')">portal ${result.whg_id}</a>
+                                        </span>
+                                    </h5>
+                    {#<p>Country Codes: ${result.ccodes.join(', ')}</p>#}
+                    {#<p>Feature Classes: ${result.fclasses.join(', ')}</p>#}
+                    {#<p>Types: ${result.types.join(', ')}</p>#}
+                </div>
+            `;
+            $resultsDiv.append(html);
+                    // result.geom is an array
+                if(!!result.geom) {
+              havegeom +=1
+              result.geom.forEach(function(g){
+                g['properties']['title'] = result.title
+                g['properties']['whgid'] = result.whg_id
+                {#g['properties']['whgid'] = (doctype=='place')?sug.whg_id:sug.place_id#}
+                geoms.push(g)
+              })
+            }
 
-		        // search term to search input
-				    const lastQuery = localStorage.getItem('last_query');
-				    $("#d_input input").val(lastQuery);
-						localStorage.removeItem('last_query');
+            {#result.types.forEach(type => typesSet.add(type));#}
+            {#result.ccodes.forEach(ccode => countriesSet.add(ccode));#}
 
-				    if(!!result.geom) {
-		          havegeom +=1
-		          result.geom.forEach(function(g){
-		            g['properties']['title'] = result.title
-		            g['properties']['whgid'] = result.whg_id
-		            {#g['properties']['whgid'] = (doctype=='place')?sug.whg_id:sug.place_id#}
-		            geoms.push(g)
-		          })
-		        }
+        });
 
-		        result.types.forEach(type => typesSet.add(type));
-		        result.ccodes.forEach(ccode => countriesSet.add(ccode));
+        if(isInitialLoad) {
+            // sets values of global variables
+            allTypes = getAllTypes(results);
+            allCountries = getAllCountries(results);
+            isInitialLoad = false;
 
-		    });
-	      $('.result').first().addClass('selected');
+            console.log('allTypes', allTypes)
+            console.log('allCountries', allCountries)
+        }
+        $('.result').first().addClass('selected');
 
-
-		    // Convert sets to arrays
-		    const types = Array.from(typesSet);
-		    const countries = Array.from(countriesSet);
-
-		    // checkboxes for types in results
-		    $('#type_checkboxes').empty().append('<p>Place Types</p>');
-		    types.forEach(type => {
-		        const checkbox = $('<input>', {
+        // checkboxes for types in intial results
+        $('#type_checkboxes').empty().append('<p>Place Types</p>');
+        {#types.forEach(type => {#}
+        allTypes.forEach(type => {
+            const checkbox = $('<input>', {
               type: 'checkbox',
-		          id: 'type_' + type,
-		          value: type,
-		          class: 'filter-checkbox type-checkbox',
-		          checked: checkboxStates[type] || false
+                  id: 'type_' + type,
+                  value: type,
+                  class: 'filter-checkbox type-checkbox',
+                  checked: checkboxStates[type] || false
             });
-	          const label = $('<label>', { 'for': 'type_' + type, text: type });
-		        $('#type_checkboxes').append(checkbox).append(label).append('<br>');
-		    });
+            const count = initialTypeCounts[type] || 0;
+            const label = $('<label>', { 'for': 'type_' + type, text: `${type} (${count})` });
+            {#const label = $('<label>', { 'for': 'type_' + type, text: type });#}
+            $('#type_checkboxes').append(checkbox).append(label).append('<br>');
+        });
 
-		    // checkboxes for countries in results
-		    $('#country_checkboxes').empty().append('<p>Countries</p>');
-		    countries.forEach(country => {
-		        const cName = ccode_hash[country]['gnlabel'];
-		        const checkbox = $('<input>', {
+        // checkboxes for countries in initial results
+        $('#country_checkboxes').empty().append('<p>Countries</p>');
+        {#countries.forEach(country => {#}
+        allCountries.forEach(country => {
+            const cName = ccode_hash[country]['gnlabel'];
+            const checkbox = $('<input>', {
               type: 'checkbox',
               id: 'country_' + country,
               value: country,
               class: 'filter-checkbox country-checkbox',
               checked: checkboxStates[country] || false
             });
-		        const label = $('<label>', { 'for': 'country_' + country, text: cName + ' (' + country + ')' });
-		        $('#country_checkboxes').append(checkbox).append(label).append('<br>');
-		    });
+            const count = initialCountryCounts[country] || 0;
+            const label = $('<label>', { 'for': 'country_' +
+                country, text: `${cName} (${country}; ${count})` });
 
-				updateCheckboxCounts(results)
+            $('#country_checkboxes').append(checkbox).append(label).append('<br>');
+        });
 
-				$('.filter-checkbox').change(function() {
-	          console.log('checkbox changed')
-	          // store state
-	          checkboxStates[this.value] = this.checked;
-				    // Get all checked checkboxes
-				    let checkedTypes = getCheckedTypes();
-				    let checkedCountries = getCheckedCountries();
 
-				    // Log the current selected types and countries for debugging
-				    console.log('Selected Types:', checkedTypes);
-				    console.log('Selected Countries:', checkedCountries);
+        {#if (isInitialLoad == true) {#}
+        {#updateCheckboxCounts(results)#}
+        {# }#}
 
-						let filteredResults = filterResults(checkedTypes, checkedCountries);
+        $('.filter-checkbox').change(function() {
+            {#console.log('checkbox changed')#}
+            // store state
+            checkboxStates[this.value] = this.checked;
+            console.log('checkboxStates', checkboxStates)
 
-				    // Log the filtered results for debugging
-				    console.log('Filtered Results:', filteredResults);
+            // Get all checked checkboxes
+            let checkedTypes = getCheckedTypes();
+            let checkedCountries = getCheckedCountries();
 
-				    // Render the filtered results
-				    if (filteredResults.length > 0) {
-				        renderResults(filteredResults);
-				        renderDetail(filteredResults[0]); // Render details for the first result
-				        {#renderCheckboxes(filteredResults);#}
-				    } else {
-				        // Handle the case where there are no matching results
-				        $('#search_results').html('<p>No results match the selected filters.</p>');
-				        $('#detail').empty(); // You might also want to clear the detail view
-				    }
-				});
+            // Log the current selected types and countries for debugging
+            {#console.log('Selected Types:', checkedTypes);#}
+            {#console.log('Selected Countries:', checkedCountries);#}
 
-			  // send some fields to
-			  renderDetail(results[0]);
+            let filteredResults = filterResults(checkedTypes, checkedCountries);
 
-			  $('.result').click(function() {
-	        const index = $(this).index(); // Get index of clicked card
-				  console.log('card index:', index)
-				  console.log('result', results[index])
-	        renderDetail(results[index]); // Update detail view with clicked result data
-			    $('.result').removeClass('selected');
-			    $(this).addClass('selected');
-	        // Future: Highlight marker on map corresponding to clicked result
-	      });
+            // Log the filtered results for debugging
+            console.log('Filtered Results:', filteredResults);
 
-	      console.log('geoms', geoms)
-				{#renderPlaces(geoms)#}
-	  }
+            // Render the filtered results
+            if (filteredResults.length > 0) {
+                renderResults(filteredResults);
+                renderDetail(filteredResults[0]); // Render details for the first result
+                {#renderCheckboxes(filteredResults);#}
+            } else {
+                // Handle the case where there are no matching results
+                $('#search_results').html('<p>No results match the selected filters.</p>');
+                $('#detail').empty(); // You might also want to clear the detail view
+            }
+        });
 
-		function updateCheckboxCounts(results) {
-		    // Count the number of results for each type and country
-		    let typeCounts = {};
-		    let countryCounts = {};
-		    results.forEach(result => {
-		        result.types.forEach(type => {
-		            typeCounts[type] = (typeCounts[type] || 0) + 1;
-		        });
-		        result.ccodes.forEach(country => {
-		            countryCounts[country] = (countryCounts[country] || 0) + 1;
-		        });
-		    });
+        // send some fields to
+        renderDetail(results[0]);
 
-		    // Update the checkbox labels with the counts
-		    $('.type-checkbox').each(function() {
-		        const type = this.value;
-		        {#console.log('type', this.value)#}
-		        $(`label[for='type_${type}']`).text(`${type} (${typeCounts[type] || 0})`);
-		        {#$(`label[for='type_${type.replace(' ', '_')}']`).text(`${type} (${typeCounts[type] || 0})`);#}
-		    });
-		    $('.country-checkbox').each(function() {
-		        const country = this.value;
-				    const countryName = ccode_hash[country] ? ccode_hash[country]['gnlabel'] : country;
-				    $(`label[for='country_${country}']`).text(`${countryName} (${countryCounts[country] || 0})`);
-		        {#$(`label[for='country_${country}']`).text(`${country} (${countryCounts[country] || 0})`);#}
-		    });
+        $('.result').click(function() {
+        const index = $(this).index(); // Get index of clicked card
+          {#console.log('card index:', index)#}
+          {#console.log('result', results[index])#}
+        renderDetail(results[index]); // Update detail view with clicked result data
+        $('.result').removeClass('selected');
+        $(this).addClass('selected');
+        // Future: Highlight marker on map corresponding to clicked result
+        });
 
-        {#console.log('updateCheckboxCounts typeCounts', typeCounts)#}
-        {#console.log('updateCheckboxCounts countryCounts', countryCounts)#}
-		}
+        {#console.log('geoms', geoms)#}
+        {#renderPlaces(geoms)#}
+    }
 
-		function initiateSearch() {
+function getAllTypes(results) {
+    let typesSet = new Set();
+    let typeCounts = {};
 
-				localStorage.removeItem('last_results')
-				localStorage.removeItem('last_query')
+    results.forEach(result => {
+        result.types.forEach(type => {
+            typesSet.add(type);
 
-		    const query = $('#search-input').val(); // Get the query from the input
-		    localStorage.setItem('last_query', query); // Store the query in localStorage
+            // Increment count for this type
+            if (!typeCounts[type]) {
+                typeCounts[type] = 0;
+            }
+            typeCounts[type]++;
+        });
+    });
 
-		    const options = gatherOptions(); //
-				console.log('options', options)
-		    // AJAX GET request to SearchView() with the options (includes qstr)
-		    $.get("/search/index", options, function(data) {
-		        {#const searchres = data['suggestions']; // Extract results from response#}
-		        results = data['suggestions']; // replaces global variable
-		        localStorage.setItem('last_results', JSON.stringify(results)); // Store results in localStorage
+    // Set the global variable for initial type counts
+    initialTypeCounts = typeCounts;
 
-		        // Call a function to render the results on the page (implement this as needed)
-		        renderResults(results);
+    return Array.from(typesSet).sort();
+}
 
-		    });
-		}
+function getAllCountries(results) {
+    let countriesSet = new Set();
+    let countryCounts = {};
 
-		function gatherOptions() {
-	    // gather and return option values from the UI
-	    fclasses = [];
-	    $('#search_filters input:checked').each(function() {
-	      fclasses.push($(this).val());
-	    });
-	    options = {
-				"qstr":$('#d_input input').val(),
-		    "idx": "whg",
-		    "fclasses": fclasses.join(','),
-		    "start": $("#input_start").val(),
-		    "end": $("#input_end").val(),
-		    "bounds": $("#boundsobj").val()
-	    }
-			return options;
-		}
+    results.forEach(result => {
+        result.ccodes.forEach(country => {
+            countriesSet.add(country);
 
-		function renderDetail(result) {
-		    let detailHtml = "";
+            // Increment count for this country
+            if (!countryCounts[country]) {
+                countryCounts[country] = 0;
+            }
+            countryCounts[country]++;
+        });
+    });
 
-		    if (result.variants && result.variants.length > 0) {
-		        detailHtml += `<p>Variants: ${result.variants.join(', ')}</p>`;
-		    } else {
-		        detailHtml += `<p>No Variants Available</p>`; // Or you can just skip adding this line
-		    }
+    // Set the global variable for initial country counts
+    initialCountryCounts = countryCounts;
 
-		    if (result.ccodes && result.ccodes.length > 0) {
-		        detailHtml += `<p>Country Codes: ${result.ccodes.join(', ')}</p>`;
-		    } else {
-		        detailHtml += `<p>No Country Codes Available</p>`; // Or you can just skip adding this line
-		    }
+    return Array.from(countriesSet).sort();
+}
 
-		    if (result.fclasses && result.fclasses.length > 0) {
-		        detailHtml += `<p>Feature Classes: ${result.fclasses.join(', ')}</p>`;
-		    } else {
-		        detailHtml += `<p>No Feature Classes Available</p>`; // Or you can just skip adding this line
-		    }
+    {#function getAllTypes(results) {#}
+    {#    let typesSet = new Set();#}
+    {#    results.forEach(result => {#}
+    {#        result.types.forEach(type => {#}
+    {#            typesSet.add(type);#}
+    {#        });#}
+    {#    });#}
+    {#    return Array.from(typesSet).sort();#}
+    {# }#}
+    {##}
+    {#function getAllCountries(results) {#}
+    {#    let countriesSet = new Set();#}
+    {#    results.forEach(result => {#}
+    {#        result.ccodes.forEach(country => countriesSet.add(country));#}
+    {#    });#}
+    {#    return Array.from(countriesSet).sort();#}
+    {# }#}
 
-		    if (result.types && result.types.length > 0) {
-		        detailHtml += `<p>Types: ${result.types.join(', ')}</p>`;
-		    } else {
-		        detailHtml += `<p>No Types Available</p>`; // Or you can just skip adding this line
-		    }
+    function updateCheckboxCounts(results) {
+        // Count the number of results for each type and country
+        let typeCounts = {};
+        let countryCounts = {};
+        results.forEach(result => {
+            result.types.forEach(type => {
+                typeCounts[type] = (typeCounts[type] || 0) + 1;
+            });
+            result.ccodes.forEach(country => {
+                countryCounts[country] = (countryCounts[country] || 0) + 1;
+            });
+        });
 
-		    $('#detail').html(detailHtml);
-		}
+        // Update the checkbox labels with the counts
+        $('.type-checkbox').each(function() {
+            const type = this.value;
+            {#console.log('type', this.value)#}
+            $(`label[for='type_${type}']`).text(`${type} (${typeCounts[type] || 0})`);
+        });
+        $('.country-checkbox').each(function() {
+            const country = this.value;
+                const countryName = ccode_hash[country] ? ccode_hash[country]['gnlabel'] : country;
+                $(`label[for='country_${country}']`).text(`${countryName} (${countryCounts[country] || 0})`);
+            {#$(`label[for='country_${country}']`).text(`${country} (${countryCounts[country] || 0})`);#}
+        });
+
+    {#console.log('updateCheckboxCounts typeCounts', typeCounts)#}
+    {#console.log('updateCheckboxCounts countryCounts', countryCounts)#}
+    }
+
+    function initiateSearch() {
+        isInitialLoad = true;
+
+        localStorage.removeItem('last_results')
+        localStorage.removeItem('last_query')
+
+        const query = $('#search-input').val(); // Get the query from the input
+        localStorage.setItem('last_query', query); // Store the query in localStorage
+
+        const options = gatherOptions(); //
+
+        // AJAX GET request to SearchView() with the options (includes qstr)
+        $.get("/search/index", options, function(data) {
+
+            results = data['suggestions']; // replaces global variable
+            localStorage.setItem('last_results', JSON.stringify(results));
+
+            renderResults(results);
+
+        });
+    }
+
+    function gatherOptions() {
+    // gather and return option values from the UI
+    fclasses = [];
+    $('#search_filters input:checked').each(function() {
+      fclasses.push($(this).val());
+    });
+    options = {
+            "qstr":$('#d_input input').val(),
+        "idx": "whg",
+        "fclasses": fclasses.join(','),
+        "start": $("#input_start").val(),
+        "end": $("#input_end").val(),
+        "bounds": $("#boundsobj").val()
+    }
+        return options;
+    }
+
+    function renderDetail(result) {
+        let detailHtml = "";
+
+        if (result.variants && result.variants.length > 0) {
+            detailHtml += `<p>Variants: ${result.variants.join(', ')}</p>`;
+        } else {
+            detailHtml += `<p>No Variants Available</p>`; // Or you can just skip adding this line
+        }
+
+        if (result.ccodes && result.ccodes.length > 0) {
+            detailHtml += `<p>Country Codes: ${result.ccodes.join(', ')}</p>`;
+        } else {
+            detailHtml += `<p>No Country Codes Available</p>`; // Or you can just skip adding this line
+        }
+
+        if (result.fclasses && result.fclasses.length > 0) {
+            detailHtml += `<p>Feature Classes: ${result.fclasses.join(', ')}</p>`;
+        } else {
+            detailHtml += `<p>No Feature Classes Available</p>`; // Or you can just skip adding this line
+        }
+
+        if (result.types && result.types.length > 0) {
+            detailHtml += `<p>Types: ${result.types.join(', ')}</p>`;
+        } else {
+            detailHtml += `<p>No Types Available</p>`; // Or you can just skip adding this line
+        }
+
+        $('#detail').html(detailHtml);
+    }
 
     function renderPlaces(geoms) {
-    if(features){ features.clearLayers() }
-    if(typeof(traces)!=='undefined'){ traces.clearLayers() }
+	    if(features){ features.clearLayers() }
+	    if(typeof(traces)!=='undefined'){ traces.clearLayers() }
 
-    featcoll = {"type":"FeatureCollection","features":geoms}
-    // console.log('geodata prior to render',data)
-    var count_features = 0
-    idToFeature = {}
-    idToArea = {}
-    mappy.createPane('placePane');
-    mappy.getPane('placePane').style.zIndex = 200;
+	    featcoll = {"type":"FeatureCollection","features":geoms}
+	    // console.log('geodata prior to render',data)
+	    var count_features = 0
+	    idToFeature = {}
+	    idToArea = {}
+	    mappy.createPane('placePane');
+	    mappy.getPane('placePane').style.zIndex = 200;
 
-    initialLayers = new L.featureGroup()
-    features = L.geoJSON(featcoll, {
-      pointToLayer: function (feature, latlng) {
-        count_features +=1;
-        // if feature has src key, it's from a database search
-        identifier = feature.src ? feature.properties.pid : feature.properties.whgid;
-				// all geometry added from wikidata matches is MultiPoint...for some reason
-        if(feature.type.indexOf('Point') > -1){
-          marker = L.circleMarker(latlng, styles.marker_default)
-          // add to array for selection
-          idToFeature[identifier] = marker
-          return marker
-        }
-      },
-      onEachFeature: function(feature,layer) {
-        f=feature; l=layer;
-        // if feature has src key, it's from a database search; also, popup link differs
-        if(feature.src){
-          identifier = feature.properties.pid
-          popup_link = ' (<a href="/places/'+identifier+'/detail">place page</a>)'
-        } else {
-          identifier = feature.properties.whgid
-          popup_link = ' (<a href="/places/'+identifier+'/portal">place portal</a>)'
-        }
-        if(feature.type != 'Point'){
-          layer.setStyle(['LineString','MultiLineString'].indexOf(feature.type)>-1 ? styles.line_default:styles.pgon_default)
-          idToFeature[identifier] = layer
-        }
-        layer.bindPopup(feature.properties.title);
+	    initialLayers = new L.featureGroup()
+	    features = L.geoJSON(featcoll, {
+	      pointToLayer: function (feature, latlng) {
+	        count_features +=1;
+	        // if feature has src key, it's from a database search
+	        identifier = feature.src ? feature.properties.pid : feature.properties.whgid;
+					// all geometry added from wikidata matches is MultiPoint...for some reason
+	        if(feature.type.indexOf('Point') > -1){
+	          marker = L.circleMarker(latlng, styles.marker_default)
+	          // add to array for selection
+	          idToFeature[identifier] = marker
+	          return marker
+	        }
+	      },
+	      onEachFeature: function(feature,layer) {
+	        f=feature; l=layer;
+	        // if feature has src key, it's from a database search; also, popup link differs
+	        if(feature.src){
+	          identifier = feature.properties.pid
+	          popup_link = ' (<a href="/places/'+identifier+'/detail">place page</a>)'
+	        } else {
+	          identifier = feature.properties.whgid
+	          popup_link = ' (<a href="/places/'+identifier+'/portal">place portal</a>)'
+	        }
+	        if(feature.type != 'Point'){
+	          layer.setStyle(['LineString','MultiLineString'].indexOf(feature.type)>-1 ? styles.line_default:styles.pgon_default)
+	          idToFeature[identifier] = layer
+	        }
+	        layer.bindPopup(feature.properties.title);
 
-        // find row in results and highlight it
-        layer.on('click',function(e){
-          scroll = 20
-          ele = $("#result_div")
-          // set all to white background
-          $(".search-row").css('background-color','#fff')
+	        // find row in results and highlight it
+	        layer.on('click',function(e){
+	          scroll = 20
+	          ele = $("#result_div")
+	          // set all to white background
+	          $(".search-row").css('background-color','#fff')
 
-          fid = search_scope=='idx'?this.feature.geometry.properties.whgid:this.feature.geometry.properties.pid
+	          fid = search_scope=='idx'?this.feature.geometry.properties.whgid:this.feature.geometry.properties.pid
 
-          foo=$("tr.place-item").find('[data-id="'+fid+'"]').closest('.search-row')
-          foo.css('background-color','#f4f4d7')
-          foo[0].scrollIntoView()
-          ele.scrollTop(ele.scrollTop() - scroll);
-        })
-        //
-        initialLayers.addLayer(layer)
-      }
-    }).addTo(mappy); <!-- adds features L.geoJSON -->
+	          foo=$("tr.place-item").find('[data-id="'+fid+'"]').closest('.search-row')
+	          foo.css('background-color','#f4f4d7')
+	          foo[0].scrollIntoView()
+	          ele.scrollTop(ele.scrollTop() - scroll);
+	        })
+	        //
+	        initialLayers.addLayer(layer)
+	      }
+	    }).addTo(mappy); <!-- adds features L.geoJSON -->
 
-    bounds = features.getBounds()
-    if(geoms.length > 0 ){
-      mappy.fitBounds(bounds)
-      if(mappy.getZoom() > 5){ mappy.setZoom(5)}
-    }
-  }
+	    bounds = features.getBounds()
+	    if(geoms.length > 0 ){
+	      mappy.fitBounds(bounds)
+	      if(mappy.getZoom() > 5){ mappy.setZoom(5)}
+	    }
+	  }
 
   </script>
 {% endblock %}
