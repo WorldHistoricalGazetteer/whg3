@@ -39,6 +39,7 @@
 				z-index: 1000;
 		}
 		.advanced-search-link a { color: #336699 !important;}
+
 		#advanced_search {
 				position: absolute;
 				top: 4px;
@@ -59,6 +60,18 @@
 		{# }#}
 
 		{##adv_checkboxes label {font-size: 0.8rem;}#}
+
+.carousel-inner {
+  height: 200px; /* Adjust as needed */
+}
+.carousel-item {
+  height: 100%; /* Take the full height of .carousel-inner */
+}
+.carousel-item h5 { margin:0;}
+.carousel-control-prev, .carousel-control-next {
+		background-color: #53A1DA !important;
+		width: 10%;
+}
 	</style>
 {% endblock %}
 
@@ -152,43 +165,70 @@
 			</div>
 		</div>
 		<div class="col-sm-3">
-			<div class="gy-2 h-100 bg-white pb-1">
-				<div class="h-50 border mb-1 p-1"> {# #3979B1 #} {# #54A1DA #}
+{#			<div class="gy-2 h-100 bg-white pb-1">#}
+			<div class="gy-2 bg-white pb-1">
+				<div class="h-25 border mb-1 p-1"> {# #3979B1 #} {# #54A1DA #}
 					<h6 class="ds-header p-1 strong">Datasets
 						<span class="float-end small">
 							<a class="linkylite" href="">Gallery</a>
 						</span>
-                    </h6>
-                    <div id="datasetsCarousel" class="carousel slide" data-ride="carousel">
-                      <div class="carousel-inner">
-                        {% for ds in featured_ds %}
-                        <div class="carousel-item {% if forloop.first %}active{% endif %}">
-{#                          <img src="/media/{{ dataset.image_file.name }}" class="d-block w-100" alt="{{ ds.title }}">#}
-                          <div class="carousel-caption d-none d-md-block">
-                            <h5>{{ ds.title }}</h5>
-                            <p>{{ ds.description }}</p>
-                          </div>
-                        </div>
-                        {% endfor %}
-                      </div>
-                    </div>
+          </h6>
+					<div id="datasetsCarousel" class="carousel slide" data-ride="carousel">
+						<ol class="carousel-indicators">
+						  {% for ds in featured_ds %}
+						    <li data-bs-target="#datasetsCarousel"
+						        data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active"{% endif %}></li>
+						  {% endfor %}
+						</ol>
+						<div class="carousel-inner">
+						  {% for ds in featured_ds %}
+						     <div class="carousel-item p-2 {% if forloop.first %}active{% endif %}">
+						           <h5>{{ ds.title }}</h5>
+						           <p>{{ ds.description }}</p>
+						     </div>
+						  {% endfor %}
+						</div>
+					  <button class="carousel-control-prev" type="button" data-bs-target="#datasetsCarousel" data-bs-slide="prev">
+					    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+					    <span class="visually-hidden">Previous</span>
+					  </button>
+					  <button class="carousel-control-next" type="button" data-bs-target="#datasetsCarousel" data-bs-slide="next">
+					    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+					    <span class="visually-hidden">Next</span>
+					  </button>
+					</div>
 				</div>
-				<div class="h-50 border p-1">
+				<div class="h-25 border p-1">
 					<h6 class="coll-header p-1 strong">Collections
 						<span class="float-end small">
 							<a class="linkylite" href="{% url 'collection:collection-gallery' %}">Gallery</a>
-						</span></h6>
-                    <div id="collectionsCarousel" class="carousel slide" data-ride="carousel">
-                      <div class="carousel-inner">
-                        {% for c in featured_coll %}
-{#                            <img src="/media/{{ c.image_file.name }}" class="d-block w-100" alt="{{ c.title }}">#}
-                            <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                            <h5>{{ c.title }}</h5>
-                            <p>{{ c.description }}</p>
-                        </div>
-                        {% endfor %}
-                      </div>
-                    </div>
+						</span>
+					</h6>
+          <div id="collectionsCarousel" class="carousel slide" data-ride="carousel">
+					  <ol class="carousel-indicators">
+					    {% for ds in featured_ds %}
+					      <li data-bs-target="#datasetsCarousel"
+					          data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active"{% endif %}></li>
+					    {% endfor %}
+					  </ol>
+            <div class="carousel-inner">
+              {% for c in featured_coll %}
+								{#<img src="/media/{{ c.image_file.name }}" class="d-block w-100" alt="{{ c.title }}">#}
+                <div class="carousel-item p-2 {% if forloop.first %}active{% endif %}">
+                <h5>{{ c.title }}</h5>
+                <p>{{ c.description }}</p>
+              </div>
+              {% endfor %}
+            </div>
+					  <button class="carousel-control-prev" type="button" data-bs-target="#collectionsCarousel" data-bs-slide="prev">
+					    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+					    <span class="visually-hidden">Previous</span>
+					  </button>
+					  <button class="carousel-control-next" type="button" data-bs-target="#collectionsCarousel" data-bs-slide="next">
+					    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+					    <span class="visually-hidden">Next</span>
+					  </button>
+          </div>
 				</div>
 			</div>
 		</div>
@@ -405,6 +445,15 @@ $(function(){
 		return options;
 	}
 
+
+	  $('#datasetsCarousel').carousel({
+	    interval: 3000 // Adjust the auto-transition interval as needed
+	  });
+
+	  $('#collectionsCarousel').carousel({
+	    interval: 3000 // Adjust the auto-transition interval as needed
+	  });
+
   $("[rel='tooltip']").tooltip();
   // modal for images
   $('.pop').on('click', function() {
@@ -415,7 +464,7 @@ $(function(){
     url = url.replace(ext,'_full'+ext)
     $("#header_text").html(txt)
     $('.imagepreview').attr('src', url);
-    $('#image_modal').modal('show');   
+    $('#image_modal').modal('show');
   });
 
 })
