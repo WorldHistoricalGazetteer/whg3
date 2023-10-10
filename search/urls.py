@@ -9,10 +9,11 @@ from search.views import (
 #app_name = "search"
 
 urlpatterns = [
-  path('', SearchPageView.as_view(), name='search-page'),
+  # path('', SearchPageView.as_view(), name='search-page'),
+  path('', SearchPageViewNew.as_view(), name='search-page'),
 
-  # simply returns new search page, no results
-  path('new/', SearchPageViewNew.as_view(), name='search-page-new'),
+  # simply returns old search page, for comparison
+  path('old/', SearchPageView.as_view(), name='search-page-old'),
 
   # generic search view, renders search_new.html w/results
   # path('search_new/', search_new, name='search-new'),

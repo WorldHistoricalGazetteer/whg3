@@ -26,7 +26,7 @@
 		{#.home-icon-row {text-align: center;} #AAC7A4 54A1DA #}
 		.ds-header { background-color: #3979B1; color: #fff; }
 		.coll-header { background-color: #54A1DA; color: #fff; }
-		img {image-orientation: none;}
+		{#img {image-orientation: none;}#}
 		#map { position: absolute; top: 0; bottom: 0; width: 100%; }
 		#search_map {position: absolute; top: 5px; left: 5px}
 		.advanced-search-link {
@@ -39,6 +39,13 @@
 				z-index: 1000;
 		}
 		.advanced-search-link a { color: #336699 !important;}
+		#advanced_search {
+				position: absolute;
+				top: 36px;
+				left: 5px;
+				width:40%;
+				display: none;
+		}
 	</style>
 {% endblock %}
 
@@ -84,9 +91,14 @@
 					  <a href="#" id="a_search"><i class="fas fa-search"></i></a>
 				  </span>
 				</div>
+		    <div id="advanced_search" class="text-center"
+		         style="background-color: #ffffe0;">
+		        <div>some checkboxes and dropdowns</div>
+		        <button id="close-advanced_search" class="btn btn-secondary">Close</button>
+		    </div>
 				<div class="advanced-search-link px-1 py-0">
 					<a id="a_advanced" href="#">advanced here</a>
-					<a href="{% url 'search-page-new' %}" class="ms-2">new search</a>
+					<a href="{% url 'search-page-old' %}" class="ms-2">old search</a>
 				</div>
 			</div>
 			<div class=" p-1 border bg-white" style="height: 24%;">
@@ -203,6 +215,13 @@ $(function(){
 	        initiateSearchHome(); // Call the initiateSearch function when 'Enter' is pressed
 	    }
 	});
+
+	$('#a_advanced').click(function(e) {
+	    e.preventDefault();
+	    var advancedSearch = document.getElementById('advanced_search');
+	    advancedSearch.style.display = (advancedSearch.style.display === 'none') ? 'block' : 'none';
+	});
+
 	// call views.search_new() with parameters
 	// search_new() will pass these to search_new.html
 	function initiateSearchHome() {
@@ -216,8 +235,12 @@ $(function(){
       // store locally
       localStorage.setItem('last_results',JSON.stringify(searchres))
 	    console.log(searchres)
-	    // deliver to search_new.html
-	    window.location.href = "{% url 'search-page-new' %}";
+	    // if results, deliver to search_new.html
+			if(searchres.length > 0){
+        window.location.href = "{% url 'search-page' %}";
+			} else {
+        alert('no results for "'+query+'", sorry')
+			}
     });
 	}
 
@@ -254,10 +277,6 @@ $(function(){
     $('#image_modal').modal('show');   
   });
 
-  $("#a_advanced").on('click', function(e){
-    e.preventDefault()
-    alert('gonna drop down advanced...tomorrow')
-  })
 })
 
 homeModal = document.getElementById('homeModal')
