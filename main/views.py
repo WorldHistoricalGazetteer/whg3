@@ -211,7 +211,8 @@ class LibreView(TemplateView):
 
 class Home30a(TemplateView):
     # template_name = 'main/home_v2a.html'
-    template_name = 'main/home_v30a.html'
+    # template_name = 'main/home_v30a.html'
+    template_name = 'main/home30b.html'
 
     def get_context_data(self, *args, **kwargs):
         context = super(Home30a, self).get_context_data(*args, **kwargs)

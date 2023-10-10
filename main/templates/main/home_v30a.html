@@ -26,7 +26,7 @@
 		{#.home-icon-row {text-align: center;} #AAC7A4 54A1DA #}
 		.ds-header { background-color: #3979B1; color: #fff; }
 		.coll-header { background-color: #54A1DA; color: #fff; }
-		img {image-orientation: none;}
+		{#img {image-orientation: none;}#}
 		#map { position: absolute; top: 0; bottom: 0; width: 100%; }
 		#search_map {position: absolute; top: 5px; left: 5px}
 		.advanced-search-link {
@@ -40,22 +40,21 @@
 		}
 		.advanced-search-link a { color: #336699 !important;}
 
-.carousel-inner {
-  height: 200px; /* Adjust as needed */
-}
-.carousel-item {
-  height: 100%; /* Take the full height of .carousel-inner */
-}
-.carousel-item h5 { margin:0;}
-.carousel-control-prev, .carousel-control-next {
-		background-color: #53A1DA !important;
-		width: 10%;
-}
+		.carousel-inner {
+		  height: 200px; /* Adjust as needed */
+		}
+		.carousel-item {
+		  height: 100%; /* Take the full height of .carousel-inner */
+		}
+		.carousel-item h5 { margin:0;}
+		.carousel-control-prev, .carousel-control-next {
+				background-color: #53A1DA !important;
+				width: 10%;
+	}
 {#.carousel-caption {#}
 {#  color: black; /* Set an explicit text color */#}
 {#  background-color: white; /* Set a contrasting background color */#}
 {# }#}
-
 	</style>
 {% endblock %}
 
@@ -112,7 +111,6 @@
 			</div>
 		</div>
 		<div class="col-sm-3">
-{#			<div class="gy-2 h-100 bg-white pb-1">#}
 			<div class="gy-2 bg-white pb-1">
 				<div class="h-25 border mb-1 p-1"> {# #3979B1 #} {# #54A1DA #}
 					<h6 class="ds-header p-1 strong">Datasets

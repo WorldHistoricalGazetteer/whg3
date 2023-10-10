@@ -17,7 +17,7 @@ urlpatterns = [
     path('group/<int:id>/gallery', views.CollectionGroupGalleryView.as_view(), name='collection-group-gallery'),
     path('gallery', views.CollectionGalleryView.as_view(), name='collection-gallery'),
 
-                  # DATASET collections (datasets only)
+    # DATASET collections (datasets only)
     path('create_ds/', views.DatasetCollectionCreateView.as_view(), name='ds-collection-create'),
     path('<int:id>/update_ds', views.DatasetCollectionUpdateView.as_view(), name='ds-collection-update'),
     path('<int:pk>/summary_ds', views.DatasetCollectionSummaryView.as_view(), name='ds-collection-summary'),
