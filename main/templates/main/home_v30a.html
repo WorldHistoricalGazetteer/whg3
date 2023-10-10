@@ -33,19 +33,31 @@
 				font-size: .8rem;
 				{#color: yellow !important;#}
 				position: absolute;
-				bottom:8px;
-				left: 5px;
+				top:10px;
+				left: 220px;
 				background-color: #fff;
 				z-index: 1000;
 		}
 		.advanced-search-link a { color: #336699 !important;}
 		#advanced_search {
 				position: absolute;
-				top: 36px;
-				left: 5px;
-				width:40%;
+				top: 4px;
+				left: 3px;
+				width :46%;
 				display: none;
+				background-color: #ffffe0;
+				padding-top: 30px;
+				padding-bottom: .5rem;
 		}
+		.categories {font-variant: small-caps; font-size: .9rem; color:#993333;}
+		#adv_checkboxes p {font-size: 0.8rem; margin:0;}
+		#adv_checkboxes label {margin-left:2px;}
+		{##adv_checkboxes {#}
+		{#    display: flex;#}
+		{#    align-items: center;#}
+		{# }#}
+
+		{##adv_checkboxes label {font-size: 0.8rem;}#}
 	</style>
 {% endblock %}
 
@@ -84,20 +96,41 @@
 		<div class="col-sm-6">
 			<div class="border mb-1 h-75 bg-white" style="position: relative;">
 				<div id="map"></div>
-				<div id="search_map" class="input-group input-group-sm mb-3 shadow-sm" style="width: 40%">
+		    <div id="advanced_search">
+			    <p class="mb-0"><span class="categories ms-1">place categories</span>
+            <span class="ms-1 categories">
+              <span class="me-1"><a id="check_toggle" href="#">clear all</a></span>
+              <a id="filter_help" class="pointer" data-toggle="popover" title="Place categories"
+                 data-content="" tabindex="0" data-trigger="focus"><i class="fas fa-question-circle linky"></i></a>
+            </span>
+            </p>
+			      <div id="adv_checkboxes" class="small mt-2 ps-1">
+			        <p><input type="checkbox" id="cb_a" checked="checked" value="A"/>
+				        <span for="cb_a"> Administrative entities (A)</span></p>
+			        <p><input type="checkbox" id="cb_p" checked="checked" value="P"/>
+				        <span for="cb_p"> Cities, towns, hamlets (P)</span></p>
+			        <p><input type="checkbox" id="cb_s" checked="checked" value="S"/>
+				        <span for="cb_s"> Sites, buildings, complexes (S)</span></p>
+			        <p><input type="checkbox" id="cb_r" checked="checked" value="R"/>
+				        <span for="cb_r"> Roads, routes, rail... (R)</span></p>
+			        <p><input type="checkbox" id="cb_l" checked="checked" value="L"/>
+				        <span for="cb_l"> Regions, landscape areas (L)</span></p>
+			        <p><input type="checkbox" id="cb_t" checked="checked" value="T"/>
+				        <span for="cb_t"> Terrestrial landforms (T)</span></p>
+			        <p><input type="checkbox" id="cb_h" checked="checked" value="H"/>
+				        <span for="cb_h"> Water bodies (H)</span></p>
+		        </div>
+{#		        <button id="close-advanced_search" class="btn btn-sm btn-secondary">Close</button>#}
+		    </div>
+				<div id="search_map" class="input-group input-group-sm mb-3 shadow-sm" style="width: 45%">
 				  <input type="text" class="form-control" placeholder="Enter place name"
 				         aria-label="Username" aria-describedby="addon-wrapping">
 				  <span class="input-group-text" id="addon-wrapping">
 					  <a href="#" id="a_search"><i class="fas fa-search"></i></a>
 				  </span>
 				</div>
-		    <div id="advanced_search" class="text-center"
-		         style="background-color: #ffffe0;">
-		        <div>some checkboxes and dropdowns</div>
-		        <button id="close-advanced_search" class="btn btn-secondary">Close</button>
-		    </div>
 				<div class="advanced-search-link px-1 py-0">
-					<a id="a_advanced" href="#">advanced here</a>
+					<a id="a_advanced" href="#">advanced search </a>
 					<a href="{% url 'search-page-old' %}" class="ms-2">old search</a>
 				</div>
 			</div>
@@ -216,11 +249,30 @@ $(function(){
 	    }
 	});
 
-	$('#a_advanced').click(function(e) {
-	    e.preventDefault();
-	    var advancedSearch = document.getElementById('advanced_search');
-	    advancedSearch.style.display = (advancedSearch.style.display === 'none') ? 'block' : 'none';
-	});
+  $('#a_advanced').on('click', function(e) {
+      e.preventDefault();
+      $('#advanced_search').slideToggle(300); // This toggles the visibility of the advanced search div
+   });
+	    {#$('#advanced_search').hide();#}
+			{##}
+      {#$('#advanced_search-toggle').click(function() {#}
+      {#    $('#advanced_search').slideToggle(300);#}
+      {# });#}
+			{##}
+      {#$('#close-advanced_search').click(function() {#}
+      {#    $('#advanced_search').slideUp(300);#}
+      {# });#}
+	{#document.getElementById('a_advanced').addEventListener('click', function(e) {#}
+	{#    e.preventDefault();#}
+	{#    var advancedSearch = document.getElementById('advanced_search');#}
+	{#    advancedSearch.style.display = (advancedSearch.style.display === 'none') ? 'block' : 'none';#}
+	{# });#}
+
+	{#$('#a_advanced').click(function() {#}
+	    {#e.preventDefault();#}
+	{#    var advancedSearch = $('#advanced_search');#}
+	{#    advancedSearch.style.display = (advancedSearch.style.display === 'none') ? 'block' : 'none';#}
+	{# });#}
 
 	// call views.search_new() with parameters
 	// search_new() will pass these to search_new.html
@@ -244,15 +296,29 @@ $(function(){
     });
 	}
 
+  // toggle all fclass checkboxes
+  $("#check_toggle").click(function(e){
+    e.preventDefault()
+    var state = $("#check_toggle").text()
+    if(state == 'check all'){
+    $("input:checkbox").prop('checked', true);
+    $("#check_toggle").text('clear all');
+    } else if( state == 'clear all'){
+    $("input:checkbox").prop('checked', false);
+    $("#check_toggle").text('check all');
+    }
+  })
+
 	// get option values
 	function gatherOptions() {
     // test
     {#options = {"fclasses":"P"}#}
     // gather and return option values from the UI
     fclasses = [];
-    $('#search_filters input:checked').each(function() {
+    $('#adv_checkboxes input:checked').each(function() {
       fclasses.push($(this).val());
     });
+    console.log('checked', fclasses)
     options = {
 			"qstr":$('#search_map input').val(),
 	    "idx": "whg",

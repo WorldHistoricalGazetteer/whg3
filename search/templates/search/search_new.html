@@ -146,23 +146,23 @@
 	    // toggler for advanced search
 	    $('#advanced_search').hide();
 
-        $('#advanced_search-toggle').click(function() {
-            $('#advanced_search').slideToggle(300);
-        });
+      $('#advanced_search-toggle').click(function() {
+          $('#advanced_search').slideToggle(300);
+      });
 
-        $('#close-advanced_search').click(function() {
-            $('#advanced_search').slideUp(300);
-        });
+      $('#close-advanced_search').click(function() {
+          $('#advanced_search').slideUp(300);
+      });
 
-        $("#a_search").on('click', function(event) {
-		    event.preventDefault();
-		    initiateSearch(); // Call the initiateSearch function when the button is clicked
-        });
-        $("#d_input input").on('keypress', function(event) {
-			    if (event.which == 13) {
-			        event.preventDefault();
-			        initiateSearch(); // Call the initiateSearch function when 'Enter' is pressed
-			    }
+      $("#a_search").on('click', function(event) {
+	    event.preventDefault();
+	    initiateSearch(); // Call the initiateSearch function when the button is clicked
+      });
+      $("#d_input input").on('keypress', function(event) {
+		    if (event.which == 13) {
+		        event.preventDefault();
+		        initiateSearch(); // Call the initiateSearch function when 'Enter' is pressed
+		    }
 			});
 
     }); // document ready
@@ -180,14 +180,14 @@
     let checkedTypes = $('.type-checkbox:checked').map(function() {
         return this.value;
     }).get();
-  return checkedTypes
+        return checkedTypes
     }
 
     function getCheckedCountries(){
         let checkedCountries = $('.country-checkbox:checked').map(function() {
           return this.value;
         }).get();
-  return checkedCountries
+        return checkedCountries
     }
 
     // render results and facet checkboxes
@@ -268,7 +268,6 @@
             });
             const count = initialTypeCounts[type] || 0;
             const label = $('<label>', { 'for': 'type_' + type, text: `${type} (${count})` });
-            {#const label = $('<label>', { 'for': 'type_' + type, text: type });#}
             $('#type_checkboxes').append(checkbox).append(label).append('<br>');
         });
 
