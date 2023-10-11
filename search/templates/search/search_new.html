@@ -50,7 +50,12 @@
 		.result.selected {
 		    background-color: #e0e0e0; /* Adjust selected color as needed */
 		}
-		#advanced_search {position:absolute; z-index: 1000; opacity: 80%;}
+
+		.categories {font-variant: small-caps; font-size: .9rem; color:#993333;}
+		#adv_checkboxes p {font-size: 0.8rem; margin:0;}
+		#adv_checkboxes label {margin-left:2px;}
+
+		#advanced_search {position:absolute; z-index: 1000; opacity: 100%;}
 		#result_facets label {font-size: 0.8rem; margin-left: 0.3rem;}
 		#type_checkboxes p {margin-bottom:0 !important; font-weight: bold;}
 		#country_checkboxes p {margin-bottom:0 !important; font-weight: bold;}
@@ -73,11 +78,63 @@
 	            <a href="#" id="advanced_search-toggle" class="small ps-2">Advanced Search</a>
 	        </div>
 	    </div>
-	    <div id="advanced_search" class="text-center col-12 w-100"
+
+	    <div id="advanced_search" class="text-center bg-light col-12 w-100"
 	         style="background-color: #ffffe0; top: 100%;">
-	        <div>some checkboxes and dropdowns</div>
+	        <div class="small" mt-2>
+						<p><input type="checkbox" id="cb_a" checked="checked" value="A"/>
+			        <span for="cb_a"> Administrative entities (A)</span></p>
+		        <p><input type="checkbox" id="cb_p" checked="checked" value="P"/>
+			        <span for="cb_p"> Cities, towns, hamlets (P)</span></p>
+		        <p><input type="checkbox" id="cb_s" checked="checked" value="S"/>
+			        <span for="cb_s"> Sites, buildings, complexes (S)</span></p>
+		        <p><input type="checkbox" id="cb_r" checked="checked" value="R"/>
+			        <span for="cb_r"> Roads, routes, rail... (R)</span></p>
+		        <p><input type="checkbox" id="cb_l" checked="checked" value="L"/>
+			        <span for="cb_l"> Regions, landscape areas (L)</span></p>
+		        <p><input type="checkbox" id="cb_t" checked="checked" value="T"/>
+			        <span for="cb_t"> Terrestrial landforms (T)</span></p>
+		        <p><input type="checkbox" id="cb_h" checked="checked" value="H"/>
+			        <span for="cb_h"> Water bodies (H)</span></p>
+					</div>
 	        <button id="close-advanced_search" class="btn btn-secondary">Close</button>
 	    </div>
+{#		  <div id="advanced_search">#}
+{#			    <p class="mb-0"><span class="categories ms-1">place categories</span>#}
+{#            <span class="ms-1 categories">#}
+{#              <span class="me-1"><a id="check_toggle" href="#">clear all</a></span>#}
+{#              <a id="filter_help" class="pointer" data-toggle="popover" title="Place categories"#}
+{#                 data-content="" tabindex="0" data-trigger="focus"><i class="fas fa-question-circle linky"></i></a>#}
+{#            </span>#}
+{#            </p>#}
+{#			      <div id="adv_checkboxes" class="small mt-2 ps-1">#}
+{#			        <p><input type="checkbox" id="cb_a" checked="checked" value="A"/>#}
+{#				        <span for="cb_a"> Administrative entities (A)</span></p>#}
+{#			        <p><input type="checkbox" id="cb_p" checked="checked" value="P"/>#}
+{#				        <span for="cb_p"> Cities, towns, hamlets (P)</span></p>#}
+{#			        <p><input type="checkbox" id="cb_s" checked="checked" value="S"/>#}
+{#				        <span for="cb_s"> Sites, buildings, complexes (S)</span></p>#}
+{#			        <p><input type="checkbox" id="cb_r" checked="checked" value="R"/>#}
+{#				        <span for="cb_r"> Roads, routes, rail... (R)</span></p>#}
+{#			        <p><input type="checkbox" id="cb_l" checked="checked" value="L"/>#}
+{#				        <span for="cb_l"> Regions, landscape areas (L)</span></p>#}
+{#			        <p><input type="checkbox" id="cb_t" checked="checked" value="T"/>#}
+{#				        <span for="cb_t"> Terrestrial landforms (T)</span></p>#}
+{#			        <p><input type="checkbox" id="cb_h" checked="checked" value="H"/>#}
+{#				        <span for="cb_h"> Water bodies (H)</span></p>#}
+{#		        </div>#}
+{#            <div id="filter_spatial">#}
+{#	            <p class="mb-0"><span class="categories ms-1">spatial</span>#}
+{#              <span class="float-end">#}
+{#              <a id="spatial_help" class="pointer" data-toggle="popover"#}
+{#                 title="Spatial filter" data-content="" tabindex="0" data-trigger="focus">#}
+{#              <i class="fas fa-question-circle linky"></i></a></span>#}
+{#            </p>#}
+{#              <input id="input_area" type="text" size="25" placeholder="Region, country, study area" />#}
+{#              <input type="hidden" id="boundsobj" />#}
+{#            </div>#}
+			    {#		        <button id="close-advanced_search" class="btn btn-sm btn-secondary">Close</button>#}
+{#		    </div>#}
 		</div>
 
 	  <!-- Main content grid -->
