@@ -19,36 +19,26 @@
 		    overflow: hidden;
 		}
 
-		{##search_center {#}
-		#search_right {
+		#search_center {
 		    flex-grow: 1;
 		    overflow: hidden;
 		    display: flex;
 		    flex-direction: column;
-		    {#padding: 0 2px 2px 2px;#}
-		}
-		#search_right_top {
-			min-height: 45%;
-		}
-		#map {
-			border: 1px gainsboro solid;
 		}
 
 		#search_results {
-			border: 1px gainsboro solid;
-		}
-		#result_container {
 			height: 200px;
-	    overflow-y: auto;
-	    flex-grow: 1;
+		    overflow-y: auto;
+		    flex-grow: 1;
 		}
+
 		.result {
 		    border: 1px solid #ccc;
 		    {#margin: 10px;#}
 		    padding: 10px;
 		    border-radius: 5px;
-		    box-shadow: gainsboro;
 		}
+
 		.result h5 {
 		    margin: 0 0 10px;
 		    padding: 0;
@@ -56,13 +46,16 @@
 		.result:hover {
 		    background-color: #f0f0f0; /* Adjust hover color as needed */
 		}
+
 		.result.selected {
 		    background-color: #e0e0e0; /* Adjust selected color as needed */
 		}
+
 		.categories {font-variant: small-caps; font-size: .9rem; color:#993333;}
 		#adv_checkboxes p {font-size: 0.8rem; margin:0;}
 		#adv_checkboxes label {margin-left:2px;}
 
+		#advanced_search {position:absolute; z-index: 1000; opacity: 100%;}
 		#result_facets label {font-size: 0.8rem; margin-left: 0.3rem;}
 		#type_checkboxes p {margin-bottom:0 !important; font-weight: bold;}
 		#country_checkboxes p {margin-bottom:0 !important; font-weight: bold;}
@@ -71,24 +64,42 @@
 
 {% block content %}
   <div class="container-md">
+
+		<!-- Search bar at the top -->
 	  <div id="search-bar" class="row bg-light py-2 position-relative">
-	    <div class="col-4">
-	      <span class="float-start fs-4">Search</span>
-			</div>
-	    <div id="d_input" class="col-8 ps-1">
-	        <div id="input" class="w-75 input-group">
+	    <div id="d_input" class="text-center col-12">
+	        <span class="float-start fs-4">Search</span>
+	        <div id="input" class="input-group w-50 mx-auto position-relative">
 	            <input type="text" id="search-input" class="form-control" placeholder="Enter place name"
 	                   aria-label="Search" aria-describedby="search-addon">
 	            <span class="input-group-text" id="search-addon">
 	                <a href="#" id="a_search"><i class="fas fa-search"></i></a>
 	            </span>
+	            <a href="#" id="advanced_search-toggle" class="small ps-2">Advanced Search</a>
 	        </div>
 	    </div>
-	  </div>
-	  <div id="search_content" class="row">
-			<div id="search_left" class="col-4 p-2 bg-light">
-				<div id="adv_options" class="hidden">
-					<h5>Advanced options</h5>
+
+	    <div id="advanced_search" class="text-center bg-light col-12 w-100"
+	         style="background-color: #ffffe0; top: 100%;">
+	        <div class="small" mt-2>
+						<p><input type="checkbox" id="cb_a" checked="checked" value="A"/>
+			        <span for="cb_a"> Administrative entities (A)</span></p>
+		        <p><input type="checkbox" id="cb_p" checked="checked" value="P"/>
+			        <span for="cb_p"> Cities, towns, hamlets (P)</span></p>
+		        <p><input type="checkbox" id="cb_s" checked="checked" value="S"/>
+			        <span for="cb_s"> Sites, buildings, complexes (S)</span></p>
+		        <p><input type="checkbox" id="cb_r" checked="checked" value="R"/>
+			        <span for="cb_r"> Roads, routes, rail... (R)</span></p>
+		        <p><input type="checkbox" id="cb_l" checked="checked" value="L"/>
+			        <span for="cb_l"> Regions, landscape areas (L)</span></p>
+		        <p><input type="checkbox" id="cb_t" checked="checked" value="T"/>
+			        <span for="cb_t"> Terrestrial landforms (T)</span></p>
+		        <p><input type="checkbox" id="cb_h" checked="checked" value="H"/>
+			        <span for="cb_h"> Water bodies (H)</span></p>
+					</div>
+	        <button id="close-advanced_search" class="btn btn-secondary">Close</button>
+	    </div>
+		  <div id="advanced_search">
 			    <p class="mb-0"><span class="categories ms-1">place categories</span>
             <span class="ms-1 categories">
               <span class="me-1"><a id="check_toggle" href="#">clear all</a></span>
@@ -96,7 +107,7 @@
                  data-content="" tabindex="0" data-trigger="focus"><i class="fas fa-question-circle linky"></i></a>
             </span>
           </p>
-          <div id="adv_checkboxes" class="small mt-2 ps-1">
+		      <div id="adv_checkboxes" class="small mt-2 ps-1">
 		        <p><input type="checkbox" id="cb_a" checked="checked" value="A"/>
 			        <span for="cb_a"> Administrative entities (A)</span></p>
 		        <p><input type="checkbox" id="cb_p" checked="checked" value="P"/>
@@ -111,7 +122,7 @@
 			        <span for="cb_t"> Terrestrial landforms (T)</span></p>
 		        <p><input type="checkbox" id="cb_h" checked="checked" value="H"/>
 			        <span for="cb_h"> Water bodies (H)</span></p>
-          </div>
+	        </div>
           <div id="filter_spatial">
             <p class="mb-0"><span class="categories ms-1">spatial</span>
               <span class="float-end">
@@ -122,65 +133,46 @@
             <input id="input_area" type="text" size="25" placeholder="Region, country, study area" />
             <input type="hidden" id="boundsobj" />
           </div>
-				</div>
-	      <div id="result_facets" class="p-1 bg-light hidden">
-	        <h5>Filter Results</h5>
+            <button id="close-advanced_search" class="btn btn-sm btn-secondary">Close</button>
+		    </div>
+		</div>
+
+	  <!-- Main content grid -->
+	  <div id="search_content" class="row">
+	    <!-- Left column for facets -->
+	    <div id="search_left" class="col-2 p-1" style="background-color: #e6e6e6;">
+	      <h5>Filter Results</h5>
+	      <div id="result_facets" class="p-1 bg-light">
 			    <div id="type_checkboxes"></div>
 			    <div id="country_checkboxes" class="mt-2"></div>
 	      </div>
-	      <!-- Detail box -->
-	      <div id="detail-box" class="p-1 mt-2" style="background-color: palegoldenrod;">
-	        <h5>Detail</h5>
-	        <div id="detail" class="p-3 bg-light"></div>
-	      </div>
 	    </div>
-			<div id="search_right" class="col-8 bg-lighteryellow">
-				<div id="search_right_top" class="row p-1">
-					<div id="map" class="col-9 bg-lighterblue p-2">map</div>
-					<div id="map_notes" class="col-3 bg-lightyellow p-2">legend? note?</div>
-				</div>
-				<div id="result_container" class="row p-1">
-					<div id="search_results" class="col-12 bg-light p-2">
-						<h6>Welcome/Results</h6>
-					</div>
-				</div>
-			</div>
-	  <!-- Main content grid -->
-{#	  <div id="search_content" class="row">#}
-{#	    <!-- Left column for facets -->#}
-{#	    <div id="search_left" class="col-2 p-1" style="background-color: #e6e6e6;">#}
-{#	      <h5>Filter Results</h5>#}
-{#	      <div id="result_facets" class="p-1 bg-light">#}
-{#			    <div id="type_checkboxes"></div>#}
-{#			    <div id="country_checkboxes" class="mt-2"></div>#}
-{#	      </div>#}
-{#	    </div>#}
-{##}
-{#	    <!-- Center column for search results -->#}
-{#	    <div id="search_center" class="col-5 p-1" style="background-color: #cccccc;">#}
-{#				<h5>Results (<span id="result_count"></span>)</h5>#}
-{#	      <div id="search_results" class="p-1 bg-light"></div>#}
-{#	    </div>#}
-{##}
-{#	    <!-- Right column -->#}
-{#	    <div id="search_right" class="col-5 px-0">#}
-{##}
-{#	      <!-- Map -->#}
-{#	      <div id="map-container" style="background-color: #e6e6e6;">#}
-{#	        <div id=map" class="p-3">#}
-{#	          <label>Map</label>#}
-{#	        </div>#}
-{#	      </div>#}
-{##}
-{#	      <!-- Detail box -->#}
-{#	      <div id="detail-box" class="p-1" style="background-color: palegoldenrod;">#}
-{#	        <h5>Detail</h5>#}
-{#	        <div id="detail" class="p-3 bg-light">#}
-{#	        </div>#}
-{#	      </div>#}
-{##}
-{#	    </div>#}
-{#    </div>#}
+
+	    <!-- Center column for search results -->
+	    <div id="search_center" class="col-5 p-1" style="background-color: #cccccc;">
+				<h5>Results (<span id="result_count"></span>)</h5>
+	      <div id="search_results" class="p-1 bg-light"></div>
+	    </div>
+
+	    <!-- Right column -->
+	    <div id="search_right" class="col-5 px-0">
+
+	      <!-- Map -->
+	      <div id="map-container" style="background-color: #e6e6e6;">
+	        <div id=map" class="p-3">
+	          <label>Map</label>
+	        </div>
+	      </div>
+
+	      <!-- Detail box -->
+	      <div id="detail-box" class="p-1" style="background-color: palegoldenrod;">
+	        <h5>Detail</h5>
+	        <div id="detail" class="p-3 bg-light">
+	        </div>
+	      </div>
+
+	    </div>
+    </div>
 
   </div>
 
@@ -204,11 +196,8 @@
         if (results) {
             // Render the results on the page
             renderResults(results);
-            // display filters div
-						$("#result_facets").show()
         } else {
             console.log('no results')
-            $("#adv_options").show()
         }
 
 	    // toggler for advanced search
@@ -261,8 +250,6 @@
     // render results and facet checkboxes
     function renderResults(results){
         console.log('results (global)', results)
-        $("#adv_options").hide()
-        $("#result_facets").show()
         $("#result_count").html(results.length)
         // Clear previous results
         $('#search_results').empty();
@@ -288,10 +275,10 @@
             const html = `
                 <div class="result">
                     <h5>${result.title} (${count} in set)
-                      <span class="float-end">
-                          <a href="JavaScript:alert('not live in dev')">portal ${result.whg_id}</a>
-                      </span>
-										</h5>
+                                        <span class="float-end">
+                                            <a href="JavaScript:alert('not live in dev')">portal ${result.whg_id}</a>
+                                        </span>
+                                    </h5>
                     {#<p>Country Codes: ${result.ccodes.join(', ')}</p>#}
                     {#<p>Feature Classes: ${result.fclasses.join(', ')}</p>#}
                     {#<p>Types: ${result.types.join(', ')}</p>#}
