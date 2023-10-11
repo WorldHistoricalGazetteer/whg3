@@ -340,8 +340,8 @@
     $.get("/api/area_list", function(data){
       //console.log('initial areas for list',data)-->
       for(var i=0;i<data.length;i++){
-      area_objs.push(data[i])
-      area_list.push(data[i]['title'])
+	      area_objs.push(data[i])
+	      area_list.push(data[i]['title'])
       }
     })
 

@@ -52,6 +52,7 @@
 		.categories {font-variant: small-caps; font-size: .9rem; color:#993333;}
 		#adv_checkboxes p {font-size: 0.8rem; margin:0;}
 		#adv_checkboxes label {margin-left:2px;}
+		#input_area {width: 95%}
 		{##adv_checkboxes {#}
 		{#    display: flex;#}
 		{#    align-items: center;#}
@@ -120,7 +121,17 @@
 			        <p><input type="checkbox" id="cb_h" checked="checked" value="H"/>
 				        <span for="cb_h"> Water bodies (H)</span></p>
 		        </div>
-{#		        <button id="close-advanced_search" class="btn btn-sm btn-secondary">Close</button>#}
+            <div id="filter_spatial">
+	            <p class="mb-0"><span class="categories ms-1">spatial</span>
+              <span class="float-end">
+              <a id="spatial_help" class="pointer" data-toggle="popover"
+                 title="Spatial filter" data-content="" tabindex="0" data-trigger="focus">
+              <i class="fas fa-question-circle linky"></i></a></span>
+            </p>
+              <input id="input_area" type="text" size="25" placeholder="Region, country, study area" />
+              <input type="hidden" id="boundsobj" />
+            </div>
+			    {#		        <button id="close-advanced_search" class="btn btn-sm btn-secondary">Close</button>#}
 		    </div>
 				<div id="search_map" class="input-group input-group-sm mb-3 shadow-sm" style="width: 45%">
 				  <input type="text" class="form-control" placeholder="Enter place name"
@@ -231,6 +242,10 @@
 </div>
 
 <script type="text/javascript">
+let idToArea = {}
+let area_list = []
+let area_objs = []
+
 $(function(){
   // always clear last_results & last_query
 	localStorage.removeItem('last_results')
@@ -253,27 +268,64 @@ $(function(){
       e.preventDefault();
       $('#advanced_search').slideToggle(300); // This toggles the visibility of the advanced search div
    });
-	    {#$('#advanced_search').hide();#}
-			{##}
-      {#$('#advanced_search-toggle').click(function() {#}
-      {#    $('#advanced_search').slideToggle(300);#}
-      {# });#}
-			{##}
-      {#$('#close-advanced_search').click(function() {#}
-      {#    $('#advanced_search').slideUp(300);#}
-      {# });#}
-	{#document.getElementById('a_advanced').addEventListener('click', function(e) {#}
-	{#    e.preventDefault();#}
-	{#    var advancedSearch = document.getElementById('advanced_search');#}
-	{#    advancedSearch.style.display = (advancedSearch.style.display === 'none') ? 'block' : 'none';#}
-	{# });#}
 
-	{#$('#a_advanced').click(function() {#}
-	    {#e.preventDefault();#}
-	{#    var advancedSearch = $('#advanced_search');#}
-	{#    advancedSearch.style.display = (advancedSearch.style.display === 'none') ? 'block' : 'none';#}
-	{# });#}
+  $.get("/api/area_list", function(data){
+    console.log('initial areas for list',data)
+    for(var i=0;i<data.length;i++){
+      area_objs.push(data[i])
+      area_list.push(data[i]['title'])
+    }
+  })
+  $( "#input_area" ).autocomplete({
+    source: area_list,
+    minLength: 2,
+    select: function( event, ui ) {
+      // build boundsobj, insert as hidden input val()
+      label = ui.item.label
+      obj = area_objs.find(o =>o.title==label)
+      areaid = obj.id
+      boundsobj = '{"type":["'+obj.type+'"],"id":["'+areaid+'"]}'
+      $("#boundsobj").val( boundsobj )
+      console.log( "boundsobj for view ", boundsobj);
 
+      // fetch and render selected area
+      render_area(areaid)
+    }
+  });
+  {#$("#input_area").on('keyup', function(e){#}
+  {#  // resets stuff#}
+  {#  if($('#input_area').val().length < 3) {#}
+  {#    $("#boundsobj").val('')#}
+  {#    if(typeof arealayer !== 'undefined'){arealayer.removeFrom(mappy)}#}
+  {#    mappy.setView([38, 10], 2.4)#}
+  {#  }#}
+  {# })#}
+  render_area = function(areaid) {
+    $.ajax({
+      url: '/api/area/'+areaid
+      }).done(function(data){
+      console.log('render_area() data',data)
+      geom = {"type":"FeatureCollecton","features":[]}
+      geom['features'].push(data.geojson)
+      console.log('render_area() geom',geom)
+
+    // clear existing
+    if(typeof arealayer !== 'undefined'){arealayer.removeFrom(mappy)}
+
+    // TODO: NOT YET render new
+    {#arealayer = L.geoJSON(geom, {#}
+    {#  onEachFeature: function(feature,layer) {#}
+    {#  f=feature; l=layer;#}
+    {#  console.log('render_area() f,l',f,l)#}
+    {#  l.setStyle({"color":"orange","weight":2,"fillOpacity":0})#}
+    {#  idToArea[areaid] = l#}
+    {#  popupOptions = {maxWidth: 200};#}
+    {#  l.bindPopup(data.title, popupOptions);#}
+    {#  }#}
+    {# }).addTo(mappy)#}
+    {#mappy.fitBounds(arealayer.getBounds())#}
+    })
+  }
 	// call views.search_new() with parameters
 	// search_new() will pass these to search_new.html
 	function initiateSearchHome() {
