@@ -3,13 +3,21 @@ from django.urls import path #, include
 
 from search.views import (
   SearchView, SearchPageView, FeatureContextView, TraceGeomView,
-  SearchDatabaseView, CollectionGeomView
+  SearchDatabaseView, CollectionGeomView, SearchPageViewNew
 )
 
 #app_name = "search"
 
 urlpatterns = [
-  path('', SearchPageView.as_view(), name='search-page'), # former home page
+  # path('', SearchPageView.as_view(), name='search-page'),
+  path('', SearchPageViewNew.as_view(), name='search-page'),
+
+  # simply returns old search page, for comparison
+  path('old/', SearchPageView.as_view(), name='search-page-old'),
+
+  # generic search view, renders search_new.html w/results
+  # path('search_new/', search_new, name='search-new'),
+
   path('index/', SearchView.as_view(), name='search'), # executes index search
   path('db/', SearchDatabaseView.as_view(), name='search-db'), # executes database search
   path('context/', FeatureContextView.as_view(), name='feature_context'), # place portal context

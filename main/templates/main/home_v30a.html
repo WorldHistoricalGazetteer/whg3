@@ -26,19 +26,39 @@
 		{#.home-icon-row {text-align: center;} #AAC7A4 54A1DA #}
 		.ds-header { background-color: #3979B1; color: #fff; }
 		.coll-header { background-color: #54A1DA; color: #fff; }
-		img {image-orientation: none;}
+		{#img {image-orientation: none;}#}
 		#map { position: absolute; top: 0; bottom: 0; width: 100%; }
 		#search_map {position: absolute; top: 5px; left: 5px}
 		.advanced-search-link {
 				font-size: .8rem;
 				{#color: yellow !important;#}
 				position: absolute;
-				bottom:8px;
-				left: 5px;
+				top:10px;
+				left: 220px;
 				background-color: #fff;
 				z-index: 1000;
 		}
 		.advanced-search-link a { color: #336699 !important;}
+		#advanced_search {
+				position: absolute;
+				top: 4px;
+				left: 3px;
+				width :46%;
+				display: none;
+				{#background-color: #ffffe0;#}
+				padding-top: 30px;
+				padding-bottom: .5rem;
+		}
+		.categories {font-variant: small-caps; font-size: .9rem; color:#993333;}
+		#adv_checkboxes p {font-size: 0.8rem; margin:0;}
+		#adv_checkboxes label {margin-left:2px;}
+		#input_area {width: 95%; font-size: 0.9rem; margin-left:2px;}
+		{##adv_checkboxes {#}
+		{#    display: flex;#}
+		{#    align-items: center;#}
+		{# }#}
+
+		{##adv_checkboxes label {font-size: 0.8rem;}#}
 	</style>
 {% endblock %}
 
@@ -77,15 +97,52 @@
 		<div class="col-sm-6">
 			<div class="border mb-1 h-75 bg-white" style="position: relative;">
 				<div id="map"></div>
-				<div id="search_map" class="input-group input-group-sm mb-3 shadow-sm" style="width: 40%">
+		    <div id="advanced_search" class="bg-light">
+			    <p class="mb-0"><span class="categories ms-1">place categories</span>
+            <span class="ms-1 categories">
+              <span class="me-1"><a id="check_toggle" href="#">clear all</a></span>
+              <a id="filter_help" class="pointer" data-toggle="popover" title="Place categories"
+                 data-content="" tabindex="0" data-trigger="focus"><i class="fas fa-question-circle linky"></i></a>
+            </span>
+            </p>
+			      <div id="adv_checkboxes" class="small mt-2 ps-1">
+			        <p><input type="checkbox" id="cb_a" checked="checked" value="A"/>
+				        <span for="cb_a"> Administrative entities (A)</span></p>
+			        <p><input type="checkbox" id="cb_p" checked="checked" value="P"/>
+				        <span for="cb_p"> Cities, towns, hamlets (P)</span></p>
+			        <p><input type="checkbox" id="cb_s" checked="checked" value="S"/>
+				        <span for="cb_s"> Sites, buildings, complexes (S)</span></p>
+			        <p><input type="checkbox" id="cb_r" checked="checked" value="R"/>
+				        <span for="cb_r"> Roads, routes, rail... (R)</span></p>
+			        <p><input type="checkbox" id="cb_l" checked="checked" value="L"/>
+				        <span for="cb_l"> Regions, landscape areas (L)</span></p>
+			        <p><input type="checkbox" id="cb_t" checked="checked" value="T"/>
+				        <span for="cb_t"> Terrestrial landforms (T)</span></p>
+			        <p><input type="checkbox" id="cb_h" checked="checked" value="H"/>
+				        <span for="cb_h"> Water bodies (H)</span></p>
+		        </div>
+            <div id="filter_spatial">
+	            <p class="mb-0"><span class="categories ms-1">spatial</span>
+              <span class="small">
+              <a id="spatial_help" class="pointer" data-toggle="popover"
+                 title="Spatial filter" data-content="" tabindex="0" data-trigger="focus">
+              <i class="fas fa-question-circle linky"></i></a></span>
+            </p>
+              <input id="input_area" type="text" size="25" placeholder="Region, country, study area" />
+              <input type="hidden" id="boundsobj" />
+            </div>
+			    {#		        <button id="close-advanced_search" class="btn btn-sm btn-secondary">Close</button>#}
+		    </div>
+				<div id="search_map" class="input-group input-group-sm mb-3 shadow-sm" style="width: 45%">
 				  <input type="text" class="form-control" placeholder="Enter place name"
 				         aria-label="Username" aria-describedby="addon-wrapping">
 				  <span class="input-group-text" id="addon-wrapping">
-					  <a href="#" onclick="JavaScript:alert('Results on new results page')"><i class="fas fa-search"></i></a>
+					  <a href="#" id="a_search"><i class="fas fa-search"></i></a>
 				  </span>
 				</div>
 				<div class="advanced-search-link px-1 py-0">
-					<a href="{% url 'search-page' %}"#>advanced search</a>
+					<a id="a_advanced" href="#">advanced search </a>
+{#					<a href="{% url 'search-page-old' %}" class="ms-2">old search</a>#}
 				</div>
 			</div>
 			<div class=" p-1 border bg-white" style="height: 24%;">
@@ -185,7 +242,146 @@
 </div>
 
 <script type="text/javascript">
+let idToArea = {}
+let area_list = []
+let area_objs = []
+
 $(function(){
+  // always clear last_results & last_query
+	localStorage.removeItem('last_results')
+	localStorage.removeItem('last_query')
+
+  // listen for search action
+  // TODO: handle Enter key also
+	$("#a_search").click(function() {
+    initiateSearchHome();
+	});
+
+	$("#search_map input").on('keypress', function(event) {
+	    if (event.which == 13) { // 13 is the 'Enter' key code
+	        event.preventDefault();
+	        initiateSearchHome(); // Call the initiateSearch function when 'Enter' is pressed
+	    }
+	});
+
+  $('#a_advanced').on('click', function(e) {
+      e.preventDefault();
+      $('#advanced_search').slideToggle(300); // This toggles the visibility of the advanced search div
+   });
+
+  $.get("/api/area_list", function(data){
+    {#console.log('initial areas for list',data)#}
+    for(var i=0;i<data.length;i++){
+      area_objs.push(data[i])
+      area_list.push(data[i]['title'])
+    }
+  })
+  $( "#input_area" ).autocomplete({
+    source: area_list,
+    minLength: 2,
+    select: function( event, ui ) {
+      // build boundsobj, insert as hidden input val()
+      label = ui.item.label
+      obj = area_objs.find(o =>o.title==label)
+      areaid = obj.id
+      boundsobj = '{"type":["'+obj.type+'"],"id":["'+areaid+'"]}'
+      $("#boundsobj").val( boundsobj )
+      console.log( "boundsobj for view ", boundsobj);
+
+      // fetch and render selected area
+      render_area(areaid)
+    }
+  });
+  {#$("#input_area").on('keyup', function(e){#}
+  {#  // resets stuff#}
+  {#  if($('#input_area').val().length < 3) {#}
+  {#    $("#boundsobj").val('')#}
+  {#    if(typeof arealayer !== 'undefined'){arealayer.removeFrom(mappy)}#}
+  {#    mappy.setView([38, 10], 2.4)#}
+  {#  }#}
+  {# })#}
+  render_area = function(areaid) {
+    $.ajax({
+      url: '/api/area/'+areaid
+      }).done(function(data){
+      console.log('render_area() data',data)
+      geom = {"type":"FeatureCollecton","features":[]}
+      geom['features'].push(data.geojson)
+      console.log('render_area() geom',geom)
+
+    // clear existing
+    if(typeof arealayer !== 'undefined'){arealayer.removeFrom(mappy)}
+
+    // TODO: NOT YET render new
+    {#arealayer = L.geoJSON(geom, {#}
+    {#  onEachFeature: function(feature,layer) {#}
+    {#  f=feature; l=layer;#}
+    {#  console.log('render_area() f,l',f,l)#}
+    {#  l.setStyle({"color":"orange","weight":2,"fillOpacity":0})#}
+    {#  idToArea[areaid] = l#}
+    {#  popupOptions = {maxWidth: 200};#}
+    {#  l.bindPopup(data.title, popupOptions);#}
+    {#  }#}
+    {# }).addTo(mappy)#}
+    {#mappy.fitBounds(arealayer.getBounds())#}
+    })
+  }
+	// call views.search_new() with parameters
+	// search_new() will pass these to search_new.html
+	function initiateSearchHome() {
+    const query = $('#search_map input').val();
+    const filters = gatherOptions(); // Suppose you have a function to gather filters
+		localStorage.setItem('last_query', query)
+
+    $.get("/search/index", filters, function(data){
+      window.searchres = data['suggestions']
+      window.session = data['session']
+      // store locally
+      localStorage.setItem('last_results',JSON.stringify(searchres))
+	    console.log(searchres)
+	    // if results, deliver to search_new.html
+			if(searchres.length > 0){
+        window.location.href = "{% url 'search-page' %}";
+			} else {
+        alert('no results for "'+query+'", sorry')
+			}
+    });
+	}
+
+  // toggle all fclass checkboxes
+  $("#check_toggle").click(function(e){
+    e.preventDefault()
+    var state = $("#check_toggle").text()
+    if(state == 'check all'){
+    $("input:checkbox").prop('checked', true);
+    $("#check_toggle").text('clear all');
+    } else if( state == 'clear all'){
+    $("input:checkbox").prop('checked', false);
+    $("#check_toggle").text('check all');
+    }
+  })
+
+	// get option values
+	function gatherOptions() {
+    // test
+    {#options = {"fclasses":"P"}#}
+    // gather and return option values from the UI
+    fclasses = [];
+    $('#adv_checkboxes input:checked').each(function() {
+      fclasses.push($(this).val());
+    });
+    console.log('checked', fclasses)
+    options = {
+			"qstr":$('#search_map input').val(),
+	    "idx": "whg",
+	    "fclasses": fclasses.join(','),
+	    "start": $("#input_start").val(),
+	    "end": $("#input_end").val(),
+	    "bounds": $("#boundsobj").val()
+    }
+		return options;
+	}
+
   $("[rel='tooltip']").tooltip();
   // modal for images
   $('.pop').on('click', function() {
@@ -197,7 +393,8 @@ $(function(){
     $("#header_text").html(txt)
     $('.imagepreview').attr('src', url);
     $('#image_modal').modal('show');   
-  });	
+  });
+
 })
 
 homeModal = document.getElementById('homeModal')

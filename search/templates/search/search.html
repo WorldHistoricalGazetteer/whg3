@@ -1,9 +1,7 @@
 <!-- search/search.html -->
 {% extends "main/base.html" %}
 {% load leaflet_tags %}
-{% load livereload_tags %}
 {% load static %}
-
 {% block title %}<title>WHG Search</title>{% endblock %}
 {% block extra_head %}
   {% leaflet_js %}
@@ -50,7 +48,7 @@
         <span class="filter-header">pre-filters</span>
         <div class="small row">
           <div id="filters_class" class="col-md-12 col-lg-6">
-            <p class="mb-0">place categories
+            <p class="mb-0 smallcaps">place categories
             <span class="ms-1">
               <span class="me-1"><a id="check_toggle" href="#">clear all</a></span>
               <a id="filter_help" class="pointer" data-toggle="popover" title="Place categories" data-content="" tabindex="0" data-trigger="focus"><i class="fas fa-question-circle linky"></i></a>
@@ -342,8 +340,8 @@
     $.get("/api/area_list", function(data){
       //console.log('initial areas for list',data)-->
       for(var i=0;i<data.length;i++){
-      area_objs.push(data[i])
-      area_list.push(data[i]['title'])
+	      area_objs.push(data[i])
+	      area_list.push(data[i]['title'])
       }
     })
 
@@ -1043,7 +1041,6 @@
           })
         }
         // adds a row to result_div that gets inserted into #result_div later
-        //result_table += sugLister(sug, doctype, scope)
         result_table += sugLister(sug)
         countadded +=1
         // result_table += sugTableRow(sug, doctype, scope)   -->
@@ -1276,39 +1273,39 @@
     return item
   }
   // from sugLister()
-  // TODO: doesn't reach into when.timespans; Indias data malformed
-  function parseRels(rels){
-    html=''
-  timespans=[]; starts=[]; ends=[]
-    for(r in rels){
-    html += rels[r].relation
-    for(w in rels[r].when){
-    timespans.push(rels[r].when[w])
-  }}
-  reg = /(-?\d{1,4})\D?/
-  for (t in timespans){
-    // no 'in', 'earliest' or 'latest' here
-    starts.push(Number(timespans[t].start.match(reg)[1]))
-    ends.push(!!timespans[t].end ? Number(timespans[t].end.match(reg)[1]) : -1)
-  }
-  <!--console.log('starts',starts,'ends',ends)-->
-  minmax=' ['+[starts.length>0?Math.max.apply(null, starts):'-',ends.length>0?Math.max.apply(null, ends):'-']+']'
-  if(!starts.length==0 && !ends.length==0){ html += minmax}
-    return html
-  }
+  {#function parseRels(rels){#}
+  {#  html=''#}
+  {#timespans=[]; starts=[]; ends=[]#}
+  {#  for(r in rels){#}
+  {#  html += rels[r].relation#}
+  {#  for(w in rels[r].when){#}
+  {#  timespans.push(rels[r].when[w])#}
+  {# }}#}
+  {#reg = /(-?\d{1,4})\D?/#}
+  {#for (t in timespans){#}
+  {#  // no 'in', 'earliest' or 'latest' here#}
+  {#  starts.push(Number(timespans[t].start.match(reg)[1]))#}
+  {#  ends.push(!!timespans[t].end ? Number(timespans[t].end.match(reg)[1]) : -1)#}
+  {# }#}
+  {#<!--console.log('starts',starts,'ends',ends)-->#}
+  {#minmax=' ['+[starts.length>0?Math.max.apply(null, starts):'-',ends.length>0?Math.max.apply(null, ends):'-']+']'#}
+  {#if(!starts.length==0 && !ends.length==0){ html += minmax}#}
+  {#  return html#}
+  {# }#}
+
   // from sugLister()
   // TODO: doesn't reach into when.timespans; Indias data malformed
-  function parseWhen(when){
-  console.log('parseWhen()',when)
-    html=''
-    for (w in when){
-      s = 'start' in when[w]?'start: '+when[w]['start']:'earliest: '+when[w]['earliest']
-      e = 'end' in when[w]?'end: '+when[w]['end']:'latest: '+when[w]['latest']
-      html += s +", " +e
-      html+=w==when.length-1?'':'; '
-    }
-    return html
-  }
+  {#function parseWhen(when){#}
+  {#console.log('parseWhen()',when)#}
+  {#  html=''#}
+  {#  for (w in when){#}
+  {#    s = 'start' in when[w]?'start: '+when[w]['start']:'earliest: '+when[w]['earliest']#}
+  {#    e = 'end' in when[w]?'end: '+when[w]['end']:'latest: '+when[w]['latest']#}
+  {#    html += s +", " +e#}
+  {#    html+=w==when.length-1?'':'; '#}
+  {#  }#}
+  {#  return html#}
+  {# }#}
 
   // from parserPlace() builds link for external place record
   function url_extplace(identifier) {
