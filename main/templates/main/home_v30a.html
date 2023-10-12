@@ -47,6 +47,8 @@
 				left: 220px;
 				background-color: #fff;
 				z-index: 1000;
+				opacity: 75%;
+				border-radius: 4px;
 		}
 		.advanced-search-link a { color: #336699 !important;}
 		.categories {font-variant: small-caps; font-size: .9rem; color:#993333;}
@@ -58,7 +60,7 @@
 		    flex-grow: 1;
 		    min-height: 180px;
 		}
-		.carousel-inner,
+		.carousel-inner
 		.carousel-item {
 		    height: 100%;
 		}
@@ -69,7 +71,15 @@
 		}
 		.carousel-item p { font-size: .8rem;}
 		.carousel-item h6 { margin-bottom: 0;}
-		.carousel button {background-color: yellow; bottom: auto !important;}
+		.carousel button {
+				position: absolute;
+				width: 20px;
+				background-color: silver;
+				opacity:40%;
+				bottom: auto !important;
+		}
+		#datasetsCarousel button {top: 30%;}
+		#collectionsCarousel button {top: 50px;}
 	</style>
 {% endblock %}
 
