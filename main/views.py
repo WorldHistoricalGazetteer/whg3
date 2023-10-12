@@ -212,17 +212,21 @@ class LibreView(TemplateView):
 class Home30a(TemplateView):
     # template_name = 'main/home_v2a.html'
     template_name = 'main/home_v30a.html'
+    # template_name = 'main/home30b.html'
 
     def get_context_data(self, *args, **kwargs):
         context = super(Home30a, self).get_context_data(*args, **kwargs)
         
         # deliver featured datasets and collections
         f_collections = Collection.objects.exclude(featured__isnull=True)
-        f_datasets = list(Dataset.objects.exclude(featured__isnull=True))
-        shuffle(f_datasets)
+        f_datasets = Dataset.objects.exclude(featured__isnull=True)
+
+        # f_datasets = list(Dataset.objects.exclude(featured__isnull=True))
+        # shuffle(f_datasets)
         
         # 2 collections, rotate datasets randomly
-        context['featured_coll'] = f_collections.order_by('featured')[:2]
+        # context['featured_coll'] = f_collections.order_by('featured')[:2]
+        context['featured_coll'] = f_collections
         context['featured_ds'] = f_datasets
         context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
         context['mbtokenmb'] = settings.MAPBOX_TOKEN_MB

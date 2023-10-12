@@ -21,14 +21,24 @@
 {#	<link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />#}
 
 	<style>
+		#banner {width: 100%; height: 15vh; min-height: 60px;}
 		#intro {font-size: .9rem;}
 		.home-button {position: relative; font-family: "Archivo Black";}
-		{#.home-icon-row {text-align: center;} #AAC7A4 54A1DA #}
 		.ds-header { background-color: #3979B1; color: #fff; }
 		.coll-header { background-color: #54A1DA; color: #fff; }
-		{#img {image-orientation: none;}#}
 		#map { position: absolute; top: 0; bottom: 0; width: 100%; }
-		#search_map {position: absolute; top: 5px; left: 5px}
+		#search_map {position: absolute; top: 5px; left: 5px; width: 206px;}
+
+		#advanced_search {
+				position: absolute;
+				top: 4px;
+				left: 3px;
+				{#width :46%;#}
+				width: 210px;
+				display: none;
+				padding-top: 30px;
+				padding-bottom: .5rem;
+		}
 		.advanced-search-link {
 				font-size: .8rem;
 				{#color: yellow !important;#}
@@ -37,34 +47,45 @@
 				left: 220px;
 				background-color: #fff;
 				z-index: 1000;
+				opacity: 75%;
+				border-radius: 4px;
 		}
 		.advanced-search-link a { color: #336699 !important;}
-		#advanced_search {
-				position: absolute;
-				top: 4px;
-				left: 3px;
-				width :46%;
-				display: none;
-				{#background-color: #ffffe0;#}
-				padding-top: 30px;
-				padding-bottom: .5rem;
-		}
 		.categories {font-variant: small-caps; font-size: .9rem; color:#993333;}
 		#adv_checkboxes p {font-size: 0.8rem; margin:0;}
 		#adv_checkboxes label {margin-left:2px;}
 		#input_area {width: 95%; font-size: 0.9rem; margin-left:2px;}
-		{##adv_checkboxes {#}
-		{#    display: flex;#}
-		{#    align-items: center;#}
-		{# }#}
 
-		{##adv_checkboxes label {font-size: 0.8rem;}#}
+		.carousel-container {
+		    flex-grow: 1;
+		    min-height: 180px;
+		}
+		.carousel-inner
+		.carousel-item {
+		    height: 100%;
+		}
+		.carousel-item img {
+		    object-fit: cover;
+		    height: 100%;
+		    width: 100%;
+		}
+		.carousel-item p { font-size: .8rem;}
+		.carousel-item h6 { margin-bottom: 0;}
+		.carousel button {
+				position: absolute;
+				width: 20px;
+				background-color: silver;
+				opacity:40%;
+				bottom: auto !important;
+		}
+		#datasetsCarousel button {top: 30%;}
+		#collectionsCarousel button {top: 50px;}
 	</style>
 {% endblock %}
 
 {% block content %}
 
-<div class="container mt-1" style="height: calc(100vh - 210px);">
+<div class="container mt-1" style="min-height: calc(100vh - 210px);">
 	<div id="banner" class="banner-bare w-100 my-1 p-2">
 		{% if request.user_agent.is_mobile %}
 			<div class="centered ">
@@ -133,7 +154,7 @@
             </div>
 			    {#		        <button id="close-advanced_search" class="btn btn-sm btn-secondary">Close</button>#}
 		    </div>
-				<div id="search_map" class="input-group input-group-sm mb-3 shadow-sm" style="width: 45%">
+				<div id="search_map" class="input-group input-group-sm mb-3 shadow-sm">
 				  <input type="text" class="form-control" placeholder="Enter place name"
 				         aria-label="Username" aria-describedby="addon-wrapping">
 				  <span class="input-group-text" id="addon-wrapping">
@@ -151,23 +172,81 @@
 					</p>
 			</div>
 		</div>
-		<div class="col-sm-3">
-			<div class="gy-2 h-100 bg-white pb-1">
-				<div class="h-50 border mb-1 p-1"> {# #3979B1 #} {# #54A1DA #}
-					<h6 class="ds-header p-1 strong">Datasets
-						<span class="float-end small">
-							<a class="linkylite" href="">Gallery</a>
-						</span></h6>
-					<div><p>carousel</p></div>
-				</div>
-				<div class="h-50 border p-1">
-					<h6 class="coll-header p-1 strong">Collections
-						<span class="float-end small">
-							<a class="linkylite" href="{% url 'collection:collection-gallery' %}">Gallery</a>
-						</span></h6>
-					<div><p>carousel</p></div>
-				</div>
-			</div>
+		<div class="col-sm-3 d-flex flex-column p-0">
+		    <div class="carousel-container p-1 home-carousel">
+		        <div class="border p-1 h-100">
+		            <h6 class="ds-header p-1 strong">Datasets
+								<span class="float-end small">
+									<a class="linkylite" href="">Gallery</a>
+								</span>
+		          </h6>
+			        <div id="datasetsCarousel" class="carousel slide h-100" data-ride="carousel">
+								<div class="carousel-inner">
+								  {% for ds in featured_ds %}
+								     <div class="carousel-item p-2 {% if forloop.first %}active{% endif %}">
+									     <h6><a href="{%  url 'datasets:ds_places' ds.id %}">{{ ds.title }}</a></h6>
+											{# <p>{{ ds.description|truncatechars:100 }}</p>#}
+								     </div>
+								  {% endfor %}
+								</div>
+							  <button class="carousel-control-prev" type="button" data-bs-target="#datasetsCarousel" data-bs-slide="prev">
+							    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+							    <span class="visually-hidden">Previous</span>
+							  </button>
+							  <button class="carousel-control-next" type="button" data-bs-target="#datasetsCarousel" data-bs-slide="next">
+							    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+							    <span class="visually-hidden">Next</span>
+							  </button>
+		                <!-- ... Other carousel elements ... -->
+		            </div>
+		        </div>
+		    </div>
+		    <div class="carousel-container p-1 home-carousel">
+		        <div class="border p-1 h-100">
+		            <!-- ... Your other carousel content here ... -->
+		            <div id="collectionsCarousel" class="carousel slide h-100" data-ride="carousel">
+							<h6 class="coll-header p-1 strong">Collections
+								<span class="float-end small">
+									<a class="linkylite" href="{% url 'collection:collection-gallery' %}">Gallery</a>
+								</span>
+							</h6>
+		          <div id="collectionsCarousel" class="carousel slide" data-ride="carousel">
+{#							  <ol class="carousel-indicators">#}
+{#							    {% for ds in featured_ds %}#}
+{#							      <li data-bs-target="#datasetsCarousel"#}
+{#							          data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active"{% endif %}></li>#}
+{#							    {% endfor %}#}
+{#							  </ol>#}
+		            <div class="carousel-inner">
+		              {% for c in featured_coll %}
+										{#<img src="/media/{{ c.image_file.name }}" class="d-block w-100" alt="{{ c.title }}">#}
+		                <div class="carousel-item p-2 {% if forloop.first %}active{% endif %}">
+												{% with collection_class=c.collection_class %}
+												<h6><a href="
+										        {% if collection_class == 'place' %}
+										            {% url 'collection:place-collection-browse' c.id %}
+										        {% else %}
+										            {% url 'collection:ds-collection-browse' c.id %}
+										        {% endif %}">{{ c.title }}
+										    </a></h6>
+												{% endwith %}
+
+										{# <p>{{ c.description|truncatechars:100 }}</p>#}
+		              </div>
+		              {% endfor %}
+		            </div>
+							  <button class="carousel-control-prev" type="button" data-bs-target="#collectionsCarousel" data-bs-slide="prev">
+							    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+							    <span class="visually-hidden">Previous</span>
+							  </button>
+							  <button class="carousel-control-next" type="button" data-bs-target="#collectionsCarousel" data-bs-slide="next">
+							    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+							    <span class="visually-hidden">Next</span>
+							  </button>
+		          </div>
+		            </div>
+		        </div>
+		    </div>
 		</div>
 	</div> <!-- content_top -->
 
@@ -382,6 +461,15 @@ $(function(){
 		return options;
 	}
 
+
+	  $('#datasetsCarousel').carousel({
+	    interval: 3000 // Adjust the auto-transition interval as needed
+	  });
+
+	  $('#collectionsCarousel').carousel({
+	    interval: 3000 // Adjust the auto-transition interval as needed
+	  });
+
   $("[rel='tooltip']").tooltip();
   // modal for images
   $('.pop').on('click', function() {
@@ -392,7 +480,7 @@ $(function(){
     url = url.replace(ext,'_full'+ext)
     $("#header_text").html(txt)
     $('.imagepreview').attr('src', url);
-    $('#image_modal').modal('show');   
+    $('#image_modal').modal('show');
   });
 
 })
