@@ -104,12 +104,6 @@
 								</span>
 		          </h6>
 			        <div id="datasetsCarousel" class="carousel slide h-100" data-ride="carousel">
-{#								<ol class="carousel-indicators">#}
-{#								  {% for ds in featured_ds %}#}
-{#								    <li data-bs-target="#datasetsCarousel"#}
-{#								        data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active"{% endif %}></li>#}
-{#								  {% endfor %}#}
-{#								</ol>#}
 								<div class="carousel-inner">
 								  {% for ds in featured_ds %}
 								     <div class="carousel-item p-2 {% if forloop.first %}active{% endif %}">
