@@ -45,14 +45,14 @@
 				left: 3px;
 				width :46%;
 				display: none;
-				background-color: #ffffe0;
+				{#background-color: #ffffe0;#}
 				padding-top: 30px;
 				padding-bottom: .5rem;
 		}
 		.categories {font-variant: small-caps; font-size: .9rem; color:#993333;}
 		#adv_checkboxes p {font-size: 0.8rem; margin:0;}
 		#adv_checkboxes label {margin-left:2px;}
-		#input_area {width: 95%}
+		#input_area {width: 95%; font-size: 0.9rem; margin-left:2px;}
 		{##adv_checkboxes {#}
 		{#    display: flex;#}
 		{#    align-items: center;#}
@@ -97,7 +97,7 @@
 		<div class="col-sm-6">
 			<div class="border mb-1 h-75 bg-white" style="position: relative;">
 				<div id="map"></div>
-		    <div id="advanced_search">
+		    <div id="advanced_search" class="bg-light">
 			    <p class="mb-0"><span class="categories ms-1">place categories</span>
             <span class="ms-1 categories">
               <span class="me-1"><a id="check_toggle" href="#">clear all</a></span>
@@ -123,7 +123,7 @@
 		        </div>
             <div id="filter_spatial">
 	            <p class="mb-0"><span class="categories ms-1">spatial</span>
-              <span class="float-end">
+              <span class="small">
               <a id="spatial_help" class="pointer" data-toggle="popover"
                  title="Spatial filter" data-content="" tabindex="0" data-trigger="focus">
               <i class="fas fa-question-circle linky"></i></a></span>
@@ -142,7 +142,7 @@
 				</div>
 				<div class="advanced-search-link px-1 py-0">
 					<a id="a_advanced" href="#">advanced search </a>
-					<a href="{% url 'search-page-old' %}" class="ms-2">old search</a>
+{#					<a href="{% url 'search-page-old' %}" class="ms-2">old search</a>#}
 				</div>
 			</div>
 			<div class=" p-1 border bg-white" style="height: 24%;">
@@ -270,7 +270,7 @@ $(function(){
    });
 
   $.get("/api/area_list", function(data){
-    console.log('initial areas for list',data)
+    {#console.log('initial areas for list',data)#}
     for(var i=0;i<data.length;i++){
       area_objs.push(data[i])
       area_list.push(data[i]['title'])

@@ -33,7 +33,10 @@
 		#map {
 			border: 1px gainsboro solid;
 		}
-
+		#detail_box {
+			background-color: antiquewhite;
+			font-size: 0.9rem;
+		}
 		#search_results {
 			border: 1px gainsboro solid;
 		}
@@ -129,7 +132,7 @@
 			    <div id="country_checkboxes" class="mt-2"></div>
 	      </div>
 	      <!-- Detail box -->
-	      <div id="detail-box" class="p-1 mt-2" style="background-color: palegoldenrod;">
+	      <div id="detail_box" class="p-1 mt-2 hidden">
 	        <h5>Detail</h5>
 	        <div id="detail" class="p-3 bg-light"></div>
 	      </div>
@@ -141,47 +144,11 @@
 				</div>
 				<div id="result_container" class="row p-1">
 					<div id="search_results" class="col-12 bg-light p-2">
-						<h6>Welcome/Results</h6>
+						<h6>Search in WHG</h6>
+						<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
 					</div>
 				</div>
 			</div>
-	  <!-- Main content grid -->
-{#	  <div id="search_content" class="row">#}
-{#	    <!-- Left column for facets -->#}
-{#	    <div id="search_left" class="col-2 p-1" style="background-color: #e6e6e6;">#}
-{#	      <h5>Filter Results</h5>#}
-{#	      <div id="result_facets" class="p-1 bg-light">#}
-{#			    <div id="type_checkboxes"></div>#}
-{#			    <div id="country_checkboxes" class="mt-2"></div>#}
-{#	      </div>#}
-{#	    </div>#}
-{##}
-{#	    <!-- Center column for search results -->#}
-{#	    <div id="search_center" class="col-5 p-1" style="background-color: #cccccc;">#}
-{#				<h5>Results (<span id="result_count"></span>)</h5>#}
-{#	      <div id="search_results" class="p-1 bg-light"></div>#}
-{#	    </div>#}
-{##}
-{#	    <!-- Right column -->#}
-{#	    <div id="search_right" class="col-5 px-0">#}
-{##}
-{#	      <!-- Map -->#}
-{#	      <div id="map-container" style="background-color: #e6e6e6;">#}
-{#	        <div id=map" class="p-3">#}
-{#	          <label>Map</label>#}
-{#	        </div>#}
-{#	      </div>#}
-{##}
-{#	      <!-- Detail box -->#}
-{#	      <div id="detail-box" class="p-1" style="background-color: palegoldenrod;">#}
-{#	        <h5>Detail</h5>#}
-{#	        <div id="detail" class="p-3 bg-light">#}
-{#	        </div>#}
-{#	      </div>#}
-{##}
-{#	    </div>#}
-{#    </div>#}
-
   </div>
 
   <script type="text/javascript">
@@ -263,6 +230,7 @@
         console.log('results (global)', results)
         $("#adv_options").hide()
         $("#result_facets").show()
+        $("#detail_box").show()
         $("#result_count").html(results.length)
         // Clear previous results
         $('#search_results').empty();
