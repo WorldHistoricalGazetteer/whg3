@@ -21,6 +21,7 @@
 {#	<link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />#}
 
 	<style>
+		#banner {width: 100%; height: 15vh; min-height: 60px;}
 		#intro {font-size: .9rem;}
 		.home-button {position: relative; font-family: "Archivo Black";}
 		.ds-header { background-color: #3979B1; color: #fff; }
@@ -74,7 +75,7 @@
 
 {% block content %}
 
-<div class="container mt-1" style="height: calc(100vh - 210px);">
+<div class="container mt-1" style="min-height: calc(100vh - 210px);">
 	<div id="banner" class="banner-bare w-100 my-1 p-2">
 		{% if request.user_agent.is_mobile %}
 			<div class="centered ">
