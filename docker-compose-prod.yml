@@ -9,8 +9,7 @@ networks:
 services:
   web:
     networks:
-      WHG3:
-        ipv4_address: 172.20.0.7
+      - WHG3
     platform: linux/amd64
     build:
       context: .
