@@ -76,8 +76,7 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust  # Allow all connections without password authentication
     ports:
-      - 127.0.0.1:5433:5432 # exposed on host/container
-    #command: -c ssl=on -c ssl_cert_file=/etc/ssl/certs/fullchain.pem -c ssl_key_file=/etc/ssl/private/privkey.pem
+      - 127.0.0.1:5433:5432
 
   redis:
     networks:
