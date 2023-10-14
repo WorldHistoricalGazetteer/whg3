@@ -46,7 +46,8 @@ def defer_review(request, pid, auth, last):
   return HttpResponseRedirect(return_url)
 
 class PlacePortalView(DetailView):
-  template_name = 'places/place_portal.html'
+  # template_name = 'places/place_portal.html'
+  template_name = 'places/place_portal_new.html'
 
   #
   # given index id (whg_id) returned by typeahead/suggest, 

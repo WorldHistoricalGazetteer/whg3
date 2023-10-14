@@ -14,7 +14,9 @@ urlpatterns = [
 
     # will eventually take purl
     path('<int:id>/portal', views.PlacePortalView.as_view(), name='place-portal'),
-    
+
+    path('portal_new/', TemplateView.as_view(template_name='places/place_portal_new.html'), name='portal_new'),
+
     # single db record
     path('<int:id>/detail', views.PlaceDetailView.as_view(), name='place-detail'),
     # single db record for modal
