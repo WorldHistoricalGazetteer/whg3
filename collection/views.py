@@ -264,24 +264,25 @@ def fetch_mapdata_coll(request, *args, **kwargs):
     first_anno = t.place.annos.first()
     sequence_value = first_anno.sequence if first_anno else None
 
-    feature = {
-        "type": "Feature",
-        "geometry": t.place.geoms.all()[0].jsonb,
-        "properties": {
-            "pid": t.place.id,
-            "cid": id_,
-            "title": t.place.title,
-            "ccodes": t.place.ccodes,
-            "relation": t.relation[0],
-            "min": year_from_string(t.start),
-            "max": year_from_string(t.end),
-            "note": t.note,
-            "seq": sequence_value,
-        },
-        "id": i,  # Required for MapLibre conditional styling
-    }
-
-    feature_collection['features'].append(feature)
+    # KG: trying to skip places missing
+    if len(t.place.geoms.all()) > 0:
+      feature = {
+          "type": "Feature",
+          "geometry": t.place.geoms.all()[0].jsonb,
+          "properties": {
+              "pid": t.place.id,
+              "cid": id_,
+              "title": t.place.title,
+              "ccodes": t.place.ccodes,
+              "relation": t.relation[0],
+              "min": year_from_string(t.start),
+              "max": year_from_string(t.end),
+              "note": t.note,
+              "seq": sequence_value,
+          },
+          "id": i,  # Required for MapLibre conditional styling
+      }
+      feature_collection['features'].append(feature)
 
   return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii':False,'indent':2})
 
