@@ -1,0 +1,130 @@
+{% extends "main/base.html" %}
+
+{% load static %}
+{% load dataset_extras %}
+{% load leaflet_tags %}
+{% block title %}<title>Place::{{ place.title }}</title>{% endblock %}
+{% block extra_head %}
+  <script src="{% static 'js/aliases.js' %}"></script>
+{#  <script src="{% static 'js/leaflet.ajax.min.js' %}"></script>#}
+{#  <script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>#}
+
+  <script src = "https://d3js.org/d3.v4.min.js"></script>
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.css' rel='stylesheet' />
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js'></script>
+
+<style>
+        #webmap {
+            background-color: palegreen;
+		        height: 80vh;
+        }
+        #info {
+            background-color: #a8dadc;
+            border: 1px solid #aaa;
+            height: 98%;
+        }
+        #sources, #source_detail, #graph_viz {
+            padding: 10px;
+            border: 1px solid #aaa;
+        }
+        #map_controls {
+            background-color: #a8dadc;
+            border: 1px solid #aaa;
+		        height: 100%;
+        }
+        .middle {
+		        left: -7px;
+				    right: 15px;
+		        background-color: gainsboro;
+		        height: 50px;
+		        padding: .2rem;
+        }
+				#time_histogram {top: 6px;}
+        #time_slider {bottom: 6px; }
+
+				.info-box {margin-bottom: .2rem;}
+</style>
+{% endblock %}
+{% block content %}
+    <div class="container mt-4">
+
+<div id="webmap" class="position-relative" style="height: 80vh;">
+
+    <!-- Bootstrap row to structure the overlays -->
+    <div class="row h-100">
+        <!-- Left column (info) -->
+        <div id="left" class="col-4 h-100 d-flex flex-column">
+	        <div id="info" class="m-2 p-1">
+            <div id="sources" class="bg-light info-box">Sources</div>
+            <div id="source_detail" class="bg-light info-box">Source Detail</div>
+            <div id="graph_viz" class="bg-light info-box">Graph Visualization</div>
+	        </div>
+        </div>
+
+        <!-- Middle column (time_slider and time_histogram) -->
+        <div id="middle" class="col-6 position-relative py-2">
+            <div id="time_histogram" class="position-absolute middle">Time Histogram</div>
+            <div id="time_slider" class="position-absolute middle">Time Slider</div>
+        </div>
+
+        <!-- Right column (map_controls) -->
+        <div id="right" class="col-2 h-100 d-flex flex-column p-2">
+            <div id="map_controls" class="mx-2 p-1">
+	            <p>Map Controls</p>
+	            <div id="control1" class="bg-light info-box">control 1</div>
+	            <div id="control2" class="bg-light info-box">control 2</div>
+	            <div id="control3" class="bg-light info-box">control3</div>
+            </div>
+        </div>
+
+    </div> <!-- End of Bootstrap row -->
+
+</div> <!-- End of webmap div -->
+
+        <!-- Main div for the web map -->
+{#        <div id="webmap" class="position-relative p-2">#}
+{##}
+{#            <!-- Info div on the left -->#}
+{#            <div id="info" class="position-absolute d-flex flex-column">#}
+{#                <div id="sources">#}
+{#                    <!-- Content for sources -->#}
+{#                    <div>Source Content</div>#}
+{#                </div>#}
+{#                <div id="source_detail">#}
+{#                    <!-- Content for source detail -->#}
+{#                    <div>Source Detail Content</div>#}
+{#                </div>#}
+{#                <div id="graph_viz">#}
+{#                    <!-- Content for graph visualization -->#}
+{#                    <div>Graph Visualization Content</div>#}
+{#                </div>#}
+{#            </div>#}
+{##}
+{#            <!-- Map controls div on the right -->#}
+{#            <div id="map_controls" class="position-absolute">#}
+{#                <!-- TBD sub-divs and content for map controls -->#}
+{#                <div>Map Controls Content</div>#}
+{#            </div>#}
+{##}
+{#            <!-- Time histogram div at the top -->#}
+{#            <div id="time_histogram">#}
+{#                <!-- Content for time histogram -->#}
+{#                <div>Time Histogram Content</div>#}
+{#            </div>#}
+{##}
+{#            <!-- Time slider div at the bottom -->#}
+{#            <div id="time_slider" >#}
+{#                <!-- Content for time slider -->#}
+{#                <div>Time Slider Content</div>#}
+{#            </div>#}
+{##}
+{##}
+{#        </div> <!-- End of webmap div -->#}
+
+    </div> <!-- End of container -->
+	<script type="text/javascript">
+
+	</script>
+	<script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
+{% endblock %}
+
