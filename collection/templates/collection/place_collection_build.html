@@ -371,7 +371,7 @@
 									      <i>pid: (<a class="coll-place" data-pid={{ cp.p.id }} href="#" >{{ cp.p.id }}</a>)</i>
 												{# huge kluge: tooltip breaks for single place!? #}
 								        {% if seq_places|length > 1 %}
-								        <span class="float-end me-3"> <span class="seq-visible">id: {{ p.id }}; seq:{{ p.seq }}</span>
+								        <span class="float-end me-3"> <span class="seq-visible">id: {{ cp.p.id }}; seq:{{ cp.seq }}</span>
 									        <a class="mark-place" href="#" title="Remove from collection" rel="tooltip"
                                 data-pid="{{ cp.p.id }}" data-col="{{ object.id }}">
 										        <i class="fas fa-minus-square" style="color:#ff8080"></i></a>
@@ -450,59 +450,6 @@
          {% endif %}
 	      </div> {# d-flex #}
 	    </div> {# coll_builder #}
-			{% comment %}
-		  <div id="coll_collaborators" class="tab-pane fade h-100" style="height: auto; position:relative;">
-	      <form id="sharing_form" method="POST" action="{% url 'collection:collab-add'%}"
-{#	      <form id="sharing_form" method="POST" action="{% url 'collection:collab-add' cid=object.id %}"#}
-	            enctype="multipart/form-data">
-	      {% csrf_token %}
-	      <input type="hidden" name="collection" value='{{ object.id }}' />
-	      <div class="sharing-box my-3 w-50">
-	        <div class="sharing-header mb-0 ps-2 strong">Collaborators</div>
-	        <div class="smallish ps-2">
-	          <p class="">Collaborators are registered WHG users, assigned per collection.</p>
-	          <p><sr>Members</sr> can add, remove, and annotate places, and add/remove links.<br/>
-		          <sr>Co-owners</sr> can edit collection metadata, submit it for review, and delete it.
-	          </p>
-	        </div>
-	        {% if is_owner %}
-	          <div class="ms-2 my-2">
-	            <div class="form-check form-check-inline sharing-input">
-	              <span class="input-group">
-	                <input type="text" class="form-control input-sm" name="email" placeholder="Enter user email">
-	                <div class="input-group-append">
-	                  <button class="btn btn-sm btn-outline-secondary" type="submit">Add</button>
-	                </div>
-	              </span>
-	            </div>
-	            <div class="form-check form-check-inline">
-	              <input class="form-check-input hover" type="radio" name="role" id="r_place" value="member" checked="checked">
-	              <label class="form-check-label" for="r_place">Member</label>
-	            </div>
-	            <div class="form-check form-check-inline">
-	              <input class="form-check-input hover" type="radio" name="role" id="r_trace" value="owner">
-	              <label class="form-check-label" for="r_trace">Co-owner</label>
-	            </div>
-	          </div>
-	        {% endif %}
-	        <ul id="collabs_list">
-	          {% for c in collabs %}
-	            <li>
-{#	              {{ c.name|safe }}  ({{ c.email }})#}
-		            {{ c|safe }}
-		            {% if is_owner or whgteam %}
-	                <span class="float-end me-2">
-	                <a href="{% url 'collection:collab-delete' uid=c.id cid=object.id %}">
-	                  <i class="fas fa-times-circle linky"></i></a>
-	                </span>
-		            {% endif %}
-	            </li>
-	          {% endfor %}
-	        </ul>
-	      </div>
-	      </form>
-			</div>
-	    {% endcomment %}
 	  </div> {# tab_content #}
     <div class="selector py-3"><div id="helpme"></div></div>
   </div> {# h-100 #}
