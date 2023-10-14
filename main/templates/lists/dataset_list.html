@@ -10,7 +10,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
       <th>name <i class="fa fa-sort ms-1" data-id=1 ref=asc></i></th>
       <th>label <i class="fa fa-sort ms-1" data-id=2 ref=asc></i></th>
       <th>created <i class="fa fa-sort ms-1" data-id=3 title="UTC"></i></th>
-      <th>format</th>
+{#      <th>format</th>#}
       <th># rows</th>
       <th>status <i class="fa fa-sort ms-1" data-id=6 ref=asc></i></th>
       {% if beta_or_better %}
@@ -33,7 +33,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
               {% else %}{{ d.label }}{% endif %}
           </td>
           <td class="small">{{ d.create_date|date:"Y-m-d, H:i" }}</td>
-          <td>{{ d.format }}</td>
+{#          <td>{{ d.ds_format }}</td>#}
           <td>{{ d.numrows }}</td>
           <td>{{ d.ds_status }}</td>
           <!--{ if user.is_superuser %}-->
