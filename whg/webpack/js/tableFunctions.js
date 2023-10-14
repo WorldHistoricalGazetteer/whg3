@@ -312,7 +312,7 @@ export function initialiseTable() {
 			"<'col-sm-5'>>" +
 			"<'row'<'col-sm-12'tr>>" +
 			"<'row small'<'col-sm-12'p>>",
-		select: true,
+		// select: true,
 		columns: columns,
 		columnDefs: columnDefs,
 		order: order,
