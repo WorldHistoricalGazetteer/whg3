@@ -255,11 +255,12 @@
             const count = parseInt(result.linkcount)+1
             const html = `
                 <div class="result">
-                    <h5>${result.title} (${count} in set)
+                    <p>${result.title} (${count} in set)
                       <span class="float-end">
-                          <a href="JavaScript:alert('not live in dev')">portal ${result.whg_id}</a>
+                          <a href="{% url 'places:portal_new' %}">portal ${result.whg_id}</a>
+                          {#<a href="JavaScript:alert('not live in dev')">portal ${result.whg_id}</a>#}
                       </span>
-										</h5>
+										</p>
                     {#<p>Country Codes: ${result.ccodes.join(', ')}</p>#}
                     {#<p>Feature Classes: ${result.fclasses.join(', ')}</p>#}
                     {#<p>Types: ${result.types.join(', ')}</p>#}
