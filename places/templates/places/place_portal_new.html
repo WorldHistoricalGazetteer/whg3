@@ -15,7 +15,7 @@
 
 <style>
         #webmap {
-            background-color: palegreen;
+            background-color: #eaffea;
 		        height: 80vh;
         }
         #info {
@@ -43,6 +43,12 @@
         #time_slider {bottom: 6px; }
 
 				.info-box {margin-bottom: .2rem;}
+				.source-box {
+						background-color: white;
+						border: 1px gainsboro solid;
+						margin: .1rem;
+						padding: .1rem;
+				}
 </style>
 {% endblock %}
 {% block content %}
@@ -55,9 +61,18 @@
         <!-- Left column (info) -->
         <div id="left" class="col-4 h-100 d-flex flex-column">
 	        <div id="info" class="m-2 p-1">
-            <div id="sources" class="bg-light info-box">Sources</div>
-            <div id="source_detail" class="bg-light info-box">Source Detail</div>
-            <div id="graph_viz" class="bg-light info-box">Graph Visualization</div>
+            <div id="sources" class="bg-light info-box">
+	            <p class="mb-0 strong-red">Sources</p>
+	            <div class="source-box">attestation #1</div>
+	            <div class="source-box">attestation #2</div>
+	            <div class="source-box">attestation #3</div>
+            </div>
+            <div id="source_detail" class="bg-light info-box">
+	            {source detail}
+            </div>
+            <div id="graph_viz" class="bg-light info-box">
+	            {graph visualization}
+            </div>
 	        </div>
         </div>
 
