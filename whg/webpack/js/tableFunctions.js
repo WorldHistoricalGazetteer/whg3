@@ -103,6 +103,7 @@ function toggleMapLayers(val) {
 	});
 }
 
+let highlightFirst = true;
 export function scrollToRowByProperty(propertyName, value) {
     // Search for the row within the sorted and filtered view
     var pageInfo = table.page.info();
@@ -127,9 +128,10 @@ export function scrollToRowByProperty(propertyName, value) {
 
         // Check if the row is on the current page
         if (pageInfo.page !== pageNumber) {
+			highlightFirst = false;
             table.page(pageNumber).draw('page');
         }
-
+		highlightFirst = true;
         selectedRow.scrollIntoView();
         $(selectedRow).trigger('click');
     }
@@ -351,7 +353,7 @@ export function initialiseTable() {
 				// make sure selection_status is visible
 				$("#selection_status").show()
 			}
-			highlightFirstRow();
+			if (highlightFirst) highlightFirstRow();
 			if (!!mapSequencer) {
 				mapSequencer.updateButtons();
 			}
