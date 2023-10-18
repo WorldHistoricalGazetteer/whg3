@@ -38,7 +38,8 @@
                     <p>{{ object.description|safe }}</p>
                 </div>
                 <div class="col-sm-4" style="position: relative;"> {% if object.image_file %} <a href="#" class="pop">
-                        <img id="active_img" class="img-responsive thumbnail float-end" src="/media/{{ object.image_file.name }}" width="220px" />
+                        <img id="active_img" class="img-responsive thumbnail float-end"
+                             src="/media/{{ object.image_file.name }}" width="220px" />
                     </a> {% else %} <span>
                         <i>image here</i>
                     </span> {% endif %} </div>
@@ -86,7 +87,8 @@
             </div>
             <div class="mt-3" style="border-top: 1px solid gainsboro;">
                 <i class="fas fa-download linky"></i>
-                <a href="" id="a_download_modal" class="a-dl" data-collid="{{ object.id }}" data-toggle="modal" data-target="#downloadModal" title="download options"> download options</a>
+                <a href="" id="a_download_modal" class="a-dl" data-collid="{{ object.id }}"
+                   data-toggle="modal" data-target="#downloadModal" title="download options"> download options</a>
             </div>
             <div class="float-end">
                 <label for="checkbox" class="small">Close intro by default</label>
@@ -115,12 +117,15 @@
             <div class="modal-content modal-85">
                 <div class="modal-header">
                     <h5 class="modal-title" id="downloadModalLabel">
-                        <i class="fas fa-download linky"></i> Download options for the <span class="text-danger">{{ object.title }}</span> collection
+                        <i class="fas fa-download linky"></i>
+	                    Download options for the <span class="text-danger">{{ object.title }}</span> collection
                     </h5>
                 </div>
                 <div class="modal-body container">
                     <div class="dl-blurb">
-                        <p class="mb-1">Data uploaded as Linked Places format (LPF) are available only in that format. Data uploaded as LP-TSV (delimited text files or spreadsheets) can be downloaded as either <sr>LPF</sr> or <sr>LP-TSV</sr>.
+                        <p class="mb-1">Data uploaded as Linked Places format (LPF) are available only in that format.
+	                        Data uploaded as LP-TSV (delimited text files or spreadsheets) can be downloaded as
+	                        either <sr>LPF</sr> or <sr>LP-TSV</sr>.
                             <!--Downloads totaling more than {n} records will be queued, and a notification email sent when completed.-->
                         </p>
                         <div id="dl_licensing">
