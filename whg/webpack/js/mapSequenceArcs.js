@@ -1,21 +1,31 @@
 // mapSequenceArcs.js
 
 import { distance, lineString, bezierSpline } from './6.5.0_turf.min.js';
+import { representativePoint } from './utilities';
 
 export default class SequenceArcs {
-	constructor(map, dataset, { deflectionValue = 1, lineColor = '#888', lineOpacity = .8, lineWidth = 1, dashLength = 8, animationRate = 1 } = {}) { // animationRate = steps per second
+	constructor(map, dataset, {
+		deflectionValue = 1,
+		lineColor = '#888',
+		lineOpacity = .8,
+		lineWidth = 1,
+		dashLength = 8,
+		animationRate = 1
+	} = {}) { // animationRate = steps per second
 		this.map = map;
-		this.dataset = dataset;
+		this.dataset = this.convertToRepresentativePoints(dataset);
 		this.arcSourceId = 'sequence-arcs-source';
 		this.arcLayerId = 'sequence-arcs-layer';
-		window.additionalLayers.push(['sequence-arcs-source','sequence-arcs-layer']);
+		window.additionalLayers.push(['sequence-arcs-source', 'sequence-arcs-layer']);
 		this.deflectionValue = deflectionValue; // Defines curvature of arc (displacement of arc's centre-point is proportional to its length)
 		this.lineColor = lineColor;
 		this.lineOpacity = lineOpacity;
 		this.lineWidth = lineWidth;
 		this.dashLength = dashLength; // Must be > 0
 		this.animationInterval = animationRate > 0 ? 1000 / (animationRate * dashLength * 1.5) : null; // animationRate is number of full dash-cycles per second
-		this.dashArraySequence = animationRate > 0 ? this.generateDashArraySequence() : [[1, 0]]; // Draw solid line if no animation
+		this.dashArraySequence = animationRate > 0 ? this.generateDashArraySequence() : [
+			[1, 0]
+		]; // Draw solid line if no animation
 		this.createArcs();
 		this.createArcLayer();
 		if (animationRate > 0) this.animateDashedLine();
@@ -38,7 +48,7 @@ export default class SequenceArcs {
 			return [controlX, controlY];
 		}
 
-		const pointSourceData = this.dataset;
+		const pointSourceData = this.dataset; // dataset has been converted to representative points by class constructor
 
 		if (pointSourceData && pointSourceData.type === 'FeatureCollection') {
 			const sortedData = pointSourceData.features.sort((a, b) => {
@@ -69,7 +79,7 @@ export default class SequenceArcs {
 			}
 
 			this.arcFeatures = arcFeatures;
-			
+
 			this.map.addSource(this.arcSourceId, {
 				type: 'geojson',
 				data: {
@@ -77,7 +87,7 @@ export default class SequenceArcs {
 					features: this.arcFeatures
 				},
 			})
-			
+
 		}
 	}
 
@@ -113,21 +123,40 @@ export default class SequenceArcs {
 
 	animateDashedLine() {
 		let step = 0;
-    	let lastTimestamp = 0;
+		let lastTimestamp = 0;
 		const animateDashArray = (timestamp) => {
-        	const elapsedTime = timestamp - lastTimestamp;
-	        if (elapsedTime >= this.animationInterval) {
-	            lastTimestamp = timestamp;
-	            const newStep = (step + 1) % this.dashArraySequence.length;
-	            this.map.setPaintProperty(
-	                this.arcLayerId,
-	                'line-dasharray',
-	                this.dashArraySequence[newStep]
-	            );
-	            step = newStep;
-	        }
+			const elapsedTime = timestamp - lastTimestamp;
+			if (elapsedTime >= this.animationInterval) {
+				lastTimestamp = timestamp;
+				const newStep = (step + 1) % this.dashArraySequence.length;
+				this.map.setPaintProperty(
+					this.arcLayerId,
+					'line-dasharray',
+					this.dashArraySequence[newStep]
+				);
+				step = newStep;
+			}
 			requestAnimationFrame(animateDashArray);
 		}
 		requestAnimationFrame(animateDashArray);
+	}
+
+	convertToRepresentativePoints(dataset) {
+		if (dataset && dataset.type === 'FeatureCollection') {
+			const convertedFeatures = dataset.features.map((feature) => {
+				const representative = representativePoint(feature.geometry);
+				return {
+					type: 'Feature',
+					properties: feature.properties,
+					geometry: representative,
+				};
+			});
+			return {
+				type: 'FeatureCollection',
+				features: convertedFeatures,
+			};
+		}
+		console.log('Failed to convert dataset to representative points.');
+		return dataset; // If the dataset is not a FeatureCollection, return it as is
 	}
 }

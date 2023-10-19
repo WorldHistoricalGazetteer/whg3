@@ -1,6 +1,62 @@
-import { bbox } from './6.5.0_turf.min.js'
+import { bbox, midpoint, centroid, getType, area } from './6.5.0_turf.min.js'
 import ClipboardJS from '/webpack/node_modules/clipboard';
 import { lch } from './chroma.min.js'
+
+export function largestSubGeometry(geometry) {
+	if (getType(geometry) === 'MultiPoint' || getType(geometry) === 'MultiLineString' || getType(geometry) === 'MultiPolygon') {
+		if (geometry.coordinates && geometry.coordinates.length > 0) {
+			// Initialize variables to keep track of the largest bounding box area and its corresponding geometry
+			let largestArea = 0;
+			let largestGeometry = null;
+
+			for (const subGeometry of geometry.coordinates) {
+				const subGeometryType = getType({
+					type: getType(geometry).replace('Multi', ''),
+					coordinates: subGeometry
+				});
+				const subGeometryArea = area({
+					type: subGeometryType,
+					coordinates: subGeometry
+				});
+
+				if (subGeometryArea > largestArea) {
+					largestArea = subGeometryArea;
+					largestGeometry = geometry; // Preserve any other attributes
+					largestGeometry.coordinates = subGeometry;
+					largestGeometry.type = subGeometryType;
+				}
+			}
+
+			if (largestGeometry) {
+				return largestGeometry;
+			}
+		}
+	}
+	return null; // If the input is not a Multi-geometry or if it's empty, return null.
+}
+
+export function representativePoint(geometry) {
+	if (getType(geometry) === 'Point') {
+		return geometry;
+	} else if (getType(geometry) === 'LineString') {
+		const midPoint = midpoint(geometry);
+		geometry.type = 'Point';
+		geometry.coordinates = midPoint.geometry.coordinates;
+		return geometry;
+	} else if (getType(geometry) === 'Polygon') {
+		const centerPoint = centroid(geometry);
+		geometry.type = 'Point';
+		geometry.coordinates = centerPoint.geometry.coordinates;
+		return geometry;
+	} else if (getType(geometry) === 'MultiPoint' || getType(geometry) === 'MultiLineString' || getType(geometry) === 'MultiPolygon') {
+		// For Multi-geometries, use the preceding rules for the largest sub-geometry.
+		if (geometry.coordinates && geometry.coordinates.length > 0) {
+			return representativePoint(largestSubGeometry(geometry));
+		}
+	}
+	console.log('Failed to generate representative point:', geometry);
+	return null; // If the geometry type is not recognized or if it's empty, return null.
+}
 
 export function equidistantLCHColors(numColors) {
 	const colors = [];
@@ -34,20 +90,20 @@ export function arrayColors(strings) {
 export function colorTable(arrayColors, target) {
 	const colorKeyTable = $('<table>').addClass('color-key-table');
 	const tableBody = $('<tbody>');
-	
+
 	for (let i = 0; i < arrayColors.length; i += 2) {
-	  const label = i == arrayColors.length - 2 ? '<i>no relation</i>' : arrayColors[i];
-	  const color = arrayColors[i + 1];
-	  const row = $('<tr>');
-	  const colorCell = $('<td>').addClass('color-swatch');
-	  const colorSwatch = $('<div>').addClass('color-swatch');
-	  colorSwatch.css('background-color', color);
-	  colorCell.append(colorSwatch);
-	  const labelCell = $('<td>').html(label);
-	  row.append(colorCell, labelCell);
-	  tableBody.append(row);
+		const label = i == arrayColors.length - 2 ? '<i>no relation</i>' : arrayColors[i];
+		const color = arrayColors[i + 1];
+		const row = $('<tr>');
+		const colorCell = $('<td>').addClass('color-swatch');
+		const colorSwatch = $('<div>').addClass('color-swatch');
+		colorSwatch.css('background-color', color);
+		colorCell.append(colorSwatch);
+		const labelCell = $('<td>').html(label);
+		row.append(colorCell, labelCell);
+		tableBody.append(row);
 	}
-	
+
 	colorKeyTable.append(tableBody);
 	$(target).append(colorKeyTable);
 }
@@ -97,7 +153,7 @@ export function startSpinner(spinnerId = 'dataset_content', scale = .5) {
 		scale: scale,
 		color: '#004080'
 	}).spin();
-	$(( spinnerId.startsWith('.') ? '' : '#' ) + spinnerId).append(newSpinner.el);
+	$((spinnerId.startsWith('.') ? '' : '#') + spinnerId).append(newSpinner.el);
 	return newSpinner;
 }
 
@@ -110,38 +166,37 @@ export function initUtils(mappy) {
 		text: function(trigger) {
 			let target = trigger.getAttribute('data-clipboard-target');
 			if (target == null) {
-	        	return trigger.getAttribute('aria-label');
+				return trigger.getAttribute('aria-label');
+			} else {
+				return $(target).text();
 			}
-			else {
-	        	return $(target).text();
-			}
-	    },
-	    container: document.getElementById('downloadModal') || document.body
+		},
+		container: document.getElementById('downloadModal') || document.body
 	}).on('success', function(e) {
 		console.log('clipped')
 		e.clearSelection();
-	    var $trigger = $(e.trigger);
-	    $trigger.tooltip('dispose').attr('title', 'Copied!').tooltip();
-	    $trigger.tooltip('show');
-	    setTimeout(function() {
-	        $trigger.tooltip('hide');
-	    }, 2000);
+		var $trigger = $(e.trigger);
+		$trigger.tooltip('dispose').attr('title', 'Copied!').tooltip();
+		$trigger.tooltip('show');
+		setTimeout(function() {
+			$trigger.tooltip('hide');
+		}, 2000);
 	});
-	
+
 	// image modal
 	$("body").on("click", ".pop, #anno_img", function() {
 		let image = $(this).is('img') ? $(this) : $(this).find('img:first');
-	    let url = image.attr('src')
-        let txt = image.attr('alt')
-        // let re = /(.png|.jpg|.jpeg|.gif|.tif)/g // TODO: Remove if not required
-        console.log('url', url)
-        $("#header_text").html(txt)
-        $('.imagepreview').attr('src', url);
-	    $('#imageModal').modal('show');
+		let url = image.attr('src')
+		let txt = image.attr('alt')
+		// let re = /(.png|.jpg|.jpeg|.gif|.tif)/g // TODO: Remove if not required
+		console.log('url', url)
+		$("#header_text").html(txt)
+		$('.imagepreview').attr('src', url);
+		$('#imageModal').modal('show');
 	});
 	// TODO: Figure out why the modal close button doesn't work without this additional code:
 	$('#imageModal button.close').click(function() {
-	  $('#imageModal').modal('hide');
+		$('#imageModal').modal('hide');
 	});
 
 
@@ -215,8 +270,8 @@ export function minmaxer(timespans) {
 export function get_ds_list_stats(allFeatures) {
 	let min = Infinity;
 	let max = -Infinity;
-    let seqMin = Infinity;
-    let seqMax = -Infinity;
+	let seqMin = Infinity;
+	let seqMax = -Infinity;
 	for (let i = 0; i < allFeatures.length; i++) {
 		const featureMin = allFeatures[i].properties.min;
 		const featureMax = allFeatures[i].properties.max;
@@ -225,10 +280,10 @@ export function get_ds_list_stats(allFeatures) {
 			min = Math.min(min, featureMin);
 			max = Math.max(max, featureMax);
 		}
-        if (!isNaN(seqValue)) {
-            seqMin = Math.min(seqMin, seqValue);
-            seqMax = Math.max(seqMax, seqValue);
-        }
+		if (!isNaN(seqValue)) {
+			seqMin = Math.min(seqMin, seqValue);
+			seqMax = Math.max(seqMax, seqValue);
+		}
 	}
 	if (!isFinite(min)) min = -3000;
 	if (!isFinite(max)) max = 2000;
@@ -241,8 +296,8 @@ export function get_ds_list_stats(allFeatures) {
 	return {
 		min: min,
 		max: max,
-        seqmin: seqMin,
-        seqmax: seqMax,
+		seqmin: seqMin,
+		seqmax: seqMax,
 		extent: bbox(geojson)
 	}
 }
