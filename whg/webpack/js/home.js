@@ -330,7 +330,7 @@ $(function() {
 
 })
 
-homeModal = document.getElementById('homeModal')
+let homeModal = document.getElementById('homeModal')
 homeModal.addEventListener('show.bs.modal', function (event) {
   // Button that triggered the modal
   var button = event.relatedTarget
