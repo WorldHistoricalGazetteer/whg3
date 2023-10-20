@@ -1,6 +1,6 @@
 ## World Historical Gazetteer v3.0a
 
-This is the repository for the Version 3.0 of the World Historical Gazetteer (WHG) web platform and API, in active development. A pre-release alpha is anticipated for December, 2023. Version 2.1 of WHG is live at https://whgazetteer.org, and its repository is [here]().
+This is the repository for the Version 3.0a (alpha) of the World Historical Gazetteer (WHG) web platform and API, in active development. A pre-release alpha is anticipated for December, 2023. Version 2.1 of WHG is live at https://whgazetteer.org, and its repository is [here]().
 
 ### Contributing to software and data development
 
