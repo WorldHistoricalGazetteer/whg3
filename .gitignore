@@ -79,5 +79,5 @@ package-lock.json
 
 # Ignore Webpack generated files
 whg/static/webpack/*.bundle.*
-#whg/static/webpack/*.svg
+whg/static/webpack/*.svg
 package-lock.json
