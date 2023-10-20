@@ -1,4 +1,4 @@
-import { envelope } from './6.5.0_turf.min.js';
+import { bbox } from './6.5.0_turf.min.js';
 import { getPlace } from './getPlace';
 import { startSpinner } from './utilities';
 import { updatePadding, recenterMap/*, listSourcesAndLayers*/ } from './mapFunctions';
@@ -161,7 +161,7 @@ export function highlightFeature(ds_pid, features, mappy) {
 				}
 				recenterMap('lazy');
 			} else {
-				window.mapBounds = envelope(geom).bbox;
+				window.mapBounds = bbox(geom);
 				recenterMap('lazy');
 			}
 			//console.log(`Highlight now on ${window.highlightedFeatureIndex}.`);
