@@ -3,8 +3,8 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import JSONField
 from django.contrib.gis.db import models as geomodels
-from django.contrib.gis.db.models import Collect, Extent
-from django.contrib.gis.geos import GeometryCollection, Polygon
+from django.contrib.gis.db.models import Collect, Extent, Aggregate
+from django.contrib.gis.geos import GeometryCollection, Polygon, GEOSGeometry
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 User = get_user_model()
@@ -84,6 +84,31 @@ class Dataset(models.Model):
     # print(feat)
     return feat
     # return feat if dsgeoms.count() > 0 else None
+
+  @property
+  def convex_hull(self):
+    dsgeoms = PlaceGeom.objects.filter(place__dataset=self.label)
+    geometry = None
+    if dsgeoms.count() > 0:
+        geom_list = [GEOSGeometry(dsgeom.geom.wkt) for dsgeom in dsgeoms]
+        combined_geom = geom_list[0].convex_hull
+        
+        for geom in geom_list[1:]: # Union of convex hulls is much faster than union of full geometries
+            combined_geom = combined_geom.union(geom.convex_hull)
+            
+        geometry = json.loads(combined_geom.convex_hull.geojson)
+
+    return Feature(properties={
+        "title": self.title,
+        "image_file": self.image_file.url if self.image_file else None,
+        "description": self.description,
+        "creator": self.creator,
+        "type": "dataset", 
+        "featured": self.featured,
+        "id": self.id, 
+        "webpage": self.webpage,
+        "url": reverse('datasets:ds_places', args=[self.id]),
+    }, geometry=geometry)
 
   @property
   def collaborators(self):
