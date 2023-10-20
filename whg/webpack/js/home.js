@@ -299,12 +299,12 @@ $(function() {
 		// test
 		//{#options = {"fclasses":"P"}#}
 		// gather and return option values from the UI
-		fclasses = [];
+		let fclasses = [];
 		$('#adv_checkboxes input:checked').each(function() {
 			fclasses.push($(this).val());
 		});
 		console.log('checked', fclasses)
-		options = {
+		let options = {
 			"qstr": $('#search_map input').val(),
 			"idx": "whg",
 			"fclasses": fclasses.join(','),
@@ -318,14 +318,41 @@ $(function() {
 	$("[rel='tooltip']").tooltip();
 	// modal for images
 	$('.pop').on('click', function() {
-		url = $(this).find('img').attr('src')
-		txt = $(this).find('img').attr('alt')
-		re = /(.png|.jpg|.jpeg|.gif|.tif)/g
-		ext = url.match(re)[0]
+		let url = $(this).find('img').attr('src')
+		let txt = $(this).find('img').attr('alt')
+		let re = /(.png|.jpg|.jpeg|.gif|.tif)/g
+		let ext = url.match(re)[0]
 		url = url.replace(ext, '_full' + ext)
 		$("#header_text").html(txt)
 		$('.imagepreview').attr('src', url);
 		$('#image_modal').modal('show');
 	});
 
+})
+
+homeModal = document.getElementById('homeModal')
+homeModal.addEventListener('show.bs.modal', function (event) {
+  // Button that triggered the modal
+  var button = event.relatedTarget
+  // Extract info from data-bs-* attributes
+  var title = button.getAttribute('data-bs-title')
+	var page = button.getAttribute('data-bs-page')
+	console.log('button_id', page)
+
+  // update the modal title
+  var modalTitle = homeModal.querySelector('.modal-title')
+  modalTitle.textContent = title
+
+	// get modal body as django template
+	$.ajax({
+    url: homeModalURL, // Passed as a variable in Django template
+		data: {'page': page,},
+    type: 'POST',
+    success: function(response) {
+        $('.modal-body').html(response);
+    },
+    error: function(xhr, status, error) {
+	    console.log('status, error', status, error)
+	  }
+	});
 })

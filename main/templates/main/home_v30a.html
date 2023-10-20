@@ -50,12 +50,12 @@
 				<div id="map"></div>
 		    <div id="advanced_search" class="bg-light">
 			    <p class="mb-0"><span class="categories ms-1">place categories</span>
-            <span class="ms-1 categories">
-              <span class="me-1"><a id="check_toggle" href="#">clear all</a></span>
-              <a id="filter_help" class="pointer" data-toggle="popover" title="Place categories"
-                 data-content="" tabindex="0" data-trigger="focus"><i class="fas fa-question-circle linky"></i></a>
-            </span>
-            </p>
+		            <span class="ms-1 categories">
+		              <span class="me-1"><a id="check_toggle" href="#">clear all</a></span>
+		              <a id="filter_help" class="pointer" data-toggle="popover" title="Place categories"
+		                 data-content="" tabindex="0" data-trigger="focus"><i class="fas fa-question-circle linky"></i></a>
+		            </span>
+	            </p>
 			      <div id="adv_checkboxes" class="small mt-2 ps-1">
 			        <p><input type="checkbox" id="cb_a" checked="checked" value="A"/>
 				        <span for="cb_a"> Administrative entities (A)</span></p>
@@ -73,16 +73,16 @@
 				        <span for="cb_h"> Water bodies (H)</span></p>
 		        </div>
             <div id="filter_spatial">
-	            <p class="mb-0"><span class="categories ms-1">spatial</span>
-              <span class="small">
-              <a id="spatial_help" class="pointer" data-toggle="popover"
-                 title="Spatial filter" data-content="" tabindex="0" data-trigger="focus">
-              <i class="fas fa-question-circle linky"></i></a></span>
-            </p>
-              <input id="input_area" type="text" size="25" placeholder="Region, country, study area" />
-              <input type="hidden" id="boundsobj" />
+				<p class="mb-0"><span class="categories ms-1">spatial</span>
+	              <span class="small">
+	              <a id="spatial_help" class="pointer" data-toggle="popover"
+	                 title="Spatial filter" data-content="" tabindex="0" data-trigger="focus">
+	              <i class="fas fa-question-circle linky"></i></a></span>
+	            </p>
+				<input id="input_area" type="text" size="25" placeholder="Region, country, study area" />
+	            <input type="hidden" id="boundsobj" />
             </div>
-			    {#		        <button id="close-advanced_search" class="btn btn-sm btn-secondary">Close</button>#}
+			    {#<button id="close-advanced_search" class="btn btn-sm btn-secondary">Close</button>#}
 		    </div>
 				<div id="search_map" class="input-group input-group-sm mb-3 shadow-sm">
 				  <input type="text" class="form-control" placeholder="Enter place name"
@@ -99,7 +99,7 @@
 			<div class=" p-1 border bg-white" style="height: 24%;">
 				<p>Praesent ac vehicula nulla. Sed sit amet lacinia arcu.
 					Praesent suscipit a justo non ornare. Nulla a ligula commodo, laoreet risus a, cursus neque.
-					</p>
+				</p>
 			</div>
 		</div>
 		<div id="carousel-outer-container" class="col-sm-3 d-flex flex-column p-0">
@@ -177,37 +177,6 @@
 	</div>
 </div>
 
-<script type="text/javascript">
-
-homeModal = document.getElementById('homeModal')
-homeModal.addEventListener('show.bs.modal', function (event) {
-  // Button that triggered the modal
-  var button = event.relatedTarget
-  // Extract info from data-bs-* attributes
-  var title = button.getAttribute('data-bs-title')
-	var page = button.getAttribute('data-bs-page')
-	console.log('button_id', page)
-
-  // update the modal title
-  var modalTitle = homeModal.querySelector('.modal-title')
-  modalTitle.textContent = title
-
-	// get modal body as django template
-	$.ajax({
-    url: "{% url 'modal-home' %}",
-		data: {'page': page,},
-    type: 'POST',
-    success: function(response) {
-        $('.modal-body').html(response);
-    },
-    error: function(xhr, status, error) {
-	    console.log('status, error', status, error)
-	  }
-	});
-})
-
-</script>
-
 <!-- Set up MapLibre map using Maptiler SDK -->
 <script type="text/javascript">
     let mapParameters = {
@@ -241,6 +210,7 @@ homeModal.addEventListener('show.bs.modal', function (event) {
     window.carousels = {{ featured_datasets|safe }};
     /* TODO: Do we need a url for a Datasets gallery, to be inserted below?*/
     let galleries = [["Datasets",null],["Collections","{% url 'collection:collection-gallery' %}"]];
+    let homeModalURL = "{% url 'modal-home' %}"
     console.log('window.carousels', window.carousels);
 </script>
 <script type="module">
