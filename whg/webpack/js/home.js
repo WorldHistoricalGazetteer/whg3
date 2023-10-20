@@ -61,6 +61,33 @@ mappy.on('load', function() {
     });
 	
 	$(document).ready(function(){
+		
+		galleries.forEach(gallery => {
+		    const [title, url] = gallery;
+		    const type = title.toLowerCase();
+		    const carouselContainer = $('<div class="carousel-container p-1 home-carousel"></div>');
+		    const border = $('<div class="border p-1 h-100"></div>');
+		    const heading = $(`<h6 class="coll-header p-1 strong">${ title }</h6>`);
+		    const galleryLink = url == null ? '' : `<span class="float-end small"><a class="linkylite" href="${ url }">Gallery</a></span>`;
+		    const carousel = $(`<div id="${type.toLowerCase()}Carousel" class="carousel slide carousel-fade h-100"></div>`);
+		    const carouselInner = $('<div class="carousel-inner"></div>');
+		    const prevButton = $(`<button class="carousel-control-prev" type="button" data-bs-target="#${type}Carousel" data-bs-slide="prev">
+		                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+		                            <span class="visually-hidden">Previous</span>
+		                        </button>`);
+		    const nextButton = $(`<button class="carousel-control-next" type="button" data-bs-target="#${type}Carousel" data-bs-slide="next">
+		                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+		                            <span class="visually-hidden">Next</span>
+		                        </button>`);
+		    heading.append(galleryLink);
+		    border.append(heading);
+		    carousel.append(carouselInner);
+		    carousel.append(prevButton);
+		    carousel.append(nextButton);
+		    border.append(carousel);
+		    carouselContainer.append(border);
+		    $('#carousel-outer-container').append(carouselContainer);
+		});
 
 		window.carousels.features.forEach(feature => {
 			const target = $('#' + feature.properties.type + 'sCarousel .carousel-inner');

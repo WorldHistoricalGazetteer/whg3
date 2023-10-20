@@ -102,52 +102,8 @@
 					</p>
 			</div>
 		</div>
-		<div class="col-sm-3 d-flex flex-column p-0">
-		    <div class="carousel-container p-1 home-carousel">
-		        <div class="border p-1 h-100">
-		            <h6 class="ds-header p-1 strong">Datasets
-								<span class="float-end small">
-									<a class="linkylite" href="">Gallery</a>
-								</span>
-		          </h6>
-			        <div id="datasetsCarousel" class="carousel slide carousel-fade h-100">
-						<div class="carousel-inner"> {# Will be filled dynamically #}
-						</div>
-							  <button class="carousel-control-prev" type="button" data-bs-target="#datasetsCarousel" data-bs-slide="prev">
-							    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-							    <span class="visually-hidden">Previous</span>
-							  </button>
-							  <button class="carousel-control-next" type="button" data-bs-target="#datasetsCarousel" data-bs-slide="next">
-							    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-							    <span class="visually-hidden">Next</span>
-							  </button>
-		            </div>
-		        </div>
-		    </div>
-		    <div class="carousel-container p-1 home-carousel">
-		        <div class="border p-1 h-100">
-		            <!-- ... Your other carousel content here ... -->
-		            <div id="collectionsCarousel" class="carousel slide h-100" data-ride="carousel">
-							<h6 class="coll-header p-1 strong">Collections
-								<span class="float-end small">
-									<a class="linkylite" href="{% url 'collection:collection-gallery' %}">Gallery</a>
-								</span>
-							</h6>
-		          <div id="collectionsCarousel" class="carousel slide carousel-fade">
-						<div class="carousel-inner"> {# Will be filled dynamically #}
-						</div>
-							  <button class="carousel-control-prev" type="button" data-bs-target="#collectionsCarousel" data-bs-slide="prev">
-							    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-							    <span class="visually-hidden">Previous</span>
-							  </button>
-							  <button class="carousel-control-next" type="button" data-bs-target="#collectionsCarousel" data-bs-slide="next">
-							    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-							    <span class="visually-hidden">Next</span>
-							  </button>
-		          </div>
-		            </div>
-		        </div>
-		    </div>
+		<div id="carousel-outer-container" class="col-sm-3 d-flex flex-column p-0">
+			{# Populated dynamically in JavaScript #}
 		</div>
 	</div> <!-- content_top -->
 
@@ -250,15 +206,6 @@ homeModal.addEventListener('show.bs.modal', function (event) {
 	});
 })
 
-/* mapboxgl.accessToken = '{{ mbtokenwhg }}';
-const map = new mapboxgl.Map({
-	container: 'map',
-	style: 'mapbox://styles/kgeographer/ckidglq8l2nra19nzzbl995ue',
-	center: [10.2385, 29.8626], // starting position [lng, lat]
-	zoom: 0.1 // starting zoom
-}); */
-
-
 </script>
 
 <!-- Set up MapLibre map using Maptiler SDK -->
@@ -292,6 +239,8 @@ const map = new mapboxgl.Map({
     }
 
     window.carousels = {{ featured_datasets|safe }};
+    /* TODO: Do we need a url for a Datasets gallery, to be inserted below?*/
+    let galleries = [["Datasets",null],["Collections","{% url 'collection:collection-gallery' %}"]];
     console.log('window.carousels', window.carousels);
 </script>
 <script type="module">
