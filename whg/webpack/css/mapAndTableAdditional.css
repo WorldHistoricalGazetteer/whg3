@@ -35,9 +35,20 @@
   font-size: 1.2rem;
   font-family: Raleway, san-serif;
 }
-/*#metadata p {*/
-/*  font-size: 0.9rem;*/
-/*}*/
+.pub-right {
+  display: flex;
+  flex-direction: column;
+}
+#ds_table {
+    flex-grow: 3;
+    flex-shrink: 0;
+    flex-basis: 0;
+}
+#detail {
+    flex-grow: 1;
+    flex-shrink: 0;
+    flex-basis: 0;
+}
 
 #actions {
   padding-top: 0.2rem;
