@@ -352,9 +352,9 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 	width: fit-content;
 	border: 1px solid #ccc;
     position: absolute;
-    right:0px;
+    left:0px;
     top: 40px;
-    background-color: whitesmoke;
+    background-color: white;
 }
 
 .color-key-table td {
