@@ -37,7 +37,8 @@
                 <div class="col-sm-8">
                     <p>{{ object.description|safe }}</p>
                 </div>
-                <div class="col-sm-4" style="position: relative;"> {% if object.image_file %} <a href="#" class="pop">
+                <div class="col-sm-4" style="position: relative;">
+	                {% if object.image_file %} <a href="#" class="pop">
                         <img id="active_img" class="img-responsive thumbnail float-end"
                              src="/media/{{ object.image_file.name }}" width="220px" />
                     </a> {% else %} <span>
