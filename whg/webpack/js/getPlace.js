@@ -21,7 +21,7 @@ export function getPlace(pid, cid, spinner_detail) {
 			$("#detail").html(parsePlace(data));
 		} else {
 			window.payload = data;
-			$("#row_title").html('<b>' + data.title + '</b>');
+			$("#anno_title").html('<b>' + data.title + '</b>');
 			console.log('img', data.traces.image_file);
 			$("#anno_body").html(parseAnno(data.traces));
 			$("#anno_img").html(data.traces.image_file);
@@ -72,8 +72,8 @@ function parseAnno(data) {
 			descrip += '<i>none yet</i>'
 		} else {
 			if (t.relation) {
-				descrip += "<p><b><u>Relation</u></b>: " +
-					JSON.parse(t.relation)[0] + "</p>"
+				descrip += "<span><b><u>Relation</u></b>: " +
+					JSON.parse(t.relation)[0] + "</span>"
 			}
 			if (t.note) {
 				// find & format embedded markdown link syntax
