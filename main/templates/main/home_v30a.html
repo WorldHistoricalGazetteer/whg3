@@ -8,79 +8,9 @@
   {% leaflet_css %}
   <script src="{% static 'js/aliases.js' %}"></script>
   <script src="{% static 'js/parents.js' %}"></script>
-  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
-  <link rel="stylesheet" href="//cdn.datatables.net/1.10.16/css/dataTables.bootstrap4.min.css">
 
-  <script src="{% static 'js/spin.umd.js' %}"></script>
-  <link rel="stylesheet" href="{% static 'css/spin.css' %}"/>
   <link href="https://fonts.googleapis.com/css?family=Archivo+Black" rel="stylesheet">
-
-	<link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
-	<script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
-{#	<script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>#}
-{#	<link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />#}
-
-	<style>
-		#banner {width: 100%; height: 15vh; min-height: 60px;}
-		#intro {font-size: .9rem;}
-		.home-button {position: relative; font-family: "Archivo Black";}
-		.ds-header { background-color: #3979B1; color: #fff; }
-		.coll-header { background-color: #54A1DA; color: #fff; }
-		#map { position: absolute; top: 0; bottom: 0; width: 100%; }
-		#search_map {position: absolute; top: 5px; left: 5px; width: 206px;}
-
-		#advanced_search {
-				position: absolute;
-				top: 4px;
-				left: 3px;
-				{#width :46%;#}
-				width: 210px;
-				display: none;
-				padding-top: 30px;
-				padding-bottom: .5rem;
-		}
-		.advanced-search-link {
-				font-size: .8rem;
-				{#color: yellow !important;#}
-				position: absolute;
-				top:10px;
-				left: 220px;
-				background-color: #fff;
-				z-index: 1000;
-				opacity: 75%;
-				border-radius: 4px;
-		}
-		.advanced-search-link a { color: #336699 !important;}
-		.categories {font-variant: small-caps; font-size: .9rem; color:#993333;}
-		#adv_checkboxes p {font-size: 0.8rem; margin:0;}
-		#adv_checkboxes label {margin-left:2px;}
-		#input_area {width: 95%; font-size: 0.9rem; margin-left:2px;}
-
-		.carousel-container {
-		    flex-grow: 1;
-		    min-height: 180px;
-		}
-		.carousel-inner
-		.carousel-item {
-		    height: 100%;
-		}
-		.carousel-item img {
-		    object-fit: cover;
-		    height: 100%;
-		    width: 100%;
-		}
-		.carousel-item p { font-size: .8rem;}
-		.carousel-item h6 { margin-bottom: 0;}
-		.carousel button {
-				position: absolute;
-				width: 20px;
-				background-color: silver;
-				opacity:40%;
-				bottom: auto !important;
-		}
-		#datasetsCarousel button {top: 30%;}
-		#collectionsCarousel button {top: 50px;}
-	</style>
+  <link href="{% static 'webpack/home.bundle.css' %}" rel="stylesheet" /> 
 {% endblock %}
 
 {% block content %}
@@ -120,12 +50,12 @@
 				<div id="map"></div>
 		    <div id="advanced_search" class="bg-light">
 			    <p class="mb-0"><span class="categories ms-1">place categories</span>
-            <span class="ms-1 categories">
-              <span class="me-1"><a id="check_toggle" href="#">clear all</a></span>
-              <a id="filter_help" class="pointer" data-toggle="popover" title="Place categories"
-                 data-content="" tabindex="0" data-trigger="focus"><i class="fas fa-question-circle linky"></i></a>
-            </span>
-            </p>
+		            <span class="ms-1 categories">
+		              <span class="me-1"><a id="check_toggle" href="#">clear all</a></span>
+		              <a id="filter_help" class="pointer" data-toggle="popover" title="Place categories"
+		                 data-content="" tabindex="0" data-trigger="focus"><i class="fas fa-question-circle linky"></i></a>
+		            </span>
+	            </p>
 			      <div id="adv_checkboxes" class="small mt-2 ps-1">
 			        <p><input type="checkbox" id="cb_a" checked="checked" value="A"/>
 				        <span for="cb_a"> Administrative entities (A)</span></p>
@@ -143,16 +73,16 @@
 				        <span for="cb_h"> Water bodies (H)</span></p>
 		        </div>
             <div id="filter_spatial">
-	            <p class="mb-0"><span class="categories ms-1">spatial</span>
-              <span class="small">
-              <a id="spatial_help" class="pointer" data-toggle="popover"
-                 title="Spatial filter" data-content="" tabindex="0" data-trigger="focus">
-              <i class="fas fa-question-circle linky"></i></a></span>
-            </p>
-              <input id="input_area" type="text" size="25" placeholder="Region, country, study area" />
-              <input type="hidden" id="boundsobj" />
+				<p class="mb-0"><span class="categories ms-1">spatial</span>
+	              <span class="small">
+	              <a id="spatial_help" class="pointer" data-toggle="popover"
+	                 title="Spatial filter" data-content="" tabindex="0" data-trigger="focus">
+	              <i class="fas fa-question-circle linky"></i></a></span>
+	            </p>
+				<input id="input_area" type="text" size="25" placeholder="Region, country, study area" />
+	            <input type="hidden" id="boundsobj" />
             </div>
-			    {#		        <button id="close-advanced_search" class="btn btn-sm btn-secondary">Close</button>#}
+			    {#<button id="close-advanced_search" class="btn btn-sm btn-secondary">Close</button>#}
 		    </div>
 				<div id="search_map" class="input-group input-group-sm mb-3 shadow-sm">
 				  <input type="text" class="form-control" placeholder="Enter place name"
@@ -169,84 +99,11 @@
 			<div class=" p-1 border bg-white" style="height: 24%;">
 				<p>Praesent ac vehicula nulla. Sed sit amet lacinia arcu.
 					Praesent suscipit a justo non ornare. Nulla a ligula commodo, laoreet risus a, cursus neque.
-					</p>
+				</p>
 			</div>
 		</div>
-		<div class="col-sm-3 d-flex flex-column p-0">
-		    <div class="carousel-container p-1 home-carousel">
-		        <div class="border p-1 h-100">
-		            <h6 class="ds-header p-1 strong">Datasets
-								<span class="float-end small">
-									<a class="linkylite" href="">Gallery</a>
-								</span>
-		          </h6>
-			        <div id="datasetsCarousel" class="carousel slide h-100" data-ride="carousel">
-								<div class="carousel-inner">
-								  {% for ds in featured_ds %}
-								     <div class="carousel-item p-2 {% if forloop.first %}active{% endif %}">
-									     <h6><a href="{%  url 'datasets:ds_places' ds.id %}">{{ ds.title }}</a></h6>
-											{# <p>{{ ds.description|truncatechars:100 }}</p>#}
-								     </div>
-								  {% endfor %}
-								</div>
-							  <button class="carousel-control-prev" type="button" data-bs-target="#datasetsCarousel" data-bs-slide="prev">
-							    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-							    <span class="visually-hidden">Previous</span>
-							  </button>
-							  <button class="carousel-control-next" type="button" data-bs-target="#datasetsCarousel" data-bs-slide="next">
-							    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-							    <span class="visually-hidden">Next</span>
-							  </button>
-		                <!-- ... Other carousel elements ... -->
-		            </div>
-		        </div>
-		    </div>
-		    <div class="carousel-container p-1 home-carousel">
-		        <div class="border p-1 h-100">
-		            <!-- ... Your other carousel content here ... -->
-		            <div id="collectionsCarousel" class="carousel slide h-100" data-ride="carousel">
-							<h6 class="coll-header p-1 strong">Collections
-								<span class="float-end small">
-									<a class="linkylite" href="{% url 'collection:collection-gallery' %}">Gallery</a>
-								</span>
-							</h6>
-		          <div id="collectionsCarousel" class="carousel slide" data-ride="carousel">
-{#							  <ol class="carousel-indicators">#}
-{#							    {% for ds in featured_ds %}#}
-{#							      <li data-bs-target="#datasetsCarousel"#}
-{#							          data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active"{% endif %}></li>#}
-{#							    {% endfor %}#}
-{#							  </ol>#}
-		            <div class="carousel-inner">
-		              {% for c in featured_coll %}
-										{#<img src="/media/{{ c.image_file.name }}" class="d-block w-100" alt="{{ c.title }}">#}
-		                <div class="carousel-item p-2 {% if forloop.first %}active{% endif %}">
-												{% with collection_class=c.collection_class %}
-												<h6><a href="
-										        {% if collection_class == 'place' %}
-										            {% url 'collection:place-collection-browse' c.id %}
-										        {% else %}
-										            {% url 'collection:ds-collection-browse' c.id %}
-										        {% endif %}">{{ c.title }}
-										    </a></h6>
-												{% endwith %}
-
-										{# <p>{{ c.description|truncatechars:100 }}</p>#}
-		              </div>
-		              {% endfor %}
-		            </div>
-							  <button class="carousel-control-prev" type="button" data-bs-target="#collectionsCarousel" data-bs-slide="prev">
-							    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-							    <span class="visually-hidden">Previous</span>
-							  </button>
-							  <button class="carousel-control-next" type="button" data-bs-target="#collectionsCarousel" data-bs-slide="next">
-							    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-							    <span class="visually-hidden">Next</span>
-							  </button>
-		          </div>
-		            </div>
-		        </div>
-		    </div>
+		<div id="carousel-outer-container" class="col-sm-3 d-flex flex-column p-0">
+			{# Populated dynamically in JavaScript #}
 		</div>
 	</div> <!-- content_top -->
 
@@ -320,205 +177,44 @@
 	</div>
 </div>
 
+<!-- Set up MapLibre map using Maptiler SDK -->
 <script type="text/javascript">
-let idToArea = {}
-let area_list = []
-let area_objs = []
-
-$(function(){
-  // always clear last_results & last_query
-	localStorage.removeItem('last_results')
-	localStorage.removeItem('last_query')
-
-  // listen for search action
-  // TODO: handle Enter key also
-	$("#a_search").click(function() {
-    initiateSearchHome();
-	});
-
-	$("#search_map input").on('keypress', function(event) {
-	    if (event.which == 13) { // 13 is the 'Enter' key code
-	        event.preventDefault();
-	        initiateSearchHome(); // Call the initiateSearch function when 'Enter' is pressed
-	    }
-	});
-
-  $('#a_advanced').on('click', function(e) {
-      e.preventDefault();
-      $('#advanced_search').slideToggle(300); // This toggles the visibility of the advanced search div
-   });
-
-  $.get("/api/area_list", function(data){
-    {#console.log('initial areas for list',data)#}
-    for(var i=0;i<data.length;i++){
-      area_objs.push(data[i])
-      area_list.push(data[i]['title'])
+    let mapParameters = {
+        container: 'map',
+        center: [10.2385, 29.8626],
+        zoom: 0.1, // starting zoom
+        minZoom: 0.1,
+        maxZoom: 10,
+        mapTilerKey: 'F8uQKJ8cHQ0tsUSnWKWO', // {{ mbtoken }}
+        controls: {
+            layer: true,
+            navigation: false,
+            fullscreen: false,
+            attribution: {
+                open: false,
+            },
+            temporal: {
+                fromValue: 1550,
+                toValue: 1720,
+                minValue: -2000,
+                maxValue: 2100,
+                open: false,
+                includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
+                epochs: null,
+                automate: null,
+            }
+        },
+        styleFilter: [ 'OUTDOOR.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
     }
-  })
-  $( "#input_area" ).autocomplete({
-    source: area_list,
-    minLength: 2,
-    select: function( event, ui ) {
-      // build boundsobj, insert as hidden input val()
-      label = ui.item.label
-      obj = area_objs.find(o =>o.title==label)
-      areaid = obj.id
-      boundsobj = '{"type":["'+obj.type+'"],"id":["'+areaid+'"]}'
-      $("#boundsobj").val( boundsobj )
-      console.log( "boundsobj for view ", boundsobj);
 
-      // fetch and render selected area
-      render_area(areaid)
-    }
-  });
-  {#$("#input_area").on('keyup', function(e){#}
-  {#  // resets stuff#}
-  {#  if($('#input_area').val().length < 3) {#}
-  {#    $("#boundsobj").val('')#}
-  {#    if(typeof arealayer !== 'undefined'){arealayer.removeFrom(mappy)}#}
-  {#    mappy.setView([38, 10], 2.4)#}
-  {#  }#}
-  {# })#}
-  render_area = function(areaid) {
-    $.ajax({
-      url: '/api/area/'+areaid
-      }).done(function(data){
-      console.log('render_area() data',data)
-      geom = {"type":"FeatureCollecton","features":[]}
-      geom['features'].push(data.geojson)
-      console.log('render_area() geom',geom)
-
-    // clear existing
-    if(typeof arealayer !== 'undefined'){arealayer.removeFrom(mappy)}
-
-    // TODO: NOT YET render new
-    {#arealayer = L.geoJSON(geom, {#}
-    {#  onEachFeature: function(feature,layer) {#}
-    {#  f=feature; l=layer;#}
-    {#  console.log('render_area() f,l',f,l)#}
-    {#  l.setStyle({"color":"orange","weight":2,"fillOpacity":0})#}
-    {#  idToArea[areaid] = l#}
-    {#  popupOptions = {maxWidth: 200};#}
-    {#  l.bindPopup(data.title, popupOptions);#}
-    {#  }#}
-    {# }).addTo(mappy)#}
-    {#mappy.fitBounds(arealayer.getBounds())#}
-    })
-  }
-	// call views.search_new() with parameters
-	// search_new() will pass these to search_new.html
-	function initiateSearchHome() {
-    const query = $('#search_map input').val();
-    const filters = gatherOptions(); // Suppose you have a function to gather filters
-		localStorage.setItem('last_query', query)
-
-    $.get("/search/index", filters, function(data){
-      window.searchres = data['suggestions']
-      window.session = data['session']
-      // store locally
-      localStorage.setItem('last_results',JSON.stringify(searchres))
-	    console.log(searchres)
-	    // if results, deliver to search_new.html
-			if(searchres.length > 0){
-        window.location.href = "{% url 'search-page' %}";
-			} else {
-        alert('no results for "'+query+'", sorry')
-			}
-    });
-	}
-
-  // toggle all fclass checkboxes
-  $("#check_toggle").click(function(e){
-    e.preventDefault()
-    var state = $("#check_toggle").text()
-    if(state == 'check all'){
-    $("input:checkbox").prop('checked', true);
-    $("#check_toggle").text('clear all');
-    } else if( state == 'clear all'){
-    $("input:checkbox").prop('checked', false);
-    $("#check_toggle").text('check all');
-    }
-  })
-
-	// get option values
-	function gatherOptions() {
-    // test
-    {#options = {"fclasses":"P"}#}
-    // gather and return option values from the UI
-    fclasses = [];
-    $('#adv_checkboxes input:checked').each(function() {
-      fclasses.push($(this).val());
-    });
-    console.log('checked', fclasses)
-    options = {
-			"qstr":$('#search_map input').val(),
-	    "idx": "whg",
-	    "fclasses": fclasses.join(','),
-	    "start": $("#input_start").val(),
-	    "end": $("#input_end").val(),
-	    "bounds": $("#boundsobj").val()
-    }
-		return options;
-	}
-
-
-	  $('#datasetsCarousel').carousel({
-	    interval: 3000 // Adjust the auto-transition interval as needed
-	  });
-
-	  $('#collectionsCarousel').carousel({
-	    interval: 3000 // Adjust the auto-transition interval as needed
-	  });
-
-  $("[rel='tooltip']").tooltip();
-  // modal for images
-  $('.pop').on('click', function() {
-    url = $(this).find('img').attr('src')
-    txt = $(this).find('img').attr('alt')
-    re=/(.png|.jpg|.jpeg|.gif|.tif)/g
-    ext=url.match(re)[0]
-    url = url.replace(ext,'_full'+ext)
-    $("#header_text").html(txt)
-    $('.imagepreview').attr('src', url);
-    $('#image_modal').modal('show');
-  });
-
-})
-
-homeModal = document.getElementById('homeModal')
-homeModal.addEventListener('show.bs.modal', function (event) {
-  // Button that triggered the modal
-  var button = event.relatedTarget
-  // Extract info from data-bs-* attributes
-  var title = button.getAttribute('data-bs-title')
-	var page = button.getAttribute('data-bs-page')
-	console.log('button_id', page)
-
-  // update the modal title
-  var modalTitle = homeModal.querySelector('.modal-title')
-  modalTitle.textContent = title
-
-	// get modal body as django template
-	$.ajax({
-    url: "{% url 'modal-home' %}",
-		data: {'page': page,},
-    type: 'POST',
-    success: function(response) {
-        $('.modal-body').html(response);
-    },
-    error: function(xhr, status, error) {
-	    console.log('status, error', status, error)
-	  }
-	});
-})
-
-mapboxgl.accessToken = '{{ mbtokenwhg }}';
-const map = new mapboxgl.Map({
-	container: 'map',
-	style: 'mapbox://styles/kgeographer/ckidglq8l2nra19nzzbl995ue',
-	center: [10.2385, 29.8626], // starting position [lng, lat]
-	zoom: 0.1 // starting zoom
-});
-
+    window.carousels = {{ featured_datasets|safe }};
+    /* TODO: Do we need a url for a Datasets gallery, to be inserted below?*/
+    let galleries = [["Datasets",null],["Collections","{% url 'collection:collection-gallery' %}"]];
+    let homeModalURL = "{% url 'modal-home' %}"
+    console.log('window.carousels', window.carousels);
 </script>
+<script type="module">
+    import "{% static 'webpack/home.bundle.js' %}";
+</script> 
+
 {% endblock %}

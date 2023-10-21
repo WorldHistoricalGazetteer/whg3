@@ -14,6 +14,9 @@ from places.models import Place
 from traces.models import TraceAnnotation
 from django_resized import ResizedImageField
 from multiselectfield import MultiSelectField
+from django.contrib.gis.geos import GEOSGeometry
+import simplejson as json
+from geojson import Feature
 
 """ for images """
 from io import BytesIO
@@ -94,6 +97,31 @@ class Collection(models.Model):
   def get_absolute_url(self):
     #return reverse('datasets:dashboard', kwargs={'id': self.id})
     return reverse('data-collections')
+
+  @property
+  def convex_hull(self):
+    places = self.places.all()
+    geometry = None
+    if places.count() > 0:
+        geom_list = [GEOSGeometry(geom.geom.wkt) for place in places for geom in place.geoms.all()]
+        combined_geom = geom_list[0].convex_hull
+        
+        for geom in geom_list[1:]: # Union of convex hulls is much faster than union of full geometries
+            combined_geom = combined_geom.union(geom.convex_hull)
+
+        geometry = json.loads(combined_geom.convex_hull.geojson)
+
+    return Feature(properties={
+        "title": self.title,
+        "image_file": self.image_file.url if self.image_file else None,
+        "description": self.description,
+        "creator": self.creator,
+        "type": "collection", 
+        "featured": self.featured,
+        "id": self.id, 
+        "webpage": self.webpage,
+        "url": reverse('collection:ds-collection-browse', args=[self.id]),
+    }, geometry=geometry)
 
   @property
   def collaborators(self):

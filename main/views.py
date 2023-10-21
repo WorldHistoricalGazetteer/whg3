@@ -12,8 +12,12 @@ from collection.models import Collection, CollectionGroup, CollectionGroupUser
 from datasets.models import Dataset
 from datasets.tasks import testAdd
 from main.models import Link
-from places.models import Place
+from places.models import Place, PlaceGeom
 from bootstrap_modal_forms.generic import BSModalCreateView
+from django.core import serializers
+from django.contrib.gis.geos import GEOSGeometry
+import json
+import random
 
 from .forms import CommentModalForm, ContactForm
 es = settings.ES_CONN
@@ -217,17 +221,21 @@ class Home30a(TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super(Home30a, self).get_context_data(*args, **kwargs)
         
-        # deliver featured datasets and collections
-        f_collections = Collection.objects.exclude(featured__isnull=True)
-        f_datasets = Dataset.objects.exclude(featured__isnull=True)
-
+        featured_datasets = {
+            "type": "FeatureCollection",
+            "features": []
+        }
+        for dataset_types in [Collection, Dataset]:
+            featured = dataset_types.objects.exclude(featured__isnull=True)
+            for dataset in featured:
+                featured_datasets['features'].append(dataset.convex_hull)
+        random.shuffle(featured_datasets['features'])
+        
         # f_datasets = list(Dataset.objects.exclude(featured__isnull=True))
         # shuffle(f_datasets)
         
         # 2 collections, rotate datasets randomly
         # context['featured_coll'] = f_collections.order_by('featured')[:2]
-        context['featured_coll'] = f_collections
-        context['featured_ds'] = f_datasets
         context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
         context['mbtokenmb'] = settings.MAPBOX_TOKEN_MB
         context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
@@ -238,6 +246,17 @@ class Home30a(TemplateView):
         context['teacher'] = True if self.request.user.groups.filter(
             name__in=['teacher']).exists() else False
         context['count'] = Place.objects.filter(dataset__public=True).count()
+        
+        
+        # TODO: REMOVE THE FOLLOWING? ****************************************************
+        # Serialize the querysets to JSON
+        f_collections = Collection.objects.exclude(featured__isnull=True)
+        f_datasets = Dataset.objects.exclude(featured__isnull=True)
+        context['featured_coll'] = f_collections
+        context['featured_ds'] = f_datasets
+        
+        
+        context['featured_datasets'] = json.dumps(featured_datasets)
 
         return context
 
