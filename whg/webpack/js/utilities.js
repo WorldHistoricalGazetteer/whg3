@@ -88,6 +88,7 @@ export function arrayColors(strings) {
 }
 
 export function colorTable(arrayColors, target) {
+	print('colorTable target', target)
 	const colorKeyTable = $('<table>').addClass('color-key-table');
 	const tableBody = $('<tbody>');
 

@@ -25,7 +25,8 @@ export function addMapLayer(layer, ds) {
 	mappy.addLayer(filteredLayer(modifiedLayer));
 	if (!!ds.relations && layer.id == 'gl_active_point') {
 		let circleColors = arrayColors(ds.relations);
-		colorTable(circleColors, '#coll_detail');
+		// colorTable(circleColors, '#coll_detail');
+		colorTable(circleColors, '#mapControls');
 		mappy.setPaintProperty(modifiedLayer.id, 'circle-color', [
 			'match',
 			['get', 'relation'],

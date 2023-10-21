@@ -341,15 +341,20 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 	z-index: -1
 }
 
-#coll_detail {
-  	display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(34%, 1fr));
-    grid-gap: 20px;
-}
+/*#coll_detail {*/
+/*  	display: inline;*/
+/*  	!*display: grid;*!*/
+/*    grid-template-columns: repeat(auto-fill, minmax(34%, 1fr));*/
+/*    grid-gap: 20px;*/
+/*}*/
 
 .color-key-table {
 	width: fit-content;
 	border: 1px solid #ccc;
+    position: absolute;
+    right:0px;
+    top: 40px;
+    background-color: whitesmoke;
 }
 
 .color-key-table td {
@@ -358,6 +363,8 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 
 .color-key-table .color-swatch {
 	border-radius: 50%;
-    width: 1rem;
-    height: 1rem;
+    width: .5rem;
+    height: .5rem;
+    /*width: 1rem;*/
+    /*height: 1rem;*/
 }

@@ -1,7 +1,43 @@
 #mapOverlays p, td {
   font-family: Raleway, san-serif !important;
-  font-size: 0.85qrem;
+  font-size: 0.85rem;
 }
+
+#ds_info {
+  /*height: fit-content!important;*/
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex-basis: auto;
+  flex-grow: 0;
+  flex-shrink: 0;
+  height: fit-content !important;
+}
+#time_control {
+  flex-grow: 0;
+  flex-shrink: 0;
+  flex-basis: 60px;
+  margin-top: auto;
+}
+#coll_detail {
+  display:inline;
+  /*display:flex;*/
+  border-top: 1px solid lightgray;
+
+}
+
+#ds_info.info-collapsed .info-collapse, #ds_info:not(.info-collapsed) .info-expand {
+	display: none;
+}
+.pub-intro {
+  padding-bottom: 0.5rem;
+}
+.pub-title {
+  font-size: 1.2rem;
+  font-family: Raleway, san-serif;
+}
+/*#metadata p {*/
+/*  font-size: 0.9rem;*/
+/*}*/
 
 #actions {
   padding-top: 0.2rem;
@@ -40,15 +76,6 @@
   overflow-y: auto;
 }
 
-#ds_info {
-    height: fit-content!important;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-#ds_info.info-collapsed .info-collapse, #ds_info:not(.info-collapsed) .info-expand {
-	display: none;
-}
 
 #pcoll_content {
 	position: relative;
@@ -85,10 +112,6 @@
   top: 40%;
   right: 40%;
   transform: translate(50%, -50%);
-}
-
-#metadata p {
-  font-size: 0.9rem;
 }
 
 .paginate_button {
