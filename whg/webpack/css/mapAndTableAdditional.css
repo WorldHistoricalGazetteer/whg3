@@ -1,3 +1,8 @@
+#mapOverlays p, td {
+  font-family: Raleway, san-serif !important;
+  font-size: 0.9rem;
+}
+
 #actions {
   padding-top: 0.2rem;
 }
