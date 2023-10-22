@@ -209,7 +209,10 @@
 
     window.carousels = {{ featured_datasets|safe }};
     /* TODO: Do we need a url for a Datasets gallery, to be inserted below?*/
-    let galleries = [["Datasets",null],["Collections","{% url 'collection:collection-gallery' %}"]];
+    let galleries = [
+		    ["Datasets","{% url 'datasets:dataset-gallery' %}"],
+        ["Collections","{% url 'collection:collection-gallery' %}"]
+    ];
     let homeModalURL = "{% url 'modal-home' %}"
     console.log('window.carousels', window.carousels);
 </script>

@@ -963,7 +963,7 @@ class DatasetCollectionBrowseView(DetailView):
     return context
 
 """ browse collection collections 
-    w/student section?
+    w/student section
 """
 class CollectionGalleryView(ListView):
   redirect_field_name = 'redirect_to'

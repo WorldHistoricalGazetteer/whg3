@@ -50,6 +50,28 @@ from main.models import Log, Comment
 from places.models import *
 from resources.models import Resource
 
+""" browse datasets 
+"""
+class DatasetGalleryView(ListView):
+  redirect_field_name = 'redirect_to'
+
+  context_object_name = 'datasets'
+  template_name = 'datasets/gallery.html'
+  model = Dataset
+
+  def get_queryset(self):
+    qs = super().get_queryset()
+    return qs.filter(public = True).order_by('title')
+
+  def get_context_data(self, *args, **kwargs):
+    context = super(DatasetGalleryView, self).get_context_data(*args, **kwargs)
+    # public collections
+    # context['group'] = self.get_object()
+    context['datasets'] = Dataset.objects.filter(public=True)
+
+    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
+    return context
+
 """
   email various, incl. Celery down notice
   to ['whgazetteer@gmail.com','karl@kgeographer.org'],

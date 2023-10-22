@@ -26,6 +26,7 @@ urlpatterns = [
   # upload excel
   path('xl/', views.xl_upload, name='xl-upload'),
 
+  path('gallery', views.DatasetGalleryView.as_view(), name='dataset-gallery'),
   ## MANAGE/VIEW
   # dataset owner pages (tabs); names correspond to template names
   path('<int:id>/summary', views.DatasetSummaryView.as_view(), name='ds_summary'),
