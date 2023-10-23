@@ -5,9 +5,10 @@ import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.css';
 import datasetLayers from './mapLayerStyles';
 import { bbox } from './6.5.0_turf.min.js';
 import { attributionString } from './utilities';
+import { CustomAttributionControl } from './customMapControls';
 import '../css/search.css';
 
-let results = [];
+let results = null;
 let checkboxStates = {};
 let allTypes = [];
 let allCountries = [];
@@ -58,6 +59,11 @@ function waitMapLoad() {
 		    datasetLayers.forEach(function(layer) {
 				mappy.addLayer(layer);
 			});
+			
+			mappy.addControl(new CustomAttributionControl({
+				compact: true,
+		    	autoClose: mapParameters.controls.attribution.open === false,
+			}), 'bottom-right');
             
             resolve();
         });
@@ -73,7 +79,7 @@ function waitDocumentReady() {
 Promise.all([waitMapLoad(), waitDocumentReady()])
     .then(() => {
         const storedResults = localStorage.getItem('last_results');
-        const results = storedResults ? JSON.parse(storedResults) : null;
+        results = storedResults ? JSON.parse(storedResults) : results;
 
         if (results) {
             renderResults(results);
@@ -105,8 +111,11 @@ function filterResults(checkedTypes, checkedCountries) {
 		return (checkedTypes.length === 0 || checkedTypes.some(type => result.types.includes(type))) &&
 			(checkedCountries.length === 0 || checkedCountries.some(country => result.ccodes.includes(country)));
 	});
-	console.log('Filtering...',results,filteredResults);
-	return {type: "FeatureCollection", features: filteredResults}
+	for (let i = 0; i < filteredResults.length; i++) {
+	    filteredResults[i].id = i;
+	}
+	console.log('Filtering...', results, filteredResults);
+	return {type: "FeatureCollection", features: filteredResults, query: results.query}
 }
 
 function getCheckedTypes() {
@@ -134,19 +143,30 @@ function renderResults(featureCollection) {
 	$('#search_results').empty();
 
 	mappy.getSource('places').setData(featureCollection);
-	mappy.fitBounds(bbox(featureCollection), {
-        padding: 100,
-        maxZoom: 5,
-        speed: .5,
-    });
+	
+	if (featureCollection.features.length > 0) {
+		mappy.fitBounds(bbox(featureCollection), {
+	        padding: 100,
+	        maxZoom: 5,
+	        duration: 1000,
+	    });
+	}
+	else {
+	    mappy.flyTo({
+			center: mapParameters.center,
+			zoom: mapParameters.zoom,
+	        speed: .5,
+	    });
+		$('#detail').empty(); // Clear the detail view
+	}
+    
+    
 
 	// Select the search_results div
 	const $resultsDiv = $('#search_results');
 
 	// search term to search input
-	const lastQuery = localStorage.getItem('last_query');
-	$("#d_input input").val(lastQuery);
-	localStorage.removeItem('last_query');
+	$("#d_input input").val(!!featureCollection.query ? featureCollection.query : '');
 
 	// Iterate over the results and append HTML for each
 	// NB these are parents only
@@ -181,10 +201,9 @@ function renderResults(featureCollection) {
 		allCountries = getAllCountries(results);
 		isInitialLoad = false;
 
-		console.log('allTypes', allTypes)
-		console.log('allCountries', allCountries)
+		// console.log('allTypes', allTypes)
+		// console.log('allCountries', allCountries)
 	}
-	$('.result').first().addClass('selected');
 
 	// checkboxes for types in intial results
 	$('#type_checkboxes').empty().append('<p>Place Types</p>');
@@ -246,24 +265,31 @@ function renderResults(featureCollection) {
 		// Render the filtered results
 		if (filteredResults.features.length > 0) {
 			renderResults(filteredResults);
-			renderDetail(filteredResults.features[0]); // Render details for the first result
 		} else {
 			// Handle the case where there are no matching results
 			$('#search_results').html('<p>No results match the selected filters.</p>');
-			$('#detail').empty(); // You might also want to clear the detail view
+			$('#detail').empty(); // Clear the detail view
 		}
 	});
 
-	// send some fields to
-	renderDetail(results[0]);
-
 	$('.result').click(function() {
 		const index = $(this).index(); // Get index of clicked card
+	
+		mappy.removeFeatureState({ source: 'places' });	
+		mappy.setFeatureState({ source: 'places', id: index }, { highlight: true });
+		mappy.fitBounds(bbox(featureCollection), {
+	        padding: 100,
+	        maxZoom: 5,
+	        duration: 1000,
+	    });
+		
 		renderDetail(results[index]); // Update detail view with clicked result data
 		$('.result').removeClass('selected');
 		$(this).addClass('selected');
-		// Future: Highlight marker on map corresponding to clicked result
 	});
+	
+	// Highlight first result and render its detail
+	$('.result').first().click();
 }
 
 function getAllTypes(results) {
@@ -343,6 +369,7 @@ function suggestionsGeoJSON(suggestions) { // Convert ES suggestions to GeoJSON 
 	  type: "FeatureCollection",
 	  features: [],
 	};
+	let idCounter = 0;
 	for (const itemSource of suggestions) {
 	  let item = {... itemSource};
 	  const feature = {
@@ -352,6 +379,7 @@ function suggestionsGeoJSON(suggestions) { // Convert ES suggestions to GeoJSON 
         	geometries: item.geom
 		},
 	    properties: {},
+	    id: idCounter,
 	  };
 	  delete item.geom;
 	  for (const prop in item) { // Copy all non-standard properties from the original item
@@ -360,6 +388,7 @@ function suggestionsGeoJSON(suggestions) { // Convert ES suggestions to GeoJSON 
 	    }
 	  }
 	  featureCollection.features.push(feature);
+	  idCounter++;
 	}
 	return featureCollection;
 }
@@ -368,17 +397,15 @@ function initiateSearch() {
 	isInitialLoad = true;
 
 	localStorage.removeItem('last_results')
-	localStorage.removeItem('last_query')
 
 	const query = $('#search-input').val(); // Get the query from the input
-	localStorage.setItem('last_query', query); // Store the query in localStorage
-
 	const options = gatherOptions(); //
 
 	// AJAX GET request to SearchView() with the options (includes qstr)
 	$.get("/search/index", options, function(data) {
 
 		results = suggestionsGeoJSON(data['suggestions']); // Convert to GeoJSON and replace global variable
+		results.query = query;
 		localStorage.setItem('last_results', JSON.stringify(results));
 
 		renderResults(results);
@@ -404,6 +431,7 @@ function gatherOptions() {
 }
 
 function renderDetail(feature) {
+	
 	let result = feature.properties;
 	let detailHtml = "";
 
@@ -446,12 +474,8 @@ function renderPlaces(geoms) { // TODO: DELETE THIS WHEN mapResults IS COMPLETE
 		"type": "FeatureCollection",
 		"features": geoms
 	}
-	// console.log('geodata prior to render',data)
-	var count_features = 0
 	idToFeature = {}
 	idToArea = {}
-	mappy.createPane('placePane');
-	mappy.getPane('placePane').style.zIndex = 200;
 
 	initialLayers = new L.featureGroup()
 	features = L.geoJSON(featcoll, {
@@ -501,13 +525,5 @@ function renderPlaces(geoms) { // TODO: DELETE THIS WHEN mapResults IS COMPLETE
 			//
 			initialLayers.addLayer(layer)
 		}
-	}).addTo(mappy); // adds features L.geoJSON
-
-	bounds = features.getBounds()
-	if (geoms.length > 0) {
-		mappy.fitBounds(bounds)
-		if (mappy.getZoom() > 5) {
-			mappy.setZoom(5)
-		}
-	}
+	}).addTo(mappy);
 }
