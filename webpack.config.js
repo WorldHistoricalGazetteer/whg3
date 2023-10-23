@@ -14,6 +14,7 @@ module.exports = {
     gis_resources: '/app/whg/webpack/js/gis_resources.js',
     search_functions: '/app/whg/webpack/js/search_resources.js',
     home: '/app/whg/webpack/js/home.js',
+    search: '/app/whg/webpack/js/search.js',
   },
   output: {
     filename: '[name].bundle.js',

@@ -1,0 +1,467 @@
+// /whg/webpack/search.js
+
+import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.umd.min.js';
+import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.css';
+import '../css/search.css';
+
+let results = [];
+let checkboxStates = {};
+let allTypes = [];
+let allCountries = [];
+let isInitialLoad = true;
+let initialTypeCounts = {};
+let initialCountryCounts = {};
+
+let style_code;
+if (mapParameters.styleFilter.length == 0) {
+	style_code = ['DATAVIZ', 'DEFAULT']
+} else {
+	style_code = mapParameters.styleFilter[0].split(".");
+}
+
+maptilersdk.config.apiKey = mapParameters.mapTilerKey;
+let mappy = new maptilersdk.Map({
+	container: mapParameters.container,
+	center: mapParameters.center,
+	zoom: mapParameters.zoom,
+	minZoom: mapParameters.minZoom,
+	maxZoom: mapParameters.maxZoom,
+	style: maptilersdk.MapStyle[style_code[0]][style_code[1]],
+	attributionControl: false,
+	geolocateControl: false,
+	navigationControl: false,
+	userProperties: true
+});
+
+mappy.on('load', function() {
+	console.log('Map loaded.');
+	
+	const style = mappy.getStyle();
+	style.layers.forEach(layer => { // Hide map labels
+	    if (layer.id.includes('label')) {
+	        mappy.setLayoutProperty(layer.id, 'visibility', 'none');
+	    }
+	});
+	
+});
+
+$(document).ready(function() {
+
+	// look for last_results
+	const storedResults = localStorage.getItem('last_results');
+	results = storedResults ? JSON.parse(storedResults) : null;
+
+	// render 'em
+	if (results) {
+		// Render the results on the page
+		renderResults(results);
+		// display filters div
+		$("#result_facets").show()
+	} else {
+		console.log('no results')
+		$("#adv_options").show()
+	}
+
+	// toggler for advanced search
+	$('#advanced_search').hide();
+
+	$('#advanced_search-toggle').click(function() {
+		$('#advanced_search').slideToggle(300);
+	});
+
+	$('#close-advanced_search').click(function() {
+		$('#advanced_search').slideUp(300);
+	});
+
+	$("#a_search").on('click', function(event) {
+		event.preventDefault();
+		initiateSearch(); // Call the initiateSearch function when the button is clicked
+	});
+	$("#d_input input").on('keypress', function(event) {
+		if (event.which == 13) {
+			event.preventDefault();
+			initiateSearch(); // Call the initiateSearch function when 'Enter' is pressed
+		}
+	});
+
+}); // document ready
+
+// Filter results based on checked checkboxes
+function filterResults(checkedTypes, checkedCountries) {
+	let filteredResults = results.filter(function(result) {
+		return (checkedTypes.length === 0 || checkedTypes.some(type => result.types.includes(type))) &&
+			(checkedCountries.length === 0 || checkedCountries.some(country => result.ccodes.includes(country)));
+	});
+	return filteredResults
+}
+
+function getCheckedTypes() {
+	let checkedTypes = $('.type-checkbox:checked').map(function() {
+		return this.value;
+	}).get();
+	return checkedTypes
+}
+
+function getCheckedCountries() {
+	let checkedCountries = $('.country-checkbox:checked').map(function() {
+		return this.value;
+	}).get();
+	return checkedCountries
+}
+
+// render results and facet checkboxes
+function renderResults(results) {
+	console.log('results (global)', results)
+	$("#adv_options").hide()
+	$("#result_facets").show()
+	$("#detail_box").show()
+	$("#result_count").html(results.length)
+	// Clear previous results
+	$('#search_results').empty();
+	let geoms = []
+	let havegeom = 0
+
+	// Select the search_results div
+	const $resultsDiv = $('#search_results');
+
+	// search term to search input
+	const lastQuery = localStorage.getItem('last_query');
+	$("#d_input input").val(lastQuery);
+	localStorage.removeItem('last_query');
+
+	// Iterate over the results and append HTML for each
+	// NB these are parents only
+	// hit (delivers): [title, searchy, whg_id, pid, linkcount, variants,
+	//    ccodes, fclasses, types, geoms]
+	// hit (also): [uri, names, links, timespans, dataset]
+	// link to portal: <a href="/places/${result.whg_id}/portal">portal</a>
+	results.forEach(result => {
+		const count = parseInt(result.linkcount) + 1
+		const html = `
+            <div class="result">
+                <p>${result.title} (${count} in set)
+                  <span class="float-end">
+                      <a href="{% url 'places:portal_new' %}">portal ${result.whg_id}</a>
+                  </span>
+									</p>
+            </div>
+        `;
+		$resultsDiv.append(html);
+		// result.geom is an array
+		if (!!result.geom) {
+			havegeom += 1
+			result.geom.forEach(function(g) {
+				g['properties']['title'] = result.title
+				g['properties']['whgid'] = result.whg_id
+				geoms.push(g)
+			})
+		}
+
+	});
+
+	if (isInitialLoad) {
+		// sets values of global variables
+		allTypes = getAllTypes(results);
+		allCountries = getAllCountries(results);
+		isInitialLoad = false;
+
+		console.log('allTypes', allTypes)
+		console.log('allCountries', allCountries)
+	}
+	$('.result').first().addClass('selected');
+
+	// checkboxes for types in intial results
+	$('#type_checkboxes').empty().append('<p>Place Types</p>');
+	allTypes.forEach(type => {
+		const checkbox = $('<input>', {
+			type: 'checkbox',
+			id: 'type_' + type,
+			value: type,
+			class: 'filter-checkbox type-checkbox',
+			checked: checkboxStates[type] || false
+		});
+		const count = initialTypeCounts[type] || 0;
+		const label = $('<label>', {
+			'for': 'type_' + type,
+			text: `${type} (${count})`
+		});
+		$('#type_checkboxes').append(checkbox).append(label).append('<br>');
+	});
+
+	// checkboxes for countries in initial results
+	$('#country_checkboxes').empty().append('<p>Countries</p>');
+	allCountries.forEach(country => {
+		const cName = ccode_hash[country]['gnlabel'];
+		const checkbox = $('<input>', {
+			type: 'checkbox',
+			id: 'country_' + country,
+			value: country,
+			class: 'filter-checkbox country-checkbox',
+			checked: checkboxStates[country] || false
+		});
+		const count = initialCountryCounts[country] || 0;
+		const label = $('<label>', {
+			'for': 'country_' +
+				country,
+			text: `${cName} (${country}; ${count})`
+		});
+
+		$('#country_checkboxes').append(checkbox).append(label).append('<br>');
+	});
+
+	$('.filter-checkbox').change(function() {
+		// store state
+		checkboxStates[this.value] = this.checked;
+		console.log('checkboxStates', checkboxStates)
+
+		// Get all checked checkboxes
+		let checkedTypes = getCheckedTypes();
+		let checkedCountries = getCheckedCountries();
+
+		// Log the current selected types and countries for debugging
+		// console.log('Selected Types:', checkedTypes);
+		// console.log('Selected Countries:', checkedCountries);
+
+		let filteredResults = filterResults(checkedTypes, checkedCountries);
+
+		// Log the filtered results for debugging
+		console.log('Filtered Results:', filteredResults);
+
+		// Render the filtered results
+		if (filteredResults.length > 0) {
+			renderResults(filteredResults);
+			renderDetail(filteredResults[0]); // Render details for the first result
+		} else {
+			// Handle the case where there are no matching results
+			$('#search_results').html('<p>No results match the selected filters.</p>');
+			$('#detail').empty(); // You might also want to clear the detail view
+		}
+	});
+
+	// send some fields to
+	renderDetail(results[0]);
+
+	$('.result').click(function() {
+		const index = $(this).index(); // Get index of clicked card
+		renderDetail(results[index]); // Update detail view with clicked result data
+		$('.result').removeClass('selected');
+		$(this).addClass('selected');
+		// Future: Highlight marker on map corresponding to clicked result
+	});
+}
+
+function getAllTypes(results) {
+	let typesSet = new Set();
+	let typeCounts = {};
+
+	results.forEach(result => {
+		result.types.forEach(type => {
+			typesSet.add(type);
+
+			// Increment count for this type
+			if (!typeCounts[type]) {
+				typeCounts[type] = 0;
+			}
+			typeCounts[type]++;
+		});
+	});
+
+	// Set the global variable for initial type counts
+	initialTypeCounts = typeCounts;
+
+	return Array.from(typesSet).sort();
+}
+
+function getAllCountries(results) {
+	let countriesSet = new Set();
+	let countryCounts = {};
+
+	results.forEach(result => {
+		result.ccodes.forEach(country => {
+			countriesSet.add(country);
+
+			// Increment count for this country
+			if (!countryCounts[country]) {
+				countryCounts[country] = 0;
+			}
+			countryCounts[country]++;
+		});
+	});
+
+	// Set the global variable for initial country counts
+	initialCountryCounts = countryCounts;
+
+	return Array.from(countriesSet).sort();
+}
+
+function updateCheckboxCounts(results) {
+	// Count the number of results for each type and country
+	let typeCounts = {};
+	let countryCounts = {};
+	results.forEach(result => {
+		result.types.forEach(type => {
+			typeCounts[type] = (typeCounts[type] || 0) + 1;
+		});
+		result.ccodes.forEach(country => {
+			countryCounts[country] = (countryCounts[country] || 0) + 1;
+		});
+	});
+
+	// Update the checkbox labels with the counts
+	$('.type-checkbox').each(function() {
+		const type = this.value;
+		$(`label[for='type_${type}']`).text(`${type} (${typeCounts[type] || 0})`);
+	});
+	$('.country-checkbox').each(function() {
+		const country = this.value;
+		const countryName = ccode_hash[country] ? ccode_hash[country]['gnlabel'] : country;
+		$(`label[for='country_${country}']`).text(`${countryName} (${countryCounts[country] || 0})`);
+	});
+}
+
+function initiateSearch() {
+	isInitialLoad = true;
+
+	localStorage.removeItem('last_results')
+	localStorage.removeItem('last_query')
+
+	const query = $('#search-input').val(); // Get the query from the input
+	localStorage.setItem('last_query', query); // Store the query in localStorage
+
+	const options = gatherOptions(); //
+
+	// AJAX GET request to SearchView() with the options (includes qstr)
+	$.get("/search/index", options, function(data) {
+
+		results = data['suggestions']; // replaces global variable
+		localStorage.setItem('last_results', JSON.stringify(results));
+
+		renderResults(results);
+
+	});
+}
+
+function gatherOptions() {
+	// gather and return option values from the UI
+	let fclasses = [];
+	$('#search_filters input:checked').each(function() {
+		fclasses.push($(this).val());
+	});
+	let options = {
+		"qstr": $('#d_input input').val(),
+		"idx": "whg",
+		"fclasses": fclasses.join(','),
+		"start": $("#input_start").val(),
+		"end": $("#input_end").val(),
+		"bounds": $("#boundsobj").val()
+	}
+	return options;
+}
+
+function renderDetail(result) {
+	let detailHtml = "";
+
+	if (result.variants && result.variants.length > 0) {
+		detailHtml += `<p>Variants: ${result.variants.join(', ')}</p>`;
+	} else {
+		detailHtml += `<p>No Variants Available</p>`; // Or you can just skip adding this line
+	}
+
+	if (result.ccodes && result.ccodes.length > 0) {
+		detailHtml += `<p>Country Codes: ${result.ccodes.join(', ')}</p>`;
+	} else {
+		detailHtml += `<p>No Country Codes Available</p>`; // Or you can just skip adding this line
+	}
+
+	if (result.fclasses && result.fclasses.length > 0) {
+		detailHtml += `<p>Feature Classes: ${result.fclasses.join(', ')}</p>`;
+	} else {
+		detailHtml += `<p>No Feature Classes Available</p>`; // Or you can just skip adding this line
+	}
+
+	if (result.types && result.types.length > 0) {
+		detailHtml += `<p>Types: ${result.types.join(', ')}</p>`;
+	} else {
+		detailHtml += `<p>No Types Available</p>`; // Or you can just skip adding this line
+	}
+
+	$('#detail').html(detailHtml);
+}
+
+function renderPlaces(geoms) {
+	if (features) {
+		features.clearLayers()
+	}
+	if (typeof(traces) !== 'undefined') {
+		traces.clearLayers()
+	}
+
+	featcoll = {
+		"type": "FeatureCollection",
+		"features": geoms
+	}
+	// console.log('geodata prior to render',data)
+	var count_features = 0
+	idToFeature = {}
+	idToArea = {}
+	mappy.createPane('placePane');
+	mappy.getPane('placePane').style.zIndex = 200;
+
+	initialLayers = new L.featureGroup()
+	features = L.geoJSON(featcoll, {
+		pointToLayer: function(feature, latlng) {
+			count_features += 1;
+			// if feature has src key, it's from a database search
+			identifier = feature.src ? feature.properties.pid : feature.properties.whgid;
+			// all geometry added from wikidata matches is MultiPoint...for some reason
+			if (feature.type.indexOf('Point') > -1) {
+				marker = L.circleMarker(latlng, styles.marker_default)
+				// add to array for selection
+				idToFeature[identifier] = marker
+				return marker
+			}
+		},
+		onEachFeature: function(feature, layer) {
+			f = feature;
+			l = layer;
+			// if feature has src key, it's from a database search; also, popup link differs
+			if (feature.src) {
+				identifier = feature.properties.pid
+				popup_link = ' (<a href="/places/' + identifier + '/detail">place page</a>)'
+			} else {
+				identifier = feature.properties.whgid
+				popup_link = ' (<a href="/places/' + identifier + '/portal">place portal</a>)'
+			}
+			if (feature.type != 'Point') {
+				layer.setStyle(['LineString', 'MultiLineString'].indexOf(feature.type) > -1 ? styles.line_default : styles.pgon_default)
+				idToFeature[identifier] = layer
+			}
+			layer.bindPopup(feature.properties.title);
+
+			// find row in results and highlight it
+			layer.on('click', function(e) {
+				scroll = 20
+				ele = $("#result_div")
+				// set all to white background
+				$(".search-row").css('background-color', '#fff')
+
+				fid = search_scope == 'idx' ? this.feature.geometry.properties.whgid : this.feature.geometry.properties.pid
+
+				foo = $("tr.place-item").find('[data-id="' + fid + '"]').closest('.search-row')
+				foo.css('background-color', '#f4f4d7')
+				foo[0].scrollIntoView()
+				ele.scrollTop(ele.scrollTop() - scroll);
+			})
+			//
+			initialLayers.addLayer(layer)
+		}
+	}).addTo(mappy); // adds features L.geoJSON
+
+	bounds = features.getBounds()
+	if (geoms.length > 0) {
+		mappy.fitBounds(bounds)
+		if (mappy.getZoom() > 5) {
+			mappy.setZoom(5)
+		}
+	}
+}
