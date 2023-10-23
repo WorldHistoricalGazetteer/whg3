@@ -3,7 +3,7 @@
 import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.umd.min.js';
 import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.css';
 import datasetLayers from './mapLayerStyles';
-import { bbox } from './6.5.0_turf.min.js';
+import { bbox, centroid } from './6.5.0_turf.min.js';
 import { attributionString } from './utilities';
 import { CustomAttributionControl } from './customMapControls';
 import '../css/search.css';
@@ -86,7 +86,7 @@ function waitMapLoad() {
 			});
 			
 			mappy.on('click', function(e) {
-				$('.result').eq(getFeatureId(e)).click();
+				$('.result').eq(getFeatureId(e)).attr('data-map-clicked', 'true').click();
 			});
             
             resolve();
@@ -166,25 +166,7 @@ function renderResults(featureCollection) {
 	// Clear previous results
 	$('#search_results').empty();
 
-	mappy.getSource('places').setData(featureCollection);
-	
-	if (featureCollection.features.length > 0) {
-		mappy.fitBounds(bbox(featureCollection), {
-	        padding: 100,
-	        maxZoom: 5,
-	        duration: 1000,
-	    });
-	}
-	else {
-	    mappy.flyTo({
-			center: mapParameters.center,
-			zoom: mapParameters.zoom,
-	        speed: .5,
-	    });
-		$('#detail').empty(); // Clear the detail view
-	}
-    
-    
+	mappy.getSource('places').setData(featureCollection);    
 
 	// Select the search_results div
 	const $resultsDiv = $('#search_results');
@@ -301,22 +283,46 @@ function renderResults(featureCollection) {
 	
 		mappy.removeFeatureState({ source: 'places' });	
 		mappy.setFeatureState({ source: 'places', id: index }, { highlight: true });
-/*		mappy.fitBounds(bbox(featureCollection), {
-	        padding: 100,
-	        maxZoom: 5,
-	        duration: 1000,
-	    });*/
 	    
-	    // TODO: FlyTo when row clicked, NOT map
-	    // Scroll table to bring map-clicked row into view
+	    if ($(this).attr('data-map-clicked') === 'true') { // Scroll table
+			$(this).removeAttr('data-map-clicked');
+			const $container = $('#result_container');
+			$container.scrollTop($(this).offset().top - $container.offset().top);
+		}
+		else if ($(this).attr('data-map-initialising') === 'true') {
+			$(this).removeAttr('data-map-initialising');
+			mappy.fitBounds(bbox(featureCollection), {
+		        padding: 30,
+		        // maxZoom: 5,
+		        duration: 1000,
+		    });
+		}
+		else {
+		    mappy.flyTo({ // Adjust map
+				center: centroid(featureCollection.features[index]).geometry.coordinates,
+				duration: 1000,
+		    });
+		}
 		
 		renderDetail(results[index]); // Update detail view with clicked result data
 		$('.result').removeClass('selected');
 		$(this).addClass('selected');
 	});
 	
-	// Highlight first result and render its detail
-	$('.result').first().click();
+	
+	
+	if (featureCollection.features.length > 0) {
+		// Highlight first result and render its detail
+		$('.result').first().attr('data-map-initialising', 'true').click();
+	}
+	else {
+	    mappy.flyTo({
+			center: mapParameters.center,
+			zoom: mapParameters.zoom,
+	        speed: .5,
+	    });
+		$('#detail').empty(); // Clear the detail view
+	}
 }
 
 function getAllTypes(results) {
