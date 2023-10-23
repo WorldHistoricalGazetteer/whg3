@@ -403,8 +403,7 @@ function suggestionsGeoJSON(suggestions) { // Convert ES suggestions to GeoJSON 
 	  features: [],
 	};
 	let idCounter = 0;
-	for (const itemSource of suggestions) {
-	  let item = {... itemSource};
+	for (const item of suggestions) {
 	  const feature = {
 	    type: "Feature",
 	    geometry: {
