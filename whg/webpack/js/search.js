@@ -64,6 +64,30 @@ function waitMapLoad() {
 				compact: true,
 		    	autoClose: mapParameters.controls.attribution.open === false,
 			}), 'bottom-right');
+			
+			function getFeatureId(e) {
+				const features = mappy.queryRenderedFeatures(e.point);
+				if (features.length > 0) {
+					const topFeature = features[0]; // Handle only the top-most feature
+					const topLayerId = topFeature.layer.id;
+					// Check if the top feature's layer id starts with the id of any layer in datasetLayers
+					const isTopFeatureInDatasetLayer = datasetLayers.some(layer => topLayerId.startsWith(layer.id));
+					if (isTopFeatureInDatasetLayer) {
+						mappy.getCanvas().style.cursor = 'pointer';
+				        return topFeature.id;
+					}
+				}
+				mappy.getCanvas().style.cursor = 'grab';
+		        return null;
+			}
+			
+			mappy.on('mousemove', function(e) {
+				getFeatureId(e);
+			});
+			
+			mappy.on('click', function(e) {
+				$('.result').eq(getFeatureId(e)).click();
+			});
             
             resolve();
         });
@@ -277,11 +301,14 @@ function renderResults(featureCollection) {
 	
 		mappy.removeFeatureState({ source: 'places' });	
 		mappy.setFeatureState({ source: 'places', id: index }, { highlight: true });
-		mappy.fitBounds(bbox(featureCollection), {
+/*		mappy.fitBounds(bbox(featureCollection), {
 	        padding: 100,
 	        maxZoom: 5,
 	        duration: 1000,
-	    });
+	    });*/
+	    
+	    // TODO: FlyTo when row clicked, NOT map
+	    // Scroll table to bring map-clicked row into view
 		
 		renderDetail(results[index]); // Update detail view with clicked result data
 		$('.result').removeClass('selected');
