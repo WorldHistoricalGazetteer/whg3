@@ -56,7 +56,7 @@ class DatasetGalleryView(ListView):
   redirect_field_name = 'redirect_to'
 
   context_object_name = 'datasets'
-  template_name = 'datasets/gallery.html'
+  template_name = 'datasets/ds_gallery.html'
   model = Dataset
 
   def get_queryset(self):
