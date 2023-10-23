@@ -2,6 +2,9 @@
 
 import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.umd.min.js';
 import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.css';
+import datasetLayers from './mapLayerStyles';
+import { bbox } from './6.5.0_turf.min.js';
+import { attributionString } from './utilities';
 import '../css/search.css';
 
 let results = [];
@@ -33,66 +36,77 @@ let mappy = new maptilersdk.Map({
 	userProperties: true
 });
 
-mappy.on('load', function() {
-	console.log('Map loaded.');
-	
-	const style = mappy.getStyle();
-	style.layers.forEach(layer => { // Hide map labels
-	    if (layer.id.includes('label')) {
-	        mappy.setLayoutProperty(layer.id, 'visibility', 'none');
-	    }
-	});
-	
-});
+function waitMapLoad() {
+    return new Promise((resolve) => {
+        mappy.on('load', () => {
+            console.log('Map loaded.');
+            const style = mappy.getStyle();
+            style.layers.forEach(layer => {
+                if (layer.id.includes('label')) {
+                    mappy.setLayoutProperty(layer.id, 'visibility', 'none');
+                }
+            });
+            
+		    mappy.addSource('places', {
+				'type': 'geojson',
+				'data': {
+				  "type": "FeatureCollection",
+				  "features": []
+				},
+				'attribution': attributionString(),
+			});
+		    datasetLayers.forEach(function(layer) {
+				mappy.addLayer(layer);
+			});
+            
+            resolve();
+        });
+    });
+}
 
-$(document).ready(function() {
+function waitDocumentReady() {
+    return new Promise((resolve) => {
+        $(document).ready(() => resolve());
+    });
+}
 
-	// look for last_results
-	const storedResults = localStorage.getItem('last_results');
-	results = storedResults ? JSON.parse(storedResults) : null;
+Promise.all([waitMapLoad(), waitDocumentReady()])
+    .then(() => {
+        const storedResults = localStorage.getItem('last_results');
+        const results = storedResults ? JSON.parse(storedResults) : null;
 
-	// render 'em
-	if (results) {
-		// Render the results on the page
-		renderResults(results);
-		// display filters div
-		$("#result_facets").show()
-	} else {
-		console.log('no results')
-		$("#adv_options").show()
-	}
+        if (results) {
+            renderResults(results);
+            $("#result_facets").show();
+        } else {
+            console.log('no results');
+            $("#adv_options").show();
+        }
 
-	// toggler for advanced search
-	$('#advanced_search').hide();
+        $('#advanced_search').hide();
 
-	$('#advanced_search-toggle').click(function() {
-		$('#advanced_search').slideToggle(300);
-	});
+        $('#advanced_search-toggle').click(() => $('#advanced_search').slideToggle(300));
 
-	$('#close-advanced_search').click(function() {
-		$('#advanced_search').slideUp(300);
-	});
+        $('#close-advanced_search').click(() => $('#advanced_search').slideUp(300));
 
-	$("#a_search").on('click', function(event) {
-		event.preventDefault();
-		initiateSearch(); // Call the initiateSearch function when the button is clicked
-	});
-	$("#d_input input").on('keypress', function(event) {
-		if (event.which == 13) {
-			event.preventDefault();
-			initiateSearch(); // Call the initiateSearch function when 'Enter' is pressed
-		}
-	});
-
-}); // document ready
+        $("#a_search, #d_input input").on('click keypress', function(event) {
+            if (event.type === 'click' || (event.type === 'keypress' && event.which === 13)) {
+                event.preventDefault();
+                initiateSearch();
+            }
+        });
+    })
+    .catch(error => console.error("An error occurred:", error));
 
 // Filter results based on checked checkboxes
 function filterResults(checkedTypes, checkedCountries) {
-	let filteredResults = results.filter(function(result) {
+	let filteredResults = results.features.filter(function(feature) {
+		let result = feature.properties
 		return (checkedTypes.length === 0 || checkedTypes.some(type => result.types.includes(type))) &&
 			(checkedCountries.length === 0 || checkedCountries.some(country => result.ccodes.includes(country)));
 	});
-	return filteredResults
+	console.log('Filtering...',results,filteredResults);
+	return {type: "FeatureCollection", features: filteredResults}
 }
 
 function getCheckedTypes() {
@@ -110,16 +124,21 @@ function getCheckedCountries() {
 }
 
 // render results and facet checkboxes
-function renderResults(results) {
-	console.log('results (global)', results)
+function renderResults(featureCollection) {
+	console.log('results (global)', featureCollection)
 	$("#adv_options").hide()
 	$("#result_facets").show()
 	$("#detail_box").show()
-	$("#result_count").html(results.length)
+	$("#result_count").html(featureCollection.features.length)
 	// Clear previous results
 	$('#search_results').empty();
-	let geoms = []
-	let havegeom = 0
+
+	mappy.getSource('places').setData(featureCollection);
+	mappy.fitBounds(bbox(featureCollection), {
+        padding: 100,
+        maxZoom: 5,
+        speed: .5,
+    });
 
 	// Select the search_results div
 	const $resultsDiv = $('#search_results');
@@ -134,28 +153,25 @@ function renderResults(results) {
 	// hit (delivers): [title, searchy, whg_id, pid, linkcount, variants,
 	//    ccodes, fclasses, types, geoms]
 	// hit (also): [uri, names, links, timespans, dataset]
+	// TODO: Portal URL not yet implemented
 	// link to portal: <a href="/places/${result.whg_id}/portal">portal</a>
-	results.forEach(result => {
+	
+	let results = featureCollection.features;
+	results.forEach(feature => {
+		
+		let result = feature.properties;
+		
 		const count = parseInt(result.linkcount) + 1
 		const html = `
             <div class="result">
                 <p>${result.title} (${count} in set)
                   <span class="float-end">
-                      <a href="{% url 'places:portal_new' %}">portal ${result.whg_id}</a>
+                      <a href="/places/${result.whg_id}/portal" title="portal for ${ result.whg_id }">portal</a>
                   </span>
 									</p>
             </div>
         `;
 		$resultsDiv.append(html);
-		// result.geom is an array
-		if (!!result.geom) {
-			havegeom += 1
-			result.geom.forEach(function(g) {
-				g['properties']['title'] = result.title
-				g['properties']['whgid'] = result.whg_id
-				geoms.push(g)
-			})
-		}
 
 	});
 
@@ -228,9 +244,9 @@ function renderResults(results) {
 		console.log('Filtered Results:', filteredResults);
 
 		// Render the filtered results
-		if (filteredResults.length > 0) {
+		if (filteredResults.features.length > 0) {
 			renderResults(filteredResults);
-			renderDetail(filteredResults[0]); // Render details for the first result
+			renderDetail(filteredResults.features[0]); // Render details for the first result
 		} else {
 			// Handle the case where there are no matching results
 			$('#search_results').html('<p>No results match the selected filters.</p>');
@@ -254,7 +270,8 @@ function getAllTypes(results) {
 	let typesSet = new Set();
 	let typeCounts = {};
 
-	results.forEach(result => {
+	results.forEach(feature => {
+		let result = feature.properties;
 		result.types.forEach(type => {
 			typesSet.add(type);
 
@@ -276,7 +293,8 @@ function getAllCountries(results) {
 	let countriesSet = new Set();
 	let countryCounts = {};
 
-	results.forEach(result => {
+	results.forEach(feature => {
+		let result = feature.properties;
 		result.ccodes.forEach(country => {
 			countriesSet.add(country);
 
@@ -294,11 +312,12 @@ function getAllCountries(results) {
 	return Array.from(countriesSet).sort();
 }
 
-function updateCheckboxCounts(results) {
+function updateCheckboxCounts(features) {
 	// Count the number of results for each type and country
 	let typeCounts = {};
 	let countryCounts = {};
-	results.forEach(result => {
+	features.forEach(feature => {
+		let result = feature.properties;
 		result.types.forEach(type => {
 			typeCounts[type] = (typeCounts[type] || 0) + 1;
 		});
@@ -319,6 +338,32 @@ function updateCheckboxCounts(results) {
 	});
 }
 
+function suggestionsGeoJSON(suggestions) { // Convert ES suggestions to GeoJSON FeatureCollection
+	let featureCollection = {
+	  type: "FeatureCollection",
+	  features: [],
+	};
+	for (const itemSource of suggestions) {
+	  let item = {... itemSource};
+	  const feature = {
+	    type: "Feature",
+	    geometry: {
+			type: "GeometryCollection",
+        	geometries: item.geom
+		},
+	    properties: {},
+	  };
+	  delete item.geom;
+	  for (const prop in item) { // Copy all non-standard properties from the original item
+	    if (!["type", "geometry", "properties"].includes(prop)) {
+	      feature.properties[prop] = item[prop];
+	    }
+	  }
+	  featureCollection.features.push(feature);
+	}
+	return featureCollection;
+}
+
 function initiateSearch() {
 	isInitialLoad = true;
 
@@ -333,7 +378,7 @@ function initiateSearch() {
 	// AJAX GET request to SearchView() with the options (includes qstr)
 	$.get("/search/index", options, function(data) {
 
-		results = data['suggestions']; // replaces global variable
+		results = suggestionsGeoJSON(data['suggestions']); // Convert to GeoJSON and replace global variable
 		localStorage.setItem('last_results', JSON.stringify(results));
 
 		renderResults(results);
@@ -358,7 +403,8 @@ function gatherOptions() {
 	return options;
 }
 
-function renderDetail(result) {
+function renderDetail(feature) {
+	let result = feature.properties;
 	let detailHtml = "";
 
 	if (result.variants && result.variants.length > 0) {
@@ -388,7 +434,7 @@ function renderDetail(result) {
 	$('#detail').html(detailHtml);
 }
 
-function renderPlaces(geoms) {
+function renderPlaces(geoms) { // TODO: DELETE THIS WHEN mapResults IS COMPLETE
 	if (features) {
 		features.clearLayers()
 	}

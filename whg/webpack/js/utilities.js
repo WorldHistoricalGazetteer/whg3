@@ -132,17 +132,17 @@ export function initInfoOverlay() {
 
 export function attributionString(data) {
 	let attributionParts = [];
-	if (data.attribution) {
+	if (!!data && data.attribution) {
 		attributionParts.push(data.attribution);
 	}
-	if (data.citation) {
+	if (!!data && data.citation) {
 		attributionParts.push(data.citation);
 	}
 	let attribution = '';
 	if (attributionParts.length > 0) attribution = attributionParts.join(', ');
 
 	let attributionStringParts = ['&copy; World Historical Gazetteer & contributors'];
-	attributionStringParts.push(data.attribution || data.citation || attribution);
+	if (!!data) attributionStringParts.push(data.attribution || data.citation || attribution);
 
 	return attributionStringParts.join(' | ');
 }
