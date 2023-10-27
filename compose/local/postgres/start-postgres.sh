@@ -12,6 +12,7 @@ echo "Default superuser $DB_USER ensured."
 
 if database_exists; then
     echo "Database $DB_NAME already exists."
+    echo "DB_LOAD_DATA is set to $DB_LOAD_DATA"
     if [[ "$DB_LOAD_DATA" == "True" ]]; then
         # Restore data if DB_LOAD_DATA is set to True
         echo "Restoring data from dump..."
