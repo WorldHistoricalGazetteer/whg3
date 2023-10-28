@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+# may require removing existing volume; see start-postgres-prod.sh
+
 # Check if database exists
 database_exists() {
     psql -U "$POSTGRES_USER" -lqt | cut -d \| -f 1 | grep -qw "$DB_NAME"
