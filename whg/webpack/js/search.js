@@ -4,7 +4,7 @@ import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.umd.min.js';
 import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.css';
 import datasetLayers from './mapLayerStyles';
 import { bbox, centroid } from './6.5.0_turf.min.js';
-import { attributionString } from './utilities';
+import { attributionString, geomsGeoJSON } from './utilities';
 import { CustomAttributionControl } from './customMapControls';
 import '../css/search.css';
 
@@ -397,34 +397,6 @@ function updateCheckboxCounts(features) {
 	});
 }
 
-function suggestionsGeoJSON(suggestions) { // Convert ES suggestions to GeoJSON FeatureCollection
-	let featureCollection = {
-	  type: "FeatureCollection",
-	  features: [],
-	};
-	let idCounter = 0;
-	for (const item of suggestions) {
-	  const feature = {
-	    type: "Feature",
-	    geometry: {
-			type: "GeometryCollection",
-        	geometries: item.geom
-		},
-	    properties: {},
-	    id: idCounter,
-	  };
-	  delete item.geom;
-	  for (const prop in item) { // Copy all non-standard properties from the original item
-	    if (!["type", "geometry", "properties"].includes(prop)) {
-	      feature.properties[prop] = item[prop];
-	    }
-	  }
-	  featureCollection.features.push(feature);
-	  idCounter++;
-	}
-	return featureCollection;
-}
-
 function initiateSearch() {
 	isInitialLoad = true;
 
@@ -436,7 +408,7 @@ function initiateSearch() {
 	// AJAX GET request to SearchView() with the options (includes qstr)
 	$.get("/search/index", options, function(data) {
 
-		results = suggestionsGeoJSON(data['suggestions']); // Convert to GeoJSON and replace global variable
+		results = geomsGeoJSON(data['suggestions']); // Convert to GeoJSON and replace global variable
 		results.query = query;
 		localStorage.setItem('last_results', JSON.stringify(results));
 
