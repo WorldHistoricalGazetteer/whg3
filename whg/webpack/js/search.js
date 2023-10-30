@@ -33,7 +33,7 @@ let mappy = new maptilersdk.Map({
 	style: maptilersdk.MapStyle[style_code[0]][style_code[1]],
 	attributionControl: false,
 	geolocateControl: false,
-	navigationControl: false,
+	navigationControl: true,
 	userProperties: true
 });
 

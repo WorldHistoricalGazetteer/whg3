@@ -26,7 +26,7 @@ let mappy = new maptilersdk.Map({
 	style: maptilersdk.MapStyle[style_code[0]][style_code[1]],
 	attributionControl: false,
 	geolocateControl: false,
-	navigationControl: false,
+	navigationControl: true,
 	userProperties: true
 });
 
@@ -43,6 +43,7 @@ function waitMapLoad() {
 				'data': featureCollection,
 				'attribution': attributionString(),
 			});
+			mappy.setFeatureState({ source: 'places', id: 0 }, { highlight: true });
 		    datasetLayers.forEach(function(layer) {
 				mappy.addLayer(layer);
 			});
@@ -112,20 +113,80 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		} else {
 			$("#place_temporal").hide()
 		}
+
+		$(".ds_card").on('click', function(e) {
+			// set all layers to default style
+			for (i in idToFeature) {
+				idToFeature[i].setStyle(styles['Polygon']['default'])
+			}
+			dsid = $(this).data('id')
+			l = idToFeature[dsid]
+			// raise z-index
+			l.bringToFront().setStyle(styles['Polygon']['focus'])
+			// get a centroid
+			mappy.fitBounds(l.getBounds().pad(0.5))
+		})
+		
+		$(".ds_card").hover(function() {
+				//console.log($(this))
+				let id = $(this).data('id')
+				feat = idToFeature[id]
+				//console.log('feat',feat)
+				ogfill = "#ff9999"
+				feat.setStyle({
+					fillColor: 'yellow',
+					color: 'red',
+					fillOpacity: 0.3
+				})
+			},
+			function() {
+				let id = $(this).data('id')
+				feat = idToFeature[id]
+				feat.setStyle({
+					fillColor: ogfill,
+					color: '#333',
+					fillOpacity: 0.3
+				})
+			}
+		);
+		
+		$("#b_download").click(function() {
+			var dsids = [];
+			$('.modal-body input:checked').each(function() {
+				dsids.push($(this).val());
+			});
+			console.log('download datasets:', dsids)
+		})
+		
+		$(".btn-cancel").click(function() {
+			$("#downloadModal").modal('hide')
+		})
+		
+		$(".dl-links a").click(function(e) {
+			//e.preventDefault()
+			urly = '/datasets/' + $(this).data('id') + '/augmented/' + $(this).attr('ref')
+			console.log('urly', urly)
+			startDownloadSpinner()
+			$.ajax({
+				type: 'GET',
+				url: urly
+			}).done(function() {
+				spinner_dl.stop();
+			})
+		})
+
+		$("[rel='tooltip']").tooltip();
+
+		var clip_geom = new ClipboardJS('#a_clipgeom');
+		clip_geom.on('success', function(e) {
+			e.clearSelection();
+			$("#a_clipgeom").tooltip('hide')
+				.attr('data-original-title', 'copied!')
+				.tooltip('show');
+		});
  
     })
     .catch(error => console.error("An error occurred:", error));
-
-$("[rel='tooltip']").tooltip();
-
-var clip_geom = new ClipboardJS('#a_clipgeom');
-clip_geom.on('success', function(e) {
-	e.clearSelection();
-	$("#a_clipgeom").tooltip('hide')
-		.attr('data-original-title', 'copied!')
-		.tooltip('show');
-});
-// activate all tooltips
 
 // helpers for histogram_data()
 function range(start, stop, step) {
@@ -243,68 +304,7 @@ function histogram(data, labels) {
 		.call(axisB)
 }
 
-$(".ds_card").on('click', function(e) {
-	// set all layers to default style
-	for (i in idToFeature) {
-		idToFeature[i].setStyle(styles['Polygon']['default'])
-	}
-	dsid = $(this).data('id')
-	l = idToFeature[dsid]
-	// raise z-index
-	l.bringToFront().setStyle(styles['Polygon']['focus'])
-	// get a centroid
-	mappy.fitBounds(l.getBounds().pad(0.5))
-})
-
-$(".ds_card").hover(function() {
-		//console.log($(this))
-		let id = $(this).data('id')
-		feat = idToFeature[id]
-		//console.log('feat',feat)
-		ogfill = "#ff9999"
-		feat.setStyle({
-			fillColor: 'yellow',
-			color: 'red',
-			fillOpacity: 0.3
-		})
-	},
-	function() {
-		let id = $(this).data('id')
-		feat = idToFeature[id]
-		feat.setStyle({
-			fillColor: ogfill,
-			color: '#333',
-			fillOpacity: 0.3
-		})
-	}
-);
-
-$("#b_download").click(function() {
-	var dsids = [];
-	$('.modal-body input:checked').each(function() {
-		dsids.push($(this).val());
-	});
-	console.log('download datasets:', dsids)
-})
-
 function startDownloadSpinner() {
 	window.spinner_dl = new Spin.Spinner().spin();
 	$("#ds_cards").append(spinner_dl.el);
 }
-
-$(".btn-cancel").click(function() {
-	$("#downloadModal").modal('hide')
-})
-
-$(".dl-links a").click(function(e) {
-	//e.preventDefault()
-	urly = '/datasets/' + $(this).data('id') + '/augmented/' + $(this).attr('ref')
-	console.log('urly', urly)
-	startDownloadSpinner()
-	$.ajax({
-		type: 'GET',
-		url: urly
-	}).done(function() {
-		spinner_dl.stop();
-	})
-})
