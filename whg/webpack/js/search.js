@@ -125,6 +125,55 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
                 initiateSearch();
             }
         });
+
+		// START Ids to session (kg 2023-10-31)
+		function getCookie(name) {
+		  let cookieValue = null;
+		  if (document.cookie && document.cookie !== '') {
+			const cookies = document.cookie.split(';');
+			for (let i = 0; i < cookies.length; i++) {
+			  const cookie = cookies[i].trim();
+			  if (cookie.substring(0, name.length + 1) === (name + '=')) {
+				cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+				break;
+			  }
+			}
+		  }
+		  return cookieValue;
+		}
+
+		$('.portal-link').click(function(e) {
+			e.preventDefault();
+
+			const pid = $(this).data('pid');
+			const children = $(this).data('children') ?
+				decodeURIComponent($(this).data('children')).split(',').map(id => parseInt(id, 10)) : [];
+			const placeIds = [pid, ...children].filter(id => !isNaN(id) && id !== null && id !== undefined);
+			const csrfToken = getCookie('csrftoken');
+
+			console.log('pid', pid)
+			console.log('children', $(this).attr('data-children'))
+			console.log('placeIds', placeIds)
+			console.log('csrfToken', csrfToken)
+
+			$.ajax({
+			  url: '/places/set-current-result/',
+			  type: 'POST',
+			  data: {
+				'place_ids': placeIds,
+				'csrfmiddlewaretoken': csrfToken
+			  },
+			  traditional: true,
+			  success: function(response) {
+				window.location.href = '/places/portal-new/';
+			  },
+			  error: function(xhr, status, error) {
+				console.error("AJAX POST error:", error);
+			  }
+			});
+
+		});
+		// END Ids to session
     })
     .catch(error => console.error("An error occurred:", error));
 
@@ -188,6 +237,9 @@ function renderResults(featureCollection) {
 		let result = feature.properties;
 		
 		const count = parseInt(result.linkcount) + 1
+
+		// START alternate url (kg 2023-10-31)
+
 		const html = `
             <div class="result">
                 <p>${result.title} (${count} in set)
