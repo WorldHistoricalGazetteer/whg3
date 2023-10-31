@@ -6,19 +6,10 @@
 {% load dataset_extras %}
 
 {% block extra_head %}
-  {% leaflet_js %}
-  {% leaflet_css %}
   <script src="{% static 'js/aliases.js' %}"></script>
-{#  <script src="{% static 'js/easyprint.js' %}"></script>#}
-  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
-  
   <link rel="stylesheet" href="{% static 'css/spin.css' %}"/>
-{#  <link rel="stylesheet" href="//cdn.datatables.net/1.10.23/css/dataTables.bootstrap4.min.css">#}
-{#  <script src="//cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js"></script>#}
-{#  <script src="//cdn.datatables.net/1.10.23/js/dataTables.bootstrap4.min.js"></script>#}
-	<style>
-		#error_closer {padding: 0 .75rem !important;}
-	</style>
+	
+  <link href="{% static 'webpack/tasks.bundle.css' %}" rel="stylesheet" /> 
 {% endblock %}
 
 {% block title %}<title>Dataset::{{ ds.label }}</title>{% endblock %}
@@ -176,7 +167,7 @@
           {% if request.method == 'GET' %}
           <div id="mapdiv_recon" class="mt-2">
 	          <span class="smallish">SEARCH BOUNDS: <span id="area_name" class="strong-red">Global</span></span>
-            {% leaflet_map "map_recon" %}
+              <div id="mapdiv"></div>
           </div>
           {% endif %}
           {% if not ds.recon_status.idx %}
@@ -243,264 +234,38 @@
   </div>
 </div>
 
+<!-- Set up MapLibre map using Maptiler SDK -->
 <script type="text/javascript">
-  // modal buttons
-  $("#btn_done").on('click', function(){ location.reload(); })
-  $("#btn_cancel").on('click', function(){ location.reload(); })
-
-  //
-  $('#recon_form').change(function(){
-		task = $("input[name='recon']:checked").val();
-    if (task == 't_whg') {
-      $("#data_limiter").show()
-    } else {
-      $("#data_limiter").hide()
+    let mapParameters = {
+        container: 'mapdiv',
+        center: [10.2385, 29.8626],
+        zoom: 0.1, // starting zoom
+        minZoom: 0.1,
+        maxZoom: 10,
+        mapTilerKey: '{{ maptilerkey }}',
+        controls: {
+            layer: true,
+            navigation: false,
+            fullscreen: false,
+            attribution: {
+                open: false,
+            },
+            temporal: {
+                fromValue: 1550,
+                toValue: 1720,
+                minValue: -2000,
+                maxValue: 2100,
+                open: false,
+                includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
+                epochs: null,
+                automate: null,
+            }
+        },
+        styleFilter: [ 'OUTDOOR.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
     }
-  });
-	$('#data_limiter').change(function(){
-		coll = $("#select_colls").val();
-		ds = $("#select_ds").val();
-		{#huh = $(this)#}
-    {#console.log('$(this)', $(this))#}
-    {#console.log('coll, ds', coll, ds)#}
-	})
+</script>
 
-  $( "#select_region" ).change(function() {
-    $( "#select_userarea option[value=0]" ).prop('selected',true)
-    if ($(this).val() == 0) {
-			reset_map()
-    } else {
-        render_area( $(this).val(), 'region')
-    }
-  });
-
-  $(function(){
-    msgs = ["{{ msg_wdlocal.type }}","{{ msg_whg.type }}"]
-    console.log('msgs',msgs)
-    if("{{ msg_wdlocal.type }}" == 'done' && '{{ ds.ds_status }}' != 'updated' ){
-      $("#r_wdlocal").attr('disabled',true)
-	    $("#r_whg").prop('checked','true')
-    }
-    found = msgs.slice(0,2).some(r=> ['none','unreviewed','inprogress'].includes(r))
-
-    if(msgs.slice(0,2).includes("done") && !found){
-      $("#addtask_lower").addClass("hidden")
-    }
-
-    // set default 
-    $("#r_keep_wd").attr('checked', true)
-    
-    $("#cancel_taskadd").click(function(e){
-      e.preventDefault();
-      window.location.href = "{% url 'datasets:ds_reconcile' ds.id %}"
-    })
-
-    // help modals
-    $(".help-matches").click(function(){
-      page=$(this).data('id')
-      console.log('help:', page)
-      $('.selector').dialog('open');
-    })
-    $(".selector").dialog({
-      resizable: false,
-      autoOpen: false,
-      height: 500,
-      width: 700,
-      title: "WHG Help",
-      modal: true,
-      buttons: { 'Close': function() {console.log('close dialog'); $(this).dialog('close');} },
-      open: function(event, ui) {
-        $('#helpme').load('/media/help/'+page+'.html')
-      },
-      show: {effect: "fade",duration: 400 },
-      hide: {effect: "fade",duration: 400 }
-    });
-  })
-
-  // activate all tooltips
-  $("[rel='tooltip']").tooltip();
-
-  function renderMap(geom, tab){
-    if (geom.features.length==0) {
-      console.log('no features in renderMap() call')
-    } else {
-      // clear existing if any
-      if(typeof(features)!=='undefined'){
-        mappy.removeLayer(features)
-      }
-      idToFeature = {}  // for feature lookup
-      features = L.geoJSON(geom, {
-      // feature here is a geometry
-      // TODO: LPF should allow single geometry, not only GeometryCollection
-        pointToLayer: function (feature, latlng) {
-          matchid = feature.place_id
-          <!--console.log('feature',feature)-->
-          marker = L.circleMarker(latlng,styles.Point.default).bindPopup(feature.title+
-            '<br>pid: <a href="'+window.location.origin+'/api/db?id='+matchid+'" target="_blank">'+
-            matchid+'</a>');
-          idToFeature[matchid] = marker
-          return marker
-        }
-        ,onEachFeature: function(feature,layer) {
-          f=feature; l=layer;
-          identifier = f.place_id;
-          if(f.type != 'Point'){
-            layer.setStyle(styles[f.type].default).bindPopup(
-              f.title+'<br>pid: <a href="'+
-              window.location.origin+'/api/db?id='+
-              identifier+'" target="_blank">'+identifier+'</a>'
-            )
-            idToFeature[identifier] = layer
-          }
-        }
-      }).addTo(mappy);
-    }
-    mappy.fitBounds(features.getBounds())
-    mappy.on('zoomend', function() {
-      var currentZoom = mappy.getZoom();
-      var myRadius = currentZoom*(1); //or whatever ratio you prefer
-      var myWeight = currentZoom*(1/5); //or whatever ratio you prefer
-      features.setStyle({radius: myRadius, weight: myWeight});
-      opt = Object.values(idToFeature)[0].options
-      foptions = { ...opt };
-    });
-    opt = Object.values(idToFeature)[0].options
-    foptions = { ...opt };
-  }
-    
-  // area-related
-  function render_area(aid) {
-    $.ajax({
-        url: '/api/area/'+aid
-      }).done(function(data){
-        console.log('render_area()',data)
-        geom = {"type":"FeatureCollecton","features":[]}
-        geom['features'].push(data.geojson)
-        renderMap(geom,'area')
-		    $("#area_name").html(data.title).show()
-    })
-  }
-
-  function reset_map(){
-    features.clearLayers()
-    $("#area_name").html('Global')
-	  mappy.setView(L.latLng(35,0), 1)
-  }
-
-  window.limiter = []
-  // clear data limiter dropdown choice if other is used
-  $( "#select_colls" ).change(function() {
-    $( "#select_ds option[value=0]" ).prop('selected',true)
-	  limiter = ['c',$(this).val()]
-	  console.log('limiter:', limiter)
-  });
-  
-  $( "#select_ds" ).change(function() {
-    $( "#select_colls option[value=0]" ).prop('selected',true)
-	  limiter = ['d',$(this).val()]
-	  console.log('limiter:', limiter)
-  });
-
-  // clear dropdown choice if other is used & render geometry
-  $( "#select_region" ).change(function() {
-    $( "#select_userarea option[value=0]" ).prop('selected',true)
-    if ($(this).val() == 0) {
-			reset_map()
-    } else {
-        render_area( $(this).val(), 'region')
-    }
-  });
-
-  $( "#select_userarea" ).change(function() {
-    $( "#select_region option[value=0]" ).prop('selected',true)
-    if ($(this).val() == 0) {
-        reset_map()
-    } else {
-        render_area( $(this).val(), 'area')
-    }
-    if ($( "#select_userarea option[value='create']" ).prop('selected') == true) {
-      location.href="{% url 'areas:area-create' %}?next={% url 'datasets:ds_recon' ds.id %}"
-    }
-  });
-
-  $("[rel='tooltip']").tooltip(); 
-
-  // responds to leaflet_map tags in both #browse and #addtask tabs
-  addEventListener('map:init', function (e) {
-      token_whg = '{{ mbtoken }}',
-      mbstyle_url = 'https://api.mapbox.com/styles/v1/{id}/tiles/256/{z}/{x}/{y}?access_token={token}';
-      
-    var satellite  = L.tileLayer(mbstyle_url, {id:'mapbox/satellite-streets-v11', token:token_whg})
-    var osm  = L.tileLayer(mbstyle_url, {id:'mapbox/light-v10', token:token_whg})
-
-    var baseLayers = {
-      "OSM": osm,
-      "Satellite": satellite
-    };
-
-    if (e.detail.id == 'map_browse'){
-      // it's the Browse map, name it mappy
-      window.mappy = e.detail.map
-      mappy.setMaxBounds(null)
-      L.control.layers(baseLayers).addTo(mappy);
-      baseLayers['OSM'].addTo(mappy)
-
-      var printer = L.easyPrint({
-        tileLayer: osm,
-        sizeModes: ['Current'],
-        filename: 'myMap',
-        exportOnly: true,
-        hideControlContainer: true
-      }).addTo(mappy)
-      
-      // get dataset features -> renderMap() if < 15,000
-      $.get("/api/geoms", {ds: "{{ ds.label }}", f: "{{ filter }}" },
-        function(data){
-          <!--console.log('feature count:',data.count)-->
-          geom = {"type":"FeatureCollection","features":data.results}
-          if(geom.features.length >= 15000) {
-            $(".toomany").html('for performance reasons, mapping only the first 15,000 features - sorry!')
-          }
-          if(geom.features.length <= 15000) {
-            renderMap(geom,'browse')
-          } else {
-            spinner.stop()
-            $(".toomany").html('too many features to map (> '+geom.features.length+'), sorry!')
-          }
-      })  
-    } else {
-      window.mappy = e.detail.map
-      mappy.setMaxBounds(null)
-      L.control.layers(baseLayers).addTo(mappy);
-      window.map_default = [mappy.getCenter(), mappy.getZoom()]
-
-      baseLayers['OSM'].addTo(mappy)
-      mappy.invalidateSize()
-    }
-
-  }, false);
-  
-  styles = {
-    "Point": {
-      "default": {radius: 1, fillColor:"#ff9900", fillOpacity: 0.8, stroke: false},
-      "focus": {radius:8, fillColor:"#ffff00",fillOpacity:1, stroke:true, weight:1,color:"#000"}},
-    "MultiPoint": {
-      "default": {radius: 1, fillColor:"#ff9900", fillOpacity: 0.8, stroke: false},
-      "focus": {radius:8, fillColor:"#ffff00",fillOpacity:1, stroke:true, weight:1,color:"#000"}},
-    "LineString": {
-      "default":{opacity: 1, weight: 1, color: "#336699"},
-      "focus":{opacity: 1, weight: 2, color: "blue"}},
-    "MultiLineString": {
-      "default":{opacity: 1, weight: 1, color: "#336699"},
-      "focus":{opacity: 1, weight: 2, color: "blue"}},
-    "MultiPolygon": {
-      "default":{fillOpacity: 0.3, opacity: 1, color: "#000", weight: 1, fillColor:"#ff9999"},
-      "focus":{fillOpacity: 0.3, opacity: 1, color: "red", weight: 2, fillColor:"#ff9999"}},
-    "Polygon": {
-      "default":{fillOpacity: 0.3, opacity: .5, color: "#666", weight: 1, fillColor:"#ff9999"},
-      "focus":{fillOpacity: 0.3, opacity: .5, color: "red", weight: 2, fillColor:"#ff9999"}}
-  }
-  
-  
+<script type="module">
+    import "{% static 'webpack/tasks.bundle.js' %}";
 </script>
 {% endblock %}

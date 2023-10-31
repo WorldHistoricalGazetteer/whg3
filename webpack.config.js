@@ -16,6 +16,7 @@ module.exports = {
     home: '/app/whg/webpack/js/home.js',
     search: '/app/whg/webpack/js/search.js',
     places: '/app/whg/webpack/js/places.js',
+    tasks: '/app/whg/webpack/js/tasks.js',
   },
   output: {
     filename: '[name].bundle.js',
