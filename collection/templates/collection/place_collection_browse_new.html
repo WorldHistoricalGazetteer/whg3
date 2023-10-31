@@ -9,6 +9,7 @@
 	<!-- Datatables does not function with Webpack except in browsers >~ 2021 - see https://datatables.net/blog/2022-11-10-esm -->
 	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.24/b-1.7.0/b-colvis-1.7.0/b-html5-1.7.0/cr-1.5.3/fh-3.1.8/sc-2.0.3/sp-1.2.2/sl-1.3.3/datatables.min.css" />
 	<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.24/b-1.7.0/b-colvis-1.7.0/b-html5-1.7.0/cr-1.5.3/fh-3.1.8/sc-2.0.3/sp-1.2.2/sl-1.3.3/datatables.min.js"></script>
+	<link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
 	<link href="{% static 'webpack/whg.bundle.css' %}" rel="stylesheet" />
 {% endblock %}
 
@@ -249,6 +250,7 @@
 </script>
 
 <script type="module">
+    import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
     import "{% static 'webpack/whg.bundle.js' %}";
 </script>
 

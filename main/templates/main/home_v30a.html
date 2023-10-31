@@ -10,6 +10,7 @@
   <script src="{% static 'js/parents.js' %}"></script>
 
   <link href="https://fonts.googleapis.com/css?family=Archivo+Black" rel="stylesheet">
+  <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
   <link href="{% static 'webpack/home.bundle.css' %}" rel="stylesheet" /> 
 {% endblock %}
 
@@ -214,6 +215,7 @@
     console.log('window.carousels', window.carousels);
 </script>
 <script type="module">
+    import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
     import "{% static 'webpack/home.bundle.js' %}";
 </script> 
 

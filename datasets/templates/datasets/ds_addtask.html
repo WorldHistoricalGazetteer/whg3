@@ -8,7 +8,7 @@
 {% block extra_head %}
   <script src="{% static 'js/aliases.js' %}"></script>
   <link rel="stylesheet" href="{% static 'css/spin.css' %}"/>
-	
+  <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
   <link href="{% static 'webpack/tasks.bundle.css' %}" rel="stylesheet" /> 
 {% endblock %}
 
@@ -266,6 +266,7 @@
 </script>
 
 <script type="module">
+    import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
     import "{% static 'webpack/tasks.bundle.js' %}";
 </script>
 {% endblock %}

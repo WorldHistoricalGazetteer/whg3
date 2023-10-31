@@ -1,7 +1,5 @@
 // /whg/webpack/places.js
 
-import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.umd.min.js';
-import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.css';
 import datasetLayers from './mapLayerStyles';
 import { attributionString, geomsGeoJSON } from './utilities';
 import { bbox } from './6.5.0_turf.min.js';
