@@ -122,6 +122,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         $("#a_search, #d_input input").on('click keypress', function(event) {
             if (event.type === 'click' || (event.type === 'keypress' && event.which === 13)) {
                 event.preventDefault();
+				console.log('entered value for search')
                 initiateSearch();
             }
         });
@@ -142,11 +143,14 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		  return cookieValue;
 		}
 
-		$('.portal-link').click(function(e) {
+		// $('.portal-link').click(function(e) {
+		$(document).on('click', '.portal-link', function(e) {
+		// $('.result').on('click', '.portal-link', function(e) {
 			e.preventDefault();
+			e.stopPropagation();
 
 			const pid = $(this).data('pid');
-			const children = $(this).data('children') ?
+			const children= $(this).data('children') ?
 				decodeURIComponent($(this).data('children')).split(',').map(id => parseInt(id, 10)) : [];
 			const placeIds = [pid, ...children].filter(id => !isNaN(id) && id !== null && id !== undefined);
 			const csrfToken = getCookie('csrftoken');
@@ -211,7 +215,7 @@ function renderResults(featureCollection) {
 	$("#adv_options").hide()
 	$("#result_facets").show()
 	$("#detail_box").show()
-	$("#result_count").html(featureCollection.features.length)
+	// $("#result_count").html(featureCollection.features.length)
 	// Clear previous results
 	$('#search_results').empty();
 
@@ -235,20 +239,25 @@ function renderResults(featureCollection) {
 	results.forEach(feature => {
 		
 		let result = feature.properties;
-		
-		const count = parseInt(result.linkcount) + 1
+		const count = parseInt(result.linkcount) + 1;
+		const pid = result.pid;
+		const children = result.children;
+		// Encode children as a comma-separated string
+		const encodedChildren = encodeURIComponent(children.join(','));
+
 
 		// START alternate url (kg 2023-10-31)
-
-		const html = `
+		let html = `
             <div class="result">
                 <p>${result.title} (${count} in set)
                   <span class="float-end">
-                      <a href="/places/${result.whg_id}/portal" title="portal for ${ result.whg_id }">portal</a>
-                  </span>
-									</p>
-            </div>
-        `;
+					<a href="#" class="portal-link"	data-pid="${pid}" data-children="${encodedChildren}">portal ${pid}</a>
+                  </span>`
+		if (children.length > 0) {
+			html += `<span class="ml-2">children: ${children.join(', ')}</span>`;
+		};
+		// END alternate url (kg 2023-10-31)
+
 		$resultsDiv.append(html);
 
 	});

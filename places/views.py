@@ -1,9 +1,11 @@
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import get_user_model
 User = get_user_model()
-from django.http import JsonResponse,HttpResponseRedirect
+from django.http import JsonResponse, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
-from django.views.generic import DetailView
+from django.views import View
+from django.views.generic import DetailView, TemplateView
 
 from datetime import datetime
 from elasticsearch8 import Elasticsearch
@@ -44,6 +46,44 @@ def defer_review(request, pid, auth, last):
       return_url = base + 'reconcile'
   # return to calling page
   return HttpResponseRedirect(return_url)
+
+class SetCurrentResultView(View):
+  def post(self, request, *args, **kwargs):
+    place_ids = request.POST.getlist('place_ids')
+    print('Setting place_ids in session:', place_ids)
+    request.session['current_result'] = {'place_ids': place_ids}
+    messages.success(request, 'Place details loaded successfully!')
+    return JsonResponse({'status': 'ok'})
+
+class PlacePortalViewNew(TemplateView):
+  template_name = 'places/place_portal_new.html'
+
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    place_ids = self.request.session.get('current_result', {}).get('place_ids', [])
+    if not place_ids:
+      messages.error(self.request, "Place IDs are required to view this page")
+      raise Http404("Place IDs are required")
+    alltitles = []
+    try:
+      place_ids = [int(pid) for pid in place_ids]
+      print('place_ids', place_ids)
+      qs = Place.objects.filter(id__in=place_ids).order_by('-whens__minmax')
+      print('qs', qs)
+      for place in qs:
+        ds = Dataset.objects.get(id=place.dataset.id)
+        print('place.title', place.title)
+        # alltitles.append(place.title)
+        types = attribListFromSet('types', place.types.all())
+
+    except ValueError:
+      messages.error(self.request, "Invalid place ID format")
+      raise Http404("Invalid place ID format")
+
+    context['place_ids'] = place_ids
+    context['foo'] = 'bar'
+    # context['types'] = types
+    return context
 
 class PlacePortalView(DetailView):
   # template_name = 'places/place_portal.html'
@@ -233,7 +273,6 @@ class PlaceModalView(DetailView):
   # //
   # given place_id (pid), return abbreviated place_detail
   # //
-
 
 class PlaceFullView(PlacePortalView):
   def render_to_response(self, context, **response_kwargs):
