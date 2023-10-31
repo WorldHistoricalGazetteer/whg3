@@ -1,62 +1,24 @@
 <!-- areas/area_create.html -->
 {% extends "main/base.html" %}
-{% load leaflet_tags %}
 
 {% load static %}
 {% load dataset_extras %}
 {% block title %}<title>WHG::Create/Update Area</title>{% endblock %}
 {% block extra_head %}
-  {% leaflet_js %}
-  {% leaflet_css %}
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js" integrity="sha256-LOnFraxKlOhESwdU/dX+K0GArwymUDups0czPWLEg4E=" crossorigin="anonymous"></script>
-  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
   
   <script src="{% static 'js/tags/bootstrap-tagsinput.js' %}"></script>
   <script src="{% static 'js/tags/bloodhound.js' %}"></script>
   <link rel="stylesheet" href="{% static 'js/tags/bootstrap-tagsinput.css' %}"/>
   <link rel="stylesheet" href="{% static 'js/tags/bootstrap-tagsinput-typeahead.css' %}"/>
   
-  <script src="{% static 'js/leaflet-draw/Leaflet.draw.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/Leaflet.Draw.Event.js' %}"></script>
-  <link rel="stylesheet" href="{% static 'js/leaflet-draw/leaflet.draw.css' %}"/>
-
-  <script src="{% static 'js/leaflet-draw/Toolbar.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/Tooltip.js' %}"></script>
-
-  <script src="{% static 'js/leaflet-draw/ext/GeometryUtil.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/ext/LatLngUtil.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/ext/LineUtil.Intersect.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/ext/Polygon.Intersect.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/ext/Polyline.Intersect.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/ext/TouchEvents.js' %}"></script>
-
-  <script src="{% static 'js/leaflet-draw/draw/DrawToolbar.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/draw/handler/Draw.Feature.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/draw/handler/Draw.SimpleShape.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/draw/handler/Draw.Polyline.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/draw/handler/Draw.Marker.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/draw/handler/Draw.Circle.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/draw/handler/Draw.CircleMarker.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/draw/handler/Draw.Polygon.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/draw/handler/Draw.Rectangle.js' %}"></script>
-
-  <script src="{% static 'js/leaflet-draw/edit/EditToolbar.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/edit/handler/EditToolbar.Edit.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/edit/handler/EditToolbar.Delete.js' %}"></script>
-
-  <script src="{% static 'js/leaflet-draw/Control.Draw.js' %}"></script>
-
-  <script src="{% static 'js/leaflet-draw/edit/handler/Edit.Poly.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/edit/handler/Edit.SimpleShape.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/edit/handler/Edit.Rectangle.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/edit/handler/Edit.Marker.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/edit/handler/Edit.CircleMarker.js' %}"></script>
-  <script src="{% static 'js/leaflet-draw/edit/handler/Edit.Circle.js' %}"></script>
   
-  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.css' rel='stylesheet' />
-  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js'></script>
-  <script src="{% static 'js/leaflet.ajax.min.js' %}"></script>
-  <script src="{% static 'js/leaflet-mapbox-gl.js' %}"></script>
+  <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
+  <link href="{% static 'webpack/areas.bundle.css' %}" rel="stylesheet" /> 
+  
+  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.2.0/mapbox-gl-draw.js"></script>
+  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.2.0/mapbox-gl-draw.css" type="text/css" />
 
 {% endblock %}
 
@@ -99,10 +61,10 @@
         <div class="tab-content">
           <div id="areas_codes" class="tab-pane fade show active">
             <p id="p_ccodes">Country codes (ISO 3166 alpha2) &nbsp;<a href="https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2" target="_blank"><i class="fas fa-external-link-alt linky"></i></a><br/>{{ form.ccodes }}
-              <span class="float-end ms-1">
-                <a href="javascript:{ map_clear() }">clear</a></span>
-              <span class="float-end">
-                <a href="javascript:{ map_render() }">preview |</a></span>
+              <span class="float-end ms-1 area-link-clear">
+                <a href="#">clear</a></span>
+              <span class="float-end area-link-render">
+                <a href="#">preview</a> |</span>
             </p>
             <p>Buffer (optional, km)<br/>
               <input type="text" id="buffer_km" name="buffer_km" value=""/></p>
@@ -118,316 +80,47 @@
     </form>
     </div>
     <div id="map_container" class="col-sm-8">
-      {% leaflet_map "map_area" callback="map_init" %}
     </div>
   </div> <!-- d-flex -->
 </div> <!-- container -->
 
+<!-- Set up MapLibre map using Maptiler SDK -->
 <script type="text/javascript">
-  $(function(){
-    // area_type = 'ccodes' // default
-    $( ".textarea" ).each(function(index) {
-      if ( ["None","null"].includes( $(this).val() ) ) {
-        $(this).val('')
-      }
-    });
-    $("#id_geojson").attr("placeholder","generated from country codes")
-  })
-    {#$("#btn_counter").click(function(){#}
-    {#    console.log('go count index records in this area')#}
-    {#    let coords=JSON.stringify(JSON.parse($("textarea#id_geojson").val()).coordinates)#}
-    {#    console.log(coords)#}
-    {#    fetchContext(coords)#}
-    {# })#}
-  // ES query to count...retrieve?
-  function fetchCount(coords){
-    {#startMapitSpinner()#}
-	  console.log('coords', coords)
-    context={"type":"FeatureCollection","features":[]}
-    $.get("/search/context",{idx: 'whg', extent: coords, task: 'count'},
-      function(data){
-        console.log('this many:', data['count'])
-        $("#count_result").html(data['count'])
-      });
-   }
-
-  $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-    var target = $(e.target).attr("href") // activated tab
-    area_type = $(e.target).attr("ref") // activated tab
-    map_clear() // switch create modes? clear the deck
-    // feed area type to hidden input
-    $("input[name='type']").val(area_type)
-    // console.log('tab id:',target);
-    active = $("ul#area_tabs_ul a.active").attr("href")
-    // TODO: better refactor 
-    if (target == '#areas_codes') {
-      $("#id_geojson").attr("placeholder","generated from country codes")
-      if ($(".leaflet-draw-toolbar").length > 0) {
-          // console.log('remove drawControl')
-          $(".leaflet-draw").remove()
-      }
-    } else if (target == '#areas_draw') {
-      console.log('line 170',$(".leaflet-draw").length)
-      $("#id_geojson").attr("placeholder","generated from drawn shapes")
-      if ($(".leaflet-draw").length == 0) {
-        {#drawnItems = L.featureGroup().addTo(mappy)#}
-        drawControls(drawnItems)
-	      console.log('feature0', drawnItems.toGeoJSON().features[0])
-        mappy.on(L.Draw.Event.CREATED, function (event) {
-          window.drawnlayer = event.layer;
-          console.log('drawnlayer',drawnlayer)
-          drawnItems.addLayer(drawnlayer);
-          drawnItems.addTo(mappy)
-          // $("textarea#id_geojson").val(JSON.stringify(drawnItems.toGeoJSON()))
-          $("textarea#id_geojson").val(JSON.stringify(drawnItems.toGeoJSON().features[0].geometry))
-        });
-        mappy.on(L.Draw.Event.EDITED, function (event) {
-          // $("textarea#id_geojson").val(JSON.stringify(drawnItems.toGeoJSON()))
-	        geom = drawnItems.toGeoJSON().features[0].geometry
-	        geom_string = JSON.stringify(geom)
-	        {#coords = JSON.stringify(geom.coordinates)#}
-	        {#console.log('coords', geom)#}
-	        {#fetchCount(coords)#}
-          $("textarea#id_geojson").val(geom_string)
-
-        });
-        mappy.on(L.Draw.Event.DELETED, function (event) {
-          $("textarea#id_geojson").val(JSON.stringify(drawnItems.toGeoJSON()))
-          $("textarea#id_geojson").val(JSON.stringify(drawnItems.toGeoJSON().features[0].geometry))
-          //drawnItems.addTo(mappy)
-          console.log('you deleted something')
-        })
-      }
-    }
-  });
-  //
-  // add draw controls to map
-  // on tab switch && on update Area if type == 'drawn'
-  function drawControls(mode){
-    var drawControl = new L.Control.Draw({
-      draw: {
-         marker: false,
-         polyline: false,
-         circle: false,
-         circlemarker: false,
-     },
-      edit: {
-         featureGroup: mode
-      }
-    });
-    mappy.addControl(drawControl);  
-  }
-  //
-  // expose leaflet map for events, call it 'mappy'
-  window.addEventListener('map:init', function (e) {
-    console.log('map:init, w.action', '{{ action }}')
-    window.mappy = e.detail.map
-    var attrib_mb = 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
-            '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-            'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-      token_whg = '{{ mbtoken }}',
-      mbstyle_url = 'https://api.mapbox.com/styles/v1/{id}/tiles/256/{z}/{x}/{y}?access_token={token}';
-
-
-    var satellite  = L.tileLayer(mbstyle_url, {id:'mapbox/satellite-streets-v11', token:token_whg, attribution:attrib_mb});
-    var osm  = L.tileLayer(mbstyle_url, {id:'mapbox/light-v10', token:token_whg, attribution:attrib_mb});
-
-    var watershedStyle = {
-      "fillColor": "#993333",
-      "color": "#fff",
-      "weight": 1,
-      "opacity": 0.7,
-      "fillOpacity": 0.1
-    };
-
-    function random_rgba() {
-        var o = Math.round, ra = Math.random, s = 255;
-        tup = [o(ra()*s), o(ra()*s), o(ra()*s)]
-
-        const rgbToHex = (r,g,b) => '#' + [r,g,b].map(x => {
-          const hex = x.toString(16)
-          return hex.length === 1 ? '0' + hex : hex
-        }).join('')
-
-        return rgbToHex(tup[0],tup[1],tup[2])
-    }
-
-    var riverStyle = {
-      "color": "#336699",
-      "weight": 1
-    };
-
-    rivers = new L.GeoJSON.AJAX("/datasets/ne_rivers982/places",
-      {style:riverStyle,
-        onEachFeature: function (feature, layer) {
-          popupOptions = {maxWidth: 200};
-            layer.bindPopup(feature.properties.name+" ("+feature.properties.src_id+")", popupOptions);
-          }
-      });
-
-    watersheds = new L.GeoJSON.AJAX("/datasets/wri_watersheds/places",
-      { style:watershedStyle,
-        onEachFeature: function (feature, layer) {
-        layer.setStyle({"fillColor":random_rgba()})
-          popupOptions = {maxWidth: 200};
-            layer.bindPopup(feature.properties.name+" ("+feature.properties.src_id+")", popupOptions);
-        }
-      })
-
-    drawnItems = L.featureGroup().addTo(mappy)
-
-    var baseLayers = {
-      "OSM": osm,
-      "Satellite": satellite
-    };
-
-    var overlays = {
-      "Drawn features": drawnItems,
-	    "Rivers": rivers,
-	    "Watersheds": watersheds
-    }
-
-    layerGroup = L.control.layers(baseLayers,overlays).addTo(mappy);
-    baseLayers['OSM'].addTo(mappy)
-	  {#overlays['Rivers'].addTo(mappy)#}
-
-  }, false);
-
-  function zoomTo(id) {
-    mappy.setView(idToFeature[id]._latlng, mappy.getZoom() +2 )
-  }
-
-  function cleanJson(text) {
-    z=text.replace(/'/g,'\\"')
-    y=z.replace(/point/,'Point')
-    return JSON.parse(JSON.parse(y))
-  }
-
-   // initialize, render map w/settings.LEAFLET_CONFIG
-  {#function map_init (map, options) {#}
-  {#  // edit/update drawn area#}
-  {#  if('{{ action }}' == 'update' && '{{ form.type.value }}' == 'drawn'){#}
-  {#    $('a[href="#areas_draw"]').tab('show');#}
-  {#    $('a[href="#areas_codes"]').addClass('disabled').css("cursor","default")#}
-  {#    // load existing data for editing#}
-      {#lgeojson = L.geoJson(JSON.parse($("textarea#id_geojson").val()), {#}
-  {#    lgeojson = L.geoJson(JSON.parse($("textarea#id_geojson").val()), {#}
-  {#      onEachFeature: function (feature, layer) {#}
-  {#        drawnItems.addLayer(layer);#}
-  {#      }#}
-  {#    }).addTo(mappy)#}
-  {#    mappy.fitBounds(lgeojson.getBounds())#}
-	{##}
-  {#    drawControls(drawnItems)#}
-  {#  } else if('{{ action }}' == 'update' && '{{ form.type.value }}' == 'ccodes') {#}
-  {#    $('a[href="#areas_draw"]').addClass('disabled').css("cursor","default")#}
-  {#    map_render()#}
-  {#  }#}
-  {# }  #}
-
-  function map_init (map, options) {
-    // whether drawn or ccodes, load existing data
-    if('{{ action }}' == 'update') {
-      // existing
-      areageom = JSON.parse('{{ form.geojson.value|safe }}')
-
-	    // if area was drawn
-			if('{{ form.type.value }}' == 'drawn'){
-        console.log('was drawn')
-	      // load existing for editing
-	      lgeojson = L.geoJson(areageom, {
-	        onEachFeature: function (feature, layer) {
-	          drawnItems.addLayer(layer);
-	        }
-	      }).addTo(mappy)
-	      mappy.fitBounds(lgeojson.getBounds())
-        {#drawControls(drawnItems)#}
-
-	      $('a[href="#areas_draw"]').tab('show');
-        $('a[href="#areas_codes"]').addClass('disabled').css("cursor","default")
-
-			} else if('{{ form.type.value }}' == 'ccodes') {
-        console.log('was ccodes-generated')
-	      window.geom = {"type":"FeatureCollection","features":[]}
-        window.buffer = $("input#buffer_km").val()
-	      cc_layer = L.geoJson(areageom, {
-            onEachFeature: function onEachFeature(feature, layer) {
-              geom['features'].push(feature)
-              {#var props = feature.properties;#}
-              {#var content = `<p>${props.iso}</p><p>${props.gnlabel}</p>`;#}
-              {#layer.bindPopup(content);#}
-          }
-        }).addTo(mappy)
-	      mappy.fitBounds(cc_layer.getBounds())
-				// disable draw tab
-        $('a[href="#areas_draw"]').addClass('disabled').css("cursor","default")
-        {#map_render()#}
-      }
-  }}
-
-  function map_render() {
-    console.log('in map_render()')
-    ccodes = $("input#id_ccodes").val()
-    window.geoj = $("textarea#id_geojson")
-    window.geom = {"type":"FeatureCollection","features":[]}
-    window.buffer = $("input#buffer_km").val()
-    $("#count_result mark").html('')
-    // console.clear()
-
-    var country_url = "/media/data/countries_simplified.json"
-    // clear geoJSON
-    if (Object.keys(mappy._layers).length > 2 ) {
-      cc_layer.clearLayers()
-      hull_layer.clearLayers()
-    }
-    if (ccodes != '') {
-      // TODO: test csv format
-      ccode_arr = ccodes.toUpperCase().split(",")
-      // console.log(ccode_arr)
-      fetch(country_url)
-        .then(function(resp) {
-          return resp.json();
-        })
-        .then(function(data) {
-          // console.log('fetched data', data)
-          window.cc_layer = L.geoJson(data, {
-            filter: function(feature, layer) {
-              return ccode_arr.includes(feature.properties.iso) ;
+    let mapParameters = {
+        container: 'map_container',
+        center: [10.2385, 29.8626],
+        zoom: 0.1, // starting zoom
+        minZoom: 0.1,
+        maxZoom: 10,
+        mapTilerKey: '{{ maptilerkey }}',
+        controls: {
+            layer: true,
+            navigation: false,
+            fullscreen: false,
+            attribution: {
+                open: false,
             },
-            onEachFeature: function onEachFeature(feature, layer) {
-              // console.log('feature:', JSON.stringify(feature))
-              geom['features'].push(feature)
-              var props = feature.properties;
-              var content = `<p>${props.iso}</p><p>${props.gnlabel}</p>`;
-              layer.bindPopup(content);
-          }}).addTo(mappy);
-        })
-        .then(function(){
-          hull = turf.buffer(turf.convex(geom),buffer,{units:'kilometers'})
-          // hull_mp = turf.multiPolygon(hull.geometry.coordinates)
-          // geoj.val(JSON.stringify(hull_mp.geometry))
-          geoj.val(JSON.stringify(hull.geometry))
-	        console.log('geoj', geoj.val())
-          hull_layer = L.geoJSON(hull, {
-            style: function (feature) {
-              return {color: '#ff8c00'}; }
-          }).addTo(mappy);
-          mappy.fitBounds(hull_layer.getBounds())
-        })
-    } else {
-      alert('Need one or more comma-delimited 2-letter country codes')
+            temporal: {
+                fromValue: 1550,
+                toValue: 1720,
+                minValue: -2000,
+                maxValue: 2100,
+                open: false,
+                includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
+                epochs: null,
+                automate: null,
+            }
+        },
+        styleFilter: [ 'OUTDOOR.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
     }
-  }
+    let action = '{{ action }}';
+    let formType = '{{ form.type.value }}';
+    let formGeoJSON = '{{ form.geojson.value|safe }}';
+</script>
 
-  function map_clear() {
-    if(typeof cc_layer != "undefined"){cc_layer.remove()}
-    if(typeof hull_layer != "undefined"){hull_layer.remove()}
-    $("input#id_ccodes").val(null)
-    if('{{ action }}' == "create"){
-      $("textarea#id_geojson").val(null)
-    }
-    $("#buffer_km").val(null)
-  }
+<script type="module">
+    import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
+    import "{% static 'webpack/areas.bundle.js' %}";
 </script>
 
 {% endblock %}
