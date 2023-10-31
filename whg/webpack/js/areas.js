@@ -49,29 +49,26 @@ function waitMapLoad() {
 			});
 
 		    var draw = new MapboxDraw({
-		        displayControlsDefault: true,
-/*		        controls: {
+		        displayControlsDefault: false,
+		        controls: {
+		            point: true,
+		            line_string: true,
 		            polygon: true,
 		            trash: true
-		        }*/
+		        },
 		    })
 		    mappy.addControl(draw, 'top-left');
 		    const drawControls = document.querySelectorAll(".mapboxgl-ctrl-group.mapboxgl-ctrl");
 		    drawControls.forEach((elem) => {
 		        elem.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group');
 		    });
-		    mappy.on('draw.create', updateArea);
-		    mappy.on('draw.delete', updateArea);
-		    mappy.on('draw.update', updateArea);
+		    mappy.on('draw.create', updateGeoJSON);
+		    mappy.on('draw.delete', updateGeoJSON);
+		    mappy.on('draw.update', updateGeoJSON);
 		
-		    function updateArea(e) {
+		    function updateGeoJSON() {
 		        var data = draw.getAll();
-		        if (data.features.length > 0) {
-		            var area = bbox(data);
-		        } else {
-		            if (e.type !== 'draw.delete')
-		                alert('Use the draw tools to draw a polygon!');
-		        }
+		        $("textarea#id_geojson").val(data.features.length > 0 ? JSON.stringify(data) : '');
 		    }
 			
 			mappy.addControl(new CustomAttributionControl({
