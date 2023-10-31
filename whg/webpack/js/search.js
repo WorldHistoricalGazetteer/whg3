@@ -6,6 +6,7 @@ import datasetLayers from './mapLayerStyles';
 import { bbox, centroid } from './6.5.0_turf.min.js';
 import { attributionString, geomsGeoJSON } from './utilities';
 import { CustomAttributionControl } from './customMapControls';
+import '../css/maplibre-common.css';
 import '../css/search.css';
 
 let results = null;

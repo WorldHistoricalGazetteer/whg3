@@ -7,6 +7,7 @@ import { attributionString, geomsGeoJSON } from './utilities';
 import { bbox } from './6.5.0_turf.min.js';
 import { CustomAttributionControl } from './customMapControls';
 
+import '../css/maplibre-common.css';
 import '../css/tasks.css';
 
 let style_code;
@@ -90,7 +91,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 	
 		// help modals
 		$(".help-matches").click(function() {
-			page = $(this).data('id')
+			let page = $(this).data('id')
 			console.log('help:', page)
 			$('.selector').dialog('open');
 		})
@@ -194,7 +195,7 @@ function renderMap(featureCollection, tab) {
 		mappy.getSource('places').setData(featureCollection);
 		mappy.setFeatureState({ source: 'places', id: 0 }, { highlight: true });
 		
-		/* TODO: Not yet implemented in MapLibre - in v2 the popups give `undefined` values. What is its purpose, and is it still required?		
+		/* TODO: Not yet implemented in MapLibre - in v2 the popups give `undefined` values.		
 		// clear existing if any
 		if (typeof(features) !== 'undefined') {
 			mappy.removeLayer(features)
