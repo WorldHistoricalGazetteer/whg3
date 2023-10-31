@@ -6,7 +6,7 @@ const datasetLayers = [ // IMPORTANT: Listed in order of addition to the map
 		'paint': {
 			'fill-color': [
 				'case',
-				['boolean', ['feature-state', 'highlight'], false], 'rgba(0,128,0,.8)', // green
+				['boolean', ['feature-state', 'highlight'], false], 'rgba(0,128,0,.4)', // green
 				'rgba(221,221,221,.3)' // pale-gray
 			],
 			'fill-outline-color': [
@@ -25,7 +25,7 @@ const datasetLayers = [ // IMPORTANT: Listed in order of addition to the map
 		'paint': {
 			'line-color': [
 				'case',
-				['boolean', ['feature-state', 'highlight'], false], 'rgba(0,128,0,.8)', // green
+				['boolean', ['feature-state', 'highlight'], false], 'rgba(0,128,0,.4)', // green
 				'rgba(144,238,144,.8)' // lightgreen
 			],
 			'line-width': [

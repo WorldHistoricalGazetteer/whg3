@@ -586,6 +586,7 @@ class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
     ]
     context['created'] = self.object.created.strftime("%Y-%m-%d")
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
     # context['whgteam'] = User.objects.filter(groups__name='whg_team')
 
     return context
@@ -613,6 +614,7 @@ class PlaceCollectionBrowseView(DetailView):
 
     context = super(PlaceCollectionBrowseView, self).get_context_data(*args, **kwargs)
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
     context['media_url'] = settings.MEDIA_URL
 
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
@@ -670,6 +672,7 @@ class CollectionGroupCreateView(CreateView):
   def get_context_data(self, *args, **kwargs):
     context = super(CollectionGroupCreateView, self).get_context_data(*args, **kwargs)
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
     # print('args',args,kwargs)
     context['action'] = 'create'
     # context['referrer'] = self.request.POST.get('referrer')
@@ -692,6 +695,7 @@ class CollectionGroupDetailView(DetailView):
     context = super(CollectionGroupDetailView, self).get_context_data(*args, **kwargs)
     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
 
     print('CollectionGroupDetailView get_context_data() kwargs:', self.kwargs)
     print('CollectionGroupDetailView get_context_data() request.user', self.request.user)
@@ -825,6 +829,7 @@ class DatasetCollectionCreateView(LoginRequiredMixin, CreateView):
     user = self.request.user
     context = super(DatasetCollectionCreateView, self).get_context_data(*args, **kwargs)
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
     context['whgteam'] = User.objects.filter(groups__name='whg_team')
 
     datasets = []
@@ -887,6 +892,7 @@ class DatasetCollectionUpdateView(UpdateView):
 
     context['created'] = self.object.created.strftime("%Y-%m-%d")
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
     context['whgteam'] = User.objects.filter(groups__name='whg_team')
 
     return context
@@ -908,6 +914,7 @@ class DatasetCollectionSummaryView(DetailView):
     bboxes = [ds.bounds for ds in datasets]
 
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
     context['whgteam'] = User.objects.filter(groups__name='whg_team')
 
     context['ds_list'] = datasets
@@ -941,6 +948,7 @@ class DatasetCollectionBrowseView(DetailView):
 
     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
     context['media_url'] = settings.MEDIA_URL
 
     id_ = self.kwargs.get("id")
@@ -1016,6 +1024,7 @@ class CollectionDeleteView(DeleteView):
 #
 #     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
 #     context['mbtokenmb'] = settings.MAPBOX_TOKEN_MB
+#     context['maptilerkey'] = settings.MAPTILER_KEY
 #     context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
 #     context['whgteam'] = User.objects.filter(groups__name='whg_team')
 #

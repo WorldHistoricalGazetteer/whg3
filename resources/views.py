@@ -35,6 +35,7 @@ class TeachingPortalView(ListView):
     regions = list(Resource.objects.all().values_list('regions', flat=True))
     context['regions'] = [x for l in regions for x in l]
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
     context['featured'] = Resource.objects.filter(featured__isnull=False).order_by('featured')
     return context
 
@@ -148,6 +149,7 @@ class ResourceCreateView(LoginRequiredMixin, FormView):
   #   context = super(ResourceCreateView,
   #                   self).get_context_data(*args, **kwargs)
   #   context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+  #   context['maptilerkey'] = settings.MAPTILER_KEY
   #   user = self.request.user
   #   #_id = self.kwargs.get("id")
   #   print('ResourceCreate() user', user)

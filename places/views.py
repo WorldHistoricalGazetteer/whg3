@@ -73,6 +73,7 @@ class PlacePortalView(DetailView):
     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
     es = settings.ES_CONN
     id_ = self.kwargs.get("id")
     pid = self.kwargs.get("pid")
@@ -176,6 +177,7 @@ class PlaceDetailView(DetailView):
     context = super(PlaceDetailView, self).get_context_data(*args, **kwargs)
     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
 
     print('PlaceDetailView get_context_data() kwargs:',self.kwargs)
     print('PlaceDetailView get_context_data() request.user',self.request.user)
@@ -211,6 +213,7 @@ class PlaceModalView(DetailView):
     context = super(PlaceModalView, self).get_context_data(*args, **kwargs)
     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
 
     print('PlaceModalView get_context_data() kwargs:',self.kwargs)
     print('PlaceModalView get_context_data() request.user',self.request.user)

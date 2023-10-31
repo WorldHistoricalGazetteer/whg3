@@ -208,7 +208,9 @@ class LibreView(TemplateView):
         context = super(LibreView, self).get_context_data(*args, **kwargs)
         context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
         context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+        context['maptilerkey'] = settings.MAPTILER_KEY
         context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
+        context['maptilerkey'] = settings.MAPTILER_KEY
         context['media_url'] = settings.MEDIA_URL
         return context
 
@@ -239,6 +241,7 @@ class Home30a(TemplateView):
         context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
         context['mbtokenmb'] = settings.MAPBOX_TOKEN_MB
         context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
+        context['maptilerkey'] = settings.MAPTILER_KEY
         context['media_url'] = settings.MEDIA_URL
         context['base_dir'] = settings.BASE_DIR
         context['beta_or_better'] = True if self.request.user.groups.filter(
@@ -277,7 +280,9 @@ class Home2b(TemplateView):
         context['featured_ds'] = f_datasets
         context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
         context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+        context['maptilerkey'] = settings.MAPTILER_KEY
         context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
+        context['maptilerkey'] = settings.MAPTILER_KEY
         context['media_url'] = settings.MEDIA_URL
         context['base_dir'] = settings.BASE_DIR
         context['beta_or_better'] = True if self.request.user.groups.filter(

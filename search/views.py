@@ -32,6 +32,7 @@ class SearchPageViewNew(TemplateView):
     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
     context['media_url'] = settings.MEDIA_URL
     context['dslist'] = dslist
     context['search_params'] = self.request.session.get('search_params')
@@ -56,6 +57,7 @@ class SearchPageView(TemplateView):
     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
     context['media_url'] = settings.MEDIA_URL
     context['dslist'] = dslist
     context['search_params'] = self.request.session.get('search_params')
