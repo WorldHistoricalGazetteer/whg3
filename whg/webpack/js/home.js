@@ -280,7 +280,7 @@ $(function() {
 			console.log(searchres)
 			// if results, deliver to search_new.html
 			if (searchres.length > 0) {
-				window.location.href = "{% url 'search-page' %}";
+				window.location.href = "/search";
 			} else {
 				alert('no results for "' + query + '", sorry')
 			}
