@@ -1,0 +1,121 @@
+.maplibregl-map {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: lightblue;
+    overflow: hidden;
+    border: 1px solid lightgrey;
+    border-radius: 4px;
+    transition: opacity 2s ease;
+}
+
+.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib:not(.fade-in) {
+    display: none;
+}
+
+.maplibregl-ctrl-attrib {
+    opacity: 0;
+    transition: opacity 1s ease;
+}
+
+.fade-in {
+    opacity: 1;
+}
+
+a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
+{
+    /* Hide obtrusive logo" */
+    display: none !important;
+}
+
+.container-md {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 65px); /* Adjust the subtraction value as needed */
+}
+
+#search_content {
+    display: flex;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+#search_right {
+    flex-grow: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+#search_right_top {
+    min-height: 45%;
+}
+
+#map {
+    border: 1px gainsboro solid;
+}
+
+#detail_box {
+    background-color: antiquewhite;
+    font-size: 0.9rem;
+}
+
+#search_results {
+    border: 1px gainsboro solid;
+}
+
+#result_container {
+    height: 200px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.result {
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: gainsboro;
+}
+
+.result h5 {
+    margin: 0 0 10px;
+    padding: 0;
+}
+
+.result:hover {
+    background-color: #f0f0f0; /* Adjust hover color as needed */
+}
+
+.result.selected {
+    background-color: #e0e0e0; /* Adjust selected color as needed */
+}
+
+.categories {
+    font-variant: small-caps;
+    font-size: 0.9rem;
+    color: #993333;
+}
+
+#adv_checkboxes p {
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+#adv_checkboxes label {
+    margin-left: 2px;
+}
+
+#result_facets label {
+    font-size: 0.8rem;
+    margin-left: 0.3rem;
+}
+
+#type_checkboxes p {
+    margin-bottom: 0 !important;
+    font-weight: bold;
+}
+
+#country_checkboxes p {
+    margin-bottom: 0 !important;
+    font-weight: bold;
+}

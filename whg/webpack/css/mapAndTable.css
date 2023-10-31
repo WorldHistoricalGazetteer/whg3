@@ -125,7 +125,6 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 	margin: 4px 0 0 0;
 }
 
-/* added 23 Oct */
 #mapControls .maplibregl-ctrl-top-left {
 	display: flex;
 }
@@ -139,7 +138,6 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
     top: -4px;
     position: relative;
 }
-/* end add 23 Oct */
 
 .style-button {
 	padding: 4px!important;

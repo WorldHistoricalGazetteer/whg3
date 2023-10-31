@@ -4,17 +4,13 @@ import Dateline from './dateline';
 import generateMapImage from './saveMapImage';
 import datasetLayers from './mapLayerStyles';
 import { table, scrollToRowByProperty } from './tableFunctions';
+import { CustomAttributionControl } from './customMapControls';
 
 class fullScreenControl {
-	onAdd() { 
+	onAdd() {
 		this._map = map;
 		this._container = document.createElement('div');
-
-		/* hotfix 23 Oct */
-		// this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
 		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group maplibregl-ctrl-fullscreen';
-		/* end hotfix */
-
 		this._container.textContent = 'Fullscreen';
 		this._container.innerHTML =
 			'<button type="button" class="maplibregl-ctrl-fullscreen" aria-label="Enter fullscreen" title="Enter fullscreen">' +
@@ -28,12 +24,7 @@ class downloadMapControl {
 	onAdd() {
 		this._map = map;
 		this._container = document.createElement('div');
-
-		/* hotfix 23 Oct */
-		// this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
 		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group maplibregl-ctrl-download';
-		/* end hotfix */
-
 		this._container.textContent = 'Download image';
 		this._container.innerHTML =
 			'<button type="button" class="download-map-button" aria-label="Download map image" title="Download map image">' +
@@ -51,7 +42,7 @@ class sequencerControl {
         if (this.minSeq == this.maxSeq) {
 			return;
 		}
-        
+
 		this._map = map;
 		this._container = document.createElement('div');
 		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group sequencer';
@@ -61,7 +52,7 @@ class sequencerControl {
 		this.playing = false;
 		this.stepdelay = 3;
         this.playInterval = null;
-        
+
         this.buttons = [
 			['skip-first','First waypoint','Already at first waypoint','Disabled during play'],
 			['skip-previous','Previous waypoint','Already at first waypoint','Disabled during play'],
@@ -70,11 +61,11 @@ class sequencerControl {
 			'separator',
 			['play','Play from current waypoint: hold to change speed','Cannot play from last waypoint','Stop playing waypoints']
 		];
-		
+
 		this.buttons.forEach((button) => {
 			this._container.innerHTML += button == 'separator' ? '<span class="separator"/>' : `<button id = "${button[0]}" type="button" style="background-image: url(/static/images/sequencer/${button[0]}-btn.svg)" ${['skip-first', 'skip-previous'].includes(button[0]) ? 'disabled ' : ''}aria-label="${button[1]}" title="${button[1]}" />`
 		});
-		
+
 		let longClickTimeout;
 		let initialisingSlider = false;
 		$('body').on('mousedown', '.sequencer:not(.playing) button#play', () => {
@@ -84,17 +75,17 @@ class sequencerControl {
 		      initialisingSlider = true;
 		  }, 1000);
 		});
-		
+
 		$('body').on('mouseup','.sequencer button', (e) => {
 		    const sequencer = $('.sequencer');
 		    const action = $(e.target).attr('id');
-		    
+
 		    if (table.search() !== '') { // Clear any table search filter
 				table.search('').draw();
 			}
-		    
+
 		    console.log(`Sequencer action: ${action} from ${this.currentSeq}.`);
-			
+
 			if (window.highlightedFeatureIndex == undefined) {
 				if (['skip-previous', 'skip-next'].includes(action)) { // Highlight feature selected in table
 					$('#placetable tr.highlight-row').click();
@@ -104,9 +95,9 @@ class sequencerControl {
 					this.currentSeq -= 1; // Play will commence by re-adding 1
 				}
 			}
-			
+
 			if (action=='play') {
-				
+
 		  		clearTimeout(longClickTimeout);
 				if (initialisingSlider) {
 		  			initialisingSlider = false;
@@ -125,29 +116,29 @@ class sequencerControl {
 			}
 			else {
 				if (action=='skip-first') {
-					this.currentSeq = this.minSeq; 
+					this.currentSeq = this.minSeq;
 				}
 				else if (action=='skip-previous') {
-					this.currentSeq -= 1; 
+					this.currentSeq -= 1;
 				}
 				else if (action=='skip-next') {
-					this.currentSeq += 1; 
+					this.currentSeq += 1;
 				}
 				else if (action=='skip-last') {
-					this.currentSeq = this.maxSeq; 
+					this.currentSeq = this.maxSeq;
 				}
-				
+
 				scrollToRowByProperty(table, 'seq', this.currentSeq);
 			}
-			
+
 			if (this.playing && this.currentSeq == this.maxSeq) {
 				this.stopPlayback();
 		        return;
 		    }
 			this.updateButtons();
-			
+
 		});
-		
+
 		function createSelect() {
 		  if ($('#stepDelayDropbox').length === 0) {
 		    const $dropboxContainer = $('<div id="stepDelayDropbox" class="sequencer"></div>');
@@ -168,7 +159,7 @@ class sequencerControl {
 
 		return this._container;
 	}
-	
+
 	updateButtons() {
 		const sequencer = $('.sequencer');
 		this.currentSeq = $('#placetable tr.highlight-row').data('seq');
@@ -188,7 +179,7 @@ class sequencerControl {
 			button.setAttribute('aria-label', button.getAttribute('title'));
 		});
 	}
-	
+
 	clickNext() {
 		this.currentSeq += 1;
 		this.continuePlay = true;
@@ -198,7 +189,7 @@ class sequencerControl {
 			this.stopPlayback();
 		}
 	}
-		
+
 	startPlayback() {
 		console.log('Starting sequence play...');
 		this.playing = true;
@@ -222,11 +213,11 @@ class sequencerControl {
 }
 
 class StyleControl {
-	
+
 	constructor(mappy) {
         this._mappy = mappy;
     }
-	
+
 	onAdd() {
 		this._map = map;
 		this._container = document.createElement('div');
@@ -282,9 +273,9 @@ class StyleControl {
 	}
 
 	_onVariantClick(event) {
-	
+
 		let mappy = this._mappy;
-	
+
 		const variantValue = event.target.dataset.value;
 		const style_code = variantValue.split(".");
 		console.log('Selected variant: ', variantValue, maptilersdk.MapStyle[style_code[0]][style_code[1]]);
@@ -316,46 +307,23 @@ class StyleControl {
 	}
 }
 
-class CustomAttributionControl extends maptilersdk.AttributionControl {
-    constructor(options) {
-        super(options);
-        this.autoClose = options.autoClose !== false;
-    }
-    onAdd(map) {
-        const container = super.onAdd(map);
-        // Automatically close the AttributionControl if autoClose is enabled
-        if (this.autoClose) {
-            const attributionButton = container.querySelector('.maplibregl-ctrl-attrib-button');
-            if (attributionButton) {
-                attributionButton.dispatchEvent(new MouseEvent('click', {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window
-                }));
-                container.classList.add('fade-in');
-            }
-        }
-        return container;
-    }
-}
-
 let mapSequencer;
 function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table){
 
 	if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
-	
+
 	if (mapParameters.styleFilter.length !== 1) {
 		mappy.addControl(new StyleControl(mappy), 'top-right');
 	}
-	
+
 	mappy.addControl(new fullScreenControl(), 'top-left');
 	mappy.addControl(new downloadMapControl(), 'top-left');
-	
+
 	if (!!mapParameters.controls.sequencer) {
 		mapSequencer = new sequencerControl();
 		mappy.addControl(mapSequencer, 'bottom-left');
 	}
-	
+
 	mappy.addControl(new CustomAttributionControl({
 		compact: true,
     	autoClose: mapParameters.controls.attribution.open === false,
@@ -369,7 +337,7 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 	        clearTimeout(debounceTimeout);
 	        debounceTimeout = setTimeout(toggleFilters(true, mappy, table), 300);
 	    }
-	    debounceFilterApplication(); 
+	    debounceFilterApplication();
 	}
 
 	if (window.dateline) {
@@ -400,17 +368,17 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 			onChange: dateRangeChanged
 		});
 	};
-	
+
 	document.addEventListener('click', function(event) {
-        
+
         if (event.target && event.target.parentNode) {
 			const parentNodeClassList = event.target.parentNode.classList;
-			
+
 			if (parentNodeClassList.contains('maplibregl-ctrl-fullscreen')) {
 				console.log('Switching to fullscreen.');
 				parentNodeClassList.replace('maplibregl-ctrl-fullscreen', 'maplibregl-ctrl-shrink');
 				document.getElementById('mapOverlays').classList.add('fullscreen');
-			} 
+			}
 			else if (parentNodeClassList.contains('maplibregl-ctrl-shrink')) {
 				console.log('Switching off fullscreen.');
 				parentNodeClassList.replace('maplibregl-ctrl-shrink', 'maplibregl-ctrl-fullscreen');
@@ -422,13 +390,13 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 			else if (parentNodeClassList.contains('download-map-button')) {
 				generateMapImage(mappy);
 			}
-			
+
 		}
 
 	});
-	
+
 	return { datelineContainer, mapParameters }
-	
+
 }
 
 export { init_mapControls, mapSequencer };

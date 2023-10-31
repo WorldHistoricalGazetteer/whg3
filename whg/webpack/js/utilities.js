@@ -2,6 +2,34 @@ import { bbox, midpoint, centroid, getType, area } from './6.5.0_turf.min.js'
 import ClipboardJS from '/webpack/node_modules/clipboard';
 import { lch } from './chroma.min.js'
 
+export function geomsGeoJSON(geomItems) { // Convert array of items with .geom to GeoJSON FeatureCollection
+	let featureCollection = {
+	  type: "FeatureCollection",
+	  features: [],
+	};
+	let idCounter = 0;
+	for (const item of geomItems) {
+	  const feature = {
+	    type: "Feature",
+	    geometry: {
+			type: "GeometryCollection",
+        	geometries: Array.isArray(item.geom) ? item.geom : [item.geom]
+		},
+	    properties: {},
+	    id: idCounter,
+	  };
+	  delete item.geom;
+	  for (const prop in item) { // Copy all non-standard properties from the original item
+	    if (!["type", "geometry", "properties"].includes(prop)) {
+	      feature.properties[prop] = item[prop];
+	    }
+	  }
+	  featureCollection.features.push(feature);
+	  idCounter++;
+	}
+	return featureCollection;
+}
+
 export function largestSubGeometry(geometry) {
 	if (getType(geometry) === 'MultiPoint' || getType(geometry) === 'MultiLineString' || getType(geometry) === 'MultiPolygon') {
 		if (geometry.coordinates && geometry.coordinates.length > 0) {
@@ -132,17 +160,17 @@ export function initInfoOverlay() {
 
 export function attributionString(data) {
 	let attributionParts = [];
-	if (data.attribution) {
+	if (!!data && data.attribution) {
 		attributionParts.push(data.attribution);
 	}
-	if (data.citation) {
+	if (!!data && data.citation) {
 		attributionParts.push(data.citation);
 	}
 	let attribution = '';
 	if (attributionParts.length > 0) attribution = attributionParts.join(', ');
 
 	let attributionStringParts = ['&copy; World Historical Gazetteer & contributors'];
-	attributionStringParts.push(data.attribution || data.citation || attribution);
+	if (!!data) attributionStringParts.push(data.attribution || data.citation || attribution);
 
 	return attributionStringParts.join(' | ');
 }
