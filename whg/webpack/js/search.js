@@ -228,13 +228,6 @@ function renderResults(featureCollection) {
 	$("#d_input input").val(!!featureCollection.query ? featureCollection.query : '');
 
 	// Iterate over the results and append HTML for each
-	// NB these are parents only
-	// hit (delivers): [title, searchy, whg_id, pid, linkcount, variants,
-	//    ccodes, fclasses, types, geoms]
-	// hit (also): [uri, names, links, timespans, dataset]
-	// TODO: Portal URL not yet implemented
-	// link to portal: <a href="/places/${result.whg_id}/portal">portal</a>
-	
 	let results = featureCollection.features;
 	results.forEach(feature => {
 		
@@ -460,11 +453,11 @@ function updateCheckboxCounts(features) {
 
 function initiateSearch() {
 	isInitialLoad = true;
-
 	localStorage.removeItem('last_results')
 
 	const query = $('#search-input').val(); // Get the query from the input
 	const options = gatherOptions(); //
+	console.log('initiateSearch()', query)
 
 	// AJAX GET request to SearchView() with the options (includes qstr)
 	$.get("/search/index", options, function(data) {
