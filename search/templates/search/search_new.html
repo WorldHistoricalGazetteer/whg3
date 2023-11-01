@@ -5,6 +5,7 @@
 {% block extra_head %}
   <script src="{% static 'js/aliases.js' %}"></script>
   <script src="{% static 'js/parents.js' %}"></script>
+  <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
   <link href="{% static 'webpack/search.bundle.css' %}" rel="stylesheet" /> 
 {% endblock %}
 
@@ -117,6 +118,7 @@
     }
 </script>
 <script type="module">
+    import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
     import "{% static 'webpack/search.bundle.js' %}";
 </script>
 {% endblock %}

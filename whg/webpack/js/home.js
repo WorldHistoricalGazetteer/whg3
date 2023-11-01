@@ -1,7 +1,5 @@
 // /whg/webpack/home.js
 
-import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.umd.min.js';
-import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.css';
 import { CustomAttributionControl } from './customMapControls';
 import '../css/home.css';
 import { bbox } from './6.5.0_turf.min.js';
