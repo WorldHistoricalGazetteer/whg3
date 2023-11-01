@@ -1,9 +1,13 @@
 // /whg/webpack/areas.js
 
 import datasetLayers from './mapLayerStyles';
-import { attributionString } from './utilities';
-import { bbox } from './6.5.0_turf.min.js';
-import { CustomAttributionControl } from './customMapControls';
+import {
+	attributionString, deepCopy
+} from './utilities';
+import {
+	bbox, buffer, convex, flatten, dissolve, combine
+} from './6.5.0_turf.min.js';
+import { /*StyleControl,*/ CustomAttributionControl } from './customMapControls';
 
 import '../css/maplibre-common.css';
 import '../css/areas.css';
@@ -29,112 +33,132 @@ let mappy = new maptilersdk.Map({
 	userProperties: true
 });
 
-let nullCollection = {
-    type: 'FeatureCollection',
-    features: []
+const nullCollection = {
+	type: 'FeatureCollection',
+	features: []
+}
+let featureCollection;
+
+let countryGeoJSON;
+var draw;
+var drawControl;
+
+let hullLayer = {
+	'id': 'hull',
+	'type': 'fill',
+	'source': 'hulls',
+	'paint': {
+		'fill-color': 'rgba(221,221,221,.3)', // pale-gray,
+		'fill-outline-color': 'rgba(0,128,0,.8)', // green,
+	}
 }
 
 function waitMapLoad() {
-    return new Promise((resolve) => {
-        mappy.on('load', () => {
-            console.log('Map loaded.');
-            
-            mappy.addSource('places', {
-				'type': 'geojson',
-			    'data': nullCollection,
-				'attribution': attributionString(),
-			});
-		    datasetLayers.forEach(function(layer) {
-				mappy.addLayer(layer);
-			});
+	return new Promise((resolve) => {
+		mappy.on('load', () => {
+			console.log('Map loaded.');
 
-		    var draw = new MapboxDraw({
-		        displayControlsDefault: false,
-		        controls: {
-		            point: true,
-		            line_string: true,
-		            polygon: true,
-		            trash: true
-		        },
-		    })
-		    mappy.addControl(draw, 'top-left');
-		    const drawControls = document.querySelectorAll(".mapboxgl-ctrl-group.mapboxgl-ctrl");
-		    drawControls.forEach((elem) => {
-		        elem.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group');
-		    });
-		    mappy.on('draw.create', updateGeoJSON);
-		    mappy.on('draw.delete', updateGeoJSON);
-		    mappy.on('draw.update', updateGeoJSON);
-		
-		    function updateGeoJSON() {
-		        var data = draw.getAll();
-		        $("textarea#id_geojson").val(data.features.length > 0 ? JSON.stringify(data) : '');
-		    }
+			// Fetch the river and watershed GeoJSON data
+			const fetchRiverData = fetch('/datasets/ne_rivers982/places')
+			  .then((response) => {
+			    if (!response.ok) {
+			      throw new Error('Failed to fetch river data');
+			    }
+			    return response.json();
+			  });
 			
+			const fetchWatershedData = fetch('/datasets/wri_watersheds/places')
+			  .then((response) => {
+			    if (!response.ok) {
+			      throw new Error('Failed to fetch watershed data');
+			    }
+			    return response.json();
+			  });
+			
+			// Use Promise.all to wait for both fetch operations to complete
+			Promise.all([fetchRiverData, fetchWatershedData])
+			  .then(([riverGeoJSON, watershedGeoJSON]) => {
+				  
+			    if (!!riverGeoJSON.features && riverGeoJSON.features.length > 0) {
+			    
+				    // Add river and watershed sources and layers
+					var riverStyle = {
+						'line-color': '#336699',
+		  				'line-width': 1,
+					};
+				    mappy.addSource('rivers', {
+				      type: 'geojson',
+				      data: riverGeoJSON,
+				    });
+				    mappy.addLayer({
+				      id: 'rivers',
+				      type: 'line',
+				      source: 'rivers',
+				      paint: riverStyle,
+				    });
+					
+				}
+				else {
+					console.log('Empty or invalid riverGeoJSON.');
+				}
+				  
+			    if (!!watershedGeoJSON.features && watershedGeoJSON.features.length > 0) {
+			
+					var watershedStyle = {
+						'fill-color': '#993333',
+						'fill-opacity': 0.1,
+						'fill-outline-color': '#fff',
+					};
+				    mappy.addSource('watersheds', {
+				      type: 'geojson',
+				      data: watershedGeoJSON,
+				    });
+				    mappy.addLayer({
+				      id: 'watersheds',
+				      type: 'fill',
+				      source: 'watersheds',
+				      paint: watershedStyle,
+				    });
+					
+				}
+				else {
+					console.log('Empty or invalid watershedGeoJSON.');
+				}
+			
+			    // Now that river and watershed sources/layers are added, proceed with adding other sources and layers
+			    mappy.addSource('places', {
+			      type: 'geojson',
+			      data: nullCollection,
+			      attribution: attributionString(),
+			    });
+			
+			    datasetLayers.forEach(function (layer) {
+			      mappy.addLayer(layer);
+			    });
+			
+			    mappy.addSource('hulls', {
+			      type: 'geojson',
+			      data: nullCollection,
+			    });
+			
+			    mappy.addLayer(hullLayer);
+			  })
+			  .catch((error) => {
+			    console.error('Error fetching GeoJSON data:', error);
+			  });
+
+			addDrawingControl();
+			
+/*			if (mapParameters.styleFilter.length !== 1) { // This would be a little complicated (but not impossible) to implement due to MapBox drawing layers; styling also required.
+				mappy.addControl(new StyleControl(mappy), 'top-right');
+			}*/
+
 			mappy.addControl(new CustomAttributionControl({
 				compact: true,
-		    	autoClose: mapParameters.controls.attribution.open === false,
+				autoClose: mapParameters.controls.attribution.open === false,
 			}), 'bottom-right');
 			
-			map_init();
-	
-			/*
-			var attrib_mb = 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
-				'<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-				'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-				token_whg = '{{ mbtoken }}',
-				mbstyle_url = 'https://api.mapbox.com/styles/v1/{id}/tiles/256/{z}/{x}/{y}?access_token={token}';
-		
-		
-			var satellite = L.tileLayer(mbstyle_url, {
-				id: 'mapbox/satellite-streets-v11',
-				token: token_whg,
-				attribution: attrib_mb
-			});
-			var osm = L.tileLayer(mbstyle_url, {
-				id: 'mapbox/light-v10',
-				token: token_whg,
-				attribution: attrib_mb
-			});
-			*/
-		
-			var watershedStyle = {
-				"fillColor": "#993333",
-				"color": "#fff",
-				"weight": 1,
-				"opacity": 0.7,
-				"fillOpacity": 0.1
-			};
-		
-			var riverStyle = {
-				"color": "#336699",
-				"weight": 1
-			};
-		
-			/*
-			rivers = new L.GeoJSON.AJAX("/datasets/ne_rivers982/places", {
-				style: riverStyle,
-				onEachFeature: function(feature, layer) {
-					popupOptions = {
-						maxWidth: 200
-					};
-					layer.bindPopup(feature.properties.name + " (" + feature.properties.src_id + ")", popupOptions);
-				}
-			});
-		
-			watersheds = new L.GeoJSON.AJAX("/datasets/wri_watersheds/places", {
-				style: watershedStyle,
-				onEachFeature: function(feature, layer) {
-					layer.setStyle({
-						"fillColor": random_rgba()
-					})
-					popupOptions = {
-						maxWidth: 200
-					};
-					layer.bindPopup(feature.properties.name + " (" + feature.properties.src_id + ")", popupOptions);
-				}
-			})
-		
+			/*		
 			drawnItems = L.featureGroup().addTo(mappy)
 		
 			var baseLayers = {
@@ -152,87 +176,182 @@ function waitMapLoad() {
 			baseLayers['OSM'].addTo(mappy)
 			//overlays['Rivers'].addTo(mappy)
 			*/
-            
-            resolve();
-        });
-    });
+
+			resolve();
+		});
+	});
 }
 
 function waitDocumentReady() {
-    return new Promise((resolve) => {
-        $(document).ready(() => resolve());
-    });
+	return new Promise((resolve) => {
+		$(document).ready(() => resolve());
+	});
 }
 
 Promise.all([waitMapLoad(), waitDocumentReady()])
-    .then(() => {
+	.then(() => {
 
-	// area_type = 'ccodes' // default
-	$(".textarea").each(function(index) {
-		if (["None", "null"].includes($(this).val())) {
-			$(this).val('')
-		}
-	});
-	$("#id_geojson").attr("placeholder", "generated from country codes")
-
- 
-    })
-    .catch(error => console.error("An error occurred:", error));
-    
-    $('#areas_codes .area-link-clear').click(() => { map_clear(); });
-    $('#areas_codes .area-link-render').click(() => { map_render(); });
-
-	$('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
-		const target = $(e.target).attr("href") // activated tab
-		const area_type = $(e.target).attr("ref") // activated tab
-		map_clear() // switch create modes? clear the deck
-		// feed area type to hidden input
-		$("input[name='type']").val(area_type)
-		console.log('tab id:',target);
-		const active = $("ul#area_tabs_ul a.active").attr("href")
-		// TODO: better refactor 
-		if (target == '#areas_codes') {
-			$("#id_geojson").attr("placeholder", "generated from country codes")
-			if ($(".leaflet-draw-toolbar").length > 0) {
-				// console.log('remove drawControl')
-				$(".leaflet-draw").remove()
+		// area_type = 'ccodes' // default
+		$(".textarea").each(function(index) {
+			if (["None", "null"].includes($(this).val())) {
+				$(this).val('')
 			}
-		} else if (target == '#areas_draw') {
-			console.log('line 170', $(".leaflet-draw").length)
-			$("#id_geojson").attr("placeholder", "generated from drawn shapes")
-			/*
-			if ($(".leaflet-draw").length == 0) {
-				//drawnItems = L.featureGroup().addTo(mappy)
-				drawControls(drawnItems)
-				console.log('feature0', drawnItems.toGeoJSON().features[0])
-				mappy.on(L.Draw.Event.CREATED, function(event) {
-					window.drawnlayer = event.layer;
-					console.log('drawnlayer', drawnlayer)
-					drawnItems.addLayer(drawnlayer);
-					drawnItems.addTo(mappy)
-					// $("textarea#id_geojson").val(JSON.stringify(drawnItems.toGeoJSON()))
-					$("textarea#id_geojson").val(JSON.stringify(drawnItems.toGeoJSON().features[0].geometry))
-				});
-				mappy.on(L.Draw.Event.EDITED, function(event) {
-					// $("textarea#id_geojson").val(JSON.stringify(drawnItems.toGeoJSON()))
-					geom = drawnItems.toGeoJSON().features[0].geometry
-					geom_string = JSON.stringify(geom)
-					//coords = JSON.stringify(geom.coordinates)
-					//console.log('coords', geom)
-					//fetchCount(coords)
-					$("textarea#id_geojson").val(geom_string)
-	
-				});
-				mappy.on(L.Draw.Event.DELETED, function(event) {
-					$("textarea#id_geojson").val(JSON.stringify(drawnItems.toGeoJSON()))
-					$("textarea#id_geojson").val(JSON.stringify(drawnItems.toGeoJSON().features[0].geometry))
-					//drawnItems.addTo(mappy)
-					console.log('you deleted something')
-				})
+		});
+		
+		let country_url = "/media/data/countries_simplified.json";
+		fetch(country_url)
+			.then(function(resp) { return resp.json(); })
+			.then(function(data) {
+				countryGeoJSON = data;
+			});
+		
+		$("#id_geojson")
+			.attr("placeholder", "generated from country codes")
+			.attr("disabled", true)
+
+		$('#areas_codes .area-link-clear').click(() => {
+			map_clear();
+		});
+		$('#areas_codes .area-link-render').click(() => {
+			map_render();
+		});
+
+		$('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+			const target = $(e.target).attr("href") // activated tab
+			const area_type = $(e.target).attr("ref") // activated tab
+			map_clear();
+			// feed area type to hidden input
+			$("input[name='type']").val(area_type)
+			console.log('tab id:', target);
+			// TODO: better refactor 
+			if (target == '#areas_codes') {
+				drawControl.hide();
+				$("#id_geojson").attr("placeholder", "generated from country codes")
+			} else if (target == '#areas_draw') {
+				drawControl.show();
+				$("#id_geojson").attr("placeholder", "generated from drawn shapes")
 			}
-			*/
-		}
+		});
+
+		map_init();
+	})
+	.catch(error => console.error("An error occurred:", error));
+
+function addDrawingControl() {
+
+	draw = new MapboxDraw({
+		displayControlsDefault: false,
+		controls: {
+			//point: true,
+			//line_string: true,
+			polygon: true,
+			trash: true
+		},
+	})
+	let drawControlObject = mappy.addControl(draw, 'top-left');
+	drawControl = $(drawControlObject._container).find('.maplibregl-ctrl-top-left');
+	drawControl.hide();
+	const drawControls = document.querySelectorAll(".mapboxgl-ctrl-group.mapboxgl-ctrl");
+	drawControls.forEach((elem) => {
+		elem.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group');
 	});
+	mappy.on('draw.create', updateGeoJSON);
+	mappy.on('draw.delete', updateGeoJSON);
+	mappy.on('draw.update', updateGeoJSON);
+
+	function updateGeoJSON() {
+		var data = draw.getAll();
+		$("textarea#id_geojson").val(data.features.length > 0 ? JSON.stringify(data) : '');
+	}
+
+}
+
+function map_init() {
+	// whether drawn or ccodes, load existing data
+	if (action == 'update') {
+		// existing - assumes that formGeoJSON is a featureCollection
+		areageom = JSON.parse(formGeoJSON);
+
+		// if area was drawn
+		if (formType == 'drawn') {
+			console.log('was drawn')
+			draw.set(formGeoJSON)
+			$('a[href="#areas_draw"]').tab('show');
+			// disable ccodes tab
+			$('a[href="#areas_codes"]').addClass('disabled').css("cursor", "default")
+
+		} else if (formType == 'ccodes') {
+			console.log('was ccodes-generated')
+			mappy.getSource('places').setData(formGeoJSON);
+			// disable draw tab
+			$('a[href="#areas_draw"]').addClass('disabled').css("cursor", "default")
+		}
+		mappy.fitBounds(bbox(formGeoJSON), {
+	        padding: 30,
+	        duration: 1000,
+	    });
+	}
+}
+
+function map_clear() {
+	draw.deleteAll();
+	mappy.getSource('places').setData(nullCollection);
+	mappy.getSource('hulls').setData(nullCollection);
+	$("input#id_ccodes").val(null);
+	if (action == "create") {
+		$("textarea#id_geojson").val(null);
+	}
+	$("#buffer_km").val(null);
+	mappy.flyTo({
+	    center: mapParameters.center,
+	    zoom: mapParameters.zoom,
+        duration: 1000,
+	});
+}
+
+function map_render() {
+	mappy.getSource('places').setData(nullCollection);
+	mappy.getSource('hulls').setData(nullCollection);
+	let ccodes = $("input#id_ccodes").val().split(/[,\s|]+/).map(code => code.trim().toUpperCase()).filter(Boolean);
+	let cbuffer = $("input#buffer_km").val();
+	featureCollection = deepCopy(nullCollection);
+	let hullCollection = deepCopy(nullCollection);
+	if (ccodes.length > 0) {
+		featureCollection.features = countryGeoJSON.features.filter(feature => ccodes.includes(feature.properties.iso));
+		if (featureCollection.features.length ==0) {
+			alert('No matches found for those country codes.');
+			return;
+		}
+		featureCollection.features.forEach((feature, index) => { 
+			feature.id = index;
+			if (cbuffer > 0) {
+				const bufferedHull = convex(buffer(feature, cbuffer, { units: 'kilometers' }));
+        		hullCollection.features.push(bufferedHull);
+			} 
+		});
+		if (cbuffer > 0) {
+			hullCollection = combine(dissolve(flatten(hullCollection)));
+			mappy.getSource('hulls').setData(hullCollection);
+		}
+		mappy.getSource('places').setData(featureCollection);
+		featureCollection.features.forEach((feature, index) => {
+			mappy.setFeatureState({ source: 'places', id: index }, { highlight: true });
+        });
+	} else {
+		alert('Need one or more comma-delimited 2-letter country codes.');
+		return;
+	}
+    let primaryCollection = cbuffer > 0 ? hullCollection : featureCollection;
+    $("textarea#id_geojson").val(JSON.stringify(primaryCollection));
+	mappy.fitBounds(bbox(primaryCollection), {
+        padding: 30,
+        duration: 1000,
+    });
+}
+
+/*
+THE FOLLOWING FUNCTIONS ARE AS-YET REDUNDANT AND MIGHT EVENTUALLY BE REMOVED
+ */
 
 // ES query to count...retrieve?
 function fetchCount(coords) {
@@ -252,7 +371,7 @@ function fetchCount(coords) {
 			$("#count_result").html(data['count'])
 		});
 }
-			
+
 function random_rgba() {
 	var o = Math.round,
 		ra = Math.random,
@@ -267,24 +386,6 @@ function random_rgba() {
 	return rgbToHex(tup[0], tup[1], tup[2])
 }
 
-/*
-// add draw controls to map
-// on tab switch && on update Area if type == 'drawn'
-function drawControls(mode) {
-	var drawControl = new L.Control.Draw({
-		draw: {
-			marker: false,
-			polyline: false,
-			circle: false,
-			circlemarker: false,
-		},
-		edit: {
-			featureGroup: mode
-		}
-	});
-	mappy.addControl(drawControl);
-}
-*/
 function zoomTo(id) {
 	mappy.setView(idToFeature[id]._latlng, mappy.getZoom() + 2)
 }
@@ -293,133 +394,4 @@ function cleanJson(text) {
 	z = text.replace(/'/g, '\\"')
 	y = z.replace(/point/, 'Point')
 	return JSON.parse(JSON.parse(y))
-}
-
-function map_init() {
-	// whether drawn or ccodes, load existing data
-	if (action == 'update') {
-		// existing
-		areageom = JSON.parse(formGeoJSON)
-
-		// if area was drawn
-		if (formType == 'drawn') {
-			console.log('was drawn')
-			/*
-			// load existing for editing
-			lgeojson = L.geoJson(areageom, {
-				onEachFeature: function(feature, layer) {
-					drawnItems.addLayer(layer);
-				}
-			}).addTo(mappy)
-			mappy.fitBounds(lgeojson.getBounds())
-			//drawControls(drawnItems)
-			*/
-
-			$('a[href="#areas_draw"]').tab('show');
-			$('a[href="#areas_codes"]').addClass('disabled').css("cursor", "default")
-
-		} else if (formType == 'ccodes') {
-			console.log('was ccodes-generated')
-			/*
-			window.geom = {
-				"type": "FeatureCollection",
-				"features": []
-			}
-			window.buffer = $("input#buffer_km").val()
-			cc_layer = L.geoJson(areageom, {
-				onEachFeature: function onEachFeature(feature, layer) {
-					geom['features'].push(feature)
-					//var props = feature.properties;
-					//var content = `<p>${props.iso}</p><p>${props.gnlabel}</p>`;
-					//layer.bindPopup(content);
-				}
-			}).addTo(mappy)
-			mappy.fitBounds(cc_layer.getBounds())
-			*/
-			// disable draw tab
-			$('a[href="#areas_draw"]').addClass('disabled').css("cursor", "default")
-			//map_render()
-		}
-	}
-}
-
-function map_render() {
-	console.log('in map_render()')
-	let ccodes = $("input#id_ccodes").val()
-	window.geoj = $("textarea#id_geojson")
-	window.geom = {
-		"type": "FeatureCollection",
-		"features": []
-	}
-	window.buffer = $("input#buffer_km").val()
-	$("#count_result mark").html('')
-	// console.clear()
-
-	var country_url = "/media/data/countries_simplified.json"
-	// clear geoJSON
-	if (Object.keys(mappy._layers).length > 2) {
-		cc_layer.clearLayers()
-		hull_layer.clearLayers()
-	}
-	if (ccodes != '') {
-		// TODO: test csv format
-		ccode_arr = ccodes.toUpperCase().split(",")
-		// console.log(ccode_arr)
-		fetch(country_url)
-			.then(function(resp) {
-				return resp.json();
-			})
-			.then(function(data) {
-				// console.log('fetched data', data)
-				/*
-				window.cc_layer = L.geoJson(data, {
-					filter: function(feature, layer) {
-						return ccode_arr.includes(feature.properties.iso);
-					},
-					onEachFeature: function onEachFeature(feature, layer) {
-						// console.log('feature:', JSON.stringify(feature))
-						geom['features'].push(feature)
-						var props = feature.properties;
-						var content = `<p>${props.iso}</p><p>${props.gnlabel}</p>`;
-						layer.bindPopup(content);
-					}
-				}).addTo(mappy);
-				*/
-			})
-			.then(function() {
-				hull = turf.buffer(turf.convex(geom), buffer, {
-					units: 'kilometers'
-				})
-				// hull_mp = turf.multiPolygon(hull.geometry.coordinates)
-				// geoj.val(JSON.stringify(hull_mp.geometry))
-				geoj.val(JSON.stringify(hull.geometry))
-				console.log('geoj', geoj.val())
-				/*
-				hull_layer = L.geoJSON(hull, {
-					style: function(feature) {
-						return {
-							color: '#ff8c00'
-						};
-					}
-				}).addTo(mappy);
-				mappy.fitBounds(hull_layer.getBounds())
-				*/
-			})
-	} else {
-		alert('Need one or more comma-delimited 2-letter country codes')
-	}
-}
-
-function map_clear() {
-	if (typeof cc_layer != "undefined") {
-		cc_layer.remove()
-	}
-	if (typeof hull_layer != "undefined") {
-		hull_layer.remove()
-	}
-	$("input#id_ccodes").val(null)
-	if (action == "create") {
-		$("textarea#id_geojson").val(null)
-	}
-	$("#buffer_km").val(null)
 }

@@ -5,7 +5,7 @@
 {% load dataset_extras %}
 {% block title %}<title>WHG::Create/Update Area</title>{% endblock %}
 {% block extra_head %}
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js" integrity="sha256-LOnFraxKlOhESwdU/dX+K0GArwymUDups0czPWLEg4E=" crossorigin="anonymous"></script>
   
   <script src="{% static 'js/tags/bootstrap-tagsinput.js' %}"></script>
@@ -59,12 +59,12 @@
             <a class="nav-link" role="tab" data-toggle="tab" ref="drawn" href="#areas_draw">Draw</a></li>
         </ul>
         <div class="tab-content">
-          <div id="areas_codes" class="tab-pane fade show active">
+          <div id="areas_codes" class="tab-pane fade active show">
             <p id="p_ccodes">Country codes (ISO 3166 alpha2) &nbsp;<a href="https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2" target="_blank"><i class="fas fa-external-link-alt linky"></i></a><br/>{{ form.ccodes }}
               <span class="float-end ms-1 area-link-clear">
-                <a href="#">clear</a></span>
+                <a href="javascript:void(0);">clear</a></span>
               <span class="float-end area-link-render">
-                <a href="#">preview</a> |</span>
+                <a href="javascript:void(0);">preview</a> |</span>
             </p>
             <p>Buffer (optional, km)<br/>
               <input type="text" id="buffer_km" name="buffer_km" value=""/></p>
@@ -111,7 +111,7 @@
                 automate: null,
             }
         },
-        styleFilter: [ 'OUTDOOR.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
+        styleFilter: [ 'OUTDOOR.DEFAULT', 'SATELLITE.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
     }
     let action = '{{ action }}';
     let formType = '{{ form.type.value }}';
