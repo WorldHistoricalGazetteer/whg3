@@ -39,7 +39,7 @@
 		        height: 50px;
 		        padding: .2rem;
         }
-				#time_histogram {top: 6px;}
+				#histogram {top: 6px; width:90%;}
         #time_slider {bottom: 6px; }
 
 				.info-box {margin-bottom: .2rem;}
@@ -63,22 +63,63 @@
 	        <div id="info" class="m-2 p-1">
             <div id="sources" class="bg-light info-box">
 	            <p class="mb-0 strong-red">Sources</p>
-	            <div class="source-box">attestation #1</div>
-	            <div class="source-box">attestation #2</div>
-	            <div class="source-box">attestation #3</div>
+              {{ payload|json_script:"payload_data" }}
+	            {% for rec in payload %}
+	              <div class="source-box small">
+		              <span class="fs-6">{{ rec.title}} ({{ rec.place_id }})</span><br/>
+	                Dataset: <a class="pop-link pop-dataset" data-id={{rec.dataset.id}} data-toggle="popover" title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
+	              {{rec.dataset.name|remove:'(stub) '|truncatechars:25}}</a>
+	              {% if rec.timespans  %}
+	              <br/>Temporal: {{ rec.timespans }}
+	              {% endif %}
+	              </div>
+	            {% endfor %}
+{#	            <div class="source-box">attestation #2</div>#}
+{#	            <div class="source-box">attestation #3</div>#}
             </div>
             <div id="source_detail" class="bg-light info-box">
-	            {source detail}
+              <p class="mb-0 strong-red">In Collection(s)</p>
+		          <div id="collection_list">
+		          {% if collections|length > 0 %}
+		            <ul>
+		            {% for c in collections %}
+			            {% with c.collection_class as cclass %}
+			            <li>
+				            {% if cclass == 'place' %}
+				              <a href="{% url 'collection:place-collection-browse' c.id %}" target="_blank">
+					              <b>{{ c.title }}</b></a>, a collection of <sr>{{ c.places_all.count }}</sr> places
+					              {{ c.title|json_script:"c_title" }}
+					              {{ c.description|json_script:"c_description" }}
+					              [<a href='javascript:{ showCollectionDescription()}' class="a_cdescription">description</a>,
+					              <a href="#" class="coll-geo" data-id="{{ c.id }}">places</a>]
+				            {% else %}
+				              <a href="{% url 'collection:ds-collection-browse' c.id %}" target="_blank">
+					              <b>{{ c.title }}</b></a>
+					            , a collection of all <sr>{{ c.places_all.count }})</sr> places in {{ c.datasets.count }} datasets
+			              {% endif %}
+		              </li>
+			            {% endwith %}
+		            {% endfor %}
+		            </ul>
+		          {% else %}
+		            <i>None yet</i>
+		          {% endif %}
+		          </div>
+{#	            {% for c in collections %}#}
+{#	            <p class="small">{{ c.title }}</p>#}
+{#	            {% endfor %}#}
             </div>
             <div id="graph_viz" class="bg-light info-box">
-	            {graph visualization}
+	            {graph visualization?}
             </div>
 	        </div>
         </div>
 
         <!-- Middle column (time_slider and time_histogram) -->
         <div id="middle" class="col-6 position-relative py-2">
-            <div id="time_histogram" class="position-absolute middle">Time Histogram</div>
+            <div id="histogram" class="position-absolute bg-light">
+	            <p class="allcap-heading small my-0">TEMPORAL ATTESTATIONS</p>
+            </div>
             <div id="time_slider" class="position-absolute middle">Time Slider</div>
         </div>
 
@@ -93,52 +134,175 @@
         </div>
 
     </div> <!-- End of Bootstrap row -->
-
-</div> <!-- End of webmap div -->
-
-        <!-- Main div for the web map -->
-{#        <div id="webmap" class="position-relative p-2">#}
-{##}
-{#            <!-- Info div on the left -->#}
-{#            <div id="info" class="position-absolute d-flex flex-column">#}
-{#                <div id="sources">#}
-{#                    <!-- Content for sources -->#}
-{#                    <div>Source Content</div>#}
-{#                </div>#}
-{#                <div id="source_detail">#}
-{#                    <!-- Content for source detail -->#}
-{#                    <div>Source Detail Content</div>#}
-{#                </div>#}
-{#                <div id="graph_viz">#}
-{#                    <!-- Content for graph visualization -->#}
-{#                    <div>Graph Visualization Content</div>#}
-{#                </div>#}
-{#            </div>#}
-{##}
-{#            <!-- Map controls div on the right -->#}
-{#            <div id="map_controls" class="position-absolute">#}
-{#                <!-- TBD sub-divs and content for map controls -->#}
-{#                <div>Map Controls Content</div>#}
-{#            </div>#}
-{##}
-{#            <!-- Time histogram div at the top -->#}
-{#            <div id="time_histogram">#}
-{#                <!-- Content for time histogram -->#}
-{#                <div>Time Histogram Content</div>#}
-{#            </div>#}
-{##}
-{#            <!-- Time slider div at the bottom -->#}
-{#            <div id="time_slider" >#}
-{#                <!-- Content for time slider -->#}
-{#                <div>Time Slider Content</div>#}
-{#            </div>#}
-{##}
-{##}
-{#        </div> <!-- End of webmap div -->#}
-
-    </div> <!-- End of container -->
+	</div> <!-- End of webmap div -->
+</div> <!-- End of container -->
 	<script type="text/javascript">
+	  function fetchCollectionGeom(coll_id,counter) {
+		  counter= 3
+		  $.get("/search/collgeom",{coll_id: coll_id},
+		    function(data){
+          coll_places = data
+		      console.log('coll_places', coll_places)
+		      {#cplaces = L.geoJSON(data, {#}
+		      {#  pane: 'tracePane',#}
+		      {#  pointToLayer: function (feature, latlng) {#}
+		      {#    identifier = feature.properties.pid#}
+		      {#    marker = L.circleMarker(latlng,#}
+		      {#      {#}
+		      {#        radius: 5, fillOpacity: 0.3, opacity: 1, weight: 1,#}
+		      {#        color: "#fff", fillColor: filly(counter)#}
+		      {#      }#}
+		      {#    ).bindPopup('pid:'+identifier+'<br/><b>'+#}
+		      {#      '<a href="/places/'+identifier+'/portal">'+feature.properties.title+"</b></a>");#}
+		      {#    idToFeature[identifier] = marker#}
+		      {#    return marker#}
+		      {#  },#}
+		      {#  onEachFeature: function(feature,layer){#}
+		      {#    layer.addTo(traceLayers)#}
+		      {#  }#}
+		      {# }).addTo(mappy);#}
+		      {#mappy.fitBounds(cplaces.getBounds())#}
+		  });
+		}
 
+		document.addEventListener('DOMContentLoaded', (event) => {
+		  const payload = JSON.parse(document.getElementById('payload_data').textContent);
+		  console.log('payload', payload);
+
+			allts = {{ allts }}
+			var min = Math.min.apply(null, allts.map(function(row){
+                return Math.min.apply(Math, row); }));
+			var max = Math.max.apply(null, allts.map(function(row){
+                return Math.max.apply(Math, row); }));
+			minmax=[min,max]
+
+			function range(start, stop, step) {
+				var a = [start],
+					b = start;
+				while (b < stop) {
+					a.push(b += step || 1);
+				}
+				return a;
+			}
+
+			function intersects(a, b) {
+				min = (a[0] < b[0] ? a : b)
+				max = (min == a ? b : a)
+				return !(min[1] < max[1])
+			}
+
+			function histogram_data(intervals, minmax) {
+				step = Number(((minmax[1] - minmax[0]) / 200))
+				bins = range(minmax[0], minmax[1], step)
+				hist_array = Array.apply(null, Array(bins.length)).map(Number.prototype.valueOf, 0);
+				labels = bins.map(function(d) {
+					return Math.round(d)
+				})
+				for (b = 0; b < bins.length; b++) {
+					bin = Array(bins[b], bins[b + 1])
+					for (i in intervals) {
+						if (intersects(bin, intervals[i])) {
+							hist_array[b] += 1
+						}
+					}
+				}
+				data = hist_array.map(function(d, i) {
+					return {
+						"bin": labels[i],
+						"count": d
+					}
+				})
+
+				// visualize it
+				histogram(data, labels)
+
+			}
+
+			function histogram(data, labels) {
+				// exit if no data
+				if (data[0].bin == "Infinity") {
+					$("#histogram").html('<i>None yet</i>');
+					return;
+				}
+				data = data.slice(0, 200)
+				curwidth = $("#histogram").width()
+
+				var margin = {
+						top: 0,
+						right: 10,
+						bottom: 0,
+						left: 10
+					},
+					width = 400,
+					height = 30,
+					padding_h = 20,
+					padding_w = 30;
+
+				// set the ranges
+				window.xScale = d3.scaleLinear()
+					.range([0, width])
+				window.yScale = d3.scaleLinear()
+					.range([height, 0]);
+
+				xScale.domain(minmax);
+				yScale.domain([0, d3.max(data, function(d) {
+					return d.count;
+				})]);
+
+				// TODO: responsive scaling of svg width
+				window.svg_hist = d3.select("#histogram").append("svg")
+					.attr("width", '100%')
+					.attr("height", height + padding_h)
+
+					.attr('viewBox', '0 0 ' + Math.min(width, height + padding_h) + ' ' + Math.min(width, height + padding_h))
+					.attr('preserveAspectRatio', 'xMinYMin')
+
+					.append("g")
+					.attr("transform", "translate(" + margin.left + "," + margin.top + ")")
+
+				window.axisB = d3.axisBottom(xScale)
+					.tickValues(labels.filter(function(d, i) {
+						return !(i % 20)
+					}))
+					.tickFormat(d3.format("d"));
+
+				var axisL = d3.axisLeft(yScale)
+
+				svg_hist.selectAll(".bar")
+					.data(data)
+					.enter().append("rect")
+					.attr("class", "bar")
+					.attr("x", function(d) {
+						return xScale(d.bin);
+					})
+					//.attr("width", function(d) { return xScale(d.x1) - xScale(d.x0) -1 ; })
+					.attr("width", 2)
+					.attr("y", function(d) {
+						return yScale(d.count);
+					})
+					.attr("height", function(d) {
+						return height - yScale(d.count);
+					});
+
+				var xAxis = svg_hist.append("g")
+					.attr("id", "xaxis")
+					.attr("transform", "translate(0," + height + ")")
+					.call(axisB)
+			}
+
+			// feed to #histogram
+			histogram_data(allts, minmax)
+
+	    // load collection geometry (# within reason)
+	    $(".coll-geo").click(function(e){
+	      e.preventDefault()
+		    // TODO: why does context fail when collection places are displayed
+		    // in any case, hide the checkbox
+		    $("#fetch_context").hide()
+	      fetchCollectionGeom($(this).data('id'), 3)
+	      $("#clear_markers").fadeIn()
+	    })
+		});
 	</script>
 	<script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
 {% endblock %}

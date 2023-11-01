@@ -12,8 +12,15 @@ from elastic.es_utils import fetch
 app_name='places'
 urlpatterns = [
 
-    # will eventually take purl
-    path('<int:id>/portal', views.PlacePortalView.as_view(), name='place-portal'),
+    # START new urls-> views (kg 2023-10-31)
+    path('portal-new/', views.PlacePortalViewNew.as_view(), name='place-portal-new'),
+
+    # added for sessions approach
+    path('set-current-result/', views.SetCurrentResultView.as_view(), name='set-current-result'),
+
+    path('portal_new/', TemplateView.as_view(template_name='places/place_portal_new.html'),
+       name='portal-new'),
+    # END new urls-> views (kg 2023-10-31)
 
     path('portal_new/', TemplateView.as_view(template_name='places/place_portal_new.html'), name='portal_new'),
 

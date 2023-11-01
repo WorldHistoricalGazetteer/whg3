@@ -109,9 +109,11 @@ def makeGeom(pid,geom):
 def suggestionItem(s):
   h = s['hit']
   print('a search hit', h)
+  unique_children = list(set(h['children']))
   item = {
     "whg_id": h['whg_id'] if 'whg_id' in h else '',
     "pid":h['place_id'],
+    "children": unique_children,
     "linkcount":s['linkcount'],
     "title": h['title'],
     "variants":[n for n in h['searchy'] if n != h['title']],

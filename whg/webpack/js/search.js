@@ -122,9 +122,62 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         $("#a_search, #d_input input").on('click keypress', function(event) {
             if (event.type === 'click' || (event.type === 'keypress' && event.which === 13)) {
                 event.preventDefault();
+				console.log('entered value for search')
                 initiateSearch();
             }
         });
+
+		// START Ids to session (kg 2023-10-31)
+		function getCookie(name) {
+		  let cookieValue = null;
+		  if (document.cookie && document.cookie !== '') {
+			const cookies = document.cookie.split(';');
+			for (let i = 0; i < cookies.length; i++) {
+			  const cookie = cookies[i].trim();
+			  if (cookie.substring(0, name.length + 1) === (name + '=')) {
+				cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+				break;
+			  }
+			}
+		  }
+		  return cookieValue;
+		}
+
+		// $('.portal-link').click(function(e) {
+		$(document).on('click', '.portal-link', function(e) {
+		// $('.result').on('click', '.portal-link', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+
+			const pid = $(this).data('pid');
+			const children= $(this).data('children') ?
+				decodeURIComponent($(this).data('children')).split(',').map(id => parseInt(id, 10)) : [];
+			const placeIds = [pid, ...children].filter(id => !isNaN(id) && id !== null && id !== undefined);
+			const csrfToken = getCookie('csrftoken');
+
+			console.log('pid', pid)
+			console.log('children', $(this).attr('data-children'))
+			console.log('placeIds', placeIds)
+			console.log('csrfToken', csrfToken)
+
+			$.ajax({
+			  url: '/places/set-current-result/',
+			  type: 'POST',
+			  data: {
+				'place_ids': placeIds,
+				'csrfmiddlewaretoken': csrfToken
+			  },
+			  traditional: true,
+			  success: function(response) {
+				window.location.href = '/places/portal-new/';
+			  },
+			  error: function(xhr, status, error) {
+				console.error("AJAX POST error:", error);
+			  }
+			});
+
+		});
+		// END Ids to session
     })
     .catch(error => console.error("An error occurred:", error));
 
@@ -162,7 +215,7 @@ function renderResults(featureCollection) {
 	$("#adv_options").hide()
 	$("#result_facets").show()
 	$("#detail_box").show()
-	$("#result_count").html(featureCollection.features.length)
+	// $("#result_count").html(featureCollection.features.length)
 	// Clear previous results
 	$('#search_results').empty();
 
@@ -175,28 +228,29 @@ function renderResults(featureCollection) {
 	$("#d_input input").val(!!featureCollection.query ? featureCollection.query : '');
 
 	// Iterate over the results and append HTML for each
-	// NB these are parents only
-	// hit (delivers): [title, searchy, whg_id, pid, linkcount, variants,
-	//    ccodes, fclasses, types, geoms]
-	// hit (also): [uri, names, links, timespans, dataset]
-	// TODO: Portal URL not yet implemented
-	// link to portal: <a href="/places/${result.whg_id}/portal">portal</a>
-	
 	let results = featureCollection.features;
 	results.forEach(feature => {
 		
 		let result = feature.properties;
-		
-		const count = parseInt(result.linkcount) + 1
-		const html = `
+		const count = parseInt(result.linkcount) + 1;
+		const pid = result.pid;
+		const children = result.children;
+		// Encode children as a comma-separated string
+		const encodedChildren = encodeURIComponent(children.join(','));
+
+
+		// START alternate url (kg 2023-10-31)
+		let html = `
             <div class="result">
                 <p>${result.title} (${count} in set)
                   <span class="float-end">
-                      <a href="/places/${result.whg_id}/portal" title="portal for ${ result.whg_id }">portal</a>
-                  </span>
-									</p>
-            </div>
-        `;
+					<a href="#" class="portal-link"	data-pid="${pid}" data-children="${encodedChildren}">portal ${pid}</a>
+                  </span>`
+		if (children.length > 0) {
+			html += `<span class="ml-2">children: ${children.join(', ')}</span>`;
+		};
+		// END alternate url (kg 2023-10-31)
+
 		$resultsDiv.append(html);
 
 	});
@@ -399,11 +453,11 @@ function updateCheckboxCounts(features) {
 
 function initiateSearch() {
 	isInitialLoad = true;
-
 	localStorage.removeItem('last_results')
 
 	const query = $('#search-input').val(); // Get the query from the input
 	const options = gatherOptions(); //
+	console.log('initiateSearch()', query)
 
 	// AJAX GET request to SearchView() with the options (includes qstr)
 	$.get("/search/index", options, function(data) {
