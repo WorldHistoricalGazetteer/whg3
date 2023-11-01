@@ -58,8 +58,21 @@ class SetCurrentResultView(View):
 class PlacePortalViewNew(TemplateView):
   template_name = 'places/place_portal_new.html'
 
-  def get_context_data(self, **kwargs):
-    context = super().get_context_data(**kwargs)
+  def get_context_data(self, *args, **kwargs):
+    context = super(PlacePortalViewNew, self).get_context_data(*args, **kwargs)
+    context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
+    context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
+    context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
+
+    me = self.request.user
+    # context['whg_id'] = id_
+    context['payload'] = [] # parent and children if any
+    context['traces'] = [] #
+    context['allts'] = []
+
+    context['core'] = ['gn500','gnmore','ne_countries','ne_rivers982','ne_mountains','wri_lakes','tgn_filtered_01']
+
     place_ids = self.request.session.get('current_result', {}).get('place_ids', [])
     if not place_ids:
       messages.error(self.request, "Place IDs are required to view this page")
@@ -67,22 +80,63 @@ class PlacePortalViewNew(TemplateView):
     alltitles = []
     try:
       place_ids = [int(pid) for pid in place_ids]
-      print('place_ids', place_ids)
       qs = Place.objects.filter(id__in=place_ids).order_by('-whens__minmax')
+      context['title'] = qs.first().title
+      collections = []
+      annotations = []
       print('qs', qs)
+      print('place_ids', place_ids)
       for place in qs:
         ds = Dataset.objects.get(id=place.dataset.id)
         print('place.title', place.title)
-        # alltitles.append(place.title)
+        # temporally scoped attributes
+        names = attribListFromSet('names', place.names.all())
         types = attribListFromSet('types', place.types.all())
 
+        # get traces, collections for this attestation
+        attest_traces = list(place.traces.all())
+        attest_collections = [t.collection for t in attest_traces if t.collection.status == "published"]
+        # add to global list
+        annotations = annotations + attest_traces
+        collections = list(set(collections + attest_collections))
+
+        geoms = [geom.jsonb for geom in place.geoms.all()]
+        related = [rel.jsonb for rel in place.related.all()]
+
+        # timespans generated upon Place record creation
+        # draws from 'when' in names, types, geoms, relations
+        # deliver to template in context
+        timespans = list(t for t, _ in itertools.groupby(place.timespans)) if place.timespans else []
+        context['allts'] += timespans
+
+        record = {
+          # "whg_id": id_,
+          "dataset": {"id": ds.id, "label": ds.label,
+                      "name": ds.title, "webpage": ds.webpage},
+          "place_id": place.id,
+          "src_id": place.src_id,
+          "purl": ds.uri_base + str(place.id) if 'whgaz' in ds.uri_base else ds.uri_base + place.src_id,
+          "title": place.title,
+          "ccodes": place.ccodes,
+          "names": names,
+          "types": types,
+          "geoms": geoms,
+          "related": related,
+          "links": [link.jsonb for link in place.links.distinct('jsonb') if
+                    not link.jsonb['identifier'].startswith('whg')],
+          "descriptions": [descr.jsonb for descr in place.descriptions.all()],
+          "depictions": [depict.jsonb for depict in place.depictions.all()],
+          "minmax": place.minmax,
+          "timespans": timespans
+        }
+        context['payload'].append(record)
     except ValueError:
       messages.error(self.request, "Invalid place ID format")
       raise Http404("Invalid place ID format")
 
-    context['place_ids'] = place_ids
-    context['foo'] = 'bar'
-    # context['types'] = types
+    context['annotations'] = annotations
+    context['collections'] = collections
+
     return context
 
 class PlacePortalView(DetailView):

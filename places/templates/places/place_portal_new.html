@@ -63,13 +63,25 @@
 	        <div id="info" class="m-2 p-1">
             <div id="sources" class="bg-light info-box">
 	            <p class="mb-0 strong-red">Sources</p>
-	            <div class="source-box">attestation #1</div>
-	            <div class="source-box">attestation #2</div>
-	            <div class="source-box">attestation #3</div>
+              {{ payload|json_script:"payload_data" }}
+	            {% for rec in payload %}
+	              <div class="source-box small">
+		              <b>{{ rec.title }}</b> ({{ rec.place_id }})<br/>
+	                dataset: <a class="pop-link pop-dataset" data-id={{rec.dataset.id}} data-toggle="popover" title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
+	              {{rec.dataset.name|truncatechars:25}}</a>
+	              {% if rec.timespans  %}
+	              <p>Temporal: {{ rec.timespans }}</p>
+	              {% endif %}
+	              </div>
+	            {% endfor %}
+{#	            <div class="source-box">attestation #2</div>#}
+{#	            <div class="source-box">attestation #3</div>#}
             </div>
             <div id="source_detail" class="bg-light info-box">
-	            <p>foo: {{ foo }}</p>
-	            <p>place_ids: {{ place_ids }}</p>
+              <p class="mb-0 strong-red">Collections</p>
+	            {% for c in collections %}
+	            <p class="small">{{ c.title }}</p>
+	            {% endfor %}
             </div>
             <div id="graph_viz" class="bg-light info-box">
 	            {graph visualization}
@@ -94,52 +106,13 @@
         </div>
 
     </div> <!-- End of Bootstrap row -->
-
-</div> <!-- End of webmap div -->
-
-        <!-- Main div for the web map -->
-{#        <div id="webmap" class="position-relative p-2">#}
-{##}
-{#            <!-- Info div on the left -->#}
-{#            <div id="info" class="position-absolute d-flex flex-column">#}
-{#                <div id="sources">#}
-{#                    <!-- Content for sources -->#}
-{#                    <div>Source Content</div>#}
-{#                </div>#}
-{#                <div id="source_detail">#}
-{#                    <!-- Content for source detail -->#}
-{#                    <div>Source Detail Content</div>#}
-{#                </div>#}
-{#                <div id="graph_viz">#}
-{#                    <!-- Content for graph visualization -->#}
-{#                    <div>Graph Visualization Content</div>#}
-{#                </div>#}
-{#            </div>#}
-{##}
-{#            <!-- Map controls div on the right -->#}
-{#            <div id="map_controls" class="position-absolute">#}
-{#                <!-- TBD sub-divs and content for map controls -->#}
-{#                <div>Map Controls Content</div>#}
-{#            </div>#}
-{##}
-{#            <!-- Time histogram div at the top -->#}
-{#            <div id="time_histogram">#}
-{#                <!-- Content for time histogram -->#}
-{#                <div>Time Histogram Content</div>#}
-{#            </div>#}
-{##}
-{#            <!-- Time slider div at the bottom -->#}
-{#            <div id="time_slider" >#}
-{#                <!-- Content for time slider -->#}
-{#                <div>Time Slider Content</div>#}
-{#            </div>#}
-{##}
-{##}
-{#        </div> <!-- End of webmap div -->#}
-
-    </div> <!-- End of container -->
+	</div> <!-- End of webmap div -->
+</div> <!-- End of container -->
 	<script type="text/javascript">
-
+		document.addEventListener('DOMContentLoaded', (event) => {
+		  const payload = JSON.parse(document.getElementById('payload_data').textContent);
+		  console.log('payload', payload);
+		});
 	</script>
 	<script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
 {% endblock %}
