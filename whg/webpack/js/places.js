@@ -68,8 +68,10 @@ function waitDocumentReady() {
     });
 }
 
+
 Promise.all([waitMapLoad(), waitDocumentReady()])
     .then(() => {
+
 		//area_type = 'ccodes' // default
 		$(".textarea").each(function(index) {
 			if (["None", "null"].includes($(this).val())) {
