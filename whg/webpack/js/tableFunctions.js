@@ -9,13 +9,16 @@ import { mappy } from './mapAndTable';
 let table;
 
 function highlightFirstRow() {
-	$("#placetable tr").removeClass("highlight-row");
-	const firstrow = $("#placetable tbody tr:first");
-	const pid = firstrow.data('ds_pid').pid;
-	const cid = firstrow.data('cid');
-	// highlight first row and fetch detail, but don't fly map to it
-	firstrow.addClass('highlight-row');
-	getPlace(pid, cid);
+	let rows = $("#placetable tbody tr"); 
+	rows.removeClass("highlight-row");
+	const firstrow = rows.first();
+	if (!firstrow.find('td:first').hasClass('dataTables_empty')) {
+		const pid = firstrow.data('ds_pid').pid;
+		const cid = firstrow.data('cid');
+		// highlight first row and fetch detail, but don't fly map to it
+		firstrow.addClass('highlight-row');
+		getPlace(pid, cid); 
+	}
 }
 
 // Adjust the DataTable's page length to avoid scrolling where possible
