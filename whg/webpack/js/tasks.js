@@ -192,40 +192,6 @@ function renderMap(featureCollection, tab) {
 		
 		mappy.getSource('places').setData(featureCollection);
 		mappy.setFeatureState({ source: 'places', id: 0 }, { highlight: true });
-		
-		/* TODO: Not yet implemented in MapLibre - in v2 the popups give `undefined` values.		
-		// clear existing if any
-		if (typeof(features) !== 'undefined') {
-			mappy.removeLayer(features)
-		}
-		idToFeature = {} // for feature lookup
-		features = L.geoJSON(featureCollection, {
-			// feature here is a geometry
-			// TODO: LPF should allow single geometry, not only GeometryCollection
-			pointToLayer: function(feature, latlng) {
-				matchid = feature.place_id
-				//console.log('feature',feature)
-				marker = L.circleMarker(latlng, styles.Point.default).bindPopup(feature.title +
-					'<br>pid: <a href="' + window.location.origin + '/api/db?id=' + matchid + '" target="_blank">' +
-					matchid + '</a>');
-				idToFeature[matchid] = marker
-				return marker
-			},
-			onEachFeature: function(feature, layer) {
-				f = feature;
-				l = layer;
-				identifier = f.place_id;
-				if (f.type != 'Point') {
-					layer.setStyle(styles[f.type].default).bindPopup(
-						f.title + '<br>pid: <a href="' +
-						window.location.origin + '/api/db?id=' +
-						identifier + '" target="_blank">' + identifier + '</a>'
-					)
-					idToFeature[identifier] = layer
-				}
-			}
-		}).addTo(mappy);
-		*/
 	}
 	mappy.fitBounds(bbox(featureCollection), {
         padding: 30,
