@@ -1,0 +1,44 @@
+#webmap {
+    background-color: #eaffea;
+    height: 80vh;
+}
+#info {
+    background-color: #a8dadc;
+    border: 1px solid #aaa;
+    height: 98%;
+}
+#sources,
+#source_detail,
+#graph_viz {
+    padding: 10px;
+    border: 1px solid #aaa;
+}
+#map_controls {
+    background-color: #a8dadc;
+    border: 1px solid #aaa;
+    height: 100%;
+}
+.middle {
+    left: -7px;
+    right: 15px;
+    background-color: gainsboro;
+    height: 50px;
+    padding: 0.2rem;
+}
+#histogram {
+    top: 6px;
+    width: 90%;
+}
+#time_slider {
+    bottom: 6px;
+}
+
+.info-box {
+    margin-bottom: 0.2rem;
+}
+.source-box {
+    background-color: white;
+    border: 1px gainsboro solid;
+    margin: 0.1rem;
+    padding: 0.1rem;
+}

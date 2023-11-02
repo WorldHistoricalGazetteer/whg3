@@ -6,50 +6,12 @@
 {% block title %}<title>Place::{{ place.title }}</title>{% endblock %}
 {% block extra_head %}
   <script src="{% static 'js/aliases.js' %}"></script>
-{#  <script src="{% static 'js/leaflet.ajax.min.js' %}"></script>#}
-{#  <script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>#}
 
   <script src = "https://d3js.org/d3.v4.min.js"></script>
-  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.css' rel='stylesheet' />
-  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js'></script>
+  
+  <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
+  <link href="{% static 'webpack/places.bundle.css' %}" rel="stylesheet" /> 
 
-<style>
-        #webmap {
-            background-color: #eaffea;
-		        height: 80vh;
-        }
-        #info {
-            background-color: #a8dadc;
-            border: 1px solid #aaa;
-            height: 98%;
-        }
-        #sources, #source_detail, #graph_viz {
-            padding: 10px;
-            border: 1px solid #aaa;
-        }
-        #map_controls {
-            background-color: #a8dadc;
-            border: 1px solid #aaa;
-		        height: 100%;
-        }
-        .middle {
-		        left: -7px;
-				    right: 15px;
-		        background-color: gainsboro;
-		        height: 50px;
-		        padding: .2rem;
-        }
-				#histogram {top: 6px; width:90%;}
-        #time_slider {bottom: 6px; }
-
-				.info-box {margin-bottom: .2rem;}
-				.source-box {
-						background-color: white;
-						border: 1px gainsboro solid;
-						margin: .1rem;
-						padding: .1rem;
-				}
-</style>
 {% endblock %}
 {% block content %}
     <div class="container mt-4">
@@ -63,7 +25,6 @@
 	        <div id="info" class="m-2 p-1">
             <div id="sources" class="bg-light info-box">
 	            <p class="mb-0 strong-red">Sources</p>
-              {{ payload|json_script:"payload_data" }}
 	            {% for rec in payload %}
 	              <div class="source-box small">
 		              <span class="fs-6">{{ rec.title}} ({{ rec.place_id }})</span><br/>
@@ -136,174 +97,48 @@
     </div> <!-- End of Bootstrap row -->
 	</div> <!-- End of webmap div -->
 </div> <!-- End of container -->
-	<script type="text/javascript">
-	  function fetchCollectionGeom(coll_id,counter) {
-		  counter= 3
-		  $.get("/search/collgeom",{coll_id: coll_id},
-		    function(data){
-          coll_places = data
-		      console.log('coll_places', coll_places)
-		      {#cplaces = L.geoJSON(data, {#}
-		      {#  pane: 'tracePane',#}
-		      {#  pointToLayer: function (feature, latlng) {#}
-		      {#    identifier = feature.properties.pid#}
-		      {#    marker = L.circleMarker(latlng,#}
-		      {#      {#}
-		      {#        radius: 5, fillOpacity: 0.3, opacity: 1, weight: 1,#}
-		      {#        color: "#fff", fillColor: filly(counter)#}
-		      {#      }#}
-		      {#    ).bindPopup('pid:'+identifier+'<br/><b>'+#}
-		      {#      '<a href="/places/'+identifier+'/portal">'+feature.properties.title+"</b></a>");#}
-		      {#    idToFeature[identifier] = marker#}
-		      {#    return marker#}
-		      {#  },#}
-		      {#  onEachFeature: function(feature,layer){#}
-		      {#    layer.addTo(traceLayers)#}
-		      {#  }#}
-		      {# }).addTo(mappy);#}
-		      {#mappy.fitBounds(cplaces.getBounds())#}
-		  });
-		}
 
-		document.addEventListener('DOMContentLoaded', (event) => {
-		  const payload = JSON.parse(document.getElementById('payload_data').textContent);
-		  console.log('payload', payload);
 
-			allts = {{ allts }}
-			var min = Math.min.apply(null, allts.map(function(row){
-                return Math.min.apply(Math, row); }));
-			var max = Math.max.apply(null, allts.map(function(row){
-                return Math.max.apply(Math, row); }));
-			minmax=[min,max]
+<script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
 
-			function range(start, stop, step) {
-				var a = [start],
-					b = start;
-				while (b < stop) {
-					a.push(b += step || 1);
-				}
-				return a;
-			}
+<!-- Set up MapLibre map using Maptiler SDK -->
+<script type="text/javascript">
+    let mapParameters = {
+        container: 'webmap',
+        center: [10.2385, 29.8626],
+        zoom: 0.1, // starting zoom
+        minZoom: 0.1,
+        maxZoom: 10,
+        mapTilerKey: '{{ maptilerkey }}',
+        controls: {
+            layer: true,
+            navigation: false,
+            fullscreen: false,
+            attribution: {
+                open: false,
+            },
+            temporal: {
+                fromValue: 1550,
+                toValue: 1720,
+                minValue: -2000,
+                maxValue: 2100,
+                open: false,
+                includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
+                epochs: null,
+                automate: null,
+            }
+        },
+        styleFilter: [ 'OUTDOOR.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
+    }
+    let allts = {{ allts }}
+</script>
 
-			function intersects(a, b) {
-				min = (a[0] < b[0] ? a : b)
-				max = (min == a ? b : a)
-				return !(min[1] < max[1])
-			}
+{{ payload|json_script:"payload_data" }}
 
-			function histogram_data(intervals, minmax) {
-				step = Number(((minmax[1] - minmax[0]) / 200))
-				bins = range(minmax[0], minmax[1], step)
-				hist_array = Array.apply(null, Array(bins.length)).map(Number.prototype.valueOf, 0);
-				labels = bins.map(function(d) {
-					return Math.round(d)
-				})
-				for (b = 0; b < bins.length; b++) {
-					bin = Array(bins[b], bins[b + 1])
-					for (i in intervals) {
-						if (intersects(bin, intervals[i])) {
-							hist_array[b] += 1
-						}
-					}
-				}
-				data = hist_array.map(function(d, i) {
-					return {
-						"bin": labels[i],
-						"count": d
-					}
-				})
-
-				// visualize it
-				histogram(data, labels)
-
-			}
-
-			function histogram(data, labels) {
-				// exit if no data
-				if (data[0].bin == "Infinity") {
-					$("#histogram").html('<i>None yet</i>');
-					return;
-				}
-				data = data.slice(0, 200)
-				curwidth = $("#histogram").width()
-
-				var margin = {
-						top: 0,
-						right: 10,
-						bottom: 0,
-						left: 10
-					},
-					width = 400,
-					height = 30,
-					padding_h = 20,
-					padding_w = 30;
-
-				// set the ranges
-				window.xScale = d3.scaleLinear()
-					.range([0, width])
-				window.yScale = d3.scaleLinear()
-					.range([height, 0]);
-
-				xScale.domain(minmax);
-				yScale.domain([0, d3.max(data, function(d) {
-					return d.count;
-				})]);
-
-				// TODO: responsive scaling of svg width
-				window.svg_hist = d3.select("#histogram").append("svg")
-					.attr("width", '100%')
-					.attr("height", height + padding_h)
-
-					.attr('viewBox', '0 0 ' + Math.min(width, height + padding_h) + ' ' + Math.min(width, height + padding_h))
-					.attr('preserveAspectRatio', 'xMinYMin')
-
-					.append("g")
-					.attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-
-				window.axisB = d3.axisBottom(xScale)
-					.tickValues(labels.filter(function(d, i) {
-						return !(i % 20)
-					}))
-					.tickFormat(d3.format("d"));
-
-				var axisL = d3.axisLeft(yScale)
-
-				svg_hist.selectAll(".bar")
-					.data(data)
-					.enter().append("rect")
-					.attr("class", "bar")
-					.attr("x", function(d) {
-						return xScale(d.bin);
-					})
-					//.attr("width", function(d) { return xScale(d.x1) - xScale(d.x0) -1 ; })
-					.attr("width", 2)
-					.attr("y", function(d) {
-						return yScale(d.count);
-					})
-					.attr("height", function(d) {
-						return height - yScale(d.count);
-					});
-
-				var xAxis = svg_hist.append("g")
-					.attr("id", "xaxis")
-					.attr("transform", "translate(0," + height + ")")
-					.call(axisB)
-			}
-
-			// feed to #histogram
-			histogram_data(allts, minmax)
-
-	    // load collection geometry (# within reason)
-	    $(".coll-geo").click(function(e){
-	      e.preventDefault()
-		    // TODO: why does context fail when collection places are displayed
-		    // in any case, hide the checkbox
-		    $("#fetch_context").hide()
-	      fetchCollectionGeom($(this).data('id'), 3)
-	      $("#clear_markers").fadeIn()
-	    })
-		});
-	</script>
-	<script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
+<script type="module">
+    import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
+    import "{% static 'webpack/portal.bundle.js' %}";
+</script>	
+	
 {% endblock %}
 
