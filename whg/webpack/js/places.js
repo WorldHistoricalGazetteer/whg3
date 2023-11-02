@@ -182,6 +182,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			e.clearSelection();
 			$("#a_clipgeom").tooltip('hide')
 				.attr('data-original-title', 'copied!')
+				.attr('data-bs-original-title', 'copied!')
 				.tooltip('show');
 		});
  

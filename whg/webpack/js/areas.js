@@ -1,14 +1,9 @@
 // /whg/webpack/areas.js
 
 import datasetLayers from './mapLayerStyles';
-import {
-	attributionString, deepCopy
-} from './utilities';
-import {
-	bbox, buffer, convex, flatten, dissolve, combine
-} from './6.5.0_turf.min.js';
+import { attributionString, deepCopy } from './utilities';
+import { bbox, buffer, convex, flatten, dissolve, combine } from './6.5.0_turf.min.js';
 import { /*StyleControl,*/ CustomAttributionControl } from './customMapControls';
-
 import '../css/maplibre-common.css';
 import '../css/areas.css';
 

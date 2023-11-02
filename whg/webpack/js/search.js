@@ -111,6 +111,8 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
             console.log('no results');
             $("#adv_options").show();
         }
+        
+		updateCheckedboxes(true);
 
         $('#advanced_search').hide();
 
@@ -118,8 +120,12 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 
         $('#close-advanced_search').click(() => $('#advanced_search').slideUp(300));
 
-        $("#a_search, #d_input input").on('click keypress', function(event) {
-            if (event.type === 'click' || (event.type === 'keypress' && event.which === 13)) {
+        $("#a_search, #d_input input").on('click keypress keyup', function(event) {
+            if (
+					(event.type === 'click' && $(event.target).is("#a_search")) || 
+					(event.type === 'keypress' && event.which === 13) || 
+					(event.type === 'keyup' && $.trim($(this).val()).length >= 3)
+				) {
                 event.preventDefault();
 				console.log('entered value for search')
                 initiateSearch();
@@ -269,7 +275,7 @@ function renderResults(featureCollection) {
 	allTypes.forEach(type => {
 		const checkbox = $('<input>', {
 			type: 'checkbox',
-			id: 'type_' + type,
+			id: 'type_' + type.replace(' ','_'),
 			value: type,
 			class: 'filter-checkbox type-checkbox',
 			checked: checkboxStates[type] || false
@@ -306,7 +312,10 @@ function renderResults(featureCollection) {
 	$('.filter-checkbox').change(function() {
 		// store state
 		checkboxStates[this.value] = this.checked;
-		console.log('checkboxStates', checkboxStates)
+		console.log('checkboxStates', checkboxStates);
+		if (!programmaticChange) {
+			updateCheckedboxes();
+		}
 
 		// Get all checked checkboxes
 		let checkedTypes = getCheckedTypes();
@@ -450,6 +459,26 @@ function updateCheckboxCounts(features) {
 	});
 }
 
+let programmaticChange = false;
+function updateCheckedboxes(retrieve=false) {
+	if (retrieve) {
+		programmaticChange = true;
+		const checkedboxesJSON = localStorage.getItem('checkedboxes');
+        const checkedboxes = checkedboxesJSON ? JSON.parse(checkedboxesJSON) : [];
+        checkedboxes.forEach(function(id) {
+	    	$('#' + id).prop('checked', true);
+	    });
+	    programmaticChange = false;
+	}
+	else{
+		const checkedboxes = $('#result_facets input[type="checkbox"]:checked').map(function() {
+			    return this.id;
+			  })
+			  .get();
+		localStorage.setItem('checkedboxes', JSON.stringify(checkedboxes));
+	}
+}
+
 function initiateSearch() {
 	isInitialLoad = true;
 	localStorage.removeItem('last_results')
@@ -464,7 +493,7 @@ function initiateSearch() {
 		results = geomsGeoJSON(data['suggestions']); // Convert to GeoJSON and replace global variable
 		results.query = query;
 		localStorage.setItem('last_results', JSON.stringify(results));
-
+		updateCheckedboxes();
 		renderResults(results);
 
 	});
