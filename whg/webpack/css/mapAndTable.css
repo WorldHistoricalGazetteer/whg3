@@ -1,12 +1,6 @@
 .maplibregl-map {
-  position: relative;
   width: 100%;
   height: 100%;
-  background-color: lightblue;
-  overflow: hidden;
-  border: 1px solid lightgrey;
-  border-radius: 4px;
-  transition: opacity 2s ease;
 }
 
 .overlay.left, .overlay.right {
@@ -22,24 +16,6 @@
 .overlay.left {
 	height: 20%;
 	max-height: 250px;
-}
-
-.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib:not(.fade-in) {
-    display: none;
-}
-
-.maplibregl-ctrl-attrib {
-  opacity: 0;
-  transition: opacity 1s ease;
-}
-
-.fade-in {
-  opacity: 1;
-}
-
-a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
-  /* Hide obtrusive logo" */
-  display: none!important;
 }
 
 #mapOverlays{

@@ -1,11 +1,10 @@
 // /whg/webpack/search.js
 
-import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.umd.min.js';
-import '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.css';
 import datasetLayers from './mapLayerStyles';
 import { bbox, centroid } from './6.5.0_turf.min.js';
 import { attributionString, geomsGeoJSON } from './utilities';
 import { CustomAttributionControl } from './customMapControls';
+import '../css/maplibre-common.css';
 import '../css/search.css';
 
 let results = null;

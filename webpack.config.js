@@ -11,11 +11,14 @@ module.exports = {
   },
   entry: {
     whg: '/app/whg/webpack/js/whg.js',
+    maptiler_sdk: '/app/whg/webpack/js/maptiler-sdk.js',
     gis_resources: '/app/whg/webpack/js/gis_resources.js',
     search_functions: '/app/whg/webpack/js/search_resources.js',
     home: '/app/whg/webpack/js/home.js',
     search: '/app/whg/webpack/js/search.js',
     places: '/app/whg/webpack/js/places.js',
+    tasks: '/app/whg/webpack/js/tasks.js',
+    areas: '/app/whg/webpack/js/areas.js',
   },
   output: {
     filename: '[name].bundle.js',

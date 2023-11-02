@@ -2,6 +2,24 @@ import { bbox, midpoint, centroid, getType, area } from './6.5.0_turf.min.js'
 import ClipboardJS from '/webpack/node_modules/clipboard';
 import { lch } from './chroma.min.js'
 
+export function deepCopy(obj) {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(deepCopy);
+  }
+
+  const result = {};
+  for (const key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      result[key] = deepCopy(obj[key]);
+    }
+  }
+  return result;
+}
+
 export function geomsGeoJSON(geomItems) { // Convert array of items with .geom to GeoJSON FeatureCollection
 	let featureCollection = {
 	  type: "FeatureCollection",
