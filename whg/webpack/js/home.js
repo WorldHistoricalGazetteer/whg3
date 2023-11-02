@@ -1,6 +1,7 @@
 // /whg/webpack/home.js
 
 import { CustomAttributionControl } from './customMapControls';
+import { geomsGeoJSON } from './utilities';
 import '../css/home.css';
 import { bbox } from './6.5.0_turf.min.js';
 
@@ -24,6 +25,8 @@ let mappy = new maptilersdk.Map({
 	navigationControl: false,
 	userProperties: true
 });
+
+var timer; // Controls the carousels
 
 mappy.on('load', function() {
 	console.log('Map loaded.');
@@ -113,7 +116,6 @@ mappy.on('load', function() {
 		
 		var carousels = $('.carousel');
 		let delay = 10000;
-		var timer;
 		let mouseover = false;
 		carousels.first().carousel({
 		  	interval: delay,
@@ -198,6 +200,8 @@ $(function() {
 
 	$('#a_advanced').on('click', function(e) {
 		e.preventDefault();
+		clearTimeout(timer); // Stop the carousels
+		$('.carousel').first().carousel('pause');
 		$('#advanced_search').slideToggle(300); // This toggles the visibility of the advanced search div
 	});
 
@@ -213,10 +217,10 @@ $(function() {
 		minLength: 2,
 		select: function(event, ui) {
 			// build boundsobj, insert as hidden input val()
-			label = ui.item.label
-			obj = area_objs.find(o => o.title == label)
-			areaid = obj.id
-			boundsobj = '{"type":["' + obj.type + '"],"id":["' + areaid + '"]}'
+			let label = ui.item.label
+			let obj = area_objs.find(o => o.title == label)
+			let areaid = obj.id
+			let boundsobj = '{"type":["' + obj.type + '"],"id":["' + areaid + '"]}'
 			$("#boundsobj").val(boundsobj)
 			console.log("boundsobj for view ", boundsobj);
 
@@ -237,7 +241,7 @@ $(function() {
 			url: '/api/area/' + areaid
 		}).done(function(data) {
 			console.log('render_area() data', data)
-			geom = {
+			let geom = {
 				"type": "FeatureCollecton",
 				"features": []
 			}
@@ -267,14 +271,21 @@ $(function() {
 	// search_new() will pass these to search_new.html
 	function initiateSearchHome() {
 		const query = $('#search_map input').val();
-		const filters = gatherOptions(); // Suppose you have a function to gather filters
+		const filters = gatherOptions();
 		localStorage.setItem('last_query', query)
 
 		$.get("/search/index", filters, function(data) {
 			window.searchres = data['suggestions']
 			window.session = data['session']
+			
+			console.log(filters);
+			
 			// store locally
-			localStorage.setItem('last_results', JSON.stringify(searchres))
+			let results = geomsGeoJSON(searchres); // Convert to GeoJSON
+			results.query = query;
+			localStorage.setItem('checkedboxes', '[]');
+			localStorage.setItem('last_results', JSON.stringify(results));
+			
 			console.log(searchres)
 			// if results, deliver to search_new.html
 			if (searchres.length > 0) {
