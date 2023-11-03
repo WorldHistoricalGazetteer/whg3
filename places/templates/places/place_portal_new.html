@@ -27,7 +27,13 @@
             </div>
         </div>    
     </div>
-    <div class="overlay left">
+    <div id="temporal-attestations" class="overlay right">
+        <div id="histogram" class="position-absolute bg-light">
+            <p class="allcap-heading small my-0">TEMPORAL ATTESTATIONS</p>
+        </div>
+    </div>
+    <div id="map" style="opacity: 0;" class="overlay right"></div>
+    <div class="overlay right">
         <div id="source_detail" class="bg-light info-box">
             <p class="mb-0 strong-red">In Collection(s)</p>
             <div id="collection_list"> {% if collections|length > 0 %} <ul> {% for c in collections %} {% with c.collection_class as cclass %} <li> {% if cclass == 'place' %} <a href="{% url 'collection:place-collection-browse' c.id %}" target="_blank">
@@ -40,12 +46,6 @@
         </div>
         <div id="graph_viz" class="bg-light info-box"> {graph visualization?} </div>    
     </div>
-    <div id="temporal-attestations" class="overlay right">
-        <div id="histogram" class="position-absolute bg-light">
-            <p class="allcap-heading small my-0">TEMPORAL ATTESTATIONS</p>
-        </div>
-    </div>
-    <div id="map" style="opacity: 0;"></div>
 </div>
 
 <script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>

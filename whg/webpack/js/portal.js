@@ -57,10 +57,15 @@ function waitMapLoad() {
 				mapOverlays.appendChild(column);
 				const overlays = document.querySelectorAll('.overlay.' + side);
 				overlays.forEach(function(overlay) {
-					column.appendChild(overlay);
-					overlay.classList.add('item');
+					if (overlay.id == 'map') {
+						column.appendChild(controlContainer);	
+						overlay.classList.remove('overlay','left','right');					
+					}
+					else {
+						column.appendChild(overlay);
+						overlay.classList.add('item');
+					}
 				})
-				if (side == 'right') column.appendChild(controlContainer);
 			})
             
             mappy.addSource('places', {
