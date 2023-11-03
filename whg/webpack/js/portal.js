@@ -93,6 +93,14 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		
 	  	const payload = JSON.parse(document.getElementById('payload_data').textContent);
 	  	console.log('payload', payload);
+			
+		let featureCollection = geomsGeoJSON(payload);
+		console.log(featureCollection);
+		mappy.getSource('places').setData(featureCollection);
+		mappy.fitBounds(bbox(featureCollection), {
+	        padding: 30,
+	        duration: 1000,
+	    });
 	  	
 	  	var min = Math.min.apply(null, allts.map(function(row) {
 	  		return Math.min.apply(Math, row);

@@ -120,7 +120,7 @@ class PlacePortalViewNew(TemplateView):
           "ccodes": place.ccodes,
           "names": names,
           "types": types,
-          "geoms": geoms,
+          "geom": geoms,
           "related": related,
           "links": [link.jsonb for link in place.links.distinct('jsonb') if
                     not link.jsonb['identifier'].startswith('whg')],
