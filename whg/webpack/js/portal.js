@@ -6,6 +6,7 @@ import { bbox } from './6.5.0_turf.min.js';
 import { CustomAttributionControl } from './customMapControls';
 
 import '../css/maplibre-common.css';
+import '../css/mapAndTableMirrored.css';
 import '../css/portal.css';
 
 let style_code;
@@ -38,6 +39,27 @@ function waitMapLoad() {
     return new Promise((resolve) => {
         mappy.on('load', () => {
             console.log('Map loaded.');
+			const whgMap = document.getElementById(mapParameters.container);
+            
+			const controlContainer = document.querySelector('.maplibregl-control-container');
+			controlContainer.setAttribute('id', 'mapControls');
+			controlContainer.classList.add('item');
+		
+			const mapOverlays = document.createElement('div');
+			mapOverlays.id = 'mapOverlays';
+			whgMap.appendChild(mapOverlays);
+		
+			['left', 'right'].forEach(function(side) {
+				const column = document.createElement('div');
+				column.classList.add('column', side);
+				mapOverlays.appendChild(column);
+				const overlays = document.querySelectorAll('.overlay.' + side);
+				overlays.forEach(function(overlay) {
+					column.appendChild(overlay);
+					overlay.classList.add('item');
+				})
+				if (side == 'right') column.appendChild(controlContainer);
+			})
             
             mappy.addSource('places', {
 				'type': 'geojson',
@@ -52,6 +74,8 @@ function waitMapLoad() {
 				compact: true,
 		    	autoClose: mapParameters.controls.attribution.open === false,
 			}), 'bottom-right');
+			
+			whgMap.style.opacity = 1;
             
             resolve();
         });

@@ -10,101 +10,50 @@
   <script src = "https://d3js.org/d3.v4.min.js"></script>
   
   <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
-  <link href="{% static 'webpack/places.bundle.css' %}" rel="stylesheet" /> 
+  <link href="{% static 'webpack/portal.bundle.css' %}" rel="stylesheet" /> 
 
 {% endblock %}
 {% block content %}
-    <div class="container mt-4">
 
-<div id="webmap" class="position-relative" style="height: 80vh;">
-
-    <!-- Bootstrap row to structure the overlays -->
-    <div class="row h-100">
-        <!-- Left column (info) -->
-        <div id="left" class="col-4 h-100 d-flex flex-column">
-	        <div id="info" class="m-2 p-1">
+<div class="container mt-1 px-1">
+    <div id="ds_info" class="overlay right">
+        <div id="histogram" class="position-absolute bg-light">
+            <p class="allcap-heading small my-0">TEMPORAL ATTESTATIONS</p>
+        </div>
+    </div>
+    <div class="overlay left">
+        <div class="m-2 p-1">
             <div id="sources" class="bg-light info-box">
-	            <p class="mb-0 strong-red">Sources</p>
-	            {% for rec in payload %}
-	              <div class="source-box small">
-		              <span class="fs-6">{{ rec.title}} ({{ rec.place_id }})</span><br/>
-	                Dataset: <a class="pop-link pop-dataset" data-id={{rec.dataset.id}} data-toggle="popover" title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
-	              {{rec.dataset.name|remove:'(stub) '|truncatechars:25}}</a>
-	              {% if rec.timespans  %}
-	              <br/>Temporal: {{ rec.timespans }}
-	              {% endif %}
-	              </div>
-	            {% endfor %}
-{#	            <div class="source-box">attestation #2</div>#}
-{#	            <div class="source-box">attestation #3</div>#}
+                <p class="mb-0 strong-red">Sources</p> {% for rec in payload %} <div class="source-box small">
+                    <span class="fs-6">{{ rec.title}} ({{ rec.place_id }})</span>
+                    <br /> Dataset: <a class="pop-link pop-dataset" data-id={{rec.dataset.id}} data-toggle="popover" title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
+                        {{rec.dataset.name|remove:'(stub) '|truncatechars:25}}</a> {% if rec.timespans  %} <br />Temporal: {{ rec.timespans }} {% endif %}
+                </div> {% endfor %}
             </div>
-            <div id="source_detail" class="bg-light info-box">
-              <p class="mb-0 strong-red">In Collection(s)</p>
-		          <div id="collection_list">
-		          {% if collections|length > 0 %}
-		            <ul>
-		            {% for c in collections %}
-			            {% with c.collection_class as cclass %}
-			            <li>
-				            {% if cclass == 'place' %}
-				              <a href="{% url 'collection:place-collection-browse' c.id %}" target="_blank">
-					              <b>{{ c.title }}</b></a>, a collection of <sr>{{ c.places_all.count }}</sr> places
-					              {{ c.title|json_script:"c_title" }}
-					              {{ c.description|json_script:"c_description" }}
-					              [<a href='javascript:{ showCollectionDescription()}' class="a_cdescription">description</a>,
-					              <a href="#" class="coll-geo" data-id="{{ c.id }}">places</a>]
-				            {% else %}
-				              <a href="{% url 'collection:ds-collection-browse' c.id %}" target="_blank">
-					              <b>{{ c.title }}</b></a>
-					            , a collection of all <sr>{{ c.places_all.count }})</sr> places in {{ c.datasets.count }} datasets
-			              {% endif %}
-		              </li>
-			            {% endwith %}
-		            {% endfor %}
-		            </ul>
-		          {% else %}
-		            <i>None yet</i>
-		          {% endif %}
-		          </div>
-{#	            {% for c in collections %}#}
-{#	            <p class="small">{{ c.title }}</p>#}
-{#	            {% endfor %}#}
-            </div>
-            <div id="graph_viz" class="bg-light info-box">
-	            {graph visualization?}
-            </div>
-	        </div>
+        </div>    
+    </div>
+    <div class="overlay left">
+        <div id="source_detail" class="bg-light info-box">
+            <p class="mb-0 strong-red">In Collection(s)</p>
+            <div id="collection_list"> {% if collections|length > 0 %} <ul> {% for c in collections %} {% with c.collection_class as cclass %} <li> {% if cclass == 'place' %} <a href="{% url 'collection:place-collection-browse' c.id %}" target="_blank">
+                            <b>{{ c.title }}</b>
+                        </a>, a collection of <sr>{{ c.places_all.count }}</sr> places {{ c.title|json_script:"c_title" }}
+                        {{ c.description|json_script:"c_description" }} [ <a href='javascript:{ showCollectionDescription()}' class="a_cdescription">description</a>, <a href="#" class="coll-geo" data-id="{{ c.id }}">places</a>] {% else %} <a href="{% url 'collection:ds-collection-browse' c.id %}" target="_blank">
+                            <b>{{ c.title }}</b>
+                        </a> , a collection of all <sr>{{ c.places_all.count }})</sr> places in {{ c.datasets.count }} datasets {% endif %}
+                    </li> {% endwith %} {% endfor %} </ul> {% else %} <i>None yet</i> {% endif %} </div>
         </div>
-
-        <!-- Middle column (time_slider and time_histogram) -->
-        <div id="middle" class="col-6 position-relative py-2">
-            <div id="histogram" class="position-absolute bg-light">
-	            <p class="allcap-heading small my-0">TEMPORAL ATTESTATIONS</p>
-            </div>
-            <div id="time_slider" class="position-absolute middle">Time Slider</div>
-        </div>
-
-        <!-- Right column (map_controls) -->
-        <div id="right" class="col-2 h-100 d-flex flex-column p-2">
-            <div id="map_controls" class="mx-2 p-1">
-	            <p>Map Controls</p>
-	            <div id="control1" class="bg-light info-box">control 1</div>
-	            <div id="control2" class="bg-light info-box">control 2</div>
-	            <div id="control3" class="bg-light info-box">control3</div>
-            </div>
-        </div>
-
-    </div> <!-- End of Bootstrap row -->
-	</div> <!-- End of webmap div -->
-</div> <!-- End of container -->
-
+        <div id="graph_viz" class="bg-light info-box"> {graph visualization?} </div>    
+    </div>
+    <div id="map" style="opacity: 0;"></div>
+</div>
 
 <script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
 
 <!-- Set up MapLibre map using Maptiler SDK -->
 <script type="text/javascript">
     let mapParameters = {
-        container: 'webmap',
+        container: 'map',
         center: [10.2385, 29.8626],
         zoom: 0.1, // starting zoom
         minZoom: 0.1,

@@ -1,0 +1,360 @@
+.maplibregl-map {
+  width: 100%;
+  height: 100%;
+}
+
+.overlay.left, .overlay.right {
+  display: none; /* Hide until positioned */
+  background-color: rgba(255, 255, 255, 0.8);
+  border: 1px solid lightgrey;
+  border-radius: 3px;
+  padding: 10px;
+  overflow: auto;
+  pointer-events: auto;
+}
+
+.overlay.right {
+	height: 20%;
+	max-height: 250px;
+}
+
+#mapOverlays{
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  padding: 2px;
+  pointer-events: none;
+  height: 100%;
+  width: 100%;
+  }
+
+#mapOverlays .column {
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 4px);
+}
+
+#mapOverlays .column.right {
+  min-width: 50%; /* Do not allow map to be over-squeezed by .column.left flex width */
+  width: 100%;
+}
+
+#mapOverlays .column.left {
+  flex: 1 0 32%; /* Default width for left-hand column */
+  overflow-x: auto; /* Engages if .column.right is squeezed to its min-width */
+}
+
+#mapOverlays .item {
+  display: block;
+  margin: 4px;
+  height: 100%;
+  position: relative;
+}
+
+#mapOverlays .item:last-child {
+  margin-bottom: 0px;
+}
+
+#mapOverlays .column,
+#mapOverlays .overlay.right.item {
+  transition: flex 0.5s ease-in-out, max-height 0.5s ease-in-out, margin 0.5s ease-in-out, padding 0.5s ease-in-out, border 0.5s ease-in-out;
+}
+
+#mapOverlays.fullscreen .column.right {
+  flex: 1 0 100%;
+}
+
+#mapOverlays.fullscreen .column.left {
+  flex: 1 0 0%;
+}
+
+#mapOverlays.fullscreen .overlay.right.item {
+	max-height: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+#mapOverlays:not(.fullscreen) .download-map-button {
+	display: none!important;
+}
+
+#mapControls.item {
+  border: none;
+  pointer-events: none; /* Make the #mapControls transparent for map interaction */
+}
+
+#mapControls > div {
+  position: absolute;
+}
+
+#mapControls * {
+  pointer-events: auto; /* Restore mouse events for elements inside #mapControls */
+}
+
+#mapControls .maplibregl-ctrl, #mapControls #dateline {
+	margin: 0;
+}
+
+#mapControls > div > .maplibregl-ctrl:not(:first-child) {
+	margin: 4px 0 0 0;
+}
+
+#mapControls .maplibregl-ctrl-top-left {
+	display: flex;
+}
+
+#mapOverlays.fullscreen #mapControls .maplibregl-ctrl-fullscreen {
+	margin-bottom: 4px;
+}
+
+#mapControls .maplibregl-ctrl-download {
+	left: 4px;
+    top: -4px;
+    position: relative;
+}
+
+.style-button {
+	padding: 4px!important;
+	float: right;
+}
+
+.style-button .maplibregl-ctrl-icon {
+	background: url(../images/style-switcher.svg);
+	background-size: contain;
+}
+
+.download-map-button .maplibregl-ctrl-icon {
+	background: url(../images/camera.svg);
+	background-size: 26px;
+}
+
+.sequencer {
+  display: flex;
+  justify-content: space-between;
+  gap: 2px;
+  padding: 4px;
+  opacity: .8;
+}
+
+.sequencer button {
+	border: none!important;
+	background-position: 50%;
+    background-repeat: no-repeat;
+    background-size: 26px;
+    display: block;
+    height: 26px;
+    width: 34px;
+    color: black;
+}
+
+.sequencer button:disabled {
+	opacity: .5;
+}
+
+.sequencer.playing button#play {
+	background-image: url(../../static/images/sequencer/stop-btn.svg)!important;
+}
+
+.sequencer .separator {
+	border-right: 1px solid #ccc;
+    width: 6px;
+    margin-right: 6px;
+}
+
+.sequencer #stepDelayDropbox {
+	display: none;
+	padding: 0;
+}
+
+.sequencer #stepDelayDropbox select {
+	position: relative;
+    top: 3px;
+    height: 20px;
+    border: 2px solid #2f932d;
+    border-radius: 4px;
+}
+
+.sequencer #stepDelayDropbox select:focus {
+  box-shadow: 0 0 3px rgba(0, 123, 255, 0.5);
+  outline: none;
+  border-radius: 4px;
+}
+
+.sequencer #stepDelayDropbox select::before {
+  content: '▼'; /* Unicode arrow character or custom icon */
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  font-size: 12px; /* Adjust font size as needed */
+  color: #555; /* Color of the arrow */
+}
+
+/* Reset the default list styles */
+.maplibre-styles-list,
+.maplibre-styles-list ul,
+.maplibre-styles-list li {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Style for the group names */
+.group-item {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+/* Style for the variant options */
+.variant-item {
+  cursor: pointer;
+  margin-bottom: 4px;
+  padding: 4px 8px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+  font-weight: normal;
+  padding: 0 6px 0 12px !important;
+}
+
+/* Style for the selected variant option */
+.variant-item.selected {
+  background-color: #007bff; /* Customize the background color for the selected style */
+  color: white; /* Customize the text color for the selected style */
+}
+
+/* Add hover styles for the variant options */
+.variant-item:hover {
+  background-color: #dcdcdc; /* Customize the background color on hover */
+}
+
+/* Style for the scrollable list */
+#mapStyleList {
+  display: none;
+  overflow-y: scroll;
+  max-height: 150px;
+  border: 1px solid #ccc; /* Add a border around the list */
+  border-radius: 4px;
+  padding: 4px;
+  margin: 3px;
+}
+
+#mapStyleList.show {
+    display: block;
+}
+
+/* Remove the default scrollbar style for webkit browsers */
+#mapStyleList::-webkit-scrollbar {
+  width: 8px;
+}
+
+#mapStyleList::-webkit-scrollbar-thumb {
+  background-color: #007bff; /* Customize the scrollbar thumb color */
+  border-radius: 8px;
+}
+
+#mapStyleList::-webkit-scrollbar-thumb:hover {
+  background-color: #0056b3; /* Customize the scrollbar thumb color on hover */
+}
+
+#placetable_wrapper {
+	overflow: hidden;
+}
+
+#placetable tr.no-geometry {
+	background-color: #dc35451c;
+}
+
+#placetable tr.no-temporal {
+	font-style: italic;
+}
+
+.dataTables_scrollBody {
+	height: auto!important;
+	max-height: 100%;
+}
+
+/* Styling for the attribution text */
+.attribution-text {
+  margin: 10px 0;
+  padding: 5px 10px;
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+#injunctionText {
+	font-weight: bold;
+}
+
+#map-download-dialog button {
+  margin: 5px 0;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  float: right;
+  color: #fff;
+}
+
+/* Styling for the copy attribution button */
+#copy-attribution {
+  background-color: #007BFF;
+}
+
+/* Styling for the download button */
+#download {
+  background-color: #28A745;
+  margin-right: 5px!important;
+}
+
+/* Styling for the cancel button */
+#cancel {
+  background-color: #dc3545;
+  float: left!important;
+}
+
+/* Styling for the modal overlay */
+.ui-widget-overlay {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+#map-render-container {
+	position: 'absolute';
+	top: 0;
+	left: 0;
+	z-index: -1
+}
+
+/*#coll_detail {*/
+/*  	display: inline;*/
+/*  	!*display: grid;*!*/
+/*    grid-template-columns: repeat(auto-fill, minmax(34%, 1fr));*/
+/*    grid-gap: 20px;*/
+/*}*/
+
+.color-key-table {
+	width: fit-content;
+	border: 1px solid #ccc;
+    position: absolute;
+    left:0px;
+    top: 40px;
+    background-color: white;
+}
+
+.color-key-table td {
+	padding: 0 .3rem;
+}
+
+.color-key-table .color-swatch {
+	border-radius: 50%;
+    width: .5rem;
+    height: .5rem;
+    /*width: 1rem;*/
+    /*height: 1rem;*/
+}

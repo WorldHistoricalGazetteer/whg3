@@ -1,4 +1,4 @@
-#webmap {
+#map {
     background-color: #eaffea;
     height: 80vh;
 }
@@ -13,24 +13,9 @@
     padding: 10px;
     border: 1px solid #aaa;
 }
-#map_controls {
-    background-color: #a8dadc;
-    border: 1px solid #aaa;
-    height: 100%;
-}
-.middle {
-    left: -7px;
-    right: 15px;
-    background-color: gainsboro;
-    height: 50px;
-    padding: 0.2rem;
-}
 #histogram {
     top: 6px;
     width: 90%;
-}
-#time_slider {
-    bottom: 6px;
 }
 
 .info-box {
@@ -41,4 +26,11 @@
     border: 1px gainsboro solid;
     margin: 0.1rem;
     padding: 0.1rem;
+}
+
+#time_control {
+  flex-grow: 0;
+  flex-shrink: 0;
+  flex-basis: 60px;
+  margin-top: auto;
 }
