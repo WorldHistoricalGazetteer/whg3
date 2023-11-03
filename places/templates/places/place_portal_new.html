@@ -66,11 +66,11 @@
             attribution: {
                 open: false,
             },
-            temporal: { //TODO: Configure based on dataset timespans
-                fromValue: 1550,
-                toValue: 1720,
-                minValue: -2000,
-                maxValue: 2100,
+            temporal: {
+                fromValue: {{ from_value }},
+                toValue: {{ to_value }},
+                minValue: {{ min_timespan }},
+                maxValue: {{ max_timespan }},
                 open: true,
                 includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
                 epochs: null,

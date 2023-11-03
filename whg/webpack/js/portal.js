@@ -28,7 +28,7 @@ let mappy = new maptilersdk.Map({
 	style: maptilersdk.MapStyle[style_code[0]][style_code[1]],
 	attributionControl: false,
 	geolocateControl: false,
-	navigationControl: true,
+	navigationControl: mapParameters.controls.navigation,
 	userProperties: true
 });
 
@@ -95,6 +95,9 @@ function waitMapLoad() {
 					onChange: dateRangeChanged
 				});
 			};
+			
+			// TODO: Add basemap style-switcher?
+			// TODO: Configure resize observer for map padding initialisation and updates
 			
 			whgMap.style.opacity = 1;
             
