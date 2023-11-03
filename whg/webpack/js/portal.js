@@ -4,9 +4,11 @@ import datasetLayers from './mapLayerStyles';
 import { attributionString, geomsGeoJSON } from './utilities';
 import { bbox } from './6.5.0_turf.min.js';
 import { CustomAttributionControl } from './customMapControls';
+import Dateline from './dateline';
 
 import '../css/maplibre-common.css';
 import '../css/mapAndTableMirrored.css';
+import '../css/dateline.css';
 import '../css/portal.css';
 
 let style_code;
@@ -74,6 +76,25 @@ function waitMapLoad() {
 				compact: true,
 		    	autoClose: mapParameters.controls.attribution.open === false,
 			}), 'bottom-right');
+
+			function dateRangeChanged(fromValue, toValue){
+				let debounceTimeout;
+			    function debounceFilterApplication() {
+			        clearTimeout(debounceTimeout);
+			        //debounceTimeout = setTimeout(toggleFilters(true, mappy, table), 300);
+			    }
+			    debounceFilterApplication();
+			}
+
+			if (!!mapParameters.controls.temporal) {
+				let datelineContainer = document.createElement('div');
+				datelineContainer.id = 'dateline';
+				document.getElementById('mapControls').appendChild(datelineContainer);		
+				window.dateline = new Dateline({
+					...mapParameters.controls.temporal,
+					onChange: dateRangeChanged
+				});
+			};
 			
 			whgMap.style.opacity = 1;
             
