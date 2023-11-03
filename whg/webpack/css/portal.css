@@ -15,7 +15,7 @@
 }
 #histogram {
     top: 6px;
-    width: 90%;
+    width: 100%;
 }
 
 .info-box {
@@ -26,6 +26,11 @@
     border: 1px gainsboro solid;
     margin: 0.1rem;
     padding: 0.1rem;
+}
+
+#temporal-attestations {
+	height: 105px!important;
+	overflow: hidden;
 }
 
 #time_control {

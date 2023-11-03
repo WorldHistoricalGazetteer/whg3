@@ -16,13 +16,8 @@
 {% block content %}
 
 <div class="container mt-1 px-1">
-    <div id="ds_info" class="overlay right">
-        <div id="histogram" class="position-absolute bg-light">
-            <p class="allcap-heading small my-0">TEMPORAL ATTESTATIONS</p>
-        </div>
-    </div>
     <div class="overlay left">
-        <div class="m-2 p-1">
+        <div id="info" class="m-2 p-1">
             <div id="sources" class="bg-light info-box">
                 <p class="mb-0 strong-red">Sources</p> {% for rec in payload %} <div class="source-box small">
                     <span class="fs-6">{{ rec.title}} ({{ rec.place_id }})</span>
@@ -44,6 +39,11 @@
                     </li> {% endwith %} {% endfor %} </ul> {% else %} <i>None yet</i> {% endif %} </div>
         </div>
         <div id="graph_viz" class="bg-light info-box"> {graph visualization?} </div>    
+    </div>
+    <div id="temporal-attestations" class="overlay right">
+        <div id="histogram" class="position-absolute bg-light">
+            <p class="allcap-heading small my-0">TEMPORAL ATTESTATIONS</p>
+        </div>
     </div>
     <div id="map" style="opacity: 0;"></div>
 </div>
