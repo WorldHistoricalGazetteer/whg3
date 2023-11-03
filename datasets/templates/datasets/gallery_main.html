@@ -1,0 +1,207 @@
+{% extends "main/base.html" %}
+{% block title %}<title>WHG::Gallery</title>{% endblock %}
+
+{% block content %}
+{#	{% load geojson_tags %}#}
+{#	{% load leaflet_tags %}#}
+	{% load static %}
+	{% load dataset_extras %}
+	{% block extra_head %}
+	<style>
+		#essay_modal {font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+			font-size: 1.2rem;}
+		.gallery-banner-dataset {border-bottom: 1px solid lightgray;
+			background-color:#53A1DA; color: white;}
+		.gallery-banner-place {border-bottom: 1px solid lightgray;
+			background-color:rgb(216, 227, 242); color: darkslateblue;}
+		.gallery-banner-student {border-bottom: 1px solid lightgray;
+			background-color:aliceblue; color: darkblue;}
+		{#.ds-gallery {overflow-y:auto; }#}
+		{#.coll-gallery {overflow:auto; border-bottom: 1px solid gainsboro;}#}
+		.ds-card-content { border: 1px dotted gainsboro;}
+		.ds-card-content h6 {font-size: .9rem;}
+		.ds-card-title {font-size: 1rem;}
+		.ds-card-blurb {line-height: 1rem; font-size: small;}
+		.ds-card {float:left; margin-right:.1rem;
+			width: 99%; height: 175px; overflow-y:auto; background-color: white;}
+		.ds-card:hover {cursor: pointer; opacity:0.8;}
+	</style>
+	{% endblock %}
+
+	<div class="container pt-2 container-md" style="height: calc(100vh - 65px); position:relative;">
+	    <section class="text-center">
+	        <div class="container mb-1" style="position:relative">
+	            <h3>Published Datasets</h3>
+	        </div>
+	    </section>
+	    <div id="gallery_bottom" class="mt-2" style="height: 100%; overflow-y: auto;">
+	        <div class="ds-gallery w-100">
+	            <div class="gallery-banner-dataset ps-2 pt-1 small w-100">DATASETS</div>
+	            <div class="row ps-1">
+	                {% for ds in datasets %}
+	                <div class="col-md-3 mt-1">
+	                    <div class="ds-card">
+	                        <div class="ds-card-content px-2 pt-1" data-id="{{ ds.id }}">
+	                            <p class="ds-card-title">{{ ds.title }} ({{ ds.owner.name }})</p>
+	                            <p class="coll-card-blurb my-1">
+	                                <img src="/media/{{ ds.image_file.name }}" width="60" class="float-end"/>
+	                                {{ ds.description }}
+	                                {# {{ ds.description|trunc_it:remainder }} #}
+	                            </p>
+	                        </div>
+	                    </div>
+	                </div>
+	                {% endfor %}
+	            </div>
+	        </div> <!-- .ds-gallery -->
+	    </div>
+	    <div id="essay_modal" class="selector py-3" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;"></div>
+	</div>
+
+	<script type="text/javascript">
+		$(function () {
+			$('[data-toggle="tooltip"]').tooltip()
+			$("#regions_reset").click(function(){
+				resetRegions()
+			})
+		})
+		function resetRegions(){
+			regions.setStyle({ fillColor: "#ff9999", color: "black" })
+			$('.resource-card').css('display', 'block')
+			$("#regions_reset").hide();
+		}
+		function filterResources(region){
+			var $el = $('.resource-card').filter(function () {
+				// console.log('this', $(this).data("regions"))
+				return (!$(this).data("regions").includes(region))
+			}).css('display','none')
+			shown = $('.resource-card').filter(function(){
+				return $(this).is(":visible");
+			})
+			regiones = []
+			shown.each(function(){
+				regarr = $(this).attr('data-regions').split(', ')
+				// console.log('regset',regarr, typeof(regarr))
+				regiones.push(regarr)
+			})
+			merged = [].concat.apply([], regiones);
+			unique = [...new Set(merged.map(item => item))];
+			$("#regions_reset").show();
+		}
+
+		// var dataurl = '{% url "area-features" %}';
+		var dataurl = 'https://whgazetteer.org/api/area_features?filter=un';
+
+		styles = {
+				"MultiPolygon": {
+					"default": { fillOpacity: 0.3, opacity: 1, color: "#000", weight: 1, fillColor: "#ff9999" },
+					"focus": { fillOpacity: 0.3, opacity: 1, color: "red", weight: 2, fillColor: "#ff9999" }
+				},
+				"Polygon": {
+					"default": { fillOpacity: 0.3, opacity: .5, color: "#666", weight: 1, fillColor: "#ff9999" },
+					"focus": { fillOpacity: 0.3, opacity: .5, color: "red", weight: 2, fillColor: "#ff9999" }
+				}
+			}
+
+		window.addEventListener("map:init", function (event) {
+			map = event.detail.map;
+			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+			}).addTo(map);
+
+
+			fetch(dataurl)
+				.then(function (resp) {
+					return resp.json();
+				})
+				.then(function (data) {
+					// console.log(data)
+					idToFeature = {}
+					regions = L.geoJson(data, {
+						filter: function (feature, layer) {
+							return "{{ regions }}".includes(feature.properties.id);
+						},
+						onEachFeature: function onEachFeature(feature, layer) {
+							// console.log('feature:', feature)
+							identifier = feature.properties.id;
+							layer.setStyle({ fillOpacity: .1, opacity: .5, color: "#000", weight: 1, fillColor: "#ff9999" })
+							var props = feature.properties;
+							// var content = `<b>${props.title}</b><p>${props.description}</p>`;
+							var content = `<b>${props.title}</b>`;
+							idToFeature[identifier] = layer
+							// layer.bindPopup(content);
+							layer.on('mouseover', function (e) {
+								$("#region_label").html(content);
+							});
+							layer.on('mouseout', function (e) {
+								$("#region_label").html("select region to filter")
+							});
+							// layer.bindPopup(content);
+						}
+					}).addTo(map);
+
+					L.Control.textbox = L.Control.extend({
+						onAdd: function (map) {
+
+							var textdiv = L.DomUtil.create('div');
+							textdiv.id = "region_label";
+							textdiv.innerHTML = "select region to filter"
+							return textdiv;
+						},
+
+						onRemove: function (map) {
+							// Nothing to do here
+						}
+					});
+					L.control.textbox = function (opts) { return new L.Control.textbox(opts); }
+					L.control.textbox({ position: 'topright' }).addTo(map);
+
+					regions.on('click', function(e){
+						// console.log('layer', e.layer)
+						// show title in upper right
+						$("#region_label").html(e.layer.feature.properties.title)
+						// display all cards
+						$('.resource-card').css('display', 'block')
+						// default fill and outline for all regions
+						regions.setStyle({fillColor:"#ff9999", color:"black"})
+						// set fill for this to yellow
+						e.layer.setStyle({fillColor:'yellow', color:"red"})
+						// filter cards on region
+						filterResources(e.layer.feature.properties.title)
+						// title=e.layer.feature.properties.title
+						// console.log('clicked region:',title)
+					})
+				});
+		});
+		$(function () {})
+		// resources
+		$(".resource-card-content").click(function(){
+			rid = $(this).data('id');
+			window.location.href = "/resources/"+rid+"/detail";
+		})
+		$(".modal-link").click(function () {
+			page = $(this).data('id')
+			$('.selector').dialog('open');
+		})
+		$(".selector").dialog({
+				resizable: true,
+				autoOpen: false,
+				width: $(window).width() * 0.5,
+				height: $(window).height() * 0.9,
+				title: "Teaching with World Historical Gazetteer",
+				modal: true,
+				buttons: {
+					'Close': function () {
+						$(this).dialog('close');
+					}
+				},
+				open: function (event, ui) {
+					$('.selector').load('/media/resources/'+page+'.html');
+				},
+				show: { effect: "fade", duration: 400 },
+				hide: { effect: "fade", duration: 400 }
+			});
+
+	</script>
+{% endblock %}
+

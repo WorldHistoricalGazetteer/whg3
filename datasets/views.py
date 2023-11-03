@@ -50,6 +50,26 @@ from main.models import Log, Comment
 from places.models import *
 from resources.models import Resource
 
+
+class DatasetGalleryView(ListView):
+  redirect_field_name = 'redirect_to'
+
+  context_object_name = 'datasets'
+  template_name = 'datasets/gallery_main.html'
+  model = Dataset
+
+  def get_queryset(self):
+    qs = super().get_queryset()
+    return qs.filter(public = True).order_by('title')
+
+  def get_context_data(self, *args, **kwargs):
+    context = super(DatasetGalleryView, self).get_context_data(*args, **kwargs)
+    # all public datasets
+    context['datasets'] = Dataset.objects.filter(public=True)
+
+    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
+    return context
+
 """
   email various, incl. Celery down notice
   to ['whgazetteer@gmail.com','karl@kgeographer.org'],
@@ -1196,8 +1216,7 @@ def update_rels_tsv(pobj, row):
       #filename_new=filename_new[:-4]+'_'+tempfn[-11:-4]+filename_new[-4:]
       filename_new=fn[0]+'_'+tempfn[-11:-4]+fn[1]
     filepath = 'media/'+filename_new
-    copyfile(tempfn,filepath)
-    
+    copyfile(tempfn,filepath) 
 """
 
 def ds_update(request):
@@ -2307,10 +2326,8 @@ def failed_upload_notification(user, fn, ds=None):
             [user.email, settings.EMAIL_HOST_USER])
 
 """
-  DatasetCreateView()
-  initial create
-  upload file, validate format, create DatasetFile instance,
-  redirect to dataset.html for db insert if context['format_ok']
+  DatasetCreateEmptyView()
+  initial create, no file
 """
 class DatasetCreateEmptyView (LoginRequiredMixin, CreateView):
   login_url = '/accounts/login/'
@@ -3706,116 +3723,116 @@ class DatasetLogView(LoginRequiredMixin, DetailView):
 """
   ds_compare_bak() backup copy 5 Dec 2022; pre-refactor
 """
-def ds_compare_bak():
-  if request.method == 'POST':
-    print('ds_compare() request.POST', request.POST)
-    print('ds_compare() request.FILES', request.FILES)
-    dsid = request.POST['dsid']
-    user = request.user.name
-    format = request.POST['format']
-    ds = get_object_or_404(Dataset, id=dsid)
-    ds_status = ds.ds_status
-
-    # wrangling names
-    # current (previous) file
-    file_cur = ds.files.all().order_by('-rev')[0].file
-    filename_cur = file_cur.name
-
-    # new file
-    file_new = request.FILES['file']
-    tempf, tempfn = tempfile.mkstemp()
-    # write new file as temporary to /var/folders/../...
-    try:
-      for chunk in file_new.chunks():
-        os.write(tempf, chunk)
-    except:
-      raise Exception("Problem with the input file %s" % request.FILES['file'])
-    finally:
-      os.close(tempf)
-
-    print('tempfn,filename_cur,file_new.name', tempfn, filename_cur, file_new.name)
-
-    # validation (tempfn is file path)
-    if format == 'delimited':
-      print('format:', format)
-      try:
-        vresult = validate_tsv(tempfn, 'delimited')
-      except:
-        print('validate_tsv() failed:', sys.exc_info())
-
-    elif format == 'lpf':
-      # TODO: feed tempfn only?
-      # TODO: accept json-lines; only FeatureCollections ('coll') now
-      vresult = validate_lpf(tempfn, 'coll')
-      # print('format, vresult:',format,vresult)
-
-    # if validation errors, stop and return them to modal
-    # which expects {validation_result{errors['','']}}
-    print('vresult', vresult)
-    if len(vresult['errors']) > 0:
-      errormsg = {"failed": {
-        "errors": vresult['errors']
-      }}
-      return JsonResponse(errormsg, safe=False)
-
-    # give new file a path
-    # filename_new = 'user_'+user+'/'+'sample7cr_new.tsv'
-    filename_new = 'user_' + user + '/' + file_new.name
-    # temp files were given extensions in validation functions
-    tempfn_new = tempfn + '.tsv' if format == 'delimited' else tempfn + '.jsonld'
-    print('tempfn_new', tempfn_new)
-
-    # begin report
-    comparison = {
-      "id": dsid,
-      "filename_cur": filename_cur,
-      "filename_new": filename_new,
-      "format": format,
-      "validation_result": vresult,
-      "tempfn": tempfn,
-      "count_indexed": ds.status_idx['idxcount'],
-    }
-    # create pandas (pd) objects, then perform comparison
-    # a = existing, b = new
-    fn_a = 'media/' + filename_cur
-    fn_b = tempfn
-    if format == 'delimited':
-      adf = pd.read_csv(fn_a, file_cur.delimiter)
-      try:
-        bdf = pd.read_csv(fn_b, delimiter='\t')
-      except:
-        print('bdf read failed', sys.exc_info())
-
-      ids_a = adf['id'].tolist()
-      ids_b = bdf['id'].tolist()
-      print('ids_a, ids_b', ids_a[:10], ids_b[:10])
-      # new or removed columns?
-      cols_del = list(set(adf.columns) - set(bdf.columns))
-      cols_add = list(set(bdf.columns) - set(adf.columns))
-
-      # count of *added* links
-      comparison['count_links_added'] = ds.links.filter(task_id__isnull=False).count()
-      # count of *added* geometries
-      comparison['count_geoms_added'] = ds.geometries.filter(task_id__isnull=False).count()
-
-      comparison['compare_result'] = {
-        "count_new": len(ids_b),
-        'count_diff': len(ids_b) - len(ids_a),
-        'count_replace': len(set.intersection(set(ids_b), set(ids_a))),
-        'cols_del': cols_del,
-        'cols_add': cols_add,
-        'header_new': vresult['columns'],
-        'rows_add': [str(x) for x in (set(ids_b) - set(ids_a))],
-        'rows_del': [str(x) for x in (set(ids_a) - set(ids_b))]
-      }
-    # TODO: process LP format, collections + json-lines
-    elif format == 'lpf':
-      # print('need to compare lpf files:',fn_a,fn_b)
-      comparison['compare_result'] = "it's lpf...tougher row to hoe"
-
-    print('comparison (compare_data)', comparison)
-    # back to calling modal
-    return JsonResponse(comparison, safe=False)
+# def ds_compare_bak():
+#   if request.method == 'POST':
+#     print('ds_compare() request.POST', request.POST)
+#     print('ds_compare() request.FILES', request.FILES)
+#     dsid = request.POST['dsid']
+#     user = request.user.name
+#     format = request.POST['format']
+#     ds = get_object_or_404(Dataset, id=dsid)
+#     ds_status = ds.ds_status
+#
+#     # wrangling names
+#     # current (previous) file
+#     file_cur = ds.files.all().order_by('-rev')[0].file
+#     filename_cur = file_cur.name
+#
+#     # new file
+#     file_new = request.FILES['file']
+#     tempf, tempfn = tempfile.mkstemp()
+#     # write new file as temporary to /var/folders/../...
+#     try:
+#       for chunk in file_new.chunks():
+#         os.write(tempf, chunk)
+#     except:
+#       raise Exception("Problem with the input file %s" % request.FILES['file'])
+#     finally:
+#       os.close(tempf)
+#
+#     print('tempfn,filename_cur,file_new.name', tempfn, filename_cur, file_new.name)
+#
+#     # validation (tempfn is file path)
+#     if format == 'delimited':
+#       print('format:', format)
+#       try:
+#         vresult = validate_tsv(tempfn, 'delimited')
+#       except:
+#         print('validate_tsv() failed:', sys.exc_info())
+#
+#     elif format == 'lpf':
+#       # TODO: feed tempfn only?
+#       # TODO: accept json-lines; only FeatureCollections ('coll') now
+#       vresult = validate_lpf(tempfn, 'coll')
+#       # print('format, vresult:',format,vresult)
+#
+#     # if validation errors, stop and return them to modal
+#     # which expects {validation_result{errors['','']}}
+#     print('vresult', vresult)
+#     if len(vresult['errors']) > 0:
+#       errormsg = {"failed": {
+#         "errors": vresult['errors']
+#       }}
+#       return JsonResponse(errormsg, safe=False)
+#
+#     # give new file a path
+#     # filename_new = 'user_'+user+'/'+'sample7cr_new.tsv'
+#     filename_new = 'user_' + user + '/' + file_new.name
+#     # temp files were given extensions in validation functions
+#     tempfn_new = tempfn + '.tsv' if format == 'delimited' else tempfn + '.jsonld'
+#     print('tempfn_new', tempfn_new)
+#
+#     # begin report
+#     comparison = {
+#       "id": dsid,
+#       "filename_cur": filename_cur,
+#       "filename_new": filename_new,
+#       "format": format,
+#       "validation_result": vresult,
+#       "tempfn": tempfn,
+#       "count_indexed": ds.status_idx['idxcount'],
+#     }
+#     # create pandas (pd) objects, then perform comparison
+#     # a = existing, b = new
+#     fn_a = 'media/' + filename_cur
+#     fn_b = tempfn
+#     if format == 'delimited':
+#       adf = pd.read_csv(fn_a, file_cur.delimiter)
+#       try:
+#         bdf = pd.read_csv(fn_b, delimiter='\t')
+#       except:
+#         print('bdf read failed', sys.exc_info())
+#
+#       ids_a = adf['id'].tolist()
+#       ids_b = bdf['id'].tolist()
+#       print('ids_a, ids_b', ids_a[:10], ids_b[:10])
+#       # new or removed columns?
+#       cols_del = list(set(adf.columns) - set(bdf.columns))
+#       cols_add = list(set(bdf.columns) - set(adf.columns))
+#
+#       # count of *added* links
+#       comparison['count_links_added'] = ds.links.filter(task_id__isnull=False).count()
+#       # count of *added* geometries
+#       comparison['count_geoms_added'] = ds.geometries.filter(task_id__isnull=False).count()
+#
+#       comparison['compare_result'] = {
+#         "count_new": len(ids_b),
+#         'count_diff': len(ids_b) - len(ids_a),
+#         'count_replace': len(set.intersection(set(ids_b), set(ids_a))),
+#         'cols_del': cols_del,
+#         'cols_add': cols_add,
+#         'header_new': vresult['columns'],
+#         'rows_add': [str(x) for x in (set(ids_b) - set(ids_a))],
+#         'rows_del': [str(x) for x in (set(ids_a) - set(ids_b))]
+#       }
+#     # TODO: process LP format, collections + json-lines
+#     elif format == 'lpf':
+#       # print('need to compare lpf files:',fn_a,fn_b)
+#       comparison['compare_result'] = "it's lpf...tougher row to hoe"
+#
+#     print('comparison (compare_data)', comparison)
+#     # back to calling modal
+#     return JsonResponse(comparison, safe=False)
 
 """
 DEPRECATED Aug 2022: all pass0 must be reviewed for accessioning

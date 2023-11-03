@@ -86,7 +86,6 @@
 			    {#<button id="close-advanced_search" class="btn btn-sm btn-secondary">Close</button>#}
 		    </div>
 
-
 				<div id="search_map" class="input-group input-group-sm mb-3 shadow-sm">
 				  <input type="text" class="form-control" placeholder="Enter place name"
 				         aria-label="Username" aria-describedby="addon-wrapping">
@@ -95,20 +94,8 @@
 				  </span>
 				</div>
 
-{# from search #}
-{#		    <div id="d_input" class="col-8 ps-1">#}
-{#		        <div id="input" class="w-75 input-group">#}
-{#		            <input type="text" id="search-input" class="form-control" placeholder="Enter place name"#}
-{#		                   aria-label="Search" aria-describedby="search-addon">#}
-{#		            <span class="input-group-text" id="search-addon">#}
-{#		                <a href="#" id="a_search"><i class="fas fa-search"></i></a>#}
-{#		            </span>#}
-{#		        </div>#}
-{#		    </div>#}
-
 				<div class="advanced-search-link px-1 py-0">
 					<a id="a_advanced" href="#">advanced search </a>
-{#					<a href="{% url 'search-page-old' %}" class="ms-2">old search</a>#}
 				</div>
 			</div>
 			<div class=" p-1 border bg-white" style="height: 24%;">
@@ -224,7 +211,9 @@
 
     window.carousels = {{ featured_datasets|safe }};
     /* TODO: Do we need a url for a Datasets gallery, to be inserted below?*/
-    let galleries = [["Datasets",null],["Collections","{% url 'collection:collection-gallery' %}"]];
+    let galleries = [
+        ["Datasets","{% url 'datasets:dataset-gallery' %}"],
+		    ["Collections","{% url 'collection:collection-gallery' %}"]];
     let homeModalURL = "{% url 'modal-home' %}"
     console.log('window.carousels', window.carousels);
 </script>
