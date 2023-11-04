@@ -124,8 +124,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		
 	  	const payload = JSON.parse(document.getElementById('payload_data').textContent);
 		let featureCollection = geomsGeoJSON(payload);
-		updatePadding();
-		mappy.getSource('places').setData(featureCollection);		
+		mappy.getSource('places').setData(featureCollection);
 		// Do not use fitBounds or flyTo due to padding bug in MapLibre/Maptiler
 		fitViewport( mappy, bbox(featureCollection) );
 	  	
@@ -151,24 +150,6 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 	  	
     })
     .catch(error => console.error("An error occurred:", error));
-		
-function updatePadding() {
-	let mapParams = {
-		ControlsRectEl: document.getElementById('mapControls'),
-		MapRectEl: document.querySelector('div.maplibregl-map'),
-		ControlsRectMargin: 4,
-		MapRectBorder: 1
-	}
-	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
-	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
-	mappy.setPadding({
-		top: Math.round(ControlsRect.top - MapRect.top - mapParams.ControlsRectMargin),
-		bottom: Math.round(MapRect.bottom - ControlsRect.bottom - mapParams.ControlsRectMargin),
-		left: Math.round(ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin),
-		right: Math.round(MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin),
-	});
-	//mappy.showPadding = true;
-}
 
 function range(start, stop, step) {
 	var a = [start],
