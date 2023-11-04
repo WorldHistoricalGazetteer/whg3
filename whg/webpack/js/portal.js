@@ -1,7 +1,8 @@
 // /whg/webpack/portal.js
 
+import './extend-maptiler-sdk.js'; // Adds 'fitViewport' method
 import datasetLayers from './mapLayerStyles';
-import { attributionString, geomsGeoJSON, fitViewport } from './utilities';
+import { attributionString, geomsGeoJSON } from './utilities';
 import { bbox } from './6.5.0_turf.min.js';
 import { CustomAttributionControl } from './customMapControls';
 import Dateline from './dateline';
@@ -126,7 +127,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		let featureCollection = geomsGeoJSON(payload);
 		mappy.getSource('places').setData(featureCollection);
 		// Do not use fitBounds or flyTo due to padding bug in MapLibre/Maptiler
-		fitViewport( mappy, bbox(featureCollection) );
+		mappy.fitViewport( bbox(featureCollection) );
 	  	
 	  	var min = Math.min.apply(null, allts.map(function(row) {
 	  		return Math.min.apply(Math, row);
