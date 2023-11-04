@@ -6,10 +6,13 @@ from django.http import JsonResponse, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.views import View
 from django.views.generic import DetailView, TemplateView
+from django.db.models import Count
 
 from datetime import datetime
 from elasticsearch8 import Elasticsearch
 import itertools, re
+from django.core.serializers import serialize
+from django.urls import reverse
 
 from collection.models import Collection
 from datasets.models import Dataset
@@ -109,6 +112,19 @@ class PlacePortalViewNew(TemplateView):
         timespans = list(t for t, _ in itertools.groupby(place.timespans)) if place.timespans else []
         context['allts'] += timespans
 
+        collection_records = []
+        for collection in attest_collections:
+            collection_url = reverse('collection:place-collection-browse', args=[collection.id])
+            collection_record = {
+                "class": collection.collection_class,
+                "id": collection.id,
+                "url": collection_url,
+                "title": collection.title,
+                "description": collection.description,
+                "count": collection.places_all.aggregate(place_count=Count('id'))['place_count']
+            }
+            collection_records.append(collection_record)
+
         record = {
           # "whg_id": id_,
           "dataset": {"id": ds.id, "label": ds.label,
@@ -127,7 +143,8 @@ class PlacePortalViewNew(TemplateView):
           "descriptions": [descr.jsonb for descr in place.descriptions.all()],
           "depictions": [depict.jsonb for depict in place.depictions.all()],
           "minmax": place.minmax,
-          "timespans": timespans
+          "timespans": timespans,
+          "collections": collection_records
         }
         context['payload'].append(record)
     except ValueError:

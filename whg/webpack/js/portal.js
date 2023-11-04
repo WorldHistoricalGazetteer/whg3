@@ -40,6 +40,8 @@ let nullCollection = {
     features: []
 }
 
+let featureCollection;	
+
 function waitMapLoad() {
     return new Promise((resolve) => {
         mappy.on('load', () => {
@@ -121,10 +123,43 @@ function waitDocumentReady() {
 }
 
 Promise.all([waitMapLoad(), waitDocumentReady()])
-    .then(() => {		
+    .then(() => {	
+	  	const payload = JSON.parse($('#payload_data').text());
+	  	
+    	const collectionList = $('#collection_list');
+    	const ul = $('<ul>');
+    	
+    	payload.forEach(dataset => {
+		  	if (dataset.collections.length > 0) {
+				  dataset.collections.forEach(collection => {			
+			            let listItem = '';
+			            if (collection.class === 'place') {
+			                listItem = `
+			                    <a href="${ collection.collection_url }" target="_blank">
+			                        <b>${ collection.title.trim() }</b>
+			                    </a>, a collection of <sr>${ collection.count }</sr> places.
+			                    <span class="showing"><p>${ collection.description }</p></span> 
+			                    [<a href="javascript:void(0);" data-id="${ collection.id }" class="show-collection"><span>show</span><span class="showing">hide</span></a>]
+			                `;
+			            } else {
+			                listItem = `
+			                    <a href="${ collection.collection_url }" target="_blank">
+			                        <b>${title}</b>
+			                    </a>, a collection of all <sr>${ collection.count }</sr> places in datasets
+			                `;
+			            }
+			            ul.append($('<li>').html(listItem));				  
+				  });
+			}	
+		});
+		if (ul.find('li').length > 0) {
+		    collectionList.append(ul);
+		}
+		else {
+			collectionList.html('<i>None yet</i>');
+		}
 		
-	  	const payload = JSON.parse(document.getElementById('payload_data').textContent);
-		let featureCollection = geomsGeoJSON(payload);
+		featureCollection = geomsGeoJSON(payload);
 		mappy.getSource('places').setData(featureCollection);
 		// Do not use fitBounds or flyTo due to padding bug in MapLibre/Maptiler
 		mappy.fitViewport( bbox(featureCollection) );
@@ -139,14 +174,25 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 	  	// feed to #histogram
 	  	histogram_data(allts, minmax)
 
-	  	// load collection geometry (# within reason)
-	  	$(".coll-geo").click(function(e) {
-	  		e.preventDefault()
-	  		// TODO: why does context fail when collection places are displayed
-	  		// in any case, hide the checkbox
-	  		$("#fetch_context").hide()
-	  		fetchCollectionGeom($(this).data('id'), 3)
-	  		$("#clear_markers").fadeIn()
+	  	// Show/Hide related Collection
+	  	$(".show-collection").click(function(e) {
+	  		e.preventDefault();
+	  		const parentItem = $(this).parent('li');
+	  		parentItem.toggleClass('showing');
+	  		if (parentItem.hasClass('showing')) {
+			  	$.get("/search/collgeom", {
+			  			coll_id: $(this).data('id')
+			  		},
+			  		function(relatedFeatureCollection) {
+			  			console.log('coll_places', relatedFeatureCollection);
+						mappy.getSource('places').setData(relatedFeatureCollection);
+						mappy.fitViewport( bbox(relatedFeatureCollection) );
+			  		});		
+			}
+			else {		
+				mappy.getSource('places').setData(featureCollection);
+				mappy.fitViewport( bbox(featureCollection) );
+			}
 	  	})
 	  	
     })
@@ -265,14 +311,3 @@ function histogram(data, labels, minmax) {
 		.attr("transform", "translate(0," + height + ")")
 		.call(axisB)
 }  
-
-function fetchCollectionGeom(coll_id, counter) {
-  	counter = 3
-  	$.get("/search/collgeom", {
-  			coll_id: coll_id
-  		},
-  		function(data) {
-  			let coll_places = data
-  			console.log('coll_places', coll_places)
-  		});
-}

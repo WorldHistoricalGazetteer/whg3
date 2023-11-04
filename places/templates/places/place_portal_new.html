@@ -36,13 +36,8 @@
     <div class="overlay right">
         <div id="source_detail" class="bg-light info-box">
             <p class="mb-0 strong-red">In Collection(s)</p>
-            <div id="collection_list"> {% if collections|length > 0 %} <ul> {% for c in collections %} {% with c.collection_class as cclass %} <li> {% if cclass == 'place' %} <a href="{% url 'collection:place-collection-browse' c.id %}" target="_blank">
-                            <b>{{ c.title }}</b>
-                        </a>, a collection of <sr>{{ c.places_all.count }}</sr> places {{ c.title|json_script:"c_title" }}
-                        {{ c.description|json_script:"c_description" }} [ <a href='javascript:{ showCollectionDescription()}' class="a_cdescription">description</a>, <a href="#" class="coll-geo" data-id="{{ c.id }}">places</a>] {% else %} <a href="{% url 'collection:ds-collection-browse' c.id %}" target="_blank">
-                            <b>{{ c.title }}</b>
-                        </a> , a collection of all <sr>{{ c.places_all.count }})</sr> places in {{ c.datasets.count }} datasets {% endif %}
-                    </li> {% endwith %} {% endfor %} </ul> {% else %} <i>None yet</i> {% endif %} </div>
+            <div id="collection_list"> 
+            </div>
         </div>
         <div id="graph_viz" class="bg-light info-box"> {graph visualization?} </div>    
     </div>

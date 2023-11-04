@@ -27,12 +27,13 @@ maptilersdk.Map.prototype.fitViewport = function (bbox) {
 		right: Math.round(mapContainerRect.right - mapControlsRect.right - mapControlsRectMargin),
 	};
 	
-	this.jumpTo({
+	this.flyTo({
 		center: [
 			(bbox[0] + bbox[2]) / 2,
 			(bbox[1] + bbox[3]) / 2
 		],
 		zoom: zoom,
-		padding: viewportPadding
+		padding: viewportPadding,
+		duration: 1000,
 	});
 };
