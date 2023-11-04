@@ -55,7 +55,7 @@ class DatasetGalleryView(ListView):
   redirect_field_name = 'redirect_to'
 
   context_object_name = 'datasets'
-  template_name = 'datasets/gallery_main.html'
+  template_name = 'datasets/ds_gallery.html'
   model = Dataset
 
   def get_queryset(self):
@@ -2242,7 +2242,7 @@ class DataListsView(LoginRequiredMixin, ListView):
     if self.request.path == reverse('data-datasets'):
       idlist = [obj.id for obj in Dataset.objects.all() if me in obj.owners or
                    me in obj.collaborators or whgteam]
-      list = Dataset.objects.filter(id__in=idlist).order_by('-create_date')
+      list = Dataset.objects.filter(id__in=idlist).order_by('-create_date').exclude(title__startswith='(stub)')
       return list
     elif self.request.path == reverse('data-collections'):
       idlist = [obj.id for obj in Collection.objects.all() if me in obj.owners or

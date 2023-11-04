@@ -12,19 +12,21 @@
 			font-size: 1.2rem;}
 		.gallery-banner-dataset {border-bottom: 1px solid lightgray;
 			background-color:#53A1DA; color: white;}
-		.gallery-banner-place {border-bottom: 1px solid lightgray;
-			background-color:rgb(216, 227, 242); color: darkslateblue;}
-		.gallery-banner-student {border-bottom: 1px solid lightgray;
-			background-color:aliceblue; color: darkblue;}
-		{#.ds-gallery {overflow-y:auto; }#}
-		{#.coll-gallery {overflow:auto; border-bottom: 1px solid gainsboro;}#}
-		.ds-card-content { border: 1px dotted gainsboro;}
+		.ds-gallery {padding-right: 6px;}
+		.ds-card-gallery {
+			border: 1px gainsboro dashed;
+			height: 130px;
+			padding: .5rem;
+			overflow-y:auto;
+			box-shadow: 2px 2px 4px rgba(200, 200, 200, 0.5);
+			margin-bottom: .5rem;
+		}
+		.ds-card-gallery img {margin-left: 2px;}
+		.ds-card-gallery:hover {cursor: pointer; opacity:0.8;}
 		.ds-card-content h6 {font-size: .9rem;}
 		.ds-card-title {font-size: 1rem;}
+		.ds-card-owner {font-size: .9rem; font-variant: small-caps; color: #993333;}
 		.ds-card-blurb {line-height: 1rem; font-size: small;}
-		.ds-card {float:left; margin-right:.1rem;
-			width: 99%; height: 175px; overflow-y:auto; background-color: white;}
-		.ds-card:hover {cursor: pointer; opacity:0.8;}
 	</style>
 	{% endblock %}
 
@@ -37,17 +39,18 @@
 	    <div id="gallery_bottom" class="mt-2" style="height: 100%; overflow-y: auto;">
 	        <div class="ds-gallery w-100">
 	            <div class="gallery-banner-dataset ps-2 pt-1 small w-100">DATASETS</div>
-	            <div class="row ps-1">
+	            <div class="row ps-1 gx-2">
 	                {% for ds in datasets %}
-	                <div class="col-md-3 mt-1">
-	                    <div class="ds-card">
-	                        <div class="ds-card-content px-2 pt-1" data-id="{{ ds.id }}">
-	                            <p class="ds-card-title">{{ ds.title }} ({{ ds.owner.name }})</p>
-	                            <p class="coll-card-blurb my-1">
+	                <div class="col-md-4 mt-1">
+	                    <div class="ds-card-gallery">
+	                        <div class="ds-card-content" data-id="{{ ds.id }}">
+	                            <h6 class="ds-card-title">{{ ds.title }}</h6>
+	                            <p class="ds-card-blurb my-1">
 	                                <img src="/media/{{ ds.image_file.name }}" width="60" class="float-end"/>
 	                                {{ ds.description }}
 	                                {# {{ ds.description|trunc_it:remainder }} #}
 	                            </p>
+		                          <p class="ds-card-owner">{{ ds.owner.name }}</p>
 	                        </div>
 	                    </div>
 	                </div>
@@ -175,9 +178,9 @@
 		});
 		$(function () {})
 		// resources
-		$(".resource-card-content").click(function(){
-			rid = $(this).data('id');
-			window.location.href = "/resources/"+rid+"/detail";
+		$(".ds-card-content").click(function(){
+			dsid = $(this).data('id');
+			window.location.href = "/datasets/"+dsid+"/places";
 		})
 		$(".modal-link").click(function () {
 			page = $(this).data('id')

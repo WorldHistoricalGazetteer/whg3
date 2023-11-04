@@ -977,7 +977,7 @@ class CollectionGalleryView(ListView):
   redirect_field_name = 'redirect_to'
 
   context_object_name = 'collections'
-  template_name = 'collection/gallery_main.html'
+  template_name = 'collection/collection_gallery.html'
   model = Collection
 
   def get_queryset(self):
@@ -1004,32 +1004,3 @@ class CollectionDeleteView(DeleteView):
 
   def get_success_url(self):
     return reverse('data-collections')
-
-""" public collection view, contents, bboxes on a map 
-  NOT IN USE, place_collection_browse is single display page """
-# class PlaceCollectionSummaryView(DetailView):
-#   template_name = 'collection/place_collection_summary.html'
-#
-#   model = Collection
-#
-#   def get_context_data(self, **kwargs):
-#     context = super(PlaceCollectionSummaryView, self).get_context_data(**kwargs)
-#     id_ = self.kwargs.get("pk")
-#     print('CollectionDetailView(), kwargs',self, self.kwargs)
-#
-#     datasets = self.object.datasets.all()
-#     places = self.object.places.all().order_by('title')
-#     # gather bounding boxes
-#     bboxes = [ds.bounds for ds in datasets]
-#
-#     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-#     context['mbtokenmb'] = settings.MAPBOX_TOKEN_MB
-#     context['maptilerkey'] = settings.MAPTILER_KEY
-#     context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
-#     context['whgteam'] = User.objects.filter(groups__name='whg_team')
-#
-#     context['place_list'] = places
-#     context['ds_list'] = datasets
-#     context['bboxes'] = bboxes
-#     return context
-

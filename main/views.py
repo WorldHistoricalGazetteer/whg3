@@ -33,7 +33,8 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False):
     if collection_class:
       return model.objects.filter(collection_class=collection_class)
     else:
-      return model.objects.all()
+      # in development, dummy dataset record titles are prefixed
+      return model.objects.exclude(title__startswith='(stub)')
 
   return model.objects.filter(**filter_criteria)
 
