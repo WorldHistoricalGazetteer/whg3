@@ -205,15 +205,36 @@ class Dataset(models.Model):
     return PlaceLink.objects.filter(place_id__in=placeids, jsonb__icontains='Q').count()
 
   # status of each recon task type
+  # @property
+  # def recon_status(self):
+  #   tuple_id = f'({self.id},)'
+  #   print(tuple_id)
+  #   tasks = TaskResult.objects.filter(
+  #     task_args = tuple_id,
+  #     task_name__startswith='align',
+  #     status='SUCCESS')
+  #   result = {}
+  #   for t in tasks:
+  #     result[t.task_name[6:]] = Hit.objects.filter(task_id=t.task_id,reviewed=False).values("place_id").distinct().count()
+  #
+  #   return result
+
   @property
   def recon_status(self):
+    # Format task_args as a string representation of a tuple
+    # because that's how Celery records it now
+    args_with_quotes = f'"({self.id},)"'
     tasks = TaskResult.objects.filter(
-      task_args = '['+str(self.id)+']',
+      task_args=args_with_quotes,
       task_name__startswith='align',
-      status='SUCCESS')
+      status='SUCCESS'
+    )
+    print('tasks', tasks)
+    # Calculate the status based on the tasks and hits
     result = {}
     for t in tasks:
-      result[t.task_name[6:]] = Hit.objects.filter(task_id=t.task_id,reviewed=False).values("place_id").distinct().count()
+      hit_count = Hit.objects.filter(task_id=t.task_id, reviewed=False).values("place_id").distinct().count()
+      result[t.task_name[6:]] = hit_count
 
     return result
 
