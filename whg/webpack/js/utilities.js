@@ -48,6 +48,34 @@ export function geomsGeoJSON(geomItems) { // Convert array of items with .geom t
 	return featureCollection;
 }
 
+export function fitViewport(map, bbox) {
+	// This function addresses an apparent bug with flyTo and fitBounds in MapLibre/Maptiler,
+	// which crash and/or fail to center correctly with large mapPadding values. 
+	const mapControls = map.getContainer().querySelector('.maplibregl-control-container');
+	const { width, height } = mapControls.getBoundingClientRect();
+	const padding = 10; // Apply equal padding on all sides within viewport
+	const currentZoom = map.getZoom();
+	
+	const bounds = [[bbox[0], bbox[1]], [bbox[2], bbox[3]]];
+	const sw = map.project(bounds[0]);
+	const ne = map.project(bounds[1]);
+	let zoom = Math.log2(
+		Math.min(
+			(width - 2 * padding) / (ne.x - sw.x), 
+			(height- 2 * padding) / (sw.y - ne.y))
+		) + currentZoom;
+	zoom = Math.min(zoom, mapParameters.maxZoom);
+	zoom = Math.max(zoom, mapParameters.minZoom);
+	
+	map.jumpTo({
+		center: [
+			(bbox[0] + bbox[2]) / 2,
+			(bbox[1] + bbox[3]) / 2
+		],
+		zoom: zoom
+	});
+}
+
 export function largestSubGeometry(geometry) {
 	if (getType(geometry) === 'MultiPoint' || getType(geometry) === 'MultiLineString' || getType(geometry) === 'MultiPolygon') {
 		if (geometry.coordinates && geometry.coordinates.length > 0) {

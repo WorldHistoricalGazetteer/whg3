@@ -147,15 +147,15 @@ class PlacePortalViewNew(TemplateView):
         min_ts = min(min_ts, start)
         max_ts = max(max_ts, end)
         
-    if min_ts == float('inf'):
-        min_ts = -2000
-        
-    if max_ts == float('-inf'):
-        max_ts = 2100
-    
-    range_percentage = 5
-    from_value = min_ts - (range_percentage / 100) * (max_ts - min_ts)
-    to_value = max_ts + (range_percentage / 100) * (max_ts - min_ts)
+    if min_ts == float('inf') or max_ts == float('-inf'):
+        min_ts = False
+        max_ts = False
+        from_value = False
+        to_value = False
+    else:
+        range_percentage = 5
+        from_value = min_ts - (range_percentage / 100) * (max_ts - min_ts)
+        to_value = max_ts + (range_percentage / 100) * (max_ts - min_ts)
     
     context['min_timespan'] = min_ts
     context['max_timespan'] = max_ts

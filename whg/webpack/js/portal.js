@@ -1,7 +1,7 @@
 // /whg/webpack/portal.js
 
 import datasetLayers from './mapLayerStyles';
-import { attributionString, geomsGeoJSON } from './utilities';
+import { attributionString, geomsGeoJSON, fitViewport } from './utilities';
 import { bbox } from './6.5.0_turf.min.js';
 import { CustomAttributionControl } from './customMapControls';
 import Dateline from './dateline';
@@ -29,7 +29,9 @@ let mappy = new maptilersdk.Map({
 	attributionControl: false,
 	geolocateControl: false,
 	navigationControl: mapParameters.controls.navigation,
-	userProperties: true
+	userProperties: true,
+	bearing: 0,
+	pitch: 0,
 });
 
 let nullCollection = {
@@ -121,15 +123,11 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
     .then(() => {		
 		
 	  	const payload = JSON.parse(document.getElementById('payload_data').textContent);
-	  	console.log('payload', payload);
-			
 		let featureCollection = geomsGeoJSON(payload);
-		console.log(featureCollection);
-		mappy.getSource('places').setData(featureCollection);
-		mappy.fitBounds(bbox(featureCollection), {
-	        padding: 30,
-	        duration: 1000,
-	    });
+		updatePadding();
+		mappy.getSource('places').setData(featureCollection);		
+		// Do not use fitBounds or flyTo due to padding bug in MapLibre/Maptiler
+		fitViewport( mappy, bbox(featureCollection) );
 	  	
 	  	var min = Math.min.apply(null, allts.map(function(row) {
 	  		return Math.min.apply(Math, row);
@@ -153,6 +151,24 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 	  	
     })
     .catch(error => console.error("An error occurred:", error));
+		
+function updatePadding() {
+	let mapParams = {
+		ControlsRectEl: document.getElementById('mapControls'),
+		MapRectEl: document.querySelector('div.maplibregl-map'),
+		ControlsRectMargin: 4,
+		MapRectBorder: 1
+	}
+	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
+	const MapRect = mapParams.MapRectEl.getBoundingClientRect();
+	mappy.setPadding({
+		top: Math.round(ControlsRect.top - MapRect.top - mapParams.ControlsRectMargin),
+		bottom: Math.round(MapRect.bottom - ControlsRect.bottom - mapParams.ControlsRectMargin),
+		left: Math.round(ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin),
+		right: Math.round(MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin),
+	});
+	//mappy.showPadding = true;
+}
 
 function range(start, stop, step) {
 	var a = [start],
@@ -274,7 +290,7 @@ function fetchCollectionGeom(coll_id, counter) {
   			coll_id: coll_id
   		},
   		function(data) {
-  			coll_places = data
+  			let coll_places = data
   			console.log('coll_places', coll_places)
   		});
 }

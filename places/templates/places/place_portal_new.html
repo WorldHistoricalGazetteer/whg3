@@ -55,9 +55,9 @@
     let mapParameters = {
         container: 'map',
         center: [10.2385, 29.8626],
-        zoom: 0.1, // starting zoom
+        zoom: 5, // starting zoom
         minZoom: 0.1,
-        maxZoom: 10,
+        maxZoom: 20,
         mapTilerKey: '{{ maptilerkey }}',
         controls: {
             layer: true,
@@ -66,16 +66,20 @@
             attribution: {
                 open: false,
             },
-            temporal: {
-                fromValue: {{ from_value }},
-                toValue: {{ to_value }},
-                minValue: {{ min_timespan }},
-                maxValue: {{ max_timespan }},
-                open: true,
-                includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
-                epochs: null,
-                automate: null,
-            }
+            {% if from_value %}
+	            temporal: {
+	                fromValue: {{ from_value }},
+	                toValue: {{ to_value }},
+	                minValue: {{ min_timespan }},
+	                maxValue: {{ max_timespan }},
+	                open: false,
+	                includeUndated: true,
+	                epochs: null,
+	                automate: null,
+	            }
+	        {% else %}
+	            temporal: false
+	        {% endif %}
         },
         styleFilter: [ 'OUTDOOR.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
     }
