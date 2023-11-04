@@ -66,6 +66,7 @@
               <div class="toomany"></div>
               
               {%comment%}
+              <!-- just a thought -->
               <div id="filter_group" class="">Display&nbsp;
                 points: <input id="cb_point" class="gtype" data-g="point" type="checkbox" checked />&nbsp;
                 lines: <input id="cb_line" class="gtype" data-g="line" type="checkbox" checked />&nbsp;
@@ -74,20 +75,10 @@
               {%endcomment%}
               
               <div id="map" style="height:300px;"></div>
-              
-              <!-- time slider eventually -->
-              {%comment%}
-              <div id="nouislider" class="my-2"></div>
-              <!--<div><input style="width:100%;" id="slider" type="range" min= {ds.minmax.0}} max= {ds.minmax.1}} step="100" value="0"></div>
-              <div class="small" style="margin-top:-10px;border-bottom:1px dashed #ddd;">
-                {{ds.minmax.0}}<span class="float-end">{{ds.minmax.1}}
-              </div>-->
-              {%endcomment%}
-              
               <div id="row_detail">
                 <div id="detail" class="small"></div>
               </div>
-              <!--min: {{ds.minmax.0}} max:{{ds.minmax.1}}-->
+              {% comment %}min: {{ds.minmax.0}} max:{{ds.minmax.1}}{% endcomment %}
             </div> <!-- drftable_detail -->
             <div id="drftable_list" class="col-sm-7">
               <table id="placetable" class="table table-striped table-bordered" style="width:100%">
@@ -139,13 +130,11 @@
     buildSelect()
     
     startTableSpinner()
-    {#startDetailSpinner()#}
-    
+
     window.dslabel = "{{ ds.label }}"
     window.filter = "{{ filter }}"
     table = $('#placetable').DataTable({
       dom: "<'row'<'col-sm-12 col-md-3'l>+" +
-      {#"<'#status_filter.col-sm-12 col-md-5'>"+#}
       filter_col+
       "<'col-sm-12 col-md-4'f>>" +
       "<'row'<'col-sm-12'tr>>" +
@@ -814,7 +803,7 @@
     return descrip
   }
   
-  // fetch complete-ish place record
+  // fetch single complete-ish place record
   function getPlace(pid){
     console.log('getPlace()', pid)
     $.ajax({

@@ -241,7 +241,7 @@ def make_download(request, *args, **kwargs):
 @shared_task(name="task_emailer")
 def task_emailer(tid, dslabel, name, email, counthit, totalhits, test):
   # TODO: sometimes a valid tid is not recognized (race?)
-  time.sleep(5)
+  time.sleep(15)
   try:
     task = get_object_or_404(TaskResult, task_id=tid) or False
     tasklabel = 'Wikidata' if task.task_name[6:8]=='wd' else \
