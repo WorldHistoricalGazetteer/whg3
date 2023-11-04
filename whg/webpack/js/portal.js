@@ -135,7 +135,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			            let listItem = '';
 			            if (collection.class === 'place') {
 			                listItem = `
-			                    <a href="${ collection.collection_url }" target="_blank">
+			                    <a href="${ collection.url }" target="_blank">
 			                        <b>${ collection.title.trim() }</b>
 			                    </a>, a collection of <sr>${ collection.count }</sr> places.
 			                    <span class="showing"><p>${ collection.description }</p></span> 
@@ -143,7 +143,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			                `;
 			            } else {
 			                listItem = `
-			                    <a href="${ collection.collection_url }" target="_blank">
+			                    <a href="${ collection.url }" target="_blank">
 			                        <b>${title}</b>
 			                    </a>, a collection of all <sr>${ collection.count }</sr> places in datasets
 			                `;
