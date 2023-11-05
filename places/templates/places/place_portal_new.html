@@ -27,19 +27,22 @@
             </div>
         </div>    
     </div>
-    <div id="temporal-attestations" class="overlay right">
-        <div id="histogram" class="position-absolute bg-light">
-            <p class="allcap-heading small my-0">TEMPORAL ATTESTATIONS</p>
-        </div>
-    </div>
-    <div id="map" style="opacity: 0;" class="overlay right"></div>
-    <div class="overlay right">
+    <div class="overlay left">
         <div id="source_detail" class="bg-light info-box">
             <p class="mb-0 strong-red">In Collection(s)</p>
             <div id="collection_list"> <!-- Populated dynamically from context in JavaScript -->
             </div>
         </div>
         <div id="graph_viz" class="bg-light info-box"> {graph visualization?} </div>    
+    </div>
+    <div id="temporal-attestations" class="overlay centre">
+        <div id="histogram" class="position-absolute bg-light">
+            <p class="allcap-heading small my-0">TEMPORAL ATTESTATIONS</p>
+        </div>
+    </div>
+    <div id="map" style="opacity: 0;" class="overlay centre"></div>
+    <div id="map-options" class="overlay right">
+        <p class="mb-0 strong-red">MAP OPTIONS</p>
     </div>
 </div>
 
@@ -76,12 +79,13 @@
 	            temporal: false
 	        {% endif %}
         },
-        styleFilter: [ 'OUTDOOR.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
+        styleFilter: [ 'OUTDOOR.DEFAULT', 'TOPO.DEFAULT', 'TOPO.TOPOGRAPHIQUE', 'SATELLITE.DEFAULT', 'OCEAN.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
     }
     let allts = {{ allts }}
 </script>
 
 {{ payload|json_script:"payload_data" }}
+{{ core|json_script:"geo-layers" }}
 
 <script type="module">
     import "{% static 'webpack/maptiler_sdk.bundle.js' %}";

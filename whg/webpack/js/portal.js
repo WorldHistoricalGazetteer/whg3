@@ -41,6 +41,7 @@ let nullCollection = {
 }
 
 let featureCollection;
+let relatedFeatureCollection;
 let featureHighlights = [];
 let showingRelated = false;
 
@@ -58,7 +59,7 @@ function waitMapLoad() {
 			mapOverlays.id = 'mapOverlays';
 			whgMap.appendChild(mapOverlays);
 		
-			['left', 'right'].forEach(function(side) {
+			['left', 'centre', 'right'].forEach(function(side) {
 				const column = document.createElement('div');
 				column.classList.add('column', side);
 				mapOverlays.appendChild(column);
@@ -83,6 +84,17 @@ function waitMapLoad() {
 		    datasetLayers.forEach(function(layer) {
 				mappy.addLayer(layer);
 			});
+			
+	  		const geoLayers = JSON.parse($('#geo-layers').text());
+			if (geoLayers.length > 0) {
+				$('#map-options').append(createGeoLayerSelectors('geoLayers', geoLayers));
+			}
+			
+			if (mapParameters.styleFilter.length !== 1) {
+				$('#map-options').append(createBasemapRadioButtons());
+			}
+			
+			$('#map-options').append(createNearbyPlacesControl());
 			
 			mappy.addControl(new CustomAttributionControl({
 				compact: true,
@@ -259,7 +271,8 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			  	$.get("/search/collgeom", {
 			  			coll_id: $(this).data('id')
 			  		},
-			  		function(relatedFeatureCollection) {
+			  		function(collgeom) {
+						relatedFeatureCollection = collgeom;
 			  			console.log('coll_places', relatedFeatureCollection);
 						mappy.getSource('places').setData(relatedFeatureCollection);
 						mappy.fitViewport( bbox(relatedFeatureCollection) );
@@ -388,4 +401,129 @@ function histogram(data, labels, minmax) {
 		.attr("id", "xaxis")
 		.attr("transform", "translate(0," + height + ")")
 		.call(axisB)
-}  
+}
+  
+function onBasemapRadioChange() {
+    const variantValue = $(this).val();
+    const style_code = variantValue.split(".");
+    console.log('Selected variant: ', variantValue, maptilersdk.MapStyle[style_code[0]][style_code[1]]);
+    
+    let placesSource = {
+		'type': 'geojson',
+	    'data': showingRelated ? relatedFeatureCollection : featureCollection,
+		'attribution': attributionString(),
+	}
+	mappy.setStyle(maptilersdk.MapStyle[style_code[0]][style_code[1]], {
+	  transformStyle: (previousStyle, nextStyle) => {
+	    const newSources = { ...nextStyle.sources };
+	    newSources['places'] = placesSource;
+	    return {
+	      ...nextStyle,
+	      sources: newSources,
+	      layers: [
+	        ...nextStyle.layers,
+	        ...datasetLayers,
+	      	]
+	    };
+	  }
+	});
+}
+
+function createBasemapRadioButtons() {
+    const styleFilterValues = mapParameters.styleFilter.map(value => value.split('.')[0]);
+    const $radioContainer = $('<div>').addClass('option-block');
+    $('<p>').addClass('strong-red heading').text('Basemap Style').appendTo($radioContainer);
+    
+    const $itemDiv = $('<div>').addClass('geoLayer-choice');
+	const $checkboxItem = $('<input>')
+        .attr('id', '3D_selector')
+        .attr('type', 'checkbox')
+        .attr('disabled', 'disabled') // TODO
+        /*.on('change', switch3D)*/; // TODO
+    const $label = $(`<label for = '3D_selector'>`).text('Enable 3D');
+    $itemDiv.append($checkboxItem, $label);
+    $radioContainer.append($itemDiv);
+    
+    console.log(mappy.getStyle());
+
+    for (const group of Object.values(maptilersdk.MapStyle)) {
+        if (mapParameters.styleFilter.length == 0 || styleFilterValues.includes(group.id)) {
+            const $groupItem = $('<div>').addClass('group-item').text(group.name);
+
+            for (const orderedVariant of group.orderedVariants) {
+                const datasetValue = group.id + '.' + orderedVariant.variantType;
+                if (mapParameters.styleFilter.length == 0 || mapParameters.styleFilter.includes(datasetValue)) {
+            		const $itemDiv = $('<div>').addClass('basemap-choice');
+					const itemID = datasetValue.replace('.','-').toLowerCase();
+                    const $radioItem = $('<input>')
+                        .attr('id', itemID)
+                        .attr('type', 'radio')
+                        .attr('name', 'basemap-style')
+                        .attr('value', datasetValue)
+                        .attr('checked', datasetValue == mapParameters.styleFilter[0])
+                        .on('change', onBasemapRadioChange);
+                    const $label = $(`<label for = '${ itemID }'>`).text(orderedVariant.name);
+                    $itemDiv.append($radioItem, $label);
+                    $groupItem.append($itemDiv);
+                }
+            }
+
+            $radioContainer.append($groupItem);
+        }
+    }
+
+    return $radioContainer;
+}
+  
+function onGeoLayerSelectorChange() {
+    const geoLayerValue = $(this).val();
+    console.log('Selected GeoLayer: ', geoLayerValue);
+}
+
+function createGeoLayerSelectors(heading, geoLayers) {
+    const $geoLayersContainer = $('<div>').addClass('option-block');
+    $('<p>').addClass('strong-red heading').text(heading).appendTo($geoLayersContainer);
+    geoLayers.forEach((geoLayer, i) => {
+		const itemID = `geoLayer_${i}`;
+		const $itemDiv = $('<div>').addClass('geoLayer-choice');
+		const $checkboxItem = $('<input>')
+            .attr('id', itemID)
+            .attr('type', 'checkbox')
+            .attr('value', geoLayer)
+        	.attr('disabled', 'disabled') // TODO
+            .on('change', onGeoLayerSelectorChange);
+        const $label = $(`<label for = '${ itemID }'>`).text(geoLayer);
+        $itemDiv.append($checkboxItem, $label);
+        $geoLayersContainer.append($itemDiv);
+	});
+
+    return $geoLayersContainer;
+}
+
+function createNearbyPlacesControl() {
+    const $nearbyPlacesControl = $('<div>').addClass('option-block');
+    $('<p>').addClass('strong-red heading').text('Nearby Places').appendTo($nearbyPlacesControl);
+    const $itemDiv = $('<div>').addClass('geoLayer-choice');
+	const $checkboxItem = $('<input>')
+        .attr('id', 'nearby_places')
+        .attr('type', 'checkbox')
+        .attr('disabled', 'disabled') // TODO
+        /*.on('change', nearby_places)*/; // TODO
+    const $label = $(`<label for = 'nearby_places'>`).text('Show');
+    $itemDiv.append($checkboxItem, $label);
+    
+    const $radiusLabel = $(`<label for = 'radiusSelect'>`).text('Radius: ');
+    const $select = $('<select>').attr('id', 'radiusSelect');
+    for (let i = 1; i <= 10; i++) {
+        const $option = $('<option>')
+            .attr('value', i)
+            .text(`${i} km`)
+        	/*.on('change', nearby_places)*/; // TODO
+        $select.append($option);
+    }  
+    $select.val(5);  
+    
+    $nearbyPlacesControl.append($itemDiv, $radiusLabel, $select);
+    
+    return $nearbyPlacesControl;
+}

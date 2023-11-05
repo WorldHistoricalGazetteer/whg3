@@ -3,7 +3,7 @@
   height: 100%;
 }
 
-.overlay.left, .overlay.right {
+.overlay.left, .overlay.centre, .overlay.right {
   display: none; /* Hide until positioned */
   background-color: rgba(255, 255, 255, 0.8);
   border: 1px solid lightgrey;
@@ -35,13 +35,18 @@
   height: calc(100% - 4px);
 }
 
+#mapOverlays .column.centre {
+  min-width: 50%; /* Do not allow map to be over-squeezed by .column.left flex width */
+  width: 100%;
+}
+
 #mapOverlays .column.right {
-  min-width: 30%; /* Do not allow map to be over-squeezed by .column.left flex width */
+  min-width: 15%; /* Do not allow map to be over-squeezed by .column.left flex width */
   width: 100%;
 }
 
 #mapOverlays .column.left {
-  flex: 1 0 50%; /* Default width for left-hand column */
+  flex: 1 0 35%; /* Default width for left-hand column */
   overflow-x: auto; /* Engages if .column.right is squeezed to its min-width */
 }
 
@@ -61,7 +66,7 @@
   transition: flex 0.5s ease-in-out, max-height 0.5s ease-in-out, margin 0.5s ease-in-out, padding 0.5s ease-in-out, border 0.5s ease-in-out;
 }
 
-#mapOverlays.fullscreen .column.right {
+/* #mapOverlays.fullscreen .column.right {
   flex: 1 0 100%;
 }
 
@@ -78,7 +83,7 @@
 
 #mapOverlays:not(.fullscreen) .download-map-button {
 	display: none!important;
-}
+} */
 
 #mapControls.item {
   border: none;
