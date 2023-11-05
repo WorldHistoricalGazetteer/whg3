@@ -74,7 +74,7 @@ class PlacePortalViewNew(TemplateView):
     context['traces'] = [] #
     context['allts'] = []
 
-    context['core'] = ['gn500','gnmore','ne_countries','ne_rivers982','ne_mountains','wri_lakes','tgn_filtered_01']
+    context['core'] = ['ne_countries','ne_rivers982','ne_mountains','wri_lakes']
 
     place_ids = self.request.session.get('current_result', {}).get('place_ids', [])
     if not place_ids:
@@ -222,7 +222,7 @@ class PlacePortalView(DetailView):
     context['traces'] = [] # 
     context['allts'] = []
     # place portal headers gray for records from these
-    context['core'] = ['gn500','gnmore','ne_countries','ne_rivers982','ne_mountains','wri_lakes','tgn_filtered_01']
+    context['core'] = ['ne_countries','ne_rivers982','ne_mountains','wri_lakes']
 
     ids = [pid]
     # get child record ids from index
