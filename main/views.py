@@ -54,7 +54,8 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
   # If the user is an admin and we're looking at Area, apply the study_areas filter to all users including admins
   if is_admin and model == Area:
     objects = objects.filter(type__in=filter_criteria['type'])
-
+  elif model == Dataset: # some dummy datasets need to be filtered
+      objects = objects.exclude(title__startswith='(stub)')
   return objects
 
 
@@ -128,6 +129,7 @@ def group_list(request, role):
 
 def dashboard_view(request):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
+  is_leader = request.user.groups.filter(name='group_leaders').exists()
   user_groups = [group.name for group in request.user.groups.all()]
 
   user_datasets_count = Dataset.objects.filter(owner=request.user).count()
@@ -146,6 +148,7 @@ def dashboard_view(request):
     'section': section,
     'user_groups': user_groups,
     'is_admin': is_admin,
+    'is_leader': is_leader,
   }
   return render(request, 'main/dashboard.html', context)
 

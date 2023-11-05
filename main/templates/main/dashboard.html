@@ -94,8 +94,10 @@
 									   id="add_place_collection" style="display: none;">Add Place Collection</a>
 									<a href="{% url 'collection:ds-collection-create' %}"
 									   id="add_dataset_collection" style="display: none;">Add Dataset Collection</a>
+									{% if is_admin %}
 									<a href="{% url 'collection:collection-group-create' %}"
 									   id="add_group" style="display: none;">Add Group</a>
+									{% endif %}
 									<a href="{% url 'areas:area-create' %}"
 									   id="add_area" style="display: none;">Add Study Area</a>
 								</span>
@@ -146,7 +148,8 @@ $(document).ready(function() {
             $('#add_dataset_collection').show();
             $('#add_group').hide();
             $('#add_area').hide();
-        } else if (sectionName == "Groups" && userGroups.includes('group_leader')) {
+        {# } else if (sectionName == "Groups" && userGroups.includes('group_leader')) {#}
+        } else if (sectionName == "Groups") {
             $('#add_dataset').hide();
             $('#add_place_collection').hide();
             $('#add_dataset_collection').hide();

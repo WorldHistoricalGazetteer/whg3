@@ -13,7 +13,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
 {#      <th>format</th>#}
       <th># rows</th>
       <th>status <i class="fa fa-sort ms-1" data-id=6 ref=asc></i></th>
-      {% if beta_or_better %}
+      {% if is_admin %}
       <th>owner <i class="fa fa-sort ms-1" data-id=7 ref=asc></i></th>{% endif %}
     </thead>
     <tbody>
@@ -37,7 +37,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
           <td>{{ d.numrows }}</td>
           <td>{{ d.ds_status }}</td>
           <!--{ if user.is_superuser %}-->
-          {% if beta_or_better %}
+          {% if is_admin %}
           <td>{{ d.owner|truncatechars:20 }}</td>
           {% endif %}
         </tr>
