@@ -27,7 +27,7 @@ from rest_framework.reverse import reverse
 from accounts.permissions import IsOwnerOrReadOnly
 from api.serializers import (
   UserSerializer, DatasetSerializer, PlaceSerializer,
-  PlaceTableSerializer, PlaceGeomSerializer, AreaSerializer,
+  PlaceTableSerializer, PlaceGeomSerializer, PlaceGeoFeatureSerializer, AreaSerializer,
   FeatureSerializer, LPFSerializer, PlaceCompareSerializer)
 from areas.models import Area
 from collection.models import Collection, CollPlace
@@ -212,7 +212,7 @@ class SpatialAPIView(generics.ListAPIView):
         print(msg)
 
     filtered = qs[:pagesize] if pagesize and pagesize < 200 else qs[:20]
-    serial = LPFSerializer if qtype == 'bbox' else PlaceGeomSerializer
+    serial = LPFSerializer if qtype == 'bbox' else PlaceGeoFeatureSerializer
     serializer = serial(filtered, many=True, context={'request': self.request})
     serialized_data = serializer.data
     result = {
@@ -222,7 +222,7 @@ class SpatialAPIView(generics.ListAPIView):
               "errors": err_note,
               "type": "FeatureCollection",
               "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
-              "features": serialized_data
+              "features": serialized_data if qtype == 'bbox' else serialized_data['features']
               }
     #print('place result',result)
     return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})

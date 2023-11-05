@@ -161,6 +161,12 @@ class PlaceGeomsSerializer(serializers.ModelSerializer):
               #, 'ds'
               #'title', 'geom_src', 'when', 'certainty'
     )
+    
+class PlaceGeoFeatureSerializer(GeoFeatureModelSerializer):
+    class Meta:
+        model = PlaceGeom
+        geo_field = 'geom'
+        fields = '__all__'
 
 class PlaceTypeSerializer(serializers.ModelSerializer):
   # json: identifier, label, sourceLabel OR sourceLabels[{}], when{}

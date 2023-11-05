@@ -2,7 +2,8 @@
 
 import './extend-maptiler-sdk.js'; // Adds 'fitViewport' method
 import datasetLayers from './mapLayerStyles';
-import { attributionString, geomsGeoJSON } from './utilities';
+import nearPlaceLayers from './nearPlaceLayerStyles';
+import { attributionString, deepCopy, geomsGeoJSON } from './utilities';
 import { bbox } from './6.5.0_turf.min.js';
 import { CustomAttributionControl } from './customMapControls';
 import Dateline from './dateline';
@@ -42,6 +43,7 @@ let nullCollection = {
 
 let featureCollection;
 let relatedFeatureCollection;
+let nearbyFeatureCollection;
 let featureHighlights = [];
 let showingRelated = false;
 
@@ -76,12 +78,20 @@ function waitMapLoad() {
 				})
 			})
             
+            mappy.addSource('nearbyPlaces', {
+				'type': 'geojson',
+			    'data': nullCollection,
+			});
+		    nearPlaceLayers.forEach(layer => {
+				mappy.addLayer(layer);
+			});
+            
             mappy.addSource('places', {
 				'type': 'geojson',
 			    'data': nullCollection,
 				'attribution': attributionString(),
 			});
-		    datasetLayers.forEach(function(layer) {
+		    datasetLayers.forEach(layer => {
 				mappy.addLayer(layer);
 			});
 			
@@ -142,8 +152,8 @@ function waitMapLoad() {
 						
 						clearHighlights();
 						features.forEach(feature => { // Starting with topmost layers
-							if (!datasetLayers.some(layer => feature.layer.id.startsWith(layer.id))) {
-								return; // Reached basemap layers - exit loop
+							if (!datasetLayers.some(layer => feature.layer.id == layer.id)) {
+								return; // Reached underlying layers - exit loop
 							}
 							let featureHighlight = { source: feature.source, id: feature.id, geom: featureCollection.features[feature.id].geometry };
 							mappy.setFeatureState(featureHighlight, { highlight: true });
@@ -500,6 +510,36 @@ function createGeoLayerSelectors(heading, geoLayers) {
     return $geoLayersContainer;
 }
 
+function nearbyPlaces() {
+	if ( $('#nearby_places').prop('checked') ) {
+        const center = mappy.getCenter();
+        const radius = $('#radiusSelect').val();
+        const lon = center.lng;
+        const lat = center.lat;
+        		
+        fetch(`/api/spatial/?type=nearby&lon=${lon}&lat=${lat}&km=${radius}`)
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch nearby places.');
+                }
+                return response.json(); // Parse the response JSON
+            })
+            .then((data) => {
+				data.features.forEach((feature, index) => feature.id = index);
+                nearbyFeatureCollection = data; // Set the global variable
+                console.log(nearbyFeatureCollection);
+                mappy.getSource('nearbyPlaces').setData(nearbyFeatureCollection);
+            })
+            .catch((error) => {
+                console.error(error);
+            });
+		  
+	}
+	else {
+		mappy.getSource('nearbyPlaces').setData(nullCollection);
+	}
+}
+
 function createNearbyPlacesControl() {
     const $nearbyPlacesControl = $('<div>').addClass('option-block');
     $('<p>').addClass('strong-red heading').text('Nearby Places').appendTo($nearbyPlacesControl);
@@ -507,8 +547,8 @@ function createNearbyPlacesControl() {
 	const $checkboxItem = $('<input>')
         .attr('id', 'nearby_places')
         .attr('type', 'checkbox')
-        .attr('disabled', 'disabled') // TODO
-        /*.on('change', nearby_places)*/; // TODO
+        //.attr('disabled', 'disabled')
+        .on('change', nearbyPlaces);
     const $label = $(`<label for = 'nearby_places'>`).text('Show');
     $itemDiv.append($checkboxItem, $label);
     
@@ -516,12 +556,12 @@ function createNearbyPlacesControl() {
     const $select = $('<select>').attr('id', 'radiusSelect');
     for (let i = 1; i <= 10; i++) {
         const $option = $('<option>')
-            .attr('value', i)
-            .text(`${i} km`)
-        	/*.on('change', nearby_places)*/; // TODO
+            .attr('value', i**2)
+            .text(`${i**2} km`)
+        	.on('change', nearbyPlaces);
         $select.append($option);
     }  
-    $select.val(5);  
+    $select.val(16);
     
     $nearbyPlacesControl.append($itemDiv, $radiusLabel, $select);
     
