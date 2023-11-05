@@ -5,7 +5,7 @@ from django.urls import path, re_path, include, get_resolver
 from django.views.generic.base import TemplateView
 
 from main import views
-from datasets.views import PublicListsView, DataListsView
+from datasets.views import PublicListsView #, DataListsView
 from resources.views import TeachingPortalView
 
 #handler404 = 'datasets.views.handler404',
@@ -31,11 +31,11 @@ urlpatterns = [
 
     ## "mydata" DATA LIST VIEWS
     # reverse name is parameter to DataListsView()
-    path('mydata/', DataListsView.as_view(), name='data-datasets'),
-    path('mycollections/', DataListsView.as_view(), name='data-collections'),
-    path('mystudyareas/', DataListsView.as_view(), name='data-areas'),
-    path('resourcelist/', DataListsView.as_view(), name='data-resources'),
-    path('mycollgroups/', DataListsView.as_view(), name='data-collgroups'),
+    # path('mydata/', DataListsView.as_view(), name='data-datasets'),
+    # path('mycollections/', DataListsView.as_view(), name='data-collections'),
+    # path('mystudyareas/', DataListsView.as_view(), name='data-areas'),
+    # path('resourcelist/', DataListsView.as_view(), name='data-resources'),
+    # path('mycollgroups/', DataListsView.as_view(), name='data-collgroups'),
 
     path('public_data/', PublicListsView.as_view(), name='public-lists'),
 

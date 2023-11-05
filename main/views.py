@@ -26,17 +26,53 @@ from urllib.parse import urlparse
 import sys
 from datetime import datetime
 
-def get_objects_for_user(model, user, filter_criteria, is_admin=False):
-  collection_class = filter_criteria.get('collection_class', None)
+# def get_objects_for_user(model, user, filter_criteria, is_admin=False):
+#   collection_class = filter_criteria.get('collection_class', None)
+#
+#   if collection_class:
+#     return model.objects.filter(collection_class=collection_class)
+#
+#   return model.objects.exclude(title__startswith='(stub)').filter(**filter_criteria)
+#
+# def area_list(request):
+#   study_areas = ['ccodes', 'copied', 'drawn']
+#   is_admin = request.user.groups.filter(name='whg_admins').exists()
+#   user_areas = get_objects_for_user(Area, request.user,
+#                                     {'owner': request.user}, is_admin)
+#   return render(request, 'lists/area_list.html', {'areas': user_areas,
+#                                                   'is_admin': is_admin, 'section':'areas'})
 
-  if is_admin or user.is_superuser:
-    if collection_class:
-      return model.objects.filter(collection_class=collection_class)
-    else:
-      # in development, dummy dataset record titles are prefixed
-      return model.objects.exclude(title__startswith='(stub)')
+def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
+  # Always apply extra filters if they are provided and the model is Area
+  if extra_filters and model == Area:
+    objects = model.objects.filter(**extra_filters)
+  elif is_admin:
+    objects = model.objects.all()
+  else:
+    objects = model.objects.filter(**filter_criteria).exclude(title__startswith='(stub)')
 
-  return model.objects.filter(**filter_criteria)
+  # If the user is an admin and we're looking at Area, apply the study_areas filter to all users including admins
+  if is_admin and model == Area:
+    objects = objects.filter(type__in=filter_criteria['type'])
+
+  return objects
+
+
+def area_list(request):
+  # Filter that applies to all Area objects to exclude system records.
+  area_filters = {'type__in': ['ccodes', 'copied', 'drawn']}
+
+  # Check if the user is an admin to determine visibility scope.
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
+
+  if is_admin:
+    # Admins see all Areas matching the filtered types without the owner filter.
+    user_areas = Area.objects.filter(**area_filters)
+  else:
+    # Non-admins see only their Areas matching the filtered types.
+    user_areas = Area.objects.filter(**area_filters, owner=request.user)
+
+  return render(request, 'lists/area_list.html', {'areas': user_areas, 'is_admin': is_admin, 'section': 'areas'})
 
 
 def dataset_list(request):
@@ -60,13 +96,6 @@ def collection_list(request, collection_class="place"):
 
   return render(request, 'lists/collection_list.html',
                 {'collections': user_collections, 'is_admin': is_admin, 'section': 'collections'})
-
-
-def area_list(request):
-  is_admin = request.user.groups.filter(name='whg_admins').exists()
-  user_areas = get_objects_for_user(Area, request.user, {'owner': request.user}, is_admin)
-  return render(request, 'lists/area_list.html', {'areas': user_areas,
-                                                  'is_admin': is_admin, 'section':'areas'})
 
 def group_list(request, role):
   user = request.user
@@ -98,7 +127,6 @@ def group_list(request, role):
   return render(request, 'lists/group_list.html', context)
 
 def dashboard_view(request):
-  # is_admin = user.groups.filter(name='whg_admins').exists()
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   user_groups = [group.name for group in request.user.groups.all()]
 
@@ -118,7 +146,6 @@ def dashboard_view(request):
     'section': section,
     'user_groups': user_groups,
     'is_admin': is_admin,
-    # ... any other context data ...
   }
   return render(request, 'main/dashboard.html', context)
 

@@ -2206,84 +2206,84 @@ def ds_insert_tsv(request, pk):
           "total_links":total_links})
 
 """
+  DEPRECATED in v3
   DataListsView()
   Returns lists for various data types
 """
-class DataListsView(LoginRequiredMixin, ListView):
-  login_url = '/accounts/login/'
-  redirect_field_name = 'redirect_to'
-
-  # templates per list type
-  template_d = 'datasets/data_datasets.html'
-  template_c = 'datasets/data_collections.html'
-  template_a = 'datasets/data_areas.html'
-  template_r = 'datasets/data_resources.html'
-  template_cg = 'datasets/data_collection_groups.html'
-
-  # which template to use?
-  def get_template_names(self, *args, **kwargs):
-    print('self.request.path', self.request.path)
-    if self.request.path == reverse('data-datasets'):
-      return [self.template_d]
-    elif self.request.path == reverse('data-collections'):
-      return [self.template_c]
-    elif self.request.path == reverse('data-areas'):
-      return [self.template_a]
-    elif self.request.path == reverse('data-resources'):
-      return [self.template_r]
-    else:
-      return [self.template_cg]
-
-  def get_queryset(self, **kwargs):
-    me = self.request.user
-    whgteam = me.is_superuser or 'whg_team' in [g.name for g in me.groups.all()]
-    teaching = 'teaching' in [g.name for g in me.groups.all()]
-    print('me in DataListsView', me)
-
-    if self.request.path == reverse('data-datasets'):
-      idlist = [obj.id for obj in Dataset.objects.all() if me in obj.owners or
-                   me in obj.collaborators or whgteam]
-      list = Dataset.objects.filter(id__in=idlist).order_by('-create_date').exclude(title__startswith='(stub)')
-      return list
-    elif self.request.path == reverse('data-collections'):
-      idlist = [obj.id for obj in Collection.objects.all() if me in obj.owners or
-                   me in obj.collaborators or whgteam]
-      list = Collection.objects.filter(id__in=idlist).order_by('-created')
-      # list = Collection.objects.all().order_by('created') if whgteam \
-      #   else Collection.objects.filter(owner=me).order_by('created')
-      return list
-    elif self.request.path == reverse('data-areas'):
-      # print('areas...whgteam?', whgteam)
-      study_areas = ['ccodes', 'copied', 'drawn']       # only user study areas
-      list = Area.objects.all().filter(type__in=study_areas).order_by('-id') if whgteam else \
-        Area.objects.all().filter(type__in=study_areas, owner=me).order_by('-id')
-      # print('list:', list)
-      return list
-    elif self.request.path == reverse('data-resources'):
-      # print('resources...whgteam?', whgteam)
-      list = Resource.objects.all().order_by('create_date') if whgteam or teaching \
-        else Resource.objects.all().filter(owner=me).order_by('created')
-      # print('list:', list)
-      return list
-    else:
-      # print('collgroups...whgteam?', whgteam)
-      list = CollectionGroup.objects.all().order_by('-created') \
-        if whgteam or teaching else CollectionGroup.objects.filter(owner=me).order_by('-created')
-      return list
-
-
-  def get_context_data(self, *args, **kwargs):
-    me = self.request.user
-    context = super(DataListsView, self).get_context_data(*args, **kwargs)
-    print('me in get_context_data()', me)
-
-    context['viewable'] = ['uploaded', 'inserted', 'reconciling', 'review_hits', 'reviewed', 'review_whg', 'indexed']
-    context['beta_or_better'] = True if me.groups.filter(name__in=['beta', 'admins', 'whg_team']).exists() \
-      else False
-    context['whgteam'] = True if me.is_superuser or me.groups.filter(name__in=['admins', 'whg_team']).exists() else False
-    # TODO: assign users to 'teacher' group
-    context['teacher'] = True if self.request.user.groups.filter(name__in=['teacher']).exists() else False
-    return context
+# class DataListsView(LoginRequiredMixin, ListView):
+#   login_url = '/accounts/login/'
+#   redirect_field_name = 'redirect_to'
+#
+#   # templates per list type
+#   template_d = 'datasets/data_datasets.html'
+#   template_c = 'datasets/data_collections.html'
+#   template_a = 'datasets/data_areas.html'
+#   template_r = 'datasets/data_resources.html'
+#   template_cg = 'datasets/data_collection_groups.html'
+#
+#   # which template to use?
+#   def get_template_names(self, *args, **kwargs):
+#     print('self.request.path', self.request.path)
+#     if self.request.path == reverse('data-datasets'):
+#       return [self.template_d]
+#     elif self.request.path == reverse('data-collections'):
+#       return [self.template_c]
+#     elif self.request.path == reverse('data-areas'):
+#       return [self.template_a]
+#     elif self.request.path == reverse('data-resources'):
+#       return [self.template_r]
+#     else:
+#       return [self.template_cg]
+#
+#   def get_queryset(self, **kwargs):
+#     me = self.request.user
+#     whgteam = me.is_superuser or 'whg_team' in [g.name for g in me.groups.all()]
+#     teaching = 'teaching' in [g.name for g in me.groups.all()]
+#     print('me in DataListsView', me)
+#
+#     if self.request.path == reverse('data-datasets'):
+#       idlist = [obj.id for obj in Dataset.objects.all() if me in obj.owners or
+#                    me in obj.collaborators or whgteam]
+#       list = Dataset.objects.filter(id__in=idlist).order_by('-create_date').exclude(title__startswith='(stub)')
+#       return list
+#     elif self.request.path == reverse('data-collections'):
+#       idlist = [obj.id for obj in Collection.objects.all() if me in obj.owners or
+#                    me in obj.collaborators or whgteam]
+#       list = Collection.objects.filter(id__in=idlist).order_by('-created')
+#       # list = Collection.objects.all().order_by('created') if whgteam \
+#       #   else Collection.objects.filter(owner=me).order_by('created')
+#       return list
+#     elif self.request.path == reverse('data-areas'):
+#       # print('areas...whgteam?', whgteam)
+#       study_areas = ['ccodes', 'copied', 'drawn']       # only user study areas
+#       alist = Area.objects.all().filter(type__in=study_areas).order_by('-id')
+#       list = alist if whgteam else alist.filter(owner=me)
+#       return list
+#     elif self.request.path == reverse('data-resources'):
+#       # print('resources...whgteam?', whgteam)
+#       list = Resource.objects.all().order_by('create_date') if whgteam or teaching \
+#         else Resource.objects.all().filter(owner=me).order_by('created')
+#       # print('list:', list)
+#       return list
+#     else:
+#       # print('collgroups...whgteam?', whgteam)
+#       list = CollectionGroup.objects.all().order_by('-created') \
+#         if whgteam or teaching else CollectionGroup.objects.filter(owner=me).order_by('-created')
+#       return list
+#
+#
+#   def get_context_data(self, *args, **kwargs):
+#     me = self.request.user
+#     context = super(DataListsView, self).get_context_data(*args, **kwargs)
+#     print('me in get_context_data()', me)
+#
+#     context['viewable'] = ['uploaded', 'inserted', 'reconciling', 'review_hits', 'reviewed', 'review_whg', 'indexed']
+#     context['beta_or_better'] = True if me.groups.filter(name__in=['beta', 'admins', 'whg_team']).exists() \
+#       else False
+#     context['whgteam'] = True if me.is_superuser or me.groups.filter(name__in=['admins', 'whg_team']).exists() else False
+#     # TODO: assign users to 'teacher' group
+#     context['teacher'] = True if self.request.user.groups.filter(name__in=['teacher']).exists() else False
+#     return context
 
 """
   PublicListView()
