@@ -20,7 +20,8 @@ export function deepCopy(obj) {
   return result;
 }
 
-export function geomsGeoJSON(geomItems) { // Convert array of items with .geom to GeoJSON FeatureCollection
+export function geomsGeoJSON(geomItemsOriginal) { // Convert array of items with .geom to GeoJSON FeatureCollection
+	let geomItems = deepCopy(geomItemsOriginal);
 	let featureCollection = {
 	  type: "FeatureCollection",
 	  features: [],

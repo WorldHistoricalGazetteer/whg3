@@ -12,7 +12,7 @@ maptilersdk.Map.prototype.fitViewport = function (bbox) {
 	const bounds = [[bbox[0], bbox[1]], [bbox[2], bbox[3]]];
 	const sw = this.project(bounds[0]);
 	const ne = this.project(bounds[1]);
-	let zoom = Math.log2(
+	let zoom = Math.log2( // Returns Infinity for bbox(Point)
 		Math.min(
 			(mapControlsRect.width - 2 * padding) / (ne.x - sw.x), 
 			(mapControlsRect.height- 2 * padding) / (sw.y - ne.y))

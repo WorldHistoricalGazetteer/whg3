@@ -40,7 +40,9 @@ let nullCollection = {
     features: []
 }
 
-let featureCollection;	
+let featureCollection;
+let featureHighlights = [];
+let showingRelated = false;
 
 function waitMapLoad() {
     return new Promise((resolve) => {
@@ -109,6 +111,51 @@ function waitMapLoad() {
 			// TODO: Add basemap style-switcher?
 			// TODO: Configure resize observer for map padding initialisation and updates
 			
+			mappy.on('mousemove', function(e) {
+				const features = mappy.queryRenderedFeatures(e.point);
+				
+				function clearHighlights() {
+					if (featureHighlights.length > 0) {
+						mappy.getCanvas().style.cursor = 'grab';
+						featureHighlights.forEach(featureHighlight => {
+							mappy.setFeatureState(featureHighlight, { highlight: false });
+							$('.source-box').eq(featureHighlight.id).removeClass('highlight');
+						});
+						featureHighlights = [];
+					}
+				}
+				
+				if (!showingRelated) {
+					if (features.length > 0) {
+						
+						clearHighlights();
+						features.forEach(feature => { // Starting with topmost layers
+							if (!datasetLayers.some(layer => feature.layer.id.startsWith(layer.id))) {
+								return; // Reached basemap layers - exit loop
+							}
+							let featureHighlight = { source: feature.source, id: feature.id, geom: featureCollection.features[feature.id].geometry };
+							mappy.setFeatureState(featureHighlight, { highlight: true });
+							$('.source-box').eq(featureHighlight.id).addClass('highlight');
+							featureHighlights.push(featureHighlight);
+							
+						});
+						if (featureHighlights.length > 0) {
+							mappy.getCanvas().style.cursor = 'pointer';
+						}
+
+					} else {
+						clearHighlights();
+					}
+				}
+		
+			});	
+
+			mappy.on('click', function() {
+				if (!showingRelated && featureHighlights.length > 0) {
+					mappy.fitViewport( bbox( geomsGeoJSON(featureHighlights) ) );
+				}
+			});		
+			
 			whgMap.style.opacity = 1;
             
             resolve();
@@ -173,6 +220,35 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 	  	let minmax = [min, max]
 	  	// feed to #histogram
 	  	histogram_data(allts, minmax)
+	  	
+	  	$('.source-box')
+	  	.on('mousemove', function() {
+			  if (!showingRelated) {
+				  $(this)
+				  .prop('title', 'Click to zoom on map.')
+				  .addClass('highlight');
+				  const index = $(this).index() - 1;
+				  mappy.setFeatureState({source: 'places', id: index}, { highlight: true });
+			  }
+		})
+	  	.on('mouseleave', function() {
+			  if (!showingRelated) {
+				  $(this)
+				  .prop('title', '')
+				  .removeClass('highlight');
+				  const index = $(this).index() - 1;
+				  mappy.setFeatureState({source: 'places', id: index}, { highlight: false });
+				  mappy.fitViewport( bbox( featureCollection ) );
+			  }
+		})
+	  	.on('click', function() {
+			  if (!showingRelated) {
+				  $(this)
+				  .prop('title', '')
+				  const index = $(this).index() - 1;
+				  mappy.fitViewport( bbox( featureCollection.features[index].geometry ) );
+			  }
+		})
 
 	  	// Show/Hide related Collection
 	  	$(".show-collection").click(function(e) {
@@ -187,11 +263,13 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			  			console.log('coll_places', relatedFeatureCollection);
 						mappy.getSource('places').setData(relatedFeatureCollection);
 						mappy.fitViewport( bbox(relatedFeatureCollection) );
-			  		});		
+			  		});	
+			  	showingRelated = true;	
 			}
 			else {		
 				mappy.getSource('places').setData(featureCollection);
 				mappy.fitViewport( bbox(featureCollection) );
+				showingRelated = false;
 			}
 	  	})
 	  	

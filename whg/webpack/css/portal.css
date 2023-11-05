@@ -40,7 +40,7 @@
   margin-top: auto;
 }
 
-li.showing {
+li.showing, .source-box.highlight {
 	background-color: rgba(255, 165, 0, .2);
 	padding: 7px;
 }
