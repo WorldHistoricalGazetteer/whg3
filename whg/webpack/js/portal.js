@@ -80,6 +80,7 @@ function waitMapLoad() {
 				})
 			});
 			
+			const currentStyle = mappy.getStyle();
 			baseStyle.sources = Object.keys(currentStyle.sources);
 	    	baseStyle.layers = currentStyle.layers.map((layer) => layer.id);
             
