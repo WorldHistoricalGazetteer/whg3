@@ -2,7 +2,7 @@ import datasetLayers from './mapLayerStyles';
 import { attributionString, arrayColors, colorTable } from './utilities';
 import { filteredLayer } from './mapFilters';
 import SequenceArcs from './mapSequenceArcs';
-import { scrollToRowByProperty } from './tableFunctions';
+import { scrollToRowByProperty, clearFilters } from './tableFunctions';
 import { popupFeatureHTML } from './getPlace.js';
 import { mappy } from './mapAndTable';
 
@@ -244,6 +244,7 @@ export function initPopups(table) {
 		if (activePopup && activePopup.pid) {
 			let savedPID = activePopup.pid;
 			clearPopup();
+			table.search('').draw();
 			scrollToRowByProperty(table, 'pid', savedPID);
 		}
 	});

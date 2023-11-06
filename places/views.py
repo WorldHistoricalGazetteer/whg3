@@ -6,10 +6,13 @@ from django.http import JsonResponse, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
 from django.views import View
 from django.views.generic import DetailView, TemplateView
+from django.db.models import Count
 
 from datetime import datetime
 from elasticsearch8 import Elasticsearch
 import itertools, re
+from django.core.serializers import serialize
+from django.urls import reverse
 
 from collection.models import Collection
 from datasets.models import Dataset
@@ -71,7 +74,7 @@ class PlacePortalViewNew(TemplateView):
     context['traces'] = [] #
     context['allts'] = []
 
-    context['core'] = ['gn500','gnmore','ne_countries','ne_rivers982','ne_mountains','wri_lakes','tgn_filtered_01']
+    context['core'] = ['ne_countries','ne_rivers982','ne_mountains','wri_lakes']
 
     place_ids = self.request.session.get('current_result', {}).get('place_ids', [])
     if not place_ids:
@@ -109,6 +112,19 @@ class PlacePortalViewNew(TemplateView):
         timespans = list(t for t, _ in itertools.groupby(place.timespans)) if place.timespans else []
         context['allts'] += timespans
 
+        collection_records = []
+        for collection in attest_collections:
+            collection_url = reverse('collection:place-collection-browse', args=[collection.id])
+            collection_record = {
+                "class": collection.collection_class,
+                "id": collection.id,
+                "url": collection_url,
+                "title": collection.title,
+                "description": collection.description,
+                "count": collection.places_all.aggregate(place_count=Count('id'))['place_count']
+            }
+            collection_records.append(collection_record)
+
         record = {
           # "whg_id": id_,
           "dataset": {"id": ds.id, "label": ds.label,
@@ -120,14 +136,15 @@ class PlacePortalViewNew(TemplateView):
           "ccodes": place.ccodes,
           "names": names,
           "types": types,
-          "geoms": geoms,
+          "geom": geoms,
           "related": related,
           "links": [link.jsonb for link in place.links.distinct('jsonb') if
                     not link.jsonb['identifier'].startswith('whg')],
           "descriptions": [descr.jsonb for descr in place.descriptions.all()],
           "depictions": [depict.jsonb for depict in place.depictions.all()],
           "minmax": place.minmax,
-          "timespans": timespans
+          "timespans": timespans,
+          "collections": collection_records
         }
         context['payload'].append(record)
     except ValueError:
@@ -136,6 +153,31 @@ class PlacePortalViewNew(TemplateView):
 
     context['annotations'] = annotations
     context['collections'] = collections
+    
+    # Calculate initialisation values for temporal control
+    
+    min_ts = float('inf')
+    max_ts = float('-inf')
+    
+    for t in timespans:
+        start, end = t
+        min_ts = min(min_ts, start)
+        max_ts = max(max_ts, end)
+        
+    if min_ts == float('inf') or max_ts == float('-inf'):
+        min_ts = False
+        max_ts = False
+        from_value = False
+        to_value = False
+    else:
+        range_percentage = 5
+        from_value = min_ts - (range_percentage / 100) * (max_ts - min_ts)
+        to_value = max_ts + (range_percentage / 100) * (max_ts - min_ts)
+    
+    context['min_timespan'] = min_ts
+    context['max_timespan'] = max_ts
+    context['from_value'] = from_value
+    context['to_value'] = to_value
 
     return context
 
@@ -180,7 +222,7 @@ class PlacePortalView(DetailView):
     context['traces'] = [] # 
     context['allts'] = []
     # place portal headers gray for records from these
-    context['core'] = ['gn500','gnmore','ne_countries','ne_rivers982','ne_mountains','wri_lakes','tgn_filtered_01']
+    context['core'] = ['ne_countries','ne_rivers982','ne_mountains','wri_lakes']
 
     ids = [pid]
     # get child record ids from index

@@ -1,0 +1,111 @@
+#map {
+    background-color: #eaffea;
+    height: 80vh;
+}
+#info {
+    background-color: #a8dadc;
+    border: 1px solid #aaa;
+    height: 98%;
+}
+#sources,
+#source_detail,
+#graph_viz {
+    padding: 10px;
+    border: 1px solid #aaa;
+}
+#histogram {
+    top: 6px;
+    width: 100%;
+}
+
+.info-box {
+    margin-bottom: 0.2rem;
+}
+.source-box {
+    background-color: white;
+    border: 1px gainsboro solid;
+    margin: 0.1rem;
+    padding: 0.1rem;
+}
+
+#mapOverlays .overlay.left.item:first-of-type {
+    height: -webkit-fill-available!important;
+}
+
+#mapOverlays .overlay.left.item:last-of-type {
+    height: fit-content;
+    overflow: visible;
+}
+
+#temporal-attestations {
+	height: 105px!important;
+	overflow: hidden;
+}
+
+#map-options {
+	max-height: 100%;
+}
+
+#map-options .option-block {
+    margin: 4px;
+    position: relative;
+    padding-bottom: 4px;
+}
+
+#map-options .option-block:not(:last-of-type)::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background-color: #000;
+}
+
+#map-options .strong-red.heading {
+	margin-bottom: 0.3rem;
+}
+
+#map-options .geoLayer-choice label {
+    cursor: pointer;
+    position: relative;
+    top: -6px;
+    left: 6px;
+}
+
+#map-options .group-item {
+    margin-bottom: 0.2rem;
+    font-weight: bold;
+}
+
+#map-options .group-item input[type="radio"] {
+    margin-right: 5px;
+}
+
+#map-options .group-item label, #map-options label[for="radiusSelect"] {
+    font-weight: normal;
+    cursor: pointer;
+    position: relative;
+    top: -2px;
+    margin-bottom: -2px;
+}
+
+#time_control {
+  flex-grow: 0;
+  flex-shrink: 0;
+  flex-basis: 60px;
+  margin-top: auto;
+}
+
+li.showing, .source-box.highlight {
+	background-color: rgba(255, 165, 0, .2);
+	padding: 7px;
+}
+
+li.showing span:not(.showing) {
+	display: none;
+}
+
+li:not(.showing) span.showing {
+	display: none;
+}

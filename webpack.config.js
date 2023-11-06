@@ -16,6 +16,7 @@ module.exports = {
     search_functions: '/app/whg/webpack/js/search_resources.js',
     home: '/app/whg/webpack/js/home.js',
     search: '/app/whg/webpack/js/search.js',
+    portal: '/app/whg/webpack/js/portal.js',
     places: '/app/whg/webpack/js/places.js',
     tasks: '/app/whg/webpack/js/tasks.js',
     areas: '/app/whg/webpack/js/areas.js',
