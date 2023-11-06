@@ -98,7 +98,7 @@ class acmeStyleControl {
 		}
 	}
 }
-
+/*
 class StyleControl {
 
 	constructor(mappy) {
@@ -193,7 +193,7 @@ class StyleControl {
 		}
 	}
 }
-
+*/
 class CustomAttributionControl extends maptilersdk.AttributionControl {
     constructor(options) {
         super(options);
@@ -217,4 +217,4 @@ class CustomAttributionControl extends maptilersdk.AttributionControl {
     }
 }
 
-export { acmeStyleControl, StyleControl, CustomAttributionControl };
+export { acmeStyleControl, /*StyleControl, */CustomAttributionControl };

@@ -3,7 +3,7 @@
 import Dateline from './dateline';
 import generateMapImage from './saveMapImage';
 import { table, scrollToRowByProperty } from './tableFunctions';
-import { StyleControl, CustomAttributionControl } from './customMapControls';
+import { acmeStyleControl, CustomAttributionControl } from './customMapControls';
 
 class fullScreenControl {
 	onAdd() {
@@ -217,7 +217,7 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 	if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
 
 	if (mapParameters.styleFilter.length !== 1) {
-		mappy.addControl(new StyleControl(mappy), 'top-right');
+		mappy.addControl(new acmeStyleControl(mappy), 'top-right');
 	}
 
 	mappy.addControl(new fullScreenControl(), 'top-left');
@@ -303,4 +303,4 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 
 }
 
-export { init_mapControls, StyleControl, mapSequencer };
+export { init_mapControls, acmeStyleControl, mapSequencer };
