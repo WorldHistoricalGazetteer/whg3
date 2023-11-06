@@ -560,11 +560,10 @@ function createNearbyPlacesControl() {
     for (let i = 1; i <= 10; i++) {
         const $option = $('<option>')
             .attr('value', i**2)
-            .text(`${i**2} km`)
-        	.on('change', nearbyPlaces);
+            .text(`${i**2} km`);
         $select.append($option);
     }  
-    $select.val(16);
+    $select.val(16).on('change', nearbyPlaces);
     
     $nearbyPlacesControl.append($itemDiv, $radiusLabel, $select);
     
