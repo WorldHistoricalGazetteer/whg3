@@ -178,9 +178,9 @@ function parsePlace(data) { // TODO: See also commented code at bottom
 	var html = ''
 	if (data.links.length > 0) {
 		let links = data.links
-		links_arr = onlyUnique(data.links)
+		let links_arr = onlyUnique(data.links)
 		/*console.log('distinct data.links',links_arr)*/
-		for (l in links_arr) {
+		for (var l in links_arr) {
 			descrip += url_extplace(links_arr[l].identifier)
 		}
 	} else {
@@ -242,18 +242,19 @@ function parsePlace(data) { // TODO: See also commented code at bottom
 // builds link for external place record
 function url_extplace(identifier) {
 	// abbreviate links not in aliases.base_urls
+	let link;
 	if (identifier.startsWith('http')) {
-		let tag = identifier.replace(/.+\/\/|www.|\..+/g, '')
+		const tag = identifier.replace(/.+\/\/|www.|\..+/g, '')
 		link = '<a href="' + identifier + '" target="_blank">' + tag + '<i class="fas fa-external-link-alt linky"></i>,  </a>';
 	} else {
 		link = '<a href="" class="ext" data-target="#ext_site">' + identifier + '&nbsp;<i class="fas fa-external-link-alt linky"></i></a>, ';
 	}
-	return link
+	return link;
 }
 
 // builds link for external placetype record
 function url_exttype(type) {
-	const link = ' <a href="#" class="exttab" data-id=' + type.identifier +
+	let link = ' <a href="#" class="exttab" data-id=' + type.identifier +
 		'>(' + type.label + ' <i class="fas fa-external-link-alt linky"></i>)</a>'
 	return link
 }
