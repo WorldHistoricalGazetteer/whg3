@@ -20,6 +20,7 @@ module.exports = {
     places: '/app/whg/webpack/js/places.js',
     tasks: '/app/whg/webpack/js/tasks.js',
     areas: '/app/whg/webpack/js/areas.js',
+    ds_browse: '/app/whg/webpack/js/ds_browse.js',
   },
   output: {
     filename: '[name].bundle.js',

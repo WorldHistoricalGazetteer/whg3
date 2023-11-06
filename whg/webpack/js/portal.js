@@ -36,6 +36,8 @@ let mappy = new maptilersdk.Map({
 	pitch: 0,
 });
 
+let baseStyle = {};
+
 let nullCollection = {
     type: 'FeatureCollection',
     features: []
@@ -76,7 +78,10 @@ function waitMapLoad() {
 						overlay.classList.add('item');
 					}
 				})
-			})
+			});
+			
+			baseStyle.sources = Object.keys(currentStyle.sources);
+	    	baseStyle.layers = currentStyle.layers.map((layer) => layer.id);
             
             mappy.addSource('nearbyPlaces', {
 				'type': 'geojson',
@@ -411,28 +416,28 @@ function histogram(data, labels, minmax) {
 }
   
 function onBasemapRadioChange() {
-    const variantValue = $(this).val();
-    const style_code = variantValue.split(".");
-    console.log('Selected variant: ', variantValue, maptilersdk.MapStyle[style_code[0]][style_code[1]]);
-    
-    let placesSource = {
-		'type': 'geojson',
-	    'data': showingRelated ? relatedFeatureCollection : featureCollection,
-		'attribution': attributionString(),
-	}
+	const variantValue = $(this).val();
+	const style_code = variantValue.split(".");
+	console.log('Selected variant: ', variantValue, maptilersdk.MapStyle[style_code[0]][style_code[1]]);
 	mappy.setStyle(maptilersdk.MapStyle[style_code[0]][style_code[1]], {
-	  transformStyle: (previousStyle, nextStyle) => {
-	    const newSources = { ...nextStyle.sources };
-	    newSources['places'] = placesSource;
-	    return {
-	      ...nextStyle,
-	      sources: newSources,
-	      layers: [
-	        ...nextStyle.layers,
-	        ...datasetLayers,
-	      	]
-	    };
-	  }
+		transformStyle: (previousStyle, nextStyle) => {
+			const newSources = {
+				...nextStyle.sources
+			};
+			Object.keys(previousStyle.sources).forEach((sourceId) => {
+				if (!baseStyle.sources.includes(sourceId)) {
+					newSources[sourceId] = previousStyle.sources[sourceId];
+				}
+			});
+			const additionalLayers = previousStyle.layers.filter((layer) => !baseStyle.layers.includes(layer.id));
+			baseStyle.sources = Object.keys(nextStyle.sources);
+			baseStyle.layers = nextStyle.layers.map((layer) => layer.id);
+			return {
+				...nextStyle,
+				sources: newSources,
+				layers: [...nextStyle.layers, ...additionalLayers],
+			};
+		}
 	});
 }
 
