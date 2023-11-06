@@ -177,7 +177,7 @@ function parsePlace(data) { // TODO: See also commented code at bottom
 	//close_count = added_count = related_count = 0
 	var html = ''
 	if (data.links.length > 0) {
-		links = data.links
+		let links = data.links
 		links_arr = onlyUnique(data.links)
 		/*console.log('distinct data.links',links_arr)*/
 		for (l in links_arr) {
