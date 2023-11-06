@@ -433,7 +433,6 @@ def review(request, pk, tid, passnum):
     'countries': countries,
     'passnum': passnum,
     'page': page if request.method == 'GET' else str(int(page)-1),
-    # 'aug_geom': json.loads(task.task_kwargs.replace("'",'"'))['aug_geom'],
     'aug_geom': kwargs['aug_geom'],
     'mbtoken': settings.MAPBOX_TOKEN_WHG,
     'maptilerkey': settings.MAPTILER_KEY,

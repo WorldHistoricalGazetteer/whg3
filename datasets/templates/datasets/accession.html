@@ -46,7 +46,8 @@
 
         <div class="col-sm-4 ps-1">
 	        {% comment %} TODO: undo an accessioning match?
-            <a id="undo" class="small hidden-imp" href="" data-url="{% url 'datasets:match-undo' ds=ds_id tid=task_id pid=999 %}">Undo last save {% fontawesome_icon 'undo' color='#336699' %}</a>
+            <a id="undo" class="small hidden-imp" href="" data-url="{% url 'datasets:match-undo'
+            ds=ds_id tid=task_id pid=999 %}">Undo last save {% fontawesome_icon 'undo' color='#336699' %}</a>
            {% endcomment %}
         </div>
 
@@ -122,7 +123,8 @@
             {% if record.links.all|length > 0 %}
             <p><strong>Links</strong>: 
               {% for link in record.links.all %}
-                <a href="" class="me-2 ext" data-toggle="modal" data-target="#ext_site">{{ link.jsonb.identifier }} <i class="fas fa-external-link-alt linky"></i></a>
+                <a href="" class="me-2 ext" data-toggle="modal"
+                   data-target="#ext_site">{{ link.jsonb.identifier }} <i class="fas fa-external-link-alt linky"></i></a>
               {% endfor %}</p>
             {% endif %}
             {% if record.minmax %}
@@ -142,7 +144,8 @@
             {% leaflet_map "map_review" callback="map_init" %}
           </div>
         </div>
-        <!--available: ['whg_id', 'place_id', 'src_id', 'title', 'dataset', 'variants', 'types', 'ccodes', 'parents', 'descriptions', 'geoms', 'timespans', 'links']-->
+        <!--available: ['whg_id', 'place_id', 'src_id', 'title', 'dataset', 'variants', 'types',
+        'ccodes', 'parents', 'descriptions', 'geoms', 'timespans', 'links']-->
         <div id="review_list" class="col-sm-8 pe-0">
           {% for form in formset %}
             <input type="hidden" name="id" value='{{ form.id.value }}'></input>
@@ -158,7 +161,8 @@
                 <span class="help" data-id="matches"><i class="fas fa-question-circle linkypop"></i></span>
                 {% if form.json.value|get:"sources" %}
                 <span class="float-end me-1 mt-1 smaller">
-	                {{ form.json.value|get:"whg_id" }}&nbsp;&nbsp;{{ form.json.value|get:"sources"|length }} linked records <i class="fas fa-link linky"></i>
+	                {{ form.json.value|get:"whg_id" }}&nbsp;&nbsp;{{ form.json.value|get:"sources"|length }}
+	                linked records <i class="fas fa-link linky"></i>
                 </span>
                 {% endif %}
                 </span>
@@ -185,13 +189,17 @@
 	                     href="javascript:{ zoomTo(+{{ form.authrecord_id.value }}) }" title="Flash map marker">
 		                  <i class="fas fa-globe" style="color:#ED7702;"></i>
 	                  </a>
-		                <a class="pop-link pop-dataset" data-label={{src.dslabel}} data-toggle="popover" title="Dataset Profile" data-content="" tabindex="0" rel="clickover">{{ src.dslabel }}</a> (<a href="/api/place/{{src.pid}}/" target="_blank">{{ src.pid }}</a>):
+		                <a class="pop-link pop-dataset" data-label={{src.dslabel}} data-toggle="popover"
+		                   title="Dataset Profile" data-content="" tabindex="0" rel="clickover">{{ src.dslabel }}</a>
+		                (<a href="/api/place/{{src.pid}}/" target="_blank">{{ src.pid }}</a>):
 		                {% if src.variants|length > 0 %}<i>variants</i>: <b>{{ src.variants|join:", " }}</b>{% endif %}
 		                {% if src.types|length > 0 %}; <i>type(s)</i>: <b>{{ src.types|join:","}}</b>{% endif %}
 										{# index has some nulls in minmax #}
-		                {% if src.minmax and src.minmax.first != None %}; <i>earliest/latest</i>:<b> {{ src.minmax|join:"/"}}</b>{% endif %}
+		                {% if src.minmax and src.minmax.first != None %}
+			                ; <i>earliest/latest</i>:<b>{{ src.minmax|join:"/"}}</b>{% endif %}
 		                <i class="text-muted">{{ src.pass }}</i>
-		                {% if src.related|length > 0 %}<br/><i class="ms-3">relation(s)</i>: <b>{{ src.related|join:","}}</b>{% endif %}
+		                {% if src.related|length > 0 %}<br/>
+			                <i class="ms-3">relation(s)</i>: <b>{{ src.related|join:","}}</b>{% endif %}
                 </p>
 	                <p></p>
 	                </div>
