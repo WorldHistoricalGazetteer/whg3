@@ -163,10 +163,31 @@ class PlaceGeomsSerializer(serializers.ModelSerializer):
     )
     
 class PlaceGeoFeatureSerializer(GeoFeatureModelSerializer):
+    
+    ds = serializers.SerializerMethodField()
+    title = serializers.CharField(source='place.title')  # To include the 'title' attribute
+
+    def get_ds(self, obj):
+        return obj.place.dataset.id
+    
+    type = serializers.ReadOnlyField(source='jsonb.type')
+    coordinates = serializers.ReadOnlyField(source='jsonb.coordinates')
+    when = serializers.ReadOnlyField(source='jsonb.when', default=None)
+    citation = serializers.ReadOnlyField(source='jsonb.citation', default=None)
+    certainty = serializers.ReadOnlyField(source='jsonb.certainty', default=None) 
+
     class Meta:
         model = PlaceGeom
         geo_field = 'geom'
-        fields = '__all__'
+        fields = ('ds', 'title', 'place_id', 'type', 'coordinates', 'geom_src', 'citation', 'when', 'certainty')
+        
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Remove 'coordinates' from the 'properties' dictionary
+        if 'coordinates' in data.get('properties', {}):
+            data['properties'].pop('coordinates')
+        
+        return data        
 
 class PlaceTypeSerializer(serializers.ModelSerializer):
   # json: identifier, label, sourceLabel OR sourceLabels[{}], when{}
