@@ -130,9 +130,6 @@ function waitMapLoad() {
 				});
 			};
 			
-			// TODO: Add basemap style-switcher?
-			// TODO: Configure resize observer for map padding initialisation and updates
-			
 			mappy.on('mousemove', function(e) {
 				const features = mappy.queryRenderedFeatures(e.point);
 				
