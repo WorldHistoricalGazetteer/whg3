@@ -128,6 +128,12 @@
         styleFilter: [ /* 'TOPO.PASTEL','BASIC.DEFAULT' */ ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
     }
     const ds_id = "{{ ds.id }}";
+    const dslabel = "{{ ds.label }}"
+	window.filter = "{{ filter }}"
+    const wdtask = {% if wdtask %} true {% else %} false {% endif %};
+    const tgntask = {% if tgntask %} true {% else %} false {% endif %};
+    const whgtask = {% if whgtask %} true {% else %} false {% endif %};
+    const anytask = wdtask || tgntask || whgtask;
 </script>
 
 <script type="module">

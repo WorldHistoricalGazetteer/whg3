@@ -1,9 +1,11 @@
 // /whg/webpack/js/ds_browse.js
 
+import './extend-maptiler-sdk.js'; // Adds 'fitViewport' method
 import datasetLayers from './mapLayerStyles';
 import { bbox } from './6.5.0_turf.min.js';
-import { attributionString } from './utilities';
+import { attributionString, startSpinner } from './utilities';
 import { acmeStyleControl, CustomAttributionControl } from './customMapControls';
+import { getPlace } from './getPlace';
 
 import '../css/maplibre-common.css';
 import '../css/style-control.css';
@@ -37,6 +39,9 @@ let nullCollection = {
     type: 'FeatureCollection',
     features: []
 }
+let highlightedFeatureId = false;
+
+let table;
 
 function waitMapLoad() {
     return new Promise((resolve) => {
@@ -80,129 +85,176 @@ function waitDocumentReady() {
 
 Promise.all([waitMapLoad(), waitDocumentReady()])
     .then(() => {
+		
+		console.log(`wdtask: ${wdtask}, tgntask: ${tgntask}, whgtask: ${whgtask}, anytask: ${anytask}`);
 	  	
+		localStorage.setItem('filter', '99')
+		// hide filter dropdown if there are no tasks
+		const filter_col = anytask ? "<'#status_filter.col-sm-12 col-md-5'>" : "<'#nostatus.col-sm-12 col-md-5'>";
+		
+		buildSelect();
+		const spinner_table = startSpinner("drftable_list");
+		
+		table = $('#placetable').DataTable({
+			dom: "<'row'<'col-sm-12 col-md-3'l>+" +
+				filter_col +
+				"<'col-sm-12 col-md-4'f>>" +
+				"<'row'<'col-sm-12'tr>>" +
+				"<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
+			serverSide: true,
+			ajax: {
+				url: `/api/placetable/?format=datatables&ds=${dslabel}`
+			},
+			scrollY: 400,
+			select: true,
+			order: [
+				[2, 'asc']
+			],
+			columns: [{
+					"data": "id"
+				},
+				{
+					"data": "src_id"
+				},
+				{
+					"data": "title"
+				},
+				{
+					"data": "ccodes"
+				},
+				{
+					"data": "geo"
+				},
+				{
+					"data": "review_wd"
+				},
+				{
+					"data": "review_tgn"
+				},
+				{
+					"data": "review_whg"
+				},
+				{
+					"data": "revwd",
+					"visible": wdtask ? true : false,
+					"orderable": false
+				},
+				{
+					"data": "revtgn",
+					"visible": tgntask ? true : false,
+					"orderable": false
+				},
+				{
+					"data": "revwhg",
+					"visible": whgtask ? true : false,
+					"orderable": false
+				}
+			],
+			columnDefs: [{
+					className: "browse-task-col",
+					"targets": [8, 9, 10]
+				},
+				{
+					orderable: false,
+					"targets": [4, 5, 6, 7]
+				},
+				{
+					searchable: false,
+					"targets": [0, 1, 3, 4, 8, 9, 10]
+				}, {
+					visible: false,
+					"targets": [5, 6, 7]
+				}
+			],
+			initComplete: function(settings, json) {
+			},
+			drawCallback: function(settings) {
+				$("#status_filter").html(buildSelect());
+				$("#status_select").val(localStorage.getItem('filter'))
+				spinner_table.stop()
+				setRowEvents();
+			}
+			
+		})
+		
     })
     .catch(error => console.error("An error occurred:", error));
+    
 
-// fetch and render
-function renderData(dsid) {
-        		
-    fetch(`/datasets/${ dsid }/geojson`)
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error('Failed to fetch dataset GeoJSON.');
-            }
-            return response.json(); // Parse the response JSON
-        })
-        .then((data) => {
-            featureCollection = data.collection; // Set the global variable
-			featureCollection.features.forEach((feature, index) => feature.id = index);
-            console.log(featureCollection);
-            mappy.getSource('places').setData(featureCollection);
-			mappy.fitBounds( bbox( featureCollection ), {
-				padding: 30
-			})
-        })
-        .catch((error) => {
-            console.error(error);
-        });
-        
-}
+function setRowEvents() {
+	$("#status_select").change(function(e) {
+		// clear search first
+		console.log('search has val:', $("#placetable_filter input").val())
+		//$("#placetable_filter input").val('')
+		if ($("#placetable_filter input").val() != '') {
+			$('#placetable').DataTable().search('').draw()
+		}
+		//fnDraw()
+		const val = $(this).val();
+		localStorage.setItem('filter', val);
+		console.log(val);
+		const spinner_filter = startSpinner("status_filter");
+		if (val == '99') {
+			// clear search
+			clearFilters();
+		} else {
+			clearFilters();
+			filterColumn(val[0], val[1]);
+		}
+		spinner_filter.stop();
+	})
+
+	$("#placetable tbody tr").click(function() {
+		const thisy = $(this);
+		// close popup if exists
+		if (typeof poppy != 'undefined') {
+			poppy.remove();
+		}
+		// get id
+		const pid = parseInt( $(this)[0].cells[0].textContent );
+		if ( highlightedFeatureId ) {
+			mappy.setFeatureState({ source: 'places', id: highlightedFeatureId }, { highlight: false });
+		}
+		const feat = featureCollection.features.find(feature => feature.properties.pid === pid);
+		if (feat) {
+			highlightedFeatureId = feat.id;
+			mappy
+			.setFeatureState({ source: 'places', id: highlightedFeatureId }, { highlight: true })
+			.fitViewport( bbox( feat ) );
+		}
+		else {
+			highlightedFeatureId = false;
+		}
+
+		// highlight this row, clear others
+		var selected = $(this).hasClass("highlight-row");
+		$("#placetable tr").removeClass("highlight-row");
+
+		if (!selected)
+			$(this).removeClass("rowhover");
+		$(this).addClass("highlight-row");
+
+		// fetch its detail
+		getPlace(pid);
+
+	})
+
+	const row = $("#drftable_list table tbody")[0].rows[0];
+	const pid = parseInt(row.cells[0].textContent);
+	// highlight first row, fetch detail, but don't zoomTo() it
+	$("#placetable tbody").find('tr').eq(0).addClass('highlight-row');
+
+	if (pid) {
+		const spinner_detail = startSpinner("row_detail");
+		getPlace(pid);
+		spinner_detail.stop();
+	}
+}    
+    
 /*
 $(function() {
-	localStorage.setItem('filter', '99')
-	wdtask = "{{wdtask}}" == "True" ? true : false
-	tgntask = "{{tgntask}}" == "True" ? true : false
-	whgtask = "{{whgtask}}" == "True" ? true : false
-	anytask = wdtask | tgntask | whgtask
-	// hide filter dropdown if there are no tasks
-	filter_col = anytask ? "<'#status_filter.col-sm-12 col-md-5'>" : "<'#nostatus.col-sm-12 col-md-5'>"
-	console.log('anytask?', anytask)
-	buildSelect()
 
-	startTableSpinner()
 
-	window.dslabel = "{{ ds.label }}"
-	window.filter = "{{ filter }}"
-	table = $('#placetable').DataTable({
-		dom: "<'row'<'col-sm-12 col-md-3'l>+" +
-			filter_col +
-			"<'col-sm-12 col-md-4'f>>" +
-			"<'row'<'col-sm-12'tr>>" +
-			"<'row'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>",
-		serverSide: true,
-		ajax: {
-			url: "/api/placetable/?format=datatables&ds={{ ds.label }}"
-		},
-		scrollY: 400,
-		select: true,
-		order: [
-			[2, 'asc']
-		],
-		columns: [{
-				"data": "id"
-			},
-			{
-				"data": "src_id"
-			},
-			{
-				"data": "title"
-			},
-			{
-				"data": "ccodes"
-			},
-			{
-				"data": "geo"
-			},
-			{
-				"data": "review_wd"
-			},
-			{
-				"data": "review_tgn"
-			},
-			{
-				"data": "review_whg"
-			},
-			{
-				"data": "revwd",
-				"visible": wdtask ? true : false,
-				"orderable": false
-			},
-			{
-				"data": "revtgn",
-				"visible": tgntask ? true : false,
-				"orderable": false
-			},
-			{
-				"data": "revwhg",
-				"visible": whgtask ? true : false,
-				"orderable": false
-			}
-		],
-		columnDefs: [{
-				className: "browse-task-col",
-				"targets": [8, 9, 10]
-			},
-			{
-				orderable: false,
-				"targets": [4, 5, 6, 7]
-			},
-			{
-				searchable: false,
-				"targets": [0, 1, 3, 4, 8, 9, 10]
-			}, {
-				visible: false,
-				"targets": [5, 6, 7]
-			}
-		]
-	})
-
-	table.on('draw', function() {
-		$("#status_filter").html(buildSelect());
-		$("#status_select").val(localStorage.getItem('filter'))
-		spinner_table.stop()
-		setRowEvents();
-	})
 
 	// help popups
 	$(".help-matches").click(function() {
@@ -448,129 +500,6 @@ function zoomTo(pid) {
 	}
 }
 
-function filterColumn(i, v) {
-	// clear then search
-	console.log('filterColumn', i, v, typeof(i))
-	table
-		.columns([7, 8])
-		.search('')
-		.columns(i)
-		.search(v)
-		.draw();
-	$("#status_select").val(localStorage.getItem('filter'))
-}
-
-function clearFilters() {
-	// clear
-	table
-		.columns([5, 6, 7])
-		.search('')
-		.draw();
-	$("#status_select").val('99')
-}
-
-// table events
-// TODO: use datatables methods?
-function setRowEvents() {
-	$("#status_select").change(function(e) {
-		// clear search first
-		console.log('search has val:', $("#placetable_filter input").val())
-		//$("#placetable_filter input").val('')
-		if ($("#placetable_filter input").val() != '') {
-			$('#placetable').DataTable().search('').draw()
-		}
-		//fnDraw()
-		val = $(this).val()
-		localStorage.setItem('filter', val)
-		console.log(val)
-		if (val == '99') {
-			// clear search
-			startFilterSpinner()
-			clearFilters()
-		} else {
-			clearFilters()
-			filterColumn(val[0], val[1])
-		}
-		//spinner_filter.stop()
-	})
-
-	$("#placetable tbody tr").click(function() {
-		thisy = $(this)
-		// close popup if exists
-		if (typeof poppy != 'undefined') {
-			poppy.remove()
-		}
-		// get id
-		pid = $(this)[0].cells[0].textContent
-
-		// looks only at geometry features
-		feat = features.find(function(f) {
-			return f.properties.pid == pid
-		})
-		console.log('feat', feat)
-
-		if (feat) {
-			geom = feat.geometry
-			coords = geom.coordinates
-
-			// highlight marker, zoomTo()
-			highlightFeatureGL(pid, geom, coords)
-		}
-
-		// highlight this row, clear others
-		var selected = $(this).hasClass("highlight-row");
-		$("#placetable tr").removeClass("highlight-row");
-
-		if (!selected)
-			$(this).removeClass("rowhover");
-		$(this).addClass("highlight-row");
-
-		// fetch its detail
-		getPlace(pid)
-
-	})
-
-	row = $("#drftable_list table tbody")[0].rows[0]
-	pid = parseInt(row.cells[0].textContent)
-	// highlight first row, fetch detail, but don't zoomTo() it
-	$("#placetable tbody").find('tr').eq(0).addClass('highlight-row')
-
-	if (pid) {
-		startDetailSpinner()
-		getPlace(pid)
-	}
-}
-
-// build select 
-function buildSelect() {
-	select = '<label>Review filters: <select name="status" aria-controls="placetable" id="status_select" class="datatables_length">' +
-		'<option value="99" selected="selected">All</option>'
-
-	if (wdtask) {
-		select +=
-			'<option disabled>-----wikidata-----</option>' +
-			'<option value="50">Needs review (wd)</option>' +
-			'<option value="51">Reviewed (wd)</option>' +
-			'<option value="52">Deferred (wd)</option>'
-	}
-	if (tgntask) {
-		select +=
-			'<option disabled>-------tgn-------</option>' +
-			'<option value="60">Needs review (tgn)</option>' +
-			'<option value="61">Reviewed (tgn)</option>' +
-			'<option value="62">Deferred (tgn)</option>'
-	}
-	if (whgtask) {
-		select +=
-			'<option disabled>-------whg-------</option>' +
-			'<option value="70">Needs review (whg)</option>' +
-			'<option value="71">Reviewed (whg)</option>' +
-			'<option value="72">Deferred (whg)</option>'
-	}
-
-	select += '</select></label>'
-	return select
-}
 
 // builds link for external place record
 function url_extplace(identifier) {
@@ -792,31 +721,81 @@ function getPlace(pid) {
 	});
 	//spinner_detail.stop()
 }
-
-// spinners
-spin_opts = {
-	scale: .5,
-	top: '50%'
-}
-
-function startTableSpinner() {
-	window.spinner_table = new Spin.Spinner(spin_opts).spin();
-	$("#drftable_list").append(spinner_table.el);
-}
-
-function startFilterSpinner() {
-	window.spinner_filter = new Spin.Spinner(spin_opts).spin();
-	$("#status_filter").append(spinner_filter.el);
-}
-
-function startDetailSpinner() {
-	window.spinner_detail = new Spin.Spinner(spin_opts).spin();
-	$("#row_detail").append(spinner_detail.el);
-}
-
-function startMapSpinner() {
-	//console.log('startMapSpinner()')
-	window.spinner_map = new Spin.Spinner(spin_opts).spin();
-	$("#map").append(spinner_map.el);
-}
 */
+
+
+// fetch and render
+function renderData(dsid) {
+        		
+    fetch(`/datasets/${ dsid }/geojson`)
+        .then((response) => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch dataset GeoJSON.');
+            }
+            return response.json(); // Parse the response JSON
+        })
+        .then((data) => {
+            featureCollection = data.collection; // Set the global variable
+			featureCollection.features.forEach((feature, index) => feature.id = index);
+            console.log(featureCollection);
+            mappy.getSource('places').setData(featureCollection);
+			mappy.fitBounds( bbox( featureCollection ), {
+				padding: 30
+			})
+        })
+        .catch((error) => {
+            console.error(error);
+        });
+        
+}
+
+function buildSelect() {
+	var select = '<label>Review filters: <select name="status" aria-controls="placetable" id="status_select" class="datatables_length">' +
+		'<option value="99" selected="selected">All</option>'
+
+	if (wdtask) {
+		select +=
+			'<option disabled>-----wikidata-----</option>' +
+			'<option value="50">Needs review (wd)</option>' +
+			'<option value="51">Reviewed (wd)</option>' +
+			'<option value="52">Deferred (wd)</option>'
+	}
+	if (tgntask) {
+		select +=
+			'<option disabled>-------tgn-------</option>' +
+			'<option value="60">Needs review (tgn)</option>' +
+			'<option value="61">Reviewed (tgn)</option>' +
+			'<option value="62">Deferred (tgn)</option>'
+	}
+	if (whgtask) {
+		select +=
+			'<option disabled>-------whg-------</option>' +
+			'<option value="70">Needs review (whg)</option>' +
+			'<option value="71">Reviewed (whg)</option>' +
+			'<option value="72">Deferred (whg)</option>'
+	}
+
+	select += '</select></label>'
+	return select
+}
+
+function filterColumn(i, v) {
+	// clear then search
+	console.log('filterColumn', i, v, typeof(i))
+	table
+		.columns([7, 8])
+		.search('')
+		.columns(i)
+		.search(v)
+		.draw();
+	$("#status_select").val(localStorage.getItem('filter'))
+}
+
+function clearFilters() {
+	// clear
+	table
+		.columns([5, 6, 7])
+		.search('')
+		.draw();
+	$("#status_select").val('99')
+}

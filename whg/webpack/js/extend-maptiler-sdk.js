@@ -4,6 +4,7 @@ maptilersdk.Map.prototype.fitViewport = function (bbox) {
 	const mapContainer = this.getContainer();
 	const mapContainerRect = mapContainer.getBoundingClientRect();
 	const mapControls = mapContainer.querySelector('.maplibregl-control-container');
+	mapControls.style.height = '100%';
 	const mapControlsRect = mapControls.getBoundingClientRect();
 	const mapControlsRectMargin = parseFloat(getComputedStyle(mapControls).marginTop);
 	
@@ -17,7 +18,7 @@ maptilersdk.Map.prototype.fitViewport = function (bbox) {
 			(mapControlsRect.width - 2 * padding) / (ne.x - sw.x), 
 			(mapControlsRect.height- 2 * padding) / (sw.y - ne.y))
 		) + this.getZoom();
-	zoom = Math.min(zoom, this.getMaxZoom());
+	zoom = isNaN(zoom) ? this.getMaxZoom() : Math.min(zoom, this.getMaxZoom());
 	zoom = Math.max(zoom, this.getMinZoom());
 	
 	const viewportPadding = {
