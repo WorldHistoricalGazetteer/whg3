@@ -418,6 +418,8 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     dsid = kwargs['dsid']
     ds = get_object_or_404(Dataset, pk=dsid)
     
+    reduce_geometry = request.GET.get('reduce_geometry', 'true')
+    
     places = ds.places.prefetch_related('geoms')
     extent = list(ds.places.aggregate(Extent('geoms__geom')).values())[0]
 
@@ -434,13 +436,34 @@ def fetch_mapdata_ds(request, *args, **kwargs):
 
     for index, place in enumerate(places):
         geometries = place.geoms.all()
-        geometry = json.loads(geometries[0].geom.json) if geometries and geometries[0].geom else None
+        geometry = None
+
+        if geometries:
+            if reduce_geometry.lower() == 'true':
+                # Reduce geometry to a point (default behavior)
+                geojson_geometry = GEOSGeometry(geometries[0].geom)
+                geometry = json.loads(geojson_geometry.json)
+            else:
+                if len(geometries) == 1:
+                    geojson_geometry = GEOSGeometry(geometries[0].geom)
+                    geometry = json.loads(geojson_geometry.json)
+                else:
+                    geometry = {
+                        "type": "GeometryCollection",
+                        "geometries": []
+                    }
+                    for geo in geometries:
+                        geojson_geometry = GEOSGeometry(geo.geom)
+                        geometry["geometries"].append(json.loads(geojson_geometry.json))
 
         feature = {
             "type": "Feature",
             "properties": {
                 "pid": place.id,
                 "title": place.title,
+                "review_wd": place.review_wd,
+                "review_tgn": place.review_tgn,
+                "review_whg": place.review_whg,
                 "min": "null" if place.minmax is None or place.minmax[0] is None else place.minmax[0], # String required by Maplibre filter test
                 "max": "null" if place.minmax is None or place.minmax[1] is None else place.minmax[1], # String required by Maplibre filter test
             },

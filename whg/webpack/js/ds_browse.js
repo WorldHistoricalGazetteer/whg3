@@ -216,7 +216,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 					/* At low zoom levels, show popup only at +/-180 degrees longitude */
 					coordinates[0] = ((coordinates[0] - e.lngLat.lng + 180) % 360 + 360) % 360 - 180;
 					var html = `<b>${ title }</b>`;
-					if (min) {
+					if (min !== null && min !== 'null' && min !== undefined) {
 						html += `<br/>earliest: ${min}<br/>latest: ${max}`;
 					}
 					html += '<br/>[click to fetch details]';
@@ -356,7 +356,7 @@ function setRowEvents() {
 // fetch and render
 function renderData(dsid) {
         		
-    fetch(`/datasets/${ dsid }/geojson`)
+    fetch(`/datasets/${ dsid }/mapdata/?reduce_geometry=false`)
         .then((response) => {
             if (!response.ok) {
                 throw new Error('Failed to fetch dataset GeoJSON.');
@@ -364,8 +364,7 @@ function renderData(dsid) {
             return response.json(); // Parse the response JSON
         })
         .then((data) => {
-            featureCollection = data.collection; // Set the global variable
-			featureCollection.features.forEach((feature, index) => feature.id = index);
+            featureCollection = data; // Set the global variable
             console.log(featureCollection);
             mappy.getSource('places').setData(featureCollection);
 			mappy.fitBounds( bbox( featureCollection ), {
