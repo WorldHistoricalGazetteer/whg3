@@ -229,7 +229,7 @@ class Dataset(models.Model):
       task_name__startswith='align',
       status='SUCCESS'
     )
-    print('tasks', tasks)
+    # print('tasks', tasks)
     # Calculate the status based on the tasks and hits
     result = {}
     for t in tasks:
@@ -262,7 +262,8 @@ class Dataset(models.Model):
 
   @property
   def tasks(self):
-    return TaskResult.objects.filter(task_args = '"('+str(self.id)+',)"',task_name__startswith='align')
+    args_with_quotes = f'"({self.id},)"'
+    return TaskResult.objects.filter(task_args=args_with_quotes,task_name__startswith='align')
 
   # "(1556,)"
   # "{'ds': 1556, 'dslabel': 'dj4test1', 'owner': 1, 'user': 1, 'bounds': {'type': ['userarea'], 'id': ['0']}, 'aug_geom': 'on', 'scope': 'all', 'lang': 'en', 'test': 'off'}"
