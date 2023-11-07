@@ -34,6 +34,7 @@ let mappy = new maptilersdk.Map({
 	pitch: 0,
 });
 
+let styleControl;
 let featureCollection;
 let nullCollection = {
     type: 'FeatureCollection',
@@ -48,10 +49,10 @@ function waitMapLoad() {
         mappy.on('load', () => {
             console.log('Map loaded.');
 			const whgMap = document.getElementById(mapParameters.container);
-			let hilited = null;
 			
 			if (mapParameters.styleFilter.length !== 1) {
-				mappy.addControl(new acmeStyleControl(mappy), 'top-right');
+				styleControl = new acmeStyleControl(mappy);
+				mappy.addControl(styleControl, 'top-right');
 			}		
             
             mappy.addSource('places', {
@@ -177,6 +178,71 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			
 		})
 		
+		let activePopup;
+
+		function clearPopup(preserveCursor = false) {
+			if (activePopup) {
+				activePopup.remove();
+				activePopup = null;
+				if (!preserveCursor) mappy.getCanvas().style.cursor = '';
+			}
+		}
+		
+		mappy.on('mouseleave', function() { clearPopup() }); // Cursor might slide off both map and a large feature
+		
+		mappy.on('click', function() {
+			if (activePopup) {
+				getPlace(activePopup.pid);
+				clearPopup();
+			}
+		});
+		
+		mappy.on('mousemove', function(e) {
+
+			const features = mappy.queryRenderedFeatures(e.point);
+			if (features.length > 0) {
+				const topFeature = features[0]; // Handle only the top-most feature
+				const isAddedFeature = !styleControl.baseStyle.layers.includes(topFeature.layer.id);
+				if (isAddedFeature) {
+					mappy.getCanvas().style.cursor = 'pointer';
+					var coordinates = [e.lngLat.lng, e.lngLat.lat];
+					var props = topFeature.properties
+					var pid = props.pid;
+					var title = props.title;
+					var min = props.min;
+					var max = props.max;
+					var src_id = props.src_id; // Unused
+					var fc = props.fclasses; // Unused
+					/* At low zoom levels, show popup only at +/-180 degrees longitude */
+					coordinates[0] = ((coordinates[0] - e.lngLat.lng + 180) % 360 + 360) % 360 - 180;
+					var html = `<b>${ title }</b>`;
+					if (min) {
+						html += `<br/>earliest: ${min}<br/>latest: ${max}`;
+					}
+					html += '<br/>[click to fetch details]';
+					if (!activePopup || activePopup.pid !== topFeature.properties.pid) {
+						if (activePopup) {
+							clearPopup(true);
+						}
+						activePopup = new maptilersdk.Popup({
+								closeButton: false,
+							})
+							.setLngLat(coordinates)
+							.setHTML(html)
+							.addTo(mappy);
+						activePopup.pid = topFeature.properties.pid;
+					} else { // move it
+						activePopup.setLngLat(e.lngLat);
+					}
+
+				} else {
+					clearPopup();
+				}
+			} else {
+				clearPopup();
+			}
+		});	
+		
     })
     .catch(error => console.error("An error occurred:", error));
     
@@ -249,13 +315,7 @@ function setRowEvents() {
 		getPlace(pid);
 		spinner_detail.stop();
 	}
-}    
-    
-/*
-$(function() {
-
-
-
+	
 	// help popups
 	$(".help-matches").click(function() {
 		page = $(this).data('id')
@@ -286,98 +346,13 @@ $(function() {
 			effect: "fade",
 			duration: 400
 		}
-	});
-}) /* end onload()
-
-// activate all tooltips
-$("[rel='tooltip']").tooltip();
-
-function popupMaker(place, lnglat) {
-	console.log('lnglat', lnglat)
-	// lnglat is clicked point
-	var coordinates = [lnglat.lng, lnglat.lat];
-	var props = place.properties
-	var pid = props.pid;
-	var title = props.title;
-	var src_id = props.src_id;
-	var min = props.min;
-	var max = props.max;
-	var fc = props.fclasses;
-
-	 Ensure that if the map is zoomed out such that multiple
-	   copies of the feature are visible, the popup appears
-	   over the copy being pointed to. 
-	while (Math.abs(lnglat.lng - coordinates[0]) > 180) {
-		coordinates[0] += lnglat.lng > coordinates[0] ? 360 : -360;
-	}
-
-	// popup
-	var html = '<b>' + title + '</b><br/>' + '<a href="javascript:getPlace(' + pid + ')">fetch info</a>'
-	if (min != 'null') {
-		html += '<br/>earliest: ' + min + '<br/>' + 'latest: ' + max
-	}
-	poppy = new maplibregl.Popup()
-		.setLngLat(coordinates)
-		.setHTML(html)
-		.addTo(mappy);
-}
-// all this for a popup, on ONE layer
-// TODO: repeat for lines and polygons
-mappy.on('click', 'gl_active_point', function(e) {
-	// console.log('e.lngLat', e.lngLat)
-	//lng = e.lngLat.lng
-	lnglat = e.lngLat
-	//lngLat = e.lngLat
-	place = e.features[0]
-	//console.log('clicked point, lng', place, lng)
-	// 
-	popupMaker(place, lnglat)
-});
-
-mappy.on('click', 'gl_active_line', function(e) {
-	lnglat = e.lngLat
-	place = e.features[0]
-	// console.log('clicked line, lngLat', place, lnglat)
-	// 
-	popupMaker(place, lnglat)
-});
-
-mappy.on('click', 'gl_active_poly', function(e) {
-	lnglat = e.lngLat
-	place = e.features[0]
-	// console.log('clicked line, lngLat', place, lnglat)
-	// 
-	popupMaker(place, lnglat)
-});
-
-// Change the cursor to a pointer when the mouse is over the point layer.
-mappy.on('mouseenter', 'gl_active_point', function() {
-	mappy.getCanvas().style.cursor = 'pointer';
-});
-// Change it back to a pointer when it leaves.
-mappy.on('mouseleave', 'gl_active_point', function() {
-	mappy.getCanvas().style.cursor = '';
-});
-
-mappy.on('mouseenter', 'gl_active_line', function() {
-	mappy.getCanvas().style.cursor = 'pointer';
-});
-// Change it back to a pointer when it leaves.
-mappy.on('mouseleave', 'gl_active_line', function() {
-	mappy.getCanvas().style.cursor = '';
-});
-
-mappy.on('mouseenter', 'gl_active_poly', function() {
-	mappy.getCanvas().style.cursor = 'pointer';
-});
-// Change it back to a pointer when it leaves.
-mappy.on('mouseleave', 'gl_active_poly', function() {
-	mappy.getCanvas().style.cursor = '';
-});
-
-*/
-
-
+	});	
+	
+	// activate all tooltips
+	$("[rel='tooltip']").tooltip();
+	
+}    
+    
 // fetch and render
 function renderData(dsid) {
         		

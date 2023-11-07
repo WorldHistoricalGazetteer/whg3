@@ -2949,7 +2949,7 @@ class DatasetBrowseView(LoginRequiredMixin, DetailView):
 
     ds = get_object_or_404(Dataset, id=id_)
     me = self.request.user
-    ds_tasks = [t.task_name[6:] for t in ds.tasks.filter(status='SUCCESS')]
+    ds_tasks = [t for t in ds.recon_status]
 
     context['collaborators'] = ds.collaborators.all()
     context['owners'] = ds.owners

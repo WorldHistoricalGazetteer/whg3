@@ -30,7 +30,8 @@ export function getPlace(pid, cid, spinner_detail) {
 		// events on detail items
 		$('.ext').on('click', function(e) {
 			e.preventDefault();
-			str = $(this).text();
+			let str = $(this).text();
+			let url; // Must be scoped outwith if/else
 			//console.log('str (identifier)',str)-->
 			// URL identifiers can be 'http*' or an authority prefix
 			if (str.substring(0, 4).toLowerCase() == 'http') {
@@ -39,7 +40,7 @@ export function getPlace(pid, cid, spinner_detail) {
 				var re = /(http|bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wdlocal|whg|wp):(.*?)$/;
 				const matches = str.match(re);
 				url = base_urls[matches[1]] + matches[2];
-				//console.log('url', url)
+				console.log(base_urls,matches,'url', url)
 			}
 			window.open(url, '_blank');
 		});
@@ -48,7 +49,7 @@ export function getPlace(pid, cid, spinner_detail) {
 			id = $(this).data('id')
 			//console.log('id', id)
 			var re = /(http|dbp|gn|tgn|wd|loc|viaf|aat):(.*?)$/;
-			url = id.match(re)[1] == 'http' ? id : base_urls[id.match(re)[1]] + id.match(re)[2]
+			let url = id.match(re)[1] == 'http' ? id : base_urls[id.match(re)[1]] + id.match(re)[2]
 			//console.log('url', url)
 			window.open(url, '_blank')
 		});
