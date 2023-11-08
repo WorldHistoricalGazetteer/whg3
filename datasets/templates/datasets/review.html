@@ -158,7 +158,7 @@
 					              	{% if record.minmax.0 == record.minmax.1 %}
 					              		<p><strong>Attested year</strong>: {{record.minmax.0}}</p>
 					              	{% else %}
-					              		<p><strong>Eariest/latest:</strong>: {{record.minmax.0}} / {{record.minmax.1}}</p>
+					              		<p><strong>Earliest/latest:</strong>: {{record.minmax.0}} / {{record.minmax.1}}</p>
 					              	{% endif %}
 					            {% endif %}
 				            	{% if record.descriptions %}
@@ -208,12 +208,12 @@
 					       		</div>
 					            {{ form.non_field_errors }}
 					            <div class="auth-match ps-2 mt-0 mb-2">
-					                <!-- push geometries to js -->
+<!-- 					                push geometries to js
 					                {% if form.json.value|get:"geoms"|length > 0 %}
 										{% for g in form.json.value|get:"geoms" %}
 					                    	{{ g|safe|json_script:g.id }}
 					                  	{% endfor %}
-                					{% endif %}
+                					{% endif %} -->
 					                <!-- {{ form.json.value }} -->
 					                <p><strong>Title/Preferred</strong>: <span class="text-danger h6">{{ form.json.value|get:"title" }}</p>
 					                {% if authority|startswith:'whg' %}
@@ -330,7 +330,10 @@
         },
         styleFilter: [ /* 'TOPO.PASTEL','BASIC.DEFAULT' */ ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
     }
-    const formFeatureCollection = {{ feature_collection|safe|json_script:"featureCollection" }};
+    const featureCollectionJSON = '{{ feature_collection|safe }}';
+    let already = '{{ already }}';
+    let passnum = '{{ passnum }}';
+    let ds_label = '{{ ds_label }}';
 </script>
 
 <script type="module">

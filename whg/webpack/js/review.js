@@ -36,10 +36,6 @@ let mappy = new maptilersdk.Map({
 
 let styleControl;
 let featureCollection;
-let nullCollection = {
-    type: 'FeatureCollection',
-    features: []
-}
 
 function waitMapLoad() {
     return new Promise((resolve) => {
@@ -51,15 +47,25 @@ function waitMapLoad() {
 				styleControl = new acmeStyleControl(mappy);
 				mappy.addControl(styleControl, 'top-right');
 			}		
+			
+			featureCollection = JSON.parse(featureCollectionJSON);
+			console.log(featureCollection);
             
             mappy.addSource('places', {
 				'type': 'geojson',
-			    'data': nullCollection,
+			    'data': featureCollection,
 				'attribution': attributionString(),
 			});
 		    datasetLayers.forEach(layer => {
 				mappy.addLayer(layer);
 			});
+			
+			if (featureCollection.features.length > 0) {
+				mappy.fitViewport( bbox( featureCollection ) );
+			}
+			else {
+				console.log('No features to map.')
+			}
 			
 			mappy.addControl(new CustomAttributionControl({
 				compact: true,
@@ -81,12 +87,57 @@ function waitDocumentReady() {
 
 Promise.all([waitMapLoad(), waitDocumentReady()])
     .then(() => {
+				
+		mappy.on('click', function(e) { // Find match for map marker
+			const features = mappy.queryRenderedFeatures(e.point);
+			if (features.length > 0) {
+				const topFeature = features[0]; // Handle only the top-most feature
+				const isAddedFeature = !styleControl.baseStyle.layers.includes(topFeature.layer.id);
+				if (isAddedFeature && !!topFeature.properties.src_id) {
+					$('.match_radio').css('background', 'oldlace'); // first, background to #fff for all 
+					const divy = $('.match_radio[data-id=' + topFeature.properties.src_id + ']');
+					divy.css('background', 'yellow'); // .matchbar background change, scroll to it
+					console.log(`Clicked marker: ${ topFeature.properties.src_id }; Matched div top: ${ divy.position().top }`);
+					$("#review_list").scrollTop(divy.position().top - 80);
+				}
+			}
+		});	
+				
+		mappy.on('mousemove', function(e) { // Change cursor to pointer over map markers
+			const features = mappy.queryRenderedFeatures(e.point);
+			if (features.length > 0) {
+				const topFeature = features[0]; // Handle only the top-most feature
+				const isAddedFeature = !styleControl.baseStyle.layers.includes(topFeature.layer.id);
+				if (isAddedFeature && !!topFeature.properties.src_id) {
+					mappy.getCanvas().style.cursor = 'pointer';
+				}
+				else {
+					mappy.getCanvas().style.cursor = 'grab';
+				}
+			}
+			else {
+				mappy.getCanvas().style.cursor = 'grab';
+			}
+		});	
 		
-		console.log("already: {{ already }}")
-		if ("{{ already }}") {
+		$(".match_radio").hover(
+		    function() { toggleHighlight(true, this); },
+		    function() { toggleHighlight(false, this); }
+		);
+		
+		function toggleHighlight(highlight, element) {
+		    let targetId = $(element).data('id');
+		    let matchingFeature = featureCollection.features.find(feature => feature.properties.src_id === targetId);
+		    if (matchingFeature) {
+		        mappy.setFeatureState({ source: 'places', id: matchingFeature.id }, { highlight });
+		    }
+		}
+
+		console.log(`already: ${ already }`)
+		if (already !=='') {
 			alert('last record was saved by someone else, this is the next')
 		}
-		current_place = $('input[name=place_id]').val()
+		let current_place = $('input[name=place_id]').val()
 		console.log('lastPlace:', sessionStorage.lastPlace)
 		console.log('current place:', $('input[name=place_id]').val())
 		// show undo link if there is a lastPlace & it's not the current place
@@ -94,9 +145,9 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			$("#undo").removeClass('hidden-imp')
 		}
 		// set pass dropdown as next set with any reviewed=False rows
-		$("#select_pass").val("{{ passnum }}")
+		$("#select_pass").val(passnum)
 	
-		z = window.location.href
+		let z = window.location.href
 		$('#passnum_dynamic').html('<b>' + z.slice(-6) + '</b>')
 	
 		// defaults to string 'None' - no idea why
@@ -104,8 +155,8 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 	
 		$(".create-comment-review").each(function() {
 			var recpk = $(this).data('id');
-			uribase = "/comment/" + recpk
-			next = '?next=' + "{% url 'datasets:review' pk=ds_id tid=task_id passnum=passnum %}"
+			let uribase = "/comment/" + recpk
+			let next = '?next=' + "{% url 'datasets:review' pk=ds_id tid=task_id passnum=passnum %}"
 			$(this).modalForm({
 				formURL: uribase + next
 			});
@@ -119,7 +170,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		
 
 		$(".help-matches").click(function() {
-			page = $(this).data('id')
+			let page = $(this).data('id')
 			$('.selector').dialog('open');
 		})
 		$(".selector").dialog({
@@ -149,24 +200,25 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		
 		$('.ext').on('click', function(e) {
 			e.preventDefault();
-			str = $(this).text()
+			let str = $(this).text()
 			var re = /(http|bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wdlocal|whg|wp):(.*?)$/;
-			url = str.match(re)[1] == 'http' ? str : base_urls[str.match(re)[1]] + str.match(re)[2]
+			let url = str.match(re)[1] == 'http' ? str : base_urls[str.match(re)[1]] + str.match(re)[2]
 			console.log('str, url', str, url)
 			window.open(url, '_blank')
 		});
 		// recon authority external links (wd, tgn)
 		$('.ext-recon').on('click', function(e) {
 			e.preventDefault();
-			id = $(this).text()
-			url = base_urls[$(this).data('auth')] + id.toString()
+			let id = $(this).text()
+			let url = base_urls[$(this).data('auth')] + id.toString()
 			//console.log('id, url',id,url)
 			window.open(url, '_blank')
 		});
 		
-		var ds = "{{ ds_label }}" + ':'
+		var ds = ds_label + ':' // TODO: This appears to be redundant
+		
 		$("#btn_save").click(function() {
-			current_place = $('input[name=place_id]').val()
+			let current_place = $('input[name=place_id]').val()
 			sessionStorage.setItem('reviewBegun', true)
 			// update lastPlace pid in sessionStorage on every save
 			sessionStorage.setItem('lastPlace', current_place)
@@ -174,14 +226,14 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		
 		$("#undo").click(function(e) {
 			e.preventDefault()
-			url = $(this).data('url').replace('999', sessionStorage.lastPlace)
+			let url = $(this).data('url').replace('999', sessionStorage.lastPlace)
 			console.log('undo url:', url)
 			document.location.href = url
 		});		
 
 		$("#select_pass").change(function() {
-			z = window.location.href
-			baseurl = z.substring(0, z.lastIndexOf('/') + 1)
+			let z = window.location.href
+			let baseurl = z.substring(0, z.lastIndexOf('/') + 1)
 			window.location.href = baseurl + $(this).val()
 		});
 		
@@ -195,121 +247,3 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		
     })
     .catch(error => console.error("An error occurred:", error));
-
-/*
-
-$(".geolink").hover(function() {
-		//console.log($(this))
-		let id = $(this)[0].id
-		//console.log('id:',id)
-		feat = idToFeature[id]
-		ogcolor = feat.options.fillColor
-		feat.setStyle({
-			radius: 10,
-			fillColor: 'yellow',
-			color: 'red'
-		})
-	},
-	function() {
-		let id = $(this)[0].id
-		feat = idToFeature[id]
-		feat.setStyle({
-			radius: 8,
-			fillColor: ogcolor,
-			color: '#333'
-		})
-	}
-);
-
-// closer look
-function zoomTo(id) {
-	console.log('zoomTo', id)
-	mappy.setView(idToFeature[id]._latlng, mappy.getZoom() + 2)
-}
-
-cleanJson = function(text) {
-	z = text.replace(/'/g, '\\"')
-	y = z.replace(/point/, 'Point')
-	return JSON.parse(JSON.parse(y))
-}
-
-// initialize, render map
-// authority geom "geoms": [{"type": "point", "coordinates": [-72.8667, -13.6167]}]
-function map_init(map, options) {
-	// console.log('in map_init()')
-	window.geom = {
-		"type": "FeatureCollecton",
-		"features": []
-	}
-
-	window.gelems = $('script').filter(function() {
-		// return this.id.match(/[0-9]/) && this.text != '"null"';-->
-		return this.id != '' && this.text != '"null"';
-	});
-	//console.log(gelems)
-	for (i = 0; i < gelems.length; i++) {
-		let t_geom = cleanJson(gelems[i].text)
-		t_geom['properties'] = {
-			"id": gelems[i].id,
-			"ds": t_geom.ds != null ? t_geom.ds : ds
-		}
-		//citation does not always have id
-		      if ('citation' in t_geom){
-		        t_geom['properties'] = {"id":t_geom['citation']['id'] }
-		      } else t_geom['properties'] = {"id": gelems[i].id,"ds": t_geom.ds!=null?t_geom.ds:ds}
-		geom['features'].push(t_geom)
-	}
-
-	function fill(ds) {
-		//console.log('ds',ds)
-		if (['tgn', 'wd', 'whg'].indexOf(ds) >= 0) {
-			return "orange"
-		} else {
-			return "green"
-		}
-	}
-
-	if (geom['features'].length > 0) {
-		//console.log('geom: ',geom)
-		idToFeature = {} // for feature lookup
-		features = L.geoJSON(geom, {
-			pointToLayer: function(feature, latlng) {
-				//console.log('feature.properties',feature.properties)
-				//console.log('feature',feature)
-				matchid = feature.properties.id
-				marker = L.circleMarker(latlng, {
-					radius: 8,
-					fillOpacity: 0.4,
-					opacity: 1,
-					weight: 1,
-					color: "#333",
-					fillColor: fill(feature.properties.ds)
-				}).bindPopup(matchid);
-				marker.on('click', function() {
-					console.log('clicked marker w/id', feature.properties.id)
-					// .matchbar background change, scroll to it
-					// first, background to #fff for all 
-					$('.match_radio').css('background', 'oldlace')
-					divy = $('.match_radio[data-id=' + feature.properties.id + ']')
-					divy.css('background', 'yellow')
-					console.log('divy top', divy.position().top)
-					$("#review_list").scrollTop(divy.position().top - 80)
-					// $('[data-id=' + 'Q1630019' + ']')
-				})
-				idToFeature[matchid] = marker
-				return marker
-			}
-		}).addTo(map);
-
-		//mappy.setView(features.getBounds().getCenter(),6)
-		mappy.fitBounds(features.getBounds())
-		mappy.setZoom(mappy.getZoom() - 1)
-		mappy.on('popupclose', function() {
-			$('.match_radio').css('background', 'oldlace')
-			$("#review_list").scrollTop(0)
-		})
-	} else {
-		console.log('no geometries, no feature')
-	}
-} // end map_init
-*/
