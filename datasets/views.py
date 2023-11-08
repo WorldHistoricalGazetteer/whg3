@@ -453,6 +453,31 @@ def review(request, pk, tid, passnum):
     form=HitModelForm, extra=0)
   formset = HitFormset(request.POST or None, queryset=raw_hits)
   context['formset'] = formset
+  
+  # Create FeatureCollection for mapping the form geometries
+  geojson_features = []
+  for form in formset:
+        if form.json.value.get("geoms"):
+            for g in form.json.value["geoms"]:
+                properties = {}  # Create an empty properties dictionary
+                properties.update(form.json.value)  # Copy properties from form.json.value
+                # Create a GeoJSON feature with properties and geometry
+                feature = {
+                    "type": "Feature",
+                    "properties": properties,
+                    "geometry": g,
+                }
+                geojson_features.append(feature)  # Add the feature to the list
+
+  # Construct the GeoJSON FeatureCollection
+  feature_collection = {
+        "type": "FeatureCollection",
+        "features": geojson_features,
+  }
+  context['feature_collection'] = json.dumps(feature_collection)
+  
+  
+  
   method = request.method
 
   # GET -> just display
