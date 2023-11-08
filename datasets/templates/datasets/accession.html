@@ -6,475 +6,266 @@
 {% load dataset_extras %}
 {% block title %}<title>Accessioning::{{ ds_label }}>{{authority}}</title>{% endblock %}
 {% block extra_head %}
-  {% leaflet_js %}
-  {% leaflet_css %}
-  <script src="{% static 'js/aliases.js' %}"></script>
-  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.css' rel='stylesheet' />
-  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js'></script>
-  <script src="{% static 'js/leaflet-mapbox-gl.js' %}"></script>
-	<style>
-		label {}
-	</style>
+	<script src="{% static 'js/aliases.js' %}"></script>
+	<link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
+	<link href="{% static 'webpack/review.bundle.css' %}" rel="stylesheet" /> 
 {% endblock %}
 {% block content %}
 <div class="container">
-  <h5 class="mb-2 mt-3">
-	  {% if authority == 'idx' %}Accessioning{%else%}Reconciliation{%endif%} Review
-	  {% if deferred is True %}
-	    (<span class="text-danger">"deferred"</span>)
-	  {% endif %}
-    {% comment %}
-	  <span class="help" data-id="accessioning"><i class="fas fa-question-circle linkypop"></i></span>{% endcomment %}
-	  <span class="small ms-3"> <i>dataset</i>:
-		  <a href="{% url 'datasets:ds_reconcile' id=ds_id %}"> {{ ds_label }}</a>
-	  </span>
-	  <span class="half float-end me-2"><i>task id</i>: {{ task_id }}</span>
-  </h5>
-  {% if nohits %}
-    <div>
-      <p>No unreviewed hits for this accessioning task! {{ authority }}</p>
-      <p><a href="{% url 'datasets:ds_summary' id=ds_id %}">return to dataset summary page</a></p>
-    </div>
-  {% else %}
-    <form id="form_related" method="POST" action="" >
-    {% csrf_token %}
-    {{ formset.management_form }}
-    {% for record in records %} 
-    <!-- there is only one; if last, do nothing -->
-    <div class="container">
-      <div id="review_nav" class="row pagination justify-content-center">
-
-        <div class="col-sm-4 ps-1">
-	        {% comment %} TODO: undo an accessioning match?
-            <a id="undo" class="small hidden-imp" href="" data-url="{% url 'datasets:match-undo' ds=ds_id tid=task_id pid=999 %}">Undo last save {% fontawesome_icon 'undo' color='#336699' %}</a>
-           {% endcomment %}
-        </div>
-
-        <div class="col-sm-8">
-        <span>
-          <button type="submit" id="btn_save" class="button-sm me-2">Save</button>
-          {% if deferred is False %}
-          <a id="defer_link" rel="tooltip" 
-            title="flag for separate review" class="small" 
-            href="{% url 'places:defer-review' pid=record.id auth=authority last=records.paginator.num_pages  %}">defer</a>
-          {% endif %}
-          <span class="step-links">
-            {% if records.has_previous %}
-                <a href="?page=1">&laquo; first</a>&nbsp;&nbsp;
-                <a href="?page={{ records.previous_page_number }}">previous</a>
-            {% endif %}
-            <span class="current">
-                Record {{ records.number }} of {{ records.paginator.num_pages }}
-            </span>
-            {% if records.has_next %}
-                <a href="?page={{ records.next_page_number }}">next</a>&nbsp;&nbsp;
-                <a href="?page={{ records.paginator.num_pages }}">last &raquo;</a>
-            {% endif %}
-          </span>
-	        {% if test == 'on' %}
-	          <span class="bold float-end">VIEW ONLY</span>{% endif %}
-        </div>
-      </div>
-      <div class="row mt-2">
-        <div id="review_record" class="col-sm-4 ps-0 small">
-          <div class="bg-secondary font-weight-bold ps-2 text-light">{{ dataset_label }}</div>
-          <div id="place_record" class="mb-2">
-            <div>
-              <input type="hidden" name="place_id" value="{{ record.id }}" />
-              <span>
-                <h4 class="text-danger">{{ record.title }}
-                  {% if record.geoms %}
-                  <span class="ms-2"><svg height="18" width="18">
-                    <circle cx="9" cy="8" r="7" stroke="grey" stroke-width="1" fill="green" fill-opacity="0.4"/>
-                  </svg></span>{% endif %}
-                  <span class="float-end">
-                    <button type="button" data-id="{{ record.id }}" class="create-comment btn"
-                      data-src='record'> <i class="fas fa-edit linky fa-xs"></i></button>
-                  </span>
-                </h4>
-              </span>
-            </div>
-            {% for g in record.geoms.all %}
-              {{ g.jsonb|safe|json_script:record.id }}
-            {% endfor %}
-            <p><strong>WHG place id</strong>: {{ record.id }} </p>
-            <p><strong>Source id</strong>: {{ record.src_id }}</p>
-            <p class="scroll100"><strong>Name variants</strong>:<i>
-              {% for name in record.names.all %}
-               {{ name.jsonb.toponym }};
-              {% endfor %}</i></p>
-            {% if countries %}
-            <p><strong>Modern countries</strong>:
-              {% for c in countries %}
-                {{ c }};
-              {% endfor %}</p>
-            {% endif %}
-            {% if record.related.all|length > 0 %}
-            <p><strong>Relations</strong>: 
-              {% for rel in record.related.all %}
-                {{ rel.jsonb.label }}; <!--({ rel.jsonb.relationType }); -->
-              {% endfor %}</p>
-            {% endif %}
-            <p><strong>Place type(s)</strong>:
-              {% for type in record.types.all %}
-                {{ type.jsonb.sourceLabel }} ({{ type.jsonb.label }}); 
-              {% endfor %}</p>
-            {% if record.links.all|length > 0 %}
-            <p><strong>Links</strong>: 
-              {% for link in record.links.all %}
-                <a href="" class="me-2 ext" data-toggle="modal" data-target="#ext_site">{{ link.jsonb.identifier }} <i class="fas fa-external-link-alt linky"></i></a>
-              {% endfor %}</p>
-            {% endif %}
-            {% if record.minmax %}
-              {% if record.minmax.0 == record.minmax.1 %}
-              <p><strong>Attested year</strong>: {{record.minmax.0}}</p>
-              {% else %}
-              <p><strong>Eariest/latest:</strong>: {{record.minmax.0}} / {{record.minmax.1}}</p>
-              {% endif %}
-            {% endif %}
-            {% if record.descriptions %}
-              {% for d in record.descriptions.all %}
-              <p><strong>Description</strong>: {{d.jsonb.value}}</p>
-              {%endfor%}
-            {% endif %}
-          </div> <!-- place_record -->
-          <div id="map">
-            {% leaflet_map "map_review" callback="map_init" %}
-          </div>
-        </div>
-        <!--available: ['whg_id', 'place_id', 'src_id', 'title', 'dataset', 'variants', 'types', 'ccodes', 'parents', 'descriptions', 'geoms', 'timespans', 'links']-->
-        <div id="review_list" class="col-sm-8 pe-0">
-          {% for form in formset %}
-            <input type="hidden" name="id" value='{{ form.id.value }}'></input>
-            <input type="hidden" name="authrecord_id" value='{{ form.authrecord_id.value }}'></input>
-            <input type="hidden" name="score" value='{{ form.score.value }}'></input>
-            <input type="hidden" name="query_pass" value='{{ form.query_pass.value }}'></input>
-            {% for hidden in form.hidden_fields %}
-              {{ hidden }}
-            {% endfor %}
-            <div class="ps-2 pe-2 mb-1 matchbar">
-              <div class="match_radio custom-control custom-radio ps-1">
-	              {% for choice in form.match %}{{ choice }}&nbsp;{% endfor %}
-                <span class="help" data-id="matches"><i class="fas fa-question-circle linkypop"></i></span>
-                {% if form.json.value|get:"sources" %}
-                <span class="float-end me-1 mt-1 smaller">
-	                {{ form.json.value|get:"whg_id" }}&nbsp;&nbsp;{{ form.json.value|get:"sources"|length }} linked records <i class="fas fa-link linky"></i>
-                </span>
-                {% endif %}
-                </span>
-              </div>
-            </div>
-            {{ form.non_field_errors }}
-            <div class="auth-match bg-white ps-2 mt-0 mb-2">
-              <!-- pull geometries to js -->
-              {% if form.json.value|get:"geoms"|length > 0 %}
-                {% for g in form.json.value|get:"geoms" %}
-                  {{ g|safe|json_script:g.id }}
-                {% endfor %}
-              {% endif %}
-              <p><strong>Title(s)</strong>: <span class="text-danger h6">{{ form.json.value|get:"titles" }}</p>
-              {% if form.json.value|get:"countries"|length > 0 %}
-                <p><strong>Countries</strong>: {{ form.json.value|get:"countries" }}</p>
-              {% endif %}
-
-              <p class="mb-0"><strong>Linked records ({{ form.json.value|get:"sources"|length }})</strong>:
-	              {% for src in form.json.value|get:"sources" %}
-	                <div class="accession-div-row">
-	                <p>
-	                  <a class="geolink" rel="tooltip" id="{{ src.pid }}"
-	                     href="javascript:{ zoomTo(+{{ form.authrecord_id.value }}) }" title="Flash map marker">
-		                  <i class="fas fa-globe" style="color:#ED7702;"></i>
-	                  </a>
-		                <a class="pop-link pop-dataset" data-label={{src.dslabel}} data-toggle="popover" title="Dataset Profile" data-content="" tabindex="0" rel="clickover">{{ src.dslabel }}</a> (<a href="/api/place/{{src.pid}}/" target="_blank">{{ src.pid }}</a>):
-		                {% if src.variants|length > 0 %}<i>variants</i>: <b>{{ src.variants|join:", " }}</b>{% endif %}
-		                {% if src.types|length > 0 %}; <i>type(s)</i>: <b>{{ src.types|join:","}}</b>{% endif %}
-										{# index has some nulls in minmax #}
-		                {% if src.minmax and src.minmax.first != None %}; <i>earliest/latest</i>:<b> {{ src.minmax|join:"/"}}</b>{% endif %}
-		                <i class="text-muted">{{ src.pass }}</i>
-		                {% if src.related|length > 0 %}<br/><i class="ms-3">relation(s)</i>: <b>{{ src.related|join:","}}</b>{% endif %}
-                </p>
-	                <p></p>
-	                </div>
-	              {% endfor %}
-	            </p>
-
-              {% if form.json.value|get:"links"|length > 0 %} 
-                <p><strong>All concordances</strong>: 
-                {% for link in form.json.value|get:"links" %}
-                  <a href="" class="me-2 ext" data-toggle="modal" data-target="#ext_site">{{ link }}
-	                  <i class="fas fa-external-link-alt linky"></i></a>
-                {% endfor %}
-              </p>{% endif %}
-              
-              
-              {% if form.json.value|get:"minmax"|length > 0 %} 
-                <p><strong>Temporal attestations</strong>: 
-                {{ form.json.value|get:"minmax" }}</p>
-              {% endif %}
-              
-              <!--{ if form.json.value|get:"descriptions"|length > 0 %} -->
-                <!--<p class="mb-0"><strong>Description(s)</strong>:</p> -->
-                <!--<div>-->
-                <!--{ for d in form.json.value|get:"descriptions" %}-->
-                  <!--<p>({d.lang}}) { d.text }}</p>{ endfor %}-->
-                <!--</div>-->
-              <!--{ endif %}-->
-              
-            </div>
-          {% endfor %}
-        </div> <!-- review_list -->
-      </div> <!-- .row -->
-    </div> <!-- container flex -->
-    </form>
-    {% endfor %} <!-- record in records -->
-  {% endif %}
-  <div class="modal fade" tabindex="-1" role="dialog" id="modal">
-  <div class="modal-dialog modal-form" role="document">
-    <div class="modal-content"></div>
-  </div>
-  <div class="selector py-3"><div id="helpme" class="my-3"><div></div>
+ 		<h5 class="mb-2 mt-3">
+  		{% if authority == 'idx' %}Accessioning{%else%}Reconciliation{%endif%} Review
+	  	{% if deferred is True %}
+	    	(<span class="text-danger">"deferred"</span>)
+	  	{% endif %}
+    	{% comment %}
+	  		<span class="help" data-id="accessioning"><i class="fas fa-question-circle linkypop"></i></span>
+	  	{% endcomment %}
+	  	<span class="small ms-3"> <i>dataset</i>:
+		  	<a href="{% url 'datasets:ds_reconcile' id=ds_id %}"> {{ ds_label }}</a>
+	  	</span>
+	  	<span class="half float-end me-2"><i>task id</i>: {{ task_id }}</span>
+  	</h5>
+  	{% if nohits %}
+    	<div>
+      		<p>No unreviewed hits for this accessioning task! {{ authority }}</p>
+      		<p><a href="{% url 'datasets:ds_summary' id=ds_id %}">return to dataset summary page</a></p>
+    	</div>
+  	{% else %}
+    	<form id="form_related" method="POST" action="" >
+    		{% csrf_token %}
+    		{{ formset.management_form }}
+    		{% for record in records %} 
+    			<!-- there is only one; if last, do nothing -->
+			    <div class="container">
+			      	<div id="review_nav" class="row pagination justify-content-center">
+			        	<div class="col-sm-4 ps-1">
+				        	{% comment %} TODO: undo an accessioning match?
+			            		<a id="undo" class="small hidden-imp" href="" data-url="{% url 'datasets:match-undo' ds=ds_id tid=task_id pid=999 %}">Undo last save {% fontawesome_icon 'undo' color='#336699' %}</a>
+			           		{% endcomment %}
+		        		</div>
+			        	<div class="col-sm-8">
+		          			<button type="submit" id="btn_save" class="button-sm me-2">Save</button>
+		          			{% if deferred is False %}
+		          				<a id="defer_link" rel="tooltip" 
+				            		title="flag for separate review" class="small" 
+				            		href="{% url 'places:defer-review' pid=record.id auth=authority last=records.paginator.num_pages  %}">defer
+				            	</a>
+				          	{% endif %}
+		          			<span class="step-links">
+		            			{% if records.has_previous %}
+					                <a href="?page=1">&laquo; first</a>&nbsp;&nbsp;
+					                <a href="?page={{ records.previous_page_number }}">previous</a>
+		            			{% endif %}
+		            			<span class="current">
+		                			Record {{ records.number }} of {{ records.paginator.num_pages }}
+		            			</span>
+		            			{% if records.has_next %}
+					                <a href="?page={{ records.next_page_number }}">next</a>&nbsp;&nbsp;
+					                <a href="?page={{ records.paginator.num_pages }}">last &raquo;</a>
+		            			{% endif %}
+		          			</span>
+			        		{% if test == 'on' %}
+			          			<span class="bold float-end">VIEW ONLY</span>
+			          		{% endif %}
+		        		</div>
+     					</div>
+     					<div class="row mt-2">
+				        <div id="review_record" class="col-sm-4 ps-0 small">
+				          	<div class="bg-secondary font-weight-bold ps-2 text-light">{{ dataset_label }}</div>
+				          	<div id="place_record" class="mb-2">
+					            <div>
+					              	<input type="hidden" name="place_id" value="{{ record.id }}" />
+					              	<span>
+					                	<h4 class="text-danger">{{ record.title }}
+					                  		{% if record.geoms %}
+						                  		<span class="ms-2">
+						                  			<svg height="18" width="18">
+						                    			<circle cx="9" cy="8" r="7" stroke="grey" stroke-width="1" fill="green" fill-opacity="0.4"/>
+	                  								</svg>
+	                  							</span>
+                  							{% endif %}
+						                  	<span class="float-end">
+						                    	<button type="button" data-id="{{ record.id }}" class="create-comment btn"
+						                      		data-src='record'> <i class="fas fa-edit linky fa-xs"></i>
+						                      	</button>
+						                  	</span>
+						                </h4>
+						        	</span>
+								</div>
+					        	{% for g in record.geoms.all %}
+					              	{{ g.jsonb|safe|json_script:record.id }}
+					            {% endfor %}
+					            <p><strong>WHG place id</strong>: {{ record.id }} </p>
+					            <p><strong>Source id</strong>: {{ record.src_id }}</p>
+					            <p class="scroll100"><strong>Name variants</strong>:<i>
+					              	{% for name in record.names.all %}
+					               		{{ name.jsonb.toponym }};
+					              	{% endfor %}</i>
+					            </p>
+					            {% if countries %}
+					            	<p>
+					            		<strong>Modern countries</strong>:
+					              		{% for c in countries %}
+					                	{{ c }};
+					              		{% endfor %}
+					              	</p>
+					            {% endif %}
+					            {% if record.related.all|length > 0 %}
+					            	<p>
+					            		<strong>Relations</strong>: 
+						              	{% for rel in record.related.all %}
+						                	{{ rel.jsonb.label }}; <!--({ rel.jsonb.relationType }); -->
+						              	{% endfor %}
+						        	</p>
+					            {% endif %}
+					            <p>
+					            	<strong>Place type(s)</strong>:
+					              	{% for type in record.types.all %}
+					                	{{ type.jsonb.sourceLabel }} ({{ type.jsonb.label }}); 
+					              	{% endfor %}
+					            </p>
+					            {% if record.links.all|length > 0 %}
+					            	<p>
+					            		<strong>Links</strong>: 
+					              		{% for link in record.links.all %}
+					                		<a href="" class="me-2 ext" data-toggle="modal" data-target="#ext_site">{{ link.jsonb.identifier }} <i class="fas fa-external-link-alt linky"></i></a>
+					              		{% endfor %}
+					              	</p>
+					            {% endif %}
+				            	{% if record.minmax %}
+				              		{% if record.minmax.0 == record.minmax.1 %}
+				              			<p><strong>Attested year</strong>: {{record.minmax.0}}</p>
+				              		{% else %}
+				              			<p><strong>Eariest/latest:</strong>: {{record.minmax.0}} / {{record.minmax.1}}</p>
+				              		{% endif %}
+				            	{% endif %}
+				            	{% if record.descriptions %}
+				              		{% for d in record.descriptions.all %}
+				              			<p><strong>Description</strong>: {{d.jsonb.value}}</p>
+				              		{%endfor%}
+				            	{% endif %}
+				     		</div> <!-- place_record -->
+			          		<div id="map" style="height:300px;"></div>
+       					</div>
+				        <!--available: ['whg_id', 'place_id', 'src_id', 'title', 'dataset', 'variants', 'types', 'ccodes', 'parents', 'descriptions', 'geoms', 'timespans', 'links']-->
+				        <div id="review_list" class="col-sm-8 pe-0">
+				          	{% for form in formset %}
+					            <input type="hidden" name="id" value='{{ form.id.value }}'></input>
+					            <input type="hidden" name="authrecord_id" value='{{ form.authrecord_id.value }}'></input>
+					            <input type="hidden" name="score" value='{{ form.score.value }}'></input>
+					            <input type="hidden" name="query_pass" value='{{ form.query_pass.value }}'></input>
+					            {% for hidden in form.hidden_fields %}
+					              	{{ hidden }}
+					            {% endfor %}
+				            	<div class="ps-2 pe-2 mb-1 matchbar">
+				              		<div class="match_radio custom-control custom-radio ps-1">
+					              		{% for choice in form.match %}{{ choice }}&nbsp;{% endfor %}
+				                		<span class="help" data-id="matches"><i class="fas fa-question-circle linkypop"></i></span>
+					                		{% if form.json.value|get:"sources" %}
+					                			<span class="float-end me-1 mt-1 smaller">
+						                			{{ form.json.value|get:"whg_id" }}&nbsp;&nbsp;{{ form.json.value|get:"sources"|length }} linked records <i class="fas fa-link linky"></i>
+					                			</span>
+					                		{% endif %}
+				                		</span>
+				              		</div>
+				            	</div>
+				            	{{ form.non_field_errors }}
+				            	<div class="auth-match bg-white ps-2 mt-0 mb-2">
+				              		<!-- pull geometries to js -->
+				              		{% if form.json.value|get:"geoms"|length > 0 %}
+				                		{% for g in form.json.value|get:"geoms" %}
+				                  			{{ g|safe|json_script:g.id }}
+				                		{% endfor %}
+				              		{% endif %}
+				              		<p><strong>Title(s)</strong>: <span class="text-danger h6">{{ form.json.value|get:"titles" }}</p>
+				              		{% if form.json.value|get:"countries"|length > 0 %}
+				                		<p><strong>Countries</strong>: {{ form.json.value|get:"countries" }}</p>
+				              		{% endif %}
+					
+					              	<p class="mb-0"><strong>Linked records ({{ form.json.value|get:"sources"|length }})</strong>:
+						              	{% for src in form.json.value|get:"sources" %}
+						                	<div class="accession-div-row">
+						                		<p>
+						                  			<a class="geolink" rel="tooltip" id="{{ src.pid }}"
+						                     			href="javascript:{ zoomTo(+{{ form.authrecord_id.value }}) }" title="Flash map marker">
+							                  			<i class="fas fa-globe" style="color:#ED7702;"></i>
+						                  			</a>
+							                		<a class="pop-link pop-dataset" data-label={{src.dslabel}} data-toggle="popover" title="Dataset Profile" data-content="" tabindex="0" rel="clickover">{{ src.dslabel }}</a> (<a href="/api/place/{{src.pid}}/" target="_blank">{{ src.pid }}</a>):
+									                {% if src.variants|length > 0 %}<i>variants</i>: <b>{{ src.variants|join:", " }}</b>{% endif %}
+									                {% if src.types|length > 0 %}; <i>type(s)</i>: <b>{{ src.types|join:","}}</b>{% endif %}
+													{# index has some nulls in minmax #}
+						                			{% if src.minmax and src.minmax.first != None %}; <i>earliest/latest</i>:<b> {{ src.minmax|join:"/"}}</b>{% endif %}
+						                			<i class="text-muted">{{ src.pass }}</i>
+									                {% if src.related|length > 0 %}<br/><i class="ms-3">relation(s)</i>: <b>{{ src.related|join:","}}</b>{% endif %}
+							                	</p>
+						                		<p></p>
+						                	</div>
+						              	{% endfor %}
+						            </p>
+             							{% if form.json.value|get:"links"|length > 0 %} 
+						                <p>
+						                	<strong>All concordances</strong>: 
+						                	{% for link in form.json.value|get:"links" %}
+						                  		<a href="" class="me-2 ext" data-toggle="modal" data-target="#ext_site">{{ link }}
+							                  	<i class="fas fa-external-link-alt linky"></i></a>
+						                	{% endfor %}
+						              	</p>
+						            {% endif %}
+             							{% if form.json.value|get:"minmax"|length > 0 %} 
+					                	<p><strong>Temporal attestations</strong>: 
+					                	{{ form.json.value|get:"minmax" }}</p>
+					              	{% endif %}
+			            		</div>
+			          		{% endfor %}
+			        	</div> <!-- review_list -->
+			      </div> <!-- .row -->
+			    </div> <!-- container flex -->
+   			{% endfor %} <!-- record in records -->
+   		</form>
+	{% endif %}
+	<div class="modal fade" tabindex="-1" role="dialog" id="modal">
+		<div class="modal-dialog modal-form" role="document">
+ 			<div class="modal-content"></div>
+		</div>
+	</div>
+	<div class="selector py-3"><div id="helpme" class="my-3">
+ 		<div></div>
+	</div>
 </div>
 
-<script type="text/javascript">
-  placeid = $('script').filter(function() {
-    return this.id.match("placeid")
-  }).text()
-    
-  // capture pid for place just reviewed
-  // https://catalogue.bnf.fr/ark:/12148/cb11942741p
-  $(".help").click(function(){
-    page=$(this).data('id')
-    $('.selector').dialog('open');
-  })
-  $(".selector").dialog({
-    resizable: false,
-    autoOpen: false,
-    height: 600,
-    width: 700,
-    title: "WHG Help",
-    modal: true,
-    buttons: {
-      'Close': function() {
-        $(this).dialog('close');
-      }
-    },
-    open: function(event, ui) {
-      $('.selector').load('/media/help/'+page+'.html');
-    },
-    show: {effect: "fade",duration: 400 },
-    hide: {effect: "fade",duration: 400 }
-   });
-   
-  $('.ext').on('click', function(e) {
-    e.preventDefault();
-    str=$(this).text()
-    var re = /(http|bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wdlocal|whg|wp):(.*?)$/;
-    url=str.match(re)[1]=='http' ? str : base_urls[str.match(re)[1]]+str.match(re)[2]
-    console.log('str, url',str, url)
-    window.open(url,'_blank')
-  });
-  // recon authority external links (wd, tgn)
-  $('.ext-recon').on('click', function(e) {
-    e.preventDefault();
-    id=$(this).text()
-    url = base_urls[$(this).data('auth')]+id.toString()
-    <!--console.log('id, url',id,url)-->
-    window.open(url,'_blank')
-  });
-
-
-  var ds = "{{ ds_label }}"+':'
-  var pass = document.location.pathname.slice(-5)
-  
-  $("#btn_save").click(function(){
-    current_place = $('input[name=place_id]').val()
-    sessionStorage.setItem('reviewBegun',true)
-    // update lastPlace pid in sessionStorage on every save
-    sessionStorage.setItem('lastPlace', current_place)
-  })
-  $("#undo").click(function(e){
-    e.preventDefault()
-    url = $(this).data('url').replace('999',sessionStorage.lastPlace)
-    console.log('undo url:',url)
-    document.location.href = url
-  })
-  $(function(){
-    if("{{ test }}" == "on"){
-      $("#review_nav").css("background-color", "lightsalmon")
-	    $("input:radio").attr("disabled", "disabled")
-	    $("#btn_save").hide()
-	    $("#defer_link").hide()
-    }
-    // on each page load...
-    current_place = $('input[name=place_id]').val()
-    // show undo link if there is a lastPlace & it's not the current place
-    if((sessionStorage.lastPlace && sessionStorage.lastPlace != current_place)){
-      $("#undo").removeClass('hidden-imp')}
-    // set pass dropdown as next set with any reviewed=False rows
-    $( "#select_pass" ).val("{{ passnum }}")
-    // defaults to string 'None' - no idea why
-    $('.textarea').html('')
-    z=window.location.href
-    $('#passnum_dynamic').html('<b>'+z.slice(-6)+'</b>')
-    
-    $(".create-comment").each(function () {
-      var recpk = $(this).data('id');
-      uribase="/comment/"+recpk
-      next='?next='+"{% url 'datasets:review' pk=ds_id tid=task_id passnum=passnum %}"
-      $(this).modalForm({formURL: uribase+next});
-    });
-    
-    $("[rel='tooltip']").tooltip();
-    var hideAllPopovers = function() {
-       $('.pop-dataset').each(function() {
-            $(this).popover('hide');
-        });  
-    };
-  
-    var dspop = $(".pop-dataset").popover({
-      trigger: 'focus',
-      placement: 'right',
-      html: true
-    }).on('show.bs.popover', function () {
-        $.ajax({
-          url: '/api/datasets/',
-          data: {label:$(this).data('label')},
-          dataType: "JSON",
-          async: false,
-          success: function (data) {
-            ds=data.results[0]
-            <!--console.log('ds',ds)-->
-            html='<p class="thin"><b>Title</b>: '+ds.title+'</p>'
-            html+='<p class="thin"><b>Description</b>: '+ds.description+'</p>'
-            html+='<p class="thin"><b>WHG Owner</b>: '+ds.owner+'</p>'
-            html+='<p class="thin"><b>Creator</b>: '+ds.creator+'</p>'
-            dspop.attr('data-content', html);
-          }
-      });
-    })
-    
-  })
-            
-  // expose leaflet map for events, call it 'mappy'
-  window.addEventListener('map:init', function (e) {
-    window.mappy = e.detail.map
-    var token_mb = '{{ mbtoken }}',
-    mbstyle_url = 'https://api.mapbox.com/styles/v1/{id}/tiles/256/{z}/{x}/{y}?access_token={token}';
-      
-    var satellite  = L.tileLayer(mbstyle_url, {
-      id:'mapbox/satellite-streets-v11', 
-      token:token_mb}),
-    osm  = L.tileLayer(mbstyle_url, {
-      id:'mapbox/light-v10',
-      token:token_mb});
-
-    var baseLayers = {
-      "OSM": osm,
-      "Satellite": satellite
-    };
-    L.control.layers(baseLayers).addTo(mappy);
-    baseLayers['OSM'].addTo(mappy)
-  }, false);
-
-
-  //
-  $( "#select_pass" ).change(function() {
-    z=window.location.href
-    baseurl=z.substring(0,z.lastIndexOf('/')+1)
-    window.location.href = baseurl + $(this).val()
-  });
-
-  $('.noteicon').on('click', function(){
-    $(this).parents(".matchbar").find(".notefield").toggle()
-  })
-
-  $('.noteicon').hover(function(){
-    console.log('hovering')
-  })
-
-  $( ".geolink" ).hover(function() {
-      <!--console.log($(this))-->
-      let id = $(this)[0].id
-      <!--console.log('id:',id)-->
-      feat = idToFeature[id]
-      ogcolor = feat.options.fillColor
-      feat.setStyle(
-        {radius: 10, fillColor: 'yellow', color: 'red'}
-      )
-    },
-    function() {
-      let id = $(this)[0].id
-      feat = idToFeature[id]
-      feat.setStyle(
-        {radius: 8, fillColor: ogcolor, color: '#333' }
-      )
-    }
-  );
-
-  // closer look
-  function zoomTo(id) {
-    console.log('zoomTo()', id)
-    mappy.setView(idToFeature[id]._latlng, mappy.getZoom() +2 )
-  }
-
-  cleanJson = function(text) {
-    z=text.replace(/'/g,'\\"')
-    y=z.replace(/point/,'Point')
-    return JSON.parse(JSON.parse(y))
-  }
-
-  // initialize, render map
-  function map_init (map, options) {
-    // console.log('in map_init()')
-    window.geom = {"type":"FeatureCollecton","features":[]}
-
-    window.gelems = $('script').filter(function() {
-      return this.id !='' && this.text != '"null"';
-    });
-    <!--console.log(gelems)-->
-    for (i=0;i<gelems.length;i++){
-      let t_geom = cleanJson(gelems[i].text)
-      t_geom['properties'] = {"id": gelems[i].id,"ds": t_geom.ds!=null?t_geom.ds:ds}
-      geom['features'].push(t_geom)
-    }
-
-    function markerIt(src_ds) {
-      if(src_ds == ds){
-        style = {radius: 8, fillOpacity: 0.4, opacity: 1, weight: 1,
-              color: "#333", fillColor: "green"}        
-      } else {
-        style = {radius: 8, fillOpacity: 0.4, opacity: 1, weight: 1,
-              color: "#333", fillColor: "orange"}      
-      }
-      return style
-    }
-    if (geom['features'].length > 0) {
-      <!--console.log('geom: ',geom)-->
-      idToFeature = {} // for feature lookup
-      features = L.geoJSON(geom, {
-        pointToLayer: function (feature, latlng) {
-          <!--console.log('feature.properties',feature.properties)-->
-          <!--console.log('feature',feature)-->
-          matchid = feature.properties.id
-          marker = L.circleMarker(latlng, markerIt(feature.properties.ds)
-            <!--{-->
-              <!--radius: 8, fillOpacity: 0.4, opacity: 1, weight: 1,-->
-              <!--color: "#333", fillColor: fill(feature.properties.ds)-->
-            <!--}-->
-          ).bindPopup(feature.properties.id);
-
-          idToFeature[matchid] = marker
-          return marker
-        }
-      }).addTo(map);
-
-      <!--mappy.setView(features.getBounds().getCenter(),6)-->
-      mappy.fitBounds(features.getBounds())
-      mappy.setZoom(mappy.getZoom()-1)
-    } else {
-      console.log('no geometries, no feature')
-    }
-  } // end map_init
-</script>
 <script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
+
+<!-- Set up MapLibre map using Maptiler SDK -->
+<script type="text/javascript">
+    let mapParameters = {
+        container: 'map',
+        center: [9.2, 33],
+        zoom: 0.2, // starting zoom
+        minZoom: 0.1,
+        maxZoom: 10,
+        mapTilerKey: '{{ maptilerkey }}',
+        controls: {
+            layer: true,
+            navigation: true,
+            fullscreen: false,
+            attribution: {
+                open: false,
+            },
+            temporal: false
+        },
+        styleFilter: [ /* 'TOPO.PASTEL','BASIC.DEFAULT' */ ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
+    }
+    // TODO: Get the necessary data into `feature_collection`
+    //const featureCollectionJSON = '{{ feature_collection|safe }}';
+    let ds_label = '{{ ds_label }}';
+    let test = '{{ test }}';
+    let passnum = '{{ passnum }}';
+    let mbtoken = '{{ mbtoken }}';
+</script>
+
+<script type="module">
+    import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
+    import "{% static 'webpack/review.bundle.js' %}";
+</script> 
+
 {% endblock %}
