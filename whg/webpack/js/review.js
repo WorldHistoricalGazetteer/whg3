@@ -91,15 +91,23 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		mappy.on('click', function(e) { // Find match for map marker
 			const features = mappy.queryRenderedFeatures(e.point);
 			if (features.length > 0) {
-				const topFeature = features[0]; // Handle only the top-most feature
-				const isAddedFeature = !styleControl.baseStyle.layers.includes(topFeature.layer.id);
-				if (isAddedFeature && !!topFeature.properties.src_id) {
-					$('.match_radio').css('background', 'oldlace'); // first, background to #fff for all 
-					const divy = $('.match_radio[data-id=' + topFeature.properties.src_id + ']');
-					divy.css('background', 'yellow'); // .matchbar background change, scroll to it
-					console.log(`Clicked marker: ${ topFeature.properties.src_id }; Matched div top: ${ divy.position().top }`);
-					$("#review_list").scrollTop(divy.position().top - 80);
-				}
+				let scrolled = false;
+				features.forEach(feature => {
+					const isAddedFeature = !styleControl.baseStyle.layers.includes(feature.layer.id);
+					if (isAddedFeature && !!feature.properties.src_id) {
+						if (!scrolled) {
+							$('.match_radio').css('background', 'oldlace'); // first, background to #fff for all 
+						}
+						const divy = $('.match_radio[data-id=' + feature.properties.src_id + ']');
+						divy.css('background', 'yellow'); // .matchbar background change, scroll to it
+						console.log(`Clicked marker: ${ feature.properties.src_id }`);
+						if (!scrolled) {
+							console.log(`First matched div top: ${ divy.position().top }`);
+							$("#review_list").scrollTop(divy.position().top - 80);
+							scrolled = true;
+						}
+					}
+				});
 			}
 		});	
 				
