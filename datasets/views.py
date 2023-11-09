@@ -522,17 +522,18 @@ def review(request, pk, tid, passnum):
             }
         else:
             feature_geometry = geometry_objects[0]
-
-        if (
-            feature_data.get("dataset") == pk
-        ):  # `reconciliation` property used to set map marker colour
-            feature_data["reconciliation"] = True
+            
+        feature_data["reconciliation"] = True if feature_data.get("dataset") == pk else False # `reconciliation` property used to set map marker colour
 
         feature_data["pk"] = pk
 
         feature = {
             "type": "Feature",
-            "properties": feature_data,
+            # "properties": feature_data, ## Some characters used in placenames are not properly encoded: reduce to minimal requirement for operation
+            "properties": {
+                "reconciliation": feature_data["reconciliation"],
+                "src_id": feature_data["src_id"],
+            },
             "geometry": feature_geometry,
             "id": counter,
         }

@@ -36,7 +36,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		
 		else if (page_variant == 'accession') {
 		
-			placeid = $('script').filter(function() { // TODO: Redundant code?
+			let placeid = $('script').filter(function() { // TODO: Redundant code?
 				return this.id.match("placeid")
 			}).text();
 			
