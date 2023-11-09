@@ -775,6 +775,7 @@ def ds_recon(request, pk):
     try:
       result = func.delay(
         # ds.id,
+        pk=ds.id,
         ds=ds.id,
         dslabel=ds.label,
         owner=ds.owner.id,

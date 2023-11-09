@@ -109,14 +109,16 @@
             <div class="form-check">
               <label class="form-check-label" for="r_wdlocal">
                 <input type="radio" class="form-check-input r_wd" id="r_wdlocal"
-                  name="recon" value="wdlocal" checked>Wikidata (wdlocal) <span class="ms-2 font-italic small">estimated time: {{ ds.numrows|time_estimate }}</span>
+                  name="recon" value="wdlocal" checked>Wikidata (wdlocal)
+	                  <span class="ms-2 font-italic small">estimated time: {{ ds.numrows|time_estimate }}</span>
               </label>
               {% if msg_wdlocal %}
                 <div id="wdlocal_tasks" class="smaller">
                   <div class="mt-0 smaller radiodiv">
                   {{ msg_wdlocal.msg|safe }}
                   {% if msg_wdlocal.type == 'inprogress' %}
-                  <label class="mb-0"><input type="radio" name="prior"  value="keep" id="r_keep_wd"> keep prior match results</label>
+                  <label class="mb-0"><input type="radio" name="prior"  value="keep" id="r_keep_wd">
+	                  keep prior match results</label>
                   <label class="mb-0"><input type="radio" name="prior" value="zap"> delete prior match results</label>
                   {% endif %}
                   </div>

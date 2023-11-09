@@ -1303,8 +1303,10 @@ def align_idx(pk, *args, **kwargs):
           hitobj['countries'].extend([','.join(k['countries']) for k in kids])
           
           # unnest
-          hitobj['geoms'].extend(list(chain.from_iterable([k['geoms'] for k in kids])))
-          hitobj['links'].extend(list(chain.from_iterable([k['links'] for k in kids])))
+          if hitobj['geoms']:
+            hitobj['geoms'].extend(list(chain.from_iterable([k['geoms'] for k in kids])))
+          if hitobj['links']:
+            hitobj['links'].extend(list(chain.from_iterable([k['links'] for k in kids])))
           
           # add kids to parent in sources
           hitobj['sources'].extend(
