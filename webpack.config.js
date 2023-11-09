@@ -22,7 +22,6 @@ module.exports = {
     areas: '/app/whg/webpack/js/areas.js',
     ds_browse: '/app/whg/webpack/js/ds_browse.js',
     review: '/app/whg/webpack/js/review.js',
-    accession: '/app/whg/webpack/js/accession.js',
   },
   output: {
     filename: '[name].bundle.js',
