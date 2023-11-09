@@ -255,8 +255,8 @@
         },
         styleFilter: [ /* 'TOPO.PASTEL','BASIC.DEFAULT' */ ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
     }
-    // TODO: Get the necessary data into `feature_collection`
-    //const featureCollectionJSON = '{{ feature_collection|safe }}';
+    // TODO: Get the necessary data into `featureCollectionJSON`
+    const featureCollectionJSON = '{ "type": "FeatureCollection","features": [] }' // '{{ feature_collection|safe }}';
     let ds_label = '{{ ds_label }}';
     let test = '{{ test }}';
     let passnum = '{{ passnum }}';
