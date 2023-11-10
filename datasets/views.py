@@ -769,13 +769,13 @@ def ds_recon(request, pk):
         The system administrator has been notified.""")
       return redirect('/datasets/'+str(ds.id)+'/reconcile')
 
-    # sys.exit()
     # initiate celery/redis task
-    # NB 'func' resolves to align_wdlocal() or align_idx() or align_tgn()
+    # NB 'func' resolves to align_wdlocal() or align_idx()
+    # NB#2 the dataset id is specified twice, as positional and as a keyword
+    # **intentionally** - required for a useful result record
     try:
       result = func.delay(
-        # ds.id,
-        pk=ds.id,
+        ds.id,
         ds=ds.id,
         dslabel=ds.label,
         owner=ds.owner.id,

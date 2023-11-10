@@ -777,9 +777,9 @@ parse, write Hit records for review
 
 """
 @shared_task(name="align_wdlocal")
-def align_wdlocal(pk, **kwargs):
+def align_wdlocal(*args, **kwargs):
   task_id = align_wdlocal.request.id
-  ds = get_object_or_404(Dataset, id=pk)
+  ds = get_object_or_404(Dataset, id=kwargs['ds'])
   user = get_object_or_404(User, pk=kwargs['user'])
   bounds = kwargs['bounds']
   scope = kwargs['scope']
@@ -790,7 +790,7 @@ def align_wdlocal(pk, **kwargs):
   [nohits,wdlocal_es_errors,features] = [[],[],[]]
   [count_hit, count_nohit, total_hits, count_p0, count_p1, count_p2] = [0,0,0,0,0,0]
   start = datetime.datetime.now()
-  # no test option for wikidata, but needs default
+  # there is no test option for wikidata, but needs default
   test = 'off'
 
   # queryset depends on 'scope'
@@ -1168,28 +1168,17 @@ def es_lookup_idx(qobj, *args, **kwargs):
 # TODO (2): "passive analysis option" that reports matches within datasets in a collection
 # TODO (3): option with collection constraint; writes place_link records for partner records
 @shared_task(name="align_idx")
-def align_idx(pk, *args, **kwargs):
+def align_idx(*args, **kwargs):
+  task_id = align_idx.request.id
+  ds = get_object_or_404(Dataset, id=kwargs['ds'])
   print('kwargs in align_idx()',kwargs)
   test = kwargs['test']
-  task_id = align_idx.request.id
-  ds = get_object_or_404(Dataset, id=pk)
   idx = 'whg'
   user = get_object_or_404(User, id=kwargs['user'])
   # get last index identifier (used for _id)
   whg_id = maxID(es, idx)
-  """
-  kwargs: {'ds': 1231, 'dslabel': 'owt10b', 'owner': 14, 'user': 1, 
-    'bounds': {'type': ['userarea'], 'id': ['0']}, 'aug_geom': 'on', 
-    'scope': 'all', 'lang': 'en', 'test': 'false'}
-  """
-  """
-    {'csrfmiddlewaretoken': ['Z3vg1TOlJRNTYSErmyNYuuaoTYMmk8235pMea2nXHtxvpfmvmdqPsqRHeefFqt2u'], 
-    'ds': ['1231'], 
-    'wd_lang': [''], 
-    'recon': ['idx'], 
-    'lang': ['']}>
-  """
-  # open file for writing new seed/parents for inspection
+
+  # TODO: ?? open file for writing new seed/parents for inspection
   # wd = "/Users/karlg/Documents/repos/_whgazetteer/_scratch/accessioning/"
   # fn1 = "new-parents_"+str(ds.id)+".txt"
   # fout1 = codecs.open(wd+fn1, mode="w", encoding="utf8")
@@ -1221,9 +1210,9 @@ def align_idx(pk, *args, **kwargs):
     result_obj = es_lookup_idx(qobj, bounds=bounds)
     
     # PARSE RESULTS
-    # no hits on any pass, it's a new seed/parent
+    # no hits on any pass, index as new seed/parent
     if len(result_obj['hits']) == 0:
-      # create new parent (write to file for inspection)
+      # create new parent
       whg_id +=1
       doc = makeDoc(p)
       doc['relation']['name'] = 'parent'
@@ -1237,8 +1226,7 @@ def align_idx(pk, *args, **kwargs):
         res = es.index(index=idx, id=str(whg_id), document=json.dumps(doc))
         p.indexed = True
         p.save()
-        # es.index(idx, doc, id=whg_id)
-      
+
     # got some hits, format json & write to db as for align_wdlocal, etc.
     elif len(result_obj['hits']) > 0:
       count_hit +=1  # this record got >=1 hits
