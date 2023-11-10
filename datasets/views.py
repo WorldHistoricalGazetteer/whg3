@@ -771,8 +771,8 @@ def ds_recon(request, pk):
 
     # initiate celery/redis task
     # NB 'func' resolves to align_wdlocal() or align_idx()
-    # NB#2 the dataset id is specified twice, as positional and as a keyword
-    # **intentionally** - required for a useful result record
+    # NB#2 the dataset id is both positional and a keyword **intentionally** -
+    # required to generate a useful result record
     try:
       result = func.delay(
         ds.id,
