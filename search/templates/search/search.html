@@ -20,6 +20,9 @@
   <script src="{% static 'js/leaflet-mapbox-gl.js' %}"></script>
 
   <link rel="stylesheet" href="{% static 'css/spin.css' %}"/>
+  <style>
+      .row-pub {border-left: 2px red solid;}
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -1235,7 +1238,7 @@
   */
   function sugLister(sug) {
   //function sugLister(sug, doctype, scope) {
-		{#console.log('sug', sug)#}
+		console.log('sug', sug)
     // this is count of children[]; add 1 to include self
     linkcount = parseInt(sug['linkcount']) +1
     attestations = sug['ds'] ? '' : ' <i>' + linkcount + (linkcount>1?' linked attestations</i>; ':' attestation</i>; ')

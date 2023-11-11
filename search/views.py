@@ -113,6 +113,7 @@ def suggestionItem(s):
   item = {
     "whg_id": h['whg_id'] if 'whg_id' in h else '',
     "pid":h['place_id'],
+    "index": s['_index'],
     "children": unique_children,
     "linkcount":s['linkcount'],
     "title": h['title'],
@@ -126,21 +127,20 @@ def suggestionItem(s):
 
 
 """
-  performs the ES search of index aliased 'whg'
+  performs es search against 'whg' and 'pub'
 """
-def suggester(q, idx):
-  # print('key', settings.ES_APIKEY_ID, settings.ES_APIKEY_KEY)
-  # returns only parents; children retrieved into place portal
-  print('suggester q',q)
+def suggester(q, indices):
+  print('suggester q', q)
+  print('suggester indices', indices)
   try:
     es = settings.ES_CONN
   except:
     print('es query failed', sys.exc_info())
-  # print('suggester es connector',es)
 
   suggestions = []
   
-  res = es.search(index=idx, body=q)
+  # Search across multiple indices
+  res = es.search(index=','.join(indices), body=q)
   hits = res['hits']['hits']
   if len(hits) > 0:
     for h in hits:
@@ -152,6 +152,7 @@ def suggester(q, idx):
       )
 
   sortedsugs = sorted(suggestions, key=lambda x: x['linkcount'], reverse=True)
+  print('sortedsugs', sortedsugs)
   # TODO: there may be parents and children
   return sortedsugs
 
@@ -185,8 +186,6 @@ class SearchView(View):
     
     params = {
       "qstr":qstr,
-      # "doctype": doctype,
-      # "scope": scope,
       "idx": idx,
       "fclasses": fclasses,
       "start": start,
@@ -197,23 +196,26 @@ class SearchView(View):
     print('search_params set', params)
 
     # TODO: fuzzy search; results ranked for closeness
-    # TODO: remove remaining references to traces
-    q = { "size": 100,
-          "query": {"bool": {
-            "must": [
-              {"exists": {"field": "whg_id"}},
-              {"multi_match": {
+    # always include fclass-less records in results (i.e. ['X']
+    fclist = ['X']
+    if fclasses:
+      fclist.extend(fclasses.split(','))
+
+    q = {
+      "size": 100,
+      "query": {
+        "bool": {
+          "must": [
+            {"exists": {"field": "whg_id"}},
+            {"multi_match": {
                 "query": qstr,
                 "fields": ["title^3", "names.toponym", "searchy"]
-              }}
-            ]
-          }}
+            }},
+            {"terms": {"fclasses": fclist}}
+          ]
+        }
+      }
     }
-    print('q in SearchView()', q)
-    if fclasses:
-      fclist = fclasses.split(',')
-      fclist.append('X')
-      q['query']['bool']['must'].append({"terms": {"fclasses": fclist}})
 
     if start:
       q['query']['bool']['must'].append({"range":{"timespans":{"gte" :start,"lte":end if end else 2005}}})
@@ -222,7 +224,7 @@ class SearchView(View):
       q['query']['bool']["filter"]=get_bounds_filter(bounds,'whg')
 
     print('query q in search', q)
-    suggestions = suggester(q, idx)
+    suggestions = suggester(q, [idx, 'pub'])
     suggestions = [suggestionItem(s) for s in suggestions]
     # print('suggestions', suggestions)
     # return query params for ??
