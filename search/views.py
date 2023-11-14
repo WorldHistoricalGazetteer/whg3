@@ -146,6 +146,7 @@ def suggester(q, indices):
     for h in hits:
       suggestions.append(
         {"_id": h['_id'],
+         "_index": h['_index'],
          "linkcount":len(set(h['_source']['children'])),
          "hit": h['_source'],
         }
@@ -194,6 +195,7 @@ class SearchView(View):
     }
     request.session["search_params"] = params 
     print('search_params set', params)
+    print('fclasses from search form', fclasses)
 
     # TODO: fuzzy search; results ranked for closeness
     # always include fclass-less records in results (i.e. ['X']

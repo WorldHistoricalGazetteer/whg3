@@ -58,11 +58,17 @@
 }
 
 .result:hover {
-    background-color: #f0f0f0; /* Adjust hover color as needed */
+    background-color: aliceblue;
+    border: 1px solid #993333;
+
 }
 
 .result.selected {
-    background-color: #e0e0e0; /* Adjust selected color as needed */
+    background-color: #e0e0e0;
+}
+
+.result-pub {
+  background-color: palegoldenrod;
 }
 
 .categories {

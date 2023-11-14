@@ -240,21 +240,25 @@ function renderResults(featureCollection) {
 		const count = parseInt(result.linkcount) + 1;
 		const pid = result.pid;
 		const children = result.children;
+		const index = result.index;
 		// Encode children as a comma-separated string
 		const encodedChildren = encodeURIComponent(children.join(','));
 
 
-		// START alternate url (kg 2023-10-31)
+		// START alternate url (kg 2023-11-11)
+		let isPubIndex = result.index.startsWith('pub');
+		let backgroundColorClass = isPubIndex ? "result-pub" : "";
+
 		let html = `
-            <div class="result">
-                <p>${result.title} (${count} in set)
+            <div class="result ${backgroundColorClass}">
+                <p>${result.title} (${count} in set; pid: ${pid})
                   <span class="float-end">
-					<a href="#" class="portal-link"	data-pid="${pid}" data-children="${encodedChildren}">portal ${pid}</a>
-                  </span>`
+					<a href="#" class="portal-link"	data-pid="${pid}" data-children="${encodedChildren}">portal</a>
+                  </span><br/>Index: ${index}<br/>`
 		if (children.length > 0) {
-			html += `<span class="ml-2">children: ${children.join(', ')}</span>`;
+			html += `<span class="ml-2"> children: ${children.join(', ')}</span>`;
 		};
-		// END alternate url (kg 2023-10-31)
+		// END alternate url (kg 2023-11-11)
 
 		$resultsDiv.append(html);
 
