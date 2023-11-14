@@ -60,8 +60,10 @@
               <div class="form-check mt-2">
                 <label class="form-check-label text-danger" for="r_idx">
                   <input type="radio" class="form-check-input" id="r_idx"
-                    name="recon" value="idx">WHG accession (reconcile, index)
-                </label> <span class="float-end">test only? <input type="checkbox" name="test" ></span>
+                    name="recon" value="idx">WHG accession TEST, no writes (reconcile, index)
+                </label>
+                {# always 'on' for dev - no writing to the production index! #}
+	              <span class="float-end">test only? <input type="checkbox" name="test" checked="checked" disabled></span>
 								<br/>
 								{#	test reconcile against whg index; no writes #}
                 {% comment %}

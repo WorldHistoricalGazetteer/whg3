@@ -1172,7 +1172,11 @@ def align_idx(*args, **kwargs):
   task_id = align_idx.request.id
   ds = get_object_or_404(Dataset, id=kwargs['ds'])
   print('kwargs in align_idx()',kwargs)
-  test = kwargs['test']
+
+  # always 'on' for dev - no writing to the production index!
+  # TODO: remove for production
+  test = 'on'
+
   idx = 'whg'
   user = get_object_or_404(User, id=kwargs['user'])
   # get last index identifier (used for _id)
