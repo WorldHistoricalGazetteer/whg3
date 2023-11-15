@@ -7,7 +7,7 @@ from django_celery_results.models import TaskResult
 from django.conf import settings
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives, EmailMessage
-from django.db import connection
+from django.db import transaction, connection
 from django.db.models import Q
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -15,11 +15,15 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 User = get_user_model()
 
+from celery.utils.log import get_task_logger
+logger = get_task_logger(__name__)
+
 import codecs, csv, datetime, itertools, re, sys, time
+from copy import deepcopy
+from elasticsearch8.helpers import bulk, streaming_bulk
+from itertools import chain
 import pandas as pd
 import simplejson as json
-from copy import deepcopy
-from itertools import chain
 
 from areas.models import Area
 from collection.models import Collection
@@ -27,18 +31,124 @@ from datasets.models import Dataset, Hit
 from datasets.static.hashes.parents import ccodes as cchash
 from datasets.static.hashes.qtypes import qtypes
 from elastic.es_utils import makeDoc, build_qobj, profileHit
+
 #from datasets.task_utils import *
 from datasets.utils import bestParent, elapsed, getQ, \
   HitRecord, hully, makeNow, parse_wkt, post_recon_update
 
 from main.models import Log
-
+from places.models import Place
 ## global for all es connections in this file
 es = settings.ES_CONN
 
-# @shared_task(name="testy")
-# def testy():
-#   print("I'm testy...who wouldn't be?")
+"""
+  adds newly public dataset to 'pub' index
+  making it accessible to search (and API eventually)
+"""
+@shared_task()
+def index_to_pub(dataset_id, idx='pub'):
+    es = settings.ES_CONN
+    # Fetch dataset by ID
+    try:
+        dataset = Dataset.objects.get(pk=dataset_id, ds_status__in=['wd-complete', 'accessioning'])
+    except Dataset.DoesNotExist:
+        print(f"Dataset with ID {dataset_id} does not exist or is not public/ready for accessioning.")
+        return  # Exit if dataset conditions aren't met
+
+    places_to_index = Place.objects.filter(dataset=dataset, indexed=False, idx_pub=False)
+    place_ids_to_index = list(places_to_index.values_list('id', flat=True))
+
+    # convert a Place into a dict that's ready for indexing
+    def make_bulk_doc(place):
+        doc = makeDoc(place)
+        doc['whg_id'] = ''
+        # Add names and title to search field
+        searchy_content = set(doc.get('searchy', []))
+        searchy_content.update(n['toponym'] for n in doc['names'])
+        searchy_content.add(doc['title'])
+        doc['searchy'] = list(searchy_content)
+        return {
+            "_index": idx,
+            "_id": place.id,  # place ID as document ID
+            "_source": doc,
+        }
+
+    actions = (make_bulk_doc(place) for place in places_to_index.iterator())
+
+    # Perform the bulk index operation and collect the response
+    successes, failed_docs = 0, []
+    with transaction.atomic():  # Use a transaction to prevent race conditions
+        for ok, action in streaming_bulk(es, actions, index=idx, raise_on_error=False):
+            if ok:
+                successes += 1
+            else:
+                failed_docs.append(action)
+
+    # Update the idx_pub flag for all successful Place objects using the Place IDs
+    Place.objects.filter(id__in=place_ids_to_index).update(idx_pub=True)
+
+    print(f"Indexing complete. Total indexed places: {successes}. Failed documents: {len(failed_docs)}")
+    if failed_docs:
+        print(f"Failed documents: {failed_docs}")
+
+"""
+  unindex from 'pub': an entire dataset or a single record
+"""
+@shared_task()
+def unindex_from_pub(dataset_id=None, place_id=None, idx='pub'):
+  es = settings.ES_CONN
+  if place_id:
+    try:
+      # Check if the place exists and is indexed in 'pub'
+      place = Place.objects.get(pk=place_id, idx_pub=True)
+      # Perform the delete operation for the specific place
+      response = es.delete(index=idx, id=str(place_id), refresh=True)
+      # Check if delete operation was successful
+      if response.get('result') != 'deleted':
+        raise Exception("Elasticsearch delete operation failed")
+      else:
+        print('pub record deleted in unindex_from_pub():', place)
+      # Update the idx_pub flag for this Place object
+      place.idx_pub = False
+      place.save()
+    except Place.DoesNotExist:
+      logger.error(f"Place with ID {place_id} does not exist or is not indexed to 'pub'.")
+    except Exception as e:
+      logger.error(f"An error occurred while attempting to unindex place with ID {place_id}: {e}")
+      raise  # Re-raise exception to ensure it's caught by Celery
+    return {'place_id': place_id}
+
+  elif dataset_id:
+    try:
+      dataset = Dataset.objects.get(pk=dataset_id)
+    except Dataset.DoesNotExist:
+      print(f"Dataset with ID {dataset_id} does not exist.")
+      return  # Exit if the dataset is not found
+
+    # query for es.delete_by_query
+    query = {
+      "query": {
+        "term": {
+          "dataset": dataset.label  # This field should match the field in the ES document
+        }
+      }
+    }
+
+    # Perform the delete_by_query operation
+    response = es.delete_by_query(index=idx, body=query, refresh=True)
+
+    # Check for failures and take necessary actions
+    if response['failures']:
+      print(f"Failures in unindexing: {response['failures']}")
+
+    # Now, update the idx_pub flag for all Place objects of this dataset
+    with transaction.atomic():
+      Place.objects.filter(dataset=dataset).update(idx_pub=False)
+
+    place_ids = Place.objects.filter(dataset_id=dataset_id, idx_pub=True).values_list('id', flat=True)
+    return {'place_ids': list(place_ids)}
+
+  print(f"Unindexing complete")
 
 """ 
   called by utils.downloader()
@@ -1172,20 +1282,22 @@ def align_idx(*args, **kwargs):
   task_id = align_idx.request.id
   ds = get_object_or_404(Dataset, id=kwargs['ds'])
   print('kwargs in align_idx()',kwargs)
+  test=kwargs['test']
 
+  # TODO: testing dev via ES_LINKING
   # always 'on' for dev - no writing to the production index!
-  # TODO: remove for production
-  test = 'on'
-
-  idx = 'whg'
+  # test = 'on'
+  # idx = 'whg'
+  idx = settings.ES_LINKING
+  print('idx in align_idx', idx)
   user = get_object_or_404(User, id=kwargs['user'])
   # get last index identifier (used for _id)
   whg_id = maxID(es, idx)
 
   # TODO: ?? open file for writing new seed/parents for inspection
-  # wd = "/Users/karlg/Documents/repos/_whgazetteer/_scratch/accessioning/"
-  # fn1 = "new-parents_"+str(ds.id)+".txt"
-  # fout1 = codecs.open(wd+fn1, mode="w", encoding="utf8")
+  wd = "_scratch/"
+  fn1 = "new-parents_"+str(ds.id)+".txt"
+  fout1 = codecs.open(fn1, mode="w", encoding="utf8")
   
   # bounds = {'type': ['userarea'], 'id': ['0']}
   bounds = kwargs['bounds']
@@ -1194,7 +1306,8 @@ def align_idx(*args, **kwargs):
   hit_parade = {"summary": {}, "hits": []}
   [count_hit,count_nohit,total_hits,count_p0,count_p1] = [0,0,0,0,0]
   [count_errors,count_seeds,count_kids,count_fail] = [0,0,0,0]
-  new_seeds = []  
+  new_seeds = [] # ids of places indexed immediately
+  for_review = [] # ids of places for which there were hits
   start = datetime.datetime.now()
     
   # limit scope if some are already indexed
@@ -1225,7 +1338,7 @@ def align_idx(*args, **kwargs):
       names = [p.toponym for p in p.names.all()]
       doc['searchy'] = names
       print("seed", whg_id, doc)
-      new_seeds.append(doc)
+      new_seeds.append(p.id)
       if test == 'off':
         res = es.index(index=idx, id=str(whg_id), document=json.dumps(doc))
         p.indexed = True
@@ -1237,7 +1350,8 @@ def align_idx(*args, **kwargs):
       # set place/task status to 0 (has unreviewed hits)
       p.review_whg = 0
       p.save()
-      
+      for_review.append(p.id)
+
       hits = result_obj['hits']
       [count_kids,count_errors] = [0,0]
       total_hits += result_obj['total_hits']
@@ -1342,9 +1456,10 @@ def align_idx(*args, **kwargs):
         #print(json.dumps(jsonic,indent=2))
   
   # testing: write new index seed/parent docs for inspection
-  # fout1.write(json.dumps(new_seeds, indent=2))
-  # fout1.close()
-  # print(str(len(new_seeds)) + ' new index seeds written to '+ fn1)
+  fout1.write(str(new_seeds))
+  fout1.write('\n\nFor Review\n'+str(for_review))
+  fout1.close()
+  print(str(len(new_seeds)+len(for_review)) + ' IDs written to '+ fn1)
   
   end = datetime.datetime.now()
   

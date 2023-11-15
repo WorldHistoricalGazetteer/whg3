@@ -88,7 +88,8 @@
                       ({{ t.date_done|date:"d-M-Y, H:i (e)" }}; elapsed: {{ t.result|get:"elapsed"|safe }})</span>
                     </p>
                     <p><b>ID</b>: {{ t.task_id }}</p>
-	                  {% if t.task_name != 'align_idx' and user in  ds.owners %}
+                  {% if t.task_name != 'align_idx' and user in ds.owners or user.is_superuser or test == 'on'%}
+	                  {% comment %}{% if t.task_name != 'align_idx' and user in ds.owners %}{% endcomment %}
                       <p id="{{ t.task_name }}">
                       <a class="confirm-del-all" data-id={{t.task_id}} href="{% url 'datasets:task-delete' tid=t.task_id scope='task' %}">Delete task & hits, clear matches <i class="fas fa-trash linkyred"></i></i>
                       </a><br/>

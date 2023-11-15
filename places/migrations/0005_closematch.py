@@ -7,7 +7,8 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('places', '0004_alter_placegeom_s2'),
+        ('places', '0002_initial'),
+        # ('places', '0004_alter_placegeom_s2'),
     ]
 
     operations = [

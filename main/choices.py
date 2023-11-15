@@ -1,12 +1,12 @@
 # model field value choices
 
-AREATYPES = {
+AREATYPES = [
     ('ccodes','Country codes'),
     ('copied','CopyPasted GeoJSON'),
     ('search','Region/Polity record'),
     ('drawn','User drawn'),
     ('predefined','World Regions'),
-}
+]
 
 AUTHORITIES = [
     ('tgn','Getty TGN'),
@@ -17,15 +17,15 @@ AUTHORITIES = [
     ('whg','WHG'),
 ]
 
-AUTHORITY_BASEURI = {
-    'align_tgn':'tgn:',
-    'align_dbp':'dbp:',
-    'align_gn':'gn:',
-    'align_wd':'wd:',
-    'align_wdlocal':'wd:',
-    'align_idx':'whg:',
-    'align_whg':'whg:'
-}
+AUTHORITY_BASEURI = [
+    ('align_tgn','tgn:'),
+    ('align_dbp','dbp:'),
+    ('align_gn','gn:'),
+    ('align_wd','wd:'),
+    ('align_wdlocal','wd:'),
+    ('align_idx','whg:'),
+    ('align_whg','whg:')
+]
 
 COLLECTIONCLASSES = [
     ('dataset','Dataset collection'),
@@ -84,9 +84,9 @@ FEATURE_CLASSES = [
 #H: stream, lake, ...
 #L: parks,area, ...
 #P: city, village,...
-#R: road, railroad 
+#R: road, railroad
 #S: spot, building, farm
-#T: mountain,hill,rock,... 
+#T: mountain,hill,rock,...
 #U: undersea
 #V: forest,heath,...
 
@@ -97,10 +97,9 @@ FORMATS = [
 ]
 
 LINKTYPES = [
-    # ('page','web page'),
-    ('webpage',"<i class='fas fa-window-maximize'></i>"),
+    ('webpage','<i class="fas fa-window-maximize"></i>'),
     ('image','<img src="/static/images/noun-photo.svg" width="16"/>') ,
-    ('document',"<i class='far fa-file-pdf linky'></i>")
+    ('document','<i class="far fa-file-pdf linky"></i>')
 ]
 
 LOG_CATEGORIES = [
@@ -258,4 +257,3 @@ USERTYPES = [
     ('individual', 'Individual'),
     ('group', 'Group or project team')
 ]
-

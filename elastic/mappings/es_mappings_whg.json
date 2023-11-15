@@ -213,7 +213,8 @@
             "type" : "keyword"
           },
           "location" : {
-            "type" : "geo_shape"
+            "type" : "geo_shape",
+            "ignore_malformed": true
           }
         }
       },

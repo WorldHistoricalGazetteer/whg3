@@ -30,7 +30,10 @@ class Place(models.Model):
   timespans = JSONField(blank=True,null=True) # for list of lists
   fclasses = ArrayField(models.CharField(max_length=1, choices=FEATURE_CLASSES), null=True, blank=True)
   indexed = models.BooleanField(default=False)  
+  idx_pub = models.BooleanField(default=False)
   flag = models.BooleanField(default=False) # not in use
+  # added Apr 2023, for case of no start/end
+  # attestation_year = models.IntegerField(null=True,blank=True)
 
   # 0=hits:unreviewed, 1=hits:reviewed, 2=hits:deferred, null=no hits
   review_wd = models.IntegerField(null=True, choices=STATUS_REVIEW)
@@ -182,7 +185,7 @@ class PlaceGeom(models.Model):
                                  to_field='src_id', on_delete=models.SET_NULL)
   # TODO: 
   geom = geomodels.GeometryField(null=True, blank=True, srid=4326)
-
+  # s2 =ArrayField(models.IntegerField(blank=True,null=True), null=True)
   # informs dataset last_update
   created = models.DateTimeField(null=True, auto_now_add=True)
 

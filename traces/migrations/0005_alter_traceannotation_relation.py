@@ -15,6 +15,11 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='traceannotation',
             name='relation',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=30), blank=True, default=traces.models.getDefaultRelations, null=True, size=None),
+            field=django.contrib.postgres.fields.ArrayField(
+                base_field=models.CharField(max_length=30),
+                blank=True,
+                default=traces.models.getDefaultRelations,
+                null=True,
+                size=None),
         ),
     ]
