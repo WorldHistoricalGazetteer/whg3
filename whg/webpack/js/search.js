@@ -502,12 +502,14 @@ function initiateSearch() {
 function gatherOptions() {
 	// gather and return option values from the UI
 	let fclasses = [];
+	// the whg index, for dev or prod according to local_settings
+	var eswhg = "{{ es_whg|escapejs }}";
 	$('#search_filters input:checked').each(function() {
 		fclasses.push($(this).val());
 	});
 	let options = {
 		"qstr": $('#d_input input').val(),
-		"idx": "whg",
+		"idx": eswhg,
 		"fclasses": fclasses.join(','),
 		"start": $("#input_start").val(),
 		"end": $("#input_end").val(),

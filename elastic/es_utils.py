@@ -693,6 +693,8 @@ def uriMaker(place):
 # called from ALL indexing functions (initial and updates)
 # ***
 def makeDoc(place):
+  fclasses_value = place.fclasses if place.fclasses not in [None, []] else ["X"]
+  print('makeDoc fclasses', fclasses_value)
   es_doc = {
     "relation": {},
     "children": [],
@@ -707,8 +709,7 @@ def makeDoc(place):
     "types": parsePlace(place,'types'),
     "geoms": parsePlace(place,'geoms'),
     "links": parsePlace(place,'links'),
-    # new, for index whg03
-    "fclasses": place.fclasses,
+    "fclasses": fclasses_value,
     "timespans": [{"gte":t[0],"lte":t[1]} for t in place.timespans] if place.timespans not in [None,[]] else [],
     "minmax": {"gte":place.minmax[0],"lte":place.minmax[1]} if place.minmax not in [None,[]] else [],
     "descriptions": parsePlace(place,'descriptions'),

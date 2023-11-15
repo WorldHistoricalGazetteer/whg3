@@ -36,6 +36,7 @@ class SearchPageViewNew(TemplateView):
     context['media_url'] = settings.MEDIA_URL
     context['dslist'] = dslist
     context['search_params'] = self.request.session.get('search_params')
+    context['es_whg'] = settings.ES_WHG
     #context['bboxes'] = bboxes
     return context
 
@@ -113,6 +114,7 @@ def suggestionItem(s):
   item = {
     "whg_id": h['whg_id'] if 'whg_id' in h else '',
     "pid":h['place_id'],
+    "index": s['_index'],
     "children": unique_children,
     "linkcount":s['linkcount'],
     "title": h['title'],
@@ -125,37 +127,38 @@ def suggestionItem(s):
   return item
 
 
+
+
 """
-  performs the ES search of index aliased 'whg'
+  performs the ES search of 'whg' and 'pub'
 """
-def suggester(q, idx):
-  # print('key', settings.ES_APIKEY_ID, settings.ES_APIKEY_KEY)
-  # returns only parents; children retrieved into place portal
-  print('suggester q',q)
+def suggester(q, indices):
+  print('suggester q', q)
+  print('suggester indices', indices)
   try:
     es = settings.ES_CONN
   except:
     print('es query failed', sys.exc_info())
-  # print('suggester es connector',es)
 
   suggestions = []
-  
-  res = es.search(index=idx, body=q)
+
+  # Search across multiple indices
+  res = es.search(index=','.join(indices), body=q)
   hits = res['hits']['hits']
   if len(hits) > 0:
     for h in hits:
       suggestions.append(
         {"_id": h['_id'],
-         "linkcount":len(set(h['_source']['children'])),
+         "_index": h['_index'],
+         "linkcount": len(set(h['_source']['children'])),
          "hit": h['_source'],
-        }
+         }
       )
 
   sortedsugs = sorted(suggestions, key=lambda x: x['linkcount'], reverse=True)
+  print('sortedsugs', sortedsugs)
   # TODO: there may be parents and children
   return sortedsugs
-
-
 """ 
   /search/index/?
   performs es search in index aliased 'whg'
@@ -177,7 +180,8 @@ class SearchView(View):
         [string] bounds: text of JSON geometry
     """
     qstr = request.GET.get('qstr')
-    idx = request.GET.get('idx')
+    # idx = request.GET.get('idx')
+    idx = settings.ES_WHG
     fclasses = request.GET.get('fclasses')
     start = request.GET.get('start')
     end = request.GET.get('end')
@@ -222,7 +226,7 @@ class SearchView(View):
       q['query']['bool']["filter"]=get_bounds_filter(bounds,'whg')
 
     print('query q in search', q)
-    suggestions = suggester(q, idx)
+    suggestions = suggester(q, [idx, 'pub'])
     suggestions = [suggestionItem(s) for s in suggestions]
     # print('suggestions', suggestions)
     # return query params for ??

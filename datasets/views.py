@@ -101,7 +101,7 @@ def indexMatch(pid, hit_pid=None):
   print('indexMatch(): pid '+str(pid)+' w/hit_pid '+str(hit_pid))
   es = settings.ES_CONN
   # idx='whg'
-  idx=settings.ES_LINKING
+  idx=settings.ES_WHG
   place = get_object_or_404(Place, id=pid)
 
   # is this place already indexed (e.g. by pass0 automatch)?

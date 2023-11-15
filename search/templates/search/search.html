@@ -937,13 +937,14 @@
       fclasses.push($(this).val());
     });
     {#console.log('fclasses', fclasses)#}
-    index = 'whg'
+	  var esLinking = "{{ es_whg|escapejs }}";
+    {#index = 'whg'#}
     // clear filters
     $(".list-inline").html('')
     // console.log('bounds in js SearchPlacesIdx()',$("#boundsobj").val())-->
     $.get("/search/index",{
       qstr: $('#input_box').val(),
-      idx: index,
+      idx: esLinking,
       fclasses: fclasses.join(','),
       start: $("#input_start").val(),
       end: $("#input_end").val(),

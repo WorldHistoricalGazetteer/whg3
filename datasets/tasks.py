@@ -1284,11 +1284,11 @@ def align_idx(*args, **kwargs):
   print('kwargs in align_idx()',kwargs)
   test=kwargs['test']
 
-  # TODO: testing dev via ES_LINKING
+  # TODO: testing dev via ES_WHG
   # always 'on' for dev - no writing to the production index!
   # test = 'on'
   # idx = 'whg'
-  idx = settings.ES_LINKING
+  idx = settings.ES_WHG
   print('idx in align_idx', idx)
   user = get_object_or_404(User, id=kwargs['user'])
   # get last index identifier (used for _id)

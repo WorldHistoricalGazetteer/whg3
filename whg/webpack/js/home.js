@@ -315,13 +315,16 @@ $(function() {
 		//{#options = {"fclasses":"P"}#}
 		// gather and return option values from the UI
 		let fclasses = [];
+		// the whg index, for dev or prod according to local_settings
+		var eswhg = "{{ es_whg|escapejs }}";
 		$('#adv_checkboxes input:checked').each(function() {
 			fclasses.push($(this).val());
 		});
 		console.log('checked', fclasses)
 		let options = {
 			"qstr": $('#search_map input').val(),
-			"idx": "whg",
+			"idx": eswhg,
+			// "idx": "whg",
 			"fclasses": fclasses.join(','),
 			"start": $("#input_start").val(),
 			"end": $("#input_end").val(),
