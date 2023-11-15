@@ -123,8 +123,8 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         $("#a_search, #d_input input").on('click keypress keyup', function(event) {
             if (
 					(event.type === 'click' && $(event.target).is("#a_search")) || 
-					(event.type === 'keypress' && event.which === 13) || 
-					(event.type === 'keyup' && $.trim($(this).val()).length >= 3)
+					(event.type === 'keypress' && event.which === 13) 
+					// || (event.type === 'keyup' && $.trim($(this).val()).length >= 3)
 				) {
                 event.preventDefault();
 				console.log('entered value for search')
@@ -371,8 +371,7 @@ function renderResults(featureCollection) {
 		$(this).addClass('selected');
 	});
 	
-	
-	
+
 	if (featureCollection.features.length > 0) {
 		// Highlight first result and render its detail
 		$('.result').first().attr('data-map-initialising', 'true').click();
