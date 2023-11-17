@@ -11,6 +11,7 @@
 	<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.24/b-1.7.0/b-colvis-1.7.0/b-html5-1.7.0/cr-1.5.3/fh-3.1.8/sc-2.0.3/sp-1.2.2/sl-1.3.3/datatables.min.js"></script>
 	<link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
 	<link href="{% static 'webpack/whg.bundle.css' %}" rel="stylesheet" />
+	<script src="{% static 'celery_progress/celery_progress.js' %}"></script>
 {% endblock %}
 
 {% block title %}
@@ -38,13 +39,14 @@
         <div id="metadata" class="mt-2">
             <div class="row pub-intro">
                 <div class="col-sm-9">
-                    <p class="mb-1">{{ object.description|safe }}</p>
-	                {% if object.file %}<b>Essay:</b>
+                    <p class="mb-1">{{ object.description|safe }}
+	                  {% if object.file %}<br/><b>Essay:</b>
                         <a href="/media/{{ object.file }}" target="_blank">
                           <i class="fas fa-file-pdf linky"></i>
                           {{ object.file.name|filename }}
                         </a>
 	                  {% endif %}
+                    </p>
                 </div>
                 <div class="col-sm-3" style="position: relative;">
 	                {% if object.image_file %} <a href="#" class="pop">
@@ -59,7 +61,7 @@
 	                {% if links|length > 0 %}
 		                <tr>
                         <td>
-                            <b>Links</b>
+                            <b>Links</b>:
                         </td>
                         <td> {% for l in links %} <a href="{{ l.uri }}" target="_blank">{{ l.label }}</a>; {% endfor %} </td>
                     </tr>
@@ -89,15 +91,16 @@
                     </tr>
 	                {% endif %}
                 </table>
-		            <div class="" >
-		                <i class="fas fa-download linky"></i>
-										<a href="#" id="a_download_modal" class="a-dl" data-collid="{{ object.id }}"
+		            <div class="" ><p>
+										<a href="#" id="a_download_modal" class="a-dl me-2" data-collid="{{ object.id }}"
 										   data-bs-toggle="modal" data-bs-target="#downloadModal" title="download options">
-										  download options</a>
+										  Download options</a>
+		                <i class="fas fa-download linky"></i>
 			              <span class="float-end">
 			                <label for="checkbox" class="small">Close intro by default</label>
 			                <input type="checkbox" id="checkbox">
 			              </span>
+			            </p>
 		            </div>
             </div>
 {#            <div class="mt-3" style="border-top: 1px solid gainsboro;">#}
@@ -211,6 +214,30 @@
 <!-- pcoll_content -->
 <script type="text/javascript">
 	window.csrfToken = "{{ csrf_token }}";
+
+  clearEl = function(el){
+    $("#progress-bar").fadeOut()
+    el.html('')
+  }
+
+  function dater(){
+    const date = new Date(Date.now());
+    return date.toISOString().substring(0,10)
+  }
+
+  function customResult(resultElement, result) {
+    {#console.log('celery result',result)#}
+    {#console.log('celery resultElement',resultElement)#}
+    {#spinner_dl.stop()#}
+    let fn = result.filename
+    let link = '[ <span class="dl-save"><a href="/'+fn+'" title="downloaded: '+dater()+
+              '" download>save</a></span> ]'
+    $( resultElement ).append(
+      $('<p>').html(link)
+    );
+    $(".dl-save a")[0].click()
+    setTimeout(clearEl($("#celery-result")), 1000)
+  }
 </script>
 <!-- Set up MapLibre map using Maptiler SDK -->
 <script type="text/javascript">

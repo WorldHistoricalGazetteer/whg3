@@ -1,5 +1,5 @@
 import datasetLayers from './mapLayerStyles';
-import { attributionString, arrayColors, colorTable } from './utilities';
+import {attributionString, arrayColors, colorTable, startSpinner} from './utilities';
 import { filteredLayer } from './mapFilters';
 import SequenceArcs from './mapSequenceArcs';
 import { scrollToRowByProperty, clearFilters } from './tableFunctions';
@@ -156,12 +156,13 @@ export function initOverlays(whgMap) {
 				"format": 'lpf',
 				"dsid": dsid,
 				"collid": collid,
-				"csrfmiddlewaretoken": "{{ csrf_token }}"
+				"csrfmiddlewaretoken": window.csrfToken
 			},
 			datatype: 'json',
 			success: function(response) {
-				window.spinner_download = startSpinner("metadata"); // TODO: window.spinner_download.stop() not yet implemented anywhere?
-				task_id = response.task_id
+				// window.spinner_download = startSpinner("metadata");
+				// TODO: window.spinner_download.stop() not yet implemented anywhere?
+				let task_id = response.task_id
 				var progressUrl = "/celery-progress/" + task_id + "/";
 				CeleryProgressBar.initProgressBar(progressUrl, {
 					pollingInterval: 500,
@@ -170,6 +171,8 @@ export function initOverlays(whgMap) {
 			}
 		})
 	})
+
+			// called from a-dl click()
 
 	// TODO: Collection download event handlers
 	$(".btn-cancel").click(function() {
