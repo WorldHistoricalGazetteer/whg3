@@ -14,6 +14,8 @@ static/_older/
 # leave server versions intact
 media/scratch/
 media/user*
+media/downloads/*
+
 #media/resources/
 #media/collections/
 #media/datasets/
