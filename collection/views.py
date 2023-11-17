@@ -858,7 +858,7 @@ class DatasetCollectionUpdateView(UpdateView):
 
   def get_success_url(self):
     id_ = self.kwargs.get("id")
-    return '/collections/'+str(id_)+'/summary_ds'
+    return '/collections/'+str(id_)+'/browse_ds'
 
   def form_valid(self, form):
     if form.is_valid():

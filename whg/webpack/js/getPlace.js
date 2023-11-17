@@ -216,7 +216,7 @@ function parsePlace(data) { // TODO: See also commented code at bottom
 	// DESCRIPTIONS
 	// TODO: link description to identifier URI if present
 	if (data.descriptions.length > 0) {
-		val = data.descriptions[0]['value'].substring(0, 300)
+		let val = data.descriptions[0]['value'].substring(0, 300)
 		descrip += '<p><b>Description</b>: ' + (val.startsWith('http') ? '<a href="' + val + '" target="_blank">Link</a>' : val) +
 			' ... </p>'
 		//'<br/><span class="small red-bold">('+data.descriptions[0]['identifier']+')</span>-->
