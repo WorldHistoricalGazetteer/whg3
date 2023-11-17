@@ -617,6 +617,7 @@ class PlaceCollectionBrowseView(DetailView):
     context['maptilerkey'] = settings.MAPTILER_KEY
     context['media_url'] = settings.MEDIA_URL
 
+
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
     context['ds_list'] = coll.ds_list
     context['ds_counter'] = coll.ds_counter
