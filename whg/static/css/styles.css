@@ -735,7 +735,13 @@ em { color: #993333;}
   min-width: 150px;
   max-width: 90%;
 }
-#placetable_filter input {font-size:smaller;}
+#placetable_filter {
+  font-size: .8rem;
+}
+#placetable_filter input {
+  font-size: 0.8rem;
+  line-height: 0.9rem;
+}
 #collection_form p { margin-bottom: .3rem;}
 #coll_meta {
   background-color: oldlace;

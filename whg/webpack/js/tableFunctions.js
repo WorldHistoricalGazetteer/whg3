@@ -302,8 +302,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 	}
 
 	table = $('#placetable').DataTable({
-		dom: "<'row small'<'col-sm-7'f>" +
-			"<'col-sm-5'>>" +
+		dom: "<'row small'<'col-sm-9'f>" + "<'col-sm-3'>>" +
 			"<'row'<'col-sm-12'tr>>" +
 			"<'row small'<'col-sm-12'p>>",
 		select: true,
