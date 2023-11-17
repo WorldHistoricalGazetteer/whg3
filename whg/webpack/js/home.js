@@ -117,42 +117,43 @@ mappy.on('load', function() {
 		var carousels = $('.carousel');
 		let delay = 10000;
 		let mouseover = false;
-		carousels.first().carousel({
-		  	interval: delay,
-			ride: 'carousel',
-		  	keyboard: false, // Ignore keyboard
-		}).on('slide.bs.carousel', function () {
-		    if (!mouseover) {
-				timer = setTimeout(function () {
-			      carousels.eq(1).carousel('next');
-			    }, delay / 2);
-			}
-		});
-		carousels.eq(1).carousel({
-		  	keyboard: false, // Ignore keyboard
-		});
-		carousels.on('slid.bs.carousel', function () {
-			const featureId = $(this).find('.carousel-item.active').data('id');
-			mappy.setFilter('featured-data-layer', ['==', 'id', featureId]);
-			
-		    const selectedFeature = window.carousels.features.find(feature => feature.properties.id === featureId);
-		    if (selectedFeature && selectedFeature.geometry && selectedFeature.geometry.coordinates) {
-		        mappy.fitBounds(bbox(selectedFeature.geometry), {
-		            padding: 100,
-			        speed: .5,
-		        });
-		    }
-		    else {
-			    mappy.flyTo({
-					center: mapParameters.center,
-					zoom: mapParameters.zoom,
-			        speed: .5,
-			    });
-			}
-			
-			$('.carousel-container .border').removeClass('highlight-carousel');
-			$(this).closest('.border').addClass('highlight-carousel');
-		});
+		// disabled 2023-11-17  kg
+		// carousels.first().carousel({
+		//   	interval: delay,
+		// 	ride: 'carousel',
+		//   	keyboard: false, // Ignore keyboard
+		// }).on('slide.bs.carousel', function () {
+		//     if (!mouseover) {
+		// 		timer = setTimeout(function () {
+		// 	      carousels.eq(1).carousel('next');
+		// 	    }, delay / 2);
+		// 	}
+		// });
+		// carousels.eq(1).carousel({
+		//   	keyboard: false, // Ignore keyboard
+		// });
+		// carousels.on('slid.bs.carousel', function () {
+		// 	const featureId = $(this).find('.carousel-item.active').data('id');
+		// 	mappy.setFilter('featured-data-layer', ['==', 'id', featureId]);
+		//
+		//     const selectedFeature = window.carousels.features.find(feature => feature.properties.id === featureId);
+		//     if (selectedFeature && selectedFeature.geometry && selectedFeature.geometry.coordinates) {
+		//         mappy.fitBounds(bbox(selectedFeature.geometry), {
+		//             padding: 100,
+		// 	        speed: .5,
+		//         });
+		//     }
+		//     else {
+		// 	    mappy.flyTo({
+		// 			center: mapParameters.center,
+		// 			zoom: mapParameters.zoom,
+		// 	        speed: .5,
+		// 	    });
+		// 	}
+		//
+		// 	$('.carousel-container .border').removeClass('highlight-carousel');
+		// 	$(this).closest('.border').addClass('highlight-carousel');
+		// });
 		$('.carousel-container').on('mouseenter', function() {
 		  	carousels.first().carousel('pause');
 		  	clearTimeout(timer);

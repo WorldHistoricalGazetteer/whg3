@@ -439,12 +439,12 @@ def removeDatasetFromIndex(request, *args, **kwargs):
   from datasets.models import Dataset
   ds = Dataset.objects.get(id = args[0] if args else kwargs['dsid'])
   es = settings.ES_CONN
-  # q_pids = {"match": {"dataset": 'sample7h'}}
+  idx = settings.ES_WHG
   q_pids = {"match": {"dataset": ds.label}}
-  res = es.search(index='whg', query=q_pids, _source=["title", "place_id"], size=ds.places.count())
+  res = es.search(index=idx, query=q_pids, _source=["title", "place_id"], size=ds.places.count())
   pids = [h['_source']['place_id'] for h in res['hits']['hits']]
   print('pids in remove...()', pids)
-  removePlacesFromIndex(es, 'whg', pids)
+  removePlacesFromIndex(es, idx, pids)
   ds.ds_status = 'wd-complete'
   ds.save()
   # remove indexed flag in places

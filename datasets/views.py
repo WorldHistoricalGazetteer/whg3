@@ -312,8 +312,8 @@ def review(request, pk, tid, passnum):
   pid = None
   if 'pid' in request.GET:
     pid = request.GET['pid']
-  ds = get_object_or_404(Dataset, id=pk)
-  task = get_object_or_404(TaskResult, task_id=tid)
+  ds = Dataset.objects.get(id=pk)
+  task = TaskResult.objects.get(task_id=tid)
   auth = task.task_name[6:].replace('local','')
   authname = 'Wikidata' if auth == 'wd' else 'Getty TGN' \
     if auth == 'tgn' else 'WHG'
@@ -515,7 +515,7 @@ def review(request, pk, tid, passnum):
                 src_id = place.src_id,
                 jsonb = {
                   "type":hits[x]['match'],
-                  "identifier":link_uri(task.task_name,hits[x]['authrecord_id'] \
+                  "identifier":link_uri(task.task_name, hits[x]['authrecord_id'] \
                       if hits[x]['authority'] != 'whg' else hits[x]['json']['place_id'])
                 }
               )
@@ -809,10 +809,12 @@ def ds_recon(request, pk):
 # TODO: needs overhaul to account for ds.ds_status
 def task_delete(request, tid, scope="foo"):
   hits = Hit.objects.all().filter(task_id=tid)
-  tr = get_object_or_404(TaskResult, task_id=tid)
+  tr = TaskResult.objects.get(task_id=tid)
   auth = tr.task_name[6:] # wdlocal, idx
-  dsid = tr.task_args[1:-1]
-  test = json.loads(tr.task_kwargs.replace("'",'"'))['test'] \
+  # dsid = tr.task_args[1:-1]
+  dsid = int(tr.task_args[2:-3])
+  # test = json.loads(tr.task_kwargs.replace("'",'"'))['test'] \
+  test = json.loads(tr.task_kwargs[1:-1].replace("'", '"'))['test'] \
     if 'test' in tr.task_kwargs else 'off'
   ds=get_object_or_404(Dataset, pk=dsid)
   ds_status = ds.ds_status
@@ -862,7 +864,7 @@ def task_delete(request, tid, scope="foo"):
       ds.ds_status = 'uploaded'
   ds.save()
 
-  return redirect('/datasets/'+dsid+'/reconcile')
+  return redirect('/datasets/'+str(dsid)+'/reconcile')
 
 """
   task_archive(tid, scope, prior)

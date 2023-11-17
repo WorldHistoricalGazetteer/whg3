@@ -1,6 +1,6 @@
 # update ES records for this and that
 from django.conf import settings
-from elasticsearch import Elasticsearch
+from elasticsearch8 import Elasticsearch
 es = settings.ES_CONN
 
 from datasets.models import Dataset

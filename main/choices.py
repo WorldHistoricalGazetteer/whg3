@@ -17,15 +17,15 @@ AUTHORITIES = [
     ('whg','WHG'),
 ]
 
-AUTHORITY_BASEURI = [
-    ('align_tgn','tgn:'),
-    ('align_dbp','dbp:'),
-    ('align_gn','gn:'),
-    ('align_wd','wd:'),
-    ('align_wdlocal','wd:'),
-    ('align_idx','whg:'),
-    ('align_whg','whg:')
-]
+AUTHORITY_BASEURI = {
+    'align_tgn':'tgn:',
+    'align_dbp':'dbp:',
+    'align_gn':'gn:',
+    'align_wd':'wd:',
+    'align_wdlocal':'wd:',
+    'align_idx':'whg:',
+    'align_whg':'whg:'
+}
 
 COLLECTIONCLASSES = [
     ('dataset','Dataset collection'),
