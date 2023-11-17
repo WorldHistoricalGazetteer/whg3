@@ -165,11 +165,7 @@ def make_download(request, *args, **kwargs):
   dsid = kwargs['dsid'] or None
   collid = kwargs['collid'] or None
   print('make_download() dsid, collid', dsid, collid)
-  # test values
-  # username = 'whgadmin'
-  # userid=1
-  # req_format = 'tsv'
-  # dsid = 1423
+
 
   date = makeNow()
 
