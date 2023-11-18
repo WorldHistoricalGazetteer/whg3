@@ -268,7 +268,8 @@ function renderResults(featureCollection) {
 	}
 
 	// checkboxes for types in initial results
-	$('#type_checkboxes').empty().append('<p>Place Types</p>');
+	// $('#type_checkboxes').empty().append('<p>Place Types</p>');
+	$('#type_checkboxes').empty();
 	allTypes.forEach(type => {
 		const checkbox = $('<input>', {
 			type: 'checkbox',
@@ -286,7 +287,8 @@ function renderResults(featureCollection) {
 	});
 
 	// checkboxes for countries in initial results
-	$('#country_checkboxes').empty().append('<p>Countries</p>');
+	// $('#country_checkboxes').empty().append('<p>Countries</p>');
+	$('#country_checkboxes').empty();
 	allCountries.forEach(country => {
 		const cName = ccode_hash[country]['gnlabel'];
 		const checkbox = $('<input>', {
@@ -305,6 +307,43 @@ function renderResults(featureCollection) {
 
 		$('#country_checkboxes').append(checkbox).append(label).append('<br>');
 	});
+
+	$('#typesCount').text(`(${allTypes.length})`);
+	$('#countriesCount').text(`(${allCountries.length})`);
+
+	// var chevronIcon = $('#headingCountries .accordion-toggle-indicator i');
+
+	// 5 or fewer countries? open accordion; more? close it
+	if (allCountries.length <= 5) {
+		$('#collapseCountries').addClass('show').removeClass('collapse');
+		$('#headingCountries .accordion-button').removeClass('collapsed').attr('aria-expanded', 'true');
+		$("#headingCountries button .accordion-toggle-indicator").hide();
+	} else {
+		$('#collapseCountries').removeClass('show').addClass('collapse');
+		$('#headingCountries .accordion-button').addClass('collapsed').attr('aria-expanded', 'false');
+		$("#headingCountries button .accordion-toggle-indicator").show();
+	}
+
+	$('#collapseTypes').on('show.bs.collapse', function () {
+		$('#headingTypes .accordion-toggle-indicator').html('<i class="info-collapse fas fa-chevron-up"></i>');
+	}).on('hide.bs.collapse', function () {
+		$('#headingTypes .accordion-toggle-indicator').html('<i class="info-collapse fas fa-chevron-down"></i>');
+	});
+
+	$('#collapseCountries').on('show.bs.collapse', function () {
+		$('#headingCountries .accordion-toggle-indicator').html('<i class="info-collapse fas fa-chevron-up"></i>');
+	}).on('hide.bs.collapse', function () {
+		$('#headingCountries .accordion-toggle-indicator').html('<i class="info-collapse fas fa-chevron-down"></i>');
+	});
+	$('.accordion-button').on('click', function() {
+    var indicator = $(this).find('.accordion-toggle-indicator');
+    if ($(this).hasClass('collapsed')) {
+        indicator.html('<i class="info-collapse fas fa-chevron-down');
+    } else {
+        indicator.html('<i class="info-collapse fas fa-chevron-up');
+    }
+});
+
 
 	$('.filter-checkbox').change(function() {
 		// store state

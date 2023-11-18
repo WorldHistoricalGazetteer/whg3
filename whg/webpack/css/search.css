@@ -51,6 +51,18 @@
     border: 1px gainsboro solid;
 }
 
+.accordion-header {
+    background-color: aliceblue;
+}
+
+.accordion-button {
+    display: block !important;
+}
+
+.accordion-toggle-indicator {
+    color: cadetblue;
+}
+
 #result_container {
     height: 200px;
     overflow-y: auto;
