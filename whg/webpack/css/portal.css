@@ -37,22 +37,22 @@
     overflow: visible;
 }
 
-#temporal-attestations {
+#temporal_attestations {
 	height: 105px!important;
 	overflow: hidden;
 }
 
-#map-options {
+#map_options {
 	max-height: 100%;
 }
 
-#map-options .option-block {
+#map_options .option-block {
     margin: 4px;
     position: relative;
     padding-bottom: 4px;
 }
 
-#map-options .option-block:not(:last-of-type)::after {
+#map_options .option-block:not(:last-of-type)::after {
   content: "";
   position: absolute;
   left: 0;
@@ -62,27 +62,27 @@
   background-color: #000;
 }
 
-#map-options .strong-red.heading {
+#map_options .strong-red.heading {
 	margin-bottom: 0.3rem;
 }
 
-#map-options .geoLayer-choice label {
+#map_options .geoLayer-choice label {
     cursor: pointer;
     position: relative;
     top: -6px;
     left: 6px;
 }
 
-#map-options .group-item {
+#map_options .group-item {
     margin-bottom: 0.2rem;
     font-weight: bold;
 }
 
-#map-options .group-item input[type="radio"] {
+#map_options .group-item input[type="radio"] {
     margin-right: 5px;
 }
 
-#map-options .group-item label, #map-options label[for="radiusSelect"] {
+#map_options .group-item label, #map-options label[for="radiusSelect"] {
     font-weight: normal;
     cursor: pointer;
     position: relative;

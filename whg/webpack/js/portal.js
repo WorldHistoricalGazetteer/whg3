@@ -97,14 +97,14 @@ function waitMapLoad() {
 			
 	  		const geoLayers = JSON.parse($('#geo-layers').text());
 			if (geoLayers.length > 0) {
-				$('#map-options').append(createGeoLayerSelectors('geoLayers', geoLayers));
+				$('#map_options').append(createGeoLayerSelectors('geoLayers', geoLayers));
 			}
 			
 			if (mapParameters.styleFilter.length !== 1) {
-				$('#map-options').append(createBasemapRadioButtons());
+				$('#map_options').append(createBasemapRadioButtons());
 			}
 			
-			$('#map-options').append(createNearbyPlacesControl());
+			$('#map_options').append(createNearbyPlacesControl());
 			
 			mappy.addControl(new CustomAttributionControl({
 				compact: true,

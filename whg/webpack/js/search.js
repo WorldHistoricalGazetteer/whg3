@@ -174,7 +174,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			  },
 			  traditional: true,
 			  success: function(response) {
-				window.location.href = '/places/portal-new/';
+				window.location.href = '/places/portal/';
 			  },
 			  error: function(xhr, status, error) {
 				console.error("AJAX POST error:", error);

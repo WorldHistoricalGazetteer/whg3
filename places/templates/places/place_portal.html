@@ -1,897 +1,101 @@
-<!-- places/place_detail.html -->
 {% extends "main/base.html" %}
 
 {% load static %}
 {% load dataset_extras %}
 {% load leaflet_tags %}
-
 {% block title %}<title>Place::{{ place.title }}</title>{% endblock %}
 {% block extra_head %}
-  {% leaflet_js %}
-  {% leaflet_css %}
   <script src="{% static 'js/aliases.js' %}"></script>
-  <script src="{% static 'js/leaflet.ajax.min.js' %}"></script>
-  <script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
 
   <script src = "https://d3js.org/d3.v4.min.js"></script>
+  
+  <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
+  <link href="{% static 'webpack/portal.bundle.css' %}" rel="stylesheet" /> 
 
-  <!-- spinners stuff -->
-  <link rel="stylesheet" href="{% static 'css/spin.css' %}"/>
-  
-  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.css' rel='stylesheet' />
-  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js'></script>
-  <script src="{% static 'js/leaflet-mapbox-gl.js' %}"></script>
-  <script src="{% static 'js/bootstrapx-clickover.js' %}"></script>
-  
-  <style>
-    #addtocoll {padding-left:0.3rem;}
-    #addtocoll_popup {position:absolute;
-	    top:3px; left:3px; width:200px;
-	    background-color: #fff;
-	    border: 1px solid #336699;
-	    z-index: 2000;
-	    box-shadow: 3px 3px #c3c3c3;
-	    {#border-radius: 10px;#}
-    }
-    .svg-container {
-      display: inline-block;
-      position: relative;
-      width: 100%;
-      padding-bottom: 10%;
-      vertical-align: top;
-      overflow: hidden;
-    }
-    .svg-content {
-        display: inline-block;
-        position: absolute;
-        top: 0;
-        left: 0;
-    }
-    #coll_popup {
-	    position:absolute;
-			{#background-color: whitesmoke;#}
-	    border: 1px solid grey;
-	    box-shadow: gainsboro 4px 4px;
-	    border-radius: 6px;
-	    padding: 15px;
-	    max-height: 75%;
-	    width: 350px;
-	    top: 0;
-	    right: 3px;
-	    z-index: 1000;
-	    overflow-y: scroll;
-	    background-color: cornsilk;
-	    {#display:none;#}
-    }
-  </style>
-  
 {% endblock %}
 {% block content %}
-<div class="container">
-  <div id="place_title">
-    <span id="backlink" class="me-1 text-muted smaller"> <a href="javascript:window.history.go(-1);" class="history1">return to search results</a></span>
-    <h4>{{ title }}</h4>
-  </div>
-  <div id="place_content" class="tab-content">
-    <div class="row pt-1">
-      <div id="place_home_l" class="col-sm-6">
-	      <div class="small allcap-heading">
-		      ATTESTATIONS TO DATE
-		      <span id="added_flash" class="float-end"></span>
-		      <span id="addtocoll" class="float-end me-1 hidden">
-			      <a id="addchecked" href="#">add to collection {% fontawesome_icon 'plus' %}</a>
-		      </span>
-	      </div>
-        {% for rec in payload %}
-        <div id="card_{{ rec.place_id }}" class="col-content small mt-1">
-          <!-- 'core' array of dataset labels is context from view; color-code core -->
-          {% if core|haskey:rec.dataset.label %}
-            <div class="core-header">
-          {% else %}
-            <div class="attest-header">
-          {% endif %}
-          <b>{{ rec.title }}</b>
-          <span class="ms-2">
-            dataset: <a class="pop-link pop-dataset" data-id={{rec.dataset.id}} data-toggle="popover" title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
-	              {{rec.dataset.name|truncatechars:25}}</a>
-          <span class="float-end">
-            <a href="#" data-id="{{ rec.place_id }}" class="create-comment me-2" rel="tooltip" title="create note">
-              issue? <i class="fas fa-edit linky fa-xs"></i></a>pid:
-            <a href="" class="a_modal" data-pid="{{ rec.place_id }}" data-toggle="modal" data-target="#modal_place" title="full record">{{ rec.place_id }}</a>
-            <span class="ms-2">
-              {% if rec.geoms|length > 0 %}
-                <a href="#" class="flash-geo ttip" data-id="{{ rec.place_id }}" title="flash map marker">{% fontawesome_icon 'map-marker' %}</a>
-              {% endif %}
-              {% if user.is_authenticated %}
-              <input type="radio" name="r_anno" rel="tooltip" title="add to a collection" class="action ms-2" data-id="{{ rec.place_id }}" />
-              {% endif %}
-            </span>
-          </span>
-        </div>
-        <div class="attest-element scroll65"><b>Variants</b>:
-          {% for name in rec.names|slice:":4"|dictsort:"label" %}
-            <i>{{name.label}}</i>
-            {% if name.when %}
-              ({% for t in name.when.timespans|sortts %}
-                <!--TODO: not necessarily 'in'-->
-                {{ t.start.in }}-{{ t.end.in }}
-              {% if not forloop.last %}; {% endif %}
-              {% endfor %})
-            {% endif %}
-            {% if not forloop.last %}; {% endif %}
-          {% endfor %}
-          {% if rec.names|length > 4 %}...{{rec.names|length|add:"-4"}} more{% endif %}
-        </div>
-          <div class="attest-element"><b>Types</b>: 
-            {% for type in rec.types %}
-              <i>{{ type.label }}
-                {% if type.when %}
-                  {% for t in type.when.timespans|sortts %}
-                    {{ t.start.in }}-{{ t.end.in }}
-                    {% if not forloop.last %}| {% endif %}
-                  {% endfor %}
-                {% endif %}</i>
-              {% if not forloop.last %}<i>;</i> {% endif %}
-            {% endfor %}
-          </div>
 
-          {% if rec.links|length > 0 %}
-            <div class="attest-element"><b>Links</b>: {{rec.links|length}} linked records
-	            {% for l in rec.links %}
-	              <a href="#" class="ext">{{ l.identifier }}</a>;
-              {% endfor %}
+<div class="container mt-1 px-1">
+    <div class="overlay left">
+        <div id="info" class="m-2 p-1">
+            <div id="sources" class="bg-light info-box">
+                <p class="mb-0 strong-red">Sources</p>
+	              {% for rec in payload %}
+		              <div class="source-box small">
+                    <span class="fs-6">{{ rec.title}} ({{ rec.place_id }})</span>
+                    <br /> Dataset: <a class="pop-link pop-dataset" data-id={{rec.dataset.id}} data-toggle="popover"
+                                       title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
+                        {{rec.dataset.name|remove:'(stub) '|truncatechars:25}}</a>
+	                  {% if rec.timespans  %} <br />Temporal: {{ rec.timespans }} {% endif %}
+                  </div>
+	              {% endfor %}
             </div>
-          {% endif %}
-
-          {% if rec.related|length > 0 %}
-            <div class="attest-element"><b>Related</b>:<i>
-                {% for rel in rec.related %}
-                  {% if rel.relationType == 'gvp:broaderPartitive'%}
-                    <b>within</b>{% endif %}
-                  {{ rel.label }} 
-                  {% if rel.when %}
-                    {{ rel.when|json_script:rec.place_id }}
-                    ({{ rel.when.timespans|first|parsedict:"start"|parsedict:"in" }}/{{ rel.when.timespans|first|parsedict:"end"|parsedict:"in" }})
-                  {% endif %}
-                  {% if not forloop.last %}| {% endif %}
-                {% endfor %}</i>
-            </div>
-          {% endif %}
-          
-          {% if rec.timespans|length > 0 %}
-            <div class="attest-element attesttime">
-              <b>When</b>:
-              {% if rec.timespans|length > 0 %}
-                {% for t in rec.timespans %}
-                  {{t}}{% if not forloop.last %}; {% endif %}
-                {% endfor %}                    
-              {% endif %}
-            </div>
-          {% endif %}
-          
-          <!-- geoms into $('script') elements-->
-          {% if rec.geoms|length > 0 %}
-            {% for g in rec.geoms %}
-              {{ g|json_script:rec.place_id }}
-            {% endfor %}
-          {% endif %}
-        </div>
-        {% endfor %} <!-- rec in payload-->
-        <!-- popup -->
-	      <div id="coll_popup" class="hidden">
-		      <div class="closer" style="position:absolute; top:-3px; right:7px;">x</div>
-		      <h5 id="coll_title"></h5>
-		      <div id="coll_popup_content" class="smaller"></div>
-	      </div>
-      </div> <!-- place_home_l-->
-      <div id="place_home_r" class="col-sm-6">
-{#        {% if my_collections %}#}
-        {% if user.is_authenticated %}
-        {% endif %}
-	      <div id="addtocoll_popup" class="p-2 hidden small">
-		      <div class="closer" style="position:absolute; top:0; right:4px">X</div>
-		      <ul id="my_collections" class="no-bullets">
-			      {% for c in my_collections %}
-				      <li><a class="a_addtocoll" href="#" ref="{{ c.id }}">{{ c.title }}</a></li>
-			      {% endfor %}
-		      </ul>
-		      <hr/>
-		      <p class="mb-0 ital">
-			      <a id="create_coll_link" href="#"><i class="fas fa-plus-square linky"></i> create new</a>
-		      </p>
-		      <p id="title_form" class="small hidden">
-			      <input id="title_input" type="text" placeholder="Collection title" width="20"/>
-			      <button id="b_create_coll" type="button">create</button>
-		      </p>
-	      </div>
-	      <div id="place_temporal" class="col-content small">
-          <p class="mb-0 allcap-heading">TEMPORAL ATTESTATIONS</p>
-          <!--<div id="histogram_sum"></div>-->
-          <div id="histogram_sum" class="svg-container"></div>
-        </div>
-        <div id="place_map" class="col-content small">
-          <p class="mb-0 allcap-heading">GEOGRAPHY <span class="nogeo text-danger"></span>
-              <span id="fetch_context" class="float-end">nearby places (8000 max) <input id="fetch-context" type="checkbox"/></span>
-          </p>
-          <div id="map">{% leaflet_map "map" callback="map_init" %}</div>
-        </div>
-        <div id="place_traces" class="col-content small mt-1">
-          <p class="mb-0 allcap-heading">IN COLLECTIONS
-            <span id="clear_markers" class="float-end hidden"><a href="#">clear markers</a> </span>
-          </p>
-          <div id="collection_list">
-          {% if collections|length > 0 %}
-            <ul>
-            {% for c in collections %}
-	            {% with c.collection_class as cclass %}
-	            <li>
-		            {% if cclass == 'place' %}
-		              <a href="{% url 'collection:place-collection-browse' c.id %}" target="_blank">
-			              <b>{{ c.title }}</b></a>, a collection of <sr>{{ c.places_all.count }}</sr> places
-			              {{ c.title|json_script:"c_title" }}
-			              {{ c.description|json_script:"c_description" }}
-			              [<a href='javascript:{ showCollectionDescription()}' class="a_cdescription">description</a>,
-			              <a href="#" class="coll-geo" data-id="{{ c.id }}">places</a>]
-		            {% else %}
-		              <a href="{% url 'collection:ds-collection-browse' c.id %}" target="_blank">
-			              <b>{{ c.title }}</b></a>
-			            , a collection of all <sr>{{ c.places_all.count }})</sr> places in {{ c.datasets.count }} datasets
-	              {% endif %}
-              </li>
-	            {% endwith %}
-            {% endfor %}
-            </ul>
-          {% else %}
-            <i>None yet</i>
-          {% endif %}
-          </div>
-        </div>
-      </div> <!-- place_home_r -->
-    </div> <!-- row -->          
-  </div> <!-- place_content -->
-</div> <!-- top container -->
-
-<div id="modal_place" class="modal fade" tabindex="-1" role="dialog" >
-  <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-body"></div>
+        </div>    
     </div>
-  </div>
+    <div class="overlay left">
+        <div id="source_detail" class="bg-light info-box">
+            <p class="mb-0 strong-red">In Collection(s)</p>
+            <div id="collection_list"> <!-- Populated dynamically from context in JavaScript -->
+            </div>
+        </div>
+        <div id="graph_viz" class="bg-light info-box"> {graph visualization?} </div>    
+    </div>
+    <div id="temporal_attestations" class="overlay centre">
+        <div id="histogram" class="position-absolute bg-light">
+            <p class="allcap-heading small my-0">TEMPORAL ATTESTATIONS</p>
+        </div>
+    </div>
+    <div id="map" style="opacity: 0;" class="overlay centre"></div>
+    <div id="map_options" class="overlay right">
+        <p class="mb-0 strong-red">MAP OPTIONS</p>
+    </div>
 </div>
 
-<div id="modal" class="modal fade" tabindex="-1" role="dialog" >
-  <div class="modal-dialog" role="document">
-    <div class="modal-content modal-form"></div>
-  </div>
-</div>
-
-<script type="text/javascript">
-
-	function showCollectionDescription(){
-    const title = JSON.parse($("#c_title").text());
-    const descrip = JSON.parse($("#c_description").text());
-    console.log('descrip',descrip)
-    console.log('title',title)
-    $("#coll_popup").fadeIn()
-    $("#coll_title").html(title)
-    $("#coll_popup_content").html('<p>'+descrip+'</p>')
-	}
-
-	// pids generate new CollPlace (collection_collplace) and
-	// TraceAnnotation records (trace_annotations
-	// same function in ds_places.html
-	function add_to_collection(coll, pids){
-      var formData = new FormData()
-			formData.append('collection', coll)
-			formData.append('place_list', pids)
-			formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-			$.ajax({
-		      type: 'POST',
-		      enctype: 'multipart/form-data',
-		      url: '/collections/add_places/',
-		      processData: false,
-		      contentType: false,
-		      cache: false,
-		      data: formData,
-		      success:function(response){
-			      if(response.status == 'dupe'){
-              alert('That record is already in the collection')
-				      $("input.action").prop('checked',false)
-			      } else {
-			        $("#added_flash").html(response.msg).show().delay(3000).fadeOut()
-			        {#$("#added_flash").show().delay(3000).fadeOut()#}
-				      console.log('added! gimmee feedback', response.msg)
-			      }
-		      }
-			})
-			// TODO: notify of success
-			$("#addtocoll").hide()
-			$("#addtocoll_popup").hide()
-			$("input.action").prop('checked',false)
-
-	}
-	$(".a_addtocoll").click(function(){
-      console.log('clicked', $(this))
-      thisy = $(this)
-			coll = $(this).attr('ref')
-			pids = checked_cards
-			add_to_collection(coll, pids)
-			console.log('pids to coll', pids, coll)
-	})
-	$("#b_create_coll").click(function(){
-			let title = $("#title_input").val()
-			if(title != ''){
-        // create new place collection, return id
-				var formData = new FormData()
-				formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-				formData.append('title', title )
-		    $.ajax({
-		      type: 'POST',
-		      enctype: 'multipart/form-data',
-		      url: '/collections/flash_create/',
-		      processData: false,
-		      contentType: false,
-		      cache: false,
-		      data: formData,
-		      success:function(data){
-			      console.log('new collection', data)
-			      el = $('<li><a class="a_addtocoll" href="#" ref='+data.id+'>'+data.title+'</a></li>')
-			      el.click(function(){
-							coll = data.id
-							pids = checked_cards
-							add_to_collection(coll, pids)
-							console.log('pids to coll', pids, coll)
-			      })
-						$("#my_collections").append(el)
-		      }
-        })
-				$("#title_form").hide()
-			} else {
-					alert( 'Your new collection needs a title!' )
-			}
-	})
-	$(".closer").click(function(){
-      $(this).parent().hide()
-			{#$("#addtocoll_popup").hide()#}
-	})
-	$("#create_coll_link").click(function(){
-			console.log('open title input')
-			$("#title_form").show()
-	})
-	$("#addchecked").click(function(){
-      $("#addtocoll_popup").fadeIn()
-	})
-	{# single pid for place portal; adapt for multi-select elsewhere #}
-	$(".action:radio").click(function(){
-			pid = $('input[name="r_anno"]:checked').data('id');
-			console.log('checked radio for pid:', pid)
-			{#if($(".action:checkbox:checked").length > 0) {#}
-				{#$("#addtocoll").removeClass('hidden')#}
-			$("#addtocoll").fadeIn()
-			{# } else {#}
-      {#  $("#addtocoll").fadeOut()#}
-      {#  $("#addtocoll_popup").fadeOut()#}
-			{# }#}
-			checked_cards = []
-			{#$(".action:checkbox:checked").each(function() {#}
-			checked_cards.push($(this).data("id"))
-					{#console.log('checked ids:', checked_cards);#}
-			{# });#}
-      {#console.log($(this))#}
-	})
-
-  $(".a_modal").on('click',function(){
-    // remove modal header if there is one from a comment form
-    $(".modal-header").remove()
-    $(".modal-footer").remove()
-    startModalSpinner()
-    var pid = $(this).data('pid')
-    $('.modal-body').load('/places/'+pid+'/modal',function(){
-      <!--$('#modal_place').modal('show');-->
-      spinner_modal.stop()
-    });
-  });
-
-  // for loading rivers, watersheds, ecoregions
-  function startMapitSpinner(){
-    window.spinner_mapit = new Spin.Spinner().spin();
-    $("#map").append(spinner_mapit.el);   
-  }
-  spin_opts = { scale: .5, top: '50%'}
-  function startModalSpinner(){
-    window.spinner_modal = new Spin.Spinner({top: '40%'}).spin();
-    $("#modal_place").append(spinner_modal.el);   
-  }
-
-  $(function() {
-    // zap 'keep' if nav away *except history link*
-    $('a').show().filter(':not(.history1)').click(function(){
-      localStorage.removeItem('keep')
-    })
-    
-    if(!localStorage.getItem('last_results') || localStorage.getItem('last_results') == "undefined"){
-      $("#backlink").hide()
-    }
-    var isVisible = false;
-    var hideAllPopovers = function() {
-       $('.pop-dataset').each(function() {
-            $(this).popover('hide');
-        });  
-    };
-    var dspop = $(".pop-dataset").popover({
-      trigger: 'focus',
-      placement: 'right',
-      html: true
-      }).on('show.bs.popover', function () {
-        $.ajax({
-          url: '/api/datasets/',
-          data: {id:$(this).data('id')},
-          dataType: "JSON",
-          async: false,
-          success: function (data) {
-            ds=data.results[0]
-            console.log('ds',ds)
-            html='<p class="thin"><b>Title</b>: '+ds.title+'</p>'
-            html+='<p class="thin"><b>Description</b>: '+ds.description+'</p>'
-            html+='<p class="thin"><b>WHG Owner</b>: '+ds.owner+'</p>'
-            html+='<p class="thin"><b>Creator</b>: '+ds.creator+'</p>'
-            dspop.attr('data-content', html);
-          }
-      });
-    })
-
-    allts = {{ allts }}
-    
-    var min = Math.min.apply(null, allts.map(function(row){ return Math.min.apply(Math, row); }));
-    var max = Math.max.apply(null, allts.map(function(row){ return Math.max.apply(Math, row); }));
-    minmax=[min,max]
-    // feed to tvis_summary()
-    histogram_data(allts, minmax)
-    
-    $(".create-comment").each(function () {
-      var recpk = $(this).data('id');
-      uribase="/comment/"+recpk
-      next='?next='+"{% url 'places:place-portal' id=whg_id %}"
-      $(this).modalForm({formURL: uribase+next});
-    });
-    
-    var trace_count = 0
-    $("[rel='tooltip']").tooltip();
-    $('a[data-toggle="tooltip"]').tooltip({
-      animated: 'fade',
-      placement: 'bottom',
-      html: true
-    });
-    $('input[data-toggle="tooltip"]').tooltip({
-      animated: 'fade',
-      placement: 'bottom',
-      html: true
-    });
-    // toggle nearby places
-    $('input#fetch-context').prop('checked',false)
-    $('input#fetch-context').click(function(){
-      if($(this).is(':checked')) {
-        fetchContext(boundsPolygon(mappy.getBounds()))
-      } else {
-        nearby.removeFrom(mappy)
-      }
-    })
-    $("#clear_markers").click(function(){
-      traceLayers.clearLayers()
-	    // center on place record again
-      mappy.setView(center, 5)
-	    $("#clear_markers").fadeOut()
-	    $("#fetch_context").show()
-    })
-
-		$(".clear-markers").click(function(){
-      console.log('clear markers, toot sweet')
-		})
-
-    // load collection geometry (# within reason)
-    $(".coll-geo").click(function(e){
-      e.preventDefault()
-	    // TODO: why does context fail when collection places are displayed
-	    // in any case, hide the checkbox
-	    $("#fetch_context").hide()
-      fetchCollectionGeom($(this).data('id'), 3)
-      $("#clear_markers").fadeIn()
-    })
-  }) // jquery on load
-
-  function filly(counter) {
-    if (counter == 0)
-      return "blue"
-    else if (counter == 1)
-      return "green"
-    else if (counter == 2)
-      return "purple"
-    else if (counter == 3)
-      return "red"
-    else 
-      return "black"
-  }
-  // database fetch (collection may include non-indexed datasets)
-  function fetchCollectionGeom(coll_id,counter) {
-    counter= 3
-    $.get("/search/collgeom",{coll_id: coll_id},
-      function(data){
-        console.log('collection places', data)
-        cplaces = L.geoJSON(data, {
-          pane: 'tracePane',
-          pointToLayer: function (feature, latlng) {
-            identifier = feature.properties.pid
-            marker = L.circleMarker(latlng,
-              {
-                radius: 5, fillOpacity: 0.3, opacity: 1, weight: 1,
-                color: "#fff", fillColor: filly(counter)
-              }
-            ).bindPopup('pid:'+identifier+'<br/><b>'+
-              '<a href="/places/'+identifier+'/portal">'+feature.properties.title+"</b></a>");
-            idToFeature[identifier] = marker
-            return marker
-          },
-          onEachFeature: function(feature,layer){
-            layer.addTo(traceLayers)
-          }
-        }).addTo(mappy);
-        mappy.fitBounds(cplaces.getBounds())
-    });
-  }
-
-	// TODO: retire this
-  function fetchTraceGeom(trace_id,counter) {
-    $.get("/search/tracegeom",{idx: 'traces', search: trace_id, doc_type: 'trace'},
-      function(data){
-        traces = L.geoJSON(data, {
-          pane: 'tracePane',
-          pointToLayer: function (feature, latlng) {
-            identifier = feature.properties.whg_id
-            marker = L.circleMarker(latlng,
-              {
-                radius: 3, fillOpacity: 0.8, opacity: 1, weight: 1,
-                color: "#fff", fillColor: filly(counter)
-              }
-            ).bindPopup('pid:'+identifier+'<br/><b>'+
-              '<a href="/places/'+identifier+'/portal">'+feature.properties.title+"</b></a>");
-            idToFeature[identifier] = marker
-            return marker
-          },
-          onEachFeature: function(feature,layer){
-            layer.addTo(traceLayers)
-          }
-        }).addTo(mappy);
-        mappy.fitBounds(traces.getBounds())
-    });
-  }
-
-  // ES query to retrieve 800 in map viewport bbox
-	// TODO: closest, not random in box
-  function fetchContext(coords){
-    startMapitSpinner()
-    context={"type":"FeatureCollection","features":[]}
-    $.get("/search/context",{idx: 'whg', extent: coords, task: 'features'},
-      function(data){
-        <!--console.log('data:',data)-->
-        console.log('a hit:', data['hits'][0])
-        for(i in data['hits']){
-          title = data['hits'][i]['title']
-          whg_id = data['hits'][i]['whg_id']
-          geoms=data['hits'][i]['geoms']
-          {#console.log(geoms)#}
-          for(j in geoms) {
-            context["features"].push(
-              { "type":"Feature",
-                "properties":{
-                  "id":whg_id,
-                  "title":title,
-                  "ds":'whg'
-                },
-                "geometry":geoms[j]['location']
-              }
-            )
-          }
-        }
-        // TODO: fix panes z-index
-        mappy.createPane('contextPane');
-        mappy.getPane('contextPane').style.zIndex = 100;
-        nearby = L.geoJSON(context, {
-          pane: 'contextPane',
-          pointToLayer: function (feature, latlng) {
-            marker = L.circleMarker(latlng,
-              {
-                radius: 3, fillOpacity: 0.6, opacity: 1, weight: 1,
-                color: "#fff", fillColor: fill(feature.properties.ds)
-              }
-            ).bindPopup('<a href="/places/'+feature.properties.id+'/portal">'+feature.properties.title+'</a>');
-         
-            idToFeature[feature.properties.id] = marker
-            return marker
-          }
-        }).addTo(mappy);
-        spinner_mapit.stop()
-    });
-  }
-
-  function boundsPolygon(bounds){
-    ne=bounds._northEast
-    sw=bounds._southWest
-
-    var latlngs=[[ne['lat'],ne['lng']], [sw['lat'],ne['lng']],
-      [sw['lat'],sw['lng']],[ne['lat'],sw['lng']]]
-    var geom = {"type": "Polygon", 
-      "coordinates": [[
-        [ne['lng'],ne['lat']],[ne['lng'],sw['lat']],[sw['lng'],sw['lat']],
-        [sw['lng'],ne['lat']],[ne['lng'],ne['lat']]
-      ]]
-    }
-    return JSON.stringify(geom["coordinates"])
-  }
-  
-  window.addEventListener('map:init', function (e) {
-    window.mappy = e.detail.map
-    mappy.createPane('tracePane');
-    mappy.getPane('tracePane').style.zIndex = 200;
-    traceLayers = new L.layerGroup().addTo(mappy)
-    
-    token_mb = '{{ mbtoken }}',
-    mbstyle_url = 'https://api.mapbox.com/styles/v1/{id}/tiles/256/{z}/{x}/{y}?access_token={token}';
-      
-    var satellite  = L.tileLayer(mbstyle_url, {id:'mapbox/satellite-streets-v11', token:token_mb})
-    var osm  = L.tileLayer(mbstyle_url, {id:'mapbox/light-v10', token:token_mb});
-
-    ne_global= L.mapboxGL({
-      style:'mapbox://styles/kgeographer/ckidglq8l2nra19nzzbl995ue',
-      accessToken:'{{ mbtoken }}'})
-      
-    var watershedStyle = {
-      "fillColor": "#993333",
-      "color": "#fff",
-      "weight": 1,
-      "opacity": 0.7,
-      "fillOpacity": 0.1
-    };
-    
-    function random_rgba() {
-        var o = Math.round, ra = Math.random, s = 255;
-        tup = [o(ra()*s), o(ra()*s), o(ra()*s)]
-        
-        const rgbToHex = (r,g,b) => '#' + [r,g,b].map(x => {
-          const hex = x.toString(16)
-          return hex.length === 1 ? '0' + hex : hex
-        }).join('')
-          
-        return rgbToHex(tup[0],tup[1],tup[2])
-    }
-  
-    var riverStyle = {
-      "color": "#336699",
-      "weight": 1
-    };
-    var popupOptions = {}
-    
-    rivers = new L.GeoJSON.AJAX("/datasets/ne_rivers982/places",
-      {style:riverStyle,
-        onEachFeature: function (feature, layer) {
-          popupOptions = {maxWidth: 200};
-            layer.bindPopup(feature.properties.name+" ("+feature.properties.src_id+")", popupOptions);
-          }
-      });
-    watersheds = new L.GeoJSON.AJAX("/datasets/wri_watersheds/places",
-      { style:watershedStyle,
-        onEachFeature: function (feature, layer) {
-        layer.setStyle({"fillColor":random_rgba()})
-          popupOptions = {maxWidth: 200};
-            layer.bindPopup(feature.properties.name+" ("+feature.properties.src_id+")", popupOptions);
-        }
-      })
-    ecoregions = new L.GeoJSON.AJAX("/datasets/tnc_ecoregions/places",
-      { style: {
-          color: "#fff",
-          <!--fillColor:random_rgba(),-->
-          weight: 1,
-          opacity: 0.7,
-          fillOpacity: 0.3},
-        onEachFeature: function (feature, layer) {
-          layer.setStyle({"fillColor":random_rgba()})
-          popupOptions = {maxWidth: 200};
-            layer.bindPopup(feature.properties.name+" ("+feature.properties.src_id+")", popupOptions);
-        }
-      })
-
-    var baseLayers = {
-      "OpenStreetMap": osm,
-      "Terrain": ne_global,
-      "Satellite": satellite
-    };
-    var dataLayers = {
-      "Rivers": rivers,
-      "Watersheds": watersheds,
-      "Ecoregions": ecoregions
-    }
-    L.control.layers(baseLayers,dataLayers).addTo(mappy);
-    baseLayers['OpenStreetMap'].addTo(mappy)
-  }, false);
-
-  function getClose() {
-    mappy.setZoom(mappy.getZoom()+3)
-  }
-  function fill(foo) {
-    if (foo == 'tgn')
-      return "#ff7800"
-    else if (foo == 'whg')
-      return "#ff3300"
-    else
-      return "#7AFF7A"
-  }
-  function renderMap(geom){
-    <!--clear out the previous if any-->
-    if(typeof(features) != 'undefined'){
-      mappy.removeLayer(features)
-    }
-    <!--console.log('renderMap(geom)',geom)-->
-    idToFeature = {}  // for feature lookup
-    mappy.createPane('mainPane');
-    mappy.getPane('mainPane').style.zIndex = 400;
-    features = L.geoJSON(geom, {
-      pane: 'mainPane',
-      pointToLayer: function (feature, latlng) {
-        {#console.log('feature', feature.properties)#}
-        ll = latlng
-        identifier = feature.properties.id
-        {#title = feature.properties.title#}
-        marker = L.circleMarker(latlng,
-          {
-            radius: 8, fillOpacity: 0.8, opacity: 1, weight: 1,
-            color: "#000", fillColor: fill(feature.properties.dataset)
-          }
-        ).bindPopup('pid: <b>'+identifier+'</b><br/>lon/lat: ['+latlng['lng']+', '+latlng['lat']+']'
-          +('when' in feature?'<br/>('+
-          feature.when.timespans[0].start.in+
-          ('end' in feature.when.timespans[0]?'/'+feature.when.timespans[0].end.in:'/-')+')':''))
-     
-        idToFeature[feature.properties.id] = marker
-        return marker
-      }
-    }).addTo(mappy);
-    
-    // TODO: better zoomto choices
-    if (geom['features'].length > 0){
-      center=features.getBounds().getCenter()
-      mappy.setView(center, 5)    
-    } else {
-      $(".nogeo").html('no geometry yet!')
-    }
-  }
-
-  // initialize, render map w/settings.LEAFLET_CONFIG
-  function map_init (map, options) {
-    <!--console.log('in map_init()')-->
-    geom = {"type":"FeatureCollecton","features":[]}
-    // gather geom script from html body
-    window.gelems = $('script').filter(function() {
-      return this.id.match(/[0-9]/) && this.text != '"null"' && this.text.includes('coordinates');
-    });
-
-    // 
-    for (i=0;i<gelems.length;i++){
-      <!--let t_geom = cleanJson(gelems[i].text)-->
-        {#console.log(gelems[i])#}
-      let g = JSON.parse(gelems[i].text)
-      g['properties'] = {"id": gelems[i].id}
-      geom['features'].push(g)
-    }
-    renderMap(geom)
-    
-  } // end map_init
-  
-  var fopt = null;
-  $('.flash-geo').mouseover(function(e){
-    e.preventDefault()
-    feature = idToFeature[$(this).data('id')]
-    feature.bringToFront().setStyle({fillColor:"red",fillOpacity: 1})
-    window.fopt = feature.options
-  })
-  $('.flash-geo').mouseleave(function(e){
-    e.preventDefault()
-    feature = idToFeature[$(this).data('id')]
-    feature.setStyle({fillColor:"#7AFF7A"})
-  })
-  
-  $('.ext').on('click', function(e) {
-    e.preventDefault();
-    str=$(this).text()
-    console.log('str',str)
-    var re = /(http|dbp|gn|tgn|wd|loc|viaf|aat|wp):(.*?)$/;
-    url=str.match(re)[1]=='http' ? str : base_urls[str.match(re)[1]]+str.match(re)[2]
-    window.open(url,'_blank')
-  });
-
-	// histogram stuff
-  function range(start, stop, step) {
-    var a = [start], b = start;
-    while (b < stop) {
-        a.push(b += step || 1);
-    }
-    return a;
-  }
-
-  function intersects(a,b){
-    min = (a[0] < b[0] ? a : b)
-    max = (min == a ? b : a)
-    return !(min[1] < max[1])
-  }
-
-  function histogram_data(intervals,minmax){
-    step = Number(((minmax[1]-minmax[0])/200))
-    bins = range(minmax[0],minmax[1],step)
-    hist_array = Array.apply(null, Array(bins.length)).map(Number.prototype.valueOf,0);
-    labels=bins.map(function(d){return Math.round(d)})
-    for (b=0; b<bins.length; b++){
-      bin = Array(bins[b],bins[b+1])
-      for (i in intervals){
-        if (intersects(bin,intervals[i])){
-          hist_array[b] +=1
-        }
-      }
-    }
-    data=hist_array.map(function(d,i){return {"bin":labels[i],"count":d}})
-    // now visualize it
-    <!--console.log(data)-->
-    histogram(data,labels)
-  }
-
-  function histogram(data,labels){
-    // exit if no data
-    if (data[0].bin == "Infinity"){ $("#histogram_sum").html('<i>None yet</i>'); return; }
-    data=data.slice(0,200)
-    var margin = {top: 0, right: 10, bottom: 0, left: 12};
-    var width = 500, height = 30,  padding_h = 20,  padding_w = 30;
-
-    // set the ranges
-    window.xScale = d3.scaleLinear()
-      .range([0, width])
-    window.yScale = d3.scaleLinear()
-      .range([height, 0]);
-
-    <!--xScale.domain(data.map(function(d) { return d.bin; }));-->
-    xScale.domain(minmax);
-    yScale.domain([0, d3.max(data, function(d) { return d.count; })]);
-
-
-    window.svg_hist = d3.select("#histogram_sum")
-      .append("svg")
-      .attr('preserveAspectRatio','xMinYMin meet')
-      .attr('viewBox','0 0 530 60')
-      .classed("svg-content", true)
-
-      .append("g")
-      .attr("transform","translate(" + margin.left + "," + margin.top + ")")
-
-
-    window.axisB = d3.axisBottom(xScale)
-      .tickValues(labels.filter(function(d,i){return !(i%20)}))
-      .tickFormat(d3.format("d"));
-
-    var axisL = d3.axisLeft(yScale)
-
-    svg_hist.selectAll(".bar")
-      .data(data)
-    .enter().append("rect")
-      .attr("class", "bar")
-      .attr("x", function(d) { return xScale(d.bin); })
-      .attr("width", 2)
-      .attr("y", function(d) { return yScale(d.count); })
-      .attr("height", function(d) { return height - yScale(d.count); });
-
-    var xAxis = svg_hist.append("g")
-      .attr("id","xaxis")
-      .attr("transform", "translate(0," + height + ")")
-      .call(axisB)
-  }
-
-
-</script>
 <script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
+
+<!-- Set up MapLibre map using Maptiler SDK -->
+<script type="text/javascript">
+    let mapParameters = {
+        container: 'map',
+        center: [10.2385, 29.8626],
+        zoom: 5, // starting zoom
+        minZoom: 0.1,
+        maxZoom: 17,
+        mapTilerKey: '{{ maptilerkey }}',
+        controls: {
+            layer: true,
+            navigation: true,
+            fullscreen: false,
+            attribution: {
+                open: false,
+            },
+            {% if from_value %}
+	            temporal: {
+	                fromValue: {{ from_value }},
+	                toValue: {{ to_value }},
+	                minValue: {{ min_timespan }},
+	                maxValue: {{ max_timespan }},
+	                open: false,
+	                includeUndated: true,
+	                epochs: null,
+	                automate: null,
+	            }
+	        {% else %}
+	            temporal: false
+	        {% endif %}
+        },
+        styleFilter: [ 'OUTDOOR.DEFAULT', 'TOPO.DEFAULT', 'TOPO.TOPOGRAPHIQUE', 'SATELLITE.DEFAULT', 'OCEAN.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
+    }
+    let allts = {{ allts }}
+</script>
+
+{{ payload|json_script:"payload_data" }}
+{{ core|json_script:"geo-layers" }}
+
+<script type="module">
+    import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
+    import "{% static 'webpack/portal.bundle.js' %}";
+</script>	
+	
 {% endblock %}
 
