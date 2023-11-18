@@ -249,7 +249,7 @@ function renderResults(featureCollection) {
             <div class="result">
                 <p>${result.title} (${count} in set)
                   <span class="float-end">
-					<a href="#" class="portal-link"	data-pid="${pid}" data-children="${encodedChildren}">portal ${pid}</a>
+					<a href="#" class="portal-link"	data-pid="${pid}" data-children="${encodedChildren}">place portal</a>
                   </span>`
 		if (children.length > 0) {
 			html += `<span class="ml-2">children: ${children.join(', ')}</span>`;
@@ -265,12 +265,9 @@ function renderResults(featureCollection) {
 		allTypes = getAllTypes(results);
 		allCountries = getAllCountries(results);
 		isInitialLoad = false;
-
-		// console.log('allTypes', allTypes)
-		// console.log('allCountries', allCountries)
 	}
 
-	// checkboxes for types in intial results
+	// checkboxes for types in initial results
 	$('#type_checkboxes').empty().append('<p>Place Types</p>');
 	allTypes.forEach(type => {
 		const checkbox = $('<input>', {
@@ -540,6 +537,8 @@ function renderDetail(feature) {
 	let result = feature.properties;
 	let detailHtml = "";
 
+	detailHtml += `<h5>${result.title}</h5>`
+
 	if (result.variants && result.variants.length > 0) {
 		const threshold = 5;
 		const limitedVariants = result.variants.slice(0, threshold).join(', ');
@@ -559,7 +558,7 @@ function renderDetail(feature) {
 		setTimeout(() => {
 			const variantsToggleLink = document.getElementById('variantsToggle');
 			if (variantsToggleLink) {
-				console.log('Attaching event listener to variantsToggle');
+				// console.log('Attaching event listener to variantsToggle');
 				variantsToggleLink.addEventListener('click', toggleVariants);
 			} else {
 				console.log('variantsToggle link not found');
@@ -569,12 +568,6 @@ function renderDetail(feature) {
 	} else {
 		detailHtml += `<p>No Variants Available</p>`; // Or you can just skip adding this line
 	}
-
-	// if (result.variants && result.variants.length > 0) {
-	// 	detailHtml += `<p>Variants: ${result.variants.join(', ')}</p>`;
-	// } else {
-	// 	detailHtml += `<p>No Variants Available</p>`; // Or you can just skip adding this line
-	// }
 
 	if (result.ccodes && result.ccodes.length > 0) {
 		detailHtml += `<p>Country Codes: ${result.ccodes.join(', ')}</p>`;
