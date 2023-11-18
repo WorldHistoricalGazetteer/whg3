@@ -482,7 +482,7 @@ function initiateSearch() {
 	isInitialLoad = true;
 	localStorage.removeItem('last_results')
 
-	const query = $('#search-input').val(); // Get the query from the input
+	const query = $('#search_input').val(); // Get the query from the input
 	const options = gatherOptions(); //
 	console.log('initiateSearch()', query)
 
@@ -517,16 +517,64 @@ function gatherOptions() {
 	return options;
 }
 
+// variant list can grow too long
+function toggleVariants(event) {
+	console.log('toggleVariants called');
+    event.preventDefault();
+    const fullListDiv = document.getElementById('allVariants');
+    const limitedListDiv = document.getElementById('limitedVariants');
+    const moreLink = event.target;
+
+    if (fullListDiv.style.display === 'none') {
+        fullListDiv.style.display = 'block';
+        limitedListDiv.style.display = 'none';
+        moreLink.innerHTML = 'view fewer';
+    } else {
+        fullListDiv.style.display = 'none';
+        limitedListDiv.style.display = 'block';
+        moreLink.innerHTML = 'view all';
+    }
+}
+
 function renderDetail(feature) {
-	
 	let result = feature.properties;
 	let detailHtml = "";
 
 	if (result.variants && result.variants.length > 0) {
-		detailHtml += `<p>Variants: ${result.variants.join(', ')}</p>`;
+		const threshold = 5;
+		const limitedVariants = result.variants.slice(0, threshold).join(', ');
+		const allVariants = result.variants.join(', ');
+
+		detailHtml += '<p>Variants: ';
+        if (result.variants.length > threshold) {
+            detailHtml += `<a href="#" id="variantsToggle" class="ms-2 italic">view all</a><br/>`;
+        }
+		detailHtml += `<span id="limitedVariants">${limitedVariants}</span>`;
+		if (result.variants && result.variants.length > threshold) {
+			detailHtml += `<span id="allVariants" style="display:none">${allVariants}</span>`;
+		}
+		detailHtml += '</p>';
+
+		// add listener
+		setTimeout(() => {
+			const variantsToggleLink = document.getElementById('variantsToggle');
+			if (variantsToggleLink) {
+				console.log('Attaching event listener to variantsToggle');
+				variantsToggleLink.addEventListener('click', toggleVariants);
+			} else {
+				console.log('variantsToggle link not found');
+			}
+		}, 0)
+
 	} else {
 		detailHtml += `<p>No Variants Available</p>`; // Or you can just skip adding this line
 	}
+
+	// if (result.variants && result.variants.length > 0) {
+	// 	detailHtml += `<p>Variants: ${result.variants.join(', ')}</p>`;
+	// } else {
+	// 	detailHtml += `<p>No Variants Available</p>`; // Or you can just skip adding this line
+	// }
 
 	if (result.ccodes && result.ccodes.length > 0) {
 		detailHtml += `<p>Country Codes: ${result.ccodes.join(', ')}</p>`;

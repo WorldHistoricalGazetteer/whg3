@@ -9,11 +9,33 @@
     height: calc(100vh - 65px); /* Adjust the subtraction value as needed */
 }
 
+#search_bar {
+    background-color: antiquewhite;
+    border-radius: 8px;
+}
+
 #search_content {
     display: flex;
     flex-grow: 1;
     overflow: hidden;
 }
+#search_left {
+  z-index:500;
+  margin:0; padding:5px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  height: fit-content;
+}
+/*#search_right {  position:relative; z-index: 0;}*/
+/*#search_lower {*/
+/*  margin-top: .3rem;*/
+/*  margin-right:auto;*/
+/*}*/
+/*#search_info, #traces_info {*/
+/*  width: 100%;*/
+/*  !*overflow-y:auto;*!*/
+/*  !*background-color:whitesmoke;*!*/
+/*}*/
 
 #search_right {
     flex-grow: 1;

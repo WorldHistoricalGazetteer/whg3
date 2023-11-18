@@ -15,20 +15,14 @@ from datasets.tasks import normalize, get_bounds_filter
 from places.models import Place, PlaceGeom
 
 # new
-class SearchPageViewNew(TemplateView):
-  template_name = 'search/search_new.html'
-  # template_name = 'search/search_new.html'
+class SearchPageView(TemplateView):
+  template_name = 'search/search.html'
 
   def get_context_data(self, *args, **kwargs):
     # return list of datasets
     dslist = Dataset.objects.filter(public=True)
 
-    #bboxes = [
-      #{"type":"Feature",
-       #"properties": {"id":ds.id, "label": ds.label, "title": ds.title},
-       #"geometry":ds.bounds} for ds in dslist if ds.label not in ['tgn_filtered_01']]
-
-    context = super(SearchPageViewNew, self).get_context_data(*args, **kwargs)
+    context = super(SearchPageView, self).get_context_data(*args, **kwargs)
     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
@@ -41,29 +35,29 @@ class SearchPageViewNew(TemplateView):
     return context
 
 # old
-class SearchPageView(TemplateView):
-  template_name = 'search/search.html'
-  # template_name = 'search/search_new.html'
-
-  def get_context_data(self, *args, **kwargs):
-    # return list of datasets
-    dslist = Dataset.objects.filter(public=True)
-
-    #bboxes = [
-      #{"type":"Feature",
-       #"properties": {"id":ds.id, "label": ds.label, "title": ds.title},
-       #"geometry":ds.bounds} for ds in dslist if ds.label not in ['tgn_filtered_01']]
-
-    context = super(SearchPageView, self).get_context_data(*args, **kwargs)
-    context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-    context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-    context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
-    context['maptilerkey'] = settings.MAPTILER_KEY
-    context['media_url'] = settings.MEDIA_URL
-    context['dslist'] = dslist
-    context['search_params'] = self.request.session.get('search_params')
-    #context['bboxes'] = bboxes
-    return context
+# class SearchPageView(TemplateView):
+#   template_name = 'search/search.html'
+#   # template_name = 'search/search_new.html'
+#
+#   def get_context_data(self, *args, **kwargs):
+#     # return list of datasets
+#     dslist = Dataset.objects.filter(public=True)
+#
+#     #bboxes = [
+#       #{"type":"Feature",
+#        #"properties": {"id":ds.id, "label": ds.label, "title": ds.title},
+#        #"geometry":ds.bounds} for ds in dslist if ds.label not in ['tgn_filtered_01']]
+#
+#     context = super(SearchPageView, self).get_context_data(*args, **kwargs)
+#     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
+#     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+#     context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
+#     context['maptilerkey'] = settings.MAPTILER_KEY
+#     context['media_url'] = settings.MEDIA_URL
+#     context['dslist'] = dslist
+#     context['search_params'] = self.request.session.get('search_params')
+#     #context['bboxes'] = bboxes
+#     return context
 
 # DEPRECATED
 # class LookupView(View):
