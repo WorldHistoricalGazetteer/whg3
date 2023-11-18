@@ -13,6 +13,7 @@ import '../css/mapAndTableMirrored.css';
 import '../css/dateline.css';
 import '../css/portal.css';
 
+
 let style_code;
 if (mapParameters.styleFilter.length == 0) {
 	style_code = ['DATAVIZ', 'DEFAULT']
@@ -182,6 +183,7 @@ function waitMapLoad() {
     });
 }
 
+
 function waitDocumentReady() {
     return new Promise((resolve) => {
         $(document).ready(() => resolve());
@@ -189,7 +191,8 @@ function waitDocumentReady() {
 }
 
 Promise.all([waitMapLoad(), waitDocumentReady()])
-    .then(() => {	
+    .then(() => {
+
 	  	const payload = JSON.parse($('#payload_data').text());
 	  	
     	const collectionList = $('#collection_list');
@@ -292,7 +295,12 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 				showingRelated = false;
 			}
 	  	})
-	  	
+
+        document.querySelectorAll('.toggle-link').forEach(link => {
+            link.addEventListener('click', function(event) {
+                toggleVariants(event, this);
+            });
+        });
     })
     .catch(error => console.error("An error occurred:", error));
 
@@ -413,7 +421,7 @@ function histogram(data, labels, minmax) {
 function onBasemapRadioChange() {
     const variantValue = $(this).val();
     const style_code = variantValue.split(".");
-    console.log('Selected variant: ', variantValue, maptilersdk.MapStyle[style_code[0]][style_code[1]]);
+    console.log('Selected base: ', variantValue, maptilersdk.MapStyle[style_code[0]][style_code[1]]);
     
     let placesSource = {
 		'type': 'geojson',

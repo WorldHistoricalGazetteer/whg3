@@ -1,16 +1,27 @@
+#portal_container {
+    font-family: 'Raleway', sans-serif !important;
+}
+
 #map {
     background-color: #eaffea;
     height: 80vh;
 }
 #info {
-    background-color: #a8dadc;
+    /*background-color: #a8dadc;*/
+    /*background-color: blue;*/
     border: 1px solid #aaa;
     height: 98%;
+    margin:0 !important;
+    font-family: 'Raleway', sans-serif !important;
+}
+
+div.overlay .left .item {
+    padding: 2px !important;
 }
 #sources,
 #source_detail,
 #graph_viz {
-    padding: 10px;
+    padding: 2px;
     border: 1px solid #aaa;
 }
 #histogram {
@@ -20,7 +31,9 @@
 
 .info-box {
     margin-bottom: 0.2rem;
+    font-family: 'Raleway', sans-serif !important;
 }
+
 .source-box {
     background-color: white;
     border: 1px gainsboro solid;
@@ -28,9 +41,15 @@
     padding: 0.1rem;
 }
 
-#mapOverlays .overlay.left.item:first-of-type {
-    height: -webkit-fill-available!important;
+/*#mapOverlays .column .left .item {*/
+.overlay.left.item {
+    margin:0 !important;
+    padding:0 !important;
 }
+
+/*#mapOverlays .overlay.left.item:first-of-type {*/
+/*    height: -webkit-fill-available!important;*/
+/*}*/
 
 #mapOverlays .overlay.left.item:last-of-type {
     height: fit-content;
@@ -44,6 +63,10 @@
 
 #map_options {
 	max-height: 100%;
+    padding: 0.3rem !important;
+    background-color: whitesmoke;
+    opacity: 0.8;
+    font-family: 'Raleway', sans-serif !important;
 }
 
 #map_options .option-block {
@@ -97,9 +120,13 @@
   margin-top: auto;
 }
 
-li.showing, .source-box.highlight {
-	background-color: rgba(255, 165, 0, .2);
-	padding: 7px;
+/*li.showing, .source-box.highlight {*/
+li.showing { background-color: #F8F9FA !important;}
+
+.source-box.highlight {
+	/*background-color: rgba(255, 165, 0, .2);*/
+	background-color: antiquewhite;
+	/*padding: 7px;*/
 }
 
 li.showing span:not(.showing) {
