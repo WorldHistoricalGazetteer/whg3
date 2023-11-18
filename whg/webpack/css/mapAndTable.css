@@ -264,7 +264,8 @@
 }
 
 #placetable tr.no-geometry {
-	background-color: #dc35451c;
+	/*background-color: ghostwhite;*/
+	/*background-color: #dc35451c;*/
 }
 
 #placetable tr.no-temporal {
