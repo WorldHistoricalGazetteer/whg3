@@ -597,8 +597,7 @@ class PlaceCollectionBrowseView(DetailView):
   redirect_field_name = 'redirect_to'
 
   model = Collection
-  # template_name = 'collection/place_collection_browse.html'
-  template_name = 'collection/place_collection_browse_new.html'
+  template_name = 'collection/place_collection_browse.html'
 
   def get_success_url(self):
     id_ = self.kwargs.get("id")
@@ -931,8 +930,7 @@ class DatasetCollectionBrowseView(DetailView):
   redirect_field_name = 'redirect_to'
 
   model = Collection
-  # template_name = 'collection/ds_collection_browse.html'
-  template_name = 'collection/ds_collection_browse_new.html'
+  template_name = 'collection/ds_collection_browse.html'
 
   def get_success_url(self):
     id_ = self.kwargs.get("id")
