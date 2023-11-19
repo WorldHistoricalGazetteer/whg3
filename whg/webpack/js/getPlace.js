@@ -30,25 +30,25 @@ export function getPlace(pid, cid, spinner_detail) {
 		// events on detail items
 		$('.ext').on('click', function(e) {
 			e.preventDefault();
-			str = $(this).text();
+			let str = $(this).text();
 			//console.log('str (identifier)',str)-->
 			// URL identifiers can be 'http*' or an authority prefix
 			if (str.substring(0, 4).toLowerCase() == 'http') {
-				url = str;
+				let url = str;
 			} else {
 				var re = /(http|bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wdlocal|whg|wp):(.*?)$/;
 				const matches = str.match(re);
-				url = base_urls[matches[1]] + matches[2];
+				let url = base_urls[matches[1]] + matches[2];
 				//console.log('url', url)
 			}
 			window.open(url, '_blank');
 		});
 		$('.exttab').on('click', function(e) {
 			e.preventDefault();
-			id = $(this).data('id')
+			let id = $(this).data('id')
 			//console.log('id', id)
 			var re = /(http|dbp|gn|tgn|wd|loc|viaf|aat):(.*?)$/;
-			url = id.match(re)[1] == 'http' ? id : base_urls[id.match(re)[1]] + id.match(re)[2]
+			let url = id.match(re)[1] == 'http' ? id : base_urls[id.match(re)[1]] + id.match(re)[2]
 			//console.log('url', url)
 			window.open(url, '_blank')
 		});
@@ -89,7 +89,7 @@ function parseAnno(data) {
 					// TODO: Nothing appears to be happening with this variable?
 					// has a link, get initial text
 					let text = linkish.slice(0, linkindex)
-					innerlink = linkish.slice(linkindex, )
+					let innerlink = linkish.slice(linkindex, )
 					descrip += '<p><b><u>Notes</u></b>: ' +
 						readMore(text, 250, innerlink) + '</p>'
 				}
@@ -155,9 +155,9 @@ function parsePlace(data) { // TODO: See also commented code at bottom
 		var str = ''
 		var type = data.types[t]
 		if ('sourceLabels' in type) {
-			srclabels = type.sourceLabels
-			for (l in srclabels) {
-				label = srclabels[l]['label']
+			let srclabels = type.sourceLabels
+			for (let l in srclabels) {
+				let label = srclabels[l]['label']
 				str = label != '' ? label + '; ' : ''
 			}
 		} else if ('sourceLabel' in type) {
@@ -177,10 +177,10 @@ function parsePlace(data) { // TODO: See also commented code at bottom
 	//close_count = added_count = related_count = 0
 	var html = ''
 	if (data.links.length > 0) {
-		links = data.links
-		links_arr = onlyUnique(data.links)
+		let links = data.links
+		let links_arr = onlyUnique(data.links)
 		/*console.log('distinct data.links',links_arr)*/
-		for (l in links_arr) {
+		for (let l in links_arr) {
 			descrip += url_extplace(links_arr[l].identifier)
 		}
 	} else {
@@ -241,6 +241,7 @@ function parsePlace(data) { // TODO: See also commented code at bottom
 
 // builds link for external place record
 function url_extplace(identifier) {
+	var link = ''
 	// abbreviate links not in aliases.base_urls
 	if (identifier.startsWith('http')) {
 		let tag = identifier.replace(/.+\/\/|www.|\..+/g, '')

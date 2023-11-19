@@ -10,6 +10,9 @@
 <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
 <link href="{% static 'webpack/whg.bundle.css' %}" rel="stylesheet" />
 <script src="{% static 'celery_progress/celery_progress.js' %}"></script>
+	<style>
+	.raleway { font-family: 'Raleway', sans-serif; }
+	</style>
 {% endblock %} 
 
 {% block title %} 
@@ -20,7 +23,7 @@
 <div id="dataset_content" class="container mt-1 px-1">
     <div id="map" style="opacity: 0; height:100%;"></div>
     <div id="ds_info" class="overlay left">
-        <div id="ds_header">
+        <div id="ds_header" class="raleway">
             <span class="fs-5 title">
                 <img src="{% static 'images/spreadsheet.png'%}" height=28 alt="" />
                 {{ ds.title }}
@@ -138,15 +141,8 @@
     </div>
 
 </div>
-	{% comment %} former ds_info
-	            <div class="float-end">
-                <label for="checkbox" class="small">Close intro by default</label>
-                <input type="checkbox" id="checkbox">
-            </div>
-  {% endcomment %}
-<!-- dataset_content -->
 
-<!-- Set up MapLibre map using Maptiler SDK -->
+	<!-- Set up MapLibre map using Maptiler SDK -->
 <script type="text/javascript">
     let mapParameters = {
         container: 'map',
