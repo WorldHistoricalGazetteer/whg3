@@ -1,7 +1,6 @@
 {% extends "main/base.html" %} 
 {% load static %} 
-{% load leaflet_tags %} 
-{% load mathfilters %} 
+{% load mathfilters %}
 {% load dataset_extras %} 
 
 {% block extra_head %}
@@ -33,7 +32,6 @@
               <i class="info-expand fas fa-chevron-down"></i>
           </span>
       </div>
-      <!-- dscoll_header -->
       <div id="metadata" class="mt-2">
           <div class="row pub-intro">
               <div class="col-sm-9">
@@ -47,12 +45,17 @@
                   </p>
               </div>
               <div class="col-sm-3" style="position: relative;">
-                {% if object.image_file %} <a href="#" class="pop">
-                <img id="active_img" class="img-responsive thumbnail float-end" src="/media/{{ object.image_file.name }}" width="220px" />
-                  </a> {% else %} <span>
-                      <i>image here</i>
-                  </span> {% endif %} </div>
-          </div>
+                {% if object.image_file %}
+	                <a href="#" class="pop">
+                  <img id="active_img"
+                     class="img-responsive thumbnail float-end"
+                     src="/media/{{ object.image_file.name }}"
+                     width="220px" />
+                  </a>
+                {% else %} <span><i>image here</i></span>
+                {% endif %}
+              </div>
+          </div><!-- .row -->
           <div class="coll_detail">
               <table>
                   <tr>
@@ -62,7 +65,11 @@
                   {% if links|length > 0 %}
 	                  <tr>
                       <td><b>Links</b></td>
-		                  <td> {% for l in links %} <a href="{{ l.uri }}" target="_blank">{{ l.label }}</a>; {% endfor %}
+		                  <td>
+			                  {% for l in links %}
+			                  <a href="{{ l.uri }}" target="_blank">
+				                  {{ l.label }}</a>;
+		                    {% endfor %}
 		                  </td>
                     </tr>
                   {% endif %}
@@ -70,7 +77,8 @@
 	                  <tr>
                       <td><b>Webpage</b></td>
                       <td>
-                          <a href="{{object.webpage }}" target="_blank"> link <i class="fas fa-external-link-alt linky"></i>
+                          <a href="{{object.webpage }}" target="_blank">
+	                          link <i class="fas fa-external-link-alt linky"></i>
                           </a>
                       </td>
                     </tr>
@@ -88,8 +96,8 @@
                     </tr>
                   {% endif %}
               </table>
-              <div class=""><p>
-                <a href="#" id="a_download_modal"
+              <div class="">
+	              <p><a href="#" id="a_download_modal"
                    class="a-dl me-2" data-collid="{{ object.id }}"
                    data-bs-toggle="modal"
                    data-bs-target="#downloadModal"
@@ -100,11 +108,10 @@
 	                <label for="checkbox" class="small">
 		                Close intro by default</label>
 	                <input type="checkbox" id="checkbox">
-                </span>
-              </p>
+                </span></p>
             </div>
           </div>
-      </div>
+      </div> <!-- #metadata -->
   </div>
   <div class="pub-right">
 	  <div id="ds_table" class="overlay right">

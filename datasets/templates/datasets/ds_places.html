@@ -1,7 +1,6 @@
 {% extends "main/base.html" %} 
 {% load static %} 
-{% load leaflet_tags %} 
-{% load mathfilters %} 
+{% load mathfilters %}
 {% load dataset_extras %} 
 
 {% block extra_head %}
@@ -9,7 +8,8 @@
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.24/b-1.7.0/b-colvis-1.7.0/b-html5-1.7.0/cr-1.5.3/fh-3.1.8/sc-2.0.3/sp-1.2.2/sl-1.3.3/datatables.min.css" />
 <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.24/b-1.7.0/b-colvis-1.7.0/b-html5-1.7.0/cr-1.5.3/fh-3.1.8/sc-2.0.3/sp-1.2.2/sl-1.3.3/datatables.min.js"></script>
 <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
-<link href="{% static 'webpack/whg.bundle.css' %}" rel="stylesheet" /> 
+<link href="{% static 'webpack/whg.bundle.css' %}" rel="stylesheet" />
+<script src="{% static 'celery_progress/celery_progress.js' %}"></script>
 {% endblock %} 
 
 {% block title %} 
@@ -33,76 +33,60 @@
                 <i class="info-expand fas fa-chevron-down"></i>
             </span>
         </div>
-        <!-- ds_header -->
         <div id="metadata" class="mt-2">
-            <div class="row">
-                <div class="col-sm-8">
+            <div class="row pub-intro">
+                <div class="col-sm-9">
                     <p>{{ ds.description|safe }}</p>
                 </div>
-                <div class="col-sm-4" style="position: relative;"> {% if ds.image_file %} <a href="#" class="pop">
-                        <img id="active_img" class="img-responsive thumbnail float-end" src="/media/{{ ds.image_file.name }}" width="220px" />
-                    </a> {% else %} <span>
-                        <i>image here</i>
-                    </span> {% endif %} </div>
-            </div>
-            <!-- row -->
-            <!-- id, label, #rows, timespan, last modified WHG permalink
-					creator(s), citation -->
-            <div id="ds_details" style="border-top: 1px solid gainsboro;">
-                <p>
-                    <b>Creator(s)</b>: {{ ds.creator }} {% if ds.contributors %} <span>
-                        <b>Contributor(s)</b>: {{ ds.creator }}
-                    </span> {% endif %}
-                </p>
-                <p>
-                    <b>Last modified</b>: {{ ds.last_modified_text }}
-                </p>
-                <p>
-                    <b>Timespan(s)</b>: earliest: {{ ds.minmax.0 }}; latest: {{ ds.minmax.1 }}
-                </p>
-                <p>
-                    <b>WHG Permalink</b>: <a href="https://whgazetteer.org/datasets/{{ds.id}}">https://whgazetteer.org/datasets/{{ds.id}}</a>
-                </p>
-                <p>
-                    <span class="">
-                        <b>Citation</b>
-                        <a id="a_clipcite" class="clippy" data-clipboard-target="#citation" rel="tooltip" title="copy to clipboard">
-                            <i class="fas fa-clipboard linky"></i>
-                        </a>
-                    </span>
-                    <span id="citation"> {% if object.citation %} {{ object.citation }} {% else %} {{object.creator}}. {{object.title}}. [Data file, last modified {{ object.last_modified_text}}]. Retrieved from https://whgazetteer.org/datasets/{{object.id}}, {% now 'd M Y' %} {% endif %} </span>
-                </p>
-                <div>
-                    <span style="display: block;" class="bg-lighteryellow mt-2">
-                        <b>Download options</b>
-                    </span> {% if object.numrows <= 25000 %} <p>
-                        <a class="a-dl-celery" href="#" ref="lpf">Linked Places format <i class="fas fa-download linky"></i>
-                        </a>
-                        <span id="file_lpf" class="ms-1"></span>
-                    </p> {% if current_file.format == 'delimited' %} <p>
-                        <a class="a-dl-celery" href="#" ref="tsv">LP-TSV <i class="fas fa-download linky"></i>
-                        </a>
-                        <span id="file_tsv" class="ms-1"></span>
-                    </p> {% else %} <p class="mt-2">
-                        <i>LP-TSV conversion is not possible for this LPF dataset. <a id="conversion_help" class="pointer" data-toggle="popover" title="LPF download options" data-content="
-									
-								<p>Data initially loaded in Linked Places format (LPF) has one&#8209;to&#8209;many relations that can't be converted to simple TSV files.</p>" tabindex="0" data-trigger="focus" data-original-title="">
-                                <i title="" class="fa fa-question-circle linkypop"></i>
-                            </a>
-                        </i>
-                    </p> {% endif %} {% else %} <span class="red-head">
-                        <br />Download of augmented datasets larger than 25,000 rows is not supported right now. </span> {% endif %}
+                <div class="col-sm-3" style="position: relative;">
+	                {% if ds.image_file %}
+		                <a href="#" class="pop">
+		                <img id="active_img"
+		                     class="img-responsive thumbnail float-end"
+		                     src="/media/{{ ds.image_file.name }}"
+		                     width="220px" />
+                    </a>
+	                {% else %}<span><i>image here</i></span>
+	                {% endif %}
                 </div>
+            </div><!-- .row -->
+            <div id="ds_details">
+              <table>
+                  {% if ds.webpage %}
+	                  <tr>
+                      <td><b>Webpage</b></td>
+                      <td>
+                          <a href="{{object.webpage }}" target="_blank">
+	                          link <i class="fas fa-external-link-alt linky"></i>
+                          </a>
+                      </td>
+                    </tr>
+                  {% endif %}
+									{% if ds.creator %}
+										<tr>
+                      <td><b>Creator(s)</b></td>
+                      <td>{{ object.creator }}</td>
+                    </tr>
+									{% endif %}
+              </table>
+              <div class="">
+	              <p><a href="#" id="a_download_modal"
+                   class="a-dl me-2" data-collid="{{ object.id }}"
+                   data-bs-toggle="modal"
+                   data-bs-target="#downloadModal"
+                   title="download options">
+	                Download options</a>
+                <i class="fas fa-download linky"></i>
+                <span class="float-end">
+	                <label for="checkbox" class="small">
+		                Close intro by default</label>
+	                <input type="checkbox" id="checkbox">
+                </span></p>
             </div>
-            <!-- ds_details -->
-            <div class="float-end">
-                <label for="checkbox" class="small">Close intro by default</label>
-                <input type="checkbox" id="checkbox">
             </div>
-        </div>
-    </div>
-    <!-- ds_info -->
-    <!-- data table -->
+        </div> <!-- #metadata -->
+    </div> <!-- ds_info -->
+
     <div id="ds_table" class="overlay right">
         <table id="placetable" class="table table-striped table-bordered small" style="width:100%">
         </table>
@@ -132,9 +116,9 @@
             </p>
         </div>
     </div>
-    <!-- place detail box -->
     <div id="detail" class="overlay right"></div>
-    <div class="modal fade" id="" tabindex="-1" role="dialog" aria-labelledby="updateModalLabel" aria-hidden="true">
+    <div class="modal fade" id="" tabindex="-1" role="dialog"
+         aria-labelledby="updateModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -152,7 +136,14 @@
             </div>
         </div>
     </div>
+
 </div>
+	{% comment %} former ds_info
+	            <div class="float-end">
+                <label for="checkbox" class="small">Close intro by default</label>
+                <input type="checkbox" id="checkbox">
+            </div>
+  {% endcomment %}
 <!-- dataset_content -->
 
 <!-- Set up MapLibre map using Maptiler SDK -->
