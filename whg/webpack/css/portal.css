@@ -1,10 +1,13 @@
-#portal_container {
-    font-family: 'Raleway', sans-serif !important;
+#dataset_content {
+  position: relative;
+  height: calc(98vh - 60px);
+  overflow-y: auto;
 }
 
 #map {
     background-color: #eaffea;
-    height: 80vh;
+    height: calc(98vh - 60px)
+    /*height: 80vh;*/
 }
 #info {
     /*background-color: #a8dadc;*/
@@ -24,6 +27,11 @@ div.overlay .left .item {
     padding: 2px;
     border: 1px solid #aaa;
 }
+
+#source_detail {
+    padding-left: 0.3rem;
+}
+
 #histogram {
     top: 6px;
     width: 100%;
@@ -40,6 +48,7 @@ div.overlay .left .item {
     margin: 0.1rem;
     padding: 0.1rem;
 }
+
 
 /*#mapOverlays .column .left .item {*/
 .overlay.left.item {
@@ -118,6 +127,12 @@ div.overlay .left .item {
   flex-shrink: 0;
   flex-basis: 60px;
   margin-top: auto;
+}
+
+ul.coll-list {
+    list-style-type: none;
+    padding-left: 0;
+    margin-left: 0;
 }
 
 /*li.showing, .source-box.highlight {*/

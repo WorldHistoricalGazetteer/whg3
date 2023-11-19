@@ -4,15 +4,16 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 from django.http import JsonResponse, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
+from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, TemplateView
 from django.db.models import Count
 
 from datetime import datetime
 from elasticsearch8 import Elasticsearch
+from collections import Counter
 import itertools, re
 from django.core.serializers import serialize
-from django.urls import reverse
 
 from collection.models import Collection
 from datasets.models import Dataset
@@ -80,11 +81,12 @@ class PlacePortalView(TemplateView):
     if not place_ids:
       messages.error(self.request, "Place IDs are required to view this page")
       raise Http404("Place IDs are required")
-    alltitles = []
+    alltitles = set()
+    allvariants = []
     try:
       place_ids = [int(pid) for pid in place_ids]
       qs = Place.objects.filter(id__in=place_ids).order_by('-whens__minmax')
-      context['title'] = qs.first().title
+      #context['title'] = qs.first().title
       collections = []
       annotations = []
       print('qs', qs)
@@ -92,13 +94,17 @@ class PlacePortalView(TemplateView):
       for place in qs:
         ds = Dataset.objects.get(id=place.dataset.id)
         print('place.title', place.title)
+        alltitles.add(place.title)
+
         # temporally scoped attributes
-        names = attribListFromSet('names', place.names.all())
+        names = attribListFromSet('names', place.names.all(), exclude_title=place.title)
+        print('names for a place:', names)
         types = attribListFromSet('types', place.types.all())
 
         # get traces, collections for this attestation
         attest_traces = list(place.traces.all())
         attest_collections = [t.collection for t in attest_traces if t.collection.status == "published"]
+
         # add to global list
         annotations = annotations + attest_traces
         collections = list(set(collections + attest_collections))
@@ -146,13 +152,29 @@ class PlacePortalView(TemplateView):
           "timespans": timespans,
           "collections": collection_records
         }
+        for name in names:
+          variant = name.get('label', '')
+          if variant != place.title:
+            allvariants.append(variant)
+
         context['payload'].append(record)
     except ValueError:
       messages.error(self.request, "Invalid place ID format")
       raise Http404("Invalid place ID format")
 
+    title_counts = Counter(alltitles)
+    variant_counts = Counter(allvariants)
+
+    # Find the two most common titles and variants
+    common_titles = [title for title, _ in title_counts.most_common(2)]
+    common_variants = [variant for variant, _ in variant_counts.most_common(2)]
+
+    # Construct the portal headword
+    portal_headword = common_titles + common_variants
+    context['portal_headword'] = "; ".join(portal_headword)+"; ..."
     context['annotations'] = annotations
     context['collections'] = collections
+
     
     # Calculate initialisation values for temporal control
     

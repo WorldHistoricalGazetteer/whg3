@@ -196,8 +196,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 	  	const payload = JSON.parse($('#payload_data').text());
 	  	
     	const collectionList = $('#collection_list');
-    	const ul = $('<ul>');
-    	
+    	const ul = $('<ul>').addClass('coll-list');
     	payload.forEach(dataset => {
 		  	if (dataset.collections.length > 0) {
 				  dataset.collections.forEach(collection => {			

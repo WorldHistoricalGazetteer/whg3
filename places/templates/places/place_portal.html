@@ -15,50 +15,42 @@
 {% endblock %}
 {% block content %}
 
-<div id="portal_container" class="container mt-1 px-1">
+<div id="dataset_content" class="container mt-1 px-1">
     <div class="overlay left">
         <div id="info" class="m-2 p-1">
-            <div id="sources" class="bg-light info-box">
-                <h6 class="mb-0 strong-red">Sources</h6>
-	              {% for rec in payload %}
-		              <div class="source-box">
-                    in: <a class="pop-link pop-dataset" data-id={{rec.dataset.id}} data-toggle="popover"
-                                       title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
-                        {{rec.dataset.name|remove:'(stub) '|truncatechars:25}}</a>
-                    {% comment %}<span class="fs-6">{{ rec.title}} ({{ rec.place_id }})</span><br/>{% endcomment %}
-								    <div class="name-variants">Names:
-								        <strong class="larger">{{ rec.title }}</strong>
-								        {% with labels=rec.names %}
-								            {% for label in labels %}
-								                {% if forloop.counter <= 10 %}
-								                    {{ label.label }}{% if not forloop.last %}; {% endif %}
-								                {% endif %}
-								            {% endfor %}
-								            {% if labels|length > 10 %}
-								                ... <a href="#">more</a>
-								            {% endif %}
-								        {% endwith %}
-								    </div>
-								    {% if labels|length > 10 %}
-								        <div class="all-variants" style="display: none;">
-								            {% for label in labels %}
-								                {{ label.label }}{% if not forloop.last %}; {% endif %}
-								            {% endfor %}
-								        </div>
-								    {% endif %}
-{#		                <span> Names:#}
-{#									    <strong class="larger">{{ rec.title }}</strong>{% if rec.names %}; {% endif %}#}
-{#									    {% with labels=rec.names %}#}
-{#									        {% for label in labels %}#}
-{#									            {{ label.label }}{% if not forloop.last %}; {% endif %}#}
-{#									        {% endfor %}#}
-{#									    {% endwith %}#}
-{#		                </span>#}
-
-	                  {% if rec.timespans  %}Temporal: {{ rec.timespans }} {% endif %}
-                  </div>
-	              {% endfor %}
-            </div>
+          <div><h5>{{ portal_headword }}</h5></div> {#  work in progress #}
+	        <div id="sources" class="bg-light info-box">
+	            <h6 class="mb-0 strong-red">Sources</h6>
+	            {% for rec in payload %}
+	              <div class="source-box">
+	                in: <a class="pop-link pop-dataset" data-id={{rec.dataset.id}} data-toggle="popover"
+	                                   title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
+	                    {{rec.dataset.name|remove:'(stub) '|truncatechars:25}}</a>
+	                {% comment %}<span class="fs-6">{{ rec.title}} ({{ rec.place_id }})</span><br/>{% endcomment %}
+							    <div class="name-variants">Names:
+							        <strong class="larger">{{ rec.title }}</strong>
+							        {% with labels=rec.names %}
+							            {% for label in labels %}
+							                {% if forloop.counter <= 10 %}
+							                    {{ label.label }}{% if not forloop.last %}; {% endif %}
+							                {% endif %}
+							            {% endfor %}
+							            {% if labels|length > 10 %}
+							                ... <a href="#">more</a>
+							            {% endif %}
+							        {% endwith %}
+							    </div>
+							    {% if labels|length > 10 %}
+							        <div class="all-variants" style="display: none;">
+							            {% for label in labels %}
+							                {{ label.label }}{% if not forloop.last %}; {% endif %}
+							            {% endfor %}
+							        </div>
+							    {% endif %}
+	                {% if rec.timespans  %}Temporal: {{ rec.timespans }} {% endif %}
+	              </div>
+	            {% endfor %}
+	        </div>
         </div>    
     </div>
     <div class="overlay left">
@@ -67,7 +59,7 @@
             <div id="collection_list"> <!-- Populated dynamically from context in JavaScript -->
             </div>
         </div>
-        <div id="graph_viz" class="bg-light info-box"> {graph visualization?} </div>
+{#        <div id="graph_viz" class="bg-light info-box"> {graph visualization?} </div>#}
     </div>
     <div id="temporal_attestations" class="overlay centre">
         <div id="histogram" class="position-absolute bg-light">
