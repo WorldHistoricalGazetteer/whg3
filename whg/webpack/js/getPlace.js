@@ -31,15 +31,16 @@ export function getPlace(pid, cid, spinner_detail) {
 		$('.ext').on('click', function(e) {
 			e.preventDefault();
 			let str = $(this).text();
+			let url; // Must be scoped outwith if/else
 			//console.log('str (identifier)',str)-->
 			// URL identifiers can be 'http*' or an authority prefix
 			if (str.substring(0, 4).toLowerCase() == 'http') {
-				let url = str;
+				url = str;
 			} else {
 				var re = /(http|bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wdlocal|whg|wp):(.*?)$/;
 				const matches = str.match(re);
-				let url = base_urls[matches[1]] + matches[2];
-				//console.log('url', url)
+				url = base_urls[matches[1]] + matches[2];
+				console.log(base_urls,matches,'url', url)
 			}
 			window.open(url, '_blank');
 		});
@@ -135,7 +136,7 @@ function parsePlace(data) { // TODO: See also commented code at bottom
 	}
 	//timespan_arr = []-->
 	//
-	// TITLE 
+	// TITLE
 	var descrip = '<p><b>Title</b>: <span id="row_title" class="larger text-danger">' + data.title + '</span>'
 	//
 	// NAME VARIANTS
@@ -173,7 +174,7 @@ function parsePlace(data) { // TODO: See also commented code at bottom
 	}
 	//
 	// LINKS
-	// 
+	//
 	descrip += '<p class="mb-0"><b>Links</b>: '
 	//close_count = added_count = related_count = 0
 	var html = ''
@@ -181,7 +182,7 @@ function parsePlace(data) { // TODO: See also commented code at bottom
 		let links = data.links
 		let links_arr = onlyUnique(data.links)
 		/*console.log('distinct data.links',links_arr)*/
-		for (let l in links_arr) {
+		for (var l in links_arr) {
 			descrip += url_extplace(links_arr[l].identifier)
 		}
 	} else {
@@ -244,18 +245,19 @@ function parsePlace(data) { // TODO: See also commented code at bottom
 function url_extplace(identifier) {
 	var link = ''
 	// abbreviate links not in aliases.base_urls
+	let link;
 	if (identifier.startsWith('http')) {
-		let tag = identifier.replace(/.+\/\/|www.|\..+/g, '')
+		const tag = identifier.replace(/.+\/\/|www.|\..+/g, '')
 		link = '<a href="' + identifier + '" target="_blank">' + tag + '<i class="fas fa-external-link-alt linky"></i>,  </a>';
 	} else {
 		link = '<a href="" class="ext" data-target="#ext_site">' + identifier + '&nbsp;<i class="fas fa-external-link-alt linky"></i></a>, ';
 	}
-	return link
+	return link;
 }
 
 // builds link for external placetype record
 function url_exttype(type) {
-	const link = ' <a href="#" class="exttab" data-id=' + type.identifier +
+	let link = ' <a href="#" class="exttab" data-id=' + type.identifier +
 		'>(' + type.label + ' <i class="fas fa-external-link-alt linky"></i>)</a>'
 	return link
 }
@@ -294,7 +296,7 @@ function readMore(text, numchars, innerlink = '') {
 
 /*
 
-THIS VERSION OF parsePlace is more developed, but not actually used where it was found, in places_collection_browse 
+THIS VERSION OF parsePlace is more developed, but not actually used where it was found, in places_collection_browse
 
 
 //

@@ -57,7 +57,8 @@ class AreaDeleteView(DeleteView):
         return get_object_or_404(Area, id=id_)
 
     def get_success_url(self):
-        return reverse('data-areas')
+        # return reverse('data-areas')
+        return reverse('dashboard')
 
 #
 # update (edit); uses same template as create

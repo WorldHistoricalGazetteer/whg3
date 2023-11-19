@@ -3,7 +3,7 @@
 import datasetLayers from './mapLayerStyles';
 import { attributionString, deepCopy } from './utilities';
 import { bbox, buffer, convex, flatten, dissolve, combine } from './6.5.0_turf.min.js';
-import { /*StyleControl,*/ CustomAttributionControl } from './customMapControls';
+import { /*acmeStyleControl,*/ CustomAttributionControl } from './customMapControls';
 import '../css/maplibre-common.css';
 import '../css/areas.css';
 
@@ -145,7 +145,7 @@ function waitMapLoad() {
 			addDrawingControl();
 			
 /*			if (mapParameters.styleFilter.length !== 1) { // This would be a little complicated (but not impossible) to implement due to MapBox drawing layers; styling also required.
-				mappy.addControl(new StyleControl(mappy), 'top-right');
+				mappy.addControl(new acmeStyleControl(mappy), 'top-right');
 			}*/
 
 			mappy.addControl(new CustomAttributionControl({

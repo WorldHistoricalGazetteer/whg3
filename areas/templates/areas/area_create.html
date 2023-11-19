@@ -7,18 +7,18 @@
 {% block extra_head %}
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-Piv4xVNRyMGpqkS2by6br4gNJ7DXjqk09RmUpJ8jgGtD7zP9yug3goQfGII0yAns" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js" integrity="sha256-LOnFraxKlOhESwdU/dX+K0GArwymUDups0czPWLEg4E=" crossorigin="anonymous"></script>
-  
+
   <script src="{% static 'js/tags/bootstrap-tagsinput.js' %}"></script>
   <script src="{% static 'js/tags/bloodhound.js' %}"></script>
   <link rel="stylesheet" href="{% static 'js/tags/bootstrap-tagsinput.css' %}"/>
   <link rel="stylesheet" href="{% static 'js/tags/bootstrap-tagsinput-typeahead.css' %}"/>
-  
-  
-  <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
-  <link href="{% static 'webpack/areas.bundle.css' %}" rel="stylesheet" /> 
-  
+
+
+  <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" />
+  <link href="{% static 'webpack/areas.bundle.css' %}" rel="stylesheet" />
+
   <script src="{% static 'js/mapbox-gl-draw.js' %}"></script>
-  <link href="{% static 'css/mapbox-gl-draw.css' %}" rel="stylesheet" /> 
+  <link href="{% static 'css/mapbox-gl-draw.css' %}" rel="stylesheet" />
 
 {% endblock %}
 
@@ -76,7 +76,7 @@
       </div> <!-- area_options -->
       <p id="referrer"></p>
       <input class="btn-sm btn-primary mt-2" type="submit" value="Save" />
-      <span title="back"><a href="{% url 'main:area-list' %}">Cancel</a></span>
+      <span title="back"><a href="{% url 'area-list' %}">Cancel</a></span>
     </form>
     </div>
     <div id="map_container" class="col-sm-8">
@@ -124,4 +124,3 @@
 </script>
 
 {% endblock %}
-
