@@ -317,6 +317,7 @@ def review(request, pk, tid, passnum):
     authname = "Wikidata" if auth == "wd" else "Getty TGN" if auth == "tgn" else "WHG"
     kwargs = ast.literal_eval(task.task_kwargs)
     kwargs = json.loads(kwargs.replace("'", '"'))
+    print('auth, authname', auth, authname)
     test = kwargs["test"] if "test" in kwargs else "off"
     beta = "beta" in list(request.user.groups.all().values_list("name", flat=True))
     # filter place records by passnum for those with unreviewed hits on this task
@@ -526,13 +527,14 @@ def review(request, pk, tid, passnum):
         feature_data["reconciliation"] = True if feature_data.get("dataset") == pk else False # `reconciliation` property used to set map marker colour
 
         feature_data["pk"] = pk
-
+        print('feature_data', feature_data)
         feature = {
             "type": "Feature",
             # "properties": feature_data, ## Some characters used in placenames are not properly encoded: reduce to minimal requirement for operation
             "properties": {
                 "reconciliation": feature_data["reconciliation"],
-                "src_id": feature_data["src_id"],
+                # TODO: src_id not present for accession task - matters? 2023-11-19
+                # "src_id": feature_data["src_id"],
             },
             "geometry": feature_geometry,
             "id": counter,
