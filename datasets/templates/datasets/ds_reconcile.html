@@ -133,15 +133,6 @@
                                  <i class="fas fa-question-circle linkypop"></i>
                                 </span>
                             {% endif %}
-{#                         <span class="pass0auto">#}
-{#                          {% if t.task_name == 'align_idx'%}#}
-{#                          | <a href="{% url 'datasets:idx_pass0' tid=t.task_id %}">auto-accept</a>#}
-{#                          {% elif t.task_name == 'align_wdlocal'%}#}
-{#                          | <a href="{% url 'datasets:wd_pass0' tid=t.task_id %}">auto-accept</a>#}
-{#                          {% endif %}#}
-{#	                         <span class="help-matches" data-id="auto-match">#}
-{#		                         <i class="fas fa-question-circle linkypop"></i></span>#}
-{#                         </span>#}
                          </li>
 	                      {% endif %}
                       {% elif t.task_name == "align_idx" %}
