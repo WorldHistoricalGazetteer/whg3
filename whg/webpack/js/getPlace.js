@@ -149,27 +149,28 @@ function parsePlace(data) { // TODO: See also commented code at bottom
 	// may include sourceLabel:"" **OR** sourceLabels[{"label":"","lang":""},...]
 	// console.log('data.types',data.types)
 	//{"label":"","identifier":"aat:___","sourceLabels":[{"label":" ","lang":"en"}]}
-	descrip += '</p><p><b>Types</b>: '
-	var typeids = ''
-	for (var t in data.types) {
-		var str = ''
-		var type = data.types[t]
-		if ('sourceLabels' in type) {
-			let srclabels = type.sourceLabels
-			for (let l in srclabels) {
-				let label = srclabels[l]['label']
-				str = label != '' ? label + '; ' : ''
+	if(data.types.length > 0) {
+		descrip += '</p><p><b>Types</b>: '
+		var typeids = ''
+		for (var t in data.types) {
+			var str = ''
+			var type = data.types[t]
+			if ('sourceLabels' in type) {
+				let srclabels = type.sourceLabels
+				for (let l in srclabels) {
+					let label = srclabels[l]['label']
+					str = label != '' ? label + '; ' : ''
+				}
+			} else if ('sourceLabel' in type) {
+				str = type.sourceLabel != '' ? type.sourceLabel + '; ' : ''
 			}
-		} else if ('sourceLabel' in type) {
-			str = type.sourceLabel != '' ? type.sourceLabel + '; ' : ''
+			if (type.label != '') {
+				str += url_exttype(type) + ' '
+			}
+			typeids += str
 		}
-		if (type.label != '') {
-			str += url_exttype(type) + ' '
-		}
-		typeids += str
+		descrip += typeids.replace(/(; $)/g, "") + '</p>'
 	}
-	descrip += typeids.replace(/(; $)/g, "") + '</p>'
-
 	//
 	// LINKS
 	// 
