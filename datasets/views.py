@@ -341,11 +341,18 @@ def review(request, pk, tid, passnum):
     pass_int = int(passnum[4])
     # if no unreviewed left, go to next pass
     passnum = passnum if cnt_pass > 0 else 'pass'+str(pass_int+1)
-    hitplaces = Hit.objects.values('place_id').filter(
-      task_id=tid,
-      reviewed=False,
-      query_pass=passnum
-    )
+    if passnum == 'pass0&1':
+      hitplaces = Hit.objects.values('place_id').filter(
+        task_id=tid,
+        reviewed=False,
+        query_pass__in=['pass0', 'pass1']
+      )
+    else:
+      hitplaces = Hit.objects.values('place_id').filter(
+        task_id=tid,
+        reviewed=False,
+        query_pass=passnum
+      )
   else:
     # all unreviewed
     hitplaces = Hit.objects.values('place_id').filter(task_id=tid, reviewed=False)

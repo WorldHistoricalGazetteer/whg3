@@ -105,6 +105,8 @@ CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_EAGER_PROPAGATES = True
 # required per https://github.com/celery/django-celery-results/issues/334
 CELERY_RESULT_EXTENDED = True
+CELERY_RESULT_EXPIRES = None
+
 
 # CELERY_BEAT_SCHEDULE = {
 #   'task01': {
