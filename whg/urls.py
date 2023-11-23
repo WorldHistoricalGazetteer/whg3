@@ -44,6 +44,9 @@ urlpatterns = [
     # path('dashboard/', TemplateView.as_view(template_name="main/dashboard.html"), name="dashboard"),
 
     path('about/', TemplateView.as_view(template_name="main/about.html"), name="about"),
+    path('builder/', TemplateView.as_view(template_name="main/builder_start.html"), name="gazetteer-builder"),
+    path('builder_single/', TemplateView.as_view(template_name="main/builder_single.html"), name="builder-single"),
+    path('builder_multiple/', TemplateView.as_view(template_name="main/builder_multiple.html"), name="builder-multiple"),
     path('contributing/', TemplateView.as_view(template_name="main/contributing.html"), name="contributing"),
     path('credits/', TemplateView.as_view(template_name="main/credits.html"), name="credits"),
     path('licensing/', TemplateView.as_view(template_name="main/licensing.html"), name="licensing"),
