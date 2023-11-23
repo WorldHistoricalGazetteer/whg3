@@ -43,9 +43,9 @@
 								<div class="coll-card-content px-2 pt-1" data-id={{c.id}}>
 									{% with remainder=190 %}
 									<h6>
-{#										<a href="{% url 'collection:place-collection-browse' c.id %}">#}
+										<a href="{% url 'collection:place-collection-browse' c.id %}">
 											{{ c.title }}
-{#										</a>#}
+										</a>
 										 ({{ c.owner.name }})
 									</h6>
 									<p class="coll-card-blurb my-1">
@@ -69,9 +69,9 @@
 								<div class="coll-card-content px-2 pt-1" data-id={{c.id}}>
 									{% with remainder=190 %}
 									<h6>
-{#										<a href="{% url 'collection:place-collection-browse' c.id %}">#}
+										<a href="{% url 'collection:place-collection-browse' c.id %}">
 											{{ c.title }}
-{#										</a>#}
+										</a>
 										 ({{ c.owner.name }})
 									</h6>
 									<img src="/media/{{ c.image_file.name }}" width="60" style="float: right;"/>
