@@ -43,7 +43,7 @@
 								<div class="coll-card-content px-2 pt-1" data-id={{c.id}}>
 									{% with remainder=190 %}
 									<h6>
-										<a href="{% url 'collection:place-collection-browse' c.id %}">
+										<a href="{% url 'collection:ds-collection-browse' c.id %}">
 											{{ c.title }}
 										</a>
 										 ({{ c.owner.name }})
