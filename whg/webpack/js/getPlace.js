@@ -245,7 +245,6 @@ function parsePlace(data) { // TODO: See also commented code at bottom
 function url_extplace(identifier) {
 	var link = ''
 	// abbreviate links not in aliases.base_urls
-	let link;
 	if (identifier.startsWith('http')) {
 		const tag = identifier.replace(/.+\/\/|www.|\..+/g, '')
 		link = '<a href="' + identifier + '" target="_blank">' + tag + '<i class="fas fa-external-link-alt linky"></i>,  </a>';
