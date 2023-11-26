@@ -187,6 +187,9 @@ LOGGING = {
     },
 }
 
+SESSION_COOKIE_AGE = 1209600  # Two weeks, in seconds
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
 GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
 GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
 

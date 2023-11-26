@@ -132,7 +132,7 @@ def dashboard_view(request):
   is_leader = request.user.groups.filter(name='group_leaders').exists()
   user_groups = [group.name for group in request.user.groups.all()]
 
-  user_datasets_count = Dataset.objects.filter(owner=request.user).count()
+  user_datasets_count = Dataset.objects.filter(owner=request.user.id).count()
   user_collections_count = Collection.objects.filter(owner=request.user).count()
 
   section = request.GET.get('section', 'datasets')
@@ -247,9 +247,7 @@ class LibreView(TemplateView):
 
 
 class Home30a(TemplateView):
-    # template_name = 'main/home_v2a.html'
     template_name = 'main/home_v30a.html'
-    # template_name = 'main/home30b.html'
 
     def get_context_data(self, *args, **kwargs):
         context = super(Home30a, self).get_context_data(*args, **kwargs)
