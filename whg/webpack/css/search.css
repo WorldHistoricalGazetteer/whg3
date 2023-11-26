@@ -49,6 +49,8 @@
 
 #search_results {
     border: 1px gainsboro solid;
+    height: fit-content;
+    overflow-y: scroll;
 }
 
 .accordion-header {
