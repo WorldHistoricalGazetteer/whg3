@@ -15,6 +15,10 @@ app = Celery('whg')
 
 app.config_from_object('django.conf:settings', namespace='CELERY')
 app.conf.broker_url = 'redis://localhost:6379'
+app.conf.result_expires = None
+
+print('app.conf', app.conf)
+
 
 # override Beat default daily cleanup task
 app.conf.result_expires = None
