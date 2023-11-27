@@ -4,11 +4,8 @@ from places.models import Place  # Import your Django model
 # import some_spatial_analysis_library
 
 def calculate_name_similarity(names1, names2):
-  print('name1, name2', names1, names2)
+  # print('name1, name2', names1, names2)
   return 0.7
-
-def geometry_overlap(geoms1, geoms2):
-  print('geoms1, geoms2', geoms1, geoms2)
 
 def ccode_overlap(ccodes1, ccodes2):
   # ccodes1=['AR','BR']
@@ -37,6 +34,22 @@ def ccode_overlap(ccodes1, ccodes2):
 def mixed_overlap(obj1, obj2):
   print('obj1, obj2', obj1, obj2)
 
+
+def geometry_overlap(geoms1, geoms2):
+  """
+  Compares two lists of S2 cell IDs (at resolution 30).
+  Returns a score based on whether there is any overlap in S2 cell IDs.
+  """
+  # Convert lists of geometries (S2 cell IDs) to sets for efficient comparison
+  set_geoms1 = set(geoms1)
+  set_geoms2 = set(geoms2)
+
+  # Check for any intersection (overlap) between the sets
+  if set_geoms1.intersection(set_geoms2):
+    return 1  # Overlap found
+  else:
+    return 0  # No overlap
+
 def calculate_spatial_overlap(geoms1, geoms2, ccodes1, ccodes2):
   # Case 1: Both records have geometries
   if geoms1 and geoms2:
@@ -57,7 +70,7 @@ def calculate_spatial_overlap(geoms1, geoms2, ccodes1, ccodes2):
 
 
 def is_feature_class_compatible(fc1, fc2):
-  print('fc1, fc2', fc1, fc2)
+  # print('fc1, fc2', fc1, fc2)
 
   # Convert both feature class lists to sets
   set_fc1 = set(fc1)
@@ -72,8 +85,10 @@ weight_spatial = 1
 score_threshold = 0.8
 def conflate_records(queryset):
     potential_matches = {}
-
+    counter = 0
     for p in queryset:
+      counter = counter +1
+      print('place record #', counter)
       fclasses1 = p.fclasses if p.fclasses else []
       names1 = [n.toponym for n in p.names.all()]
       ccodes1 = p.ccodes if p.ccodes else []
@@ -104,7 +119,7 @@ def conflate_records(queryset):
 
 # Example usage
 testid = 29 # historical conflict data
-qs = Place.objects.filter(dataset__id=testid)[:20]
+qs = Place.objects.filter(dataset__id=testid)[:200]
 matches = conflate_records(qs)
 
 # Further processing of matches

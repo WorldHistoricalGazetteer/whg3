@@ -694,7 +694,7 @@ def uriMaker(place):
 # ***
 def makeDoc(place):
   fclasses_value = place.fclasses if place.fclasses not in [None, []] else ["X"]
-  print('makeDoc fclasses', fclasses_value)
+  # print('makeDoc fclasses', fclasses_value)
   es_doc = {
     "relation": {},
     "children": [],
