@@ -22,7 +22,8 @@ class AreaCreateView(CreateView):
         if redirect != '':
             self.success_url = redirect
         else:
-            self.success_url = '/mystudyareas'
+            # self.success_url = '/mystudyareas'
+            self.success_url = '/dashboard'
         return kwargs
     
     def form_invalid(self,form):

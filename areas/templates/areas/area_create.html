@@ -28,9 +28,11 @@
     {% if action == 'update' %}
         Update Study Area
         <span class="text-danger">"{{ form.title.value }}"</span>
+	      {% comment %}
         <span class="ms-3 half">
             (<mark id="count_result">{{ object.count_public }}</mark> places from public datasets lie within this area)
         </span>
+        {% endcomment %}
         <a href="{% url 'areas:area-delete' object.id %}" class="float-end"
         title="Delete area feature" rel="tooltip" style="margin-top:-2px;">
         <i class="fas fa-trash linkyred"></i></a>
@@ -76,7 +78,7 @@
       </div> <!-- area_options -->
       <p id="referrer"></p>
       <input class="btn-sm btn-primary mt-2" type="submit" value="Save" />
-      <span title="back"><a href="{% url 'area-list' %}">Cancel</a></span>
+      <span title="back"><a href="{% url 'dashboard' %}">Cancel</a></span>
     </form>
     </div>
     <div id="map_container" class="col-sm-8">

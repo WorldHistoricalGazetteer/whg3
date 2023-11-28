@@ -282,8 +282,10 @@
           </div> <!-- #coll_dscards_create -->
 			</div> {# coll_builder #}
 			<div id="coll_conflator" class="tab-pane fade h-100" style="height: auto; position:relative;">
-				<h4>Conflator tool</h4>
-				<p><img src="{% static 'images/conflator-wireframe.png'%}" width="90%" ></p>
+				<h4>DS Collection functionality</h4>
+				<p>Seed dataset id: <input type="text" id="seed_id"/></p>
+				<p><button type="button" id="dscoll_seed">Seed this collection</button> </p>
+				<p id="idx_result"></p>
 			</div>
 			<div id="coll_collaborators" class="tab-pane fade h-100" style="height: auto; position:relative;">
 				<h4>Add collection collaborators</h4>
@@ -295,6 +297,38 @@
 
 <script type="text/javascript">
   $(function(){
+
+    $("#dscoll_seed").click(function(e){
+        e.preventDefault()
+        console.log('gonna index '+ $("#seed_id").val() + ' for collection '+'{{ object.id }}')
+		    index_to_builder($("#seed_id").val())
+    })
+
+	  // runs celery task index_to_builder
+		function index_to_builder(dsid){
+	      var formData = new FormData()
+				formData.append('collection_id', '{{ object.id }}')
+				formData.append('dataset_id', dsid)
+				formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+				$.ajax({
+			      type: 'POST',
+			      enctype: 'multipart/form-data',
+			      url: '/datasets/index_to_builder/',
+			      processData: false,
+			      contentType: false,
+			      cache: false,
+			      data: formData,
+			      success:function(response){
+				      if(response.result == 'dupe'){
+	              alert('That dataset is already in the builder index!')
+				      } else {
+					      $("#idx_result").html('added!', response.result)
+					      console.log('added!', response.result)
+				      }
+			      }
+				})
+		}
+
     dslist=[] // holds ids of selected datasets
     $( ".textarea" ).each(function(index) {
       if ( ["None","null"].includes( $(this).val() ) ) {
