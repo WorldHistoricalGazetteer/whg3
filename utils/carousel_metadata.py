@@ -8,6 +8,8 @@ def carousel_metadata(caller):
     caller_class = type(caller)
     caller_class = caller_class.__name__
     
+    display_mode = getattr(caller, 'display_mode', None) or 'clusterhull' # 'clusterhull'|'heatmap' implemented
+    
     if caller_class == 'Dataset':
         url = reverse('datasets:ds_places', args=[caller.id])
         id_name = 'id'
@@ -28,7 +30,8 @@ def carousel_metadata(caller):
         "type": caller_class.lower(), 
         "featured": caller.featured,
         "ds_or_c_id": caller.id, 
+        "display_mode": display_mode,
         "webpage": caller.webpage,
         "url": url,
-        "geometry_url": f"/api/featureCollection/?{id_name}={caller.id}&mode=clusterhull",
+        "geometry_url": f"/api/featureCollection/?{id_name}={caller.id}&mode={display_mode}",
     }

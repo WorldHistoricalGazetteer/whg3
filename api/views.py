@@ -780,6 +780,9 @@ class featureCollectionAPIView(generics.ListAPIView):
     if mode == 'clusterhull':
         featureCollection = datacollection.clustered_geometries
         pass
+    elif mode == 'heatmap':
+        featureCollection = datacollection.heatmapped_geometries
+        pass
     else:
         return Response({"error": "Invalid QueryString"}, status=status.HTTP_400_BAD_REQUEST)
      

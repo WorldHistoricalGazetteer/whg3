@@ -24,6 +24,7 @@ import simplejson as json
 from shapely.geometry import box, mapping
 import numpy as np
 from utils.cluster_geometries import clustered_geometries
+from utils.heatmap_geometries import heatmapped_geometries
 from utils.carousel_metadata import carousel_metadata
 
 def user_directory_path(instance, filename):
@@ -163,6 +164,10 @@ class Dataset(models.Model):
   def geometries(self):
     g_list = PlaceGeom.objects.filter(place_id__in=self.placeids).values_list('jsonb', flat=True)
     return g_list
+
+  @property
+  def heatmapped_geometries(self):
+    return heatmapped_geometries(self)
 
   @property
   def last_modified_iso(self):

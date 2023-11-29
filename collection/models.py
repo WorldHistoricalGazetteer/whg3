@@ -18,6 +18,7 @@ from django.contrib.gis.geos import GEOSGeometry
 import simplejson as json
 from geojson import Feature
 from utils.cluster_geometries import clustered_geometries
+from utils.heatmap_geometries import heatmapped_geometries
 from utils.carousel_metadata import carousel_metadata
 
 """ for images """
@@ -139,6 +140,10 @@ class Collection(models.Model):
     team = CollectionUser.objects.filter(collection_id = self.id).values_list('user_id')
     teamusers = User.objects.filter(id__in=team)
     return teamusers
+
+  @property
+  def heatmapped_geometries(self):
+    return heatmapped_geometries(self)
 
   @property
   def kw_colors(self):

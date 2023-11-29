@@ -10,6 +10,7 @@ import '../css/home.css';
 import {
 	bbox
 } from './6.5.0_turf.min.js';
+import featuredDataLayers from './featuredDataLayerStyles';
 
 let style_code;
 if (mapParameters.styleFilter.length == 0) {
@@ -57,31 +58,9 @@ mappy.on('load', function() {
 		}
 	});
 	
-	mappy.addLayer({
-        id: 'featured-data-layer-polygons',
-        type: 'fill',
-        source: 'featured-data-source',
-        paint: {
-	        'fill-outline-color': 'red',
-            'fill-color': 'pink',
-            'fill-opacity': 0.7,
-        },
-        'filter': ['==', '$type', 'Polygon'],
-    });
-	
-	mappy.addLayer({
-        id: 'featured-data-layer-points',
-	    type: 'circle',
-	    source: 'featured-data-source',
-	    paint: {
-	        'circle-radius': 6,
-	        'circle-color': 'pink',
-	        'circle-opacity': 0.7,
-	        'circle-stroke-color': 'red',
-	        'circle-stroke-width': 2,
-	    },
-        'filter': ['==', '$type', 'Point'],
-    });
+	featuredDataLayers.forEach(layer => {
+		mappy.addLayer(layer);
+	});
 		
 	$(document).ready(function() {
 
@@ -134,6 +113,7 @@ mappy.on('load', function() {
 				.data({
 					id: datacollection.ds_or_c_id,
 					type: datacollection.type,
+					mode: datacollection.display_mode,
 					geometry_url: datacollection.geometry_url
 				});
 			target.append(carouselItem);
@@ -158,9 +138,9 @@ mappy.on('load', function() {
 			keyboard: false, // Ignore keyboard
 		});
 
-		function fetchDataFromLocalStorage(type, id) {
+		function fetchDataFromLocalStorage(type, id, mode) {
 			return new Promise((resolve, reject) => {
-				const storedData = localStorage.getItem(`${type}_${id}_data`);
+				const storedData = localStorage.getItem(`${type}_${id}_${mode}_data`);
 				if (storedData) {
 					resolve(JSON.parse(storedData));
 				} else {
@@ -201,10 +181,10 @@ mappy.on('load', function() {
 			}
 			thisHorse.closest('.border').addClass('highlight-carousel');
 			return new Promise((resolve, reject) => {
-				fetchDataFromLocalStorage(thisHorse.data('type'), thisHorse.data('id'))
+				fetchDataFromLocalStorage(thisHorse.data('type'), thisHorse.data('id'), thisHorse.data('mode'))
 					.then(data => {
 						mapData(data);
-						console.log(`${ thisHorse.data('type') } ${ thisHorse.data('id') } retrieved from local storage.`);
+						console.log(`${ thisHorse.data('type') } ${ thisHorse.data('id') } ${ thisHorse.data('mode') } retrieved from local storage.`);
 						resolve(data);
 					})
 					.catch(() => {
@@ -212,8 +192,8 @@ mappy.on('load', function() {
 						fetchDataFromNetwork(thisHorse.data('geometry_url'))
 							.then(data => {
 								mapData(data);
-								localStorage.setItem(`${thisHorse.data('type')}_${thisHorse.data('id')}_data`, JSON.stringify(data));
-								console.log(`${ thisHorse.data('type') } ${ thisHorse.data('id') } fetched from the network and saved to local storage.`);
+								localStorage.setItem(`${thisHorse.data('type')}_${thisHorse.data('id')}_${thisHorse.data('mode')}_data`, JSON.stringify(data));
+								console.log(`${ thisHorse.data('type') } ${ thisHorse.data('id') } ${ thisHorse.data('mode') } fetched from the network and saved to local storage.`);
 								resolve(data);
 							})
 							.catch(error => {
