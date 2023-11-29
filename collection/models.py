@@ -18,6 +18,7 @@ from django.contrib.gis.geos import GEOSGeometry
 import simplejson as json
 from geojson import Feature
 from utils.cluster_geometries import clustered_geometries
+from utils.carousel_metadata import carousel_metadata
 
 """ for images """
 from io import BytesIO
@@ -98,6 +99,10 @@ class Collection(models.Model):
   def get_absolute_url(self):
     #return reverse('datasets:dashboard', kwargs={'id': self.id})
     return reverse('data-collections')
+
+  @property
+  def carousel_metadata(self):
+    return carousel_metadata(self)
 
   @property
   def clustered_geometries(self):

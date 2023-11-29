@@ -24,6 +24,7 @@ import simplejson as json
 from shapely.geometry import box, mapping
 import numpy as np
 from utils.cluster_geometries import clustered_geometries
+from utils.carousel_metadata import carousel_metadata
 
 def user_directory_path(instance, filename):
   # upload to MEDIA_ROOT/user_<username>/<filename>
@@ -86,6 +87,10 @@ class Dataset(models.Model):
     # print(feat)
     return feat
     # return feat if dsgeoms.count() > 0 else None
+
+  @property
+  def carousel_metadata(self):
+    return carousel_metadata(self)
 
   @property
   def clustered_geometries(self):

@@ -1,48 +1,24 @@
 # cluster_geometries.py
 
-from django.urls import reverse
 from django.contrib.gis.geos import GEOSGeometry, Point, MultiPoint
+from geojson import Feature, Point
 from places.models import PlaceGeom
 import numpy as np
 import simplejson as json
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import calinski_harabasz_score
 
-def clustered_geometries(caller, bare=False):
+def clustered_geometries(caller):
     
     # Detect the class of the caller
     caller_class = type(caller)
-    caller_class = caller_class.__name__
-    
-    if caller_class == 'Dataset':
-        url = reverse('datasets:ds_places', args=[caller.id])
-        pass
-    elif caller_class == 'Collection':
-        url = reverse('collection:ds-collection-browse', args=[caller.id])
-        pass
-    else:
-        # Handle other cases or raise an exception
-        raise ValueError("Unsupported caller class: {}".format(caller_class))    
+    caller_class = caller_class.__name__   
     
     # Initialize the clustered features with common properties
     clustered_geometries = {
-        "properties": {},
-        "type": "Feature",
-        "geometry": {"type": "GeometryCollection", "geometries": []}
+        "type": "FeatureCollection",
+        "features": [],
     }
-    
-    if not bare:
-        clustered_geometries['properties'] = {
-            "title": caller.title,
-            "image_file": caller.image_file.url if caller.image_file else None,
-            "description": caller.description,
-            "creator": caller.creator,
-            "type": caller_class.lower(), 
-            "featured": caller.featured,
-            "ds_or_c_id": caller.id, 
-            "webpage": caller.webpage,
-            "url": url,
-        }
 
     def flatten_coordinates(coord): # Required to cope with nested GeometryCollections and MultiGeometries
         flattened = []
@@ -110,16 +86,11 @@ def clustered_geometries(caller, bare=False):
                 cluster_points = [GEOSGeometry(f"POINT ({coord[0]} {coord[1]})") for coord in coordinates[members_indices]]
                 multipoint_geom = MultiPoint(cluster_points)
                 convex_hull = multipoint_geom.convex_hull
-                geometry = json.loads(GEOSGeometry(convex_hull).geojson)
-                clustered_geometries['geometry']['geometries'].append(geometry)
+                clustered_geometries['features'].append(Feature(geometry= json.loads(GEOSGeometry(convex_hull).geojson) ))
             else:
                 # Create points for clusters with 1 or 2 members
                 for member_index in members_indices:
-                    geometry = {
-                        "type": "Point",
-                        "coordinates": coordinates[member_index].tolist(),
-                    }
-                    clustered_geometries['geometry']['geometries'].append(geometry)
+                    clustered_geometries['features'].append(Feature(geometry= Point(coordinates=coordinates[member_index].tolist()) ))
     
             processed_labels.add(current_label)
 

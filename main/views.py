@@ -252,20 +252,13 @@ class Home30a(TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super(Home30a, self).get_context_data(*args, **kwargs)
         
-        featured_datasets = {
-            "type": "FeatureCollection",
-            "features": []
-        }
-        featured_datasets_clustered = {
-            "type": "FeatureCollection",
-            "features": []
-        }
+        carousel_metadata = []
         for dataset_types in [Collection, Dataset]:
             featured = dataset_types.objects.exclude(featured__isnull=True)
             for dataset in featured:
-                featured_datasets['features'].append(dataset.convex_hull)
-                featured_datasets_clustered['features'].append(dataset.clustered_geometries)
-        random.shuffle(featured_datasets['features'])
+                carousel_metadata.append(dataset.carousel_metadata)
+        random.shuffle(carousel_metadata)
+        context['carousel_metadata'] = json.dumps(carousel_metadata)
         
         # f_datasets = list(Dataset.objects.exclude(featured__isnull=True))
         # shuffle(f_datasets)
@@ -293,10 +286,6 @@ class Home30a(TemplateView):
         context['featured_coll'] = f_collections
         context['featured_ds'] = f_datasets
         
-        
-        context['featured_datasets'] = json.dumps(featured_datasets)
-        context['featured_datasets_clustered'] = json.dumps(featured_datasets_clustered)
-
         return context
 
 class Home2b(TemplateView):

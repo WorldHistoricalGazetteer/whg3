@@ -1,9 +1,15 @@
 // /whg/webpack/home.js
 
-import { CustomAttributionControl } from './customMapControls';
-import { geomsGeoJSON } from './utilities';
+import {
+	CustomAttributionControl
+} from './customMapControls';
+import {
+	geomsGeoJSON
+} from './utilities';
 import '../css/home.css';
-import { bbox } from './6.5.0_turf.min.js';
+import {
+	bbox
+} from './6.5.0_turf.min.js';
 
 let style_code;
 if (mapParameters.styleFilter.length == 0) {
@@ -30,29 +36,25 @@ var timer; // Controls the carousels
 
 mappy.on('load', function() {
 	console.log('Map loaded.');
-	
+
 	const style = mappy.getStyle();
 	style.layers.forEach(layer => { // Hide map labels
-	    if (layer.id.includes('label')) {
-	        mappy.setLayoutProperty(layer.id, 'visibility', 'none');
-	    }
+		if (layer.id.includes('label')) {
+			mappy.setLayoutProperty(layer.id, 'visibility', 'none');
+		}
 	});
-			
+
 	mappy.addControl(new CustomAttributionControl({
 		compact: true,
-    	autoClose: mapParameters.controls.attribution.open === false,
+		autoClose: mapParameters.controls.attribution.open === false,
 	}), 'bottom-right');
-	
-	// Add id for filtering
-	let featureId = 1;
-    window.carousels.features.forEach(feature => {
-		feature.properties = feature.properties || {}; // Create properties object if it doesn't exist
-        feature.properties.id = feature.properties.id || featureId++;
-    });
 	
 	mappy.addSource('featured-data-source', {
 	    type: 'geojson',
-	    data: window.carousels
+	    data: {
+		    type: 'FeatureCollection',
+		    features: []
+		}
 	});
 	
 	mappy.addLayer({
@@ -64,11 +66,7 @@ mappy.on('load', function() {
             'fill-color': 'pink',
             'fill-opacity': 0.7,
         },
-        filter: [
-	        'all',
-	        ['==', 'id', ''],
-	        ['==', '$type', 'Polygon'],
-	    ],
+        'filter': ['==', '$type', 'Polygon'],
     });
 	
 	mappy.addLayer({
@@ -82,129 +80,174 @@ mappy.on('load', function() {
 	        'circle-stroke-color': 'red',
 	        'circle-stroke-width': 2,
 	    },
-        filter: [
-	        'all',
-	        ['==', 'id', ''],
-	        ['==', '$type', 'Point'],
-	    ],
+        'filter': ['==', '$type', 'Point'],
     });
-	
-	$(document).ready(function(){
 		
+	$(document).ready(function() {
+
 		galleries.forEach(gallery => {
-		    const [title, url] = gallery;
-		    const type = title.toLowerCase();
-		    const carouselContainer = $('<div class="carousel-container p-1 home-carousel"></div>');
-		    const border = $('<div class="border p-1 h-100"></div>');
-		    const heading = $(`<h6 class="p-1 strong">${ title }</h6>`);
-			if(type == 'datasets') {
+			const [title, url] = gallery;
+			const type = title.toLowerCase();
+			const carouselContainer = $('<div class="carousel-container p-1 home-carousel"></div>');
+			const border = $('<div class="border p-1 h-100"></div>');
+			const heading = $(`<h6 class="p-1 strong">${ title }</h6>`);
+			if (type == 'datasets') {
 				heading.addClass("ds-header")
 			} else {
 				heading.addClass("coll-header")
 			}
-		    const galleryLink = url == null ? '' : `<span class="float-end small"><a class="linkylite" href="${ url }">view all</a></span>`;
-		    const carousel = $(`<div id="${type.toLowerCase()}Carousel" class="carousel slide carousel-fade h-100"></div>`);
-		    const carouselInner = $('<div class="carousel-inner"></div>');
-		    const prevButton = $(`<button class="carousel-control-prev" type="button" data-bs-target="#${type}Carousel" data-bs-slide="prev">
+			const galleryLink = url == null ? '' : `<span class="float-end small"><a class="linkylite" href="${ url }">view all</a></span>`;
+			const carousel = $(`<div id="${type.toLowerCase()}Carousel" class="carousel slide carousel-fade h-100"></div>`);
+			const carouselInner = $('<div class="carousel-inner"></div>');
+			const prevButton = $(`<button class="carousel-control-prev" type="button" data-bs-target="#${type}Carousel" data-bs-slide="prev">
 		                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
 		                            <span class="visually-hidden">Previous</span>
 		                        </button>`);
-		    const nextButton = $(`<button class="carousel-control-next" type="button" data-bs-target="#${type}Carousel" data-bs-slide="next">
+			const nextButton = $(`<button class="carousel-control-next" type="button" data-bs-target="#${type}Carousel" data-bs-slide="next">
 		                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
 		                            <span class="visually-hidden">Next</span>
 		                        </button>`);
-		    heading.append(galleryLink);
-		    border.append(heading);
-		    carousel.append(carouselInner);
-		    carousel.append(prevButton);
-		    carousel.append(nextButton);
-		    border.append(carousel);
-		    carouselContainer.append(border);
-		    $('#carousel-outer-container').append(carouselContainer);
+			heading.append(galleryLink);
+			border.append(heading);
+			carousel.append(carouselInner);
+			carousel.append(prevButton);
+			carousel.append(nextButton);
+			border.append(carousel);
+			carouselContainer.append(border);
+			$('#carousel-outer-container').append(carouselContainer);
 		});
 
-		window.carousels.features.forEach(feature => {
-			const target = $('#' + feature.properties.type + 'sCarousel .carousel-inner');
+		carousel_metadata.forEach(datacollection => {
+			const target = $('#' + datacollection.type + 'sCarousel .carousel-inner');
 			const carouselItem = $(`<div class="carousel-item${ target.children('.carousel-item').length == 0 ? ' active' : '' } p-2"></div>`);
-			const description = feature.properties.description.length > 100 ? feature.properties.description.substring(0, 100) + '...' : feature.properties.description;
-		    if (feature.properties.image_file) {
-		        const imageElement = $(`<img src="${feature.properties.image_file}" class="carousel-image">`);
-		        carouselItem.append(imageElement);
-		    }
+			const description = datacollection.description.length > 100 ? datacollection.description.substring(0, 100) + '...' : datacollection.description;
+			if (datacollection.image_file) {
+				const imageElement = $(`<img src="${datacollection.image_file}" class="carousel-image">`);
+				carouselItem.append(imageElement);
+			}
 			carouselItem.append(`
 		        <h6>
-		            <a href="${feature.properties.url}">${feature.properties.title}</a>
+		            <a href="${datacollection.url}">${datacollection.title}</a>
 		        </h6>
 		        <p>${description}</p>
 		    `)
-		    .data({id: feature.properties.id});
-		    target.append(carouselItem);
+				.data({
+					id: datacollection.ds_or_c_id,
+					type: datacollection.type,
+					geometry_url: datacollection.geometry_url
+				});
+			target.append(carouselItem);
 		});
-		
+		fetchDataForHorse( $('.carousel-item:first') );
+
 		var carousels = $('.carousel');
 		let delay = 10000;
 		let mouseover = false;
 		if (startCarousels) carousels.first().carousel({
-		   	interval: delay,
-		 	ride: 'carousel',
-		   	keyboard: false, // Ignore keyboard
-		 }).on('slide.bs.carousel', function () {
-		     if (!mouseover) {
-		 		timer = setTimeout(function () {
-		 	      carousels.eq(1).carousel('next');
-		 	    }, delay / 2);
-		 	}
-		 });
-		 carousels.eq(1).carousel({
-		   	keyboard: false,  // Ignore keyboard
-		 });
-		 carousels.on('slid.bs.carousel', function () {
-			 const featureId = $(this).find('.carousel-item.active').data('id');
-			 
-			 ['featured-data-layer-points','featured-data-layer-polygons'].forEach(layer => {
-				 var filter = mappy.getFilter(layer);
-				 filter[1][2] = featureId;
-				 mappy.setFilter(layer, filter);
-			 });
-		
-		     const selectedFeature = window.carousels.features.find(feature => feature.properties.id === featureId);
-		     if (selectedFeature && selectedFeature.geometry && selectedFeature.geometry.geometries && selectedFeature.geometry.geometries.length > 0) {
-		         mappy.fitBounds(bbox(selectedFeature.geometry), {
-		             padding: 100,
-		 	        speed: .5,
-		         });
-		     }
-		     else {
-		 	    mappy.flyTo({
-		 			center: mapParameters.center,
-		 			zoom: mapParameters.zoom,
-		 	        speed: .5,
-		 	    });
-		 	}
-		
-		 	$('.carousel-container .border').removeClass('highlight-carousel');
-		 	$(this).closest('.border').addClass('highlight-carousel');
-		 });
+			interval: delay,
+			ride: 'carousel',
+			keyboard: false, // Ignore keyboard
+		}).on('slide.bs.carousel', function() {
+			if (!mouseover) {
+				timer = setTimeout(function() {
+					carousels.eq(1).carousel('next');
+				}, delay / 2);
+			}
+		});
+		carousels.eq(1).carousel({
+			keyboard: false, // Ignore keyboard
+		});
+
+		function fetchDataFromLocalStorage(type, id) {
+			return new Promise((resolve, reject) => {
+				const storedData = localStorage.getItem(`${type}_${id}_data`);
+				if (storedData) {
+					resolve(JSON.parse(storedData));
+				} else {
+					reject(new Error('Data not found in local storage'));
+				}
+			});
+		}
+
+		function fetchDataFromNetwork(url) {
+			return fetch(url)
+				.then(response => {
+					if (!response.ok) {
+						throw new Error('Bad network response.');
+					}
+					return response.json();
+				});
+		}
+
+		function fetchDataForHorse(thisHorse) {
+			function mapData(data) {
+				mappy.getSource('featured-data-source').setData(data);
+	            if (repositionMap) {
+					const bounding_box = bbox(data);
+					if (bounding_box[0] == Infinity) {
+				 	    mappy.flyTo({
+				 			center: mapParameters.center,
+				 			zoom: mapParameters.zoom,
+				 	        speed: .5,
+				 	    });
+					}
+					else {
+				         mappy.fitBounds(bounding_box, {
+				             padding: 100,
+				 	        speed: .5,
+				         });							
+					}
+				}
+			}
+			thisHorse.closest('.border').addClass('highlight-carousel');
+			return new Promise((resolve, reject) => {
+				fetchDataFromLocalStorage(thisHorse.data('type'), thisHorse.data('id'))
+					.then(data => {
+						mapData(data);
+						console.log(`${ thisHorse.data('type') } ${ thisHorse.data('id') } retrieved from local storage.`);
+						resolve(data);
+					})
+					.catch(() => {
+						// Data not found in local storage, fetch from the network
+						fetchDataFromNetwork(thisHorse.data('geometry_url'))
+							.then(data => {
+								mapData(data);
+								localStorage.setItem(`${thisHorse.data('type')}_${thisHorse.data('id')}_data`, JSON.stringify(data));
+								console.log(`${ thisHorse.data('type') } ${ thisHorse.data('id') } fetched from the network and saved to local storage.`);
+								resolve(data);
+							})
+							.catch(error => {
+								console.error('Error fetching GeoJSON:', error);
+								reject(error);
+							});
+					});
+			});
+		}
+
+		carousels.on('slid.bs.carousel', function() {
+			$('.carousel-container .border').removeClass('highlight-carousel');
+		    fetchDataForHorse( $(this).find('.carousel-item.active') );
+		});
 		$('.carousel-container').on('mouseenter', function() {
-		  	if (startCarousels) carousels.first().carousel('pause');
-		  	clearTimeout(timer);
-		  	mouseover = true;
+			if (startCarousels) carousels.first().carousel('pause');
+			clearTimeout(timer);
+			mouseover = true;
 		}).on('mouseleave', function() {
-		  	if (startCarousels) carousels.first().carousel('cycle');
-		  	mouseover = false;
+			if (startCarousels) carousels.first().carousel('cycle');
+			mouseover = false;
 		})
 		// Cycling restarts on button click unless carousel is paused, even though mouse has not left container
-		$('.carousel-control-next').on('click', function () {
-		  	if (startCarousels) carousels.first().carousel('pause');
+		$('.carousel-control-next').on('click', function() {
+			if (startCarousels) carousels.first().carousel('pause');
 			$($(this).data('bs-target')).carousel('next');
 		});
-		$('.carousel-control-prev').on('click', function () {
-		  	if (startCarousels) carousels.first().carousel('pause');
+		$('.carousel-control-prev').on('click', function() {
+			if (startCarousels) carousels.first().carousel('pause');
 			$($(this).data('bs-target')).carousel('prev');
 		});
-		
+
 	})
-	
+
 });
 
 
@@ -309,15 +352,15 @@ $(function() {
 		$.get("/search/index", filters, function(data) {
 			window.searchres = data['suggestions']
 			window.session = data['session']
-			
+
 			console.log(filters);
-			
+
 			// store locally
 			let results = geomsGeoJSON(searchres); // Convert to GeoJSON
 			results.query = query;
 			localStorage.setItem('checkedboxes', '[]');
 			localStorage.setItem('last_results', JSON.stringify(results));
-			
+
 			console.log(searchres)
 			// if results, deliver to search_new.html
 			if (searchres.length > 0) {
@@ -381,28 +424,30 @@ $(function() {
 })
 
 let homeModal = document.getElementById('homeModal')
-homeModal.addEventListener('show.bs.modal', function (event) {
-  // Button that triggered the modal
-  var button = event.relatedTarget
-  // Extract info from data-bs-* attributes
-  var title = button.getAttribute('data-bs-title')
+homeModal.addEventListener('show.bs.modal', function(event) {
+	// Button that triggered the modal
+	var button = event.relatedTarget
+	// Extract info from data-bs-* attributes
+	var title = button.getAttribute('data-bs-title')
 	var page = button.getAttribute('data-bs-page')
 	console.log('button_id', page)
 
-  // update the modal title
-  var modalTitle = homeModal.querySelector('.modal-title')
-  modalTitle.textContent = title
+	// update the modal title
+	var modalTitle = homeModal.querySelector('.modal-title')
+	modalTitle.textContent = title
 
 	// get modal body as django template
 	$.ajax({
-    url: homeModalURL, // Passed as a variable in Django template
-		data: {'page': page,},
-    type: 'POST',
-    success: function(response) {
-        $('.modal-body').html(response);
-    },
-    error: function(xhr, status, error) {
-	    console.log('status, error', status, error)
-	  }
+		url: homeModalURL, // Passed as a variable in Django template
+		data: {
+			'page': page,
+		},
+		type: 'POST',
+		success: function(response) {
+			$('.modal-body').html(response);
+		},
+		error: function(xhr, status, error) {
+			console.log('status, error', status, error)
+		}
 	});
 })

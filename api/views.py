@@ -755,6 +755,36 @@ class GeoJSONAPIView(generics.ListAPIView):
     #print('qs',qs)
     return qs
 
+""" 
+    /api/featureCollection/{{ ds.id  or coll.cid}}
+"""
+class featureCollectionAPIView(generics.ListAPIView):
+  permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+  
+  def get(self, format=None, *args, **kwargs):
+
+    mode = self.request.GET.get('mode')
+    featureCollection = None
+    
+    if 'id' in self.request.GET:
+        dsid = self.request.GET.get('id')
+        datacollection = get_object_or_404(Dataset, pk=dsid)
+        pass
+    elif 'coll' in self.request.GET:
+        cid = self.request.GET.get('coll')
+        datacollection = get_object_or_404(Collection, id=cid)
+        pass
+    else:
+        return Response({"error": "QueryString must include either an id or coll identifier"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if mode == 'clusterhull':
+        featureCollection = datacollection.clustered_geometries
+        pass
+    else:
+        return Response({"error": "Invalid QueryString"}, status=status.HTTP_400_BAD_REQUEST)
+     
+    return JsonResponse(featureCollection, content_type="application/json") 
+
 """
     populates drf table in ds_browse.html, ds_places.html
 """

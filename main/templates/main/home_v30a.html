@@ -209,16 +209,14 @@
         styleFilter: [ 'OUTDOOR.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
     }
 
-    //window.carousels = {{ featured_datasets|safe }};
-    window.carousels = {{ featured_datasets_clustered|safe }};
-    let startCarousels = false; // Determines whether galleries are to be auto-cycled
-    /* TODO: Do we need a url for a Datasets gallery, to be inserted below?*/
     let galleries = [
         ["Datasets","{% url 'datasets:dataset-gallery' %}"],
-		    ["Collections","{% url 'collection:collection-gallery' %}"]];
+		["Collections","{% url 'collection:collection-gallery' %}"]
+    ];
+    let carousel_metadata = {{ carousel_metadata|safe }}
+    let startCarousels = false; // Determines whether galleries are to be auto-cycled
+    let repositionMap = true; // Determines whether map should fly to loaded datacollection
     let homeModalURL = "{% url 'modal-home' %}"
-    console.log('window.carousels', window.carousels);
-    console.log('galleries', galleries);
 </script>
 <script type="module">
     import "{% static 'webpack/maptiler_sdk.bundle.js' %}";

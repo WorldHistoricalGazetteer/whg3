@@ -52,6 +52,7 @@ urlpatterns = [
     path('geoms/', views.GeomViewSet.as_view({'get':'list'}), name='geom-list'),
     # use: heatmap sources for collection_places.html
     path('geojson/', views.GeoJSONAPIView.as_view(), name='geojson'),    
+    path('featureCollection/', views.featureCollectionAPIView.as_view(), name='feature-collection'),    
 
     
     # 
