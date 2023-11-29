@@ -31,6 +31,7 @@ class Place(models.Model):
   fclasses = ArrayField(models.CharField(max_length=1, choices=FEATURE_CLASSES), null=True, blank=True)
   indexed = models.BooleanField(default=False)  
   idx_pub = models.BooleanField(default=False)
+  idx_builder = models.BooleanField(default=False)
   flag = models.BooleanField(default=False) # not in use
   # added Apr 2023, for case of no start/end
   # attestation_year = models.IntegerField(null=True,blank=True)

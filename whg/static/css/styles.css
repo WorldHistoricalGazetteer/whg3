@@ -169,6 +169,12 @@ ul.no-bullets {
   margin: 0;
   padding: 0;
 }
+ul.flush-left {
+    margin: 0;
+    padding: 0;
+    /*list-style-type: none;*/
+}
+
 .ul-flush{
   display: table;
   margin-left: 0;

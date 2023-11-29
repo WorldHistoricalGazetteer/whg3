@@ -51,6 +51,9 @@ class Dataset(models.Model):
 
   ds_status = models.CharField(max_length=12, null=True, blank=True, choices=STATUS_DS)
 
+  # added 20231128
+  idx_builder = models.BooleanField(default=False)
+
   # 4 added 20210619
   creator = models.CharField(max_length=500, null=True, blank=True)
   source = models.CharField(max_length=500, null=True, blank=True)

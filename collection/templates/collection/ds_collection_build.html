@@ -12,6 +12,7 @@
   <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.css' rel='stylesheet' />
   <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js'></script>
   <script src="{% static 'js/leaflet-mapbox-gl.js' %}"></script>
+	<link rel="stylesheet" href="{% static 'css/spin.css' %}"/>
 
 	<style>
     .form-group {margin-bottom: .5rem !important;}
@@ -63,20 +64,21 @@
 		    <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
           type="button" role="tab" aria-controls="coll_builder" aria-selected="false">Add and manage datasets</button>
 		  </li>
-
+			{# workspace; not conflating, linking #}
 		  <li class="nav-item" role="presentation">
 		    <button class="nav-link" id="conflator-tab" data-bs-toggle="tab" data-bs-target="#coll_conflator"
           type="button" role="tab" aria-controls="coll_conflator aria-selected="false">Conflator</button>
 		  </li>
+			{# collaborator s#}
 		  <li class="nav-item" role="presentation">
 		    <button class="nav-link" id="collaborators-tab" data-bs-toggle="tab" data-bs-target="#coll_collaborators"
           type="button" role="tab" aria-controls="coll_collaborators" aria-selected="false">Collaborators</button>
 		  </li>
-
 		  {% endif %}
 		</ul>
 		<div id="content" class="tab-content">
 			<div id="coll_form" class="tab-pane fade show active h-100">
+{#			<div id="coll_form" class="tab-pane fade h-100">#}
 		    <form id="collection_form" method="POST" enctype="multipart/form-data">
 		    {% csrf_token %}
         <div class="row">
@@ -87,7 +89,7 @@
 			      <input type="hidden" name="owner" value='{{ form.owner.value }}' />
 		      {% endif %}
 		      <input type="hidden" name="collection_class" value='dataset' />
-{#		      status: {{ form.status.value }}#}
+					{# status: {{ form.status.value }}#}
 					<div class="form-group">
 						<label for="Title">Title &#x02733;</label><br/>{{ form.title }}
 					</div>
@@ -100,7 +102,7 @@
 		      <div id="d_buttons" class="" style="">
 	          <span class="">
 	          {% if action == 'create' %}
-			        <a href="/mycollections">Cancel</a>
+			        <a href="/dashboard">Cancel</a>
 		          <input id="btn_coll_save" class="btn btn-sm btn-primary mt-2" type="submit" value="Save" />
 	          {% else %}
 		          <input id="btn_coll_save" name="display" class="btn btn-sm btn-success mt-2 "
@@ -136,23 +138,6 @@
 			      {% endif %}
 					{% endif %}
 	      </div>
-        {% comment %}
-        {% else %}
-          <div class="col-sm-5">
-	          <p class="ital small p-2">As a collaborator on this collection, you can view its metadata,
-	          add, annotate, and remove places, add links, and change the image and essay
-	          </p><hr/>
-	          {% with form.visible_fields as partial %}
-            <p><b>Title</b>: {{ partial.1.value }}</p>
-            <p><b>Description</b>:<br/>{{ partial.3.value }}</p>
-            <p><b>Collection Keywords</b>: {{ partial.4.value }}</p>
-            <p><b>Relation tags</b>: {{ partial.5.value }}</p>
-            {% endwith %}
-          </div>
-        {% endif %}
-        {% endcomment %}
-
-
 	        <div class="col-sm-7">
 		      {% if action == 'update' %}
 			      <div class="form-group mb-2">
@@ -245,41 +230,61 @@
 		    </div>
 			</div> {# coll_form #}
 			<div id="coll_builder" class="tab-pane fade h-100" style="height: auto; position:relative;">
-          <h5>Datasets</h5>
-          <p>
-            <span class="me-2">
-              <select id="select_ds" name="ds" class="custom-select-sm" style="width:auto; min-width:150px;">
-              <option value="0">Select dataset</option>
-              <option disabled>___________</option>
-              {% for ds in ds_select %}
-                {% if ds not in coll_dsset %}
-                  <option value="{{ ds.id }}">{{ ds.title }}</option>
-                {% endif %}
-              {% endfor %}
-              </select>
-            </span>
-            <a href="javascript:{ addDataset() }" class="">
-              <i class="fas fa-plus-square linky"></i> add</a>
-          </p>
-          <!-- id, label, title, description, creator, create_date, webpage, numrows, datatype -->
-          <div id="coll_dscards_create">
-            {% if coll_dsset|length == 0 %}<p id="msg" class="font-italic smaller">None yet...</p>{% endif %}
-            {% for d in coll_dsset %}
-              <div class="ds_card">
-                <p class="mb-0"><a href="{% url 'datasets:ds_summary' id=d.id %}">
-	                <span class="ds_title">{{ d.title }}</span></a> <small>({{d.label}}/{{ d.id}})</small>
-                </p>
-                <div class="ds_fields">
-                  <p class="my-1"><b>Description</b>: {{ d.description|truncatechars:150 }}</p>
-                  <p class="my-1"><b>Create date</b>: {{ d.create_date|date:"d M Y" }}</p>
-                  <p class="my-1"><b># rows</b>: {{ d.numrows }}
-                  <a href="{% url 'collection:remove-ds' ds_id=d.id coll_id=object.id %}" class="float-end">
-	                  <i class="fas fa-minus-square" style="color:#336699"></i> remove</a>
-                  </p>
-                </div>
-              </div>
-            {% endfor %}
-          </div> <!-- #coll_dscards_create -->
+{#			<div id="coll_builder" class="tab-pane fade show active h-100" style="height: auto; position:relative;">#}
+				<div class="row">
+					<div class="col-sm-7">
+		        <h5 class="bg-lighterblue">Datasets</h5>
+		        <p>
+		          <span class="me-2">
+		            <select id="select_ds" name="ds" class="custom-select-sm" style="width:auto; min-width:150px;">
+		            <option value="0">Select dataset</option>
+		            <option disabled>___________</option>
+		            {% for ds in ds_select %}
+		              {% if ds not in coll_dsset %}
+		                <option value="{{ ds.id }}">{{ ds.title }}</option>
+		              {% endif %}
+		            {% endfor %}
+		            </select>
+		          </span>
+		          <a href="javascript:{ addDataset() }" class="">
+		            <i class="fas fa-plus-square linky"></i> add</a>
+		        </p>
+						{# id, label, title, description, creator, create_date, webpage, numrows, datatype #}
+		        <div id="coll_dscards_create">
+		          {% if coll_dsset|length == 0 %}<p id="msg" class="font-italic smaller">None yet...</p>{% endif %}
+		          {% for d in coll_dsset %}
+		            <div class="ds_card">
+		              <p class="mb-0"><a href="{% url 'datasets:ds_summary' id=d.id %}">
+		                <span class="ds_title">{{ d.title }}</span></a> <small>({{d.label}}/{{ d.id}})</small>
+		              </p>
+		              <div class="ds_fields">
+		                <p class="my-1"><b>Description</b>: {{ d.description|truncatechars:150 }}</p>
+		                <p class="my-1"><b>Create date</b>: {{ d.create_date|date:"d M Y" }}</p>
+		                <p class="my-1"><b># rows</b>: {{ d.numrows }}
+		                <a href="{% url 'collection:remove-ds' ds_id=d.id coll_id=object.id %}" class="float-end">
+		                  <i class="fas fa-minus-square" style="color:#336699"></i> remove</a>
+		                </p>
+		              </div>
+		            </div>
+		          {% endfor %}
+		        </div>
+					</div>
+					<div class="col-sm-5">
+						<h5 class="bg-lighterblue">The Process</h5>
+						<div class="ps-3">
+							<ul class="flush-left">
+								<li>Add an initial dataset to "seed" the collection</li>
+								<li>Add a second dataset and reconcile it with the first, in order to link records for
+									closely matched places where they occur</li>
+								<li>Repeat for additional datasets, each time reconciling against the growing collection</li>
+							</ul>
+						</div>
+						<div class="mt-2">
+							<h5>Status</h5>
+							<p>hmmm, what here, vs in the cards themselves</p>
+						</div>
+					</div>
+				</div>
 			</div> {# coll_builder #}
 			<div id="coll_conflator" class="tab-pane fade h-100" style="height: auto; position:relative;">
 				<h4>DS Collection functionality</h4>
@@ -296,13 +301,18 @@
 </div> <!-- container -->
 
 <script type="text/javascript">
+	function startSpinner(){
+	  window.spinner = new Spin.Spinner().spin();
+	  $("#idx_result").append(spinner.el);
+	}
   $(function(){
-
     $("#dscoll_seed").click(function(e){
         e.preventDefault()
         console.log('gonna index '+ $("#seed_id").val() + ' for collection '+'{{ object.id }}')
+		    startSpinner()
 		    index_to_builder($("#seed_id").val())
     })
+
 
 	  // runs celery task index_to_builder
 		function index_to_builder(dsid){
@@ -319,11 +329,12 @@
 			      cache: false,
 			      data: formData,
 			      success:function(response){
-				      if(response.result == 'dupe'){
+				      if(response.result == 'error'){
 	              alert('That dataset is already in the builder index!')
 				      } else {
-					      $("#idx_result").html('added!', response.result)
-					      console.log('added!', response.result)
+					      console.log('response', response)
+					      $("#idx_result").html(
+                              '<p>indexed: '+response.indexed+'; failed: '+response.failed)
 				      }
 			      }
 				})
