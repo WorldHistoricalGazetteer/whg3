@@ -16,6 +16,7 @@ from django.contrib.gis.db.models import Extent
 
 from .forms import CollectionModelForm, CollectionGroupModelForm
 from .models import *
+from datasets.tasks import index_dataset_to_builder
 from main.models import Log, Link
 from traces.forms import TraceAnnotationModelForm
 from traces.models import TraceAnnotation
@@ -385,19 +386,32 @@ def add_dataset_places(request, *args, **kwargs):
   - if it is the first in
   - if no incomplete reviews of @align_builder tasks
 """
+
 def add_dataset(request, *args, **kwargs):
   coll = Collection.objects.get(id=kwargs['coll_id'])
   ds = Dataset.objects.get(id=kwargs['ds_id'])
-  print('add_dataset(): ds '+ds+' to coll '+coll)
-  # ds 9 is in 2 collections
-  print('ds in collections', [ds.id for ds in ds.collection_set.all()])
-  return
+  print('add_dataset(): ds ' + str(ds) + ' to coll ' + str(coll))
 
-  # create collections_datasets record
-  if coll.datasets.count() == 0:
+  if not coll.datasets.filter(id=ds.id).exists():
     coll.datasets.add(ds)
+    sequence = coll.datasets.count()
+    if coll.datasets.count() == 1:
+      # index only the first
+      indexing_result = index_dataset_to_builder(ds.id, coll.id)
+    dataset_details = {
+      "id": ds.id,
+      "label": ds.label,
+      "title": ds.title,
+      "create_date": ds.create_date,
+      "description": ds.description[:100]+'...',
+      "numrows": ds.places.count(),
+      "sequence": sequence
+    }
+    return JsonResponse({'status': 'success',
+                         'dataset': dataset_details})
 
-  return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+  return JsonResponse({'status': 'already_added'})
+
 
 """ 
   removes dataset from collection

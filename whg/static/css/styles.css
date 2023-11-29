@@ -808,6 +808,10 @@ em { color: #993333;}
   background-color: rgb(255 253 248);
   cursor: pointer;
 }
+.ds_card_first {
+  border: 1px dashed #993330;
+}
+
 .dl-table { width: 100%; }
 .dl-table th {
   /*background-color: #eee;*/

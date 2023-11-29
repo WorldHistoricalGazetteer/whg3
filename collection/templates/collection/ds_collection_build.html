@@ -54,14 +54,14 @@
 	  <ul id="tablist" class="nav nav-tabs" role="tablist">
 		  {# create form & intro #}
 		  <li class="nav-item" role="presentation">
-		    <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
+		    <button class="nav-link" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
           type="button" role="tab" aria-controls="coll_form" aria-selected="true">
 			    {% if action == 'create' %}Create{% else %}Edit{% endif %} Collection</button>
 		  </li>
 		  {# add & manage #}
 		  {% if action == "update" %}
 		  <li class="nav-item" role="presentation">
-		    <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
+		    <button class="nav-link active" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
           type="button" role="tab" aria-controls="coll_builder" aria-selected="false">Add and manage datasets</button>
 		  </li>
 			{# workspace; not conflating, linking #}
@@ -77,8 +77,8 @@
 		  {% endif %}
 		</ul>
 		<div id="content" class="tab-content">
-			<div id="coll_form" class="tab-pane fade show active h-100">
-{#			<div id="coll_form" class="tab-pane fade h-100">#}
+{#			<div id="coll_form" class="tab-pane fade show active h-100">#}
+			<div id="coll_form" class="tab-pane fade h-100">
 		    <form id="collection_form" method="POST" enctype="multipart/form-data">
 		    {% csrf_token %}
         <div class="row">
@@ -229,8 +229,8 @@
 	          </form>
 		    </div>
 			</div> {# coll_form #}
-			<div id="coll_builder" class="tab-pane fade h-100" style="height: auto; position:relative;">
-{#			<div id="coll_builder" class="tab-pane fade show active h-100" style="height: auto; position:relative;">#}
+{#			<div id="coll_builder" class="tab-pane fade h-100" style="height: auto; position:relative;">#}
+			<div id="coll_builder" class="tab-pane fade show active h-100" style="height: auto; position:relative;">
 				<div class="row">
 					<div class="col-sm-7">
 		        <h5 class="bg-lighterblue">Datasets</h5>
@@ -253,16 +253,21 @@
 		        <div id="coll_dscards_create">
 		          {% if coll_dsset|length == 0 %}<p id="msg" class="font-italic smaller">None yet...</p>{% endif %}
 		          {% for d in coll_dsset %}
-		            <div class="ds_card">
+		            <div class="ds_card {% if forloop.first %}ds_card_first{% endif %}">
 		              <p class="mb-0"><a href="{% url 'datasets:ds_summary' id=d.id %}">
 		                <span class="ds_title">{{ d.title }}</span></a> <small>({{d.label}}/{{ d.id}})</small>
+			              <span class="float-end text-danger">
+				              {% if forloop.first %}seed{% endif %}</span>
 		              </p>
 		              <div class="ds_fields">
 		                <p class="my-1"><b>Description</b>: {{ d.description|truncatechars:150 }}</p>
 		                <p class="my-1"><b>Create date</b>: {{ d.create_date|date:"d M Y" }}</p>
 		                <p class="my-1"><b># rows</b>: {{ d.numrows }}
-		                <a href="{% url 'collection:remove-ds' ds_id=d.id coll_id=object.id %}" class="float-end">
-		                  <i class="fas fa-minus-square" style="color:#336699"></i> remove</a>
+											<a href="#" onclick="confirmRemove({{ d.id }}, '{{ object.id }}', this)" class="float-end">
+											    <i class="fas fa-minus-square" style="color:#336699"></i> remove
+											</a>
+{#		                <a href="{% url 'collection:remove-ds' ds_id=d.id coll_id=object.id %}" class="float-end">#}
+{#		                  <i class="fas fa-minus-square" style="color:#336699"></i> remove</a>#}
 		                </p>
 		              </div>
 		            </div>
@@ -434,7 +439,8 @@
     dslist.push(d.id)
     $("#id_datasets [value=" + d.id + "]").attr("checked", "checked");
     card='<div class="ds_card" id="card_'+d.id+'">'
-        +'<p class="mb-0"><a href="#"><span class="ds_title">'+d.title+'</span></a> ('+d.label+'/'+d.id+')</p>'
+        +'<p class="mb-0"><a href="#"><span class="ds_title">'+d.title+'</span></a> ('+d.label+'/'+d.id+')'
+		    +'<span id="ds_sequence" class="float-end"></span></p>'
         +'<div class="ds_fields">'
           +'<p class="my-1"><b>Description</b>: '+d.description+'</p>'
           +'<p class="my-1"><b>Create date</b>: '+d.create_date+'</p>'
@@ -447,31 +453,47 @@
   }
 
   // adds, displays single dataset
-  function addDataset() {
-    console.log('selected', $("#select_ds").val())
-    $.get("/collections/list_ds", {ds_id:$("#select_ds").val()},
-      function(data){
-        // render to html
-        listDataset(data)
-        {#console.log('ds to list:',data)#}
-        // append ds.id to form
-    });
-    // reset select
-    $("#select_ds").val(0)
-    $("#msg").html('').hide()
-  }
-  function clearDataset(dsid){
-    {#console.log('clear card for ds', dsid)#}
-    $("#card_"+dsid).remove()
-  }
+	function addDataset() {
+	  console.log('selected', $("#select_ds").val());
+	  $.ajax({
+	    url: "/collections/add_ds/{{object.id}}/" + $("#select_ds").val(),
+	    success: function(result) {
+	      console.log('addDataset() result', result);
+	      if(result.status === 'success') {
+	        listDataset(result.dataset);
+          {#$("#ds_sequence").html(result.dataset.sequence === 1?'Seed':'')#}
+	      } else if(result.status === 'already_added') {
+	        console.log('Dataset already in the collection');
+	      }
+	    },
+	    error: function(xhr, status, error) {
+	      console.error('Error in addDataset:', error);
+	    }
+	  });
+	  // Reset select and hide message
+	  $("#select_ds").val(0);
+	  $("#msg").html('').hide();
+	}
+
+	function confirmRemove(dsId, collId, element) {
+      console.log('dsId, collId', dsId, collId)
+	    if (confirm("Are you sure you want to remove this dataset?")) {
+	        var url = `/collections/remove_ds/${collId}/${dsId}`;
+	        window.location.href = url;
+	    } else {
+	        console.log("Removal canceled.");
+	    }
+	 }
+
   function removeDataset(dsid) {
     if("{{ action }}" == 'update') {
-      {#console.log('removing ' + dsid + 'from collection '+ "{{object.id}}")#}
+      alert('removing ' + dsid + 'from collection '+ "{{object.id}}")
       $.ajax("/collections/remove_ds/{{object.id}}/"+dsid,
         function(result){
-          {#console.log('removeDataset() result', result)#}
+          console.log('removeDataset() result', result)
       });
     } else {
+      // TODO: why would there be an else: here?
       $("#id_datasets [value=" + dsid + "]").prop("checked", false);
       let idx = dslist.indexOf(dsid)
       dslist.splice(idx, dslist.length);
@@ -483,6 +505,29 @@
     // reset select
     $("#select_ds").val(0)
   }
+
+  function clearDataset(dsid){
+    {#console.log('clear card for ds', dsid)#}
+    $("#card_"+dsid).remove()
+  }
+
+
+  {##}
+  {#// adds, displays single dataset#}
+  {#function addDataset() {#}
+  {#  console.log('selected', $("#select_ds").val())#}
+  {#  $.get("/collections/list_ds", {ds_id:$("#select_ds").val()},#}
+  {#    function(data){#}
+  {#      // render to html#}
+  {#      listDataset(data)#}
+        {#console.log('ds to list:',data)#}
+  {#      // append ds.id to form#}
+  {#  });#}
+  {#  // reset select#}
+  {#  $("#select_ds").val(0)#}
+  {#  $("#msg").html('').hide()#}
+  {# }#}
+  {##}
 </script>
 
 {% endblock %}
