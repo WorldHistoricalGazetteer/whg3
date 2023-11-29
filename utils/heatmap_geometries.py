@@ -5,6 +5,7 @@ from geojson import Feature, Point
 from places.models import PlaceGeom
 import numpy as np
 import simplejson as json
+from json.encoder import INFINITY
 
 def heatmapped_geometries(caller):
     
@@ -17,31 +18,35 @@ def heatmapped_geometries(caller):
         "features": [],
     }
     
+    max_area = float('-inf')
+    
     def add_geometry(geometry):
-        zero_dimension_factor = 5 # This will need to be adjusted
+        zero_dimension_factor = 0.146 # Seems to give a good balance between point and other geometries
+        point_area = 1000 * 3.14159 * (zero_dimension_factor / 2) ** 2 # A = πr^2
 
         area = None
         centroid = None
-        
-        print(geometry)
 
         # Calculate area and centroid based on geometry type
         if geometry.geom_type == 'Point':
-            # For Point, use the point as centroid and calculate area for a circle with diameter zero_dimension_factor
             centroid = geometry
-            area = 3.14159 * (zero_dimension_factor / 2) ** 2  # A = πr^2
-        elif geometry.geom_type == 'LineString':
-            # For LineString, use the centroid and calculate area as length times zero_dimension_factor
+            area = point_area
+        elif geometry.geom_type == 'MultiPoint':
+            centroid = geometry.centroid
+            area = sum([point_area for point in geometry])
+        elif geometry.geom_type in ['LineString', 'MultiLineString']:
             centroid = geometry.centroid
             area = geometry.length * zero_dimension_factor
         elif geometry.geom_type in ['Polygon', 'MultiPolygon']:
-            # For Polygon or MultiPolygon, use the provided area and centroid
-            area = geometry.area
             centroid = geometry.centroid
+            area = geometry.area
+        
+        nonlocal max_area
+        max_area = max(area, max_area)
 
         heatmapped_geometries['features'].append(Feature(
             geometry=Point(coordinates=(centroid.x, centroid.y) if centroid else None),
-            properties={'area': area, 'mode': 'heatmap'}
+            properties={'area': area, 'mode': 'heatmap', 'original_type': geometry.geom_type}
         ))
     
     if caller_class == 'Dataset':
@@ -58,5 +63,11 @@ def heatmapped_geometries(caller):
         for place in places:
             for placegeom in place.geoms.all():
                 add_geometry(placegeom.geom)
+                
+    # Normalize area values in the collected features
+    for feature in heatmapped_geometries['features']:
+        area = feature['properties']['area']
+        normalized_area = area / max_area if max_area != 0 else 0.5
+        feature['properties']['area'] = normalized_area
 
     return heatmapped_geometries
