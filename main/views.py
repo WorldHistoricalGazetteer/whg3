@@ -256,10 +256,15 @@ class Home30a(TemplateView):
             "type": "FeatureCollection",
             "features": []
         }
+        featured_datasets_clustered = {
+            "type": "FeatureCollection",
+            "features": []
+        }
         for dataset_types in [Collection, Dataset]:
             featured = dataset_types.objects.exclude(featured__isnull=True)
             for dataset in featured:
                 featured_datasets['features'].append(dataset.convex_hull)
+                featured_datasets_clustered['features'].append(dataset.clustered_geometries)
         random.shuffle(featured_datasets['features'])
         
         # f_datasets = list(Dataset.objects.exclude(featured__isnull=True))
@@ -290,6 +295,7 @@ class Home30a(TemplateView):
         
         
         context['featured_datasets'] = json.dumps(featured_datasets)
+        context['featured_datasets_clustered'] = json.dumps(featured_datasets_clustered)
 
         return context
 

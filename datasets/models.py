@@ -22,6 +22,8 @@ from main.choices import *
 from places.models import Place, PlaceGeom, PlaceLink
 import simplejson as json
 from shapely.geometry import box, mapping
+import numpy as np
+from utils.cluster_geometries import clustered_geometries
 
 def user_directory_path(instance, filename):
   # upload to MEDIA_ROOT/user_<username>/<filename>
@@ -84,6 +86,10 @@ class Dataset(models.Model):
     # print(feat)
     return feat
     # return feat if dsgeoms.count() > 0 else None
+
+  @property
+  def clustered_geometries(self):
+    return clustered_geometries(self)
 
   @property
   def convex_hull(self):

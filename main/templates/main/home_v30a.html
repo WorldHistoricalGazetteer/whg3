@@ -209,7 +209,9 @@
         styleFilter: [ 'OUTDOOR.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
     }
 
-    window.carousels = {{ featured_datasets|safe }};
+    //window.carousels = {{ featured_datasets|safe }};
+    window.carousels = {{ featured_datasets_clustered|safe }};
+    let startCarousels = false; // Determines whether galleries are to be auto-cycled
     /* TODO: Do we need a url for a Datasets gallery, to be inserted below?*/
     let galleries = [
         ["Datasets","{% url 'datasets:dataset-gallery' %}"],

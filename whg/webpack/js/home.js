@@ -46,8 +46,8 @@ mappy.on('load', function() {
 	// Add id for filtering
 	let featureId = 1;
     window.carousels.features.forEach(feature => {
-        feature.properties.id = featureId;
-        featureId++;
+		feature.properties = feature.properties || {}; // Create properties object if it doesn't exist
+        feature.properties.id = feature.properties.id || featureId++;
     });
 	
 	mappy.addSource('featured-data-source', {
@@ -56,15 +56,37 @@ mappy.on('load', function() {
 	});
 	
 	mappy.addLayer({
-        id: 'featured-data-layer',
+        id: 'featured-data-layer-polygons',
         type: 'fill',
         source: 'featured-data-source',
         paint: {
 	        'fill-outline-color': 'red',
-            'fill-color': 'gray',
-            'fill-opacity': 0.3,
+            'fill-color': 'pink',
+            'fill-opacity': 0.7,
         },
-        filter: ['==', 'id', ''],
+        filter: [
+	        'all',
+	        ['==', 'id', ''],
+	        ['==', '$type', 'Polygon'],
+	    ],
+    });
+	
+	mappy.addLayer({
+        id: 'featured-data-layer-points',
+	    type: 'circle',
+	    source: 'featured-data-source',
+	    paint: {
+	        'circle-radius': 6,
+	        'circle-color': 'pink',
+	        'circle-opacity': 0.7,
+	        'circle-stroke-color': 'red',
+	        'circle-stroke-width': 2,
+	    },
+        filter: [
+	        'all',
+	        ['==', 'id', ''],
+	        ['==', '$type', 'Point'],
+	    ],
     });
 	
 	$(document).ready(function(){
@@ -122,58 +144,62 @@ mappy.on('load', function() {
 		var carousels = $('.carousel');
 		let delay = 10000;
 		let mouseover = false;
-		// disabled 2023-11-17  kg
-		// carousels.first().carousel({
-		//   	interval: delay,
-		// 	ride: 'carousel',
-		//   	keyboard: false, // Ignore keyboard
-		// }).on('slide.bs.carousel', function () {
-		//     if (!mouseover) {
-		// 		timer = setTimeout(function () {
-		// 	      carousels.eq(1).carousel('next');
-		// 	    }, delay / 2);
-		// 	}
-		// });
-		// carousels.eq(1).carousel({
-		//   	keyboard: false, // Ignore keyboard
-		// });
-		// carousels.on('slid.bs.carousel', function () {
-		// 	const featureId = $(this).find('.carousel-item.active').data('id');
-		// 	mappy.setFilter('featured-data-layer', ['==', 'id', featureId]);
-		//
-		//     const selectedFeature = window.carousels.features.find(feature => feature.properties.id === featureId);
-		//     if (selectedFeature && selectedFeature.geometry && selectedFeature.geometry.coordinates) {
-		//         mappy.fitBounds(bbox(selectedFeature.geometry), {
-		//             padding: 100,
-		// 	        speed: .5,
-		//         });
-		//     }
-		//     else {
-		// 	    mappy.flyTo({
-		// 			center: mapParameters.center,
-		// 			zoom: mapParameters.zoom,
-		// 	        speed: .5,
-		// 	    });
-		// 	}
-		//
-		// 	$('.carousel-container .border').removeClass('highlight-carousel');
-		// 	$(this).closest('.border').addClass('highlight-carousel');
-		// });
+		if (startCarousels) carousels.first().carousel({
+		   	interval: delay,
+		 	ride: 'carousel',
+		   	keyboard: false, // Ignore keyboard
+		 }).on('slide.bs.carousel', function () {
+		     if (!mouseover) {
+		 		timer = setTimeout(function () {
+		 	      carousels.eq(1).carousel('next');
+		 	    }, delay / 2);
+		 	}
+		 });
+		 carousels.eq(1).carousel({
+		   	keyboard: false,  // Ignore keyboard
+		 });
+		 carousels.on('slid.bs.carousel', function () {
+			 const featureId = $(this).find('.carousel-item.active').data('id');
+			 
+			 ['featured-data-layer-points','featured-data-layer-polygons'].forEach(layer => {
+				 var filter = mappy.getFilter(layer);
+				 filter[1][2] = featureId;
+				 mappy.setFilter(layer, filter);
+			 });
+		
+		     const selectedFeature = window.carousels.features.find(feature => feature.properties.id === featureId);
+		     if (selectedFeature && selectedFeature.geometry && selectedFeature.geometry.geometries && selectedFeature.geometry.geometries.length > 0) {
+		         mappy.fitBounds(bbox(selectedFeature.geometry), {
+		             padding: 100,
+		 	        speed: .5,
+		         });
+		     }
+		     else {
+		 	    mappy.flyTo({
+		 			center: mapParameters.center,
+		 			zoom: mapParameters.zoom,
+		 	        speed: .5,
+		 	    });
+		 	}
+		
+		 	$('.carousel-container .border').removeClass('highlight-carousel');
+		 	$(this).closest('.border').addClass('highlight-carousel');
+		 });
 		$('.carousel-container').on('mouseenter', function() {
-		  	carousels.first().carousel('pause');
+		  	if (startCarousels) carousels.first().carousel('pause');
 		  	clearTimeout(timer);
 		  	mouseover = true;
 		}).on('mouseleave', function() {
-		  	carousels.first().carousel('cycle');
+		  	if (startCarousels) carousels.first().carousel('cycle');
 		  	mouseover = false;
 		})
 		// Cycling restarts on button click unless carousel is paused, even though mouse has not left container
 		$('.carousel-control-next').on('click', function () {
-		  	carousels.first().carousel('pause');
+		  	if (startCarousels) carousels.first().carousel('pause');
 			$($(this).data('bs-target')).carousel('next');
 		});
 		$('.carousel-control-prev').on('click', function () {
-		  	carousels.first().carousel('pause');
+		  	if (startCarousels) carousels.first().carousel('pause');
 			$($(this).data('bs-target')).carousel('prev');
 		});
 		
@@ -207,7 +233,7 @@ $(function() {
 	$('#a_advanced').on('click', function(e) {
 		e.preventDefault();
 		clearTimeout(timer); // Stop the carousels
-		$('.carousel').first().carousel('pause');
+		if (startCarousels) $('.carousel').first().carousel('pause');
 		$('#advanced_search').slideToggle(300); // This toggles the visibility of the advanced search div
 	});
 
