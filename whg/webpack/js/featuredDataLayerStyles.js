@@ -8,8 +8,19 @@ const featuredDataLayers = [ // IMPORTANT: Listed in order of addition to the ma
             'fill-color': 'pink',
             'fill-opacity': 0.7,
         },
-        'filter': ['all', ['==', '$type', 'Polygon'], ['==', 'mode', 'clusterhull']]
+        'filter': ['all', ['==', '$type', 'Polygon'], ['in', 'mode', 'clusterhull', 'convexhull', 'feature_collection']]
     },
+    {
+	    id: 'clusterhull-lines',
+	    type: 'line',
+	    source: 'featured-data-source',
+	    paint: {
+	        'line-color': 'red',
+	        'line-opacity': 0.7,
+	        'line-width': 2,
+	    },
+	    filter: ['all', ['==', '$type', 'LineString'], ['in', 'mode', 'feature_collection']],
+	},
 	{
         id: 'clusterhull-points',
 	    type: 'circle',
@@ -21,7 +32,7 @@ const featuredDataLayers = [ // IMPORTANT: Listed in order of addition to the ma
 	        'circle-stroke-color': 'red',
 	        'circle-stroke-width': 2,
 	    },
-        'filter': ['all', ['==', '$type', 'Point'], ['==', 'mode', 'clusterhull']],
+        'filter': ['all', ['==', '$type', 'Point'], ['in', 'mode', 'clusterhull', 'feature_collection']],
     },
     {
         id: 'heatmap-heat',

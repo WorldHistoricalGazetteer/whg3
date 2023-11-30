@@ -783,6 +783,12 @@ class featureCollectionAPIView(generics.ListAPIView):
     elif mode == 'heatmap':
         featureCollection = datacollection.heatmapped_geometries
         pass
+    elif mode == 'convexhull':
+        featureCollection = datacollection.hull_geometries
+        pass
+    elif mode is None or mode == '':
+        featureCollection = datacollection.feature_collection
+        pass
     else:
         return Response({"error": "Invalid QueryString"}, status=status.HTTP_400_BAD_REQUEST)
      

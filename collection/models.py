@@ -19,6 +19,8 @@ import simplejson as json
 from geojson import Feature
 from utils.cluster_geometries import clustered_geometries
 from utils.heatmap_geometries import heatmapped_geometries
+from utils.hull_geometries import hull_geometries
+from utils.feature_collection import feature_collection
 from utils.carousel_metadata import carousel_metadata
 
 """ for images """
@@ -110,31 +112,6 @@ class Collection(models.Model):
     return clustered_geometries(self)
 
   @property
-  def convex_hull(self):
-    places = self.places.all()
-    geometry = None
-    if places.count() > 0:
-        geom_list = [GEOSGeometry(geom.geom.wkt) for place in places for geom in place.geoms.all()]
-        combined_geom = geom_list[0].convex_hull
-        
-        for geom in geom_list[1:]: # Union of convex hulls is much faster than union of full geometries
-            combined_geom = combined_geom.union(geom.convex_hull)
-
-        geometry = json.loads(combined_geom.convex_hull.geojson)
-
-    return Feature(properties={
-        "title": self.title,
-        "image_file": self.image_file.url if self.image_file else None,
-        "description": self.description,
-        "creator": self.creator,
-        "type": "collection", 
-        "featured": self.featured,
-        "id": self.id, 
-        "webpage": self.webpage,
-        "url": reverse('collection:ds-collection-browse', args=[self.id]),
-    }, geometry=geometry)
-
-  @property
   def collaborators(self):
     # includes roles: member, owner
     team = CollectionUser.objects.filter(collection_id = self.id).values_list('user_id')
@@ -142,8 +119,16 @@ class Collection(models.Model):
     return teamusers
 
   @property
+  def feature_collection(self):
+    return feature_collection(self)
+
+  @property
   def heatmapped_geometries(self):
     return heatmapped_geometries(self)
+
+  @property
+  def hull_geometries(self):
+    return hull_geometries(self)
 
   @property
   def kw_colors(self):

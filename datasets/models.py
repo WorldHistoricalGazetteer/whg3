@@ -25,6 +25,8 @@ from shapely.geometry import box, mapping
 import numpy as np
 from utils.cluster_geometries import clustered_geometries
 from utils.heatmap_geometries import heatmapped_geometries
+from utils.hull_geometries import hull_geometries
+from utils.feature_collection import feature_collection
 from utils.carousel_metadata import carousel_metadata
 
 def user_directory_path(instance, filename):
@@ -98,31 +100,6 @@ class Dataset(models.Model):
     return clustered_geometries(self)
 
   @property
-  def convex_hull(self):
-    dsgeoms = PlaceGeom.objects.filter(place__dataset=self.label)
-    geometry = None
-    if dsgeoms.count() > 0:
-        geom_list = [GEOSGeometry(dsgeom.geom.wkt) for dsgeom in dsgeoms]
-        combined_geom = geom_list[0].convex_hull
-        
-        for geom in geom_list[1:]: # Union of convex hulls is much faster than union of full geometries
-            combined_geom = combined_geom.union(geom.convex_hull)
-            
-        geometry = json.loads(combined_geom.convex_hull.geojson)
-
-    return Feature(properties={
-        "title": self.title,
-        "image_file": self.image_file.url if self.image_file else None,
-        "description": self.description,
-        "creator": self.creator,
-        "type": "dataset", 
-        "featured": self.featured,
-        "id": self.id, 
-        "webpage": self.webpage,
-        "url": reverse('datasets:ds_places', args=[self.id]),
-    }, geometry=geometry)
-
-  @property
   def collaborators(self):
     ## includes roles: member, owner
     team = DatasetUser.objects.filter(dataset_id_id = self.id).values_list('user_id_id')
@@ -150,6 +127,10 @@ class Dataset(models.Model):
     return result
 
   @property
+  def feature_collection(self):
+    return feature_collection(self)
+
+  @property
   def file(self):
     # returns model instance for latest file
     file = self.files.all().order_by('-id')[0]
@@ -168,6 +149,10 @@ class Dataset(models.Model):
   @property
   def heatmapped_geometries(self):
     return heatmapped_geometries(self)
+
+  @property
+  def hull_geometries(self):
+    return hull_geometries(self)
 
   @property
   def last_modified_iso(self):
