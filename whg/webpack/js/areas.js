@@ -53,96 +53,76 @@ function waitMapLoad() {
 		mappy.on('load', () => {
 			console.log('Map loaded.');
 
-			// Fetch the river and watershed GeoJSON data
-			const fetchRiverData = fetch('/datasets/ne_rivers982/places')
+			addDrawingControl();
+			    
+		    // Add river and watershed sources and layers
+			var riverStyle = {
+				'line-color': '#336699',
+  				'line-width': 1,
+			};
+		    mappy.addSource('rivers', {
+		      type: 'geojson',
+		      data: nullCollection,
+		    });
+		    mappy.addLayer({
+		      id: 'rivers',
+		      type: 'line',
+		      source: 'rivers',
+		      paint: riverStyle,
+		    });
+			fetch('/datasets/ne_rivers982/places')
 			  .then((response) => {
 			    if (!response.ok) {
-			      throw new Error('Failed to fetch river data');
+			      	throw new Error('Failed to fetch river data');
 			    }
-			    return response.json();
+    			return response.json();
+			  })
+			  .then((json) => {
+			    	if (!!json.features) mappy.getSource('rivers').setData(response.json());
 			  });
 			
-			const fetchWatershedData = fetch('/datasets/wri_watersheds/places')
+			var watershedStyle = {
+				'fill-color': '#993333',
+				'fill-opacity': 0.1,
+				'fill-outline-color': '#fff',
+			};
+		    mappy.addSource('watersheds', {
+		      type: 'geojson',
+		      data: nullCollection,
+		    });
+		    mappy.addLayer({
+		      id: 'watersheds',
+		      type: 'fill',
+		      source: 'watersheds',
+		      paint: watershedStyle,
+		    });
+			fetch('/datasets/wri_watersheds/places')
 			  .then((response) => {
 			    if (!response.ok) {
 			      throw new Error('Failed to fetch watershed data');
 			    }
-			    return response.json();
-			  });
-			
-			// Use Promise.all to wait for both fetch operations to complete
-			Promise.all([fetchRiverData, fetchWatershedData])
-			  .then(([riverGeoJSON, watershedGeoJSON]) => {
-				  
-			    if (!!riverGeoJSON.features && riverGeoJSON.features.length > 0) {
-			    
-				    // Add river and watershed sources and layers
-					var riverStyle = {
-						'line-color': '#336699',
-		  				'line-width': 1,
-					};
-				    mappy.addSource('rivers', {
-				      type: 'geojson',
-				      data: riverGeoJSON,
-				    });
-				    mappy.addLayer({
-				      id: 'rivers',
-				      type: 'line',
-				      source: 'rivers',
-				      paint: riverStyle,
-				    });
-					
-				}
-				else {
-					console.log('Empty or invalid riverGeoJSON.');
-				}
-				  
-			    if (!!watershedGeoJSON.features && watershedGeoJSON.features.length > 0) {
-			
-					var watershedStyle = {
-						'fill-color': '#993333',
-						'fill-opacity': 0.1,
-						'fill-outline-color': '#fff',
-					};
-				    mappy.addSource('watersheds', {
-				      type: 'geojson',
-				      data: watershedGeoJSON,
-				    });
-				    mappy.addLayer({
-				      id: 'watersheds',
-				      type: 'fill',
-				      source: 'watersheds',
-				      paint: watershedStyle,
-				    });
-					
-				}
-				else {
-					console.log('Empty or invalid watershedGeoJSON.');
-				}
-			
-			    // Now that river and watershed sources/layers are added, proceed with adding other sources and layers
-			    mappy.addSource('places', {
-			      type: 'geojson',
-			      data: nullCollection,
-			      attribution: attributionString(),
-			    });
-			
-			    datasetLayers.forEach(function (layer) {
-			      mappy.addLayer(layer);
-			    });
-			
-			    mappy.addSource('hulls', {
-			      type: 'geojson',
-			      data: nullCollection,
-			    });
-			
-			    mappy.addLayer(hullLayer);
+    			return response.json();
 			  })
-			  .catch((error) => {
-			    console.error('Error fetching GeoJSON data:', error);
+			  .then((json) => {
+					if (!!json.features) mappy.getSource('watersheds').setData(response.json());
 			  });
-
-			addDrawingControl();
+			
+		    mappy.addSource('places', {
+		      type: 'geojson',
+		      data: nullCollection,
+		      attribution: attributionString(),
+		    });
+		
+		    datasetLayers.forEach(function (layer) {
+		      mappy.addLayer(layer);
+		    });
+		
+		    mappy.addSource('hulls', {
+		      type: 'geojson',
+		      data: nullCollection,
+		    });
+		
+		    mappy.addLayer(hullLayer);
 			
 /*			if (mapParameters.styleFilter.length !== 1) { // This would be a little complicated (but not impossible) to implement due to MapBox drawing layers; styling also required.
 				mappy.addControl(new acmeStyleControl(mappy), 'top-right');
@@ -192,6 +172,30 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 				$(this).val('')
 			}
 		});
+			
+		if (action == 'update') {
+			// existing - assumes that formGeoJSON is a featureCollection
+			const areaFeatureCollection = featureGeometryCollection(JSON.parse(formGeoJSON));
+	
+			// if area was drawn
+			if (formType == 'drawn') {
+				console.log('was drawn',areaFeatureCollection)
+				draw.set(areaFeatureCollection)
+				$('a[href="#areas_draw"]').tab('show');
+				// disable ccodes tab
+				$('a[href="#areas_codes"]').addClass('disabled').css("cursor", "default")
+	
+			} else if (formType == 'ccodes') {
+				console.log('was ccodes-generated')
+				mappy.getSource('hulls').setData(areaFeatureCollection);
+				// disable draw tab
+				$('a[href="#areas_draw"]').addClass('disabled').css("cursor", "default")
+			}
+			mappy.fitBounds(bbox(areaFeatureCollection), {
+		        padding: 30,
+		        duration: 1000,
+		    });
+		}
 		
 		let country_url = "/media/data/countries_simplified.json";
 		fetch(country_url)
@@ -227,8 +231,6 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 				$("#id_geojson").attr("placeholder", "generated from drawn shapes")
 			}
 		});
-
-		map_init();
 	})
 	.catch(error => console.error("An error occurred:", error));
 
@@ -250,42 +252,39 @@ function addDrawingControl() {
 	drawControls.forEach((elem) => {
 		elem.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group');
 	});
-	mappy.on('draw.create', updateGeoJSON);
-	mappy.on('draw.delete', updateGeoJSON);
-	mappy.on('draw.update', updateGeoJSON);
-
-	function updateGeoJSON() {
-		var data = draw.getAll();
-		$("textarea#id_geojson").val(data.features.length > 0 ? JSON.stringify(data) : '');
+	mappy.on('draw.create', updateDraw); // draw methods fail to register if not done individually
+	mappy.on('draw.delete', updateDraw);
+	mappy.on('draw.update', updateDraw);
+	function updateDraw() {
+		const featureCollection = draw.getAll();
+		$("textarea#geojson").val(featureCollection.features.length > 0 ? JSON.stringify( geometryFeatureCollection(featureCollection) ) : '');		
 	}
-
 }
 
-function map_init() {
-	// whether drawn or ccodes, load existing data
-	if (action == 'update') {
-		// existing - assumes that formGeoJSON is a featureCollection
-		areageom = JSON.parse(formGeoJSON);
+function geometryFeatureCollection(featureCollection) {
+	return {
+	  "type": "GeometryCollection",
+	  "geometries": featureCollection.features.map(feature => feature.geometry)
+	};	
+}
 
-		// if area was drawn
-		if (formType == 'drawn') {
-			console.log('was drawn')
-			draw.set(formGeoJSON)
-			$('a[href="#areas_draw"]').tab('show');
-			// disable ccodes tab
-			$('a[href="#areas_codes"]').addClass('disabled').css("cursor", "default")
-
-		} else if (formType == 'ccodes') {
-			console.log('was ccodes-generated')
-			mappy.getSource('places').setData(formGeoJSON);
-			// disable draw tab
-			$('a[href="#areas_draw"]').addClass('disabled').css("cursor", "default")
+function featureGeometryCollection(geometryCollection) {
+	if (!!geometryCollection.coordinates) { // First, convert any plain geometries to GeometryCollection
+		geometryCollection = {
+			"type": "GeometryCollection",
+	  		"geometries": [geometryCollection]
 		}
-		mappy.fitBounds(bbox(formGeoJSON), {
-	        padding: 30,
-	        duration: 1000,
-	    });
 	}
+	return {
+      type: 'FeatureCollection',
+      features: geometryCollection.geometries.map(geometry => {
+        return {
+          type: 'Feature',
+          geometry: geometry,
+          properties: {}
+        };
+      })
+    };	
 }
 
 function map_clear() {
@@ -294,7 +293,7 @@ function map_clear() {
 	mappy.getSource('hulls').setData(nullCollection);
 	$("input#id_ccodes").val(null);
 	if (action == "create") {
-		$("textarea#id_geojson").val(null);
+		$("textarea#geojson").val(null);
 	}
 	$("#buffer_km").val(null);
 	mappy.flyTo({
@@ -308,12 +307,13 @@ function map_render() {
 	mappy.getSource('places').setData(nullCollection);
 	mappy.getSource('hulls').setData(nullCollection);
 	let ccodes = $("input#id_ccodes").val().split(/[,\s|]+/).map(code => code.trim().toUpperCase()).filter(Boolean);
+	$("input#id_ccodes").val(ccodes.join(','));
 	let cbuffer = $("input#buffer_km").val();
 	featureCollection = deepCopy(nullCollection);
 	let hullCollection = deepCopy(nullCollection);
 	if (ccodes.length > 0) {
 		featureCollection.features = countryGeoJSON.features.filter(feature => ccodes.includes(feature.properties.iso));
-		if (featureCollection.features.length ==0) {
+		if (featureCollection.features.length == 0) {
 			alert('No matches found for those country codes.');
 			return;
 		}
@@ -337,7 +337,7 @@ function map_render() {
 		return;
 	}
     let primaryCollection = cbuffer > 0 ? hullCollection : featureCollection;
-    $("textarea#id_geojson").val(JSON.stringify(primaryCollection));
+    $("textarea#geojson").val(JSON.stringify( geometryFeatureCollection(primaryCollection) ));
 	mappy.fitBounds(bbox(primaryCollection), {
         padding: 30,
         duration: 1000,

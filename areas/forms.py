@@ -1,7 +1,10 @@
 from django import forms
+from django.contrib.gis.geos import GEOSGeometry, GeometryCollection
+from django.core.exceptions import ValidationError
 from django.db import models
 # from leaflet.forms.widgets import LeafletWidget
 from .models import Area
+import json
 
 class AreaModelForm(forms.ModelForm):
     # ** trying to return to referrer
@@ -17,10 +20,11 @@ class AreaModelForm(forms.ModelForm):
                 'rows':2,'cols': 40,'class':'textarea'
             }),
             'ccodes': forms.TextInput(attrs={
-                'placeholder':'2-letter codes, e.g. br,ar',
+                'placeholder':'2-letter codes, e.g. BR,AR',
                 'size': 30
             }),
             'geojson': forms.Textarea(attrs={
+                'id': 'geojson',
                 'rows':2,'cols': 40,'class':'textarea',
                 'placeholder':''
             }),
@@ -29,6 +33,20 @@ class AreaModelForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(AreaModelForm, self).__init__(*args, **kwargs)
+
+    def clean_geojson(self):
+        geojson_data = self.cleaned_data['geojson']
+
+        try:
+            geometry = GEOSGeometry(json.dumps(geojson_data))
+            geometry = geometry.simplify(0.00001).buffer(0) # Simplify and clean
+            collection = GeometryCollection(geometry)
+            return json.loads(collection.geojson)
+            
+        except Exception as e:
+            raise ValidationError(f"Invalid GeoJSON: {e}")
+
+        return None
 
 #class AreaDetailModelForm(forms.ModelForm):
     #class Meta:

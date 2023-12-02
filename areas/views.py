@@ -22,7 +22,7 @@ class AreaCreateView(CreateView):
         if redirect != '':
             self.success_url = redirect
         else:
-            self.success_url = '/mystudyareas'
+            self.success_url = '/dashboard'
         return kwargs
     
     def form_invalid(self,form):
@@ -33,7 +33,7 @@ class AreaCreateView(CreateView):
     def form_valid(self, form):
         context={}
         if form.is_valid():
-            print('form is valid, cleaned_data',form.cleaned_data)
+            print('form is valid, cleaned_data', form.cleaned_data)
         else:
             print('form not valid', form.errors)
             context['errors'] = form.errors
