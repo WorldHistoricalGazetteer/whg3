@@ -118,13 +118,23 @@ function waitMapLoad() {
 		    	autoClose: mapParameters.controls.attribution.open === false,
 			}), 'bottom-right');
 
-			function dateRangeChanged(fromValue, toValue){
-				let debounceTimeout;
-			    function debounceFilterApplication() {
-			        clearTimeout(debounceTimeout);
-			        //debounceTimeout = setTimeout(toggleFilters(true, mappy, table), 300);
+			let throttleTimeout;
+			let isThrottled = false;
+			function dateRangeChanged() { // Throttle date slider changes
+			    const throttleInterval = 300;
+			    if (!isThrottled) {
+			        toggleFilters(true, mappy, table);
+			        isThrottled = true;
+			        throttleTimeout = setTimeout(() => {
+			            isThrottled = false;
+			        }, throttleInterval);
+			    } else {
+			        clearTimeout(throttleTimeout);
+			        throttleTimeout = setTimeout(() => {
+			            isThrottled = false;
+			            toggleFilters(true, mappy, table);
+			        }, throttleInterval);
 			    }
-			    debounceFilterApplication();
 			}
 
 			if (!!mapParameters.controls.temporal) {

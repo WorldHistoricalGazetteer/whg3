@@ -233,15 +233,23 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
     	autoClose: mapParameters.controls.attribution.open === false,
 	}), 'bottom-right');
 
-	function dateRangeChanged(fromValue, toValue){
-		// Throttle date slider changes using debouncing
-		// Ought to be possible to use promises on the `render` event
-		let debounceTimeout;
-	    function debounceFilterApplication() {
-	        clearTimeout(debounceTimeout);
-	        debounceTimeout = setTimeout(toggleFilters(true, mappy, table), 300);
+	let throttleTimeout;
+	let isThrottled = false;
+	function dateRangeChanged() { // Throttle date slider changes
+	    const throttleInterval = 300;
+	    if (!isThrottled) {
+	        toggleFilters(true, mappy, table);
+	        isThrottled = true;
+	        throttleTimeout = setTimeout(() => {
+	            isThrottled = false;
+	        }, throttleInterval);
+	    } else {
+	        clearTimeout(throttleTimeout);
+	        throttleTimeout = setTimeout(() => {
+	            isThrottled = false;
+	            toggleFilters(true, mappy, table);
+	        }, throttleInterval);
 	    }
-	    debounceFilterApplication();
 	}
 
 	if (window.dateline) {
