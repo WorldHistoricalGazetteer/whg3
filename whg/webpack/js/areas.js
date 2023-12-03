@@ -252,7 +252,7 @@ function addDrawingControl() {
 	drawControls.forEach((elem) => {
 		elem.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group');
 	});
-	mappy.on('draw.create', updateDraw); // draw methods fail to register if not done individually
+	mappy.on('draw.create', updateDraw); // draw events fail to register if not done individually
 	mappy.on('draw.delete', updateDraw);
 	mappy.on('draw.update', updateDraw);
 	function updateDraw() {

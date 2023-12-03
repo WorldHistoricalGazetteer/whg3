@@ -60,7 +60,9 @@ export default class Dateline {
 		this.toValue = toValue;
 		this.minValue = minValue;
 		this.maxValue = maxValue;
-		this.open = open;
+		this.open = open; // true | false - updated to indicate varying state of control
+		this.button = null;
+		this.container = null;
 		this.includeUndated = includeUndated;
 		this.epochs = epochs;
 		this.automate = automate;
@@ -93,6 +95,7 @@ export default class Dateline {
 
 	createSliderElements() {
 		const datelineDiv = document.getElementById("dateline");
+		this.container = datelineDiv;
 		const rangeContainerHTML = `
 			<div class="range_container">
 				<div class="form_control">
@@ -118,8 +121,10 @@ export default class Dateline {
 		datelineDiv.appendChild(this.rangeContainer);
 
 		const datelineButton = document.querySelector('.dateline-button');
+		this.button = datelineButton;
 		this.rangeContainer.parentNode.insertBefore(datelineButton, this.rangeContainer);
 		datelineButton.addEventListener('click', () => {
+			this.open = !this.open;
 			if (this.rangeContainer.classList.contains('transitioned')) {
 				this.rangeContainer.classList.remove('transitioned');
 			}
@@ -210,6 +215,7 @@ export default class Dateline {
 
 		if (this.open) {
 			const datelineButton = document.querySelector('.dateline-button');
+			this.open = false; // The following line will cause it to be reset to true, and it can then be read whenever required
 			datelineButton.click();
 			this.rangeContainer.classList.add('transitioned');
 		}

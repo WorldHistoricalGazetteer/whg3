@@ -123,7 +123,7 @@ function waitMapLoad() {
 			function dateRangeChanged() { // Throttle date slider changes
 			    const throttleInterval = 300;
 			    if (!isThrottled) {
-			        toggleFilters(true, mappy, table);
+			        //toggleFilters(true, mappy, table); // TODO: replace with appropriate function
 			        isThrottled = true;
 			        throttleTimeout = setTimeout(() => {
 			            isThrottled = false;
@@ -132,7 +132,7 @@ function waitMapLoad() {
 			        clearTimeout(throttleTimeout);
 			        throttleTimeout = setTimeout(() => {
 			            isThrottled = false;
-			            toggleFilters(true, mappy, table);
+			            //toggleFilters(true, mappy, table); // TODO: replace with appropriate function
 			        }, throttleInterval);
 			    }
 			}

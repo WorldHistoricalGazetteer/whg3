@@ -171,7 +171,11 @@ class SearchView(View):
         [string] idx: index to be queried
         [int] year: filter for timespans including this
         [string[]] fclasses: filter on geonames class (A,H,L,P,S,T)
+        [int] start: filter for timespans
+        [int] end: filter for timespans
+        [string] undated: text of boolean for inclusion of undated results        
         [string] bounds: text of JSON geometry
+        [string] area_filter: text of drawn area GeometryCollection
     """
     qstr = request.GET.get('qstr')
     # idx = request.GET.get('idx')
@@ -179,7 +183,9 @@ class SearchView(View):
     fclasses = request.GET.get('fclasses')
     start = request.GET.get('start')
     end = request.GET.get('end')
+    undated = request.GET.get('undated')
     bounds = request.GET.get('bounds')
+    area_filter = request.GET.get('area_filter')
     
     params = {
       "qstr":qstr,
@@ -189,7 +195,9 @@ class SearchView(View):
       "fclasses": fclasses,
       "start": start,
       "end": end,
+      "undated": undated,
       "bounds": bounds,
+      "area_filter": area_filter,
     }
     request.session["search_params"] = params 
     print('search_params set', params)
