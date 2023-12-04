@@ -7,6 +7,7 @@ import { attributionString, deepCopy, geomsGeoJSON } from './utilities';
 import { bbox } from './6.5.0_turf.min.js';
 import { CustomAttributionControl } from './customMapControls';
 import Dateline from './dateline';
+import { popupFeatureHTML } from './getPlace.js';
 
 import '../css/maplibre-common.css';
 import '../css/mapAndTableMirrored.css';
@@ -49,6 +50,12 @@ let relatedFeatureCollection;
 let nearbyFeatureCollection;
 let featureHighlights = [];
 let showingRelated = false;
+
+let nearPlacePopup = new maptilersdk.Popup({
+	closeButton: false,
+	})
+.addTo(mappy);
+$(nearPlacePopup.getElement()).hide();
 
 function waitMapLoad() {
     return new Promise((resolve) => {
@@ -163,9 +170,8 @@ function waitMapLoad() {
 
 				if (!showingRelated) {
 					if (features.length > 0) {
-
 						clearHighlights();
-						features.forEach(feature => { // Starting with topmost layers
+						features.forEach(feature => { // Check datasetLayers, starting with topmost layers
 							if (!datasetLayers.some(layer => feature.layer.id == layer.id)) {
 								return; // Reached underlying layers - exit loop
 							}
@@ -175,12 +181,22 @@ function waitMapLoad() {
 							featureHighlights.push(featureHighlight);
 
 						});
+						features.forEach(feature => { // Check nearPlaceLayers, starting with topmost layers
+							if (!nearPlaceLayers.some(layer => feature.layer.id == layer.id)) {
+								return; // Reached underlying layers - exit loop
+							}
+							nearPlacePopup
+							.setLngLat(e.lngLat)
+							.setHTML(popupFeatureHTML(feature, false)); // second parameter indicates clickability
+						$(nearPlacePopup.getElement()).show();
+						});
 						if (featureHighlights.length > 0) {
 							mappy.getCanvas().style.cursor = 'pointer';
 						}
 
 					} else {
 						clearHighlights();
+						$(nearPlacePopup.getElement()).hide();
 					}
 				}
 
@@ -536,6 +552,7 @@ function nearbyPlaces() {
         const radius = $('#radiusSelect').val();
         const lon = center.lng;
         const lat = center.lat;
+        $('button#update_nearby').show();
 
         fetch(`/api/spatial/?type=nearby&lon=${lon}&lat=${lat}&km=${radius}`)
             .then((response) => {
@@ -549,6 +566,10 @@ function nearbyPlaces() {
                 nearbyFeatureCollection = data; // Set the global variable
                 console.log(nearbyFeatureCollection);
                 mappy.getSource('nearbyPlaces').setData(nearbyFeatureCollection);
+				if (!showingRelated && nearbyFeatureCollection.features.length > 0) {
+					mappy.fitViewport( bbox( nearbyFeatureCollection ) );
+					$('button#update_nearby').html(`<span class="strong-red">${nearbyFeatureCollection.features.length}</span> Update`);
+				}
             })
             .catch((error) => {
                 console.error(error);
@@ -557,6 +578,7 @@ function nearbyPlaces() {
 	}
 	else {
 		mappy.getSource('nearbyPlaces').setData(nullCollection);
+        $('button#update_nearby').hide();
 	}
 }
 
@@ -571,9 +593,18 @@ function createNearbyPlacesControl() {
         .on('change', nearbyPlaces);
     const $label = $(`<label for = 'nearby_places'>`).text('Show');
     $itemDiv.append($checkboxItem, $label);
+    
+    const $button = $('<button>')
+    	.attr('id', 'update_nearby')
+    	.attr('title', 'Search again - based on map center')
+    	.html('Update')
+    	.on('click', nearbyPlaces)
+    	.hide();
 
     const $radiusLabel = $(`<label for = 'radiusSelect'>`).text('Radius: ');
-    const $select = $('<select>').attr('id', 'radiusSelect');
+    const $select = $('<select>')
+    	.attr('title', 'Search radius, based on map center')
+    	.attr('id', 'radiusSelect');
     for (let i = 1; i <= 10; i++) {
         const $option = $('<option>')
             .attr('value', i**2)
@@ -582,7 +613,7 @@ function createNearbyPlacesControl() {
     }
     $select.val(16).on('change', nearbyPlaces);
 
-    $nearbyPlacesControl.append($itemDiv, $radiusLabel, $select);
+    $nearbyPlacesControl.append($button, $itemDiv, $radiusLabel, $select);
 
     return $nearbyPlacesControl;
 }
