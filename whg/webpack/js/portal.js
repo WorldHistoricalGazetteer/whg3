@@ -14,6 +14,7 @@ import '../css/mapAndTableMirrored.css';
 import '../css/dateline.css';
 import '../css/portal.css';
 
+const payload = JSON.parse($('#payload_data').text());
 
 let style_code;
 if (mapParameters.styleFilter.length == 0) {
@@ -44,6 +45,7 @@ let nullCollection = {
     type: 'FeatureCollection',
     features: []
 }
+const noSources = $('<div>').html('<i>None - please adjust time slider.</i>').hide();
 
 let featureCollection;
 let relatedFeatureCollection;
@@ -107,6 +109,11 @@ function waitMapLoad() {
 			});
 		    datasetLayers.forEach(layer => {
 				mappy.addLayer(layer);
+				mappy.setFilter(layer.id, [
+					'all',
+					layer.filter,
+					['!=', 'outOfDateRange', true],
+				]);
 			});
 
 	  		const geoLayers = JSON.parse($('#geo-layers').text());
@@ -130,7 +137,7 @@ function waitMapLoad() {
 			function dateRangeChanged() { // Throttle date slider changes
 			    const throttleInterval = 300;
 			    if (!isThrottled) {
-			        //toggleFilters(true, mappy, table); // TODO: replace with appropriate function
+			        filterSources();
 			        isThrottled = true;
 			        throttleTimeout = setTimeout(() => {
 			            isThrottled = false;
@@ -139,7 +146,7 @@ function waitMapLoad() {
 			        clearTimeout(throttleTimeout);
 			        throttleTimeout = setTimeout(() => {
 			            isThrottled = false;
-			            //toggleFilters(true, mappy, table); // TODO: replace with appropriate function
+			        	filterSources();
 			        }, throttleInterval);
 			    }
 			}
@@ -153,6 +160,7 @@ function waitMapLoad() {
 					onChange: dateRangeChanged
 				});
 			};
+			$(window.dateline.button).on('click', dateRangeChanged);
 
 			mappy.on('mousemove', function(e) {
 				const features = mappy.queryRenderedFeatures(e.point);
@@ -225,8 +233,6 @@ function waitDocumentReady() {
 Promise.all([waitMapLoad(), waitDocumentReady()])
     .then(() => {
 
-	  	const payload = JSON.parse($('#payload_data').text());
-
     	const collectionList = $('#collection_list');
     	const ul = $('<ul>').addClass('coll-list');
     	payload.forEach(dataset => {
@@ -258,8 +264,11 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		else {
 			collectionList.html('<i>None yet</i>');
 		}
+		
+		$('#sources').append(noSources);
 
 		featureCollection = geomsGeoJSON(payload);
+		console.log(featureCollection);
 		mappy.getSource('places').setData(featureCollection);
 		// Do not use fitBounds or flyTo due to padding bug in MapLibre/Maptiler
 		mappy.fitViewport( bbox(featureCollection) );
@@ -334,6 +343,28 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         });
     })
     .catch(error => console.error("An error occurred:", error));
+    
+function filterSources() {
+	console.log(`Filter dates: ${window.dateline.fromValue} - ${window.dateline.toValue} (includeUndated: ${window.dateline.includeUndated})`);
+	function inDateRange(source) {
+		if (!window.dateline.open) return true;
+        const timespans = source.timespans;
+        if (timespans.length > 0) {
+		    return !timespans.every(timespan => {
+		        return timespan[1] < window.dateline.fromValue || timespan[0] > window.dateline.toValue;
+		    });
+        } else {
+            return window.dateline.includeUndated;
+        }
+    }
+	featureCollection.features.forEach((feature, index) => {
+		const outOfDateRange = !inDateRange(feature.properties)
+		feature.properties['outOfDateRange'] = outOfDateRange;
+		$('.source-box').eq(index).toggle(!outOfDateRange);
+	});
+	mappy.getSource('places').setData(featureCollection);
+	noSources.toggle($('.source-box:visible').length == 0);
+}
 
 function range(start, stop, step) {
 	var a = [start],
@@ -566,9 +597,9 @@ function nearbyPlaces() {
                 nearbyFeatureCollection = data; // Set the global variable
                 console.log(nearbyFeatureCollection);
                 mappy.getSource('nearbyPlaces').setData(nearbyFeatureCollection);
+				$('button#update_nearby').html(`<span class="strong-red">${nearbyFeatureCollection.features.length}</span> Update`);
 				if (!showingRelated && nearbyFeatureCollection.features.length > 0) {
 					mappy.fitViewport( bbox( nearbyFeatureCollection ) );
-					$('button#update_nearby').html(`<span class="strong-red">${nearbyFeatureCollection.features.length}</span> Update`);
 				}
             })
             .catch((error) => {
