@@ -495,40 +495,26 @@ def review(request, pk, tid, passnum):
     )
     formset = HitFormset(request.POST or None, queryset=raw_hits)
     context["formset"] = formset
-
+    
     # Create FeatureCollection for mapping
-    features = []
-    for counter, hit in enumerate(raw_hits, start=0):
-        # Assuming hit.json contains your feature data
-        feature_data = hit.json
-
-        geoms = feature_data.pop("geoms", None) # e.g. [{'ds': 'wd', 'id': 'Q29168412', 'type': 'MultiPoint', 'coordinates': [[16.5984163, 47.2470939]]}]
-        for geom in geoms:
-            geom_type = geom["type"]
-            coordinates = geom["coordinates"]
-
-            # Create a GeoJSON geometry object based on the geometry type
-            if geom_type == "Point":
-                geometry = {"type": "Point", "coordinates": coordinates[0]}
-            elif geom_type == "MultiPoint":
-                geometry = {"type": "MultiPoint", "coordinates": coordinates}
-            # TODO: LineString, Polygon, MultiPolygon ?
-    
-            feature = {
+    feature_collection = {
+        "type": "FeatureCollection",
+        "features": [
+            {
                 "type": "Feature",
-                # "properties": feature_data, ## Some characters used in placenames are not properly encoded: reduce to minimal requirement for operation
                 "properties": {
-                    "green": True if geom["ds"] in ['tgn','wd','whg'] else False, # `green` property used to set map marker colour
-                    # TODO: src_id not present for accession task - matters? 2023-11-19
-                    # "src_id": feature_data["src_id"],
+                    **{key: value for key, value in geom.items() if key not in ["coordinates", "type"]},
+                    "green": # Set to True for green markers
+                        (review_page=="accession.html" and geom["ds"]==ds.label) or 
+                        (review_page=="review.html" and not geom["ds"] in ['tgn', 'wd', 'whg'])
                 },
-                "geometry": geometry,
-                "id": counter,
+                "geometry": {"type": geom["type"], "coordinates": geom.get("coordinates")},
+                "id": idx
             }
-    
-            features.append(feature)
+            for idx, (hit, geom) in enumerate((hit, geom) for hit in raw_hits for geom in hit.json['geoms'])
+        ]
+    }
 
-    feature_collection = {"type": "FeatureCollection", "features": features}
     context["feature_collection"] = json.dumps(feature_collection)
 
     method = request.method
