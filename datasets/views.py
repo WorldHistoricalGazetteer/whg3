@@ -502,8 +502,7 @@ def review(request, pk, tid, passnum):
         # Assuming hit.json contains your feature data
         feature_data = hit.json
 
-        geoms = feature_data.pop("geoms", None)
-        geometry_objects = []
+        geoms = feature_data.pop("geoms", None) # e.g. [{'ds': 'wd', 'id': 'Q29168412', 'type': 'MultiPoint', 'coordinates': [[16.5984163, 47.2470939]]}]
         for geom in geoms:
             geom_type = geom["type"]
             coordinates = geom["coordinates"]
@@ -514,33 +513,20 @@ def review(request, pk, tid, passnum):
             elif geom_type == "MultiPoint":
                 geometry = {"type": "MultiPoint", "coordinates": coordinates}
             # TODO: LineString, Polygon, MultiPolygon ?
-            geometry_objects.append(geometry)
-
-        if len(geometry_objects) > 1:
-            feature_geometry = {
-                "type": "GeometryCollection",
-                "geometries": geometry_objects,
+    
+            feature = {
+                "type": "Feature",
+                # "properties": feature_data, ## Some characters used in placenames are not properly encoded: reduce to minimal requirement for operation
+                "properties": {
+                    "green": True if geom["ds"] in ['tgn','wd','whg'] else False, # `green` property used to set map marker colour
+                    # TODO: src_id not present for accession task - matters? 2023-11-19
+                    # "src_id": feature_data["src_id"],
+                },
+                "geometry": geometry,
+                "id": counter,
             }
-        else:
-            feature_geometry = geometry_objects[0]
-
-        feature_data["reconciliation"] = True if feature_data.get("dataset") == pk else False # `reconciliation` property used to set map marker colour
-
-        feature_data["pk"] = pk
-        print('feature_data', feature_data)
-        feature = {
-            "type": "Feature",
-            # "properties": feature_data, ## Some characters used in placenames are not properly encoded: reduce to minimal requirement for operation
-            "properties": {
-                "reconciliation": feature_data["reconciliation"],
-                # TODO: src_id not present for accession task - matters? 2023-11-19
-                # "src_id": feature_data["src_id"],
-            },
-            "geometry": feature_geometry,
-            "id": counter,
-        }
-
-        features.append(feature)
+    
+            features.append(feature)
 
     feature_collection = {"type": "FeatureCollection", "features": features}
     context["feature_collection"] = json.dumps(feature_collection)
