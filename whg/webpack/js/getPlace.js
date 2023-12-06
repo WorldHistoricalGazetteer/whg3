@@ -1,4 +1,4 @@
-import { minmaxer } from './utilities';
+import { debounce, minmaxer } from './utilities';
 
 export function popupFeatureHTML(feature, clickable=true) { // TODO: Improve styling with css and content?
 	let HTML = '<b>' + feature.properties.title + '</b><br/>' +
@@ -7,7 +7,8 @@ export function popupFeatureHTML(feature, clickable=true) { // TODO: Improve sty
     return (HTML);
 }
 
-export function getPlace(pid, cid, spinner_detail) {
+export const getPlace = debounce(getPlaceBouncing, 300);
+export function getPlaceBouncing(pid, cid, spinner_detail) {
 	//console.log('getPlace()', pid);
 	if (isNaN(pid)) {
 		console.log('Invalid pid');

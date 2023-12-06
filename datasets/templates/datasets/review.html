@@ -110,9 +110,6 @@
 										{% for r in record.defer_comments %}{{ r.note }}{% endfor %}
 						            </div>
 					            </div>
-					            {% for g in record.geoms.all %}
-									{{ g.jsonb|safe|json_script:record.id }}
-					            {% endfor %}
 					            <p><strong>WHG place id</strong>: {{ record.id }} </p>
 					            <p><strong>Source id</strong>: {{ record.src_id }}</p>
 					            <p class="scroll100"><strong>Name variants</strong>:

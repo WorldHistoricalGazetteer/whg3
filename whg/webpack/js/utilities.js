@@ -2,6 +2,16 @@ import { bbox, midpoint, centroid, getType, area } from './6.5.0_turf.min.js'
 import ClipboardJS from '/webpack/node_modules/clipboard';
 import { lch } from './chroma.min.js'
 
+export function debounce(func, delay) {
+  let timeoutId;
+  return function () {
+    const context = this;
+    const args = arguments;
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(context, args), delay);
+  };
+}
+
 export function deepCopy(obj) {
   if (obj === null || typeof obj !== 'object') {
     return obj;

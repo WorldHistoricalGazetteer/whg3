@@ -497,24 +497,36 @@ def review(request, pk, tid, passnum):
     context["formset"] = formset
     
     # Create FeatureCollection for mapping
+    index_offset = sum(1 for record in records for geom in record.geoms.all().values('jsonb'))
     feature_collection = {
         "type": "FeatureCollection",
         "features": [
             {
                 "type": "Feature",
                 "properties": {
+                    "record_id": record.id,
+                    "green": True,
+                },
+                "geometry": {"type": geom['jsonb']["type"], "coordinates": geom['jsonb'].get("coordinates")},
+                "id": idx
+            }
+            for idx, (record, geom) in enumerate((record, geom) for record in records for geom in record.geoms.all().values('jsonb'))
+        ] +
+        [
+            {
+                "type": "Feature",
+                "properties": {
                     **{key: value for key, value in geom.items() if key not in ["coordinates", "type"]},
-                    "green": # Set to True for green markers
-                        (review_page=="accession.html" and geom["ds"]==ds.label) or 
-                        (review_page=="review.html" and not geom["ds"] in ['tgn', 'wd', 'whg'])
+                    "green": False, # Set to True for green markers - following 2 lines are redundant v2 code
+                        # (review_page=="accession.html" and geom["ds"]==ds.label) or 
+                        # (review_page=="review.html" and not geom["ds"] in ['tgn', 'wd', 'whg'])
                 },
                 "geometry": {"type": geom["type"], "coordinates": geom.get("coordinates")},
-                "id": idx
+                "id": idx + index_offset
             }
             for idx, (hit, geom) in enumerate((hit, geom) for hit in raw_hits for geom in hit.json['geoms'])
         ]
     }
-
     context["feature_collection"] = json.dumps(feature_collection)
 
     method = request.method
