@@ -321,4 +321,19 @@ export default class Dateline {
             this.onChangeCallback(this.fromValue, this.toValue, this.includeUndated);
         }
 	}
+	
+    toggle(show) {
+        if (this.open) {
+            this.button.click();
+        }
+        if (show === undefined) {
+            this.container.style.display = this.container.style.display === 'none' ? 'flex' : 'none';
+        } else {
+            if (!show) {
+                this.container.style.display = 'none';
+            } else {
+                this.container.style.display = 'flex';
+            }
+        }
+    }	
 }

@@ -1,6 +1,7 @@
 
 
 export function scrollToRowByProperty(table, propertyName, value) {
+	console.log(`Scrolling to ${propertyName} ${value}...`);
     // Search for the row within the sorted and filtered view
     var pageInfo = table.page.info();
     var rowPosition = -1;

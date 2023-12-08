@@ -355,6 +355,7 @@ export function get_ds_list_stats(allFeatures) {
 		max: max,
 		seqmin: seqMin,
 		seqmax: seqMax,
+		count: allFeatures.length,
 		extent: bbox(geojson)
 	}
 }

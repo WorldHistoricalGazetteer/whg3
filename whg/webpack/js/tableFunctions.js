@@ -243,30 +243,61 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
                 title: "seq",
                 data: "properties.seq"
             }, {
+                title: "start",
+                data: "properties.min"
+            }, {
+                title: "end",
+                data: "properties.max"
+            }, {
                 title: "title",
                 data: "properties.title"
             }, {
                 title: "country",
                 data: "properties.ccodes"
             }, {
-                data: "properties.pid"
+                data: "properties.pid",
+                visible: false
             }
         ];
+        
+        // Determine columns to be hidden
+        const hideColumns = columns.reduce((result, column, index) => {
+		    const tabulateValue = visParameters[column.data.split('.')[1]]?.tabulate;
+		    if (tabulateValue !== undefined && tabulateValue === false) {
+		        result.push(index);
+		    }
+		    return result;
+		}, []);
+        
+        // Determine initial sort column
+        const sortColumn = columns.reduce((result, column, index) => {
+		    const tabulateValue = visParameters[column.data.split('.')[1]]?.tabulate;
+		    if (tabulateValue !== undefined && tabulateValue === 'initial') {
+		        result.push(index);
+		    }
+		    return result;
+		}, []);
+		sortColumn.push(0); // - in case none has been set
+		
+/*		columns.push({
+	        title: 'sortIndex', // Used by Collection sequencer control
+	        visible: false,
+	        orderable: false,
+	        searchable: false
+	    })*/
             
-		columnDefs = [{
-				orderable: false,
-				"targets": []
-			},{
+		columnDefs = [
+			{
                 searchable: false,
-                "targets": [2]
+                "targets": [0,1,2,4]
             },{
                 visible: false,
-                "targets": [3]
+                "targets": hideColumns
             }
         ];
 		
 		order = [
-			[0, 'asc']
+			[sortColumn[0], 'asc']
 		];
 	}
 
@@ -291,7 +322,6 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 				pid: data.properties.pid
 			});
 			$(row).data('cid', data.properties.cid);
-			$(row).data('seq', data.properties.seq);
 			if (!data.geometry) {
 				$(row).addClass('no-geometry');
 			}

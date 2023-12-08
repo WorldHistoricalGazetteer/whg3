@@ -1,5 +1,5 @@
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, JSONField
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -98,6 +98,9 @@ class Collection(models.Model):
   datasets = models.ManyToManyField("datasets.Dataset", blank=True)
   # writes CollPlace record to collection_collplace
   places = models.ManyToManyField("places.Place", through='CollPlace', blank=True)
+  
+  # Visualisation parameters (used in place_collection_browse.html)
+  visParameters = JSONField(default=dict)
 
   def get_absolute_url(self):
     #return reverse('datasets:dashboard', kwargs={'id': self.id})
