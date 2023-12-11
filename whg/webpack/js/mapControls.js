@@ -294,8 +294,8 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 		// Update the temporal settings
 		mapParameters.controls.temporal.fromValue = window.ds_list_stats.min;
 		mapParameters.controls.temporal.toValue = window.ds_list_stats.max;
-		mapParameters.controls.temporal.minValue = window.ds_list_stats.min - buffer;
-		mapParameters.controls.temporal.maxValue = window.ds_list_stats.max + buffer;
+		mapParameters.controls.temporal.minValue = Math.floor(window.ds_list_stats.min - buffer);
+		mapParameters.controls.temporal.maxValue = Math.ceil(window.ds_list_stats.max + buffer);
 
 		window.dateline = new Dateline({
 			...mapParameters.controls.temporal,

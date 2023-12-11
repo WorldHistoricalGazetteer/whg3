@@ -244,10 +244,16 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
                 data: "properties.seq"
             }, {
                 title: "start",
-                data: "properties.min"
+                data: "properties.min",
+			    render: function (data) {
+			        return data === "null" ? "-" : data;
+			    }
             }, {
                 title: "end",
-                data: "properties.max"
+                data: "properties.max",
+			    render: function (data) {
+			        return data === "null" ? "-" : data;
+			    }
             }, {
                 title: "title",
                 data: "properties.title"
@@ -333,7 +339,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 			adjustPageLength();
 		},
 		drawCallback: function(settings) {
-			console.log('table drawn')
+			//console.log('table drawn')
 			spinner_table.stop()
 			// recheck inputs in checked_rows
 			if (checked_rows.length > 0) {

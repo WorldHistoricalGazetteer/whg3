@@ -3,7 +3,7 @@
 import { init_mapControls } from './mapControls';
 import { addMapSource, addMapLayer, recenterMap, initObservers, initOverlays, initPopups, listSourcesAndLayers } from './mapFunctions';
 import { toggleFilters } from './mapFilters';
-import { initUtils, initInfoOverlay, startSpinner, minmaxer, get_ds_list_stats } from './utilities';
+import { initUtils, initInfoOverlay, startSpinner, minmaxer, get_ds_list_stats, deepCopy } from './utilities';
 import { initialiseTable } from './tableFunctions';
 import { init_collection_listeners } from './collections';
 import datasetLayers from './mapLayerStyles';
@@ -104,7 +104,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	});
 	
 	mappy.removeSource('maptiler_attribution');
-	listSourcesAndLayers();
+	//listSourcesAndLayers();
 	// TODO: Adjust attribution elsewhere: © MapTiler © OpenStreetMap contributors
 		
 	// Initialise Data Table
@@ -127,14 +127,17 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	initInfoOverlay();
 	
 	if (window.ds_list[0].ds_type == 'collections') {
-		function updateSequenceArcs() {
+		let tableOrder = null;
+		function updateVisualisation(newTableOrder) {
+			tableOrder = deepCopy(newTableOrder);
 						
 			if (sequenceArcs) sequenceArcs = sequenceArcs.destroy();
-		    const facet = table.settings()[0].aoColumns[table.order()[0][0]].mData.split('.')[1];
-		    const order = table.order()[0][1];
+		    const facet = table.settings()[0].aoColumns[tableOrder[0]].mData.split('.')[1];
+		    const order = tableOrder[1];
 		    console.log(`Re-sorted by facet: ${facet} ${order}`);
 		    
 		    if (!!visParameters[facet]) {
+				toggleFilters(visParameters[facet]['temporal_control'] == 'filter', mappy, table);			
 			    dateline.toggle(visParameters[facet]['temporal_control'] == 'filter');
 			    mapSequencer.toggle(visParameters[facet]['temporal_control'] == 'player');
 			    const featureCollection = {type:'FeatureCollection',features:allFeatures}
@@ -143,19 +146,22 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 				}
 			}
 			else {
+				toggleFilters(false, mappy, table);
 				dateline.toggle(false);
 				mapSequencer.toggle(false);
 			}		    
 		}
-		updateSequenceArcs(); // Initialise
-		$('#placetable').on('order.dt', function () {
-		    updateSequenceArcs();
+		updateVisualisation(table.order()[0]); // Initialise
+		$('#placetable').on('order.dt', function () { // Also fired by table.draw(), so need to track the order
+			const newTableOrder = deepCopy(table.order()[0]);
+			if (newTableOrder[0] !== tableOrder[0] || newTableOrder[1] !== tableOrder[1]) {
+		    	updateVisualisation(newTableOrder);
+			}
 		});		
 	}
 	else {
 		allFeatures = null; // release memory
 	}
-	
 	
 	// Initialise resize observers
 	initObservers();

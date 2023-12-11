@@ -233,9 +233,9 @@ def when_format(ts):
   return [stringer(ts[0]), stringer(ts[1])]; print(result)
 def year_from_string(ts):
   if ts:
-    return isoparse(ts).strftime('%Y')
+    return int(isoparse(ts).strftime('%Y'))
   else:
-    return None
+    return "null" # String required by Maplibre filter test
   
 # GeoJSON for all places in a dataset INCLUDING those without geometry
 def fetch_mapdata_coll(request, *args, **kwargs):

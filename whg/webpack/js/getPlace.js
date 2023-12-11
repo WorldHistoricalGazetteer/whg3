@@ -23,7 +23,7 @@ export function getPlaceBouncing(pid, cid, spinner_detail) {
 		} else {
 			window.payload = data;
 			$("#anno_title").html('<b>' + data.title + '</b>');
-			console.log('img', data.traces.image_file);
+			//console.log('img', data.traces.image_file);
 			$("#anno_body").html(parseAnno(data.traces));
 			$("#anno_img").html(data.traces.image_file);
 		}
