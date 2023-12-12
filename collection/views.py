@@ -627,13 +627,13 @@ class PlaceCollectionBrowseView(DetailView):
     context['updates'] = {}
     context['url_front'] = settings.URL_FRONT
     
-    if not coll.vis_parameters:
+    if not coll.visParameters:
         # Populate with default values:
         # tabulate: 'initial'|true|false - include sortable table column, 'initial' indicating the initial sort column
         # temporal_control: 'player'|'filter'|null - control to be displayed when sorting on this column
         # trail: true|false - whether to include ant-trail motion indicators on map
-        coll.vis_parameters = "{'seq': {'tabulate': false, 'temporal_control': 'player', 'trail': false},'min': {'tabulate': 'initial', 'temporal_control': 'player', 'trail': false},'max': {'tabulate': true, 'temporal_control': 'filter', 'trail': false}}"
-    context['vis_parameters'] = coll.vis_parameters
+        coll.visParameters = "{'seq': {'tabulate': false, 'temporal_control': 'player', 'trail': true},'min': {'tabulate': 'initial', 'temporal_control': 'player', 'trail': true},'max': {'tabulate': true, 'temporal_control': 'filter', 'trail': false}}"
+    context['visParameters'] = coll.visParameters
 
     return context
 

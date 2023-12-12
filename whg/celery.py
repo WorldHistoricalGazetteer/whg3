@@ -17,7 +17,7 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.conf.broker_url = 'redis://localhost:6379'
 app.conf.result_expires = None
 
-# print('app.conf', app.conf)
+print('app.conf', app.conf)
 
 
 # Load task modules from all registered Django app configs.
