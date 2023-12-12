@@ -100,7 +100,7 @@ class Collection(models.Model):
   places = models.ManyToManyField("places.Place", through='CollPlace', blank=True)
   
   # Visualisation parameters (used in place_collection_browse.html)
-  visParameters = JSONField(default=dict)
+  vis_parameters = JSONField(default=dict)
 
   def get_absolute_url(self):
     #return reverse('datasets:dashboard', kwargs={'id': self.id})

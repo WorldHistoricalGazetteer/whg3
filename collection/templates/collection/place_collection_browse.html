@@ -270,7 +270,7 @@
     }
     const pageData = "{{ object.id }}";
     window.collimagepath = "{{ object.image_file.name }}"
-    let visParameters = {{ visParameters|safe }};
+    let visParameters = {{ vis_parameters|safe }};
     console.log('visualisation settings:',visParameters);
     window.ds_list = [{
         ds_type: "collections",
