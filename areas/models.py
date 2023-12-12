@@ -59,7 +59,7 @@ class Area(models.Model):
     @property
     def count_public(self):
         ds_public = Dataset.objects.filter(public=True)
-        areageom = GEOSGeometry(json.dumps(self.geojson))
+        areageom = GEOSGeometry(json.dumps(self.geojson)).wkt
         places = PlaceGeom.objects.filter(geom__within=areageom, place__dataset__in=ds_public)
         return places.count()
 

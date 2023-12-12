@@ -108,29 +108,35 @@ export function addReviewListeners() {
 			
 	mappy.on('mousemove', function(e) { // Change cursor to pointer over map markers
 		const features = mappy.queryRenderedFeatures(e.point);
+		function clearHighlight() {
+			mappy.getCanvas().style.cursor = 'grab';
+			$('.highlight-row').removeClass('highlight-row');
+		}
 		if (features.length > 0) {
 			const topFeature = features[0]; // Handle only the top-most feature
 			const isAddedFeature = !styleControl.baseStyle.layers.includes(topFeature.layer.id);
-			if (isAddedFeature && !!topFeature.properties.src_id) {
+			if (isAddedFeature && !!topFeature.properties.id) {
 				mappy.getCanvas().style.cursor = 'pointer';
+				$(`.hovermap[data-id='${ topFeature.properties.id }']`).addClass('highlight-row');
 			}
-			else {
-				mappy.getCanvas().style.cursor = 'grab';
-			}
+			else clearHighlight();
 		}
-		else {
-			mappy.getCanvas().style.cursor = 'grab';
-		}
-	});	
-		
-	$(".match_radio").hover(
+		else clearHighlight();
+	});
+	
+	$(".geolink")
+		.attr('title', 'Click to zoom to this location.')
+		.on('click', function(){
+			mappy.fitViewport( bbox(featureCollection.features.find(feature => feature.properties.id === $(this).data('id'))) );
+		});
+	
+	$(".hovermap").hover(
 	    function() { toggleHighlight(true, this); },
 	    function() { toggleHighlight(false, this); }
 	);
 	
 	function toggleHighlight(highlight, element) {
-	    let targetId = $(element).data('id');
-	    let matchingFeature = featureCollection.features.find(feature => feature.properties.src_id === targetId);
+	    let matchingFeature = featureCollection.features.find(feature => feature.properties.id === $(element).data('id'));
 	    if (matchingFeature) {
 	        mappy.setFeatureState({ source: 'places', id: matchingFeature.id }, { highlight });
 	    }

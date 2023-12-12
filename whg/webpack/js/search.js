@@ -1,10 +1,12 @@
 // /whg/webpack/search.js
 
 import datasetLayers from './mapLayerStyles';
+import Dateline from './dateline';
 import { bbox, centroid } from './6.5.0_turf.min.js';
 import { attributionString, geomsGeoJSON } from './utilities';
 import { CustomAttributionControl } from './customMapControls';
 import '../css/maplibre-common.css';
+import '../css/dateline.css';
 import '../css/search.css';
 
 let results = null;
@@ -14,6 +16,8 @@ let allCountries = [];
 let isInitialLoad = true;
 let initialTypeCounts = {};
 let initialCountryCounts = {};
+let draw;
+let drawControl;
 
 let style_code;
 if (mapParameters.styleFilter.length == 0) {
@@ -63,6 +67,57 @@ function waitMapLoad() {
 				compact: true,
 		    	autoClose: mapParameters.controls.attribution.open === false,
 			}), 'bottom-right');
+
+			draw = new MapboxDraw({
+				displayControlsDefault: false,
+				controls: {
+					//point: true,
+					//line_string: true,
+					polygon: true,
+					trash: true
+				},
+			})
+			let drawControlObject = mappy.addControl(draw, 'top-left');
+			drawControl = $(drawControlObject._container).find('.maplibregl-ctrl-top-left');
+			drawControl.find('button.mapbox-gl-draw_ctrl-draw-btn').attr('title','Filter results by area: draw polygon');
+			drawControl.hide();
+			const drawControls = document.querySelectorAll(".mapboxgl-ctrl-group.mapboxgl-ctrl");
+			drawControls.forEach((elem) => {
+				elem.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group');
+			});
+			mappy.on('draw.create', initiateSearch); // draw events fail to register if not done individually
+			mappy.on('draw.delete', initiateSearch);
+			mappy.on('draw.update', initiateSearch);
+
+			let throttleTimeout;
+			let isThrottled = false;
+			function dateRangeChanged() { // Throttle date slider changes
+			    const throttleInterval = 300;
+			    if (!isThrottled) {
+			        initiateSearch();
+			        isThrottled = true;
+			        throttleTimeout = setTimeout(() => {
+			            isThrottled = false;
+			        }, throttleInterval);
+			    } else {
+			        clearTimeout(throttleTimeout);
+			        throttleTimeout = setTimeout(() => {
+			            isThrottled = false;
+			            initiateSearch();
+			        }, throttleInterval);
+			    }
+			}
+
+			if (!!mapParameters.controls.temporal) {
+				let datelineContainer = document.createElement('div');
+				datelineContainer.id = 'dateline';
+				document.querySelector('.maplibregl-control-container').appendChild(datelineContainer);
+				window.dateline = new Dateline({
+					...mapParameters.controls.temporal,
+					onChange: dateRangeChanged
+				});
+				$(window.dateline.button).on('click', initiateSearch);
+			};
 			
 			function getFeatureId(e) {
 				const features = mappy.queryRenderedFeatures(e.point);
@@ -234,6 +289,7 @@ function renderResults(featureCollection) {
 
 	// Iterate over the results and append HTML for each
 	let results = featureCollection.features;
+	drawControl.toggle(results.length > 0 || draw.getAll().features.length > 0); // Leave control to allow deletion of areas
 	results.forEach(feature => {
 		
 		let result = feature.properties;
@@ -542,13 +598,21 @@ function gatherOptions() {
 	$('#search_filters input:checked').each(function() {
 		fclasses.push($(this).val());
 	});
+	
+	let area_filter = {
+	  "type": "GeometryCollection",
+	  "geometries": draw.getAll().features.map(feature => feature.geometry)
+	}
+	console.log(area_filter);
+	
 	let options = {
 		"qstr": $('#d_input input').val(),
 		"idx": eswhg,
 		"fclasses": fclasses.join(','),
-		"start": $("#input_start").val(),
-		"end": $("#input_end").val(),
-		"bounds": $("#boundsobj").val()
+		"start": window.dateline.open ? window.dateline.fromValue : '', 
+		"end": window.dateline.open ? window.dateline.toValue : '',
+		"undated": window.dateline.open ? window.dateline.includeUndated : true,
+		"area_filter": area_filter
 	}
 	return options;
 }

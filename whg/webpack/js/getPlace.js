@@ -1,13 +1,14 @@
-import { minmaxer } from './utilities';
+import { debounce, minmaxer } from './utilities';
 
-export function popupFeatureHTML(feature) { // TODO: Improve styling with css and content?
+export function popupFeatureHTML(feature, clickable=true) { // TODO: Improve styling with css and content?
 	let HTML = '<b>' + feature.properties.title + '</b><br/>' +
-    'Temporality: ' + (feature.properties.min ? feature.properties.min : '?') + '/' + (feature.properties.max ? feature.properties.max : '?') + '<br/>' +
-    'Click to focus';
+    'Temporality: ' + (feature.properties.min ? feature.properties.min : '?') + '/' + (feature.properties.max ? feature.properties.max : '?') + 
+    (clickable ? '<br/>Click to focus' : '');
     return (HTML);
 }
 
-export function getPlace(pid, cid, spinner_detail) {
+export const getPlace = debounce(getPlaceBouncing, 300);
+export function getPlaceBouncing(pid, cid, spinner_detail) {
 	//console.log('getPlace()', pid);
 	if (isNaN(pid)) {
 		console.log('Invalid pid');
@@ -22,7 +23,7 @@ export function getPlace(pid, cid, spinner_detail) {
 		} else {
 			window.payload = data;
 			$("#anno_title").html('<b>' + data.title + '</b>');
-			console.log('img', data.traces.image_file);
+			//console.log('img', data.traces.image_file);
 			$("#anno_body").html(parseAnno(data.traces));
 			$("#anno_img").html(data.traces.image_file);
 		}

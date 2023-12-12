@@ -5,6 +5,7 @@ import { updatePadding, recenterMap/*, listSourcesAndLayers*/ } from './mapFunct
 import datasetLayers from './mapLayerStyles';
 import { mapSequencer } from './mapControls';
 import { mappy } from './mapAndTable';
+import { scrollToRowByProperty } from './tableFunctions-extended';
 
 let table;
 
@@ -97,38 +98,6 @@ function toggleMapLayers(mappy, val) {
 			}
 		});
 	});
-}
-
-export function scrollToRowByProperty(table, propertyName, value) {
-    // Search for the row within the sorted and filtered view
-    var pageInfo = table.page.info();
-    var rowPosition = -1;
-    var rows = table.rows({
-        search: 'applied',
-        order: 'current'
-    }).nodes();
-    let selectedRow;
-    for (var i = 0; i < rows.length; i++) {
-        var rowData = table.row(rows[i]).data();
-        rowPosition++;
-        if (rowData.properties[propertyName] == value) {
-            selectedRow = rows[i];
-            break; // Stop the loop when the row is found
-        }
-    }
-
-    if (rowPosition !== -1) {
-        // Calculate the page number based on the row's position
-        var pageNumber = Math.floor(rowPosition / pageInfo.length);
-
-        // Check if the row is on the current page
-        if (pageInfo.page !== pageNumber) {
-            table.page(pageNumber).draw('page');
-        }
-
-        selectedRow.scrollIntoView();
-        $(selectedRow).trigger('click');
-    }
 }
 
 export function highlightFeature(ds_pid, features, mappy) {
@@ -274,30 +243,67 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
                 title: "seq",
                 data: "properties.seq"
             }, {
+                title: "start",
+                data: "properties.min",
+			    render: function (data) {
+			        return data === "null" ? "-" : data;
+			    }
+            }, {
+                title: "end",
+                data: "properties.max",
+			    render: function (data) {
+			        return data === "null" ? "-" : data;
+			    }
+            }, {
                 title: "title",
                 data: "properties.title"
             }, {
                 title: "country",
                 data: "properties.ccodes"
             }, {
-                data: "properties.pid"
+                data: "properties.pid",
+                visible: false
             }
         ];
+        
+        // Determine columns to be hidden
+        const hideColumns = columns.reduce((result, column, index) => {
+		    const tabulateValue = visParameters[column.data.split('.')[1]]?.tabulate;
+		    if (tabulateValue !== undefined && tabulateValue === false) {
+		        result.push(index);
+		    }
+		    return result;
+		}, []);
+        
+        // Determine initial sort column
+        const sortColumn = columns.reduce((result, column, index) => {
+		    const tabulateValue = visParameters[column.data.split('.')[1]]?.tabulate;
+		    if (tabulateValue !== undefined && tabulateValue === 'initial') {
+		        result.push(index);
+		    }
+		    return result;
+		}, []);
+		sortColumn.push(0); // - in case none has been set
+		
+/*		columns.push({
+	        title: 'sortIndex', // Used by Collection sequencer control
+	        visible: false,
+	        orderable: false,
+	        searchable: false
+	    })*/
             
-		columnDefs = [{
-				orderable: false,
-				"targets": []
-			},{
+		columnDefs = [
+			{
                 searchable: false,
-                "targets": [2]
+                "targets": [0,1,2,4]
             },{
                 visible: false,
-                "targets": [3]
+                "targets": hideColumns
             }
         ];
 		
 		order = [
-			[0, 'asc']
+			[sortColumn[0], 'asc']
 		];
 	}
 
@@ -322,7 +328,6 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 				pid: data.properties.pid
 			});
 			$(row).data('cid', data.properties.cid);
-			$(row).data('seq', data.properties.seq);
 			if (!data.geometry) {
 				$(row).addClass('no-geometry');
 			}
@@ -334,7 +339,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 			adjustPageLength();
 		},
 		drawCallback: function(settings) {
-			console.log('table drawn')
+			//console.log('table drawn')
 			spinner_table.stop()
 			// recheck inputs in checked_rows
 			if (checked_rows.length > 0) {

@@ -56,7 +56,7 @@ const datasetLayers = [ // IMPORTANT: Listed in order of addition to the map
 	        'circle-color': [
 	            'case',
 				['boolean', ['feature-state', 'highlight'], false], 'rgba(255,0,0)', // red
-				['all', ['has', 'reconciliation'], ['==', ['get', 'reconciliation'], true]], 'rgba(0, 128, 0)', // green
+				['all', ['has', 'green'], ['==', ['get', 'green'], true]], 'rgba(0, 128, 0)', // green
 				'rgba(255,165,0)' // orange
 	        ],
 	        'circle-opacity': [
@@ -74,7 +74,7 @@ const datasetLayers = [ // IMPORTANT: Listed in order of addition to the map
 			'circle-stroke-color': [
 	            'case',
 				['boolean', ['feature-state', 'highlight'], false], 'rgb(255,0,0)',	// red
-				['all', ['has', 'reconciliation'], ['==', ['get', 'reconciliation'], true]], 'rgba(0, 128, 0)', // green		
+				['all', ['has', 'green'], ['==', ['get', 'green'], true]], 'rgba(0, 128, 0)', // green		
 				'rgb(255,165,0)' // orange
 	        ],
 			'circle-stroke-opacity': [

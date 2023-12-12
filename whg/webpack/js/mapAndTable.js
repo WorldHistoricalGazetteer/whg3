@@ -3,10 +3,11 @@
 import { init_mapControls } from './mapControls';
 import { addMapSource, addMapLayer, recenterMap, initObservers, initOverlays, initPopups, listSourcesAndLayers } from './mapFunctions';
 import { toggleFilters } from './mapFilters';
-import { initUtils, initInfoOverlay, startSpinner, minmaxer, get_ds_list_stats } from './utilities';
+import { initUtils, initInfoOverlay, startSpinner, minmaxer, get_ds_list_stats, deepCopy } from './utilities';
 import { initialiseTable } from './tableFunctions';
 import { init_collection_listeners } from './collections';
 import datasetLayers from './mapLayerStyles';
+import SequenceArcs from './mapSequenceArcs';
 
 let ds_listJSON = document.getElementById('ds_list_data') || false;
 if (ds_listJSON) {
@@ -22,6 +23,8 @@ window.additionalLayers = []; // Keep track of added map sources and layers - re
 
 window.dateline = null;
 let datelineContainer = null;
+let mapSequencer = null;
+let sequenceArcs;
 
 let table;
 let checked_rows;
@@ -101,15 +104,13 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	});
 	
 	mappy.removeSource('maptiler_attribution');
-	listSourcesAndLayers();
+	//listSourcesAndLayers();
 	// TODO: Adjust attribution elsewhere: © MapTiler © OpenStreetMap contributors
 		
 	// Initialise Data Table
 	const tableInit = initialiseTable(allFeatures, checked_rows, spinner_table, spinner_detail, mappy);
 	table = tableInit.table;
 	checked_rows = tableInit.checked_rows;
-	
-	allFeatures = null; // release memory
 
 	window.mapBounds = window.ds_list_stats.extent;
 
@@ -119,10 +120,48 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	// Initialise Map Controls
 	const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table);
 	datelineContainer = mapControlsInit.datelineContainer;
+	mapSequencer = mapControlsInit.mapSequencer;
 	mapParameters = mapControlsInit.mapParameters;
 	
 	// Initialise Info Box state
 	initInfoOverlay();
+	
+	if (window.ds_list[0].ds_type == 'collections') {
+		let tableOrder = null;
+		function updateVisualisation(newTableOrder) {
+			tableOrder = deepCopy(newTableOrder);
+						
+			if (sequenceArcs) sequenceArcs = sequenceArcs.destroy();
+		    const facet = table.settings()[0].aoColumns[tableOrder[0]].mData.split('.')[1];
+		    const order = tableOrder[1];
+		    console.log(`Re-sorted by facet: ${facet} ${order}`);
+		    
+		    if (!!visParameters[facet]) {
+				toggleFilters(visParameters[facet]['temporal_control'] == 'filter', mappy, table);			
+			    dateline.toggle(visParameters[facet]['temporal_control'] == 'filter');
+			    mapSequencer.toggle(visParameters[facet]['temporal_control'] == 'player');
+			    const featureCollection = {type:'FeatureCollection',features:allFeatures}
+			    if(visParameters[facet]['trail']) {
+			    	sequenceArcs = new SequenceArcs(mappy, featureCollection, { facet: facet, order: order });
+				}
+			}
+			else {
+				toggleFilters(false, mappy, table);
+				dateline.toggle(false);
+				mapSequencer.toggle(false);
+			}		    
+		}
+		updateVisualisation(table.order()[0]); // Initialise
+		$('#placetable').on('order.dt', function () { // Also fired by table.draw(), so need to track the order
+			const newTableOrder = deepCopy(table.order()[0]);
+			if (newTableOrder[0] !== tableOrder[0] || newTableOrder[1] !== tableOrder[1]) {
+		    	updateVisualisation(newTableOrder);
+			}
+		});		
+	}
+	else {
+		allFeatures = null; // release memory
+	}
 	
 	// Initialise resize observers
 	initObservers();

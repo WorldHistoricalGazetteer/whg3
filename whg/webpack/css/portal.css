@@ -129,6 +129,15 @@ div.overlay .left .item {
   margin-top: auto;
 }
 
+button#update_nearby {
+    float: right;
+    padding: 0 0.4em;
+	border: 1px solid #888;
+	border-radius: 8px;
+	position: relative;
+	top: -.3em;
+}
+
 ul.coll-list {
     list-style-type: none;
     padding-left: 0;

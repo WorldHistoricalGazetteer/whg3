@@ -233,9 +233,9 @@ def when_format(ts):
   return [stringer(ts[0]), stringer(ts[1])]; print(result)
 def year_from_string(ts):
   if ts:
-    return isoparse(ts).strftime('%Y')
+    return int(isoparse(ts).strftime('%Y'))
   else:
-    return None
+    return "null" # String required by Maplibre filter test
   
 # GeoJSON for all places in a dataset INCLUDING those without geometry
 def fetch_mapdata_coll(request, *args, **kwargs):
@@ -626,6 +626,14 @@ class PlaceCollectionBrowseView(DetailView):
     context['places'] = coll.places.all().order_by('title')
     context['updates'] = {}
     context['url_front'] = settings.URL_FRONT
+    
+    if not coll.visParameters:
+        # Populate with default values:
+        # tabulate: 'initial'|true|false - include sortable table column, 'initial' indicating the initial sort column
+        # temporal_control: 'player'|'filter'|null - control to be displayed when sorting on this column
+        # trail: true|false - whether to include ant-trail motion indicators on map
+        coll.visParameters = "{'seq': {'tabulate': false, 'temporal_control': 'player', 'trail': true},'min': {'tabulate': 'initial', 'temporal_control': 'player', 'trail': true},'max': {'tabulate': true, 'temporal_control': 'filter', 'trail': false}}"
+    context['visParameters'] = coll.visParameters
 
     return context
 

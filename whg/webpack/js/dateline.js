@@ -60,7 +60,9 @@ export default class Dateline {
 		this.toValue = toValue;
 		this.minValue = minValue;
 		this.maxValue = maxValue;
-		this.open = open;
+		this.open = open; // true | false - updated to indicate varying state of control
+		this.button = null;
+		this.container = null;
 		this.includeUndated = includeUndated;
 		this.epochs = epochs;
 		this.automate = automate;
@@ -93,6 +95,7 @@ export default class Dateline {
 
 	createSliderElements() {
 		const datelineDiv = document.getElementById("dateline");
+		this.container = datelineDiv;
 		const rangeContainerHTML = `
 			<div class="range_container">
 				<div class="form_control">
@@ -118,8 +121,10 @@ export default class Dateline {
 		datelineDiv.appendChild(this.rangeContainer);
 
 		const datelineButton = document.querySelector('.dateline-button');
+		this.button = datelineButton;
 		this.rangeContainer.parentNode.insertBefore(datelineButton, this.rangeContainer);
 		datelineButton.addEventListener('click', () => {
+			this.open = !this.open;
 			if (this.rangeContainer.classList.contains('transitioned')) {
 				this.rangeContainer.classList.remove('transitioned');
 			}
@@ -128,7 +133,7 @@ export default class Dateline {
 			const onTransitionEnd = (event) => {
 				if ((event.propertyName === 'max-width') && this.rangeContainer.classList.contains('expanded')) {
 					if (!this.scaleContainer.hasChildNodes()) {
-						this.addSliderScale(this.scaleContainer);
+						this.addSliderScale();
 					}
 					this.rangeContainer.removeEventListener('transitionend', onTransitionEnd);
 					this.rangeContainer.classList.add('transitioned');
@@ -210,6 +215,7 @@ export default class Dateline {
 
 		if (this.open) {
 			const datelineButton = document.querySelector('.dateline-button');
+			this.open = false; // The following line will cause it to be reset to true, and it can then be read whenever required
 			datelineButton.click();
 			this.rangeContainer.classList.add('transitioned');
 		}
@@ -219,14 +225,14 @@ export default class Dateline {
 		this.resizeObserver = new ResizeObserver(entries => {
 			for (const entry of entries) {
 				if (entry.target === document.getElementById("dateline") && this.rangeContainer.classList.contains('expanded')) {
-					this.addSliderScale(this.scaleContainer);
+					this.addSliderScale();
 				}
 			}
 		});
 		this.resizeObserver.observe(document.getElementById("dateline"));
 	}
 
-	addSliderScale(scaleContainer) {
+	addSliderScale() {
 
 		function calculateFirstAndLastLabels(minValue, maxValue, scale, divisions, maxLabels) {
 			for (const division of divisions) {
@@ -258,7 +264,7 @@ export default class Dateline {
 			return {};
 		}
 
-		const maxLabels = Math.floor(scaleContainer.offsetWidth / (1.6 * calculateLabelWidth(scaleContainer, this.maxValue).width));
+		const maxLabels = Math.floor(this.scaleContainer.offsetWidth / (1.6 * calculateLabelWidth(this.scaleContainer, this.maxValue).width));
 		const valueRange = this.maxValue - this.minValue;
 		const divisions = [1, 2, 5, 10, 20, 50];
 		const minStep = Math.floor(valueRange / maxLabels);
@@ -274,7 +280,7 @@ export default class Dateline {
 			tickStep
 		} = calculateFirstAndLastLabels(this.minValue, this.maxValue, scale, divisions, maxLabels);
 
-		scaleContainer.innerHTML = ''; // Clear the scale container in case of re-sizing
+		this.scaleContainer.innerHTML = ''; // Clear the scale container in case of re-sizing
 		let tickValue = firstTick;
 		while (tickValue <= this.maxValue) {
 			const tick = document.createElement('div');
@@ -286,19 +292,19 @@ export default class Dateline {
 				const {
 					element: valueLabel,
 					width: labelWidth
-				} = calculateLabelWidth(scaleContainer, tickValue);
+				} = calculateLabelWidth(this.scaleContainer, tickValue);
 				valueLabel.textContent = tickValue;
-				scaleContainer.appendChild(valueLabel);
+				this.scaleContainer.appendChild(valueLabel);
 
 				// Calculate the position for the label to center it on the tick
 				const labelLeft = ((tickValue - this.minValue) / valueRange) * 100;
 
 				// Adjust labelLeft to ensure the label is not off the slider boundaries
-				const minLeft = (labelWidth / scaleContainer.offsetWidth) * 100 / 2;
+				const minLeft = (labelWidth / this.scaleContainer.offsetWidth) * 100 / 2;
 				const maxLeft = 100 - minLeft;
 				valueLabel.style.left = `${Math.min(maxLeft, Math.max(minLeft, labelLeft))}%`;
 			}
-			scaleContainer.appendChild(tick);
+			this.scaleContainer.appendChild(tick);
 
 			tickValue += tickStep;
 		}
@@ -315,4 +321,32 @@ export default class Dateline {
             this.onChangeCallback(this.fromValue, this.toValue, this.includeUndated);
         }
 	}
+	
+	reconfigure(newMinValue, newMaxValue) {
+		const range = newMaxValue - newMinValue;
+		const buffer = range * 0.1; // 10% buffer
+
+		this.fromValue = newMinValue;
+		this.toValue = newMaxValue;
+		this.minValue = Math.floor(newMinValue - buffer);
+		this.maxValue = Math.ceil(newMaxValue + buffer);
+		
+		this.createSliderElements();
+		this.updateFormInputs();
+	}
+	
+    toggle(show) {
+        if (this.open) {
+            this.button.click();
+        }
+        if (show === undefined) {
+            this.container.style.display = this.container.style.display === 'none' ? 'flex' : 'none';
+        } else {
+            if (!show) {
+                this.container.style.display = 'none';
+            } else {
+                this.container.style.display = 'flex';
+            }
+        }
+    }	
 }

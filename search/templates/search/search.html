@@ -7,6 +7,9 @@
   <script src="{% static 'js/parents.js' %}"></script>
   <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
   <link href="{% static 'webpack/search.bundle.css' %}" rel="stylesheet" /> 
+
+  <script src="{% static 'js/mapbox-gl-draw.js' %}"></script>
+  <link href="{% static 'css/mapbox-gl-draw.css' %}" rel="stylesheet" />
 {% endblock %}
 
 {% block content %}
@@ -60,7 +63,6 @@
               <i class="fas fa-question-circle linky"></i></a></span>
             </p>
             <input id="input_area" type="text" size="25" placeholder="Region, country, study area" />
-            <input type="hidden" id="boundsobj" />
           </div>
 				</div>
 
@@ -140,8 +142,8 @@
                 open: false,
             },
             temporal: {
-                fromValue: 1550,
-                toValue: 1720,
+                fromValue: 800,
+                toValue: 1800,
                 minValue: -2000,
                 maxValue: 2100,
                 open: false,

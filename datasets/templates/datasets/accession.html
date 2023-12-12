@@ -92,9 +92,6 @@
 						                </h4>
 						        	</span>
 								</div>
-					        	{% for g in record.geoms.all %}
-					              	{{ g.jsonb|safe|json_script:record.id }}
-					            {% endfor %}
 					            <p><strong>WHG place id</strong>: {{ record.id }} </p>
 					            <p><strong>Source id</strong>: {{ record.src_id }}</p>
 					            <p class="scroll100"><strong>Name variants</strong>:<i>
@@ -171,12 +168,6 @@
 				            	</div>
 				            	{{ form.non_field_errors }}
 				            	<div class="auth-match bg-white ps-2 mt-0 mb-2">
-				              		<!-- pull geometries to js -->
-				              		{% if form.json.value|get:"geoms"|length > 0 %}
-				                		{% for g in form.json.value|get:"geoms" %}
-				                  			{{ g|safe|json_script:g.id }}
-				                		{% endfor %}
-				              		{% endif %}
 				              		<p><strong>Title(s)</strong>: <span class="text-danger h6">{{ form.json.value|get:"titles" }}</p>
 				              		{% if form.json.value|get:"countries"|length > 0 %}
 				                		<p><strong>Countries</strong>: {{ form.json.value|get:"countries" }}</p>
@@ -184,10 +175,10 @@
 
 					              	<p class="mb-0"><strong>Linked records ({{ form.json.value|get:"sources"|length }})</strong>:
 						              	{% for src in form.json.value|get:"sources" %}
-						                	<div class="accession-div-row">
+						                	<div class="accession-div-row hovermap" data-id="{{ src.pid }}">
 						                		<p>
-						                  			<a class="geolink" rel="tooltip" id="{{ src.pid }}"
-						                     			href="javascript:{ zoomTo(+{{ form.authrecord_id.value }}) }" title="Flash map marker">
+						                  			<a class="geolink" data-id="{{ src.pid }}" rel="tooltip" id="{{ src.pid }}"
+						                     			href="javascript:void(0)">
 							                  			<i class="fas fa-globe" style="color:#ED7702;"></i>
 						                  			</a>
 							                		<a class="pop-link pop-dataset" data-label={{src.dslabel}} data-toggle="popover" title="Dataset Profile" data-content="" tabindex="0" rel="clickover">{{ src.dslabel }}</a> (<a href="/api/place/{{src.pid}}/" target="_blank">{{ src.pid }}</a>):

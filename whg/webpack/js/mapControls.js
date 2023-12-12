@@ -2,7 +2,8 @@
 
 import Dateline from './dateline';
 import generateMapImage from './saveMapImage';
-import { table, scrollToRowByProperty } from './tableFunctions';
+import { table } from './tableFunctions';
+import { scrollToRowByProperty } from './tableFunctions-extended';
 import { acmeStyleControl, CustomAttributionControl } from './customMapControls';
 
 class fullScreenControl {
@@ -35,9 +36,9 @@ class downloadMapControl {
 
 class sequencerControl {
 	onAdd() {
-		this.minSeq = window.ds_list_stats.seqmin;
-        this.maxSeq = window.ds_list_stats.seqmax;
-		console.log(`Sequence range (${window.ds_list_stats.seqmin}-${window.ds_list_stats.seqmax}).`);
+		this.minSeq = 0; //window.ds_list_stats.seqmin;
+        this.maxSeq = window.ds_list_stats.count - 1; //window.ds_list_stats.seqmax;
+		console.log(`Sequence range (${this.minSeq}-${this.maxSeq}).`);
         if (this.minSeq == this.maxSeq) {
 			return;
 		}
@@ -51,6 +52,7 @@ class sequencerControl {
 		this.playing = false;
 		this.stepdelay = 3;
         this.playInterval = null;
+        this.sortedPIDs = [];
 
         this.buttons = [
 			['skip-first','First waypoint','Already at first waypoint','Disabled during play'],
@@ -127,7 +129,7 @@ class sequencerControl {
 					this.currentSeq = this.maxSeq;
 				}
 
-				scrollToRowByProperty(table, 'seq', this.currentSeq);
+				scrollToRowByProperty(table, 'pid', this.sortedPIDs[this.currentSeq]);
 			}
 
 			if (this.playing && this.currentSeq == this.maxSeq) {
@@ -161,7 +163,10 @@ class sequencerControl {
 
 	updateButtons() {
 		const sequencer = $('.sequencer');
-		this.currentSeq = $('#placetable tr.highlight-row').data('seq');
+		
+		const highlightedPid = $('#placetable tr.highlight-row').attr('pid');
+		this.currentSeq = this.sortedPIDs.indexOf(parseInt(highlightedPid));
+		
         if (!this.playing) {
             sequencer.find('button').prop('disabled', false);
             if (this.currentSeq == this.minSeq) {
@@ -183,7 +188,7 @@ class sequencerControl {
 		this.currentSeq += 1;
 		this.continuePlay = true;
 		console.log(`Sequencer action: play ${this.currentSeq}.`);
-		scrollToRowByProperty(table, 'seq', this.currentSeq); // Triggers updateButtons()
+		scrollToRowByProperty(table, 'pid', this.sortedPIDs[this.currentSeq]); // Triggers updateButtons()
 		if (this.currentSeq == this.maxSeq) {
 			this.stopPlayback();
 		}
@@ -209,6 +214,23 @@ class sequencerControl {
         this.updateButtons();
 		console.log('... stopped sequence play.');
     }
+    
+    toggle(show) {
+        this.stopPlayback();
+        if (show === undefined) {
+            this._container.style.display = this._container.style.display === 'none' ? 'flex' : 'none';
+        } else {
+            if (!show) {
+                this._container.style.display = 'none';
+            } else {
+                this._container.style.display = 'flex';
+            }
+        }
+      	if (this._container.style.display === 'flex') {
+			// Update sortedPIDs to match current table sort order
+			mapSequencer.sortedPIDs = table.rows({ order: 'current' }).data().map(rowData => rowData.properties.pid);
+		}
+    }
 }
 
 let mapSequencer;
@@ -233,15 +255,23 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
     	autoClose: mapParameters.controls.attribution.open === false,
 	}), 'bottom-right');
 
-	function dateRangeChanged(fromValue, toValue){
-		// Throttle date slider changes using debouncing
-		// Ought to be possible to use promises on the `render` event
-		let debounceTimeout;
-	    function debounceFilterApplication() {
-	        clearTimeout(debounceTimeout);
-	        debounceTimeout = setTimeout(toggleFilters(true, mappy, table), 300);
+	let throttleTimeout;
+	let isThrottled = false;
+	function dateRangeChanged() { // Throttle date slider changes
+	    const throttleInterval = 300;
+	    if (!isThrottled) {
+	        toggleFilters(true, mappy, table);
+	        isThrottled = true;
+	        throttleTimeout = setTimeout(() => {
+	            isThrottled = false;
+	        }, throttleInterval);
+	    } else {
+	        clearTimeout(throttleTimeout);
+	        throttleTimeout = setTimeout(() => {
+	            isThrottled = false;
+	            toggleFilters(true, mappy, table);
+	        }, throttleInterval);
 	    }
-	    debounceFilterApplication();
 	}
 
 	if (window.dateline) {
@@ -264,8 +294,8 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 		// Update the temporal settings
 		mapParameters.controls.temporal.fromValue = window.ds_list_stats.min;
 		mapParameters.controls.temporal.toValue = window.ds_list_stats.max;
-		mapParameters.controls.temporal.minValue = window.ds_list_stats.min - buffer;
-		mapParameters.controls.temporal.maxValue = window.ds_list_stats.max + buffer;
+		mapParameters.controls.temporal.minValue = Math.floor(window.ds_list_stats.min - buffer);
+		mapParameters.controls.temporal.maxValue = Math.ceil(window.ds_list_stats.max + buffer);
 
 		window.dateline = new Dateline({
 			...mapParameters.controls.temporal,
@@ -299,7 +329,7 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 
 	});
 
-	return { datelineContainer, mapParameters }
+	return { datelineContainer, mapParameters, mapSequencer }
 
 }
 

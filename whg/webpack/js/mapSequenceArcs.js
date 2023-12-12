@@ -5,19 +5,29 @@ import { representativePoint } from './utilities';
 
 export default class SequenceArcs {
 	constructor(map, dataset, {
+        facet = 'seq', // Property to use for sorting
+        order = 'asc', // 'asc'|'desc' - Sort order
+		animationRate = 1, // animationRate = steps per second
 		deflectionValue = 1,
 		lineColor = '#888',
 		lineOpacity = .8,
 		lineWidth = 1,
-		dashLength = 8,
-		animationRate = 1
-	} = {}) { // animationRate = steps per second
+		dashLength = 8
+	} = {}) {
 		this.map = map;
 		this.dataset = this.convertToRepresentativePoints(dataset);
 		this.arcSourceId = 'sequence-arcs-source';
 		this.arcLayerId = 'sequence-arcs-layer';
-		window.additionalLayers.push(['sequence-arcs-source', 'sequence-arcs-layer']);
-		this.deflectionValue = deflectionValue; // Defines curvature of arc (displacement of arc's centre-point is proportional to its length)
+		if(!this.map.getSource(this.arcSourceId)) {
+			window.additionalLayers.push([this.arcSourceId, this.arcLayerId]);
+		}
+		else {
+			this.map.removeLayer(this.arcLayerId);
+			this.map.removeSource(this.arcSourceId);
+		}
+		this.facet = facet;
+		this.sortOrder = (order === 'desc') ? -1 : 1;		
+        this.deflectionValue = deflectionValue; // Defines curvature of arc (displacement of arc's centre-point is proportional to its length)
 		this.lineColor = lineColor;
 		this.lineOpacity = lineOpacity;
 		this.lineWidth = lineWidth;
@@ -48,12 +58,10 @@ export default class SequenceArcs {
 			return [controlX, controlY];
 		}
 
-		const pointSourceData = this.dataset; // dataset has been converted to representative points by class constructor
-
-		if (pointSourceData && pointSourceData.type === 'FeatureCollection') {
-			const sortedData = pointSourceData.features.sort((a, b) => {
-				return a.properties.seq - b.properties.seq;
-			});
+		if (this.dataset && this.dataset.type === 'FeatureCollection') {
+			const sortedData = this.dataset.features.sort((a, b) => {
+				return this.sortOrder * (a.properties[this.facet] - b.properties[this.facet]);
+            });
 
 			for (let i = 0; i < sortedData.length - 1; i++) {
 				const startPoint = sortedData[i];
@@ -92,17 +100,27 @@ export default class SequenceArcs {
 	}
 
 	createArcLayer() {
-		this.map.addLayer({
-			id: this.arcLayerId,
-			type: 'line',
-			source: this.arcSourceId,
-			paint: {
-				'line-color': this.lineColor,
-				'line-opacity': this.lineOpacity,
-				'line-width': this.lineWidth,
-				'line-dasharray': this.dashArraySequence[0],
-			},
-		});
+	    const layers = this.map.getStyle().layers;
+        // Find the index of the highest layer whose id begins with 'gl_active_point'
+        let topPointLayer;
+        for (let i = layers.length - 1; i < layers.length; i--) {
+            if (layers[i].id.startsWith('gl_active_point')) {
+                topPointLayer = layers[i].id;
+                break;
+            }
+        }
+	
+	    this.map.addLayer({
+	        id: this.arcLayerId,
+	        type: 'line',
+	        source: this.arcSourceId,
+	        paint: {
+	            'line-color': this.lineColor,
+	            'line-opacity': this.lineOpacity,
+	            'line-width': this.lineWidth,
+	            'line-dasharray': this.dashArraySequence[0],
+	        },
+	    }, topPointLayer);
 	}
 
 	generateDashArraySequence() {
@@ -136,9 +154,9 @@ export default class SequenceArcs {
 				);
 				step = newStep;
 			}
-			requestAnimationFrame(animateDashArray);
+			this.animationFrame = requestAnimationFrame(animateDashArray);
 		}
-		requestAnimationFrame(animateDashArray);
+		this.animationFrame = requestAnimationFrame(animateDashArray);
 	}
 
 	convertToRepresentativePoints(dataset) {
@@ -159,4 +177,21 @@ export default class SequenceArcs {
 		console.log('Failed to convert dataset to representative points.');
 		return dataset; // If the dataset is not a FeatureCollection, return it as is
 	}
+	
+	destroy() {
+        cancelAnimationFrame(this.animationFrame);
+        window.additionalLayers = window.additionalLayers.filter(item =>
+		  	JSON.stringify(item) !== JSON.stringify([this.arcSourceId, this.arcLayerId])
+		);
+        if (this.map.getLayer(this.arcLayerId)) {
+            this.map.removeLayer(this.arcLayerId);
+        }
+        if (this.map.getSource(this.arcSourceId)) {
+            this.map.removeSource(this.arcSourceId);
+        }
+        this.map = null;
+        this.dataset = null;
+        this.arcFeatures = null;
+        return null;
+    }
 }

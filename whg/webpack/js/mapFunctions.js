@@ -1,7 +1,6 @@
 import datasetLayers from './mapLayerStyles';
 import {attributionString, arrayColors, colorTable, startSpinner} from './utilities';
 import { filteredLayer } from './mapFilters';
-import SequenceArcs from './mapSequenceArcs';
 import { scrollToRowByProperty, clearFilters } from './tableFunctions';
 import { popupFeatureHTML } from './getPlace.js';
 import { mappy } from './mapAndTable';
@@ -39,9 +38,6 @@ export function addMapLayer(layer, ds) {
 			...circleColors,
 			'#ccc',
 		]);
-		const sequenceArcs = new SequenceArcs(mappy, ds, {
-			/*animationRate: 0*/ });
-		mappy.moveLayer(sequenceArcs.arcLayerId, modifiedLayer.id);
 	}
 }
 

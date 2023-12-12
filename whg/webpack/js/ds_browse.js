@@ -194,6 +194,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			if (activePopup) {
 				getPlace(activePopup.pid);
 				clearPopup();
+				$('.highlight-row, .selected').removeClass('highlight-row selected');
 			}
 		});
 		
@@ -281,7 +282,7 @@ function setRowEvents() {
 		if ( highlightedFeatureId ) {
 			mappy.setFeatureState({ source: 'places', id: highlightedFeatureId }, { highlight: false });
 		}
-		const feat = featureCollection.features.find(feature => feature.properties.pid === pid);
+		const feat = featureCollection.features.find(feature => feature.properties.pid === pid && feature.geometry !== null);
 		if (feat) {
 			highlightedFeatureId = feat.id;
 			mappy

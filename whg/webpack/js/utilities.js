@@ -2,6 +2,16 @@ import { bbox, midpoint, centroid, getType, area } from './6.5.0_turf.min.js'
 import ClipboardJS from '/webpack/node_modules/clipboard';
 import { lch } from './chroma.min.js'
 
+export function debounce(func, delay) {
+  let timeoutId;
+  return function () {
+    const context = this;
+    const args = arguments;
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(context, args), delay);
+  };
+}
+
 export function deepCopy(obj) {
   if (obj === null || typeof obj !== 'object') {
     return obj;
@@ -320,14 +330,15 @@ export function get_ds_list_stats(allFeatures) {
 	let seqMin = Infinity;
 	let seqMax = -Infinity;
 	for (let i = 0; i < allFeatures.length; i++) {
-		const featureMin = allFeatures[i].properties.min;
-		const featureMax = allFeatures[i].properties.max;
-		const seqValue = allFeatures[i].properties.seq;
-		if (!isNaN(featureMin) && !isNaN(featureMax)) {
+		// Convert strings to integers
+		const featureMin = (/^-?\d+$/.test(allFeatures[i].properties.min)) ? parseInt(allFeatures[i].properties.min) : false;
+		const featureMax = (/^-?\d+$/.test(allFeatures[i].properties.max)) ? parseInt(allFeatures[i].properties.max) : false;
+		const seqValue = (/^-?\d+$/.test(allFeatures[i].properties.seq)) ? parseInt(allFeatures[i].properties.seq) : false;
+		if (featureMin && featureMax) {
 			min = Math.min(min, featureMin);
 			max = Math.max(max, featureMax);
 		}
-		if (!isNaN(seqValue)) {
+		if (seqValue) {
 			seqMin = Math.min(seqMin, seqValue);
 			seqMax = Math.max(seqMax, seqValue);
 		}
@@ -345,6 +356,7 @@ export function get_ds_list_stats(allFeatures) {
 		max: max,
 		seqmin: seqMin,
 		seqmax: seqMax,
+		count: allFeatures.length,
 		extent: bbox(geojson)
 	}
 }

@@ -110,9 +110,6 @@
 										{% for r in record.defer_comments %}{{ r.note }}{% endfor %}
 						            </div>
 					            </div>
-					            {% for g in record.geoms.all %}
-									{{ g.jsonb|safe|json_script:record.id }}
-					            {% endfor %}
 					            <p><strong>WHG place id</strong>: {{ record.id }} </p>
 					            <p><strong>Source id</strong>: {{ record.src_id }}</p>
 					            <p class="scroll100"><strong>Name variants</strong>:
@@ -180,16 +177,16 @@
 				                	{{ hidden }}
 				              	{% endfor %}
 				              	<div class="ps-2 pe-2 mb-1 matchbar">
-				                	<div class="match_radio custom-control custom-radio"  data-id="{{ form.authrecord_id.value }}">
+				                	<div class="match_radio custom-control custom-radio hovermap" data-id="{{ form.authrecord_id.value }}">
 				                  		{% if form.json.value|get:"geoms"|length > 0 %}
 				                    		<span class="me-2 globeflash">
-				                      			<a class="geolink" rel="tooltip"
+				                      			<a class="geolink" data-id="{{ form.authrecord_id.value }}" rel="tooltip"
 							                        {% if ds_label == 'tgn_filtered_01' or authority == 'whg' or authority == 'idx'%}
 							                          	id="{{ form.json.value|get:"place_id" }}"
 							                        {% else %}
 							                          	id="{{ form.authrecord_id.value }}"
 							                        {% endif %}
-							                        href='javascript:{ zoomTo("{{ form.authrecord_id.value }}") }' title="Flash map marker">
+							                        href='javascript:void(0)'>
 							                        <i class="fas fa-globe" style="color:#000;"></i>
 				                        		</a>
 				                    		</span>

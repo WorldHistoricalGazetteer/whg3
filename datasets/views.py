@@ -495,54 +495,38 @@ def review(request, pk, tid, passnum):
     )
     formset = HitFormset(request.POST or None, queryset=raw_hits)
     context["formset"] = formset
-
+    
     # Create FeatureCollection for mapping
-    features = []
-    for counter, hit in enumerate(raw_hits, start=0):
-        # Assuming hit.json contains your feature data
-        feature_data = hit.json
-
-        geoms = feature_data.pop("geoms", None)
-        geometry_objects = []
-        for geom in geoms:
-            geom_type = geom["type"]
-            coordinates = geom["coordinates"]
-
-            # Create a GeoJSON geometry object based on the geometry type
-            if geom_type == "Point":
-                geometry = {"type": "Point", "coordinates": coordinates[0]}
-            elif geom_type == "MultiPoint":
-                geometry = {"type": "MultiPoint", "coordinates": coordinates}
-            # TODO: LineString, Polygon, MultiPolygon ?
-            geometry_objects.append(geometry)
-
-        if len(geometry_objects) > 1:
-            feature_geometry = {
-                "type": "GeometryCollection",
-                "geometries": geometry_objects,
+    index_offset = sum(1 for record in records for geom in record.geoms.all().values('jsonb'))
+    feature_collection = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {
+                    "record_id": record.id,
+                    "green": True,
+                },
+                "geometry": {"type": geom['jsonb']["type"], "coordinates": geom['jsonb'].get("coordinates")},
+                "id": idx
             }
-        else:
-            feature_geometry = geometry_objects[0]
-
-        feature_data["reconciliation"] = True if feature_data.get("dataset") == pk else False # `reconciliation` property used to set map marker colour
-
-        feature_data["pk"] = pk
-        print('feature_data', feature_data)
-        feature = {
-            "type": "Feature",
-            # "properties": feature_data, ## Some characters used in placenames are not properly encoded: reduce to minimal requirement for operation
-            "properties": {
-                "reconciliation": feature_data["reconciliation"],
-                # TODO: src_id not present for accession task - matters? 2023-11-19
-                # "src_id": feature_data["src_id"],
-            },
-            "geometry": feature_geometry,
-            "id": counter,
-        }
-
-        features.append(feature)
-
-    feature_collection = {"type": "FeatureCollection", "features": features}
+            for idx, (record, geom) in enumerate((record, geom) for record in records for geom in record.geoms.all().values('jsonb'))
+        ] +
+        [
+            {
+                "type": "Feature",
+                "properties": {
+                    **{key: value for key, value in geom.items() if key not in ["coordinates", "type"]},
+                    "green": False, # Set to True for green markers - following 2 lines are redundant v2 code
+                        # (review_page=="accession.html" and geom["ds"]==ds.label) or 
+                        # (review_page=="review.html" and not geom["ds"] in ['tgn', 'wd', 'whg'])
+                },
+                "geometry": {"type": geom["type"], "coordinates": geom.get("coordinates")},
+                "id": idx + index_offset
+            }
+            for idx, (hit, geom) in enumerate((hit, geom) for hit in raw_hits for geom in hit.json['geoms'])
+        ]
+    }
     context["feature_collection"] = json.dumps(feature_collection)
 
     method = request.method
