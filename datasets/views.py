@@ -870,6 +870,7 @@ def ds_recon(request, pk):
     # previous successful task of this type?
     #   wdlocal? archive previous, scope = unreviewed
     #   idx? scope = unindexed
+    collection_id = request.POST.get('collection_id')
     previous = ds.tasks.filter(task_name='align_'+auth,status='SUCCESS')
     prior = request.POST['prior'] if 'prior' in request.POST else 'na'
     if previous.count() > 0:
@@ -912,7 +913,8 @@ def ds_recon(request, pk):
       return redirect('/datasets/'+str(ds.id)+'/reconcile')
 
     # initiate celery/redis task
-    # NB 'func' resolves to align_wdlocal() or align_idx()
+    # 2023-12-13 new options for reconciliation
+    # NB 'func' resolves to align_wdlocal(), align_idx(), align_collection() or align_self()
     # NB#2 the dataset id is both positional and a keyword **intentionally** -
     # required to generate a useful result record
     try:
@@ -927,6 +929,7 @@ def ds_recon(request, pk):
         scope=scope,
         lang=language,
         test=test,
+        collection_id=collection_id
       )
       messages.add_message(request, messages.INFO, "<span class='text-danger'>Your reconciliation task is under way.</span><br/>When complete, you will receive an email and if successful, results will appear below (you may have to refresh screen). <br/>In the meantime, you can navigate elsewhere.")
       return redirect('/datasets/'+str(ds.id)+'/reconcile')
