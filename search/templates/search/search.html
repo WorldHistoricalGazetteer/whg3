@@ -1,3 +1,4 @@
+<!-- /search/templates/search/search.html -->
 {% extends "main/base.html" %}
 {% load leaflet_tags %}
 {% load static %}
@@ -21,7 +22,7 @@
 	    <div id="d_input" class="col-8 ps-1">
 	        <div id="input" class="w-75 input-group">
 	            <input id="search_input" class="form-control" type="text" placeholder="Enter place name"
-	                   aria-label="Search" aria-describedby="search-addon">
+	                   aria-label="Search" aria-describedby="search-addon" autocomplete="off">
 	            <span class="input-group-text" id="search-addon">
 	                <a href="#" id="a_search"><i class="fas fa-search"></i></a>
 	            </span>
@@ -125,6 +126,7 @@
 				</div>
 			</div>
   </div>
+  {% csrf_token %} <!-- Used for Django POST requests -->
 <!-- Set up MapLibre map using Maptiler SDK -->
 <script type="text/javascript">
     let mapParameters = {

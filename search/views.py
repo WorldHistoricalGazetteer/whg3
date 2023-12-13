@@ -160,9 +160,9 @@ def suggester(q, indices):
 """
 class SearchView(View):
   @staticmethod
-  def get(request):
-    print('SearchView() request',request.GET)
-    print('SearchView() bounds',request.GET.get('fclasses'))
+  def handle_request(request):
+    print('SearchView() request',request.GET or request.POST)
+    print('SearchView() bounds',request.GET.get('fclasses') or request.POST.get('fclasses'))
     """
       args in request.GET:
         [string] qstr: query string
@@ -175,17 +175,15 @@ class SearchView(View):
         [int] end: filter for timespans
         [string] undated: text of boolean for inclusion of undated results        
         [string] bounds: text of JSON geometry
-        [string] area_filter: text of drawn area GeometryCollection
     """
-    qstr = request.GET.get('qstr')
+    qstr = request.GET.get('qstr') or request.POST.get('qstr')
     # idx = request.GET.get('idx')
     idx = settings.ES_WHG
-    fclasses = request.GET.get('fclasses')
-    start = request.GET.get('start')
-    end = request.GET.get('end')
-    undated = request.GET.get('undated')
-    bounds = request.GET.get('bounds')
-    area_filter = request.GET.get('area_filter')
+    fclasses = request.GET.get('fclasses') or request.POST.get('fclasses')
+    start = request.GET.get('start') or request.POST.get('start')
+    end = request.GET.get('end') or request.POST.get('end')
+    undated = request.GET.get('undated') or request.POST.get('undated')
+    bounds = request.GET.get('bounds') or request.POST.get('bounds')
     
     params = {
       "qstr":qstr,
@@ -197,7 +195,6 @@ class SearchView(View):
       "end": end,
       "undated": undated,
       "bounds": bounds,
-      "area_filter": area_filter,
     }
     request.session["search_params"] = params 
     print('search_params set', params)
@@ -222,19 +219,59 @@ class SearchView(View):
       q['query']['bool']['must'].append({"terms": {"fclasses": fclist}})
 
     if start:
-      q['query']['bool']['must'].append({"range":{"timespans":{"gte" :start,"lte":end if end else 2005}}})
+        timespan_filter = {"range": {"timespans": {"gte": start, "lte": end if end else 2005}}}
+        if undated: # Include records with empty timespans
+            q['query']['bool']['must'].append({
+                "bool": {"should": [timespan_filter, {"bool": {"must_not": {"exists": {"field": "timespans"}}}}]}
+            })
+        else:
+            q['query']['bool']['must'].append(timespan_filter)
+            
     if bounds:
-      bounds=json.loads(bounds)
-      q['query']['bool']["filter"]=get_bounds_filter(bounds,'whg')
+      if request.method == 'GET':
+          bounds=json.loads(bounds)
+          q['query']['bool']["filter"]=get_bounds_filter(bounds,'whg')
+      elif request.method == 'POST' and len(bounds['geometries']) > 0:
+          filters = []        
+          for geometry in bounds['geometries']:                
+                filters.append({
+                    "geo_shape": {
+                        "geoms.location": {
+                            "shape": {
+                                "type": geometry['type'],
+                                "coordinates": geometry['coordinates']
+                            },
+                            "relation": "intersects"
+                        }
+                    }
+                })
+          q['query']['bool']["filter"]={"bool": {"should": filters}}
 
     print('query q in search', q)
     suggestions = suggester(q, [idx, 'pub'])
     suggestions = [suggestionItem(s) for s in suggestions]
     # print('suggestions', suggestions)
     # return query params for ??
-    result = {'get': request.GET, 'suggestions': suggestions, 'session': params }
+    result = {'parameters': params, 'suggestions': suggestions }
 
     return JsonResponse(result, safe=False)
+
+  def get(self, request):
+    return self.handle_request(request)
+
+  def post(self, request):
+    # Extract JSON data from the request body
+    try:
+        json_data = json.loads(request.body.decode('utf-8'))
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+
+    # Merge JSON data with request.POST for compatibility with existing code
+    request.POST = request.POST.copy()
+    request.POST.update(json_data)
+
+    # Call the handle_request method
+    return self.handle_request(request)
       
   
 """

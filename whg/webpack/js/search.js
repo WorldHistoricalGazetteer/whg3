@@ -107,6 +107,8 @@ function waitMapLoad() {
 			        }, throttleInterval);
 			    }
 			}
+        
+			updateSearchState(true);
 
 			if (!!mapParameters.controls.temporal) {
 				let datelineContainer = document.createElement('div');
@@ -166,8 +168,6 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
             console.log('no results');
             $("#adv_options").show();
         }
-        
-		updateCheckedboxes(true);
 
         $('#advanced_search').hide();
 
@@ -406,7 +406,7 @@ function renderResults(featureCollection) {
 		checkboxStates[this.value] = this.checked;
 		console.log('checkboxStates', checkboxStates);
 		if (!programmaticChange) {
-			updateCheckedboxes();
+			updateSearchState();
 		}
 
 		// Get all checked checkboxes
@@ -551,43 +551,92 @@ function updateCheckboxCounts(features) {
 }
 
 let programmaticChange = false;
-function updateCheckedboxes(retrieve=false) {
+function updateSearchState(retrieve=false, results=false) {
+	// search_input, checkboxes, temporal filter, spatial filter, results
 	if (retrieve) {
-		programmaticChange = true;
-		const checkedboxesJSON = localStorage.getItem('checkedboxes');
-        const checkedboxes = checkedboxesJSON ? JSON.parse(checkedboxesJSON) : [];
-        checkedboxes.forEach(function(id) {
-	    	$('#' + id).prop('checked', true);
-	    });
-	    programmaticChange = false;
+		const searchStateJSON = localStorage.getItem('search_state');
+		if (searchStateJSON) {
+			programmaticChange = true;
+			const searchState = JSON.parse(searchStateJSON);
+			$('#search_input').val(searchState['search_input']);
+			$('#result_facets input[type="checkbox"]').prop('checked', false);
+	        searchState['checkedboxes'].forEach(function(id) {
+		    	$('#' + id).prop('checked', true);
+		    });
+		    mapParameters.controls.temporal = searchState['temporal_filter'];
+			draw.add(searchState['spatial_filter']);
+			programmaticChange = false;
+		}
 	}
-	else{
-		const checkedboxes = $('#result_facets input[type="checkbox"]:checked').map(function() {
-			    return this.id;
-			  })
-			  .get();
-		localStorage.setItem('checkedboxes', JSON.stringify(checkedboxes));
-	}
+	else {
+		let searchState = {}
+		searchState['search_input'] = $('#search_input').val();
+		searchState['checkedboxes'] = $('#result_facets input[type="checkbox"]:checked')
+			.map(function() {
+				return this.id;
+			})
+			.get();
+			
+		if (results) {
+			console.log('updateSearchState results', results);
+			searchState['temporal_filter'] = {
+				'fromValue': dateline.fromValue,
+				'toValue': dateline.toValue,
+				'minValue': dateline.minValue,
+				'maxValue': dateline.maxValue,
+				'open': dateline.open,
+				'includeUndated': dateline.includeUndated,
+				'epochs': dateline.epochs,
+				'automate': dateline.automate			
+			};
+			searchState['spatial_filter'] = draw.getAll();
+			searchState['suggestions'] = results.suggestions;
+		}
+			
+		localStorage.setItem('search_state', JSON.stringify(searchState));
+	}	
 }
 
 function initiateSearch() {
+	
+	if (programmaticChange) return; // initiateSearch has been triggered by initialisation of filters
+	
 	isInitialLoad = true;
 	localStorage.removeItem('last_results')
 
 	const query = $('#search_input').val(); // Get the query from the input
 	const options = gatherOptions(); //
-	console.log('initiateSearch()', query)
+	console.log('initiateSearch()', query, options)
 
-	// AJAX GET request to SearchView() with the options (includes qstr)
+/*	// AJAX GET request to SearchView() with the options (includes qstr)
 	$.get("/search/index", options, function(data) {
 
 		results = geomsGeoJSON(data['suggestions']); // Convert to GeoJSON and replace global variable
 		results.query = query;
 		localStorage.setItem('last_results', JSON.stringify(results));
-		updateCheckedboxes();
+		updateSearchState();
 		renderResults(results);
 
-	});
+	});*/
+
+  	// AJAX POST request to SearchView() with the options (includes qstr)
+    $.ajax({
+        type: 'POST',
+        url: '/search/index/',
+	    data: JSON.stringify(options),
+	    contentType: 'application/json',
+        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },  // Include CSRF token in headers for Django POST requests
+        success: function(data) {
+            results = geomsGeoJSON(data['suggestions']);
+            results.query = query;
+            localStorage.setItem('last_results', JSON.stringify(results));
+            updateSearchState(false, data);
+            renderResults(results);
+        },
+        error: function(error) {
+            console.error('Error:', error);
+        }
+    });
 }
 
 function gatherOptions() {
@@ -603,7 +652,6 @@ function gatherOptions() {
 	  "type": "GeometryCollection",
 	  "geometries": draw.getAll().features.map(feature => feature.geometry)
 	}
-	console.log(area_filter);
 	
 	let options = {
 		"qstr": $('#d_input input').val(),
@@ -612,7 +660,7 @@ function gatherOptions() {
 		"start": window.dateline.open ? window.dateline.fromValue : '', 
 		"end": window.dateline.open ? window.dateline.toValue : '',
 		"undated": window.dateline.open ? window.dateline.includeUndated : true,
-		"area_filter": area_filter
+		"bounds": area_filter
 	}
 	return options;
 }

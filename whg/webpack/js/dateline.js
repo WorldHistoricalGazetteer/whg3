@@ -322,12 +322,12 @@ export default class Dateline {
         }
 	}
 	
-	reconfigure(newMinValue, newMaxValue) {
+	reconfigure(newMinValue, newMaxValue, newFromValue=false, newToValue=false) {
 		const range = newMaxValue - newMinValue;
 		const buffer = range * 0.1; // 10% buffer
 
-		this.fromValue = newMinValue;
-		this.toValue = newMaxValue;
+		this.fromValue = newFromValue ? newFromValue : newMinValue;
+		this.toValue = newToValue ? newToValue : newMaxValue;
 		this.minValue = Math.floor(newMinValue - buffer);
 		this.maxValue = Math.ceil(newMaxValue + buffer);
 		
