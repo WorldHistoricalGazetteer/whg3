@@ -302,14 +302,41 @@ def profileHit(hit):
   return profile
 
 # ***
+# index dataset to builder given ds.id list
+# ***
+#
+def indexToBuilder(es, dsid, idx='builder'):
+  from django.conf import settings
+  es = settings.ES_CONN
+  from places.models import Place
+
+  qs=Place.objects.filter(dataset=dsid)
+  import sys, json
+  for place in qs:
+    pobj = makeDoc(place)
+    for n in pobj['names']:
+      pobj['searchy'].append(n['toponym'])
+    # add its title
+    if place.title not in pobj['searchy']:
+      pobj['searchy'].append(place.title)
+    #index it
+    try:
+      res = es.index(index=idx, body=json.dumps(pobj))
+    except:
+      print('failed indexing '+str(place.id), sys.exc_info())
+      pass
+    place.idx_builder = True
+    place.save()
+
+# ***
 # index docs given place_id list
 # ***
-# TODO:
+#
 def indexSomeParents(es, idx, pids):
   from datasets.tasks import maxID
   from django.shortcuts import get_object_or_404
   from places.models import Place
-  import sys,json
+  import sys, json
   whg_id=maxID(es,idx)
   for pid in pids:
     place=get_object_or_404(Place,id=pid)
