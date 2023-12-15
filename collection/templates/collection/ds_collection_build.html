@@ -54,14 +54,14 @@
 	  <ul id="tablist" class="nav nav-tabs" role="tablist">
 		  {# create form & intro #}
 		  <li class="nav-item" role="presentation">
-		    <button class="nav-link" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
+		    <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
           type="button" role="tab" aria-controls="coll_form" aria-selected="true">
 			    {% if action == 'create' %}Create{% else %}Edit{% endif %} Collection</button>
 		  </li>
 		  {# add & manage #}
 		  {% if action == "update" %}
 		  <li class="nav-item" role="presentation">
-		    <button class="nav-link active" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
+		    <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
           type="button" role="tab" aria-controls="coll_builder" aria-selected="false">Add and manage datasets</button>
 		  </li>
 			{# workspace; not conflating, linking #}
@@ -77,8 +77,8 @@
 		  {% endif %}
 		</ul>
 		<div id="content" class="tab-content">
-{#			<div id="coll_form" class="tab-pane fade show active h-100">#}
-			<div id="coll_form" class="tab-pane fade h-100">
+			<div id="coll_form" class="tab-pane fade show active h-100">
+{#			<div id="coll_form" class="tab-pane fade h-100">#}
 		    <form id="collection_form" method="POST" enctype="multipart/form-data">
 		    {% csrf_token %}
         <div class="row">
@@ -193,15 +193,11 @@
 						</div>
 		      {% else %}
 				    <h5 style="display:block;">Welcome</h5>
-					  <p>To create a new Place Collection, first fill out the required fields in the form on the left.
+					  <p>To create a new Dataset Collection, first fill out the required fields in the form on the left.
 						  and press <b>Save</b>. All information can be edited afterwards, and you can begin adding and
-						  annotating places. The collection itself can include primary image, an essay file and
+						  linking datasets. The collection itself can include primary image, an essay file and
 						  links to related material.</p>
 			      <p><mark-b>Collection keywords</mark-b> are terms describing the collection.</p>
-					  <p><mark-b>Annotation keywords</mark-b> are terms that will be your own vocabulary for relations between a given
-	              place and the collection theme or topic. For example, relevant annotation keywords for a collection
-	              about a journey might include "waypoint" and "extended stay." For lives of individuals, "birthplace"
-	              and "resided" might be appropriate. The choice is yours.</p>
 		      {% endif %}
 		      </div> {# col-sm-7 #}
         </div> {# row #}
@@ -229,8 +225,8 @@
 	          </form>
 		    </div>
 			</div> {# coll_form #}
-{#			<div id="coll_builder" class="tab-pane fade h-100" style="height: auto; position:relative;">#}
-			<div id="coll_builder" class="tab-pane fade show active h-100" style="height: auto; position:relative;">
+			<div id="coll_builder" class="tab-pane fade h-100" style="height: auto; position:relative;">
+{#			<div id="coll_builder" class="tab-pane fade show active h-100" style="height: auto; position:relative;">#}
 				<div class="row">
 					<div class="col-sm-7">
 		        <h5 class="bg-lighterblue">Datasets</h5>
