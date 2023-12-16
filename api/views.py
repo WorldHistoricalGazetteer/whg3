@@ -8,11 +8,15 @@ User = get_user_model()
 from django.contrib.gis.geos import Polygon, Point
 # from django.contrib.postgres import search
 from django.contrib.gis.measure import D
-from django.contrib.gis.db.models.functions import Distance
-from django.db.models import Q
+from django.contrib.gis.db.models.functions import Distance, GeometryField
+from django.contrib.gis.geos import GEOSGeometry
+from django.db.models import JSONField
+from django.db.models import Case, When, Min, Max, Q, F, ExpressionWrapper, fields, Subquery, OuterRef, Count, IntegerField
 from django.http import JsonResponse, HttpResponse#, FileResponse
 from django.shortcuts import get_object_or_404
-from django.views.generic import View
+from django.views.generic import View, ListView
+from django.core.paginator import PageNotAnInteger, EmptyPage, Paginator
+
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import permissions
@@ -24,6 +28,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework.reverse import reverse
+from rest_framework.generics import ListAPIView
 from accounts.permissions import IsOwnerOrReadOnly
 from api.serializers import (
   UserSerializer, DatasetSerializer, PlaceSerializer,
@@ -32,10 +37,83 @@ from api.serializers import (
 from areas.models import Area
 from collection.models import Collection, CollPlace
 from datasets.models import Dataset
+from main.models import Log
 from datasets.tasks import get_bounds_filter
 from places.models import Place, PlaceGeom
 from search.views import getGeomCollection
 import inspect
+import json
+import random
+
+class GalleryView(ListAPIView):
+    pagination_class = PageNumberPagination
+    pagination_class.page_size = 9
+
+    def get_queryset(self):
+        gallery_type = self.kwargs.get('type')
+        model = Collection if gallery_type == 'collections' else Dataset
+        
+        # TEXT FILTERS
+        search_text = self.request.query_params.get('q', '') # Default to empty string
+        filter = Q(public=True)
+        if search_text:
+            filter &= (Q(title__icontains=search_text) | Q(description__icontains=search_text))
+        queryset = model.objects.filter(filter)
+
+        # SPATIAL FILTERS
+        country_codes = self.request.query_params.get('countries', '').split(',')
+        print(country_codes)
+        if country_codes != ['']:
+            country_codes = [code.upper() for code in country_codes]
+            queryset = queryset.filter(places__ccodes__overlap=country_codes).distinct()
+
+        # SORTING
+        sort_by = self.request.query_params.get('sort', 'title') # Default to `title` alphabetical
+        if sort_by.endswith('earliest'): # Use `endswith` to accommodate reverse sorting
+            queryset = queryset.annotate(earliest=Min('places__minmax__0'))
+        elif sort_by.endswith('latest'):
+            queryset = queryset.annotate(latest=Max('places__minmax__1'))
+        elif sort_by.endswith('numrows') and gallery_type == 'collections':
+            queryset = queryset.annotate(numrows=Count(
+                    Case(
+                        When(
+                            places__isnull=False,
+                            then=1,
+                        ),
+                        output_field=IntegerField(),
+                    ),
+                    distinct=True,
+                ) + Count('datasets__places', distinct=True))
+        elif sort_by.endswith('modified'):
+            queryset = queryset.annotate(
+                modified=Subquery(Log.objects.filter(dataset=OuterRef('pk')).order_by('-timestamp').values('timestamp')[:1])
+            )
+
+        return queryset.order_by(sort_by)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+
+        # Paginate the data
+        paginator = self.pagination_class()
+        try:
+            page = paginator.paginate_queryset(queryset, request)
+        except PageNotAnInteger:
+            page = 1
+        except EmptyPage:
+            page = paginator.page.paginator.num_pages
+
+        qs_list = [instance.carousel_metadata for instance in page]
+        qs_json = json.dumps(qs_list, default=str)
+        
+        response_data = {
+            'items': json.loads(qs_json),
+            'total_items': queryset.count(),
+            'current_page': int(request.query_params.get('page', 1)),
+            'total_pages': paginator.page.paginator.num_pages,
+        }
+
+        return JsonResponse(response_data, safe=False)
 
 class StandardResultsSetPagination(PageNumberPagination):
   page_size = 10
