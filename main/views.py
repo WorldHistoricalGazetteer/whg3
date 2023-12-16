@@ -102,6 +102,7 @@ def dataset_list(request):
 #                 {'collections': user_collections, 'is_admin': is_admin, 'section': 'collections'})
 
 def collection_list(request, *args, **kwargs):
+  print('collection_list() kwargs', kwargs)
   collection_class = kwargs.get('collection_class')
   is_admin = request.user.groups.filter(name='whg_admins').exists()
 

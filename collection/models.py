@@ -45,6 +45,20 @@ def default_relations():
 def default_omitted():
   return '{}'
 
+# class NewCollDataset(models.Model):
+#   collection = models.ForeignKey('Collection', on_delete=models.CASCADE)
+#   dataset = models.ForeignKey('datasets.Dataset', on_delete=models.CASCADE)
+#
+#   class Meta:
+#     ordering = ['id']
+
+class CollDataset(models.Model):
+  collection = models.ForeignKey('Collection', on_delete=models.CASCADE)
+  dataset = models.ForeignKey('datasets.Dataset', on_delete=models.CASCADE)
+
+  class Meta:
+    ordering = ['id']
+
 class Collection(models.Model):
   owner = models.ForeignKey(settings.AUTH_USER_MODEL,
       related_name='collections', on_delete=models.CASCADE)
@@ -89,8 +103,10 @@ class Collection(models.Model):
   # submitted = models.BooleanField(default=False)
   submit_date = models.DateTimeField(null=True, blank=True)
 
-  # collections  can comprise >=0 datasets, >=1 places
-  datasets = models.ManyToManyField("datasets.Dataset", blank=True)
+  # writes CollDataset record to collection_colldataset
+  datasets = models.ManyToManyField('datasets.Dataset', through='collection.CollDataset',
+                                        related_name='new_datasets', blank=True)
+
   # writes CollPlace record to collection_collplace
   places = models.ManyToManyField("places.Place", through='CollPlace', blank=True)
 
