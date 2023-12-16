@@ -45,13 +45,6 @@ def default_relations():
 def default_omitted():
   return '{}'
 
-# class NewCollDataset(models.Model):
-#   collection = models.ForeignKey('Collection', on_delete=models.CASCADE)
-#   dataset = models.ForeignKey('datasets.Dataset', on_delete=models.CASCADE)
-#
-#   class Meta:
-#     ordering = ['id']
-
 class CollDataset(models.Model):
   collection = models.ForeignKey('Collection', on_delete=models.CASCADE)
   dataset = models.ForeignKey('datasets.Dataset', on_delete=models.CASCADE)
