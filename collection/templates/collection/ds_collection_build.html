@@ -54,14 +54,15 @@
 	  <ul id="tablist" class="nav nav-tabs" role="tablist">
 		  {# create form & intro #}
 		  <li class="nav-item" role="presentation">
-		    <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
+		    <button class="nav-link" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
           type="button" role="tab" aria-controls="coll_form" aria-selected="true">
 			    {% if action == 'create' %}Create{% else %}Edit{% endif %} Collection</button>
 		  </li>
 		  {# add & manage #}
 		  {% if action == "update" %}
+		  {# builder #}
 		  <li class="nav-item" role="presentation">
-		    <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
+		    <button class="nav-link active" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
           type="button" role="tab" aria-controls="coll_builder" aria-selected="false">Add and manage datasets</button>
 		  </li>
 			{# workspace; not conflating, linking #}
@@ -77,7 +78,7 @@
 		  {% endif %}
 		</ul>
 		<div id="content" class="tab-content">
-			<div id="coll_form" class="tab-pane fade show active h-100">
+			<div id="coll_form" class="tab-pane fade h-100">
 {#			<div id="coll_form" class="tab-pane fade h-100">#}
 		    <form id="collection_form" method="POST" enctype="multipart/form-data">
 		    {% csrf_token %}
@@ -225,8 +226,7 @@
 	          </form>
 		    </div>
 			</div> {# coll_form #}
-			<div id="coll_builder" class="tab-pane fade h-100" style="height: auto; position:relative;">
-{#			<div id="coll_builder" class="tab-pane fade show active h-100" style="height: auto; position:relative;">#}
+			<div id="coll_builder" class="tab-pane fade show active h-100" style="height: auto; position:relative;">
 				<div class="row">
 					<div class="col-sm-7">
 		        <h5 class="bg-lighterblue">Datasets</h5>
@@ -243,10 +243,10 @@
 		            </select>
 		          </span>
 		          <a href="javascript:{ addDataset() }" class="">
-		            <i class="fas fa-plus-square linky"></i> add</a>
+		            <i class="fas fa-plus-square linky"></i> add to collection</a>
 		        </p>
 						{# id, label, title, description, creator, create_date, webpage, numrows, datatype #}
-		        <div id="coll_dscards_create">
+		        <div id="coll_dscards">
 		          {% if coll_dsset|length == 0 %}<p id="msg" class="font-italic smaller">None yet...</p>{% endif %}
 		          {% for d in coll_dsset %}
 		            <div class="ds_card {% if forloop.first %}ds_card_first{% endif %}">
@@ -262,9 +262,7 @@
 											<a href="#" onclick="confirmRemove({{ d.id }}, '{{ object.id }}', this)" class="float-end">
 											    <i class="fas fa-minus-square" style="color:#336699"></i> remove
 											</a>
-{#		                <a href="{% url 'collection:remove-ds' ds_id=d.id coll_id=object.id %}" class="float-end">#}
-{#		                  <i class="fas fa-minus-square" style="color:#336699"></i> remove</a>#}
-		                </p>
+ 		                </p>
 		              </div>
 		            </div>
 		          {% endfor %}
@@ -286,7 +284,7 @@
 						</div>
 					</div>
 				</div>
-			</div> {# coll_builder #}
+			</div>
 			<div id="coll_conflator" class="tab-pane fade h-100" style="height: auto; position:relative;">
 				<h4>DS Collection functionality</h4>
 				<p>Seed dataset id: <input type="text" id="seed_id"/></p>
@@ -444,8 +442,7 @@
             +'<a href="javascript:{ removeDataset('+d.id+') }" class="float-end">'
               +'<i class="fas fa-minus-square" style="color:#336699"></i> remove</a>'
           +'</p></div></div>'
-    $("#coll_dscards_create").append(card)
-    // console.log(card)
+    $("#coll_dscards").append(card)
   }
 
   // adds, displays single dataset
@@ -459,7 +456,7 @@
 	        listDataset(result.dataset);
           {#$("#ds_sequence").html(result.dataset.sequence === 1?'Seed':'')#}
 	      } else if(result.status === 'already_added') {
-	        console.log('Dataset already in the collection');
+	        alert('Dataset already in the collection');
 	      }
 	    },
 	    error: function(xhr, status, error) {

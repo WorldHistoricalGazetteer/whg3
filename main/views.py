@@ -82,18 +82,35 @@ def dataset_list(request):
   return render(request, 'lists/dataset_list.html',
                 {'datasets': user_datasets, 'is_admin': is_admin, 'section': 'datasets'})
 
-def collection_list(request, collection_class="place"):
+# def collection_list(request, collection_class="place"):
+# def collection_list(request, *args, **kwargs):
+#   print('collection_list() kwargs', kwargs)
+#   collection_class = kwargs.get('collection_class')
+#   is_admin = request.user.groups.filter(name='whg_admins').exists()
+#
+#   # Set filter criteria based on collection_type
+#   if collection_class.lower() == 'place':
+#     filter_criteria = {'owner': request.user, 'collection_class': 'place'}
+#   elif collection_class.lower() == 'dataset':
+#     filter_criteria = {'owner': request.user, 'collection_class': 'dataset'}
+#   else:
+#     filter_criteria = {'owner': request.user}
+#
+#   user_collections = get_objects_for_user(Collection, request.user, filter_criteria, is_admin)
+#
+#   return render(request, 'lists/collection_list.html',
+#                 {'collections': user_collections, 'is_admin': is_admin, 'section': 'collections'})
+
+def collection_list(request, *args, **kwargs):
+  collection_class = kwargs.get('collection_class')
   is_admin = request.user.groups.filter(name='whg_admins').exists()
 
-  # Set filter criteria based on collection_type
-  if collection_class.lower() == 'place':
-    filter_criteria = {'owner': request.user, 'collection_class': 'place'}
-  elif collection_class.lower() == 'dataset':
-    filter_criteria = {'owner': request.user, 'collection_class': 'dataset'}
+  if is_admin:
+    # Admins see all Collections of the specified class
+    user_collections = Collection.objects.filter(collection_class=collection_class)
   else:
-    filter_criteria = {'owner': request.user}
-
-  user_collections = get_objects_for_user(Collection, request.user, filter_criteria, is_admin)
+    # Non-admins see only their Collections of the specified class
+    user_collections = Collection.objects.filter(collection_class=collection_class, owner=request.user)
 
   return render(request, 'lists/collection_list.html',
                 {'collections': user_collections, 'is_admin': is_admin, 'section': 'collections'})

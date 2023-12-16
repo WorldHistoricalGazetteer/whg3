@@ -343,31 +343,6 @@ def indexToBuilder(dsid, idx='builder'):
 
     print(f"Indexing complete. Total indexed places: {success}. Failed documents: {len(failed)}")
 
-# def indexToBuilder(dsid, idx='builder'):
-#   from django.conf import settings
-#   es = settings.ES_CONN
-#   from places.models import Place
-#   from datasets.models import Dataset
-#   dslabel = Dataset.objects.get(id=dsid).label
-#   qs=Place.objects.filter(dataset=dslabel)
-#   import sys, json
-#   print('indexing '+dslabel+' to '+idx)
-#   for place in qs:
-#     pobj = makeDoc(place)
-#     for n in pobj['names']:
-#       pobj['searchy'].append(n['toponym'])
-#     # add its title
-#     if place.title not in pobj['searchy']:
-#       pobj['searchy'].append(place.title)
-#     #index it
-#     try:
-#       res = es.index(index=idx, body=json.dumps(pobj))
-#     except:
-#       print('failed indexing '+str(place.id), sys.exc_info())
-#       pass
-#     place.idx_builder = True
-#     place.save()
-
 # ***
 # index docs given place_id list
 # ***

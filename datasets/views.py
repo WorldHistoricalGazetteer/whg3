@@ -40,7 +40,7 @@ from datasets.static.hashes import mimetypes_plus as mthash_plus
 from datasets.static.hashes.parents import ccodes as cchash
 
 # NB these task names ARE in use; they are generated dynamically
-from datasets.tasks import align_wdlocal, align_idx, align_tgn, maxID
+from datasets.tasks import align_wdlocal, align_idx, maxID
 
 # from datasets.update import deleteFromIndex
 from datasets.utils import *
@@ -847,7 +847,7 @@ def write_wd_pass0(request, tid):
 """
   ds_recon()
   initiates & monitors Celery tasks against Elasticsearch indexes
-  i.e. align_[wdlocal | idx | tgn ] in tasks.py
+  i.e. align_[wdlocal | wd | builder] in tasks.py
   url: datasets/{ds.id}/reconcile ('ds_reconcile'; from ds_addtask.html)
   params: pk (dataset id), auth, region, userarea, geom, scope
   each align_{auth} task runs matching es_lookup_{auth}() and writes Hit instances
@@ -890,7 +890,7 @@ def ds_recon(request, pk):
 
     print('ds_recon() scope', scope)
     print('ds_recon() auth', auth)
-    # which task? wdlocal, tgn, idx, whg (future)
+    # which task? wdlocal, idx, builder
     func = eval('align_'+auth)
 
     # TODO: let this vary per task?
@@ -914,7 +914,7 @@ def ds_recon(request, pk):
 
     # initiate celery/redis task
     # 2023-12-13 new options for reconciliation
-    # NB 'func' resolves to align_wdlocal(), align_idx(), align_collection() or align_self()
+    # NB 'func' resolves to align_wdlocal(), align_idx(), align_collection()
     # NB#2 the dataset id is both positional and a keyword **intentionally** -
     # required to generate a useful result record
     try:
