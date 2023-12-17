@@ -47,15 +47,27 @@ import random
 
 class GalleryView(ListAPIView):
     pagination_class = PageNumberPagination
-    pagination_class.page_size = 9
+    pagination_class.page_size = 6
 
     def get_queryset(self):
         gallery_type = self.kwargs.get('type')
         model = Collection if gallery_type == 'collections' else Dataset
         
-        # TEXT FILTERS
-        search_text = self.request.query_params.get('q', '') # Default to empty string
         filter = Q(public=True)
+        
+        # ADD COLLECTION CLASS FILTERS
+        classes = self.request.query_params.get('classes', '')
+        if classes:
+            class_list = classes.split(',')
+            classfilters = Q(collection_class__in=class_list)
+            if 'student' in class_list:
+                classfilters |= Q(nominated=True)
+            filter &= classfilters
+        elif gallery_type == 'collections':
+            return model.objects.none()
+        
+        # ADD TEXT FILTERS
+        search_text = self.request.query_params.get('q', '') # Default to empty string
         if search_text:
             filter &= (Q(title__icontains=search_text) | Q(description__icontains=search_text))
         queryset = model.objects.filter(filter)

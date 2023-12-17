@@ -3,6 +3,7 @@
 import './extend-maptiler-sdk.js'; // Adds 'fitViewport' method
 import datasetLayers from './mapLayerStyles';
 import nearPlaceLayers from './nearPlaceLayerStyles';
+import throttle from 'lodash/throttle';
 import { attributionString, deepCopy, geomsGeoJSON } from './utilities';
 import { bbox } from './6.5.0_turf.min.js';
 import { CustomAttributionControl } from './customMapControls';
@@ -131,25 +132,10 @@ function waitMapLoad() {
 				compact: true,
 		    	autoClose: mapParameters.controls.attribution.open === false,
 			}), 'bottom-right');
-
-			let throttleTimeout;
-			let isThrottled = false;
-			function dateRangeChanged() { // Throttle date slider changes
-			    const throttleInterval = 300;
-			    if (!isThrottled) {
-			        filterSources();
-			        isThrottled = true;
-			        throttleTimeout = setTimeout(() => {
-			            isThrottled = false;
-			        }, throttleInterval);
-			    } else {
-			        clearTimeout(throttleTimeout);
-			        throttleTimeout = setTimeout(() => {
-			            isThrottled = false;
-			        	filterSources();
-			        }, throttleInterval);
-			    }
-			}
+			
+			const dateRangeChanged = throttle(() => { // Uses imported lodash function
+			    filterSources();
+			}, 300);
 
 			if (!!mapParameters.controls.temporal) {
 				let datelineContainer = document.createElement('div');

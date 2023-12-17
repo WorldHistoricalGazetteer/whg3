@@ -70,16 +70,10 @@ class DatasetGalleryView(ListView):
   def get_context_data(self, *args, **kwargs):
     context = super(DatasetGalleryView, self).get_context_data(*args, **kwargs)
     
-    context['num_datasets'] = Dataset.objects.filter(public=True).count()
-    context['num_collections'] = Collection.objects.filter(public=True).count()
+    context['active_tab'] = self.kwargs.get('gallery_type', 'datasets')  # datasets|collections: default to 'datasets' if not provided
     
-    context['page_controls'] = [
-        ['skip-first', 'First page'],
-        ['skip-previous', 'Previous page'],
-        'dropbox',
-        ['skip-next', 'Next page'],
-        ['skip-last', 'Last page']
-    ]    
+    context['num_datasets'] = Dataset.objects.filter(public=True).count()
+    context['num_collections'] = Collection.objects.filter(public=True).count()   
     
     regions = Area.objects.all().filter((Q(type='predefined'))).values('id','type','title','geojson')
     countries = Area.objects.all().filter((Q(type='country'))).values('id','type','title','ccodes','geojson')

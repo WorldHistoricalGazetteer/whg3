@@ -2,6 +2,7 @@
 
 import datasetLayers from './mapLayerStyles';
 import Dateline from './dateline';
+import throttle from 'lodash/throttle';
 import { bbox, centroid } from './6.5.0_turf.min.js';
 import { attributionString, geomsGeoJSON } from './utilities';
 import { CustomAttributionControl } from './customMapControls';
@@ -88,25 +89,10 @@ function waitMapLoad() {
 			mappy.on('draw.create', initiateSearch); // draw events fail to register if not done individually
 			mappy.on('draw.delete', initiateSearch);
 			mappy.on('draw.update', initiateSearch);
-
-			let throttleTimeout;
-			let isThrottled = false;
-			function dateRangeChanged() { // Throttle date slider changes
-			    const throttleInterval = 300;
-			    if (!isThrottled) {
-			        initiateSearch();
-			        isThrottled = true;
-			        throttleTimeout = setTimeout(() => {
-			            isThrottled = false;
-			        }, throttleInterval);
-			    } else {
-			        clearTimeout(throttleTimeout);
-			        throttleTimeout = setTimeout(() => {
-			            isThrottled = false;
-			            initiateSearch();
-			        }, throttleInterval);
-			    }
-			}
+			
+			const dateRangeChanged = throttle(() => { // Uses imported lodash function
+			    initiateSearch();
+			}, 300); 
         
 			updateSearchState(true);
 

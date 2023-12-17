@@ -2,6 +2,7 @@
 
 import Dateline from './dateline';
 import generateMapImage from './saveMapImage';
+import throttle from 'lodash/throttle';
 import { table } from './tableFunctions';
 import { scrollToRowByProperty } from './tableFunctions-extended';
 import { acmeStyleControl, CustomAttributionControl } from './customMapControls';
@@ -254,25 +255,10 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 		compact: true,
     	autoClose: mapParameters.controls.attribution.open === false,
 	}), 'bottom-right');
-
-	let throttleTimeout;
-	let isThrottled = false;
-	function dateRangeChanged() { // Throttle date slider changes
-	    const throttleInterval = 300;
-	    if (!isThrottled) {
-	        toggleFilters(true, mappy, table);
-	        isThrottled = true;
-	        throttleTimeout = setTimeout(() => {
-	            isThrottled = false;
-	        }, throttleInterval);
-	    } else {
-	        clearTimeout(throttleTimeout);
-	        throttleTimeout = setTimeout(() => {
-	            isThrottled = false;
-	            toggleFilters(true, mappy, table);
-	        }, throttleInterval);
-	    }
-	}
+			
+	const dateRangeChanged = throttle(() => { // Uses imported lodash function
+	    toggleFilters(true, mappy, table);
+	}, 300);
 
 	if (window.dateline) {
 		window.dateline.destroy();
