@@ -89,6 +89,23 @@ class Dataset(models.Model):
     # return feat if dsgeoms.count() > 0 else None
 
   @property
+  def builder_hastask(self):
+    hastask = False
+    if self.tasks.filter(task_name='align_collection').count() > 0:
+      hastask = True
+    return hastask
+
+  @property
+  def builder_remaining(self):
+    remaining = 0
+    if self.tasks.filter(task_name='align_collection').count() > 0:
+        remaining = Hit.objects.filter(
+            task_id=self.tasks.filter(task_name='align_collection')[0].task_id,
+            reviewed=False
+        ).values("place_id").distinct().count()
+    return remaining
+
+  @property
   def convex_hull(self):
     dsgeoms = PlaceGeom.objects.filter(place__dataset=self.label)
     geometry = None
@@ -122,6 +139,7 @@ class Dataset(models.Model):
     teamusers = User.objects.filter(id__in=team) | User.objects.filter(groups__name='whg_team')
     return teamusers
 
+  # download time estimate
   @property
   def dl_est(self):
     file = self.files.all().order_by('id')[0]
@@ -207,21 +225,6 @@ class Dataset(models.Model):
     placeids = Place.objects.filter(dataset=self.label).values_list('id', flat=True)
     return PlaceLink.objects.filter(place_id__in=placeids, jsonb__icontains='Q').count()
 
-  # status of each recon task type
-  # @property
-  # def recon_status(self):
-  #   tuple_id = f'({self.id},)'
-  #   print(tuple_id)
-  #   tasks = TaskResult.objects.filter(
-  #     task_args = tuple_id,
-  #     task_name__startswith='align',
-  #     status='SUCCESS')
-  #   result = {}
-  #   for t in tasks:
-  #     result[t.task_name[6:]] = Hit.objects.filter(task_id=t.task_id,reviewed=False).values("place_id").distinct().count()
-  #
-  #   return result
-
   @property
   def recon_status(self):
     # Format task_args as a string representation of a tuple
@@ -266,10 +269,8 @@ class Dataset(models.Model):
   @property
   def tasks(self):
     args_with_quotes = f'"({self.id},)"'
-    return TaskResult.objects.filter(task_args=args_with_quotes,task_name__startswith='align')
+    return TaskResult.objects.filter(task_args=args_with_quotes, task_name__startswith='align')
 
-  # "(1556,)"
-  # "{'ds': 1556, 'dslabel': 'dj4test1', 'owner': 1, 'user': 1, 'bounds': {'type': ['userarea'], 'id': ['0']}, 'aug_geom': 'on', 'scope': 'all', 'lang': 'en', 'test': 'off'}"
   # tasks stats
   @property
   def taskstats(self):

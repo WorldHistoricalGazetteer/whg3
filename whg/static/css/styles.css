@@ -788,12 +788,10 @@ em { color: #993333;}
   /*box-shadow: 3px 3px #eee;*/
   font-size: .8rem;
 }
-#coll_dscards { 
-  position:absolute;
+#coll_dscards {
+  flex-grow: 1;
+  overflow-y: auto;
   max-height: 100%;
-  overflow-y: auto; 
-  width: 95%;
-  /*max-width: 95%;*/
 }
 #coll_dscards_create { 
   /*position:absolute;*/
