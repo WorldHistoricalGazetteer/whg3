@@ -7,10 +7,13 @@ User = get_user_model()
 from django.conf import settings
 es = settings.ES_CONN
 from django.http import JsonResponse
+from elasticsearch8.helpers import bulk
 from places.models import Place
+# from datasets.models import Dataset
 from datasets.static.hashes.parents import ccodes as cchash
 from copy import deepcopy
 import sys
+
 # given pid, gets db and index records
 # called by: elastic/index_admin.html
 #
@@ -170,12 +173,9 @@ def alt_parents(place, parent_pid):
 #
 #   print('adding place doc', childobj, 'as child of', parent_id)
 
-
-
 """
 topParent(parents, form)
 parents is set or list 
-
 """
 def topParent(parents, form):
   #print('topParent():', parents)   
@@ -302,14 +302,56 @@ def profileHit(hit):
   return profile
 
 # ***
+# index dataset to builder given ds.id list
+# ***
+#
+from elasticsearch8.helpers import bulk
+# from places.models import Place
+# from datasets.models import Dataset
+# from django.conf import settings
+
+def indexToBuilder(dsid, idx='builder'):
+    es = settings.ES_CONN
+    from elasticsearch8.helpers import bulk
+    from datasets.models import Dataset
+    from places.models import Place
+    dslabel = Dataset.objects.get(id=dsid).label
+    qs = Place.objects.filter(dataset=dslabel).iterator()
+
+    def gen_data():
+        for place in qs:
+            pobj = makeDoc(place)
+            pobj['searchy'] += [n['toponym'] for n in pobj['names'] if n['toponym'] not in pobj['searchy']]
+            if place.title not in pobj['searchy']:
+                pobj['searchy'].append(place.title)
+            # Create action for bulk API
+            yield {
+                '_op_type': 'index',
+                '_index': idx,
+                '_id': place.id,
+                '_source': pobj,
+            }
+
+    # Perform bulk indexing
+    success, failed = bulk(es, gen_data(), raise_on_error=False)
+
+    # Update indexed status in database
+    if success:
+        Place.objects.filter(id__in=[place.id for place in qs]).update(idx_builder=True)
+
+
+
+    print(f"Indexing complete. Total indexed places: {success}. Failed documents: {len(failed)}")
+
+# ***
 # index docs given place_id list
 # ***
-# TODO:
+#
 def indexSomeParents(es, idx, pids):
   from datasets.tasks import maxID
   from django.shortcuts import get_object_or_404
   from places.models import Place
-  import sys,json
+  import sys, json
   whg_id=maxID(es,idx)
   for pid in pids:
     place=get_object_or_404(Place,id=pid)
@@ -694,7 +736,7 @@ def uriMaker(place):
 # ***
 def makeDoc(place):
   fclasses_value = place.fclasses if place.fclasses not in [None, []] else ["X"]
-  print('makeDoc fclasses', fclasses_value)
+  # print('makeDoc fclasses', fclasses_value)
   es_doc = {
     "relation": {},
     "children": [],

@@ -42,6 +42,90 @@ from places.models import Place
 es = settings.ES_CONN
 
 """
+  Adds a dataset's places to the builder index
+  cases: 1) initial seed; 2) post-reconciliation
+"""
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+
+def index_to_builder(request, idx='builder'):
+  if request.method == 'POST':
+    collection_id = request.POST.get('collection_id')
+    dataset_id = request.POST.get('dataset_id')
+    # Call the new indexing function
+    result = index_dataset_to_builder(dataset_id, collection_id, idx)
+    return JsonResponse(result)
+  else:
+    return JsonResponse({"result": "error", "message": "Invalid request"})
+
+
+# @shared_task()
+# def index_to_builder(request, idx='builder'):
+@csrf_exempt  # necessary?
+def index_dataset_to_builder(dataset_id, collection_id, idx='builder'):
+  print('in index_to_builder()', dataset_id, collection_id)
+  es = settings.ES_CONN
+  # Fetch dataset and collection
+  try:
+      dataset = Dataset.objects.get(pk=dataset_id, idx_builder=False)
+      collection = Collection.objects.get(pk=collection_id)
+  except Dataset.DoesNotExist:
+      print(f"Dataset with ID {dataset_id} does not exist or is already indexed.")
+      return JsonResponse({"result": "error", "message": "Dataset does not exist or is already indexed"})
+
+  places_to_index = Place.objects.filter(dataset=dataset, indexed=False, idx_pub=False)
+  place_ids_to_index = list(places_to_index.values_list('id', flat=True))
+
+  # convert a Place into a dict that's ready for indexing
+  def make_bulk_doc(place):
+      doc = makeDoc(place)
+      doc['collection_id'] = collection_id
+      # Add names and title to search field
+      searchy_content = set(doc.get('searchy', []))
+      searchy_content.update(n['toponym'] for n in doc['names'])
+      searchy_content.add(doc['title'])
+      doc['searchy'] = list(searchy_content)
+      return {
+          "_index": idx,
+          "_id": place.id,  # place ID as document ID
+          "_source": doc,
+      }
+
+  actions = (make_bulk_doc(place) for place in places_to_index.iterator())
+
+  # Perform the bulk index operation and collect the response
+  successes, failed_docs = 0, []
+  try:
+    with transaction.atomic():  # Use a transaction to prevent race conditions
+        for ok, action in streaming_bulk(es, actions, index=idx, raise_on_error=False):
+            if ok:
+                successes += 1
+            else:
+                failed_docs.append(action)
+  except Exception as e:
+    # Log the exception and return an error response
+    print(f"Exception during indexing: {e}")
+    return {"result": "error", "message": str(e)}
+
+  # Update the idx_builder flag for all successful Place objects using the Place IDs
+  Place.objects.filter(id__in=place_ids_to_index).update(idx_builder=True)
+
+  print(f"Indexing complete. Total indexed places: {successes}. Failed documents: {len(failed_docs)}")
+  if failed_docs:
+      print(f"Failed documents: {failed_docs}")
+
+  dataset.idx_builder = True
+  if collection.datasets.count() == 1:
+    dataset.ds_status = 'builder_seed'
+  dataset.save()
+
+  return JsonResponse({"result": "success",
+                       "indexed": successes,
+                       "failed": len(failed_docs)
+                       })
+
+"""
   adds newly public dataset to 'pub' index
   making it accessible to search (and API eventually)
 """
@@ -713,13 +797,35 @@ def get_bounds_filter(bounds, idx):
 #from datasets.tasks import get_bounds_filter
 
 """
+performs elasticsearch > builder queries
+from align_collection()
+"""
+def es_lookup_builder(qobj, *args, **kwargs):
+  #bounds = {'type': ['userarea'], 'id': ['0']}
+  bounds = kwargs['bounds']
+  print('kwargs in es_lookup_builder()', kwargs)
+
+"""
+manage align/reconcile to builder index 
+"""
+@shared_task(name="align_collection")
+def align_collection(*args, **kwargs):
+  task_id = align_wdlocal.request.id
+  ds = get_object_or_404(Dataset, id=kwargs['ds'])
+  user = get_object_or_404(User, pk=kwargs['user'])
+  bounds = kwargs['bounds']
+  scope = kwargs['scope']
+  print('kwargs from align_collection() task', kwargs)
+
+
+"""
 performs elasticsearch > wdlocal queries
 from align_wdlocal()
-
 """
 def es_lookup_wdlocal(qobj, *args, **kwargs):
   #bounds = {'type': ['userarea'], 'id': ['0']}
   bounds = kwargs['bounds']
+  print('kwargs in es_lookup_wdlocal()', kwargs)
   hit_count = 0
 
   # empty result object
@@ -1489,270 +1595,3 @@ def align_idx(*args, **kwargs):
 
   return hit_parade['summary']
 
-
-"""
-perform elasticsearch > tgn queries
-from align_tgn()
-
-"""
-def es_lookup_tgn(qobj, *args, **kwargs):
-  print('es_lookup_tgn qobj', qobj)
-  bounds = kwargs['bounds']
-  hit_count = 0
-
-  # empty result object
-  result_obj = {
-    'place_id': qobj['place_id'], 'hits': [],
-    'missed': -1, 'total_hits': -1
-  }
-
-  # array (includes title)
-  variants = list(set(qobj['variants']))
-
-  # bestParent() coalesces mod. country and region; countries.json
-  parent = bestParent(qobj)
-
-  # pre-computed in sql
-  # minmax = row['minmax']
-
-  # getty aat numerical identifiers
-  placetypes = list(set(qobj['placetypes']))
-
-  # base query: name, type, parent, bounds if specified
-  # geo_polygon filter added later for pass1; used as-is for pass2
-  qbase = {"query": {
-    "bool": {
-      "must": [
-        {"terms": {"names.name": variants}},
-        {"terms": {"types.id": placetypes}}
-      ],
-      "should": [
-        {"terms": {"parents": parent}}
-        # ,{"terms": {"types.id":placetypes}}
-      ],
-      "filter": [get_bounds_filter(bounds, 'tgn')] if bounds['id'] != ['0'] else []
-    }
-  }}
-
-  qbare = {"query": {
-    "bool": {
-      "must": [
-        {"terms": {"names.name": variants}}
-      ],
-      "should": [
-        {"terms": {"parents": parent}}
-      ],
-      "filter": [get_bounds_filter(bounds, 'tgn')] if bounds['id'] != ['0'] else []
-    }
-  }}
-
-  # grab deep copy of qbase, add w/geo filter if 'geom'
-  q1 = deepcopy(qbase)
-
-  # create 'within polygon' filter and add to q1
-  if 'geom' in qobj.keys():
-    location = qobj['geom']
-    # always polygon returned from hully(g_list)
-    filter_within = {"geo_polygon": {
-      "repr_point": {
-        "points": location['coordinates']
-      }
-    }}
-    q1['query']['bool']['filter'].append(filter_within)
-
-  # /\/\/\/\/\/
-  # pass1: must[name]; should[type,parent]; filter[bounds,geom]
-  # /\/\/\/\/\/
-  # print('q1',q1)
-  try:
-    res1 = es.search(index="tgn", body=q1)
-    hits1 = res1['hits']['hits']
-  except:
-    print('pass1 error:', sys.exc_info())
-  if len(hits1) > 0:
-    for hit in hits1:
-      hit_count += 1
-      hit['pass'] = 'pass1'
-      result_obj['hits'].append(hit)
-  elif len(hits1) == 0:
-    # print('q1 no result:)',q1)
-    # /\/\/\/\/\/
-    # pass2: revert to qbase{} (drops geom)
-    # /\/\/\/\/\/
-    q2 = qbase
-    try:
-      res2 = es.search(index="tgn", body=q2)
-      hits2 = res2['hits']['hits']
-    except:
-      print('pass2 error:', sys.exc_info())
-    if len(hits2) > 0:
-      for hit in hits2:
-        hit_count += 1
-        hit['pass'] = 'pass2'
-        result_obj['hits'].append(hit)
-    elif len(hits2) == 0:
-      # print('q2 no result:)',q2)
-      # /\/\/\/\/\/
-      # pass3: revert to qbare{} (drops placetype)
-      # /\/\/\/\/\/
-      q3 = qbare
-      # print('q3 (bare)',q3)
-      try:
-        res3 = es.search(index="tgn", body=q3)
-        hits3 = res3['hits']['hits']
-      except:
-        print('pass3 error:', sys.exc_info())
-      if len(hits3) > 0:
-        for hit in hits3:
-          hit_count += 1
-          hit['pass'] = 'pass3'
-          result_obj['hits'].append(hit)
-      else:
-        # no hit at all, name & bounds only
-        # print('q3 no result:)',q3)
-        result_obj['missed'] = qobj['place_id']
-  result_obj['hit_count'] = hit_count
-  return result_obj
-
-
-"""
-manage align/reconcile to tgn
-get result_obj per Place via es_lookup_tgn()
-parse, write Hit records for review
-
-"""
-@shared_task(name="align_tgn")
-def align_tgn(pk, *args, **kwargs):
-  task_id = align_tgn.request.id
-  ds = get_object_or_404(Dataset, id=pk)
-  user = get_object_or_404(User, pk=kwargs['user'])
-  bounds = kwargs['bounds']
-  scope = kwargs['scope']
-  print('args, kwargs from align_tgn() task', args, kwargs)
-  hit_parade = {"summary": {}, "hits": []}
-  [nohits, tgn_es_errors, features] = [[], [], []]
-  [count_hit, count_nohit, total_hits, count_p1, count_p2, count_p3] = [0, 0, 0, 0, 0, 0]
-  start = datetime.datetime.now()
-
-  # queryset depends 'scope'
-  qs = ds.places.all() if scope == 'all' else \
-    ds.places.filter(~Q(review_tgn=1))
-
-  for place in qs:
-    # place=get_object_or_404(Place,id=131735)
-    # build query object
-    qobj = {"place_id": place.id,
-            "src_id": place.src_id,
-            "title": place.title}
-    [variants, geoms, types, ccodes, parents] = [[], [], [], [], []]
-
-    # ccodes (2-letter iso codes)
-    for c in place.ccodes:
-      ccodes.append(c.upper())
-    qobj['countries'] = place.ccodes
-
-    # types (Getty AAT identifiers)
-    # all have 'aat:' prefixes
-    for t in place.types.all():
-      # types.append('aat:'+t.jsonb['identifier'])
-      types.append(t.jsonb['identifier'])
-    qobj['placetypes'] = types
-
-    # names
-    for name in place.names.all():
-      variants.append(name.toponym)
-    qobj['variants'] = variants
-
-    # parents
-    # TODO: other relations
-    if len(place.related.all()) > 0:
-      for rel in place.related.all():
-        if rel.jsonb['relationType'] == 'gvp:broaderPartitive':
-          parents.append(rel.jsonb['label'])
-      qobj['parents'] = parents
-    else:
-      qobj['parents'] = []
-
-    # geoms
-    if len(place.geoms.all()) > 0:
-      g_list = [g.jsonb for g in place.geoms.all()]
-      print('g_list', g_list)
-      # make everything a simple polygon hull for spatial filter
-      qobj['geom'] = hully(g_list)
-
-    ## run pass1-pass3 ES queries
-    # print('qobj in align_tgn()',qobj)
-    result_obj = es_lookup_tgn(qobj, bounds=bounds)
-
-    if result_obj['hit_count'] == 0:
-      count_nohit += 1
-      nohits.append(result_obj['missed'])
-      print('no hits in align_tgn() for', place.id, place.title)
-    else:
-      # place/task status 0 (unreviewed hits)
-      place.review_tgn = 0
-      place.save()
-      count_hit += 1
-      total_hits += len(result_obj['hits'])
-      # print("hit[0]: ",result_obj['hits'][0]['_source'])
-      # print('hits from align_tgn',result_obj['hits'])
-      for hit in result_obj['hits']:
-        if hit['pass'] == 'pass1':
-          count_p1 += 1
-        elif hit['pass'] == 'pass2':
-          count_p2 += 1
-        elif hit['pass'] == 'pass3':
-          count_p3 += 1
-        hit_parade["hits"].append(hit)
-        # correct lower case 'point' in tgn index
-        # TODO: fix in index
-        if 'location' in hit['_source'].keys():
-          loc = hit['_source']['location']
-          loc['type'] = "Point"
-        else:
-          loc = {}
-        new = Hit(
-          authority='tgn',
-          authrecord_id=hit['_id'],
-          dataset=ds,
-          place=place,
-          task_id=align_tgn.request.id,
-          query_pass=hit['pass'],
-          # prepare for consistent display in review screen
-          json=normalize(hit['_source'], 'tgn'),
-          src_id=qobj['src_id'],
-          score=hit['_score'],
-          geom=loc,
-          reviewed=False,
-          matched=False,
-        )
-        new.save()
-  end = datetime.datetime.now()
-
-  print('tgn ES errors:', tgn_es_errors)
-  hit_parade['summary'] = {
-    'count': qs.count(),
-    'got_hits': count_hit,
-    'total_hits': total_hits,
-    'pass1': count_p1,
-    'pass2': count_p2,
-    'pass3': count_p3,
-    'no_hits': {'count': count_nohit},
-    'elapsed': elapsed(end - start)
-  }
-  print("summary returned", hit_parade['summary'])
-
-  # create log entry and update ds status
-  post_recon_update(ds, user, 'tgn')
-
-  # email owner when complete
-  task_emailer.delay(
-    task_id,
-    ds.label,
-    user.name,
-    user.email,
-    count_hit,
-    total_hits
-  )
-
-  return hit_parade['summary']

@@ -40,7 +40,7 @@ from datasets.static.hashes import mimetypes_plus as mthash_plus
 from datasets.static.hashes.parents import ccodes as cchash
 
 # NB these task names ARE in use; they are generated dynamically
-from datasets.tasks import align_wdlocal, align_idx, align_tgn, maxID
+from datasets.tasks import align_wdlocal, align_idx, maxID
 
 # from datasets.update import deleteFromIndex
 from datasets.utils import *
@@ -831,7 +831,7 @@ def write_wd_pass0(request, tid):
 """
   ds_recon()
   initiates & monitors Celery tasks against Elasticsearch indexes
-  i.e. align_[wdlocal | idx | tgn ] in tasks.py
+  i.e. align_[wdlocal | wd | builder] in tasks.py
   url: datasets/{ds.id}/reconcile ('ds_reconcile'; from ds_addtask.html)
   params: pk (dataset id), auth, region, userarea, geom, scope
   each align_{auth} task runs matching es_lookup_{auth}() and writes Hit instances
@@ -854,6 +854,7 @@ def ds_recon(request, pk):
     # previous successful task of this type?
     #   wdlocal? archive previous, scope = unreviewed
     #   idx? scope = unindexed
+    collection_id = request.POST.get('collection_id')
     previous = ds.tasks.filter(task_name='align_'+auth,status='SUCCESS')
     prior = request.POST['prior'] if 'prior' in request.POST else 'na'
     if previous.count() > 0:
@@ -873,7 +874,7 @@ def ds_recon(request, pk):
 
     print('ds_recon() scope', scope)
     print('ds_recon() auth', auth)
-    # which task? wdlocal, tgn, idx, whg (future)
+    # which task? wdlocal, idx, builder
     func = eval('align_'+auth)
 
     # TODO: let this vary per task?
@@ -896,7 +897,8 @@ def ds_recon(request, pk):
       return redirect('/datasets/'+str(ds.id)+'/reconcile')
 
     # initiate celery/redis task
-    # NB 'func' resolves to align_wdlocal() or align_idx()
+    # 2023-12-13 new options for reconciliation
+    # NB 'func' resolves to align_wdlocal(), align_idx(), align_collection()
     # NB#2 the dataset id is both positional and a keyword **intentionally** -
     # required to generate a useful result record
     try:
@@ -911,6 +913,7 @@ def ds_recon(request, pk):
         scope=scope,
         lang=language,
         test=test,
+        collection_id=collection_id
       )
       messages.add_message(request, messages.INFO, "<span class='text-danger'>Your reconciliation task is under way.</span><br/>When complete, you will receive an email and if successful, results will appear below (you may have to refresh screen). <br/>In the meantime, you can navigate elsewhere.")
       return redirect('/datasets/'+str(ds.id)+'/reconcile')

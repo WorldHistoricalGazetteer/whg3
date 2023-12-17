@@ -1036,7 +1036,7 @@
 
 	// adds all dataset places to placelist
 	function addPlaces(dsid){
-		let url = "/collections/add_ds/"+"{{ object.id }}"+"/"+dsid
+		let url = "/collections/add_dsplaces/"+"{{ object.id }}"+"/"+dsid
 		// collection.views.add_dataset
 		{#console.log('adding dataset w/o save',dsid, {{ object.id }}, url)#}
 		document.location.href = url

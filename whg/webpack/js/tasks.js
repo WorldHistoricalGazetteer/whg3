@@ -126,38 +126,15 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		$("#btn_cancel").on('click', function() {
 			location.reload();
 		})
-		
-		$('#recon_form').change(function() {
-			let task = $("input[name='recon']:checked").val();
-			if (task == 't_whg') {
-				$("#data_limiter").show()
-			} else {
-				$("#data_limiter").hide()
-			}
-		});
-		
-		$('#data_limiter').change(function() {
-			let coll = $("#select_colls").val();
-			let ds = $("#select_ds").val();
-			//huh = $(this)
-			//console.log('$(this)', $(this))
-			//console.log('coll, ds', coll, ds)
-		})
 
-		window.limiter = []
+		// window.limiter = []
 		// clear data limiter dropdown choice if other is used
-		$("#select_colls").change(function() {
-			$("#select_ds option[value=0]").prop('selected', true)
-			limiter = ['c', $(this).val()]
-			console.log('limiter:', limiter)
+		$("#select_colls").change(function(event) {
+			event.preventDefault()
+			$("#collection_id").val($(this).val())
+			console.log('recon to collection', $(this).val())
 		});
-		
-		$("#select_ds").change(function() {
-			$("#select_colls option[value=0]").prop('selected', true)
-			limiter = ['d', $(this).val()]
-			console.log('limiter:', limiter)
-		});
-		
+
 		// clear dropdown choice if other is used & render geometry
 		$("#select_region").change(function() {
 			$("#select_userarea option[value=0]").prop('selected', true)

@@ -28,9 +28,11 @@
     {% if action == 'update' %}
         Update Study Area
         <span class="text-danger">"{{ form.title.value }}"</span>
+	      {% comment %}
         <span class="ms-3 half">
             (<mark id="count_result">{{ object.count_public }}</mark> places from public datasets lie within this area)
         </span>
+        {% endcomment %}
         <a href="{% url 'areas:area-delete' object.id %}" class="float-end"
         title="Delete area feature" rel="tooltip" style="margin-top:-2px;">
         <i class="fas fa-trash linkyred"></i></a>
