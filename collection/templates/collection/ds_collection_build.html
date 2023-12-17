@@ -284,6 +284,9 @@
 		              <div class="ds_fields">
 		                <p class="my-1"><b>Description</b>: {{ d.description|truncatechars:150 }}</p>
 		                <p class="my-1"><b>Create date</b>: {{ d.create_date|date:"d M Y" }}</p>
+
+				              <p>has_task={{ d.builder_hastask }}; remaining={{ d.builder_remaining }}</p>
+
 		                <p class="my-1"><b># rows</b>: {{ d.numrows }}
 			                <span id="s_dsremove" class="float-end">
 											<a href="#" onclick="confirmRemove({{ d.id }}, '{{ object.id }}', this)">
@@ -513,7 +516,9 @@
 	  let selectedOption = $("#select_ds option:selected");
 	  let dsStatus = selectedOption.data('status');
 	  let dsTitle = selectedOption.data('title');
-
+		console.log('addDataset() selectedOption', selectedOption)
+		console.log('addDataset() dsStatus', dsStatus)
+		console.log('addDataset() dsTitle', dsTitle)
 	  // Generate the modal content based on the dataset status
 	  generateModalContent(dsStatus, dsTitle);
 
@@ -567,16 +572,6 @@
 	    $('#modal').modal('hide');
 	  });
 	}
-
-	{#function confirmRemove(dsId, collId, element) {#}
-  {#    console.log('dsId, collId', dsId, collId)#}
-	{#    if (confirm("Are you sure you want to remove this dataset?")) {#}
-	{#        var url = `/collections/remove_ds/${collId}/${dsId}`;#}
-	{#        window.location.href = url;#}
-	{#    } else {#}
-	{#        console.log("Removal canceled.");#}
-	{#    }#}
-	{# }#}
 
 	function confirmRemove(dsId, collId, element) {
 	    console.log('dsId, collId', dsId, collId)
