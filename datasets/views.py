@@ -9,7 +9,7 @@ User = get_user_model()
 from django.contrib.gis.geos import GEOSGeometry
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, F
 from django.db.utils import DataError
 from django.forms import modelformset_factory
 from django.http import HttpResponseServerError, HttpResponseRedirect, JsonResponse, HttpResponse
@@ -18,7 +18,10 @@ from django.test import Client
 from django.urls import reverse
 from django.views.generic import (CreateView, ListView, UpdateView, DeleteView, DetailView)
 from django_celery_results.models import TaskResult
+from django.core.serializers import serialize
 
+from django.db.models.functions import Cast
+from django.db.models import CharField, JSONField
 
 # external
 from celery import current_app as celapp
@@ -32,7 +35,7 @@ from pathlib import Path
 from shapely import wkt
 from shutil import copyfile
 
-from areas.models import Area
+from areas.models import Area, Country
 from collection.models import Collection, CollectionGroup
 from datasets.forms import HitModelForm, DatasetDetailModelForm, DatasetCreateModelForm, DatasetCreateEmptyModelForm
 from datasets.models import Dataset, Hit, DatasetFile
@@ -50,6 +53,8 @@ from main.models import Log, Comment
 from places.models import *
 from resources.models import Resource
 
+from api.views import AreaListView
+
 
 class DatasetGalleryView(ListView):
   redirect_field_name = 'redirect_to'
@@ -64,8 +69,53 @@ class DatasetGalleryView(ListView):
 
   def get_context_data(self, *args, **kwargs):
     context = super(DatasetGalleryView, self).get_context_data(*args, **kwargs)
-    # all public datasets
-    context['datasets'] = Dataset.objects.filter(public=True)
+    
+    context['active_tab'] = self.kwargs.get('gallery_type', 'datasets')  # datasets|collections: default to 'datasets' if not provided
+    
+    context['num_datasets'] = Dataset.objects.filter(public=True).count()
+    context['num_collections'] = Collection.objects.filter(public=True).count()   
+    
+    regions = Area.objects.all().filter((Q(type='predefined'))).values('id','type','title','geojson')
+    countries = Area.objects.all().filter((Q(type='country'))).values('id','type','title','ccodes','geojson')
+    country_codes = {country['id']: country['ccodes'] for country in countries}
+    country_geometries = {country['id']: GEOSGeometry(json.dumps(country['geojson'])) for country in countries}
+    
+    # TODO: This code block would be unnecessary if all predefined areas had populated ccodes in database
+    for region in regions:
+        region_geojson = GEOSGeometry(json.dumps(region['geojson']))
+        intersecting_ccodes = []
+    
+        # Check intersection with each country
+        for country_id, country_geometry in country_geometries.items():
+            if region_geojson.intersects(country_geometry):
+                intersecting_ccodes.extend(country_codes[country_id])
+    
+        region['ccodes'] = intersecting_ccodes
+            
+    # Transform lists for grouping in dropdown
+    regions = [{'id': region['id'], 'text': region['title'], 'ccodes': region['ccodes']} for region in sorted(regions, key=lambda x: x['title'])]
+    countries = [{'id': country['ccodes'][0], 'text': country['title']} for country in sorted(countries, key=lambda x: x['title'])]
+
+    dropdown_data = [{'text':'Regions', 'children': list(regions)}, {'text': 'Countries', 'children': list(countries)}]
+            
+    context['dropdown_data'] = json.dumps(dropdown_data, default=str)
+    
+    context['maptilerkey'] = settings.MAPTILER_KEY
+    
+    country_feature_collection = {
+        'type': 'FeatureCollection',
+        'features': []
+    }
+    
+    for country_id, geometry in country_geometries.items():
+        feature = {
+            'type': 'Feature',
+            'properties': {'ccode': country_codes[country_id][0]},
+            'geometry': json.loads(geometry.geojson)
+        }
+        country_feature_collection['features'].append(feature)
+    
+    context['country_feature_collection'] = json.dumps(country_feature_collection, default=str)
 
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
     return context

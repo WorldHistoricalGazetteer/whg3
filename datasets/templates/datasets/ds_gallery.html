@@ -7,176 +7,91 @@
 	{% load static %}
 	{% load dataset_extras %}
 	{% block extra_head %}
-	<style>
-		#essay_modal {font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-			font-size: 1.2rem;}
-		.gallery-banner-dataset {border-bottom: 1px solid lightgray;
-			background-color:#53A1DA; color: white;}
-		.ds-gallery {padding-right: 6px;}
-		.ds-card-gallery {
-			border: 1px gainsboro dashed;
-			height: 130px;
-			padding: .5rem;
-			overflow-y:auto;
-			box-shadow: 2px 2px 4px rgba(200, 200, 200, 0.5);
-			margin-bottom: .5rem;
-		}
-		.ds-card-gallery img {margin-left: 2px;}
-		.ds-card-gallery:hover {cursor: pointer; opacity:0.8;}
-		.ds-card-content h6 {font-size: .9rem;}
-		.ds-card-title {font-size: 1rem;}
-		.ds-card-owner {font-size: .9rem; font-variant: small-caps; color: #993333;}
-		.ds-card-blurb {line-height: 1rem; font-size: small;}
-	</style>
+	
+	<link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
+	<link href="{% static 'webpack/gallery.bundle.css' %}" rel="stylesheet" />
+	
 	{% endblock %}
 
 	<div class="container pt-2 container-md" style="height: calc(100vh - 65px); position:relative;">
 	    <section class="text-center">
-	        <div class="container mb-1" style="position:relative">
-	            <h3>Published Datasets</h3>
-	        </div>
-	    </section>
-	    <div id="gallery_bottom" class="mt-2" style="height: 100%; overflow-y: auto;">
-	        <div class="ds-gallery w-100">
-	            <div class="gallery-banner-dataset ps-2 pt-1 small w-100">DATASETS</div>
-	            <div class="row ps-1 gx-2">
-	                {% for ds in datasets %}
-	                <div class="col-md-4 mt-1">
-	                    <div class="ds-card-gallery">
-	                        <div class="ds-card-content" data-id="{{ ds.id }}">
-	                            <h6 class="ds-card-title">{{ ds.title }}</h6>
-	                            <p class="ds-card-blurb my-1">
-	                                <img src="/media/{{ ds.image_file.name }}" width="60" class="float-end"/>
-	                                {{ ds.description }}
-	                                {# {{ ds.description|trunc_it:remainder }} #}
-	                            </p>
-		                          <p class="ds-card-owner">{{ ds.owner.name }}</p>
-	                        </div>
-	                    </div>
-	                </div>
-	                {% endfor %}
+		    <div class="container mb-1" style="position:relative">
+	            <ul class="nav nav-tabs justify-content-end" id="galleryTabs">
+	                <li class="nav-item">
+	                    <h3 class="nav-title">Publications</h3>
+	                </li>
+	                <li class="nav-item">
+	                    <a class="nav-link {% if active_tab == 'datasets' %}active{% endif %}" id="datasets-tab" data-bs-toggle="tab" href="#datasets">Datasets ({{ num_datasets|safe }})</a>
+	                </li>
+	                <li class="nav-item">
+	                    <a class="nav-link {% if active_tab == 'collections' %}active{% endif %}" id="collections-tab" data-bs-toggle="tab" href="#collections">Collections ({{ num_collections|safe }})</a>
+	                </li>
+	            </ul>
+		    </div>
+		</section>
+	    <div class="row">
+	        <div id="gallery_bottom" class="col-md-8 mt-2" style="height: 100%; overflow-y: auto;">
+	            <div class="ds-gallery w-100">
+	                <div id="dynamic-gallery" class="row ps-1 gx-2"></div>
 	            </div>
-	        </div> <!-- .ds-gallery -->
+	        </div>
+	        <div id="map_column" class="col-md-4">
+	        	<div id="page_controls" class="mt-2"></div> <!-- Populated dynamically -->
+	            <label for="sortDropdown">Sort results:</label>
+				<select id="sortDropdown">
+	                <option value="title">Title</option>
+	                <option value="numrows">Smallest</option>
+	                <option value="earliest">Earliest</option>
+	                <option value="latest">Latest</option>
+	                <option value="modified">Recent</option>
+	            </select>
+	            <label for="reverseSortCheckbox">reverse</label>
+	            <input type="checkbox" id="reverseSortCheckbox">
+				<div id="map"></div>
+	            <div class="input-group mb-3">
+				    <input type="text" id="searchInput" class="form-control" placeholder="Filter titles and descriptions">
+				    <button class="btn btn-outline-secondary" type="button" id="clearSearchButton">Clear</button>
+				</div>
+	            <div class="input-group mb-3">
+				    <select id="countryDropdown" class="form-select" data-type="country" data-placeholder="Country filter(s)" multiple></select>
+				    <button class="btn btn-outline-secondary" type="button" id="clearCountryDropdown">Clear</button>
+				</div>
+	            
+				
+	        </div>
 	    </div>
 	    <div id="essay_modal" class="selector py-3" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;"></div>
 	</div>
 
 	<script type="text/javascript">
+	
+    	let mapParameters = {
+            container: 'map',
+            center: [9.2, 33],
+            zoom: 0.2, // starting zoom
+            minZoom: 0.1,
+            maxZoom: 10,
+            mapTilerKey: '{{ maptilerkey }}',
+            controls: {
+                layer: true,
+                navigation: true,
+                fullscreen: false,
+                attribution: {
+                    open: false,
+                },
+                temporal: false
+            },
+            styleFilter: [ /* 'TOPO.PASTEL','BASIC.DEFAULT' */ ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
+        }
+	
+		const dropdown_data = {{ dropdown_data|safe }}
+		const country_feature_collection = {{ country_feature_collection|safe }}
+    	let datacollection = '{{ active_tab }}';
+		
 		$(function () {
 			$('[data-toggle="tooltip"]').tooltip()
-			$("#regions_reset").click(function(){
-				resetRegions()
-			})
 		})
-		function resetRegions(){
-			regions.setStyle({ fillColor: "#ff9999", color: "black" })
-			$('.resource-card').css('display', 'block')
-			$("#regions_reset").hide();
-		}
-		function filterResources(region){
-			var $el = $('.resource-card').filter(function () {
-				// console.log('this', $(this).data("regions"))
-				return (!$(this).data("regions").includes(region))
-			}).css('display','none')
-			shown = $('.resource-card').filter(function(){
-				return $(this).is(":visible");
-			})
-			regiones = []
-			shown.each(function(){
-				regarr = $(this).attr('data-regions').split(', ')
-				// console.log('regset',regarr, typeof(regarr))
-				regiones.push(regarr)
-			})
-			merged = [].concat.apply([], regiones);
-			unique = [...new Set(merged.map(item => item))];
-			$("#regions_reset").show();
-		}
 
-		// var dataurl = '{% url "area-features" %}';
-		var dataurl = 'https://whgazetteer.org/api/area_features?filter=un';
-
-		styles = {
-				"MultiPolygon": {
-					"default": { fillOpacity: 0.3, opacity: 1, color: "#000", weight: 1, fillColor: "#ff9999" },
-					"focus": { fillOpacity: 0.3, opacity: 1, color: "red", weight: 2, fillColor: "#ff9999" }
-				},
-				"Polygon": {
-					"default": { fillOpacity: 0.3, opacity: .5, color: "#666", weight: 1, fillColor: "#ff9999" },
-					"focus": { fillOpacity: 0.3, opacity: .5, color: "red", weight: 2, fillColor: "#ff9999" }
-				}
-			}
-
-		window.addEventListener("map:init", function (event) {
-			map = event.detail.map;
-			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-			}).addTo(map);
-
-
-			fetch(dataurl)
-				.then(function (resp) {
-					return resp.json();
-				})
-				.then(function (data) {
-					// console.log(data)
-					idToFeature = {}
-					regions = L.geoJson(data, {
-						filter: function (feature, layer) {
-							return "{{ regions }}".includes(feature.properties.id);
-						},
-						onEachFeature: function onEachFeature(feature, layer) {
-							// console.log('feature:', feature)
-							identifier = feature.properties.id;
-							layer.setStyle({ fillOpacity: .1, opacity: .5, color: "#000", weight: 1, fillColor: "#ff9999" })
-							var props = feature.properties;
-							// var content = `<b>${props.title}</b><p>${props.description}</p>`;
-							var content = `<b>${props.title}</b>`;
-							idToFeature[identifier] = layer
-							// layer.bindPopup(content);
-							layer.on('mouseover', function (e) {
-								$("#region_label").html(content);
-							});
-							layer.on('mouseout', function (e) {
-								$("#region_label").html("select region to filter")
-							});
-							// layer.bindPopup(content);
-						}
-					}).addTo(map);
-
-					L.Control.textbox = L.Control.extend({
-						onAdd: function (map) {
-
-							var textdiv = L.DomUtil.create('div');
-							textdiv.id = "region_label";
-							textdiv.innerHTML = "select region to filter"
-							return textdiv;
-						},
-
-						onRemove: function (map) {
-							// Nothing to do here
-						}
-					});
-					L.control.textbox = function (opts) { return new L.Control.textbox(opts); }
-					L.control.textbox({ position: 'topright' }).addTo(map);
-
-					regions.on('click', function(e){
-						// console.log('layer', e.layer)
-						// show title in upper right
-						$("#region_label").html(e.layer.feature.properties.title)
-						// display all cards
-						$('.resource-card').css('display', 'block')
-						// default fill and outline for all regions
-						regions.setStyle({fillColor:"#ff9999", color:"black"})
-						// set fill for this to yellow
-						e.layer.setStyle({fillColor:'yellow', color:"red"})
-						// filter cards on region
-						filterResources(e.layer.feature.properties.title)
-						// title=e.layer.feature.properties.title
-						// console.log('clicked region:',title)
-					})
-				});
-		});
-		$(function () {})
 		// resources
 		$(".ds-card-content").click(function(){
 			dsid = $(this).data('id');
@@ -206,5 +121,10 @@
 			});
 
 	</script>
+	
+	<script type="module">
+    	import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
+    	import "{% static 'webpack/gallery.bundle.js' %}";
+	</script> 
 {% endblock %}
 

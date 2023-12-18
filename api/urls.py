@@ -24,7 +24,9 @@ urlpatterns = [
     # 2022-09 name conflict with new remote api
     # path('datasets/', views.DatasetAPIView.as_view(), name='dataset-list'),
     path('datasets/', views.DatasetAPIView.as_view(), name='ds-list'),
-
+        
+    # *** DATASETS & COLLECTIONS
+    path('gallery/<str:type>/', views.GalleryView.as_view(), name='gallery'), # type: datasets|collections
 
     # *** PLACES ***
         

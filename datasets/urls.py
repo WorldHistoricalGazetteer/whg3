@@ -18,8 +18,9 @@ urlpatterns = [
   path('create_empty/', views.DatasetCreateEmptyView.as_view(), name='dataset-create-empty'),
   path('<int:id>/delete', views.DatasetDeleteView.as_view(), name='dataset-delete'),
 
-  # public datasets
+  # public datasets & collections
   path('gallery', views.DatasetGalleryView.as_view(), name='dataset-gallery'),
+  path('gallery/<str:gallery_type>/', views.DatasetGalleryView.as_view(), name='dataset-gallery-type'),
 
   # insert validated delimited file data to db (csv, tsv, spreadsheet)
   path('<int:pk>/insert_tsv/', views.ds_insert_tsv, name="ds_insert_tsv"),

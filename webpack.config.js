@@ -22,6 +22,7 @@ module.exports = {
     areas: '/app/whg/webpack/js/areas.js',
     ds_browse: '/app/whg/webpack/js/ds_browse.js',
     review: '/app/whg/webpack/js/review.js',
+    gallery: '/app/whg/webpack/js/gallery.js',
   },
   output: {
     filename: '[name].bundle.js',
@@ -46,8 +47,15 @@ module.exports = {
   ],
   resolve: {
     alias: {
-      'jquery': path.resolve(__dirname, 'static/admin/js/vendor/jquery/jquery.js'),
+      'jquery': path.resolve(__dirname, 'static/admin/js/vendor/jquery/jquery.min.js'),
     },
+    modules: [
+      path.resolve(__dirname, 'static/admin/js/vendor'),
+      'node_modules',
+    ],
+  },
+  externals: {
+    "jquery": "jQuery",
   },
   optimization: {
     minimize: false,
