@@ -1,7 +1,12 @@
 import datasetLayers from './mapLayerStyles';
 import {attributionString, arrayColors, colorTable, startSpinner} from './utilities';
 import { filteredLayer } from './mapFilters';
-import { scrollToRowByProperty, clearFilters } from './tableFunctions';
+
+// hotfix 2023-12-18 per sg
+// import { scrollToRowByProperty, clearFilters } from './tableFunctions';
+import { scrollToRowByProperty } from './tableFunctions-extended';
+import { clearFilters } from './tableFunctions';
+
 import { popupFeatureHTML } from './getPlace.js';
 import { mappy } from './mapAndTable';
 
