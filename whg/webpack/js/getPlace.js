@@ -1,4 +1,5 @@
-import { debounce, minmaxer } from './utilities';
+import { minmaxer } from './utilities';
+import debounce from 'lodash/debounce';
 
 export function popupFeatureHTML(feature, clickable=true) { // TODO: Improve styling with css and content?
 	let HTML = '<b>' + feature.properties.title + '</b><br/>' +

@@ -1,7 +1,7 @@
 
 import '../../../static/admin/css/vendor/select2/select2.min.css';
 import '../../../static/admin/js/vendor/select2/select2.full.min.js';
-import throttle from 'lodash/throttle';
+import debounce from 'lodash/debounce';
 import { bbox } from './6.5.0_turf.min.js';
 import { attributionString } from './utilities';
 import { CustomAttributionControl } from './customMapControls';
@@ -153,7 +153,7 @@ function buildGallery(datacollections) {
 Promise.all([waitMapLoad(), waitDocumentReady()])
     .then(() => {
 	
-	const throttledUpdates = throttle(() => { // Uses imported lodash function
+	const debouncedUpdates = debounce(() => { // Uses imported lodash function
 	    fetchData();
 	    updateAreaMap();
 	}, 400);    
@@ -172,7 +172,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         	countryDropdown.val(ccodes).trigger('change');
         }
     }).on('change', function (e) {
-		throttledUpdates();
+		debouncedUpdates();
     });
     
 	$('#clearCountryDropdown').on('click', function() {
@@ -249,7 +249,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         });
     }
     
-    throttledUpdates(); // Fetch and build initial gallery; set map filter
+    debouncedUpdates(); // Fetch and build initial gallery; set map filter
     
     function resetMap() {
 		mappy.flyTo({
