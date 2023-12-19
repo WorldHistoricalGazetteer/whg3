@@ -56,38 +56,15 @@
             <input type="hidden" name="wd_lang" value="">
 
 	          {# whg accession and test options if superuser or editor #}
-            {% if user.is_superuser or user.email == 'als512@pitt.edu' %}
+            {% if user.is_superuser %}
               <div class="form-check mt-2">
                 <label class="form-check-label text-danger" for="r_idx">
-                  <input type="radio" class="form-check-input" id="r_idx"
+                  <input type="radio" class="form-check-input r_recon" id="r_idx"
                     name="recon" value="idx">WHG accession TO DEV (reconcile, index)
                 </label>
-                {% comment %}{# always 'on' for dev - no writing to the production index! #}
-	              <span class="float-end">test only? <input type="checkbox" name="test" checked="checked" disabled></span>
-	              {% endcomment %}
+								{#	test reconcile against whg index; no writes #}
 	              <span class="float-end">test only? <input type="checkbox" name="test"></span>
 								<br/>
-								{#	test reconcile against whg index; no writes #}
-                {% comment %}
-	              <label class="form-check-label text-secondary" for="t_whg">
-	                <input type="radio" class="form-check-input" id="t_whg"
-	                  name="recon" value="t_whg">WHG index subset (reports results, no writes)
-	              </label>
-	              {% endcomment %}
-                <div id="data_limiter" class="hidden">
-	                <select id="select_colls" name="collection" class="custom-select-sm" style="width:auto;">
-		                <option value="0"><i>Limit to collection</i></option>
-	                  {% for c in coll_list %}
-	                    <option value="{{ c.id }}">{{ c.title }}</option>
-	                  {% endfor %}
-	                </select>
-	                <select id="select_ds" name="dataset" class="custom-select-sm" style="width:auto;">
-	                  <option value="0">Limit to dataset</option>
-	\                  {% for ds in ds_list %}
-	                    <option value="{{ ds.id }}">{{ ds.title }}</option>
-	                  {% endfor %}
-	                </select>
-                </div>
               </div>
 							{% for message in messages %}
 								<div class="container-fluid p-0">
@@ -106,13 +83,11 @@
 	              the workflow in progress. If you would like to stop the accessioning step and roll back the workflow,
 	              please <a href="#" class="feedback">contact the editorial team</a>.</p>
             {% endif %}
-            <p class="font-weight-bold mb-0">Name authority source</p>
+            <p class="font-weight-bold mb-0">Reconciliation target</p>
             <p class="small">Your task will enter a queue and and an email notification sent when completed.</p>
-
-            {# Wikidata #}
             <div class="form-check">
               <label class="form-check-label" for="r_wdlocal">
-                <input type="radio" class="form-check-input r_wd" id="r_wdlocal"
+                <input type="radio" class="form-check-input r_recon" id="r_wdlocal"
                   name="recon" value="wdlocal" checked>Wikidata (wdlocal)
 	                  <span class="ms-2 font-italic small">estimated time: {{ ds.numrows|time_estimate }}</span>
               </label>
@@ -128,6 +103,27 @@
                   </div>
                 </div>
               {% endif %}
+            </div>
+            <div class="form-check">
+              <label class="form-check-label" for="r_wdlocal">
+                <input type="radio" class="form-check-input r_recon" id="r_collection"
+                  name="recon" value="collection">A Dataset Collection
+	                  <span class="ms-2 font-italic small">estimated time:
+		                  {{ ds.numrows|time_estimate }}</span>
+              </label>
+              <select id="select_colls" name="collection" class="custom-select-sm hidden"
+                      style="width:auto;">
+                <option value="0"><i>Select collection</i></option>
+                {% for c in coll_list %}
+                  <option value="{{ c.id }}">{{ c.title }}</option>
+                {% endfor %}
+              </select><br/>
+              <input type="hidden" id="collection_id" name="collection_id" value="">
+              <label class="form-check-label" for="r_wdlocal">
+                <input type="radio" class="form-check-input r_recon" id="r_collection"
+                  name="recon" value="self">"Conflator" (record grouping tool)
+	                  <span class="ms-2 font-italic small">estimated time: ?? </span>
+              </label>
             </div>
             {# geo bounds: regions, study areas #}
             <div id="addtask_lower">
@@ -239,7 +235,27 @@
     </div>
   </div>
 </div>
+<script type="text/javascript">
+// Get the radio buttons
+let radios = $('.r_recon');
 
+// Get the select element
+let selectColls = $('#select_colls');
+
+// Add event listener to each radio button
+radios.each(function() {
+  $(this).change(function() {
+    // Check the value of the selected radio button
+    if (this.value === 'collection') {
+        // Show the select element
+        selectColls.show();
+    } else {
+      // Hide the select element
+      selectColls.hide();
+    }
+  });
+});
+</script>
 <!-- Set up MapLibre map using Maptiler SDK -->
 <script type="text/javascript">
     let mapParameters = {

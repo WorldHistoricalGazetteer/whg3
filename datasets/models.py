@@ -57,6 +57,9 @@ class Dataset(models.Model):
 
   ds_status = models.CharField(max_length=12, null=True, blank=True, choices=STATUS_DS)
 
+  # added 20231128
+  idx_builder = models.BooleanField(default=False)
+
   # 4 added 20210619
   creator = models.CharField(max_length=500, null=True, blank=True)
   source = models.CharField(max_length=500, null=True, blank=True)
@@ -96,6 +99,36 @@ class Dataset(models.Model):
     return carousel_metadata(self)
 
   @property
+  def builder_hastask(self):
+    hastask = False
+    if self.tasks.filter(task_name='align_collection').count() > 0:
+      hastask = True
+    return hastask
+
+  @property
+  def builder_remaining(self):
+    remaining = 0
+    if self.tasks.filter(task_name='align_collection').count() > 0:
+        remaining = Hit.objects.filter(
+            task_id=self.tasks.filter(task_name='align_collection')[0].task_id,
+            reviewed=False
+        ).values("place_id").distinct().count()
+    return remaining
+
+  @property
+  def convex_hull(self):
+    dsgeoms = PlaceGeom.objects.filter(place__dataset=self.label)
+    geometry = None
+    if dsgeoms.count() > 0:
+        geom_list = [GEOSGeometry(dsgeom.geom.wkt) for dsgeom in dsgeoms]
+        combined_geom = geom_list[0].convex_hull
+
+        for geom in geom_list[1:]: # Union of convex hulls is much faster than union of full geometries
+            combined_geom = combined_geom.union(geom.convex_hull)
+
+        geometry = json.loads(combined_geom.convex_hull.geojson)
+
+  @property
   def clustered_geometries(self):
     return clustered_geometries(self)
 
@@ -108,6 +141,7 @@ class Dataset(models.Model):
     teamusers = User.objects.filter(id__in=team) | User.objects.filter(groups__name='whg_team')
     return teamusers
 
+  # download time estimate
   @property
   def dl_est(self):
     file = self.files.all().order_by('id')[0]
@@ -205,21 +239,6 @@ class Dataset(models.Model):
     placeids = Place.objects.filter(dataset=self.label).values_list('id', flat=True)
     return PlaceLink.objects.filter(place_id__in=placeids, jsonb__icontains='Q').count()
 
-  # status of each recon task type
-  # @property
-  # def recon_status(self):
-  #   tuple_id = f'({self.id},)'
-  #   print(tuple_id)
-  #   tasks = TaskResult.objects.filter(
-  #     task_args = tuple_id,
-  #     task_name__startswith='align',
-  #     status='SUCCESS')
-  #   result = {}
-  #   for t in tasks:
-  #     result[t.task_name[6:]] = Hit.objects.filter(task_id=t.task_id,reviewed=False).values("place_id").distinct().count()
-  #
-  #   return result
-
   @property
   def recon_status(self):
     # Format task_args as a string representation of a tuple
@@ -264,10 +283,8 @@ class Dataset(models.Model):
   @property
   def tasks(self):
     args_with_quotes = f'"({self.id},)"'
-    return TaskResult.objects.filter(task_args=args_with_quotes,task_name__startswith='align')
+    return TaskResult.objects.filter(task_args=args_with_quotes, task_name__startswith='align')
 
-  # "(1556,)"
-  # "{'ds': 1556, 'dslabel': 'dj4test1', 'owner': 1, 'user': 1, 'bounds': {'type': ['userarea'], 'id': ['0']}, 'aug_geom': 'on', 'scope': 'all', 'lang': 'en', 'test': 'off'}"
   # tasks stats
   @property
   def taskstats(self):
@@ -278,16 +295,16 @@ class Dataset(models.Model):
       p_hits2 = Hit.objects.filter(task_id=t.task_id,query_pass='pass2', reviewed=False).values("place_id").distinct().count()
       p_hits3 = Hit.objects.filter(task_id=t.task_id,query_pass='pass3', reviewed=False).values("place_id").distinct().count()
       p_sum = p_hits0+p_hits1+p_hits2+p_hits3
-      
+
       return {"tid":t.task_id,
        #"task":t.task_name,
        "date":t.date_done.strftime('%Y-%m-%d'),
-       "total":p_sum, 
-       "pass0":p_hits0, 
-       "pass1":p_hits1, 
-       "pass2":p_hits2, 
-       "pass3":p_hits3 } 
-    
+       "total":p_sum,
+       "pass0":p_hits0,
+       "pass1":p_hits1,
+       "pass2":p_hits2,
+       "pass3":p_hits3 }
+
     result = {}
     # array for each kind of task
     #task_types = self.tasks.all().values_list("task_name", flat=True)

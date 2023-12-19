@@ -3,6 +3,7 @@ import {attributionString, arrayColors, colorTable, startSpinner} from './utilit
 import { filteredLayer } from './mapFilters';
 import { scrollToRowByProperty } from './tableFunctions-extended';
 import { clearFilters } from './tableFunctions';
+
 import { popupFeatureHTML } from './getPlace.js';
 import { mappy } from './mapAndTable';
 

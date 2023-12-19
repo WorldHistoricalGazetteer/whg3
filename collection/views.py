@@ -16,6 +16,7 @@ from django.contrib.gis.db.models import Extent
 
 from .forms import CollectionModelForm, CollectionGroupModelForm
 from .models import *
+from datasets.tasks import index_dataset_to_builder
 from main.models import Log, Link
 from traces.forms import TraceAnnotationModelForm
 from traces.models import TraceAnnotation
@@ -337,12 +338,13 @@ class ListDatasetView(View):
 
 """
   adds all places in a dataset as CollPlace records
+  to a place collection
   i.e. new CollPlace and TraceAnnotation rows
   url call from place_collection_build.html
   adds dataset to db:collections_datasets
 """
 # TODO: essentially same as add_places(); needs refactor
-def add_dataset(request, *args, **kwargs):
+def add_dataset_places(request, *args, **kwargs):
   print('method', request.method)
   print('add_dataset() kwargs', kwargs)
   coll = Collection.objects.get(id=kwargs['coll_id'])
@@ -380,8 +382,40 @@ def add_dataset(request, *args, **kwargs):
   return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 """ 
-  removes dataset from collection & clean up "omitted"; refreshes page 
-  remove   
+  adds dataset to dataset collection 
+  - if it is the first in
+  - if no incomplete reviews of @align_builder tasks
+"""
+
+def add_dataset(request, *args, **kwargs):
+  coll = Collection.objects.get(id=kwargs['coll_id'])
+  ds = Dataset.objects.get(id=kwargs['ds_id'])
+  print('add_dataset(): ds ' + str(ds) + ' to coll ' + str(coll))
+
+  if not coll.datasets.filter(id=ds.id).exists():
+    coll.datasets.add(ds)
+    sequence = coll.datasets.count()
+    if coll.datasets.count() == 1:
+      # index only the first
+      indexing_result = index_dataset_to_builder(ds.id, coll.id)
+    dataset_details = {
+      "id": ds.id,
+      "label": ds.label,
+      "title": ds.title,
+      "create_date": ds.create_date,
+      "description": ds.description[:100]+'...',
+      "numrows": ds.places.count(),
+      "sequence": sequence
+    }
+    return JsonResponse({'status': 'success',
+                         'dataset': dataset_details})
+
+  return JsonResponse({'status': 'already_added'})
+
+
+""" 
+  removes dataset from collection
+  clean up "omitted"; refreshes page    
 """
 def remove_dataset(request, *args, **kwargs):
   coll = Collection.objects.get(id=kwargs['coll_id'])
@@ -817,7 +851,7 @@ class DatasetCollectionCreateView(LoginRequiredMixin, CreateView):
       note = 'created collection id: '+str(self.object.id),
       user_id = self.request.user.id
     )
-    return reverse('data-collections')
+    return reverse('dashboard')
   #
   def get_form_kwargs(self, **kwargs):
     kwargs = super(DatasetCollectionCreateView, self).get_form_kwargs()
@@ -842,8 +876,8 @@ class DatasetCollectionCreateView(LoginRequiredMixin, CreateView):
 
     datasets = []
     # owners create collections from their datasets
-    ds_select = [obj for obj in Dataset.objects.all().order_by('title') if user in obj.owners or
-      user in obj.collaborators or user.is_superuser]
+    ds_select = [obj for obj in Dataset.objects.all().order_by('title').exclude(title__startswith='(stub)')
+                 if user in obj.owners or user in obj.collaborators or user.is_superuser]
 
     context['action'] = 'create'
     context['ds_select'] = ds_select
@@ -892,7 +926,9 @@ class DatasetCollectionUpdateView(UpdateView):
     datasets = self.object.datasets.all()
 
     # populates dropdown
-    ds_select = [obj for obj in Dataset.objects.all().order_by('title') if user in obj.owners or user.is_superuser]
+    ds_select = [obj for obj in Dataset.objects.all().order_by('title').exclude(title__startswith='(stub)')
+                 if user in obj.owners or user in obj.collaborators or user.is_superuser]
+    # ds_select = [obj for obj in Dataset.objects.all().order_by('title') if user in obj.owners or user.is_superuser]
 
     context['action'] = 'update'
     context['ds_select'] = ds_select

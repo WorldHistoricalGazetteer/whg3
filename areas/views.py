@@ -22,14 +22,15 @@ class AreaCreateView(CreateView):
         if redirect != '':
             self.success_url = redirect
         else:
+            # self.success_url = '/mystudyareas'
             self.success_url = '/dashboard'
         return kwargs
-    
+
     def form_invalid(self,form):
         print('form invalid...',form.errors.as_data())
         context = {'form': form}
         return self.render_to_response(context=context)
-    
+
     def form_valid(self, form):
         context={}
         if form.is_valid():
@@ -38,10 +39,10 @@ class AreaCreateView(CreateView):
             print('form not valid', form.errors)
             context['errors'] = form.errors
         return super().form_valid(form)
-    
+
     def get_context_data(self, *args, **kwargs):
         context = super(AreaCreateView, self).get_context_data(*args, **kwargs)
-        context['mbtoken'] = settings.MAPBOX_TOKEN_WHG        
+        context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
         context['maptilerkey'] = settings.MAPTILER_KEY
         #print('args',args,kwargs)
         context['action'] = 'create'
@@ -88,4 +89,3 @@ class AreaUpdateView(UpdateView):
         context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
         context['maptilerkey'] = settings.MAPTILER_KEY
         return context
-
