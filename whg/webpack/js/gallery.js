@@ -7,6 +7,7 @@ import { attributionString } from './utilities';
 import { CustomAttributionControl } from './customMapControls';
 import featuredDataLayers from './featuredDataLayerStyles';
 import { fetchDataForHorse } from './localGeometryStorage';
+import { CountryCacheFeatureCollection } from  './countryCache';
 
 import '../css/maplibre-common.css';
 import '../css/gallery.css';
@@ -52,6 +53,8 @@ var datasetLayers = [
 		'filter': ['==', '$type', 'Polygon']
 	}
 ]
+
+let countryCache = new CountryCacheFeatureCollection();
 
 let page = 1;
 const $page_controls = $('#page_controls');	
@@ -258,25 +261,19 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
     
     function updateAreaMap() {
     	const countries = countryDropdown.select2('data').map(country => country.id);
-    	const filteredCountries = {
-			type: 'FeatureCollection',
-			features: country_feature_collection['features'].filter(feature => {
-				const countryCode = feature.properties.ccode;
-				return countries.includes(countryCode);
-			}),
-		};
-		
-		mappy.getSource('places').setData(filteredCountries);
-		try {
-			mappy.fitBounds(bbox(filteredCountries), {
-		        padding: 30,
-		        maxZoom: 7,
-		        duration: 1000,
-		    });
-		}
-		catch {
-			resetMap();
-		}
+        countryCache.filter(countries).then(filteredCountries => {
+            mappy.getSource('places').setData(filteredCountries);
+
+            try {
+                mappy.fitBounds(bbox(filteredCountries), {
+                    padding: 30,
+                    maxZoom: 7,
+                    duration: 1000,
+                });
+            } catch {
+                resetMap();
+            }
+        });
     }
     
     $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function () {

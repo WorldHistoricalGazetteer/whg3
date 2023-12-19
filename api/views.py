@@ -1015,3 +1015,27 @@ class RegionViewSet(View):
       description='UN Statistical Division Sub-Region').order_by('title')
   serializer_class = AreaSerializer
 
+
+# Country Geometries from ccode list
+class CountryFeaturesAPIView(View):
+    def get(self, request, *args, **kwargs):
+        country_codes_param = self.request.GET.get('country_codes', '')
+        country_codes = [code.strip().upper() for code in country_codes_param.split(',') if code.strip()]
+
+        countries = Area.objects.filter(Q(type='country') & Q(ccodes__overlap=country_codes)).values('id', 'ccodes', 'geojson')
+
+        country_feature_collection = {
+            'type': 'FeatureCollection',
+            'features': []
+        }
+
+        for country in countries:
+            feature = {
+                'type': 'Feature',
+                'properties': {'ccode': country['ccodes'][0]},
+                'geometry': country['geojson']
+            }
+            country_feature_collection['features'].append(feature)
+
+        return JsonResponse(country_feature_collection, safe=False)
+    
