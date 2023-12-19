@@ -308,4 +308,10 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         fetchData();
     });
     
+    // Force country filter to track width of search filter
+    const resizeObserver = new ResizeObserver(entries => {
+	    $('.select2-container').css('width', entries[0].target.offsetWidth);
+	});
+	resizeObserver.observe($('#searchInput')[0]);
+    
 });
