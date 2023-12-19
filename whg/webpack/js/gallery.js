@@ -1,12 +1,13 @@
 
 import '../../../static/admin/css/vendor/select2/select2.min.css';
 import '../../../static/admin/js/vendor/select2/select2.full.min.js';
-import throttle from 'lodash/throttle';
+import debounce from 'lodash/debounce';
 import { bbox } from './6.5.0_turf.min.js';
 import { attributionString } from './utilities';
 import { CustomAttributionControl } from './customMapControls';
 import featuredDataLayers from './featuredDataLayerStyles';
 import { fetchDataForHorse } from './localGeometryStorage';
+import { CountryCacheFeatureCollection } from  './countryCache';
 
 import '../css/maplibre-common.css';
 import '../css/gallery.css';
@@ -52,6 +53,8 @@ var datasetLayers = [
 		'filter': ['==', '$type', 'Polygon']
 	}
 ]
+
+let countryCache = new CountryCacheFeatureCollection();
 
 let page = 1;
 const $page_controls = $('#page_controls');	
@@ -150,7 +153,7 @@ function buildGallery(datacollections) {
 Promise.all([waitMapLoad(), waitDocumentReady()])
     .then(() => {
 	
-	const throttledUpdates = throttle(() => { // Uses imported lodash function
+	const debouncedUpdates = debounce(() => { // Uses imported lodash function
 	    fetchData();
 	    updateAreaMap();
 	}, 400);    
@@ -169,7 +172,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         	countryDropdown.val(ccodes).trigger('change');
         }
     }).on('change', function (e) {
-		throttledUpdates();
+		debouncedUpdates();
     });
     
 	$('#clearCountryDropdown').on('click', function() {
@@ -246,7 +249,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         });
     }
     
-    throttledUpdates(); // Fetch and build initial gallery; set map filter
+    debouncedUpdates(); // Fetch and build initial gallery; set map filter
     
     function resetMap() {
 		mappy.flyTo({
@@ -258,25 +261,19 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
     
     function updateAreaMap() {
     	const countries = countryDropdown.select2('data').map(country => country.id);
-    	const filteredCountries = {
-			type: 'FeatureCollection',
-			features: country_feature_collection['features'].filter(feature => {
-				const countryCode = feature.properties.ccode;
-				return countries.includes(countryCode);
-			}),
-		};
-		
-		mappy.getSource('places').setData(filteredCountries);
-		try {
-			mappy.fitBounds(bbox(filteredCountries), {
-		        padding: 30,
-		        maxZoom: 7,
-		        duration: 1000,
-		    });
-		}
-		catch {
-			resetMap();
-		}
+        countryCache.filter(countries).then(filteredCountries => {
+            mappy.getSource('places').setData(filteredCountries);
+
+            try {
+                mappy.fitBounds(bbox(filteredCountries), {
+                    padding: 30,
+                    maxZoom: 7,
+                    duration: 1000,
+                });
+            } catch {
+                resetMap();
+            }
+        });
     }
     
     $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function () {
@@ -310,5 +307,11 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         $('#searchInput').val('');
         fetchData();
     });
+    
+    // Force country filter to track width of search filter
+    const resizeObserver = new ResizeObserver(entries => {
+	    $('.select2-container').css('width', entries[0].target.offsetWidth);
+	});
+	resizeObserver.observe($('#searchInput')[0]);
     
 });

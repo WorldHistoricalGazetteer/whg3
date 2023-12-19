@@ -1,9 +1,6 @@
 import datasetLayers from './mapLayerStyles';
 import {attributionString, arrayColors, colorTable, startSpinner} from './utilities';
 import { filteredLayer } from './mapFilters';
-
-// hotfix 2023-12-18 per sg
-// import { scrollToRowByProperty, clearFilters } from './tableFunctions';
 import { scrollToRowByProperty } from './tableFunctions-extended';
 import { clearFilters } from './tableFunctions';
 

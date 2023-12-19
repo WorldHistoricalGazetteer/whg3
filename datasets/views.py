@@ -107,15 +107,16 @@ class DatasetGalleryView(ListView):
         'features': []
     }
     
-    for country_id, geometry in country_geometries.items():
-        feature = {
-            'type': 'Feature',
-            'properties': {'ccode': country_codes[country_id][0]},
-            'geometry': json.loads(geometry.geojson)
-        }
-        country_feature_collection['features'].append(feature)
-    
-    context['country_feature_collection'] = json.dumps(country_feature_collection, default=str)
+    ## This codeblock superseded by JavaScript/LocalStorage class
+    # for country_id, geometry in country_geometries.items():
+    #     feature = {
+    #         'type': 'Feature',
+    #         'properties': {'ccode': country_codes[country_id][0]},
+    #         'geometry': json.loads(geometry.geojson)
+    #     }
+    #     country_feature_collection['features'].append(feature)
+    #
+    # context['country_feature_collection'] = json.dumps(country_feature_collection, default=str)
 
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
     return context
