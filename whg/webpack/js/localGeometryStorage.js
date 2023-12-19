@@ -35,7 +35,7 @@ export async function fetchDataForHorse(thisHorse, mappy, repositionMap = true) 
                             zoom: mapParameters.zoom,
                             speed: 0.5,
                         });
-                    } else {
+                    } else {					
                         mappy.fitBounds(bounding_box, {
                             padding: 100,
                             speed: 0.5,

@@ -12,30 +12,8 @@ import { CountryCacheFeatureCollection } from  './countryCache';
 import '../css/maplibre-common.css';
 import '../css/gallery.css';
 
-
-let style_code;
-if (mapParameters.styleFilter.length == 0) {
-	style_code = ['DATAVIZ', 'DEFAULT']
-} else {
-	style_code = mapParameters.styleFilter[0].split(".");
-}
-
-maptilersdk.config.apiKey = mapParameters.mapTilerKey;
-let mappy = new maptilersdk.Map({
-	container: mapParameters.container,
-	center: mapParameters.center,
-	zoom: mapParameters.zoom,
-	minZoom: mapParameters.minZoom,
-	maxZoom: mapParameters.maxZoom,
-	style: maptilersdk.MapStyle[style_code[0]][style_code[1]],
-	attributionControl: false,
-	geolocateControl: false,
-	navigationControl: mapParameters.controls.navigation,
-	userProperties: true,
-	bearing: 0,
-	pitch: 0,
-});
-
+let mappy = new maptilersdk.Map(mapParameters);
+    
 let nullCollection = {
     type: 'FeatureCollection',
     features: []
@@ -83,11 +61,6 @@ function waitMapLoad() {
 			featuredDataLayers.forEach(layer => {
 				mappy.addLayer(layer);
 			});
-			
-			mappy.addControl(new CustomAttributionControl({
-				compact: true,
-		    	autoClose: mapParameters.controls.attribution.open === false,
-			}), 'bottom-right');	
             
             resolve();
         });
@@ -307,6 +280,13 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         $('#searchInput').val('');
         fetchData();
     });
+    
+	// Observe the map container for size changes: maintain aspect ratio to accommodate all possible bounds
+    const mapResizeObserver = new ResizeObserver(entries => {
+        mappy._container.style.height = `${Math.round(entries[0].contentRect.width * .8)}px`;
+        mappy.resize();
+	});
+	mapResizeObserver.observe(mappy._container);
     
     // Force country filter to track width of search filter
     const resizeObserver = new ResizeObserver(entries => {
