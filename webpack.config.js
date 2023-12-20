@@ -51,6 +51,8 @@ module.exports = {
     },
     modules: [
       path.resolve(__dirname, 'static/admin/js/vendor'),
+      path.resolve(__dirname, 'node_modules'),
+      path.resolve(__dirname, 'node_modules/lodash'),
       'node_modules',
     ],
   },
