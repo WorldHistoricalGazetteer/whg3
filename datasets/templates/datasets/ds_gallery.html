@@ -15,15 +15,15 @@
 
 	<div class="container pt-2 container-md" style="height: calc(100vh - 65px); position:relative;">
 	    <section class="text-center">
-		    <div class="container mb-1" style="position:relative">
+		    <div class="container mb-1" style="position:relative; padding: 0;">
 	            <ul class="nav nav-tabs justify-content-end" id="galleryTabs">
 	                <li class="nav-item">
 	                    <h3 class="nav-title">Publications</h3>
 	                </li>
-	                <li class="nav-item">
+	                <li class="nav-item" title="There are {{ num_datasets|safe }} published Datasets.">
 	                    <a class="nav-link {% if active_tab == 'datasets' %}active{% endif %}" id="datasets-tab" data-bs-toggle="tab" href="#datasets">Datasets ({{ num_datasets|safe }})</a>
 	                </li>
-	                <li class="nav-item">
+	                <li class="nav-item" title="There are {{ num_collections|safe }} published Collections.">
 	                    <a class="nav-link {% if active_tab == 'collections' %}active{% endif %}" id="collections-tab" data-bs-toggle="tab" href="#collections">Collections ({{ num_collections|safe }})</a>
 	                </li>
 	            </ul>
@@ -98,40 +98,7 @@
         }
 	
 		const dropdown_data = {{ dropdown_data|safe }}
-		// const country_feature_collection = {{ country_feature_collection|safe }} //Superseded by JavaScript/LocalStorage class
     	let datacollection = '{{ active_tab }}';
-		
-		$(function () {
-			$('[data-toggle="tooltip"]').tooltip()
-		})
-
-		// resources
-		$(".ds-card-content").click(function(){
-			dsid = $(this).data('id');
-			window.location.href = "/datasets/"+dsid+"/places";
-		})
-		$(".modal-link").click(function () {
-			page = $(this).data('id')
-			$('.selector').dialog('open');
-		})
-		$(".selector").dialog({
-				resizable: true,
-				autoOpen: false,
-				width: $(window).width() * 0.5,
-				height: $(window).height() * 0.9,
-				title: "Teaching with World Historical Gazetteer",
-				modal: true,
-				buttons: {
-					'Close': function () {
-						$(this).dialog('close');
-					}
-				},
-				open: function (event, ui) {
-					$('.selector').load('/media/resources/'+page+'.html');
-				},
-				show: { effect: "fade", duration: 400 },
-				hide: { effect: "fade", duration: 400 }
-			});
 
 	</script>
 	

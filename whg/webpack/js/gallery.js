@@ -4,7 +4,6 @@ import '../../../static/admin/js/vendor/select2/select2.full.min.js';
 import debounce from 'lodash/debounce';
 import { bbox } from './6.5.0_turf.min.js';
 import { attributionString } from './utilities';
-import { CustomAttributionControl } from './customMapControls';
 import featuredDataLayers from './featuredDataLayerStyles';
 import { fetchDataForHorse } from './localGeometryStorage';
 import { CountryCacheFeatureCollection } from  './countryCache';
@@ -83,8 +82,11 @@ function buildGallery(datacollections) {
     if (datacollections.length === 0) {
         var noResultsMessage = $('<h3>').text(`No matching ${datacollection} found`);
         dynamicGallery.append(noResultsMessage);
+        let suggestion = $('.nav-link.active').find('input[type="checkbox"]:not(:checked)').length == 3 ?
+        					'You have not selected any Collection classes.' :
+        					'Try adjusting the filters.'
         noResultsMessage.after(
-		    $('<p>').text('Try adjusting the filters.')
+		    $('<p>').text(suggestion)
 		);
     } else {
 	    datacollections.forEach(function(dc) {
@@ -94,10 +96,11 @@ function buildGallery(datacollections) {
 				'type':dc.type,
 				'id':dc.ds_or_c_id,
 				'mode':dc.display_mode,
-				'geometry_url':dc.geometry_url
+				'geometry_url':dc.geometry_url,
+				'url': dc.url
 			});
 	        var dsCardGallery = $('<div>', {'class': 'ds-card-gallery'});
-	        var dsCardContent = $('<div>', {'class': 'ds-card-content', 'data-id': dc.ds_or_c_id});
+	        var dsCardContent = $('<div>', {'class': 'ds-card-content'});
 	        var dsCardTitle = $('<h6>', {'class': 'ds-card-title', text: dc.title});
 	        var dsCardBlurb = $('<p>', {'class': 'ds-card-blurb my-1'});
 	        var dsCardImage = $('<img>', {'src': dc.image_file, 'width': '60', 'class': 'float-end'});
@@ -119,8 +122,6 @@ function buildGallery(datacollections) {
 	        dynamicGallery.append(dsCard);
 	    });
 	}
-
-	
 }
 
 Promise.all([waitMapLoad(), waitDocumentReady()])
@@ -156,7 +157,14 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 	["Dataset", "Place", "Student"].forEach(function(tab_checkbox) {
 		$checkbox_container.append(
 			$('<label>', {'class': 'checkbox-label'}).text(tab_checkbox)
-			.prepend( $('<input>', {'type': 'checkbox', 'checked': 'checked', name: `${tab_checkbox.toLowerCase()}_checkbox`, 'id': `${tab_checkbox.toLowerCase()}_checkbox`}) ) 
+			.prepend( $('<input>', {
+				'type': 'checkbox', 
+				'checked': 'checked', 
+				'name': `${tab_checkbox.toLowerCase()}_checkbox`, 
+				'id': `${tab_checkbox.toLowerCase()}_checkbox`,
+				'title': `Include Collections classed as '${tab_checkbox}'.`,
+				'aria-label': `Include Collections classed as '${tab_checkbox}'.`,
+			}) ) 
 		)
 	})
 	$('#collections-tab').append($checkbox_container);
@@ -170,28 +178,53 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 	].forEach(function(control) {
 		const $control = control[0] == 'dropbox' ?
 			$('<select>', {'title': control[1], 'aria-label': control[1]}) :
-			$('<button>', {'id': control[0], 'type': 'button', 'style': `background-image: url(/static/images/sequencer/${control[0]}-btn.svg)`})
+			$('<button>', {'id': control[0], 'type': 'button', 'class': 'btn btn-outline-secondary', 'style': `background-image: url(/static/images/sequencer/${control[0]}-btn.svg)`})
 		$control
 		.data('titles', control.slice(1,3))
 		.data('disability', control[3])
 		.data('click-page', control[4])
 		.on('click change', function(e) {
 			page = $(this).is('button') ? $(this).data('page') : $(this).val();
-			if ($(this).is('button') || e.type === 'change') fetchData();
+			if ($(this).is('button') || e.type === 'change') fetchData(page);
 		});
 		$page_controls.append( $control );	
 	});
 	$select = $page_controls.find('select');
+
+	function stateStore(fetch=false) {
+		if(fetch) {
+		    const storedState = sessionStorage.getItem('galleryState');
+		    if (storedState) {
+		        const state = JSON.parse(storedState);
+		        page = state.page;
+		        $('#reverseSortCheckbox').prop('checked', state.sort.startsWith('-'));
+		        $('#sortDropdown').val(state.sort.replace(/^-/, ''));
+		        countryDropdown.val(state.countries.split(',')).trigger('change');
+		        $('#searchInput').val(state.search);
+		    }
+    		debouncedUpdates();
+		}
+		else {
+		    const state = {
+		        page: page,
+		        sort: ($('#reverseSortCheckbox').prop('checked') ? '-' : '') + ($('#sortDropdown').val() ?? 'title'),
+		        countries: countryDropdown.select2('data').map(country => country.id).join(','),
+		        search: $('#searchInput').val() ?? '',
+		    };
+		    sessionStorage.setItem('galleryState', JSON.stringify(state));
+		}
+	}
     
-    function fetchData() {
+    function fetchData(page=1) { // Defaults to 1 except when called by page controls
 		const classes = $('.checkbox-label input:checked').map(function () {
 		    return $(this).closest('label').text().toLowerCase();
 		}).get().join(',');
-		const sort = ($('#reverseSortCheckbox').prop('checked') ? '-' : '') + $('#sortDropdown').val();
+		const sort = ($('#reverseSortCheckbox').prop('checked') ? '-' : '') + ($('#sortDropdown').val() ?? 'title');
     	const countries = countryDropdown.select2('data').map(country => country.id).join(',');
-    	const search = $('#searchInput').val();
+    	const search = $('#searchInput').val() ?? '';
     	const url = `/api/gallery/${datacollection}/?page=${page}&classes=${ datacollection=='collections' ? classes : '' }&sort=${sort}&countries=${countries}&q=${search}`;
     	console.log(`Fetching from: ${url}`);
+    	stateStore();
         fetch(url)
         .then(response => {
             if (!response.ok) {
@@ -222,7 +255,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         });
     }
     
-    debouncedUpdates(); // Fetch and build initial gallery; set map filter
+    stateStore(true); // Fetch and build initial gallery; set map filter
     
     function resetMap() {
 		mappy.flyTo({
@@ -293,5 +326,36 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 	    $('.select2-container').css('width', entries[0].target.offsetWidth);
 	});
 	resizeObserver.observe($('#searchInput')[0]);
+		
+	$('[data-toggle="tooltip"]').tooltip();
+	 
+	$('#dynamic-gallery')
+		.on('click', ".ds-card-container", function(event) {
+		    // Check that the clicked element is not a link within the container
+		    if ($(event.target).closest('a').length === 0) {
+		        window.location.href = $(this).data('url');
+		    }
+		})	
+		.on('click', ".modal-link", function() {
+			$('.selector').data('modalPageId', $(this).data('id')).dialog('open');
+		})
+	$(".selector").dialog({
+		resizable: true,
+		autoOpen: false,
+		width: $(window).width() * 0.5,
+		height: $(window).height() * 0.9,
+		title: "Teaching with World Historical Gazetteer",
+		modal: true,
+		buttons: {
+			'Close': function () {
+				$(this).dialog('close');
+			}
+		},
+		open: function (event, ui) {
+			$('.selector').load(`/media/resources/${ $(this).data('modalPageId') }.html`);
+		},
+		show: { effect: "fade", duration: 400 },
+		hide: { effect: "fade", duration: 400 }
+	});
     
 });
