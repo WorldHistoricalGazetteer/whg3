@@ -11,6 +11,8 @@ import { CountryCacheFeatureCollection } from  './countryCache';
 import '../css/maplibre-common.css';
 import '../css/gallery.css';
 
+import mapParams from './mapParameters';
+const mapParameters = new mapParams({ style:'ne_global', maxZoom:6, navigationControl: false, attributionControl: false });
 let mappy = new maptilersdk.Map(mapParameters);
     
 let nullCollection = {
