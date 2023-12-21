@@ -1003,8 +1003,10 @@ class DatasetCollectionBrowseView(DetailView):
                  # "bbox": ds.bounds } for ds in coll.datasets.all()]
     #bboxes = [{"id":ds['id'], "geometry":ds['bounds']} for ds in datasets]
 
+    # sg 21-Dec-2023: These 2 lines appear to be redundant:
     placeset = coll.places.all()
-    context['places'] = placeset
+    context['places'] = placeset 
+    
     context['ds_list'] = coll.ds_list
     context['links'] = Link.objects.filter(collection=id_)
     context['updates'] = {}

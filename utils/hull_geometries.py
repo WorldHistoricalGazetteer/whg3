@@ -24,7 +24,7 @@ def hull_geometries(caller):
         if dsgeoms.count() > 0:
             geom_list = [GEOSGeometry(dsgeom.geom.wkt) for dsgeom in dsgeoms]
     else: # caller_class == 'Collection'
-        places = caller.places.all()
+        places = caller.places_all
         if places.count() > 0:
             geom_list = [GEOSGeometry(geom.geom.wkt) for place in places for geom in place.geoms.all()]
             
