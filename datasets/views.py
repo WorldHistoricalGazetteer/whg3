@@ -2618,6 +2618,186 @@ class DatasetCreateEmptyView (LoginRequiredMixin, CreateView):
     return context
 
 """
+  DatasetCreate()
+  2023-08; replaces DatasetCreateView(); bot-guided
+  - validates form
+  - checks file encoding, gets mimetype
+  - initiates content validation (validation.py)
+  - initiates database writes (insert.py)
+  - raises errors from each stage to dataset_create.html form
+"""
+class DatasetCreate(LoginRequiredMixin, CreateView):
+  login_url = '/accounts/login/'
+  redirect_field_name = 'redirect_to'
+
+  form_class = DatasetUploadForm
+  template_name = 'datasets/dataset_create.html'
+  success_message = 'dataset created'
+
+  def form_invalid(self, form):
+    print('form invalid...', form.errors.as_data())
+    context = {'form': form}
+    return self.render_to_response(context=context)
+
+  def form_valid(self, form):
+    form_data = form.cleaned_data
+    file = form_data['file']
+    context = {"format": form_data['format']}
+    user=self.request.user
+    filename = file.name
+    tempfn = form.cleaned_data['temp_file_path']
+
+    # Get the mimetype and extension
+    mimetype = file.content_type
+    ext = mthash_plus.mimetypes.get(mimetype, None)
+    # print('ext in form_valid', ext)
+    infile = file.open(mode="r")
+
+    # For JSON files:
+    if ext == 'json':
+      jdata = json.loads(infile.read())
+      try:
+        result = validate_lpf(tempfn, 'coll')
+      except LPFValidationError as e:
+        # Assuming 'e' contains a list of error dictionaries
+        error_list = e.args[0]
+
+        # Construct the error message for the user
+        if len(error_list) == 3:
+          message = "<b>Several errors were found in your file; the first of these are</b>:<ul class='no-indent'>"
+        else:
+          message = "<b>Errors were found in your file</b>:<ul class='no-indent'>"
+
+        for err in error_list:
+          row = err['feat']
+          reason_match = re.search(r'Reason: (.*?) Schema path', err['error'])
+          if reason_match:
+            reason = reason_match.group(1)
+            message += f"<li>Row {row}: {reason}</li>"
+        message += "</ul>"
+
+        messages.error(self.request, message)
+        return self.render_to_response(self.get_context_data(form=form))
+
+      # Create the Dataset object
+      dataset = form.save(commit=False)
+      dataset.save()
+
+      # Directly process the data and create database entries
+      # insert_lpf_data(data, dataset.pk)
+      result = ds_insert_json(jdata, dataset.pk, user)
+
+    # For delimited files:
+    elif ext in ['csv', 'tsv', 'xlsx', 'ods']:
+      # TEST ROUTINE
+      # df = pd.read_csv(file, sep='\t', dtype=str)
+      # empty_cells = df[df == ''].stack().index.tolist()
+      # print('empty_cells', empty_cells)
+      # print('df', df)
+      # return
+      #  END TEST
+
+      df = read_file_into_dataframe(file, ext)
+      try:
+        validate_delim(df)
+      except DelimValidationError as e:
+        error_list = e.args[0]
+
+        if isinstance(error_list, str):
+          error_list = [{"row": "Unknown", "error": error_list}]
+
+        # Construct the error message for the user
+        if len(error_list) > 1:
+          message = "<b>Several errors were found in your file; the first of these are</b>:<ul class='no-indent'>"
+        else:
+          message = "<b>Errors were found in your file</b>:<ul class='no-indent'>"
+
+        for err in error_list:
+          row = err['row']
+          reason = err['error']
+          message += f"<li>Row {row}: {reason}</li>"
+        message += "</ul>"
+
+        messages.error(self.request, message)
+        return self.render_to_response(self.get_context_data(form=form))
+
+      # Create the Dataset object
+      dataset = form.save(commit=False)
+      dataset.save()
+
+      # Directly process the DataFrame and create database entries
+      try:
+        with transaction.atomic():
+          ds_insert_delim(df, dataset.pk)
+      except DataAlreadyProcessedError:
+        messages.info(self.request, "The data appears to have already been processed.")
+        return self.render_to_response(self.get_context_data(form=form))
+      except DelimInsertError as e:
+        error_list = e.args[0]
+
+        if isinstance(error_list, str):
+          error_list = [{"row": "Unknown", "error": error_list}]
+
+        # Construct the error message for the user
+        if len(error_list) > 1:
+          message = "<b>Several errors occurred during insertion; the first of these are</b>:<ul class='no-indent'>"
+        else:
+          message = "<b>Errors occurred during insertion</b>:<ul class='no-indent'>"
+
+        print('error_list', error_list)
+        for err in error_list:
+          row = err['row']
+          reason = err['error']
+          message += f"<li>Row {row}: {reason}</li>"
+        message += "</ul>"
+
+        messages.error(self.request, message)
+        return self.render_to_response(self.get_context_data(form=form))
+
+      # backfill to new Dataset object and save
+
+    else:
+      message = "Detected file type is not supported - must be one of json, csv, tsv, xlsx, or ods."
+      messages.error(self.request, message)
+      return self.render_to_response(self.get_context_data(form=form))
+
+    # if result:
+    #   dataset.numrows = result['numrows']
+    #   dataset.numlinked = result['numlinked']
+    #   dataset.total_links = result['total_links']
+    dataset.ds_status = 'uploaded'
+    dataset.save()
+
+    # Create the DatasetFile object
+    DatasetFile.objects.create(
+      dataset_id = dataset,
+      # uploaded valid file as is
+      file = form.cleaned_data['file'],
+      rev = 1,
+      format = ext,
+      delimiter = '\t' if ext in ['tsv','xlsx','ods'] else ',' if ext == 'csv' else 'n/a',
+      upload_date = None,
+      header = df.columns.tolist() if ext != 'json' else None,
+      numrows = len(df) if ext != 'json' else result['numrows'],
+      df_status = 'uploaded'
+    )
+
+    # write log entry
+    Log.objects.create(
+      # category, logtype, "timestamp", subtype, dataset_id, user_id
+      category='dataset',
+      logtype='ds_create',
+      subtype=form_data['datatype'],
+      dataset_id=dataset.id,
+      user_id=user.id
+    )
+
+    # If everything went well:
+    # return super().form_valid(form)
+    return redirect('/datasets/'+str(dataset.id)+'/summary')
+
+
+"""
   DatasetCreateView()
   initial create
   upload file, validate format, create DatasetFile instance,
