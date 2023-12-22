@@ -1,4 +1,5 @@
 import logging, codecs, json, os, re, sys
+import math
 from frictionless import validate as fvalidate
 from jsonschema import draft7_format_checker, validate, ValidationError
 from .exceptions import LPFValidationError, DelimValidationError
@@ -23,6 +24,80 @@ def parse_validation_error(error):
     user_message = f"Error in data: {data}. Reason: {message}. Schema path: {schema_path}"
 
     return user_message
+
+#
+# replaces validate_tsv()
+#
+def validate_delim(df):
+	errors = []
+
+	# Define required fields and patterns
+	aliases = ["bnf", "cerl", "dbp", "gn", "gnd", "gov", "loc", "pl", "tgn", "viaf", "wd", "wp", "whg"]
+	pattern = r"https?:\/\/.*\..*|(" + "|".join(aliases) + r"):\d+"
+
+	# Define required fields and patterns
+	required_fields = ['id', 'title', 'title_source', 'start']
+	pattern_constraints = {
+		'ccodes': "([a-zA-Z]{2};?)+",
+		'matches': pattern,
+		'parent_id': "(https?:\/\/.*\\..*|#\\d*)",
+		'start': "(-?\\d{1,4}(-\\d{2})?(-\\d{2})?)(\/(-?\\d{1,4}(-\\d{2})?(-\\d{2})?))?",
+		'end': "(-?\\d{1,4}(-\\d{2})?(-\\d{2})?)(\/(-?\\d{1,4}(-\\d{2})?(-\\d{2})?))?"
+	}
+	range_constraints = {
+		'lon': (-180, 180),
+		'lat': (-90, 90)
+	}
+
+	# Loop through rows for validation
+	for index, row in df.iterrows():
+		# Check required fields
+		for field in required_fields:
+			if field not in row:
+				errors.append({"row": index + 1, "error": f"Required field missing: {field}"})
+
+		# Check one of "start" or "attestation_year" is non-empty
+		if (row.get("start") is None or math.isnan(row.get("start"))) and \
+			(row.get("attestation_year") is None or math.isnan(row.get("attestation_year"))):
+			errors.append({"row": index + 1, "error": "Either start or attestation_year must be present in all rows"})
+
+
+		# Check for unsupported aat_types
+		supported_aat_types = {aat_id for aat_id in aat_fclass}
+		aat_types = [int(a.strip()) for a in str(row.get('aat_types', '')).split(';') if a]
+		for aat_type in aat_types:
+			if aat_type not in supported_aat_types:
+				errors.append({
+					"row": index + 1,
+					"error": f"Unsupported aat_type: {aat_type}"
+				})
+
+		# Check pattern constraints
+		for field, pattern in pattern_constraints.items():
+			# Check if the field exists in the row
+			if field in row:
+				value = str(row[field])
+				# If the field's value is an empty string or "nan" or it matches the pattern, continue to the next iteration
+				if value in ('', 'nan') or bool(re.search(pattern, value)):
+					continue
+				if field == 'matches':
+					errors.append(
+						{"row": index + 1, "error": f"Field {field} contains an unsupported alias or invalid URL. Please use supported alias(es)."}
+					)
+				else:
+					errors.append(
+						{"row": index + 1, "error": f"Field {field} contains a value that does not match the required pattern"}
+					)
+
+		# Check range constraints
+		for field, (low, high) in range_constraints.items():
+			if field in row and (float(row[field]) < low or float(row[field]) > high):
+				errors.append({"row": index + 1, "error": f"Value in {field} is out of the allowed range"})
+
+	if errors:
+		raise DelimValidationError(errors)
+
+	return errors
 
 #
 # validate Linked Places json-ld (w/jsonschema)
@@ -78,84 +153,9 @@ def validate_lpf(tempfn, format):
 		result['count'] = countrows
 	return result
 
-aliases = ["bnf", "cerl", "dbp", "gn", "gnd", "gov", "loc", "pl", "tgn", "viaf", "wd", "wp", "whg"]
-pattern = r"(https?:\\/\\/.*\\..*;?)+|(" + "|".join(aliases) + r":.*;?)+"
-
-#
-# replaces validate_tsv()
-def validate_delim(df):
-	errors = []
-
-	# Define required fields and patterns
-	aliases = ["bnf", "cerl", "dbp", "gn", "gnd", "gov", "loc", "pl", "tgn", "viaf", "wd", "wp", "whg"]
-	pattern = r"https?:\/\/.*\..*|(" + "|".join(aliases) + r"):\d+"
-
-	# Define required fields and patterns
-	required_fields = ['id', 'title', 'title_source', 'start']
-	pattern_constraints = {
-		'ccodes': "([a-zA-Z]{2};?)+",
-		'matches': pattern,
-		'parent_id': "(https?:\/\/.*\\..*|#\\d*)",
-		'start': "(-?\\d{1,4}(-\\d{2})?(-\\d{2})?)(\/(-?\\d{1,4}(-\\d{2})?(-\\d{2})?))?",
-		'end': "(-?\\d{1,4}(-\\d{2})?(-\\d{2})?)(\/(-?\\d{1,4}(-\\d{2})?(-\\d{2})?))?"
-	}
-	range_constraints = {
-		'lon': (-180, 180),
-		'lat': (-90, 90)
-	}
-
-	# Loop through rows for validation
-	for index, row in df.iterrows():
-		# Check required fields
-		for field in required_fields:
-			if field not in row:
-				errors.append({"row": index + 1, "error": f"Required field missing: {field}"})
-
-		# Check for either "start" or "attestation_year"
-		if not ("start" in row or "attestation_year" in row):
-			errors.append({"row": index + 1, "error": "Either 'start' or 'attestation_year' must be present"})
-
-		supported_aat_types = {aat_id for aat_id in aat_fclass}
-		aat_types = [int(a.strip()) for a in str(row.get('aat_types', '')).split(';') if a]
-
-		for aat_type in aat_types:
-			if aat_type not in supported_aat_types:
-				errors.append({
-					"row": index + 1,
-					"error": f"Unsupported aat_type: {aat_type}"
-				})
-
-		# Check pattern constraints
-		for field, pattern in pattern_constraints.items():
-			# Check if the field exists in the row
-			if field in row:
-				value = str(row[field])
-				# If the field's value is an empty string or "nan" or it matches the pattern, continue to the next iteration
-				if value in ('', 'nan') or bool(re.search(pattern, value)):
-					continue
-				if field == 'matches':
-					errors.append(
-						{"row": index + 1,
-						 "error": f"Field {field} contains an unsupported alias or invalid URL. Please use supported alias(es)."}
-					)
-				else:
-					errors.append(
-						{"row": index + 1, "error": f"Field {field} contains a value that does not match the required pattern"}
-					)
-
-		# Check range constraints
-		for field, (low, high) in range_constraints.items():
-			if field in row and (row[field] < low or row[field] > high):
-				errors.append({"row": index + 1, "error": f"Value in {field} is out of the allowed range"})
-
-	if errors:
-		raise DelimValidationError(errors)
-
-	return errors
-
 #
 # DEPRECATED 2023-08 (uses frictionless.py 3.31.0)
-# replaces by validate_delim()
+# replaced by validate_delim()
 #
 def validate_tsv(fn, ext):
 	# incoming csv or tsv; in cases converted from xlsx or ods via pandas

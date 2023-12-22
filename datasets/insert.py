@@ -120,7 +120,6 @@ def process_types(row, newpl):
   types = [t.strip() for t in str(row.get('types', '')).split(';') if t]
   aat_types = [int(a.strip()) for a in str(row.get('aat_types', '')).split(';') if a]
   fclasses_from_row = [f.strip() for f in str(row.get('fclasses', '')).split(';') if f]
-  fclasses_from_row = [f.strip() for f in str(row.get('fclasses', '')).split(';') if f]
 
   # Build the PlaceType objects for each type and aat_type
   for type_, aat_type in zip_longest(types, aat_types, fillvalue=None):

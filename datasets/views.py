@@ -5,10 +5,10 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-User = get_user_model()
 from django.contrib.gis.geos import GEOSGeometry
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Q, F
 from django.db.utils import DataError
 from django.forms import modelformset_factory
@@ -26,35 +26,42 @@ from django.db.models import CharField, JSONField
 # external
 from celery import current_app as celapp
 from copy import deepcopy
-import ast, shutil, tempfile, codecs, math, mimetypes, os, re, sys
+import ast, shutil, tempfile #, codecs, math, mimetypes, os, re, sys
 from deepdiff import DeepDiff as diff
 import numpy as np
 es = settings.ES_CONN
-import pandas as pd
 from pathlib import Path
 from shapely import wkt
 from shutil import copyfile
 
 from areas.models import Area, Country
 from collection.models import Collection, CollectionGroup
-from datasets.forms import HitModelForm, DatasetDetailModelForm, DatasetCreateModelForm, DatasetCreateEmptyModelForm
-from datasets.models import Dataset, Hit, DatasetFile
-from datasets.static.hashes import mimetypes_plus as mthash_plus
-from datasets.static.hashes.parents import ccodes as cchash
+
+from .exceptions import LPFValidationError, DelimValidationError, \
+  DelimInsertError, DataAlreadyProcessedError
+from .forms import (HitModelForm, DatasetDetailModelForm,
+  DatasetUploadForm, DatasetCreateModelForm, DatasetCreateEmptyModelForm)
+from .insert import ds_insert_json, ds_insert_delim, \
+  ds_insert_lpf, ds_insert_tsv, failed_upload_notification
+from .validation import validate_delim, validate_lpf, validate_tsv
+
+from .models import Dataset, Hit, DatasetFile
+from .static.hashes import mimetypes_plus as mthash_plus
+from .static.hashes.parents import ccodes as cchash
 
 # NB these task names ARE in use; they are generated dynamically
-from datasets.tasks import align_wdlocal, align_idx, maxID
+from .tasks import align_wdlocal, align_idx, maxID
 
 # from datasets.update import deleteFromIndex
-from datasets.utils import *
+from .utils import *
 from elastic.es_utils import makeDoc, removePlacesFromIndex, replaceInIndex, removeDatasetFromIndex
 from main.choices import AUTHORITY_BASEURI
 from main.models import Log, Comment
 from places.models import *
-from resources.models import Resource
 
 from api.views import AreaListView
 
+User = get_user_model()
 
 class DatasetGalleryView(ListView):
   redirect_field_name = 'redirect_to'
@@ -331,7 +338,7 @@ def indexMultiMatch(pid, matchlist):
       es.delete('whg', _id)
       es.index(index='whg', id=_id, body=newsrcd, routing=1)
     except RequestError as rq:
-      print('reindex failed (demoted)',d)
+      print('reindex failed (demoted)', _id)
       print('Error: ', rq.error, rq.info)
 
     # re-assign parent for kids of all/any demoted parents
@@ -666,7 +673,7 @@ def review(request, pk, tid, passnum):
                         # TODO: filter duplicates
                         if "links" in hits[x]["json"]:
                             for l in hits[x]["json"]["links"]:
-                                authid = re.search("\: ?(.*?)$", l).group(1)
+                                authid = re.search(": ?(.*?)$", l).group(1)
                                 # print('authid, authids',authid, place.authids)
                                 if l not in place.authids:
                                     # if authid not in place.authids:
@@ -838,7 +845,7 @@ def write_wd_pass0(request, tid):
         #'jsonb__identifier',flat=True)
       for l in h.json['links']:
         link_counter += 1
-        authid = re.search("\:?(.*?)$", l).group(1)
+        authid = re.search(":?(.*?)$", l).group(1)
         print(authid)
         # TODO: same no-dupe logic in review()
         # don't write duplicates
@@ -2616,6 +2623,46 @@ class DatasetCreateEmptyView (LoginRequiredMixin, CreateView):
     context = super(DatasetCreateEmptyView, self).get_context_data(*args, **kwargs)
     #context['action'] = 'create'
     return context
+
+"""
+  DatasetCreate() helpers
+  alternate bot-guided
+"""
+
+def get_file_type(file):
+    """Determine the file type based on its MIME type."""
+    mimetype = file.content_type
+    return mthash_plus.mimetypes.get(mimetype, None)
+
+def read_file_into_dataframe(file, ext):
+  """
+	Reads the given file into a pandas DataFrame based on the provided extension.
+  """
+  if ext == 'csv':
+    df = pd.read_csv(file, sep=',', converters={
+      'id': str, 'start': str, 'end': str,
+      'aat_types': str, 'lon': float, 'lat': float})
+
+  elif ext == 'tsv':
+    df = pd.read_csv(file, sep='\t', converters={
+      'id': str, 'start': str, 'end': str, 'aat_types': str})
+
+    # Convert 'lon' and 'lat' with error handling
+    df['lon'] = pd.to_numeric(df['lon'], errors='coerce')
+    df['lat'] = pd.to_numeric(df['lat'], errors='coerce')
+
+  elif ext == 'xlsx' or ext == 'ods':
+    df = pd.read_excel(file, converters={
+      'id': str, 'start': str, 'end': str,
+      'aat_types': str, 'lon': float, 'lat': float})
+  else:
+    raise ValueError(f"Unsupported file extension: {ext}")
+
+  # Convert column headers to lowercase
+  df.columns = df.columns.str.lower()
+
+  return df
+
 
 """
   DatasetCreate()
