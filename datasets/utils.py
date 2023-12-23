@@ -12,6 +12,7 @@ import codecs, csv, datetime, sys, openpyxl, os, pprint, re, time
 import pandas as pd
 import simplejson as json
 from chardet import detect
+from dateutil.parser import parse
 from django_celery_results.models import TaskResult
 from frictionless import validate as fvalidate
 from goodtables import validate as gvalidate
@@ -592,13 +593,13 @@ def parse_errors_lpf(errors):
 # returns object for PlaceWhen.jsonb in db
 # and minmax int years for PlacePortalView()
 #
+
 def parsedates_tsv(s,e):
-  s_yr=s[:5] if s[0] == '-' else s[:4]
-  e_yr=e[:5] if e[0] == '-' else e[:4]
-  #union = intmap([*set(e.split('/')), *set(s.split('/'))])
-  return {"timespans":[
-    {"start": {"earliest":s}, "end": {"latest":e}}],
-          "minmax":[int(s_yr),int(e_yr)]}
+    s_yr = parse(s).year
+    e_yr = parse(e).year
+    return {"timespans":[
+        {"start": {"earliest":s}, "end": {"latest":e}}],
+            "minmax":[s_yr, e_yr]}
 
 # extract integers for new Place from lpf
 def timespansReduce(tsl):

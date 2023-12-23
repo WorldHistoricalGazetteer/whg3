@@ -5,12 +5,16 @@ from django.test import TestCase
 import pandas as pd
 import unittest
 
-from datasets.exceptions import DelimValidationError, LPFValidationError
+from datasets.exceptions import DelimValidationError, DelimInsertError, LPFValidationError
 from datasets.insert import ds_insert_delim
 from datasets.models import Dataset
 from datasets.validation import validate_delim
 
-class DatasetCreateTestCase(TestCase):
+from django.test import TestCase, Client
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.urls import reverse
+
+class DatasetCreateViewTest(TestCase):
     def setUp(self):
         # Create a User instance
         User = get_user_model()
@@ -22,6 +26,7 @@ class DatasetCreateTestCase(TestCase):
                                               description='Test Dataset Description')
 
         # Define test files and expected error messages
+        # TODO: invalid ccode, duplicate id
         self.test_files = [
             ('tests/data/valid_file.tsv', None),  # No errors expected
             ('tests/data/missing_field.tsv', ['Required field missing']),  # Expected error message
@@ -36,7 +41,8 @@ class DatasetCreateTestCase(TestCase):
               "unsupported alias",
               "out of the allowed range",
               "does not match the required pattern",
-             ])
+             ]),
+            ('tests/data/valid_but_duplicate.tsv', ['Duplicate value error message']),
         ]
 
     def test_validate_delim(self):
@@ -62,20 +68,110 @@ class DatasetCreateTestCase(TestCase):
                     self.fail("validate_delim() did not raise DelimValidationError when it was expected")    # def test_validate_delim(self):
 
     def test_ds_insert_delim(self):
-        for filename, expected_error in self.test_files:
-            # Only test files that are expected to be valid
-            if expected_error is None:
-                # Load the file and make a DataFrame
-                df = pd.read_csv(filename)
+        for filename, expected_errors in self.test_files:
+            # Load the file and make a DataFrame
+            df = pd.read_csv(filename, sep='\t')
 
-                # Submit the DataFrame and the Dataset instance to ds_insert_delim()
-                try:
-                    ds_insert_delim(df, self.dataset.pk)
-                except Exception as e:
-                    # If ds_insert_delim() raises an error, fail the test
-                    self.fail(f"ds_insert_delim() raised {type(e).__name__} when no error was expected")
+            try:
+                ds_insert_delim(df, self.dataset.pk)
+            except DelimInsertError as e:
+                # Check that the error messages from ds_insert_delim() are as expected
+                for error in e.errors:
+                    self.assertIn(error["error"], expected_errors)
+
+    def test_end_to_end(self):
+        # Define the form data
+        form_data = {
+            'owner': self.user.pk,
+            'label': 'test_dataset',
+            'title': 'Test Dataset',
+            'description': 'Test Dataset Description',
+        }
+
+        # Create a test file
+        test_file = SimpleUploadedFile('test_file.tsv', b'id\ttitle\tstart\tend\n1\tTest\t2000\t2001\n')
+
+        # Add the test file to the form data
+        form_data['file_field_name'] = test_file
+
+        # Send a POST request to the form URL
+        response = self.client.post(reverse('datasets:dataset-create'), form_data)
+
+        # Check the response for the expected error messages
+        self.assertContains(response, 'Expected error message 1')
+        self.assertContains(response, 'Expected error message 2')
+        # ... Add more assertions for each expected error message ...
+
+
 if __name__ == '__main__':
     unittest.main()
+
+# class DatasetCreateTestCase(TestCase):
+#     def setUp(self):
+#         # Create a User instance
+#         User = get_user_model()
+#         self.user = User.objects.create_user(email='test@test.com', password='12345')
+#
+#         # Create a Dataset instance
+#         self.dataset = Dataset.objects.create(owner=self.user, label='test_dataset',
+#                                               title='Test Dataset',
+#                                               description='Test Dataset Description')
+#
+#         # Define test files and expected error messages
+#         self.test_files = [
+#             ('tests/data/valid_file.tsv', None),  # No errors expected
+#             ('tests/data/missing_field.tsv', ['Required field missing']),  # Expected error message
+#             ('tests/data/missing_start_value.tsv', ["Either start or attestation_year"]),  # Expected error message
+#             ('tests/data/missing_start_column.tsv', ["Required field missing", "Either start or attestation_year"]),  # Expected error message
+#             ('tests/data/unsupported_aat.tsv', ["Unsupported aat_type"]),  # Expected error message
+#             ('tests/data/unsupported_alias.tsv', ["unsupported alias"]),  # Expected error message
+#             ('tests/data/out_of_range.tsv', ["out of the allowed range"]),  # Expected error message
+#             ('tests/data/mixed_errors.tsv', [
+#               'Required field missing',
+#               "Either start or attestation_year",
+#               "unsupported alias",
+#               "out of the allowed range",
+#               "does not match the required pattern",
+#              ])
+#         ]
+#
+#     def test_validate_delim(self):
+#         for filename, expected_errors in self.test_files:
+#             print('testing file:', filename)
+#             # Load the file and make a DataFrame
+#             df = pd.read_csv(filename, sep='\t')
+#             print(df)
+#             print('expected_errors:', expected_errors)
+#             try:
+#                 validate_delim(df)
+#             except DelimValidationError as e:
+#                 # If validate_delim() raises a DelimValidationError, check that the error messages are as expected
+#                 if expected_errors is not None:
+#                     for error in e.errors:
+#                         self.assertTrue(any(expected_error in error["error"] for expected_error in expected_errors),
+#                                         f"Error message '{error['error']}' does not contain any of the expected error messages")
+#             else:
+#                 # If validate_delim() does not raise a DelimValidationError, and no error was expected, the test passes
+#                 if expected_errors is None:
+#                     self.assertEqual(expected_errors, None, "validate_delim() did not raise DelimValidationError as expected")
+#                 else:
+#                     self.fail("validate_delim() did not raise DelimValidationError when it was expected")    # def test_validate_delim(self):
+#
+#     def test_ds_insert_delim(self):
+#         for filename, expected_error in self.test_files:
+#             # Only test files that are expected to be valid
+#             if expected_error is None:
+#                 # Load the file and make a DataFrame
+#                 df = pd.read_csv(filename)
+#
+#                 # Submit the DataFrame and the Dataset instance to ds_insert_delim()
+#                 try:
+#                     ds_insert_delim(df, self.dataset.pk)
+#                 except Exception as e:
+#                     # If ds_insert_delim() raises an error, fail the test
+#                     self.fail(f"ds_insert_delim() raised {type(e).__name__} when no error was expected")
+
+
 
 
 # circa Jan 2021

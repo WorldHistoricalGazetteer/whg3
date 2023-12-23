@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import traceback
 import warnings
+from dateutil.parser import parse
 from itertools import zip_longest
 
 from django.contrib import messages
@@ -161,35 +162,36 @@ def process_types(row, newpl):
 # create PlaceWhen object; update Place with minmax, timespans
 def process_when(row, newpl):
   error_msgs = []
-
   try:
-    # Check for existence of the columns and not empty
-    start = int(row['start']) if 'start' in row and row.get('start', '') else None
-    end = int(row['end']) if 'end' in row and row.get('end', '') else None
-    attestation_year = int(row['attestation_year']) if \
-      'attestation_year' in row and row.get('attestation_year', '') else None
+      # Check for existence of the columns and not empty
+      start = parse(row['start']) if 'start' in row and row.get('start', '') else None
+      end = parse(row['end']) if 'end' in row and row.get('end', '') else None
+      attestation_year = int(row['attestation_year']) if \
+          'attestation_year' in row and row.get('attestation_year', '') else None
 
-    # Either start or attestation_year is assured by validation
-    dates = (start, end, attestation_year)
-    datesobj = parsedates_tsv(dates)
+      # Check if start is less than end
+      if start and end and start > end:
+          raise ValueError("Start date is greater than end date")
 
-    # Update the newpl object with the computed values
-    newpl.minmax = datesobj['minmax']
-    newpl.attestation_year = attestation_year
-    newpl.timespans = [datesobj['minmax']]
-    newpl.save()
+      # Either start or attestation_year is assured by validation
+      dates = (start, end, attestation_year)
+      datesobj = parsedates_tsv(dates)
 
-    # Create the PlaceWhen object
-    when_object = PlaceWhen(
-      place=newpl,
-      src_id=newpl.src_id,
-      jsonb=datesobj
-    )
+      # Update the newpl object with the computed values
+      newpl.minmax = datesobj['minmax']
+      newpl.attestation_year = attestation_year
+      newpl.timespans = [datesobj['minmax']]
+      newpl.save()
 
-  except ValueError:
-    error_msgs.append(f"Error converting date values for place <b>{newpl} ({newpl.src_id})</b>.")
-  except Exception as e:
-    error_msgs.append(f"Error processing dates for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
+      # Create the PlaceWhen object
+      when_object = PlaceWhen(
+          place=newpl,
+          src_id=newpl.src_id,
+          jsonb=datesobj
+      )
+
+  except ValueError as e:
+      error_msgs.append(f"Error processing dates for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
 
   if error_msgs:
     raise DelimInsertError("; ".join(error_msgs))
@@ -239,13 +241,15 @@ def process_geom(row, newpl):
   # print('geom',geom_object.geom)
 
   # Process ccodes
+  # if geom is in ocean, no ccode possible; just pass
   if 'ccodes' in row and row['ccodes']:
     ccodes = [x.strip().upper() for x in row['ccodes'].split(';')]
   elif geojson:
     try:
       ccodes = ccodesFromGeom(geojson)
     except Exception as e:
-      error_msgs.append(f"Error generating country codes for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
+      pass
+      # error_msgs.append(f"Error generating country codes for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
   else:
     ccodes = []
 
@@ -305,7 +309,6 @@ def process_descriptions(row, newpl):
 """
 def ds_insert_delim(df, pk):
   """
-
   :param df: dataframe
   :param pk: primary key of dataset
   """
@@ -353,6 +356,7 @@ def ds_insert_delim(df, pk):
 
     # PlaceType
     relevant_columns = ['types', 'aat_types', 'fclasses']
+
     if any(col in df.columns for col in relevant_columns) and \
       any(row.get(col, None) not in ['', None] for col in relevant_columns):
       objlists['PlaceType'].extend(process_types(row, newpl))

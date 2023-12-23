@@ -3,6 +3,7 @@ import math
 from frictionless import validate as fvalidate
 from jsonschema import draft7_format_checker, validate, ValidationError
 from .exceptions import LPFValidationError, DelimValidationError
+from areas.models import Country
 from places.models import Type
 
 aat_fclass = {}
@@ -30,10 +31,11 @@ def parse_validation_error(error):
 #
 def validate_delim(df):
 	errors = []
-
+	# TODO: get valid ccodes from db
 	# Define required fields and patterns
 	aliases = ["bnf", "cerl", "dbp", "gn", "gnd", "gov", "loc", "pl", "tgn", "viaf", "wd", "wp", "whg"]
 	pattern = r"https?:\/\/.*\..*|(" + "|".join(aliases) + r"):\d+"
+	ccode_list = [c.iso for c in Country.objects.all()]
 
 	# Define required fields and patterns
 	required_fields = ['id', 'title', 'title_source', 'start']
@@ -60,6 +62,13 @@ def validate_delim(df):
 		if (row.get("start") is None or math.isnan(row.get("start"))) and \
 			(row.get("attestation_year") is None or math.isnan(row.get("attestation_year"))):
 			errors.append({"row": index + 1, "error": "Either start or attestation_year must be present in all rows"})
+
+		# Check for invalid ccodes (if present)
+		if 'ccodes' in row:
+			ccodes = [c.strip() for c in str(row['ccodes']).split(';') if c]
+			for ccode in ccodes:
+				if ccode.lower() not in ccode_list:
+					errors.append({"row": index + 1, "error": f"Invalid ccode: {ccode}"})
 
 
 		# Check for unsupported aat_types
