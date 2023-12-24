@@ -320,15 +320,9 @@ def ds_insert_delim(df, pk):
   uribase = ds.uri_base
   # any
   noplaces = Place.objects.filter(dataset=ds.label).count() == 0
-  # print(f"new dataset: {ds.label}, uri_base: {uribase}")
+  skipped_rows = []
+  skipped_row_ids = []
 
-  # TEST
-  # duplicates = df[df.duplicated()]
-  # print("Duplicate Rows:", duplicates)
-  # END TEST
-
-  # header = df.columns
-  # print('df header', header)
 
   # ensure dataset has no orphaned Place records
   # this appears to be a pre-refactor remnant
@@ -345,7 +339,12 @@ def ds_insert_delim(df, pk):
     """
       create new Place + a PlaceName record from its title
     """
-    newpl = create_place(row, ds)
+    if not Place.objects.filter(src_id=row['id'], dataset=ds).exists():
+      newpl = create_place(row, ds)
+    else:
+      skipped_rows += 1
+      skipped_row_ids.append(row['id'])
+      print('skipping existing place', row['id'])
 
     """
     generate new related objects for objlists[]

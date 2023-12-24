@@ -2775,7 +2775,7 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
       # Directly process the DataFrame and create database entries
       try:
         with transaction.atomic():
-          ds_insert_delim(df, dataset.pk)
+          skipped_rows = ds_insert_delim(df, dataset.pk)
       except DataAlreadyProcessedError:
         messages.info(self.request, "The data appears to have already been processed.")
         return self.render_to_response(self.get_context_data(form=form))
@@ -2801,32 +2801,26 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
         messages.error(self.request, message)
         return self.render_to_response(self.get_context_data(form=form))
 
-      # backfill to new Dataset object and save
-
     else:
       message = "Detected file type is not supported - must be one of json, csv, tsv, xlsx, or ods."
       messages.error(self.request, message)
       return self.render_to_response(self.get_context_data(form=form))
 
-    # if result:
-    #   dataset.numrows = result['numrows']
-    #   dataset.numlinked = result['numlinked']
-    #   dataset.total_links = result['total_links']
     dataset.ds_status = 'uploaded'
     dataset.save()
 
     # Create the DatasetFile object
     DatasetFile.objects.create(
-      dataset_id = dataset,
+      dataset_id=dataset,
       # uploaded valid file as is
-      file = form.cleaned_data['file'],
-      rev = 1,
-      format = ext,
-      delimiter = '\t' if ext in ['tsv','xlsx','ods'] else ',' if ext == 'csv' else 'n/a',
-      upload_date = None,
-      header = df.columns.tolist() if ext != 'json' else None,
-      numrows = len(df) if ext != 'json' else result['numrows'],
-      df_status = 'uploaded'
+      file=form.cleaned_data['file'],
+      rev=1,
+      format=ext,
+      delimiter='\t' if ext in ['tsv','xlsx','ods'] else ',' if ext == 'csv' else 'n/a',
+      upload_date=None,
+      header=df.columns.tolist() if ext != 'json' else None,
+      numrows=len(df) if ext != 'json' else result['numrows'],
+      df_status='uploaded'
     )
 
     # write log entry
@@ -2840,8 +2834,8 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
     )
 
     # If everything went well:
-    # return super().form_valid(form)
-    return redirect('/datasets/'+str(dataset.id)+'/summary')
+    messages.info(self.request, f"{skipped_rows} rows were skipped.")
+    return redirect('/datasets/' + str(dataset.id) + '/summary')
 
 
 """

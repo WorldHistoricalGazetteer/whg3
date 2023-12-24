@@ -42,8 +42,12 @@ class DatasetCreateViewTest(TestCase):
               "out of the allowed range",
               "does not match the required pattern",
              ]),
-            ('tests/data/valid_but_duplicate.tsv', ['Duplicate value error message']),
+            ('tests/data/invalid_geowkt.tsv', ['Error converting WKT for place']),
+            ('tests/data/start_gt_end.tsv', ['Start date is greater than end date']),
+            ('tests/data/invalid_ccode.tsv', ['Invalid ccode']),
+            ('tests/data/invalid fclasses.tsv', ['Invalid fclass']),
         ]
+
 
     def test_validate_delim(self):
         for filename, expected_errors in self.test_files:
@@ -65,7 +69,7 @@ class DatasetCreateViewTest(TestCase):
                 if expected_errors is None:
                     self.assertEqual(expected_errors, None, "validate_delim() did not raise DelimValidationError as expected")
                 else:
-                    self.fail("validate_delim() did not raise DelimValidationError when it was expected")    # def test_validate_delim(self):
+                    self.fail("validate_delim() did not raise DelimValidationError when it was expected")
 
     def test_ds_insert_delim(self):
         for filename, expected_errors in self.test_files:

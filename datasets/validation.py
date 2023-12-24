@@ -3,6 +3,7 @@ import math
 from frictionless import validate as fvalidate
 from jsonschema import draft7_format_checker, validate, ValidationError
 from .exceptions import LPFValidationError, DelimValidationError
+from django.db.models.functions import Lower
 from areas.models import Country
 from places.models import Type
 
@@ -36,6 +37,7 @@ def validate_delim(df):
 	aliases = ["bnf", "cerl", "dbp", "gn", "gnd", "gov", "loc", "pl", "tgn", "viaf", "wd", "wp", "whg"]
 	pattern = r"https?:\/\/.*\..*|(" + "|".join(aliases) + r"):\d+"
 	ccode_list = [c.iso for c in Country.objects.all()]
+	fclass_list = Type.objects.annotate(lower_fclass=Lower('fclass')).values_list('lower_fclass', flat=True).distinct()
 
 	# Define required fields and patterns
 	required_fields = ['id', 'title', 'title_source', 'start']
@@ -69,6 +71,16 @@ def validate_delim(df):
 			for ccode in ccodes:
 				if ccode.lower() not in ccode_list:
 					errors.append({"row": index + 1, "error": f"Invalid ccode: {ccode}"})
+
+		# Check for invalid fclasses (if present)
+		if 'fclasses' in row:
+			fclasses = [c.strip() for c in str(row['ccodes']).split(';') if c]
+			fclass_list_lower = [fclass.lower() for fclass in fclass_list]
+			for fclass in fclasses:
+				if fclass.lower() not in fclass_list_lower:
+					print('invalid fclass', fclass)
+					errors.append({"row": index + 1,
+					               "error": f"Invalid fclass: {fclass}, must be one of S, R, A, P, H, T, L"})
 
 
 		# Check for unsupported aat_types
