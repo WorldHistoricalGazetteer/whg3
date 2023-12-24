@@ -5,6 +5,7 @@ from django.test import TestCase
 import pandas as pd
 import unittest
 
+from areas.models import Area
 from datasets.exceptions import DelimValidationError, DelimInsertError, LPFValidationError
 from datasets.insert import ds_insert_delim
 from datasets.models import Dataset
@@ -20,6 +21,13 @@ class DatasetCreateViewTest(TestCase):
         User = get_user_model()
         self.user = User.objects.create_user(email='test@test.com', password='12345')
 
+        valid_ccodes = ['AD', 'AE', 'AF', 'AG', 'AL', 'AM', 'BG', 'AO', 'AR', 'BH', 'BI', 'PF', 'AT', 'AU', 'AZ', 'FM', 'JO', 'CV', 'BA', 'BB', 'BD', 'BE', 'BF', 'BJ', 'BN', 'BS', 'BT', 'GQ', 'BO', 'BR', 'SZ', 'BW', 'CI', 'CL', 'BY', 'TW', 'CU', 'FJ', 'BZ', 'CA', 'CR', 'CF', 'DK', 'DM', 'CG', 'DO', 'CM', 'CN', 'EG', 'CO', 'LI', 'IT', 'CY', 'CZ', 'CD', 'DE', 'DJ', 'DZ', 'ER', 'EC', 'EE', 'GE', 'ES', 'GW', 'ET', 'GH', 'GM', 'FI', 'JP', 'FR', 'IE', 'GA', 'GN', 'GB', 'GD', 'GR', 'GT', 'GY', 'HN', 'JM', 'IL', 'IN', 'KI', 'TF', 'GL', 'GU', 'HR', 'HT', 'HU', 'ID', 'HM', 'IQ', 'IS', 'KE', 'IR', 'LC', 'KG', 'LK', 'KH', 'KM', 'KN', 'KP', 'HK', 'IM', 'XK', 'KR', 'MZ', 'KW', 'KZ', 'LR', 'LS', 'LA', 'LB', 'LT', 'LU', 'LV', 'MG', 'LY', 'MK', 'SN', 'MA', 'MD', 'ME', 'ML', 'MM', 'MN', 'NL', 'NO', 'MR', 'MT', 'MU', 'MW', 'MX', 'MY', 'NC', 'NU', 'PR', 'GS', 'VI', 'NA', 'NE', 'NG', 'NI', 'NP', 'PA', 'NZ', 'OM', 'PE', 'PG', 'PH', 'RW', 'PK', 'PL', 'PS', 'PT', 'PW', 'PY', 'QA', 'SK', 'RO', 'RS', 'RU', 'SA', 'SB', 'SD', 'SL', 'SE', 'SG', 'TL', 'SI', 'SO', 'SR', 'CH', 'SS', 'ST', 'SV', 'SY', 'TD', 'TG', 'UG', 'US', 'TH', 'TJ', 'TM', 'TN', 'TR', 'TT', 'TZ', 'UY', 'UA', 'UZ', 'VC', 'VU', 'VE', 'VN', 'WS', 'YE', 'ZA', 'ZW', 'AX', 'AS', 'AQ', 'KY', 'CW', 'ZM', 'FK', 'FO', 'EH']
+        for ccode in valid_ccodes:
+            Area.objects.create(type='country',
+                                ccodes=[ccode],
+                                owner=self.user,
+                                title='a country',
+                                description='a country',)
         # Create a Dataset instance
         self.dataset = Dataset.objects.create(owner=self.user, label='test_dataset',
                                               title='Test Dataset',
@@ -44,10 +52,10 @@ class DatasetCreateViewTest(TestCase):
              ]),
         ]
         self.insert_test_files = [
-            ('tests/data/invalid_geowkt.tsv', ['Error converting WKT for place']),
+            ('tests/data/invalid_geowkt.tsv', ['Invalid coordinates in WKT geometry']),
             ('tests/data/start_gt_end.tsv', ['Start date is greater than end date']),
-            ('tests/data/invalid_ccode.tsv', ['Invalid ccode']),
-            ('tests/data/invalid fclasses.tsv', ['Invalid fclass']),
+            ('tests/data/invalid_ccode.tsv', ['At least one invalid ccode']),
+            ('tests/data/invalid_fclasses.tsv', ['Invalid fclass']),
         ]
 
 
@@ -82,9 +90,7 @@ class DatasetCreateViewTest(TestCase):
             try:
                 ds_insert_delim(df, self.dataset.pk)
             except DelimInsertError as e:
-                # Check that the error messages from ds_insert_delim() are as expected
-                for error in e.errors:
-                    self.assertIn(error["error"], expected_errors)
+                self.assertTrue(any(expected_error in str(e) for expected_error in expected_errors))
 
     def test_end_to_end(self):
         # Define the form data

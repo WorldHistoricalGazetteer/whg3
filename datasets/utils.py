@@ -18,6 +18,8 @@ from frictionless import validate as fvalidate
 from goodtables import validate as gvalidate
 from jsonschema import draft7_format_checker, validate
 from shapely import wkt
+from shapely.geometry import mapping
+from shapely.wkt import loads as wkt_loads
 
 from areas.models import Country
 from datasets.models import Dataset, DatasetUser, Hit
@@ -1043,13 +1045,22 @@ def hully(g_list):
   #print(hull.geojson)    
   return json.loads(hull.geojson) if hull.geojson !=None else []
 
+
 def parse_wkt(g):
-  #print('wkt',g)
-  from shapely.geometry import mapping
-  gw = wkt.loads(g)
-  feature = json.loads(json.dumps(mapping(gw)))
-  #print('wkt, feature',g, feature)
-  return feature
+    # Load the geometry from the WKT string
+    gw = wkt_loads(g)
+
+    # Get the bounding box of the geometry
+    minx, miny, maxx, maxy = gw.bounds
+
+    # Check if the bounding box's coordinates are within the valid range
+    if not (-180 <= minx <= 180 and -90 <= miny <= 90 and -180 <= maxx <= 180 and -90 <= maxy <= 90):
+        raise ValueError("Invalid coordinates in WKT geometry")
+
+    # Convert the geometry to a GeoJSON feature
+    feature = json.loads(json.dumps(mapping(gw)))
+
+    return feature
 
 # from timestamp
 def makeDate(ts, form):
@@ -1080,12 +1091,10 @@ def makeCoords(lonstr,latstr):
 
 # might be GeometryCollection or singleton
 def ccodesFromGeom(geom):
-  #print('ccodesFromGeom() geom',geom)
   if geom['type'] == 'Point' and geom['coordinates'] ==[]:
     ccodes = []
     return ccodes
-    #print(ccodes)
-  else:    
+  else:
     g = GEOSGeometry(str(geom))
     if g.geom_type == 'GeometryCollection':
       # just hull them all

@@ -17,7 +17,7 @@ from django.shortcuts import get_object_or_404, redirect
 
 from .exceptions import DelimInsertError, DataAlreadyProcessedError
 from .models import Dataset
-from places.models import *
+from areas.models import Area
 from datasets.utils import aliasIt, aat_lookup, ccodesFromGeom, \
   makeCoords, parse_wkt, parsedates_tsv, parsedates_lpf # emailer,
 from places.models import *
@@ -202,6 +202,7 @@ def process_when(row, newpl):
 def process_geom(row, newpl):
   error_msgs = []
   geojson = None
+  valid_ccodes = [ccode.upper() for c in Area.objects.filter(type='country') for ccode in c.ccodes]
 
   # If 'lat' and 'lon' are both present, generate Point geometry
   if all(col in row for col in ['lat', 'lon']) and row['lat'] and row['lon']:
@@ -213,8 +214,10 @@ def process_geom(row, newpl):
     }
   # If 'geowkt' is present, parse and generate corresponding geojson
   elif 'geowkt' in row and row['geowkt']:
+    print('geowkt', row['geowkt'])
     try:
       geojson = parse_wkt(row['geowkt'])
+      print('geojson', geojson)
     except Exception as e:
       error_msgs.append(f"Error converting WKT for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
 
@@ -238,20 +241,21 @@ def process_geom(row, newpl):
     except Exception as e:
       error_msgs.append(f"Error creating GEOSGeometry for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
 
-  # print('geom',geom_object.geom)
-
   # Process ccodes
-  # if geom is in ocean, no ccode possible; just pass
   if 'ccodes' in row and row['ccodes']:
     ccodes = [x.strip().upper() for x in row['ccodes'].split(';')]
+    print('ccodes', ccodes)
+    for ccode in ccodes:
+      if ccode not in valid_ccodes:
+        error_msgs.append(f"At least one invalid ccode: {ccode} for place <b>{newpl} ({newpl.src_id})</b>")
   elif geojson:
     try:
-      ccodes = ccodesFromGeom(geojson)
+      ccodes = ccodesFromGeom(geojson) # might be if not terrestrial []
     except Exception as e:
       pass
-      # error_msgs.append(f"Error generating country codes for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
   else:
     ccodes = []
+
 
   newpl.ccodes = ccodes
   newpl.save()
@@ -337,49 +341,49 @@ def ds_insert_delim(df, pk):
 
   # Loop through rows for insert
   for index, row in df.iterrows():
+    with transaction.atomic():
+      """
+        create new Place + a PlaceName record from its title
+      """
+      if not Place.objects.filter(src_id=row['id'], dataset=ds).exists():
+        newpl = create_place(row, ds)
+      else:
+        skipped_rows += 1
+        skipped_row_ids.append(row['id'])
+        print('skipping existing place', row['id'])
 
-    """
-      create new Place + a PlaceName record from its title
-    """
-    if not Place.objects.filter(src_id=row['id'], dataset=ds).exists():
-      newpl = create_place(row, ds)
-    else:
-      skipped_rows += 1
-      skipped_row_ids.append(row['id'])
-      print('skipping existing place', row['id'])
+      """
+      generate new related objects for objlists[]
+      """
+      # PlaceName
+      if 'variants' in df.columns and row['variants'] not in ['', None]:
+        objlists['PlaceName'].extend(process_variants(row, newpl))
 
-    """
-    generate new related objects for objlists[]
-    """
-    # PlaceName
-    if 'variants' in df.columns and row['variants'] not in ['', None]:
-      objlists['PlaceName'].extend(process_variants(row, newpl))
+      # PlaceType
+      relevant_columns = ['types', 'aat_types', 'fclasses']
 
-    # PlaceType
-    relevant_columns = ['types', 'aat_types', 'fclasses']
+      if any(col in df.columns for col in relevant_columns) and \
+        any(row.get(col, None) not in ['', None] for col in relevant_columns):
+        objlists['PlaceType'].extend(process_types(row, newpl))
 
-    if any(col in df.columns for col in relevant_columns) and \
-      any(row.get(col, None) not in ['', None] for col in relevant_columns):
-      objlists['PlaceType'].extend(process_types(row, newpl))
+      # PlaceWhen (always at least a start or attestation_year)
+      objlists['PlaceWhen'].extend(process_when(row, newpl))
 
-    # PlaceWhen (always at least a start or attestation_year)
-    objlists['PlaceWhen'].extend(process_when(row, newpl))
+      # PlaceGeom
+      if ('lat' in row and 'lon' in row and row['lat'] and row['lon']) or ('geowkt' in row and row['geowkt']):
+        objlists['PlaceGeom'].extend(process_geom(row, newpl))
 
-    # PlaceGeom
-    if ('lat' in row and 'lon' in row and row['lat'] and row['lon']) or ('geowkt' in row and row['geowkt']):
-      objlists['PlaceGeom'].extend(process_geom(row, newpl))
+      # PlaceLink
+      if ('matches' in row and row['matches']):
+        objlists['PlaceLink'].extend(process_links(row, newpl))
 
-    # PlaceLink
-    if ('matches' in row and row['matches']):
-      objlists['PlaceLink'].extend(process_links(row, newpl))
+      # PlaceRelated
+      if ('parent_name' in row and row['parent_name']):
+        objlists['PlaceRelated'].extend(process_related(row, newpl))
 
-    # PlaceRelated
-    if ('parent_name' in row and row['parent_name']):
-      objlists['PlaceRelated'].extend(process_related(row, newpl))
-
-    # PlaceDescription
-    if ('description' in row and row['description']):
-      objlists['PlaceDescription'].extend(process_descriptions(row, newpl))
+      # PlaceDescription
+      if ('description' in row and row['description']):
+        objlists['PlaceDescription'].extend(process_descriptions(row, newpl))
 
   # print('PlaceWhen list', len(objlists['PlaceWhen']), objlists['PlaceWhen'][0].__dict__)
   # bulk_create for each related model; NB no depictions in LP-Delim
