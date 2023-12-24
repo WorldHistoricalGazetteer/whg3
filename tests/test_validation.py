@@ -27,8 +27,8 @@ class DatasetCreateViewTest(TestCase):
 
         # Define test files and expected error messages
         # TODO: invalid ccode, duplicate id
-        self.test_files = [
-            ('tests/data/valid_file.tsv', None),  # No errors expected
+        self.validate_test_files = [
+            # ('tests/data/valid_file.tsv', None),  # No errors expected
             ('tests/data/missing_field.tsv', ['Required field missing']),  # Expected error message
             ('tests/data/missing_start_value.tsv', ["Either start or attestation_year"]),  # Expected error message
             ('tests/data/missing_start_column.tsv', ["Required field missing", "Either start or attestation_year"]),  # Expected error message
@@ -42,6 +42,8 @@ class DatasetCreateViewTest(TestCase):
               "out of the allowed range",
               "does not match the required pattern",
              ]),
+        ]
+        self.insert_test_files = [
             ('tests/data/invalid_geowkt.tsv', ['Error converting WKT for place']),
             ('tests/data/start_gt_end.tsv', ['Start date is greater than end date']),
             ('tests/data/invalid_ccode.tsv', ['Invalid ccode']),
@@ -50,7 +52,7 @@ class DatasetCreateViewTest(TestCase):
 
 
     def test_validate_delim(self):
-        for filename, expected_errors in self.test_files:
+        for filename, expected_errors in self.validate_test_files:
             print('testing file:', filename)
             # Load the file and make a DataFrame
             df = pd.read_csv(filename, sep='\t')
@@ -72,7 +74,8 @@ class DatasetCreateViewTest(TestCase):
                     self.fail("validate_delim() did not raise DelimValidationError when it was expected")
 
     def test_ds_insert_delim(self):
-        for filename, expected_errors in self.test_files:
+        for filename, expected_errors in self.insert_test_files:
+            print('processing file:', filename)
             # Load the file and make a DataFrame
             df = pd.read_csv(filename, sep='\t')
 

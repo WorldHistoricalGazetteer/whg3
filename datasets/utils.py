@@ -594,12 +594,24 @@ def parse_errors_lpf(errors):
 # and minmax int years for PlacePortalView()
 #
 
-def parsedates_tsv(s,e):
-    s_yr = parse(s).year
-    e_yr = parse(e).year
-    return {"timespans":[
-        {"start": {"earliest":s}, "end": {"latest":e}}],
-            "minmax":[s_yr, e_yr]}
+def parsedates_tsv(dates):
+    s, e, attestation_year = dates
+    if s and e:
+      s_yr = s.year
+      e_yr = e.year
+      timespans = {"start": {"earliest": s.isoformat()}, "end": {"latest": e.isoformat()}}
+      minmax = [s_yr, e_yr]
+    elif s and not e:
+      s_yr = s.year
+      timespans = {"start": {"in": s.isoformat()}}
+      minmax = [s_yr, s_yr]
+    elif attestation_year:
+      s_yr = attestation_year
+      timespans = {"start": {"in": str(attestation_year)}}
+      minmax = [attestation_year, attestation_year]
+    else:
+      return None  # Or handle this case differently if needed
+    return {"timespans": [timespans], "minmax": minmax}
 
 # extract integers for new Place from lpf
 def timespansReduce(tsl):

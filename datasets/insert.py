@@ -62,7 +62,7 @@ def create_place(row, ds):
     src_id=row['id'],
     title=row['title'].strip(),
     dataset=ds,
-    ccodes=[] if pd.isnull(row.get('ccodes')) else row.get('ccodes')
+    ccodes=[] if pd.isnull(row.get('ccodes')) else row.get('ccodes').split(';')
   )
 
   title_source = row['title_source'],
@@ -72,7 +72,7 @@ def create_place(row, ds):
     place=pl,
     src_id=row['id'],
     toponym=row['title'].strip(),
-    jsonb={"toponym": pl.title, "citations": [{"id":title_uri,"label":title_source}]}
+    jsonb={"toponym": pl.title, "citations": [{"id": title_uri,"label": title_source}]}
   )
   return pl
 
@@ -164,9 +164,9 @@ def process_when(row, newpl):
   error_msgs = []
   try:
       # Check for existence of the columns and not empty
-      start = parse(row['start']) if 'start' in row and row.get('start', '') else None
-      end = parse(row['end']) if 'end' in row and row.get('end', '') else None
-      attestation_year = int(row['attestation_year']) if \
+      start = parse(str(row['start'])) if 'start' in row and row.get('start', '') else None
+      end = parse(str(row['end'])) if 'end' in row and row.get('end', '') else None
+      attestation_year = str(row['attestation_year']) if \
           'attestation_year' in row and row.get('attestation_year', '') else None
 
       # Check if start is less than end
@@ -285,8 +285,9 @@ def process_related(row, newpl):
     jsonb={"identifier": row["parent_name"],
            "relationType": "gvp:broaderPartitive"},
   )
-  if row['parent_id']:
-    related_object['jsonb']['relationTo'] = row['parent_id']
+  parent_id = row.get('parent_id')
+  if parent_id is not None:
+    related_object['jsonb']['relationTo'] = parent_id
 
   return [related_object]
 
@@ -312,13 +313,14 @@ def ds_insert_delim(df, pk):
   :param df: dataframe
   :param pk: primary key of dataset
   """
+  print('in ds_insert_delim() with df, pk', df, pk)
   # tidy up dataframe
   df.dropna(axis=1, how='all', inplace=True)
   df.replace({np.nan: None}, inplace=True)
   # get new dataset
   ds = get_object_or_404(Dataset, id=pk)
   uribase = ds.uri_base
-  # any
+  print('existing places', [p.__dict__ for p in Place.objects.filter(dataset=ds.label)])
   noplaces = Place.objects.filter(dataset=ds.label).count() == 0
   skipped_rows = []
   skipped_row_ids = []
