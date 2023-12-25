@@ -217,7 +217,7 @@ def process_geom(row, newpl):
     # print('geowkt', row['geowkt'])
     try:
       geojson = parse_wkt(row['geowkt'])
-      print('geojson', geojson)
+      # print('geojson', geojson)
     except Exception as e:
       error_msgs.append(f"Error converting WKT for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
 

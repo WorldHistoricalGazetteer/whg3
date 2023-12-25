@@ -3150,7 +3150,7 @@ class DatasetDeleteView(DeleteView):
 
   def get_success_url(self):
     self.delete_complete()
-    return reverse('data-datasets')
+    return reverse('dashboard')
 
 """
   fetch places in specified dataset

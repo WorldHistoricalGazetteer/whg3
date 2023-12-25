@@ -22,16 +22,19 @@ from main.choices import *
 from places.models import Place, PlaceGeom, PlaceLink
 import simplejson as json
 from shapely.geometry import box, mapping
-import numpy as np
 from utils.cluster_geometries import clustered_geometries
 from utils.heatmap_geometries import heatmapped_geometries
 from utils.hull_geometries import hull_geometries
 from utils.feature_collection import feature_collection
 from utils.carousel_metadata import carousel_metadata
 
+
+# upload to MEDIA_ROOT/user_<username>/<filename>
 def user_directory_path(instance, filename):
-  # upload to MEDIA_ROOT/user_<username>/<filename>
   return 'user_{0}/{1}'.format(instance.owner.name, filename)
+
+def dataset_file_path(instance, filename):
+  return 'user_{0}/{1}'.format(instance.dataset_id.owner.name, filename)
 
 def ds_image_path(instance, filename):
   # upload to MEDIA_ROOT/datasets/<id>_<filename>
@@ -343,7 +346,8 @@ class DatasetFile(models.Model):
   dataset_id = models.ForeignKey(Dataset, related_name='files',
     default=-1, on_delete=models.CASCADE)
   rev = models.IntegerField(null=True, blank=True)
-  file = models.FileField(upload_to=user_directory_path)
+  file = models.FileField(upload_to=dataset_file_path)
+  # file = models.FileField(upload_to=user_directory_path)
   format = models.CharField(max_length=12, null=False,
                               choices=FORMATS, default='lpf')
   datatype = models.CharField(max_length=12, null=False, choices=DATATYPES,

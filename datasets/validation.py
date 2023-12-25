@@ -82,9 +82,10 @@ def validate_delim(df):
 
 		# Check for invalid ccodes (if present)
 		if 'ccodes' in row:
-			ccodes = [c.strip() for c in str(row['ccodes']).split(';') if c]
+			ccodes = [c.strip() for c in str(row['ccodes']).split(';') if c and c.lower() != 'nan']
 			for ccode in ccodes:
 				# print('ccode', ccode)
+				# print('valid_ccodes', valid_ccodes)
 				if ccode.upper() not in valid_ccodes:
 					errors.append({"row": index + 1, "error": f"Invalid ccode: {ccode}"})
 
