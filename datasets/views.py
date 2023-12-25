@@ -2635,33 +2635,29 @@ def get_file_type(file):
     return mthash_plus.mimetypes.get(mimetype, None)
 
 def read_file_into_dataframe(file, ext):
-  """
-	Reads the given file into a pandas DataFrame based on the provided extension.
-  """
-  if ext == 'csv':
-    df = pd.read_csv(file, sep=',', converters={
-      'id': str, 'start': str, 'end': str,
-      'aat_types': str, 'lon': float, 'lat': float})
+    """
+    Reads the given file into a pandas DataFrame based on the provided extension.
+    """
+    converters = {
+        'id': str, 'start': str, 'end': str, 'aat_types': str
+    }
 
-  elif ext == 'tsv':
-    df = pd.read_csv(file, sep='\t', converters={
-      'id': str, 'start': str, 'end': str, 'aat_types': str})
+    if ext == 'csv':
+        df = pd.read_csv(file, sep=',', converters=converters)
+    elif ext == 'tsv':
+        df = pd.read_csv(file, sep='\t', converters=converters)
+    elif ext == 'xlsx' or ext == 'ods':
+        df = pd.read_excel(file, converters=converters)
+    else:
+        raise ValueError(f"Unsupported file extension: {ext}")
 
-    # Convert 'lon' and 'lat' with error handling
-    df['lon'] = pd.to_numeric(df['lon'], errors='coerce')
-    df['lat'] = pd.to_numeric(df['lat'], errors='coerce')
+    # Convert 'lon' and 'lat' with error handling, if they exist
+    if 'lon' in df.columns:
+        df['lon'] = pd.to_numeric(df['lon'], errors='coerce')
+    if 'lat' in df.columns:
+        df['lat'] = pd.to_numeric(df['lat'], errors='coerce')
 
-  elif ext == 'xlsx' or ext == 'ods':
-    df = pd.read_excel(file, converters={
-      'id': str, 'start': str, 'end': str,
-      'aat_types': str, 'lon': float, 'lat': float})
-  else:
-    raise ValueError(f"Unsupported file extension: {ext}")
-
-  # Convert column headers to lowercase
-  df.columns = df.columns.str.lower()
-
-  return df
+    return df
 
 
 """
@@ -2687,6 +2683,7 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
     return self.render_to_response(context=context)
 
   def form_valid(self, form):
+    print('form valid...')
     form_data = form.cleaned_data
     file = form_data['file']
     context = {"format": form_data['format']}
@@ -2780,6 +2777,7 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
         messages.info(self.request, "The data appears to have already been processed.")
         return self.render_to_response(self.get_context_data(form=form))
       except DelimInsertError as e:
+        dataset.delete()
         error_list = e.args[0]
 
         if isinstance(error_list, str):
@@ -2787,7 +2785,7 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
 
         # Construct the error message for the user
         if len(error_list) > 1:
-          message = "<b>Several errors occurred during insertion; the first of these are</b>:<ul class='no-indent'>"
+          message = "<b>Several errors occurred during insertion, including</b>:<ul class='no-indent'>"
         else:
           message = "<b>Errors occurred during insertion</b>:<ul class='no-indent'>"
 
@@ -2795,7 +2793,8 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
         for err in error_list:
           row = err['row']
           reason = err['error']
-          message += f"<li>Row {row}: {reason}</li>"
+          message += f"<li>{reason}</li>"
+          # message += f"<li>Row {row}: {reason}</li>"
         message += "</ul>"
 
         messages.error(self.request, message)

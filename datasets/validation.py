@@ -1,10 +1,11 @@
 import logging, codecs, json, os, re, sys
 import math
+from dateutil.parser import parse
 from frictionless import validate as fvalidate
 from jsonschema import draft7_format_checker, validate, ValidationError
 from .exceptions import LPFValidationError, DelimValidationError
 from django.db.models.functions import Lower
-from areas.models import Country
+from areas.models import Area
 from places.models import Type
 
 aat_fclass = {}
@@ -36,7 +37,7 @@ def validate_delim(df):
 	# Define required fields and patterns
 	aliases = ["bnf", "cerl", "dbp", "gn", "gnd", "gov", "loc", "pl", "tgn", "viaf", "wd", "wp", "whg"]
 	pattern = r"https?:\/\/.*\..*|(" + "|".join(aliases) + r"):\d+"
-	ccode_list = [c.iso for c in Country.objects.all()]
+	valid_ccodes = [ccode.upper() for c in Area.objects.filter(type='country') for ccode in c.ccodes]
 	fclass_list = Type.objects.annotate(lower_fclass=Lower('fclass')).values_list('lower_fclass', flat=True).distinct()
 
 	# Define required fields and patterns
@@ -61,26 +62,41 @@ def validate_delim(df):
 				errors.append({"row": index + 1, "error": f"Required field missing: {field}"})
 
 		# Check one of "start" or "attestation_year" is non-empty
-		if (row.get("start") is None or math.isnan(row.get("start"))) and \
-			(row.get("attestation_year") is None or math.isnan(row.get("attestation_year"))):
+		try:
+			start = parse(row.get("start")) if row.get("start") else None
+		except ValueError:
+			start = None
+
+		try:
+			attestation_year = int(row.get("attestation_year")) if row.get("attestation_year") else None
+		except ValueError:
+			attestation_year = None
+
+		if start is None and attestation_year is None:
 			errors.append({"row": index + 1, "error": "Either start or attestation_year must be present in all rows"})
+
+		# Check one of "start" or "attestation_year" is non-empty
+		# if (row.get("start") is None or math.isnan(row.get("start"))) and \
+		# 	(row.get("attestation_year") is None or math.isnan(row.get("attestation_year"))):
+		# 	errors.append({"row": index + 1, "error": "Either start or attestation_year must be present in all rows"})
 
 		# Check for invalid ccodes (if present)
 		if 'ccodes' in row:
 			ccodes = [c.strip() for c in str(row['ccodes']).split(';') if c]
 			for ccode in ccodes:
-				if ccode.lower() not in ccode_list:
+				# print('ccode', ccode)
+				if ccode.upper() not in valid_ccodes:
 					errors.append({"row": index + 1, "error": f"Invalid ccode: {ccode}"})
 
 		# Check for invalid fclasses (if present)
 		if 'fclasses' in row:
-			fclasses = [c.strip() for c in str(row['ccodes']).split(';') if c]
-			fclass_list_lower = [fclass.lower() for fclass in fclass_list]
+			fclasses = [fc.strip() for fc in str(row['fclasses']).split(';') if fc]
+			# print('fclasses', fclasses)
 			for fclass in fclasses:
-				if fclass.lower() not in fclass_list_lower:
+				if fclass.lower() not in fclass_list:
 					print('invalid fclass', fclass)
 					errors.append({"row": index + 1,
-					               "error": f"Invalid fclass: {fclass}, must be one of S, R, A, P, H, T, L"})
+					               "error": f"Invalid fclass: {fclass}, must be one of A, P, H, S, R, T, L"})
 
 
 		# Check for unsupported aat_types
@@ -102,18 +118,23 @@ def validate_delim(df):
 				if value in ('', 'nan') or bool(re.search(pattern, value)):
 					continue
 				if field == 'matches':
-					errors.append(
-						{"row": index + 1, "error": f"Field {field} contains an unsupported alias or invalid URL. Please use supported alias(es)."}
-					)
+					errors.append({
+					    "row": index + 1,
+					    "error": (
+					        f"Field {field} contains an unsupported alias or invalid URL. "
+					        f"Please use supported alias(es): "
+					        f"{', '.join([alias + ':' for alias in aliases])}, or a valid URL."
+					    )
+					})
 				else:
 					errors.append(
-						{"row": index + 1, "error": f"Field {field} contains a value that does not match the required pattern"}
+						{"row": index + 1, "error": f"Field {field} contains a value ({value}) that does not match its required pattern"}
 					)
 
 		# Check range constraints
 		for field, (low, high) in range_constraints.items():
 			if field in row and (float(row[field]) < low or float(row[field]) > high):
-				errors.append({"row": index + 1, "error": f"Value in {field} is out of the allowed range"})
+				errors.append({"row": index + 1, "error": f"Value in {field} ({row[field]}) is out of the allowed range"})
 
 	if errors:
 		raise DelimValidationError(errors)

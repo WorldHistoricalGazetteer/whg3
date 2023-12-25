@@ -6,7 +6,7 @@ import logging
 logger = logging.getLogger(__name__)
 import traceback
 
-print('in places.signals.py')
+# print('in places.signals.py')
 
 @receiver(pre_save, sender=apps.get_model('places', 'Place'))
 def handle_index_change(sender, instance, **kwargs):

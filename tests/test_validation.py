@@ -21,7 +21,12 @@ class DatasetCreateViewTest(TestCase):
         User = get_user_model()
         self.user = User.objects.create_user(email='test@test.com', password='12345')
 
-        valid_ccodes = ['AD', 'AE', 'AF', 'AG', 'AL', 'AM', 'BG', 'AO', 'AR', 'BH', 'BI', 'PF', 'AT', 'AU', 'AZ', 'FM', 'JO', 'CV', 'BA', 'BB', 'BD', 'BE', 'BF', 'BJ', 'BN', 'BS', 'BT', 'GQ', 'BO', 'BR', 'SZ', 'BW', 'CI', 'CL', 'BY', 'TW', 'CU', 'FJ', 'BZ', 'CA', 'CR', 'CF', 'DK', 'DM', 'CG', 'DO', 'CM', 'CN', 'EG', 'CO', 'LI', 'IT', 'CY', 'CZ', 'CD', 'DE', 'DJ', 'DZ', 'ER', 'EC', 'EE', 'GE', 'ES', 'GW', 'ET', 'GH', 'GM', 'FI', 'JP', 'FR', 'IE', 'GA', 'GN', 'GB', 'GD', 'GR', 'GT', 'GY', 'HN', 'JM', 'IL', 'IN', 'KI', 'TF', 'GL', 'GU', 'HR', 'HT', 'HU', 'ID', 'HM', 'IQ', 'IS', 'KE', 'IR', 'LC', 'KG', 'LK', 'KH', 'KM', 'KN', 'KP', 'HK', 'IM', 'XK', 'KR', 'MZ', 'KW', 'KZ', 'LR', 'LS', 'LA', 'LB', 'LT', 'LU', 'LV', 'MG', 'LY', 'MK', 'SN', 'MA', 'MD', 'ME', 'ML', 'MM', 'MN', 'NL', 'NO', 'MR', 'MT', 'MU', 'MW', 'MX', 'MY', 'NC', 'NU', 'PR', 'GS', 'VI', 'NA', 'NE', 'NG', 'NI', 'NP', 'PA', 'NZ', 'OM', 'PE', 'PG', 'PH', 'RW', 'PK', 'PL', 'PS', 'PT', 'PW', 'PY', 'QA', 'SK', 'RO', 'RS', 'RU', 'SA', 'SB', 'SD', 'SL', 'SE', 'SG', 'TL', 'SI', 'SO', 'SR', 'CH', 'SS', 'ST', 'SV', 'SY', 'TD', 'TG', 'UG', 'US', 'TH', 'TJ', 'TM', 'TN', 'TR', 'TT', 'TZ', 'UY', 'UA', 'UZ', 'VC', 'VU', 'VE', 'VN', 'WS', 'YE', 'ZA', 'ZW', 'AX', 'AS', 'AQ', 'KY', 'CW', 'ZM', 'FK', 'FO', 'EH']
+        valid_ccodes = ['AD', 'AE', 'AF', 'AG', 'AL', 'AM', 'BG', 'AO', 'AR', 'BH', 'BI', 'PF', 'AT', 'AU', 'AZ', 'FM',
+                        'JO', 'CV', 'BA', 'BB', 'BD', 'BE', 'BF', 'BJ', 'BN', 'BS', 'BT', 'GQ', 'BO', 'BR', 'SZ', 'BW',
+                        'CI', 'CL', 'BY', 'TW', 'CU', 'FJ', 'BZ', 'CA', 'CR', 'CF', 'DK', 'DM', 'CG', 'DO', 'CM', 'CN',
+                        'EG', 'CO', 'LI', 'IT', 'CY', 'CZ', 'CD', 'DE', 'DJ', 'DZ', 'ER', 'EC', 'EE', 'GE', 'ES', 'GW',
+                        'ET', 'GH', 'GM', 'FI', 'JP', 'FR', 'IE', 'GA', 'GN', 'GB', 'GD', 'GR', 'GT', 'GY', 'HN', 'JM',
+                        'IL', 'IN', 'KI', 'TF', 'GL', 'GU', 'HR', 'HT', 'HU', 'ID', 'HM', 'IQ', 'IS', 'KE', 'IR', 'LC', 'KG', 'LK', 'KH', 'KM', 'KN', 'KP', 'HK', 'IM', 'XK', 'KR', 'MZ', 'KW', 'KZ', 'LR', 'LS', 'LA', 'LB', 'LT', 'LU', 'LV', 'MG', 'LY', 'MK', 'SN', 'MA', 'MD', 'ME', 'ML', 'MM', 'MN', 'NL', 'NO', 'MR', 'MT', 'MU', 'MW', 'MX', 'MY', 'NC', 'NU', 'PR', 'GS', 'VI', 'NA', 'NE', 'NG', 'NI', 'NP', 'PA', 'NZ', 'OM', 'PE', 'PG', 'PH', 'RW', 'PK', 'PL', 'PS', 'PT', 'PW', 'PY', 'QA', 'SK', 'RO', 'RS', 'RU', 'SA', 'SB', 'SD', 'SL', 'SE', 'SG', 'TL', 'SI', 'SO', 'SR', 'CH', 'SS', 'ST', 'SV', 'SY', 'TD', 'TG', 'UG', 'US', 'TH', 'TJ', 'TM', 'TN', 'TR', 'TT', 'TZ', 'UY', 'UA', 'UZ', 'VC', 'VU', 'VE', 'VN', 'WS', 'YE', 'ZA', 'ZW', 'AX', 'AS', 'AQ', 'KY', 'CW', 'ZM', 'FK', 'FO', 'EH']
         for ccode in valid_ccodes:
             Area.objects.create(type='country',
                                 ccodes=[ccode],
@@ -64,8 +69,8 @@ class DatasetCreateViewTest(TestCase):
             print('testing file:', filename)
             # Load the file and make a DataFrame
             df = pd.read_csv(filename, sep='\t')
-            print(df)
-            print('expected_errors:', expected_errors)
+            # print(df)
+            # print('expected_errors:', expected_errors)
             try:
                 validate_delim(df)
             except DelimValidationError as e:
@@ -74,6 +79,7 @@ class DatasetCreateViewTest(TestCase):
                     for error in e.errors:
                         self.assertTrue(any(expected_error in error["error"] for expected_error in expected_errors),
                                         f"Error message '{error['error']}' does not contain any of the expected error messages")
+                        print(f'Success: expected error found.')
             else:
                 # If validate_delim() does not raise a DelimValidationError, and no error was expected, the test passes
                 if expected_errors is None:
@@ -91,6 +97,7 @@ class DatasetCreateViewTest(TestCase):
                 ds_insert_delim(df, self.dataset.pk)
             except DelimInsertError as e:
                 self.assertTrue(any(expected_error in str(e) for expected_error in expected_errors))
+                print(f'Success: expected error found.')
 
     def test_end_to_end(self):
         # Define the form data

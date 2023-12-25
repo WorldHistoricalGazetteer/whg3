@@ -214,7 +214,7 @@ def process_geom(row, newpl):
     }
   # If 'geowkt' is present, parse and generate corresponding geojson
   elif 'geowkt' in row and row['geowkt']:
-    print('geowkt', row['geowkt'])
+    # print('geowkt', row['geowkt'])
     try:
       geojson = parse_wkt(row['geowkt'])
       print('geojson', geojson)
@@ -244,7 +244,7 @@ def process_geom(row, newpl):
   # Process ccodes
   if 'ccodes' in row and row['ccodes']:
     ccodes = [x.strip().upper() for x in row['ccodes'].split(';')]
-    print('ccodes', ccodes)
+    # print('ccodes', ccodes)
     for ccode in ccodes:
       if ccode not in valid_ccodes:
         error_msgs.append(f"At least one invalid ccode: {ccode} for place <b>{newpl} ({newpl.src_id})</b>")
@@ -317,14 +317,14 @@ def ds_insert_delim(df, pk):
   :param df: dataframe
   :param pk: primary key of dataset
   """
-  print('in ds_insert_delim() with df, pk', df, pk)
+  # print('in ds_insert_delim() with df, pk', df, pk)
   # tidy up dataframe
   df.dropna(axis=1, how='all', inplace=True)
   df.replace({np.nan: None}, inplace=True)
   # get new dataset
   ds = get_object_or_404(Dataset, id=pk)
   uribase = ds.uri_base
-  print('existing places', [p.__dict__ for p in Place.objects.filter(dataset=ds.label)])
+  # print('existing places', [p.__dict__ for p in Place.objects.filter(dataset=ds.label)])
   noplaces = Place.objects.filter(dataset=ds.label).count() == 0
   skipped_rows = []
   skipped_row_ids = []
