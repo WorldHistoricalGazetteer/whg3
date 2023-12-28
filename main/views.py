@@ -127,6 +127,63 @@ def group_list(request, role):
   }
   return render(request, 'lists/group_list.html', context)
 
+# for non-admins
+def dashboard_user_view(request):
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
+  is_leader = request.user.groups.filter(name='group_leaders').exists()
+  user_groups = [group.name for group in request.user.groups.all()]
+
+  user_datasets_count = Dataset.objects.filter(owner=request.user.id).count()
+  user_collections_count = Collection.objects.filter(owner=request.user).count()
+
+  section = request.GET.get('section', 'datasets')
+
+  datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+  collections = get_objects_for_user(Collection, request.user, {'owner': request.user}, is_admin)
+
+  context = {
+    'datasets': datasets,
+    'collections': collections,
+    'has_datasets': user_datasets_count > 0,
+    'has_collections': user_collections_count > 0,
+    'section': section,
+    'user_groups': user_groups,
+    'is_admin': is_admin,
+    'is_leader': is_leader,
+    'box_titles': ['Datasets', 'Place Collections', 'Dataset Collections', 'Study Areas', 'Groups'],
+
+  }
+  return render(request, 'main/dashboard_user.html', context)
+
+# all-purpose for admins
+def dashboard_admin_view(request):
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
+  is_leader = request.user.groups.filter(name='group_leaders').exists()
+  user_groups = [group.name for group in request.user.groups.all()]
+
+  user_datasets_count = Dataset.objects.filter(owner=request.user.id).count()
+  user_collections_count = Collection.objects.filter(owner=request.user).count()
+
+  section = request.GET.get('section', 'datasets')
+
+  datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+  collections = get_objects_for_user(Collection, request.user, {'owner': request.user}, is_admin)
+  areas = get_objects_for_user(Area, request.user, {'owner': request.user}, is_admin)
+
+  context = {
+    'datasets': datasets,
+    'collections': collections,
+    'areas': areas,
+    'has_datasets': user_datasets_count > 0,
+    'has_collections': user_collections_count > 0,
+    'section': section,
+    'user_groups': user_groups,
+    'is_admin': is_admin,
+    'is_leader': is_leader,
+  }
+  return render(request, 'main/dashboard_admin.html', context)
+
+# first take at a dashboard for all users
 def dashboard_view(request):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   is_leader = request.user.groups.filter(name='group_leaders').exists()

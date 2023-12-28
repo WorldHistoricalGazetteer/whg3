@@ -41,7 +41,9 @@ urlpatterns = [
 
     # static content
     path('dashboard/', views.dashboard_view, name="dashboard"),
-    # path('dashboard/', TemplateView.as_view(template_name="main/dashboard.html"), name="dashboard"),
+    path('dashboard_user/', views.dashboard_user_view, name="dashboard-user"),
+    path('dashboard_admin/', views.dashboard_admin_view, name="dashboard-admin"),
+
 
     path('about/', TemplateView.as_view(template_name="main/about.html"), name="about"),
     path('builder/', TemplateView.as_view(template_name="main/builder_start.html"), name="gazetteer-builder"),

@@ -1,0 +1,124 @@
+{% extends "main/base.html" %}
+
+{% block extra_head %}
+  <style>
+    #container {
+      min-height: calc(100vh - 90px);
+      border: gainsboro 1px solid;
+    }
+    .dashboard-box {
+      background-color: #f0f0f0; /* Light grey background for visibility */
+      min-height: 200px; /* Minimum height, adjust as needed */
+      border: 1px solid #ccc; /* Slight border for definition */
+      box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+			margin: 5px 0;
+	    font-size: small;
+    }
+		.dashboard-box-special {
+      background-color: #d6eaf8; /* Different background color for the 6th box */
+      min-height: 200px; /* Minimum height, adjust as needed */
+      border: 1px solid #ccc; /* Slight border for definition */
+      box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+      overflow-y: auto; /* Allows scrolling within the box */
+			margin: 5px 0;
+    }
+    .box-header {
+      background-color: #e7e7e7; /* Slightly darker background for the header */
+      text-align: center;
+      font-weight: bold;
+      padding: 5px 0;
+    }
+    .box-header p {
+	    font-size: 1.2rem;
+			margin: 0;
+	    font-weight: bold;
+		}
+    .box-content {
+      overflow-y: auto; /* Allows scrolling within the content area */
+      height: calc(100% - 30px); /* Adjusts height to account for header */
+      padding: 10px;
+    }
+	  .item-div {
+	    display: flex;
+	    justify-content: space-between;
+	    align-items: center;
+	    padding: 5px;
+	    border-bottom: 1px solid #ddd;
+	  }
+	  .item-div:last-child {
+	    border-bottom: none;
+	  }
+	  .fa-icon {
+	    margin-left: 5px;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div id="container" class="container mt-4">
+  <div class="d-flex justify-content-center mt-3">
+    <h3>My Dashboard</h3>
+  </div>
+  <div class="row">
+    <!-- Box 1: Datasets -->
+    <div class="col-md-4">
+      <div class="dashboard-box">
+        <div class="box-header">
+          <p>Datasets</p>
+        </div>
+        <div class="box-content">
+        {% for item in datasets %}
+          <div class="item-div">
+            {{ item.title }}
+            <div>
+              <a href="{% url 'datasets:ds_places' item.id %}">view</a>
+              <a href="{% url 'datasets:ds_summary' item.id %}">edit</a>
+            </div>
+          </div>
+        {% endfor %}
+        </div>
+      </div>
+    </div>
+    <!-- Box 2: Place Collections -->
+    <div class="col-md-4">
+      <div class="dashboard-box">
+        <div class="box-header">
+          <p>Collections</p>
+        </div>
+        <div class="box-content">
+          {% for item in collections %}
+          <div class="item-div">
+            {{ item.title }}
+	          <div class="float-end">
+							<a href="#">view</a>
+							<a href="#">edit</a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="dashboard-box">
+        <div class="box-header">
+          <p>Study Areas</p>
+        </div>
+        <div class="box-content">
+          <ul>
+            {% for item in areas %}
+            <li>{{ item.title }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      <div class="dashboard-box">
+        <div class="box-header">
+          <p>Groups</p>
+        </div>
+        <div class="box-content">
+					<p>some groups, if any</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
