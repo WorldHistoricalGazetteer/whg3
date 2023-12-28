@@ -4,11 +4,11 @@
   <style>
     #container {
       min-height: calc(100vh - 90px);
-      border: gainsboro 1px solid;
+      {#border: gainsboro 1px solid;#}
     }
     .dashboard-box {
       background-color: #f0f0f0; /* Light grey background for visibility */
-      min-height: 200px; /* Minimum height, adjust as needed */
+      min-height: 250px; /* Minimum height, adjust as needed */
       border: 1px solid #ccc; /* Slight border for definition */
       box-sizing: border-box; /* Includes padding and border in the element's total width and height */
 			margin: 5px 0;
@@ -75,13 +75,14 @@
 <div id="container" class="container mt-1">
   <div class="page-title-container mt-3">
     <h4 class="page-title">My Dashboard</h4>
-    <a href="#" class="profile-link">
+    <a href="{% url 'profile-edit' %}" class="profile-link">
       Profile<i class="fas fa-user ms-2"></i>
     </a>
   </div>
   <div class="row">
-    <!-- Box 1: Datasets -->
-    <div class="col-md-4 pe-0">
+    <!-- column 1: Datasets -->
+    <div class="col-md-4">
+    <div class="column-wrapper">
       <div class="dashboard-box">
         <div class="box-header">
           <div class="box-header-title">Datasets</div>
@@ -108,8 +109,11 @@
         </div>
       </div>
     </div>
-    <!-- Box 2: Collections -->
+    </div>
+
+    <!-- column 2: Collections -->
     <div class="col-md-4">
+		<div class="column-wrapper">
       <div class="dashboard-box">
         <div class="box-header">
           <div class="box-header-title">Collections</div>
@@ -134,7 +138,11 @@
         </div>
       </div>
     </div>
-    <div class="col-md-4 ps-0">
+	  </div>
+
+    <!-- column 3: Areas, Collection Groups -->
+		<div class="col-md-4">
+		<div class="column-wrapper">
       <div class="dashboard-box">
         <div class="box-header">
           <div class="box-header-title">Study Areas</div>
@@ -155,7 +163,7 @@
           {% endfor %}
 					{% else %}
 	          <p>no study areas yet</p>
-        	{% endif %}
+          {% endif %}
         </div>
       </div>
       <div class="dashboard-box">
@@ -178,10 +186,11 @@
           {% endfor %}
 					{% else %}
 	          <p>no groups yet</p>
-        	{% endif %}
+          {% endif %}
         </div>
       </div>
     </div>
+		</div>
   </div>
 </div>
 {% endblock %}

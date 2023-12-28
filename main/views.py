@@ -1,6 +1,7 @@
 # main.views
 from django.apps import apps
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail, BadHeaderError
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect #, render_to_response
@@ -26,21 +27,16 @@ from urllib.parse import urlparse
 import sys
 from datetime import datetime
 
-# def get_objects_for_user(model, user, filter_criteria, is_admin=False):
-#   collection_class = filter_criteria.get('collection_class', None)
-#
-#   if collection_class:
-#     return model.objects.filter(collection_class=collection_class)
-#
-#   return model.objects.exclude(title__startswith='(stub)').filter(**filter_criteria)
-#
-# def area_list(request):
-#   study_areas = ['ccodes', 'copied', 'drawn']
-#   is_admin = request.user.groups.filter(name='whg_admins').exists()
-#   user_areas = get_objects_for_user(Area, request.user,
-#                                     {'owner': request.user}, is_admin)
-#   return render(request, 'lists/area_list.html', {'areas': user_areas,
-#                                                   'is_admin': is_admin, 'section':'areas'})
+@login_required
+def profile_edit(request):
+    if request.method == 'POST':
+        user = request.user
+        user.name = request.POST.get('name')
+        user.affiliation = request.POST.get('affiliation')
+        user.save()
+        return redirect('profile-edit')
+
+    return render(request, 'main/profile.html')
 
 def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
   # Always apply extra filters if they are provided and the model is Area
