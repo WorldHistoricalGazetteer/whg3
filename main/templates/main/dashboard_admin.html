@@ -1,0 +1,196 @@
+{% extends "main/base.html" %}
+
+{% block extra_head %}
+  <style>
+    #container {
+      min-height: calc(100vh - 90px);
+      {#border: gainsboro 1px solid;#}
+    }
+    .dashboard-box {
+      background-color: #f0f0f0; /* Light grey background for visibility */
+      min-height: 250px; /* Minimum height, adjust as needed */
+      border: 1px solid #ccc; /* Slight border for definition */
+      box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+			margin: 5px 0;
+	    font-size: small;
+    }
+	  .box-header {
+	    display: flex;
+	    justify-content: space-between;
+	    align-items: center;
+	    padding: 5px 10px; /* Added horizontal padding */
+		  background-color: palegoldenrod;
+	  }
+	  .box-header-title {
+	    width: 100%;
+	    text-align: center;
+		  font-size: 1.2rem;
+		  font-weight: bold;
+	  }
+	  .fa-plus {
+	    margin-left: auto; /* Aligns the icon to the right */
+	  }
+    .box-content {
+      overflow-y: auto; /* Allows scrolling within the content area */
+      height: calc(100% - 30px); /* Adjusts height to account for header */
+      padding: 10px;
+    }
+	  .item-div {
+	    display: flex;
+	    justify-content: space-between;
+	    align-items: center;
+	    padding: 5px;
+	    border-bottom: 1px solid #ddd;
+	  }
+	  .item-div:last-child {
+	    border-bottom: none;
+	  }
+	  .fa-icon {
+	    margin-left: 5px;
+  }
+  .page-title-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+	  margin-bottom: .5rem;
+  }
+  .page-title {
+    margin: 0 auto; /* Keeps the title centered */
+  }
+  .profile-link {
+    position: absolute;
+    right: 10px; /* Adjust as needed */
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+  }
+  .profile-link i {
+    margin-right: 5px;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div id="container" class="container mt-1">
+  <div class="page-title-container mt-3">
+    <h4 class="page-title">Admin Dashboard</h4>
+    <a href="{% url 'profile-edit' %}" class="profile-link">
+      Profile<i class="fas fa-user ms-2"></i>
+    </a>
+  </div>
+  <div class="row">
+    <!-- column 1: Datasets -->
+    <div class="col-md-4">
+    <div class="column-wrapper">
+      <div class="dashboard-box">
+        <div class="box-header">
+          <div class="box-header-title">Datasets</div>
+          <a href="{% url 'datasets:dataset-create' %}">
+            <i class="fas fa-plus"></i>
+          </a>
+        </div>
+        <div class="box-content">
+        {% if has_datasets %}
+        {% for item in datasets %}
+          <div class="item-div">
+            {{ item.title }}
+            <div>
+              <a href="{% url 'datasets:ds_places' item.id %}" title="view">
+	              <i class="fas fa-eye linky"></i></a>
+	            <a href="{% url 'datasets:ds_summary' item.id %}" title="edit">
+		            <i class="fas fa-edit linky"></i></a>
+            </div>
+          </div>
+        {% endfor %}
+        {% else %}
+					<p>no datasets yet</p>
+				{% endif %}
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <!-- column 2: Collections -->
+    <div class="col-md-4">
+		<div class="column-wrapper">
+      <div class="dashboard-box">
+        <div class="box-header">
+          <div class="box-header-title">Collections</div>
+          <a href="{% url 'collection:place-collection-create' %}">
+            <i class="fas fa-plus"></i>
+          </a>
+        </div>
+        <div class="box-content">
+          {% if has_collections %}
+          {% for item in collections %}
+          <div class="item-div">
+            {{ item.title }}
+	          <div class="float-end">
+							<a href="#"><i class="fas fa-eye linky"></i></a>
+							<a href="#"><i class="fas fa-edit linky"></i></a>
+            </div>
+          </div>
+          {% endfor %}
+          {% else %}
+	          <p>no collections yet</p>
+        	{% endif %}
+        </div>
+      </div>
+    </div>
+	  </div>
+
+    <!-- column 3: Areas, Collection Groups -->
+		<div class="col-md-4">
+		<div class="column-wrapper">
+      <div class="dashboard-box">
+        <div class="box-header">
+          <div class="box-header-title">Study Areas</div>
+          <a href="{% url 'areas:area-create' %}">
+            <i class="fas fa-plus"></i>
+          </a>
+        </div>
+        <div class="box-content">
+          {% if has_areas %}
+	        {% for item in areas %}
+          <div class="item-div">
+            {{ item.title }}
+	          <div class="float-end">
+							<a href="#"><i class="fas fa-eye linky"></i></a>
+							<a href="#"><i class="fas fa-edit linky"></i></a>
+            </div>
+          </div>
+          {% endfor %}
+					{% else %}
+	          <p>no study areas yet</p>
+          {% endif %}
+        </div>
+      </div>
+      <div class="dashboard-box">
+        <div class="box-header">
+          <div class="box-header-title">Collection Groups</div>
+          <a href="{% url 'areas:area-create' %}">
+            <i class="fas fa-plus"></i>
+          </a>
+        </div>
+        <div class="box-content">
+          {% if groups|length > 0 %}
+	        {% for item in groups %}
+          <div class="item-div">
+            {{ item.title }}
+	          <div class="float-end">
+							<a href="#"><i class="fas fa-eye linky"></i></a>
+							<a href="#"><i class="fas fa-edit linky"></i></a>
+            </div>
+          </div>
+          {% endfor %}
+					{% else %}
+	          <p>no groups yet</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+		</div>
+  </div>
+</div>
+{% endblock %}

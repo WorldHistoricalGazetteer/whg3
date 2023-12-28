@@ -49,7 +49,8 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
 
   # If the user is an admin and we're looking at Area, apply the study_areas filter to all users including admins
   if is_admin and model == Area:
-    objects = objects.filter(type__in=filter_criteria['type'])
+    objects = objects.exclude(type__in=filter_criteria['type'])
+    # objects = objects.filter(type__in=filter_criteria['type'])
   elif model == Dataset: # some dummy datasets need to be filtered
       objects = objects.exclude(title__startswith='(stub)')
   return objects
@@ -167,9 +168,12 @@ def dashboard_admin_view(request):
 
   section = request.GET.get('section', 'datasets')
 
-  datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
-  collections = get_objects_for_user(Collection, request.user, {'owner': request.user}, is_admin)
-  areas = get_objects_for_user(Area, request.user, {'owner': request.user}, is_admin)
+  # TODO: for admins, show all datasets, collections, areas
+  datasets = get_objects_for_user(Dataset, request.user, {}, is_admin)
+  # datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+  collections = get_objects_for_user(Collection, request.user, {}, is_admin)
+  # collections = get_objects_for_user(Collection, request.user, {'owner': request.user}, is_admin)
+  areas = get_objects_for_user(Area, request.user, {'type': ['predefined', 'country']}, is_admin)
 
   context = {
     'datasets': datasets,

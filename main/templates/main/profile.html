@@ -30,7 +30,8 @@
 	.profile-placeholder {
 	    width: 100px;
 	    height: 100px;
-	    background-color: #f2f2f2;
+	    background-color: aliceblue;
+	    {#background-color: #f2f2f2;#}
 	    border-radius: 50%;  /* circle */
 	    display: flex;
 	    align-items: center;
@@ -42,6 +43,11 @@
 	    margin-bottom: 1rem;
 			margin-left: auto;
       margin-right: auto;
+	}
+	.profile-info {
+		border : 1px solid #f2f2f2;
+		border-radius: 10px;
+		padding: 1rem;
 	}
   .edit-button {
     cursor: pointer;
@@ -68,7 +74,7 @@
         <h5>{{ user.name }}</h5>
         <p>{{ user.affiliation }}</p>
         <!-- Edit button -->
-        <span class="edit-button" onclick="toggleEditForm()">Edit</span>
+        <span class="edit-button" onclick="toggleEditForm()">Edit  <i class="fas fa-edit linky"></i></span>
         <!-- Edit form (initially hidden) -->
 				<div id="editForm" style="display:none;">
 				  <form method="post" action="{% url 'profile-edit' %}">
