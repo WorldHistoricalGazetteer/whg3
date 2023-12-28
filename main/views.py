@@ -135,17 +135,21 @@ def dashboard_user_view(request):
 
   user_datasets_count = Dataset.objects.filter(owner=request.user.id).count()
   user_collections_count = Collection.objects.filter(owner=request.user).count()
+  user_areas_count = Area.objects.filter(owner=request.user).count()
 
   section = request.GET.get('section', 'datasets')
 
   datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
   collections = get_objects_for_user(Collection, request.user, {'owner': request.user}, is_admin)
+  areas = get_objects_for_user(Area, request.user, {'owner': request.user}, is_admin)
 
   context = {
     'datasets': datasets,
     'collections': collections,
+    'areas': areas,
     'has_datasets': user_datasets_count > 0,
     'has_collections': user_collections_count > 0,
+    'has_areas': user_areas_count > 0,
     'section': section,
     'user_groups': user_groups,
     'is_admin': is_admin,
@@ -160,6 +164,7 @@ def dashboard_admin_view(request):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   is_leader = request.user.groups.filter(name='group_leaders').exists()
   user_groups = [group.name for group in request.user.groups.all()]
+
 
   user_datasets_count = Dataset.objects.filter(owner=request.user.id).count()
   user_collections_count = Collection.objects.filter(owner=request.user).count()
