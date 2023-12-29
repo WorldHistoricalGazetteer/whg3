@@ -62,15 +62,15 @@
 <div id="container" class="container mt-1">
   <div class="page-title-container mt-3">
     <h4 class="page-title">My Profile</h4>
-	  {% if user_isadmin %}
-    <a href="{% url 'dashboard-user' %}" class="header-link">
-      Dashboard<i class="fas  fa-columns ms-2"></i>
+    <a href="{% url 'dashboard' %}" class="header-link">
+      Data Dashboard<i class="fas  fa-columns ms-2"></i>
     </a>
+{%  comment %}	  {% if user_isadmin %}
 	  {% else %}
     <a href="{% url 'dashboard-admin' %}" class="header-link">
       Dashboard<i class="fas  fa-columns ms-2"></i>
     </a>
-	  {% endif %}
+	  {% endif %} {% endcomment %}
   </div>
   <div class="row mt-4">
 	  <div class="col-md-3"></div>

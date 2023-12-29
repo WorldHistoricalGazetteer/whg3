@@ -40,9 +40,15 @@ urlpatterns = [
     path('public_data/', PublicListsView.as_view(), name='public-lists'),
 
     # static content
-    path('dashboard/', views.dashboard_view, name="dashboard"),
+    # path('dashboard/', views.dashboard_view, name="dashboard"),
     path('dashboard_user/', views.dashboard_user_view, name="dashboard-user"),
     path('dashboard_admin/', views.dashboard_admin_view, name="dashboard-admin"),
+    # activate section
+    path('dashboard/<str:section>/', views.dashboard_admin_view, name='dashboard-admin-section'),
+
+    # redirect to correct dashboard
+    path('dashboard/', views.dashboard_redirect, name="dashboard"),
+    # profile and settings
     path('profile/', views.profile_edit, name="profile-edit"),
 
     path('about/', TemplateView.as_view(template_name="main/about.html"), name="about"),

@@ -124,6 +124,17 @@ def group_list(request, role):
   }
   return render(request, 'lists/group_list.html', context)
 
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
+
+# get's the correct view based on user group
+@login_required
+def dashboard_redirect(request):
+    if request.user.groups.filter(name='whg_admins').exists():
+        return redirect('dashboard-admin')
+    else:
+        return redirect('dashboard-user')
+
 # for non-admins
 def dashboard_user_view(request):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
@@ -186,6 +197,7 @@ def dashboard_admin_view(request):
     'is_admin': is_admin,
     'is_leader': is_leader,
   }
+  # return render(request, 'main/dashboard_admin.html', {'initial_section': section})
   return render(request, 'main/dashboard_admin.html', context)
 
 # first take at a dashboard for all users

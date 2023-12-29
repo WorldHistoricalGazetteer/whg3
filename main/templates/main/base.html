@@ -110,26 +110,22 @@
                 Data
                 </a>
                 <ul class="dropdown-menu">
-                  {% comment %}
-                  <li><a class="dropdown-item" href="{% url 'data-datasets' %}">My datasets</a></li>
-                  <li><a class="dropdown-item" href="{% url 'data-collections' %}">My collections</a></li>
-                  <li><a class="dropdown-item" href="{% url 'data-areas' %}">My study areas</a></li>
-                  {% if user.role == 'group_leader' or user|has_group:"beta30" or user.is_superuser %}
-                  <li><a class="dropdown-item" href="{% url 'data-collgroups' %}">My groups</a></li>
-                  {% endif %}
-                  {% if user|has_group:'whg_team' or user|has_group:'teaching' %}
-                  <li><a class="dropdown-item" href="{% url 'data-resources' %}">Teaching Resources</a></li>
-                  {% endif %}
-                  {% endcomment %}
-									<li><a class="dropdown-item" href="{% url 'dashboard' %}">My Data</a></li>
+	                <li>
+	                  {% is_whg_admin as user_is_whg_admin %}
+									  {% if user_is_whg_admin %}
+									    <a class="dropdown-item" href="{% url 'dashboard-admin' %}">Admin Dashboard</a>
+									  {% else %}
+									    <a class="dropdown-item" href="{% url 'dashboard-user' %}">My Data</a>
+									  {% endif %}
+									</li>
 	                <li><hr class="dropdown-divider"></li>
                   <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}">Dataset Gallery</a></li>
                   <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}">Collection Gallery</a></li>
                 </ul>
 	            </li>
 	            <li class="nav-item larger">
-	            <a class="nav-link" rel="tooltip" title="{{ user.name }}'s dashboard"
-	               href="{% url 'dashboard' %}">
+	            <a class="nav-link" rel="tooltip" title="{{ user.name }}'s profile"
+	               href="{% url 'profile-edit' %}">
 {#	               href="{% url 'accounts:profile' %}">#}
 	                <i class="fas fa-user" style="color:#336699;"></i></a>
 	            </li>

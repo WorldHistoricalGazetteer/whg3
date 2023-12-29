@@ -1,196 +1,263 @@
 {% extends "main/base.html" %}
 
 {% block extra_head %}
-  <style>
-    #container {
-      min-height: calc(100vh - 90px);
-      {#border: gainsboro 1px solid;#}
-    }
-    .dashboard-box {
-      background-color: #f0f0f0; /* Light grey background for visibility */
-      min-height: 250px; /* Minimum height, adjust as needed */
-      border: 1px solid #ccc; /* Slight border for definition */
-      box-sizing: border-box; /* Includes padding and border in the element's total width and height */
-			margin: 5px 0;
-	    font-size: small;
-    }
-	  .box-header {
-	    display: flex;
-	    justify-content: space-between;
-	    align-items: center;
-	    padding: 5px 10px; /* Added horizontal padding */
-		  background-color: palegoldenrod;
-	  }
-	  .box-header-title {
-	    width: 100%;
-	    text-align: center;
-		  font-size: 1.2rem;
-		  font-weight: bold;
-	  }
-	  .fa-plus {
-	    margin-left: auto; /* Aligns the icon to the right */
-	  }
-    .box-content {
-      overflow-y: auto; /* Allows scrolling within the content area */
-      height: calc(100% - 30px); /* Adjusts height to account for header */
-      padding: 10px;
-    }
-	  .item-div {
-	    display: flex;
-	    justify-content: space-between;
-	    align-items: center;
-	    padding: 5px;
-	    border-bottom: 1px solid #ddd;
-	  }
-	  .item-div:last-child {
-	    border-bottom: none;
-	  }
-	  .fa-icon {
-	    margin-left: 5px;
-  }
-  .page-title-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-	  margin-bottom: .5rem;
-  }
-  .page-title {
-    margin: 0 auto; /* Keeps the title centered */
-  }
-  .profile-link {
-    position: absolute;
-    right: 10px; /* Adjust as needed */
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    align-items: center;
-  }
-  .profile-link i {
-    margin-right: 5px;
-  }
-</style>
+    <style>
+			.no-wrap {
+			    white-space: nowrap;
+			}
+      .my {color: #993300;}
+        /* Custom styles for the dashboard */
+        .sidebar {
+            border-right: 1px solid #ddd;
+            height: 100vh; /* Full viewport height */
+            padding-top: 20px;
+        }
+        .profile-info {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .sidebar-nav-item {
+            display: block;
+            padding: 10px;
+            margin: 5px 0;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-radius: 5px;
+        }
+        .sidebar-nav-item:hover,
+        .sidebar-nav-item.active {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+        }
+			.profile-placeholder {
+			    width: 100px;
+			    height: 100px;
+			    background-color: #f2f2f2;
+			    border-radius: 50%;  /* circle */
+			    display: flex;
+			    align-items: center;
+			    justify-content: center;
+			    font-size: 50px;  /* Adjust based on your preference */
+			    font-weight: bold;  /* Makes the letter thicker */
+			    line-height: 1;  /* Ensures the letter is vertically centered */
+			    vertical-align: middle;
+			    margin-bottom: 1rem;
+					margin-left: auto;
+          margin-right: auto;
+			}
+
+			#dashboard_header {
+					{#text-align: center;#}
+					background-color: #F9EAD7;
+					border-radius: 5px;
+					box-shadow: #e5e5e5;
+			}
+
+    </style>
 {% endblock %}
 {% block content %}
-<div id="container" class="container mt-1">
-  <div class="page-title-container mt-3">
-    <h4 class="page-title">Admin Dashboard</h4>
-    <a href="{% url 'profile-edit' %}" class="profile-link">
-      Profile<i class="fas fa-user ms-2"></i>
-    </a>
-  </div>
-  <div class="row">
-    <!-- column 1: Datasets -->
-    <div class="col-md-4">
-    <div class="column-wrapper">
-      <div class="dashboard-box">
-        <div class="box-header">
-          <div class="box-header-title">Datasets</div>
-          <a href="{% url 'datasets:dataset-create' %}">
-            <i class="fas fa-plus"></i>
-          </a>
-        </div>
-        <div class="box-content">
-        {% if has_datasets %}
-        {% for item in datasets %}
-          <div class="item-div">
-            {{ item.title }}
-            <div>
-              <a href="{% url 'datasets:ds_places' item.id %}" title="view">
-	              <i class="fas fa-eye linky"></i></a>
-	            <a href="{% url 'datasets:ds_summary' item.id %}" title="edit">
-		            <i class="fas fa-edit linky"></i></a>
+    <div id="container" class="container mt-4" >
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar">
+                <!-- Profile Info -->
+                <div class="profile-info">
+	                <div class="profile-placeholder">{{ user.name|first }}</div>
+                    <h5>{{ user.name }}</h5>
+                </div>
+                <!-- Sidebar Navigation -->
+                <a href="{% url 'main:dataset-list' %}" class="sidebar-nav-item">Datasets</a>
+                <a href="{% url 'main:collection-list' collection_class='place' %}"
+                   class="sidebar-nav-item">Place Collections</a>
+                <a href="{% url 'main:collection-list' collection_class='dataset' %}"
+                   class="sidebar-nav-item">Dataset Collections</a>
+                <a href="{% url 'main:area-list' %}" class="sidebar-nav-item">Study Areas</a>
+                {% if user.role == 'group_leader' %}
+                  <a href="{% url 'main:group-list' role='leader' %}" class="sidebar-nav-item">Groups</a>
+                {% else %}
+	                <a href="{% url 'main:group-list' role='member' %}" class="sidebar-nav-item">Groups</a>
+                {% endif %}
             </div>
-          </div>
-        {% endfor %}
-        {% else %}
-					<p>no datasets yet</p>
-				{% endif %}
+
+            <!-- Main Content -->
+            <div class="col-md-10 ">
+              <div id="dashboard_header" class="fs-4 text-center">Admin Dashboard</div>
+
+							<p class="fs-6 mb-1 my">
+								{% if is_admin %}All{% else %}My{% endif %}
+								<span id="section_title" rel="Datasets">Datasets</span>
+								<span class="ps-3 small">
+									<a href="{% url 'datasets:dataset-create' %}"
+									   id="add_dataset">Add Dataset</a>
+									<a href="{% url 'collection:place-collection-create' %}"
+									   id="add_place_collection" style="display: none;">Add Place Collection</a>
+									<a href="{% url 'collection:ds-collection-create' %}"
+									   id="add_dataset_collection" style="display: none;">Add Dataset Collection</a>
+									{% if is_admin %}
+									<a href="{% url 'collection:collection-group-create' %}"
+									   id="add_group" style="display: none;">Add Group</a>
+									{% endif %}
+									<a href="{% url 'areas:area-create' %}"
+									   id="add_area" style="display: none;">Add Study Area</a>
+								</span>
+					    </p>
+
+              <div class="main-content py-1">
+						    {% if has_datasets %}
+						        {% include "lists/dataset_list.html" %}
+						    {% elif has_collections %}
+						        {% include "lists/collection_list.html" %}
+						    {% else %}
+						        {% include "lists/dataset_list.html" %}
+						    {% endif %}
+              </div>
+            </div>
         </div>
-      </div>
-    </div>
     </div>
 
-    <!-- column 2: Collections -->
-    <div class="col-md-4">
-		<div class="column-wrapper">
-      <div class="dashboard-box">
-        <div class="box-header">
-          <div class="box-header-title">Collections</div>
-          <a href="{% url 'collection:place-collection-create' %}">
-            <i class="fas fa-plus"></i>
-          </a>
-        </div>
-        <div class="box-content">
-          {% if has_collections %}
-          {% for item in collections %}
-          <div class="item-div">
-            {{ item.title }}
-	          <div class="float-end">
-							<a href="#"><i class="fas fa-eye linky"></i></a>
-							<a href="#"><i class="fas fa-edit linky"></i></a>
-            </div>
-          </div>
-          {% endfor %}
-          {% else %}
-	          <p>no collections yet</p>
-        	{% endif %}
-        </div>
-      </div>
-    </div>
-	  </div>
+<script>
 
-    <!-- column 3: Areas, Collection Groups -->
-		<div class="col-md-4">
-		<div class="column-wrapper">
-      <div class="dashboard-box">
-        <div class="box-header">
-          <div class="box-header-title">Study Areas</div>
-          <a href="{% url 'areas:area-create' %}">
-            <i class="fas fa-plus"></i>
-          </a>
-        </div>
-        <div class="box-content">
-          {% if has_areas %}
-	        {% for item in areas %}
-          <div class="item-div">
-            {{ item.title }}
-	          <div class="float-end">
-							<a href="#"><i class="fas fa-eye linky"></i></a>
-							<a href="#"><i class="fas fa-edit linky"></i></a>
-            </div>
-          </div>
-          {% endfor %}
-					{% else %}
-	          <p>no study areas yet</p>
-          {% endif %}
-        </div>
-      </div>
-      <div class="dashboard-box">
-        <div class="box-header">
-          <div class="box-header-title">Collection Groups</div>
-          <a href="{% url 'areas:area-create' %}">
-            <i class="fas fa-plus"></i>
-          </a>
-        </div>
-        <div class="box-content">
-          {% if groups|length > 0 %}
-	        {% for item in groups %}
-          <div class="item-div">
-            {{ item.title }}
-	          <div class="float-end">
-							<a href="#"><i class="fas fa-eye linky"></i></a>
-							<a href="#"><i class="fas fa-edit linky"></i></a>
-            </div>
-          </div>
-          {% endfor %}
-					{% else %}
-	          <p>no groups yet</p>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-		</div>
-  </div>
-</div>
+$(document).ready(function() {
+    var initialSection = '{{ initial_section }}';
+    alert(initialSection)
+    if (initialSection) {
+        loadSection(initialSection);
+    } else {
+        loadSection("Datasets", "Datasets"); // Default section if none specified
+    }
+
+    $('.sidebar-nav-item').on('click', function(e) {
+        e.preventDefault();
+        var sectionName = $(this).text();
+        var url = $(this).attr('href');
+        loadSection(sectionName, url);
+    });
+});
+
+function loadSection(sectionName, url) {
+    var targetUrl = url
+
+    // Show/hide 'Add' buttons based on sectionName
+    if (sectionName == "Datasets") {
+        $('#add_dataset').show();
+        $('#add_place_collection').hide();
+        $('#add_dataset_collection').hide();
+        $('#add_group').hide();
+        $('#add_area').hide();
+    } if (sectionName == "Place Collections") {
+        $('#add_dataset').hide();
+        $('#add_place_collection').show();
+        $('#add_dataset_collection').hide();
+        $('#add_group').hide();
+        $('#add_area').hide();
+    } else if (sectionName == "Dataset Collections") {
+        $('#add_dataset').hide();
+        $('#add_place_collection').hide();
+        $('#add_dataset_collection').show();
+        $('#add_group').hide();
+        $('#add_area').hide();
+     } else if (sectionName == "Groups" && userGroups.includes('group_leader')) {
+    } else if (sectionName == "Groups") {
+        $('#add_dataset').hide();
+        $('#add_place_collection').hide();
+        $('#add_dataset_collection').hide();
+        $('#add_group').show();
+        $('#add_area').hide();
+    } else if (sectionName == "Study Areas") {
+        $('#add_dataset').hide();
+        $('#add_place_collection').hide();
+        $('#add_dataset_collection').hide();
+        $('#add_group').hide();
+        $('#add_area').show();
+    } else {
+        $('#add_dataset').hide();
+        $('#add_place_collection').hide();
+        $('#add_dataset_collection').hide();
+        $('#add_group').hide();
+        $('#add_area').hide();
+    }
+
+    $.get(targetUrl, function(data) {
+        $('.main-content').html(data);
+        history.pushState({}, '', targetUrl);
+        $('#section_title').text(sectionName);
+
+        $('.sidebar-nav-item').removeClass('active');
+        $('.sidebar-nav-item').filter(function() {
+            return $(this).text() === sectionName;
+        }).addClass('active');
+    });
+}
+
+
+{#$(document).ready(function() {#}
+{#    var userGroups = {{ user_groups|safe }};#}
+{#    console.log('groups:', userGroups)#}
+{##}
+{#    $('.sidebar-nav-item').on('click', function(e) {#}
+{#        e.preventDefault();  // Prevent default navigation#}
+{##}
+{#        // set section variable#}
+{#        var sectionName = $(this).text();#}
+{#        var targetUrl = $(this).attr('href');#}
+{#				console.log('sectionName', sectionName)#}
+{#				console.log('targetUrl', targetUrl)#}
+{##}
+{#        if (sectionName == "Datasets") {#}
+{#            $('#add_dataset').show();#}
+{#            $('#add_place_collection').hide();#}
+{#            $('#add_dataset_collection').hide();#}
+{#            $('#add_group').hide();#}
+{#            $('#add_area').hide();#}
+{#        } if (sectionName == "Place Collections") {#}
+{#            $('#add_dataset').hide();#}
+{#            $('#add_place_collection').show();#}
+{#            $('#add_dataset_collection').hide();#}
+{#            $('#add_group').hide();#}
+{#            $('#add_area').hide();#}
+{#        } else if (sectionName == "Dataset Collections") {#}
+{#            $('#add_dataset').hide();#}
+{#            $('#add_place_collection').hide();#}
+{#            $('#add_dataset_collection').show();#}
+{#            $('#add_group').hide();#}
+{#            $('#add_area').hide();#}
+        {# } else if (sectionName == "Groups" && userGroups.includes('group_leader')) {#}
+{#        } else if (sectionName == "Groups") {#}
+{#            $('#add_dataset').hide();#}
+{#            $('#add_place_collection').hide();#}
+{#            $('#add_dataset_collection').hide();#}
+{#            $('#add_group').show();#}
+{#            $('#add_area').hide();#}
+{#        } else if (sectionName == "Study Areas") {#}
+{#            $('#add_dataset').hide();#}
+{#            $('#add_place_collection').hide();#}
+{#            $('#add_dataset_collection').hide();#}
+{#            $('#add_group').hide();#}
+{#            $('#add_area').show();#}
+{#        } else {#}
+            {#$('#add_dataset').hide();#}
+{#            $('#add_place_collection').hide();#}
+{#            $('#add_dataset_collection').hide();#}
+{#            $('#add_group').hide();#}
+{#            $('#add_area').hide();#}
+{#        }#}
+{##}
+{#        // Fetch content via AJAX#}
+{#        $.get(targetUrl, function(data) {#}
+{#            $('.main-content').html(data);  // Update the main content div#}
+{#        });#}
+{##}
+{#        // Update the section title#}
+{#        $('#section_title').text(sectionName).attr('rel', sectionName);#}
+{##}
+{#        // Highlight the active sidebar item#}
+{#        $('.sidebar-nav-item').removeClass('active');#}
+{#        $(this).addClass('active');#}
+{#    });#}
+{# });#}
+
+</script>
+
 {% endblock %}
+
