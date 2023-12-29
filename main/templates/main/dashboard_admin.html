@@ -102,7 +102,7 @@
 									   id="add_area" style="display: none;">Add Study Area</a>
 								</span>
 								<span class="float-end">
-				          <select id="status_select" class="small">
+				          <select id="filter_select" class="small">
 				          <option value="all">Filter status</option>
 				          <option value="uploaded">Uploaded</option>
 				          <option value="reconciling">Reconciling</option>
@@ -146,7 +146,7 @@ $(document).ready(function() {
     });
 });
 
-$("#status_select").change(function() {
+$("#filter_select").change(function() {
     let term = $(this).val()
     if(term == 'all'){
       $("#status_select option")[0].innerHTML='Filter status'
@@ -155,10 +155,10 @@ $("#status_select").change(function() {
 })
 
 statusFilter = function(term) {
-    sel = $('#status_select').find(":selected").val()
+    sel = $('#filter_select').find(":selected").val()
 		console.log('term, sel', term, sel)
     if (sel != 'all'){
-			$("#status_select option")[0].innerHTML='Show all'
+			$("#filter_select option")[0].innerHTML='Show all'
     }
     results = $("#table_ds tbody tr")
     for (i = 0; i < results.length; i++) {
