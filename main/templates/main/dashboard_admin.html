@@ -84,12 +84,12 @@
             <div class="col-md-10 ">
               <div id="dashboard_header" class="fs-4 text-center">Admin Dashboard</div>
 
-							<p class="fs-6 mb-1 my">
+							<div id="options" class="fs-6 mb-1 my">
 								{% if is_admin %}All{% else %}My{% endif %}
 								<span id="section_title" rel="Datasets">Datasets</span>
 								<span class="ps-3 small">
 									<a href="{% url 'datasets:dataset-create' %}"
-									   id="add_dataset">Add Dataset</a>
+									   id="add_dataset" style="display: none;">Add Dataset</a>
 									<a href="{% url 'collection:place-collection-create' %}"
 									   id="add_place_collection" style="display: none;">Add Place Collection</a>
 									<a href="{% url 'collection:ds-collection-create' %}"
@@ -101,7 +101,18 @@
 									<a href="{% url 'areas:area-create' %}"
 									   id="add_area" style="display: none;">Add Study Area</a>
 								</span>
-					    </p>
+								<span class="float-end">
+				          <select id="status_select" class="small">
+				          <option value="all">Filter status</option>
+				          <option value="uploaded">Uploaded</option>
+				          <option value="reconciling">Reconciling</option>
+				          <option value="wd-complete">Wikidata complete</option>
+				          <option value="accessioning">Accessioning</option>
+				          <option value="indexed">Indexed</option>
+				          <option value="remote">Remote</option>
+			            </select>
+								</span>
+					    </div>
 
               <div class="main-content py-1">
 						    {% if has_datasets %}
@@ -120,11 +131,11 @@
 
 $(document).ready(function() {
     var initialSection = '{{ initial_section }}';
-    alert(initialSection)
     if (initialSection) {
         loadSection(initialSection);
     } else {
-        loadSection("Datasets", "Datasets"); // Default section if none specified
+        window.sectionName = "Datasets"
+		    its_datasets()
     }
 
     $('.sidebar-nav-item').on('click', function(e) {
@@ -135,16 +146,49 @@ $(document).ready(function() {
     });
 });
 
+$("#status_select").change(function() {
+    let term = $(this).val()
+    if(term == 'all'){
+      $("#status_select option")[0].innerHTML='Filter status'
+    }
+    statusFilter(term)
+})
+
+statusFilter = function(term) {
+    sel = $('#status_select').find(":selected").val()
+		console.log('term, sel', term, sel)
+    if (sel != 'all'){
+			$("#status_select option")[0].innerHTML='Show all'
+    }
+    results = $("#table_ds tbody tr")
+    for (i = 0; i < results.length; i++) {
+        ds_status = results[i].cells[5].innerHTML
+		    {#console.log('ds_status', ds_status)#}
+        if (term == ds_status || term == 'all') {
+            results[i].style.display = "";
+        } else if (term != ds_status) {
+            results[i].style.display = "none";
+        }
+    }
+}
+
+function its_datasets() {
+		$('#add_dataset').show();
+    $('#add_place_collection').hide();
+    $('#add_dataset_collection').hide();
+    $('#add_group').hide();
+    $('#add_area').hide();
+}
+
+
 function loadSection(sectionName, url) {
     var targetUrl = url
+    console.log('sectionName', sectionName)
+		console.log('targetUrl', targetUrl)
 
     // Show/hide 'Add' buttons based on sectionName
     if (sectionName == "Datasets") {
-        $('#add_dataset').show();
-        $('#add_place_collection').hide();
-        $('#add_dataset_collection').hide();
-        $('#add_group').hide();
-        $('#add_area').hide();
+        its_datasets()
     } if (sectionName == "Place Collections") {
         $('#add_dataset').hide();
         $('#add_place_collection').show();
