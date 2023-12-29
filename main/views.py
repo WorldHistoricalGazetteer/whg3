@@ -167,38 +167,97 @@ def dashboard_user_view(request):
   }
   return render(request, 'main/dashboard_user.html', context)
 
-# all-purpose for admins
+# views.py
+from django.http import JsonResponse
+
+def get_datasets(filter_option, sort_option):
+    # Get all datasets
+    datasets = Dataset.objects.all()
+
+    # Apply any filters
+    if filter_option == 'public':
+        datasets = datasets.filter(public=True)
+    elif filter_option == 'private':
+        datasets = datasets.filter(public=False)
+
+    # Apply any sorting
+    if sort_option == 'title':
+        datasets = datasets.order_by('title')
+    elif sort_option == 'date':
+        datasets = datasets.order_by('date_created')
+
+    # Convert the datasets to JSON and return them
+    return serializers.serialize('json', datasets)
+
+def get_collections(filter_option, sort_option):
+    # Get all collections
+    collections = Collection.objects.all()
+
+    # Apply any filters
+    if filter_option == 'public':
+        collections = collections.filter(public=True)
+    elif filter_option == 'private':
+        collections = collections.filter(public=False)
+
+    # Apply any sorting
+    if sort_option == 'title':
+        collections = collections.order_by('title')
+    elif sort_option == 'date':
+        collections = collections.order_by('date_created')
+
+    # Convert the collections to JSON and return them
+    return serializers.serialize('json', collections)
+
 def dashboard_admin_view(request):
-  is_admin = request.user.groups.filter(name='whg_admins').exists()
-  is_leader = request.user.groups.filter(name='group_leaders').exists()
-  user_groups = [group.name for group in request.user.groups.all()]
+    # Determine the type of data to return based on a parameter
+    data_type = request.GET.get('data_type', 'datasets')
 
+    # Get any filter or sort options
+    filter_option = request.GET.get('filter_option')
+    sort_option = request.GET.get('sort_option')
 
-  user_datasets_count = Dataset.objects.filter(owner=request.user.id).count()
-  user_collections_count = Collection.objects.filter(owner=request.user).count()
+    # Get the appropriate data
+    if data_type == 'datasets':
+        data = get_datasets(filter_option, sort_option)
+    elif data_type == 'collections':
+        data = get_collections(filter_option, sort_option)
+    # Add more elif statements for other data types...
 
-  section = request.GET.get('section', 'datasets')
+    # Convert the data to JSON and return it
+    return JsonResponse(data, safe=False)
 
-  # TODO: for admins, show all datasets, collections, areas
-  datasets = get_objects_for_user(Dataset, request.user, {}, is_admin)
-  # datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
-  collections = get_objects_for_user(Collection, request.user, {}, is_admin)
-  # collections = get_objects_for_user(Collection, request.user, {'owner': request.user}, is_admin)
-  areas = get_objects_for_user(Area, request.user, {'type': ['predefined', 'country']}, is_admin)
-
-  context = {
-    'datasets': datasets,
-    'collections': collections,
-    'areas': areas,
-    'has_datasets': user_datasets_count > 0,
-    'has_collections': user_collections_count > 0,
-    'section': section,
-    'user_groups': user_groups,
-    'is_admin': is_admin,
-    'is_leader': is_leader,
-  }
-  # return render(request, 'main/dashboard_admin.html', {'initial_section': section})
-  return render(request, 'main/dashboard_admin.html', context)
+# DEPRECATED
+# def dashboard_admin_view(request):
+#   is_admin = request.user.groups.filter(name='whg_admins').exists()
+#   is_leader = request.user.groups.filter(name='group_leaders').exists()
+#   user_groups = [group.name for group in request.user.groups.all()]
+#
+#
+#   user_datasets_count = Dataset.objects.filter(owner=request.user.id).count()
+#   user_collections_count = Collection.objects.filter(owner=request.user).count()
+#
+#   section = request.GET.get('section', 'datasets')
+#
+#   # TODO: for admins, show all datasets, collections, areas
+#   datasets = get_objects_for_user(Dataset, request.user, {}, is_admin)
+#   # datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+#   collections = get_objects_for_user(Collection, request.user, {}, is_admin)
+#   # collections = get_objects_for_user(Collection, request.user, {'owner': request.user}, is_admin)
+#   areas = get_objects_for_user(Area, request.user, {'type': ['predefined', 'country']}, is_admin)
+#
+#   context = {
+#     'datasets': datasets,
+#     'collections': collections,
+#     'areas': areas,
+#     'has_datasets': user_datasets_count > 0,
+#     'has_collections': user_collections_count > 0,
+#     'section': section,
+#     'user_groups': user_groups,
+#     'is_admin': is_admin,
+#     'is_leader': is_leader,
+#   }
+#   # return render(request, 'main/dashboard_admin.html', {'initial_section': section})
+#   return render(request, 'main/dashboard_admin.html', context)
 
 # first take at a dashboard for all users
 def dashboard_view(request):

@@ -12,6 +12,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 INSTALLED_APPS = [
+    # added 29 Dec 2023
+    'custom_admin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -1,0 +1,20 @@
+{% extends "main/base.html" %}
+{% load static i18n %}
+
+{% block extra_head %}
+	{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/base.css' %}">
+{#<link rel="stylesheet" type="text/css" href="{% static 'admin/css/dashboard.css' %}">#}
+{#<link rel="stylesheet" type="text/css" href="{% static 'admin/css/nav_sidebar.css' %}">#}
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/forms.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/autocomplete.css' %}">
+<!-- Add any other admin CSS files as needed -->
+{% endblock %}
+
+{% block content %}
+    <div id="container" class="container mt-2" >
+    {% block content_main %}
+        <!-- Default Django admin content -->
+    {% endblock %}
+    </div>
+{% endblock %}
