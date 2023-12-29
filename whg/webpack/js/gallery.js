@@ -1,19 +1,16 @@
+// gallery.js
 
-import '../../../static/admin/css/vendor/select2/select2.min.css';
-import '../../../static/admin/js/vendor/select2/select2.full.min.js';
+import 'select2/dist/js/select2.full.js';
+import 'select2/dist/css/select2.css';
 import debounce from 'lodash/debounce';
-import { bbox } from './6.5.0_turf.min.js';
 import { attributionString } from './utilities';
 import featuredDataLayers from './featuredDataLayerStyles';
 import { fetchDataForHorse } from './localGeometryStorage';
 import { CountryCacheFeatureCollection } from  './countryCache';
 
-import '../css/maplibre-common.css';
 import '../css/gallery.css';
 
-import mapParams from './mapParameters';
-const mapParameters = new mapParams({ style:'ne_global', maxZoom:6, navigationControl: false, attributionControl: false });
-let mappy = new maptilersdk.Map(mapParameters);
+let mappy = new whg_maplibre.Map();
     
 let nullCollection = {
     type: 'FeatureCollection',
@@ -70,8 +67,8 @@ function waitMapLoad() {
 
 function waitDocumentReady() {
     return new Promise((resolve) => {
-        $(document).ready(() => {			
-			resolve();
+        $(document).ready(() => {
+            resolve();
 		});
     });
 }
@@ -259,14 +256,6 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
     
     stateStore(true); // Fetch and build initial gallery; set map filter
     
-    function resetMap() {
-		mappy.flyTo({
- 			center: mapParameters.center,
- 			zoom: mapParameters.zoom,
- 	        speed: .5,
- 	    });
-	}
-    
     function updateAreaMap() {
     	const countries = countryDropdown.select2('data').map(country => country.id);
         countryCache.filter(countries).then(filteredCountries => {
@@ -279,7 +268,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
                     duration: 1000,
                 });
             } catch {
-                resetMap();
+                mappy.reset();
             }
         });
     }
@@ -307,7 +296,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		fetchDataForHorse($(e.target).closest('.ds-card-container'), mappy);
 	}).on('mouseleave', '.ds-card-container', () => {
 		mappy.getSource('featured-data-source').setData(nullCollection);
-		resetMap();
+		mappy.reset();
 	});
 	
 	$('#searchInput').on('input', function() {fetchData();});

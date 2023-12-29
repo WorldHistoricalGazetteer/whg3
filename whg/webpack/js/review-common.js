@@ -1,7 +1,7 @@
 
 import './extend-maptiler-sdk.js'; // Adds 'fitViewport' method
 import datasetLayers from './mapLayerStyles';
-import { bbox } from './6.5.0_turf.min.js';
+import bbox from '@turf/bbox';
 import { attributionString } from './utilities';
 import { acmeStyleControl, CustomAttributionControl } from './customMapControls';
 

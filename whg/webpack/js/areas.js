@@ -2,7 +2,12 @@
 
 import datasetLayers from './mapLayerStyles';
 import { attributionString, deepCopy } from './utilities';
-import { bbox, buffer, convex, flatten, dissolve, combine } from './6.5.0_turf.min.js';
+import bbox from '@turf/bbox';
+import buffer from '@turf/buffer';
+import convex from '@turf/convex';
+import flatten from '@turf/flatten';
+import dissolve from '@turf/dissolve';
+import combine from '@turf/combine';
 import { /*acmeStyleControl,*/ CustomAttributionControl } from './customMapControls';
 import '../css/maplibre-common.css';
 import '../css/areas.css';

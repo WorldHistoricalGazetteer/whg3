@@ -1,0 +1,140 @@
+{% load i18n %}
+{% load static %}
+{% load dataset_extras %}
+{% load livereload_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	{% block title %}<title>WHG</title>{% endblock %}
+  	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.ico' %}"/>
+	<script src="{% static 'jquery/jquery-3.6.0.min.js' %}"></script>
+	<script src="{% static 'webpack/base.bundle.js' %}"></script>
+
+    <link href="{% static 'webpack/base.bundle.css' %}" rel="stylesheet" />
+  
+    {% block extra_head %}
+      	<style>
+        	.container a {text-decoration: none !important;}
+      	</style>
+  	{% endblock %}
+</head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZB73342G3Y"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-ZB73342G3Y');
+</script>
+<body>
+  <header>
+		<nav class="navbar navbar-expand-lg bg-white">
+		  <div class="container">
+		    <a href="{% url 'home' %}">
+		        <img src="{% static 'images/whg_logo.svg'%}" alt="WHG" width="50" height="38">
+		    </a>
+		    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+		            data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+		            aria-expanded="false" aria-label="Toggle navigation">
+		      <span class="navbar-toggler-icon"></span>
+		    </button>
+		    <div class="collapse navbar-collapse smallish pt-2" id="navbarSupportedContent">
+	        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+	        <div id="links_home">
+            <span id="version_badge" class="badge text-bg-success">v3.0a</span>
+            <span id="beta_links">
+              <a href="{% url 'tutorials:tute-guide' %}" class="text-decoration-none">guide</a> |
+              <a href="#" class="feedback text-decoration-none">contact us</a> |
+              <a href="https://twitter.com/whgazetteer" target="_blank">
+              <img src="{% static 'images/twitter30h.png'%}" height=14></a>
+            </span>
+	        </div>
+	        <div id="links_other" class="d-none">
+            <a class="navbar-brand me-0" href="{% url 'home' %}">&nbsp;World Historical Gazetteer</a>
+            <a href="#" class="feedback text-decoration-none">contact us</a> |
+            <a href="https://twitter.com/whgazetteer" target="_blank"><img src="{% static 'images/twitter30h.png'%}" height=14></a>
+	        </div>
+	        </ul>
+		        <ul class="navbar-nav">
+	            <li class="nav-item">
+	              <a class="nav-link" href="{% url 'search-page' %}">Search</a>
+	            </li>
+	            <li class="nav-item">
+	              <a class="nav-link" href="{% url 'tutorials:teaching-page' %}">Teaching</a>
+	            </li>
+	            <li class="nav-item">
+	              <a class="nav-link" href="{% url 'tutorials:tutorials' %}">Guides</a>
+	            </li>
+	            <li class="nav-item">
+	              <a class="nav-link" href="{% url 'usingapi' %}">API</a>
+	            </li>
+		          <li class="nav-item dropdown">
+		            <a class="nav-link dropdown-toggle" href="#" role="button"
+		               data-bs-toggle="dropdown" aria-expanded="false">
+		            About
+		            </a>
+		            <ul class="dropdown-menu">
+	                <li><a class="dropdown-item" href="{% url 'about' %}">Introduction</a></li>
+	                <li><a class="dropdown-item" href="{% url 'system' %}">System details</a></li>
+	                <li><a class="dropdown-item" href="{% url 'licensing' %}">Licensing, Terms</a></li>
+	                <li><a class="dropdown-item" href="{% url 'credits' %}">Credits & Contacts</a></li>
+	                <li><hr class="dropdown-divider"></li>
+	                <li><a class="dropdown-item" href="http://blog.whgazetteer.org" target="_blank">News</a></li>
+		            </ul>
+		        </li>
+		        {% if user.is_authenticated %}
+	            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Data
+                </a>
+                <ul class="dropdown-menu">
+                  {% comment %}
+                  <li><a class="dropdown-item" href="{% url 'data-datasets' %}">My datasets</a></li>
+                  <li><a class="dropdown-item" href="{% url 'data-collections' %}">My collections</a></li>
+                  <li><a class="dropdown-item" href="{% url 'data-areas' %}">My study areas</a></li>
+                  {% if user.role == 'group_leader' or user|has_group:"beta30" or user.is_superuser %}
+                  <li><a class="dropdown-item" href="{% url 'data-collgroups' %}">My groups</a></li>
+                  {% endif %}
+                  {% if user|has_group:'whg_team' or user|has_group:'teaching' %}
+                  <li><a class="dropdown-item" href="{% url 'data-resources' %}">Teaching Resources</a></li>
+                  {% endif %}
+                  {% endcomment %}
+									<li><a class="dropdown-item" href="{% url 'dashboard' %}">My Data</a></li>
+	                <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}">Dataset Gallery</a></li>
+                  <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}">Collection Gallery</a></li>
+                </ul>
+	            </li>
+	            <li class="nav-item larger">
+	            <a class="nav-link" rel="tooltip" title="{{ user.name }}'s dashboard"
+	               href="{% url 'dashboard' %}">
+{#	               href="{% url 'accounts:profile' %}">#}
+	                <i class="fas fa-user" style="color:#336699;"></i></a>
+	            </li>
+	            <li class="nav-item">
+		            <a class="nav-link `ms-5"
+		               href="javascript:{document.getElementById('logout').submit()}">Logout</a>
+		              <form id="logout" method="post" action="{% url 'accounts:logout' %}">
+			              {% csrf_token %}
+		              </form>
+	            </li>
+		        {% else %}
+	            <li class="nav-item">
+	                <a class="nav-link ms-5" href="{% url 'accounts:register' %}">Register</a>
+	            </li>
+	            <li class="nav-item">
+		                <a class="nav-link" href="{% url 'accounts:login' %}">Login</a>
+		            </li>
+		        {% endif %}
+		        </ul>
+		    </div>
+		  </div>
+		</nav>
+  </header>
+
+  {% block content %}
+  {% endblock %}
+  </body>
+</html>

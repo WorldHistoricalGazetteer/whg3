@@ -1,15 +1,8 @@
 // /whg/webpack/home.js
 
-import {
-	CustomAttributionControl
-} from './customMapControls';
-import {
-	geomsGeoJSON
-} from './utilities';
+import { CustomAttributionControl } from './customMapControls';
+import { geomsGeoJSON } from './utilities';
 import '../css/home.css';
-import {
-	bbox
-} from './6.5.0_turf.min.js';
 import featuredDataLayers from './featuredDataLayerStyles';
 import { fetchDataForHorse } from './localGeometryStorage';
 

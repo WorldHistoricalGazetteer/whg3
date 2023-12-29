@@ -1,4 +1,4 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% block title %}<title>WHG::Gallery</title>{% endblock %}
 
 {% block content %}
@@ -7,8 +7,7 @@
 	{% load static %}
 	{% load dataset_extras %}
 	{% block extra_head %}
-	
-	<link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
+	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" /> 
 	<link href="{% static 'webpack/gallery.bundle.css' %}" rel="stylesheet" />
 	
 	{% endblock %}
@@ -65,15 +64,14 @@
 
 	<script type="text/javascript">
 
-	    const mbtoken = '{{ mbtoken }}';
-	    const maptilerkey = '{{ maptilerkey }}';
 		const dropdown_data = {{ dropdown_data|safe }};
     	let datacollection = '{{ active_tab }}';
 
 	</script>
+	<script src="{% static 'webpack/whg_maplibre.bundle.js' %}"></script>
 	
 	<script type="module">
-    	import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
+    	import "{% static 'webpack/vendors.bundle.js' %}";
     	import "{% static 'webpack/gallery.bundle.js' %}";
 	</script> 
 {% endblock %}

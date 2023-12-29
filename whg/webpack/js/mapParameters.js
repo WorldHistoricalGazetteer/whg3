@@ -23,7 +23,7 @@ const styles = {
 
 class mapParams {
     constructor({
-		style = 'OUTDOOR.DEFAULT',
+		style = ['OUTDOOR.DEFAULT'],
 		container = 'map',
 		center = [9.2, 33],
         zoom = 0.2,
@@ -40,20 +40,20 @@ class mapParams {
         bearing = 0,
         pitch = 0,
 		} = {}) {
+        //this.layerControl = Array.isArray(style) ? style : false;
         this.style = this.setStyle(style);
         this.container = container;
         this.center = center;
         this.zoom = zoom;
         this.minZoom = minZoom;
         this.maxZoom = maxZoom;
-        this.attributionControl = attributionControl;
-        this.attributionControlOpen = attributionControlOpen;
-        this.fullscreenControl = fullscreenControl;
-        this.geolocateControl = geolocateControl;
-        this.layerControl = Array.isArray(style);
+        //this.attributionControl = attributionControl;
+        //this.attributionControlOpen = attributionControlOpen;
+        //this.fullscreenControl = fullscreenControl;
+        //this.geolocateControl = geolocateControl;
         this.navigationControl = navigationControl;
-        this.sequencerControl = sequencerControl;
-        this.temporalControl = this.setTemporalControl(temporalControl);
+        //this.sequencerControl = sequencerControl;
+        //this.temporalControl = this.setTemporalControl(temporalControl);
         this.userProperties = userProperties;
         this.bearing = bearing;
         this.pitch = pitch;
@@ -83,7 +83,5 @@ class mapParams {
         return temporalControl;
     }
 }
-
-maptilersdk.config.apiKey = `${ !!maptilerkey ? maptilerkey : "" }`;
 
 export default mapParams;

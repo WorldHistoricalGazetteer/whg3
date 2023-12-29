@@ -5,7 +5,7 @@ import datasetLayers from './mapLayerStyles';
 import nearPlaceLayers from './nearPlaceLayerStyles';
 import throttle from 'lodash/throttle';
 import { attributionString, deepCopy, geomsGeoJSON } from './utilities';
-import { bbox } from './6.5.0_turf.min.js';
+import bbox from '@turf/bbox';
 import { CustomAttributionControl } from './customMapControls';
 import Dateline from './dateline';
 import { popupFeatureHTML } from './getPlace.js';

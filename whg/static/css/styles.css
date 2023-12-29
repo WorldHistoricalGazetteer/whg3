@@ -2,7 +2,10 @@ html, body {
   margin: 0;
   padding: 0;
   height: 100%;
-  font-family:  'Raleway', sans-serif;
+  font-family:  sans-serif;
+}
+.fonts-loaded body {
+  font-family: 'Raleway', sans-serif;
 }
 body {overflow-y: scroll;}
 pre { margin:0; background-color:whitesmoke;}
@@ -61,7 +64,7 @@ label {vertical-align:text-top;}
 .bg-lightblue { background-color: powderblue !important; }
 .bg-lighterblue { background-color: azure !important; }
 .bg-lightgrey { background-color: ghostwhite !important; }
-.bg-white { background-color: white; !important; }
+.bg-white { background-color: white !important; }
 .bg-tan { background-color: burlywood !important; color:white;}
 .bg-seagreen { background-color: #3B8794 !important; color:white;}
 .bg-lightseagreen { background-color: lightseagreen !important; color:white;}
@@ -262,13 +265,13 @@ i.fa-eye { margin-bottom: -5px; margin-left: -5px;}
 /* #4a8765, cadetblue, darkcyan, darkgreen, forestgreen, seagreen */
 .home-button-hilite {color: #6b8e6d;}
 .banner {
-    background-image: url('/static/images/banner_50percent.jpg');
+    background-image: url('../images/banner_50percent.jpg');
     height: 20%;
     position:relative;
     text-align:center;
 }
 .banner-bare {
-    background-image: url('');
+    background-image: none;
     height: 20%;
     position:relative;
     text-align:center;
@@ -345,7 +348,7 @@ i.fa-eye { margin-bottom: -5px; margin-left: -5px;}
   background-color: #3c8894 !important;
 }
 #list_all {position:absolute; right:2rem; font-size:.9rem;}
-#list_all a {color:#cff8ff; !important; vertical-align:middle; text-decoration:underline; letter-spacing:0.04em;}
+#list_all a {color:#cff8ff !important; vertical-align:middle; text-decoration:underline; letter-spacing:0.04em;}
 .item-left {
   position: relative;
   min-height: 62px;
@@ -355,12 +358,12 @@ i.fa-eye { margin-bottom: -5px; margin-left: -5px;}
   border-radius: 4px;
   box-shadow: 2px 2px #ccc;
   /*cursor: pointer;*/
-  /*background-image: url('/static/images/right-arrow.png') right no-repeat;*/
+  /*background-image: url('../images/right-arrow.png') right no-repeat;*/
 }
 .item-left p { margin:.5rem 0; font-size:.85rem;}
 .item-left:hover {opacity:0.7;}
 #item_left_search {
-  background-image: url('/static/images/search-map-50_425x80.png');
+  background-image: url('../images/search-map-50_425x80.png');
   background-color: #fff !important;
   font-weight:600;
 }
@@ -373,7 +376,7 @@ i.fa-eye { margin-bottom: -5px; margin-left: -5px;}
   z-index: 1;
   /* fixes overlap error in IE7/8,
      make sure you have an empty gif */
-  background-image: url('/static/images/empty.gif');
+  background-image: url('../images/empty.gif');
 }
 .home-icon { margin:0; padding:12px 0 0 0; text-align:center; }
 .imghelper {display: inline-block; height: 100%; vertical-align:middle;}
