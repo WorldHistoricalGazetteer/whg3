@@ -1,17 +1,13 @@
-{% extends "main/base.html" %}
-{% load leaflet_tags %}
+{% extends "main/base_webpack.html" %}
 {% load static %}
 
-{% block title %}<title>WHG v3.0a</title>{% endblock %}
-{% block extra_head %}
-  {% leaflet_js %}
-  {% leaflet_css %}
-  <script src="{% static 'js/aliases.js' %}"></script>
-  <script src="{% static 'js/parents.js' %}"></script>
+{% block title %}
+	<title>WHG v3.0a</title>
+{% endblock %}
 
-  <link href="https://fonts.googleapis.com/css?family=Archivo+Black" rel="stylesheet">
-  <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
-  <link href="{% static 'webpack/home.bundle.css' %}" rel="stylesheet" /> 
+{% block extra_head %}  
+	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" /> 
+	<link href="{% static 'webpack/home.bundle.css' %}" rel="stylesheet" />
 {% endblock %}
 
 {% block content %}
@@ -174,36 +170,7 @@
 	</div>
 </div>
 
-<!-- Set up MapLibre map using Maptiler SDK -->
 <script type="text/javascript">
-    let mapParameters = {
-        container: 'map',
-        center: [10.2385, 29.8626],
-        zoom: 0.1, // starting zoom
-        minZoom: 0.1,
-        maxZoom: 10,
-        mapTilerKey: '{{ maptilerkey }}',
-        controls: {
-            layer: true,
-            navigation: false,
-            fullscreen: false,
-            attribution: {
-                open: false,
-            },
-            temporal: {
-                fromValue: 1550,
-                toValue: 1720,
-                minValue: -2000,
-                maxValue: 2100,
-                open: false,
-                includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
-                epochs: null,
-                automate: null,
-            }
-        },
-        styleFilter: [ 'OUTDOOR.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
-    }
-
     let galleries = [
         ["Datasets","{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"],
 		["Collections","{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}"]
@@ -213,9 +180,24 @@
     let repositionMap = true; // Determines whether map should fly to loaded datacollection
     let homeModalURL = "{% url 'modal-home' %}"
 </script>
-<script type="module">
-    import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
-    import "{% static 'webpack/home.bundle.js' %}";
-</script> 
+
+{% endblock %}
+
+{% block deferredScripts %}
+   	
+   	var scripts = [
+		{
+			src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
+			type: 'text/javascript',
+		},
+		{
+			src: '{% static 'webpack/vendors.bundle.js' %}',
+			type: 'module',
+		},
+		{
+			src: '{% static 'webpack/home.bundle.js' %}',
+			type: 'module',
+		},
+   	]
 
 {% endblock %}

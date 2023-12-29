@@ -1,30 +1,13 @@
 // /whg/webpack/home.js
 
-import { CustomAttributionControl } from './customMapControls';
 import { geomsGeoJSON } from './utilities';
 import '../css/home.css';
 import featuredDataLayers from './featuredDataLayerStyles';
 import { fetchDataForHorse } from './localGeometryStorage';
 
-let style_code;
-if (mapParameters.styleFilter.length == 0) {
-	style_code = ['DATAVIZ', 'DEFAULT']
-} else {
-	style_code = mapParameters.styleFilter[0].split(".");
-}
-
-maptilersdk.config.apiKey = mapParameters.mapTilerKey;
-let mappy = new maptilersdk.Map({
-	container: mapParameters.container,
-	center: mapParameters.center,
-	zoom: mapParameters.zoom,
-	minZoom: mapParameters.minZoom,
-	maxZoom: mapParameters.maxZoom,
-	style: maptilersdk.MapStyle[style_code[0]][style_code[1]],
-	attributionControl: false,
-	geolocateControl: false,
-	navigationControl: false,
-	userProperties: true
+let mappy = new whg_maplibre.Map({
+	style: [ 'OUTDOOR.DEFAULT' ], 
+	maxZoom: 10
 });
 
 var timer; // Controls the carousels
@@ -38,11 +21,6 @@ mappy.on('load', function() {
 			mappy.setLayoutProperty(layer.id, 'visibility', 'none');
 		}
 	});
-
-	mappy.addControl(new CustomAttributionControl({
-		compact: true,
-		autoClose: mapParameters.controls.attribution.open === false,
-	}), 'bottom-right');
 	
 	mappy.addSource('featured-data-source', {
 	    type: 'geojson',

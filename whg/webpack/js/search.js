@@ -7,6 +7,7 @@ import bbox from '@turf/bbox';
 import centroid from '@turf/centroid';
 import { attributionString, geomsGeoJSON } from './utilities';
 import { CustomAttributionControl } from './customMapControls';
+import '../../../static/js/parents.js'; // ccode_hash
 import '../css/maplibre-common.css';
 import '../css/dateline.css';
 import '../css/search.css';

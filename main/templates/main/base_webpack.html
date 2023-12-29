@@ -9,9 +9,8 @@
   	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.ico' %}"/>
-	<script src="{% static 'jquery/jquery-3.6.0.min.js' %}"></script>
-	<script src="{% static 'webpack/base.bundle.js' %}"></script>
-
+	
+	<script defer src="{% static 'webpack/base.bundle.js' %}"></script>
     <link href="{% static 'webpack/base.bundle.css' %}" rel="stylesheet" />
   
     {% block extra_head %}
@@ -19,14 +18,36 @@
         	.container a {text-decoration: none !important;}
       	</style>
   	{% endblock %}
+	<script type="text/javascript">
+		function executeDeferredScripts() {
+			{% block deferredScripts %}
+			{% endblock %}
+			const loadNextScript = function(index) {
+			  	if (index < scripts.length) {
+			  		const script = scripts[index];
+			  		const scriptElement = document.createElement('script');
+			  		scriptElement.src = script.src;
+			  		if (script.type) {
+			  			scriptElement.type = script.type;
+			  		}
+			  		scriptElement.onload = function() {
+			  			console.log(`Loaded ${script.src}`);
+			  			loadNextScript(index + 1); // Load the next script
+			  		};
+			  		document.body.appendChild(scriptElement);
+			  	}
+			};
+			loadNextScript(0);
+		}
+	</script>
 </head>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZB73342G3Y"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-ZB73342G3Y');
+	window.dataLayer = window.dataLayer || [];
+	function gtag(){dataLayer.push(arguments);}
+	gtag('js', new Date());
+	gtag('config', 'G-ZB73342G3Y');
 </script>
 <body>
   <header>

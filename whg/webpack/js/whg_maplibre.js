@@ -391,19 +391,24 @@ class CustomAttributionControl extends AttributionControl {
 }
 
 const originalMapConstructor = Map;
-Map = function (options = {
-		container: 'map',
-		style: 'ne_global', // ['DATAVIZ.DEFAULT'], or with style switcher ['DATAVIZ.DEFAULT', 'OUTDOOR.DEFAULT']
-		zoom: 0.2,
-		center: [ 9.2, 33 ],
-		minZoom: 0.1,
-		maxZoom: 6,
-		attributionControl: false, // {position: 'bottom-right', autoClose: true},
-		geolocateControl: false,
-		navigationControl: false, // {position: 'top-right', showCompass: false},
-		maptilerLogo: false,
-	}) {
-    const { style, attributionControl, ...otherOptions } = options;
+Map = function (options = {}) {
+		
+    const defaultOptions = {
+        container: 'map',
+        style: 'ne_global', // ['DATAVIZ.DEFAULT'], or with style switcher ['DATAVIZ.DEFAULT', 'OUTDOOR.DEFAULT']
+        zoom: 0.2,
+        center: [9.2, 33],
+        minZoom: 0.1,
+        maxZoom: 6,
+        attributionControl: false, // {position: 'bottom-right', autoClose: true},
+        geolocateControl: false,
+        navigationControl: false, // {position: 'top-right', showCompass: false},
+        maptilerLogo: false,
+    };
+    
+    const mergedOptions = { ...defaultOptions, ...options };
+    
+    const { style, attributionControl, ...otherOptions } = mergedOptions;
     
     let styleFilters = Array.isArray(style) ? style : false;
     otherOptions.style = Array.isArray(style) ? style : convertStyle(style);

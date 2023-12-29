@@ -26,3 +26,10 @@
   font-weight: 600;
   font-style: italic;
 }
+
+@font-face {
+  font-family: 'Archivo Black';
+  src: local('Archivo Black'), url('../../static/webpack/fonts/ArchivoBlack/ArchivoBlack-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}

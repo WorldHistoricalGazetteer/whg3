@@ -1,16 +1,17 @@
 {% extends "main/base_webpack.html" %}
-{% block title %}<title>WHG::Gallery</title>{% endblock %}
+{% load static %}
+{% load dataset_extras %}
 
-{% block content %}
-{#	{% load geojson_tags %}#}
-{#	{% load leaflet_tags %}#}
-	{% load static %}
-	{% load dataset_extras %}
-	{% block extra_head %}
+{% block title %}
+	<title>WHG::Gallery</title>
+{% endblock %}
+
+{% block extra_head %}
 	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" /> 
 	<link href="{% static 'webpack/gallery.bundle.css' %}" rel="stylesheet" />
-	
-	{% endblock %}
+{% endblock %}
+
+{% block content %}
 
 	<div class="container pt-2 container-md" style="height: calc(100vh - 65px); position:relative;">
 	    <section class="text-center">
@@ -61,18 +62,29 @@
 	    </div>
 	    <div id="essay_modal" class="selector py-3" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;"></div>
 	</div>
-
 	<script type="text/javascript">
-
 		const dropdown_data = {{ dropdown_data|safe }};
-    	let datacollection = '{{ active_tab }}';
-
+	   	let datacollection = '{{ active_tab }}';
 	</script>
-	<script src="{% static 'webpack/whg_maplibre.bundle.js' %}"></script>
-	
-	<script type="module">
-    	import "{% static 'webpack/vendors.bundle.js' %}";
-    	import "{% static 'webpack/gallery.bundle.js' %}";
-	</script> 
 {% endblock %}
+
+{% block deferredScripts %}
+   	
+   	var scripts = [
+		{
+			src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
+			type: 'text/javascript',
+		},
+		{
+			src: '{% static 'webpack/vendors.bundle.js' %}',
+			type: 'module',
+		},
+		{
+			src: '{% static 'webpack/gallery.bundle.js' %}',
+			type: 'module',
+		},
+   	]
+
+{% endblock %}
+
 
