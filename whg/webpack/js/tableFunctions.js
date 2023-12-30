@@ -1,5 +1,4 @@
 
-import bbox from '@turf/bbox';
 import { getPlace } from './getPlace';
 import { startSpinner } from './utilities';
 import { updatePadding, recenterMap/*, listSourcesAndLayers*/ } from './mapFunctions';

@@ -1,8 +1,5 @@
 // mapSequenceArcs.js
 
-import distance from '@turf/distance';
-import { lineString } from '@turf/helpers';
-import bezierSpline from '@turf/bezier-spline';
 import { representativePoint } from './utilities';
 
 export default class SequenceArcs {

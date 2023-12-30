@@ -1,44 +1,25 @@
 // /whg/webpack/portal.js
 
-import './extend-maptiler-sdk.js'; // Adds 'fitViewport' method
 import datasetLayers from './mapLayerStyles';
 import nearPlaceLayers from './nearPlaceLayerStyles';
 import throttle from 'lodash/throttle';
 import { attributionString, deepCopy, geomsGeoJSON } from './utilities';
-import bbox from '@turf/bbox';
-import { CustomAttributionControl } from './customMapControls';
 import Dateline from './dateline';
 import { popupFeatureHTML } from './getPlace.js';
 
-import '../css/maplibre-common.css';
 import '../css/mapAndTableMirrored.css';
 import '../css/dateline.css';
 import '../css/portal.css';
 
 const payload = JSON.parse($('#payload_data').text());
 
-let style_code;
-if (mapParameters.styleFilter.length == 0) {
-	style_code = ['DATAVIZ', 'DEFAULT']
-} else {
-	style_code = mapParameters.styleFilter[0].split(".");
+let mapParameters = {
+	style: [ 'OUTDOOR.DEFAULT', 'TOPO.DEFAULT', 'TOPO.TOPOGRAPHIQUE', 'SATELLITE.DEFAULT', 'OCEAN.DEFAULT' ], 
+	maxZoom: 17,
+	navigationControl: true,
+	controls: {temporal: temporal},
 }
-
-maptilersdk.config.apiKey = mapParameters.mapTilerKey;
-let mappy = new maptilersdk.Map({
-	container: mapParameters.container,
-	center: mapParameters.center,
-	zoom: mapParameters.zoom,
-	minZoom: mapParameters.minZoom,
-	maxZoom: mapParameters.maxZoom,
-	style: maptilersdk.MapStyle[style_code[0]][style_code[1]],
-	attributionControl: false,
-	geolocateControl: false,
-	navigationControl: mapParameters.controls.navigation,
-	userProperties: true,
-	bearing: 0,
-	pitch: 0,
-});
+let mappy = new whg_maplibre.Map(mapParameters);
 
 let baseStyle = {};
 
@@ -54,7 +35,7 @@ let nearbyFeatureCollection;
 let featureHighlights = [];
 let showingRelated = false;
 
-let nearPlacePopup = new maptilersdk.Popup({
+let nearPlacePopup = new whg_maplibre.Popup({
 	closeButton: false,
 	})
 .addTo(mappy);
@@ -64,7 +45,6 @@ function waitMapLoad() {
     return new Promise((resolve) => {
         mappy.on('load', () => {
             console.log('Map loaded.');
-			const whgMap = document.getElementById(mapParameters.container);
 
 			const controlContainer = document.querySelector('.maplibregl-control-container');
 			controlContainer.setAttribute('id', 'mapControls');
@@ -72,7 +52,7 @@ function waitMapLoad() {
 
 			const mapOverlays = document.createElement('div');
 			mapOverlays.id = 'mapOverlays';
-			whgMap.appendChild(mapOverlays);
+			mappy.getContainer().appendChild(mapOverlays);
 
 			['left', 'centre', 'right'].forEach(function(side) {
 				const column = document.createElement('div');
@@ -122,16 +102,11 @@ function waitMapLoad() {
 				$('#map_options').append(createGeoLayerSelectors('geoLayers', geoLayers));
 			}
 
-			if (mapParameters.styleFilter.length !== 1) {
+			if (mapParameters.style.length !== 1) {
 				$('#map_options').append(createBasemapRadioButtons());
 			}
 
 			$('#map_options').append(createNearbyPlacesControl());
-
-			mappy.addControl(new CustomAttributionControl({
-				compact: true,
-		    	autoClose: mapParameters.controls.attribution.open === false,
-			}), 'bottom-right');
 			
 			const dateRangeChanged = throttle(() => { // Uses imported lodash function
 			    filterSources();
@@ -202,7 +177,7 @@ function waitMapLoad() {
 				}
 			});
 
-			whgMap.style.opacity = 1;
+			mappy.getContainer().style.opacity = 1;
 
             resolve();
         });
@@ -469,12 +444,13 @@ function histogram(data, labels, minmax) {
 function onBasemapRadioChange() {
 	const variantValue = $(this).val();
 	const style_code = variantValue.split(".");
-	console.log('Selected variant: ', variantValue, maptilersdk.MapStyle[style_code[0]][style_code[1]]);
-	mappy.setStyle(maptilersdk.MapStyle[style_code[0]][style_code[1]], {
+	console.log('Selected variant: ', variantValue, whg_maplibre.MapStyle[style_code[0]][style_code[1]]);
+	mappy.setStyle(whg_maplibre.MapStyle[style_code[0]][style_code[1]]/*, {
 		transformStyle: (previousStyle, nextStyle) => {
 			const newSources = {
 				...nextStyle.sources
 			};
+			console.log(previousStyle.sources,newSources);
 			Object.keys(previousStyle.sources).forEach((sourceId) => {
 				if (!baseStyle.sources.includes(sourceId)) {
 					newSources[sourceId] = previousStyle.sources[sourceId];
@@ -489,11 +465,11 @@ function onBasemapRadioChange() {
 				layers: [...nextStyle.layers, ...additionalLayers],
 			};
 		}
-	});
+	}*/);
 }
 
 function createBasemapRadioButtons() {
-    const styleFilterValues = mapParameters.styleFilter.map(value => value.split('.')[0]);
+    const styleFilterValues = mapParameters.style.map(value => value.split('.')[0]);
     const $radioContainer = $('<div>').addClass('option-block');
     $('<p>').addClass('strong-red heading').text('Basemap Style').appendTo($radioContainer);
 
@@ -509,13 +485,13 @@ function createBasemapRadioButtons() {
 
     console.log(mappy.getStyle());
 
-    for (const group of Object.values(maptilersdk.MapStyle)) {
-        if (mapParameters.styleFilter.length == 0 || styleFilterValues.includes(group.id)) {
+    for (const group of Object.values(whg_maplibre.MapStyle)) {
+        if (mapParameters.style.length == 0 || styleFilterValues.includes(group.id)) {
             const $groupItem = $('<div>').addClass('group-item').text(group.name);
 
             for (const orderedVariant of group.orderedVariants) {
                 const datasetValue = group.id + '.' + orderedVariant.variantType;
-                if (mapParameters.styleFilter.length == 0 || mapParameters.styleFilter.includes(datasetValue)) {
+                if (mapParameters.style.length == 0 || mapParameters.style.includes(datasetValue)) {
             		const $itemDiv = $('<div>').addClass('basemap-choice');
 					const itemID = datasetValue.replace('.','-').toLowerCase();
                     const $radioItem = $('<input>')
@@ -523,7 +499,7 @@ function createBasemapRadioButtons() {
                         .attr('type', 'radio')
                         .attr('name', 'basemap-style')
                         .attr('value', datasetValue)
-                        .attr('checked', datasetValue == mapParameters.styleFilter[0])
+                        .attr('checked', datasetValue == mapParameters.style[0])
                         .on('change', onBasemapRadioChange);
                     const $label = $(`<label for = '${ itemID }'>`).text(orderedVariant.name);
                     $itemDiv.append($radioItem, $label);

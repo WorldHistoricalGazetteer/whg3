@@ -1,12 +1,9 @@
 // base.js
 
 import { Spinner } from 'spin.js';
-import '../../../static/js/aliases.js';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'jquery-ui/dist/themes/base/jquery-ui.min.css';
+import '../../../static/js/aliases.js'; // /static/js/aliases.js
 import '../css/base.css';
-import '@fortawesome/fontawesome-free/css/all.min.css';
-import '../../static/css/styles.css';
+import '../../static/css/styles.css'; // /whg/static/css/styles.css
 import 'spin.js/spin.css';
 	
 if ('fonts' in document) {
@@ -27,66 +24,169 @@ if ('fonts' in document) {
 var CDN_fallbacks = [
 	{
 		cdnUrl: 'https://code.jquery.com/jquery-3.6.3.min.js',
-		localUrl: '/node_modules/jquery/dist/jquery.min.js',
+		localUrl: 'jquery.min.js',
 		position: 'head'
 	},
 	{
 		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.bundle.min.js',
-		localUrl: '/node_modules/bootstrap/dist/js/bootstrap.bundle.min.js',
+		localUrl: 'bootstrap.bundle.min.js',
 		position: 'body'
 	},
 	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css',
+		localUrl: 'bootstrap.min.css',
+		position: 'head'
+	},
+	{
 		cdnUrl: 'https://code.jquery.com/ui/1.13.2/jquery-ui.min.js',
-		localUrl: '/node_modules/jquery-ui/dist/jquery-ui.min.js',
+		localUrl: 'jquery-ui.min.js',
+		position: 'head'
+	},
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.13.2/themes/base/jquery-ui.min.css',
+		localUrl: 'jquery-ui.min.css',
 		position: 'head'
 	},
 	{
 		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js',
-		localUrl: '/node_modules/clipboard/dist/clipboard.min.js',
+		localUrl: 'clipboard.min.js',
+		position: 'head'
+	},
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
+		localUrl: 'all.min.css',
+		position: 'head'
+	},
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js',
+		localUrl: 'bootstrap3-typeahead.min.js',
+		position: 'head'
+	},
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js',
+		localUrl: 'bootstrap-tagsinput.min.js',
+		position: 'head'
+	},
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css',
+		localUrl: 'bootstrap-tagsinput.css',
+		position: 'head'
+	},
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput-typeahead.css',
+		localUrl: 'bootstrap-tagsinput-typeahead.css',
+		position: 'head'
+	},
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/corejs-typeahead/1.3.3/bloodhound.min.js',
+		localUrl: 'bloodhound.min.js',
+		position: 'head'
+	},
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js',
+		localUrl: 'turf.min.js',
+		position: 'head'
+	},
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js',
+		localUrl: 'd3.min.js',
 		position: 'head'
 	},
 ];
 
-function loadResource(element) {
-	return new Promise(function(resolve, reject) {
-		var resource = document.createElement('script');
+window.select2_CDN_fallbacks = [
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.full.min.js',
+		localUrl: 'select2.full.js',
+		position: 'head',
+	},
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css',
+		localUrl: 'select2.css',
+		position: 'head'
+	},
+];
 
-		resource.src = element.cdnUrl;
-		resource.type = 'text/javascript';
+window.datatables_CDN_fallbacks = [
+	{
+		cdnUrl: 'https://cdn.datatables.net/v/dt/dt-1.10.24/b-1.7.0/b-colvis-1.7.0/b-html5-1.7.0/cr-1.5.3/fh-3.1.8/sc-2.0.3/sp-1.2.2/sl-1.3.3/datatables.min.js',
+		localUrl: 'datatables.min.js',
+		position: 'head',
+	},
+	{
+		cdnUrl: 'https://cdn.datatables.net/v/dt/dt-1.10.24/b-1.7.0/b-colvis-1.7.0/b-html5-1.7.0/cr-1.5.3/fh-3.1.8/sc-2.0.3/sp-1.2.2/sl-1.3.3/datatables.min.css',
+		localUrl: 'datatables.min.css',
+		position: 'head'
+	},
+];
+
+window.mapboxDraw_CDN_fallbacks = [
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl-draw/1.4.3/mapbox-gl-draw.js',
+		localUrl: 'mapbox-gl-draw.js',
+		position: 'head',
+	},
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl-draw/1.4.3/mapbox-gl-draw.min.css',
+		localUrl: 'mapbox-gl-draw.css',
+		position: 'head'
+	},
+];
+
+window.loadResource = function(element) {
+	return new Promise(function(resolve, reject) {
+		var resource;
+		const isCSS = element.cdnUrl.endsWith('.css');
+
+		if (isCSS) {
+			resource = document.createElement('link');
+			resource.type = 'text/css';
+			resource.rel = 'stylesheet';
+		} else {
+			resource = document.createElement('script');
+			resource.type = 'text/javascript';
+		}
+
+		resource[isCSS ? 'href' : 'src'] = element.cdnUrl;
 
 		if (element.integrity) resource.integrity = element.integrity;
 		if (element.crossorigin) resource.crossorigin = element.crossorigin;
-		
+
 		document[element.position].appendChild(resource);
 
 		resource.onload = function() {
 			console.log(`Loaded CDN resource ${element.cdnUrl}`);
 			resolve();
-		}
+		};
+
 		resource.onerror = function() {
-			console.error(`Failed to load CDN resource (${element.cdnUrl}), falling back to local: ${element.localUrl}`);
-
-			resource.onload = resource.onerror = null; // Clear previous event handlers
-			resource.src = element.localUrl;
-		
+			console.log(`Failed to load CDN resource (${element.cdnUrl}), falling back to local: ${element.localUrl}`);
+			resource[isCSS ? 'href' : 'src'] = `/CDNfallbacks/${element.localUrl}`;
 			document[element.position].appendChild(resource);
-
-			resource.onload = function() {
-		        console.log(`Loaded local resource ${element.localUrl}`);
-		        resolve();
-		    };
-			resource.onerror = function() {
-				reject(new Error(`Also failed to load local resource (${element.localUrl}).`));
-			};
+			resolve();
 		};
 	});
-}
+};
 
 Promise.all(CDN_fallbacks.map(loadResource))
 	.then(function() {
 		
 		console.log('Executing deferred scripts.');
 		executeDeferredScripts();
+		
+		window.bbox = turf.bbox;
+		window.buffer = turf.buffer;
+		window.convex = turf.convex;
+		window.flatten = turf.flatten;
+		window.dissolve = turf.dissolve;
+		window.combine = turf.combine;
+		window.midpoint = turf.midpoint
+		window.centroid = turf.centroid
+		window.getType = turf.getType
+		window.area = turf.area
+		window.distance = turf.distance
+		window.lineString = turf.lineString
+		window.bezierSpline = turf.bezierSpline
 		
 		window.Spinner = Spinner;
 		

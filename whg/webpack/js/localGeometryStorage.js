@@ -1,5 +1,4 @@
 
-import bbox from '@turf/bbox';
 import { startSpinner } from './utilities';
 
 function fetchDataFromLocalStorage(type, id, mode) {

@@ -1,9 +1,4 @@
 
-import bbox from '@turf/bbox';
-import midpoint from '@turf/midpoint';
-import centroid from '@turf/centroid';
-import { getType } from '@turf/invariant';
-import area from '@turf/area';
 import { lch } from 'd3-color' 
 
 export function deepCopy(obj) {

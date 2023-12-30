@@ -1,47 +1,17 @@
 
-import './extend-maptiler-sdk.js'; // Adds 'fitViewport' method
 import datasetLayers from './mapLayerStyles';
-import bbox from '@turf/bbox';
 import { attributionString } from './utilities';
-import { acmeStyleControl, CustomAttributionControl } from './customMapControls';
 
-import '../css/maplibre-common.css';
-import '../css/style-control.css';
-
-let style_code;
-if (mapParameters.styleFilter.length == 0) {
-	style_code = ['DATAVIZ', 'DEFAULT']
-} else {
-	style_code = mapParameters.styleFilter[0].split(".");
-}
-
-maptilersdk.config.apiKey = mapParameters.mapTilerKey;
-export let mappy = new maptilersdk.Map({
-	container: mapParameters.container,
-	center: mapParameters.center,
-	zoom: mapParameters.zoom,
-	minZoom: mapParameters.minZoom,
-	maxZoom: mapParameters.maxZoom,
-	style: maptilersdk.MapStyle[style_code[0]][style_code[1]],
-	attributionControl: false,
-	geolocateControl: false,
-	navigationControl: mapParameters.controls.navigation,
-	userProperties: true,
-	bearing: 0,
-	pitch: 0,
+export let mappy = new whg_maplibre.Map({
+	style: ['DATAVIZ.DEFAULT', 'OUTDOOR.DEFAULT'], 
+	maxZoom: 10,
+	navigationControl: true,
 });
 
-let styleControl;
 let featureCollection;
 
 export function initialiseMap() {
-	console.log('Map loaded.');
-	const whgMap = document.getElementById(mapParameters.container);
-	
-	if (mapParameters.styleFilter.length !== 1) {
-		styleControl = new acmeStyleControl(mappy);
-		mappy.addControl(styleControl, 'top-right');
-	}		
+	console.log('Map loaded.');	
 	
 	featureCollection = JSON.parse(featureCollectionJSON);
 	console.log(featureCollection);
@@ -62,12 +32,7 @@ export function initialiseMap() {
 		console.log('No features to map.')
 	}
 	
-	mappy.addControl(new CustomAttributionControl({
-		compact: true,
-		autoClose: mapParameters.controls.attribution.open === false,
-	}), 'bottom-right');
-	
-	whgMap.style.opacity = 1;
+	mappy.getContainer().style.opacity = 1;
 }
 
 export function addReviewListeners() {
@@ -88,7 +53,7 @@ export function addReviewListeners() {
 		if (features.length > 0) {
 			let scrolled = false;
 			features.forEach(feature => {
-				const isAddedFeature = !styleControl.baseStyle.layers.includes(feature.layer.id);
+				const isAddedFeature = !mappy.styleControl.baseStyle.layers.includes(feature.layer.id);
 				if (isAddedFeature && !!feature.properties.src_id) {
 					if (!scrolled) {
 						$('.match_radio').css('background', 'oldlace'); // first, background to #fff for all 
@@ -114,7 +79,7 @@ export function addReviewListeners() {
 		}
 		if (features.length > 0) {
 			const topFeature = features[0]; // Handle only the top-most feature
-			const isAddedFeature = !styleControl.baseStyle.layers.includes(topFeature.layer.id);
+			const isAddedFeature = !mappy.styleControl.baseStyle.layers.includes(topFeature.layer.id);
 			if (isAddedFeature && !!topFeature.properties.id) {
 				mappy.getCanvas().style.cursor = 'pointer';
 				$(`.hovermap[data-id='${ topFeature.properties.id }']`).addClass('highlight-row');

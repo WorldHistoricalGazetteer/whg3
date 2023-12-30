@@ -6,6 +6,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const Dotenv = require('dotenv-webpack');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
 	mode: 'production',
@@ -15,10 +16,9 @@ module.exports = {
 	},
 	entry: {
 		base: '/app/whg/webpack/js/base.js',
-		whg: '/app/whg/webpack/js/whg.js',
-		maptiler_sdk: '/app/whg/webpack/js/maptiler-sdk.js',
+		mapAndTable: '/app/whg/webpack/js/mapAndTable.js',
+		//maptiler_sdk: '/app/whg/webpack/js/maptiler-sdk.js',
 		whg_maplibre: '/app/whg/webpack/js/whg_maplibre.js',
-		gis_resources: '/app/whg/webpack/js/gis_resources.js',
 		search_functions: '/app/whg/webpack/js/search_resources.js',
 		home: '/app/whg/webpack/js/home.js',
 		search: '/app/whg/webpack/js/search.js',
@@ -59,6 +59,82 @@ module.exports = {
 			generateStatsFile: true,
 			statsFilename: 'stats.json',
 		}),
+		new CopyWebpackPlugin({
+	      	patterns: [
+		        {
+		          from: 'node_modules/jquery/dist/jquery.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/bootstrap/dist/js/bootstrap.bundle.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/bootstrap/dist/css/bootstrap.min.css',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/jquery-ui/dist/jquery-ui.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/jquery-ui/dist/themes/base/jquery-ui.min.css',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/clipboard/dist/clipboard.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/@fortawesome/fontawesome-free/css/all.min.css',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/bootstrap-3-typeahead/bootstrap3-typeahead.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/bootstrap-tagsinput/dist/bootstrap-tagsinput.css',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/bootstrap-tagsinput/dist/bootstrap-tagsinput-typeahead.css',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/bloodhound-js/dist/bloodhound.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/@turf/turf/turf.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/d3/build/d3.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/select2/dist/js/select2.full.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/select2/dist/css/select2.css',
+		          to: '/app/CDNfallbacks/',
+		        },
+	      	],
+	    }),
 	],
 	resolve: {
 		modules: [
@@ -79,20 +155,6 @@ module.exports = {
 			maxInitialRequests: 30,
 			enforceSizeThreshold: 50000,
 			cacheGroups: {
-				buffer: {
-					test: /[\\/]node_modules[\\/](@turf\/buffer|turf-jsts)[\\/]/,
-					name: 'buffer',
-					chunks: 'all',
-					priority: -5,
-					reuseExistingChunk: true,
-				},
-				vendors: {
-					test: /[\\/]node_modules[\\/](@turf)[\\/]/,
-					name: 'vendors',
-					chunks: 'all',
-					priority: -10,
-					reuseExistingChunk: true,
-				},
 				default: {
 					minChunks: 2,
 					priority: -20,

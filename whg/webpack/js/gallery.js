@@ -1,7 +1,5 @@
 // gallery.js
 
-import 'select2/dist/js/select2.full.js';
-import 'select2/dist/css/select2.css';
 import debounce from 'lodash/debounce';
 import { attributionString } from './utilities';
 import featuredDataLayers from './featuredDataLayerStyles';
@@ -123,7 +121,7 @@ function buildGallery(datacollections) {
 	}
 }
 
-Promise.all([waitMapLoad(), waitDocumentReady()])
+Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(select2_CDN_fallbacks.map(loadResource))])
     .then(() => {
 	
 	const debouncedUpdates = debounce(() => { // Uses imported lodash function
@@ -318,7 +316,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 	});
 	resizeObserver.observe($('#searchInput')[0]);
 		
-	$('[data-toggle="tooltip"]').tooltip();
+	$('[data-bs-toggle="tooltip"]').tooltip();
 	 
 	$('#dynamic-gallery')
 		.on('click', ".ds-card-container", function(event) {

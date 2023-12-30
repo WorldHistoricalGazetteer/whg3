@@ -1,9 +1,10 @@
 // whg_maplibre.js
 
-import { Map, MapStyle, config, NavigationControl, AttributionControl } from '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.mjs';
+import { Map, MapStyle, config, NavigationControl, AttributionControl, Popup } from '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.mjs';
 import '@maptiler/sdk/dist/maptiler-sdk.css';
 import '../css/maplibre-common.css';
 import '../css/style-control.css';
+import '../css/dateline.css';
 
 const custom_styles = {
     'ne_global': {
@@ -48,10 +49,37 @@ function convertStyle(style) {
 	
 }
 
+Map.prototype.baseStyle = {};
 // Override the setStyle method to handle style arrays
 const originalSetStyle = Map.prototype.setStyle;
 Map.prototype.setStyle = function (style) {
-	return originalSetStyle.call(this, convertStyle(style));
+	return originalSetStyle.call(this, convertStyle(style), {
+		transformStyle: (previousStyle, nextStyle) => { // Identify sources and layers that were added to the baseStyle
+			const newSources = {
+				...nextStyle.sources
+			};
+			
+			let additionalLayers = [];
+			if (previousStyle) {
+				console.log('Style switch:',previousStyle.sources,this.baseStyle);
+				Object.keys(previousStyle.sources).forEach((sourceId) => {
+					if (!this.baseStyle.sources.includes(sourceId)) {
+						newSources[sourceId] = previousStyle.sources[sourceId];
+					}
+				});
+				additionalLayers = previousStyle.layers.filter((layer) => !this.baseStyle.layers.includes(layer.id));
+			}
+
+			this.baseStyle.sources = Object.keys(nextStyle.sources);
+			this.baseStyle.layers = nextStyle.layers.map((layer) => layer.id);
+			
+			return {
+				...nextStyle,
+				sources: newSources,
+				layers: previousStyle ? [...nextStyle.layers, ...additionalLayers] : nextStyle.layers,
+			};
+		}
+	});
 };
 
 function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
@@ -290,7 +318,7 @@ class acmeStyleControl {
 		const variantValue = event.target.dataset.value;
 		const style_code = variantValue.split(".");
 		console.log('Selected variant: ', variantValue, MapStyle[style_code[0]][style_code[1]]);
-		this._map.setStyle([variantValue], {
+		this._map.setStyle([variantValue]/*, {
 			transformStyle: (previousStyle, nextStyle) => { // Identify sources and layers that were added to the baseStyle
 				const newSources = {
 					...nextStyle.sources
@@ -309,7 +337,7 @@ class acmeStyleControl {
 					layers: [...nextStyle.layers, ...additionalLayers],
 				};
 			}
-		});
+		}*/);
 
 		const styleList = document.getElementById('mapStyleList');
 		if (styleList) {
@@ -410,7 +438,7 @@ Map = function (options = {}) {
     
     const { style, attributionControl, ...otherOptions } = mergedOptions;
     
-    let styleFilters = Array.isArray(style) ? style : false;
+    let styleFilters = Array.isArray(style) && style.length > 1 ? style : false;
     otherOptions.style = Array.isArray(style) ? style : convertStyle(style);
     
     const customNavigationControl = otherOptions.navigationControl;
@@ -421,7 +449,8 @@ Map = function (options = {}) {
 
     mapInstance.on('load', () => {
 		if (styleFilters) {
-			mapInstance.addControl(new acmeStyleControl(mapInstance, styleFilters), 'top-right');
+			mapInstance.styleControl = new acmeStyleControl(mapInstance, styleFilters);
+			mapInstance.addControl(mapInstance.styleControl, 'top-right');
 		}
 		if (customNavigationControl) mapInstance.addControl(new NavigationControl(customNavigationControl), customNavigationControl['position']);
 		if (attributionControl) mapInstance.addControl(new CustomAttributionControl({
@@ -436,4 +465,4 @@ Map = function (options = {}) {
 
 config.apiKey = process.env.MAPTILER_KEY;
 
-window.whg_maplibre = { Map }
+window.whg_maplibre = { Map, Popup, MapStyle }
