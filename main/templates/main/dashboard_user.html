@@ -75,8 +75,8 @@
 <div id="container" class="container mt-1">
   <div class="page-title-container mt-3">
     <h4 class="page-title">My Dashboard</h4>
-    <a href="{% url 'profile-edit' %}" class="profile-link">
-      Profile<i class="fas fa-user ms-2"></i>
+    <a href="{% url 'profile-edit' %}" class="profile-link" title="{{ user.id }}">
+      Profile<i class="fas fa-user mx-2"></i> {{ user.id }}
     </a>
   </div>
   <div class="row">
@@ -125,7 +125,7 @@
           {% if has_collections %}
           {% for item in collections %}
           <div class="item-div">
-            {{ item.title }}
+            {{ item.title }} ({{ item.collection_class }})
 	          <div class="float-end">
 							<a href="#"><i class="fas fa-eye linky"></i></a>
 							<a href="#"><i class="fas fa-edit linky"></i></a>
@@ -152,41 +152,69 @@
         </div>
         <div class="box-content">
           {% if has_areas %}
-	        {% for item in areas %}
-          <div class="item-div">
-            {{ item.title }}
-	          <div class="float-end">
-							<a href="#"><i class="fas fa-eye linky"></i></a>
-							<a href="#"><i class="fas fa-edit linky"></i></a>
-            </div>
-          </div>
-          {% endfor %}
+		        {% for item in areas %}
+	          <div class="item-div">
+	            {{ item.title }}
+		          <div class="float-end">
+								<a href="#"><i class="fas fa-eye linky"></i></a>
+								<a href="#"><i class="fas fa-edit linky"></i></a>
+	            </div>
+	          </div>
+	          {% endfor %}
 					{% else %}
-	          <p>no study areas yet</p>
+	          <p class="ital">no study areas yet</p>
           {% endif %}
         </div>
       </div>
       <div class="dashboard-box">
         <div class="box-header">
           <div class="box-header-title">Collection Groups</div>
+	        {% if is_leader %}
           <a href="{% url 'areas:area-create' %}">
             <i class="fas fa-plus"></i>
           </a>
+	        {% endif %}
         </div>
         <div class="box-content">
-          {% if groups|length > 0 %}
-	        {% for item in groups %}
-          <div class="item-div">
-            {{ item.title }}
-	          <div class="float-end">
-							<a href="#"><i class="fas fa-eye linky"></i></a>
-							<a href="#"><i class="fas fa-edit linky"></i></a>
-            </div>
-          </div>
-          {% endfor %}
-					{% else %}
-	          <p>no groups yet</p>
-          {% endif %}
+          {% if is_leader %}
+	          {% if groups_led|length > 0 %}
+		          <p class="red-head my-0">Groups led</p>
+		          {% for item in groups_led %}
+			          <div class="item-div">
+									{{ item.title }}
+				          <div class="float-end">
+		                <a href="#"><i class="fas fa-eye linky"></i></a>
+		                <a href="#"><i class="fas fa-edit linky"></i></a>
+				          </div>
+				        </div>
+	            {% endfor %}
+	          {% else %}
+		          <p class="ml-3 ital">no groups led yet</p>
+						{% endif %}
+					{% endif %}
+          <p class="red-head my-0">Member of:</p>
+          {% if groups_member|length == 0 %}
+            <i class="pl-3 my-1 italic">no groups yet</i>
+          {% else %}
+	          {% for item in groups_member %}
+		          <div class="item-div">
+								{{ item.title }}
+			          <div class="float-end">
+	                <a href="{% url 'collection:collection-group-detail' item.id %}">
+		                <i class="fas fa-eye linky"></i></a>
+			          </div>
+			        </div>
+            {% endfor %}
+        	{% endif %}
+{#	        {% for item in groups %}#}
+{#          <div class="item-div">#}
+{#            {{ item.title }}#}
+{#	          <div class="float-end">#}
+{#							<a href="#"><i class="fas fa-eye linky"></i></a>#}
+{#							<a href="#"><i class="fas fa-edit linky"></i></a>#}
+{#            </div>#}
+{#          </div>#}
+{#          {% endfor %}#}
         </div>
       </div>
     </div>
