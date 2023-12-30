@@ -31,7 +31,7 @@
 	    margin-left: auto; /* Aligns the icon to the right */
 	  }
     .box-content {
-      overflow-y: auto; /* Allows scrolling within the content area */
+      {#overflow-y: auto;#}
       height: calc(100% - 30px); /* Adjusts height to account for header */
       padding: 10px;
     }
@@ -41,6 +41,9 @@
 	    align-items: center;
 	    padding: 5px;
 	    border-bottom: 1px solid #ddd;
+	  }
+	  .item-div p {
+	    margin: 0;
 	  }
 	  .item-div:last-child {
 	    border-bottom: none;
@@ -124,11 +127,30 @@
         <div class="box-content">
           {% if has_collections %}
           {% for item in collections %}
-          <div class="item-div">
-            {{ item.title }} ({{ item.collection_class }})
-	          <div class="float-end">
-							<a href="#"><i class="fas fa-eye linky"></i></a>
-							<a href="#"><i class="fas fa-edit linky"></i></a>
+          <div class="item-div row">
+            <div class="col-10">
+	            <p class="fw-bold red-head">{{ item.title }}</p>
+	            <p>
+		            type: <span class="fw-bold">{{ item.collection_class }}</span>;
+		            status: <span class="fw-bold">{{ item.status }}</span>;
+		            count: <span class="fw-bold">{{ item.places_all.count }}</span>
+{#		            <span class="fst-italic">type</span>: {{ item.collection_class }};#}
+{#		            <span class="fst-italic">status</span>: {{ item.status }};#}
+{#		            <span class="fst-italic">count</span>: {{ item.places_all.count }}#}
+	            </p>
+            </div>
+            <div class="col-2">
+					    {% if item.collection_class == 'place' %}
+				        <a href="{% url 'collection:place-collection-browse' item.id %}">
+					        <i class="fas fa-eye linky"></i></a>
+				        <a href="{% url 'collection:place-collection-update' item.id %}">
+					        <i class="fas fa-edit linky"></i></a>
+					    {% elif item.collection_class == 'dataset' %}
+				        <a href="{% url 'collection:ds-collection-browse' item.id %}">
+					        <i class="fas fa-eye linky"></i></a>
+				        <a href="{% url 'collection:ds-collection-update' item.id %}">
+					        <i class="fas fa-edit linky"></i></a>
+					    {% endif %}
             </div>
           </div>
           {% endfor %}
@@ -192,13 +214,13 @@
 		          <p class="ml-3 ital">no groups led yet</p>
 						{% endif %}
 					{% endif %}
-          <p class="red-head my-0">Member of:</p>
+          <p class="fst-italic my-0">Member of:</p>
           {% if groups_member|length == 0 %}
             <i class="pl-3 my-1 italic">no groups yet</i>
           {% else %}
 	          {% for item in groups_member %}
 		          <div class="item-div">
-								{{ item.title }}
+								<span class="fw-bold red-head" >{{ item.title }}</span>
 			          <div class="float-end">
 	                <a href="{% url 'collection:collection-group-detail' item.id %}">
 		                <i class="fas fa-eye linky"></i></a>
