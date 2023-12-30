@@ -4,22 +4,22 @@
   <style>
     #container {
       min-height: calc(100vh - 90px);
-      {#border: gainsboro 1px solid;#}
     }
     .dashboard-box {
-      background-color: #f0f0f0; /* Light grey background for visibility */
-      min-height: 250px; /* Minimum height, adjust as needed */
-      border: 1px solid #ccc; /* Slight border for definition */
-      box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+      background-color: #fff;
+      min-height: 250px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
 			margin: 5px 0;
 	    font-size: small;
+	    box-shadow: 2px 2px 2px #ccc;
     }
 	  .box-header {
 	    display: flex;
 	    justify-content: space-between;
 	    align-items: center;
-	    padding: 5px 10px; /* Added horizontal padding */
-		  background-color: lightgrey;
+	    padding: 5px 10px;
+		  background-color: beige;
 	  }
 	  .box-header-title {
 	    width: 100%;
@@ -96,9 +96,15 @@
         <div class="box-content">
         {% if has_datasets %}
         {% for item in datasets %}
-          <div class="item-div">
-            {{ item.title }}
-            <div>
+          <div class="item-div row">
+          	<div class="col-10">
+            <p class="fw-bold red-head">{{ item.title }}</p>
+	          <p>
+							status: <span class="fw-bold">{{ item.ds_status }}</span>;
+							count: <span class="fw-bold">{{ item.places.count }}</span>
+            </p>
+	          </div>
+            <div class="col-2">
               <a href="{% url 'datasets:ds_places' item.id %}" title="view">
 	              <i class="fas fa-eye linky"></i></a>
 	            <a href="{% url 'datasets:ds_summary' item.id %}" title="edit">
@@ -134,9 +140,6 @@
 		            type: <span class="fw-bold">{{ item.collection_class }}</span>;
 		            status: <span class="fw-bold">{{ item.status }}</span>;
 		            count: <span class="fw-bold">{{ item.places_all.count }}</span>
-{#		            <span class="fst-italic">type</span>: {{ item.collection_class }};#}
-{#		            <span class="fst-italic">status</span>: {{ item.status }};#}
-{#		            <span class="fst-italic">count</span>: {{ item.places_all.count }}#}
 	            </p>
             </div>
             <div class="col-2">
@@ -176,10 +179,9 @@
           {% if has_areas %}
 		        {% for item in areas %}
 	          <div class="item-div">
-	            {{ item.title }}
+	            <p class="fw-bold red-head">{{ item.title }}</p>
 		          <div class="float-end">
-								<a href="#"><i class="fas fa-eye linky"></i></a>
-								<a href="#"><i class="fas fa-edit linky"></i></a>
+								<a href="{% url 'areas:area-update' item.id %}"><i class="fas fa-edit linky"></i></a>
 	            </div>
 	          </div>
 	          {% endfor %}
@@ -188,7 +190,7 @@
           {% endif %}
         </div>
       </div>
-      <div class="dashboard-box">
+      <div class="dashboard-box mt-3">
         <div class="box-header">
           <div class="box-header-title">Collection Groups</div>
 	        {% if is_leader %}
@@ -200,13 +202,15 @@
         <div class="box-content">
           {% if is_leader %}
 	          {% if groups_led|length > 0 %}
-		          <p class="red-head my-0">Groups led</p>
+		          <p class="red-head my-0">Leading:</p>
 		          {% for item in groups_led %}
 			          <div class="item-div">
 									{{ item.title }}
 				          <div class="float-end">
-		                <a href="#"><i class="fas fa-eye linky"></i></a>
-		                <a href="#"><i class="fas fa-edit linky"></i></a>
+						        <a href="{% url 'collection:collection-group-detail' item.id %}">
+							        <i class="fas fa-eye linky"></i></a>
+						        <a href="{% url 'collection:collection-group-update' item.id %}">
+							        <i class="fas fa-edit linky"></i></a>
 				          </div>
 				        </div>
 	            {% endfor %}
@@ -214,9 +218,9 @@
 		          <p class="ml-3 ital">no groups led yet</p>
 						{% endif %}
 					{% endif %}
-          <p class="fst-italic my-0">Member of:</p>
+          <p class="red-head mb-0 mt-2">Member of:</p>
           {% if groups_member|length == 0 %}
-            <i class="pl-3 my-1 italic">no groups yet</i>
+            <i class="pl-3 my-1 italic">none yet</i>
           {% else %}
 	          {% for item in groups_member %}
 		          <div class="item-div">
@@ -228,15 +232,6 @@
 			        </div>
             {% endfor %}
         	{% endif %}
-{#	        {% for item in groups %}#}
-{#          <div class="item-div">#}
-{#            {{ item.title }}#}
-{#	          <div class="float-end">#}
-{#							<a href="#"><i class="fas fa-eye linky"></i></a>#}
-{#							<a href="#"><i class="fas fa-edit linky"></i></a>#}
-{#            </div>#}
-{#          </div>#}
-{#          {% endfor %}#}
         </div>
       </div>
     </div>
