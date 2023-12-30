@@ -79,6 +79,9 @@ class Dataset(models.Model):
   numlinked = models.IntegerField(null=True, blank=True)
   total_links = models.IntegerField(null=True, blank=True)
 
+  # should come in handy`
+  vis_parameters = JSONField(default=dict, null=True, blank=True)
+
   def __str__(self):
     return self.label
     # return '%d: %s' % (self.id, self.label)

@@ -84,7 +84,7 @@
             <div class="col-md-10 ">
               <div id="dashboard_header" class="fs-4 text-center">Dashboard</div>
 
-							<p class="fs-6 mb-1 my">
+							<div id="options" class="fs-6 mb-1 my">
 								{% if is_admin %}All{% else %}My{% endif %}
 								<span id="section_title" rel="Datasets">Datasets</span>
 								<span class="ps-3 small">
@@ -101,7 +101,7 @@
 									<a href="{% url 'areas:area-create' %}"
 									   id="add_area" style="display: none;">Add Study Area</a>
 								</span>
-					    </p>
+					    </div>
 
               <div class="main-content py-1">
 						    {% if has_datasets %}

@@ -5,4 +5,5 @@ class PlacesConfig(AppConfig):
     def ready(self):
         # Import the signals module to ensure signal handlers are registered.
         import places.signals
-        print('PlacesConfig ready() called. Signal should be registered now.', places.signals)
+
+        print(places.signals)

@@ -9,7 +9,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
       <th>id</th>
       <th>name <i class="fa fa-sort ms-1" data-id=1 ref=asc></i></th>
       <th>label <i class="fa fa-sort ms-1" data-id=2 ref=asc></i></th>
-      <th>created <i class="fa fa-sort ms-1" data-id=3 title="UTC"></i></th>
+      <th>modified <i class="fa fa-sort ms-1" data-id=3 title="UTC"></i></th>
       <th># rows</th>
       <th>status <i class="fa fa-sort ms-1" data-id=6 ref=asc></i></th>
       {% if is_admin %}
@@ -31,7 +31,8 @@ id, title, label, created, format, #rows, ds_status (if)owner
                 {{ d.label }} <span class="corerow"> (core)</span>
               {% else %}{{ d.label }}{% endif %}
           </td>
-          <td class="small">{{ d.create_date|date:"Y-m-d, H:i" }}</td>
+          <td class="small">{{ d.log.last.timestamp|date:"Y-m-d" }}</td>
+{#          <td class="small">{{ d.create_date|date:"Y-m-d, H:i" }}</td>#}
           <td>{{ d.numrows }}</td>
           <td>{{ d.ds_status }}</td>
           {% if is_admin %}

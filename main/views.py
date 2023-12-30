@@ -3,6 +3,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail, BadHeaderError
+from django.db.models import Max
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect #, render_to_response
 from django.urls import reverse_lazy
@@ -39,6 +40,7 @@ def profile_edit(request):
     return render(request, 'main/profile.html')
 
 def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
+  from django.db.models import Max
   # Always apply extra filters if they are provided and the model is Area
   if extra_filters and model == Area:
     objects = model.objects.filter(**extra_filters)
@@ -50,9 +52,11 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
   # If the user is an admin and we're looking at Area, apply the study_areas filter to all users including admins
   if is_admin and model == Area:
     objects = objects.exclude(type__in=filter_criteria['type'])
-    # objects = objects.filter(type__in=filter_criteria['type'])
-  elif model == Dataset: # some dummy datasets need to be filtered
-      objects = objects.exclude(title__startswith='(stub)')
+  elif model == Dataset: # reverse sort, and some dummy datasets need to be filtered
+      objects = objects.exclude(title__startswith='(stub)').order_by()
+      objects = objects.annotate(recent_log_timestamp=Max('log__timestamp'))
+      objects = objects.order_by('-recent_log_timestamp')
+
   return objects
 
 
@@ -72,13 +76,11 @@ def area_list(request):
 
   return render(request, 'lists/area_list.html', {'areas': user_areas, 'is_admin': is_admin, 'section': 'areas'})
 
-
 def dataset_list(request):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   user_datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
   return render(request, 'lists/dataset_list.html',
                 {'datasets': user_datasets, 'is_admin': is_admin, 'section': 'datasets'})
-
 
 def collection_list(request, *args, **kwargs):
   print('collection_list() kwargs', kwargs)
@@ -90,7 +92,11 @@ def collection_list(request, *args, **kwargs):
     user_collections = Collection.objects.filter(collection_class=collection_class)
   else:
     # Non-admins see only their Collections of the specified class
-    user_collections = Collection.objects.filter(collection_class=collection_class, owner=request.user)
+    user_collections = Collection.objects.filter(collection_class=collection_class,
+                                                 owner=request.user)
+
+  user_collections = user_collections.annotate(recent_log_timestamp=Max('log__timestamp'))
+  user_collections = user_collections.order_by('-recent_log_timestamp')
 
   return render(request, 'lists/collection_list.html',
                 {'collections': user_collections, 'is_admin': is_admin, 'section': 'collections'})
@@ -136,6 +142,7 @@ def dashboard_redirect(request):
         return redirect('dashboard-user')
 
 # for non-admins
+@login_required
 def dashboard_user_view(request):
   user=request.user
   is_admin = user.groups.filter(name='whg_admins').exists()
@@ -173,6 +180,8 @@ def dashboard_user_view(request):
   return render(request, 'main/dashboard_user.html', context)
 
 # all-purpose for admins
+# login required decorator in urls.py
+@login_required
 def dashboard_admin_view(request):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   is_leader = request.user.groups.filter(name='group_leaders').exists()
