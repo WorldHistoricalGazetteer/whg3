@@ -249,6 +249,7 @@ class CollectionGroup(models.Model):
   type = models.CharField(choices=COLLECTIONGROUP_TYPES, default="class", max_length=8)
   gallery = models.BooleanField(null=False, default=False)
   gallery_required = models.BooleanField(null=False, default=False)
+  # collaborators_ok = models.BooleanField(null=False, default=False)
 
   created = models.DateTimeField(auto_now_add=True)
   start_date = models.DateTimeField(null=True)

@@ -153,7 +153,7 @@ def dashboard_user_view(request):
   user_collections_count = Collection.objects.filter(owner=user).count()
   user_areas_count = Area.objects.filter(owner=user).count()
 
-  section = request.GET.get('section', 'datasets')
+  section = request.GET.get('section')
 
   datasets = get_objects_for_user(Dataset, request.user, {'owner': user}, is_admin)
   collections = get_objects_for_user(Collection, request.user, {'owner': user}, is_admin)
@@ -183,22 +183,26 @@ def dashboard_user_view(request):
 # login required decorator in urls.py
 @login_required
 def dashboard_admin_view(request):
-  is_admin = request.user.groups.filter(name='whg_admins').exists()
-  is_leader = request.user.groups.filter(name='group_leaders').exists()
-  user_groups = [group.name for group in request.user.groups.all()]
+  print('request.GET', request.GET)
+  user = request.user
+  is_admin = user.groups.filter(name='whg_admins').exists()
+  is_leader = user.groups.filter(name='group_leaders').exists()
+  django_groups = [group.name for group in user.groups.all()]
 
 
-  user_datasets_count = Dataset.objects.filter(owner=request.user.id).count()
-  user_collections_count = Collection.objects.filter(owner=request.user).count()
+  user_datasets_count = Dataset.objects.filter(owner=user.id).count()
+  user_collections_count = Collection.objects.filter(owner=user).count()
+  user_collections_count = Collection.objects.filter(owner=user).count()
 
+  # section = request.GET.get('section')
   section = request.GET.get('section', 'datasets')
 
   # TODO: for admins, show all datasets, collections, areas
   datasets = get_objects_for_user(Dataset, request.user, {}, is_admin)
-  # datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
   collections = get_objects_for_user(Collection, request.user, {}, is_admin)
-  # collections = get_objects_for_user(Collection, request.user, {'owner': request.user}, is_admin)
   areas = get_objects_for_user(Area, request.user, {'type': ['predefined', 'country']}, is_admin)
+  groups_member = CollectionGroup.objects.filter(members__user=user)
+  groups_led = CollectionGroup.objects.filter(owner=user)
 
   context = {
     'datasets': datasets,
@@ -207,7 +211,9 @@ def dashboard_admin_view(request):
     'has_datasets': user_datasets_count > 0,
     'has_collections': user_collections_count > 0,
     'section': section,
-    'user_groups': user_groups,
+    'django_groups': django_groups,
+    'groups_member': groups_member,
+    'groups_led': groups_led,
     'is_admin': is_admin,
     'is_leader': is_leader,
   }

@@ -72,7 +72,8 @@
                    class="sidebar-nav-item">Place Collections</a>
                 <a href="{% url 'main:collection-list' collection_class='dataset' %}"
                    class="sidebar-nav-item">Dataset Collections</a>
-                <a href="{% url 'main:area-list' %}" class="sidebar-nav-item">Study Areas</a>
+                <a href="{% url 'main:area-list' %}"
+                   class="sidebar-nav-item">Study Areas</a>
                 {% if user.role == 'group_leader' %}
                   <a href="{% url 'main:group-list' role='leader' %}" class="sidebar-nav-item">Groups</a>
                 {% else %}
@@ -83,7 +84,6 @@
             <!-- Main Content -->
             <div class="col-md-10 ">
               <div id="dashboard_header" class="fs-4 text-center">Admin Dashboard</div>
-
 							<div id="options" class="fs-6 mb-1 my">
 								{% if is_admin %}All{% else %}My{% endif %}
 								<span id="section_title" rel="Datasets">Datasets</span>
@@ -101,7 +101,8 @@
 									<a href="{% url 'areas:area-create' %}"
 									   id="add_area" style="display: none;">Add Study Area</a>
 								</span>
-								<span class="float-end">
+
+								<span id="ds_status" class="float-end">
 				          <select id="filter_select" class="small">
 				          <option value="all">Filter status</option>
 				          <option value="uploaded">Uploaded</option>
@@ -117,11 +118,12 @@
               <div class="main-content py-1">
 						    {% if has_datasets %}
 						        {% include "lists/dataset_list.html" %}
-						    {% elif has_collections %}
-						        {% include "lists/collection_list.html" %}
-						    {% else %}
-						        {% include "lists/dataset_list.html" %}
-						    {% endif %}
+	              {% endif %}
+{#						    {% elif has_collections %}#}
+{#						        {% include "lists/collection_list.html" %}#}
+{#						    {% else %}#}
+{#						        {% include "lists/dataset_list.html" %}#}
+{#						    {% endif %}#}
               </div>
             </div>
         </div>
@@ -145,6 +147,22 @@ $(document).ready(function() {
         loadSection(sectionName, url);
     });
 });
+
+// TODO: this kluge is needed to reload the page when the back button is pressed
+// refactor to use ajax
+// When navigating away from the dashboard_admin screen
+history.pushState({ page: "dashboard_admin" }, "");
+console.log("Pushed state to history");
+
+// Listen for the popstate event
+window.addEventListener("popstate", function(event) {
+  // If the previous state was the dashboard_admin screen, reload the page
+	console.log("Popstate event fired", event.state);
+  if (event.state && event.state.page === "dashboard_admin") {
+		console.log("Reloading page");
+		location.reload();
+  }
+ });
 
 $("#filter_select").change(function() {
     let term = $(this).val()
@@ -174,6 +192,7 @@ statusFilter = function(term) {
 
 function its_datasets() {
 		$('#add_dataset').show();
+		$('#ds_status').show();
     $('#add_place_collection').hide();
     $('#add_dataset_collection').hide();
     $('#add_group').hide();
@@ -189,37 +208,42 @@ function loadSection(sectionName, url) {
     // Show/hide 'Add' buttons based on sectionName
     if (sectionName == "Datasets") {
         its_datasets()
-    } if (sectionName == "Place Collections") {
+    } else if (sectionName == "Place Collections") {
         $('#add_dataset').hide();
         $('#add_place_collection').show();
         $('#add_dataset_collection').hide();
         $('#add_group').hide();
         $('#add_area').hide();
+				$('#ds_status').hide();
     } else if (sectionName == "Dataset Collections") {
         $('#add_dataset').hide();
         $('#add_place_collection').hide();
         $('#add_dataset_collection').show();
         $('#add_group').hide();
         $('#add_area').hide();
-     } else if (sectionName == "Groups" && userGroups.includes('group_leader')) {
-    } else if (sectionName == "Groups") {
+				$('#ds_status').hide();
+     //} else if (sectionName == "Groups" && userGroups.includes('group_leader'))
+     } else if (sectionName == "Groups") {
         $('#add_dataset').hide();
         $('#add_place_collection').hide();
         $('#add_dataset_collection').hide();
         $('#add_group').show();
         $('#add_area').hide();
+				$('#ds_status').hide();
     } else if (sectionName == "Study Areas") {
         $('#add_dataset').hide();
         $('#add_place_collection').hide();
         $('#add_dataset_collection').hide();
         $('#add_group').hide();
         $('#add_area').show();
+				$('#ds_status').hide();
     } else {
         $('#add_dataset').hide();
         $('#add_place_collection').hide();
         $('#add_dataset_collection').hide();
         $('#add_group').hide();
         $('#add_area').hide();
+				$('#ds_status').hide();
     }
 
     $.get(targetUrl, function(data) {
