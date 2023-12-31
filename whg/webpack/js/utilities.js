@@ -114,7 +114,7 @@ export function equidistantLCHColors(numColors) {
 		const hueValue_raw = hue_default + i * hueStep;
 		const hueValue_adjust = hueValue_raw > hue_avoid - hue_avoid_tolerance
 		const hueValue_adjusted = hueValue_adjust ? hueValue_raw + hue_avoid_tolerance * 2 : hueValue_raw
-		const color = lch(hueValue_adjusted % 360, 50, 70).formatHex();
+		const color = lch(50, 70, hueValue_adjusted % 360).formatHex();
 		colors.push(color);
 	}
 	return colors;
