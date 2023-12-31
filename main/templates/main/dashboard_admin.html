@@ -149,7 +149,7 @@ $(document).ready(function() {
 $("#filter_select").change(function() {
     let term = $(this).val()
     if(term == 'all'){
-      $("#status_select option")[0].innerHTML='Filter status'
+      $("#filter_select option")[0].innerHTML='Filter status'
     }
     statusFilter(term)
 })

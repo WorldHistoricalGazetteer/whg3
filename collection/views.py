@@ -548,6 +548,7 @@ class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
 
   def get_form_kwargs(self, **kwargs):
     kwargs = super(PlaceCollectionUpdateView, self).get_form_kwargs()
+    kwargs.update({'user': self.request.user})
     return kwargs
 
   def get_object(self):
@@ -661,13 +662,13 @@ class PlaceCollectionBrowseView(DetailView):
     context['updates'] = {}
     context['url_front'] = settings.URL_FRONT
     
-    if not coll.visParameters:
+    if not coll.vis_parameters:
         # Populate with default values:
         # tabulate: 'initial'|true|false - include sortable table column, 'initial' indicating the initial sort column
         # temporal_control: 'player'|'filter'|null - control to be displayed when sorting on this column
         # trail: true|false - whether to include ant-trail motion indicators on map
-        coll.visParameters = "{'seq': {'tabulate': false, 'temporal_control': 'player', 'trail': true},'min': {'tabulate': 'initial', 'temporal_control': 'player', 'trail': true},'max': {'tabulate': true, 'temporal_control': 'filter', 'trail': false}}"
-    context['visParameters'] = coll.visParameters
+        coll.vis_parameters = "{'seq': {'tabulate': false, 'temporal_control': 'player', 'trail': true},'min': {'tabulate': 'initial', 'temporal_control': 'player', 'trail': true},'max': {'tabulate': true, 'temporal_control': 'filter', 'trail': false}}"
+    context['visParameters'] = coll.vis_parameters
 
     return context
 

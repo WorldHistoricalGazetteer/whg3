@@ -114,12 +114,12 @@
 		    <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
           type="button" role="tab" aria-controls="coll_builder" aria-selected="false">Add and annotate places</button>
 		  </li>
-		  {% comment %}
+
 		  <li class="nav-item" role="presentation">
 		    <button class="nav-link" id="collaborators-tab" data-bs-toggle="tab" data-bs-target="#coll_collaborators"
           type="button" role="tab" aria-controls="coll_collaborators" aria-selected="false">Collaborators</button>
 		  </li>
-		  {% endcomment %}
+
 		  {% endif %}
 		</ul>
 	  <div class="tab-content" id="content">
@@ -134,8 +134,7 @@
 			      <input type="hidden" name="owner" value='{{ form.owner.value }}' />
 		      {% endif %}
 		      <input type="hidden" name="collection_class" value='place' />
-{#		      status: {{ form.status.value }}#}
-	        {{ mygroups }}
+		      status: {{ form.status.value }}
 					<div class="form-group">
 						<label for="Title">Title &#x02733;</label><br/>{{ form.title }}
 					</div>
@@ -203,8 +202,7 @@
         {% endif %}
         {% endcomment %}
 
-
-	        <div class="col-sm-7">
+          <div class="col-sm-7">
 		      {% if action == 'update' %}
 			      <div class="form-group mb-2">
 				      <label for="Image">Collection image <i class="small">(800px wide or less)</i></label><br/>
@@ -451,6 +449,9 @@
          {% endif %}
 	      </div> {# d-flex #}
 	    </div> {# coll_builder #}
+	    <div id="coll_collaborators" class="tab-pane fade h-100" >
+		    <p>collaboration form</p>
+	    </div>
 	  </div> {# tab_content #}
     <div class="selector py-3"><div id="helpme"></div></div>
   </div> {# h-100 #}
