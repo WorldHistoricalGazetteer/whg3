@@ -4,7 +4,8 @@ import datasetLayers from './mapLayerStyles';
 import Dateline from './dateline';
 import throttle from 'lodash/throttle';
 import { attributionString, geomsGeoJSON } from './utilities';
-import { ccode_hash } from '../../../static/js/parents';
+import { ccodes as ccode_hash } from '../../static/js/parents';
+// import { ccode_hash } from '../../../static/js/parents';
 import '../css/dateline.css';
 import '../css/search.css';
 

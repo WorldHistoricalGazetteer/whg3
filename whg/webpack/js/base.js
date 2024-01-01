@@ -155,7 +155,7 @@ window.loadResource = function(element) {
 		document[element.position].appendChild(resource);
 
 		resource.onload = function() {
-			console.log(`Loaded CDN resource ${element.cdnUrl}`);
+			// console.log(`Loaded CDN resource ${element.cdnUrl}`);
 			resolve();
 		};
 
