@@ -1,28 +1,17 @@
 <!-- places/place_detail.html -->
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% load dataset_extras %}
-
 {% load geojson_tags %}
-{% load leaflet_tags %}
 {% load static %}
-{% block title %}<title>WHG::Place</title>{% endblock %}
-{% block extra_head %}
-  {% leaflet_js %}
-  {% leaflet_css %}
 
-  <script src="{% static 'js/tags/bootstrap-tagsinput.js' %}"></script>
-  <script src="{% static 'js/tags/bloodhound.js' %}"></script>
-  <script src="{% static 'js/clipboard.min.js' %}"></script>
-  <script src="https://d3js.org/d3.v4.min.js"></script>
-  
-  <link rel="stylesheet" href="{% static 'js/tags/bootstrap-tagsinput.css' %}"/>
-  <link rel="stylesheet" href="{% static 'js/tags/bootstrap-tagsinput-typeahead.css' %}"/>
-  <link rel="stylesheet" href="{% static 'css/spin.css' %}"/>
-  
-  <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
-  <link href="{% static 'webpack/places.bundle.css' %}" rel="stylesheet" /> 
+{% block extra_head %}
+	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" /> 
+  	<link href="{% static 'webpack/places.bundle.css' %}" rel="stylesheet" /> 
 {% endblock %}
 
+{% block title %}
+	<title>WHG::Place</title>
+{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -115,43 +104,23 @@
       </div> <!-- #coll_dslist -->
     </div>
     <!--<div class="col-sm-5 mt-2">-->
-    <div id="mapdiv" class="col-sm-5 mt-2" style="max-height:400px"></div>
+    <div id="map" class="col-sm-5 mt-2" style="max-height:400px"></div>
   </div> <!-- d-flex -->
 </div> <!-- container -->
 
-<!-- Set up MapLibre map using Maptiler SDK -->
-<script type="text/javascript">
-    let mapParameters = {
-        container: 'mapdiv',
-        center: [10.2385, 29.8626],
-        zoom: 0.1, // starting zoom
-        minZoom: 0.1,
-        maxZoom: 10,
-        mapTilerKey: '{{ maptilerkey }}',
-        controls: {
-            layer: true,
-            navigation: false,
-            fullscreen: false,
-            attribution: {
-                open: false,
-            },
-            temporal: {
-                fromValue: 1550,
-                toValue: 1720,
-                minValue: -2000,
-                maxValue: 2100,
-                open: false,
-                includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
-                epochs: null,
-                automate: null,
-            }
-        },
-        styleFilter: [ 'OUTDOOR.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
-    }
-</script>
+{% endblock %}
 
-<script type="module">
-    import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
-    import "{% static 'webpack/places.bundle.js' %}";
-</script>
+{% block deferredScripts %}
+   	
+   	var scripts = [
+		{
+			src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
+			type: 'text/javascript',
+		},
+		{
+			src: '{% static 'webpack/places.bundle.js' %}',
+			type: 'module',
+		},
+   	]
+
 {% endblock %}

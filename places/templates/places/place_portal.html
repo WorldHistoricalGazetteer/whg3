@@ -1,18 +1,16 @@
-{% extends "main/base.html" %}
-
+{% extends "main/base_webpack.html" %}
 {% load static %}
 {% load dataset_extras %}
-{% load leaflet_tags %}
-{% block title %}<title>Place::{{ place.title }}</title>{% endblock %}
+
 {% block extra_head %}
-  <script src="{% static 'js/aliases.js' %}"></script>
-
-  <script src = "https://d3js.org/d3.v4.min.js"></script>
-  
-  <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
-  <link href="{% static 'webpack/portal.bundle.css' %}" rel="stylesheet" /> 
-
+	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" /> 
+	<link href="{% static 'webpack/portal.bundle.css' %}" rel="stylesheet" /> 
 {% endblock %}
+
+{% block title %}
+	<title>Place::{{ place.title }}</title>
+{% endblock %}
+
 {% block content %}
 
 <div id="dataset_content" class="container mt-1 px-1">
@@ -72,51 +70,41 @@
     </div>
 </div>
 
-<script src="{% static 'js/jquery.bootstrap.modal.forms.min.js' %}"></script>
-
-<!-- Set up MapLibre map using Maptiler SDK -->
 <script type="text/javascript">
-    let mapParameters = {
-        container: 'map',
-        center: [10.2385, 29.8626],
-        zoom: 5, // starting zoom
-        minZoom: 0.1,
-        maxZoom: 17,
-        mapTilerKey: '{{ maptilerkey }}',
-        controls: {
-            layer: true,
-            navigation: true,
-            fullscreen: false,
-            attribution: {
-                open: false,
-            },
-            {% if from_value %}
-	            temporal: {
-	                fromValue: {{ from_value }},
-	                toValue: {{ to_value }},
-	                minValue: {{ min_timespan }},
-	                maxValue: {{ max_timespan }},
-	                open: false,
-	                includeUndated: true,
-	                epochs: null,
-	                automate: null,
-	            }
-	        {% else %}
-	            temporal: false
-	        {% endif %}
-        },
-        styleFilter: [ 'OUTDOOR.DEFAULT', 'TOPO.DEFAULT', 'TOPO.TOPOGRAPHIQUE', 'SATELLITE.DEFAULT', 'OCEAN.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
-    }
+    let temporal = {% if from_value %} {
+	        fromValue: {{ from_value }},
+	        toValue: {{ to_value }},
+	        minValue: {{ min_timespan }},
+	        maxValue: {{ max_timespan }},
+	        open: false,
+	        includeUndated: true,
+	        epochs: null,
+	        automate: null,
+	    } {% else %} false {% endif %}
     let allts = {{ allts }}
 </script>
 
 {{ payload|json_script:"payload_data" }}
 {{ core|json_script:"geo-layers" }}
-
-<script type="module">
-    import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
-    import "{% static 'webpack/portal.bundle.js' %}";
-</script>	
 	
+{% endblock %}
+
+{% block deferredScripts %}
+   	
+   	var scripts = [
+		{
+			src: '{% static 'js/jquery.bootstrap.modal.forms.min.js' %}',
+			type: 'text/javascript',
+		},
+		{
+			src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
+			type: 'text/javascript',
+		},
+		{
+			src: '{% static 'webpack/portal.bundle.js' %}',
+			type: 'module',
+		},
+   	]
+
 {% endblock %}
 

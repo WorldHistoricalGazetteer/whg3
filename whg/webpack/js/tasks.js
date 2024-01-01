@@ -2,32 +2,27 @@
 
 import datasetLayers from './mapLayerStyles';
 import { attributionString, geomsGeoJSON } from './utilities';
-import { bbox } from './6.5.0_turf.min.js';
-import { CustomAttributionControl } from './customMapControls';
 
-import '../css/maplibre-common.css';
 import '../css/tasks.css';
 
-let style_code;
-if (mapParameters.styleFilter.length == 0) {
-	style_code = ['DATAVIZ', 'DEFAULT']
-} else {
-	style_code = mapParameters.styleFilter[0].split(".");
-}
-
-maptilersdk.config.apiKey = mapParameters.mapTilerKey;
-let mappy = new maptilersdk.Map({
-	container: mapParameters.container,
-	center: mapParameters.center,
-	zoom: mapParameters.zoom,
-	minZoom: mapParameters.minZoom,
-	maxZoom: mapParameters.maxZoom,
-	style: maptilersdk.MapStyle[style_code[0]][style_code[1]],
-	attributionControl: false,
-	geolocateControl: false,
+let mapParameters = {
+	style: ['OUTDOOR.DEFAULT'], 
+	maxZoom: 10,
 	navigationControl: true,
-	userProperties: true
-});
+    controls: {
+	    temporal: {
+	        fromValue: 1550,
+	        toValue: 1720,
+	        minValue: -2000,
+	        maxValue: 2100,
+	        open: false,
+	        includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
+	        epochs: null,
+	        automate: null,
+	    }
+	},
+}
+let mappy = new whg_maplibre.Map(mapParameters);
 
 let nullCollection = {
     type: 'FeatureCollection',
@@ -47,11 +42,6 @@ function waitMapLoad() {
 		    datasetLayers.forEach(function(layer) {
 				mappy.addLayer(layer);
 			});
-			
-			mappy.addControl(new CustomAttributionControl({
-				compact: true,
-		    	autoClose: mapParameters.controls.attribution.open === false,
-			}), 'bottom-right');
             
             resolve();
         });
@@ -157,7 +147,16 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			}
 		});
 		
-		$("[rel='tooltip']").tooltip();		
+		$("[rel='tooltip']").tooltip();
+		
+		// Add event listener to each radio button
+		let radios = $('.r_recon');
+		let selectColls = $('#select_colls');
+		radios.each(function() {
+		  	$(this).change(function() {
+				selectColls.toggle(this.value === 'collection');
+		  	});
+		});		
  
     })
     .catch(error => console.error("An error occurred:", error));
@@ -193,9 +192,5 @@ function render_area(aid) {
 function reset_map() {
 	$("#area_name").html('Global');
 	mappy.getSource('places').setData(nullCollection);
-	mappy.flyTo({
-	    center: mapParameters.center,
-	    zoom: mapParameters.zoom,
-        duration: 1000,
-	});
+	mappy.reset();
 }

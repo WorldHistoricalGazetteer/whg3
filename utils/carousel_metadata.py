@@ -21,7 +21,9 @@ def carousel_metadata(caller):
         ('Dataset', 29): 'heatmap',
         ('Dataset', 38): 'clusterhull',
         ('Dataset', 40): 'heatmap',
+        ('Collection', 2): 'heatmap',
         ('Collection', 11): 'clusterhull',
+        ('Collection', 12): 'clusterhull',
         ('Collection', 13): 'convexhull',
     }
     if not display_mode or len(display_mode.strip()) == 0:

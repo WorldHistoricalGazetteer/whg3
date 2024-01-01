@@ -1,20 +1,16 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% load static %}
-{% load leaflet_tags %}
 {% load mathfilters %}
 {% load dataset_extras %}
 
 {% block extra_head %}
-<!-- Datatables does not function with Webpack except in browsers >~ 2021 - see https://datatables.net/blog/2022-11-10-esm -->
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.24/b-1.7.0/b-colvis-1.7.0/b-html5-1.7.0/cr-1.5.3/fh-3.1.8/sc-2.0.3/sp-1.2.2/sl-1.3.3/datatables.min.css" />
-<script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.24/b-1.7.0/b-colvis-1.7.0/b-html5-1.7.0/cr-1.5.3/fh-3.1.8/sc-2.0.3/sp-1.2.2/sl-1.3.3/datatables.min.js"></script>
-<link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" />
-<link href="{% static 'webpack/whg.bundle.css' %}" rel="stylesheet" />
-<script src="{% static 'celery_progress/celery_progress.js' %}"></script>
+	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" />
+	<link href="{% static 'webpack/mapAndTable.bundle.css' %}" rel="stylesheet" />
+	<script src="{% static 'celery_progress/celery_progress.js' %}"></script>
 {% endblock %}
 
 {% block title %}
-<title>Collection::{{ object.title }}</title>
+	<title>Collection::{{ object.title }}</title>
 {% endblock %}
 
 {% block content %}
@@ -238,36 +234,8 @@
     setTimeout(clearEl($("#celery-result")), 1000)
   }
 </script>
-<!-- Set up MapLibre map using Maptiler SDK -->
+
 <script type="text/javascript">
-    let mapParameters = {
-        container: 'map',
-        center: [9.2, 33],
-        zoom: 0.2, // starting zoom
-        minZoom: 0.1,
-        maxZoom: 10,
-        mapTilerKey: '{{ maptilerkey }}',
-        controls: {
-            layer: true,
-            navigation: false,
-            fullscreen: false,
-            attribution: {
-                open: false,
-            },
-            temporal: {
-                fromValue: 1550,
-                toValue: 1720,
-                minValue: -2000,
-                maxValue: 2100,
-                open: false,
-                includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
-                epochs: null,
-                automate: null,
-            },
-            sequencer: true,
-        },
-        styleFilter: [ /* 'TOPO.PASTEL','BASIC.DEFAULT' */ ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
-    }
     const pageData = "{{ object.id }}";
     window.collimagepath = "{{ object.image_file.name }}"
     let visParameters = {{ visParameters|safe }};
@@ -279,9 +247,19 @@
     }]
 </script>
 
-<script type="module">
-    import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
-    import "{% static 'webpack/whg.bundle.js' %}";
-</script>
+{% endblock %}
+
+{% block deferredScripts %}
+   	
+   	var scripts = [
+		{
+			src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
+			type: 'text/javascript',
+		},
+		{
+			src: '{% static 'webpack/mapAndTable.bundle.js' %}',
+			type: 'module',
+		},
+   	]
 
 {% endblock %}

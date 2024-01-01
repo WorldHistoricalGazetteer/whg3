@@ -1,4 +1,3 @@
-import ClipboardJS from '/webpack/node_modules/clipboard';
 
 export default function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 

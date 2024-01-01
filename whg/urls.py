@@ -8,6 +8,19 @@ from main import views
 from datasets.views import PublicListsView #, DataListsView
 from resources.views import TeachingPortalView
 
+# For CDNfallbacks
+from django.views.static import serve
+from django.http import HttpResponseForbidden
+from pathlib import Path
+
+def serve_cdnfallbacks(request, path):
+    host = request.headers.get('Host', '')
+    print(host)
+    if 'whgazetteer.org' in host or 'localhost' in host:
+        return serve(request, path, document_root=Path(settings.BASE_DIR) / 'CDNfallbacks')
+    else:
+        return HttpResponseForbidden(f"Access forbidden: {referer}")
+
 #handler404 = 'datasets.views.handler404',
 handler500 = 'main.views.custom_error_view'
 
@@ -80,6 +93,8 @@ urlpatterns = [
 
     re_path(r'^celery-progress/', include('celery_progress.urls')),  # the endpoint is configurable
     
+    # Serve the CDNfallbacks folder with host check
+    re_path(r'^CDNfallbacks/(?P<path>.*)$', serve_cdnfallbacks),
 
 ] + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
 

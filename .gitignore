@@ -8,6 +8,8 @@ _testdata/
 
 node_modules/
 
+CDNfallbacks/
+
 datasets/static/_older/
 static/_older/
 
@@ -82,4 +84,8 @@ package-lock.json
 # Ignore Webpack generated files
 whg/static/webpack/*.bundle.*
 whg/static/webpack/*.svg
+whg/static/webpack/stats.json
+whg/static/webpack/webpackReport.html
 package-lock.json
+whg/static/webpack/webpackReport.html
+whg/static/webpack/stats.json

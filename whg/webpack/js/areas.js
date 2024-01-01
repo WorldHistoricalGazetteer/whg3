@@ -2,30 +2,12 @@
 
 import datasetLayers from './mapLayerStyles';
 import { attributionString, deepCopy } from './utilities';
-import { bbox, buffer, convex, flatten, dissolve, combine } from './6.5.0_turf.min.js';
-import { /*acmeStyleControl,*/ CustomAttributionControl } from './customMapControls';
-import '../css/maplibre-common.css';
 import '../css/areas.css';
 
-let style_code;
-if (mapParameters.styleFilter.length == 0) {
-	style_code = ['DATAVIZ', 'DEFAULT']
-} else {
-	style_code = mapParameters.styleFilter[0].split(".");
-}
-
-maptilersdk.config.apiKey = mapParameters.mapTilerKey;
-let mappy = new maptilersdk.Map({
-	container: mapParameters.container,
-	center: mapParameters.center,
-	zoom: mapParameters.zoom,
-	minZoom: mapParameters.minZoom,
-	maxZoom: mapParameters.maxZoom,
-	style: maptilersdk.MapStyle[style_code[0]][style_code[1]],
-	attributionControl: false,
-	geolocateControl: false,
+let mappy = new whg_maplibre.Map({
+	style: [ 'OUTDOOR.DEFAULT', 'SATELLITE.DEFAULT' ], 
+	maxZoom: 10,
 	navigationControl: true,
-	userProperties: true
 });
 
 const nullCollection = {
@@ -127,11 +109,6 @@ function waitMapLoad() {
 /*			if (mapParameters.styleFilter.length !== 1) { // This would be a little complicated (but not impossible) to implement due to MapBox drawing layers; styling also required.
 				mappy.addControl(new acmeStyleControl(mappy), 'top-right');
 			}*/
-
-			mappy.addControl(new CustomAttributionControl({
-				compact: true,
-				autoClose: mapParameters.controls.attribution.open === false,
-			}), 'bottom-right');
 			
 			/*		
 			drawnItems = L.featureGroup().addTo(mappy)
@@ -163,7 +140,7 @@ function waitDocumentReady() {
 	});
 }
 
-Promise.all([waitMapLoad(), waitDocumentReady()])
+Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(mapboxDraw_CDN_fallbacks.map(loadResource))])
 	.then(() => {
 
 		// area_type = 'ccodes' // default
@@ -191,7 +168,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 				// disable draw tab
 				$('a[href="#areas_draw"]').addClass('disabled').css("cursor", "default")
 			}
-			mappy.fitBounds(bbox(areaFeatureCollection), {
+			mappy.fitBounds(turf.bbox(areaFeatureCollection), {
 		        padding: 30,
 		        duration: 1000,
 		    });
@@ -215,7 +192,10 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			map_render();
 		});
 
-		$('a[data-toggle="tab"]').on('shown.bs.tab', function(e) {
+		$('a[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+			
+			console.log('shown.bs.tab',e);
+			
 			const target = $(e.target).attr("href") // activated tab
 			const area_type = $(e.target).attr("ref") // activated tab
 			map_clear();
@@ -296,11 +276,7 @@ function map_clear() {
 		$("textarea#geojson").val(null);
 	}
 	$("#buffer_km").val(null);
-	mappy.flyTo({
-	    center: mapParameters.center,
-	    zoom: mapParameters.zoom,
-        duration: 1000,
-	});
+	mappy.reset();
 }
 
 function map_render() {

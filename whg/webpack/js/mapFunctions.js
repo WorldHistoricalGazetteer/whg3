@@ -214,7 +214,7 @@ export function initPopups(table) {
 		          if (activePopup) {
 		            clearPopup(true);
 		          }
-		          activePopup = new maptilersdk.Popup({
+		          activePopup = new whg_maplibre.Popup({
 		            closeButton: false,
 		          })
 		            .setLngLat(e.lngLat)

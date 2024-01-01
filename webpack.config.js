@@ -1,76 +1,178 @@
+// /webpack.config.js
+
 const path = require('path');
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
+const Dotenv = require('dotenv-webpack');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-  mode: 'production',
-  watch: true,
-  watchOptions: {
-    poll: 1000, // Check for changes every second
-  },
-  entry: {
-    whg: '/app/whg/webpack/js/whg.js',
-    maptiler_sdk: '/app/whg/webpack/js/maptiler-sdk.js',
-    gis_resources: '/app/whg/webpack/js/gis_resources.js',
-    search_functions: '/app/whg/webpack/js/search_resources.js',
-    home: '/app/whg/webpack/js/home.js',
-    search: '/app/whg/webpack/js/search.js',
-    portal: '/app/whg/webpack/js/portal.js',
-    places: '/app/whg/webpack/js/places.js',
-    tasks: '/app/whg/webpack/js/tasks.js',
-    areas: '/app/whg/webpack/js/areas.js',
-    ds_browse: '/app/whg/webpack/js/ds_browse.js',
-    review: '/app/whg/webpack/js/review.js',
-    gallery: '/app/whg/webpack/js/gallery.js',
-  },
-  output: {
-    filename: '[name].bundle.js',
-    path: '/app/whg/static/webpack',
-  },
-  module: {
-    rules: [
-      {
-        test: /\.css$/,
-        use: [MiniCssExtractPlugin.loader, 'css-loader'],
-      },
-      {
-        test: /\.scss$/,
-        use: [MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader'],
-      },
-    ],
-  },
-  plugins: [
-    new MiniCssExtractPlugin({
-      filename: '[name].bundle.css',
-    }),
-  ],
-  resolve: {
-    alias: {
-      'jquery': path.resolve(__dirname, 'static/admin/js/vendor/jquery/jquery.min.js'),
-    },
-    modules: [
-      path.resolve(__dirname, 'static/admin/js/vendor'),
-      path.resolve(__dirname, 'node_modules'),
-      path.resolve(__dirname, 'node_modules/lodash'),
-      'node_modules',
-    ],
-  },
-  externals: {
-    "jquery": "jQuery",
-  },
-  optimization: {
-    minimize: false,
-    minimizer: [
-      new TerserPlugin({
-        terserOptions: {
-          format: {
-            comments: false,
-          },
-        },
-        extractComments: false,
-      }), // Minimize JavaScript using TerserPlugin
-      new CssMinimizerPlugin(), // Minimize CSS using CssMinimizerPlugin
-    ],
-  },
+	mode: 'production',
+	watch: true,
+	watchOptions: {
+		poll: 1000, // Check for changes every second
+	},
+	entry: {
+		base: '/app/whg/webpack/js/base.js',
+		mapAndTable: '/app/whg/webpack/js/mapAndTable.js',
+		//maptiler_sdk: '/app/whg/webpack/js/maptiler-sdk.js',
+		whg_maplibre: '/app/whg/webpack/js/whg_maplibre.js',
+		search_functions: '/app/whg/webpack/js/search_resources.js',
+		home: '/app/whg/webpack/js/home.js',
+		search: '/app/whg/webpack/js/search.js',
+		portal: '/app/whg/webpack/js/portal.js',
+		places: '/app/whg/webpack/js/places.js',
+		tasks: '/app/whg/webpack/js/tasks.js',
+		areas: '/app/whg/webpack/js/areas.js',
+		ds_browse: '/app/whg/webpack/js/ds_browse.js',
+		review: '/app/whg/webpack/js/review.js',
+		gallery: '/app/whg/webpack/js/gallery.js',
+	},
+	output: {
+		filename: '[name].bundle.js',
+		path: '/app/whg/static/webpack',
+	},
+	module: {
+		rules: [
+			{
+				test: /\.css$/,
+				use: [MiniCssExtractPlugin.loader, 'css-loader'],
+			},
+			{
+				test: /\.scss$/,
+				use: [MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader'],
+			},
+		],
+	},
+	plugins: [
+		new Dotenv({
+			path: '/app/.env/.dev-whg3',
+		}),
+		new MiniCssExtractPlugin({
+			filename: '[name].bundle.css',
+		}),
+		new BundleAnalyzerPlugin({
+			analyzerMode: 'static', // `server` option is very slow
+			reportFilename: 'webpackReport.html',
+			generateStatsFile: true,
+			statsFilename: 'stats.json',
+		}),
+		new CopyWebpackPlugin({
+	      	patterns: [
+		        {
+		          from: 'node_modules/jquery/dist/jquery.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/bootstrap/dist/js/bootstrap.bundle.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/bootstrap/dist/css/bootstrap.min.css',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/jquery-ui/dist/jquery-ui.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/jquery-ui/dist/themes/base/jquery-ui.min.css',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/clipboard/dist/clipboard.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/@fortawesome/fontawesome-free/css/all.min.css',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/bootstrap-3-typeahead/bootstrap3-typeahead.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/bootstrap-tagsinput/dist/bootstrap-tagsinput.css',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/bootstrap-tagsinput/dist/bootstrap-tagsinput-typeahead.css',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/bloodhound-js/dist/bloodhound.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/@turf/turf/turf.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/d3/build/d3.min.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/select2/dist/js/select2.full.js',
+		          to: '/app/CDNfallbacks/',
+		        },
+		        {
+		          from: 'node_modules/select2/dist/css/select2.css',
+		          to: '/app/CDNfallbacks/',
+		        },
+	      	],
+	    }),
+	],
+	resolve: {
+		modules: [
+			path.resolve(__dirname, 'static/admin/js/vendor'),
+			path.resolve(__dirname, 'node_modules'),
+		],
+	},
+	externals: {
+		"jquery": "jQuery",
+	},
+	optimization: {
+		splitChunks: {
+			chunks: 'async',
+			minSize: 20000,
+			minRemainingSize: 0,
+			minChunks: 1,
+			maxAsyncRequests: 30,
+			maxInitialRequests: 30,
+			enforceSizeThreshold: 50000,
+			cacheGroups: {
+				default: {
+					minChunks: 2,
+					priority: -20,
+					reuseExistingChunk: true,
+				},
+			},
+		},
+		minimize: false, // Switch to true for production
+		minimizer: [
+			new TerserPlugin({
+				terserOptions: {
+					format: {
+						comments: false,
+					},
+				},
+				extractComments: false,
+			}), // Minimize JavaScript using TerserPlugin
+			new CssMinimizerPlugin(), // Minimize CSS using CssMinimizerPlugin
+		],
+	},
 };

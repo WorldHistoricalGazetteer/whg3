@@ -1,40 +1,17 @@
 // /whg/webpack/js/ds_browse.js
 
-import './extend-maptiler-sdk.js'; // Adds 'fitViewport' method
 import datasetLayers from './mapLayerStyles';
-import { bbox } from './6.5.0_turf.min.js';
 import { attributionString, startSpinner } from './utilities';
-import { acmeStyleControl, CustomAttributionControl } from './customMapControls';
 import { getPlace } from './getPlace';
 
-import '../css/maplibre-common.css';
-import '../css/style-control.css';
 import '../css/ds_browse.css';
 
-let style_code;
-if (mapParameters.styleFilter.length == 0) {
-	style_code = ['DATAVIZ', 'DEFAULT']
-} else {
-	style_code = mapParameters.styleFilter[0].split(".");
-}
-
-maptilersdk.config.apiKey = mapParameters.mapTilerKey;
-let mappy = new maptilersdk.Map({
-	container: mapParameters.container,
-	center: mapParameters.center,
-	zoom: mapParameters.zoom,
-	minZoom: mapParameters.minZoom,
-	maxZoom: mapParameters.maxZoom,
-	style: maptilersdk.MapStyle[style_code[0]][style_code[1]],
-	attributionControl: false,
-	geolocateControl: false,
-	navigationControl: mapParameters.controls.navigation,
-	userProperties: true,
-	bearing: 0,
-	pitch: 0,
+let mappy = new whg_maplibre.Map({
+	style: ['DATAVIZ.DEFAULT', 'OUTDOOR.DEFAULT'], 
+	maxZoom: 10,
+	navigationControl: true,
 });
 
-let styleControl;
 let featureCollection;
 let nullCollection = {
     type: 'FeatureCollection',
@@ -47,13 +24,7 @@ let table;
 function waitMapLoad() {
     return new Promise((resolve) => {
         mappy.on('load', () => {
-            console.log('Map loaded.');
-			const whgMap = document.getElementById(mapParameters.container);
-			
-			if (mapParameters.styleFilter.length !== 1) {
-				styleControl = new acmeStyleControl(mappy);
-				mappy.addControl(styleControl, 'top-right');
-			}		
+            console.log('Map loaded.');	
             
             mappy.addSource('places', {
 				'type': 'geojson',
@@ -62,16 +33,11 @@ function waitMapLoad() {
 			});
 		    datasetLayers.forEach(layer => {
 				mappy.addLayer(layer);
-			});
-			
-			mappy.addControl(new CustomAttributionControl({
-				compact: true,
-		    	autoClose: mapParameters.controls.attribution.open === false,
-			}), 'bottom-right');	
+			});	
 			
 			renderData(ds_id)
 			
-			whgMap.style.opacity = 1;
+			mappy.getContainer().style.opacity = 1;
             
             resolve();
         });
@@ -84,7 +50,7 @@ function waitDocumentReady() {
     });
 }
 
-Promise.all([waitMapLoad(), waitDocumentReady()])
+Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(datatables_CDN_fallbacks.map(loadResource))])
     .then(() => {
 		
 		console.log(`wdtask: ${wdtask}, tgntask: ${tgntask}, whgtask: ${whgtask}, anytask: ${anytask}`);
@@ -203,7 +169,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			const features = mappy.queryRenderedFeatures(e.point);
 			if (features.length > 0) {
 				const topFeature = features[0]; // Handle only the top-most feature
-				const isAddedFeature = !styleControl.baseStyle.layers.includes(topFeature.layer.id);
+				const isAddedFeature = !mappy.styleControl.baseStyle.layers.includes(topFeature.layer.id);
 				if (isAddedFeature) {
 					mappy.getCanvas().style.cursor = 'pointer';
 					var coordinates = [e.lngLat.lng, e.lngLat.lat];
@@ -225,7 +191,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 						if (activePopup) {
 							clearPopup(true);
 						}
-						activePopup = new maptilersdk.Popup({
+						activePopup = new whg_maplibre.Popup({
 								closeButton: false,
 							})
 							.setLngLat(coordinates)

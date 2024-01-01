@@ -1,4 +1,4 @@
-import { bbox } from './6.5.0_turf.min.js';
+
 import { getPlace } from './getPlace';
 import { startSpinner } from './utilities';
 import { updatePadding, recenterMap/*, listSourcesAndLayers*/ } from './mapFunctions';

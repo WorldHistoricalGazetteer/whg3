@@ -5,7 +5,6 @@ import generateMapImage from './saveMapImage';
 import throttle from 'lodash/throttle';
 import { table } from './tableFunctions';
 import { scrollToRowByProperty } from './tableFunctions-extended';
-import { acmeStyleControl, CustomAttributionControl } from './customMapControls';
 
 class fullScreenControl {
 	onAdd() {
@@ -237,12 +236,6 @@ class sequencerControl {
 let mapSequencer;
 function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table){
 
-	if (!!mapParameters.controls.navigation) map.addControl(new maptilersdk.NavigationControl(), 'top-left');
-
-	if (mapParameters.styleFilter.length !== 1) {
-		mappy.addControl(new acmeStyleControl(mappy), 'top-right');
-	}
-
 	mappy.addControl(new fullScreenControl(), 'top-left');
 	mappy.addControl(new downloadMapControl(), 'top-left');
 
@@ -250,11 +243,6 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 		mapSequencer = new sequencerControl();
 		mappy.addControl(mapSequencer, 'bottom-left');
 	}
-
-	mappy.addControl(new CustomAttributionControl({
-		compact: true,
-    	autoClose: mapParameters.controls.attribution.open === false,
-	}), 'bottom-right');
 			
 	const dateRangeChanged = throttle(() => { // Uses imported lodash function
 	    toggleFilters(true, mappy, table);
@@ -319,4 +307,4 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 
 }
 
-export { init_mapControls, acmeStyleControl, mapSequencer };
+export { init_mapControls, mapSequencer };
