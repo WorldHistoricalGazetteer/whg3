@@ -277,7 +277,6 @@ function renderResults(featureCollection) {
 	let results = featureCollection.features;
 	drawControl.toggle(results.length > 0 || draw.getAll().features.length > 0); // Leave control to allow deletion of areas
 	results.forEach(feature => {
-		
 		let result = feature.properties;
 		const count = parseInt(result.linkcount) + 1;
 		const pid = result.pid;
@@ -285,14 +284,19 @@ function renderResults(featureCollection) {
 		// Encode children as a comma-separated string
 		const encodedChildren = encodeURIComponent(children.join(','));
 
+		// _index property
+		let resultIdx = result.index.startsWith('whg') ? 'whg' : 'pub';
 
 		// START alternate url (kg 2023-10-31)
 		let html = `
-            <div class="result">
+            <div class="result ${resultIdx}-result">
                 <p>${result.title} (${count} in set)
                   <span class="float-end">
-					<a href="#" class="portal-link"	data-pid="${pid}" data-children="${encodedChildren}">place portal</a>
-                  </span>`
+					<a href="#" class="portal-link"	data-pid="${pid}" 
+						data-children="${encodedChildren}">place portal</a>
+					<span class="result-idx">${resultIdx}</span>
+                  </span>`;
+
 		if (children.length > 0) {
 			html += `<span class="ml-2">children: ${children.join(', ')}</span>`;
 		};

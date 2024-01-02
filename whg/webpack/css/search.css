@@ -52,6 +52,19 @@
     height: fit-content;
     overflow-y: scroll;
 }
+.whg-result {
+  background-color: lightblue;
+}
+
+.pub-result {
+  background-color: lightgreen;
+}
+
+.result-type {
+  margin-left: 10px;
+  font-size: 0.8em;
+  color: grey;
+}
 
 .accordion-header {
     /*background-color: lightgreen;*/
