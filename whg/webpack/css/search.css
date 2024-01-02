@@ -6,7 +6,7 @@
 .container-md {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 65px); /* Adjust the subtraction value as needed */
+    height: calc(100vh - 80px); /* Adjust the subtraction value as needed */
 }
 
 #search_bar {
@@ -19,14 +19,22 @@
     flex-grow: 1;
     overflow: hidden;
 }
+/*#search_left {*/
+/*  z-index:500;*/
+/*  margin:0; padding:5px;*/
+/*  border: 1px solid #ddd;*/
+/*  border-radius: 8px;*/
+/*  height: fit-content;*/
+/*}*/
 #search_left {
-  z-index:500;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
   margin:0; padding:5px;
   border: 1px solid #ddd;
   border-radius: 8px;
-  height: fit-content;
 }
-
 #search_right {
     flex-grow: 1;
     overflow: hidden;
@@ -42,22 +50,33 @@
     border: 1px gainsboro solid;
 }
 
-#detail_box {
-    background-color: antiquewhite;
+#search_info {
     font-size: 0.9rem;
+    min-height: 25%;
+    max-height: 50%;
+    border: 1px gainsboro solid;
+    border-radius: 8px;
 }
-
+.search_info-header {
+    font-size: 1rem;
+    font-weight: bold;
+    display: block;
+    margin: 0;
+    padding: 0;
+    margin-bottom: 0.5rem;
+    background-color: antiquewhite;
+}
 #search_results {
     border: 1px gainsboro solid;
     height: fit-content;
-    overflow-y: scroll;
+    /*overflow-y: scroll;*/
 }
 .whg-result {
-  background-color: lightblue;
+  background-color: #f0f7f9;
 }
 
 .pub-result {
-  background-color: lightgreen;
+  background-color: #ebf8eb;
 }
 
 .result-type {
@@ -87,11 +106,12 @@
 
 .result {
     border: 1px solid #ccc;
-    padding-left: 5px;
-    padding-right: 5px;
+    padding: 0 5px;
     border-radius: 5px;
     box-shadow: gainsboro;
     margin-bottom: 0.3rem;
+    /*max-height: 120px;*/
+    /*overflow-y: scroll;*/
 }
 
 .result h5 {
@@ -100,15 +120,20 @@
 }
 
 .result p {
-    margin: 0.3rem 0;
+    margin: 0.1rem 0;
+    font-size: 0.8rem;
 }
 .result:hover {
-    background-color: #f0f0f0; /* Adjust hover color as needed */
+    background-color: lightyellow;
     cursor: pointer;
 }
 
 .result.selected {
-    background-color: #e0e0e0; /* Adjust selected color as needed */
+    border: 1px solid #bbb;
+    font-weight: bold;
+    box-shadow: gainsboro 2px 2px 2px;
+    /*border: 1px solid #9d9d9d;*/
+    /*background-color: lightyellow;*/
 }
 
 #detail p {
