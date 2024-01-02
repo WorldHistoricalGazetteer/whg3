@@ -83,3 +83,5 @@ package-lock.json
 whg/static/webpack/*.bundle.*
 whg/static/webpack/*.svg
 package-lock.json
+whg/static/webpack/stats.json
+whg/static/webpack/webpackReport.html
