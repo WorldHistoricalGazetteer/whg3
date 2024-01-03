@@ -73,7 +73,7 @@ def nominator(request, *args, **kwargs):
 
 
 """
-  add (submit) or remove collection to/from collection group
+  user adds (submits) or removes collection to/from collection group
 """
 def group_connect(request, *args, **kwargs):
   action = request.POST['action']
@@ -81,13 +81,14 @@ def group_connect(request, *args, **kwargs):
   cg = CollectionGroup.objects.get(id=request.POST['group'])
   if action == 'submit':
     cg.collections.add(coll)
-    # coll.submitted = True
+    coll.status = 'group'
     coll.save()
     status = 'added to'
   else:
-    # cg.collections.remove(coll)
+    cg.collections.remove(coll)
     coll.group = None
     coll.submit_date = None
+    coll.status = 'group'
     coll.save()
     status = 'removed from'
 
