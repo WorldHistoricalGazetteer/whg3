@@ -194,21 +194,23 @@
 	          <th><a class="pointer" tabindex="99" data-bs-toggle="popover"
                data-bs-content="Reviewed? When checked, collection will appear in group gallery"
                    data-bs-trigger="hover focus"><i class="fas fa-check"></i></a></th>
-	          <th><a class="pointer" tabindex="98" data-bs-toggle="popover"
+	          <th id="nominated_heading" ><a class="pointer" tabindex="98" data-bs-toggle="popover"
                data-bs-content="Check to nominate for inclusion in public WHG gallery"
                    data-bs-trigger="hover focus"><i class="fas fa-star" style="color:#ffcc00"></i></a></th>
 	        </thead>
           {% load dataset_extras %}
-	        {% for mc in collections.all %}
-		        <tr data-id="{{ mc.id }}">
-		          <td><a href="{% url 'collection:place-collection-browse' mc.id %}">
-			        {{ mc.title }}</a><br/>({{ mc.owner.name }}; {{ mc.submit_date|date:'j M y' }})</td>
+	        {% for item in collections.all %}
+		        <tr data-id="{{ item.id }}" data-status="{{ item.status }}">
+		          <td><a href="{% url 'collection:place-collection-browse' item.id %}">
+			        {{ item.title }}</a><br/>({{ item.owner.name }}; {{ item.submit_date|date:'j M y' }})</td>
 		          <td class="text-center">
-			          <input type="checkbox" class="reviewed" data-id="{{ mc.id }}"
-			            {% if mc.status == 'reviewed' %} checked = 'checked'{% endif %} /></td>
-		          <td class="text-center">
-			          <input type="checkbox" class="nominate" data-id="{{ mc.id }}"
-			            {% if mc.nominated %} checked = 'checked'{% endif %} /></td>
+			          <input type="checkbox" class="reviewed" data-id="{{ item.id }}"
+			            {% if item.status == 'reviewed' %} checked = 'checked'{% endif %} />
+		          </td>
+						  <td class="text-center">
+						   <input type="checkbox" class="nominate" data-id="{{ item.id }}"
+						     {% if item.nominated %} checked = 'checked'{% endif %}
+						     {% if item.status != 'reviewed' %} style="display: none;"{% endif %} /></td>
 		        </tr>
 	        {% endfor %}
         </table>
@@ -313,16 +315,69 @@
 	}
 
   $(function() {
-		const popoverTriggerList = $('[data-bs-toggle="popover"]')
-		const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
 
-	  $(".reviewed").change(function(e) {
-			e.preventDefault()
-      collection_status($(this).data('id'), this.checked)
-    })
+    $("tr[data-status='nominated']").each(function() {
+        var reviewedCheckbox = $(this).find('.reviewed');
+        var nominateCheckbox = $(this).find('.nominate');
+        var nominateHeading = $('#nominated-heading');
+
+        // If the collection's status is 'nominated', both checkboxes should be visible and checked
+        reviewedCheckbox.prop('checked', true);
+        nominateCheckbox.show().prop('checked', true);
+        nominateHeading.show();
+    });
+
+	  $(".reviewed").change(function() {
+	    var nominateCheckbox = $(this).closest('tr').find('.nominate');
+	    var nominateHeading = $('#nominated-heading');
+	    if ($(this).is(':checked') || $(this).closest('tr').data('status') === 'nominated') {
+	        nominateCheckbox.show();
+	        nominateHeading.show();
+	        {#$(this).prop('disabled', true);  // Disable the 'reviewed' checkbox#}
+			    collection_status($(this).data('id'), true);
+	    } else {
+	        nominateCheckbox.hide().prop('checked', false);
+	        nominateHeading.hide();
+	        $(this).prop('disabled', false);  // Enable the 'reviewed' checkbox
+			    collection_status($(this).data('id'), false);
+	    }
+		});
+
+		$(".nominate").change(function() {
+		    var reviewedCheckbox = $(this).closest('tr').find('.reviewed');
+		    if ($(this).is(':checked')) {
+		        reviewedCheckbox.prop('disabled', true);  // Disable the 'reviewed' checkbox
+		    } else {
+		        reviewedCheckbox.prop('disabled', false);  // Enable the 'reviewed' checkbox
+		    }
+		});
+    {# change status; Show/hide the 'nominate' checkbox based on the 'reviewed' checkbox#}
+	  {#$(".reviewed").change(function() {#}
+		{#  collection_status($(this).data('id'), this.checked)#}
+		{##}
+	  {#  var nominateCheckbox = $(this).closest('tr').find('.nominate');#}
+		{#  var nominateHeading = $('#nominated_heading');#}
+	  {#  if ($(this).is(':checked')) {#}
+	  {#    nominateCheckbox.show();#}
+		{#    nominateHeading.show();#}
+	  {#  } else {#}
+	  {#    nominateCheckbox.hide().prop('checked', false);#}
+		{#    nominateHeading.hide();#}
+	  {#  }#}
+	  {# });#}
+
+		{# chenge status #}
 	  $(".nominate").change(function(){
       nominate($(this).data('id'), this.checked)
     })
+
+		const popoverTriggerList = $('[data-bs-toggle="popover"]')
+		const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
+
+	  {#$(".reviewed").change(function(e) {#}
+		{#	e.preventDefault()#}
+    {#  collection_status($(this).data('id'), this.checked)#}
+    {# })#}
 
     localStorage.removeItem("newusers")
     {#console.log('ls new users', localStorage.getItem("newusers"))#}
@@ -431,19 +486,16 @@
         console.log('data returned', data)
 	      // after validation: status, errors[], already[], just_add[], create_add[]
 	      // after adding: status, errors[], msg
-        if (data['errors'].length >0) {
-          err = data['errors']
-	        if(data['status']=='failed'){
-            html = data['msg']
-	        } else {
-            html = 'Problem(s) with file:<br/><ul class="ps-3">'
-	        }
-          for (i = 0; i < err.length; ++i) {
-            html += '<li>' + err[i] + '</li>'
-          }
-          html += '</ul>'
-          $("#results_text").html(html)
-        } else {
+				if (data['errors'].length > 0) {
+				    var err = data['errors'];
+				    var html = 'Problem(s) with file:<br/><ul class="ps-3">';
+				    for (var i = 0; i < err.length; ++i) {
+				        html += '<li>' + err[i] + '</li>';
+				    }
+				    html += '</ul>Please correct and try again';
+				    $("#userfile").val('');
+				    $("#results_text").html(html);
+				} else {
           // reporting back validation
 					if(data['status'] == 'validated'){
 	          already = data['already']

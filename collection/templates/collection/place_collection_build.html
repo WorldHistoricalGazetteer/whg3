@@ -174,16 +174,20 @@
 		      </div>
 		      <div id="select_div" class="hidden">{{ form.datasets }}</div>
 		      <div id="collection_options"></div>
-		      {% if mygroups|length > 0 %}
-			      <span id="submit_prompt">Submit{% if form.group.value %}ted{% endif %} to group:</span>
-		        <span id="submitter" class="">
-			        {{ form.group }}
-		        </span>
-			      {% if object.group %}
-			      <span class="ms-2 small">
-				      <a href="{% url 'collection:collection-group-detail' object.group.id %}" target="_blank">Info</a>
-			      </span>
-			      {% endif %}
+					{% if mygroups|length > 0 %}
+					    <span id="submit_prompt">Submit{% if form.group.value %}ted{% endif %} to group:</span>
+					    <span id="submitter" class="">
+					        {% if object.status != 'nominated' %}
+					            {{ form.group }}
+					        {% else %}
+					            {{ form.group }} <span>nominated for the gallery -- no going back!</span>
+					        {% endif %}
+					    </span>
+					    {% if object.group %}
+					    <span class="ms-2 small">
+					        <a href="{% url 'collection:collection-group-detail' object.group.id %}" target="_blank">Info</a>
+					    </span>
+					    {% endif %}
 					{% endif %}
 	      </div>
         {% comment %}
@@ -527,11 +531,11 @@
 	$("#btn_coll_submit").click(function(e){
     e.preventDefault()
     group_connect('submit')
-	})
+	 })
 	$("#btn_coll_unsubmit").click(function(e){
     e.preventDefault()
     group_connect('unsubmit')
-	})
+	 })
 
 	// flag collection as submitted, shows up on leader's list
 	function group_connect(action){
@@ -704,12 +708,6 @@
 		}
 	})
 
-	{#$("#btn_coll_update").click(function(e){#}
-  {#  if($(this).value() == 'withdraw')#}
-  {#    e.preventDefault()#}
-  {#    console.log('clicked save, is it submit?', $(this))#}
-  {#    confirm('you sure?')#}
-	{# })#}
 
 	// show/hide editor-restricted options
   $("#editor_options").hide();

@@ -60,15 +60,16 @@ def nominator(request, *args, **kwargs):
   print('in nominator()', request.POST)
   nominated = True if request.POST['nominated'] == 'true' else False
   coll = Collection.objects.get(id=request.POST['coll'])
+  print('nominated?', nominated, 'coll', coll.title, 'id', coll.id)
   if nominated:
     coll.nominated = True
-    status = 'nominated'
+    coll.status = 'nominated'
   else:
     coll.nominated = False
-    status = 'withdrawn'
+    coll.status = 'reviewed'
   coll.save()
 
-  return JsonResponse({'status': status, 'coll': coll.title}, safe=False,
+  return JsonResponse({'status': coll.status, 'coll': coll.title}, safe=False,
                       json_dumps_params={'ensure_ascii': False, 'indent': 2})
 
 
@@ -77,6 +78,7 @@ def nominator(request, *args, **kwargs):
 """
 def group_connect(request, *args, **kwargs):
   action = request.POST['action']
+  print('group_connect() action', action)
   coll = Collection.objects.get(id=request.POST['coll'])
   cg = CollectionGroup.objects.get(id=request.POST['group'])
   if action == 'submit':
@@ -88,7 +90,7 @@ def group_connect(request, *args, **kwargs):
     cg.collections.remove(coll)
     coll.group = None
     coll.submit_date = None
-    coll.status = 'group'
+    coll.status = 'sandbox'
     coll.save()
     status = 'removed from'
 

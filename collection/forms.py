@@ -46,6 +46,7 @@ class CollectionLinkForm(forms.ModelForm):
         super(CollectionLinkForm, self).__init__(*args, **kwargs)
 
 class CollectionModelForm(forms.ModelForm):
+
     # ** trying to return to referrer
     next = forms.CharField(required=False)
     # group = forms.ModelChoiceField()
@@ -75,5 +76,7 @@ class CollectionModelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super(CollectionModelForm, self).__init__(*args, **kwargs)
-        self.fields['group'].queryset = CollectionGroup.objects.filter(members__user=self.user)
-        # self.fields['group'].initial = 'initial value'
+        user_groups = CollectionGroup.objects.filter(members__user=self.user)
+        self.fields['group'].queryset = user_groups
+        if self.instance.status == 'nominated':
+            self.fields['group'].disabled = True
