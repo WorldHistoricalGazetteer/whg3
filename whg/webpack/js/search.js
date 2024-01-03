@@ -299,7 +299,7 @@ function renderResults(featureCollection) {
 		let html = `
             <div class="result ${resultIdx}-result">
                 <p><span class="red-head">${result.title}</span> 
-                  (${resultIdx === 'pub' ? 'unlinked record' : (count > 1 ? `${count} linked index records` : 'unlinked index record')})
+                  (${resultIdx === 'pub' ? 'unlinked record' : (count > 1 ? `${count} linked index records <i class="fas fa-link"></i>` : 'unlinked index record')})
                   <span class="float-end">
 					<a href="#" class="portal-link"	data-pid="${pid}" 
 						data-children="${encodedChildren}">${resultIdx === 'whg' ? 'place portal' : 'place detail'}
