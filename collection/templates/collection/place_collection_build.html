@@ -81,12 +81,22 @@
 			border-radius: 8px 8px 0 0;
 		}
     .custom-button {
-			background-color:#ededed;
+			background-color: #dcdcdc;
 	    color:#333;
 	    line-height: 1rem;
 	    font-size: small;
 		}
     #linkform_table tr td {padding:3px;}
+    #status_info {
+	    border: 1px solid #bbb;
+	    border-radius: 3px;
+	    padding: 3px;
+    }
+    #status_info h5 {
+			padding:2px;
+	    margin-bottom: 0;
+	    background-color: beige;
+		}
   </style>
 {% endblock %}
 
@@ -141,7 +151,7 @@
 		    <form id="collection_form" method="POST" enctype="multipart/form-data">
 		    {% csrf_token %}
         <div class="row">
-	        <div class="col-sm-5">
+	        <div class="col-sm-5 small">
 		      {% if action == 'create' %}
 		        <input type="hidden" name="owner" value='{{ user.id }}' />
 		      {% else %}
@@ -205,6 +215,14 @@
 					    </span>
 					    {% endif %}
 					{% endif %}
+		        <div id="d_public" class="mt-5">
+							{% if form.public.value == True %}
+								Public: {{ form.public }}
+							{% elif action == "update" and user == object.owner %}
+								<a href="#"><span class="help-matches" data-id="going_public_coll">
+									<i class="fas fa-question-circle linky"></i> making a collection public </span></a>
+							{% endif %}
+						</div>
 	      </div>
           <div class="col-sm-4">
 		      {% if action == 'update' %}
@@ -215,10 +233,10 @@
 								<span id="img_chooser_create">{{ form.image_file }}</span>
 							{% elif form.image_file.value %} {# update & there's an image #}
 								<img src="{% static 'images/noun-photo.svg'%}" width="16"/>
-								<a href="/media/{{ form.image_file.value }}">
+								<a href="/media/{{ form.image_file.value }}" class="small">
 									{{ object.image_file}}
 								</a>
-								(<a href="javascript:showChooser('img')">change</a>)
+								(<a href="javascript:showChooser('img')" class="small">change</a>)
 							{% else %} {# update and there's no image yet #}
 								<span id="img_chooser_update" >{{ form.image_file }}</span>
 							{% endif %}
@@ -240,7 +258,7 @@
 						</div>
 			      {# add link form #}
 						<div class="mt-3">
-							<label for="File">Web page links</label><br/>
+							<label for="File">Links</label><br/>
 							{% if links|length < 3 %}
 								<a href="#" id="a_linkpopup">
 									<button type="button" class="btn btn-sm btn-primary custom-button">
@@ -259,14 +277,14 @@
 							{% endif %}
 							</span>
 						</div>
-			      <div id="d_public" class="mt-5">
-							{% if form.public.value == True %}
-								Public: {{ form.public }}
-							{% elif action == "update" and user == object.owner %}
-								<a href="#"><span class="help-matches" data-id="going_public_coll">
-									<i class="fas fa-question-circle linky"></i> making a collection public </span></a>
-							{% endif %}
-						</div>
+			      <div id="status_info" class="mt-5">
+			        <h5 class="">Collection status</h5>
+			        <p class="small">
+				        {% if in_class %}Submitted to class:<br/> {{ object.group }}
+				        {% else %}{{ object.status }}
+				        {% endif %}
+			        </p>
+			      </div>
 		      {% else %}
 				    <h5 style="display:block;">Welcome</h5>
 					  <p>To create a new Place Collection, first fill out the required fields in the form
@@ -283,10 +301,12 @@
 					  </p>
 		      {% endif %}
 		      </div> {# col-sm-5 #}
-	        <div class="col-sm-3 bg-lighteryellow"><p>status info?</p></div>
-	          <div id="added_flash" class="hidden">
-		          <i class="fas fa-check-circle"></i> Added!
-	          </div>
+	        <div class="col-sm-3">
+		        <p><img src="/media/{{ object.image_file.name }}" width="200px"/> </p>
+	        </div>
+          <div id="added_flash" class="hidden">
+	          <i class="fas fa-check-circle"></i> Added!
+          </div>
         </div> {# row #}
 		    </form>
 		    <div id="linkform_popup" class="pop">
