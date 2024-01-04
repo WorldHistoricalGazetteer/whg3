@@ -9,6 +9,7 @@
 {% endblock %}
 {% block extra_head %}
   <style>
+    .fileinput {font-size: small;}
     .form-group input[type="text"] {
       width: 100%;
 		}
@@ -16,15 +17,15 @@
 	  label {font-weight: bold;}
     #linkform_popup {
 	    position:absolute;
-			background-color: whitesmoke;
-	    border: 1px solid grey;
-	    box-shadow: gainsboro 4px 4px;
+			background-color: #ededed;
+	    border: 1px solid #bbb;
+	    box-shadow: #ededed 2px 2px;
 	    border-radius: 6px;
-	    padding: 15px;
+	    padding: 8px 5px;
 	    height: 150px;
-	    width: 300px;
-	    top: 145px;
-	    left: 600px;
+	    width: 260px;
+	    top: 265px;
+	    left: 370px;
 	    z-index: 1000;
 	    display:none;
     }
@@ -79,6 +80,13 @@
 			border-right: 1px solid gainsboro;
 			border-radius: 8px 8px 0 0;
 		}
+    .custom-button {
+			background-color:#ededed;
+	    color:#333;
+	    line-height: 1rem;
+	    font-size: small;
+		}
+    #linkform_table tr td {padding:3px;}
   </style>
 {% endblock %}
 
@@ -104,7 +112,7 @@
 		    Place Collection Builder: {<span class="red-head">new</span>}
 	    {% endif %}
 	  </h5>
-	  <ul id="tablist" class="nav nav-tabs" role="tablist">
+	  <ul id="tab-list" class="nav nav-tabs" role="tablist">
 		  {# create form & intro #}
 		  <li class="nav-item" role="presentation">
 		    <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
@@ -198,7 +206,7 @@
 					    {% endif %}
 					{% endif %}
 	      </div>
-          <div class="col-sm-7">
+          <div class="col-sm-4">
 		      {% if action == 'update' %}
 			      <div class="form-group mb-2">
 				      <label for="Image">Collection image <i class="small">
@@ -222,24 +230,31 @@
 								<span id="file_chooser_create">{{ form.file }}</span>
 							{% elif form.file.value %} {# update & there's a file #}
 								<i class="far fa-file-pdf linky"></i>
-								<a href="/media/{{ form.file.value }}">{{ object.file.url|remove:'/media/collections/' }}</a>
+								<a href="/media/{{ form.file.value }}">
+									{{ object.file.url|remove:'/media/collections/' }}</a>
 								(<a href="javascript:showChooser('file')">change</a>)
-	{#								(<a href="javascript:$('#file_chooser').toggle()">change</a>)#}
 							{% else %} {# update and there's no image yet #}
-								<span id="file_chooser_update" >{{ form.file }}</span>
+								<span id="file_chooser_update">{{ form.file }}</span>
 							{% endif %}
 			        <span id="file_chooser" class="hidden">{{ form.file }}</span>
 						</div>
 			      {# add link form #}
-						<div class="mt-3">Links
+						<div class="mt-3">
+							<label for="File">Web page links</label><br/>
 							{% if links|length < 3 %}
-								<a href="#" id="a_linkpopup"><button type="button" style="border-width: thin;">Add</button></a>
-							{% endif %} <i class="small link-counter">(3 maximum)</i><br/>
+								<a href="#" id="a_linkpopup">
+									<button type="button" class="btn btn-sm btn-primary custom-button">
+										Add
+									</button></a>
+							{% endif %}
+							<i class="small link-counter">(3 maximum)</i><br/>
 							<span id="linklist">
 							{% if links|length > 0 %}
 								{% for l in links %}
-									{{ l.get_link_type_display|safe }} <a href="{{ l.uri }}" target="_blank">{{ l.label }}</a>
-										[ <a href="{% url 'collection:remove-link' id=l.id %}" class="a_removelink"><i>remove</i></a> ]<br/>
+									{{ l.get_link_type_display|safe }}
+									<a href="{{ l.uri }}" target="_blank">{{ l.label }}</a>
+										[ <a href="{% url 'collection:remove-link' id=l.id %}" class="a_removelink">
+									<i>remove</i></a> ]<br/>
 								{% endfor %}
 							{% endif %}
 							</span>
@@ -267,7 +282,11 @@
 						  "birthplace" and "resided" might be appropriate. The choice is yours.
 					  </p>
 		      {% endif %}
-		      </div> {# col-sm-7 #}
+		      </div> {# col-sm-5 #}
+	        <div class="col-sm-3 bg-lighteryellow"><p>status info?</p></div>
+	          <div id="added_flash" class="hidden">
+		          <i class="fas fa-check-circle"></i> Added!
+	          </div>
         </div> {# row #}
 		    </form>
 		    <div id="linkform_popup" class="pop">
@@ -275,21 +294,29 @@
 		        {% csrf_token %}
 			        {{ links_form }}
 		        <input type="hidden" name="collection" value="{{ object.id }}">
-		        <div class="closer" style="position:absolute; top:7px; right:7px;">X</div>
-		        <table class="mb-2">
-			        <tr><td>URI*: </td><td><input id="l_uri" name="uri" value="{{ links_form.uri }}" /></td></tr>
-			        <tr><td>Label*: </td><td><input id="l_label" name="label" value="{{ links_form.label }}" /></td></tr>
-			        <tr><td>Type*: </td>
-				          <td>
-						        <select id="select_linktype" name="link_type">
-						          <option value="webpage">Web page</option>
-						          <option value="document">Document</option>
-						          <option value="image">Image</option>
-					          </select>
-			            </td>
+{#		        <div class="closer" style="position:absolute; top:5px; right:5px;">X</div>#}
+		        <table id="linkform_table" class="mb-2 small">
+			        <tr>
+				        <td>URI*: </td>
+				        <td><input id="l_uri" name="uri" value="{{ links_form.uri }}" /></td>
+			        </tr>
+			        <tr>
+				        <td>Label*: </td>
+				        <td><input id="l_label" name="label" value="{{ links_form.label }}" /></td>
+			        </tr>
+			        <tr>
+				        <td>Type*: </td>
+			          <td>
+					        <select id="select_linktype" name="link_type">
+					          <option value="webpage">Web page</option>
+					          <option value="document">Document</option>
+					          <option value="image">Image</option>
+				          </select>
+		            </td>
 			        </tr>
 		        </table>
-		        <button id="b_createlink" type="button">Save</button>
+		        <button id="b_createlink" class="custom-button" type="button">Save</button>
+		        <button id="b_cancel_link" class="custom-button" type="button">Cancel</button>
 	          </form>
 		    </div>
 	    </div> {# coll_form #}
@@ -415,7 +442,7 @@
 				    </div> {# builder_content #}
 			    </div> {# builder col-sm-6#}
           {% if action == 'update' %}
-	         <div class="col-sm-6 ps-2" id="coll_right" style="height: auto;">
+          <div class="col-sm-6 ps-2" id="coll_right" style="height: auto;">
 			      <div id="coll_right_intro" class="hidden">
 				      <h5>Collections in WHG</h5>
 				      <p>A <mark-b>collection</mark-b> is a set of existing WHG place records.</p>
@@ -448,7 +475,7 @@
 				    </div> <!-- coll_right_anno -->
 			      {% endif %}
 	         </div>
-         {% endif %}
+          {% endif %}
 	      </div> {# d-flex #}
 	    </div> {# coll_builder #}
 	    <div id="coll_collaborators" class="tab-pane fade h-100" >
@@ -627,7 +654,11 @@
       {#console.log('place record', $(this).data('pid'));#}
   })
 
-	$(".closer").click(function(){
+	{#$(".closer").click(function(){#}
+	{#		$(".pop").fadeOut()#}
+	{# })#}
+
+	$("#b_cancel_link").click(function(){
 			$(".pop").fadeOut()
 	})
 

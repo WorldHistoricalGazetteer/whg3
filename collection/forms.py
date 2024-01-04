@@ -57,7 +57,8 @@ class CollectionModelForm(forms.ModelForm):
                   'image_file', 'file', 'datasets', 'creator', 'contact', 'webpage', 'featured', 'status', 'group')
 
         widgets = {
-            'title': forms.TextInput(attrs={'size': 45}),
+            # 'title': forms.TextInput(attrs={'size': 45}),
+            'title': forms.TextInput(),
             'keywords': forms.TextInput(attrs={'size': 45, 'placeholder':'comma-delimited'}),
             'rel_keywords': forms.TextInput(attrs={'size': 45, 'placeholder':'comma-delimited'}),
             'creator': forms.TextInput(attrs={'size': 45}),
@@ -65,8 +66,8 @@ class CollectionModelForm(forms.ModelForm):
             'webpage': forms.TextInput(attrs={'size': 45}),
             'description': forms.Textarea(attrs={'rows': 3,'cols': 45,'class': 'textarea',
                 'placeholder': 'A single paragraph. Note that a PDF file of any length can be uploaded later as well.'}),
-            'image_file':forms.FileInput(),
-            'file':forms.FileInput(),
+            'image_file': forms.FileInput(attrs={'class': 'fileinput'}),
+            'file': forms.FileInput(attrs={'class': 'fileinput'}),
             'datasets': forms.CheckboxSelectMultiple,
             'featured': forms.TextInput(attrs={'size': 3}),
             'group': forms.Select()

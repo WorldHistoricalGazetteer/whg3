@@ -28,8 +28,8 @@ pre { margin:0; background-color:whitesmoke;}
   #create_form textarea {max-width: 250px;}
 
   /* collection create form */
-  #collection_form input {max-width: 250px;}
-  #collection_form textarea {max-width: 250px;}
+  /*#collection_form input {max-width: 250px;}*/
+  /*#collection_form textarea {max-width: 250px;}*/
 
   /* collection_group create form */
   #cg_form input {max-width: 250px;}
