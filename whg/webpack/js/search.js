@@ -3,10 +3,8 @@
 import datasetLayers from './mapLayerStyles';
 import Dateline from './dateline';
 import throttle from 'lodash/throttle';
-import { bbox, centroid } from './6.5.0_turf.min.js';
 import { attributionString, geomsGeoJSON } from './utilities';
-import { CustomAttributionControl } from './customMapControls';
-import '../css/maplibre-common.css';
+import { ccode_hash } from '../../../static/js/parents';
 import '../css/dateline.css';
 import '../css/search.css';
 
@@ -20,26 +18,30 @@ let initialCountryCounts = {};
 let draw;
 let drawControl;
 
-let style_code;
-if (mapParameters.styleFilter.length == 0) {
-	style_code = ['DATAVIZ', 'DEFAULT']
-} else {
-	style_code = mapParameters.styleFilter[0].split(".");
-}
-
-maptilersdk.config.apiKey = mapParameters.mapTilerKey;
-let mappy = new maptilersdk.Map({
-	container: mapParameters.container,
-	center: mapParameters.center,
-	zoom: mapParameters.zoom,
-	minZoom: mapParameters.minZoom,
-	maxZoom: mapParameters.maxZoom,
-	style: maptilersdk.MapStyle[style_code[0]][style_code[1]],
-	attributionControl: false,
-	geolocateControl: false,
+let mapParameters = {
+	style: ['OUTDOOR.DEFAULT'], 
+	maxZoom: 10,
 	navigationControl: true,
-	userProperties: true
-});
+    controls: {
+        layer: true,
+        navigation: false,
+        fullscreen: false,
+        attribution: {
+            open: false,
+        },
+        temporal: {
+            fromValue: 800,
+            toValue: 1800,
+            minValue: -2000,
+            maxValue: 2100,
+            open: false,
+            includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
+            epochs: null,
+            automate: null,
+        }
+    },
+}
+let mappy = new whg_maplibre.Map(mapParameters);
 
 function waitMapLoad() {
     return new Promise((resolve) => {
@@ -63,49 +65,6 @@ function waitMapLoad() {
 		    datasetLayers.forEach(function(layer) {
 				mappy.addLayer(layer);
 			});
-			
-			mappy.addControl(new CustomAttributionControl({
-				compact: true,
-		    	autoClose: mapParameters.controls.attribution.open === false,
-			}), 'bottom-right');
-
-			draw = new MapboxDraw({
-				displayControlsDefault: false,
-				controls: {
-					//point: true,
-					//line_string: true,
-					polygon: true,
-					trash: true
-				},
-			})
-			let drawControlObject = mappy.addControl(draw, 'top-left');
-			drawControl = $(drawControlObject._container).find('.maplibregl-ctrl-top-left');
-			drawControl.find('button.mapbox-gl-draw_ctrl-draw-btn').attr('title','Filter results by area: draw polygon');
-			drawControl.hide();
-			const drawControls = document.querySelectorAll(".mapboxgl-ctrl-group.mapboxgl-ctrl");
-			drawControls.forEach((elem) => {
-				elem.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group');
-			});
-			mappy.on('draw.create', initiateSearch); // draw events fail to register if not done individually
-			mappy.on('draw.delete', initiateSearch);
-			mappy.on('draw.update', initiateSearch);
-			
-			const dateRangeChanged = throttle(() => { // Uses imported lodash function
-			    initiateSearch();
-			}, 300); 
-        
-			updateSearchState(true);
-
-			if (!!mapParameters.controls.temporal) {
-				let datelineContainer = document.createElement('div');
-				datelineContainer.id = 'dateline';
-				document.querySelector('.maplibregl-control-container').appendChild(datelineContainer);
-				window.dateline = new Dateline({
-					...mapParameters.controls.temporal,
-					onChange: dateRangeChanged
-				});
-				$(window.dateline.button).on('click', initiateSearch);
-			};
 			
 			function getFeatureId(e) {
 				const features = mappy.queryRenderedFeatures(e.point);
@@ -142,8 +101,47 @@ function waitDocumentReady() {
     });
 }
 
-Promise.all([waitMapLoad(), waitDocumentReady()])
+Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(mapboxDraw_CDN_fallbacks.map(loadResource))])
     .then(() => {
+
+		draw = new MapboxDraw({
+			displayControlsDefault: false,
+			controls: {
+				//point: true,
+				//line_string: true,
+				polygon: true,
+				trash: true
+			},
+		})
+		let drawControlObject = mappy.addControl(draw, 'top-left');
+		drawControl = $(drawControlObject._container).find('.maplibregl-ctrl-top-left');
+		drawControl.find('button.mapbox-gl-draw_ctrl-draw-btn').attr('title','Filter results by area: draw polygon');
+		drawControl.hide();
+		const drawControls = document.querySelectorAll(".mapboxgl-ctrl-group.mapboxgl-ctrl");
+		drawControls.forEach((elem) => {
+			elem.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group');
+		});
+		mappy.on('draw.create', initiateSearch); // draw events fail to register if not done individually
+		mappy.on('draw.delete', initiateSearch);
+		mappy.on('draw.update', initiateSearch);
+		
+		const dateRangeChanged = throttle(() => { // Uses imported lodash function
+		    initiateSearch();
+		}, 300); 
+    
+		updateSearchState(true);
+
+		if (!!mapParameters.controls.temporal) {
+			let datelineContainer = document.createElement('div');
+			datelineContainer.id = 'dateline';
+			document.querySelector('.maplibregl-control-container').appendChild(datelineContainer);
+			window.dateline = new Dateline({
+				...mapParameters.controls.temporal,
+				onChange: dateRangeChanged
+			});
+			$(window.dateline.button).on('click', initiateSearch);
+		};
+			
         const storedResults = localStorage.getItem('last_results');
         results = storedResults ? JSON.parse(storedResults) : results;
 

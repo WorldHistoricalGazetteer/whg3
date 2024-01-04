@@ -21,7 +21,7 @@ def feature_collection(caller):
     if caller_class == 'Dataset':
         geom_list = PlaceGeom.objects.filter(place_id__in=caller.placeids).values_list('jsonb', flat=True)
     else: # caller_class == 'Collection'
-        places = caller.places.all()
+        places = caller.places_all
         if places.count() > 0:
             geom_list = [geom.jsonb for place in places for geom in place.geoms.all()]
             

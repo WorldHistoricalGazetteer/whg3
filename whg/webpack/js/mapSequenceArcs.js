@@ -1,6 +1,5 @@
 // mapSequenceArcs.js
 
-import { distance, lineString, bezierSpline } from './6.5.0_turf.min.js';
 import { representativePoint } from './utilities';
 
 export default class SequenceArcs {

@@ -2,30 +2,12 @@
 
 import datasetLayers from './mapLayerStyles';
 import { attributionString, geomsGeoJSON } from './utilities';
-import { bbox } from './6.5.0_turf.min.js';
-import { CustomAttributionControl } from './customMapControls';
 
 import '../css/places.css';
 
-let style_code;
-if (mapParameters.styleFilter.length == 0) {
-	style_code = ['DATAVIZ', 'DEFAULT']
-} else {
-	style_code = mapParameters.styleFilter[0].split(".");
-}
-
-maptilersdk.config.apiKey = mapParameters.mapTilerKey;
-let mappy = new maptilersdk.Map({
-	container: mapParameters.container,
-	center: mapParameters.center,
-	zoom: mapParameters.zoom,
-	minZoom: mapParameters.minZoom,
-	maxZoom: mapParameters.maxZoom,
-	style: maptilersdk.MapStyle[style_code[0]][style_code[1]],
-	attributionControl: false,
-	geolocateControl: false,
-	navigationControl: true,
-	userProperties: true
+let mappy = new whg_maplibre.Map({
+	style: ['OUTDOOR.DEFAULT'], 
+	maxZoom: 10,
 });
 
 function waitMapLoad() {
@@ -49,11 +31,6 @@ function waitMapLoad() {
 		        padding: 30,
 		        duration: 1000,
 		    });
-			
-			mappy.addControl(new CustomAttributionControl({
-				compact: true,
-		    	autoClose: mapParameters.controls.attribution.open === false,
-			}), 'bottom-right');
             
             resolve();
         });
@@ -306,6 +283,6 @@ function histogram(data, labels) {
 }
 
 function startDownloadSpinner() {
-	window.spinner_dl = new Spin.Spinner().spin();
+	window.spinner_dl = new Spinner().spin();
 	$("#ds_cards").append(spinner_dl.el);
 }

@@ -1,6 +1,5 @@
-import { bbox, midpoint, centroid, getType, area } from './6.5.0_turf.min.js'
-import ClipboardJS from '/webpack/node_modules/clipboard';
-import { lch } from './chroma.min.js'
+
+import { lch } from 'd3-color' 
 
 export function deepCopy(obj) {
   if (obj === null || typeof obj !== 'object') {
@@ -115,7 +114,7 @@ export function equidistantLCHColors(numColors) {
 		const hueValue_raw = hue_default + i * hueStep;
 		const hueValue_adjust = hueValue_raw > hue_avoid - hue_avoid_tolerance
 		const hueValue_adjusted = hueValue_adjust ? hueValue_raw + hue_avoid_tolerance * 2 : hueValue_raw
-		const color = lch(50, 70, hueValue_adjusted % 360).hex();
+		const color = lch(50, 70, hueValue_adjusted % 360).formatHex();
 		colors.push(color);
 	}
 	return colors;
@@ -196,7 +195,7 @@ export function attributionString(data) {
 
 export function startSpinner(spinnerId = 'dataset_content', scale = .5) {
 	// TODO: scale could be set automatically based on size of the container element
-	const newSpinner = new Spin.Spinner({
+	const newSpinner = new Spinner({
 		scale: scale,
 		color: '#004080'
 	}).spin();

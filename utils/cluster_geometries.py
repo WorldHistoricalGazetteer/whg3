@@ -38,7 +38,7 @@ def clustered_geometries(caller):
             coords = GEOSGeometry(geom.geom).tuple
             coordinates.extend( flatten_coordinates(coords) )
     else: # caller_class == 'Collection'
-        places = caller.places.all()
+        places = caller.places_all
         if not places:
             return clustered_geometries
         for place in places:

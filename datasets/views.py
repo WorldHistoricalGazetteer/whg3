@@ -107,9 +107,6 @@ class DatasetGalleryView(ListView):
             
     context['dropdown_data'] = json.dumps(dropdown_data, default=str)
     
-    context['maptilerkey'] = settings.MAPTILER_KEY
-    context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-    
     country_feature_collection = {
         'type': 'FeatureCollection',
         'features': []
