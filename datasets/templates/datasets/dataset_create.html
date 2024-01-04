@@ -119,25 +119,9 @@
         {% endif %}
 		    </form>
       </div>
-  <div class="mt-2 col-md-5 col-lg-7" id="create_review">
-      {% if context.action == 'errors' %}
-        <h5><i class="fas fa-exclamation-circle" style="color:#993333;"> This file has one or more problems:</h5>
-        <ul>
-        {% for e in context.errors %}
-          <li>{% if context.format == 'delimited' or context.format == 'unknown' %}
-                {{ e|safe }}
-	            {% elif 'encoding' in e %}
-	              <b>{{ e|safe }}</b>
-              {% else %}
-                <b>row #{{ e.row }}</b>: {{ e.msg }}; <b>path</b>: {{ e.path }}
-              {% endif %}</li>
-        {% endfor %}
-        </ul>
-        <p>After making corrections, try reloading the file</p><hr/>
-      {% elif context.action == 'broken' %}
-        <h5><i class="fas fa-exclamation-circle" style="color:#993333;">
-          Uh oh! Something has gone wrong during format validation, and the problem could not be determined.
-        </h5><p>An email has been sent to WHG staff, and we will look into it and get back to you soon. You can double-check your file formatting and try again, or wait for our response.</p>
+    <div class="mt-2 col-md-5 col-lg-7" id="create_review">
+			{% if messages %}
+				{% for message in messages %}{{ message|safe }}{% endfor %}
       {% else %}
         <div class="smallish">
           {% comment %}<p class="mb-0 larger"><b>Uploading data to WHG</b></p>{% endcomment %}

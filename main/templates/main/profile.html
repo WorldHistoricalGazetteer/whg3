@@ -1,0 +1,131 @@
+{% extends "main/base.html" %}
+
+{% block extra_head %}
+  <style>
+    #container {
+      min-height: calc(100vh - 90px);
+      {#border: gainsboro 1px solid;#}
+    }
+  .page-title-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+	  margin-bottom: .5rem;
+  }
+  .page-title {
+    margin: 0 auto; /* Keeps the title centered */
+  }
+  .header-link {
+    position: absolute;
+    right: 10px; /* Adjust as needed */
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+  }
+  .header-link i {
+    margin-right: 5px;
+  }
+	.profile-placeholder {
+	    width: 100px;
+	    height: 100px;
+	    background-color: aliceblue;
+	    {#background-color: #f2f2f2;#}
+	    border-radius: 50%;  /* circle */
+	    display: flex;
+	    align-items: center;
+	    justify-content: center;
+	    font-size: 50px;  /* Adjust based on your preference */
+	    font-weight: bold;  /* Makes the letter thicker */
+	    line-height: 1;  /* Ensures the letter is vertically centered */
+	    vertical-align: middle;
+	    margin-bottom: 1rem;
+			margin-left: auto;
+      margin-right: auto;
+	}
+	.profile-info {
+		border : 1px solid #f2f2f2;
+		border-radius: 10px;
+		padding: 1rem;
+	}
+  .edit-button {
+    cursor: pointer;
+    color: #007bff;
+  }
+  .image-upload {
+    display: none;
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div id="container" class="container mt-1">
+  <div class="page-title-container mt-3">
+    <h4 class="page-title">My Profile</h4>
+    <a href="{% url 'dashboard' %}" class="header-link">
+      Data Dashboard<i class="fas  fa-columns ms-2"></i>
+    </a>
+{%  comment %}	  {% if user_isadmin %}
+	  {% else %}
+    <a href="{% url 'dashboard-admin' %}" class="header-link">
+      Dashboard<i class="fas  fa-columns ms-2"></i>
+    </a>
+	  {% endif %} {% endcomment %}
+  </div>
+  <div class="row mt-4">
+	  <div class="col-md-3"></div>
+    <div class="col-md-6">
+      <div class="profile-info">
+        <div class="profile-placeholder">{{ user.name|first }}</div>
+        <h5>{{ user.name }}</h5>
+        <p>{{ user.affiliation }}</p>
+        <p>{{ user.email }}</p>
+        <!-- Edit button -->
+        <span class="edit-button" onclick="toggleEditForm()">Edit  <i class="fas fa-edit linky"></i></span>
+        <!-- Edit form (initially hidden) -->
+				<div id="editForm" style="display:none;">
+				  <form method="post" action="{% url 'profile-edit' %}">
+				    {% csrf_token %}
+				    <div class="mb-3">
+				      <label for="name" class="form-label">Name</label>
+				      <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}">
+				    </div>
+				    <div class="mb-3">
+				      <label for="affiliation" class="form-label">Affiliation</label>
+				      <input type="text" class="form-control" id="affiliation" name="affiliation" value="{{ user.affiliation }}">
+				    </div>
+				    <button type="submit" class="btn btn-primary">Save Changes</button>
+				  </form>
+				</div>
+        <!-- Image upload (initially hidden) -->
+        <label class="image-upload">
+          <input type="file" onchange="uploadProfileImage()">
+          Upload Image
+        </label>
+      </div>
+    </div>
+{#    <div class="col-md-6">#}
+{#      <div class="profile-info">#}
+{#        <div class="profile-placeholder">{{ user.name|first }}</div>#}
+{#          <h5>{{ user.name }}</h5>#}
+{#      </div>#}
+	  <div class="col-md-3"></div>
+    </div>
+  </div>
+</div>
+<script>
+function toggleEditForm() {
+  var editForm = document.getElementById("editForm");
+  if (editForm.style.display === "none") {
+    editForm.style.display = "block";
+  } else {
+    editForm.style.display = "none";
+  }
+}
+
+function uploadProfileImage() {
+  // Function to handle image upload
+		console.log("uploadProfileImage");
+}
+</script>
+{% endblock %}

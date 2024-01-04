@@ -225,6 +225,14 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(mapboxDraw_CDN_fall
     })
     .catch(error => console.error("An error occurred:", error));
 
+// $(window).resize(function() {
+//   if ($('#result_facets').height() > someValue) { // Replace someValue with the maximum height you want for #result_facets
+//     $('#detail').collapse('hide');
+//   } else {
+//     $('#detail').collapse('show');
+//   }
+// }).resize(); // Trigger the resize event initially
+
 // Filter results based on checked checkboxes
 function filterResults(checkedTypes, checkedCountries) {
 	let filteredResults = results.features.filter(function(feature) {
@@ -258,7 +266,7 @@ function renderResults(featureCollection) {
 	console.log('results (global)', featureCollection)
 	$("#adv_options").hide()
 	$("#result_facets").show()
-	$("#detail_box").show()
+	// $("#detail_box").show()
 	// $("#result_count").html(featureCollection.features.length)
 	// Clear previous results
 	$('#search_results').empty();
@@ -275,7 +283,6 @@ function renderResults(featureCollection) {
 	let results = featureCollection.features;
 	drawControl.toggle(results.length > 0 || draw.getAll().features.length > 0); // Leave control to allow deletion of areas
 	results.forEach(feature => {
-		
 		let result = feature.properties;
 		const count = parseInt(result.linkcount) + 1;
 		const pid = result.pid;
@@ -283,18 +290,56 @@ function renderResults(featureCollection) {
 		// Encode children as a comma-separated string
 		const encodedChildren = encodeURIComponent(children.join(','));
 
+		// _index property
+		let resultIdx = result.index.startsWith('whg') ? 'whg' : 'pub';
 
-		// START alternate url (kg 2023-10-31)
+		// Add a class and a text descriptor based on the result type
 		let html = `
-            <div class="result">
-                <p>${result.title} (${count} in set)
+            <div class="result ${resultIdx}-result">
+                <p><span class="red-head">${result.title}</span> 
+                  (${resultIdx === 'pub' ? 'unlinked record' : (count > 1 ? `${count} linked index records` : 'unlinked index record')})
                   <span class="float-end">
-					<a href="#" class="portal-link"	data-pid="${pid}" data-children="${encodedChildren}">place portal</a>
-                  </span>`
-		if (children.length > 0) {
-			html += `<span class="ml-2">children: ${children.join(', ')}</span>`;
-		};
-		// END alternate url (kg 2023-10-31)
+					<a href="#" class="portal-link"	data-pid="${pid}" 
+						data-children="${encodedChildren}">${resultIdx === 'whg' ? 'place portal' : 'place detail'}
+					</a>
+					<!--<span class="result-idx">${resultIdx}</span>-->
+                  </span>`;
+
+		// if (children.length > 0) {
+		// 	html += `<span class="ml-2">children: ${children.join(', ')}</span>`;
+		// };
+		html += `</p>`
+		if (result.types && result.types.length > 0) {
+			html += `<p>Type(s): ${result.types.join(', ')}</p>`;
+		}
+
+		if (result.variants && result.variants.length > 0) {
+		  const threshold = 12;
+		  const limitedVariants = result.variants.slice(0, threshold).join(', ');
+		  const allVariants = result.variants.join(', ');
+
+		  html += '<p>Variants ('+result.variants.length+'): ';
+		  if (result.variants.length > threshold) {
+			html += `<a href="#" id="variantsToggle" class="ms-2 italic">view all</a><br/>`;
+		  }
+		  html += `<span id="limitedVariants">${limitedVariants}</span>`;
+		  if (result.variants.length > threshold) {
+			html += `<span id="allVariants" style="display:none">${allVariants}</span>`;
+		  }
+		  html += '</p>';
+
+		  // add listener
+		  setTimeout(() => {
+			const variantsToggleLink = document.getElementById('variantsToggle');
+			if (variantsToggleLink) {
+			  variantsToggleLink.addEventListener('click', toggleVariants);
+			} else {
+			  console.log('variantsToggle link not found');
+			}
+		  }, 0)
+		} else {
+			html += `<p> Variants: none provided</p>`; // Or you can just skip adding this line
+		}
 
 		$resultsDiv.append(html);
 
@@ -376,13 +421,13 @@ function renderResults(featureCollection) {
 		$('#headingCountries .accordion-toggle-indicator').html('<i class="info-collapse fas fa-chevron-down"></i>');
 	});
 	$('.accordion-button').on('click', function() {
-    var indicator = $(this).find('.accordion-toggle-indicator');
-    if ($(this).hasClass('collapsed')) {
-        indicator.html('<i class="info-collapse fas fa-chevron-down');
-    } else {
-        indicator.html('<i class="info-collapse fas fa-chevron-up');
-    }
-});
+		var indicator = $(this).find('.accordion-toggle-indicator');
+		if ($(this).hasClass('collapsed')) {
+			indicator.html('<i class="info-collapse fas fa-chevron-down');
+		} else {
+			indicator.html('<i class="info-collapse fas fa-chevron-up');
+		}
+	});
 
 
 	$('.filter-checkbox').change(function() {
@@ -442,7 +487,7 @@ function renderResults(featureCollection) {
 		    });
 		}
 		
-		renderDetail(results[index]); // Update detail view with clicked result data
+		// renderDetail(results[index]); // Update detail view with clicked result data
 		$('.result').removeClass('selected');
 		$(this).addClass('selected');
 	});
@@ -668,60 +713,60 @@ function toggleVariants(event) {
     }
 }
 
-function renderDetail(feature) {
-	let result = feature.properties;
-	let detailHtml = "";
-
-	detailHtml += `<h5>${result.title}</h5>`
-
-	if (result.variants && result.variants.length > 0) {
-		const threshold = 5;
-		const limitedVariants = result.variants.slice(0, threshold).join(', ');
-		const allVariants = result.variants.join(', ');
-
-		detailHtml += '<p>Variants: ';
-        if (result.variants.length > threshold) {
-            detailHtml += `<a href="#" id="variantsToggle" class="ms-2 italic">view all</a><br/>`;
-        }
-		detailHtml += `<span id="limitedVariants">${limitedVariants}</span>`;
-		if (result.variants && result.variants.length > threshold) {
-			detailHtml += `<span id="allVariants" style="display:none">${allVariants}</span>`;
-		}
-		detailHtml += '</p>';
-
-		// add listener
-		setTimeout(() => {
-			const variantsToggleLink = document.getElementById('variantsToggle');
-			if (variantsToggleLink) {
-				// console.log('Attaching event listener to variantsToggle');
-				variantsToggleLink.addEventListener('click', toggleVariants);
-			} else {
-				console.log('variantsToggle link not found');
-			}
-		}, 0)
-
-	} else {
-		detailHtml += `<p>No Variants Available</p>`; // Or you can just skip adding this line
-	}
-
-	if (result.ccodes && result.ccodes.length > 0) {
-		detailHtml += `<p>Country Codes: ${result.ccodes.join(', ')}</p>`;
-	} else {
-		detailHtml += `<p>No Country Codes Available</p>`; // Or you can just skip adding this line
-	}
-
-	if (result.fclasses && result.fclasses.length > 0) {
-		detailHtml += `<p>Feature Classes: ${result.fclasses.join(', ')}</p>`;
-	} else {
-		detailHtml += `<p>No Feature Classes Available</p>`; // Or you can just skip adding this line
-	}
-
-	if (result.types && result.types.length > 0) {
-		detailHtml += `<p>Types: ${result.types.join(', ')}</p>`;
-	} else {
-		detailHtml += `<p>No Types Available</p>`; // Or you can just skip adding this line
-	}
-
-	$('#detail').html(detailHtml);
-
-}
+// function renderDetail(feature) {
+// 	let result = feature.properties;
+// 	let detailHtml = "";
+//
+// 	detailHtml += `<h5>${result.title}</h5>`
+//
+// 	if (result.variants && result.variants.length > 0) {
+// 		const threshold = 5;
+// 		const limitedVariants = result.variants.slice(0, threshold).join(', ');
+// 		const allVariants = result.variants.join(', ');
+//
+// 		detailHtml += '<p>Variants: ';
+//         if (result.variants.length > threshold) {
+//             detailHtml += `<a href="#" id="variantsToggle" class="ms-2 italic">view all</a><br/>`;
+//         }
+// 		detailHtml += `<span id="limitedVariants">${limitedVariants}</span>`;
+// 		if (result.variants && result.variants.length > threshold) {
+// 			detailHtml += `<span id="allVariants" style="display:none">${allVariants}</span>`;
+// 		}
+// 		detailHtml += '</p>';
+//
+// 		// add listener
+// 		setTimeout(() => {
+// 			const variantsToggleLink = document.getElementById('variantsToggle');
+// 			if (variantsToggleLink) {
+// 				// console.log('Attaching event listener to variantsToggle');
+// 				variantsToggleLink.addEventListener('click', toggleVariants);
+// 			} else {
+// 				console.log('variantsToggle link not found');
+// 			}
+// 		}, 0)
+//
+// 	} else {
+// 		detailHtml += `<p>No Variants Available</p>`; // Or you can just skip adding this line
+// 	}
+//
+// 	if (result.ccodes && result.ccodes.length > 0) {
+// 		detailHtml += `<p>Country Codes: ${result.ccodes.join(', ')}</p>`;
+// 	} else {
+// 		detailHtml += `<p>No Country Codes Available</p>`; // Or you can just skip adding this line
+// 	}
+//
+// 	if (result.fclasses && result.fclasses.length > 0) {
+// 		detailHtml += `<p>Feature Classes: ${result.fclasses.join(', ')}</p>`;
+// 	} else {
+// 		detailHtml += `<p>No Feature Classes Available</p>`; // Or you can just skip adding this line
+// 	}
+//
+// 	if (result.types && result.types.length > 0) {
+// 		detailHtml += `<p>Types: ${result.types.join(', ')}</p>`;
+// 	} else {
+// 		detailHtml += `<p>No Types Available</p>`; // Or you can just skip adding this line
+// 	}
+//
+// 	$('#detail').html(detailHtml);
+//
+// }

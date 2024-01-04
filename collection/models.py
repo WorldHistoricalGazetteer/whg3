@@ -109,7 +109,7 @@ class Collection(models.Model):
   places = models.ManyToManyField("places.Place", through='CollPlace', blank=True)
   
   # Visualisation parameters (used in place_collection_browse.html)
-  visParameters = JSONField(default=dict)
+  vis_parameters = JSONField(default=dict, null=True, blank=True)
 
   def get_absolute_url(self):
     #return reverse('datasets:dashboard', kwargs={'id': self.id})
@@ -249,6 +249,7 @@ class CollectionGroup(models.Model):
   type = models.CharField(choices=COLLECTIONGROUP_TYPES, default="class", max_length=8)
   gallery = models.BooleanField(null=False, default=False)
   gallery_required = models.BooleanField(null=False, default=False)
+  # collaborators_ok = models.BooleanField(null=False, default=False)
 
   created = models.DateTimeField(auto_now_add=True)
   start_date = models.DateTimeField(null=True)

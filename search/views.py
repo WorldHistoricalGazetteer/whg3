@@ -34,53 +34,6 @@ class SearchPageView(TemplateView):
     #context['bboxes'] = bboxes
     return context
 
-# old
-# class SearchPageView(TemplateView):
-#   template_name = 'search/search.html'
-#   # template_name = 'search/search_new.html'
-#
-#   def get_context_data(self, *args, **kwargs):
-#     # return list of datasets
-#     dslist = Dataset.objects.filter(public=True)
-#
-#     #bboxes = [
-#       #{"type":"Feature",
-#        #"properties": {"id":ds.id, "label": ds.label, "title": ds.title},
-#        #"geometry":ds.bounds} for ds in dslist if ds.label not in ['tgn_filtered_01']]
-#
-#     context = super(SearchPageView, self).get_context_data(*args, **kwargs)
-#     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-#     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-#     context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
-#     context['maptilerkey'] = settings.MAPTILER_KEY
-#     context['media_url'] = settings.MEDIA_URL
-#     context['dslist'] = dslist
-#     context['search_params'] = self.request.session.get('search_params')
-#     #context['bboxes'] = bboxes
-#     return context
-
-# DEPRECATED
-# class LookupView(View):
-#   @staticmethod
-#   def get(request):
-#     print('in LookupView, GET =',request.GET)
-#     """
-#       args in request.GET:
-#         [string] idx: latest name for whg index
-#         [string] place_id: from a trace body
-#     """
-#     es = settings.ES_CONN
-#     idx = request.GET.get('idx')
-#     pid = request.GET.get('place_id')
-#     q={"query": {"bool": {"must": [{"match":{"place_id": pid }}]}}}
-#     res = es.search(index=idx, body=q)
-#     hit = res['hits']['hits'][0]
-#     print('hit[_id] from search/lookup',hit['_id'])
-#     #print('LookupView pid',pid)
-#     print({"whg_id":hit['_id']})
-#     return JsonResponse({"whg_id":hit['_id']}, safe=False)
-#     #return {"whg_id":hit['_id']}
-#
 def fetchArea(request):
   aid = request.GET.get('pk')
   area = Area.objects.filter(id=aid)

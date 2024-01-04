@@ -52,9 +52,8 @@ class CollectionModelForm(forms.ModelForm):
 
     class Meta:
         model = Collection
-        fields = ('id','owner','title','collection_class','description','keywords','rel_keywords',
-                  'image_file','file','datasets',
-                  'creator','contact', 'webpage','featured','status', 'group')
+        fields = ('id', 'owner', 'title','collection_class', 'description', 'keywords', 'rel_keywords',
+                  'image_file', 'file', 'datasets', 'creator', 'contact', 'webpage', 'featured', 'status', 'group')
 
         widgets = {
             'title': forms.TextInput(attrs={'size': 45}),
@@ -63,8 +62,8 @@ class CollectionModelForm(forms.ModelForm):
             'creator': forms.TextInput(attrs={'size': 45}),
             'contact': forms.TextInput(attrs={'size': 45}),
             'webpage': forms.TextInput(attrs={'size': 45}),
-            'description': forms.Textarea(attrs={'rows':3,'cols': 45,'class':'textarea',
-                'placeholder':'A single paragraph. Note that a PDF file of any length can be uploaded later as well.'}),
+            'description': forms.Textarea(attrs={'rows': 3,'cols': 45,'class': 'textarea',
+                'placeholder': 'A single paragraph. Note that a PDF file of any length can be uploaded later as well.'}),
             'image_file':forms.FileInput(),
             'file':forms.FileInput(),
             'datasets': forms.CheckboxSelectMultiple,
@@ -74,5 +73,7 @@ class CollectionModelForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
         super(CollectionModelForm, self).__init__(*args, **kwargs)
-        self.fields['group'].initial = 'initial value'
+        self.fields['group'].queryset = CollectionGroup.objects.filter(members__user=self.user)
+        # self.fields['group'].initial = 'initial value'

@@ -2,11 +2,11 @@
   <table id="table_collections"class="table table-striped">
     <thead class="small">
       <th>id</th>
-      <th>type</th>
+{#      <th>type</th>#}
       <th>title</th>
       <th></th>
       <th>count</th>
-      <th>created</th>
+      <th>modified</th>
       <th>owner</th>
       <th>status</th>
     </thead>
@@ -16,7 +16,7 @@
           <td>
             {{ c.id }}
           </td>
-          <td><span class="{{ c.collection_class }} p-1">{{ c.collection_class }}</span></td>
+{#          <td><span class="{{ c.collection_class }} p-1">{{ c.collection_class }}</span></td>#}
           <td>
             {{ c.title }}
             {% if not user == c.owner %}
@@ -34,7 +34,8 @@
 				    {% endif %}
 					</td>
           <td>{{ c.rowcount }}</td>
-					<td class="small">{{ c.created|date:"Y-m-d, H:i" }}</td>
+{#					<td class="small">{{ c.created|date:"Y-m-d, H:i" }}</td>#}
+					<td class="small">{{ c.log.last.timestamp|date:"Y-m-d" }}</td>
           <td>{{ c.owner.name }}</td>
           <td>{{ c.status }}</td>
         </tr>

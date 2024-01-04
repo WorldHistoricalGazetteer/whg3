@@ -38,6 +38,8 @@ class Log(models.Model):
         related_name='log', on_delete=models.CASCADE)
     dataset = models.ForeignKey(Dataset, null=True, blank=True, 
         related_name='log', on_delete=models.CASCADE)
+    collection = models.ForeignKey(Collection, null=True, blank=True,
+        related_name='log', on_delete=models.CASCADE)
     category = models.CharField(max_length=20, choices=LOG_CATEGORIES)
     logtype = models.CharField(max_length=20, choices=LOG_TYPES)
     subtype = models.CharField(max_length=50, null=True, blank=True)

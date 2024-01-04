@@ -1,15 +1,58 @@
-{% if areas %}
+<!--
+id, title, label, created, format, #rows, ds_status (if)owner
+-->
+{% if datasets %}
   {% if areas|length == 0 %}<p class="smaller"><i>None yet...</i></p>
   {% else %}
-	  {% for area in areas %}
-		  <p>
-			  <a href="{% url 'areas:area-update' area.id %}">{{ area.title }}</a>
-			  {% if is_admin %}
-		      (creator: {{ area.owner.name }})
-		    {% endif %}
-		  </p>
-	  {% endfor %}
+  <table id="table_ds" class="table table-striped">
+    <thead class="small strong">
+      <th>id</th>
+      <th>name <i class="fa fa-sort ms-1" data-id=1 ref=asc></i></th>
+      <th>created <i class="fa fa-sort ms-1" data-id=3 title="UTC"></i></th>
+      <th>description <i class="fa fa-sort ms-1" data-id=6 ref=asc></i></th>
+      {% if is_admin %}
+      <th>owner <i class="fa fa-sort ms-1" data-id=7 ref=asc></i></th>{% endif %}
+    </thead>
+    <tbody>
+      {% for item in areas %}
+        <tr class="place-row">
+          <td>{{ item.id }}</td>
+          <td>
+            <a href="{% url 'areas:ds_summary' item.id %}" rel="tooltip">
+            {{ item.title }}</a>
+            {% if not user == item.owner_id %}
+              <span class="smaller ms-3">
+                <i class="small fa fa-users" style="color:grey;"></i></span>
+            {% endif %}
+          </td>
+          <td class="small">{{ item.created }}</td>
+          <td>{{ item.decription|truncatechars:20 }}</td>
+	        {% if is_admin %}
+        	  <td>{{ item.owner.name }}</td>
+	        {% endif %}
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
   {% endif %}
 {% else %}
-    <p>You have no Study Areas yet. <a href="{% url 'areas:area-create' %}">Create one?</a></p>
+    <p>You have no areas yet</p>
 {% endif %}
+
+
+{##}
+{#{% if areas %}#}
+{#  {% if areas|length == 0 %}<p class="smaller"><i>None yet...</i></p>#}
+{#  {% else %}#}
+{#	  {% for area in areas %}#}
+{#		  <p>#}
+{#			  <a href="{% url 'areas:area-update' area.id %}">{{ area.title }}</a>#}
+{#			  {% if is_admin %}#}
+{#		      (creator: {{ area.owner.name }})#}
+{#		    {% endif %}#}
+{#		  </p>#}
+{#	  {% endfor %}#}
+{#  {% endif %}#}
+{#{% else %}#}
+{#    <p>You have no Study Areas yet. <a href="{% url 'areas:area-create' %}">Create one?</a></p>#}
+{#{% endif %}#}

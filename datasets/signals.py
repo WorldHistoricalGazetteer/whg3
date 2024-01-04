@@ -4,7 +4,7 @@ from django.dispatch import receiver
 
 from .models import Dataset, DatasetFile
 
-print('in datasets.signals.py')
+# print('in datasets.signals.py')
 @receiver(pre_save, sender=Dataset)
 def toggle_public_status(sender, instance, **kwargs):
   from .tasks import index_to_pub, unindex_from_pub

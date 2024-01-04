@@ -5,10 +5,10 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-User = get_user_model()
 from django.contrib.gis.geos import GEOSGeometry
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Q, F
 from django.db.utils import DataError
 from django.forms import modelformset_factory
@@ -26,35 +26,42 @@ from django.db.models import CharField, JSONField
 # external
 from celery import current_app as celapp
 from copy import deepcopy
-import ast, shutil, tempfile, codecs, math, mimetypes, os, re, sys
+import ast, shutil, tempfile #, codecs, math, mimetypes, os, re, sys
 from deepdiff import DeepDiff as diff
 import numpy as np
 es = settings.ES_CONN
-import pandas as pd
 from pathlib import Path
 from shapely import wkt
 from shutil import copyfile
 
 from areas.models import Area, Country
 from collection.models import Collection, CollectionGroup
-from datasets.forms import HitModelForm, DatasetDetailModelForm, DatasetCreateModelForm, DatasetCreateEmptyModelForm
-from datasets.models import Dataset, Hit, DatasetFile
-from datasets.static.hashes import mimetypes_plus as mthash_plus
-from datasets.static.hashes.parents import ccodes as cchash
+
+from .exceptions import LPFValidationError, DelimValidationError, \
+  DelimInsertError, DataAlreadyProcessedError
+from .forms import (HitModelForm, DatasetDetailModelForm,
+  DatasetUploadForm, DatasetCreateModelForm, DatasetCreateEmptyModelForm)
+from .insert import ds_insert_json, ds_insert_delim, \
+  ds_insert_lpf, ds_insert_tsv, failed_upload_notification
+from .validation import validate_delim, validate_lpf, validate_tsv
+
+from .models import Dataset, Hit, DatasetFile
+from .static.hashes import mimetypes_plus as mthash_plus
+from .static.hashes.parents import ccodes as cchash
 
 # NB these task names ARE in use; they are generated dynamically
-from datasets.tasks import align_wdlocal, align_idx, maxID
+from .tasks import align_wdlocal, align_idx, maxID
 
 # from datasets.update import deleteFromIndex
-from datasets.utils import *
+from .utils import *
 from elastic.es_utils import makeDoc, removePlacesFromIndex, replaceInIndex, removeDatasetFromIndex
 from main.choices import AUTHORITY_BASEURI
 from main.models import Log, Comment
 from places.models import *
-from resources.models import Resource
 
 from api.views import AreaListView
 
+User = get_user_model()
 
 class DatasetGalleryView(ListView):
   redirect_field_name = 'redirect_to'
@@ -328,7 +335,7 @@ def indexMultiMatch(pid, matchlist):
       es.delete('whg', _id)
       es.index(index='whg', id=_id, body=newsrcd, routing=1)
     except RequestError as rq:
-      print('reindex failed (demoted)',d)
+      print('reindex failed (demoted)', _id)
       print('Error: ', rq.error, rq.info)
 
     # re-assign parent for kids of all/any demoted parents
@@ -663,7 +670,7 @@ def review(request, pk, tid, passnum):
                         # TODO: filter duplicates
                         if "links" in hits[x]["json"]:
                             for l in hits[x]["json"]["links"]:
-                                authid = re.search("\: ?(.*?)$", l).group(1)
+                                authid = re.search(": ?(.*?)$", l).group(1)
                                 # print('authid, authids',authid, place.authids)
                                 if l not in place.authids:
                                     # if authid not in place.authids:
@@ -835,7 +842,7 @@ def write_wd_pass0(request, tid):
         #'jsonb__identifier',flat=True)
       for l in h.json['links']:
         link_counter += 1
-        authid = re.search("\:?(.*?)$", l).group(1)
+        authid = re.search(":?(.*?)$", l).group(1)
         print(authid)
         # TODO: same no-dupe logic in review()
         # don't write duplicates
@@ -2615,6 +2622,219 @@ class DatasetCreateEmptyView (LoginRequiredMixin, CreateView):
     return context
 
 """
+  DatasetCreate() helpers
+  alternate bot-guided
+"""
+
+def get_file_type(file):
+    """Determine the file type based on its MIME type."""
+    mimetype = file.content_type
+    return mthash_plus.mimetypes.get(mimetype, None)
+
+def read_file_into_dataframe(file, ext):
+    """
+    Reads the given file into a pandas DataFrame based on the provided extension.
+    """
+    converters = {
+        'id': str, 'start': str, 'end': str, 'aat_types': str
+    }
+
+    if ext == 'csv':
+        df = pd.read_csv(file, sep=',', converters=converters)
+    elif ext == 'tsv':
+        df = pd.read_csv(file, sep='\t', converters=converters)
+    elif ext == 'xlsx' or ext == 'ods':
+        df = pd.read_excel(file, converters=converters)
+    else:
+        raise ValueError(f"Unsupported file extension: {ext}")
+
+    # Convert 'lon' and 'lat' with error handling, if they exist
+    if 'lon' in df.columns:
+        df['lon'] = pd.to_numeric(df['lon'], errors='coerce')
+    if 'lat' in df.columns:
+        df['lat'] = pd.to_numeric(df['lat'], errors='coerce')
+
+    return df
+
+
+"""
+  DatasetCreate()
+  2023-08; replaces DatasetCreateView(); bot-guided
+  - validates form
+  - checks file encoding, gets mimetype
+  - initiates content validation (validation.py)
+  - initiates database writes (insert.py)
+  - raises errors from each stage to dataset_create.html form
+"""
+class DatasetCreate(LoginRequiredMixin, CreateView):
+  login_url = '/accounts/login/'
+  redirect_field_name = 'redirect_to'
+
+  form_class = DatasetUploadForm
+  template_name = 'datasets/dataset_create.html'
+  success_message = 'dataset created'
+
+  def form_invalid(self, form):
+    print('form invalid...', form.errors.as_data())
+    context = {'form': form}
+    return self.render_to_response(context=context)
+
+  def form_valid(self, form):
+    print('form valid...')
+    form_data = form.cleaned_data
+    file = form_data['file']
+    context = {"format": form_data['format']}
+    user=self.request.user
+    filename = file.name
+    tempfn = form.cleaned_data['temp_file_path']
+
+    # Get the mimetype and extension
+    mimetype = file.content_type
+    ext = mthash_plus.mimetypes.get(mimetype, None)
+    # print('ext in form_valid', ext)
+    infile = file.open(mode="r")
+
+    # For JSON files:
+    if ext == 'json':
+      jdata = json.loads(infile.read())
+      try:
+        result = validate_lpf(tempfn, 'coll')
+      except LPFValidationError as e:
+        # Assuming 'e' contains a list of error dictionaries
+        error_list = e.args[0]
+
+        # Construct the error message for the user
+        if len(error_list) == 3:
+          message = "<b>Several errors were found in your file; the first of these are</b>:<ul class='no-indent'>"
+        else:
+          message = "<b>Errors were found in your file</b>:<ul class='no-indent'>"
+
+        for err in error_list:
+          row = err['feat']
+          reason_match = re.search(r'Reason: (.*?) Schema path', err['error'])
+          if reason_match:
+            reason = reason_match.group(1)
+            message += f"<li>Row {row}: {reason}</li>"
+        message += "</ul>"
+
+        messages.error(self.request, message)
+        return self.render_to_response(self.get_context_data(form=form))
+
+      # Create the Dataset object
+      dataset = form.save(commit=False)
+      dataset.save()
+
+      # Directly process the data and create database entries
+      # insert_lpf_data(data, dataset.pk)
+      result = ds_insert_json(jdata, dataset.pk, user)
+
+    # For delimited files:
+    elif ext in ['csv', 'tsv', 'xlsx', 'ods']:
+      # TEST ROUTINE
+      # df = pd.read_csv(file, sep='\t', dtype=str)
+      # empty_cells = df[df == ''].stack().index.tolist()
+      # print('empty_cells', empty_cells)
+      # print('df', df)
+      # return
+      #  END TEST
+
+      df = read_file_into_dataframe(file, ext)
+      try:
+        validate_delim(df)
+      except DelimValidationError as e:
+        error_list = e.args[0]
+
+        if isinstance(error_list, str):
+          error_list = [{"row": "Unknown", "error": error_list}]
+
+        # Construct the error message for the user
+        if len(error_list) > 1:
+          message = "<b>Several errors were found in your file; the first of these are</b>:<ul class='no-indent'>"
+        else:
+          message = "<b>Errors were found in your file</b>:<ul class='no-indent'>"
+
+        for err in error_list:
+          row = err['row']
+          reason = err['error']
+          message += f"<li>Row {row}: {reason}</li>"
+        message += "</ul>"
+
+        messages.error(self.request, message)
+        return self.render_to_response(self.get_context_data(form=form))
+
+      # Create the Dataset object
+      dataset = form.save(commit=False)
+      dataset.save()
+
+      # Directly process the DataFrame and create database entries
+      try:
+        with transaction.atomic():
+          skipped_rows = ds_insert_delim(df, dataset.pk)
+      except DataAlreadyProcessedError:
+        messages.info(self.request, "The data appears to have already been processed.")
+        return self.render_to_response(self.get_context_data(form=form))
+      except DelimInsertError as e:
+        dataset.delete()
+        error_list = e.args[0]
+
+        if isinstance(error_list, str):
+          error_list = [{"row": "Unknown", "error": error_list}]
+
+        # Construct the error message for the user
+        if len(error_list) > 1:
+          message = "<b>Several errors occurred during insertion, including</b>:<ul class='no-indent'>"
+        else:
+          message = "<b>Errors occurred during insertion</b>:<ul class='no-indent'>"
+
+        print('error_list', error_list)
+        for err in error_list:
+          row = err['row']
+          reason = err['error']
+          message += f"<li>{reason}</li>"
+          # message += f"<li>Row {row}: {reason}</li>"
+        message += "</ul>"
+
+        messages.error(self.request, message)
+        return self.render_to_response(self.get_context_data(form=form))
+
+    else:
+      message = "Detected file type is not supported - must be one of json, csv, tsv, xlsx, or ods."
+      messages.error(self.request, message)
+      return self.render_to_response(self.get_context_data(form=form))
+
+    dataset.ds_status = 'uploaded'
+    dataset.save()
+
+    # Create the DatasetFile object
+    DatasetFile.objects.create(
+      dataset_id=dataset,
+      # uploaded valid file as is
+      file=form.cleaned_data['file'],
+      rev=1,
+      format=ext,
+      delimiter='\t' if ext in ['tsv','xlsx','ods'] else ',' if ext == 'csv' else 'n/a',
+      upload_date=None,
+      header=df.columns.tolist() if ext != 'json' else None,
+      numrows=len(df) if ext != 'json' else result['numrows'],
+      df_status='uploaded'
+    )
+
+    # write log entry
+    Log.objects.create(
+      # category, logtype, "timestamp", subtype, dataset_id, user_id
+      category='dataset',
+      logtype='ds_create',
+      subtype=form_data['datatype'],
+      dataset_id=dataset.id,
+      user_id=user.id
+    )
+
+    # If everything went well:
+    messages.info(self.request, f"{skipped_rows} rows were skipped.")
+    return redirect('/datasets/' + str(dataset.id) + '/summary')
+
+
+"""
   DatasetCreateView()
   initial create
   upload file, validate format, create DatasetFile instance,
@@ -2927,7 +3147,7 @@ class DatasetDeleteView(DeleteView):
 
   def get_success_url(self):
     self.delete_complete()
-    return reverse('data-datasets')
+    return reverse('dashboard')
 
 """
   fetch places in specified dataset

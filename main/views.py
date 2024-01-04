@@ -1,7 +1,9 @@
 # main.views
 from django.apps import apps
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail, BadHeaderError
+from django.db.models import Max
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect #, render_to_response
 from django.urls import reverse_lazy
@@ -26,23 +28,19 @@ from urllib.parse import urlparse
 import sys
 from datetime import datetime
 
-# def get_objects_for_user(model, user, filter_criteria, is_admin=False):
-#   collection_class = filter_criteria.get('collection_class', None)
-#
-#   if collection_class:
-#     return model.objects.filter(collection_class=collection_class)
-#
-#   return model.objects.exclude(title__startswith='(stub)').filter(**filter_criteria)
-#
-# def area_list(request):
-#   study_areas = ['ccodes', 'copied', 'drawn']
-#   is_admin = request.user.groups.filter(name='whg_admins').exists()
-#   user_areas = get_objects_for_user(Area, request.user,
-#                                     {'owner': request.user}, is_admin)
-#   return render(request, 'lists/area_list.html', {'areas': user_areas,
-#                                                   'is_admin': is_admin, 'section':'areas'})
+@login_required
+def profile_edit(request):
+    if request.method == 'POST':
+        user = request.user
+        user.name = request.POST.get('name')
+        user.affiliation = request.POST.get('affiliation')
+        user.save()
+        return redirect('profile-edit')
+
+    return render(request, 'main/profile.html')
 
 def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
+  from django.db.models import Max
   # Always apply extra filters if they are provided and the model is Area
   if extra_filters and model == Area:
     objects = model.objects.filter(**extra_filters)
@@ -53,9 +51,12 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
 
   # If the user is an admin and we're looking at Area, apply the study_areas filter to all users including admins
   if is_admin and model == Area:
-    objects = objects.filter(type__in=filter_criteria['type'])
-  elif model == Dataset: # some dummy datasets need to be filtered
-      objects = objects.exclude(title__startswith='(stub)')
+    objects = objects.exclude(type__in=filter_criteria['type'])
+  elif model == Dataset: # reverse sort, and some dummy datasets need to be filtered
+      objects = objects.exclude(title__startswith='(stub)').order_by()
+      objects = objects.annotate(recent_log_timestamp=Max('log__timestamp'))
+      objects = objects.order_by('-recent_log_timestamp')
+
   return objects
 
 
@@ -75,13 +76,11 @@ def area_list(request):
 
   return render(request, 'lists/area_list.html', {'areas': user_areas, 'is_admin': is_admin, 'section': 'areas'})
 
-
 def dataset_list(request):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   user_datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
   return render(request, 'lists/dataset_list.html',
                 {'datasets': user_datasets, 'is_admin': is_admin, 'section': 'datasets'})
-
 
 def collection_list(request, *args, **kwargs):
   print('collection_list() kwargs', kwargs)
@@ -93,7 +92,11 @@ def collection_list(request, *args, **kwargs):
     user_collections = Collection.objects.filter(collection_class=collection_class)
   else:
     # Non-admins see only their Collections of the specified class
-    user_collections = Collection.objects.filter(collection_class=collection_class, owner=request.user)
+    user_collections = Collection.objects.filter(collection_class=collection_class,
+                                                 owner=request.user)
+
+  user_collections = user_collections.annotate(recent_log_timestamp=Max('log__timestamp'))
+  user_collections = user_collections.order_by('-recent_log_timestamp')
 
   return render(request, 'lists/collection_list.html',
                 {'collections': user_collections, 'is_admin': is_admin, 'section': 'collections'})
@@ -127,6 +130,97 @@ def group_list(request, role):
   }
   return render(request, 'lists/group_list.html', context)
 
+from django.shortcuts import redirect
+from django.contrib.auth.decorators import login_required
+
+# get's the correct view based on user group
+@login_required
+def dashboard_redirect(request):
+    if request.user.groups.filter(name='whg_admins').exists():
+        return redirect('dashboard-admin')
+    else:
+        return redirect('dashboard-user')
+
+# for non-admins
+@login_required
+def dashboard_user_view(request):
+  user=request.user
+  is_admin = user.groups.filter(name='whg_admins').exists()
+  is_leader = user.groups.filter(name='group_leaders').exists()
+  django_groups = [group.name for group in user.groups.all()]
+
+  user_datasets_count = Dataset.objects.filter(owner=user.id).count()
+  user_collections_count = Collection.objects.filter(owner=user).count()
+  user_areas_count = Area.objects.filter(owner=user).count()
+
+  section = request.GET.get('section')
+
+  datasets = get_objects_for_user(Dataset, request.user, {'owner': user}, is_admin)
+  collections = get_objects_for_user(Collection, request.user, {'owner': user}, is_admin)
+  areas = get_objects_for_user(Area, request.user, {'owner': user}, is_admin)
+  groups_member = CollectionGroup.objects.filter(members__user=user)
+  groups_led = CollectionGroup.objects.filter(owner=user)
+
+  context = {
+    'datasets': datasets,
+    'collections': collections,
+    'areas': areas,
+    'has_datasets': user_datasets_count > 0,
+    'has_collections': user_collections_count > 0,
+    'has_areas': user_areas_count > 0,
+    'section': section,
+    'django_groups': django_groups,
+    'groups_member': groups_member,
+    'groups_led': groups_led,
+    'is_admin': is_admin,
+    'is_leader': is_leader,
+    'box_titles': ['Datasets', 'Place Collections', 'Dataset Collections', 'Study Areas', 'Groups'],
+
+  }
+  return render(request, 'main/dashboard_user.html', context)
+
+# all-purpose for admins
+# login required decorator in urls.py
+@login_required
+def dashboard_admin_view(request):
+  print('request.GET', request.GET)
+  user = request.user
+  is_admin = user.groups.filter(name='whg_admins').exists()
+  is_leader = user.groups.filter(name='group_leaders').exists()
+  django_groups = [group.name for group in user.groups.all()]
+
+
+  user_datasets_count = Dataset.objects.filter(owner=user.id).count()
+  user_collections_count = Collection.objects.filter(owner=user).count()
+  user_collections_count = Collection.objects.filter(owner=user).count()
+
+  # section = request.GET.get('section')
+  section = request.GET.get('section', 'datasets')
+
+  # TODO: for admins, show all datasets, collections, areas
+  datasets = get_objects_for_user(Dataset, request.user, {}, is_admin)
+  collections = get_objects_for_user(Collection, request.user, {}, is_admin)
+  areas = get_objects_for_user(Area, request.user, {'type': ['predefined', 'country']}, is_admin)
+  groups_member = CollectionGroup.objects.filter(members__user=user)
+  groups_led = CollectionGroup.objects.filter(owner=user)
+
+  context = {
+    'datasets': datasets,
+    'collections': collections,
+    'areas': areas,
+    'has_datasets': user_datasets_count > 0,
+    'has_collections': user_collections_count > 0,
+    'section': section,
+    'django_groups': django_groups,
+    'groups_member': groups_member,
+    'groups_led': groups_led,
+    'is_admin': is_admin,
+    'is_leader': is_leader,
+  }
+  # return render(request, 'main/dashboard_admin.html', {'initial_section': section})
+  return render(request, 'main/dashboard_admin.html', context)
+
+# first take at a dashboard for all users
 def dashboard_view(request):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   is_leader = request.user.groups.filter(name='group_leaders').exists()

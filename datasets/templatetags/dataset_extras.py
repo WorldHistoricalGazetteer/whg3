@@ -39,6 +39,11 @@ def haskey(objlist, arg):
     """True if any obj in objlist has key arg"""
     return any(arg in x for x in objlist)
 
+@register.simple_tag(takes_context=True)
+def is_whg_admin(context):
+    request = context['request']
+    return request.user.groups.filter(name='whg_admins').exists()
+
 @register.filter
 def is_url(val):
     return True if validators.url(val) else False
