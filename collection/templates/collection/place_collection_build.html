@@ -9,6 +9,10 @@
 {% endblock %}
 {% block extra_head %}
   <style>
+    .form-group input[type="text"] {
+      width: 100%;
+		}
+    .textarea {width: 100%;}
 	  label {font-weight: bold;}
     #linkform_popup {
 	    position:absolute;
@@ -80,7 +84,6 @@
 
 {% block content %}
 <div class="container container-md" style="height: calc(100vh);">
-{#	<p>is_member: {{ is_member }}; is_owner: {{ is_owner }}; whgteam: {{ whgteam }}</p>#}
   {% if action == 'update' and is_member == False and whgteam == False %}
 	  <p>Access to this page is limited to the collection owner <b>{{ object.owner.name }}</b> ({{ object.owner.id }})
 		  and designated collaborators.</p>
@@ -90,6 +93,7 @@
 		  {% if action == 'update' %}<span class="text-secondary">Place Collection Builder: </span>
 		    <span class="text-bold red-head">{{ form.title.value }}</span>
 				<span class="float-end fs-6">
+					<span class="me-2 small">in class: {{ in_class }}; status: <b>{{ form.status.value }}</b></span>
 			    <a href="{% url 'collection:place-collection-browse' object.id %}">
 				    view</a> <i class="fas fa-eye linky"></i>
 			    <a href="{% url 'collection:collection-delete' object.id %}"
@@ -99,7 +103,6 @@
 	    {% else %}
 		    Place Collection Builder: {<span class="red-head">new</span>}
 	    {% endif %}
-{#	    action: {{ action }}#}
 	  </h5>
 	  <ul id="tablist" class="nav nav-tabs" role="tablist">
 		  {# create form & intro #}
@@ -110,16 +113,19 @@
 		  </li>
 		  {# add & annotate #}
 		  {% if action == "update" %}
-		  <li class="nav-item" role="presentation">
-		    <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
-          type="button" role="tab" aria-controls="coll_builder" aria-selected="false">Add and annotate places</button>
-		  </li>
-
-		  <li class="nav-item" role="presentation">
-		    <button class="nav-link" id="collaborators-tab" data-bs-toggle="tab" data-bs-target="#coll_collaborators"
-          type="button" role="tab" aria-controls="coll_collaborators" aria-selected="false">Collaborators</button>
-		  </li>
-
+			  <li class="nav-item" role="presentation">
+			    <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
+	          type="button" role="tab" aria-controls="coll_builder" aria-selected="false">
+				    Add and annotate places</button>
+			  </li>
+				{% if in_class == False %}
+					  <li class="nav-item" role="presentation">
+					    <button class="nav-link" id="collaborators-tab" data-bs-toggle="tab"
+					            data-bs-target="#coll_collaborators"
+			          type="button" role="tab" aria-controls="coll_collaborators"
+			                aria-selected="false">Collaborators</button>
+					  </li>
+				{% endif %}
 		  {% endif %}
 		</ul>
 	  <div class="tab-content" id="content">
@@ -134,7 +140,6 @@
 			      <input type="hidden" name="owner" value='{{ form.owner.value }}' />
 		      {% endif %}
 		      <input type="hidden" name="collection_class" value='place' />
-		      status: {{ form.status.value }}
 					<div class="form-group">
 						<label for="Title">Title &#x02733;</label><br/>{{ form.title }}
 					</div>
@@ -142,7 +147,8 @@
 						<label for="Description">Description &#x02733;</label><br/>{{ form.description }}
 					</div>
 					<div class="form-group">
-						<label for="Collection keywords">Collection keywords &#x02733;</label><br/>{{ form.keywords }}
+						<label for="Collection keywords">
+							Collection keywords &#x02733;</label><br/>{{ form.keywords }}
 					</div>
 					<div class="form-group">
 						<label for="Annotation keywords">Annotation keywords</label><br/>{{ form.rel_keywords }}
@@ -151,7 +157,8 @@
 	          <span class="">
 	          {% if action == 'create' %}
 			        <a href="/mycollections">Cancel</a>
-		          <input id="btn_coll_save" class="btn btn-sm btn-primary mt-2" type="submit" value="Save" />
+		          <input id="btn_coll_save" class="btn btn-sm btn-primary mt-2"
+		                 type="submit" value="Save" />
 	          {% else %}
 		          <input id="btn_coll_save" name="display" class="btn btn-sm btn-success mt-2 "
 		                 type="submit" value="Save & exit" />
@@ -185,31 +192,17 @@
 					    </span>
 					    {% if object.group %}
 					    <span class="ms-2 small">
-					        <a href="{% url 'collection:collection-group-detail' object.group.id %}" target="_blank">Info</a>
+					        <a href="{% url 'collection:collection-group-detail' object.group.id %}"
+					           target="_blank">Info</a>
 					    </span>
 					    {% endif %}
 					{% endif %}
 	      </div>
-        {% comment %}
-        {% else %}
-          <div class="col-sm-5">
-	          <p class="ital small p-2">As a collaborator on this collection, you can view its metadata,
-	          add, annotate, and remove places, add links, and change the image and essay
-	          </p><hr/>
-	          {% with form.visible_fields as partial %}
-            <p><b>Title</b>: {{ partial.1.value }}</p>
-            <p><b>Description</b>:<br/>{{ partial.3.value }}</p>
-            <p><b>Collection Keywords</b>: {{ partial.4.value }}</p>
-            <p><b>Relation tags</b>: {{ partial.5.value }}</p>
-            {% endwith %}
-          </div>
-        {% endif %}
-        {% endcomment %}
-
           <div class="col-sm-7">
 		      {% if action == 'update' %}
 			      <div class="form-group mb-2">
-				      <label for="Image">Collection image <i class="small">(800px wide or less)</i></label><br/>
+				      <label for="Image">Collection image <i class="small">
+					      (800px wide or less)</i></label><br/>
 							{% if action == 'create' %} {# create, no image yet #}
 								<span id="img_chooser_create">{{ form.image_file }}</span>
 							{% elif form.image_file.value %} {# update & there's an image #}
@@ -261,15 +254,18 @@
 						</div>
 		      {% else %}
 				    <h5 style="display:block;">Welcome</h5>
-					  <p>To create a new Place Collection, first fill out the required fields in the form on the left.
-						  and press <b>Save</b>. All information can be edited afterwards, and you can begin adding and
-						  annotating places. The collection itself can include primary image, an essay file and
-						  links to related material.</p>
+					  <p>To create a new Place Collection, first fill out the required fields in the form
+						  on the left and press <b>Save</b>. All information can be edited afterwards,
+						  and you can begin adding and annotating places. The collection itself can include
+						  primary image, an essay file and links to related material.
+					  </p>
 			      <p><mark-b>Collection keywords</mark-b> are terms describing the collection.</p>
-					  <p><mark-b>Annotation keywords</mark-b> are terms that will be your own vocabulary for relations between a given
-	              place and the collection theme or topic. For example, relevant annotation keywords for a collection
-	              about a journey might include "waypoint" and "extended stay." For lives of individuals, "birthplace"
-	              and "resided" might be appropriate. The choice is yours.</p>
+					  <p><mark-b>Annotation keywords</mark-b> are terms that will be your own vocabulary
+						  for relations between a given place and the collection theme or topic.
+						  For example, relevant annotation keywords for a collection about a journey
+						  might include "waypoint" and "extended stay." For lives of individuals,
+						  "birthplace" and "resided" might be appropriate. The choice is yours.
+					  </p>
 		      {% endif %}
 		      </div> {# col-sm-7 #}
         </div> {# row #}
@@ -468,9 +464,10 @@
 	          <p><sr>Members</sr> can ...
 		          <br/><sr>Co-owners</sr> can perform all actions.</p>
 	        </div>
-	        {% if user.is_superuser or user in owners %}
-	          <div class="ms-2 my-2">
-	            <div class="form-check form-check-inline sharing-input">
+	        {% if user.is_superuser or is_owner %}
+{#	          <div class="ms-2 my-2">#}
+	          <div class="">
+	            <div class="form-check form-check-inline sharing-input ps-1">
 	              <span class="input-group">
 	                <input type="text" class="form-control input-sm" name="email"
 	                       placeholder="Enter user email">
@@ -946,7 +943,21 @@
   })
 
   $(function(){
+    var activeTab = window.location.hash;
+    if (activeTab) {
+        // Deactivate all tabs and hide all tab content
+        $('.nav-link').removeClass('active').attr('aria-selected', 'false');
+        $('.tab-content .tab-pane').removeClass('active show');
+
+        // Activate the tab that corresponds to the fragment
+        $('.nav-link[data-bs-target="' + activeTab + '"]').addClass('active').attr('aria-selected', 'true');
+
+        // Show the tab content corresponding to the active tab
+        $(activeTab).addClass('active show');
+    }
+
     $("#id_group option:first").text('None')
+
     $("#id_group").change(function(){
       if($("#id_group").val() == ""){
         $("#btn_coll_update").attr('value','Withdraw')
@@ -956,6 +967,7 @@
       }
       console.log('changed group setting')
     })
+
 		$("#coll_placelist div:first-child").click()
 		var cardList = $('#coll_placelist');
 		{#var panelList = $('#draggablePanelList');#}
