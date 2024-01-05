@@ -1,16 +1,14 @@
 <!-- /search/templates/search/search.html -->
-{% extends "main/base.html" %}
-{% load leaflet_tags %}
+{% extends "main/base_webpack.html" %}
 {% load static %}
-{% block title %}<title>WHG Search</title>{% endblock %}
-{% block extra_head %}
-  <script src="{% static 'js/aliases.js' %}"></script>
-  <script src="{% static 'js/parents.js' %}"></script>
-  <link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
-  <link href="{% static 'webpack/search.bundle.css' %}" rel="stylesheet" /> 
 
-  <script src="{% static 'js/mapbox-gl-draw.js' %}"></script>
-  <link href="{% static 'css/mapbox-gl-draw.css' %}" rel="stylesheet" />
+{% block extra_head %}
+	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" /> 
+	<link href="{% static 'webpack/search.bundle.css' %}" rel="stylesheet" /> 
+{% endblock %}
+
+{% block title %}
+	<title>WHG Search</title>
 {% endblock %}
 
 {% block content %}
@@ -133,38 +131,20 @@
 			</div>
   </div>
   {% csrf_token %} <!-- Used for Django POST requests -->
-<!-- Set up MapLibre map using Maptiler SDK -->
-<script type="text/javascript">
-    let mapParameters = {
-        container: 'map',
-        center: [10.2385, 29.8626],
-        zoom: 0.1, // starting zoom
-        minZoom: 0.1,
-        maxZoom: 10,
-        mapTilerKey: '{{ maptilerkey }}',
-        controls: {
-            layer: true,
-            navigation: false,
-            fullscreen: false,
-            attribution: {
-                open: false,
-            },
-            temporal: {
-                fromValue: 800,
-                toValue: 1800,
-                minValue: -2000,
-                maxValue: 2100,
-                open: false,
-                includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
-                epochs: null,
-                automate: null,
-            }
-        },
-        styleFilter: [ 'OUTDOOR.DEFAULT' ], // Leave empty for full list of options, or include a single style to prevent selector inclusion
-    }
-</script>
-<script type="module">
-	import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
-    import "{% static 'webpack/search.bundle.js' %}";
-</script>
+  
+{% endblock %}
+
+{% block deferredScripts %}
+   	
+   	var scripts = [
+		{
+			src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
+			type: 'text/javascript',
+		},
+		{
+			src: '{% static 'webpack/search.bundle.js' %}',
+			type: 'module',
+		},
+   	]
+
 {% endblock %}

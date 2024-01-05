@@ -1,5 +1,8 @@
 // /whg/webpack/js/mapAndTable.js
 
+import '../css/mapAndTable.css';
+import '../css/mapAndTableAdditional.css';
+
 import { init_mapControls } from './mapControls';
 import { addMapSource, addMapLayer, recenterMap, initObservers, initOverlays, initPopups, listSourcesAndLayers } from './mapFunctions';
 import { toggleFilters } from './mapFilters';
@@ -14,8 +17,6 @@ if (ds_listJSON) {
 	window.ds_list = JSON.parse(ds_listJSON.textContent);
 }
 console.log('Dataset list:',window.ds_list);
-
-const whgMap = document.getElementById(mapParameters.container);
 
 window.mapBounds;
 window.highlightedFeatureIndex;
@@ -33,26 +34,24 @@ let spinner_table;
 let spinner_detail;
 let spinner_map = startSpinner("dataset_content", 3);
 
-let style_code;
-if (mapParameters.styleFilter.length == 0) {
-	style_code = ['DATAVIZ', 'DEFAULT']
-} else {
-	style_code = mapParameters.styleFilter[0].split(".");
+let mapParameters = {
+	style: ['DATAVIZ.DEFAULT', 'OUTDOOR.DEFAULT'], 
+	maxZoom: 10,
+    controls: {
+	    temporal: {
+	        fromValue: 1550,
+	        toValue: 1720,
+	        minValue: -2000,
+	        maxValue: 2100,
+	        open: false,
+	        includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
+	        epochs: null,
+	        automate: null,
+	    },
+	    sequencer: true,
+	},
 }
-		
-maptilersdk.config.apiKey = mapParameters.mapTilerKey;
-let mappy = new maptilersdk.Map({
-	container: mapParameters.container,
-	center: mapParameters.center,
-	zoom: mapParameters.zoom,
-	minZoom: mapParameters.minZoom,
-	maxZoom: mapParameters.maxZoom,
-	style: maptilersdk.MapStyle[style_code[0]][style_code[1]],
-	attributionControl: false,
-	geolocateControl: false,
-	navigationControl: false,
-    userProperties: true
-});
+let mappy = new whg_maplibre.Map(mapParameters);
 
 const mapLoadPromise = new Promise(function (resolve, reject) {
     mappy.on('load', function () {
@@ -77,10 +76,10 @@ window.ds_list.forEach(function (ds) { // fetch data
     dataLoadPromises.push(promise);
 });
 
-Promise.all([mapLoadPromise, ...dataLoadPromises])
+Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fallbacks.map(loadResource))])
 .then(function () {
 	
-	initOverlays(whgMap);
+	initOverlays(mappy.getContainer());
 	
 	let allFeatures = [];
 	
@@ -167,7 +166,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises])
 	initObservers();
 	
 	recenterMap();
-	whgMap.style.opacity = 1;
+	mappy.getContainer().style.opacity = 1;
 	
 	initUtils(mappy); // Tooltips, ClipboardJS, clearlines, help-matches
 	

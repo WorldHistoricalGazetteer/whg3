@@ -1,17 +1,17 @@
-{% extends "main/base.html" %}
-{% block title %}<title>WHG::Gallery</title>{% endblock %}
+{% extends "main/base_webpack.html" %}
+{% load static %}
+{% load dataset_extras %}
+
+{% block title %}
+	<title>WHG::Gallery</title>
+{% endblock %}
+
+{% block extra_head %}
+	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" /> 
+	<link href="{% static 'webpack/gallery.bundle.css' %}" rel="stylesheet" />
+{% endblock %}
 
 {% block content %}
-{#	{% load geojson_tags %}#}
-{#	{% load leaflet_tags %}#}
-	{% load static %}
-	{% load dataset_extras %}
-	{% block extra_head %}
-	
-	<link href="{% static 'webpack/maptiler_sdk.bundle.css' %}" rel="stylesheet" /> 
-	<link href="{% static 'webpack/gallery.bundle.css' %}" rel="stylesheet" />
-	
-	{% endblock %}
 
 	<div class="container pt-2 container-md" style="height: calc(100vh - 65px); position:relative;">
 	    <section class="text-center">
@@ -62,49 +62,25 @@
 	    </div>
 	    <div id="essay_modal" class="selector py-3" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;"></div>
 	</div>
-
 	<script type="text/javascript">
-	
-    	let mapParameters = {
-            container: 'map',
-            center: [9.2, 33],
-            zoom: 0.2, // starting zoom
-            //minZoom: 0.1,
-            maxZoom: 6,
-            style: {
-                version: 8,
-                sources: {
-                    basemap: {
-                        type: 'raster',
-                        tiles: [
-        			    	'https://a.tiles.mapbox.com/v4/kgeographer.ne_global/{z}/{x}/{y}.png?access_token={{ mbtoken }}',
-        			    	'https://b.tiles.mapbox.com/v4/kgeographer.ne_global/{z}/{x}/{y}.png?access_token={{ mbtoken }}'
-        			  	],
-                        tileSize: 256,
-                    },
-                },
-                layers: [{
-                    id: 'basemap',
-                    type: 'raster',
-                    source: 'basemap',
-                }],
-            },
-    	    attributionControl: false,
-    	    geolocateControl: false,
-    	    navigationControl: false,
-    	    userProperties: true,
-    	    bearing: 0,
-    	    pitch: 0,
-        }
-	
-		const dropdown_data = {{ dropdown_data|safe }}
-    	let datacollection = '{{ active_tab }}';
-
+		const dropdown_data = {{ dropdown_data|safe }};
+	   	let datacollection = '{{ active_tab }}';
 	</script>
-	
-	<script type="module">
-    	import "{% static 'webpack/maptiler_sdk.bundle.js' %}";
-    	import "{% static 'webpack/gallery.bundle.js' %}";
-	</script> 
 {% endblock %}
+
+{% block deferredScripts %}
+   	
+   	var scripts = [
+		{
+			src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
+			type: 'text/javascript',
+		},
+		{
+			src: '{% static 'webpack/gallery.bundle.js' %}',
+			type: 'module',
+		},
+   	]
+
+{% endblock %}
+
 

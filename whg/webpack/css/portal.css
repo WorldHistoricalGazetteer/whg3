@@ -160,3 +160,11 @@ li.showing span:not(.showing) {
 li:not(.showing) span.showing {
 	display: none;
 }
+
+.maplibregl-ctrl-top-right .maplibregl-ctrl:first-of-type {
+	display: none;
+}
+
+.maplibregl-ctrl-top-right .maplibregl-ctrl {
+	margin-top: 0;
+}

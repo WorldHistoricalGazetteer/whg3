@@ -35,6 +35,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
 }
 #intro {
     font-size: 0.9rem;
+    min-height: 360px;
 }
 .home-button {
     position: relative;

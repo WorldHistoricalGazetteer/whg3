@@ -8,6 +8,8 @@ _testdata/
 
 node_modules/
 
+CDNfallbacks/
+
 datasets/static/_older/
 static/_older/
 
@@ -77,11 +79,11 @@ whg/media/.DS_Store
 whg/media/collections/.DS_Store
 whg/media/.DS_Store
 node_modules/
-package-lock.json
 
 # Ignore Webpack generated files
 whg/static/webpack/*.bundle.*
 whg/static/webpack/*.svg
-package-lock.json
 whg/static/webpack/stats.json
 whg/static/webpack/webpackReport.html
+
+package-lock.json

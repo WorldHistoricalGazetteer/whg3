@@ -57,7 +57,7 @@ def heatmapped_geometries(caller):
             add_geometry(dsgeom.geom)
 
     else: # caller_class == 'Collection'
-        places = caller.places.all()
+        places = caller.places_all
         if not places:
             return heatmapped_geometries
         for place in places:
