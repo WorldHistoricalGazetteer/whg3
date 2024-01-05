@@ -171,6 +171,8 @@ window.loadResource = function(element) {
 Promise.all(CDN_fallbacks.map(loadResource))
 	.then(function() {
 		
+		document.querySelector('body').style.opacity = 1;
+		
 		console.log('Executing deferred scripts.');
 		executeDeferredScripts();
 		

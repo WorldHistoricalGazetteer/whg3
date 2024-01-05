@@ -12,12 +12,14 @@
 	
 	<script defer src="{% static 'webpack/base.bundle.js' %}"></script>
     <link href="{% static 'webpack/base.bundle.css' %}" rel="stylesheet" />
+  	<style>
+    	body { /* Hide until CDN css files are fully loaded */ 
+			opacity: 0;
+			transition: opacity 1s ease;
+		}
+  	</style>
   
-    {% block extra_head %}
-      	<style>
-        	.container a {text-decoration: none !important;}
-      	</style>
-  	{% endblock %}
+    {% block extra_head %}{% endblock %}
 	<script type="text/javascript">
 		function executeDeferredScripts() {
 			{% block deferredScripts %}
