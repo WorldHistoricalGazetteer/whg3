@@ -37,7 +37,9 @@ def profile_edit(request):
         user.save()
         return redirect('profile-edit')
 
-    return render(request, 'main/profile.html')
+    is_admin = request.user.groups.filter(name='whg_admins').exists()
+    context={'is_admin': is_admin}
+    return render(request, 'main/profile.html', context=context)
 
 def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
   from django.db.models import Max

@@ -113,7 +113,15 @@
                 Data
                 </a>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{% url 'dashboard' %}">My Data</a></li>
+	                <li>
+	                  {% is_whg_admin as user_is_whg_admin %}
+                      {% if user_is_whg_admin %}
+                        <a class="dropdown-item" href="{% url 'dashboard-admin' %}">Admin Dashboard</a>
+                      {% else %}
+                        <a class="dropdown-item" href="{% url 'dashboard-user' %}">My Data</a>
+                      {% endif %}
+                    </li>
+                    {# <li><a class="dropdown-item" href="{% url 'dashboard' %}">My Data</a></li>#}
 	                <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}">Dataset Gallery</a></li>
                   <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}">Collection Gallery</a></li>

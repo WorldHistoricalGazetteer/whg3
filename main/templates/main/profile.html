@@ -63,7 +63,7 @@
   <div class="page-title-container mt-3">
     <h4 class="page-title">My Profile</h4>
     <a href="{% url 'dashboard' %}" class="header-link">
-      Data Dashboard<i class="fas  fa-columns ms-2"></i>
+      {% if is_admin %}Admin {% else %}My {% endif %}Dashboard<i class="fas  fa-columns ms-2"></i>
     </a>
 {%  comment %}	  {% if user_isadmin %}
 	  {% else %}
