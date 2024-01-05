@@ -8,6 +8,8 @@ _testdata/
 
 node_modules/
 
+CDNfallbacks/
+
 datasets/static/_older/
 static/_older/
 
