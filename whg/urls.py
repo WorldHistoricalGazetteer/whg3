@@ -39,31 +39,16 @@ urlpatterns = [
     path('tutorials/', include('main.urls_tutorials')),
     path('resources/', include('resources.urls')),
 
-    # DEPRECATED
-    # path('dashboard/', DashboardView.as_view(), name='dashboard'),
-
-    ## "mydata" DATA LIST VIEWS
-    # reverse name is parameter to DataListsView()
-    # path('mydata/', DataListsView.as_view(), name='data-datasets'),
-    # path('mycollections/', DataListsView.as_view(), name='data-collections'),
-    # path('mystudyareas/', DataListsView.as_view(), name='data-areas'),
-    # path('resourcelist/', DataListsView.as_view(), name='data-resources'),
-    # path('mycollgroups/', DataListsView.as_view(), name='data-collgroups'),
-
     path('public_data/', PublicListsView.as_view(), name='public-lists'),
-
-    # static content
-    # path('dashboard/', views.dashboard_view, name="dashboard"),
-    path('dashboard_user/', views.dashboard_user_view, name="dashboard-user"),
-    path('dashboard_admin/', views.dashboard_admin_view, name="dashboard-admin"),
-    # activate section
-    path('dashboard/<str:section>/', views.dashboard_admin_view, name='dashboard-admin-section'),
 
     # redirect to correct dashboard
     path('dashboard/', views.dashboard_redirect, name="dashboard"),
+    path('dashboard_user/', views.dashboard_user_view, name="dashboard-user"),
+    path('dashboard_admin/', views.dashboard_admin_view, name="dashboard-admin"),
     # profile and settings
     path('profile/', views.profile_edit, name="profile-edit"),
 
+    # static content
     path('about/', TemplateView.as_view(template_name="main/about.html"), name="about"),
     path('builder/', TemplateView.as_view(template_name="main/builder_start.html"), name="gazetteer-builder"),
     path('builder_single/', TemplateView.as_view(template_name="main/builder_single.html"), name="builder-single"),

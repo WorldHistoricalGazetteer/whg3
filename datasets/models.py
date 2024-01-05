@@ -7,7 +7,6 @@ from django.contrib.gis.db.models import Collect, Extent, Aggregate
 from django.contrib.gis.geos import GeometryCollection, Polygon, GEOSGeometry
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-User = get_user_model()
 from django.db import models
 from django.db.models import Q
 from django.db.models.signals import pre_delete
@@ -16,8 +15,10 @@ from django.urls import reverse
 #from django.shortcuts import get_object_or_404
 
 from django_celery_results.models import TaskResult
+from django_resized import ResizedImageField
 from elastic.es_utils import escount_ds
 from geojson import Feature
+
 from main.choices import *
 from places.models import Place, PlaceGeom, PlaceLink
 import simplejson as json
@@ -27,6 +28,8 @@ from utils.heatmap_geometries import heatmapped_geometries
 from utils.hull_geometries import hull_geometries
 from utils.feature_collection import feature_collection
 from utils.carousel_metadata import carousel_metadata
+
+User = get_user_model()
 
 
 # upload to MEDIA_ROOT/user_<username>/<filename>
@@ -51,7 +54,8 @@ class Dataset(models.Model):
   webpage = models.URLField(null=True, blank=True)
   create_date = models.DateTimeField(null=True, auto_now_add=True)
   uri_base = models.URLField(null=True, blank=True)
-  image_file = models.FileField(upload_to=ds_image_path, blank=True, null=True)
+  image_file = ResizedImageField(size=[800, 600], upload_to=ds_image_path, blank=True, null=True)
+  # image_file = models.FileField(upload_to=ds_image_path, blank=True, null=True)
   featured = models.IntegerField(null=True, blank=True)
   bbox = geomodels.PolygonField(null=True, blank=True, srid=4326)
 

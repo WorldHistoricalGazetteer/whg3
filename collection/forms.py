@@ -46,6 +46,7 @@ class CollectionLinkForm(forms.ModelForm):
         super(CollectionLinkForm, self).__init__(*args, **kwargs)
 
 class CollectionModelForm(forms.ModelForm):
+
     # ** trying to return to referrer
     next = forms.CharField(required=False)
     # group = forms.ModelChoiceField()
@@ -56,16 +57,17 @@ class CollectionModelForm(forms.ModelForm):
                   'image_file', 'file', 'datasets', 'creator', 'contact', 'webpage', 'featured', 'status', 'group')
 
         widgets = {
-            'title': forms.TextInput(attrs={'size': 45}),
-            'keywords': forms.TextInput(attrs={'size': 45, 'placeholder':'comma-delimited'}),
+            # 'title': forms.TextInput(attrs={'size': 45}),
+            'title': forms.TextInput(),
+            'keywords': forms.TextInput(attrs={'placeholder': 'comma-delimited'}),
             'rel_keywords': forms.TextInput(attrs={'size': 45, 'placeholder':'comma-delimited'}),
             'creator': forms.TextInput(attrs={'size': 45}),
             'contact': forms.TextInput(attrs={'size': 45}),
             'webpage': forms.TextInput(attrs={'size': 45}),
-            'description': forms.Textarea(attrs={'rows': 3,'cols': 45,'class': 'textarea',
+            'description': forms.Textarea(attrs={'rows': 5, 'class': 'textarea',
                 'placeholder': 'A single paragraph. Note that a PDF file of any length can be uploaded later as well.'}),
-            'image_file':forms.FileInput(),
-            'file':forms.FileInput(),
+            'image_file': forms.FileInput(attrs={'class': 'fileinput'}),
+            'file': forms.FileInput(attrs={'class': 'fileinput'}),
             'datasets': forms.CheckboxSelectMultiple,
             'featured': forms.TextInput(attrs={'size': 3}),
             'group': forms.Select()
@@ -75,5 +77,7 @@ class CollectionModelForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super(CollectionModelForm, self).__init__(*args, **kwargs)
-        self.fields['group'].queryset = CollectionGroup.objects.filter(members__user=self.user)
-        # self.fields['group'].initial = 'initial value'
+        user_groups = CollectionGroup.objects.filter(members__user=self.user)
+        self.fields['group'].queryset = user_groups
+        if self.instance.status == 'nominated':
+            self.fields['group'].disabled = True

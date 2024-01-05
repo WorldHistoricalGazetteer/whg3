@@ -151,7 +151,6 @@ class Collection(models.Model):
   @property
   def owners(self):
     owner_ids = list(CollectionUser.objects.filter(collection=self, role='owner').values_list('user_id',flat=True))
-    # du_owner_ids = list(self.collabs.filter(role = 'owner').values_list('user_id_id',flat=True))
     owner_ids.append(self.owner.id)
     owners = User.objects.filter(id__in=owner_ids)
     return owners

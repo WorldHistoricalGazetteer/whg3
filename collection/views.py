@@ -60,34 +60,37 @@ def nominator(request, *args, **kwargs):
   print('in nominator()', request.POST)
   nominated = True if request.POST['nominated'] == 'true' else False
   coll = Collection.objects.get(id=request.POST['coll'])
+  print('nominated?', nominated, 'coll', coll.title, 'id', coll.id)
   if nominated:
     coll.nominated = True
-    status = 'nominated'
+    coll.status = 'nominated'
   else:
     coll.nominated = False
-    status = 'withdrawn'
+    coll.status = 'reviewed'
   coll.save()
 
-  return JsonResponse({'status': status, 'coll': coll.title}, safe=False,
+  return JsonResponse({'status': coll.status, 'coll': coll.title}, safe=False,
                       json_dumps_params={'ensure_ascii': False, 'indent': 2})
 
 
 """
-  add (submit) or remove collection to/from collection group
+  user adds (submits) or removes collection to/from collection group
 """
 def group_connect(request, *args, **kwargs):
   action = request.POST['action']
+  print('group_connect() action', action)
   coll = Collection.objects.get(id=request.POST['coll'])
   cg = CollectionGroup.objects.get(id=request.POST['group'])
   if action == 'submit':
     cg.collections.add(coll)
-    # coll.submitted = True
+    coll.status = 'group'
     coll.save()
     status = 'added to'
   else:
-    # cg.collections.remove(coll)
+    cg.collections.remove(coll)
     coll.group = None
     coll.submit_date = None
+    coll.status = 'sandbox'
     coll.save()
     status = 'removed from'
 
@@ -572,6 +575,7 @@ class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
       obj.status = 'group'
       obj.submit_date = date.today()
     else:
+      obj.status = 'sandbox'
       obj.nominated = False
       obj.submit_date = None
     obj.save()
@@ -595,9 +599,8 @@ class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
     _id = self.kwargs.get("id")
     coll = self.object
     datasets = self.object.datasets.all()
-
+    in_class = coll.group.type == 'class' if coll.group else False
     form_anno = TraceAnnotationModelForm(self.request.GET or None, auto_id="anno_%s")
-    # anno_form = TraceAnnotationModelForm(self.request.GET or None, prefix="sch")
     # populates dropdown
     ds_select = [obj for obj in Dataset.objects.all().order_by('title') if user in obj.owners or user.is_superuser]
     if not user.is_superuser:
@@ -612,6 +615,7 @@ class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
     context['is_owner'] = True if user in self.object.owners else False
     context['whgteam'] = True if user.groups.filter(name__in=['whg_team','editorial']).exists() else False
     context['collabs'] = CollectionUser.objects.filter(collection=coll.id)
+    context['in_class'] = in_class
     # context['links'] = CollectionLink.objects.filter(collection=self.object.id)
 
     context['form_anno'] = form_anno
