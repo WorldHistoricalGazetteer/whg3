@@ -7,7 +7,7 @@ from django import forms
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms.models import inlineformset_factory
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import (View, CreateView, UpdateView, DetailView, DeleteView, ListView )
 
@@ -101,30 +101,42 @@ def group_connect(request, *args, **kwargs):
   add collaborator to collection in role
 """
 def collab_add(request, cid):
-  print('collab_add() request, cid', request, cid)
+  print('collab_add() request.POST, cid', request.POST, cid)
+  email = request.POST['email']
+  response_data = {}
   try:
-    uid=get_object_or_404(User, email=request.POST['email']).id
-    role=request.POST['role']
-  except:
-    #
-    messages.add_message(
-      request, messages.INFO, "Please check email, we don't have '<b>" + request.POST['email']+"</b>'")
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    user = get_object_or_404(User, email=email)
+    uid = user.id
+    role = request.POST['role']
+  except Http404:
+      response_data['status'] = 'User '+email+' not found'
+      return JsonResponse(response_data)
+
+  is_already_collaborator = CollectionUser.objects.filter(user_id=uid, collection_id=cid).exists()
+  if is_already_collaborator:
+      response_data['status'] = 'User is already a collaborator'
+      return JsonResponse(response_data)
+
+  response_data['status'] = 'ok'
 
   # TODO: send collaborator an email
-  print('collection collab_add():',request.POST['email'],role, cid, uid)
-  CollectionUser.objects.create(user_id=uid, collection_id=cid, role=role)
+  print('collection collab_add():', request.POST['email'],role, cid, uid)
+  coll_collab = CollectionUser.objects.create(user_id=uid, collection_id=cid, role=role)
+  response_data['user'] = str(coll_collab)  # name (role, email)
+  response_data['uid'] = uid
+  response_data['cid'] = cid
 
-  return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+  return JsonResponse(response_data)
 
 """
-  collab_delete(uid, cid)
+  collab_remove(uid, cid)
   remove collaborator from collection
 """
-def collab_delete(request, uid, cid):
+def collab_remove(request, uid, cid):
   print('collab_delete() request, uid, cid', request, uid, cid)
   get_object_or_404(CollectionUser,user=uid, collection=cid).delete()
-  return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+  response_data = {"status": "ok", "uid": uid}
+  return JsonResponse(response_data)
 
 """ utility: get next sequence for a collection """
 def seq(coll):

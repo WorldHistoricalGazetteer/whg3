@@ -228,7 +228,7 @@ class CollectionUser(models.Model):
 
   def __str__(self):
     name = self.user.name
-    return '<b>' + name + '</b> (' + self.role + ')'
+    return '<b>' + name + '</b> (' + self.role + '; ' + str(self.user.email) + ')'
 
   class Meta:
     managed = True

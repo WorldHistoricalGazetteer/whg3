@@ -33,10 +33,9 @@ urlpatterns = [
 
     ## COLLABORATORS
     # add Collection collaborator; payload includes email, role
-    #path('collab-add/', views.collab_add, name="collab-add"),
-    # delete Collection collaborator; payload includes email
-    #path('collab-delete/<int:uid>/<int:cid>/', views.collab_delete, name="collab-delete"),
-
+    path('collab-add/<int:cid>/', views.collab_add, name="collab-add"),
+    # delete Collection collaborator; payload includes int id of collaborator
+    path('collab-remove/<int:uid>/<int:cid>/', views.collab_remove, name="collab-remove"),
 
     # COLLECTION GROUPS (for classes, workshops)
     # path('create_collection_group/', views.create_collection_group, name='create-collection-group'),
