@@ -2,7 +2,6 @@
   <table id="table_collections"class="table table-striped">
     <thead class="small">
       <th>id</th>
-{#      <th>type</th>#}
       <th>title</th>
       <th></th>
       <th>count</th>
@@ -13,10 +12,7 @@
     <tbody>
       {% for c in collections %}
         <tr class="place-row">
-          <td>
-            {{ c.id }}
-          </td>
-{#          <td><span class="{{ c.collection_class }} p-1">{{ c.collection_class }}</span></td>#}
+          <td>{{ c.id }}</td>
           <td>
             {{ c.title }}
             {% if not user == c.owner %}
@@ -33,7 +29,8 @@
 			        <a href="{% url 'collection:place-collection-update' c.id %}">edit</a>
 				    {% endif %}
 					</td>
-          <td>{{ c.rowcount }}</td>
+{#          <td>{{ c.rowcount }}</td>#}
+          <td>{{ c.annos.count }}</td>
 {#					<td class="small">{{ c.created|date:"Y-m-d, H:i" }}</td>#}
 					<td class="small">{{ c.log.last.timestamp|date:"Y-m-d" }}</td>
           <td>{{ c.owner.name }}</td>

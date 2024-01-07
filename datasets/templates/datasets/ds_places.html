@@ -1,168 +1,178 @@
-{% extends "main/base_webpack.html" %} 
-{% load static %} 
+{% extends "main/base_webpack.html" %}
+{% load static %}
 {% load mathfilters %}
-{% load dataset_extras %} 
+{% load dataset_extras %}
 
 {% block extra_head %}
-	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" /> 
-	<link href="{% static 'webpack/mapAndTable.bundle.css' %}" rel="stylesheet" />
-	<script src="{% static 'celery_progress/celery_progress.js' %}"></script>
-{% endblock %} 
+    <link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet"/>
+    <link href="{% static 'webpack/mapAndTable.bundle.css' %}" rel="stylesheet"/>
+    <script src="{% static 'celery_progress/celery_progress.js' %}"></script>
+{% endblock %}
 
-{% block title %} 
-	<title>Dataset::{{ ds.label }}</title> 
-{% endblock %} 
+{% block title %}
+    <title>Dataset::{{ ds.label }}</title>
+{% endblock %}
 
-{% block content %} 
-<div id="dataset_content" class="container mt-1 px-1">
-    <div id="map" style="opacity: 0; height:100%;"></div>
-    <div id="ds_info" class="overlay left">
-        <div id="ds_header" class="raleway">
+{% block content %}
+    <div id="dataset_content" class="container mt-1 px-1">
+        <div id="map" style="opacity: 0; height:100%;"></div>
+        <div id="ds_info" class="overlay left">
+            <div id="ds_header" class="raleway">
             <span class="fs-5 title">
-                <img src="{% static 'images/spreadsheet.png'%}" height=28 alt="" />
+                <img src="{% static 'images/spreadsheet.png' %}" height=28 alt=""/>
                 {{ ds.title }}
             </span>
-            <span class="fs-6"> a WHG dataset </span>
-            <span id="collapseExpand" class="float-end">
+                <span class="fs-6"> a WHG dataset </span>
+                <span id="collapseExpand" class="float-end">
                 <span class="info-collapse small">Hide</span>
                 <i class="info-collapse fas fa-chevron-up"></i>
                 <span class="info-expand small">Show Detail</span>
                 <i class="info-expand fas fa-chevron-down"></i>
             </span>
-        </div>
-        <div id="metadata" class="mt-2">
-            <div class="row pub-intro">
-                <div class="col-sm-9">
-                    <p>{{ ds.description|safe }}</p>
-                </div>
-                <div class="col-sm-3" style="position: relative;">
-	                {% if ds.image_file %}
-		                <a href="#" class="pop">
-		                <img id="active_img"
-		                     class="img-responsive thumbnail float-end"
-		                     src="/media/{{ ds.image_file.name }}"
-		                     width="220px" />
-                    </a>
-	                {% else %}<span><i>image here</i></span>
-	                {% endif %}
-                </div>
-            </div><!-- .row -->
-            <div id="ds_details">
-              <table>
-                  {% if ds.webpage %}
-	                  <tr>
-                      <td><b>Webpage</b></td>
-                      <td>
-                          <a href="{{object.webpage }}" target="_blank">
-	                          link <i class="fas fa-external-link-alt linky"></i>
-                          </a>
-                      </td>
-                    </tr>
-                  {% endif %}
-									{% if ds.creator %}
-										<tr>
-                      <td><b>Creator(s)</b></td>
-                      <td>{{ object.creator }}</td>
-                    </tr>
-									{% endif %}
-              </table>
-              <div class="">
-	              <p><a href="#" id="a_download_modal"
-                   class="a-dl me-2" data-collid="{{ object.id }}"
-                   data-bs-toggle="modal"
-                   data-bs-target="#downloadModal"
-                   title="download options">
-	                Download options</a>
-                <i class="fas fa-download linky"></i>
-                <span class="float-end">
+            </div>
+            <div id="metadata" class="mt-2">
+                <div class="row pub-intro">
+                    <div class="col-sm-9">
+                        <p>{{ ds.description|safe }}</p>
+                    </div>
+                    <div class="col-sm-3" style="position: relative;">
+                        {% if ds.image_file %}
+                            <a href="#" class="pop">
+                                <img id="active_img"
+                                     class="img-responsive thumbnail float-end"
+                                     src="/media/{{ ds.image_file.name }}"
+                                     width="220px"/>
+                            </a>
+                        {% else %}<span><i>image here</i></span>
+                        {% endif %}
+                    </div>
+                </div><!-- .row -->
+                <div id="ds_details">
+                    <table>
+                        {% if ds.webpage %}
+                            <tr>
+                                <td><b>Webpage</b></td>
+                                <td>
+                                    <a href="{{ object.webpage }}" target="_blank">
+                                        link <i class="fas fa-external-link-alt linky"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                        {% if ds.creator %}
+                            <tr>
+                                <td><b>Creator(s)</b></td>
+                                <td>{{ object.creator }}</td>
+                            </tr>
+                        {% endif %}
+                    </table>
+                    <div class="">
+                        <p><a href="#" id="a_download_modal"
+                              class="a-dl me-2" data-collid="{{ object.id }}"
+                              data-bs-toggle="modal"
+                              data-bs-target="#downloadModal"
+                              title="download options">
+                            Download options</a>
+                            <i class="fas fa-download linky"></i>
+                            <span class="float-end">
 	                <label for="checkbox" class="small">
 		                Close intro by default</label>
 	                <input type="checkbox" id="checkbox">
                 </span></p>
-            </div>
-            </div>
-        </div> <!-- #metadata -->
-    </div> <!-- ds_info -->
+                    </div>
+                </div>
+            </div> <!-- #metadata -->
+        </div> <!-- ds_info -->
 
-    <div id="ds_table" class="overlay right">
-        <table id="placetable" class="table table-striped table-bordered small" style="width:100%">
-        </table>
-        <div id="selection_status">
+        <div id="ds_table" class="overlay right">
+            <table id="placetable" class="table table-striped table-bordered small" style="width:100%">
+            </table>
+            <div id="selection_status">
             <span id="actions">
                 <span id="addtocoll" class="float-end ">
-                    <a id="addchecked" href="#">add <mark id="sel_count"></mark>to collection <i class="fa fa-plus"></i>
+                    <a id="addchecked" href="#">add
+                        <mark id="sel_count"></mark>to collection <i class="fa fa-plus"></i>
                     </a>
                 </span>
             </span>
-        </div>
-        <div id="addtocoll_popup" class="p-2 hidden">
-            <div style="position:relative;">
-                <div class="closer" style="position:absolute; top:-6px; right:-2px">x</div>
             </div>
-            <ul id="my_collections" class="no-bullets"> {% for c in collections %} <li>
-                    <a class="a_addtocoll" href="#" ref="{{ c.id }}">{{ c.title }}</a>
-                </li> {% endfor %} </ul>
-            <hr />
-            <p class="mb-0 ital">
-                <a id="create_coll_link" href="#">
-                    <i class="fas fa-plus-square linky"></i> create new </a>
-            </p>
-            <p id="title_form" class="small hidden">
-                <input id="title_input" type="text" placeholder="Collection title" width="20" />
-                <button id="b_create_coll" type="button">create</button>
-            </p>
-        </div>
-    </div>
-    <div id="detail" class="overlay right"></div>
-    <div class="modal fade" id="" tabindex="-1" role="dialog"
-         aria-labelledby="updateModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="updateModalLabel"></h5>
+            <div id="addtocoll_popup" class="p-2 hidden">
+                <div style="position:relative;">
+                    <div class="closer" style="position:absolute; top:-6px; right:-2px">x</div>
                 </div>
-                <div class="modal-body"></div>
-                <!-- .modal-body -->
-                <div class="modal-footer">
-                    <div id="buttons_pre">
-                        <button id="btn_cancel" type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
-                        <button id="btn_update" type="button" data-dsid={{ds.id}} class="btn btn-primary btn-sm hidden"> Proceed</button>
+                <ul id="my_collections" class="no-bullets"> {% for c in collections %}
+                    <li>
+                        <a class="a_addtocoll" href="#" ref="{{ c.id }}">{{ c.title }}</a>
+                    </li> {% endfor %}
+                </ul>
+                <hr/>
+                <p class="mb-0 ital">
+                    <a id="create_coll_link" href="#">
+                        <i class="fas fa-plus-square linky"></i> create new </a>
+                </p>
+                <p id="title_form" class="small hidden">
+                    <input id="title_input" type="text" placeholder="Collection title" width="20"/>
+                    <button id="b_create_coll" type="button">create</button>
+                </p>
+            </div>
+        </div>
+        <div id="detail" class="overlay right"></div>
+        <div class="modal fade" id="" tabindex="-1" role="dialog"
+             aria-labelledby="updateModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="updateModalLabel"></h5>
                     </div>
-                    <button id="btn_done" type="button" class="btn btn-secondary btn-sm hidden" data-dismiss="modal">Done</button>
+                    <div class="modal-body"></div>
+                    <!-- .modal-body -->
+                    <div class="modal-footer">
+                        <div id="buttons_pre">
+                            <button id="btn_cancel" type="button"
+                                    class="btn btn-secondary btn-sm" data-dismiss="modal">
+                                Cancel
+                            </button>
+                            <button id="btn_update" type="button" data-dsid={{ ds.id }} class="btn btn-primary btn-sm
+                                    hidden
+                            "> Proceed</button>
+                        </div>
+                        <button id="btn_done" type="button" class="btn btn-secondary btn-sm hidden"
+                                data-dismiss="modal">Done
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
+
     </div>
 
-</div>
-
-<script type="text/javascript">
-    const pageData = "{{ ds.id }}";
-    window.loggedin = "{{ loggedin }}"
-    window.dslabel = "{{ ds.label }}"
-    window.filter = "{{ filter }}"
-    window.ds_list = [{
-        bounds: {{ ds.bounds | safe }},
-        id: {{ ds.id }},
-        label: "{{ ds.label }}",
-        modified: "{{ ds.last_modified_text }}",
-        title: "{{ ds.title }}"
-    }]
-</script>
+    <script type="text/javascript">
+        const pageData = "{{ ds.id }}";
+        window.loggedin = "{{ loggedin }}"
+        window.dslabel = "{{ ds.label }}"
+        window.filter = "{{ filter }}"
+        window.ds_list = [{
+            bounds: {{ ds.bounds | safe }},
+            id: {{ ds.id }},
+            label: "{{ ds.label }}",
+            modified: "{{ ds.last_modified_text }}",
+            title: "{{ ds.title }}"
+        }]
+    </script>
 
 {% endblock %}
 
 {% block deferredScripts %}
-   	
-   	var scripts = [
-		{
-			src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
-			type: 'text/javascript',
-		},
-		{
-			src: '{% static 'webpack/mapAndTable.bundle.js' %}',
-			type: 'module',
-		},
-   	]
+
+    var scripts = [
+    {
+    src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
+    type: 'text/javascript',
+    },
+    {
+    src: '{% static 'webpack/mapAndTable.bundle.js' %}',
+    type: 'module',
+    },
+    ]
 
 {% endblock %}
