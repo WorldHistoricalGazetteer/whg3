@@ -3,117 +3,121 @@
 {% load dataset_extras %}
 
 {% block extra_head %}
-	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" /> 
-	<link href="{% static 'webpack/portal.bundle.css' %}" rel="stylesheet" /> 
+    <link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet"/>
+    <link href="{% static 'webpack/portal.bundle.css' %}" rel="stylesheet"/>
 {% endblock %}
 
 {% block title %}
-	<title>Place::{{ place.title }}</title>
+    <title>Place::{{ place.title }}</title>
 {% endblock %}
 
 {% block content %}
 
-<div id="dataset_content" class="container mt-1 px-1">
-    <div class="overlay left">
-        <div id="info" class="m-2 p-1">
-          <div><h5>{{ portal_headword }}</h5></div> {#  work in progress #}
-	        <div id="sources" class="bg-light info-box">
-	            <h6 class="mb-0 strong-red">Sources
-                <span id="addtocoll" class="float-end me-1 small">
+    <div id="dataset_content" class="container mt-1 px-1">
+        <div class="overlay left">
+            <div id="info" class="m-2 p-1">
+                <div><h5>{{ portal_headword }}</h5></div>
+                {#  work in progress #}
+                <div id="sources" class="bg-light info-box">
+                    <h6 class="mb-0 strong-red">Sources
+                        <span id="addtocoll" class="float-end me-1 small">
 			      <a id="addchecked" href="#">add to collection <i class="fas fa-plus-circle"></i> </a>
 		        </span>
-                </h6>
-	            {% for rec in payload %}
-	              <div class="source-box">
-	                in: <a class="pop-link pop-dataset" data-id={{rec.dataset.id}} data-toggle="popover"
-	                                   title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
-	                    {{rec.dataset.name|remove:'(stub) '|truncatechars:25}}</a>
+                    </h6>
+                    {% for rec in payload %}
+                        <div class="source-box">
+                            in: <a class="pop-link pop-dataset"
+                                   data-id={{ rec.dataset.id }} data-toggle="popover"
+                                   title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
+                            {{ rec.dataset.name|remove:'(stub) '|truncatechars:25 }}</a>
 
-{% if user.is_authenticated %}
-<span class="float-end">
-<input type="radio" name="r_anno" rel="tooltip" title="add to a collection" class="action ml-2" data-id="{{ rec.id }}" />
-</span>
-{% endif %}
-                    <div class="name-variants">Names:
-                        <strong class="larger">{{ rec.title }}</strong>
-                        {% with labels=rec.names %}
-                            {% for label in labels %}
-                                {% if forloop.counter <= 10 %}
-                                    {{ label.label }}{% if not forloop.last %}; {% endif %}
-                                {% endif %}
-                            {% endfor %}
-                            {% if labels|length > 10 %}
-                                ... <a href="#">more</a>
+                            {% if user.is_authenticated %}
+                                <span class="float-end">
+                                <input type="radio" name="r_anno" rel="tooltip" title="add to a collection"
+                                       class="action ml-2" data-id="{{ rec.id }}"/>
+                                </span>
                             {% endif %}
-                        {% endwith %}
-                    </div>
-                    {% if labels|length > 10 %}
-                        <div class="all-variants" style="display: none;">
-                            {% for label in labels %}
-                                {{ label.label }}{% if not forloop.last %}; {% endif %}
-                            {% endfor %}
+                            <div class="name-variants">Names:
+                                <strong class="larger">{{ rec.title }}</strong>
+                                {% with labels=rec.names %}
+                                    {% for label in labels %}
+                                        {% if forloop.counter <= 10 %}
+                                            {{ label.label }}{% if not forloop.last %}; {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if labels|length > 10 %}
+                                        ... <a href="#">more</a>
+                                    {% endif %}
+                                {% endwith %}
+                            </div>
+                            {% if labels|length > 10 %}
+                                <div class="all-variants" style="display: none;">
+                                    {% for label in labels %}
+                                        {{ label.label }}{% if not forloop.last %}; {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            {% if rec.timespans %}Temporal: {{ rec.timespans }} {% endif %}
                         </div>
-                    {% endif %}
-	                {% if rec.timespans  %}Temporal: {{ rec.timespans }} {% endif %}
-	              </div>
-	            {% endfor %}
-	        </div>
-        </div>    
-    </div>
-    <div class="overlay left">
-        <div id="source_detail" class="bg-light info-box">
-            <p class="mb-0 strong-red">In Collection(s)</p>
-            <div id="collection_list"> <!-- Populated dynamically from context in JavaScript -->
+                    {% endfor %}
+                </div>
             </div>
         </div>
-{#        <div id="graph_viz" class="bg-light info-box"> {graph visualization?} </div>#}
-    </div>
-    <div id="temporal_attestations" class="overlay centre">
-        <div id="histogram" class="position-absolute bg-light">
-            <p class="allcap-heading small my-0">TEMPORAL ATTESTATIONS</p>
+        <div class="overlay left">
+            <div id="source_detail" class="bg-light info-box">
+                <p class="mb-0 strong-red">In Collection(s)</p>
+                <div id="collection_list"> <!-- Populated dynamically from context in JavaScript -->
+                </div>
+            </div>
+            {#        <div id="graph_viz" class="bg-light info-box"> {graph visualization?} </div>#}
+        </div>
+        <div id="temporal_attestations" class="overlay centre">
+            <div id="histogram" class="position-absolute bg-light">
+                <p class="allcap-heading small my-0">TEMPORAL ATTESTATIONS</p>
+            </div>
+        </div>
+        <div id="map" style="opacity: 0;" class="overlay centre"></div>
+        <div id="map_options" class="overlay right">
+            <p class="mb-0 strong-red">MAP OPTIONS</p>
         </div>
     </div>
-    <div id="map" style="opacity: 0;" class="overlay centre"></div>
-    <div id="map_options" class="overlay right">
-        <p class="mb-0 strong-red">MAP OPTIONS</p>
-    </div>
-</div>
 
-<script type="text/javascript">
-    let temporal = {% if from_value %} {
-	        fromValue: {{ from_value }},
-	        toValue: {{ to_value }},
-	        minValue: {{ min_timespan }},
-	        maxValue: {{ max_timespan }},
-	        open: false,
-	        includeUndated: true,
-	        epochs: null,
-	        automate: null,
-	    } {% else %} false {% endif %}
-    let allts = {{ allts }}
-</script>
+    <script type="text/javascript">
+        let temporal = {% if from_value %} {
+            fromValue: {{ from_value }},
+            toValue: {{ to_value }},
+            minValue: {{ min_timespan }},
+            maxValue: {{ max_timespan }},
+            open: false,
+            includeUndated: true,
+            epochs: null,
+            automate: null,
+        } {% else %} false {% endif %}
+        let allts =
+        {{ allts }}
+    </script>
 
-{{ payload|json_script:"payload_data" }}
-{{ core|json_script:"geo-layers" }}
-	
+    {{ payload|json_script:"payload_data" }}
+    {{ core|json_script:"geo-layers" }}
+
 {% endblock %}
 
 {% block deferredScripts %}
-   	
-   	var scripts = [
-		{
-			src: '{% static 'js/jquery.bootstrap.modal.forms.min.js' %}',
-			type: 'text/javascript',
-		},
-		{
-			src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
-			type: 'text/javascript',
-		},
-		{
-			src: '{% static 'webpack/portal.bundle.js' %}',
-			type: 'module',
-		},
-   	]
+
+    var scripts = [
+    {
+    src: '{% static 'js/jquery.bootstrap.modal.forms.min.js' %}',
+    type: 'text/javascript',
+    },
+    {
+    src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
+    type: 'text/javascript',
+    },
+    {
+    src: '{% static 'webpack/portal.bundle.js' %}',
+    type: 'module',
+    },
+    ]
 
 {% endblock %}
 
