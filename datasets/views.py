@@ -2835,258 +2835,259 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
 
 
 """
+    DEPRECATED in v3
   DatasetCreateView()
   initial create
   upload file, validate format, create DatasetFile instance,
   redirect to dataset.html for db insert if context['format_ok']
 """
-class DatasetCreateView(LoginRequiredMixin, CreateView):
-  login_url = '/accounts/login/'
-  redirect_field_name = 'redirect_to'
-
-  form_class = DatasetCreateModelForm
-  template_name = 'datasets/dataset_create.html'
-  success_message = 'dataset created'
-
-  def form_invalid(self, form):
-    print('form invalid...', form.errors.as_data())
-    context = {'form': form}
-    return self.render_to_response(context=context)
-
-  def form_valid(self, form):
-    data=form.cleaned_data
-    context={"format":data['format']}
-    user=self.request.user
-    file=self.request.FILES['file']
-    filename = file.name
-    mimetype = file.content_type
-
-    newfn, newtempfn = ['', '']
-    print('form_valid() mimetype', mimetype)
-
-
-    # open & write tempf to a temp location;
-    # call it tempfn for reference
-    tempf, tempfn = tempfile.mkstemp()
-    try:
-      for chunk in data['file'].chunks():
-        os.write(tempf, chunk)
-    except:
-      raise Exception("Problem with the input file %s" % self.request.FILES['file'])
-    finally:
-      os.close(tempf)
-
-    # print('tempfn in DatasetCreate()', tempfn)
-
-    # open, sniff, validate
-    # pass to ds_insert_{tsv|lpf} if valid
-
-    fin = codecs.open(tempfn, 'r')
-    valid_mime = mimetype in mthash_plus.mimetypes
-
-    if valid_mime:
-      if mimetype.startswith('text/'):
-        encoding = get_encoding_delim(tempfn)
-      elif 'spreadsheet' in mimetype:
-        encoding = get_encoding_excel(tempfn)
-      elif mimetype.startswith('application/'):
-        encoding = fin.encoding
-      print('encoding in DatasetCreate()', encoding)
-      if encoding.lower() not in ['utf-8', 'ascii']:
-        context['errors'] = ["The encoding of uploaded files must be unicode (utf-8). This file seems to be "+encoding]
-        context['action'] = 'errors'
-        return self.render_to_response(self.get_context_data(form=form, context=context))
-    else:
-      context['errors'] = "Not a valid file type; must be one of [.csv, .tsv, .xlsx, .ods, .json]"
-      return self.render_to_response(self.get_context_data(form=form, context=context))
-
-    # it's csv, tsv, spreadsheet, or json...
-    # if utf8, get extension and validate
-    # if encoding and encoding.lower().startswith('utf-8'):
-    ext = mthash_plus.mimetypes[mimetype]
-    print('DatasetCreateView() extension:', ext)
-    fail_msg = "A database insert failed and we aren't sure why. The WHG team has been notified "+\
-               "and will follow up by email to <b>"+user.name+"</b> ("+user.email+")"
-
-    # this validates per row and always gets a result, even if errors
-    if ext == 'json':
-      try:
-        result = validate_lpf(tempfn, 'coll')
-      except:
-        # email to user, admin
-        failed_upload_notification(user, tempfn)
-        # return message to 500.html
-        messages.error(self.request, fail_msg)
-        return HttpResponseServerError()
-
-    # for delimited, fvalidate() is performed on the entire file
-    # on fail, raises server error
-    elif ext in ['csv', 'tsv']:
-      try:
-        # fvalidate() wants an extension
-        newfn = tempfn+'.'+ext
-        os.rename(tempfn, newfn)
-        result = validate_tsv(newfn, ext)
-        print('newfn in create()', newfn)
-      except:
-        # email to user, admin
-        failed_upload_notification(user, tempfn)
-        messages.error(self.request, fail_msg)
-        return HttpResponseServerError()
-
-    elif ext in ['xlsx', 'ods']:
-      try:
-        print('spreadsheet, use pandas')
-        import pandas as pd
-
-        # open new file for tsv write
-        newfn = tempfn + '.tsv'
-        fout=codecs.open(newfn, 'w', encoding='utf8')
-
-        # add ext to tempfn (pandas need this)
-        newtempfn = tempfn+'.'+ext
-        os.rename(tempfn, newtempfn)
-        # print('renamed tempfn for pandas:', tempfn)
-
-        # dataframe from spreadsheet
-        df = pd.read_excel(newtempfn, converters={
-          'id': str, 'start':str, 'end':str,
-          'aat_types': str, 'lon': float, 'lat': float})
-
-        # write it as tsv
-        table=df.to_csv(sep='\t', index=False).replace('\nan','')
-        fout.write(table)
-        fout.close()
-
-        # print('to validate_tsv(newfn):', newfn)
-        # validate it...
-        result = validate_tsv(newfn, 'tsv')
-      except:
-        # email to user, admin
-        failed_upload_notification(user, newfn)
-        messages.error(self.request, "Database insert failed and we aren't sure why. "+
-                       "The WHG team has been notified and will follow up by email to <b>" +
-                       user.name+'</b> ('+user.email+')')
-        return HttpResponseServerError()
-
-    print('validation complete, still in DatasetCreateView')
-
-    # validated -> create Dataset, DatasetFile, Log instances,
-    # advance to dataset_detail
-    # else present form again with errors
-    if len(result['errors']) == 0:
-      context['status'] = 'format_ok'
-
-      print('validated, no errors')
-      # print('validated, no errors; result:', result)
-      print('cleaned_data',form.cleaned_data)
-      nolabel = form.cleaned_data["label"] == ''
-      # new Dataset record ('owner','id','label','title','description')
-      dsobj = form.save(commit=False)
-      dsobj.ds_status = 'format_ok'
-      dsobj.numrows = result['count']
-      clean_label=form.cleaned_data['label'].replace(' ','_')
-      if not form.cleaned_data['uri_base']:
-        dsobj.uri_base = 'https://whgazetteer.org/api/db/?id='
-
-      # links will be counted later on insert
-      dsobj.numlinked = 0
-      dsobj.total_links = 0
-      try:
-        dsobj.save()
-        ds = Dataset.objects.get(id=dsobj.id)
-        label='ds_' + str(ds.id)
-        print('new dataset label', 'ds_' + label)
-        # generate a unique label if none was entered
-        if dsobj.label == '':
-          ds.label = 'ds_' + str(dsobj.id)
-          ds.save()
-      except:
-        # self.args['form'] = form
-        return render(self.request,'datasets/dataset_create.html', self.args)
-
-      #
-      # create user directory if necessary
-      userdir = r'media/user_'+str(user.id)+'/'
-      if not Path(userdir).exists():
-        os.makedirs(userdir)
-
-      # build path, and rename file if already exists in user area
-      file_exists = Path(userdir+filename).exists()
-      if not file_exists:
-        filepath = userdir+filename
-      else:
-        splitty = filename.split('.')
-        filename=splitty[0]+'_'+tempfn[-7:]+'.'+splitty[1]
-        filepath = userdir+filename
-
-      # write log entry
-      Log.objects.create(
-        # category, logtype, "timestamp", subtype, dataset_id, user_id
-        category = 'dataset',
-        logtype = 'ds_create',
-        subtype = data['datatype'],
-        dataset_id = dsobj.id,
-        user_id = user.id
-      )
-
-      # print('pre-write')
-      # print('ext='+ext+'; newfn='+newfn+'; filepath='+filepath+
-      #       '; tempfn='+tempfn+'; newtempfn='+newtempfn)
-
-      # write request obj file to user directory
-      if ext in ['csv', 'tsv', 'json']:
-        fout = codecs.open(filepath,'w','utf8')
-        try:
-          for chunk in file.chunks():
-            fout.write(chunk.decode("utf-8", errors="ignore"))
-        except:
-          print('error writing file; chunk'+str(chunk))
-          sys.exit(sys.exc_info())
-
-      # if spreadsheet, copy newfn (tsv conversion)
-      if ext in ['xlsx', 'ods']:
-        print('copying newfn -> filepath', newfn, filepath)
-        shutil.copy(newfn, filepath+'.tsv')
-
-
-      # create initial DatasetFile record
-      DatasetFile.objects.create(
-        dataset_id = dsobj,
-        # uploaded valid file as is
-        file = filepath[6:]+'.tsv' if ext in ['xlsx','ods'] else filepath[6:],
-        rev = 1,
-        format = result['format'],
-        delimiter = '\t' if ext in ['tsv','xlsx','ods'] else ',' if ext == 'csv' else 'n/a',
-        df_status = 'format_ok',
-        upload_date = None,
-        header = result['columns'] if "columns" in result.keys() else [],
-        numrows = result['count']
-      )
-
-      # data will be written on load of dataset.html w/dsobj.status = 'format_ok'
-      #return redirect('/datasets/'+str(dsobj.id)+'/detail')
-      return redirect('/datasets/'+str(dsobj.id)+'/summary')
-
-    else:
-      context['action'] = 'errors'
-      context['format'] = result['format']
-      context['errors'] = parse_errors_lpf(result['errors']) \
-        if ext == 'json' else parse_errors_tsv(result['errors'])
-      context['columns'] = result['columns'] \
-        if ext != 'json' else []
-
-      #os.remove(tempfn)
-
-      return self.render_to_response(
-        self.get_context_data(
-          form=form, context=context
-      ))
-
-  def get_context_data(self, *args, **kwargs):
-    context = super(DatasetCreateView, self).get_context_data(*args, **kwargs)
-    #context['action'] = 'create'
-    return context
+# class DatasetCreateView(LoginRequiredMixin, CreateView):
+#   login_url = '/accounts/login/'
+#   redirect_field_name = 'redirect_to'
+#
+#   form_class = DatasetCreateModelForm
+#   template_name = 'datasets/dataset_create.html'
+#   success_message = 'dataset created'
+#
+#   def form_invalid(self, form):
+#     print('form invalid...', form.errors.as_data())
+#     context = {'form': form}
+#     return self.render_to_response(context=context)
+#
+#   def form_valid(self, form):
+#     data=form.cleaned_data
+#     context={"format":data['format']}
+#     user=self.request.user
+#     file=self.request.FILES['file']
+#     filename = file.name
+#     mimetype = file.content_type
+#
+#     newfn, newtempfn = ['', '']
+#     print('form_valid() mimetype', mimetype)
+#
+#
+#     # open & write tempf to a temp location;
+#     # call it tempfn for reference
+#     tempf, tempfn = tempfile.mkstemp()
+#     try:
+#       for chunk in data['file'].chunks():
+#         os.write(tempf, chunk)
+#     except:
+#       raise Exception("Problem with the input file %s" % self.request.FILES['file'])
+#     finally:
+#       os.close(tempf)
+#
+#     # print('tempfn in DatasetCreate()', tempfn)
+#
+#     # open, sniff, validate
+#     # pass to ds_insert_{tsv|lpf} if valid
+#
+#     fin = codecs.open(tempfn, 'r')
+#     valid_mime = mimetype in mthash_plus.mimetypes
+#
+#     if valid_mime:
+#       if mimetype.startswith('text/'):
+#         encoding = get_encoding_delim(tempfn)
+#       elif 'spreadsheet' in mimetype:
+#         encoding = get_encoding_excel(tempfn)
+#       elif mimetype.startswith('application/'):
+#         encoding = fin.encoding
+#       print('encoding in DatasetCreate()', encoding)
+#       if encoding.lower() not in ['utf-8', 'ascii']:
+#         context['errors'] = ["The encoding of uploaded files must be unicode (utf-8). This file seems to be "+encoding]
+#         context['action'] = 'errors'
+#         return self.render_to_response(self.get_context_data(form=form, context=context))
+#     else:
+#       context['errors'] = "Not a valid file type; must be one of [.csv, .tsv, .xlsx, .ods, .json]"
+#       return self.render_to_response(self.get_context_data(form=form, context=context))
+#
+#     # it's csv, tsv, spreadsheet, or json...
+#     # if utf8, get extension and validate
+#     # if encoding and encoding.lower().startswith('utf-8'):
+#     ext = mthash_plus.mimetypes[mimetype]
+#     print('DatasetCreateView() extension:', ext)
+#     fail_msg = "A database insert failed and we aren't sure why. The WHG team has been notified "+\
+#                "and will follow up by email to <b>"+user.name+"</b> ("+user.email+")"
+#
+#     # this validates per row and always gets a result, even if errors
+#     if ext == 'json':
+#       try:
+#         result = validate_lpf(tempfn, 'coll')
+#       except:
+#         # email to user, admin
+#         failed_upload_notification(user, tempfn)
+#         # return message to 500.html
+#         messages.error(self.request, fail_msg)
+#         return HttpResponseServerError()
+#
+#     # for delimited, fvalidate() is performed on the entire file
+#     # on fail, raises server error
+#     elif ext in ['csv', 'tsv']:
+#       try:
+#         # fvalidate() wants an extension
+#         newfn = tempfn+'.'+ext
+#         os.rename(tempfn, newfn)
+#         result = validate_tsv(newfn, ext)
+#         print('newfn in create()', newfn)
+#       except:
+#         # email to user, admin
+#         failed_upload_notification(user, tempfn)
+#         messages.error(self.request, fail_msg)
+#         return HttpResponseServerError()
+#
+#     elif ext in ['xlsx', 'ods']:
+#       try:
+#         print('spreadsheet, use pandas')
+#         import pandas as pd
+#
+#         # open new file for tsv write
+#         newfn = tempfn + '.tsv'
+#         fout=codecs.open(newfn, 'w', encoding='utf8')
+#
+#         # add ext to tempfn (pandas need this)
+#         newtempfn = tempfn+'.'+ext
+#         os.rename(tempfn, newtempfn)
+#         # print('renamed tempfn for pandas:', tempfn)
+#
+#         # dataframe from spreadsheet
+#         df = pd.read_excel(newtempfn, converters={
+#           'id': str, 'start':str, 'end':str,
+#           'aat_types': str, 'lon': float, 'lat': float})
+#
+#         # write it as tsv
+#         table=df.to_csv(sep='\t', index=False).replace('\nan','')
+#         fout.write(table)
+#         fout.close()
+#
+#         # print('to validate_tsv(newfn):', newfn)
+#         # validate it...
+#         result = validate_tsv(newfn, 'tsv')
+#       except:
+#         # email to user, admin
+#         failed_upload_notification(user, newfn)
+#         messages.error(self.request, "Database insert failed and we aren't sure why. "+
+#                        "The WHG team has been notified and will follow up by email to <b>" +
+#                        user.name+'</b> ('+user.email+')')
+#         return HttpResponseServerError()
+#
+#     print('validation complete, still in DatasetCreateView')
+#
+#     # validated -> create Dataset, DatasetFile, Log instances,
+#     # advance to dataset_detail
+#     # else present form again with errors
+#     if len(result['errors']) == 0:
+#       context['status'] = 'format_ok'
+#
+#       print('validated, no errors')
+#       # print('validated, no errors; result:', result)
+#       print('cleaned_data',form.cleaned_data)
+#       nolabel = form.cleaned_data["label"] == ''
+#       # new Dataset record ('owner','id','label','title','description')
+#       dsobj = form.save(commit=False)
+#       dsobj.ds_status = 'format_ok'
+#       dsobj.numrows = result['count']
+#       clean_label=form.cleaned_data['label'].replace(' ','_')
+#       if not form.cleaned_data['uri_base']:
+#         dsobj.uri_base = 'https://whgazetteer.org/api/db/?id='
+#
+#       # links will be counted later on insert
+#       dsobj.numlinked = 0
+#       dsobj.total_links = 0
+#       try:
+#         dsobj.save()
+#         ds = Dataset.objects.get(id=dsobj.id)
+#         label='ds_' + str(ds.id)
+#         print('new dataset label', 'ds_' + label)
+#         # generate a unique label if none was entered
+#         if dsobj.label == '':
+#           ds.label = 'ds_' + str(dsobj.id)
+#           ds.save()
+#       except:
+#         # self.args['form'] = form
+#         return render(self.request,'datasets/dataset_create.html', self.args)
+#
+#       #
+#       # create user directory if necessary
+#       userdir = r'media/user_'+str(user.id)+'/'
+#       if not Path(userdir).exists():
+#         os.makedirs(userdir)
+#
+#       # build path, and rename file if already exists in user area
+#       file_exists = Path(userdir+filename).exists()
+#       if not file_exists:
+#         filepath = userdir+filename
+#       else:
+#         splitty = filename.split('.')
+#         filename=splitty[0]+'_'+tempfn[-7:]+'.'+splitty[1]
+#         filepath = userdir+filename
+#
+#       # write log entry
+#       Log.objects.create(
+#         # category, logtype, "timestamp", subtype, dataset_id, user_id
+#         category = 'dataset',
+#         logtype = 'ds_create',
+#         subtype = data['datatype'],
+#         dataset_id = dsobj.id,
+#         user_id = user.id
+#       )
+#
+#       # print('pre-write')
+#       # print('ext='+ext+'; newfn='+newfn+'; filepath='+filepath+
+#       #       '; tempfn='+tempfn+'; newtempfn='+newtempfn)
+#
+#       # write request obj file to user directory
+#       if ext in ['csv', 'tsv', 'json']:
+#         fout = codecs.open(filepath,'w','utf8')
+#         try:
+#           for chunk in file.chunks():
+#             fout.write(chunk.decode("utf-8", errors="ignore"))
+#         except:
+#           print('error writing file; chunk'+str(chunk))
+#           sys.exit(sys.exc_info())
+#
+#       # if spreadsheet, copy newfn (tsv conversion)
+#       if ext in ['xlsx', 'ods']:
+#         print('copying newfn -> filepath', newfn, filepath)
+#         shutil.copy(newfn, filepath+'.tsv')
+#
+#
+#       # create initial DatasetFile record
+#       DatasetFile.objects.create(
+#         dataset_id = dsobj,
+#         # uploaded valid file as is
+#         file = filepath[6:]+'.tsv' if ext in ['xlsx','ods'] else filepath[6:],
+#         rev = 1,
+#         format = result['format'],
+#         delimiter = '\t' if ext in ['tsv','xlsx','ods'] else ',' if ext == 'csv' else 'n/a',
+#         df_status = 'format_ok',
+#         upload_date = None,
+#         header = result['columns'] if "columns" in result.keys() else [],
+#         numrows = result['count']
+#       )
+#
+#       # data will be written on load of dataset.html w/dsobj.status = 'format_ok'
+#       #return redirect('/datasets/'+str(dsobj.id)+'/detail')
+#       return redirect('/datasets/'+str(dsobj.id)+'/summary')
+#
+#     else:
+#       context['action'] = 'errors'
+#       context['format'] = result['format']
+#       context['errors'] = parse_errors_lpf(result['errors']) \
+#         if ext == 'json' else parse_errors_tsv(result['errors'])
+#       context['columns'] = result['columns'] \
+#         if ext != 'json' else []
+#
+#       #os.remove(tempfn)
+#
+#       return self.render_to_response(
+#         self.get_context_data(
+#           form=form, context=context
+#       ))
+#
+#   def get_context_data(self, *args, **kwargs):
+#     context = super(DatasetCreateView, self).get_context_data(*args, **kwargs)
+#     #context['action'] = 'create'
+#     return context
 
 """
   returns public dataset 'mets' (summary) page

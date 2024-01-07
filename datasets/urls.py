@@ -16,7 +16,6 @@ urlpatterns = [
   # BASICS: create from upload, create empty, delete
   # new validation workflow
   path('create/', views.DatasetCreate.as_view(), name='dataset-create'),
-  # path('create/', views.DatasetCreateView.as_view(), name='dataset-create'),
 
   path('create_empty/', views.DatasetCreateEmptyView.as_view(), name='dataset-create-empty'),
   path('<int:id>/delete', views.DatasetDeleteView.as_view(), name='dataset-delete'),
