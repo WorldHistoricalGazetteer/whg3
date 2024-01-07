@@ -47,12 +47,18 @@ class CollectionTestCase(TestCase):
 
     # Similarly, you can modify the other test methods to call the function-based views
     def test_add_dataset_places(self):
-        # Run the add_dataset_places() function to add all of the Place objects from the test Dataset to the Collection
-        self.collection.add_dataset_places(self.dataset.id)
+        # Login the test client
+        self.client.login(username='testuser@foo.com', password='12345')
+
+        response = self.client.post(reverse('collection:add-dsplaces',
+                                            kwargs={'coll_id': self.collection.id, 'ds_id': self.dataset.id}))
 
         # Confirm appropriate TraceAnnotation and CollPlace records are created
-        self.assertTrue(TraceAnnotation.objects.filter(collection=self.collection, place__in=[self.place1, self.place2]).exists())
-        self.assertTrue(CollPlace.objects.filter(collection=self.collection, place__in=[self.place1, self.place2]).exists())
+        self.assertTrue(TraceAnnotation.objects.filter(collection=self.collection,
+                                                       place__in=[self.place1, self.place2]).exists())
+        self.assertTrue(CollPlace.objects.filter(collection=self.collection,
+                                                 place__in=[self.place1, self.place2]).exists())
+
 
     def test_remove_dataset(self):
         # Run the remove_dataset() function
