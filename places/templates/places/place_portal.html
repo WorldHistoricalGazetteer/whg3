@@ -18,33 +18,42 @@
         <div id="info" class="m-2 p-1">
           <div><h5>{{ portal_headword }}</h5></div> {#  work in progress #}
 	        <div id="sources" class="bg-light info-box">
-	            <h6 class="mb-0 strong-red">Sources</h6>
+	            <h6 class="mb-0 strong-red">Sources
+                <span id="addtocoll" class="float-end me-1 small">
+			      <a id="addchecked" href="#">add to collection <i class="fas fa-plus-circle"></i> </a>
+		        </span>
+                </h6>
 	            {% for rec in payload %}
 	              <div class="source-box">
 	                in: <a class="pop-link pop-dataset" data-id={{rec.dataset.id}} data-toggle="popover"
 	                                   title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
 	                    {{rec.dataset.name|remove:'(stub) '|truncatechars:25}}</a>
-	                {% comment %}<span class="fs-6">{{ rec.title}} ({{ rec.place_id }})</span><br/>{% endcomment %}
-							    <div class="name-variants">Names:
-							        <strong class="larger">{{ rec.title }}</strong>
-							        {% with labels=rec.names %}
-							            {% for label in labels %}
-							                {% if forloop.counter <= 10 %}
-							                    {{ label.label }}{% if not forloop.last %}; {% endif %}
-							                {% endif %}
-							            {% endfor %}
-							            {% if labels|length > 10 %}
-							                ... <a href="#">more</a>
-							            {% endif %}
-							        {% endwith %}
-							    </div>
-							    {% if labels|length > 10 %}
-							        <div class="all-variants" style="display: none;">
-							            {% for label in labels %}
-							                {{ label.label }}{% if not forloop.last %}; {% endif %}
-							            {% endfor %}
-							        </div>
-							    {% endif %}
+
+{% if user.is_authenticated %}
+<span class="float-end">
+<input type="radio" name="r_anno" rel="tooltip" title="add to a collection" class="action ml-2" data-id="{{ rec.id }}" />
+</span>
+{% endif %}
+                    <div class="name-variants">Names:
+                        <strong class="larger">{{ rec.title }}</strong>
+                        {% with labels=rec.names %}
+                            {% for label in labels %}
+                                {% if forloop.counter <= 10 %}
+                                    {{ label.label }}{% if not forloop.last %}; {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if labels|length > 10 %}
+                                ... <a href="#">more</a>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                    {% if labels|length > 10 %}
+                        <div class="all-variants" style="display: none;">
+                            {% for label in labels %}
+                                {{ label.label }}{% if not forloop.last %}; {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
 	                {% if rec.timespans  %}Temporal: {{ rec.timespans }} {% endif %}
 	              </div>
 	            {% endfor %}
