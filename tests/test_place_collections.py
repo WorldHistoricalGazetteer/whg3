@@ -4,6 +4,7 @@ from collection.models import Collection, CollPlace, TraceAnnotation
 from datasets.models import Dataset, Place
 from django.urls import reverse
 
+# all OK, 2024-01-09
 class CollectionTestCase(TestCase):
     def setUp(self):
         # Create a User

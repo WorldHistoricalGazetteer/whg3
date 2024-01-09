@@ -2,20 +2,113 @@ from django.db import transaction
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from collection.models import Collection, CollectionGroup, CollectionGroupUser
 from django.urls import reverse
 from django.test import Client
 
-# python manage.py test tests.test_collectiongroups.CollectionGroupTestCase.test_only_group_leader_can_create_collection_group
-# python manage.py test tests.test_collectiongroups.CollectionGroupTestCase.test_add_user_to_collection_group
-# python manage.py test tests.test_collectiongroups.CollectionGroupTestCase.test_submit_collection_to_group
-# python manage.py test tests.test_collectiongroups.CollectionGroupTestCase.test_withdraw_collection_from_group
+from collection.models import Collection, CollectionGroup, CollectionGroupUser
+from datasets.models import Dataset
+from bs4 import BeautifulSoup
 
-# python manage.py test tests.test_collectiongroups.CollectionGroupTestCase.test_collection_appears_in_group_leader_list
+# test gui changes in response to actions
+class CollectionGroupScenarioTestCase(TestCase):
+    def setUp(self):
+        # Create a User instance
+        self.user = get_user_model().objects.create_user(
+            email='testuser@somewhere.com',
+            name='testuser',
+            password='12345')
 
-# python manage.py test tests.test_collectiongroups.CollectionGroupTestCase
+        # Create a group leader user
+        self.group_leader = get_user_model().objects.create_user(
+            email='testleader@somewhere.com',
+            name='group_leader',
+            password='12345')
 
 
+        # create 'group_leaders' group, add group_leader to it
+        group_leaders, created = Group.objects.get_or_create(name='group_leaders')
+        print('group_leaders', group_leaders)
+        self.group_leader.groups.add(group_leaders)
+
+        # Create a (place) Collection instance
+        self.collection = Collection.objects.create(
+            owner=self.user,
+            title='Test Place Collection',
+            collection_class='place',
+            description='Test Place Collection Description')
+
+        # Create a CollectionGroup instance
+        self.collection_group = CollectionGroup.objects.create(
+            owner=self.group_leader,
+            title='Test Collection Group',
+            type='class',
+            description='Test Collection Group Description')
+
+        self.collection.group = self.collection_group
+        self.collection.save()
+
+        # create a dataset with label 'owt10' (page load requires it)
+        self.dataset = Dataset.objects.create(
+            owner=self.user,
+            title='Test Dataset',
+            label='owt10',
+            description='Test Dataset Description')
+
+        # add the user to the group
+        CollectionGroupUser.objects.create(
+            collectiongroup=self.collection_group, user=self.user, role='member')
+
+        # Log in the user
+        self.member = Client()
+        self.member.login(username=self.user.email, password='12345')
+
+        # log in the group leader
+        self.leader = Client()
+        self.leader.login(username=self.group_leader.email, password='12345')
+
+    def test_submit_collection_to_group(self):
+        print('status before', self.collection.status)
+
+        # Submit the collection to the CollectionGroup
+        response = self.member.post(reverse('collection:group-connect'), {
+            'action': 'submit',
+            'coll': self.collection.id,
+            'group': self.collection_group.id
+        })
+        self.collection.refresh_from_db()
+
+        print('status after', self.collection.status)
+        print('collections', self.collection_group.collections.all())
+
+        # Check that the collection is now part of the CollectionGroup's collections
+        self.assertIn(self.collection, self.collection_group.collections.all())
+        self.assertEqual(self.collection.status, 'group')
+
+        # Get the HTML of the CollectionGroup update page
+        response_group = self.leader.get(reverse('collection:collection-group-update',
+                                           args=[self.collection_group.id]))
+        soup_group = BeautifulSoup(response_group.content, 'html.parser')
+
+        # Get the HTML of the user's Collection update page
+        response_user = self.member.get(reverse('collection:place-collection-update',
+                                           args=[self.collection.id]))
+        soup_user = BeautifulSoup(response_user.content, 'html.parser')
+        # print('soup_user', soup_user)
+
+        # Check that the user's place_collection_build.html page displays 'submitted to class: {CollectionGroup.title}'
+        self.assertContains(response_user, f'Submitted to class: {self.collection_group.title}')
+
+        # self.assertIn(f'Submitted to class: {self.collection_group.title}', str(soup_user))
+
+        # Check that the collection title and owner appear on a list in the div "#coll_list"
+        coll_list = soup_group.find(id='coll_list')
+        self.assertIn(self.collection.title, str(coll_list))
+        self.assertIn(self.collection.owner.name, str(coll_list))
+
+        # Check that the list item shows a previously hidden checkbox for 'reviewed'
+        self.assertIn('reviewed', str(coll_list))
+
+    # Add similar tests for other actions (withdraw, review, nominate)
 
 
 # all OK, 2024-01-03
@@ -141,33 +234,3 @@ class CollectionGroupTestCase(TestCase):
         # Check that the status of the collection is 'sandbox'
         self.assertEqual(collection.status, 'sandbox')
 
-    ########################################
-    # functional tests
-    ########################################
-    # does not work, after hours of attemppts, 2023-01-03
-    # def test_collection_appears_in_group_leader_list(self):
-    #     # Log in as the group leader
-    #     self.client.login(username=self.group_leader.username, password='12345')
-    #
-    #     # Submit the collection to the CollectionGroup
-    #     with transaction.atomic():
-    #         self.client.post(reverse('collection:group-connect'), {
-    #             'action': 'submit',
-    #             'coll': self.collection.id,
-    #             'group': self.collection_group.id
-    #         })
-    #
-    #     self.collection_group.refresh_from_db()
-    #     self.collection.refresh_from_db()
-    #
-    #     # Get the CollectionGroupUpdateView
-    #     response = self.client.get(reverse('collection:collection-group-update', kwargs={'id': self.collection_group.id}))
-    #
-    #     # Check that the response content contains the collection title and the collection owner's name
-    #     self.assertContains(response, self.collection.title)
-    #     self.assertContains(response, self.collection.owner.name)
-    #
-    #     # Check that the response content contains the collection details
-    #     self.assertContains(response, self.collection.description)
-    #     self.assertContains(response, self.collection.collection_class)
-    #     self.assertContains(response, self.collection.status)

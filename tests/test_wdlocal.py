@@ -14,9 +14,12 @@ from datasets.utils import hully
 from datasets.views import ds_recon
 from places.models import Place
 
-someuser = get_object_or_404(User, pk=14)
-whgadmin = get_object_or_404(User, pk=1)
+someuser = get_object_or_404(User, pk=4)
+whgadmin = get_object_or_404(User, pk=2)
 
+# django.test.testcases.DatabaseOperationForbidden: Database queries to 'default' are not allowed in SimpleTestCase subclasses.
+# Either subclass TestCase or TransactionTestCase to ensure proper test isolation or add 'default'
+# to tests.test_wdlocal.ReconWD.databases to silence this failure.
 
 class ReconWD(SimpleTestCase):
 #class ReconWD(TransactionTestCase):

@@ -330,7 +330,7 @@
                     <div id="status_info" class="mt-5">
                       <h5 class="">Collection status</h5>
                       <p class="small">
-                        {% if in_class %}Submitted to class:<br/> {{ object.group }}
+                        {% if in_class %}Submitted to class: {{ object.group }}<br/>Status: {{ object.status }}
                           {% else %}{{ object.status }}
                         {% endif %}
                       </p>

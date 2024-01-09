@@ -1,9 +1,10 @@
 # carousel_metadata.py
 
 from django.urls import reverse
+import traceback
 
 def carousel_metadata(caller):
-    
+    # traceback.print_stack()
     # Detect the class of the caller
     caller_class = type(caller)
     caller_class = caller_class.__name__
@@ -29,7 +30,7 @@ def carousel_metadata(caller):
     if not display_mode or len(display_mode.strip()) == 0:
         default_key = (caller_class, caller.id)
         display_mode = default_display_modes.get(default_key, '')
-        print("Please remember to remove default display mode casting in `utils/carousel_metadata.py`.")
+        # print("Please remember to remove default display mode casting in `utils/carousel_metadata.py`.")
     #############################################################################
     #############################################################################
     

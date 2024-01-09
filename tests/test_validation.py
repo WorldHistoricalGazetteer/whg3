@@ -99,29 +99,29 @@ class DatasetCreateViewTest(TestCase):
                 self.assertTrue(any(expected_error in str(e) for expected_error in expected_errors))
                 print(f'Success: expected error found.')
 
-    def test_end_to_end(self):
-        # Define the form data
-        form_data = {
-            'owner': self.user.pk,
-            'label': 'test_dataset',
-            'title': 'Test Dataset',
-            'description': 'Test Dataset Description',
-        }
-
-        # Create a test file
-        test_file = SimpleUploadedFile('test_file.tsv', b'id\ttitle\tstart\tend\n1\tTest\t2000\t2001\n')
-
-        # Add the test file to the form data
-        form_data['file_field_name'] = test_file
-
-        # Send a POST request to the form URL
-        response = self.client.post(reverse('datasets:dataset-create'), form_data)
-
-        # Check the response for the expected error messages
-        self.assertContains(response, 'Expected error message 1')
-        self.assertContains(response, 'Expected error message 2')
-        # ... Add more assertions for each expected error message ...
-
+    # def test_end_to_end(self):
+    #     # Define the form data
+    #     form_data = {
+    #         'owner': self.user.pk,
+    #         'label': 'test_dataset',
+    #         'title': 'Test Dataset',
+    #         'description': 'Test Dataset Description',
+    #     }
+    #
+    #     # Create a test file
+    #     test_file = SimpleUploadedFile('test_file.tsv', b'id\ttitle\tstart\tend\n1\tTest\t2000\t2001\n')
+    #
+    #     # Add the test file to the form data
+    #     form_data['file_field_name'] = test_file
+    #
+    #     # Send a POST request to the form URL
+    #     response = self.client.post(reverse('datasets:dataset-create'), form_data)
+    #
+    #     # Check the response for the expected error messages
+    #     self.assertContains(response, 'Expected error message 1')
+    #     self.assertContains(response, 'Expected error message 2')
+    #     # ... Add more assertions for each expected error message ...
+    #
 
 if __name__ == '__main__':
     unittest.main()
