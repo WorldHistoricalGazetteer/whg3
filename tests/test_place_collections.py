@@ -45,7 +45,6 @@ class CollectionTestCase(TestCase):
         self.assertTrue(CollPlace.objects.filter(collection=self.collection, place=self.place1).exists())
 
 
-    # Similarly, you can modify the other test methods to call the function-based views
     def test_add_dataset_places(self):
         # Login the test client
         self.client.login(username='testuser@foo.com', password='12345')
@@ -59,26 +58,33 @@ class CollectionTestCase(TestCase):
         self.assertTrue(CollPlace.objects.filter(collection=self.collection,
                                                  place__in=[self.place1, self.place2]).exists())
 
+    def test_add_and_remove_dataset_places(self):
+        # Login the test client
+        self.client.login(username='testuser@foo.com', password='12345')
 
-    def test_remove_dataset(self):
-        # Run the remove_dataset() function
-        self.collection.remove_dataset(self.dataset.id)
+        # Call the add_dataset_places() function
+        response = self.client.post(reverse('collection:add-dsplaces',
+                                            kwargs={'coll_id': self.collection.id, 'ds_id': self.dataset.id}))
 
-        # Confirm CollDataset record is gone
-        self.assertFalse(self.collection.datasets.filter(id=self.dataset.id).exists())
+        # Confirm appropriate TraceAnnotation and CollPlace records are created
+        self.assertTrue(TraceAnnotation.objects.filter(collection=self.collection,
+                                                       place__in=[self.place1, self.place2]).exists())
+        self.assertTrue(CollPlace.objects.filter(collection=self.collection,
+                                                 place__in=[self.place1, self.place2]).exists())
 
-        # Confirm CollPlace records are gone
-        self.assertFalse(CollPlace.objects.filter(collection=self.collection, place__in=[self.place1, self.place2]).exists())
+        # Modify one of the TraceAnnotation records to make it not 'blank'
+        trace_annotation = TraceAnnotation.objects.filter(collection=self.collection, place=self.place1).first()
+        trace_annotation.note = "Test note"
+        trace_annotation.save()
 
-        # Confirm TraceAnnotation.archived==True
-        self.assertTrue(TraceAnnotation.objects.filter(collection=self.collection, place__in=[self.place1, self.place2], archived=True).exists())
+        # Call the remove_dataset() function
+        response = self.client.post(reverse('collection:remove-ds',
+                                            kwargs={'coll_id': self.collection.id, 'ds_id': self.dataset.id}))
 
-    def test_archive_traces(self):
-        # Run the archive_traces() function
-        self.collection.archive_traces([self.place1.id])
-
-        # Confirm CollPlace record is gone
-        self.assertFalse(CollPlace.objects.filter(collection=self.collection, place=self.place1).exists())
-
-        # Confirm TraceAnnotation.archived==True
-        self.assertTrue(TraceAnnotation.objects.filter(collection=self.collection, place=self.place1, archived=True).exists())
+        # Confirm appropriate TraceAnnotation and CollPlace records are deleted or archived
+        self.assertFalse(TraceAnnotation.objects.filter(collection=self.collection,
+                                                        place=self.place2, archived=False).exists())
+        self.assertTrue(TraceAnnotation.objects.filter(collection=self.collection,
+                                                       place=self.place1, archived=True).exists())
+        self.assertFalse(CollPlace.objects.filter(collection=self.collection,
+                                                  place__in=[self.place1, self.place2]).exists())
