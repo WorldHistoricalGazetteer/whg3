@@ -92,13 +92,10 @@ class CollectionGroupScenarioTestCase(TestCase):
         # Get the HTML of the user's Collection update page
         response_user = self.member.get(reverse('collection:place-collection-update',
                                            args=[self.collection.id]))
-        soup_user = BeautifulSoup(response_user.content, 'html.parser')
-        # print('soup_user', soup_user)
 
         # Check that the user's place_collection_build.html page displays 'submitted to class: {CollectionGroup.title}'
         self.assertContains(response_user, f'Submitted to class: {self.collection_group.title}')
 
-        # self.assertIn(f'Submitted to class: {self.collection_group.title}', str(soup_user))
 
         # Check that the collection title and owner appear on a list in the div "#coll_list"
         coll_list = soup_group.find(id='coll_list')
@@ -107,6 +104,56 @@ class CollectionGroupScenarioTestCase(TestCase):
 
         # Check that the list item shows a previously hidden checkbox for 'reviewed'
         self.assertIn('reviewed', str(coll_list))
+
+        # test for when the leader checks 'reviewed' checkbox
+        # JS collection_status() function changes the status to 'reviewed', then...
+        response = self.leader.post(reverse('collection:status-update'), {
+            'status': 'reviewed',
+            'coll': self.collection.id,
+        })
+
+        self.collection.refresh_from_db()
+        self.assertEqual(self.collection.status, 'reviewed')
+
+        response_user = self.member.get(reverse('collection:place-collection-update',
+                                           args=[self.collection.id]))
+        self.assertContains(response_user, 'Status: reviewed')
+
+
+        # test for when the leader unchecks 'reviewed' checkbox
+        # JS collection_status() function changes the status to 'group', then...
+        response = self.leader.post(reverse('collection:status-update'), {
+            'status': 'group',
+            'coll': self.collection.id,
+        })
+        self.collection.refresh_from_db()
+        self.assertEqual(self.collection.status, 'group')
+
+        response_user = self.member.get(reverse('collection:place-collection-update',
+                                           args=[self.collection.id]))
+        self.assertContains(response_user, 'Status: group')
+
+    def test_withdraw_collection_from_group(self):
+        response = self.member.post(reverse('collection:group-connect'), {
+            'action': 'withdraw',
+            'coll': self.collection.id,
+            'group': self.collection_group.id
+        })
+        self.collection.refresh_from_db()
+
+        # Get the HTML of the CollectionGroup update page
+        response_group = self.leader.get(reverse('collection:collection-group-update',
+                                           args=[self.collection_group.id]))
+        soup_group = BeautifulSoup(response_group.content, 'html.parser')
+
+        # Check that the collection is no longer part of the CollectionGroup's collections
+        self.assertNotIn(self.collection, self.collection_group.collections.all())
+        # Check that the status of the collection is 'sandbox'
+        self.assertEqual(self.collection.status, 'sandbox')
+        # Check that the collection title and owner do not appear on a list in the div "#coll_list"
+        coll_list = soup_group.find(id='coll_list')
+        self.assertNotIn(self.collection.title, str(coll_list))
+
 
     # Add similar tests for other actions (withdraw, review, nominate)
 

@@ -289,6 +289,7 @@
       }
 		})
   }
+
 	function nominate(cid, checked){
     console.log('toggle nominated status; cid, checked', cid, checked)
 		// TODO: if nominated, reviewed by WHG editors for student gallery
@@ -321,55 +322,45 @@
         var nominateCheckbox = $(this).find('.nominate');
         var nominateHeading = $('#nominated-heading');
 
-        // If the collection's status is 'nominated', both checkboxes should be visible and checked
+        // If the collection's status is 'nominated',
+        // both checkboxes should be visible and checked
+        // and the 'reviewed' checkbox should be disabled
         reviewedCheckbox.prop('checked', true);
         nominateCheckbox.show().prop('checked', true);
         nominateHeading.show();
+        reviewedCheckbox.prop('disabled', true);
     });
 
-	  $(".reviewed").change(function() {
-	    var nominateCheckbox = $(this).closest('tr').find('.nominate');
-	    var nominateHeading = $('#nominated-heading');
-	    if ($(this).is(':checked') || $(this).closest('tr').data('status') === 'nominated') {
-	        nominateCheckbox.show();
-	        nominateHeading.show();
-	        {#$(this).prop('disabled', true);  // Disable the 'reviewed' checkbox#}
-			    collection_status($(this).data('id'), true);
-	    } else {
-	        nominateCheckbox.hide().prop('checked', false);
-	        nominateHeading.hide();
-	        $(this).prop('disabled', false);  // Enable the 'reviewed' checkbox
-			    collection_status($(this).data('id'), false);
-	    }
-		});
+    $(".reviewed").change(function() {
+      var nominateCheckbox = $(this).closest('tr').find('.nominate');
+      var nominateHeading = $('#nominated-heading');
+      if ($(this).is(':checked') || $(this).closest('tr').data('status') === 'nominated') {
+          nominateCheckbox.show();
+          nominateHeading.show();
+          collection_status($(this).data('id'), true);
+      } else {
+          nominateCheckbox.hide().prop('checked', false);
+          nominateHeading.hide();
+          collection_status($(this).data('id'), false);
+      }
 
-		$(".nominate").change(function() {
-		    var reviewedCheckbox = $(this).closest('tr').find('.reviewed');
-		    if ($(this).is(':checked')) {
-		        reviewedCheckbox.prop('disabled', true);  // Disable the 'reviewed' checkbox
-		    } else {
-		        reviewedCheckbox.prop('disabled', false);  // Enable the 'reviewed' checkbox
-		    }
-		});
-    {# change status; Show/hide the 'nominate' checkbox based on the 'reviewed' checkbox#}
-	  {#$(".reviewed").change(function() {#}
-		{#  collection_status($(this).data('id'), this.checked)#}
-		{##}
-	  {#  var nominateCheckbox = $(this).closest('tr').find('.nominate');#}
-		{#  var nominateHeading = $('#nominated_heading');#}
-	  {#  if ($(this).is(':checked')) {#}
-	  {#    nominateCheckbox.show();#}
-		{#    nominateHeading.show();#}
-	  {#  } else {#}
-	  {#    nominateCheckbox.hide().prop('checked', false);#}
-		{#    nominateHeading.hide();#}
-	  {#  }#}
-	  {# });#}
+      // Disable the 'reviewed' checkbox if both 'reviewed' and 'nominated' checkboxes are checked
+      if ($(this).is(':checked') && nominateCheckbox.is(':checked')) {
+          $(this).prop('disabled', true);
+      } else {
+          $(this).prop('disabled', false);
+      }
+    });
 
-		{# chenge status #}
-	  $(".nominate").change(function(){
-      nominate($(this).data('id'), this.checked)
-    })
+    $(".nominate").change(function() {
+        var reviewedCheckbox = $(this).closest('tr').find('.reviewed');
+        if ($(this).is(':checked')) {
+          reviewedCheckbox.prop('disabled', true);  // Disable the 'reviewed' checkbox
+        } else {
+          reviewedCheckbox.prop('disabled', false);  // Enable the 'reviewed' checkbox
+        }
+        nominate($(this).data('id'), this.checked)
+    });
 
 		const popoverTriggerList = $('[data-bs-toggle="popover"]')
 		const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
