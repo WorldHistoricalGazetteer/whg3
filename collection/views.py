@@ -22,12 +22,33 @@ from main.models import Log, Link
 from traces.forms import TraceAnnotationModelForm
 from traces.models import TraceAnnotation
 
-""" create CollectionGroup join_code"""
+"""collection group joiner"""
+def join_group(request, *args, **kwargs):
+  print('join_group() kwargs', kwargs)
+  print('join_group() request.POST', request.POST)
 
+  entered_code = request.POST.get('join_code', None)
+  if entered_code is None:
+    return JsonResponse({'msg': 'No code provided'}, safe=False)
+
+  try:
+    cg = CollectionGroup.objects.get(join_code=entered_code)
+  except CollectionGroup.DoesNotExist:
+    return JsonResponse({'msg': 'Unknown code'}, safe=False)
+
+  user = request.user
+  cgu = CollectionGroupUser.objects.create(
+    user=user, collectiongroup=cg, role='member')
+  return JsonResponse({
+    'msg': 'Joined group '+cg.title+'!',
+    'cg_title': cg.title,
+    'cg_id': cg.id,
+  }, safe=False)
+
+
+"""collection group join code generator"""
 adjectives = ['Swift', 'Wise', 'Clever', 'Eager', 'Gentle', 'Smiling', 'Lucky', 'Brave', 'Happy']
 nouns = ['Wolf', 'Deer', 'Swan', 'Cat', 'Owl', 'Bear', 'Rabbit', 'Lion', 'Horse', 'Dog', 'Duck', 'Hawk', 'Eagle', 'Fox', 'Tiger', 'Goose']
-
-# collection group join code generator
 def generate_unique_join_code(request):
   while True:
     adjective = random.choice(adjectives)
@@ -36,6 +57,7 @@ def generate_unique_join_code(request):
     if not CollectionGroup.objects.filter(join_code=join_code).exists():
       return JsonResponse({'join_code': join_code})
 
+""" collection group join code setter """
 def set_joincode(request, *args, **kwargs):
   print('set_joincode() kwargs', kwargs)
   cg = CollectionGroup.objects.get(id=kwargs['cgid'])

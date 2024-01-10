@@ -269,7 +269,7 @@ class CollectionGroupUser(models.Model):
                                    default=-1, on_delete=models.CASCADE)
   user = models.ForeignKey(User, related_name='members',
                                 default=-1, on_delete=models.CASCADE)
-  role = models.CharField(max_length=20, null=False, choices=USER_ROLE, default = 'normal')
+  role = models.CharField(max_length=20, null=False, choices=TEAMROLES, default = 'member')
 
   def __str__(self):
     return '%s (%s, %s)' % (self.user.email,self.user.id, self.user.name)

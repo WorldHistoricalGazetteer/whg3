@@ -62,6 +62,7 @@ urlpatterns = [
     path('nominate/', views.nominator, name="nominator"),
     path('get_joincode/', views.generate_unique_join_code, name="get-join-code"),
     path('set_joincode/<int:cgid>/<str:join_code>/', views.set_joincode, name="set-join-code"),
+    path('group_join/', views.join_group, name="group-join"),
 
     # function-based views to process a trace annotation
     path('<int:id>/annotate', csrf_exempt(annotate), name="collection-annotate"),

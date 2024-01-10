@@ -13,6 +13,7 @@
 			margin: 5px 0;
 	    font-size: small;
 	    box-shadow: 2px 2px 2px #ccc;
+      border-radius: 5px;
     }
 	  .box-header {
 	    display: flex;
@@ -218,10 +219,14 @@
 		          <p class="ml-3 ital">no groups led yet</p>
 						{% endif %}
 					{% endif %}
-          <p class="red-head mb-0 mt-2">Member of:</p>
+
           {% if groups_member|length == 0 %}
-            <i class="pl-3 my-1 italic">none yet</i>
+            <p>
+              Got code? <input id="i_cgcode" />
+              <button id="b_joingroup" class="btn btn-sm btn-primary">Join</button>
+            </p>
           {% else %}
+            <p class="mb-0 mt-2">Member of:</p>
 	          {% for item in groups_member %}
 		          <div class="item-div">
 								<span class="fw-bold red-head" >{{ item.title }}</span>
@@ -238,4 +243,24 @@
 		</div>
   </div>
 </div>
+<script type="text/javascript">
+$(document).ready(function() {
+  $("#i_cgcode").val('') // Clear the input field
+  $("#b_joingroup").click(function() {
+    var code = $("#i_cgcode").val();
+    $.ajax({
+      url: '/collections/group_join/',  // Update with the actual URL
+      type: 'POST',
+      data: {
+        'join_code': code,
+        'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+      },
+      success: function(response) {
+        console.log(response.msg);
+      }
+    });
+  });
+  $('.linky').tooltip();
+});
+</script>
 {% endblock %}

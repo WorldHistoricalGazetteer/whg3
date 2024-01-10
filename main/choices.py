@@ -220,10 +220,11 @@ STATUS_REVIEW = [
     (2, 'Deferred')
 ]
 
+# collaborators in datasets, collections, collection groups
 TEAMROLES = [
     ('creator', 'Creator'),
     ('owner', 'Owner'),
-    ('member', 'Team Member'),
+    ('member', 'Member'),
 ]
 
 TRACERELATIONS = [
@@ -248,6 +249,7 @@ TRACETYPES = [
     ('concept','Concept')
 ]
 
+# in User model
 USER_ROLE = (
     ('normal', 'normal'),
     ('group_leader', 'group leader'),
