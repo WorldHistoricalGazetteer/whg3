@@ -24,7 +24,6 @@ class CollectionGroupScenarioTestCase(TestCase):
             name='group_leader',
             password='12345')
 
-
         # create 'group_leaders' group, add group_leader to it
         group_leaders, created = Group.objects.get_or_create(name='group_leaders')
         print('group_leaders', group_leaders)
@@ -69,7 +68,9 @@ class CollectionGroupScenarioTestCase(TestCase):
     def test_submit_collection_to_group(self):
         print('status before', self.collection.status)
 
-        # Submit the collection to the CollectionGroup
+        """
+        member submits collection to the CollectionGroup
+        """
         response = self.member.post(reverse('collection:group-connect'), {
             'action': 'submit',
             'coll': self.collection.id,
@@ -77,10 +78,7 @@ class CollectionGroupScenarioTestCase(TestCase):
         })
         self.collection.refresh_from_db()
 
-        print('status after', self.collection.status)
-        print('collections', self.collection_group.collections.all())
-
-        # Check that the collection is now part of the CollectionGroup's collections
+        # Check collection is now part of the CollectionGroup's collections
         self.assertIn(self.collection, self.collection_group.collections.all())
         self.assertEqual(self.collection.status, 'group')
 
@@ -93,25 +91,26 @@ class CollectionGroupScenarioTestCase(TestCase):
         response_user = self.member.get(reverse('collection:place-collection-update',
                                            args=[self.collection.id]))
 
-        # Check that the user's place_collection_build.html page displays 'submitted to class: {CollectionGroup.title}'
+        # Check that the user's builder page displays 'submitted...'
         self.assertContains(response_user, f'Submitted to class: {self.collection_group.title}')
 
-
-        # Check that the collection title and owner appear on a list in the div "#coll_list"
+        # Check that collection appears in "#coll_list" on leader's CollectionGroup update page
         coll_list = soup_group.find(id='coll_list')
         self.assertIn(self.collection.title, str(coll_list))
         self.assertIn(self.collection.owner.name, str(coll_list))
 
-        # Check that the list item shows a previously hidden checkbox for 'reviewed'
+        # Check previously hidden 'reviewed' checkbox now shown
         self.assertIn('reviewed', str(coll_list))
 
-        # test for when the leader checks 'reviewed' checkbox
-        # JS collection_status() function changes the status to 'reviewed', then...
+
+        """
+        leader checks 'reviewed' checkbox
+        """
+        # JS collection_status() function changes the status to 'reviewed'
         response = self.leader.post(reverse('collection:status-update'), {
             'status': 'reviewed',
             'coll': self.collection.id,
         })
-
         self.collection.refresh_from_db()
         self.assertEqual(self.collection.status, 'reviewed')
 
@@ -120,8 +119,10 @@ class CollectionGroupScenarioTestCase(TestCase):
         self.assertContains(response_user, 'Status: reviewed')
 
 
-        # test for when the leader unchecks 'reviewed' checkbox
-        # JS collection_status() function changes the status to 'group', then...
+        """
+        leader unchecks 'reviewed' checkbox
+        """
+        # JS collection_status() function changes the status to 'group'
         response = self.leader.post(reverse('collection:status-update'), {
             'status': 'group',
             'coll': self.collection.id,
@@ -132,6 +133,44 @@ class CollectionGroupScenarioTestCase(TestCase):
         response_user = self.member.get(reverse('collection:place-collection-update',
                                            args=[self.collection.id]))
         self.assertContains(response_user, 'Status: group')
+
+
+        """
+        leader checks 'nominated' checkbox
+        """
+        # JS collection_status() function changes the status to 'nominated'
+        response = self.leader.post(reverse('collection:status-update'), {
+            'status': 'nominated',
+            'coll': self.collection.id,
+        })
+        self.collection.refresh_from_db()
+
+        # collection status to 'nominated'
+        self.assertEqual(self.collection.status, 'nominated')
+
+        # check status on member's collection update page
+        response_user = self.member.get(reverse('collection:place-collection-update',
+                                           args=[self.collection.id]))
+        self.assertContains(response_user, 'Status: nominated')
+
+
+        """
+        leader unchecks 'nominated' checkbox
+        """
+        # JS collection_status() function changes the status to 'reviewed'
+        response = self.leader.post(reverse('collection:status-update'), {
+            'status': 'reviewed',
+            'coll': self.collection.id,
+        })
+        self.collection.refresh_from_db()
+
+        # collection status back to 'reviewed'
+        self.assertEqual(self.collection.status, 'reviewed')
+
+        # check status on member's collection update page
+        response_user = self.member.get(reverse('collection:place-collection-update',
+                                           args=[self.collection.id]))
+        self.assertContains(response_user, 'Status: reviewed')
 
     def test_withdraw_collection_from_group(self):
         response = self.member.post(reverse('collection:group-connect'), {
