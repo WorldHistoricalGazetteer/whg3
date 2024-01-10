@@ -219,24 +219,24 @@
 		          <p class="ml-3 ital">no groups led yet</p>
 						{% endif %}
 					{% endif %}
-
-          {% if groups_member|length == 0 %}
-            <p>
-              Got code? <input id="i_cgcode" />
-              <button id="b_joingroup" class="btn btn-sm btn-primary">Join</button>
-            </p>
-          {% else %}
+          <p>
+            Got code? <input id="i_cgcode" />
+            <button id="b_joingroup" class="btn btn-sm btn-primary">Join</button>
+          </p>
+          {% if groups_member|length > 0 %}
             <p class="mb-0 mt-2">Member of:</p>
-	          {% for item in groups_member %}
-		          <div class="item-div">
-								<span class="fw-bold red-head" >{{ item.title }}</span>
-			          <div class="float-end">
-	                <a href="{% url 'collection:collection-group-detail' item.id %}">
-		                <i class="fas fa-eye linky"></i></a>
-			          </div>
-			        </div>
+          {% endif %}
+          <div id="group_list">
+            {% for item in groups_member %}
+              <div class="item-div">
+                <span class="fw-bold red-head" >{{ item.title }}</span>
+                <div class="float-end">
+                  <a href="{% url 'collection:collection-group-detail' item.id %}">
+                    <i class="fas fa-eye linky"></i></a>
+                </div>
+              </div>
             {% endfor %}
-        	{% endif %}
+          </div>
         </div>
       </div>
     </div>
@@ -256,7 +256,17 @@ $(document).ready(function() {
         'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
       },
       success: function(response) {
-        console.log(response.msg);
+        console.log(response);
+        var newGroupHtml = '<p class="mb-0 mt-2">Member of:</p>' +
+                            '<div class="item-div">' +
+                           '<span class="fw-bold red-head">' + response.cg_title + '</span>' +
+                           '<div class="float-end">' +
+                           '<a href="/collections/group/'+response.cg_id+'/detail">'+
+                            '<i class="fas fa-eye linky"></i></a>' +
+                           '</div></div>';
+        console.log('newGroupHtml',newGroupHtml);
+        // Append the new group to the list
+        $('#group_list').append(newGroupHtml);
       }
     });
   });
