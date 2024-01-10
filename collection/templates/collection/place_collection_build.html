@@ -154,7 +154,7 @@
           {% if action == 'update' %}<span class="text-secondary">Place Collection Builder: </span>
             <span class="text-bold red-head">{{ form.title.value }}</span>
             <span class="float-end fs-6">
-					<span class="me-2 small">in class: {{ in_class }}; status: <b>{{ form.status.value }}</b></span>
+					<span class="me-2 small">collab? {{ object.group.collaboration }}; in class: {{ in_class }}; status: <b>{{ form.status.value }}</b></span>
 			    <a href="{% url 'collection:place-collection-browse' object.id %}">
 				    view</a> <i class="fas fa-eye linky"></i>
 			    <a href="{% url 'collection:collection-delete' object.id %}"
@@ -181,7 +181,7 @@
                 Add and annotate places
               </button>
             </li>
-            {% if in_class == False %}
+            {% if in_class == False or in_class == True and object.group.collaboration == True %}
               <li class="nav-item" role="presentation">
                 <button class="nav-link" id="collaborators-tab" data-bs-toggle="tab"
                         data-bs-target="#coll_collaborators"

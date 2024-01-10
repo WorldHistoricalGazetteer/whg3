@@ -240,22 +240,22 @@ class CollectionGroup(models.Model):
       related_name='collection_groups', on_delete=models.CASCADE)
   title = models.CharField(null=False, max_length=300)
   description = models.TextField(null=True, max_length=3000)
-  keywords = ArrayField(models.CharField(max_length=50), null=True)
-
-  # single pdf file
-  file = models.FileField(upload_to=collectiongroup_path, blank=True, null=True)
-
   type = models.CharField(choices=COLLECTIONGROUP_TYPES, default="class", max_length=8)
-  gallery = models.BooleanField(null=False, default=False)
-  gallery_required = models.BooleanField(null=False, default=False)
-  # collaborators_ok = models.BooleanField(null=False, default=False)
-
+  keywords = ArrayField(models.CharField(max_length=50), null=True)
+  # e.g. an essay
+  file = models.FileField(upload_to=collectiongroup_path, blank=True, null=True)
   created = models.DateTimeField(auto_now_add=True)
   start_date = models.DateTimeField(null=True)
   due_date = models.DateTimeField(null=True)
 
   # a Collection can belong to >=1 CollectionGroup
   collections = models.ManyToManyField("collection.Collection", blank=True)
+
+  # group options
+  gallery = models.BooleanField(null=False, default=False)
+  gallery_required = models.BooleanField(null=False, default=False)
+  collaboration = models.BooleanField(null=False, default=False)
+
 
   def __str__(self):
     return self.title

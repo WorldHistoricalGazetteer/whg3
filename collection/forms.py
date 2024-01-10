@@ -8,7 +8,7 @@ class CollectionGroupModelForm(forms.ModelForm):
         model = CollectionGroup
         fields = ('id', 'title', 'owner', 'description', 'keywords',
                   'start_date', 'due_date', 'gallery', 'gallery_required',
-                  'type', 'file',)
+                  'collaboration', 'type', 'file',)
         widgets = {
             'description': forms.Textarea(attrs={
                 'rows': 2, 'cols': 40, 'class': 'textarea'
@@ -25,7 +25,8 @@ class CollectionGroupModelForm(forms.ModelForm):
             'due_date': forms.SelectDateWidget,
             'file': forms.FileInput(),
             'gallery': forms.CheckboxInput,
-            'gallery_required': forms.CheckboxInput
+            'gallery_required': forms.CheckboxInput,
+            'collaboration': forms.CheckboxInput
         }
 
     def __init__(self, *args, **kwargs):
