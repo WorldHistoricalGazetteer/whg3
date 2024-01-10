@@ -255,7 +255,7 @@ class CollectionGroup(models.Model):
   gallery = models.BooleanField(null=False, default=False)
   gallery_required = models.BooleanField(null=False, default=False)
   collaboration = models.BooleanField(null=False, default=False)
-
+  join_code = models.CharField(null=True, unique=True, max_length=20)
 
   def __str__(self):
     return self.title

@@ -109,9 +109,17 @@
               <i class="fas fa-question-circle linkypop"></i></a>
           </span>
         </p>
-        <p class="mt-0"><span>Group gallery? {{ form.gallery }}</span>
+        <p class=""><span>Group gallery? {{ form.gallery }}</span>
           <span id="gallery_required" class="ms-3">required? {{ form.gallery_required }}</span></p>
-        <p class="mt-0">Collaboration allowed? {{ form.collaboration }}</p>
+        <p class="">Collaboration allowed? {{ form.collaboration }}</p>
+        <p>Group code:
+          {% if not object.join_code %}
+            <button id="b_joincode" type="button">Create</button>
+          {% else %}
+            <span id="cg_joincode">{{ object.join_code }}<i class="ms-1 fas fa-check"></i></span>
+          {% endif %}
+          <span><button id="b_savejoincode" type="button">Save</button></span>
+        </p>
       </div>
 			<div class="mt-3">Links
 				{% if links|length < 3 %}
@@ -245,6 +253,49 @@
 </div> <!-- container -->
 
 <script type="text/javascript">
+$(document).ready(function() {
+    // Event listener for the "Create" button
+    $('#b_joincode').on('click', function() {
+      console.log('clicked create join code')
+      $.ajax({
+        url: '/collections/get_joincode/',
+        method: 'GET',
+        success: function(data) {
+          // Display the new join code
+          $('#cg_joincode').text(data.join_code);
+
+          // Show the "Save" button
+          $('#b_savejoincode').show();
+        }
+      });
+    });
+
+    // Event listener for the "Save" button
+    $('#b_savejoincode').on('click', function() {
+      // Hide the "Create" button
+      $('#b_joincode').hide();
+      var cgid = "{{ object.id }}"
+      // Lock the join code (you might want to send it to the server here)
+      var join_code = $('#cg_joincode').text();
+      console.log('clicked save join code', cgid, join_code)
+      $.ajax({
+        url: '/collections/set_joincode/'+cgid+'/'+join_code+'/',
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(data) {
+          // Display the new join code
+          $('#cg_joincode').html('<mark-b>'+data.join_code+'</mark-b><i class="ms-1 fas fa-check"></i>');
+          // Show the "Save" button
+          $('#b_savejoincode').hide();
+        }
+      });
+    });
+
+    // Initially hide the "Save" button
+    $('#b_savejoincode').hide();
+  });
 	// flag collection as submitted, shows up on leader's list
 	function group_connect(action){
     console.log('submitting collection {{ object.id }} to group '+ $("#id_group").val())

@@ -2,6 +2,7 @@
 from dateutil.parser import isoparse
 from datetime import date
 import json
+import random
 
 from django import forms
 from django.contrib import messages
@@ -20,6 +21,27 @@ from datasets.tasks import index_dataset_to_builder
 from main.models import Log, Link
 from traces.forms import TraceAnnotationModelForm
 from traces.models import TraceAnnotation
+
+""" create CollectionGroup join_code"""
+
+adjectives = ['Swift', 'Wise', 'Clever', 'Eager', 'Gentle', 'Smiling', 'Lucky', 'Brave', 'Happy']
+nouns = ['Wolf', 'Deer', 'Swan', 'Cat', 'Owl', 'Bear', 'Rabbit', 'Lion', 'Horse', 'Dog', 'Duck', 'Hawk', 'Eagle', 'Fox', 'Tiger', 'Goose']
+
+# collection group join code generator
+def generate_unique_join_code(request):
+  while True:
+    adjective = random.choice(adjectives)
+    noun = random.choice(nouns)
+    join_code = adjective + noun
+    if not CollectionGroup.objects.filter(join_code=join_code).exists():
+      return JsonResponse({'join_code': join_code})
+
+def set_joincode(request, *args, **kwargs):
+  print('set_joincode() kwargs', kwargs)
+  cg = CollectionGroup.objects.get(id=kwargs['cgid'])
+  cg.join_code = kwargs['join_code']
+  cg.save()
+  return JsonResponse({'join_code': cg.join_code})
 
 """ sets collection to inactive, removing from lists """
 def inactive(request, *args, **kwargs):
