@@ -30,7 +30,8 @@ class TeachingPortalView(ListView):
     context['beta_or_better'] = True if self.request.user.groups.filter(
         name__in=['beta', 'admins']).exists() else False
     regions = list(Resource.objects.all().values_list('regions', flat=True))
-    context['regions'] = [x for l in regions for x in l]
+    context['regions'] = [x.split(',') for x in regions]
+    # context['regions'] = [x for l in regions for x in l]
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
     context['featured'] = Resource.objects.filter(featured__isnull=False).order_by('featured')

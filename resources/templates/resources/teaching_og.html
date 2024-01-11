@@ -185,7 +185,7 @@
 					return resp.json();
 				})
 				.then(function (data) {
-					// console.log(data)
+					console.log('data',data)
 					idToFeature = {}
 					regions = L.geoJson(data, {
 						filter: function (feature, layer) {
