@@ -10,11 +10,6 @@
 	{% block extra_head %}
     <style>
       body {font-family: 'Raleway', sans-serif !important;}
-      #teaching_content {
-        height: calc(100vh - 70px);
-        position:relative;
-        border: 1px gainsboro solid;
-      }
       #teaching_essay {height: 85%; overflow: auto; }
       #essay_modal {font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
         font-size: 1.2rem;}
@@ -25,10 +20,6 @@
         /* height: 100%; */
         width: 100%;
         overflow:hidden;
-      }
-      #collections p {
-        margin: 0.3rem;
-        font-size: 0.9rem;
       }
       /* .leaflet-container-default {height: 250px !important;} */
       .resource-gallery {background-color:rgb(238, 238, 238); overflow:auto; border-bottom: 1px solid gainsboro;}
@@ -56,20 +47,25 @@
     {% leaflet_css %}
 	{% endblock %}
 
-	<div id="teaching_content" class="container pt-2 container-md">
+	<div class="container pt-2 container-md" style="height: calc(100vh - 65px); position:relative;">
 		<section class="text-center">
 			<div class="container mb-1" style="position:relative">
 				<h3>Teaching with World Historical Gazetteer</h3>
 			</div>
 		</section>
-    <div class="row">
-      <div class="col-sm-4">
-        <div>
+		<div id="teaching_top" class="row">
+			<div class="row">
+				<div class="col-md-7" style="font-size: 1.3rem;">
 					<p>Place names&mdash;their origins, change over time, and reflections of identity&mdash;can provide a fascinating and
             revealing lens through which to explore history. Used with the interactive tools of digital history,
             the study of place names brings new, deeper, and broader connections to our understanding of patterns
             of historical change.</p>
-        </div>
+				</div>
+				<div class="col-md-5">{% leaflet_map "main" %}</div>
+			</div>
+		</div> <!-- .row -->
+		<div id="teaching_bottom" class="row mt-2">
+			<div class="col-sm-4 px-0" style="height: 80%;">
 				<div class="teaching-essay p-2">
 					<div id="">
 					<h5 class="mb-0 strong">Place in World History</h5>
@@ -86,49 +82,51 @@
             <span class="modal-link float-end me-1" data-id="essay_rm"><a href="#" >more...</a></span></p>
 					</div>
 				</div>
-      </div> <!-- .col-sm-4 -->
-      <div class="col-sm-8">
-        <div id="teaching_paths" class="mt-1">
-          <ul id="teaching_tabs" class="nav nav-tabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#collections"
-                    type="button" role="tab" aria-controls="collections" aria-selected="true">Place Collections
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="form-tab" data-bs-toggle="tab" data-bs-target="#lessonplans"
-                    type="button" role="tab" aria-controls="lessonplans" aria-selected="true">Lesson Plans
-              </button>
-            </li>
-          </ul>
-          <div class="tab-content">
-            <div id="collections" class="tab-pane fade show active" role="tabpanel" aria-labelledby="collections-tab">
-              <p>A <b>Place Collection</b> is a themed set of place records, each annotated to
-                indicate the reason for its inclusion. Any WHG user can create one, and they are especially useful in
-                teaching or workshop settings using the <b>Collection Group</b> feature.</p>
-              <p class="d-block bg-lighterblue fs-5">Building Place Collections</p>
-              <p>After creating a new empty collection, place records can be added in one of two ways: a)
-                from search and browse screens on the site, and/or b) by creating a new dataset and adding all of
-                its records at once. Details can be found on the Create Collection screen.</p>
-              <p><button class="btn btn-outline-primary btn-sm">Get started</button></p>
-              <p class="d-block bg-lighterblue mt-4 fs-5">Collection Groups for classes and workshops</p>
-              <p>The <b>Collection Group</b> feature in WHG brings together multiple users in the system who are each
-                creating a Place Collection in a class or workshop setting.</p>
-              <p>Registered users with a "group leader" role are able to create a <b>Collection Group</b>,
-                invite members, review submissions, and optionally display a group gallery.</p>
-              <p>If you would like to create a Collection Group, just
-                <a href="{% url 'contact' %}">let us know</a>.</p>
-            </div>
-            <div id="lessonplans" class="tab-pane" role="tabpanel" aria-labelledby="lessonplans-tab">
-              <p>lesson plans are cool too, yada yada</p>
-            </div>
-          </div> <!-- .tab-content -->
-        </div> <!-- #teaching_paths -->
-      </div> <!-- .col-sm-8 -->
-    </div>
-		<div id="essay_modal" class="selector py-3" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;"></div>
-    </div>
-  </div>
+			</div>
+			<div class="col-sm-8 pe-0" style="height: 85%;">
+				<div class="resource-gallery h-100">
+					<div class="gallery-banner ps-2 small w-100";>
+						TEACHING RESOURCES ({{ resource_list|length }})
+						<span id="regions_reset" class="reset-link me-2" style="cursor:pointer;">reset filter</span>
+					</div>
+					<div class="ps-1">
+						{# this pins featured cards #}
+						{% for r in featured %}
+							<div class="resource-card mt-1" data-regions="{{r.regions}}">
+								<div class="resource-card-header ps-2 small ">{{ r.type }}
+									<span class="regions-ttlink me-1" data-toggle="tooltip" data-html="true" title="{{r.regions}}">
+										<i class="fas fa-globe linky"></i> regions</span>
+								</div>
+								<div class="resource-card-content px-2 pt-1" data-id={{r.id}}>
+									{% with remainder=190|add:r.title_length %}
+									<h6><a href="{% url 'resources:resource-detail' r.id %}">{{ r.title }}</a></h6>
+									<p class="resource-card-blurb my-1">{{ r.description|trunc_it:remainder }} </p>
+									{%endwith%}
+								</div>
+							</div>
+						{% endfor %}
+						{# the rest #}
+						{% for r in resource_list %}
+							<div class="resource-card mt-1" data-regions="{{r.regions}}">
+								<div class="resource-card-header ps-2 small ">{{ r.type }}
+									<span class="regions-ttlink me-1" data-toggle="tooltip" data-html="true" title="{{r.regions}}">
+										<i class="fas fa-globe linky"></i> regions</span>
+								</div>
+								<div class="resource-card-content px-2 pt-1" data-id={{r.id}}>
+									{% with remainder=190|add:r.title_length %}
+									<h6><a href="{% url 'resources:resource-detail' r.id %}">{{ r.title }}</a></h6>
+									<p class="resource-card-blurb my-1">{{ r.description|trunc_it:remainder }} </p>
+									{%endwith%}
+								</div>
+							</div>
+						{% endfor %}
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="essay_modal" class="selector py-3"
+		     style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;"></div>
+	</div>
 	<script type="text/javascript">
 		$(function () {
 			$('[data-toggle="tooltip"]').tooltip()

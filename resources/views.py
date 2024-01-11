@@ -3,8 +3,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.views.generic import (
-    View, CreateView, FormView, UpdateView, DetailView, DeleteView)
+from django.views.generic import (FormView, UpdateView, DetailView, DeleteView)
 from django.views.generic.list import ListView
 
 from .forms import ResourceModelForm
@@ -14,10 +13,8 @@ from main.models import Log
 #
 # TeachingPortalView()
 # displays essay and gallery of resources
-
 class TeachingPortalView(ListView):
   redirect_field_name = 'redirect_to'
-
   context_object_name = 'resource_list'
   template_name = 'resources/teaching.html'
   model = Resource

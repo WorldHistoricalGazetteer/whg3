@@ -1,0 +1,35 @@
+/* teqching.css. */
+
+body {font-family: 'Raleway', sans-serif !important;}
+#teaching_essay {height: 85%; overflow: auto; }
+#essay_modal {font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    font-size: 1.2rem;}
+#main {
+position: relative;
+border: 1px solid black;
+border-radius: 8px;
+/* height: 100%; */
+width: 100%;
+    overflow:hidden;
+}
+/* .leaflet-container-default {height: 250px !important;} */
+.resource-gallery {background-color:rgb(238, 238, 238); overflow:auto; border-bottom: 1px solid gainsboro;}
+.gallery-banner {border-bottom: 1px solid lightgray;
+    background-color:rgb(60, 136, 148); color: white;}
+.regions-ttlink {color:grey; font-size:.75rem; float:right; text-decoration-line: underline;}
+.reset-link {float:right; display:none; color:white; text-decoration-line: underline;}
+#teaching_bottom {height:65%;}
+#teaching_top {height:230px;}
+.teaching-essay {outline: rgb(60, 136, 148) 1px solid; box-shadow: 4px 4px rgb(221, 221, 221);
+    border-radius: 4px; background-color: ivory; min-height:auto; overflow-y: auto;}
+.resource-card {float:left; margin-right:.1rem;
+    width: 33%; height: 175px; overflow-y:auto; background-color: white;}
+.resource-card:hover {cursor: pointer; opacity:0.8;}
+.resource-card-header {width:100%; background-color: honeydew;}
+.resource-card-content h6 {font-size: .9rem;}
+.resource-card-blurb {line-height: 1rem; font-size: small;}
+#badge_link { font-size:1rem; position:absolute; right:10px; z-index:100;}
+.fill-grey {background-color:gainsboro; }
+.fill-blue {background-color:rgb(60, 136, 148); }
+#region_label {font-family: 'Raleway', sans-serif !important; font-size:1rem; color: tomato;}
+.leaflet-container, .leaflet-container-default {min-height: 220px !important; max-height: 230px !important;}
