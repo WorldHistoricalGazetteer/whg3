@@ -142,14 +142,17 @@
 			<div class="h-100 border p-1">
 				<div class="home-icon-row">
 					<img src="{% static 'images/011-teaching.png'%}" class="" height=42 width=42 alt=""/>
-					<img src="{% static 'images/006-api-2.png'%}" class="ms-3" height=42 width=42 alt=""/>
+{#					<img src="{% static 'images/006-api-2.png'%}" class="ms-3" height=42 width=42 alt=""/>#}
 				</div>
-				<h5><span class="home-button-hilite">Use WHG data</span> in teaching and software</h5>
+				<h5><span class="home-button-hilite">Use WHG data</span> in teaching</h5>
 			</div>
-			<span class="link-spanner btn" data-bs-toggle="modal"
-			      data-bs-target="#homeModal"
-			      data-bs-page="teaching_api"
-						data-bs-title="Use World Historical Gazetteer data"></span>
+      <a href="{% url 'teaching' %}">
+				<span class="link-spanner"></span>
+			</a>
+{#			<span class="link-spanner btn" data-bs-toggle="modal"#}
+{#			      data-bs-target="#homeModal"#}
+{#			      data-bs-page="teaching_api"#}
+{#						data-bs-title="Use World Historical Gazetteer data"></span>#}
 		</div>
 	</div> <!-- content_bottom-->
 	<!-- Modal -->
