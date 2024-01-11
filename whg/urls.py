@@ -29,24 +29,26 @@ urlpatterns = [
     path('libre/', views.LibreView.as_view(), name='libre'),
 
     # apps
-    path('search/', include('search.urls')),
-    path('datasets/', include('datasets.urls')),
     path('areas/', include('areas.urls')),
     path('collections/', include('collection.urls')),
-    path('places/', include('places.urls')),
+    path('datasets/', include('datasets.urls')),
     path('elastic/', include('elastic.urls')),
     path('main/', include('main.urls')), # utility urls/views
-    path('tutorials/', include('main.urls_tutorials')),
+    path('places/', include('places.urls')),
     path('resources/', include('resources.urls')),
+    path('search/', include('search.urls')),
+
+    path('guides/', include('main.urls_guides')),
+    path('teaching/', TeachingPortalView.as_view(), name="teaching"),
 
     path('public_data/', PublicListsView.as_view(), name='public-lists'),
 
-    # redirect to correct dashboard
-    path('dashboard/', views.dashboard_redirect, name="dashboard"),
-    path('dashboard_user/', views.dashboard_user_view, name="dashboard-user"),
-    path('dashboard_admin/', views.dashboard_admin_view, name="dashboard-admin"),
     # profile and settings
     path('profile/', views.profile_edit, name="profile-edit"),
+
+    path('dashboard/', views.dashboard_redirect, name="dashboard"),  # redirect to user or admin
+    path('dashboard_user/', views.dashboard_user_view, name="dashboard-user"),
+    path('dashboard_admin/', views.dashboard_admin_view, name="dashboard-admin"),
 
     # static content
     path('about/', TemplateView.as_view(template_name="main/about.html"), name="about"),

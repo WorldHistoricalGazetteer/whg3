@@ -9,7 +9,7 @@
       <h3>Tutorial: Uploading and extending data via reconciliation</h3>
     </div>
     <div id="contrib_content" class="mx-5">
-      <p class="lead">Take the following steps to walk through uploading a sample dataset to WHG and performing reconciliation against our internal index of 3.6 million Wikidata place records. More information is available in our Site Guide, and the tutorial, "<a href="{% url 'tutorials:tute-lptsv' %}">Preparing an LP-TSV format file from a spreadsheet</a>."
+      <p class="lead">Take the following steps to walk through uploading a sample dataset to WHG and performing reconciliation against our internal index of 3.6 million Wikidata place records. More information is available in our Site Guide, and the tutorial, "<a href="{% url 'guides:tute-lptsv' %}">Preparing an LP-TSV format file from a spreadsheet</a>."
 {#	      <br/><mark class="small">Note: the process is virtually the same for reconciling against our Getty TGN index.</mark>#}
       </p>
       
@@ -52,10 +52,10 @@
         <div class="p-1">
           <h4 class="p-1">Reconciliation</h4>
           <p>WHG reconciliation services allow dataset owners (and designated co-owners) to augment their data with a) additional geometry for more complete mapping and analysis, and b) links to (i.e. matches with) Wikidata records&mdash;and via Wikidata concordances, many others including Getty TGN, GeoNames, VIAF, Library of Congress and BnF.<p>
-	        <p>Those links are the essential "glue" enabling the semi-automation of the final accessioning step&mdash;reconciling to the WHG "union index" (for details, see the 'WHG Data' section of the <a href="{% url 'tutorials:tute-guide'%}" target="_blank">Site Guide</a>)</p>
+	        <p>Those links are the essential "glue" enabling the semi-automation of the final accessioning step&mdash;reconciling to the WHG "union index" (for details, see the 'WHG Data' section of the <a href="{% url 'guides:site-guide'%}" target="_blank">Site Guide</a>)</p>
           <ul>
             <li>Navigate to the "Linking" tab of the dataset portal page and click the "Add new task" link.</li>
-            <li>Leave default settings in place, with Wikidata selected. Help screen links explain some of the options (more in the "Page by page" section of the <a href="{% url 'tutorials:tute-guide'%}" target="_blank">Site Guide</a>), but we leave those aside for this exercise.</li>
+            <li>Leave default settings in place, with Wikidata selected. Help screen links explain some of the options (more in the "Page by page" section of the <a href="{% url 'guides:site-guide'%}" target="_blank">Site Guide</a>), but we leave those aside for this exercise.</li>
             <li>Click the "Start" button</li>
             <li>For each record in the uploaded data file, a search is performed against our indexed copy of ~3.6m Wikidata records. Up to three passes (queries) are made; if the first returns no results, the second is performed, and so on. These are labeled pass0, pass1, and pass2 in the results.</li>
             <li>The task is queued and performed asynchronously. You will receive an email notification when it is complete, and you can return to this page (or simply refresh it if you haven't left)</li>
