@@ -170,7 +170,20 @@
     </div>
   </div>
 	<script type="text/javascript">
-		$(function () {
+    $(function () {
+      let hash = window.location.hash;
+      window.location.hash = ""; // Clear the hash to prevent automatic scrolling
+
+      if (hash) {
+        let tabTriggerEl = document.querySelector('button[data-bs-target="' + hash + '"]');
+        if (tabTriggerEl) {
+          console.log('Tab trigger element found:', tabTriggerEl);
+          tabTriggerEl.click();
+        } else {
+          console.log('No tab trigger found for hash:', hash);
+        }
+      }
+
 			$('[data-toggle="tooltip"]').tooltip()
 			$("#regions_reset").click(function(){
 				resetRegions()

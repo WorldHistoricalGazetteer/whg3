@@ -670,17 +670,17 @@
 
   <script type="text/javascript">
     $(function () {
-      var activeTab = window.location.hash;
-      if (activeTab) {
-        // Deactivate all tabs and hide all tab content
-        $('.nav-link').removeClass('active').attr('aria-selected', 'false');
-        $('.tab-content .tab-pane').removeClass('active show');
+      let hash = window.location.hash;
+      window.location.hash = ""; // Clear the hash to prevent automatic scrolling
 
-        // Activate the tab that corresponds to the fragment
-        $('.nav-link[data-bs-target="' + activeTab + '"]').addClass('active').attr('aria-selected', 'true');
-
-        // Show the tab content corresponding to the active tab
-        $(activeTab).addClass('active show');
+      if (hash) {
+        let tabTriggerEl = document.querySelector('button[data-bs-target="' + hash + '"]');
+        if (tabTriggerEl) {
+          console.log('Tab trigger element found:', tabTriggerEl);
+          tabTriggerEl.click();
+        } else {
+          console.log('No tab trigger found for hash:', hash);
+        }
       }
 
       {#var hash = localStorage.getItem('add_hash');#}
