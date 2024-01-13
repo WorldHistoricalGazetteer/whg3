@@ -16,6 +16,7 @@ from pathlib import Path
 def serve_cdnfallbacks(request, path):
     host = request.headers.get('Host', '')
     print(host)
+    referer = request.META.get('HTTP_REFERER')
     if 'whgazetteer.org' in host or 'localhost' in host:
         return serve(request, path, document_root=Path(settings.BASE_DIR) / 'CDNfallbacks')
     else:
@@ -25,6 +26,7 @@ def serve_cdnfallbacks(request, path):
 handler500 = 'main.views.custom_error_view'
 
 urlpatterns = [
+    # path('', views.splash, name='splash'),
     path('', views.Home30a.as_view(), name="home"),
     path('libre/', views.LibreView.as_view(), name='libre'),
 

@@ -26,7 +26,75 @@ es = settings.ES_CONN
 from random import shuffle
 from urllib.parse import urlparse
 import sys
-from datetime import datetime
+
+from django.shortcuts import render, redirect
+from django import forms
+from django.contrib import messages
+
+# class SplashForm(forms.Form):
+#     password = forms.CharField(widget=forms.PasswordInput)
+#
+# def splash(request):
+#     if request.session.get('passed_splash'):
+#         return redirect('/')  # Redirect to your main page
+#
+#     if request.method == 'POST':
+#         form = SplashForm(request.POST)
+#         if form.is_valid():
+#             if form.cleaned_data['password'] == settings.ALPHA_PWD_CURRENT:
+#                 request.session['passed_splash'] = True
+#                 return redirect('/')
+#             elif form.cleaned_data['password'] == settings.ALPHA_PWD_PREVIOUS:
+#                 messages.error(request, 'Sorry, WHG v3alpha is under construction and not available right now')
+#             else:
+#                 messages.error(request, 'Sorry, that password is incorrect.')
+#     else:
+#         form = SplashForm()
+#
+#     return render(request, 'main/splash.html', {'form': form})
+
+# Mixin for checking splash screen pass
+class SplashCheckMixin:
+  def dispatch(self, request, *args, **kwargs):
+    if not request.session.get('passed_splash'):
+      return HttpResponseRedirect('/splash')  # Redirect to splash
+    return super().dispatch(request, *args, **kwargs)
+
+class Home30a(TemplateView):
+  template_name = 'main/home_v30a.html'
+
+  def get_context_data(self, *args, **kwargs):
+    context = super(Home30a, self).get_context_data(*args, **kwargs)
+
+    carousel_metadata = []
+    for dataset_types in [Collection, Dataset]:
+      featured = dataset_types.objects.exclude(featured__isnull=True)
+      for dataset in featured:
+        carousel_metadata.append(dataset.carousel_metadata)
+    random.shuffle(carousel_metadata)
+    context['carousel_metadata'] = json.dumps(carousel_metadata)
+
+    context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
+    context['mbtokenmb'] = settings.MAPBOX_TOKEN_MB
+    context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
+    context['media_url'] = settings.MEDIA_URL
+    context['base_dir'] = settings.BASE_DIR
+    context['es_whg'] = settings.ES_WHG
+    context['beta_or_better'] = True if self.request.user.groups.filter(
+      name__in=['beta', 'admins']).exists() else False
+    context['teacher'] = True if self.request.user.groups.filter(
+      name__in=['teacher']).exists() else False
+    context['count'] = Place.objects.filter(dataset__public=True).count()
+
+    # TODO: REMOVE THE FOLLOWING? ****************************************************
+    # Serialize the querysets to JSON
+    f_collections = Collection.objects.exclude(featured__isnull=True)
+    f_datasets = Dataset.objects.exclude(featured__isnull=True)
+    context['featured_coll'] = f_collections
+    context['featured_ds'] = f_datasets
+
+    return context
 
 @login_required
 def profile_edit(request):
@@ -339,49 +407,6 @@ class LibreView(TemplateView):
         context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
         context['maptilerkey'] = settings.MAPTILER_KEY
         context['media_url'] = settings.MEDIA_URL
-        return context
-
-
-class Home30a(TemplateView):
-    template_name = 'main/home_v30a.html'
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(Home30a, self).get_context_data(*args, **kwargs)
-        
-        carousel_metadata = []
-        for dataset_types in [Collection, Dataset]:
-            featured = dataset_types.objects.exclude(featured__isnull=True)
-            for dataset in featured:
-                carousel_metadata.append(dataset.carousel_metadata)
-        random.shuffle(carousel_metadata)
-        context['carousel_metadata'] = json.dumps(carousel_metadata)
-        
-        # f_datasets = list(Dataset.objects.exclude(featured__isnull=True))
-        # shuffle(f_datasets)
-        
-        # 2 collections, rotate datasets randomly
-        # context['featured_coll'] = f_collections.order_by('featured')[:2]
-        context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-        context['mbtokenmb'] = settings.MAPBOX_TOKEN_MB
-        context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
-        context['maptilerkey'] = settings.MAPTILER_KEY
-        context['media_url'] = settings.MEDIA_URL
-        context['base_dir'] = settings.BASE_DIR
-        context['es_whg'] = settings.ES_WHG
-        context['beta_or_better'] = True if self.request.user.groups.filter(
-            name__in=['beta', 'admins']).exists() else False
-        context['teacher'] = True if self.request.user.groups.filter(
-            name__in=['teacher']).exists() else False
-        context['count'] = Place.objects.filter(dataset__public=True).count()
-        
-        
-        # TODO: REMOVE THE FOLLOWING? ****************************************************
-        # Serialize the querysets to JSON
-        f_collections = Collection.objects.exclude(featured__isnull=True)
-        f_datasets = Dataset.objects.exclude(featured__isnull=True)
-        context['featured_coll'] = f_collections
-        context['featured_ds'] = f_datasets
-        
         return context
 
 class Home2b(TemplateView):

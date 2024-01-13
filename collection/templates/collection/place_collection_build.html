@@ -336,7 +336,7 @@
                       </p>
                     </div>
                   {% else %}
-                    <h5 style="display:block;">Welcome</h5>
+                    <h5 class="bg-beige">Welcome</h5>
                     <p>To create a new Place Collection, first fill out the required fields in the
                       form
                       on the left and press <b>Save</b>. All information can be edited afterwards,
@@ -358,11 +358,11 @@
                     </p>
                   {% endif %}
                 </div>
-                {% if action == 'update' and object.image_file %}
                 <div class="col-sm-3">
+                {% if action == 'update' and object.image_file %}
                   <p><img src="/media/{{ object.image_file.name }}" width="200px"/></p>
-                </div>
                 {% endif %}
+                </div>
                 <div id="added_flash" class="hidden">
                   <i class="fas fa-check-circle"></i> Added!
                 </div>

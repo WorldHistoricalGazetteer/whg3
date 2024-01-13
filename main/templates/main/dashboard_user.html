@@ -78,7 +78,7 @@
 {% block content %}
 <div id="container" class="container mt-1">
   <div class="page-title-container mt-3">
-    <h4 class="page-title">My Dashboard</h4>
+    <h4 class="page-title">{{ user.name }}'s Dashboard</h4>
     <a href="{% url 'profile-edit' %}" class="profile-link" title="{{ user.id }}">
       Profile<i class="fas fa-user mx-2"></i> {{ user.id }}
     </a>

@@ -11,7 +11,7 @@ from . import views
 app_name='guides'
 urlpatterns = [
 
-    path(r'', TemplateView.as_view(template_name="main/guides.html"), name="all-guides"),
+    path(r'', TemplateView.as_view(template_name="main/guides.html"), name="guides-all"),
     path('site_guide/', TemplateView.as_view(template_name="tutorials/site_guide.html"), name="site-guide"),
     path('choosing/', TemplateView.as_view(template_name="tutorials/choosing.html"), name="tute-choosing"),
     path('collections/', TemplateView.as_view(template_name="tutorials/collections.html"), name="tute-collections"),

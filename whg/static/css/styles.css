@@ -59,6 +59,7 @@ mark-r { background-color: chocolate; color:white; padding:0 3px;}
 label {vertical-align:text-top;}
 .alert {padding: 0 1.25rem !important;}
 .arial {font-family: arial, san-serif;}
+.bg-beige { background-color: beige !important; }
 .bg-lightyellow { background-color: #ffef98 !important; }
 .bg-lighteryellow { background-color: lightyellow !important; }
 .bg-lightblue { background-color: powderblue !important; }

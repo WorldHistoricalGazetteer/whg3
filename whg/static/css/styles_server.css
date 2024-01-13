@@ -195,7 +195,11 @@ i.fa-eye { margin-bottom: -5px; margin-left: -5px;}
     background-position:right center;
     background-repeat: no-repeat;
 }
-/*.navbar-brand {padding:0; }*/
+.navbar-brand {
+  padding:0;
+  font-family: 'Raleway', serif  !important;
+  color: #004080;
+}
 #version_badge {
   font-size: 1rem;
   margin: 6px 0 0 15px;
