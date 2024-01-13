@@ -12,6 +12,7 @@ class LoginForm(forms.Form):
 
     def clean(self):
         name = self.cleaned_data.get('name')
+        username = self.cleaned_data.get('username')
         email = self.cleaned_data.get('email')
         password = self.cleaned_data.get('password')
         user = authenticate(email=email, password=password)
