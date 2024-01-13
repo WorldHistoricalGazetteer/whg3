@@ -1,5 +1,7 @@
 // whg_maplibre.js
 
+// TODO: Integrate/extend drawing control?
+
 import '../css/maplibre-common.css';
 import '../css/style-control.css';
 import '../css/dateline.css';
@@ -332,7 +334,7 @@ class CustomTerrainControl {
 		        new maplibregl.NavigationControl({
 		            visualizePitch: true,
 		            showZoom: true,
-		            showCompass: true
+		            showCompass: false
 		        })
 		    );		*/	
 		}
@@ -376,44 +378,6 @@ class CustomTerrainControl {
         }
     }
 }
-
-/*class CustomTerrainControl extends maplibregl.TerrainControl {
-    constructor(options) {
-        super(options);
-        this.hillshadeCheckbox = document.getElementById('hillshadeCheckbox');
-        //TODO: Multiple sources
-    }
-
-    toggleTerrain(map) {
-		
-		console.log('TOGGLING DEM');
-		
-		console.log(map.getStyle());
-		
-        if (this.hillshadeCheckbox) {
-            this.hillshadeCheckbox.checked = false;
-            this.hillshadeCheckbox.disabled = true;
-        }
-
-        super.toggleTerrain(map);
-
-        if (this.hillshadeCheckbox) {
-            this.hillshadeCheckbox.disabled = false;
-        }
-    }
-
-    onAdd(map) {
-        const container = super.onAdd(map);
-
-        // Intercept the click event on the control
-        container.addEventListener('click', (event) => {
-            event.preventDefault();
-            this.toggleTerrain(map);
-        });
-
-        return container;
-    }
-}*/
 
 function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 
