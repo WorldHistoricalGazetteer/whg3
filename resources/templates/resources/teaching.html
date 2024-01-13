@@ -8,36 +8,32 @@
 	{% load static %}
 	{% load dataset_extras %}
 	{% block extra_head %}
+{#    <link href="{% static 'webpack/gallery.bundle.css' %}" rel="stylesheet" />#}
     <style>
       body {font-family: 'Raleway', sans-serif !important;}
+      p {color: black;}
       #teaching_content {
-        height: calc(100vh - 70px);
-        position:relative;
-        border: 1px gainsboro solid;
+        height: 100%;
+        {#border: 1px gainsboro solid;#}
+        margin: 0;
+        max-height: calc(100vh - 125px);
+      }
+      .row .col-sm-4, .row .col-sm-8 {
+        max-height: 100%;
+        {#max-width: 100%;#}
       }
       #teaching_essay {height: 85%; overflow: auto; }
       #essay_modal {font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
         font-size: 1.2rem;}
-      #main {
-        position: relative;
-        border: 1px solid black;
-        border-radius: 8px;
-        /* height: 100%; */
-        width: 100%;
-        overflow:hidden;
-      }
-      #collections p {
-        margin: 0.3rem;
+      #collections {
+        {#margin: 0.3rem;#}
         font-size: 0.9rem;
+        color: #000;
       }
-      /* .leaflet-container-default {height: 250px !important;} */
       .resource-gallery {background-color:rgb(238, 238, 238); overflow:auto; border-bottom: 1px solid gainsboro;}
       .gallery-banner {border-bottom: 1px solid lightgray;
         background-color:rgb(60, 136, 148); color: white;}
-      .regions-ttlink {color:grey; font-size:.75rem; float:right; text-decoration-line: underline;}
       .reset-link {float:right; display:none; color:white; text-decoration-line: underline;}
-      #teaching_bottom {height:65%;}
-      #teaching_top {height:230px;}
       .teaching-essay {outline: rgb(60, 136, 148) 1px solid; box-shadow: 4px 4px rgb(221, 221, 221);
         border-radius: 4px; background-color: ivory; min-height:auto; overflow-y: auto;}
       .resource-card {float:left; margin-right:.1rem;
@@ -46,37 +42,50 @@
       .resource-card-header {width:100%; background-color: honeydew;}
       .resource-card-content h6 {font-size: .9rem;}
       .resource-card-blurb {line-height: 1rem; font-size: small;}
+      .scrolling-div {max-height: calc(100vh - 500px); overflow: auto;}
+      #main {
+        position: relative;
+        border: 1px solid black;
+        border-radius: 8px;
+        /* height: 100%; */
+        width: 100%;
+        overflow:hidden;
+      }
+      /* .leaflet-container-default {height: 250px !important;} */
+      .regions-ttlink {color:grey; font-size:.75rem; float:right; text-decoration-line: underline;}
+      #teaching_bottom {height:65%;}
+      #teaching_top {height:230px;}
       #badge_link { font-size:1rem; position:absolute; right:10px; z-index:100;}
       .fill-grey {background-color:gainsboro; }
       .fill-blue {background-color:rgb(60, 136, 148); }
       #region_label {font-family: 'Raleway', sans-serif !important; font-size:1rem; color: tomato;}
-      {#.leaflet-container, .leaflet-container-default {min-height: 220px !important; max-height: 230px !important;}#}
+
     </style>
     {% leaflet_js %}
     {% leaflet_css %}
 	{% endblock %}
 
-	<div id="teaching_content" class="container pt-2 container-md">
-		<section class="text-center">
-			<div class="container mb-1" style="position:relative">
-				<h3>Teaching with World Historical Gazetteer</h3>
-			</div>
-		</section>
+	<div class="container">
     <div class="row">
-      <div class="col-sm-4">
+      <div id="teaching_title" class="col-12 text-center">
+        <h3>Teaching with World Historical Gazetteer</h3>
+      </div>
+    </div>
+    <div id="teaching_content" class="row">
+      <div class="col-4">
         <div>
-					<p>Place names&mdash;their origins, changes over time, and reflections of identity&mdash;can provide a fascinating and
+          <p>Place names&mdash;their origins, changes over time, and reflections of identity&mdash;can provide a fascinating and
             revealing lens through which to explore history. Used with the interactive tools of digital history,
             the study of place names brings new, deeper, and broader connections to our understanding of patterns
             of historical change.</p>
         </div>
-				<div class="teaching-essay p-2">
-					<div id="">
-					<h5 class="mb-0 strong">Place in World History</h5>
-					<p class="my-1">
+        <div class="teaching-essay p-2">
+          <div id="">
+          <h5 class="mb-0 strong">Place in World History</h5>
+          <p class="my-1">
             <a href="https://www.worldhistory.pitt.edu/people/ruth-mostern" target="_blank">Ruth Mostern</a>
             <span class="font-italic small ms-2">WHG Project Director</span></p>
-					<p class="mb-0" style="font-size:.85rem;">Most of us use the word place without thinking too much about what it means,
+          <p class="mb-0" style="font-size:.85rem;">Most of us use the word place without thinking too much about what it means,
             but for historians, place can be a powerful concept. According to the geographer John Agnew, when we say
             that something is a place, we are invoking three ideas.  First, we are talking about something that has
             a <u>location</u>. A place exists somewhere on the surface of the earth. Second, we mean that it has
@@ -84,91 +93,90 @@
             a <u>sense of place</u>, which means that some  people have had experiences that they associate with
             that location.  In other words, a place is a location in which memorable events have transpired.
             <span class="modal-link float-end me-1" data-id="essay_rm"><a href="#" >more...</a></span></p>
-					</div>
-				</div>
-      </div> <!-- .col-sm-4 -->
-      <div class="col-sm-8">
-        <div id="teaching_paths" class="mt-1">
-          <ul id="teaching_tabs" class="nav nav-tabs" role="tablist">
-            <li class="nav-item" role="presentation">
-              <button class="nav-link active" id="collections-tab" data-bs-toggle="tab" data-bs-target="#collections"
-                    type="button" role="tab" aria-controls="collections" aria-selected="true">Place Collections
-              </button>
-            </li>
-            <li class="nav-item" role="presentation">
-              <button class="nav-link" id="lessonplans-tab" data-bs-toggle="tab" data-bs-target="#lessonplans"
-                    type="button" role="tab" aria-controls="lessonplans" aria-selected="true">Lesson Plans
-              </button>
-            </li>
-          </ul>
-          <div class="tab-content">
-            <div id="collections" class="tab-pane fade show active" role="tabpanel" aria-labelledby="collections-tab">
-              <p>A <b>Place Collection</b> is a themed set of place records, each annotated to
-                indicate the reason for its inclusion. Any WHG user can create one, and they are especially useful in
-                teaching or workshop settings using the <b>Collection Group</b> feature.</p>
-              <p class="d-block bg-lighterblue mt-3 fs-6">Building Place Collections</p>
-              <p>After creating a new empty collection, place records can be added in one of two ways: a)
-                from search and browse screens on the site, and/or b) by creating a new dataset and adding all of
-                its records at once. Details can be found on the Create Collection screen.</p>
-                <a href="{% url 'collection:place-collection-create' %}">
-                <button id="b_createcoll" class="btn btn-outline-primary btn-sm">Get started</button></a>
-              </p>
-              <p class="d-block bg-lighterblue mt-4 fs-6">Collection Groups for classes and workshops</p>
-              <p>The <b>Collection Group</b> feature in WHG brings together multiple users in the system who are each
-                creating a Place Collection in a class or workshop setting.</p>
-              <p>Registered users with a "group leader" role are able to create a <b>Collection Group</b>,
-                invite members, review submissions, and optionally display a group gallery.</p>
-              <p>If you would like to create a Collection Group, just
-                <a href="{% url 'contact' %}">let us know</a>.</p>
-            </div>
-            <div id="lessonplans" class="tab-pane" role="tabpanel" aria-labelledby="lessonplans-tab">
-              <div class="">{% leaflet_map "main" %}</div>
-              <div class="resource-gallery h-100">
-                <div class="gallery-banner ps-2 small w-100";>
-                  TEACHING RESOURCES ({{ resource_list|length }})
-                  <span id="regions_reset" class="reset-link me-2" style="cursor:pointer;">reset filter</span>
-                </div>
-                <div class="ps-1">
-                  {# this pins featured cards #}
-                  {% for r in featured %}
-                    <div class="resource-card mt-1" data-regions="{{r.regions}}">
-                      <div class="resource-card-header ps-2 small ">{{ r.type }}
-{#                       <span class="regions-ttlink me-1" data-toggle="tooltip"#}
-{#                                 data-html="true" title="{{r.regions}}">#}
-{#                          <i class="fas fa-globe linky"></i> regions</span>#}
-                      </div>
-                      <div class="resource-card-content px-2 pt-1" data-id={{r.id}}>
-                        {% with remainder=190|add:r.title_length %}
-                        <h6><a href="{% url 'resources:resource-detail' r.id %}">{{ r.title }}</a></h6>
-                        <p class="resource-card-blurb my-1">{{ r.description|trunc_it:remainder }} </p>
-                        {%endwith%}
-                      </div>
-                    </div>
-                  {% endfor %}
-                  {# the rest #}
-                  {% for r in resource_list %}
-                    <div class="resource-card mt-1" data-regions="{{r.regions}}">
-                      <div class="resource-card-header ps-2 small ">{{ r.type }}
-{#                        <span class="regions-ttlink me-1" data-toggle="tooltip" data-html="true"#}
-{#                              title="{{r.regions}}">#}
-{#                          <i class="fas fa-globe linky"></i> regions</span>#}
-                      </div>
-                      <div class="resource-card-content px-2 pt-1" data-id={{r.id}}>
-                        {% with remainder=190|add:r.title_length %}
-                        <h6><a href="{% url 'resources:resource-detail' r.id %}">{{ r.title }}</a></h6>
-                        <p class="resource-card-blurb my-1">{{ r.description|trunc_it:remainder }} </p>
-                        {%endwith%}
-                      </div>
-                    </div>
-                  {% endfor %}
-                </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-8">
+        <ul id="teaching_tabs" class="nav nav-tabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="collections-tab" data-bs-toggle="tab" data-bs-target="#collections"
+                  type="button" role="tab" aria-controls="collections" aria-selected="true">Place Collections
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="lessonplans-tab" data-bs-toggle="tab" data-bs-target="#lessonplans"
+                  type="button" role="tab" aria-controls="lessonplans" aria-selected="true">Lesson Plans</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="gallery-tab"
+                    data-bs-toggle="tab" data-bs-target="#gallery"
+                  type="button" role="tab"
+                    aria-controls="gallery" aria-selected="true">Student Gallery</button>
+          </li>
+        </ul>
+        <div class="tab-content">
+          <div id="collections" class="tab-pane fade show active" role="tabpanel" aria-labelledby="collections-tab">
+            <p>A <b>Place Collection</b> is a themed set of place records, each annotated to
+              indicate the reason for its inclusion. Any WHG user can create one, and they are especially useful in
+              teaching or workshop settings using the <b>Collection Group</b> feature.</p>
+            <p class="d-block bg-beige mt-3 mb-1 fs-6">Building Place Collections</p>
+            <p class="mb-1">After creating a new empty collection, place records can be added in one of two ways: a)
+              from search and browse screens on the site, and/or b) by creating a new dataset and adding all of
+              its records at once. Details can be found on the Create Collection screen.</p>
+              <a href="{% url 'collection:place-collection-create' %}">
+              <button id="b_createcoll" class="btn btn-outline-primary btn-sm">Get started</button></a>
+            </p>
+            <p class="d-block bg-beige mt-3 mb-1 fs-6">Collection Groups for classes and workshops</p>
+            <p>The <b>Collection Group</b> feature in WHG brings together multiple users in the system who are each
+              creating a Place Collection in a class or workshop setting.</p>
+            <p>Registered users with a "group leader" role are able to create a <b>Collection Group</b>,
+              invite members, review submissions, and optionally display a group gallery.</p>
+            <p>If you would like to create a Collection Group, just
+              <a href="{% url 'contact' %}">let us know</a>.</p>
+          </div>
+          <div id="lessonplans" class="tab-pane">
+            <div class="map">{% leaflet_map "main" %}</div>
+            <div class="resource-gallery">
+              <div class="gallery-banner ps-2 small w-100";>
+                TEACHING RESOURCES ({{ resource_list|length }})
+                <span id="regions_reset" class="reset-link me-2" style="cursor:pointer;">reset filter</span>
               </div>
-            </div> <!-- #lessonplans -->
-          </div> <!-- .tab-content -->
-        </div> <!-- #teaching_paths -->
-      </div> <!-- .col-sm-8 -->
+{#              <div class="header bg-warning">Header</div>#}
+              <div class="scrolling-div" style="overflow: auto;">
+                {% for r in featured %}
+                  <div class="resource-card mt-1" data-regions="{{r.regions}}">
+                    <div class="resource-card-header ps-2 small ">{{ r.type }}</div>
+                    <div class="resource-card-content px-2 pt-1" data-id={{r.id}}>
+                      {% with remainder=190|add:r.title_length %}
+                      <h6><a href="{% url 'resources:resource-detail' r.id %}">{{ r.title }}</a></h6>
+                      <p class="resource-card-blurb my-1">{{ r.description|trunc_it:remainder }} </p>
+                      {%endwith%}
+                    </div>
+                  </div>
+                {% endfor %}
+                {% for r in resource_list %}
+                  <div class="resource-card mt-1" data-regions="{{r.regions}}">
+                    <div class="resource-card-header ps-2 small ">{{ r.type }}
+                    </div>
+                    <div class="resource-card-content px-2 pt-1" data-id={{r.id}}>
+                      {% with remainder=190|add:r.title_length %}
+                      <h6><a href="{% url 'resources:resource-detail' r.id %}">{{ r.title }}</a></h6>
+                      <p class="resource-card-blurb my-1">{{ r.description|trunc_it:remainder }} </p>
+                      {%endwith%}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+          <div id="gallery" class="tab-pane">
+           <div>a student gallery</div>
+          </div>
+        </div>
+      </div>
     </div>
-		<div id="essay_modal" class="selector py-3" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;"></div>
+		<div id="essay_modal" class="selector py-3" s
+         tyle="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;">
     </div>
   </div>
 	<script type="text/javascript">
