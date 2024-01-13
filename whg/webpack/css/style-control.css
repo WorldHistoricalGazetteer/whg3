@@ -29,12 +29,16 @@
 .variant-item {
   cursor: pointer;
   margin-bottom: 4px;
+  margin-left: -13px!important;
   padding: 4px 8px;
-  background-color: #f5f5f5;
   border-radius: 4px;
   transition: background-color 0.2s ease;
   font-weight: normal;
   padding: 0 6px 0 12px !important;
+}
+
+.variant-item-label {
+  margin: -2px 0 -2px 2px;
 }
 
 /* Style for the selected variant option */
@@ -48,6 +52,15 @@
   background-color: #dcdcdc; /* Customize the background color on hover */
 }
 
+.style-list-divider {
+	margin: 5px 0;
+}
+
+.hillshade-label {
+	margin: -5px 0 0 2px;
+	font-weight: normal;
+}
+
 /* Style for the scrollable list */
 #mapStyleList {
   display: none;
@@ -57,6 +70,7 @@
   border-radius: 4px;
   padding: 4px;
   margin: 3px;
+  user-select: none;
 }
 
 #mapStyleList.show {

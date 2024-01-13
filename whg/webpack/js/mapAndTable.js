@@ -37,17 +37,18 @@ let spinner_map = startSpinner("dataset_content", 3);
 let mapParameters = {
 	style: ['DATAVIZ.DEFAULT', 'OUTDOOR.DEFAULT'], 
 	maxZoom: 10,
+	temporalControl: {
+        fromValue: 1550,
+        toValue: 1720,
+        minValue: -2000,
+        maxValue: 2100,
+        open: false,
+        includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
+        epochs: null,
+        automate: null,
+    },
+    sequencerControl: true,
     controls: {
-	    temporal: {
-	        fromValue: 1550,
-	        toValue: 1720,
-	        minValue: -2000,
-	        maxValue: 2100,
-	        open: false,
-	        includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
-	        epochs: null,
-	        automate: null,
-	    },
 	    sequencer: true,
 	},
 }

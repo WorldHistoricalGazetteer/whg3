@@ -1,86 +1,419 @@
 // whg_maplibre.js
 
-import { Map, MapStyle, config, NavigationControl, AttributionControl, Popup } from '/webpack/node_modules/@maptiler/sdk/dist/maptiler-sdk.mjs';
-import '@maptiler/sdk/dist/maptiler-sdk.css';
 import '../css/maplibre-common.css';
 import '../css/style-control.css';
 import '../css/dateline.css';
 
-const custom_styles = {
-    'ne_global': {
-        version: 8,
-        sources: {
-            basemap: {
-                type: 'raster',
-                tiles: [
-                    `https://a.tiles.mapbox.com/v4/kgeographer.ne_global/{z}/{x}/{y}.png?access_token=${process.env.MAPBOX_TOKEN_WHG}`,
-                    `https://b.tiles.mapbox.com/v4/kgeographer.ne_global/{z}/{x}/{y}.png?access_token=${process.env.MAPBOX_TOKEN_WHG}`
-                ],
-                tileSize: 256,
-            },
-        },
-        layers: [{
-            id: 'basemap',
-            type: 'raster',
-            source: 'basemap',
-        }]        
-    },
+function getStyleURL(style) {
+	return `${process.env.TILEBOSS}/styles/${style}/style.json`;
 }
 
-function convertStyle(style) {
-	
-	console.log(style);  
-  	if (Array.isArray(style)) {
-		console.log(`Setting style from array: ${style}`);
-		let styleCode = style[0].split('.');
-		style = MapStyle[styleCode[0]][styleCode[1]];
-  	}
-  	else if (typeof style === 'string') {
-	  	console.log(`Setting style: ${style}`);
-	  	style = custom_styles[style];
-	}	
-  	else if (typeof style === 'object') {
-	  	console.log('Setting style:', style);
-	}
-	else {
-		console.log('Unable to set style.', style);
-	}
-	return style;
-	
+function getTilejsonURL(style) {
+	return `${process.env.TILEBOSS}/data/${style}.json`;
 }
 
-Map.prototype.baseStyle = {};
-// Override the setStyle method to handle style arrays
-const originalSetStyle = Map.prototype.setStyle;
-Map.prototype.setStyle = function (style) {
-	return originalSetStyle.call(this, convertStyle(style), {
-		transformStyle: (previousStyle, nextStyle) => { // Identify sources and layers that were added to the baseStyle
-			const newSources = {
-				...nextStyle.sources
-			};
-			
-			let additionalLayers = [];
-			if (previousStyle) {
-				console.log('Style switch:',previousStyle.sources,this.baseStyle);
-				Object.keys(previousStyle.sources).forEach((sourceId) => {
-					if (!this.baseStyle.sources.includes(sourceId)) {
-						newSources[sourceId] = previousStyle.sources[sourceId];
-					}
-				});
-				additionalLayers = previousStyle.layers.filter((layer) => !this.baseStyle.layers.includes(layer.id));
-			}
+async function fetchJSON(jsonURL) {
+    try {
+        const response = await fetch(jsonURL);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch JSON. Status: ${response.status}`);
+        }
+        const resultJSON = await response.json();
+        console.log('Fetched JSON.', resultJSON);
+        return resultJSON;
+    } catch (error) {
+        console.error('Error fetching JSON:', error);
+        throw error;
+    }
+}	 
 
-			this.baseStyle.sources = Object.keys(nextStyle.sources);
-			this.baseStyle.layers = nextStyle.layers.map((layer) => layer.id);
-			
-			return {
-				...nextStyle,
-				sources: newSources,
-				layers: previousStyle ? [...nextStyle.layers, ...additionalLayers] : nextStyle.layers,
-			};
+class acmeStyleControl {
+
+	constructor(mapInstance) {
+		this._map = mapInstance;
+		this.basemaps = mapInstance.initOptions.basemaps; // e.g. ['natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade', 'kg-NE2_HR_LC_SR_W', 'kg-NE2_HR_LC_SR_W_DR']
+		this.styles = mapInstance.initOptions.styles; // e.g. ['whg-ne-dem']
+		this.listDictionary = {};
+	}
+
+	onAdd() {
+		this._container = document.createElement('div');
+		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+		this._container.textContent = 'Basemap';
+		this._container.innerHTML =
+			'<button type="button" class="style-button" aria-label="Change basemap style" title="Change basemap style">' +
+			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
+			'</button>';
+		this._container.querySelector('.style-button').addEventListener('click', this._onClick.bind(this));
+		const currentStyle = this._map.getStyle();
+		this.baseStyle = {}; // Used for identifying layers that should be ignored when the map is clicked
+		this.baseStyle.sources = Object.keys(currentStyle.sources);
+		this.baseStyle.layers = currentStyle.layers.map((layer) => layer.id);
+
+        const promises = [
+            ...this.basemaps.map(item => fetchJSON(getTilejsonURL(item))),
+            ...this.styles.map(item => fetchJSON(getStyleURL(item))),
+        ];
+        
+        Promise.all(promises)
+            .then(results => {
+                [...this.basemaps, ...this.styles].forEach((item, index) => {
+                    this.listDictionary[item] = results[index];
+                });				
+                this.createMapStyleList();
+            })
+            .catch(error => {
+                console.error('Failed to fetch JSON:', error);
+            });
+
+        return this._container;	
+	}
+		
+    createMapStyleList() {
+		
+        let styleList = document.getElementById('mapStyleList');
+        if (!styleList) {
+            styleList = document.createElement('ul');
+            styleList.id = 'mapStyleList';
+            styleList.className = 'maplibre-styles-list';
+
+            const groups = [
+                { title: 'Basemaps', items: this.basemaps, type: 'basemap' },
+                { title: 'Styles', items: this.styles, type: 'style' }
+            ];
+
+            for (const [index, group] of groups.entries()) {
+                const groupItem = document.createElement('li');
+                groupItem.textContent = group.title;
+                groupItem.className = 'group-item';
+                const itemList = document.createElement('ul');
+                itemList.className = 'variant-list';
+
+                for (const [itemIndex, item] of group.items.entries()) {
+                    const itemElement = document.createElement('li');
+                    itemElement.className = 'variant-item';	                
+	                itemList.appendChild(itemElement);
+                    
+	                const radioInput = document.createElement('input');
+	                radioInput.type = 'radio';
+	                radioInput.name = group.type;
+	                radioInput.dataset.type = group.type;
+	                radioInput.dataset.value = item;
+	                radioInput.checked = 
+	                	(group.type === 'style' && item === this.styles[0]) ||
+	                	(group.type === 'basemap' && this.listDictionary[this.styles[0]].sources.basemap.url.includes(item));
+	                radioInput.addEventListener('change', (event) => this._onVariantClick(event));
+	                itemElement.appendChild(radioInput);
+	
+	                const labelElement = document.createElement('label');
+	                labelElement.textContent = this.listDictionary[item].name;
+	                labelElement.className = 'variant-item-label';
+	                labelElement.dataset.type = group.type;
+	                labelElement.dataset.value = item;
+	                labelElement.addEventListener('click', (event) => {
+	                    radioInput.checked = true;
+	                    this._onVariantClick(event);
+	                });	
+	                itemElement.appendChild(labelElement);
+	                
+                }
+
+                groupItem.appendChild(itemList);
+                styleList.appendChild(groupItem);
+            }
+            
+		    const horizontalLine = document.createElement('hr');
+	        horizontalLine.className = 'style-list-divider';
+		    styleList.appendChild(horizontalLine);
+		
+		    const hillshadeGroupItem = document.createElement('li');
+		    hillshadeGroupItem.className = 'group-item';
+		    const hillshadeCheckboxItem = document.createElement('li');
+		    const hillshadeCheckbox = document.createElement('input');
+		    hillshadeCheckbox.type = 'checkbox';
+		    hillshadeCheckbox.id = 'hillshadeCheckbox';
+	        hillshadeCheckbox.className = 'hillshade-checkbox';
+	        
+	        const sources = this.listDictionary[this.styles[0]].sources || {};
+    		const hasTerrariumSources = Object.keys(sources).some(source => source.startsWith('terrarium'));
+		    if (hasTerrariumSources) {
+		        hillshadeCheckbox.checked = true;
+		    } else {
+		        hillshadeCheckbox.disabled = true;
+		    }	        
+	        
+		    hillshadeCheckbox.addEventListener('change', (event) => this._toggleHillshadeLayers(event));
+		    const hillshadeLabel = document.createElement('label');
+		    hillshadeLabel.textContent = 'Hillshade';
+		    hillshadeLabel.setAttribute('for', 'hillshadeCheckbox');
+	        hillshadeLabel.className = 'hillshade-label';
+		    hillshadeCheckboxItem.appendChild(hillshadeCheckbox);
+		    hillshadeCheckboxItem.appendChild(hillshadeLabel);
+		    hillshadeGroupItem.appendChild(hillshadeCheckboxItem);
+		    styleList.appendChild(hillshadeGroupItem);            
+
+            this._container.appendChild(styleList);
+        }
+
+        this._onClick = this._onClick.bind(this);
+    }	
+
+	onRemove() {
+		this._container.parentNode.removeChild(this._container);
+		this._map = undefined;
+	}
+
+    _onClick() {
+        let styleList = document.getElementById('mapStyleList');
+        if (styleList) {
+            styleList.classList.toggle('show');
+        }
+    }
+    
+	_toggleHillshadeLayers(event) {
+	    const isChecked = event.target.checked;
+	    const layers = this._map.getStyle().layers;
+	    for (const layer of layers) {
+	        if (layer.type == 'hillshade') {
+	            this._map.setLayoutProperty(layer.id, 'visibility', isChecked ? 'visible' : 'none');
+	        }
+	    }
+	}    
+
+	_onVariantClick(event) {
+	    
+	    if (event.target.dataset.type === 'basemap') {
+	    
+			const resultJSON = this.listDictionary[event.target.dataset.value];
+	        this._map.setStyle(this._map.getStyle(), {
+	            transformStyle: (previousStyle, nextStyle) => ({
+	                ...nextStyle,
+	                sources: {
+	                    ...previousStyle.sources,
+	                    'basemap': resultJSON,
+	                }
+	            })
+	        }); 
+			    
 		}
-	});
-};
+		else {
+			
+	        const resultJSON = this.listDictionary[event.target.dataset.value];
+		
+			console.log('_onVariantClick style',this.listDictionary, event, event.target.dataset, resultJSON);
+	        this._map.setStyle(resultJSON, {
+	            diff: false, // Force rebuild because native diff logic cannot handle this transformation
+	            transformStyle: (previousStyle, nextStyle) => {
+					
+					console.log('previousStyle',previousStyle);
+					
+	                const modifiedSources = {
+	                    ...nextStyle.sources,
+	                    ...Object.keys(previousStyle.sources).reduce((acc, key) => {
+	                        if (!this.baseStyle.sources.includes(key)) {
+	                            acc[key] = previousStyle.sources[key];
+	                        }
+	                        return acc;
+	                    }, {}),
+	                };
+	
+	                var modifiedLayers = [
+	                    ...nextStyle.layers,
+	                    ...previousStyle.layers.filter((layer) => !this.baseStyle.layers.includes(layer.id)),
+	                ];
+	                
+	                const hillshadeCheckbox = document.getElementById('hillshadeCheckbox');
+	                const isChecked = hillshadeCheckbox ? hillshadeCheckbox.checked : false;
+	                for (var layer of modifiedLayers) {
+	                    if (layer.type === 'hillshade') {
+							layer.layout.visibility = isChecked ? 'visible' : 'none';
+	                    }
+	                }	                
+	
+	                this.baseStyle.sources = Object.keys(resultJSON.sources);
+	                this.baseStyle.layers = resultJSON.layers.map((layer) => layer.id);
+	                
+	                const styleName = resultJSON.sources.basemap.url.split('/').pop().replace('.json', '');
+				    const basemapInput = document.querySelector(`input[name="basemap"][value="${styleName}"]`);
+			        if (basemapInput) {
+			            basemapInput.checked = true;
+			        }
+		
+					console.log(this.listDictionary, modifiedSources, modifiedLayers);
+	
+	                return {
+	                    ...nextStyle,
+	                    sources: modifiedSources,
+	                    layers: modifiedLayers,
+	                };
+	            },
+	        });			
+
+		}
+	}
+}
+
+class CustomTerrainControl {
+    constructor(options) {
+        this._container = document.createElement('div');
+        this._container.className = 'custom-terrain-control maplibregl-ctrl maplibregl-ctrl-group';
+        this._terrainSources = [];
+        this._currentTerrainSource = null;
+        this._tempTerrain = 'temp_terrain';
+        this._zoomListener = null;
+        this._hillshadeState = null;
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'maplibregl-ctrl-terrain';
+        button.title = 'Enable terrain';
+        
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'maplibregl-ctrl-icon';
+        iconSpan.setAttribute('aria-hidden', 'true');
+        button.appendChild(iconSpan);        
+        
+        button.addEventListener('click', () => this.toggleTerrain(button));
+        this._container.appendChild(button);
+    }
+
+    onAdd(map) {
+        this._map = map;
+        return this._container;
+    }
+
+    onRemove() {
+        this._container.parentNode.removeChild(this._container);
+        this._map = undefined;
+    }
+
+    toggleTerrain(button) {
+        console.log('Custom Terrain Toggled');
+        
+		const enablingTerrain = !button.classList.contains('maplibregl-ctrl-terrain-enabled');
+        button.classList.toggle('maplibregl-ctrl-terrain-enabled', enablingTerrain);
+        button.title = enablingTerrain ? 'Disable terrain' : 'Enable terrain';
+        
+        const hillshadeCheckbox = document.getElementById('hillshadeCheckbox');
+        if (hillshadeCheckbox) {
+	        if (enablingTerrain) {
+				this._hillshadeState = hillshadeCheckbox.checked; // Record state of hillshadeCheckbox when terrain is enabled
+		        if (!hillshadeCheckbox.checked) {
+					hillshadeCheckbox.disabled = false;
+					hillshadeCheckbox.click();
+		        }
+				hillshadeCheckbox.disabled = true;
+			}
+			else {
+				hillshadeCheckbox.disabled = false;
+				if (!this._hillshadeState) hillshadeCheckbox.click();
+			}			
+		}
+        
+        if (enablingTerrain) {
+			const mapStyle = this._map.getStyle();
+	        
+	        this._terrainSources = [];
+            for (const source in mapStyle.sources) {
+                const demSource = mapStyle.sources[source];
+                if (demSource.type === 'raster-dem') {
+                    this._terrainSources.push(demSource);
+                }
+            }
+            
+            console.log('this._terrainSources',this._terrainSources);
+
+            this._zoomListener = () => this.handleZoomChange();
+            this._map.on('zoom', this._zoomListener);
+            this.handleZoomChange();
+			this._map.setPitch(60);
+			// TODO: add/augment Navigation control, and reset when disabling terrain
+/*		    map.addControl(
+		        new maplibregl.NavigationControl({
+		            visualizePitch: true,
+		            showZoom: true,
+		            showCompass: true
+		        })
+		    );		*/	
+		}
+		else {
+			this._map.off('zoom', this._zoomListener);
+            this._zoomListener = null;
+            this._terrainSources = [];
+			if (this._map.getSource(this._tempTerrain)) {
+			    this._map.removeSource(this._tempTerrain);
+			}      
+            this._map
+            	.setTerrain(null)
+				.setPitch(0)
+				.resetNorth();
+		}
+        
+    }
+    
+    handleZoomChange() {
+        const currentZoom = this._map.getZoom();
+        
+        // TODO: Disable terrain for zoom below 8?
+
+        // Find the first terrain source for which the current map zoom is in range
+        const selectedTerrainSource = this._terrainSources.find(source => {
+            return currentZoom >= source.minzoom && currentZoom <= source.maxzoom;
+        });
+
+        if (selectedTerrainSource && selectedTerrainSource !== this._currentTerrainSource) {
+            this._map.setTerrain(null);
+			if (this._map.getSource(this._tempTerrain)) {
+			    this._map.removeSource(this._tempTerrain);
+			}            
+            this._map.addSource(this._tempTerrain, { ...selectedTerrainSource });
+            this._currentTerrainSource = selectedTerrainSource;
+            this._map.setTerrain({
+                source: this._tempTerrain,
+                exaggeration: 1.5,
+            });
+            console.log(selectedTerrainSource, this._map.getStyle());
+        }
+    }
+}
+
+/*class CustomTerrainControl extends maplibregl.TerrainControl {
+    constructor(options) {
+        super(options);
+        this.hillshadeCheckbox = document.getElementById('hillshadeCheckbox');
+        //TODO: Multiple sources
+    }
+
+    toggleTerrain(map) {
+		
+		console.log('TOGGLING DEM');
+		
+		console.log(map.getStyle());
+		
+        if (this.hillshadeCheckbox) {
+            this.hillshadeCheckbox.checked = false;
+            this.hillshadeCheckbox.disabled = true;
+        }
+
+        super.toggleTerrain(map);
+
+        if (this.hillshadeCheckbox) {
+            this.hillshadeCheckbox.disabled = false;
+        }
+    }
+
+    onAdd(map) {
+        const container = super.onAdd(map);
+
+        // Intercept the click event on the control
+        container.addEventListener('click', (event) => {
+            event.preventDefault();
+            this.toggleTerrain(map);
+        });
+
+        return container;
+    }
+}*/
 
 function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 
@@ -162,7 +495,7 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 	originalMapContainer.appendChild(container);
 
 	// Create a map renderer
-	const renderMap = new Map({
+	const renderMap = new maplibregl.Map({
 		container: container,
 		style: map.getStyle(),
 		center: map.getCenter(),
@@ -226,7 +559,6 @@ class downloadMapControl {
     onAdd() {
         this._container = document.createElement('div');
         this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group maplibregl-ctrl-download';
-        //this._container.textContent = 'Download image';
 
         const downloadButton = document.createElement('button');
         downloadButton.type = 'button';
@@ -249,104 +581,34 @@ class downloadMapControl {
     }
 }
 
-class acmeStyleControl {
-
-	constructor(mapInstance, style) {
-		this._map = mapInstance;
-		this.styleFilter = style
-	}
-
-	onAdd() {
-		this._container = document.createElement('div');
-		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-		this._container.textContent = 'Basemap';
-		this._container.innerHTML =
-			'<button type="button" class="style-button" aria-label="Change basemap style" title="Change basemap style">' +
-			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
-			'</button>';
-		this._container.querySelector('.style-button').addEventListener('click', this._onClick.bind(this));
-		const currentStyle = this._map.getStyle();
-		this.baseStyle = {};
-		this.baseStyle.sources = Object.keys(currentStyle.sources);
-		this.baseStyle.layers = currentStyle.layers.map((layer) => layer.id);
-		return this._container;
-	}
-
-	onRemove() {
-		this._container.parentNode.removeChild(this._container);
-		this._map = undefined;
-	}
-
-	_onClick() {
-		let styleList = document.getElementById('mapStyleList');
-		if (!styleList) {
-			styleList = document.createElement('ul');
-			styleList.id = 'mapStyleList';
-			styleList.className = 'maplibre-styles-list';
-			const styleFilterValues = this.styleFilter.map(value => value.split('.')[0]);
-			for (const group of Object.values(MapStyle)) {
-				// Check if the group.id is in the styleFilter array
-				if (this.styleFilter.length == 0 || styleFilterValues.includes(group.id)) {
-					const groupItem = document.createElement('li');
-					groupItem.textContent = group.name;
-					groupItem.className = 'group-item';
-					const variantList = document.createElement('ul');
-					variantList.className = 'variant-list';
-					for (const orderedVariant of group.orderedVariants) {
-						const datasetValue = group.id + '.' + orderedVariant.variantType;
-						if (this.styleFilter.length == 0 || this.styleFilter.includes(datasetValue)) {
-							const variantItem = document.createElement('li');
-							variantItem.textContent = orderedVariant.name;
-							variantItem.className = 'variant-item';
-							variantItem.dataset.value = datasetValue;
-							variantItem.addEventListener('click', this._onVariantClick.bind(this));
-							variantList.appendChild(variantItem);
-						}
-					}
-					groupItem.appendChild(variantList);
-					styleList.appendChild(groupItem);
-				}
-			}
-			this._container.appendChild(styleList);
-		}
-
-		styleList.classList.toggle('show');
-	}
-
-	_onVariantClick(event) {
-
-		const variantValue = event.target.dataset.value;
-		const style_code = variantValue.split(".");
-		console.log('Selected variant: ', variantValue, MapStyle[style_code[0]][style_code[1]]);
-		this._map.setStyle([variantValue]/*, {
-			transformStyle: (previousStyle, nextStyle) => { // Identify sources and layers that were added to the baseStyle
-				const newSources = {
-					...nextStyle.sources
-				};
-				Object.keys(previousStyle.sources).forEach((sourceId) => {
-					if (!this.baseStyle.sources.includes(sourceId)) {
-						newSources[sourceId] = previousStyle.sources[sourceId];
-					}
-				});
-				const additionalLayers = previousStyle.layers.filter((layer) => !this.baseStyle.layers.includes(layer.id));
-				this.baseStyle.sources = Object.keys(nextStyle.sources); // Update baseStyle record
-				this.baseStyle.layers = nextStyle.layers.map((layer) => layer.id);
-				return {
-					...nextStyle,
-					sources: newSources,
-					layers: [...nextStyle.layers, ...additionalLayers],
-				};
-			}
-		}*/);
-
-		const styleList = document.getElementById('mapStyleList');
-		if (styleList) {
-			styleList.classList.remove('show');
-		}
-	}
+class CustomAttributionControl extends maplibregl.AttributionControl {
+    constructor(options) {
+        super(options);
+        this.autoClose = options.autoClose !== false;
+    }
+    onAdd(map) {
+        const container = super.onAdd(map);
+        // Automatically close the AttributionControl if autoClose is enabled
+        if (this.autoClose) {
+            const attributionButton = container.querySelector('.maplibregl-ctrl-attrib-button');            
+            if (attributionButton) {
+				const delay = 500; // Delay required to ensure that listener is registered
+                setTimeout(() => {
+	                attributionButton.dispatchEvent(new MouseEvent('click', {
+	                    bubbles: true,
+	                    cancelable: true,
+	                    view: window
+	                }));
+                    container.style.display = 'block';
+                    container.classList.add('fade-in');
+                }, delay);
+            }
+        }
+        return container;
+    }
 }
 
-Map.prototype.reset = function () {
+maplibregl.Map.prototype.reset = function () {
 	this.flyTo({
 		center: this.initOptions.center,
 		zoom: this.initOptions.zoom,
@@ -354,7 +616,7 @@ Map.prototype.reset = function () {
     });
 }
 
-Map.prototype.fitViewport = function (bbox) {
+maplibregl.Map.prototype.fitViewport = function (bbox) {
 	// This function addresses an apparent bug with flyTo and fitBounds in MapLibre/Maptiler,
 	// which crash and/or fail to center correctly with large mapPadding values.
 	const mapContainer = this.getContainer();
@@ -395,74 +657,61 @@ Map.prototype.fitViewport = function (bbox) {
 	});
 };
 
-class CustomAttributionControl extends AttributionControl {
-    constructor(options) {
-        super(options);
-        this.autoClose = options.autoClose !== false;
-    }
-    onAdd(map) {
-        const container = super.onAdd(map);
-        // Automatically close the AttributionControl if autoClose is enabled
-        if (this.autoClose) {
-            const attributionButton = container.querySelector('.maplibregl-ctrl-attrib-button');
-            if (attributionButton) {
-                attributionButton.dispatchEvent(new MouseEvent('click', {
-                    bubbles: true,
-                    cancelable: true,
-                    view: window
-                }));
-                container.classList.add('fade-in');
-            }
-        }
-        return container;
-    }
-}
-
-const originalMapConstructor = Map;
-Map = function (options = {}) {
+const originalMapConstructor = maplibregl.Map;
+maplibregl.Map = function (options = {}) {
 		
     const defaultOptions = {
         container: 'map',
-        style: 'ne_global', // ['DATAVIZ.DEFAULT'], or with style switcher ['DATAVIZ.DEFAULT', 'OUTDOOR.DEFAULT']
+        style: ['whg-basic', 'whg-enhanced'],
+        basemap: ['natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade',/* 'kg-NE2_HR_LC_SR_W', 'kg-NE2_HR_LC_SR_W_DR'*/],
         zoom: 0.2,
         center: [9.2, 33],
         minZoom: 0.1,
         maxZoom: 6,
-        attributionControl: false, // {position: 'bottom-right', autoClose: true},
-        geolocateControl: false,
-        navigationControl: false, // {position: 'top-right', showCompass: false},
-        maptilerLogo: false,
+        maxPitch: 85,
+        attributionControl: {position: 'bottom-right', autoClose: true, defaultAttribution: '© World Historical Gazetteer & contributors | Basemap: <a href="https://www.naturalearthdata.com/">Natural Earth</a> | Terrain: <a href="https://github.com/tilezen/joerd/blob/master/docs/data-sources.md">Mapzen</a>'}, // false
+        navigationControl: {position: 'top-right', showCompass: false}, // false
+        fullscreenControl: false,
+        downloadMapControl: false,
+	    terrainControl: true, //TODO - reconfigure CustomTerrainControl to disable hillshade layers when terrain is active
+	    temporalControl: false,
+    	sequencerControl: false,
     };
     
-    const mergedOptions = { ...defaultOptions, ...options };
+    // replace defaultOptions with any passed options 
+    var chosenOptions = { ...defaultOptions, ...options };
     
-    const { style, attributionControl, ...otherOptions } = mergedOptions;
-    
-    let styleFilters = Array.isArray(style) && style.length > 1 ? style : false;
-    otherOptions.style = Array.isArray(style) ? style : convertStyle(style);
-    
-    const customNavigationControl = otherOptions.navigationControl;
-    otherOptions.navigationControl = false; // Prevent default maptilersdk navigationControl
-    
-    const mapInstance = new originalMapConstructor(otherOptions);
-    mapInstance.initOptions = otherOptions;
+    if (chosenOptions.attributionControl) {
+		chosenOptions.customAttributionControl = chosenOptions.attributionControl;
+		chosenOptions.attributionControl = false;
+	}
+	
+	chosenOptions.basemaps = chosenOptions.basemap === "" ? [] : (Array.isArray(chosenOptions.basemap) ? chosenOptions.basemap : [chosenOptions.basemap]);
 
-    mapInstance.on('load', () => {
-		if (styleFilters) {
-			mapInstance.styleControl = new acmeStyleControl(mapInstance, styleFilters);
+	chosenOptions.styles = Array.isArray(chosenOptions.style) ? chosenOptions.style : [chosenOptions.style];
+	chosenOptions.style = getStyleURL(chosenOptions.styles[0]);
+    
+    const mapInstance = new originalMapConstructor(chosenOptions);
+    mapInstance.initOptions = chosenOptions;
+    
+    console.log(mapInstance.initOptions);
+    
+    mapInstance.on('load', () => { // Add chosen controls
+		if (chosenOptions.fullscreenControl) mapInstance.addControl(new maplibregl.FullscreenControl(), 'top-left');
+		if (chosenOptions.downloadMapControl) mapInstance.addControl(new downloadMapControl(mapInstance), 'top-left');
+		if (chosenOptions.navigationControl) mapInstance.addControl(new maplibregl.NavigationControl(chosenOptions.navigationControl), chosenOptions.navigationControl.position);
+		if (chosenOptions.basemaps.length + chosenOptions.styles.length > 1) {
+			mapInstance.styleControl = new acmeStyleControl( mapInstance );
 			mapInstance.addControl(mapInstance.styleControl, 'top-right');
 		}
-		if (customNavigationControl) mapInstance.addControl(new NavigationControl(customNavigationControl), customNavigationControl['position']);
-		if (attributionControl) mapInstance.addControl(new CustomAttributionControl({
+		if (chosenOptions.terrainControl) mapInstance.addControl(new CustomTerrainControl({source: 'terrarium-aws'}), 'top-right');
+		if (!!chosenOptions.customAttributionControl) mapInstance.addControl(new CustomAttributionControl({
 				compact: true,
-		    	autoClose: attributionControl.autoClose,
-			}), attributionControl.position);
-		if (downloadMapControl) mapInstance.addControl(new downloadMapControl(mapInstance), 'top-left');
+		    	autoClose: chosenOptions.customAttributionControl.autoClose,
+		    	// TODO: Deal with chosenOptions.customAttributionControl.defaultAttribution
+			}), chosenOptions.customAttributionControl.position);
     });
-
     return mapInstance;
 };
 
-config.apiKey = process.env.MAPTILER_KEY;
-
-window.whg_maplibre = { Map, Popup, MapStyle }
+window.whg_maplibre = maplibregl;

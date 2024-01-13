@@ -17,7 +17,7 @@ let mapParameters = {
 	style: [ 'OUTDOOR.DEFAULT', 'TOPO.DEFAULT', 'TOPO.TOPOGRAPHIQUE', 'SATELLITE.DEFAULT', 'OCEAN.DEFAULT' ], 
 	maxZoom: 17,
 	navigationControl: true,
-	controls: {temporal: temporal},
+	temporalControl: temporal,
 }
 let mappy = new whg_maplibre.Map(mapParameters);
 
@@ -112,12 +112,12 @@ function waitMapLoad() {
 			    filterSources();
 			}, 300);
 
-			if (!!mapParameters.controls.temporal) {
+			if (!!mapParameters.temporalControl) {
 				let datelineContainer = document.createElement('div');
 				datelineContainer.id = 'dateline';
 				document.getElementById('mapControls').appendChild(datelineContainer);
 				window.dateline = new Dateline({
-					...mapParameters.controls.temporal,
+					...mapParameters.temporalControl,
 					onChange: dateRangeChanged
 				});
 			};

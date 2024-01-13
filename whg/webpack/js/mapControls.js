@@ -257,7 +257,7 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 		datelineContainer = null;
 	}
 
-	if (!!mapParameters.controls.temporal) {
+	if (!!mapParameters.temporalControl) {
 		datelineContainer = document.createElement('div');
 		datelineContainer.id = 'dateline';
 		document.getElementById('mapControls').appendChild(datelineContainer);
@@ -266,13 +266,13 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 		const buffer = range * 0.1; // 10% buffer
 
 		// Update the temporal settings
-		mapParameters.controls.temporal.fromValue = window.ds_list_stats.min;
-		mapParameters.controls.temporal.toValue = window.ds_list_stats.max;
-		mapParameters.controls.temporal.minValue = Math.floor(window.ds_list_stats.min - buffer);
-		mapParameters.controls.temporal.maxValue = Math.ceil(window.ds_list_stats.max + buffer);
+		mapParameters.temporalControl.fromValue = window.ds_list_stats.min;
+		mapParameters.temporalControl.toValue = window.ds_list_stats.max;
+		mapParameters.temporalControl.minValue = Math.floor(window.ds_list_stats.min - buffer);
+		mapParameters.temporalControl.maxValue = Math.ceil(window.ds_list_stats.max + buffer);
 
 		window.dateline = new Dateline({
-			...mapParameters.controls.temporal,
+			...mapParameters.temporalControl,
 			onChange: dateRangeChanged
 		});
 	};

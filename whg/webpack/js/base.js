@@ -94,6 +94,19 @@ var CDN_fallbacks = [
 	},
 ];
 
+var maplibre_fallbacks = [
+	{
+		cdnUrl: 'https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js',
+		localUrl: 'maplibre-gl.js',
+		position: 'head',
+	},
+	{
+		cdnUrl: 'https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css',
+		localUrl: 'maplibre-gl.css',
+		position: 'head'
+	},
+];
+
 window.select2_CDN_fallbacks = [
 	{
 		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.full.min.js',
@@ -167,6 +180,10 @@ window.loadResource = function(element) {
 		};
 	});
 };
+
+if (typeof loadMaplibre !== 'undefined') {
+	CDN_fallbacks = [...CDN_fallbacks, ...maplibre_fallbacks];
+}
 
 Promise.all(CDN_fallbacks.map(loadResource))
 	.then(function() {

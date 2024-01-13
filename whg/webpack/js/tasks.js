@@ -9,18 +9,16 @@ let mapParameters = {
 	style: ['OUTDOOR.DEFAULT'], 
 	maxZoom: 10,
 	navigationControl: true,
-    controls: {
-	    temporal: {
-	        fromValue: 1550,
-	        toValue: 1720,
-	        minValue: -2000,
-	        maxValue: 2100,
-	        open: false,
-	        includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
-	        epochs: null,
-	        automate: null,
-	    }
-	},
+	temporalControl: {
+        fromValue: 1550,
+        toValue: 1720,
+        minValue: -2000,
+        maxValue: 2100,
+        open: false,
+        includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
+        epochs: null,
+        automate: null,
+    },
 }
 let mappy = new whg_maplibre.Map(mapParameters);
 

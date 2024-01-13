@@ -7,10 +7,6 @@
     transition: opacity 2s ease;
 }
 
-.maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib:not(.fade-in) {
-    display: none;
-}
-
 .maplibregl-ctrl-attrib {
     opacity: 0;
     transition: opacity 1s ease;
@@ -18,12 +14,6 @@
 
 .fade-in {
     opacity: 1;
-}
-
-a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
-{
-    /* Hide obtrusive logo" */
-    display: none !important;
 }
 
 .download-map-button .maplibregl-ctrl-icon {

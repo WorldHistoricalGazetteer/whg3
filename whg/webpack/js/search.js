@@ -19,26 +19,19 @@ let draw;
 let drawControl;
 
 let mapParameters = {
-	style: ['OUTDOOR.DEFAULT'], 
-	maxZoom: 10,
-	navigationControl: true,
-    controls: {
-        layer: true,
-        navigation: false,
-        fullscreen: false,
-        attribution: {
-            open: false,
-        },
-        temporal: {
-            fromValue: 800,
-            toValue: 1800,
-            minValue: -2000,
-            maxValue: 2100,
-            open: false,
-            includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
-            epochs: null,
-            automate: null,
-        }
+	maxZoom: 13,
+    fullscreenControl: true,
+    downloadMapControl: true,
+    layerSelector: true,
+    temporalControl: {
+        fromValue: 800,
+        toValue: 1800,
+        minValue: -2000,
+        maxValue: 2100,
+        open: false,
+        includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
+        epochs: null,
+        automate: null,
     },
 }
 let mappy = new whg_maplibre.Map(mapParameters);
@@ -131,12 +124,12 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(mapboxDraw_CDN_fall
     
 		updateSearchState(true);
 
-		if (!!mapParameters.controls.temporal) {
+		if (!!mapParameters.temporalControl) {
 			let datelineContainer = document.createElement('div');
 			datelineContainer.id = 'dateline';
 			document.querySelector('.maplibregl-control-container').appendChild(datelineContainer);
 			window.dateline = new Dateline({
-				...mapParameters.controls.temporal,
+				...mapParameters.temporalControl,
 				onChange: dateRangeChanged
 			});
 			$(window.dateline.button).on('click', initiateSearch);
@@ -592,7 +585,7 @@ function updateSearchState(retrieve=false, results=false) {
 	        searchState['checkedboxes'].forEach(function(id) {
 		    	$('#' + id).prop('checked', true);
 		    });
-		    mapParameters.controls.temporal = searchState['temporal_filter'];
+		    mapParameters.temporalControl = searchState['temporal_filter'];
 			draw.add(searchState['spatial_filter']);
 			programmaticChange = false;
 		}
