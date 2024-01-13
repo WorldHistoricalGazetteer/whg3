@@ -29,7 +29,11 @@
       <table>
             <tbody>
             <tr>
-                <td class="float-end pe-3 strong">Login email</td>
+                <td class="float-end pe-3 strong">Login username</td>
+                <td>{{ user_form.username.value }}</td>
+            </tr>
+            <tr>
+                <td class="float-end pe-3 strong">Email</td>
                 <td>{{ user_form.email.value }}</td>
             </tr>
             <tr>
@@ -56,6 +60,10 @@
           <tr>
             <td class="float-end pe-3 strong">Name</td>
             <td>{{ user_form.name }}</td>
+          </tr>
+          <tr>
+	          <td class="float-end pe-3 strong">Email</td>
+	          <td>{{ user_form.email }}</td>
           </tr>
           <tr>
 	          <td class="float-end pe-3 strong">Affiliation</td>

@@ -28,56 +28,6 @@ def add_to_group(cg, member):
   cguser.save()
 
 
-# validate CollectionGroup member file upload
-# def validate_usersfile(tempfn, cg):
-#   print('validate_usersfile() tempfn', tempfn)
-#   User = get_user_model()
-#   # wd=os.getcwd()+'/_scratch/'
-#   r_email = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
-#   def emailValid(email):
-#     return True if re.fullmatch(r_email, email) else False
-#   # buckets
-#   result = {"status":'validated', "errors": [], "create_add": [],
-#             'just_add': [], 'already': []}
-#   import csv
-#   with open(tempfn, newline='') as csvfile:
-#     reader = csv.reader(csvfile, delimiter=',',
-#                         skipinitialspace=True)
-#     for i, row in enumerate(reader):
-#       try:
-#         print('i, row', i, row)
-#         # delimited with comma? return for resubmit
-#         if len(row) != 2:
-#           result['errors'].append('row #'+str(i+1)+' is not delimited with comma')
-#           print(result)
-#         else:
-#           # 1st term valid email?
-#           if not emailValid(row[0]):
-#             result['errors'].append(
-#               'invalid email on row #'+str(i+1)+': '+row[0])
-#           # is name blank?
-#           if row[1] == '':
-#             result['errors'].append('no name for row #' + str(i+1))
-#           # if errors, return them
-#           if len(result['errors']) > 0:
-#             raise Exception(result['errors'])
-#           else:
-#             # no format errors
-#             # user exists? in this group?
-#             user = User.objects.filter(email=row[0])
-#             members = [u.user_id for u in cg.members.all()]
-#             if user.exists():
-#               in_group = user[0].id in members
-#               if in_group:
-#                 result['already'].append(row)
-#               else:
-#                 result['just_add'].append(row)
-#             else:
-#               result['create_add'].append(row)
-#       except:
-#         raise
-#   # print('validate result', result)
-#   return result
 class ValidationErrorList(Exception):
   def __init__(self, errors):
     self.errors = errors
@@ -155,14 +105,6 @@ def addusers(request):
                 create_add = json.loads(request.POST['create_add']) or None
                 just_add = json.loads(request.POST['just_add']) or None
 
-                # catch dupes in the uploaded file
-                # existing_users = set(User.objects.values_list('email', flat=True))
-                # uploaded_emails = [user[0] for user in create_add + just_add]
-                # print('existing_users', existing_users)
-                # print('uploaded_emails', uploaded_emails)
-                # if len(uploaded_emails) != len(set(uploaded_emails)):
-                #     return JsonResponse({"status": "failed", "errors": "Duplicate emails in the uploaded file"}, safe=False)
-
                 with transaction.atomic():
                     if create_add:
                         for u in create_add:
@@ -206,91 +148,7 @@ def addusers(request):
 
         return JsonResponse(result, safe=False)
 
-# @login_required
-# def addusers(request):
-#   if request.method == 'POST':
-#     action = request.POST['action'] # 'upload' or 'addem'
-#     print('addusers() request.POST', request.POST)
-#     cgid = request.POST['cgid']
-#     cg=get_object_or_404(CollectionGroup, id=cgid)
-#     created_count = 0
-#     only_joined_count = 0
-#     new_members=[]
-#
-#     # VALIDATION
-#     if action == 'upload':
-#       print('in addusers(), upload')
-#       print('addusers() request.FILES', request.FILES)
-#         # uploaded file
-#       file = request.FILES['file']
-#       mimetype = file.content_type
-#       tempf, tempfn = tempfile.mkstemp()
-#       # write it to a tmp location
-#       try:
-#         for chunk in file.chunks():
-#           os.write(tempf, chunk)
-#       except:
-#         raise Exception("Problem opening/writing input file")
-#       finally:
-#         os.close(tempf)
-#
-#       print('addusers() tempfn', tempfn)
-#       # validate file and return results or let user fix errors
-#       try:
-#         result = validate_usersfile(tempfn, cg)
-#       except Exception as e:
-#         return JsonResponse({"status": "failed", "errors": str(e)}, safe=False)
-#
-#       print('validation result', result)
-#     elif action == 'addem':
-#       try:
-#         # process 'create_add' and 'just_add'
-#         create_add = json.loads(request.POST['create_add']) or None
-#         just_add = json.loads(request.POST['just_add']) or None
-#         print('just_add',just_add)
-#         print('create_add',create_add)
-#         # return
-#         # create new
-#         if create_add:
-#           for u in create_add:
-#             print('u', u)
-#             new_user = User.objects.create(
-#               email = u[0],
-#               name = u[1],
-#               # email name reversed
-#               password = re.match('^(.*)@', u[0]).group(1)[::-1]
-#             )
-#             new_user.save()
-#             add_to_group(cg,new_user)
-#             created_count +=1
-#             new_members.append([u[0], u[1], new_user.id])
-#         # add all to group
-#         if just_add:
-#           for u in just_add:
-#             user=User.objects.get(email=u[0])
-#             print('user', user)
-#             add_to_group(cg, user)
-#             new_members.append([u[0], u[1], user.id])
-#             # cguser = CollectionGroupUser.objects.create(
-#             #   role='normal',
-#             #   collectiongroup=cg,
-#             #   user=user
-#             # )
-#             # cguser.save()
-#             only_joined_count +=1
-#         total = created_count+only_joined_count
-#         result = {
-#           'status': 'added', 'errors': [],
-#           'newmembers': new_members,
-#           'msg': '<p>Created ' + str(created_count) + ' new WHG users</p>' +
-#                  '<p>Added <b>'+str(total)+'</b> new group members</p>'
-#         }
-#       except:
-#         result = {'status': 'failed', 'errors': sys.exc_info(),
-#                   'msg': 'something went wrong!'}
-#
-#     return JsonResponse(result, safe=False)
-#
+
 
 @login_required
 @transaction.atomic
@@ -343,14 +201,16 @@ def register(request):
   if request.method == 'POST':
     if request.POST['password1'] == request.POST['password2']:
       try:
-        User.objects.get(email=request.POST['email'])
-        return render(request, 'accounts/register.html', {'error': 'That email is already taken'})
+        User.objects.get(email=request.POST['username'])
+        # User.objects.get(email=request.POST['email'])
+        return render(request, 'accounts/register.html', {'error': 'That username is already taken'})
       except User.DoesNotExist:
         print('request.POST',request.POST)
         user = User.objects.create_user(
-                  request.POST['email'],
+                  # request.POST['email'],
+                  request.POST['username'],
                     password=request.POST['password1'],
-                    # email=request.POST['email'],
+                    email=request.POST['email'],
                     affiliation=request.POST['affiliation'],
                     name=request.POST['name'],
                     role='normal',
@@ -364,9 +224,10 @@ def register(request):
 
 def login(request):
   if request.method == 'POST':
-    user = auth.authenticate(email=request.POST['email'],password=request.POST['password'])
+    user = auth.authenticate(username=request.POST['username'],password=request.POST['password'])
+    # user = auth.authenticate(email=request.POST['email'],password=request.POST['password'])
     if user is not None:
-      auth.login(request,user, backend='django.contrib.auth.backends.ModelBackend')
+      auth.login(request, user, backend='django.contrib.auth.backends.ModelBackend')
       return redirect('home')
     else:
       raise forms.ValidationError("Sorry, that login was invalid. Please try again.")

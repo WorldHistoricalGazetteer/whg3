@@ -12,10 +12,10 @@ User = get_user_model()
 
 # *should* appear in admin
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('email', 'id', 'name', 'affiliation', 'role',)
-    fields = ('id','email', 'name', 'affiliation', 'role', 'date_joined',
+    list_display = ('email', 'username', 'id', 'name', 'affiliation', 'role',)
+    fields = ('id','username', 'email', 'name', 'affiliation', 'role', 'date_joined',
               'groups', ('is_staff', 'is_active', 'is_superuser'))
-    readonly_fields = ('id', 'date_joined', )
+    readonly_fields = ('id', 'date_joined', 'last_login')
     list_filter = ('role',)
 
     filter_horizontal = ('groups',)

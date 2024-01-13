@@ -6,6 +6,7 @@ User = get_user_model()
 # from accounts.models import Profile
 
 class LoginForm(forms.Form):
+    username = forms.CharField(max_length=100, required=True)
     email = forms.CharField(max_length=255, required=True)
     password = forms.CharField(widget=forms.PasswordInput, required=True)
 
@@ -19,10 +20,12 @@ class LoginForm(forms.Form):
         return self.cleaned_data
 
     def login(self, request):
+        username = self.cleaned_data.get('username')
         name = self.cleaned_data.get('name')
         email = self.cleaned_data.get('email')
         password = self.cleaned_data.get('password')
-        user = authenticate(email=email, password=password)
+        user = authenticate(username=username, password=password)
+        # user = authenticate(email=email, password=password)
         return user
 
 # used to edit
@@ -30,10 +33,11 @@ class UserModelForm(forms.ModelForm):
     
     class Meta:
         model = User
-        fields = ('email', 'name', 'affiliation', 'role')
+        fields = ('username', 'email', 'name', 'affiliation', 'role')
         exclude = ('password',)
 
         widgets = {
+            'username': forms.TextInput(attrs={'size': 30}),
             'email': forms.TextInput(attrs={'size': 30}),
             'name': forms.TextInput(attrs={'size': 30}),
             'affiliation': forms.TextInput(attrs={'size': 30}),
