@@ -11,6 +11,7 @@ import { initialiseTable } from './tableFunctions';
 import { init_collection_listeners } from './collections';
 import datasetLayers from './mapLayerStyles';
 import SequenceArcs from './mapSequenceArcs';
+import { add_to_collection } from './collections.js';
 
 let ds_listJSON = document.getElementById('ds_list_data') || false;
 if (ds_listJSON) {
@@ -32,7 +33,7 @@ let checked_rows;
 
 let spinner_table;
 let spinner_detail;
-let spinner_map = startSpinner("dataset_content", 3);
+// let spinner_map = startSpinner("dataset_content", 3);
 
 let mapParameters = {
 	style: ['DATAVIZ.DEFAULT', 'OUTDOOR.DEFAULT'], 
