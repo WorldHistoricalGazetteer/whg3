@@ -71,8 +71,11 @@ class PlacePortalView(TemplateView):
 
     me = self.request.user
     if not me.is_anonymous:
-      context['my_collections'] = Collection.objects.filter(owner=me, collection_class='place')
-    # context['whg_id'] = id_
+      if me.groups.filter(name='whg_admins').exists():
+        context['my_collections'] = Collection.objects.filter(collection_class='place')
+      else:
+        context['my_collections'] = Collection.objects.filter(owner=me, collection_class='place')
+
     context['payload'] = [] # parent and children if any
     context['traces'] = [] #
     context['allts'] = []

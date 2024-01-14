@@ -1,12 +1,29 @@
 // pids generate new CollPlace (collection_collplace) and
-// TraceAnnotation records (trace_annotations
-// same function in place_portal.html
+// TraceAnnotation records (trace_annotation) for each pid
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 export function add_to_collection(coll, pids) {
-	console.log('add_to_collection()')
+	console.log('add_to_collection()', coll, pids)
 	var formData = new FormData()
 	formData.append('collection', coll)
 	formData.append('place_list', pids)
-	formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+	var csrftoken = getCookie('csrftoken');
+  	formData.append('csrfmiddlewaretoken', csrftoken);
+
 	/* collection.views.add_places() */
 	$.ajax({
 		type: 'POST',
@@ -17,18 +34,19 @@ export function add_to_collection(coll, pids) {
 		cache: false,
 		data: formData,
 		success: function(response) {
+			console.log('response', response)
 			var dupes = response.msg.dupes
 			var added = response.msg.added
 			if (dupes.length > 0) {
-				let msg = dupes.length + ' records ' + (dupes.length > 1 ? 'were' : "was") + ' already in the collection: [' + dupes
-				if (added.length > 0) {
-					msg += ']; ' + added.length + ' ' + (added.length > 1 ? 'were' : "was") + ' added'
-				}
+				let msg = dupes.length + ' records ' + (dupes.length > 1 ? 'were' : "was") +
+					' already in the collection: [' + dupes + ']';
+				// if (added.length > 0) {
+				// 	msg += ']; ' + added.length + ' ' + (added.length > 1 ? 'were' : "was") + ' added'
+				// }
 				alert(msg)
 			} else {
 				// notify success & clear checks and list
 				$("#added_flash").fadeIn().delay(2000).fadeOut()
-				checked_rows = []
 			}
 			// uncheck everything regardless
 			$(".table-chk").prop('checked', false)
@@ -89,7 +107,25 @@ export function init_collection_listeners(checked_rows) {
 		console.log('open title input')
 		$("#title_form").show()
 	})
-	
+
+	$(".closer").click(function(){
+      $(this).parent().hide()
+	})
+
+	// $("#addchecked").click(function(){
+    //   $("#addtocoll_popup").fadeIn()
+	// })
+
+	// single pid for place portal; adapt for multi-select elsewhere
+	$(".action:radio").click(function(){
+			pid = $('input[name="r_anno"]:checked').data('id');
+			console.log('checked radio for pid:', pid)
+			$("#addtocoll").fadeIn()
+			let checked_cards = []
+			checked_cards.push($(this).data("id"))
+	})
+
+	// Used in ds_places.html publication page
 	// Listen for table row click (assigned using event delegation to allow for redrawing)
 	$("body").on("click", "#placetable tbody tr", function() {
 		const thisy = $(this)
@@ -120,5 +156,7 @@ export function init_collection_listeners(checked_rows) {
 		}
 	
 	});
-	
+
+
+
 }

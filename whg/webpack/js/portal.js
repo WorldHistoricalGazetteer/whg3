@@ -15,6 +15,8 @@ import '../css/portal.css';
 
 const payload = JSON.parse($('#payload_data').text());
 
+let checked_cards = [];
+
 let mapParameters = {
 	style: [ 'OUTDOOR.DEFAULT', 'TOPO.DEFAULT', 'TOPO.TOPOGRAPHIQUE', 'SATELLITE.DEFAULT', 'OCEAN.DEFAULT' ],
 	maxZoom: 17,
@@ -193,34 +195,48 @@ function waitDocumentReady() {
             const link = document.getElementById('addchecked');
             const popup = document.getElementById('addtocoll_popup');
 
-            // Add a click event listener to the link
-            link.addEventListener('click', (event) => {
-                // Prevent the default action
-                event.preventDefault();
+			let checked_cards =[]
 
-                // Get the position of the link
-                const linkRect = link.getBoundingClientRect();
+			// Add an event listener for the radio buttons
+			document.querySelectorAll('input[name="r_anno"]').forEach(radio => {
+				radio.addEventListener('click', function() {
+					// Add the data-id value of the .pop-link <a> tag to the checked_cards array
+					const pid = this.closest('.source-box').querySelector('.pop-link').dataset.id;
+					checked_cards.push(pid);
 
-                // Position the popup to the right of the link
-                popup.style.top = '40px';
+					// Unhide the #addtocoll span
+					document.getElementById('addtocoll').style.display = 'block';
+				});
+			});
+
+			// Add an event listener for the #addchecked link
+			document.getElementById('addchecked').addEventListener('click', function(event) {
+				event.preventDefault();
+				let popup = document.getElementById('addtocoll_popup');
+				// Unhide the #addtocoll_popup div
+				popup.style.top = '40px';
                 popup.style.left = '468px';
-                // popup.style.top = `${linkRect.top}px`;
-                // popup.style.left = `${linkRect.right}px`;
+				popup.style.display = 'block';
 
-                // Show the popup
-                popup.style.display = 'block';
-            });
+			});
 
+			// Add an event listener for the .a_addtocoll links
+			document.querySelectorAll('.a_addtocoll').forEach(link => {
+				link.addEventListener('click', function(event) {
+					event.preventDefault();
+
+					// Call the add_to_collection function with the appropriate arguments
+					const coll = this.getAttribute('ref');
+					add_to_collection(coll, checked_cards);
+
+					// Clear the checked_cards array
+					checked_cards = [];
+				});
+			});
             resolve();
         });
     });
 }
-
-// function waitDocumentReady() {
-//     return new Promise((resolve) => {
-// 		$(document).ready(() => resolve());
-//     });
-// }
 
 Promise.all([waitMapLoad(), waitDocumentReady()])
     .then(() => {

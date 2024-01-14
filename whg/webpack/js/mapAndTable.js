@@ -64,6 +64,7 @@ let dataLoadPromises = [];
 window.ds_list.forEach(function (ds) { // fetch data
     const promise = new Promise(function (resolve, reject) {
         $.get(`/${ ds.ds_type || 'datasets' }/${ ds.id }/mapdata`, function (data) { // ds_type may alternatively be 'collections'
+			console.log('data', data)
             for (const prop in data) {
                 if (!ds.hasOwnProperty(prop)) {
                     ds[prop] = data[prop];

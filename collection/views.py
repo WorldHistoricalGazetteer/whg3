@@ -203,7 +203,7 @@ def add_places(request, *args, **kwargs):
   print('kwargs', kwargs)
   if request.method == 'POST':
     user = request.user
-    status, msg = ['','']
+    status, msg = ['', '']
     dupes = []
     added = []
     # print('add_places request', request.POST)
@@ -211,7 +211,8 @@ def add_places(request, *args, **kwargs):
     place_list = [int(i) for i in request.POST['place_list'].split(',')]
     for p in place_list:
       place = Place.objects.get(id=p)
-      gotplace = TraceAnnotation.objects.filter(collection=coll, place=place)
+      print('got place', place.title, 'in collection', coll.title, 'id', coll.id)
+      gotplace = TraceAnnotation.objects.filter(collection=coll, place=place, archived=False)
       if not gotplace:
         t = TraceAnnotation.objects.create(
           place = place,
@@ -231,7 +232,8 @@ def add_places(request, *args, **kwargs):
         added.append(p)
       else:
         dupes.append(place.title)
-      print('add_places() result',{"added": added, "dupes": dupes})
+      print('add_places() result', {"added": added, "dupes": dupes})
+      msg = {"added": added, "dupes": dupes}
     return JsonResponse({'status': status, 'msg': msg}, safe=False)
 
 """ 
@@ -324,7 +326,7 @@ def fetch_mapdata_coll(request, *args, **kwargs):
     first_anno = t.place.annos.first()
     sequence_value = first_anno.sequence if first_anno else None
 
-    # KG: trying to skip places missing
+    # TODO: skipping places missing geometry NOT GOOD!!!
     if len(t.place.geoms.all()) > 0:
       feature = {
           "type": "Feature",
@@ -342,7 +344,7 @@ def fetch_mapdata_coll(request, *args, **kwargs):
           },
           "id": i,  # Required for MapLibre conditional styling
       }
-      feature_collection['features'].append(feature)
+    feature_collection['features'].append(feature)
 
   return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii':False,'indent':2})
 
