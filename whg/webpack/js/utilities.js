@@ -187,7 +187,7 @@ export function attributionString(data) {
 	let attribution = '';
 	if (attributionParts.length > 0) attribution = attributionParts.join(', ');
 
-	let attributionStringParts = ['&copy; World Historical Gazetteer & contributors'];
+	let attributionStringParts = [];
 	if (!!data) attributionStringParts.push(data.attribution || data.citation || attribution);
 
 	return attributionStringParts.join(' | ');

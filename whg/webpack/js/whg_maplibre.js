@@ -329,14 +329,6 @@ class CustomTerrainControl {
             this._map.on('zoom', this._zoomListener);
             this.handleZoomChange();
 			this._map.setPitch(60);
-			// TODO: add/augment Navigation control, and reset when disabling terrain
-/*		    map.addControl(
-		        new maplibregl.NavigationControl({
-		            visualizePitch: true,
-		            showZoom: true,
-		            showCompass: false
-		        })
-		    );		*/	
 		}
 		else {
 			this._map.off('zoom', this._zoomListener);
@@ -633,11 +625,11 @@ maplibregl.Map = function (options = {}) {
         minZoom: 0.1,
         maxZoom: 6,
         maxPitch: 85,
-        attributionControl: {position: 'bottom-right', autoClose: true, defaultAttribution: '© World Historical Gazetteer & contributors | Basemap: <a href="https://www.naturalearthdata.com/">Natural Earth</a> | Terrain: <a href="https://github.com/tilezen/joerd/blob/master/docs/data-sources.md">Mapzen</a>'}, // false
-        navigationControl: {position: 'top-right', showCompass: false}, // false
+        attributionControl: {position: 'bottom-right', autoClose: true, customAttribution: '&copy; World Historical Gazetteer & contributors'}, // false
+        navigationControl: {position: 'top-right', showZoom: true, showCompass: false, visualizePitch: false}, // false
         fullscreenControl: false,
         downloadMapControl: false,
-	    terrainControl: true, //TODO - reconfigure CustomTerrainControl to disable hillshade layers when terrain is active
+	    terrainControl: true, // If true, will force display of full navigation controls too
 	    temporalControl: false,
     	sequencerControl: false,
     };
@@ -646,8 +638,12 @@ maplibregl.Map = function (options = {}) {
     var chosenOptions = { ...defaultOptions, ...options };
     
     if (chosenOptions.attributionControl) {
-		chosenOptions.customAttributionControl = chosenOptions.attributionControl;
+		chosenOptions.customAttributionControl = {...chosenOptions.attributionControl, compact: true};
 		chosenOptions.attributionControl = false;
+	}
+    
+    if (chosenOptions.terrainControl) {
+		chosenOptions.navigationControl = {position: 'top-right', showZoom: true, showCompass: true, visualizePitch: true};
 	}
 	
 	chosenOptions.basemaps = chosenOptions.basemap === "" ? [] : (Array.isArray(chosenOptions.basemap) ? chosenOptions.basemap : [chosenOptions.basemap]);
@@ -663,17 +659,15 @@ maplibregl.Map = function (options = {}) {
     mapInstance.on('load', () => { // Add chosen controls
 		if (chosenOptions.fullscreenControl) mapInstance.addControl(new maplibregl.FullscreenControl(), 'top-left');
 		if (chosenOptions.downloadMapControl) mapInstance.addControl(new downloadMapControl(mapInstance), 'top-left');
-		if (chosenOptions.navigationControl) mapInstance.addControl(new maplibregl.NavigationControl(chosenOptions.navigationControl), chosenOptions.navigationControl.position);
 		if (chosenOptions.basemaps.length + chosenOptions.styles.length > 1) {
 			mapInstance.styleControl = new acmeStyleControl( mapInstance );
 			mapInstance.addControl(mapInstance.styleControl, 'top-right');
 		}
 		if (chosenOptions.terrainControl) mapInstance.addControl(new CustomTerrainControl({source: 'terrarium-aws'}), 'top-right');
-		if (!!chosenOptions.customAttributionControl) mapInstance.addControl(new CustomAttributionControl({
-				compact: true,
-		    	autoClose: chosenOptions.customAttributionControl.autoClose,
-		    	// TODO: Deal with chosenOptions.customAttributionControl.defaultAttribution
-			}), chosenOptions.customAttributionControl.position);
+		if (chosenOptions.navigationControl) mapInstance.addControl(new maplibregl.NavigationControl(chosenOptions.navigationControl), chosenOptions.navigationControl.position);
+		if (!!chosenOptions.customAttributionControl) {
+			mapInstance.addControl(new CustomAttributionControl(chosenOptions.customAttributionControl), chosenOptions.customAttributionControl.position);
+		}
     });
     return mapInstance;
 };
