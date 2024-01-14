@@ -1,7 +1,7 @@
 // pids generate new CollPlace (collection_collplace) and
 // TraceAnnotation records (trace_annotations
 // same function in place_portal.html
-function add_to_collection(coll, pids) {
+export function add_to_collection(coll, pids) {
 	console.log('add_to_collection()')
 	var formData = new FormData()
 	formData.append('collection', coll)

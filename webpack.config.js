@@ -86,7 +86,7 @@ module.exports = {
 		          to: '/app/CDNfallbacks/',
 		        },
 		        {
-		          from: 'node_modules/@fortawesome/fontawesome-free/css/all.min.css',
+		          from: 'node_modules/@fontawesome/fontawesome-free/css/all.min.css',
 		          to: '/app/CDNfallbacks/',
 		        },
 		        {

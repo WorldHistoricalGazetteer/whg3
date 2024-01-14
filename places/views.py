@@ -70,6 +70,8 @@ class PlacePortalView(TemplateView):
     context['maptilerkey'] = settings.MAPTILER_KEY
 
     me = self.request.user
+    if not me.is_anonymous:
+      context['my_collections'] = Collection.objects.filter(owner=me, collection_class='place')
     # context['whg_id'] = id_
     context['payload'] = [] # parent and children if any
     context['traces'] = [] #

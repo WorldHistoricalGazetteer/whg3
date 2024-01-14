@@ -6,6 +6,8 @@ import throttle from 'lodash/throttle';
 import { attributionString, deepCopy, geomsGeoJSON } from './utilities';
 import Dateline from './dateline';
 import { popupFeatureHTML } from './getPlace.js';
+import { init_collection_listeners } from './collections.js';
+import { add_to_collection } from './collections.js';
 
 import '../css/mapAndTableMirrored.css';
 import '../css/dateline.css';
@@ -14,7 +16,7 @@ import '../css/portal.css';
 const payload = JSON.parse($('#payload_data').text());
 
 let mapParameters = {
-	style: [ 'OUTDOOR.DEFAULT', 'TOPO.DEFAULT', 'TOPO.TOPOGRAPHIQUE', 'SATELLITE.DEFAULT', 'OCEAN.DEFAULT' ], 
+	style: [ 'OUTDOOR.DEFAULT', 'TOPO.DEFAULT', 'TOPO.TOPOGRAPHIQUE', 'SATELLITE.DEFAULT', 'OCEAN.DEFAULT' ],
 	maxZoom: 17,
 	navigationControl: true,
 	controls: {temporal: temporal},
@@ -107,7 +109,7 @@ function waitMapLoad() {
 			}
 
 			$('#map_options').append(createNearbyPlacesControl());
-			
+
 			const dateRangeChanged = throttle(() => { // Uses imported lodash function
 			    filterSources();
 			}, 300);
@@ -184,12 +186,41 @@ function waitMapLoad() {
     });
 }
 
-
 function waitDocumentReady() {
     return new Promise((resolve) => {
-        $(document).ready(() => resolve());
+        $(document).ready(() => {
+            // Get the 'add to collection' link and the 'addtocoll_popup' div
+            const link = document.getElementById('addchecked');
+            const popup = document.getElementById('addtocoll_popup');
+
+            // Add a click event listener to the link
+            link.addEventListener('click', (event) => {
+                // Prevent the default action
+                event.preventDefault();
+
+                // Get the position of the link
+                const linkRect = link.getBoundingClientRect();
+
+                // Position the popup to the right of the link
+                popup.style.top = '40px';
+                popup.style.left = '468px';
+                // popup.style.top = `${linkRect.top}px`;
+                // popup.style.left = `${linkRect.right}px`;
+
+                // Show the popup
+                popup.style.display = 'block';
+            });
+
+            resolve();
+        });
     });
 }
+
+// function waitDocumentReady() {
+//     return new Promise((resolve) => {
+// 		$(document).ready(() => resolve());
+//     });
+// }
 
 Promise.all([waitMapLoad(), waitDocumentReady()])
     .then(() => {
@@ -225,7 +256,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		else {
 			collectionList.html('<i>None yet</i>');
 		}
-		
+
 		$('#sources').append(noSources);
 
 		featureCollection = geomsGeoJSON(payload);
@@ -304,7 +335,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         });
     })
     .catch(error => console.error("An error occurred:", error));
-    
+
 function filterSources() {
 	console.log(`Filter dates: ${window.dateline.fromValue} - ${window.dateline.toValue} (includeUndated: ${window.dateline.includeUndated})`);
 	function inDateRange(source) {
@@ -586,7 +617,7 @@ function createNearbyPlacesControl() {
         .on('change', nearbyPlaces);
     const $label = $(`<label for = 'nearby_places'>`).text('Show');
     $itemDiv.append($checkboxItem, $label);
-    
+
     const $button = $('<button>')
     	.attr('id', 'update_nearby')
     	.attr('title', 'Search again - based on map center')
