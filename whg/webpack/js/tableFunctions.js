@@ -396,11 +396,38 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 	})
 
 	$("body").on("click", ".table-chk", function(e) {
-		// e.preventDefault();
 		e.stopPropagation(); // Prevents row-click functionality
-		console.log('adding', $(this).data('id'))
-		/*console.log('checked_rows',checked_rows)*/
-	})
+		const id = $(this).data('id');
+		if ($(this).is(':checked')) {
+			// Checkbox is checked, add the data-id to the checked_rows array
+			console.log('adding', id);
+			checked_rows.push(id);
+		} else {
+			// Checkbox is unchecked, remove the data-id from the checked_rows array
+			console.log('removing', id);
+			const index = checked_rows.indexOf(id);
+			if (index > -1) {
+				checked_rows.splice(index, 1);
+			}
+		}
+		console.log('checked_rows', checked_rows);
+		if (checked_rows.length > 0) {
+			$("#selection_status").fadeIn(600);
+		} else {
+			$("#selection_status").fadeOut(600);
+		}
+		$("#sel_count").html(' ' + checked_rows.length + ' ');
+	});
+
+	// $("body").on("click", ".table-chk", function(e) {
+	// 	e.stopPropagation(); // Prevents row-click functionality
+	// 	console.log('adding', $(this).data('id'))
+	// 	checked_rows.push($(this).data('id'))
+	// 	console.log('checked_rows',checked_rows)
+	// 	console.log('checked_rows count', checked_rows.length)
+	// 	$("#sel_count").html(' ' + checked_rows.length + ' ')
+	// 	$("#selection_status").fadeIn()
+	// })
 
 	$("body").on("click", "#placetable tbody tr", function() {
 		const ds_pid = $(this).data('ds_pid');
