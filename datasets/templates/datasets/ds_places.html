@@ -24,11 +24,17 @@
             </span>
         <span class="fs-6"> a WHG dataset </span>
         <span id="collapseExpand" class="float-end">
-                <span class="info-collapse small">Hide</span>
-                <i class="info-collapse fas fa-chevron-up"></i>
-                <span class="info-expand small">Show Detail</span>
-                <i class="info-expand fas fa-chevron-down"></i>
-            </span>
+          <span class="info-collapse small">Hide</span>
+          <i class="info-collapse fas fa-chevron-up"></i>
+          <span class="info-expand small">Show Detail</span>
+          <i class="info-expand fas fa-chevron-down"></i>
+        </span>
+        {% if user == ds.owner or is_admin %}
+          <span class="float-end">
+          <a href="{% url 'datasets:ds_summary' id=ds.id %}">
+            edit <i class="fas fa-gear me-3"></i></a>
+          </span>
+        {% endif %}
       </div>
       <div id="metadata" class="mt-2">
         <div class="row pub-intro">

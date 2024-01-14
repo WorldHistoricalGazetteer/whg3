@@ -30,6 +30,12 @@
               <span class="info-expand small">Show Detail</span>
               <i class="info-expand fas fa-chevron-down"></i>
           </span>
+          {% if user == object.owner or is_admin %}
+            <span class="float-end">
+            <a href="{% url 'collection:place-collection-update' id=object.id %}">
+              edit <i class="fas fa-gear me-3"></i></a>
+            </span>
+          {% endif %}
       </div>
       <div id="metadata" class="mt-2">
           <div class="row pub-intro">

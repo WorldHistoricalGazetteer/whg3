@@ -3379,8 +3379,12 @@ class DatasetPlacesView(DetailView):
     ds = get_object_or_404(Dataset, id=id_)
     me = self.request.user
 
+    me = self.request.user
     if not me.is_anonymous:
-      context['collections'] = Collection.objects.filter(owner=me, collection_class='place')
+      if me.groups.filter(name='whg_admins').exists():
+        context['my_collections'] = Collection.objects.filter(collection_class='place')
+      else:
+        context['my_collections'] = Collection.objects.filter(owner=me, collection_class='place')
 
     context['loggedin'] = 'true' if not me.is_anonymous else 'false'
 
