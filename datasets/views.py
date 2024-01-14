@@ -3279,7 +3279,7 @@ class DatasetSummaryView(LoginRequiredMixin, UpdateView):
     context['ds'] = ds
     context['collaborators'] = ds.collaborators.all()
     context['owners'] = ds.owners
-    context['whgteam'] = User.objects.filter(groups__name='whg_team')
+    context['is_admin'] = True if me.groups.filter(name__in=['whg_admins']).exists() else False
     context['editorial'] = True if me.groups.filter(name__in=['editorial']).exists() else False
 
     # excludes datasets w/o an associated DatasetFile

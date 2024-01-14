@@ -47,10 +47,17 @@
       {% csrf_token %}
       <div class="row">
       <div id="ds_details" class="col-sm-7 small">
-      {% if object.owner.id == user.id or user.is_superuser %}
-        <span class="float-end">
-          Delete dataset <a href="{% url 'datasets:dataset-delete' ds.id %}" class="" title="Delete dataset" rel="tooltip"><i class="fas fa-trash linkyred"></i></a></span>
-      {% endif %}
+        {% if user == object.owner or user.is_superuser %}
+          <span class="float-end">Delete dataset
+            <a href="{% url 'datasets:dataset-delete' ds.id %}" class="" title="Delete dataset" rel="tooltip">
+              <i class="fas fa-trash linkyred"></i></a>
+          </span>
+        {% endif %}
+        {% if user in collaborators or is_admin and ds.public %}
+          <span class="float-end me-3">
+            public view <a href="{% url 'datasets:ds_places' id=ds.id %}"><i class="fas fa-eye"></i></a>
+          </span>
+        {% endif %}
         <table class="ds-table">
           <tr>
             <td><b>Title</b>
