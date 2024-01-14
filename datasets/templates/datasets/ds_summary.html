@@ -55,7 +55,8 @@
         {% endif %}
         {% if user in collaborators or is_admin and ds.public %}
           <span class="float-end me-3">
-            public view <a href="{% url 'datasets:ds_places' id=ds.id %}"><i class="fas fa-eye"></i></a>
+            public view <a href="{% url 'datasets:ds_places' id=ds.id %}" title="View publication page" rel="tooltip">
+            <i class="fas fa-eye"></i></a>
           </span>
         {% endif %}
         <table class="ds-table">

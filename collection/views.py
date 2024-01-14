@@ -344,7 +344,7 @@ def fetch_mapdata_coll(request, *args, **kwargs):
           },
           "id": i,  # Required for MapLibre conditional styling
       }
-    feature_collection['features'].append(feature)
+      feature_collection['features'].append(feature)
 
   return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii':False,'indent':2})
 
