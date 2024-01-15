@@ -16,13 +16,14 @@ let isInitialLoad = true;
 let initialTypeCounts = {};
 let initialCountryCounts = {};
 let draw;
-let drawControl;
+let $drawControl;
 
 let mapParameters = {
 	maxZoom: 13,
     fullscreenControl: true,
     downloadMapControl: true,
     layerSelector: true,
+    drawingControl: {hide: true},
     temporalControl: {
         fromValue: 800,
         toValue: 1800,
@@ -94,26 +95,12 @@ function waitDocumentReady() {
     });
 }
 
-Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(mapboxDraw_CDN_fallbacks.map(loadResource))])
+Promise.all([waitMapLoad(), waitDocumentReady()])
     .then(() => {
-
-		draw = new MapboxDraw({
-			displayControlsDefault: false,
-			controls: {
-				//point: true,
-				//line_string: true,
-				polygon: true,
-				trash: true
-			},
-		})
-		let drawControlObject = mappy.addControl(draw, 'top-left');
-		drawControl = $(drawControlObject._container).find('.maplibregl-ctrl-top-left');
-		drawControl.find('button.mapbox-gl-draw_ctrl-draw-btn').attr('title','Filter results by area: draw polygon');
-		drawControl.hide();
-		const drawControls = document.querySelectorAll(".mapboxgl-ctrl-group.mapboxgl-ctrl");
-		drawControls.forEach((elem) => {
-			elem.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group');
-		});
+		
+		draw = mappy._draw;
+		$drawControl = $(mappy._drawControl);
+		
 		mappy.on('draw.create', initiateSearch); // draw events fail to register if not done individually
 		mappy.on('draw.delete', initiateSearch);
 		mappy.on('draw.update', initiateSearch);
@@ -274,7 +261,8 @@ function renderResults(featureCollection) {
 
 	// Iterate over the results and append HTML for each
 	let results = featureCollection.features;
-	drawControl.toggle(results.length > 0 || draw.getAll().features.length > 0); // Leave control to allow deletion of areas
+	
+	$drawControl.toggle(results.length > 0 || draw.getAll().features.length > 0); // Leave control to allow deletion of areas
 	results.forEach(feature => {
 		let result = feature.properties;
 		const count = parseInt(result.linkcount) + 1;
@@ -491,11 +479,7 @@ function renderResults(featureCollection) {
 		$('.result').first().attr('data-map-initialising', 'true').click();
 	}
 	else {
-	    mappy.flyTo({
-			center: mapParameters.center,
-			zoom: mapParameters.zoom,
-	        speed: .5,
-	    });
+	    mappy.reset();
 		$('#detail').empty(); // Clear the detail view
 	}
 }

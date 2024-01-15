@@ -133,19 +133,6 @@ window.datatables_CDN_fallbacks = [
 	},
 ];
 
-window.mapboxDraw_CDN_fallbacks = [
-	{
-		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl-draw/1.4.3/mapbox-gl-draw.js',
-		localUrl: 'mapbox-gl-draw.js',
-		position: 'head',
-	},
-	{
-		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl-draw/1.4.3/mapbox-gl-draw.min.css',
-		localUrl: 'mapbox-gl-draw.css',
-		position: 'head'
-	},
-];
-
 window.loadResource = function(element) {
 	return new Promise(function(resolve, reject) {
 		var resource;

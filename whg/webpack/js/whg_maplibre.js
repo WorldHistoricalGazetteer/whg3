@@ -1,6 +1,7 @@
 // whg_maplibre.js
 
-// TODO: Integrate/extend drawing control?
+import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
 import '../css/maplibre-common.css';
 import '../css/style-control.css';
@@ -613,6 +614,34 @@ maplibregl.Map.prototype.fitViewport = function (bbox) {
 	});
 };
 
+class CustomDrawingControl {
+	constructor(mapInstance, options) {
+		this._map = mapInstance;
+		this._options = options;
+
+		this._map._draw = new MapboxDraw({
+			displayControlsDefault: false,
+			controls: {
+				polygon: true,
+				trash: true,
+			},
+		});
+
+		this._map.addControl(this._map._draw, 'top-left');
+	}
+
+	onAdd() {
+		this._map._drawControl = this._map.getContainer().querySelector(".mapboxgl-ctrl-group.mapboxgl-ctrl");
+		this._map._drawControl.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group'); // Convert classnames for proper rendering
+		if (this._options.hide) this._map._drawControl.style.display = 'none';
+		return this._map._drawControl;
+	}
+
+	onRemove() {
+		this._map.removeControl(this._map._draw);
+	}
+}
+
 const originalMapConstructor = maplibregl.Map;
 maplibregl.Map = function (options = {}) {
 		
@@ -625,13 +654,15 @@ maplibregl.Map = function (options = {}) {
         minZoom: 0.1,
         maxZoom: 6,
         maxPitch: 85,
+        // Controls (layer control is added depending on number of styles and basemaps listed above)
         attributionControl: {position: 'bottom-right', autoClose: true, customAttribution: '&copy; World Historical Gazetteer & contributors'}, // false
-        navigationControl: {position: 'top-right', showZoom: true, showCompass: false, visualizePitch: false}, // false
-        fullscreenControl: false,
         downloadMapControl: false,
-	    terrainControl: true, // If true, will force display of full navigation controls too
-	    temporalControl: false,
+        drawingControl: false, // Instantiate hidden control with {hide: true}
+        fullscreenControl: false,
+        navigationControl: {position: 'top-right', showZoom: true, showCompass: false, visualizePitch: false}, // false
     	sequencerControl: false,
+	    temporalControl: false,
+	    terrainControl: true, // If true, will force display of full navigation controls too
     };
     
     // replace defaultOptions with any passed options 
@@ -659,6 +690,8 @@ maplibregl.Map = function (options = {}) {
     mapInstance.on('load', () => { // Add chosen controls
 		if (chosenOptions.fullscreenControl) mapInstance.addControl(new maplibregl.FullscreenControl(), 'top-left');
 		if (chosenOptions.downloadMapControl) mapInstance.addControl(new downloadMapControl(mapInstance), 'top-left');
+		if (chosenOptions.drawingControl) mapInstance.addControl(new CustomDrawingControl(mapInstance, chosenOptions.drawingControl), 'top-left');
+		
 		if (chosenOptions.basemaps.length + chosenOptions.styles.length > 1) {
 			mapInstance.styleControl = new acmeStyleControl( mapInstance );
 			mapInstance.addControl(mapInstance.styleControl, 'top-right');
