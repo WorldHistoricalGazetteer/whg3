@@ -137,7 +137,8 @@ window.loadResource = function(element) {
 	return new Promise(function(resolve, reject) {
 		var resource;
 		const isCSS = element.cdnUrl.endsWith('.css');
-
+		const parentElement = document[element.position];
+		
 		if (isCSS) {
 			resource = document.createElement('link');
 			resource.type = 'text/css';
@@ -151,20 +152,33 @@ window.loadResource = function(element) {
 
 		if (element.integrity) resource.integrity = element.integrity;
 		if (element.crossorigin) resource.crossorigin = element.crossorigin;
-
-		document[element.position].appendChild(resource);
+			
+		var localResource = resource.cloneNode();
+		localResource[isCSS ? 'href' : 'src'] = `/CDNfallbacks/${element.localUrl}`;
 
 		resource.onload = function() {
 			console.log(`Loaded CDN resource ${element.cdnUrl}`);
 			resolve();
 		};
 
-		resource.onerror = function() {
+		resource.onerror = function() {			
 			console.log(`Failed to load CDN resource (${element.cdnUrl}), falling back to local: ${element.localUrl}`);
-			resource[isCSS ? 'href' : 'src'] = `/CDNfallbacks/${element.localUrl}`;
-			document[element.position].appendChild(resource);
-			resolve();
+			
+			localResource.onload = function() {
+				console.log(`Loaded LOCAL resource ${element.localUrl}`);
+				resolve();
+			};
+			localResource.onerror = function() {
+				console.log(`FAILED to load local resource ${element.localUrl}`);
+				resolve();
+			};
+			
+			parentElement.insertBefore(localResource, resource);
+			parentElement.removeChild(resource);
+
 		};
+
+		parentElement.appendChild(resource);
 	});
 };
 
