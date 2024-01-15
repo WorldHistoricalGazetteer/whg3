@@ -7,7 +7,6 @@ import { getPlace } from './getPlace';
 import '../css/ds_browse.css';
 
 let mappy = new whg_maplibre.Map({
-	style: ['DATAVIZ.DEFAULT', 'OUTDOOR.DEFAULT'], 
 	maxZoom: 10,
 	navigationControl: true,
 });

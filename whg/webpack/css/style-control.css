@@ -39,6 +39,7 @@
 
 .variant-item-label {
   margin: -2px 0 -2px 2px;
+  color: var(--bs-body-color);
 }
 
 /* Style for the selected variant option */
@@ -62,7 +63,7 @@
 }
 
 /* Style for the scrollable list */
-#mapStyleList {
+.maplibregl-ctrl #mapStyleList {
   display: none;
   overflow-y: scroll;
   max-height: 150px;

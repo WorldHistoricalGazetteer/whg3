@@ -5,7 +5,6 @@ import { attributionString, deepCopy } from './utilities';
 import '../css/areas.css';
 
 let mappy = new whg_maplibre.Map({
-	style: [ 'OUTDOOR.DEFAULT', 'SATELLITE.DEFAULT' ], 
 	maxZoom: 10,
 	navigationControl: true,
     drawingControl: {hide: true}

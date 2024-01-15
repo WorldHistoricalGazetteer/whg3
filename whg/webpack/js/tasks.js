@@ -5,8 +5,7 @@ import { attributionString, geomsGeoJSON } from './utilities';
 
 import '../css/tasks.css';
 
-let mapParameters = {
-	style: ['OUTDOOR.DEFAULT'], 
+let mapParameters = { 
 	maxZoom: 10,
 	navigationControl: true,
 	temporalControl: {

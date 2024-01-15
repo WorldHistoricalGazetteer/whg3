@@ -14,14 +14,10 @@ import '../css/portal.css';
 const payload = JSON.parse($('#payload_data').text());
 
 let mapParameters = {
-	style: [ 'OUTDOOR.DEFAULT', 'TOPO.DEFAULT', 'TOPO.TOPOGRAPHIQUE', 'SATELLITE.DEFAULT', 'OCEAN.DEFAULT' ], 
 	maxZoom: 17,
-	navigationControl: true,
-	temporalControl: temporal,
+	temporalControl: temporal
 }
 let mappy = new whg_maplibre.Map(mapParameters);
-
-let baseStyle = {};
 
 let nullCollection = {
     type: 'FeatureCollection',
@@ -71,10 +67,6 @@ function waitMapLoad() {
 				})
 			});
 
-			const currentStyle = mappy.getStyle();
-			baseStyle.sources = Object.keys(currentStyle.sources);
-	    	baseStyle.layers = currentStyle.layers.map((layer) => layer.id);
-
             mappy.addSource('nearbyPlaces', {
 				'type': 'geojson',
 			    'data': nullCollection,
@@ -102,9 +94,9 @@ function waitMapLoad() {
 				$('#map_options').append(createGeoLayerSelectors('geoLayers', geoLayers));
 			}
 
-			if (mapParameters.style.length !== 1) {
+/*			if (mapParameters.style.length !== 1) {
 				$('#map_options').append(createBasemapRadioButtons());
-			}
+			}*/
 
 			$('#map_options').append(createNearbyPlacesControl());
 			
@@ -439,79 +431,6 @@ function histogram(data, labels, minmax) {
 		.attr("id", "xaxis")
 		.attr("transform", "translate(0," + height + ")")
 		.call(axisB)
-}
-
-function onBasemapRadioChange() {
-	const variantValue = $(this).val();
-	const style_code = variantValue.split(".");
-	console.log('Selected variant: ', variantValue, whg_maplibre.MapStyle[style_code[0]][style_code[1]]);
-	mappy.setStyle(whg_maplibre.MapStyle[style_code[0]][style_code[1]]/*, {
-		transformStyle: (previousStyle, nextStyle) => {
-			const newSources = {
-				...nextStyle.sources
-			};
-			console.log(previousStyle.sources,newSources);
-			Object.keys(previousStyle.sources).forEach((sourceId) => {
-				if (!baseStyle.sources.includes(sourceId)) {
-					newSources[sourceId] = previousStyle.sources[sourceId];
-				}
-			});
-			const additionalLayers = previousStyle.layers.filter((layer) => !baseStyle.layers.includes(layer.id));
-			baseStyle.sources = Object.keys(nextStyle.sources);
-			baseStyle.layers = nextStyle.layers.map((layer) => layer.id);
-			return {
-				...nextStyle,
-				sources: newSources,
-				layers: [...nextStyle.layers, ...additionalLayers],
-			};
-		}
-	}*/);
-}
-
-function createBasemapRadioButtons() {
-    const styleFilterValues = mapParameters.style.map(value => value.split('.')[0]);
-    const $radioContainer = $('<div>').addClass('option-block');
-    $('<p>').addClass('strong-red heading').text('Basemap Style').appendTo($radioContainer);
-
-    const $itemDiv = $('<div>').addClass('geoLayer-choice');
-	const $checkboxItem = $('<input>')
-        .attr('id', '3D_selector')
-        .attr('type', 'checkbox')
-        .attr('disabled', 'disabled') // TODO
-        /*.on('change', switch3D)*/; // TODO
-    const $label = $(`<label for = '3D_selector'>`).text('Enable 3D');
-    $itemDiv.append($checkboxItem, $label);
-    $radioContainer.append($itemDiv);
-
-    console.log(mappy.getStyle());
-
-    for (const group of Object.values(whg_maplibre.MapStyle)) {
-        if (mapParameters.style.length == 0 || styleFilterValues.includes(group.id)) {
-            const $groupItem = $('<div>').addClass('group-item').text(group.name);
-
-            for (const orderedVariant of group.orderedVariants) {
-                const datasetValue = group.id + '.' + orderedVariant.variantType;
-                if (mapParameters.style.length == 0 || mapParameters.style.includes(datasetValue)) {
-            		const $itemDiv = $('<div>').addClass('basemap-choice');
-					const itemID = datasetValue.replace('.','-').toLowerCase();
-                    const $radioItem = $('<input>')
-                        .attr('id', itemID)
-                        .attr('type', 'radio')
-                        .attr('name', 'basemap-style')
-                        .attr('value', datasetValue)
-                        .attr('checked', datasetValue == mapParameters.style[0])
-                        .on('change', onBasemapRadioChange);
-                    const $label = $(`<label for = '${ itemID }'>`).text(orderedVariant.name);
-                    $itemDiv.append($radioItem, $label);
-                    $groupItem.append($itemDiv);
-                }
-            }
-
-            $radioContainer.append($groupItem);
-        }
-    }
-
-    return $radioContainer;
 }
 
 function onGeoLayerSelectorChange() {

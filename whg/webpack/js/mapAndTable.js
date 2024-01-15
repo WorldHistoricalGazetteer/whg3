@@ -34,8 +34,7 @@ let spinner_table;
 let spinner_detail;
 let spinner_map = startSpinner("dataset_content", 3);
 
-let mapParameters = {
-	style: ['DATAVIZ.DEFAULT', 'OUTDOOR.DEFAULT'], 
+let mapParameters = { 
 	maxZoom: 10,
 	temporalControl: {
         fromValue: 1550,

@@ -34,20 +34,23 @@ class acmeStyleControl {
 
 	constructor(mapInstance) {
 		this._map = mapInstance;
+		this._listContainer = document.getElementById('styleListContainer'); // Hard-coded by template for place_portal page
 		this.basemaps = mapInstance.initOptions.basemaps; // e.g. ['natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade', 'kg-NE2_HR_LC_SR_W', 'kg-NE2_HR_LC_SR_W_DR']
 		this.styles = mapInstance.initOptions.styles; // e.g. ['whg-ne-dem']
 		this.listDictionary = {};
 	}
 
 	onAdd() {
-		this._container = document.createElement('div');
-		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group';
-		this._container.textContent = 'Basemap';
-		this._container.innerHTML =
-			'<button type="button" class="style-button" aria-label="Change basemap style" title="Change basemap style">' +
-			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
-			'</button>';
-		this._container.querySelector('.style-button').addEventListener('click', this._onClick.bind(this));
+		if (!this._listContainer) {
+			this._listContainer = document.createElement('div');
+			this._listContainer.className = 'maplibregl-ctrl maplibregl-ctrl-group';
+			this._listContainer.textContent = 'Basemap';
+			this._listContainer.innerHTML =
+				'<button type="button" class="style-button" aria-label="Change basemap style" title="Change basemap style">' +
+				'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
+				'</button>';
+			this._listContainer.querySelector('.style-button').addEventListener('click', this._onClick.bind(this));
+		}
 		const currentStyle = this._map.getStyle();
 		this.baseStyle = {}; // Used for identifying layers that should be ignored when the map is clicked
 		this.baseStyle.sources = Object.keys(currentStyle.sources);
@@ -69,96 +72,91 @@ class acmeStyleControl {
                 console.error('Failed to fetch JSON:', error);
             });
 
-        return this._container;	
+        return this._listContainer.id == 'styleListContainer' ? document.createElement('div') : this._listContainer;
 	}
 		
     createMapStyleList() {
 		
-        let styleList = document.getElementById('mapStyleList');
-        if (!styleList) {
-            styleList = document.createElement('ul');
-            styleList.id = 'mapStyleList';
-            styleList.className = 'maplibre-styles-list';
+        var styleList = document.createElement('ul');
+        styleList.id = 'mapStyleList';
+        styleList.className = 'maplibre-styles-list';
 
-            const groups = [
-                { title: 'Basemaps', items: this.basemaps, type: 'basemap' },
-                { title: 'Styles', items: this.styles, type: 'style' }
-            ];
+        const groups = [
+            { title: 'Basemaps', items: this.basemaps, type: 'basemap' },
+            { title: 'Styles', items: this.styles, type: 'style' }
+        ];
 
-            for (const [index, group] of groups.entries()) {
-                const groupItem = document.createElement('li');
-                groupItem.textContent = group.title;
-                groupItem.className = 'group-item';
-                const itemList = document.createElement('ul');
-                itemList.className = 'variant-list';
+        for (const [index, group] of groups.entries()) {
+            const groupItem = document.createElement('li');
+            groupItem.textContent = group.title;
+            groupItem.className = 'group-item strong-red';
+            const itemList = document.createElement('ul');
+            itemList.className = 'variant-list';
 
-                for (const [itemIndex, item] of group.items.entries()) {
-                    const itemElement = document.createElement('li');
-                    itemElement.className = 'variant-item';	                
-	                itemList.appendChild(itemElement);
-                    
-	                const radioInput = document.createElement('input');
-	                radioInput.type = 'radio';
-	                radioInput.name = group.type;
-	                radioInput.dataset.type = group.type;
-	                radioInput.dataset.value = item;
-	                radioInput.checked = 
-	                	(group.type === 'style' && item === this.styles[0]) ||
-	                	(group.type === 'basemap' && this.listDictionary[this.styles[0]].sources.basemap.url.includes(item));
-	                radioInput.addEventListener('change', (event) => this._onVariantClick(event));
-	                itemElement.appendChild(radioInput);
-	
-	                const labelElement = document.createElement('label');
-	                labelElement.textContent = this.listDictionary[item].name;
-	                labelElement.className = 'variant-item-label';
-	                labelElement.dataset.type = group.type;
-	                labelElement.dataset.value = item;
-	                labelElement.addEventListener('click', (event) => {
-	                    radioInput.checked = true;
-	                    this._onVariantClick(event);
-	                });	
-	                itemElement.appendChild(labelElement);
-	                
-                }
+            for (const [itemIndex, item] of group.items.entries()) {
+                const itemElement = document.createElement('li');
+                itemElement.className = 'variant-item';	                
+                itemList.appendChild(itemElement);
+                
+                const radioInput = document.createElement('input');
+                radioInput.type = 'radio';
+                radioInput.name = group.type;
+                radioInput.dataset.type = group.type;
+                radioInput.dataset.value = item;
+                radioInput.checked = 
+                	(group.type === 'style' && item === this.styles[0]) ||
+                	(group.type === 'basemap' && this.listDictionary[this.styles[0]].sources.basemap.url.includes(item));
+                radioInput.addEventListener('change', (event) => this._onVariantClick(event));
+                itemElement.appendChild(radioInput);
 
-                groupItem.appendChild(itemList);
-                styleList.appendChild(groupItem);
+                const labelElement = document.createElement('label');
+                labelElement.textContent = this.listDictionary[item].name;
+                labelElement.className = 'variant-item-label';
+                labelElement.dataset.type = group.type;
+                labelElement.dataset.value = item;
+                labelElement.addEventListener('click', (event) => {
+                    radioInput.checked = true;
+                    this._onVariantClick(event);
+                });	
+                itemElement.appendChild(labelElement);
+                
             }
-            
-		    const horizontalLine = document.createElement('hr');
-	        horizontalLine.className = 'style-list-divider';
-		    styleList.appendChild(horizontalLine);
-		
-		    const hillshadeGroupItem = document.createElement('li');
-		    hillshadeGroupItem.className = 'group-item';
-		    const hillshadeCheckboxItem = document.createElement('li');
-		    const hillshadeCheckbox = document.createElement('input');
-		    hillshadeCheckbox.type = 'checkbox';
-		    hillshadeCheckbox.id = 'hillshadeCheckbox';
-	        hillshadeCheckbox.className = 'hillshade-checkbox';
-	        
-	        const sources = this.listDictionary[this.styles[0]].sources || {};
-    		const hasTerrariumSources = Object.keys(sources).some(source => source.startsWith('terrarium'));
-		    if (hasTerrariumSources) {
-		        hillshadeCheckbox.checked = true;
-		    } else {
-		        hillshadeCheckbox.disabled = true;
-		    }	        
-	        
-		    hillshadeCheckbox.addEventListener('change', (event) => this._toggleHillshadeLayers(event));
-		    const hillshadeLabel = document.createElement('label');
-		    hillshadeLabel.textContent = 'Hillshade';
-		    hillshadeLabel.setAttribute('for', 'hillshadeCheckbox');
-	        hillshadeLabel.className = 'hillshade-label';
-		    hillshadeCheckboxItem.appendChild(hillshadeCheckbox);
-		    hillshadeCheckboxItem.appendChild(hillshadeLabel);
-		    hillshadeGroupItem.appendChild(hillshadeCheckboxItem);
-		    styleList.appendChild(hillshadeGroupItem);            
 
-            this._container.appendChild(styleList);
+            groupItem.appendChild(itemList);
+            styleList.appendChild(groupItem);
         }
+        
+	    const horizontalLine = document.createElement('hr');
+        horizontalLine.className = 'style-list-divider';
+	    styleList.appendChild(horizontalLine);
+	
+	    const hillshadeGroupItem = document.createElement('li');
+	    hillshadeGroupItem.className = 'group-item';
+	    const hillshadeCheckboxItem = document.createElement('li');
+	    const hillshadeCheckbox = document.createElement('input');
+	    hillshadeCheckbox.type = 'checkbox';
+	    hillshadeCheckbox.id = 'hillshadeCheckbox';
+        hillshadeCheckbox.className = 'hillshade-checkbox';
+        
+        const sources = this.listDictionary[this.styles[0]].sources || {};
+		const hasTerrariumSources = Object.keys(sources).some(source => source.startsWith('terrarium'));
+	    if (hasTerrariumSources) {
+	        hillshadeCheckbox.checked = true;
+	    } else {
+	        hillshadeCheckbox.disabled = true;
+	    }	        
+        
+	    hillshadeCheckbox.addEventListener('change', (event) => this._toggleHillshadeLayers(event));
+	    const hillshadeLabel = document.createElement('label');
+	    hillshadeLabel.textContent = 'Hillshade';
+	    hillshadeLabel.setAttribute('for', 'hillshadeCheckbox');
+        hillshadeLabel.className = 'hillshade-label';
+	    hillshadeCheckboxItem.appendChild(hillshadeCheckbox);
+	    hillshadeCheckboxItem.appendChild(hillshadeLabel);
+	    hillshadeGroupItem.appendChild(hillshadeCheckboxItem);
+	    styleList.appendChild(hillshadeGroupItem);            
 
-        this._onClick = this._onClick.bind(this);
+        this._listContainer.appendChild(styleList);
     }	
 
 	onRemove() {
@@ -660,9 +658,9 @@ maplibregl.Map = function (options = {}) {
         drawingControl: false, // Instantiate hidden control with {hide: true}
         fullscreenControl: false,
         navigationControl: {position: 'top-right', showZoom: true, showCompass: false, visualizePitch: false}, // false
-    	sequencerControl: false,
+        sequencerControl: false,
 	    temporalControl: false,
-	    terrainControl: true, // If true, will force display of full navigation controls too
+	    terrainControl: false, // If true, will force display of full navigation controls too
     };
     
     // replace defaultOptions with any passed options 

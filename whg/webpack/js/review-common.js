@@ -3,7 +3,6 @@ import datasetLayers from './mapLayerStyles';
 import { attributionString } from './utilities';
 
 export let mappy = new whg_maplibre.Map({
-	style: ['DATAVIZ.DEFAULT', 'OUTDOOR.DEFAULT'], 
 	maxZoom: 10,
 	navigationControl: true,
 });
