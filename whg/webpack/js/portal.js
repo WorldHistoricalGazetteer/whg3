@@ -15,6 +15,9 @@ const payload = JSON.parse($('#payload_data').text());
 
 let mapParameters = {
 	maxZoom: 17,
+    style: ['whg-basic-light', 'whg-basic-dark'],
+    basemap: ['natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade'],
+    terrainControl: true,
 	temporalControl: temporal
 }
 let mappy = new whg_maplibre.Map(mapParameters);
@@ -88,15 +91,6 @@ function waitMapLoad() {
 					['!=', 'outOfDateRange', true],
 				]);
 			});
-
-	  		const geoLayers = JSON.parse($('#geo-layers').text());
-			if (geoLayers.length > 0) {
-				$('#map_options').append(createGeoLayerSelectors('geoLayers', geoLayers));
-			}
-
-/*			if (mapParameters.style.length !== 1) {
-				$('#map_options').append(createBasemapRadioButtons());
-			}*/
 
 			$('#map_options').append(createNearbyPlacesControl());
 			

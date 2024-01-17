@@ -9,9 +9,6 @@ import { CountryCacheFeatureCollection } from  './countryCache';
 import '../css/gallery.css';
 
 let mappy = new whg_maplibre.Map({
-    container: 'map',
-    style: ['whg-basic'],
-    basemap: [],
     maxZoom: 13,
     navigationControl: false
 });

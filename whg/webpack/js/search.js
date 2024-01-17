@@ -22,7 +22,6 @@ let mapParameters = {
 	maxZoom: 13,
     fullscreenControl: true,
     downloadMapControl: true,
-    layerSelector: true,
     drawingControl: {hide: true},
     temporalControl: {
         fromValue: 800,

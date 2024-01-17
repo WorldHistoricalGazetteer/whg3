@@ -57,9 +57,10 @@
 	margin: 5px 0;
 }
 
-.hillshade-label {
+.hillshade-label, .layer-label {
 	margin: -5px 0 0 2px;
 	font-weight: normal;
+  	color: var(--bs-body-color);
 }
 
 /* Style for the scrollable list */

@@ -236,9 +236,6 @@ class sequencerControl {
 let mapSequencer;
 function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table){
 
-	mappy.addControl(new fullScreenControl(), 'top-left');
-	mappy.addControl(new downloadMapControl(), 'top-left');
-
 	if (!!mapParameters.controls.sequencer) {
 		mapSequencer = new sequencerControl();
 		mappy.addControl(mapSequencer, 'bottom-left');

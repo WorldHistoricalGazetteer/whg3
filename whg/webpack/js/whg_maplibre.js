@@ -22,7 +22,6 @@ async function fetchJSON(jsonURL) {
             throw new Error(`Failed to fetch JSON. Status: ${response.status}`);
         }
         const resultJSON = await response.json();
-        console.log('Fetched JSON.', resultJSON);
         return resultJSON;
     } catch (error) {
         console.error('Error fetching JSON:', error);
@@ -52,9 +51,6 @@ class acmeStyleControl {
 			this._listContainer.querySelector('.style-button').addEventListener('click', this._onClick.bind(this));
 		}
 		const currentStyle = this._map.getStyle();
-		this.baseStyle = {}; // Used for identifying layers that should be ignored when the map is clicked
-		this.baseStyle.sources = Object.keys(currentStyle.sources);
-		this.baseStyle.layers = currentStyle.layers.map((layer) => layer.id);
 
         const promises = [
             ...this.basemaps.map(item => fetchJSON(getTilejsonURL(item))),
@@ -67,12 +63,91 @@ class acmeStyleControl {
                     this.listDictionary[item] = results[index];
                 });				
                 this.createMapStyleList();
+                this.buildSwitcher(currentStyle);
             })
             .catch(error => {
                 console.error('Failed to fetch JSON:', error);
             });
 
         return this._listContainer.id == 'styleListContainer' ? document.createElement('div') : this._listContainer;
+	}
+	
+	buildSwitcher(styleJSON) {
+		const switches = document.createElement('span');
+		switches.id = 'layerSwitches';
+        //switches.className = 'maplibre-styles-list';
+
+    	var switchGroups = {};
+        
+        for (const layer of styleJSON.layers) {
+			if (layer.metadata && layer.metadata['whg:switchgroup']) {
+	            const switchGroup = layer.metadata['whg:switchgroup'];
+	            if (!switchGroups[switchGroup]) {
+	                switchGroups[switchGroup] = [];
+	            }
+	            switchGroups[switchGroup].push(layer);
+	        }
+		}
+		
+		const sortedGroups = Object.keys(switchGroups).sort();
+
+    	for (const group of sortedGroups) {
+			const layers = switchGroups[group];
+            layers.sort((a, b) => a.metadata['whg:switchlabel'].localeCompare(b.metadata['whg:switchlabel']));
+	
+	        const groupItem = document.createElement('li');
+	        groupItem.textContent = group;
+	        groupItem.className = 'group-item strong-red';
+	        const itemList = document.createElement('ul');
+	        itemList.className = 'variant-list';
+	
+	        for (const layer of layers) {
+	            const itemElement = document.createElement('li');
+	            itemElement.className = 'variant-item';
+	
+	            const checkbox = document.createElement('input');
+	            checkbox.type = 'checkbox';
+	            checkbox.dataset.layerId = layer.id;
+	            checkbox.checked = layer.layout.visibility === 'visible';
+	            checkbox.addEventListener('change', (event) => {
+	                this._onSwitcherChange(event);
+				});
+	            itemElement.appendChild(checkbox);
+	
+	            const labelElement = document.createElement('label');
+	            labelElement.textContent = layer.metadata['whg:switchlabel'] || layer.id;
+	            labelElement.className = 'layer-label';
+	            labelElement.dataset.layerId = layer.id;
+	            labelElement.addEventListener('click', (event) => {
+	                checkbox.checked = !checkbox.checked;
+	                this._onSwitcherChange(event);
+	            });
+	            itemElement.appendChild(labelElement);
+	
+	            itemList.appendChild(itemElement);
+	        }
+	
+	        groupItem.appendChild(itemList);
+	        switches.appendChild(groupItem);
+	    }
+
+	    const existingSwitches = document.getElementById('layerSwitches');
+	    const mapStyleList = document.getElementById('mapStyleList');
+	    if (existingSwitches) {
+	        mapStyleList.replaceChild(switches, existingSwitches);
+	    } else {
+	        mapStyleList.appendChild(switches);
+	    }
+	    
+	}
+	
+	_onSwitcherChange(event) {
+	    const layerId = event.target.dataset.layerId;
+	    const layer = this._map.getLayer(layerId);
+	    const visibility = this._map.getLayoutProperty(layerId, 'visibility');
+	    if (layer) {
+	        this._map.setLayoutProperty(layerId, 'visibility', visibility === 'visible' ? 'none' : 'visible');
+	    }
 	}
 		
     createMapStyleList() {
@@ -200,18 +275,16 @@ class acmeStyleControl {
 		else {
 			
 	        const resultJSON = this.listDictionary[event.target.dataset.value];
+	        this.buildSwitcher(resultJSON);
 		
-			console.log('_onVariantClick style',this.listDictionary, event, event.target.dataset, resultJSON);
-	        this._map.setStyle(resultJSON, {
+			this._map.setStyle(resultJSON, {
 	            diff: false, // Force rebuild because native diff logic cannot handle this transformation
 	            transformStyle: (previousStyle, nextStyle) => {
 					
-					console.log('previousStyle',previousStyle);
-					
-	                const modifiedSources = {
+					const modifiedSources = {
 	                    ...nextStyle.sources,
 	                    ...Object.keys(previousStyle.sources).reduce((acc, key) => {
-	                        if (!this.baseStyle.sources.includes(key)) {
+	                        if (!this._map.baseStyle.sources.includes(key)) {
 	                            acc[key] = previousStyle.sources[key];
 	                        }
 	                        return acc;
@@ -220,7 +293,7 @@ class acmeStyleControl {
 	
 	                var modifiedLayers = [
 	                    ...nextStyle.layers,
-	                    ...previousStyle.layers.filter((layer) => !this.baseStyle.layers.includes(layer.id)),
+	                    ...previousStyle.layers.filter((layer) => !this._map.baseStyle.layers.includes(layer.id)),
 	                ];
 	                
 	                const hillshadeCheckbox = document.getElementById('hillshadeCheckbox');
@@ -231,8 +304,8 @@ class acmeStyleControl {
 	                    }
 	                }	                
 	
-	                this.baseStyle.sources = Object.keys(resultJSON.sources);
-	                this.baseStyle.layers = resultJSON.layers.map((layer) => layer.id);
+	                this._map.baseStyle.sources = Object.keys(resultJSON.sources);
+	                this._map.baseStyle.layers = resultJSON.layers.map((layer) => layer.id);
 	                
 	                const styleName = resultJSON.sources.basemap.url.split('/').pop().replace('.json', '');
 				    const basemapInput = document.querySelector(`input[name="basemap"][value="${styleName}"]`);
@@ -240,9 +313,7 @@ class acmeStyleControl {
 			            basemapInput.checked = true;
 			        }
 		
-					console.log(this.listDictionary, modifiedSources, modifiedLayers);
-	
-	                return {
+					return {
 	                    ...nextStyle,
 	                    sources: modifiedSources,
 	                    layers: modifiedLayers,
@@ -289,9 +360,8 @@ class CustomTerrainControl {
     }
 
     toggleTerrain(button) {
-        console.log('Custom Terrain Toggled');
         
-		const enablingTerrain = !button.classList.contains('maplibregl-ctrl-terrain-enabled');
+        const enablingTerrain = !button.classList.contains('maplibregl-ctrl-terrain-enabled');
         button.classList.toggle('maplibregl-ctrl-terrain-enabled', enablingTerrain);
         button.title = enablingTerrain ? 'Disable terrain' : 'Enable terrain';
         
@@ -322,8 +392,6 @@ class CustomTerrainControl {
                 }
             }
             
-            console.log('this._terrainSources',this._terrainSources);
-
             this._zoomListener = () => this.handleZoomChange();
             this._map.on('zoom', this._zoomListener);
             this.handleZoomChange();
@@ -365,7 +433,6 @@ class CustomTerrainControl {
                 source: this._tempTerrain,
                 exaggeration: 1.5,
             });
-            console.log(selectedTerrainSource, this._map.getStyle());
         }
     }
 }
@@ -418,7 +485,6 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 				  },
 	    		  container: document.getElementById('map-download-dialog')
 				}).on('success', function(e) {
-				  console.log('Attribution text copied to clipboard.');
 				  downloadButton.show();
 				}).on('error', function(e) {
 				  console.error('Unable to copy attribution text: ', e);
@@ -439,7 +505,6 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 			return dpi / 96;
 		},
 	});
-	console.log(actualPixelRatio, window.devicePixelRatio, map.getStyle());
 
 	// Create a hidden container for rendering the map
 	const originalMapContainer = originalCanvas.parentNode;
@@ -641,14 +706,16 @@ class CustomDrawingControl {
 }
 
 const originalMapConstructor = maplibregl.Map;
+maplibregl.Map.prototype.baseStyle = {}; // Updated by style control, and used for identifying layers that should be ignored when the map is clicked
 maplibregl.Map = function (options = {}) {
 		
     const defaultOptions = {
         container: 'map',
-        style: ['whg-basic', 'whg-enhanced'],
-        basemap: ['natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade',/* 'kg-NE2_HR_LC_SR_W', 'kg-NE2_HR_LC_SR_W_DR'*/],
+        style: ['whg-basic-light'/*, 'whg-basic-dark'*/],
+        basemap: [/*'natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade'*/],
         zoom: 0.2,
         center: [9.2, 33],
+        //maxBounds: [[-180, -80], [180, 85]],
         minZoom: 0.1,
         maxZoom: 6,
         maxPitch: 85,
@@ -681,11 +748,15 @@ maplibregl.Map = function (options = {}) {
 	chosenOptions.style = getStyleURL(chosenOptions.styles[0]);
     
     const mapInstance = new originalMapConstructor(chosenOptions);
+    
     mapInstance.initOptions = chosenOptions;
     
-    console.log(mapInstance.initOptions);
-    
     mapInstance.on('load', () => { // Add chosen controls
+    
+    	const currentStyle = mapInstance.getStyle();
+		mapInstance.baseStyle.sources = Object.keys(currentStyle.sources);
+		mapInstance.baseStyle.layers = currentStyle.layers.map((layer) => layer.id);
+    
 		if (chosenOptions.fullscreenControl) mapInstance.addControl(new maplibregl.FullscreenControl(), 'top-left');
 		if (chosenOptions.downloadMapControl) mapInstance.addControl(new downloadMapControl(mapInstance), 'top-left');
 		if (chosenOptions.drawingControl) mapInstance.addControl(new CustomDrawingControl(mapInstance, chosenOptions.drawingControl), 'top-left');

@@ -36,6 +36,8 @@ let spinner_map = startSpinner("dataset_content", 3);
 
 let mapParameters = { 
 	maxZoom: 10,
+	downloadMapControl: true,
+    fullscreenControl: true,
 	temporalControl: {
         fromValue: 1550,
         toValue: 1720,
@@ -101,10 +103,6 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 			addMapLayer(layer, ds);
 		});
 	});
-	
-	mappy.removeSource('maptiler_attribution');
-	//listSourcesAndLayers();
-	// TODO: Adjust attribution elsewhere: © MapTiler © OpenStreetMap contributors
 		
 	// Initialise Data Table
 	const tableInit = initialiseTable(allFeatures, checked_rows, spinner_table, spinner_detail, mappy);

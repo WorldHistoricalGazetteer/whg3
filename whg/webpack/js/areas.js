@@ -6,7 +6,6 @@ import '../css/areas.css';
 
 let mappy = new whg_maplibre.Map({
 	maxZoom: 10,
-	navigationControl: true,
     drawingControl: {hide: true}
 });
 

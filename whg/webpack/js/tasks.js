@@ -7,7 +7,6 @@ import '../css/tasks.css';
 
 let mapParameters = { 
 	maxZoom: 10,
-	navigationControl: true,
 	temporalControl: {
         fromValue: 1550,
         toValue: 1720,

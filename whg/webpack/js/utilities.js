@@ -314,6 +314,7 @@ export function minmaxer(timespans) {
 }
 
 export function get_ds_list_stats(allFeatures) {
+	
 	let min = Infinity;
 	let max = -Infinity;
 	let seqMin = Infinity;
