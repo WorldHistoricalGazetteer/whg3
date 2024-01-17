@@ -5,6 +5,7 @@ _scratch/
 */_scratch/*
 _tests/
 _testdata/
+_v2models/
 
 node_modules/
 
