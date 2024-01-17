@@ -3,9 +3,7 @@ import datasetLayers from './mapLayerStyles';
 import { attributionString } from './utilities';
 
 export let mappy = new whg_maplibre.Map({
-	style: ['DATAVIZ.DEFAULT', 'OUTDOOR.DEFAULT'], 
-	maxZoom: 10,
-	navigationControl: true,
+	maxZoom: 10
 });
 
 let featureCollection;
@@ -53,7 +51,7 @@ export function addReviewListeners() {
 		if (features.length > 0) {
 			let scrolled = false;
 			features.forEach(feature => {
-				const isAddedFeature = !mappy.styleControl.baseStyle.layers.includes(feature.layer.id);
+				const isAddedFeature = !mappy.baseStyle.layers.includes(feature.layer.id);
 				if (isAddedFeature && !!feature.properties.src_id) {
 					if (!scrolled) {
 						$('.match_radio').css('background', 'oldlace'); // first, background to #fff for all 
@@ -79,7 +77,7 @@ export function addReviewListeners() {
 		}
 		if (features.length > 0) {
 			const topFeature = features[0]; // Handle only the top-most feature
-			const isAddedFeature = !mappy.styleControl.baseStyle.layers.includes(topFeature.layer.id);
+			const isAddedFeature = !mappy.baseStyle.layers.includes(topFeature.layer.id);
 			if (isAddedFeature && !!topFeature.properties.id) {
 				mappy.getCanvas().style.cursor = 'pointer';
 				$(`.hovermap[data-id='${ topFeature.properties.id }']`).addClass('highlight-row');

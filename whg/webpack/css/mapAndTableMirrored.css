@@ -120,16 +120,6 @@
     position: relative;
 }
 
-.style-button {
-	padding: 4px!important;
-	float: right;
-}
-
-.style-button .maplibregl-ctrl-icon {
-	background: url(../images/style-switcher.svg);
-	background-size: contain;
-}
-
 .download-map-button .maplibregl-ctrl-icon {
 	background: url(../images/camera.svg);
 	background-size: 26px;
@@ -195,73 +185,6 @@
   transform: translateY(-50%);
   font-size: 12px; /* Adjust font size as needed */
   color: #555; /* Color of the arrow */
-}
-
-/* Reset the default list styles */
-.maplibre-styles-list,
-.maplibre-styles-list ul,
-.maplibre-styles-list li {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-/* Style for the group names */
-.group-item {
-  font-weight: bold;
-  margin-bottom: 8px;
-}
-
-/* Style for the variant options */
-.variant-item {
-  cursor: pointer;
-  margin-bottom: 4px;
-  padding: 4px 8px;
-  background-color: #f5f5f5;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
-  font-weight: normal;
-  padding: 0 6px 0 12px !important;
-}
-
-/* Style for the selected variant option */
-.variant-item.selected {
-  background-color: #007bff; /* Customize the background color for the selected style */
-  color: white; /* Customize the text color for the selected style */
-}
-
-/* Add hover styles for the variant options */
-.variant-item:hover {
-  background-color: #dcdcdc; /* Customize the background color on hover */
-}
-
-/* Style for the scrollable list */
-#mapStyleList {
-  display: none;
-  overflow-y: scroll;
-  max-height: 150px;
-  border: 1px solid #ccc; /* Add a border around the list */
-  border-radius: 4px;
-  padding: 4px;
-  margin: 3px;
-}
-
-#mapStyleList.show {
-    display: block;
-}
-
-/* Remove the default scrollbar style for webkit browsers */
-#mapStyleList::-webkit-scrollbar {
-  width: 8px;
-}
-
-#mapStyleList::-webkit-scrollbar-thumb {
-  background-color: #007bff; /* Customize the scrollbar thumb color */
-  border-radius: 8px;
-}
-
-#mapStyleList::-webkit-scrollbar-thumb:hover {
-  background-color: #0056b3; /* Customize the scrollbar thumb color on hover */
 }
 
 #placetable_wrapper {

@@ -6,7 +6,6 @@ import { attributionString, geomsGeoJSON } from './utilities';
 import '../css/places.css';
 
 let mappy = new whg_maplibre.Map({
-	style: ['OUTDOOR.DEFAULT'], 
 	maxZoom: 10,
 });
 

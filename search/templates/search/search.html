@@ -2,8 +2,14 @@
 {% extends "main/base_webpack.html" %}
 {% load static %}
 
-{% block extra_head %}
+{% block maplibre %}
+	<script type="text/javascript">
+		const loadMaplibre = true;
+	</script>
 	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" /> 
+{% endblock %}
+
+{% block extra_head %}
 	<link href="{% static 'webpack/search.bundle.css' %}" rel="stylesheet" /> 
 {% endblock %}
 
@@ -112,6 +118,8 @@
 	    </div>
 			<div id="search_right" class="col-8">
 				<div id="search_right_top" class="row px-1">
+{#					<div id="map" class="col-9 bg-lighterblue"></div>#}
+{# sg fix: remove col-9 to correct map width; still needs some padding-right reduction for alignment, and padding-bottom increase to avoid scrollbar collision #}
 					<div id="map" class="bg-lighterblue"></div>
 {#					<div id="map_notes" class="col-3 bg-lightyellow p-2">legend? note?</div>#}
 				</div>

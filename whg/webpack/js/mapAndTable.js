@@ -35,20 +35,22 @@ let spinner_table;
 let spinner_detail;
 // let spinner_map = startSpinner("dataset_content", 3);
 
-let mapParameters = {
-	style: ['DATAVIZ.DEFAULT', 'OUTDOOR.DEFAULT'], 
+let mapParameters = { 
 	maxZoom: 10,
+	downloadMapControl: true,
+    fullscreenControl: true,
+	temporalControl: {
+        fromValue: 1550,
+        toValue: 1720,
+        minValue: -2000,
+        maxValue: 2100,
+        open: false,
+        includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
+        epochs: null,
+        automate: null,
+    },
+    sequencerControl: true,
     controls: {
-	    temporal: {
-	        fromValue: 1550,
-	        toValue: 1720,
-	        minValue: -2000,
-	        maxValue: 2100,
-	        open: false,
-	        includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
-	        epochs: null,
-	        automate: null,
-	    },
 	    sequencer: true,
 	},
 }
@@ -103,10 +105,6 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 			addMapLayer(layer, ds);
 		});
 	});
-	
-	mappy.removeSource('maptiler_attribution');
-	//listSourcesAndLayers();
-	// TODO: Adjust attribution elsewhere: © MapTiler © OpenStreetMap contributors
 		
 	// Initialise Data Table
 	const tableInit = initialiseTable(allFeatures, checked_rows, spinner_table, spinner_detail, mappy);

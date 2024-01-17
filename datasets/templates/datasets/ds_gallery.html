@@ -6,8 +6,14 @@
 	<title>WHG::Gallery</title>
 {% endblock %}
 
-{% block extra_head %}
+{% block maplibre %}
+	<script type="text/javascript">
+		const loadMaplibre = true;
+	</script>
 	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" /> 
+{% endblock %}
+
+{% block extra_head %}
 	<link href="{% static 'webpack/gallery.bundle.css' %}" rel="stylesheet" />
 {% endblock %}
 

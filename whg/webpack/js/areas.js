@@ -5,9 +5,8 @@ import { attributionString, deepCopy } from './utilities';
 import '../css/areas.css';
 
 let mappy = new whg_maplibre.Map({
-	style: [ 'OUTDOOR.DEFAULT', 'SATELLITE.DEFAULT' ], 
 	maxZoom: 10,
-	navigationControl: true,
+    drawingControl: {hide: true}
 });
 
 const nullCollection = {
@@ -18,7 +17,7 @@ let featureCollection;
 
 let countryGeoJSON;
 var draw;
-var drawControl;
+var $drawControl;
 
 let hullLayer = {
 	'id': 'hull',
@@ -140,7 +139,7 @@ function waitDocumentReady() {
 	});
 }
 
-Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(mapboxDraw_CDN_fallbacks.map(loadResource))])
+Promise.all([waitMapLoad(), waitDocumentReady()])
 	.then(() => {
 
 		// area_type = 'ccodes' // default
@@ -204,10 +203,10 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(mapboxDraw_CDN_fall
 			console.log('tab id:', target);
 			// TODO: better refactor 
 			if (target == '#areas_codes') {
-				drawControl.hide();
+				$drawControl.hide();
 				$("#id_geojson").attr("placeholder", "generated from country codes")
 			} else if (target == '#areas_draw') {
-				drawControl.show();
+				$drawControl.show();
 				$("#id_geojson").attr("placeholder", "generated from drawn shapes")
 			}
 		});
@@ -215,23 +214,10 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(mapboxDraw_CDN_fall
 	.catch(error => console.error("An error occurred:", error));
 
 function addDrawingControl() {
-
-	draw = new MapboxDraw({
-		displayControlsDefault: false,
-		controls: {
-			//point: true,
-			//line_string: true,
-			polygon: true,
-			trash: true
-		},
-	})
-	let drawControlObject = mappy.addControl(draw, 'top-left');
-	drawControl = $(drawControlObject._container).find('.maplibregl-ctrl-top-left');
-	drawControl.hide();
-	const drawControls = document.querySelectorAll(".mapboxgl-ctrl-group.mapboxgl-ctrl");
-	drawControls.forEach((elem) => {
-		elem.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group');
-	});
+	
+	draw = mappy._draw;
+	$drawControl = $(mappy._drawControl);
+		
 	mappy.on('draw.create', updateDraw); // draw events fail to register if not done individually
 	mappy.on('draw.delete', updateDraw);
 	mappy.on('draw.update', updateDraw);

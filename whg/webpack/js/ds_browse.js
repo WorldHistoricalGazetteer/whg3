@@ -7,9 +7,7 @@ import { getPlace } from './getPlace';
 import '../css/ds_browse.css';
 
 let mappy = new whg_maplibre.Map({
-	style: ['DATAVIZ.DEFAULT', 'OUTDOOR.DEFAULT'], 
-	maxZoom: 10,
-	navigationControl: true,
+	maxZoom: 10
 });
 
 let featureCollection;
@@ -169,7 +167,7 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(datatables_CDN_fall
 			const features = mappy.queryRenderedFeatures(e.point);
 			if (features.length > 0) {
 				const topFeature = features[0]; // Handle only the top-most feature
-				const isAddedFeature = !mappy.styleControl.baseStyle.layers.includes(topFeature.layer.id);
+				const isAddedFeature = !mappy.baseStyle.layers.includes(topFeature.layer.id);
 				if (isAddedFeature) {
 					mappy.getCanvas().style.cursor = 'pointer';
 					var coordinates = [e.lngLat.lng, e.lngLat.lat];

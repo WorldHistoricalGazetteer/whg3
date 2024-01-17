@@ -8,7 +8,10 @@ import { CountryCacheFeatureCollection } from  './countryCache';
 
 import '../css/gallery.css';
 
-let mappy = new whg_maplibre.Map();
+let mappy = new whg_maplibre.Map({
+    maxZoom: 13,
+    navigationControl: false
+});
     
 let nullCollection = {
     type: 'FeatureCollection',

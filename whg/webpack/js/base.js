@@ -94,6 +94,19 @@ var CDN_fallbacks = [
 	},
 ];
 
+var maplibre_fallbacks = [
+	{
+		cdnUrl: 'https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js',
+		localUrl: 'maplibre-gl.js',
+		position: 'head',
+	},
+	{
+		cdnUrl: 'https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css',
+		localUrl: 'maplibre-gl.css',
+		position: 'head'
+	},
+];
+
 window.select2_CDN_fallbacks = [
 	{
 		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.full.min.js',
@@ -120,24 +133,12 @@ window.datatables_CDN_fallbacks = [
 	},
 ];
 
-window.mapboxDraw_CDN_fallbacks = [
-	{
-		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl-draw/1.4.3/mapbox-gl-draw.js',
-		localUrl: 'mapbox-gl-draw.js',
-		position: 'head',
-	},
-	{
-		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/mapbox-gl-draw/1.4.3/mapbox-gl-draw.min.css',
-		localUrl: 'mapbox-gl-draw.css',
-		position: 'head'
-	},
-];
-
 window.loadResource = function(element) {
 	return new Promise(function(resolve, reject) {
 		var resource;
 		const isCSS = element.cdnUrl.endsWith('.css');
-
+		const parentElement = document[element.position];
+		
 		if (isCSS) {
 			resource = document.createElement('link');
 			resource.type = 'text/css';
@@ -151,22 +152,39 @@ window.loadResource = function(element) {
 
 		if (element.integrity) resource.integrity = element.integrity;
 		if (element.crossorigin) resource.crossorigin = element.crossorigin;
-
-		document[element.position].appendChild(resource);
+			
+		var localResource = resource.cloneNode();
+		localResource[isCSS ? 'href' : 'src'] = `/CDNfallbacks/${element.localUrl}`;
 
 		resource.onload = function() {
 			// console.log(`Loaded CDN resource ${element.cdnUrl}`);
 			resolve();
 		};
 
-		resource.onerror = function() {
+		resource.onerror = function() {			
 			console.log(`Failed to load CDN resource (${element.cdnUrl}), falling back to local: ${element.localUrl}`);
-			resource[isCSS ? 'href' : 'src'] = `/CDNfallbacks/${element.localUrl}`;
-			document[element.position].appendChild(resource);
-			resolve();
+			
+			localResource.onload = function() {
+				console.log(`Loaded LOCAL resource ${element.localUrl}`);
+				resolve();
+			};
+			localResource.onerror = function() {
+				console.log(`FAILED to load local resource ${element.localUrl}`);
+				resolve();
+			};
+			
+			parentElement.insertBefore(localResource, resource);
+			parentElement.removeChild(resource);
+
 		};
+
+		parentElement.appendChild(resource);
 	});
 };
+
+if (typeof loadMaplibre !== 'undefined') {
+	CDN_fallbacks = [...CDN_fallbacks, ...maplibre_fallbacks];
+}
 
 Promise.all(CDN_fallbacks.map(loadResource))
 	.then(function() {

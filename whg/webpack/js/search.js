@@ -16,29 +16,22 @@ let isInitialLoad = true;
 let initialTypeCounts = {};
 let initialCountryCounts = {};
 let draw;
-let drawControl;
+let $drawControl;
 
 let mapParameters = {
-	style: ['OUTDOOR.DEFAULT'], 
-	maxZoom: 10,
-	navigationControl: true,
-    controls: {
-        layer: true,
-        navigation: false,
-        fullscreen: false,
-        attribution: {
-            open: false,
-        },
-        temporal: {
-            fromValue: 800,
-            toValue: 1800,
-            minValue: -2000,
-            maxValue: 2100,
-            open: false,
-            includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
-            epochs: null,
-            automate: null,
-        }
+	maxZoom: 13,
+    fullscreenControl: true,
+    downloadMapControl: true,
+    drawingControl: {hide: true},
+    temporalControl: {
+        fromValue: 800,
+        toValue: 1800,
+        minValue: -2000,
+        maxValue: 2100,
+        open: false,
+        includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
+        epochs: null,
+        automate: null,
     },
 }
 let mappy = new whg_maplibre.Map(mapParameters);
@@ -101,26 +94,12 @@ function waitDocumentReady() {
     });
 }
 
-Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(mapboxDraw_CDN_fallbacks.map(loadResource))])
+Promise.all([waitMapLoad(), waitDocumentReady()])
     .then(() => {
-
-		draw = new MapboxDraw({
-			displayControlsDefault: false,
-			controls: {
-				//point: true,
-				//line_string: true,
-				polygon: true,
-				trash: true
-			},
-		})
-		let drawControlObject = mappy.addControl(draw, 'top-left');
-		drawControl = $(drawControlObject._container).find('.maplibregl-ctrl-top-left');
-		drawControl.find('button.mapbox-gl-draw_ctrl-draw-btn').attr('title','Filter results by area: draw polygon');
-		drawControl.hide();
-		const drawControls = document.querySelectorAll(".mapboxgl-ctrl-group.mapboxgl-ctrl");
-		drawControls.forEach((elem) => {
-			elem.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group');
-		});
+		
+		draw = mappy._draw;
+		$drawControl = $(mappy._drawControl);
+		
 		mappy.on('draw.create', initiateSearch); // draw events fail to register if not done individually
 		mappy.on('draw.delete', initiateSearch);
 		mappy.on('draw.update', initiateSearch);
@@ -131,12 +110,12 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(mapboxDraw_CDN_fall
     
 		updateSearchState(true);
 
-		if (!!mapParameters.controls.temporal) {
+		if (!!mapParameters.temporalControl) {
 			let datelineContainer = document.createElement('div');
 			datelineContainer.id = 'dateline';
 			document.querySelector('.maplibregl-control-container').appendChild(datelineContainer);
 			window.dateline = new Dateline({
-				...mapParameters.controls.temporal,
+				...mapParameters.temporalControl,
 				onChange: dateRangeChanged
 			});
 			$(window.dateline.button).on('click', initiateSearch);
@@ -281,7 +260,8 @@ function renderResults(featureCollection) {
 
 	// Iterate over the results and append HTML for each
 	let results = featureCollection.features;
-	drawControl.toggle(results.length > 0 || draw.getAll().features.length > 0); // Leave control to allow deletion of areas
+	
+	$drawControl.toggle(results.length > 0 || draw.getAll().features.length > 0); // Leave control to allow deletion of areas
 	results.forEach(feature => {
 		let result = feature.properties;
 		const count = parseInt(result.linkcount) + 1;
@@ -498,11 +478,7 @@ function renderResults(featureCollection) {
 		$('.result').first().attr('data-map-initialising', 'true').click();
 	}
 	else {
-	    mappy.flyTo({
-			center: mapParameters.center,
-			zoom: mapParameters.zoom,
-	        speed: .5,
-	    });
+	    mappy.reset();
 		$('#detail').empty(); // Clear the detail view
 	}
 }
@@ -592,7 +568,7 @@ function updateSearchState(retrieve=false, results=false) {
 	        searchState['checkedboxes'].forEach(function(id) {
 		    	$('#' + id).prop('checked', true);
 		    });
-		    mapParameters.controls.temporal = searchState['temporal_filter'];
+		    mapParameters.temporalControl = searchState['temporal_filter'];
 			draw.add(searchState['spatial_filter']);
 			programmaticChange = false;
 		}

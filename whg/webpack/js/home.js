@@ -6,7 +6,7 @@ import featuredDataLayers from './featuredDataLayerStyles';
 import { fetchDataForHorse } from './localGeometryStorage';
 
 let mappy = new whg_maplibre.Map({
-	style: [ 'OUTDOOR.DEFAULT' ], 
+	navigationControl: false,
 	maxZoom: 10
 });
 
