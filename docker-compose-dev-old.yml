@@ -42,14 +42,13 @@ services:
       - .:/app
 
   livereload: # https://github.com/tjwalch/django-livereload-server
-    image: whg3_web
     networks:
       - WHG3
     platform: linux/amd64
-#    build:
-#      context: .
-#      dockerfile: ./compose/local/django/Dockerfile-django.dev
-#    image: whg3_livereload
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile-django.dev
+    image: whg3_livereload
     command: /start-livereload
     volumes:
       - .:/app
@@ -85,13 +84,13 @@ services:
     ports: [6380:6379]
 
   celery_worker:
-    image: whg3_web
-    command: /start-celeryworker
     networks:
       - WHG3
-#    build:
-#      context: .
-#      dockerfile: ./compose/local/django/Dockerfile-django.dev
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile-django.dev
+    image: whg3_celery_worker
+    command: /start-celeryworker
     volumes:
       - .:/app
     env_file:
@@ -101,13 +100,13 @@ services:
       - db
 
   celery_beat:
-    image: whg3_web
-    command: /start-celerybeat
     networks:
       - WHG3
-#    build:
-#      context: .
-#      dockerfile: ./compose/local/django/Dockerfile-django.dev
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile-django.dev
+    image: whg3_celery_beat
+    command: /start-celerybeat
     volumes:
       - .:/app
     env_file:
@@ -117,13 +116,13 @@ services:
       - db
 
   flower:
-    image: whg3_web
-    command: /start-flower
     networks:
       - WHG3
-#    build:
-#      context: .
-#      dockerfile: ./compose/local/django/Dockerfile-django.dev
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile-django.dev
+    image: whg3_celery_flower
+    command: /start-flower
     volumes:
       - .:/app
     env_file:
