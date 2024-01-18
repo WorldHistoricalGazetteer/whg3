@@ -1,38 +1,10 @@
 // /whg/webpack/js/mapControls.js
 
 import Dateline from './dateline';
-import generateMapImage from './saveMapImage';
+//import generateMapImage from './saveMapImage';
 import throttle from 'lodash/throttle';
 import { table } from './tableFunctions';
 import { scrollToRowByProperty } from './tableFunctions-extended';
-
-class fullScreenControl {
-	onAdd() {
-		this._map = map;
-		this._container = document.createElement('div');
-		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group maplibregl-ctrl-fullscreen';
-		this._container.textContent = 'Fullscreen';
-		this._container.innerHTML =
-			'<button type="button" class="maplibregl-ctrl-fullscreen" aria-label="Enter fullscreen" title="Enter fullscreen">' +
-			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
-			'</button>';
-		return this._container;
-	}
-}
-
-class downloadMapControl {
-	onAdd() {
-		this._map = map;
-		this._container = document.createElement('div');
-		this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group maplibregl-ctrl-download';
-		this._container.textContent = 'Download image';
-		this._container.innerHTML =
-			'<button type="button" class="download-map-button" aria-label="Download map image" title="Download map image">' +
-			'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
-			'</button>';
-		return this._container;
-	}
-}
 
 class sequencerControl {
 	onAdd() {
@@ -280,21 +252,14 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 			const parentNodeClassList = event.target.parentNode.classList;
 
 			if (parentNodeClassList.contains('maplibregl-ctrl-fullscreen')) {
-				console.log('Switching to fullscreen.');
-				parentNodeClassList.replace('maplibregl-ctrl-fullscreen', 'maplibregl-ctrl-shrink');
 				document.getElementById('mapOverlays').classList.add('fullscreen');
 			}
 			else if (parentNodeClassList.contains('maplibregl-ctrl-shrink')) {
-				console.log('Switching off fullscreen.');
-				parentNodeClassList.replace('maplibregl-ctrl-shrink', 'maplibregl-ctrl-fullscreen');
 				document.getElementById('mapOverlays').classList.remove('fullscreen');
 			}
 			else if (parentNodeClassList.contains('dateline-button')) {
 	            toggleFilters($('.range_container.expanded').length > 0, mappy, table);
 	        }
-			else if (parentNodeClassList.contains('download-map-button')) {
-				generateMapImage(mappy);
-			}
 
 		}
 

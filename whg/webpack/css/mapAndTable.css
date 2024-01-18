@@ -97,9 +97,9 @@
 	margin: 0;
 }
 
-#mapControls > div > .maplibregl-ctrl:not(:first-child) {
+/* #mapControls > div > .maplibregl-ctrl:not(:first-child) {
 	margin: 4px 0 0 0;
-}
+} */
 
 #mapControls .maplibregl-ctrl-top-left {
 	display: flex;
@@ -111,7 +111,6 @@
 
 #mapControls .maplibregl-ctrl-download {
 	left: 4px;
-    top: -4px;
     position: relative;
 }
 
