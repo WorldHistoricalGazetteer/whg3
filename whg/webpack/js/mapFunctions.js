@@ -10,11 +10,21 @@ import { mappy } from './mapAndTable';
 let mapParams;
 
 export function addMapSource(ds) {
-	mappy.addSource(ds.id.toString(), {
-		'type': 'geojson',
-		'data': ds,
-		'attribution': attributionString(ds),
-	});
+	if (!!ds.tileset && ds.tileset == true) {
+		const tilesetURL = `${process.env.TILEBOSS}/data/${ds.ds_type || 'datasets'}-${ds.id}.json`;
+		console.log('tilesetURL',tilesetURL);
+		mappy.addSource(`${ds.ds_type || 'datasets'}_${ds.id}`, {
+			'type': 'vector',
+    		'url': tilesetURL
+		});
+	}
+	else {
+		mappy.addSource(`${ds.ds_type || 'datasets'}_${ds.id}`, {
+			'type': 'geojson',
+			'data': ds,
+			'attribution': attributionString(ds),
+		});
+	}
 }
 
 export function addMapLayer(layer, ds) {
@@ -22,7 +32,13 @@ export function addMapLayer(layer, ds) {
 		...layer
 	};
 	modifiedLayer.id = `${layer.id}_${ds.id}`;
-	modifiedLayer.source = ds.id.toString();
+	modifiedLayer.source = `${ds.ds_type || 'datasets'}_${ds.id}`;
+	
+	//TODO: Read the actual source-layer id
+	modifiedLayer['source-layer'] = 'ae105649f8aa436084b4f1b6caee9955';
+	
+	console.log(mappy.getStyle(),filteredLayer(modifiedLayer));
+	
 	mappy.addLayer(filteredLayer(modifiedLayer));
 	if (!!ds.relations && layer.id == 'gl_active_point') {
 		let circleColors = arrayColors(ds.relations);

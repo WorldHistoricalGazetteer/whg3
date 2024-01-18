@@ -133,8 +133,8 @@
     background-repeat: no-repeat;
     background-size: 26px;
     display: block;
-    height: 26px;
-    width: 34px;
+    height: 26px!important;
+    width: 34px!important;
     color: black;
 }
 

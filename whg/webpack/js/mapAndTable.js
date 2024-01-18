@@ -33,7 +33,7 @@ let checked_rows;
 
 let spinner_table;
 let spinner_detail;
-// let spinner_map = startSpinner("dataset_content", 3);
+let spinner_map = startSpinner("dataset_content", 3);
 
 let mapParameters = { 
 	maxZoom: 10,
@@ -67,7 +67,25 @@ let dataLoadPromises = [];
 window.ds_list.forEach(function (ds) { // fetch data
     const promise = new Promise(function (resolve, reject) {
         $.get(`/${ ds.ds_type || 'datasets' }/${ ds.id }/mapdata`, function (data) { // ds_type may alternatively be 'collections'
-			console.log('data', data)
+        
+			//	****************************************** REMOVE AFTER TESTING *********************************************************
+		    // Iterate through features in the FeatureCollection
+		    data.features.forEach(feature => {
+		        // Set geometries to null
+		        feature.geometry = null;
+		
+		    });
+	        data.tileset = true;
+			//	****************************************** REMOVE AFTER TESTING *********************************************************
+		
+		    // Merge additional properties from data to ds
+		    for (const prop in data) {
+		        if (!ds.hasOwnProperty(prop)) {
+		            ds[prop] = data[prop];
+		        }
+		    }        
+        
+			console.log('data', data);
             for (const prop in data) {
                 if (!ds.hasOwnProperty(prop)) {
                     ds[prop] = data[prop];
@@ -86,6 +104,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	initOverlays(mappy.getContainer());
 	
 	let allFeatures = [];
+	let allExtents = [];
 	
 	window.ds_list.forEach(function(ds) {
 		addMapSource(ds);
@@ -95,9 +114,12 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 		    feature.properties.dslabel = ds.label;
 		});
 		allFeatures.push(...ds.features);
+		if (!!ds.tileset && ds.tileset == true) {
+			allExtents.push(ds.extent);
+		}
 	});
 	
-	window.ds_list_stats = get_ds_list_stats(allFeatures);
+	window.ds_list_stats = get_ds_list_stats(allFeatures, allExtents);
 	console.log('window.ds_list_stats', window.ds_list_stats);
 	
 	datasetLayers.forEach(function(layer) { // Ensure proper layer order for multiple datasets
@@ -112,7 +134,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	checked_rows = tableInit.checked_rows;
 
 	window.mapBounds = window.ds_list_stats.extent;
-
+	
 	// Initialise Map Popups
 	initPopups(table);
 	

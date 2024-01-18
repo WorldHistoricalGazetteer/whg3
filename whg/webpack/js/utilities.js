@@ -313,7 +313,7 @@ export function minmaxer(timespans) {
 	return [Math.max.apply(null, starts), Math.max.apply(null, ends)]
 }
 
-export function get_ds_list_stats(allFeatures) {
+export function get_ds_list_stats(allFeatures, allExtents=[]) {
 	
 	let min = Infinity;
 	let max = -Infinity;
@@ -338,7 +338,23 @@ export function get_ds_list_stats(allFeatures) {
 
 	const geojson = {
 		"type": "FeatureCollection",
-		"features": allFeatures
+		"features": [...allFeatures, 
+		    ...allExtents.map((extent) => ({
+		      type: "Feature",
+		      geometry: {
+		        type: "Polygon",
+		        coordinates: [
+		          [
+		            [extent[0], extent[1]],
+		            [extent[2], extent[1]],
+		            [extent[2], extent[3]],
+		            [extent[0], extent[3]],
+		            [extent[0], extent[1]],
+		          ],
+		        ],
+		      }
+		    })),	
+		]
 	};
 
 	return {
