@@ -307,6 +307,12 @@ class acmeStyleControl {
 	                this._map.baseStyle.sources = Object.keys(resultJSON.sources);
 	                this._map.baseStyle.layers = resultJSON.layers.map((layer) => layer.id);
 	                
+					// Set map container background colour to the value in the style metadata 
+			        const backgroundColor = resultJSON.metadata['whg:backgroundcolour'];
+			        if (backgroundColor) {
+			            this._map.getContainer().style.backgroundColor = backgroundColor;
+			        }			                
+	                
 	                const styleName = resultJSON.sources.basemap.url.split('/').pop().replace('.json', '');
 				    const basemapInput = document.querySelector(`input[name="basemap"][value="${styleName}"]`);
 			        if (basemapInput) {
@@ -715,7 +721,7 @@ maplibregl.Map = function (options = {}) {
         basemap: [/*'natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade'*/],
         zoom: 0.2,
         center: [9.2, 33],
-        //maxBounds: [[-180, -80], [180, 85]],
+        maxBounds: [[-Infinity, -85], [Infinity, 85]],
         minZoom: 0.1,
         maxZoom: 6,
         maxPitch: 85,
@@ -756,6 +762,12 @@ maplibregl.Map = function (options = {}) {
     	const currentStyle = mapInstance.getStyle();
 		mapInstance.baseStyle.sources = Object.keys(currentStyle.sources);
 		mapInstance.baseStyle.layers = currentStyle.layers.map((layer) => layer.id);
+		
+		// Set map container background colour to the value in the style metadata 
+        const backgroundColor = currentStyle.metadata['whg:backgroundcolour'];
+        if (backgroundColor) {
+            mapInstance.getContainer().style.backgroundColor = backgroundColor;
+        }		
     
 		if (chosenOptions.fullscreenControl) mapInstance.addControl(new maplibregl.FullscreenControl(), 'top-left');
 		if (chosenOptions.downloadMapControl) mapInstance.addControl(new downloadMapControl(mapInstance), 'top-left');
