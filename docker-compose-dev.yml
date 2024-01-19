@@ -89,9 +89,6 @@ services:
     command: /start-celeryworker
     networks:
       - WHG3
-#    build:
-#      context: .
-#      dockerfile: ./compose/local/django/Dockerfile-django.dev
     volumes:
       - .:/app
     env_file:
@@ -105,9 +102,6 @@ services:
     command: /start-celerybeat
     networks:
       - WHG3
-#    build:
-#      context: .
-#      dockerfile: ./compose/local/django/Dockerfile-django.dev
     volumes:
       - .:/app
     env_file:
@@ -121,9 +115,6 @@ services:
     command: /start-flower
     networks:
       - WHG3
-#    build:
-#      context: .
-#      dockerfile: ./compose/local/django/Dockerfile-django.dev
     volumes:
       - .:/app
     env_file:
