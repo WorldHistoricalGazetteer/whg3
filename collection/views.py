@@ -299,7 +299,7 @@ def year_from_string(ts):
   else:
     return "null" # String required by Maplibre filter test
   
-# GeoJSON for all places in a dataset INCLUDING those without geometry
+# GeoJSON for all places in a collection INCLUDING those without geometry
 def fetch_mapdata_coll(request, *args, **kwargs):
   from django.core.serializers import serialize
   from django.db.models import Min, Max
@@ -307,6 +307,9 @@ def fetch_mapdata_coll(request, *args, **kwargs):
   id_=kwargs['id']
   coll=get_object_or_404(Collection, id=id_)
   rel_keywords = coll.rel_keywords
+  
+  null_geometry = request.GET.get('variant', '') == 'nullGeometry'
+  tileset = request.GET.get('variant', '') == 'tileset'
   
   extent = list(coll.places.aggregate(Extent('geoms__geom')).values())[0]
   
@@ -344,7 +347,19 @@ def fetch_mapdata_coll(request, *args, **kwargs):
           },
           "id": i,  # Required for MapLibre conditional styling
       }
-      feature_collection['features'].append(feature)
+      
+      if null_geometry: # Minimise data sent to browser when using a vector tileset 
+        feature["properties"]["geom_type"] = feature["geometry"].get("type", None)
+        feature["geometry"] = None
+      elif tileset: # Minimise data to be included in a vector tileset
+        # Drop all properties except any listed here
+        properties_to_keep = [] # Perhaps ["pid", "min", "max"]
+        if len(properties_to_keep) == 0:
+            del feature["properties"]
+        else:
+            feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}         
+
+      feature_collection["features"].append(feature)      
 
   return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii':False,'indent':2})
 

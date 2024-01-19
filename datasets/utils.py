@@ -1,3 +1,4 @@
+# /datasets/utils.py
 from django.conf import settings
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.db.models import Extent
@@ -421,9 +422,13 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     dsid = kwargs['dsid']
     ds = get_object_or_404(Dataset, pk=dsid)
     
-    reduce_geometry = request.GET.get('reduce_geometry', 'true')
+    reduce_geometry = request.GET.get('reduce_geometry', 'true').lower() == 'true' # Default to 'true' and return reduced geometry
     
-    places = ds.places.prefetch_related('geoms')
+    null_geometry = request.GET.get('variant', '') == 'nullGeometry'
+    tileset = request.GET.get('variant', '') == 'tileset'
+    reduce_geometry = False if tileset else reduce_geometry
+    
+    places = ds.places.prefetch_related('geoms').order_by('id') # Ensure the same order each time the function is called
     extent = list(ds.places.aggregate(Extent('geoms__geom')).values())[0]
 
     feature_collection = {
@@ -442,7 +447,7 @@ def fetch_mapdata_ds(request, *args, **kwargs):
         geometry = None
 
         if geometries:
-            if reduce_geometry.lower() == 'true':
+            if reduce_geometry:
                 # Reduce geometry to a point (default behavior)
                 geojson_geometry = GEOSGeometry(geometries[0].geom)
                 geometry = json.loads(geojson_geometry.json)
@@ -473,7 +478,18 @@ def fetch_mapdata_ds(request, *args, **kwargs):
             "geometry": geometry,
             "id": index # Required for MapLibre conditional styling 
         }
-    
+        
+        if null_geometry: # Minimise data sent to browser when using a vector tileset 
+            feature["properties"]["geom_type"] = geometry.get("type", None)
+            feature["geometry"] = None
+        elif tileset: # Minimise data to be included in a vector tileset
+            # Drop all properties except any listed here
+            properties_to_keep = [] # Perhaps ["pid", "min", "max"]
+            if len(properties_to_keep) == 0:
+                del feature["properties"]
+            else:
+                feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}         
+
         feature_collection["features"].append(feature)
     
     return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii': False})

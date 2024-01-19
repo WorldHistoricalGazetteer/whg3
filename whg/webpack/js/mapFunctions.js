@@ -33,9 +33,7 @@ export function addMapLayer(layer, ds) {
 	};
 	modifiedLayer.id = `${layer.id}_${ds.id}`;
 	modifiedLayer.source = `${ds.ds_type || 'datasets'}_${ds.id}`;
-	
-	//TODO: Read the actual source-layer id
-	modifiedLayer['source-layer'] = 'ae105649f8aa436084b4f1b6caee9955';
+	modifiedLayer['source-layer'] = 'features';
 	
 	console.log(mappy.getStyle(),filteredLayer(modifiedLayer));
 	
