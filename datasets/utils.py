@@ -441,6 +441,9 @@ def fetch_mapdata_ds(request, *args, **kwargs):
         "type": "FeatureCollection", 
         "features": [], 
     }
+    
+    if null_geometry:
+        feature_collection["tileset"] = True 
 
     for index, place in enumerate(places):
         geometries = place.geoms.all()
@@ -484,11 +487,8 @@ def fetch_mapdata_ds(request, *args, **kwargs):
             feature["geometry"] = None
         elif tileset: # Minimise data to be included in a vector tileset
             # Drop all properties except any listed here
-            properties_to_keep = [] # Perhaps ["pid", "min", "max"]
-            if len(properties_to_keep) == 0:
-                del feature["properties"]
-            else:
-                feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}         
+            properties_to_keep = ["pid"] # Perhaps ["pid", "min", "max"]
+            feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}         
 
         feature_collection["features"].append(feature)
     
