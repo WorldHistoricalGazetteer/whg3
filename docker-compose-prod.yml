@@ -54,7 +54,7 @@ services:
     volumes:
       - .:/app
     env_file:
-      - ./.env/.dev-whg3
+      - ./.env/.prod-whg3
     ports:
       - 35729:35729
       -
@@ -108,7 +108,7 @@ services:
     volumes:
       - .:/app
     env_file:
-      - ./.env/.dev-whg3
+      - ./.env/.prod-whg3
     depends_on:
       - redis
       - db
@@ -121,7 +121,7 @@ services:
     volumes:
       - .:/app
     env_file:
-      - ./.env/.dev-whg3
+      - ./.env/.prod-whg3
     depends_on:
       - redis
       - db
@@ -134,7 +134,7 @@ services:
     volumes:
       - .:/app
     env_file:
-      - ./.env/.dev-whg3
+      - ./.env/.prod-whg3
     ports:
       - 5557:5555
     depends_on:
