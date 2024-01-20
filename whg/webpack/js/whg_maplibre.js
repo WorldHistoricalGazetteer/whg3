@@ -7,6 +7,19 @@ import '../css/maplibre-common.css';
 import '../css/style-control.css';
 import '../css/dateline.css';
 
+import Layerset from './layerset';
+
+maplibregl.Map.prototype.layerset = function (dc_id, source='places') {
+    return new Layerset(this, dc_id, source);
+    /*
+	// Instantiate Layerset on the map
+	const myLayerset = mapInstance.layerset(dc_id);
+	
+	// Call the reset method on the Layerset instance
+	myLayerset.reset();
+    */
+};
+
 function getStyleURL(style) {
 	return `${process.env.TILEBOSS}/styles/${style}/style.json`;
 }
