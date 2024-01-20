@@ -9,6 +9,9 @@
 {% endblock %}
 {% block extra_head %}
   <style>
+    body {
+      font-family: Raleway, san-serif;
+    }
     .fileinput {
       font-size: small;
     }
@@ -139,6 +142,11 @@
       margin-bottom: 0;
       background-color: beige;
     }
+    #getting_started, #vis_options {
+      padding: .5rem;
+      border: 1px solid #efefef;
+      border-radius: 3px;
+    }
   </style>
 {% endblock %}
 
@@ -264,6 +272,14 @@
 					    </span>
                     {% endif %}
                   {% endif %}
+                  <div id="status_info" class="mt-5">
+                      <h5 class="">Status</h5>
+                      <p class="small">
+                        {% if in_class %}Submitted to class: {{ object.group }}<br/>Status: {{ object.status }}
+                          {% else %}{{ object.status }}
+                        {% endif %}
+                      </p>
+                    </div>
                   <div id="d_public" class="mt-5">
                     {% if form.public.value == True %}
                       Public: {{ form.public }}
@@ -327,35 +343,33 @@
               {% endif %}
 							</span>
                     </div>
-                    <div id="status_info" class="mt-5">
-                      <h5 class="">Collection status</h5>
-                      <p class="small">
-                        {% if in_class %}Submitted to class: {{ object.group }}<br/>Status: {{ object.status }}
-                          {% else %}{{ object.status }}
-                        {% endif %}
-                      </p>
+                    <div id="vis_options" class="mt-5">
+                      <h5 class="bg-beige ps-1">Visualization options</h5>
+                      <p>Trails between place markers? <input type="checkbox"/></p>
                     </div>
                   {% else %}
-                    <h5 class="bg-beige">Welcome</h5>
-                    <p>To create a new Place Collection, first fill out the required fields in the
-                      form
-                      on the left and press <b>Save</b>. All information can be edited afterwards,
-                      and you can begin adding and annotating places. The collection itself can
-                      include
-                      primary image, an essay file and links to related material.
-                    </p>
-                    <p>
-                      <mark-b>Collection keywords</mark-b>
-                      are terms describing the collection.
-                    </p>
-                    <p>
-                      <mark-b>Annotation keywords</mark-b>
-                      are terms that will be your own vocabulary
-                      for relations between a given place and the collection theme or topic.
-                      For example, relevant annotation keywords for a collection about a journey
-                      might include "waypoint" and "extended stay." For lives of individuals,
-                      "birthplace" and "resided" might be appropriate. The choice is yours.
-                    </p>
+                    <div id="getting_started">
+                      <h5 class="bg-beige ps-1">Getting started</h5>
+                      <p>To create a new Place Collection, first fill out the required fields in the
+                        form
+                        on the left and press <b>Save</b>. All information can be edited afterwards,
+                        and you can begin adding and annotating places. The collection itself can
+                        include
+                        primary image, an essay file and links to related material.
+                      </p>
+                      <p>
+                        <mark-b>Collection keywords</mark-b>
+                        are terms describing the collection.
+                      </p>
+                      <p>
+                        <mark-b>Annotation keywords</mark-b>
+                        are terms that will be your own vocabulary
+                        for relations between a given place and the collection theme or topic.
+                        For example, relevant annotation keywords for a collection about a journey
+                        might include "waypoint" and "extended stay." For lives of individuals,
+                        "birthplace" and "resided" might be appropriate. The choice is yours.
+                      </p>
+                    </div>
                   {% endif %}
                 </div>
                 <div class="col-sm-3">
