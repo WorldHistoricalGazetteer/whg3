@@ -39,7 +39,10 @@ def carousel_metadata(caller):
         id_name = 'id'
         pass
     elif caller_class == 'Collection':
-        url = reverse('collection:ds-collection-browse', args=[caller.id])
+        if caller.collection_class == 'dataset':
+            url = reverse('collection:ds-collection-browse', args=[caller.id])
+        elif caller.collection_class == 'place':
+            url = reverse('collection:place-collection-browse', args=[caller.id])
         id_name = 'coll'
         pass
     else:

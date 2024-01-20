@@ -19,6 +19,7 @@ services:
         - WHGADMIN_PASSWORD
     image: whg3_web
     command: /start
+    container_name: web
     volumes:
       - .:/app
       - /home/whgadmin/sites/whgv3/media:/app/media
@@ -41,6 +42,7 @@ services:
       context: .
       dockerfile: ./compose/local/webpack/Dockerfile-webpack
     image: whg3_webpack
+    container_name: webpack
     volumes:
       - .:/app
 
@@ -51,6 +53,7 @@ services:
       - WHG3
     platform: linux/amd64
     command: /start-livereload
+    container_name: livereload
     volumes:
       - .:/app
     env_file:
@@ -102,6 +105,7 @@ services:
   celery_worker:
     image: whg3_web
     command: /start-celeryworker
+    container_name: celery_worker
     networks:
       - WHG3
     volumes:
@@ -115,6 +119,7 @@ services:
   celery_beat:
     image: whg3_web
     command: /start-celerybeat
+    container_name: celery_beat
     networks:
       - WHG3
     volumes:
@@ -128,6 +133,7 @@ services:
   flower:
     image: whg3_web
     command: /start-flower
+    container_name: flower
     networks:
       - WHG3
     volumes:

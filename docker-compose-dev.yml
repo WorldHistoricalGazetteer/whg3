@@ -17,6 +17,7 @@ services:
       dockerfile: ./compose/local/django/Dockerfile-django.dev
     image: whg3_web
     command: /start
+    container_name: web
     volumes:
       - .:/app
     env_file:
@@ -36,6 +37,7 @@ services:
       context: .
       dockerfile: ./compose/local/webpack/Dockerfile-webpack
     image: whg3_webpack
+    container_name: webpack
     logging:
       driver: local
     volumes:
@@ -51,6 +53,7 @@ services:
 #      dockerfile: ./compose/local/django/Dockerfile-django.dev
 #    image: whg3_livereload
     command: /start-livereload
+    container_name: livereload
     volumes:
       - .:/app
     env_file:
@@ -87,6 +90,7 @@ services:
   celery_worker:
     image: whg3_web
     command: /start-celeryworker
+    container_name: celery_worker
     networks:
       - WHG3
     volumes:
@@ -100,6 +104,7 @@ services:
   celery_beat:
     image: whg3_web
     command: /start-celerybeat
+    container_name: celery_beat
     networks:
       - WHG3
     volumes:
@@ -113,6 +118,7 @@ services:
   flower:
     image: whg3_web
     command: /start-flower
+    container_name: flower
     networks:
       - WHG3
     volumes:
