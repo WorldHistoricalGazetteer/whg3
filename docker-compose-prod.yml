@@ -60,21 +60,6 @@ services:
       - ./.env/.prod-whg3
     ports:
       - 35729:35729
-#  livereload: # https://github.com/tjwalch/django-livereload-server
-#    networks:
-#      - WHG3
-#    platform: linux/amd64
-#    build:
-#      context: .
-#      dockerfile: ./compose/production/django/Dockerfile-django.prod
-#    image: whg3_livereload
-#    command: /start-livereload
-#    volumes:
-#      - .:/app
-#    env_file:
-#      - ./.env/.prod-whg3
-#    ports:
-#      - 35729:35729
 
   db:
     networks:

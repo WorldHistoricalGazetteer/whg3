@@ -48,10 +48,6 @@ services:
     networks:
       - WHG3
     platform: linux/amd64
-#    build:
-#      context: .
-#      dockerfile: ./compose/local/django/Dockerfile-django.dev
-#    image: whg3_livereload
     command: /start-livereload
     container_name: livereload
     volumes:
