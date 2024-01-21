@@ -1,6 +1,7 @@
 from django import template
 from django.contrib.auth.models import Group
 from django.template.defaultfilters import stringfilter
+from django.utils.lorem_ipsum import paragraphs
 import json, re, validators, textwrap, ast
 
 register = template.Library()
@@ -55,6 +56,10 @@ def join(value,delimit):
     if type(value[0]) == int:
         value=map(str,value)
     return delimit.join(value)
+
+@register.simple_tag
+def lorem_ipsum(count=1):
+    return "\n".join(paragraphs(count, False))
 
 # @register.inclusion_tag('collection_group_create.html')
 @register.filter

@@ -62,6 +62,11 @@ urlpatterns = [
     path('licensing/', TemplateView.as_view(template_name="main/licensing.html"), name="licensing"),
     path('system/', TemplateView.as_view(template_name="main/system.html"), name="system"),
     path('usingapi/', TemplateView.as_view(template_name="main/usingapi.html"), name="usingapi"),
+
+    # static content - 2024-01
+    path('build/', TemplateView.as_view(template_name="home/build_new.html"), name="build"),
+    path('pipeline/', TemplateView.as_view(template_name="home/pipeline.html"), name="pipeline"),
+
     path('tinymce/', include('tinymce.urls')),
 
     path('modal_home/', views.home_modal, name="modal-home"),

@@ -1,10 +1,14 @@
 {% extends "main/base.html" %}
 {% block title %}<title>WHG::APIs</title>{% endblock %}
-
-{% block content %}
-
+{% block extra_head %}
+  <style>
+  body {
+    font-family: 'Raleway', sans-serif;
+  }
+  </style>
+{% endblock %}
 {% load static %}
-
+{% block content %}
   <div class="container">
     <div id="api_content" class="mx-3">
       <div class="row mt-2">
