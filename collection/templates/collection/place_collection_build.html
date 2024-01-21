@@ -152,22 +152,24 @@
 
 {% block content %}
   <div class="container container-md" style="height: calc(100vh);">
-    {% if action == 'update' and is_member == False and whgteam == False %}
+    {% if action == 'update' and not is_member and not whgteam %}
       <p>Access to this page is limited to the collection owner <b>{{ object.owner.name }}</b>
-        ({{ object.owner.id }})
-        and designated collaborators.</p>
+        ({{ object.owner.id }}) and designated collaborators.</p>
     {% else %}
       <div class="h-100">
         <h5 class="mt-3">
-          {% if action == 'update' %}<span class="text-secondary">Place Collection Builder: </span>
+          {% if action == 'update' %}
+            <span class="text-secondary">Place Collection Builder: </span>
             <span class="text-bold red-head">{{ form.title.value }}</span>
             <span class="float-end fs-6">
-					<span class="me-2 small">collab? {{ object.group.collaboration }}; in class: {{ in_class }}; status: <b>{{ form.status.value }}</b></span>
-			    <a href="{% url 'collection:place-collection-browse' object.id %}">
-				    view</a> <i class="fas fa-eye linky"></i>
-			    <a href="{% url 'collection:collection-delete' object.id %}"
-             title="Delete collection" rel="tooltip" style="margin-top:-2px;">
-			    <i class="fas fa-trash linkyred"></i></a>
+					  <span class="me-2 small">collab? {{ object.group.collaboration }};
+              in class: {{ in_class }}; status: <b>{{ form.status.value }}</b>
+            </span>
+            <a href="{% url 'collection:place-collection-browse' object.id %}">
+              view</a> <i class="fas fa-eye linky"></i>
+            <a href="{% url 'collection:collection-delete' object.id %}"
+               title="Delete collection" rel="tooltip" style="margin-top:-2px;">
+            <i class="fas fa-trash linkyred"></i></a>
 				</span>
           {% else %}
             Place Collection Builder: {<span class="red-head">new</span>}
@@ -200,7 +202,7 @@
             {% endif %}
           {% endif %}
         </ul>
-        <div class="tab-content" id="content">
+        <div id="content" class="tab-content" >
           <div id="coll_form" class="tab-pane fade show active h-100">
             <form id="collection_form" method="POST" enctype="multipart/form-data">
               {% csrf_token %}
@@ -414,7 +416,6 @@
               </form>
             </div>
           </div>
-          {# coll_form #}
           <div id="coll_builder" class="tab-pane fade h-100" style="height: auto; position:relative;">
             <div class="d-flex h-100">
               <div class="col-sm-6" id="builder">
@@ -522,7 +523,6 @@
                             {% endif %}
                             {# TODO: CollPlace/TraceAnnotation redundancy issue #}
                             {% for t in cp.p.traces.all %}
-                              {#											      {% if t.collection.id == object.id and t.saved and not t.archived %}#}
                               {% if t.saved and not t.archived %}
                                 <i class="red-head ms-3">annotated</i>
                               {% endif %}
@@ -614,7 +614,6 @@
             </div>
             {# d-flex #}
           </div>
-          {# coll_builder #}
           {% if action == 'update' %}
           <div id="coll_collaborators" class="tab-pane fade h-100">
             <form id="sharing_form" method="POST" action="{% url 'collection:collab-add' cid=object.id %}"
@@ -670,31 +669,16 @@
                 </ul>
               </div>
             </form>
-          </div> <!-- coll_collaborators -->
+          </div>
           {% endif %}
-        </div>
-        {# tab_content #}
-        <div class="selector py-3">
-          <div id="helpme"></div>
-        </div>
+        </div> {# content #}
+        <div class="selector py-3"><div id="helpme"></div></div>
       </div> {# h-100 #}
     {% endif %}
-  </div> {# container #}
+  </div> <!-- container -->
 
   <script type="text/javascript">
     $(function () {
-      let hash = window.location.hash;
-      window.location.hash = ""; // Clear the hash to prevent automatic scrolling
-
-      if (hash) {
-        let tabTriggerEl = document.querySelector('button[data-bs-target="' + hash + '"]');
-        if (tabTriggerEl) {
-          console.log('Tab trigger element found:', tabTriggerEl);
-          tabTriggerEl.click();
-        } else {
-          console.log('No tab trigger found for hash:', hash);
-        }
-      }
 
       $("#id_group option:first").text('None')
 
@@ -913,9 +897,9 @@
       })
     }
 
-    function goBrowse() {
-      window.location = '/collections/{{ object.id }}/browse_pl'
-    }
+    {#function goBrowse() {#}
+    {#  window.location = '/collections/{{ object.id }}/browse_pl'#}
+    {# }#}
 
     function saveExit() {
       $("#collection_form").submit()
@@ -1300,11 +1284,6 @@
       {#	  cardtop, scrolltop, listtop )#}
       getAnno(pid)
     })
-
-    $('.nav-link').click(function () {
-      var tabId = $(this).attr('data-bs-target');
-      window.location.hash = tabId;
-    });
 
     // add dataset to collection
     $("#select_ds").change(function () {

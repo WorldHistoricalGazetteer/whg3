@@ -1,5 +1,5 @@
 {% extends "main/base.html" %}
-
+{% block title %}<title>WHG::Dashboard</title>{% endblock %}
 {% block extra_head %}
   <style>
     body {
@@ -161,7 +161,7 @@
         	{% endif %}
         </div>
       </div>
-      <div class="dashboard-box">
+      <div class="dashboard-box mt-3">
         <div class="box-header">
           <div class="box-header-title">Dataset Collections</div>
           <a href="{% url 'collection:ds-collection-create' %}">

@@ -32,16 +32,14 @@ COLLECTIONCLASSES = [
     ('place','Place collection'),
 ]
 
+COLLECTIONTYPES = [
+    ('discrete','Discrete datasets'),
+    ('conflated','Conflated datasets'),
+]
+
 COLLECTIONGROUP_TYPES = [
     ('class', 'Class'),
     ('workshop', 'Workshop')
-]
-
-COLLECTIONTYPES = [
-    ('event','Event'),
-    ('person','Person'),
-    ('work','Work'),
-    ('theme','Theme'),
 ]
 
 COMMENT_TAGS = [

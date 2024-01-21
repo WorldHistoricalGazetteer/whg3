@@ -16,6 +16,10 @@
 
 	<style>
     body { font-family: Raleway, san-serif; }
+    .custom-radio .form-check-input {
+      position: relative;
+      top: 3px;
+    }
     .form-group {margin-bottom: .5rem !important;}
     .form-group label {margin-bottom:0 !important;}
     #linkform_popup {
@@ -53,8 +57,9 @@
 
 {% block content %}
 <div class="container container-md" style="height: calc(100vh);">
-  {% if action == 'update' and user.id != object.owner.id and not user.is_superuser and not user in whgteam %}
-	  <p>Access to this page is limited to the collection owner(s); Owner is <mark>{{object.owner.username}}</mark></p>
+  {% if action == 'update' and not is_member and not whgteam %}
+	  <p>Access to this page is limited to the collection owner <b>{{ object.owner.name }}</b>
+        ({{ object.owner.id }}) and designated collaborators.</p>
   {% else %}
     <h5 class="mt-3">
 	    {% if action == 'update' %}<span class="text-secondary">Dataset Collection Builder: </span>
@@ -68,28 +73,27 @@
 	    {% else %}Create Dataset Collection{% endif %}
 	  </h5>
 	  <ul id="tablist" class="nav nav-tabs" role="tablist">
-		  {# create form & intro #}
 		  <li class="nav-item" role="presentation">
 		    <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
           type="button" role="tab" aria-controls="coll_form" aria-selected="true">
 			    {% if action == 'create' %}Create{% else %}Edit{% endif %} Collection</button>
 		  </li>
-		  {# add & manage #}
 		  {% if action == "update" %}
 		  {# builder #}
 		  <li class="nav-item" role="presentation">
 		    <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
-          type="button" role="tab" aria-controls="coll_builder" aria-selected="false">Add and manage datasets</button>
+          type="button" role="tab" aria-controls="coll_builder"
+                aria-selected="false">Add and manage datasets</button>
 		  </li>
-			{# workspace; not conflating, linking #}
 		  <li class="nav-item" role="presentation">
 		    <button class="nav-link" id="conflator-tab" data-bs-toggle="tab" data-bs-target="#coll_conflator"
            type="button" role="tab" aria-controls="coll_conflator" aria-selected="false">Conflator</button>
 		  </li>
-			{# collaborator s#}
 		  <li class="nav-item" role="presentation">
-		    <button class="nav-link" id="collaborators-tab" data-bs-toggle="tab" data-bs-target="#coll_collaborators"
-          type="button" role="tab" aria-controls="coll_collaborators" aria-selected="false">Collaborators</button>
+		    <button class="nav-link" id="collaborators-tab" data-bs-toggle="tab"
+                data-bs-target="#coll_collaborators"
+          type="button" role="tab" aria-controls="coll_collaborators"
+                aria-selected="false">Collaborators</button>
 		  </li>
 		  {% endif %}
 		</ul>
@@ -115,6 +119,9 @@
 					<div class="form-group">
 						<label for="Collection keywords">Collection keywords &#x02733;</label><br/>{{ form.keywords }}
 					</div>
+          <div class="form-group bg-light p-1">
+            <label for="Build type">Build type</label><br/>{{ form.build_type }}
+          </div>
 		      <div id="d_buttons" class="" style="">
 	          <span class="">
 	          {% if action == 'create' %}
@@ -179,7 +186,6 @@
 								<i class="far fa-file-pdf linky"></i>
 								<a href="/media/{{ form.file.value }}">{{ object.file.url|remove:'/media/collections/' }}</a>
 								(<a href="javascript:showChooser('file')">change</a>)
-	{#								(<a href="javascript:$('#file_chooser').toggle()">change</a>)#}
 							{% else %} {# update and there's no image yet #}
 								<span id="file_chooser_update" >{{ form.file }}</span>
 							{% endif %}
@@ -214,7 +220,14 @@
 						  linking datasets. The collection itself can include primary image, an essay file and
 						  links to related material.</p>
 			      <p><mark-b>Collection keywords</mark-b> are terms describing the collection.</p>
-            <p>{% lorem_ipsum 2 %}</p>
+            <p>There are two options for creating dataset collections, and each has its own
+              <i>collection builder</i> screen. The options are:
+            <p><span class="red-head">Discrete</span>.
+              Each new dataset will be simply added to the collection, and no reconciliation will be performed
+              .<mark>more to say here</mark></p>
+            <p><span class="red-head">Conflated</span>. Each dataset added will be
+              reconciled with the others in the growing collection. <mark>more to say here</mark></p>
+            </p>
 		      {% endif %}
 		      </div> {# col-sm-7 #}
         </div> {# row #}
@@ -337,6 +350,7 @@
 				<p id="idx_result"></p>
 			</div>
 			<div id="coll_collaborators" class="tab-pane fade h-100" style="height: auto; position:relative;">
+        {% if action == 'update' %}
         <form id="sharing_form" method="POST" action="{% url 'collection:collab-add' cid=object.id %}"
                   enctype="multipart/form-data">
               {% csrf_token %}
@@ -389,9 +403,11 @@
                 </ul>
               </div>
             </form>
+        {% endif %}
 			</div>
 		</div> <!-- #content -->
-	  <div id="modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+	  <div id="modal" class="modal fade" tabindex="-1" role="dialog"
+         aria-labelledby="modalLabel" aria-hidden="true">
 			<div class="modal-dialog modal-md">
 				<div class="modal-content" style="background-color:white; border:none; height: fit-content;">
 					<div class="modal-header">
@@ -410,10 +426,6 @@
 </div> <!-- container -->
 
 <script type="text/javascript">
-	function startSpinner(){
-	  window.spinner = new Spin.Spinner().spin();
-	  $("#idx_result").append(spinner.el);
-	}
   $(function(){
 		$("#select_ds").change(function(){
 		    // show add button if ds selected

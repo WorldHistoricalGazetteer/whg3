@@ -9,7 +9,7 @@ from django.core.validators import URLValidator
 from django.urls import reverse
 from datasets.models import Dataset
 from main.choices import COLLECTIONCLASSES, LINKTYPES, TEAMROLES, STATUS_COLL, \
-  USER_ROLE, COLLECTIONGROUP_TYPES
+  USER_ROLE, COLLECTIONTYPES, COLLECTIONGROUP_TYPES
 from places.models import Place
 from traces.models import TraceAnnotation
 from django_resized import ResizedImageField
@@ -76,6 +76,7 @@ class Collection(models.Model):
 
   # modified, 20220902: no default
   collection_class = models.CharField(choices=COLLECTIONCLASSES, max_length=12)
+  build_type = models.CharField(choices=COLLECTIONTYPES, default="discrete", max_length=10)
 
   # single representative image
   image_file = ResizedImageField(size=[800, 600], upload_to=collection_path, blank=True, null=True)

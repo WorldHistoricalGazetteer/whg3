@@ -628,8 +628,6 @@ class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
     return kwargs
 
   def get_object(self):
-    # print('PlaceCollectionUpdateView() kwargs', self.kwargs)
-    # print('POST', self.request.POST)
     id_ = self.kwargs.get("id")
     return get_object_or_404(Collection, id=id_)
 
@@ -678,16 +676,18 @@ class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
     ds_select = [obj for obj in Dataset.objects.all().order_by('title') if user in obj.owners or user.is_superuser]
     if not user.is_superuser:
       ds_select.insert(len(ds_select)-1, Dataset.objects.get(label='owt10'))
-    context['mygroups'] = CollectionGroupUser.objects.filter(user_id=user)
+
     context['action'] = 'update'
     context['ds_select'] = ds_select
     context['coll_dsset'] = datasets
     context['links'] = Link.objects.filter(collection=coll.id)
+
     context['owner'] = True if user == coll.owner else False
-    context['is_member'] = True if user in coll.owners or user in coll.collaborators else False
     context['is_owner'] = True if user in self.object.owners else False
+    context['is_member'] = True if user in coll.owners or user in coll.collaborators else False
     context['whgteam'] = True if user.groups.filter(name__in=['whg_team','editorial']).exists() else False
     context['collabs'] = CollectionUser.objects.filter(collection=coll.id)
+    context['mygroups'] = CollectionGroupUser.objects.filter(user_id=user)
     context['in_class'] = in_class
     # context['links'] = CollectionLink.objects.filter(collection=self.object.id)
 
@@ -968,7 +968,6 @@ class DatasetCollectionCreateView(LoginRequiredMixin, CreateView):
 class DatasetCollectionUpdateView(UpdateView):
   form_class = CollectionModelForm
   template_name = 'collection/ds_collection_build.html'
-  success_url = '/mycollections'
 
   def get_object(self):
     id_ = self.kwargs.get("id")
@@ -999,25 +998,27 @@ class DatasetCollectionUpdateView(UpdateView):
     user = self.request.user
     _id = self.kwargs.get("id")
     print('DatasetCollectionUpdateView() kwargs', self.kwargs)
-    instance = self.get_object()
-    datasets = instance.datasets.all()
+    coll = self.get_object()
+    datasets = coll.datasets.all()
 
     # populates dropdown
     ds_select = [obj for obj in Dataset.objects.all().order_by('title').exclude(title__startswith='(stub)')
                  if user in obj.owners or user in obj.collaborators or user.is_superuser]
-    # ds_select = [obj for obj in Dataset.objects.all().order_by('title') if user in obj.owners or user.is_superuser]
 
     context['action'] = 'update'
     context['ds_select'] = ds_select
     context['coll_dsset'] = datasets
-    context['collabs'] = CollectionUser.objects.filter(collection=instance.id)
     context['created'] = self.object.created.strftime("%Y-%m-%d")
+
+    context['owner'] = True if user == coll.owner else False # actual owner
+    context['is_owner'] = True if user in self.object.owners else False # owner or co-owner
+    context['is_member'] = True if user in coll.owners or user in coll.collaborators else False
+    context['whgteam'] = True if user.groups.filter(name__in=['whg_team','editorial']).exists() else False
+    context['collabs'] = CollectionUser.objects.filter(collection=coll.id)
+
+    # TODO: deprecated?
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
-    context['owner'] = True if user == instance.owner else False
-    context['is_member'] = True if user in instance.owners or user in instance.collaborators else False
-    context['is_owner'] = True if user in self.object.owners else False
-    context['whgteam'] = True if user.groups.filter(name__in=['whg_team','editorial']).exists() else False
 
     return context
 
