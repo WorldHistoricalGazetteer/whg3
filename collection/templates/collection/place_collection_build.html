@@ -636,8 +636,8 @@
                   <div class="">
                     <div class="form-check form-check-inline sharing-input ps-1">
 	              <span class="input-group">
-	                <input type="text" class="form-control input-sm" name="email"
-                         placeholder="Enter user email">
+	                <input type="text" class="form-control input-sm" name="username"
+                         placeholder="Enter username">
 	                <div class="input-group-append">
 	                  <button class="btn btn-sm btn-outline-secondary" type="submit">Add</button>
 	                </div>
@@ -655,14 +655,13 @@
                     </div>
                   </div>
                 {% endif %}
-                <ul id="collabs_list">
+                <ul id="collabs_list" class="mt-2">
                   {% for c in collabs %}
                     <li>
                       {{ c|safe }} <!-- username, bold -->
                       {% if is_admin or owner %}
                         <span class="float-end me-2">
-	                <a id="remove_collab" data-uid="{{ c.user_id }}"
-                     href="#">
+	                <a id="remove_collab" data-uid="{{ c.user_id }}" href="#">
 {#                       href="{% url 'collection:collab-remove' uid=c.user_id cid=object.id %}">#}
 	                <i class="fas fa-times-circle linky"></i></a></span>
                       {% endif %}
@@ -696,13 +695,6 @@
           console.log('No tab trigger found for hash:', hash);
         }
       }
-
-      {#var hash = localStorage.getItem('add_hash');#}
-      {#if (hash) {#}
-      {#    window.location.hash = hash;#}
-      {#localStorage.removeItem('add_hash');#}
-      {# }#}
-      {#$('.nav-link[data-bs-target="' + hash + '"]').tab('show');#}
 
       $("#id_group option:first").text('None')
 
@@ -838,7 +830,7 @@
               '<li>' + response.user + removalMarkup + '</li>')
             history.replaceState(null, null, '#coll_collaborators');
             $('.nav-link[data-bs-target="#coll_collaborators"]').tab('show');
-            $('input[name="email"]').val('');
+            $('input[name="username"]').val('');
           } else {
             alert(response.status)
           }

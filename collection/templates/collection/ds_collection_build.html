@@ -15,6 +15,7 @@
 	<link rel="stylesheet" href="{% static 'css/spin.css' %}"/>
 
 	<style>
+    body { font-family: Raleway, san-serif; }
     .form-group {margin-bottom: .5rem !important;}
     .form-group label {margin-bottom:0 !important;}
     #linkform_popup {
@@ -69,7 +70,7 @@
 	  <ul id="tablist" class="nav nav-tabs" role="tablist">
 		  {# create form & intro #}
 		  <li class="nav-item" role="presentation">
-		    <button class="nav-link" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
+		    <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
           type="button" role="tab" aria-controls="coll_form" aria-selected="true">
 			    {% if action == 'create' %}Create{% else %}Edit{% endif %} Collection</button>
 		  </li>
@@ -77,7 +78,7 @@
 		  {% if action == "update" %}
 		  {# builder #}
 		  <li class="nav-item" role="presentation">
-		    <button class="nav-link active" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
+		    <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
           type="button" role="tab" aria-controls="coll_builder" aria-selected="false">Add and manage datasets</button>
 		  </li>
 			{# workspace; not conflating, linking #}
@@ -93,8 +94,7 @@
 		  {% endif %}
 		</ul>
 		<div id="content" class="tab-content">
-			<div id="coll_form" class="tab-pane fade h-100">
-{#			<div id="coll_form" class="tab-pane fade h-100">#}
+			<div id="coll_form" class="tab-pane fade show active  h-100">
 		    <form id="collection_form" method="POST" enctype="multipart/form-data">
 		    {% csrf_token %}
         <div class="row">
@@ -214,6 +214,7 @@
 						  linking datasets. The collection itself can include primary image, an essay file and
 						  links to related material.</p>
 			      <p><mark-b>Collection keywords</mark-b> are terms describing the collection.</p>
+            <p>{% lorem_ipsum 2 %}</p>
 		      {% endif %}
 		      </div> {# col-sm-7 #}
         </div> {# row #}
@@ -241,7 +242,7 @@
 	          </form>
 		    </div>
 			</div> {# coll_form #}
-			<div id="coll_builder" class="tab-pane fade show active h-100">
+			<div id="coll_builder" class="tab-pane fade h-100">
 				<div class="row">
 					<div class="col-sm-7 position-relative">
 						<div>
@@ -336,9 +337,60 @@
 				<p id="idx_result"></p>
 			</div>
 			<div id="coll_collaborators" class="tab-pane fade h-100" style="height: auto; position:relative;">
-				<h4>Add collection collaborators</h4>
+        <form id="sharing_form" method="POST" action="{% url 'collection:collab-add' cid=object.id %}"
+                  enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="sharing-box my-3 w-50">
+                <div class="sharing-header mb-0 ps-2 strong">Collaborators</div>
+                <div class="smallish" style="padding-left: .3rem;">
+                  <p class="">Collaborators are registered WHG users, assigned per collection.</p>
+                  <p>
+                    <sr>Members</sr>
+                    can ...
+                    <br/>
+                    <sr>Co-owners</sr>
+                    can perform all actions.
+                  </p>
+                </div>
+                {% if user.is_superuser or is_owner %}
+                  <div class="">
+                    <div class="form-check form-check-inline sharing-input ps-1">
+                    <span class="input-group">
+                      <input type="text" class="form-control input-sm" name="username"
+                             placeholder="Enter username">
+                      <div class="input-group-append">
+                        <button class="btn btn-sm btn-outline-secondary" type="submit">Add</button>
+                      </div>
+                    </span>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input hover" type="radio" name="role"
+                             id="r_place" value="member" checked="checked">
+                      <label class="form-check-label" for="r_place">Member</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input hover" type="radio" name="role"
+                             id="r_trace" value="owner">
+                      <label class="form-check-label" for="r_trace">Co-owner</label>
+                    </div>
+                  </div>
+                {% endif %}
+                <ul id="collabs_list" class="mt-2">
+                  {% for c in collabs %}
+                    <li>
+                      {{ c|safe }} <!-- username, bold -->
+                      {% if is_admin or is_owner %}
+                        <span class="float-end me-2">
+	                <a id="remove_collab" data-uid="{{ c.user_id }}" href="#">
+	                <i class="fas fa-times-circle linky"></i></a></span>
+                      {% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </form>
 			</div>
-		</div> {# #content #}
+		</div> <!-- #content -->
 	  <div id="modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
 			<div class="modal-dialog modal-md">
 				<div class="modal-content" style="background-color:white; border:none; height: fit-content;">
@@ -434,6 +486,70 @@
       show: {effect: "fade",duration: 400 },
       hide: {effect: "fade",duration: 400 }
     });
+
+    // remove collaborator from collection
+    $(document).on('click', '#remove_collab', function (event) {
+        event.preventDefault();
+        console.log('remove collab')
+        var uid = $(this).data('uid');
+        var cid = '{{ object.id }}';
+
+        $.ajax({
+          url: '/collections/collab-remove/' + uid + '/' + cid + '/',
+          type: 'POST',
+          data: {
+            'csrfmiddlewaretoken': '{{ csrf_token }}'
+          },
+          success: function (response) {
+            console.log('response', response)
+            $('#remove_collab[data-uid="' + response.uid + '"]').parent().parent().remove();
+            // Instead of setting window.location.hash directly, use history.replaceState()
+            history.replaceState(null, null, '#coll_collaborators');
+            $('.nav-link[data-bs-target="#coll_collaborators"]').tab('show');
+
+          },
+          error: function (response) {
+            // Handle error
+            console.log('error', response)
+          }
+        });
+      });
+
+    $('#sharing_form').submit(function (event) {
+      // Stop form from submitting normally
+      event.preventDefault();
+      console.log('sharing form submitted via ajax')
+
+      var formData = new FormData(this);
+
+      $.ajax({
+        url: $(this).attr('action'),
+        type: $(this).attr('method'),
+        data: formData,
+        processData: false,
+        contentType: false,
+        csrfmiddlewaretoken: '{{ csrf_token }}',
+        success: function (response) {
+          console.log('response', response)
+          if (response.status == 'ok') {
+            var removalMarkup = '<span class="float-end me-2"><a id="remove_collab" data-uid="' +
+              response.uid + '" href="/collections/collab-remove/' + response.uid +
+              '/' + response.cid + '/"><i class="fas fa-times-circle linky"></i></a></span>';
+            $("#collabs_list").append(
+              '<li>' + response.user + removalMarkup + '</li>')
+            history.replaceState(null, null, '#coll_collaborators');
+            $('.nav-link[data-bs-target="#coll_collaborators"]').tab('show');
+            $('input[name="username"]').val('');
+          } else {
+            alert(response.status)
+          }
+        },
+        error: function (response) {
+          alert('a problem occurred')
+        }
+      });
+    });
+
   })
 
 	$("#a_linkpopup").click(function(){
@@ -484,7 +600,6 @@
 			$("#linkform_popup input").val('')
 			$("#linkform_popup").hide()
 	}
-
 
   $("#btn_coll_submit").click(function(e){
     // at least two datasets selected?
@@ -633,23 +748,6 @@
     $("#card_"+dsid).remove()
   }
 
-
-  {##}
-  {#// adds, displays single dataset#}
-  {#function addDataset() {#}
-  {#  console.log('selected', $("#select_ds").val())#}
-  {#  $.get("/collections/list_ds", {ds_id:$("#select_ds").val()},#}
-  {#    function(data){#}
-  {#      // render to html#}
-  {#      listDataset(data)#}
-        {#console.log('ds to list:',data)#}
-  {#      // append ds.id to form#}
-  {#  });#}
-  {#  // reset select#}
-  {#  $("#select_ds").val(0)#}
-  {#  $("#msg").html('').hide()#}
-  {# }#}
-  {##}
 </script>
 
 {% endblock %}

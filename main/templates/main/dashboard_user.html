@@ -10,7 +10,7 @@
     }
     .dashboard-box {
       background-color: #fff;
-      min-height: 250px;
+      min-height: 150px;
       border: 1px solid #ccc;
       box-sizing: border-box;
 			margin: 5px 0;
@@ -129,7 +129,7 @@
 		<div class="column-wrapper">
       <div class="dashboard-box">
         <div class="box-header">
-          <div class="box-header-title">Collections</div>
+          <div class="box-header-title">Place Collections</div>
           <a href="{% url 'collection:place-collection-create' %}">
             <i class="fas fa-plus"></i>
           </a>
@@ -137,29 +137,58 @@
         <div class="box-content">
           {% if has_collections %}
           {% for item in collections %}
-          <div class="item-div row">
-            <div class="col-10">
-	            <p class="fw-bold red-head">{{ item.title }}</p>
-	            <p>
-		            type: <span class="fw-bold">{{ item.collection_class }}</span>;
-		            status: <span class="fw-bold">{{ item.status }}</span>;
-		            count: <span class="fw-bold">{{ item.places_all.count }}</span>
-	            </p>
-            </div>
-            <div class="col-2">
-					    {% if item.collection_class == 'place' %}
-				        <a href="{% url 'collection:place-collection-browse' item.id %}">
-					        <i class="fas fa-eye linky"></i></a>
-				        <a href="{% url 'collection:place-collection-update' item.id %}">
-					        <i class="fas fa-edit linky"></i></a>
-					    {% elif item.collection_class == 'dataset' %}
-				        <a href="{% url 'collection:ds-collection-browse' item.id %}">
-					        <i class="fas fa-eye linky"></i></a>
-				        <a href="{% url 'collection:ds-collection-update' item.id %}">
-					        <i class="fas fa-edit linky"></i></a>
-					    {% endif %}
-            </div>
-          </div>
+            {% if item.collection_class == 'place' %}
+              <div class="item-div row">
+                <div class="col-10">
+                  <p class="fw-bold red-head">{{ item.title }}</p>
+                  <p>
+                    type: <span class="fw-bold">{{ item.collection_class }}</span>;
+                    status: <span class="fw-bold">{{ item.status }}</span>;
+                    count: <span class="fw-bold">{{ item.places_all.count }}</span>
+                  </p>
+                </div>
+                <div class="col-2">
+                  <a href="{% url 'collection:place-collection-browse' item.id %}">
+                    <i class="fas fa-eye linky"></i></a>
+                  <a href="{% url 'collection:place-collection-update' item.id %}">
+                    <i class="fas fa-edit linky"></i></a>
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+          {% else %}
+	          <p>no collections yet</p>
+        	{% endif %}
+        </div>
+      </div>
+      <div class="dashboard-box">
+        <div class="box-header">
+          <div class="box-header-title">Dataset Collections</div>
+          <a href="{% url 'collection:ds-collection-create' %}">
+            <i class="fas fa-plus"></i>
+          </a>
+        </div>
+        <div class="box-content">
+          {% if has_collections %}
+          {% for item in collections %}
+            {% if item.collection_class == 'dataset' %}
+              <div class="item-div row">
+                <div class="col-10">
+                  <p class="fw-bold red-head">{{ item.title }}</p>
+                  <p>
+                    type: <span class="fw-bold">{{ item.collection_class }}</span>;
+                    status: <span class="fw-bold">{{ item.status }}</span>;
+                    count: <span class="fw-bold">{{ item.places_all.count }}</span>
+                  </p>
+                </div>
+                <div class="col-2">
+                  <a href="{% url 'collection:ds-collection-browse' item.id %}">
+                    <i class="fas fa-eye linky"></i></a>
+                  <a href="{% url 'collection:ds-collection-update' item.id %}">
+                    <i class="fas fa-edit linky"></i></a>
+                </div>
+              </div>
+            {% endif %}
           {% endfor %}
           {% else %}
 	          <p>no collections yet</p>

@@ -146,14 +146,14 @@ def group_connect(request, *args, **kwargs):
 """
 def collab_add(request, cid):
   print('collab_add() request.POST, cid', request.POST, cid)
-  email = request.POST['email']
+  username = request.POST['username']
   response_data = {}
   try:
-    user = get_object_or_404(User, email=email)
+    user = get_object_or_404(User, username=username)
     uid = user.id
     role = request.POST['role']
   except Http404:
-      response_data['status'] = 'User '+email+' not found'
+      response_data['status'] = 'User "'+username+'" not found'
       return JsonResponse(response_data)
 
   is_already_collaborator = CollectionUser.objects.filter(user_id=uid, collection_id=cid).exists()
@@ -164,7 +164,7 @@ def collab_add(request, cid):
   response_data['status'] = 'ok'
 
   # TODO: send collaborator an email
-  print('collection collab_add():', request.POST['email'],role, cid, uid)
+  print('collection collab_add():', request.POST['username'],role, cid, uid)
   coll_collab = CollectionUser.objects.create(user_id=uid, collection_id=cid, role=role)
   response_data['user'] = str(coll_collab)  # name (role, email)
   response_data['uid'] = uid
@@ -999,8 +999,8 @@ class DatasetCollectionUpdateView(UpdateView):
     user = self.request.user
     _id = self.kwargs.get("id")
     print('DatasetCollectionUpdateView() kwargs', self.kwargs)
-
-    datasets = self.object.datasets.all()
+    instance = self.get_object()
+    datasets = instance.datasets.all()
 
     # populates dropdown
     ds_select = [obj for obj in Dataset.objects.all().order_by('title').exclude(title__startswith='(stub)')
@@ -1010,11 +1010,14 @@ class DatasetCollectionUpdateView(UpdateView):
     context['action'] = 'update'
     context['ds_select'] = ds_select
     context['coll_dsset'] = datasets
-
+    context['collabs'] = CollectionUser.objects.filter(collection=instance.id)
     context['created'] = self.object.created.strftime("%Y-%m-%d")
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
-    context['whgteam'] = User.objects.filter(groups__name='whg_team')
+    context['owner'] = True if user == instance.owner else False
+    context['is_member'] = True if user in instance.owners or user in instance.collaborators else False
+    context['is_owner'] = True if user in self.object.owners else False
+    context['whgteam'] = True if user.groups.filter(name__in=['whg_team','editorial']).exists() else False
 
     return context
 
