@@ -9,9 +9,19 @@ from datasets.models import Dataset
 from places.models import Place
 from traces.models import TraceAnnotation
 
-from main.choices import COMMENT_TAGS, COMMENT_TAGS_REVIEW, LOG_CATEGORIES, LOG_TYPES, LINKTYPES
+from main.choices import (COMMENT_TAGS, COMMENT_TAGS_REVIEW, LOG_CATEGORIES, LOG_TYPES,
+                          LINKTYPES, TILESET_TYPES)
 
-# generic links table for collections, collection groups, places?, etc.
+# cross-app models
+
+class Tileset(models.Model):
+    variant = models.CharField(max_length=20, null=True, blank=True, choices=TILESET_TYPES)
+    task_id = models.CharField(max_length=50, null=True, blank=True)
+    created = models.DateTimeField(null=True, auto_now_add=True)
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='tilesets')
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name='tilesets')
+
+# generic links table for collections, collection groups, datasets?, etc.
 class Link(models.Model):
     collection = models.ForeignKey(Collection, default=None,
         on_delete=models.CASCADE, related_name='related_links', blank=True, null=True)

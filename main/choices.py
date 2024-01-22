@@ -225,6 +225,11 @@ TEAMROLES = [
     ('member', 'Member'),
 ]
 
+TILESET_TYPES = [
+    ('normal','Normal'),
+    ('heatmap','Heatmap'),
+]
+
 TRACERELATIONS = [
     ('subject','Subject'),
     ('waypoint','Waypoint'),

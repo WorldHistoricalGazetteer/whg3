@@ -6,6 +6,19 @@ from .models import Dataset, DatasetFile
 
 # print('in datasets.signals.py')
 @receiver(pre_save, sender=Dataset)
+def create_tileset(sender, instance, **kwargs):
+  from main.tasks import request_tileset
+  threshold = 2000
+  if instance.id:  # Check if it's an existing instance, not new
+    old_instance = sender.objects.get(pk=instance.pk)
+    print('create_tileset old_instance', old_instance)
+    if old_instance.tileset != instance.tileset:  # There's a change in 'tileset' status
+      if instance.tileset and instance.places.count() > threshold:
+        print('create_tileset()...sending request', instance.tileset)
+        # Changed from False to True, create the tileset
+        transaction.on_commit(lambda: request_tileset.delay(instance.id))
+
+@receiver(pre_save, sender=Dataset)
 def toggle_public_status(sender, instance, **kwargs):
   from .tasks import index_to_pub, unindex_from_pub
   # If 'public' is being toggled

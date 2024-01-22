@@ -31,27 +31,39 @@ from django.shortcuts import render, redirect
 from django import forms
 from django.contrib import messages
 
-# class SplashForm(forms.Form):
-#     password = forms.CharField(widget=forms.PasswordInput)
-#
-# def splash(request):
-#     if request.session.get('passed_splash'):
-#         return redirect('/')  # Redirect to your main page
-#
-#     if request.method == 'POST':
-#         form = SplashForm(request.POST)
-#         if form.is_valid():
-#             if form.cleaned_data['password'] == settings.ALPHA_PWD_CURRENT:
-#                 request.session['passed_splash'] = True
-#                 return redirect('/')
-#             elif form.cleaned_data['password'] == settings.ALPHA_PWD_PREVIOUS:
-#                 messages.error(request, 'Sorry, WHG v3alpha is under construction and not available right now')
-#             else:
-#                 messages.error(request, 'Sorry, that password is incorrect.')
-#     else:
-#         form = SplashForm()
-#
-#     return render(request, 'main/splash.html', {'form': form})
+import requests
+import json
+
+def task_emailer():
+  pass
+
+# initiated by main.tasks.request_tileset()
+def send_tileset_request(dataset_id, tiletype='normal'):
+  # Construct the URL and data payload
+  url = settings.TILEBOSS
+  data = {
+    "geoJSONUrl": f"https://dev.whgazetteer.org/datasets/{dataset_id}/mapdata/?variant={tiletype}"
+  }
+  # Send the POST request
+  response = requests.post(url, headers={"Content-Type": "application/json"}, data=json.dumps(data))
+
+  # Check the response
+  if response.status_code == 202:
+    response_data = response.json()
+    if response_data.get("status") == "success":
+      print("Tileset created successfully.")
+      return {"status": "success", "data": response_data}
+    else:
+      print("Failed to create tileset:", response_data.get("message"))
+      return {"status": "failure", "message": response_data.get("message")}
+  else:
+    print("Failed to send request:", response.status_code)
+    return {"status": "failure", "message": f"Failed to send request: {response.status_code}"}
+
+# {	"status":"success",
+# 	"message":"Tileset created.",
+# 	"command":"tippecanoe -o /srv/tileserver/tiles/datasets/40.mbtiles -f -n \"datasets-40\" -A \"Atlas of Mutual Heritage: Rombert Stapel\" -l \"features\" -B 4 -rg 10 -al -ap -zg -ac --no-tile-size-limit /srv/tiler/temp/18e6bb6e-635d-45e3-9833-10fe00f686f1.geojson"
+# }
 
 # Mixin for checking splash screen pass
 class SplashCheckMixin:
