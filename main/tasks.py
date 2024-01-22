@@ -11,45 +11,51 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 User = get_user_model()
-from main.views import task_emailer
+from datasets.models import Dataset
+import time
 
 @shared_task(bind=True)
 def request_tileset(self, dataset_id, tiletype='normal'):
     from main.views import send_tileset_request
     print('request_tileset', dataset_id, tiletype)
     response_data = send_tileset_request(dataset_id, tiletype)
+    dataset = Dataset.objects.get(id=dataset_id)
+    dslabel = dataset.label
+    name = 'Editor'
+    email = 'karl.geog@gmail.com'
     if response_data and response_data.get("status") == "success":
-        # Tileset created successfully, send an email to the staff member
-        task_emailer.delay(
-            self.request.id,
-            'Tileset creation',
-            'Staff Member Name',
-            'staff_member_email@example.com',
-            'Tileset created successfully for dataset ' + str(dataset_id),
-            'Tileset creation was successful.',
-            'off'
-        )
+      msg = 'Tileset created successfully for dataset ' + str(dataset_id)
     else:
-        # Tileset creation failed, send an email to the staff member
-        task_emailer.delay(
-            self.request.id,
-            'Tileset creation',
-            'Staff Member Name',
-            'staff_member_email@example.com',
-            'Tileset creation failed for dataset ' + str(dataset_id),
-            'Tileset creation failed.',
-            'off'
-        )
-    return tiletype + ' tileset requested for dataset ' + str(dataset_id)
+      msg = 'Tileset creation failed for dataset ' + str(dataset_id)
+    try:
+      tile_task_emailer.delay(
+        self.request.id,
+        dslabel,
+        name,
+        email,
+        msg
+      )
+    except:
+      print('tile_task_emailer failed on tid', self.request.id)
 
+  # task_emailer.delay(
+  #   task_id,
+  #   ds.label,
+  #   user.name,
+  #   user.email,
+  #   count_hit,
+  #   total_hits,
+  #   test
+  # )
 @shared_task(name="task_emailer")
-def task_emailer(tid, dslabel, name, email, counthit, totalhits, test):
-  # TODO: sometimes a valid tid is not recognized (race?)
+def tile_task_emailer(task_id, dslabel, name, email, msg):
+  print('tile_task_emailer()', task_id, dslabel, name, email, msg)
+  return
+  # sometimes a valid tid is not recognized (race?)
   time.sleep(15)
   try:
     task = get_object_or_404(TaskResult, task_id=tid) or False
-    tasklabel = 'Wikidata' if task.task_name[6:8]=='wd' else \
-      'Getty TGN' if task.task_name.endswith('tgn') else 'WHGazetteer'
+    tasklabel = 'tile creation'
     if task.status == "FAILURE":
       fail_msg = task.result['exc_message']
       text_content="Greetings "+name+"! Unfortunately, your "+tasklabel+" reconciliation task has completed with status: "+ \

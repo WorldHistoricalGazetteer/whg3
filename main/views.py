@@ -42,7 +42,8 @@ def send_tileset_request(dataset_id, tiletype='normal'):
   # Construct the URL and data payload
   url = settings.TILEBOSS
   data = {
-    "geoJSONUrl": f"https://dev.whgazetteer.org/datasets/{dataset_id}/mapdata/?variant={tiletype}"
+    "geoJSONUrl": f"https://dev.whgazetteer.org/datasets/{dataset_id}/mapdata/?variant=tileset",
+    "tilesetType": tiletype,
   }
   # Send the POST request
   response = requests.post(url, headers={"Content-Type": "application/json"}, data=json.dumps(data))
