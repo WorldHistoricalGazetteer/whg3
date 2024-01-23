@@ -15,11 +15,17 @@ from main.choices import (COMMENT_TAGS, COMMENT_TAGS_REVIEW, LOG_CATEGORIES, LOG
 # cross-app models
 
 class Tileset(models.Model):
-    variant = models.CharField(max_length=20, null=True, blank=True, choices=TILESET_TYPES)
+    tiletype = models.CharField(max_length=20, null=True, blank=True, choices=TILESET_TYPES)
     task_id = models.CharField(max_length=50, null=True, blank=True)
     created = models.DateTimeField(null=True, auto_now_add=True)
-    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='tilesets')
-    collection = models.ForeignKey(Collection, on_delete=models.CASCADE, related_name='tilesets')
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, null=True,
+                                blank=True, related_name='tilesets')
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE, null=True,
+                                   blank=True, related_name='tilesets')
+
+    class Meta:
+        managed = True
+        db_table = 'tilesets'
 
 # generic links table for collections, collection groups, datasets?, etc.
 class Link(models.Model):

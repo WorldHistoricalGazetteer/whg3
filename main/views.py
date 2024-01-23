@@ -34,22 +34,31 @@ from django.contrib import messages
 import requests
 import json
 
-def task_emailer():
-  pass
-
 # initiated by main.tasks.request_tileset()
-def send_tileset_request(dataset_id, tiletype='normal'):
+def send_tileset_request(dataset_id=None, collection_id=None, tiletype='normal'):
+  print("sending a POST request to TILER_URL", dataset_id, collection_id, tiletype)
   # Construct the URL and data payload
-  url = settings.TILEBOSS
+  url = settings.TILER_URL
+  if dataset_id:
+    geoJSONUrl = f"https://dev.whgazetteer.org/datasets/{dataset_id}/mapdata/?variant=tileset"
+  elif collection_id:
+    geoJSONUrl = f"https://dev.whgazetteer.org/collections/{collection_id}/mapdata/?variant=tileset"
+  else:
+    raise ValueError("Either dataset_id or collection_id must be provided.")
+
+  print('geoJSONUrl', geoJSONUrl)
+
   data = {
-    "geoJSONUrl": f"https://dev.whgazetteer.org/datasets/{dataset_id}/mapdata/?variant=tileset",
+    "geoJSONUrl": geoJSONUrl,
     "tilesetType": tiletype,
   }
   # Send the POST request
   response = requests.post(url, headers={"Content-Type": "application/json"}, data=json.dumps(data))
 
   # Check the response
-  if response.status_code == 202:
+  print("Response:", response)
+  print("Response status:", response.status_code)
+  if response.status_code == 200:
     response_data = response.json()
     if response_data.get("status") == "success":
       print("Tileset created successfully.")

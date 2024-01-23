@@ -18,17 +18,17 @@ def handle_public_status_change(sender, instance, **kwargs):
 
     if old_instance.public != instance.public:  # There's a change in 'public' status
       if instance.public:
-        print('handle_public_status_change: index to public?', instance.public)
+        # print('handle_public_status_change: index to public?', instance.public)
         # Changed from False to True, index the records
         transaction.on_commit(lambda: index_to_pub.delay(instance.id))
 
         if instance.places.count() > threshold:
-          print('handle_public_status_change: create tileset?', instance.tileset)
+          print('handle_public_status_change: has tileset?', instance.tilesets.count() > 0)
           # Changed from False to True, create the tileset
           tiletype = instance.vis_parameters.get('tiletype', 'normal')
           transaction.on_commit(lambda: request_tileset.delay(instance.id, tiletype))
         else:
-          print('handle_public_status_change: no tileset created', instance.tileset)
+          print('handle_public_status_change: no tileset created')
       else:
         print('handle_public_status_change: unindex from public?', instance.public)
         # Changed from True to False, remove the records from the index

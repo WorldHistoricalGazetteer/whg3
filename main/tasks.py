@@ -11,32 +11,61 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 User = get_user_model()
+from collection.models import Collection
 from datasets.models import Dataset
+from main.models import Log, Tileset
+from main.views import send_tileset_request
 import time
 
 @shared_task(bind=True)
-def request_tileset(self, dataset_id, tiletype='normal'):
-    from main.views import send_tileset_request
-    print('request_tileset', dataset_id, tiletype)
-    response_data = send_tileset_request(dataset_id, tiletype)
-    dataset = Dataset.objects.get(id=dataset_id)
-    dslabel = dataset.label
+def request_tileset(self, dataset_id=None, collection_id=None, tiletype='normal'):
+    print('request_tileset() task: dataset_id, collection_id, tiletype', dataset_id, collection_id, tiletype)
+    response_data = send_tileset_request(dataset_id, collection_id, tiletype)
+    if dataset_id:
+      dataset = Dataset.objects.get(id=dataset_id)
+      label = dataset.label
+      obj = dataset
+      category = 'dataset'
+    elif collection_id:
+      collection = Collection.objects.get(id=collection_id)
+      label = collection.title
+      obj = collection
+      category = 'collection'
+    else:
+      raise ValueError('request_tileset() requires either a dataset_id or collection_id')
     name = 'Editor'
     email = 'karl.geog@gmail.com'
     if response_data and response_data.get("status") == "success":
-      msg = 'Tileset created successfully for dataset ' + str(dataset_id)
-    else:
-      msg = 'Tileset creation failed for dataset ' + str(dataset_id)
-    try:
-      tile_task_emailer.delay(
-        self.request.id,
-        dslabel,
-        name,
-        email,
-        msg
+      # create tileset record
+      Tileset.objects.create(
+        tiletype=tiletype,
+        task_id=self.request.id,
+        dataset=dataset if dataset_id else None,
+        collection=collection if collection_id else None
       )
-    except:
-      print('tile_task_emailer failed on tid', self.request.id)
+      # create log entry
+      Log.objects.create(
+        user=User.objects.get(id=1),
+        dataset=dataset if dataset_id else None,
+        collection=collection if collection_id else None,
+        logtype='tileset',
+        note='Tileset created',
+        subtype=tiletype
+      )
+      print(f'Tileset created successfully for {category} ' + str(obj.id))
+      msg = f'Tileset created successfully for {category} ' + str(obj.id)
+    else:
+      msg = 'Tileset creation failed for collection ' + str(obj.id)
+    # try:
+    #   tile_task_emailer.delay(
+    #     self.request.id,
+    #     dslabel,
+    #     name,
+    #     email,
+    #     msg
+    #   )
+    # except:
+    #   print('tile_task_emailer failed on tid', self.request.id)
 
   # task_emailer.delay(
   #   task_id,
