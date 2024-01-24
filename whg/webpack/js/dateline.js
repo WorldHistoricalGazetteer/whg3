@@ -113,6 +113,7 @@ export default class Dateline {
 				<input type="range" value="${this.toValue}" min="${this.minValue}" max="${this.maxValue}" class="slider to" id="toSlider">
 				<div class="tooltip">${formatTooltipContent(this.fromValue, this.toValue)}</div>
 				<div class="scale-container"></div>
+				<i class="fas fa-question-circle linky" title="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."></i>
 				<button class="dateline-button expanded" title="Toggle date filtering"><span></span></button>
 			</div>
 		`;
@@ -123,6 +124,7 @@ export default class Dateline {
 		const datelineButton = document.querySelector('.dateline-button');
 		this.button = datelineButton;
 		this.rangeContainer.parentNode.insertBefore(datelineButton, this.rangeContainer);
+		datelineButton.parentNode.insertBefore(document.querySelector('.fa-question-circle'), datelineButton);
 		datelineButton.addEventListener('click', () => {
 			this.open = !this.open;
 			if (this.rangeContainer.classList.contains('transitioned')) {
