@@ -1,7 +1,5 @@
 // /whg/webpack/portal.js
 
-import datasetLayers from './mapLayerStyles';
-import nearPlaceLayers from './nearPlaceLayerStyles';
 import throttle from 'lodash/throttle';
 import { attributionString, deepCopy, geomsGeoJSON } from './utilities';
 import Dateline from './dateline';
@@ -26,16 +24,11 @@ let mapParameters = {
 }
 let mappy = new whg_maplibre.Map(mapParameters);
 
-let nullCollection = {
-    type: 'FeatureCollection',
-    features: []
-}
 const noSources = $('<div>').html('<i>None - please adjust time slider.</i>').hide();
 
 let featureCollection;
 let relatedFeatureCollection;
 let nearbyFeatureCollection;
-let featureHighlights = [];
 let showingRelated = false;
 
 let nearPlacePopup = new whg_maplibre.Popup({
@@ -74,27 +67,14 @@ function waitMapLoad() {
 				})
 			});
 
-            mappy.addSource('nearbyPlaces', {
-				'type': 'geojson',
-			    'data': nullCollection,
-			});
-		    nearPlaceLayers.forEach(layer => {
-				mappy.addLayer(layer);
-			});
+            mappy
+			.newSource('nearbyPlaces') // Add empty source
+			.newLayerset('nearbyPlaces', 'nearbyPlaces', 'nearby-places');
 
-            mappy.addSource('places', {
-				'type': 'geojson',
-			    'data': nullCollection,
-				'attribution': attributionString(),
-			});
-		    datasetLayers.forEach(layer => {
-				mappy.addLayer(layer);
-				mappy.setFilter(layer.id, [
-					'all',
-					layer.filter,
-					['!=', 'outOfDateRange', true],
-				]);
-			});
+            mappy
+			.newSource('places') // Add empty source
+			.newLayerset('places')
+			.addFilter(['!=', 'outOfDateRange', true]);
 
 			$('#map_options').append(createNearbyPlacesControl());
 
@@ -117,39 +97,31 @@ function waitMapLoad() {
 				const features = mappy.queryRenderedFeatures(e.point);
 
 				function clearHighlights() {
-					if (featureHighlights.length > 0) {
+					if (mappy.highlights.length > 0) {
 						mappy.getCanvas().style.cursor = 'grab';
-						featureHighlights.forEach(featureHighlight => {
-							mappy.setFeatureState(featureHighlight, { highlight: false });
-							$('.source-box').eq(featureHighlight.id).removeClass('highlight');
-						});
-						featureHighlights = [];
+						mappy.clearHighlights();
+						$('.source-box').removeClass('highlight');
 					}
 				}
 
 				if (!showingRelated) {
 					if (features.length > 0) {
 						clearHighlights();
-						features.forEach(feature => { // Check datasetLayers, starting with topmost layers
-							if (!datasetLayers.some(layer => feature.layer.id == layer.id)) {
-								return; // Reached underlying layers - exit loop
+						features.forEach(feature => {
+							if (feature.layer.id.startsWith('places_')) {
+								mappy.highlight(feature);
+								$('.source-box').eq(feature.id).addClass('highlight');
 							}
-							let featureHighlight = { source: feature.source, id: feature.id, geom: featureCollection.features[feature.id].geometry };
-							mappy.setFeatureState(featureHighlight, { highlight: true });
-							$('.source-box').eq(featureHighlight.id).addClass('highlight');
-							featureHighlights.push(featureHighlight);
-
 						});
-						features.forEach(feature => { // Check nearPlaceLayers, starting with topmost layers
-							if (!nearPlaceLayers.some(layer => feature.layer.id == layer.id)) {
-								return; // Reached underlying layers - exit loop
+						features.forEach(feature => { // Check nearbyPlaces
+							if (feature.layer.id.startsWith('nearbyPlaces_')) {
+								nearPlacePopup
+								.setLngLat(e.lngLat)
+								.setHTML(popupFeatureHTML(feature, false)); // second parameter indicates clickability								
 							}
-							nearPlacePopup
-							.setLngLat(e.lngLat)
-							.setHTML(popupFeatureHTML(feature, false)); // second parameter indicates clickability
 						$(nearPlacePopup.getElement()).show();
 						});
-						if (featureHighlights.length > 0) {
+						if (mappy.highlights.length > 0) {
 							mappy.getCanvas().style.cursor = 'pointer';
 						}
 
@@ -162,8 +134,9 @@ function waitMapLoad() {
 			});
 
 			mappy.on('click', function() {
-				if (!showingRelated && featureHighlights.length > 0) {
-					mappy.fitViewport( bbox( geomsGeoJSON(featureHighlights) ) );
+				if (!showingRelated && mappy.highlights.length > 0) {
+					console.log(mappy.highlights);
+					mappy.fitViewport( bbox( geomsGeoJSON(mappy.highlights) ) );
 				}
 			});
 
@@ -474,31 +447,6 @@ function histogram(data, labels, minmax) {
 		.call(axisB)
 }
 
-function onGeoLayerSelectorChange() {
-    const geoLayerValue = $(this).val();
-    console.log('Selected GeoLayer: ', geoLayerValue);
-}
-
-function createGeoLayerSelectors(heading, geoLayers) {
-    const $geoLayersContainer = $('<div>').addClass('option-block');
-    $('<p>').addClass('strong-red heading').text(heading).appendTo($geoLayersContainer);
-    geoLayers.forEach((geoLayer, i) => {
-		const itemID = `geoLayer_${i}`;
-		const $itemDiv = $('<div>').addClass('geoLayer-choice');
-		const $checkboxItem = $('<input>')
-            .attr('id', itemID)
-            .attr('type', 'checkbox')
-            .attr('value', geoLayer)
-        	.attr('disabled', 'disabled') // TODO
-            .on('change', onGeoLayerSelectorChange);
-        const $label = $(`<label for = '${ itemID }'>`).text(geoLayer);
-        $itemDiv.append($checkboxItem, $label);
-        $geoLayersContainer.append($itemDiv);
-	});
-
-    return $geoLayersContainer;
-}
-
 function nearbyPlaces() {
 	if ( $('#nearby_places').prop('checked') ) {
         const center = mappy.getCenter();
@@ -530,7 +478,7 @@ function nearbyPlaces() {
 
 	}
 	else {
-		mappy.getSource('nearbyPlaces').setData(nullCollection);
+		mappy.clearSource('nearbyPlaces');
         $('button#update_nearby').hide();
 	}
 }

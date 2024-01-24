@@ -1,5 +1,8 @@
 // whg_maplibre.js
 
+import Layerset from './layerset';
+import { attributionString } from './utilities';
+
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
@@ -7,18 +10,58 @@ import '../css/maplibre-common.css';
 import '../css/style-control.css';
 import '../css/dateline.css';
 
-import Layerset from './layerset';
+maplibregl.Map.prototype.nullCollection = function() {
+	return { type: 'FeatureCollection', features: [] }
+}
 
-maplibregl.Map.prototype.layerset = function (dc_id, source='places') {
-    return new Layerset(this, dc_id, source);
-    /*
-	// Instantiate Layerset on the map
-	const myLayerset = mapInstance.layerset(dc_id);
-	
-	// Call the reset method on the Layerset instance
-	myLayerset.reset();
-    */
+maplibregl.Map.prototype.clearSource = function(sourceId) {
+	this.getSource(sourceId).setData(this.nullCollection());
+	return this;
+}
+
+maplibregl.Map.prototype.newSource = function (ds, fc=null) {
+	if (!!ds.tilesets && ds.tilesets.length > 0) {
+		return this.addSource(ds.ds_id, {
+			'type': 'vector',
+    		'url': `${process.env.TILEBOSS}/data/${ds.tilesets[0]}.json`
+		});
+	}
+	else {
+		if (!!ds.ds_id) { // Standard dataset or collection
+			return this.addSource(ds.ds_id, {
+				'type': 'geojson',
+				'data': ds,
+				'attribution': attributionString(ds),
+			});
+		}
+		else if (fc) { // Name and FeatureCollection provided
+			return this.addSource(ds, { 'type': 'geojson', 'data': fc });
+		}
+		else { // Only name given, add an empty FeatureCollection
+			return this.addSource(ds, { 'type': 'geojson', 'data': this.nullCollection() });			
+		}
+	}	
 };
+
+maplibregl.Map.prototype.layersets = [];
+maplibregl.Map.prototype.newLayerset = function (dc_id, source_id, paintOption) {
+	this.layersets.push(dc_id);
+    return new Layerset(this, dc_id, source_id, paintOption);
+};
+
+maplibregl.Map.prototype.highlights = [];
+maplibregl.Map.prototype.highlight = function (feature) {
+	if (this.getFeatureState({source: feature.source, id: feature.id}) !== ({ highlight: true })) {
+    	this.setFeatureState({ source: feature.source, id: feature.id }, { highlight: true });
+    	this.highlights.push({ source: feature.source, id: feature.id, geometry: feature.geometry });
+  	}
+}
+maplibregl.Map.prototype.clearHighlights = function () {
+	this.highlights.forEach(feature => {
+		this.setFeatureState({source: feature.source, id: feature.id}, { highlight: false });
+	});
+	this.highlights = [];
+}
 
 function getStyleURL(style) {
 	return `${process.env.TILEBOSS}/styles/${style}/style.json`;

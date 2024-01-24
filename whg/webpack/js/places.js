@@ -1,7 +1,6 @@
 // /whg/webpack/places.js
 
-import datasetLayers from './mapLayerStyles';
-import { attributionString, geomsGeoJSON } from './utilities';
+import { geomsGeoJSON } from './utilities';
 
 import '../css/places.css';
 
@@ -17,15 +16,12 @@ function waitMapLoad() {
             const pgeom = JSON.parse($('#pgeom script').text());
             const featureCollection = geomsGeoJSON([{geom: pgeom}]);
             console.log(featureCollection);
-		    mappy.addSource('places', {
-				'type': 'geojson',
-				'data': featureCollection,
-				'attribution': attributionString(),
-			});
+            
+			mappy
+			.newSource('places', featureCollection)
+			.newLayerset('places');
+			
 			mappy.setFeatureState({ source: 'places', id: 0 }, { highlight: true });
-		    datasetLayers.forEach(function(layer) {
-				mappy.addLayer(layer);
-			});
 			mappy.fitBounds(bbox(featureCollection), {
 		        padding: 30,
 		        duration: 1000,

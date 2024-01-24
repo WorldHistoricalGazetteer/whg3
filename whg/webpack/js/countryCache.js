@@ -7,7 +7,7 @@ export class CountryCacheFeatureCollection {
 
 	loadFromLocalStorage() {
 		const storedData = localStorage.getItem('countryCache');
-		return storedData ? JSON.parse(storedData) : { type: 'FeatureCollection', features: [] };
+		return storedData ? JSON.parse(storedData) : mappy.nullCollection();
 	}
 
 	saveToLocalStorage() {

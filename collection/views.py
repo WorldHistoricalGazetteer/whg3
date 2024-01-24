@@ -1,4 +1,6 @@
 # collection.views (collections)
+import requests
+
 from dateutil.parser import isoparse
 from datetime import date
 import json
@@ -308,8 +310,24 @@ def fetch_mapdata_coll(request, *args, **kwargs):
   coll=get_object_or_404(Collection, id=id_)
   rel_keywords = coll.rel_keywords
   
-  null_geometry = request.GET.get('variant', '') == 'nullGeometry'
   tileset = request.GET.get('variant', '') == 'tileset'
+  ignore_tilesets = request.GET.get('variant', '') == 'ignore_tilesets'
+  
+  ############################################################################################################
+  # TODO: Force `ignore_tilesets` if any `visParameters` object has 'trail: true'                            #
+  # (representative points have to be generated in the browser)                                              #
+  ############################################################################################################
+
+  available_tilesets = None
+  null_geometry = False
+  if not tileset and not ignore_tilesets:
+
+    tiler_url = "http://tiles.whgazetteer.org:3000/tiler"
+    response = requests.post(tiler_url, json={"getTilesets": {"type": "collections", "id": id_}})
+
+    if response.status_code == 200:
+        available_tilesets = response.json().get('tilesets', [])
+        null_geometry = len(available_tilesets) > 0
   
   extent = list(coll.places.aggregate(Extent('geoms__geom')).values())[0]
   
@@ -325,18 +343,20 @@ def fetch_mapdata_coll(request, *args, **kwargs):
   }
     
   if null_geometry:
-    feature_collection["tileset"] = True 
+    feature_collection["tilesets"] = available_tilesets 
   
   for i, t in enumerate(coll.traces.filter(archived=False)):
     # Get the first annotation's sequence value
     first_anno = t.place.annos.first()
     sequence_value = first_anno.sequence if first_anno else None
+    
+    geometry = t.place.geoms.all()[0].jsonb
 
     # TODO: skipping places missing geometry NOT GOOD!!!
     if len(t.place.geoms.all()) > 0:
       feature = {
           "type": "Feature",
-          "geometry": t.place.geoms.all()[0].jsonb,
+          "geometry": geometry,
           "properties": {
               "pid": t.place.id,
               "cid": id_,
@@ -352,8 +372,10 @@ def fetch_mapdata_coll(request, *args, **kwargs):
       }
       
       if null_geometry: # Minimise data sent to browser when using a vector tileset 
-        feature["properties"]["geom_type"] = feature["geometry"].get("type", None)
-        feature["geometry"] = None
+        if geometry:
+            del feature["geometry"]["coordinates"]
+            if "geowkt" in feature["geometry"]:
+                del feature["geometry"]["geowkt"]
       elif tileset: # Minimise data to be included in a vector tileset
         # Drop all properties except any listed here
         properties_to_keep = ["pid"] # Perhaps ["pid", "min", "max"]

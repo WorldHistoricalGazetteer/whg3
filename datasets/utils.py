@@ -1,4 +1,6 @@
 # /datasets/utils.py
+import requests
+
 from django.conf import settings
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.db.models import Extent
@@ -424,9 +426,20 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     
     reduce_geometry = request.GET.get('reduce_geometry', 'true').lower() == 'true' # Default to 'true' and return reduced geometry
     
-    null_geometry = request.GET.get('variant', '') == 'nullGeometry'
     tileset = request.GET.get('variant', '') == 'tileset'
+    ignore_tilesets = request.GET.get('variant', '') == 'ignore_tilesets'
     reduce_geometry = False if tileset else reduce_geometry
+    
+    available_tilesets = None
+    null_geometry = False
+    if not tileset and not ignore_tilesets:
+    
+        tiler_url = "http://tiles.whgazetteer.org:3000/tiler"
+        response = requests.post(tiler_url, json={"getTilesets": {"type": "datasets", "id": dsid}})
+    
+        if response.status_code == 200:
+            available_tilesets = response.json().get('tilesets', [])
+            null_geometry = len(available_tilesets) > 0
     
     places = ds.places.prefetch_related('geoms').order_by('id') # Ensure the same order each time the function is called
     extent = list(ds.places.aggregate(Extent('geoms__geom')).values())[0]
@@ -443,7 +456,7 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     }
     
     if null_geometry:
-        feature_collection["tileset"] = True 
+        feature_collection["tilesets"] = available_tilesets 
 
     for index, place in enumerate(places):
         geometries = place.geoms.all()
@@ -482,9 +495,11 @@ def fetch_mapdata_ds(request, *args, **kwargs):
             "id": index # Required for MapLibre conditional styling 
         }
         
-        if null_geometry: # Minimise data sent to browser when using a vector tileset 
-            feature["properties"]["geom_type"] = geometry.get("type", None)
-            feature["geometry"] = None
+        if null_geometry: # Minimise data sent to browser when using a vector tileset
+            if geometry:
+                del feature["geometry"]["coordinates"]
+                if "geowkt" in feature["geometry"]:
+                    del feature["geometry"]["geowkt"]
         elif tileset: # Minimise data to be included in a vector tileset
             # Drop all properties except any listed here
             properties_to_keep = ["pid"] # Perhaps ["pid", "min", "max"]

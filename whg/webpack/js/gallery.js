@@ -1,7 +1,6 @@
 // gallery.js
 
 import debounce from 'lodash/debounce';
-import { attributionString } from './utilities';
 import featuredDataLayers from './featuredDataLayerStyles';
 import { fetchDataForHorse } from './localGeometryStorage';
 import { CountryCacheFeatureCollection } from  './countryCache';
@@ -12,24 +11,6 @@ let mappy = new whg_maplibre.Map({
     maxZoom: 13,
     navigationControl: false
 });
-    
-let nullCollection = {
-    type: 'FeatureCollection',
-    features: []
-}
-
-var datasetLayers = [
-	{
-		'id': 'country_polygons',
-		'type': 'fill',
-		'source': 'places',
-		'paint': {
-			'fill-color': 'rgba(0,128,0,.4)', // green,
-			'fill-outline-color': 'red',
-		},
-		'filter': ['==', '$type', 'Polygon']
-	}
-]
 
 let countryCache = new CountryCacheFeatureCollection();
 
@@ -42,20 +23,11 @@ function waitMapLoad() {
         mappy.on('load', () => {
             console.log('Map loaded.');
             
-            mappy.addSource('places', {
-				'type': 'geojson',
-			    'data': nullCollection,
-				'attribution': attributionString(),
-			});
+            mappy
+            .newSource('countries')  // Add empty source
+			.newLayerset('countries', 'countries', 'countries');
 			
-		    datasetLayers.forEach(layer => {
-				mappy.addLayer(layer);
-			});
-	
-			mappy.addSource('featured-data-source', {
-			    type: 'geojson',
-			    data: nullCollection
-			});
+			mappy.newSource('featured-data-source');  // Add empty source
 			
 			featuredDataLayers.forEach(layer => {
 				mappy.addLayer(layer);
@@ -260,7 +232,7 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(select2_CDN_fallbac
     function updateAreaMap() {
     	const countries = countryDropdown.select2('data').map(country => country.id);
         countryCache.filter(countries).then(filteredCountries => {
-            mappy.getSource('places').setData(filteredCountries);
+            mappy.getSource('countries').setData(filteredCountries);
 
             try {
                 mappy.fitBounds(bbox(filteredCountries), {
@@ -296,8 +268,9 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(select2_CDN_fallbac
     $('body').on('mouseenter', '.ds-card-container', (e) => {
 		fetchDataForHorse($(e.target).closest('.ds-card-container'), mappy);
 	}).on('mouseleave', '.ds-card-container', () => {
-		mappy.getSource('featured-data-source').setData(nullCollection);
-		mappy.reset();
+		mappy
+		.clearSource('featured-data-source')
+		.reset();
 	});
 	
 	$('#searchInput').on('input', function() {fetchData();});

@@ -1,18 +1,11 @@
-import datasetLayers from './mapLayerStyles';
+// mapFilters.js
 
-export function filteredLayer(layer) {
+function temporalFilter(baseFilter) {
 	if ($('.range_container.expanded').length > 0) { // Is dateline active?
-		const modifiedLayer = ({
-			...layer
-		});
-		const existingFilter = modifiedLayer.filter;
-
-		const isUndatedChecked = $('#undated_checkbox').is(':checked');
-
-		if (isUndatedChecked) { // Include features within the range AND undated features
-			modifiedLayer.filter = [
+		if ($('#undated_checkbox').is(':checked')) {
+			return [ // Include features within the range AND undated features
 				'all',
-				existingFilter,
+				baseFilter,
 				[
 					'any',
 					[
@@ -28,31 +21,30 @@ export function filteredLayer(layer) {
 						['==', 'min', 'null']
 					]
 				]
-			];
-		} else { // Include features within the range BUT NOT undated features
-			modifiedLayer.filter = [
+			]
+		}
+		else {
+			return [ // Include features within the range WITHOUT undated features
 				'all',
-				existingFilter,
+				baseFilter,
 				['has', 'max'],
 				['has', 'min'],
 				['>=', 'max', window.dateline.fromValue],
 				['<=', 'min', window.dateline.toValue],
-			];
+			]
 		}
-
-		return modifiedLayer;
-	} else return layer;
+	}
+	else return baseFilter; // No modification - temporal filter is inactive
 }
 
 export function toggleFilters(on, mappy, table){
-    datasetLayers.forEach(function(layer){
-		window.ds_list.forEach(function(ds) {
-			const modifiedLayer = { ...layer };
-		    modifiedLayer.id = `${layer.id}_${ds.id}`;
-		    modifiedLayer.source = ds.id.toString();
-			mappy.setFilter(modifiedLayer.id, on ? filteredLayer(modifiedLayer).filter : modifiedLayer.filter);
-		});
+	mappy.getStyle().layers.forEach(layer => {
+		if (mappy.layersets.includes(layer.source)) {
+			let filter = mappy.getFilter(layer.id); // Base filter is ['==', '$type', geometryType]
+			let baseFilter = filter[0] == 'all' ? filter[1] : filter;
+			console.log('Filters', filter, baseFilter);
+			mappy.setFilter(layer.id, on ? temporalFilter(baseFilter) : baseFilter);
+		}
 	});
 	table.draw();
 }
-

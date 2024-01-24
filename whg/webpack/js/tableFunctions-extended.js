@@ -1,4 +1,4 @@
-
+// tableFunctions-extended.js
 
 export function scrollToRowByProperty(table, propertyName, value) {
 	console.log(`Scrolling to ${propertyName} ${value}...`);

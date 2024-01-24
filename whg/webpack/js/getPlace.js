@@ -9,7 +9,7 @@ export function popupFeatureHTML(feature, clickable=true) { // TODO: Improve sty
 }
 
 export const getPlace = debounce(getPlaceBouncing, 300);
-export function getPlaceBouncing(pid, cid, spinner_detail) {
+export function getPlaceBouncing(pid, cid, spinner_detail, callback) {
 	//console.log('getPlace()', pid);
 	if (isNaN(pid)) {
 		console.log('Invalid pid');
@@ -29,6 +29,11 @@ export function getPlaceBouncing(pid, cid, spinner_detail) {
 			$("#anno_img").html(data.traces.image_file);
 		}
 		if (spinner_detail) spinner_detail.stop()
+		
+	    if (typeof callback === 'function') {
+	      	callback(data);
+	    }		
+		
 		// events on detail items
 		$('.ext').on('click', function(e) {
 			e.preventDefault();

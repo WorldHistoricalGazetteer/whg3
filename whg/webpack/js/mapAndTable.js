@@ -4,12 +4,11 @@ import '../css/mapAndTable.css';
 import '../css/mapAndTableAdditional.css';
 
 import { init_mapControls } from './mapControls';
-import { addMapSource, addMapLayer, recenterMap, initObservers, initOverlays, initPopups, listSourcesAndLayers } from './mapFunctions';
+import { recenterMap, initObservers, initOverlays, initPopups } from './mapFunctions';
 import { toggleFilters } from './mapFilters';
 import { initUtils, initInfoOverlay, startSpinner, minmaxer, get_ds_list_stats, deepCopy } from './utilities';
 import { initialiseTable } from './tableFunctions';
 import { init_collection_listeners } from './collections';
-import datasetLayers from './mapLayerStyles';
 import SequenceArcs from './mapSequenceArcs';
 import { add_to_collection } from './collections.js';
 
@@ -66,17 +65,9 @@ const mapLoadPromise = new Promise(function (resolve, reject) {
 let dataLoadPromises = [];
 window.ds_list.forEach(function (ds) { // fetch data
     const promise = new Promise(function (resolve, reject) {
-        $.get(`/${ ds.ds_type || 'datasets' }/${ ds.id }/mapdata`, function (data) { // ds_type may alternatively be 'collections'
-        
-			//	****************************************** REMOVE AFTER TESTING *********************************************************
-		    // Iterate through features in the FeatureCollection
-		    data.features.forEach(feature => {
-		        // Set geometries to null
-		        feature.geometry = null;
 		
-		    });
-	        data.tileset = true;
-			//	****************************************** REMOVE AFTER TESTING *********************************************************
+		ds.ds_id = `${ds.ds_type || 'datasets'}_${ds.id}`;
+		$.get(`/${ ds.ds_id.replace('_','/') }/mapdata`, function (data) { // ds_type may alternatively be 'collections'			
 		
 		    // Merge additional properties from data to ds
 		    for (const prop in data) {
@@ -107,26 +98,24 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	let allExtents = [];
 	
 	window.ds_list.forEach(function(ds) {
-		addMapSource(ds);
 		ds.features.forEach(feature => {
 		    feature.properties = feature.properties || {};
 		    feature.properties.dsid = ds.id;
 		    feature.properties.dslabel = ds.label;
+		    feature.properties.ds_id = ds.ds_id; // Required for table->map linkage
 		});
 		allFeatures.push(...ds.features);
-		if (!!ds.tileset && ds.tileset == true) {
+		if (!!ds.tilesets && ds.tilesets.length > 0) {
 			allExtents.push(ds.extent);
 		}
+		mappy
+		.newSource(ds) // Add source - includes detection of tileset availability
+		.newLayerset(ds.ds_id); // Add standard layerset (defined in `layerset.js` and prototyped in `whg_maplibre.js`)
 	});
+	console.log('Added layerset(s).', mappy.getStyle().layers);
 	
 	window.ds_list_stats = get_ds_list_stats(allFeatures, allExtents);
 	console.log('window.ds_list_stats', window.ds_list_stats);
-	
-	datasetLayers.forEach(function(layer) { // Ensure proper layer order for multiple datasets
-		window.ds_list.forEach(function(ds) {
-			addMapLayer(layer, ds);
-		});
-	});
 		
 	// Initialise Data Table
 	const tableInit = initialiseTable(allFeatures, checked_rows, spinner_table, spinner_detail, mappy);

@@ -22,13 +22,7 @@ mappy.on('load', function() {
 		}
 	});
 	
-	mappy.addSource('featured-data-source', {
-	    type: 'geojson',
-	    data: {
-		    type: 'FeatureCollection',
-		    features: []
-		}
-	});
+	mappy.newSource('featured-data-source');  // Add empty source
 	
 	featuredDataLayers.forEach(layer => {
 		mappy.addLayer(layer);

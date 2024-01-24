@@ -101,9 +101,11 @@ export default class SequenceArcs {
 	createArcLayer() {
 	    const layers = this.map.getStyle().layers;
         // Find the index of the highest layer whose id begins with 'gl_active_point'
+        // ... or ends with '_point' - overhauled layer id system for vector tile sources
+        // TODO: Remove 'gl_active_point' test when overhaul is complete
         let topPointLayer;
         for (let i = layers.length - 1; i < layers.length; i--) {
-            if (layers[i].id.startsWith('gl_active_point')) {
+            if (layers[i].id.startsWith('gl_active_point') || layers[i].id.endsWith('_point')) {
                 topPointLayer = layers[i].id;
                 break;
             }

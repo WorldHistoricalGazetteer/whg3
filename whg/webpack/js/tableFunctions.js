@@ -1,8 +1,7 @@
 
 import { getPlace } from './getPlace';
 import { startSpinner } from './utilities';
-import { updatePadding, recenterMap/*, listSourcesAndLayers*/ } from './mapFunctions';
-import datasetLayers from './mapLayerStyles';
+import { updatePadding, recenterMap } from './mapFunctions';
 import { mapSequencer } from './mapControls';
 import { mappy } from './mapAndTable';
 import { scrollToRowByProperty } from './tableFunctions-extended';
@@ -87,28 +86,23 @@ function clearFilters() {
 }*/
 
 function toggleMapLayers(mappy, val) {
-	let recentered = false;
-	datasetLayers.forEach(function(layer) {
-		window.ds_list.forEach(function(ds) {
-			mappy.setLayoutProperty(`${layer.id}_${ds.id}`, 'visibility', (val == 'all' || ds.id.toString() === val.toString()) ? 'visible' : 'none');
-			if (!recentered && ds.id.toString() === val.toString()) {
-				recentered = true;
-				window.mapBounds = ds.extent;
-				recenterMap('lazy');
-			}
-		});
+	if (val !== 'all') {
+		window.mapBounds = mappy.getSource(val)._data.extent;
+		recenterMap('lazy');
+	}
+	mappy.getStyle().layers.forEach(layer => {
+		if (mappy.layersets.includes(layer.source)) {
+			mappy.setLayoutProperty(layer.id, 'visibility', (val == 'all' || val == layer.source) ? 'visible' : 'none');
+		}
 	});
 }
 
-export function highlightFeature(ds_pid, features, mappy) {
-
-	//listSourcesAndLayers();
+export function highlightFeature(ds_pid, features, mappy, extent=false) {
 
 	features = features.filter(f => f.properties.dsid === ds_pid.ds);
 
 	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(ds_pid.pid));
 	if (featureIndex !== -1) {
-		//console.log(`Switching highlight from ${window.highlightedFeatureIndex} to ${featureIndex}.`);
 		if (window.highlightedFeatureIndex !== undefined) mappy.setFeatureState(window.highlightedFeatureIndex, {
 			highlight: false
 		});
@@ -117,7 +111,8 @@ export function highlightFeature(ds_pid, features, mappy) {
 		if (geom) {
 			const coords = geom.coordinates;
 			window.highlightedFeatureIndex = {
-				source: ds_pid.ds.toString(),
+				source: ds_pid.ds_id,
+				sourceLayer: mappy.getSource(ds_pid.ds_id).type == 'vector' ? 'features' : '',
 				id: featureIndex
 			};
 			mappy.setFeatureState(window.highlightedFeatureIndex, {
@@ -125,7 +120,11 @@ export function highlightFeature(ds_pid, features, mappy) {
 			});
 			updatePadding();
 			// zoom to feature
-			if (geom.type.toLowerCase() == 'point') {
+			if (extent) {
+				window.mapBounds = extent;
+				recenterMap('lazy');
+			}
+			else if (geom.type.toLowerCase() == 'point') {
 				const flycoords = typeof(coords[0]) == 'number' ? coords : coords[0]
 				window.mapBounds = {
 					'center': flycoords,
@@ -165,7 +164,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		let select = '<label>Datasets: <select id="ds_select">' +
 			'<option value="-1" data="all" selected="selected">All</option>';
 		for (let ds of window.ds_list) {
-			select += '<option value="' + ds.label + '" data="' + ds.id + '">' +
+			select += '<option value="' + ds.label + '" data="' + ds.ds_id + '">' +
 				ds.title + '</option>'
 		}
 		select += '</select></label>';
@@ -325,7 +324,8 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 			$(row).attr('pid', data.properties.pid);
 			$(row).data('ds_pid', {
 				ds: data.properties.dsid,
-				pid: data.properties.pid
+				pid: data.properties.pid,
+				ds_id: data.properties.ds_id
 			});
 			$(row).data('cid', data.properties.cid);
 			if (!data.geometry) {
@@ -382,7 +382,7 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 
 		// filter map
 		let ds_id = $(this).find(":selected").attr("data");
-		const dsItem = window.ds_list.find(ds => ds.id === ds_id);
+		const dsItem = window.ds_list.find(ds => ds.ds_id === ds_id);
 		if (dsItem) {
 			window.mapBounds = dsItem.extent;
 		}
@@ -441,9 +441,9 @@ export function initialiseTable(features, checked_rows, spinner_table, spinner_d
 		$(this).addClass("highlight-row");
 
 		// fetch its detail
-		getPlace(ds_pid.pid, $(this).data('cid'), spinner_detail);
-
-		highlightFeature(ds_pid, features, mappy);
+		getPlace(ds_pid.pid, $(this).data('cid'), spinner_detail, function(placedata) {
+		   highlightFeature(ds_pid, features, mappy, placedata.extent);
+		});
 		
 		if (!!mapSequencer) {
 			mapSequencer.updateButtons();

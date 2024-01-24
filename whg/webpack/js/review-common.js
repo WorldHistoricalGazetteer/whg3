@@ -1,7 +1,4 @@
 
-import datasetLayers from './mapLayerStyles';
-import { attributionString } from './utilities';
-
 export let mappy = new whg_maplibre.Map({
 	maxZoom: 10
 });
@@ -14,14 +11,9 @@ export function initialiseMap() {
 	featureCollection = JSON.parse(featureCollectionJSON);
 	console.log(featureCollection);
 	
-	mappy.addSource('places', {
-		'type': 'geojson',
-	    'data': featureCollection,
-		'attribution': attributionString(),
-	});
-	datasetLayers.forEach(layer => {
-		mappy.addLayer(layer);
-	});
+	mappy
+	.newSource('places', featureCollection)
+	.newLayerset('places');
 	
 	if (featureCollection.features.length > 0) {
 		mappy.fitViewport( bbox( featureCollection ) );

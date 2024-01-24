@@ -1,6 +1,4 @@
-import datasetLayers from './mapLayerStyles';
-import {attributionString, arrayColors, colorTable, startSpinner} from './utilities';
-import { filteredLayer } from './mapFilters';
+import {  arrayColors, colorTable, startSpinner } from './utilities';
 import { scrollToRowByProperty } from './tableFunctions-extended';
 import { clearFilters } from './tableFunctions';
 
@@ -8,54 +6,6 @@ import { popupFeatureHTML } from './getPlace.js';
 import { mappy } from './mapAndTable';
 
 let mapParams;
-
-export function addMapSource(ds) {
-	if (!!ds.tileset && ds.tileset == true) {
-		const tilesetURL = `${process.env.TILEBOSS}/data/${ds.ds_type || 'datasets'}-${ds.id}.json`;
-		console.log('tilesetURL',tilesetURL);
-		mappy.addSource(`${ds.ds_type || 'datasets'}_${ds.id}`, {
-			'type': 'vector',
-    		'url': tilesetURL
-		});
-	}
-	else {
-		mappy.addSource(`${ds.ds_type || 'datasets'}_${ds.id}`, {
-			'type': 'geojson',
-			'data': ds,
-			'attribution': attributionString(ds),
-		});
-	}
-}
-
-export function addMapLayer(layer, ds) {
-	const modifiedLayer = {
-		...layer
-	};
-	modifiedLayer.id = `${layer.id}_${ds.id}`;
-	modifiedLayer.source = `${ds.ds_type || 'datasets'}_${ds.id}`;
-	modifiedLayer['source-layer'] = 'features';
-	
-	console.log(mappy.getStyle(),filteredLayer(modifiedLayer));
-	
-	mappy.addLayer(filteredLayer(modifiedLayer));
-	if (!!ds.relations && layer.id == 'gl_active_point') {
-		let circleColors = arrayColors(ds.relations);
-		// colorTable(circleColors, '#coll_detail');
-		colorTable(circleColors, '#mapControls');
-		mappy.setPaintProperty(modifiedLayer.id, 'circle-color', [
-			'match',
-			['get', 'relation'],
-			...circleColors,
-			'#ccc',
-		]);
-		mappy.setPaintProperty(modifiedLayer.id, 'circle-stroke-color', [
-			'match',
-			['get', 'relation'],
-			...circleColors,
-			'#ccc',
-		]);
-	}
-}
 
 export function updatePadding() {
 	const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
@@ -217,10 +167,27 @@ export function initPopups(table) {
 			const topFeature = features[0]; // Handle only the top-most feature
 			const topLayerId = topFeature.layer.id;
 
-			// Check if the top feature's layer id starts with the id of any layer in datasetLayers
-			const isTopFeatureInDatasetLayer = datasetLayers.some(layer => topLayerId.startsWith(layer.id));
-
-			if (isTopFeatureInDatasetLayer) {
+/*			// Check if the top feature's layer id starts with the id of any layer in datasetLayers
+			const isTopFeatureInDatasetLayer = // TODO: Remove this when finished upgrade of layersets 
+				datasetLayers.some(layer => topLayerId.startsWith(layer.id));
+			if (isTopFeatureInDatasetLayer) { // TODO: Remove this when finished upgrade of layersets
+				topFeature.sourceLayer = false;
+			}*/
+				
+			const featureInLayerset = mappy.layersets.some(layer => topLayerId.startsWith(layer));
+			if (featureInLayerset) {
+				const dataset = ds_list.find(ds => ds.ds_id === topFeature.source);
+			    if (dataset) {
+			        const datasetFeature = dataset.features.find(f => f.properties.pid === topFeature.properties.pid);
+			        if (datasetFeature) {
+			            topFeature.properties.title = datasetFeature.properties.title;
+			            topFeature.properties.min = datasetFeature.properties.min;
+			            topFeature.properties.max = datasetFeature.properties.max;
+			        }
+			    }		
+			}
+			
+			if (featureInLayerset) {
 				mappy.getCanvas().style.cursor = 'pointer';
 
 		        if (!activePopup || activePopup.pid !== topFeature.properties.pid) {
@@ -235,7 +202,7 @@ export function initPopups(table) {
 		            .setHTML(popupFeatureHTML(topFeature))
 		            .addTo(mappy);
 		          activePopup.pid = topFeature.properties.pid;
-		          activePopup.featureHighlight = { source: topFeature.source, id: topFeature.id };
+		          activePopup.featureHighlight = { source: topFeature.source, sourceLayer: topFeature.sourceLayer, id: topFeature.id };
 		          if (!!window.highlightedFeatureIndex && window.highlightedFeatureIndex.id === activePopup.featureHighlight.id && window.highlightedFeatureIndex.source === activePopup.featureHighlight.source) {
 					  activePopup.featureHighlight = false;
 				  }
@@ -247,7 +214,8 @@ export function initPopups(table) {
 		          activePopup.setLngLat(e.lngLat);
 		        }
 
-			} else {
+			}
+			else {
 				clearPopup();
 			}
 		} else {

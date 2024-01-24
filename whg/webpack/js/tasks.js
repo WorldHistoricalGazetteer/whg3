@@ -1,7 +1,6 @@
 // /whg/webpack/tasks.js
 
-import datasetLayers from './mapLayerStyles';
-import { attributionString, geomsGeoJSON } from './utilities';
+import { geomsGeoJSON } from './utilities';
 
 import '../css/tasks.css';
 
@@ -20,24 +19,14 @@ let mapParameters = {
 }
 let mappy = new whg_maplibre.Map(mapParameters);
 
-let nullCollection = {
-    type: 'FeatureCollection',
-    features: []
-}
-
 function waitMapLoad() {
     return new Promise((resolve) => {
         mappy.on('load', () => {
             console.log('Map loaded.');
-            
-            mappy.addSource('places', {
-				'type': 'geojson',
-			    'data': nullCollection,
-				'attribution': attributionString(),
-			});
-		    datasetLayers.forEach(function(layer) {
-				mappy.addLayer(layer);
-			});
+			
+			mappy
+			.newSource('places') // Add empty source
+			.newLayerset('places');
             
             resolve();
         });
@@ -187,6 +176,7 @@ function render_area(aid) {
 
 function reset_map() {
 	$("#area_name").html('Global');
-	mappy.getSource('places').setData(nullCollection);
-	mappy.reset();
+	mappy
+	.clearSource('places')
+	.reset();
 }

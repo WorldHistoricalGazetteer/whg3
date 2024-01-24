@@ -1,9 +1,8 @@
 // /whg/webpack/search.js
 
-import datasetLayers from './mapLayerStyles';
 import Dateline from './dateline';
 import throttle from 'lodash/throttle';
-import { attributionString, geomsGeoJSON } from './utilities';
+import { geomsGeoJSON } from './utilities';
 import { ccode_hash } from '../../../static/js/parents';
 import '../css/dateline.css';
 import '../css/search.css';
@@ -47,28 +46,16 @@ function waitMapLoad() {
                 }
             });
             
-		    mappy.addSource('places', {
-				'type': 'geojson',
-				'data': {
-				  "type": "FeatureCollection",
-				  "features": []
-				},
-				'attribution': attributionString(),
-			});
-		    datasetLayers.forEach(function(layer) {
-				mappy.addLayer(layer);
-			});
+		    mappy
+		    .newSource('places') // Add empty source
+			.newLayerset('places');			
 			
 			function getFeatureId(e) {
 				const features = mappy.queryRenderedFeatures(e.point);
 				if (features.length > 0) {
-					const topFeature = features[0]; // Handle only the top-most feature
-					const topLayerId = topFeature.layer.id;
-					// Check if the top feature's layer id starts with the id of any layer in datasetLayers
-					const isTopFeatureInDatasetLayer = datasetLayers.some(layer => topLayerId.startsWith(layer.id));
-					if (isTopFeatureInDatasetLayer) {
+					if (features[0].layer.id.startsWith('places_')) { // Query only the top-most feature
 						mappy.getCanvas().style.cursor = 'pointer';
-				        return topFeature.id;
+				        return features[0].id;
 					}
 				}
 				mappy.getCanvas().style.cursor = 'grab';
