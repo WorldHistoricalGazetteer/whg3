@@ -11,7 +11,8 @@ urlpatterns = [
     path('logout/', views.logout, name='logout'),
     path('profile/', views.update_profile, name='profile'),
 
-    path('addusers/', views.addusers, name='add-users'),
+    # DEPRECATED
+    # path('addusers/', views.addusers, name='add-users'),
 
     path('password_change/', PasswordChangeView.as_view(), name='password_change'),
     path('password_change/done/', PasswordChangeDoneView.as_view(), name='password_change_done'),

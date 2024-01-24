@@ -58,6 +58,9 @@ class User(AbstractUser, PermissionsMixin):
 
     objects = UserManager()
 
+    class Meta:
+        db_table = 'auth_users'
+
     def __str__(self):
         return self.username
 
