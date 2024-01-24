@@ -329,9 +329,9 @@ def fetch_mapdata_coll(request, *args, **kwargs):
         available_tilesets = response.json().get('tilesets', [])
         null_geometry = len(available_tilesets) > 0
   
-  extent = list(coll.places.aggregate(Extent('geoms__geom')).values())[0]
+  extent = list(coll.places_all.aggregate(Extent('geoms__geom')).values())[0]
   
-  annotated_places = coll.places.annotate(seq=Min('annos__sequence')).order_by('seq')
+  annotated_places = coll.places_all.annotate(seq=Min('annos__sequence')).order_by('seq')
 
   feature_collection = {
     "title": coll.title,
