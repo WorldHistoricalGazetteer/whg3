@@ -83,11 +83,6 @@ var CDN_fallbacks = [
 		position: 'head'
 	},
 	{
-		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js',
-		localUrl: 'turf.min.js',
-		position: 'head'
-	},
-	{
 		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js',
 		localUrl: 'd3.min.js',
 		position: 'head'
@@ -103,6 +98,11 @@ var maplibre_fallbacks = [
 	{
 		cdnUrl: 'https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css',
 		localUrl: 'maplibre-gl.css',
+		position: 'head'
+	},
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js',
+		localUrl: 'turf.min.js',
 		position: 'head'
 	},
 ];
@@ -194,19 +194,21 @@ Promise.all(CDN_fallbacks.map(loadResource))
 		console.log('Executing deferred scripts.');
 		executeDeferredScripts();
 		
-		window.bbox = turf.bbox;
-		window.buffer = turf.buffer;
-		window.convex = turf.convex;
-		window.flatten = turf.flatten;
-		window.dissolve = turf.dissolve;
-		window.combine = turf.combine;
-		window.midpoint = turf.midpoint
-		window.centroid = turf.centroid
-		window.getType = turf.getType
-		window.area = turf.area
-		window.distance = turf.distance
-		window.lineString = turf.lineString
-		window.bezierSpline = turf.bezierSpline
+		if (typeof loadMaplibre !== 'undefined') {
+			window.bbox = turf.bbox;
+			window.buffer = turf.buffer;
+			window.convex = turf.convex;
+			window.flatten = turf.flatten;
+			window.dissolve = turf.dissolve;
+			window.combine = turf.combine;
+			window.midpoint = turf.midpoint
+			window.centroid = turf.centroid
+			window.getType = turf.getType
+			window.area = turf.area
+			window.distance = turf.distance
+			window.lineString = turf.lineString
+			window.bezierSpline = turf.bezierSpline
+		}
 		
 		window.Spinner = Spinner;
 		

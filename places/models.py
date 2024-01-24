@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 User = get_user_model()
 from django.contrib.gis.db import models as geomodels
+from django.contrib.gis.db.models import Extent
 from django.contrib.postgres.fields import ArrayField
 from django.db.models import JSONField
 from django.db import models
@@ -59,6 +60,15 @@ class Place(models.Model):
   @property
   def dsid(self):
     return self.dataset.id
+
+  @property
+  def extent(self):
+    geoms = self.geoms.all()
+    if geoms:
+        extent = geoms.aggregate(extent=Extent('geom'))
+        if extent['extent']:
+            return extent['extent']
+    return None
 
   @property
   def geom_count(self):

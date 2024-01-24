@@ -1,4 +1,6 @@
 # collection.views (collections)
+import requests
+
 from dateutil.parser import isoparse
 from datetime import date
 import json
@@ -192,8 +194,8 @@ def seq(coll):
   print(next)
   return next
 
-""" 
-  add list of >=1 places to collection 
+"""
+  add list of >=1 places to collection
   i.e. new CollPlace and TraceAnnotation rows
   ajax call from ds_places.html and place_portal.html
 """
@@ -236,9 +238,9 @@ def add_places(request, *args, **kwargs):
       msg = {"added": added, "dupes": dupes}
     return JsonResponse({'status': status, 'msg': msg}, safe=False)
 
-""" 
-  deletes CollPlace record(s) and 
-  archives TraceAnnotation(s) for list of pids 
+"""
+  deletes CollPlace record(s) and
+  archives TraceAnnotation(s) for list of pids
 """
 def archive_traces(request, *args, **kwargs):
   if request.method == 'POST':
@@ -268,8 +270,8 @@ def update_sequence(request, *args, **kwargs):
     cp.save()
   return JsonResponse({"msg": "updated?", "POST": new_sequence})
 
-""" 
-create place collection on the fly; return id for adding place(s) to it 
+"""
+create place collection on the fly; return id for adding place(s) to it
 """
 def flash_collection_create(request, *args, **kwargs):
   print('flash_collection_create request.POST', request.POST)
@@ -298,7 +300,7 @@ def year_from_string(ts):
     return int(isoparse(ts).strftime('%Y'))
   else:
     return "null" # String required by Maplibre filter test
-  
+
 # GeoJSON for all places in a collection INCLUDING those without geometry
 def fetch_mapdata_coll(request, *args, **kwargs):
   from django.core.serializers import serialize
@@ -307,36 +309,54 @@ def fetch_mapdata_coll(request, *args, **kwargs):
   id_=kwargs['id']
   coll=get_object_or_404(Collection, id=id_)
   rel_keywords = coll.rel_keywords
-  
-  null_geometry = request.GET.get('variant', '') == 'nullGeometry'
+
   tileset = request.GET.get('variant', '') == 'tileset'
-  
-  extent = list(coll.places.aggregate(Extent('geoms__geom')).values())[0]
-  
-  annotated_places = coll.places.annotate(seq=Min('annos__sequence')).order_by('seq')
+  ignore_tilesets = request.GET.get('variant', '') == 'ignore_tilesets'
+
+  ############################################################################################################
+  # TODO: Force `ignore_tilesets` if any `visParameters` object has 'trail: true'                            #
+  # (representative points have to be generated in the browser)                                              #
+  ############################################################################################################
+
+  available_tilesets = None
+  null_geometry = False
+  if not tileset and not ignore_tilesets:
+
+    tiler_url = "http://tiles.whgazetteer.org:3000/tiler"
+    response = requests.post(tiler_url, json={"getTilesets": {"type": "collections", "id": id_}})
+
+    if response.status_code == 200:
+        available_tilesets = response.json().get('tilesets', [])
+        null_geometry = len(available_tilesets) > 0
+
+  extent = list(coll.places_all.aggregate(Extent('geoms__geom')).values())[0]
+
+  annotated_places = coll.places_all.annotate(seq=Min('annos__sequence')).order_by('seq')
 
   feature_collection = {
     "title": coll.title,
     "creator": coll.creator,
-    "type": "FeatureCollection", 
+    "type": "FeatureCollection",
     "features": [],
     "relations": coll.rel_keywords,
     "extent": extent,
   }
-    
+
   if null_geometry:
-    feature_collection["tileset"] = True
-  
+    feature_collection["tilesets"] = available_tilesets
+
   for i, t in enumerate(coll.traces.filter(archived=False)):
     # Get the first annotation's sequence value
     first_anno = t.place.annos.first()
     sequence_value = first_anno.sequence if first_anno else None
 
+    geometry = t.place.geoms.all()[0].jsonb
+
     # TODO: skipping places missing geometry NOT GOOD!!!
     if len(t.place.geoms.all()) > 0:
       feature = {
           "type": "Feature",
-          "geometry": t.place.geoms.all()[0].jsonb,
+          "geometry": geometry,
           "properties": {
               "pid": t.place.id,
               "cid": id_,
@@ -350,16 +370,18 @@ def fetch_mapdata_coll(request, *args, **kwargs):
           },
           "id": i,  # Required for MapLibre conditional styling
       }
-      
-      if null_geometry: # Minimise data sent to browser when using a vector tileset 
-        feature["properties"]["geom_type"] = feature["geometry"].get("type", None)
-        feature["geometry"] = None
+
+      if null_geometry: # Minimise data sent to browser when using a vector tileset
+        if geometry:
+            del feature["geometry"]["coordinates"]
+            if "geowkt" in feature["geometry"]:
+                del feature["geometry"]["geowkt"]
       elif tileset: # Minimise data to be included in a vector tileset
         # Drop all properties except any listed here
         properties_to_keep = ["pid"] # Perhaps ["pid", "min", "max"]
-        feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}         
+        feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}
 
-      feature_collection["features"].append(feature)      
+      feature_collection["features"].append(feature)
 
   return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii':False,'indent':2})
 
@@ -370,10 +392,10 @@ def fetch_geojson_coll(request, *args, **kwargs):
   id_=kwargs['id']
   coll=get_object_or_404(Collection, id=id_)
   rel_keywords = coll.rel_keywords
-    
+
   features_t = [
     {
-        "type": "Feature", 
+        "type": "Feature",
         "geometry": t.place.geoms.all()[0].jsonb,
         "properties":{
             "pid":t.place.id,
@@ -387,7 +409,7 @@ def fetch_geojson_coll(request, *args, **kwargs):
   ]
 
   feature_collection = {
-    "type": "FeatureCollection", 
+    "type": "FeatureCollection",
     "features": features_t,
     "relations": coll.rel_keywords,
   }
@@ -457,8 +479,8 @@ def add_dataset_places(request, *args, **kwargs):
   # return JsonResponse({'status': status, 'msg': msg}, safe=False)
   return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-""" 
-  adds dataset to dataset collection 
+"""
+  adds dataset to dataset collection
   - if it is the first in
   - if no incomplete reviews of @align_builder tasks
 """
@@ -489,9 +511,9 @@ def add_dataset(request, *args, **kwargs):
   return JsonResponse({'status': 'already_added'})
 
 
-""" 
+"""
   removes dataset from collection
-  clean up "omitted"; refreshes page    
+  clean up "omitted"; refreshes page
 """
 def remove_dataset(request, *args, **kwargs):
   coll = Collection.objects.get(id=kwargs['coll_id'])
@@ -540,7 +562,7 @@ CollectionLinkFormset = inlineformset_factory(
       'link_type': forms.Select(choices=('webpage'))}
 )
 
-""" 
+"""
   PLACE COLLECTIONS
   collections from places and/or datasets; uses place_collection_build.html
 """
@@ -737,7 +759,7 @@ class PlaceCollectionBrowseView(DetailView):
     context['places'] = coll.places.all().order_by('title')
     context['updates'] = {}
     context['url_front'] = settings.URL_FRONT
-    
+
     if not coll.vis_parameters:
         # Populate with default values:
         # tabulate: 'initial'|true|false - include sortable table column, 'initial' indicating the initial sort column
@@ -748,8 +770,8 @@ class PlaceCollectionBrowseView(DetailView):
 
     return context
 
-""" 
-COLLECTION GROUPS 
+"""
+COLLECTION GROUPS
 """
 class CollectionGroupCreateView(CreateView):
   form_class = CollectionGroupModelForm
@@ -839,7 +861,7 @@ class CollectionGroupDeleteView(DeleteView):
     return reverse('accounts:profile')
 
 """
-  update (edit); uses same template as create; 
+  update (edit); uses same template as create;
   context['action'] governs template display
 """
 class CollectionGroupUpdateView(UpdateView):
@@ -910,7 +932,7 @@ class CollectionGroupGalleryView(ListView):
 
 
 """ DATASET COLLECTIONS """
-""" datasets only collection 
+""" datasets only collection
     uses ds_collection_build.html
 """
 class DatasetCollectionCreateView(LoginRequiredMixin, CreateView):
@@ -962,7 +984,7 @@ class DatasetCollectionCreateView(LoginRequiredMixin, CreateView):
 
     return context
 
-""" update dataset collection 
+""" update dataset collection
     uses ds_collection_build.html
 """
 class DatasetCollectionUpdateView(UpdateView):
@@ -1047,7 +1069,7 @@ class DatasetCollectionSummaryView(DetailView):
     context['bboxes'] = bboxes
     return context
 
-""" browse collection dataset places 
+""" browse collection dataset places
     same for owner(s) and public
 """
 class DatasetCollectionBrowseView(DetailView):
@@ -1086,8 +1108,8 @@ class DatasetCollectionBrowseView(DetailView):
 
     # sg 21-Dec-2023: These 2 lines appear to be redundant:
     placeset = coll.places.all()
-    context['places'] = placeset 
-    
+    context['places'] = placeset
+
     context['ds_list'] = coll.ds_list
     context['links'] = Link.objects.filter(collection=id_)
     context['updates'] = {}
@@ -1096,7 +1118,7 @@ class DatasetCollectionBrowseView(DetailView):
 
     return context
 
-""" browse collection collections 
+""" browse collection collections
     w/student section?
 """
 class CollectionGalleryView(ListView):

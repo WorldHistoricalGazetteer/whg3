@@ -1,7 +1,6 @@
 // /whg/webpack/js/ds_browse.js
 
-import datasetLayers from './mapLayerStyles';
-import { attributionString, startSpinner } from './utilities';
+import { startSpinner } from './utilities';
 import { getPlace } from './getPlace';
 
 import '../css/ds_browse.css';
@@ -11,10 +10,6 @@ let mappy = new whg_maplibre.Map({
 });
 
 let featureCollection;
-let nullCollection = {
-    type: 'FeatureCollection',
-    features: []
-}
 let highlightedFeatureId = false;
 
 let table;
@@ -23,15 +18,6 @@ function waitMapLoad() {
     return new Promise((resolve) => {
         mappy.on('load', () => {
             console.log('Map loaded.');	
-            
-            mappy.addSource('places', {
-				'type': 'geojson',
-			    'data': nullCollection,
-				'attribution': attributionString(),
-			});
-		    datasetLayers.forEach(layer => {
-				mappy.addLayer(layer);
-			});	
 			
 			renderData(ds_id)
 			
@@ -172,6 +158,10 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(datatables_CDN_fall
 					mappy.getCanvas().style.cursor = 'pointer';
 					var coordinates = [e.lngLat.lng, e.lngLat.lat];
 					var props = topFeature.properties
+					console.log(props);
+					if (!!featureCollection.tilesets) {
+						props = featureCollection.features.find(feature => feature.properties && feature.properties.pid === props.pid).properties;
+					}
 					var pid = props.pid;
 					var title = props.title;
 					var min = props.min;
@@ -210,6 +200,50 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(datatables_CDN_fall
 		
     })
     .catch(error => console.error("An error occurred:", error));
+
+function highlightFeature(ds_pid, features, mappy, extent=false) { //TODO: This has *similar* functionality to the same-named function in tableFunctions - refactor?
+	
+	console.log('ds_pid', ds_pid);
+
+	var featureIndex = features.findIndex(f => f.properties.pid === parseInt(ds_pid.pid));
+	if (featureIndex !== -1) {
+		if (window.highlightedFeatureIndex !== undefined) mappy.setFeatureState(window.highlightedFeatureIndex, {
+			highlight: false
+		});
+		var feature = features[featureIndex];
+		const geom = feature.geometry;
+		if (geom) {
+			const coords = geom.coordinates;
+			window.highlightedFeatureIndex = {
+				source: ds_pid.ds_id,
+				sourceLayer: mappy.getSource(ds_pid.ds_id).type == 'vector' ? 'features' : '',
+				id: featureIndex
+			};
+			mappy.setFeatureState(window.highlightedFeatureIndex, {
+				highlight: true
+			});
+			// zoom to feature
+			if (extent) {
+				mappy.fitViewport(extent);
+			}
+			else if (geom.type.toLowerCase() == 'point') {
+				const flycoords = typeof(coords[0]) == 'number' ? coords : coords[0];
+				mappy.flyTo({
+					'center': flycoords,
+					'zoom': 7,
+					'duration': duration
+				})
+			} else {
+				mappy.fitViewport(bbox(geom));
+			}
+		} else {
+			console.log('Feature in clicked row has no geometry.');
+		}
+	} else {
+		console.log(`Feature ${ds_pid.pid} not found.`);
+	}
+
+}
     
 
 function setRowEvents() {
@@ -243,19 +277,6 @@ function setRowEvents() {
 		}
 		// get id
 		const pid = parseInt( $(this)[0].cells[0].textContent );
-		if ( highlightedFeatureId ) {
-			mappy.setFeatureState({ source: 'places', id: highlightedFeatureId }, { highlight: false });
-		}
-		const feat = featureCollection.features.find(feature => feature.properties.pid === pid && feature.geometry !== null);
-		if (feat) {
-			highlightedFeatureId = feat.id;
-			mappy
-			.setFeatureState({ source: 'places', id: highlightedFeatureId }, { highlight: true })
-			.fitViewport( bbox( feat ) );
-		}
-		else {
-			highlightedFeatureId = false;
-		}
 
 		// highlight this row, clear others
 		var selected = $(this).hasClass("highlight-row");
@@ -266,7 +287,18 @@ function setRowEvents() {
 		$(this).addClass("highlight-row");
 
 		// fetch its detail
-		getPlace(pid);
+		getPlace(pid, false, false, function(placedata) {
+		    console.log('placedata', placedata);
+	
+			const ds_pid = {
+				ds: featureCollection.ds,
+				pid: pid,
+				ds_id: featureCollection.ds_id
+			}
+		    
+		    highlightFeature(ds_pid, featureCollection.features, mappy, placedata.extent);
+		   
+		});
 
 	})
 
@@ -321,7 +353,7 @@ function setRowEvents() {
 // fetch and render
 function renderData(dsid) {
         		
-    fetch(`/datasets/${ dsid }/mapdata/?reduce_geometry=false`)
+    fetch(`/datasets/${ dsid }/mapdata/`)
         .then((response) => {
             if (!response.ok) {
                 throw new Error('Failed to fetch dataset GeoJSON.');
@@ -329,12 +361,19 @@ function renderData(dsid) {
             return response.json(); // Parse the response JSON
         })
         .then((data) => {
-            featureCollection = data; // Set the global variable
-            console.log(featureCollection);
-            mappy.getSource('places').setData(featureCollection);
-			mappy.fitBounds( bbox( featureCollection ), {
+            console.log('Fetched data.', data);
+			data.ds = dsid;
+			data.ds_id = `datasets_${ dsid }`;
+			
+            mappy
+			.newSource(data)
+			.newLayerset(data.ds_id);
+			
+			mappy.fitViewport( data.extent || bbox( data ), {
 				padding: 30
 			})
+			
+            featureCollection = data; // Set the global variable
         })
         .catch((error) => {
             console.error(error);

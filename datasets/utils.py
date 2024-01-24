@@ -1,4 +1,6 @@
 # /datasets/utils.py
+import requests
+
 from django.conf import settings
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.db.models import Extent
@@ -133,10 +135,10 @@ def downloader(request, *args, **kwargs):
     # return task_id
     obj={'task_id':download_task.task_id}
     print('obj from downloader()', obj)
-    
+
     #return render(request, 'datasets/ds_meta.html', context=context)
-    return HttpResponse(json.dumps(obj), content_type='application/json')    
-    
+    return HttpResponse(json.dumps(obj), content_type='application/json')
+
   elif request.method == 'POST' and not request.is_ajax:
     print('request.POST (not ajax)', request.POST)
 
@@ -160,7 +162,7 @@ def download_augmented(request, *args, **kwargs):
   req_format = kwargs['format']
   if req_format is not None:
     print('download format',req_format)
-  
+
   features=ds.places.all().order_by('id')
 
   print('download_augmented() file format', fileobj.format)
@@ -226,37 +228,37 @@ def download_augmented(request, *args, **kwargs):
     print('augmented lpf template', result)
     with open(fn, 'w', encoding='utf-8') as outfile:
       with connection.cursor() as cursor:
-        cursor.execute("""with namings as 
-          (select place_id, jsonb_agg(jsonb) as names from place_name pn 
+        cursor.execute("""with namings as
+          (select place_id, jsonb_agg(jsonb) as names from place_name pn
           where place_id in (select id from places where dataset = '{ds}')
           group by place_id ),
-          placetypes as 
-          (select place_id, jsonb_agg(jsonb) as "types" from place_type pt 
+          placetypes as
+          (select place_id, jsonb_agg(jsonb) as "types" from place_type pt
           where place_id in (select id from places where dataset = '{ds}')
           group by place_id ),
-          placelinks as 
-          (select place_id, jsonb_agg(jsonb) as links from place_link pl 
+          placelinks as
+          (select place_id, jsonb_agg(jsonb) as links from place_link pl
           where place_id in (select id from places where dataset = '{ds}')
           group by place_id ),
-          geometry as 
-          (select place_id, jsonb_agg(jsonb) as geoms from place_geom pg 
+          geometry as
+          (select place_id, jsonb_agg(jsonb) as geoms from place_geom pg
           where place_id in (select id from places where dataset = '{ds}')
           group by place_id ),
           placewhens as
-          (select place_id, jsonb as whenobj from place_when pw 
+          (select place_id, jsonb as whenobj from place_when pw
           where place_id in (select id from places where dataset = '{ds}')),
           placerelated as
-          (select place_id, jsonb_agg(jsonb) as rels from place_related pr 
+          (select place_id, jsonb_agg(jsonb) as rels from place_related pr
           where place_id in (select id from places where dataset = '{ds}')
           group by place_id ),
           descriptions as
-          (select place_id, jsonb_agg(jsonb) as descrips from place_description pdes 
+          (select place_id, jsonb_agg(jsonb) as descrips from place_description pdes
           where place_id in (select id from places where dataset = '{ds}')
           group by place_id ),
           depictions as
-          (select place_id, jsonb_agg(jsonb) as depicts from place_depiction pdep 
+          (select place_id, jsonb_agg(jsonb) as depicts from place_depiction pdep
           where place_id in (select id from places where dataset = '{ds}')
-          group by place_id )	
+          group by place_id )
           select jsonb_build_object(
             'type','Feature',
             '@id', p.src_id,
@@ -266,7 +268,7 @@ def download_augmented(request, *args, **kwargs):
             'names', n.names,
             'types', coalesce(pt.types, '[]'),
             'links', coalesce(pl.links, '[]'),
-            'geometry', case when g.geoms is not null 
+            'geometry', case when g.geoms is not null
                 then jsonb_build_object(
                 'type','GeometryCollection',
                 'geometries', g.geoms)
@@ -277,7 +279,7 @@ def download_augmented(request, *args, **kwargs):
             'relations',coalesce(pr.rels, '[]'),
             'descriptions',coalesce(pdes.descrips, '[]'),
             'depictions',coalesce(pdep.depicts, '[]')
-          ) from places p 
+          ) from places p
           left join namings n on p.id = n.place_id
           left join placetypes pt on p.id = pt.place_id
           left join placelinks pl on p.id = pl.place_id
@@ -286,7 +288,7 @@ def download_augmented(request, *args, **kwargs):
           left join placerelated pr on p.id = pr.place_id
           left join descriptions pdes on p.id = pdes.place_id
           left join depictions pdep on p.id = pdep.place_id
-          where dataset = '{ds}'        
+          where dataset = '{ds}'
         """.format(urlpre=url_prefix, ds=dslabel, a='{}'))
         for row in cursor:
           g = row[0]['geometry']
@@ -297,9 +299,9 @@ def download_augmented(request, *args, **kwargs):
           #progress_recorder.set_progress(i + 1, len(features), description="lpf progress")
         outfile.write(json.dumps(result,indent=2))
         #outfile.write(json.dumps(result))
-        
+
     end = datetime.datetime.now()
-    print('elapsed lpf', end-start)    
+    print('elapsed lpf', end-start)
     # response is reopened file
     response = FileResponse(open(fn, 'rb'), content_type='text/json')
     response['Content-Disposition'] = 'attachment; filename="'+os.path.basename(fn)+'"'
@@ -333,7 +335,7 @@ def download_augmented_slow(request, *args, **kwargs):
     print('got format',req_format)
     #qs = qs.filter(title__icontains=query)
 
-  features=ds.places.all() 
+  features=ds.places.all()
 
   if fileobj.format == 'delimited' and req_format == 'tsv':
     print('augmented for delimited')
@@ -404,7 +406,7 @@ def download_augmented_slow(request, *args, **kwargs):
         feat['links'] = [l.jsonb for l in f.links.all()]
         feat['descriptions'] = [des.jsonb for des in f.descriptions.all()]
         feat['depictions'] = [dep.jsonb for dep in f.depictions.all()]
-        #fcoll['features'].append(feat)  
+        #fcoll['features'].append(feat)
         outfile.write(json.dumps(feat,indent=2))
       #outfile.write(json.dumps(fcoll,indent=2))
 
@@ -415,19 +417,30 @@ def download_augmented_slow(request, *args, **kwargs):
 
     return response
   # *** /end DOWNLOAD FILES
-  
+
 # GeoJSON for all places in a dataset INCLUDING those without geometry
 def fetch_mapdata_ds(request, *args, **kwargs):
     print('fetch_mapdata_ds kwargs', kwargs)
     dsid = kwargs['dsid']
     ds = get_object_or_404(Dataset, pk=dsid)
-    
+
     reduce_geometry = request.GET.get('reduce_geometry', 'true').lower() == 'true' # Default to 'true' and return reduced geometry
-    
-    null_geometry = request.GET.get('variant', '') == 'nullGeometry'
+
     tileset = request.GET.get('variant', '') == 'tileset'
+    ignore_tilesets = request.GET.get('variant', '') == 'ignore_tilesets'
     reduce_geometry = False if tileset else reduce_geometry
-    
+
+    available_tilesets = None
+    null_geometry = False
+    if not tileset and not ignore_tilesets:
+
+        tiler_url = "http://tiles.whgazetteer.org:3000/tiler"
+        response = requests.post(tiler_url, json={"getTilesets": {"type": "datasets", "id": dsid}})
+
+        if response.status_code == 200:
+            available_tilesets = response.json().get('tilesets', [])
+            null_geometry = len(available_tilesets) > 0
+
     places = ds.places.prefetch_related('geoms').order_by('id') # Ensure the same order each time the function is called
     extent = list(ds.places.aggregate(Extent('geoms__geom')).values())[0]
 
@@ -438,12 +451,12 @@ def fetch_mapdata_ds(request, *args, **kwargs):
         "creator": ds.creator,
         "minmax": ds.minmax,
         "extent": extent,
-        "type": "FeatureCollection", 
-        "features": [], 
+        "type": "FeatureCollection",
+        "features": [],
     }
-    
+
     if null_geometry:
-        feature_collection["tileset"] = True
+        feature_collection["tilesets"] = available_tilesets
 
     for index, place in enumerate(places):
         geometries = place.geoms.all()
@@ -479,19 +492,21 @@ def fetch_mapdata_ds(request, *args, **kwargs):
                 "max": "null" if place.minmax is None or place.minmax[1] is None else place.minmax[1], # String required by Maplibre filter test
             },
             "geometry": geometry,
-            "id": index # Required for MapLibre conditional styling 
+            "id": index # Required for MapLibre conditional styling
         }
-        
-        if null_geometry: # Minimise data sent to browser when using a vector tileset 
-            feature["properties"]["geom_type"] = geometry.get("type", None)
-            feature["geometry"] = None
+
+        if null_geometry: # Minimise data sent to browser when using a vector tileset
+            if geometry:
+                del feature["geometry"]["coordinates"]
+                if "geowkt" in feature["geometry"]:
+                    del feature["geometry"]["geowkt"]
         elif tileset: # Minimise data to be included in a vector tileset
             # Drop all properties except any listed here
             properties_to_keep = ["pid"] # Perhaps ["pid", "min", "max"]
-            feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}         
+            feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}
 
         feature_collection["features"].append(feature)
-    
+
     return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii': False})
 
 # GeoJSON for all places in a dataset
@@ -501,7 +516,7 @@ def fetch_geojson_ds(request, *args, **kwargs):
   dsid=kwargs['dsid']
   ds=get_object_or_404(Dataset,pk=dsid)
 
-  # build a fast FeatureCollection 
+  # build a fast FeatureCollection
   features=PlaceGeom.objects.filter(place_id__in=ds.placeids).values_list(
     'jsonb','place_id','src_id','place__title','place__minmax', 'place__fclasses')
   fcoll = {"type":"FeatureCollection","features":[], "minmax":ds.minmax}
@@ -514,9 +529,9 @@ def fetch_geojson_ds(request, *args, **kwargs):
           "geometry":f[0]}
     if minmax:
       feat["properties"]["min"] = minmax[0]
-      feat["properties"]["max"] = minmax[1]    
+      feat["properties"]["max"] = minmax[1]
     fcoll['features'].append(feat)
-  
+
   result = {"minmax":ds.minmax, "collection":fcoll}
   return JsonResponse(result, safe=False,json_dumps_params={'ensure_ascii':False})
 
@@ -532,22 +547,22 @@ def fetch_geojson_flat(request, *args, **kwargs):
   #ds= Dataset.objects.get(pk=1106)
 
   fcoll = {"type":"FeatureCollection","features":[]}
-  
-  # build a FLAT FeatureCollection 
+
+  # build a FLAT FeatureCollection
   pgobjects=PlaceGeom.objects.filter(place_id__in=ds.placeids)
   #pgobjects=PlaceGeom.objects.filter(place_id__in=ds.placeids).values_list(
     #'jsonb','place_id','src_id','minmax','place__title','place__minmax', 'place__fclasses')
   for pg in pgobjects:
     geom = json.loads(pg.geom.geojson)
-    if geom['type'] != 'GeometryCollection':      
+    if geom['type'] != 'GeometryCollection':
       fcoll['features'].append({"type":"Feature",
                   "geometry":geom,
                   "properties":{
                     "id":pg.place_id, "title":pg.place.title,
-                    "min":pg.minmax[0] if pg.minmax else None, 
+                    "min":pg.minmax[0] if pg.minmax else None,
                     "max":pg.minmax[1] if pg.minmax else None }}
       )
-    
+
   result = {"minmax":ds.minmax, "collection":fcoll}
   return JsonResponse(result, safe=False,json_dumps_params={'ensure_ascii':False})
 
@@ -584,7 +599,7 @@ def parse_errors_tsv(errors):
 
 # *** NOT YET CALLED
 # format lpf validation errors for modal display
-# *** 
+# ***
 #def parse_errors_lpf(errors):
   #new_errors = []
   #for e in error
@@ -602,7 +617,7 @@ def parse_errors_lpf(errors):
   print('relative_path 0',errors[0]['error'].relative_path)
   "deque(['geometry', 'geometries', 0])"
   msg = [{"row":e['feat'], "msg":e['error'].message, "path":
-         re.search('deque\(\[(.*)\]\)', 
+         re.search('deque\(\[(.*)\]\)',
           str(e['error'].relative_path)).group(1) } for e in errors]
   return msg
 
@@ -660,15 +675,15 @@ def parsedates_lpf(feat):
   # global when?
   if 'when' in feat and 'timespans' in feat['when']:
     try:
-      intervals += timespansReduce(feat['when']['timespans']) 
+      intervals += timespansReduce(feat['when']['timespans'])
     except:
       print('parsedates_lpf hung on', feat['@id'])
-    
+
   # which feat keys might have a when?
   possible_keys = list(set(feat.keys() & \
                     set(['names','types','relations','geometry'])))
   print('possible_keys in parsedates_lpf()',possible_keys)
-  
+
   # first, geometry
   # collections...
   geom = feat['geometry'] if 'geometry' in feat else None
@@ -681,27 +696,27 @@ def parsedates_lpf(feat):
     if geom and 'when' in geom:
       if 'timespans' in geom['when']:
         intervals += timespansReduce(g['when']['timespans'])
-        
+
   # then the rest
   for k in possible_keys:
-    if k != 'geometry':    
+    if k != 'geometry':
       obj = feat[k]
       for o in obj:
         if 'when' in o and 'timespans' in o['when']:
-          intervals += timespansReduce(o['when']['timespans']) 
+          intervals += timespansReduce(o['when']['timespans'])
   # features must have >=1 when, with >=1 timespan
   # absent end replaced by start by timespansReduce()
   starts = [ts[0] for ts in intervals]
   ends = [ts[1] for ts in intervals]
   # some lpf records have no time at all b/c not required as with lp-tsv
   minmax = [
-    int(min(starts)) if len(starts)>0 else None, 
+    int(min(starts)) if len(starts)>0 else None,
     int(max(ends))  if len(ends)>0 else None
   ]
   # de-duplicate
   unique=list(set(tuple(sorted(sub)) for sub in intervals))
   return {"intervals": unique, "minmax": minmax}
-# 
+#
 # validate Linked Places json-ld (w/jsonschema)
 # format ['coll' (FeatureCollection) | 'lines' (json-lines)]
 def validate_lpf(tempfn,format):
@@ -741,7 +756,7 @@ def validate_lpf(tempfn,format):
 
 #
 # validate LP-TSV file (uses frictionless.py 3.31.0)
-# 
+#
 def validate_tsv(fn, ext):
   # incoming csv or tsv; in cases converted from xlsx or ods via pandas
   # print('validate_tsv() fn', fn)
@@ -789,7 +804,7 @@ class HitRecord(object):
 
   def __str__(self):
     import json
-    return json.dumps(str(self.__dict__))    
+    return json.dumps(str(self.__dict__))
 
   def toJSON(self):
     import json
@@ -834,7 +849,7 @@ def aat_lookup(aid):
 def aliasIt(url):
   r1=re.compile(r"\/(?:.(?!\/))+$")
   id=re.search(r1,url)
-  if id: 
+  if id:
     id = id.group(0)[1:].replace('cb','')
   r2 = re.compile(r"bnf|cerl|dbpedia|geonames|d-nb|loc|pleiades|tgn|viaf|wikidata|whg|wikipedia")
   tag=re.search(r2,url)
@@ -855,7 +870,7 @@ def flatten(l):
 def format_size(num):
   return round(num/1000000, 2)
 
-""" 
+"""
   'monkey patch' for hully() for acknowledged GEOS/Django issue
   "call this any time before using GEOS features" @bpartridge says
 """
@@ -955,9 +970,9 @@ def patch_geos_signatures():
 
   GeometryCollection._create_collection = new_create_collection
 
-""" 
+"""
   added patch_geos_signatures() from https://gist.github.com/bpartridge/26a11b28415d706bfb9993fc28767d68
-  per https://github.com/libgeos/geos/issues/528#issuecomment-997327327 
+  per https://github.com/libgeos/geos/issues/528#issuecomment-997327327
 """
 def hully(g_list):
   """
@@ -1045,7 +1060,7 @@ def hully(g_list):
     # hull=GeometryCollection([GEOSGeometry(json.dumps(g)) for g in g_list]).convex_hull
   except:
     print('hully() failed on g_list', g_list)
-    
+
   if hull.geom_type in ['Point', 'LineString', 'Polygon']:
     # buffer hull, but only a little if near meridian
     coll = GeometryCollection([GEOSGeometry(json.dumps(g)) for g in g_list]).simplify()
@@ -1058,7 +1073,7 @@ def hully(g_list):
         hull = hull.buffer(0.1)
     except:
       print('hully buffer error longs:', longs )
-  #print(hull.geojson)    
+  #print(hull.geojson)
   return json.loads(hull.geojson) if hull.geojson !=None else []
 
 
@@ -1083,7 +1098,7 @@ def makeDate(ts, form):
   expr = ts.strftime("%Y-%m-%d") if form == 'iso' \
     else ts.strftime("%d-%b-%Y")
   return expr
-# 
+#
 def makeNow():
   ts = time.time()
   sttime = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d_%H%M%S')
@@ -1116,7 +1131,7 @@ def ccodesFromGeom(geom):
       # just hull them all
       qs = Country.objects.filter(mpoly__intersects=g.convex_hull)
     else:
-      qs = Country.objects.filter(mpoly__intersects=g)       
+      qs = Country.objects.filter(mpoly__intersects=g)
     ccodes = [c.iso for c in qs]
     return ccodes
 #
@@ -1291,7 +1306,7 @@ def status_emailer(ds, task_name):
 
 # TODO: faster?
 class UpdateCountsView(View):
-  """ Returns counts of unreviewed records, per pass and total; also deferred per task 
+  """ Returns counts of unreviewed records, per pass and total; also deferred per task
   """
   @staticmethod
   def get(request):
@@ -1310,16 +1325,16 @@ class UpdateCountsView(View):
         return ds.places.filter(id__in=pids, review_wd = 2).count()
       else:
         return ds.places.filter(id__in=pids, review_tgn = 2).count()
-    
+
     def placecounter(th):
-      pcounts={}      
+      pcounts={}
       #for th in taskhits.all():
       pcounts['p0'] = th.filter(query_pass='pass0').values('place_id').distinct().count()
       pcounts['p1'] = th.filter(query_pass='pass1').values('place_id').distinct().count()
       pcounts['p2'] = th.filter(query_pass='pass2').values('place_id').distinct().count()
       pcounts['p3'] = th.filter(query_pass='pass3').values('place_id').distinct().count()
       return pcounts
-    
+
     updates={}
     # counts of distinct place ids w/unreviewed hits per task/pass
     # for t in ds.tasks.filter(status='SUCCESS'):
@@ -1342,13 +1357,13 @@ class UpdateCountsView(View):
         "deferred": defcount
       }
 
-    #print(json.dumps(updates, indent=2))        
+    #print(json.dumps(updates, indent=2))
     return JsonResponse(updates, safe=False)
 
 # ***
 # UPLOAD UTILS
 # ***
-def xl_tester(): 
+def xl_tester():
   fn = '/Users/karlg/repos/_whgdata/data/_source/CentralEurasia/bregel_in progress.xlsx'
   from openpyxl import load_workbook
   wb = load_workbook(filename = fn)
@@ -1382,6 +1397,4 @@ def xl_upload(request):
         row_data.append(cell.value)
       excel_data.append(row_data)
 
-    return render(request, 'datasets/xl.html', {"excel_data":excel_data}) 
-
-
+    return render(request, 'datasets/xl.html', {"excel_data":excel_data})

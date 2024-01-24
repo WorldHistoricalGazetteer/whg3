@@ -223,6 +223,7 @@ class PlaceSerializer(serializers.ModelSerializer):
   names = PlaceNameSerializer(many=True, read_only=True)
   types = PlaceTypeSerializer(many=True, read_only=True)
   geoms = PlaceGeomSerializer(many=True, read_only=True)
+  extent = serializers.ReadOnlyField()
   links = PlaceLinkSerializer(many=True, read_only=True)
   related = PlaceRelatedSerializer(many=True, read_only=True)
   whens = PlaceWhenSerializer(many=True, read_only=True)
@@ -256,7 +257,7 @@ class PlaceSerializer(serializers.ModelSerializer):
   class Meta:
     model = Place
     fields = ('url', 'id', 'title', 'src_id', 'dataset', 'ccodes', 'fclasses',
-              'names', 'types', 'geoms', 'links', 'related', 'whens',
+              'names', 'types', 'geoms', 'extent', 'links', 'related', 'whens',
               'descriptions', 'depictions', 'geo', 'minmax', 'traces'
             )
 

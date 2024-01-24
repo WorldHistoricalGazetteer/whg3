@@ -27,6 +27,9 @@ export function geomsGeoJSON(geomItemsOriginal) { // Convert array of items with
 	};
 	let idCounter = 0;
 	for (const item of geomItems) {
+		
+	  item.geom = item.geom || item.geometry;
+		
 	  const feature = {
 	    type: "Feature",
 	    geometry: {
@@ -246,9 +249,14 @@ export function initUtils(mappy) {
 	});
 
 
-	$("clearlines").click(function() {
-		mappy.removeLayer('gl_active_poly')
-		mappy.removeLayer('outline')
+	$("clearlines").click(function() {//TODO: Is this redundant?
+		try {
+			mappy.removeLayer('gl_active_poly');
+		}
+		catch(error) {
+			console.log('Layer ID error.', error);
+		}
+		//mappy.removeLayer('outline')
 	})
 
 	// for collection description only
@@ -313,7 +321,7 @@ export function minmaxer(timespans) {
 	return [Math.max.apply(null, starts), Math.max.apply(null, ends)]
 }
 
-export function get_ds_list_stats(allFeatures) {
+export function get_ds_list_stats(allFeatures, allExtents=[]) {
 	
 	let min = Infinity;
 	let max = -Infinity;
@@ -338,7 +346,23 @@ export function get_ds_list_stats(allFeatures) {
 
 	const geojson = {
 		"type": "FeatureCollection",
-		"features": allFeatures
+		"features": [...allFeatures.filter(feature => feature.geometry && feature.geometry.coordinates), // Ignore the nullGeometry features returned for vector tilesets
+		    ...allExtents.map((extent) => ({
+		      type: "Feature",
+		      geometry: {
+		        type: "Polygon",
+		        coordinates: [
+		          [
+		            [extent[0], extent[1]],
+		            [extent[2], extent[1]],
+		            [extent[2], extent[3]],
+		            [extent[0], extent[3]],
+		            [extent[0], extent[1]],
+		          ],
+		        ],
+		      }
+		    })),	
+		]
 	};
 
 	return {

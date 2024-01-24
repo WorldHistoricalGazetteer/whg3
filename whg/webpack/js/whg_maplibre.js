@@ -1,11 +1,67 @@
 // whg_maplibre.js
 
+import Layerset from './layerset';
+import { attributionString } from './utilities';
+
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 
 import '../css/maplibre-common.css';
 import '../css/style-control.css';
 import '../css/dateline.css';
+
+maplibregl.Map.prototype.nullCollection = function() {
+	return { type: 'FeatureCollection', features: [] }
+}
+
+maplibregl.Map.prototype.clearSource = function(sourceId) {
+	this.getSource(sourceId).setData(this.nullCollection());
+	return this;
+}
+
+maplibregl.Map.prototype.newSource = function (ds, fc=null) {
+	if (!!ds.tilesets && ds.tilesets.length > 0) {
+		return this.addSource(ds.ds_id, {
+			'type': 'vector',
+    		'url': `${process.env.TILEBOSS}/data/${ds.tilesets[0]}.json`
+		});
+	}
+	else {
+		if (!!ds.ds_id) { // Standard dataset or collection
+			return this.addSource(ds.ds_id, {
+				'type': 'geojson',
+				'data': ds,
+				'attribution': attributionString(ds),
+			});
+		}
+		else if (fc) { // Name and FeatureCollection provided
+			return this.addSource(ds, { 'type': 'geojson', 'data': fc });
+		}
+		else { // Only name given, add an empty FeatureCollection
+			return this.addSource(ds, { 'type': 'geojson', 'data': this.nullCollection() });			
+		}
+	}	
+};
+
+maplibregl.Map.prototype.layersets = [];
+maplibregl.Map.prototype.newLayerset = function (dc_id, source_id, paintOption) {
+	this.layersets.push(dc_id);
+    return new Layerset(this, dc_id, source_id, paintOption);
+};
+
+maplibregl.Map.prototype.highlights = [];
+maplibregl.Map.prototype.highlight = function (feature) {
+	if (this.getFeatureState({source: feature.source, id: feature.id}) !== ({ highlight: true })) {
+    	this.setFeatureState({ source: feature.source, id: feature.id }, { highlight: true });
+    	this.highlights.push({ source: feature.source, id: feature.id, geometry: feature.geometry });
+  	}
+}
+maplibregl.Map.prototype.clearHighlights = function () {
+	this.highlights.forEach(feature => {
+		this.setFeatureState({source: feature.source, id: feature.id}, { highlight: false });
+	});
+	this.highlights = [];
+}
 
 function getStyleURL(style) {
 	return `${process.env.TILEBOSS}/styles/${style}/style.json`;
@@ -307,6 +363,12 @@ class acmeStyleControl {
 	                this._map.baseStyle.sources = Object.keys(resultJSON.sources);
 	                this._map.baseStyle.layers = resultJSON.layers.map((layer) => layer.id);
 	                
+					// Set map container background colour to the value in the style metadata 
+			        const backgroundColor = resultJSON.metadata['whg:backgroundcolour'];
+			        if (backgroundColor) {
+			            this._map.getContainer().style.backgroundColor = backgroundColor;
+			        }			                
+	                
 	                const styleName = resultJSON.sources.basemap.url.split('/').pop().replace('.json', '');
 				    const basemapInput = document.querySelector(`input[name="basemap"][value="${styleName}"]`);
 			        if (basemapInput) {
@@ -442,19 +504,17 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 	// Create a modal dialog for copyright attribution and acknowledgment
 	const modal = $('<div id="map-download-dialog" title="Map Attribution"></div>');
 	const injunctionText = $('<div id="injunction-text" class="injunction-text">The following attribution must be displayed together with any use of this map image:</div>');
-	const attributionText = $('<div id="attribution-text" class="attribution-text"></div>');
+	const attributionText = $(`<div id="attribution-text" class="attribution-text">${$('.maplibregl-ctrl-attrib-inner').text()}</div>`);
 	const downloadButton = $('<button id="download" style="display: none;" disabled>...rendering...</button>');
 	const copyAttributionButton = $('<button id="copy-attribution">Acknowledge and Copy Attribution</button>');
 	const cancelButton = $('<button id="cancel">Cancel</button>');
 
-	// Add the missing paragraph
 	modal.append(injunctionText);
 	modal.append(attributionText);
 	modal.append(copyAttributionButton);
 	modal.append(downloadButton);
 	modal.append(cancelButton);
 
-	// Create a dialog with the modal content
 	modal.dialog({
 		autoOpen: false,
 		appendTo: '#map',
@@ -463,34 +523,31 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 		buttons: [],
 		closeOnEscape: false,
 		open: function() {
-			const style = map.getStyle();
-			if (style && style.sources) {
-				const sources = style.sources;
-				const attributions = [];
-				Object.keys(sources).forEach((sourceName) => {
-					const source = sources[sourceName];
-					if (source.attribution) {
-						const tempElement = document.createElement('div');
-						tempElement.innerHTML = source.attribution;
-						const displayedText = tempElement.textContent;
-						attributions.push(displayedText);
-					}
-				});
-				const fullAttributionText = attributions.join('\n');
-				attributionText.text(fullAttributionText);
-	
-				new ClipboardJS(copyAttributionButton[0], {
-				  text: function(trigger) {
-				    return $('#map-download-dialog #attribution-text').text();
-				  },
-	    		  container: document.getElementById('map-download-dialog')
-				}).on('success', function(e) {
-				  downloadButton.show();
-				}).on('error', function(e) {
-				  console.error('Unable to copy attribution text: ', e);
-				});
-			}
+			new ClipboardJS(copyAttributionButton[0], {
+			  text: function(trigger) {
+			    return attributionText.text();
+			  },
+    		  container: document.getElementById('map-download-dialog')
+			}).on('success', function(e) {
+			  console.log('Attribution text copied to clipboard.');
+			  downloadButton.show();
+			}).on('error', function(e) {
+			  console.error('Unable to copy attribution text: ', e);
+			});
 		},
+		beforeClose: function() {
+			renderMap.remove();
+			container.remove();
+		    Object.defineProperty(window, 'devicePixelRatio', {
+			    get: function () {
+			      return actualPixelRatio;
+			    },
+		    });
+			console.log('Removed container');
+		},
+		close: function() {
+			modal.remove();
+		}
 	});
 
 	const originalCanvas = map.getCanvas();
@@ -533,7 +590,6 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 		downloadButton.prop('disabled', false).text('Download');
 	});
 
-	// Download button event handler
 	downloadButton.on('click', () => {
 		const canvas = renderMap.getCanvas();
 		const imageFileName = `${fileName}.png`;
@@ -545,28 +601,13 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 		a[0].click();
 		a.remove();
 
-		cleanUp();
-	});
-
-	function cleanUp() {
-		//renderMap.remove();
-		container.remove();
-			  Object.defineProperty(window, 'devicePixelRatio', {
-			    get: function () {
-			      return actualPixelRatio;
-			    },
-			  });
 		modal.dialog('close');
-		modal.remove();
-
-	}
-
-	// Cancel button event handler
-	cancelButton.on('click', () => {
-		cleanUp();
 	});
 
-	// Open the dialog
+	cancelButton.on('click', () => {
+		modal.dialog('close');
+	});
+
 	modal.dialog('open');
 }
 
@@ -715,7 +756,7 @@ maplibregl.Map = function (options = {}) {
         basemap: [/*'natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade'*/],
         zoom: 0.2,
         center: [9.2, 33],
-        //maxBounds: [[-180, -80], [180, 85]],
+        maxBounds: [[-Infinity, -85], [Infinity, 85]],
         minZoom: 0.1,
         maxZoom: 6,
         maxPitch: 85,
@@ -743,9 +784,12 @@ maplibregl.Map = function (options = {}) {
 	}
 	
 	chosenOptions.basemaps = chosenOptions.basemap === "" ? [] : (Array.isArray(chosenOptions.basemap) ? chosenOptions.basemap : [chosenOptions.basemap]);
-
-	chosenOptions.styles = Array.isArray(chosenOptions.style) ? chosenOptions.style : [chosenOptions.style];
-	chosenOptions.style = getStyleURL(chosenOptions.styles[0]);
+	
+	chosenOptions.styles = [];
+	if (!(typeof chosenOptions.style === 'object' && chosenOptions.style !== null && !Array.isArray(chosenOptions.style))) { // style is not JSON object
+		chosenOptions.styles = Array.isArray(chosenOptions.style) ? chosenOptions.style : [chosenOptions.style];
+		chosenOptions.style = getStyleURL(chosenOptions.styles[0]);
+	}
     
     const mapInstance = new originalMapConstructor(chosenOptions);
     
@@ -756,6 +800,12 @@ maplibregl.Map = function (options = {}) {
     	const currentStyle = mapInstance.getStyle();
 		mapInstance.baseStyle.sources = Object.keys(currentStyle.sources);
 		mapInstance.baseStyle.layers = currentStyle.layers.map((layer) => layer.id);
+		
+		// Set map container background colour to the value in the style metadata 
+        const backgroundColor = currentStyle.metadata['whg:backgroundcolour'];
+        if (backgroundColor) {
+            mapInstance.getContainer().style.backgroundColor = backgroundColor;
+        }		
     
 		if (chosenOptions.fullscreenControl) mapInstance.addControl(new maplibregl.FullscreenControl(), 'top-left');
 		if (chosenOptions.downloadMapControl) mapInstance.addControl(new downloadMapControl(mapInstance), 'top-left');
