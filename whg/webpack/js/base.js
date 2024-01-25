@@ -62,7 +62,7 @@ var CDN_fallbacks = [
 		localUrl: 'bootstrap3-typeahead.min.js',
 		position: 'head'
 	},
-	{
+/*	{
 		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js',
 		localUrl: 'bootstrap-tagsinput.min.js',
 		position: 'head'
@@ -76,7 +76,7 @@ var CDN_fallbacks = [
 		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput-typeahead.css',
 		localUrl: 'bootstrap-tagsinput-typeahead.css',
 		position: 'head'
-	},
+	},*/
 	{
 		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/corejs-typeahead/1.3.3/bloodhound.min.js',
 		localUrl: 'bloodhound.min.js',

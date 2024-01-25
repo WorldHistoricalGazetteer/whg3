@@ -124,18 +124,49 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         $('#advanced_search-toggle').click(() => $('#advanced_search').slideToggle(300));
 
         $('#close-advanced_search').click(() => $('#advanced_search').slideUp(300));
-
-        $("#a_search, #d_input input").on('click keypress keyup', function(event) {
-            if (
-					(event.type === 'click' && $(event.target).is("#a_search")) || 
-					(event.type === 'keypress' && event.which === 13) 
-					// || (event.type === 'keyup' && $.trim($(this).val()).length >= 3)
-				) {
-                event.preventDefault();
-				console.log('entered value for search')
-                initiateSearch();
+        
+	    $('#search_input').on('keyup', function (event) {
+			if(event.which === 13) {
+				event.preventDefault();
+	        	initiateSearch();
+			}
+	    });
+        
+	    $('#a_search').on('click', function () {
+	        initiateSearch();
+	    });
+        
+	    $('#a_clear').on('click', function () { // Clear the input
+	        $('#search_input').val('').focus();
+	        initiateSearch();
+	    });
+	    
+        var suggestions = new Bloodhound({ // https://github.com/twitter/typeahead.js/blob/master/doc/bloodhound.md#remote
+            datumTokenizer: Bloodhound.tokenizers.whitespace,
+            queryTokenizer: Bloodhound.tokenizers.whitespace,
+            local:  [],
+            indexRemote: true,
+            remote: { // Returns simple array, like ["Glasgow","Glasgo"]
+                url: '/search/suggestions/?q=%QUERY',
+                wildcard: '%QUERY',
+                rateLimitBy: 'debounce',
+        		rateLimitWait: 100
             }
         });
+        
+        console.log(suggestions);
+		
+		$("#search_input").typeahead( // Bootstrap3 version: https://github.com/bassjobsen/Bootstrap-3-Typeahead/blob/master/README.md
+			{
+				items: 20,
+				source: suggestions.ttAdapter(),
+				matcher: function() { return true; }, // Offer all Elastic suggestions without filtering
+		  		afterSelect: function(title) {
+					console.log('selected', title);
+					initiateSearch();  
+				}
+			}
+		);
 
 		// START Ids to session (kg 2023-10-31)
 		function getCookie(name) {
