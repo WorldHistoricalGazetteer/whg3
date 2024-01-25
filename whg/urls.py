@@ -67,7 +67,7 @@ urlpatterns = [
     path('build/', TemplateView.as_view(template_name="home/build_new.html"), name="build"),
     path('pipeline/', TemplateView.as_view(template_name="home/pipeline.html"), name="pipeline"),
 
-    path('tinymce/', include('tinymce.urls')),
+    # path('tinymce/', include('tinymce.urls')),
 
     path('modal_home/', views.home_modal, name="modal-home"),
 

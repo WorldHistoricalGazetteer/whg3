@@ -55,7 +55,7 @@ def send_tileset_request(dataset_id=None, collection_id=None, tiletype='normal')
   # Send the POST request
   response = requests.post(url, headers={"Content-Type": "application/json"}, data=json.dumps(data))
 
-  # Check the response
+  # Check the response7
   print("Response:", response)
   print("Response status:", response.status_code)
   if response.status_code == 200:
@@ -357,6 +357,7 @@ def is_url(url):
     return all([result.scheme, result.netloc])
   except ValueError:
     return False
+
 """ 
   create link associated with instance of various models, so far:
   Collection, CollectionGroup, TraceAnnotation, Place 
@@ -417,50 +418,8 @@ def remove_link(request, *args, **kwargs):
   link.delete()
   return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-# experiment with MapLibre
-class LibreView(TemplateView):
-    template_name = 'datasets/libre.html'
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(LibreView, self).get_context_data(*args, **kwargs)
-        context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-        context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-        context['maptilerkey'] = settings.MAPTILER_KEY
-        context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
-        context['maptilerkey'] = settings.MAPTILER_KEY
-        context['media_url'] = settings.MEDIA_URL
-        return context
-
-class Home2b(TemplateView):
-    # template_name = 'main/home_v2a.html'
-    template_name = 'main/home_v2b.html'
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(Home2b, self).get_context_data(*args, **kwargs)
-        
-        # deliver featured datasets and collections
-        f_collections = Collection.objects.exclude(featured__isnull=True)
-        f_datasets = list(Dataset.objects.exclude(featured__isnull=True))
-        shuffle(f_datasets)
-        
-        # 2 collections, rotate datasets randomly
-        context['featured_coll'] = f_collections.order_by('featured')[:2]
-        context['featured_ds'] = f_datasets
-        context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-        context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-        context['maptilerkey'] = settings.MAPTILER_KEY
-        context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
-        context['maptilerkey'] = settings.MAPTILER_KEY
-        context['media_url'] = settings.MEDIA_URL
-        context['base_dir'] = settings.BASE_DIR
-        context['beta_or_better'] = True if self.request.user.groups.filter(
-            name__in=['beta', 'admins']).exists() else False
-        context['teacher'] = True if self.request.user.groups.filter(
-            name__in=['teacher']).exists() else False
-
-        return context
-
-
+# TODO on cron in v3?
 def statusView(request):
     context = {"status_site": "??",
                "status_database": "??",
@@ -472,17 +431,6 @@ def statusView(request):
         context["status_database"] = "up" if place.title == 'Abydos' else 'error'
     except:
         context["status_database"] = "down"
-
-    # whg index
-    # TODO: 20221203 something happened to cause
-    # ElasticsearchWarning: The client is unable to verify that the server is Elasticsearch due security privileges on the server side
-    # try:
-    #     q = {"query": {"bool": {"must": [{"match": {"place_id": "81011"}}]}}}
-    #     res1 = es.search(index=, body=q)
-    #     context["status_index"] = "up" if (res1['hits']['total'] == 1 and res1['hits']['hits'][0]['_source']['title'] == 'Abydos') \
-    #         else "error"
-    # except:
-    #     context["status_index"] = "down"
 
     # celery recon task
     try:

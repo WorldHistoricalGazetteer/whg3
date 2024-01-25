@@ -434,8 +434,7 @@ def task_emailer(tid, dslabel, name, email, counthit, totalhits, test):
   time.sleep(15)
   try:
     task = get_object_or_404(TaskResult, task_id=tid) or False
-    tasklabel = 'Wikidata' if task.task_name[6:8]=='wd' else \
-      'Getty TGN' if task.task_name.endswith('tgn') else 'WHGazetteer'
+    tasklabel = 'Wikidata' if task.task_name[6:8]=='wd' else 'WHGazetteer'
     if task.status == "FAILURE":
       fail_msg = task.result['exc_message']
       text_content="Greetings "+name+"! Unfortunately, your "+tasklabel+" reconciliation task has completed with status: "+ \
