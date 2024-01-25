@@ -31,7 +31,7 @@ from datasets.models import Dataset, Hit
 from datasets.static.hashes.parents import ccodes as cchash
 from datasets.static.hashes.qtypes import qtypes
 from elastic.es_utils import makeDoc, build_qobj, profileHit
-from utils.emailing import new_emailer
+# from utils.emailing import new_emailer
 
 #from datasets.task_utils import *
 from datasets.utils import bestParent, elapsed, getQ, \
@@ -1582,6 +1582,7 @@ def align_idx(*args, **kwargs):
 
   # email owner when complete
   # tid, dslabel, name, email, counthit, totalhits, test
+  # from utils.emailing import new_emailer
   # new_emailer(
   #   email_type='welcome',
   #   subject='Welcome to WHG',
@@ -1595,6 +1596,7 @@ def align_idx(*args, **kwargs):
   #   totalhits=total_hits,
   #   test=test
   # )
+
   task_emailer.delay(
     task_id,
     ds.label,

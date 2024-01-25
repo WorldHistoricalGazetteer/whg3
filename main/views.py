@@ -17,7 +17,7 @@ from datasets.models import Dataset
 from datasets.tasks import testAdd
 from main.models import Link
 from places.models import Place, PlaceGeom
-from utils.emailing import new_emailer
+# from utils.emailing import new_emailer
 
 from bootstrap_modal_forms.generic import BSModalCreateView
 import json
