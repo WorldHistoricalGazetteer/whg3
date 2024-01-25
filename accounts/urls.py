@@ -1,6 +1,5 @@
 from django.urls import path
 from . import views
-# under allauth.account
 from django.contrib.auth.views import * 
 
 app_name = "accounts"
@@ -10,6 +9,9 @@ urlpatterns = [
     path('login/', views.login, name='login'),
     path('logout/', views.logout, name='logout'),
     path('profile/', views.update_profile, name='profile'),
+    path('confirm_email/<str:token>/', views.confirm_email, name='confirm-email'),
+    path('confirmation_sent/', views.confirmation_sent, name='confirmation-sent'),
+    path('confirmation_success/', views.confirmation_success, name='confirmation-success'),
 
     # DEPRECATED
     # path('addusers/', views.addusers, name='add-users'),

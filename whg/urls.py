@@ -28,7 +28,6 @@ handler500 = 'main.views.custom_error_view'
 urlpatterns = [
     # path('', views.splash, name='splash'),
     path('', views.Home30a.as_view(), name="home"),
-    path('libre/', views.LibreView.as_view(), name='libre'),
 
     # apps
     path('areas/', include('areas.urls')),

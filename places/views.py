@@ -56,7 +56,7 @@ class SetCurrentResultView(View):
     place_ids = request.POST.getlist('place_ids')
     print('Setting place_ids in session:', place_ids)
     request.session['current_result'] = {'place_ids': place_ids}
-    messages.success(request, 'Place details loaded successfully!')
+    # messages.success(request, 'Place details loaded successfully!')
     return JsonResponse({'status': 'ok'})
 
 class PlacePortalView(TemplateView):
