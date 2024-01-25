@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import path, re_path, include, get_resolver
 from django.views.generic.base import TemplateView
 
+from accounts.views import profile_edit
 from main import views
 from datasets.views import PublicListsView #, DataListsView
 from resources.views import TeachingPortalView
@@ -45,7 +46,7 @@ urlpatterns = [
     path('public_data/', PublicListsView.as_view(), name='public-lists'),
 
     # profile and settings
-    path('profile/', views.profile_edit, name="profile-edit"),
+    path('profile/', profile_edit, name="profile-edit"),
 
     path('dashboard/', views.dashboard_redirect, name="dashboard"),  # redirect to user or admin
     path('dashboard_user/', views.dashboard_user_view, name="dashboard-user"),

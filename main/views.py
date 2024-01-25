@@ -118,18 +118,6 @@ class Home30a(TemplateView):
 
     return context
 
-@login_required
-def profile_edit(request):
-    if request.method == 'POST':
-        user = request.user
-        user.name = request.POST.get('name')
-        user.affiliation = request.POST.get('affiliation')
-        user.save()
-        return redirect('profile-edit')
-
-    is_admin = request.user.groups.filter(name='whg_admins').exists()
-    context={'is_admin': is_admin}
-    return render(request, 'main/profile.html', context=context)
 
 def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
   from django.db.models import Max

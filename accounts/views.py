@@ -69,6 +69,7 @@ def register(request):
   else:
     return render(request, 'registration/register.html')
 
+
 def confirm_email(request, token):
   signer = Signer()
   try:
@@ -83,11 +84,14 @@ def confirm_email(request, token):
     # Handle invalid or expired token
     return render(request, 'accounts:invalid_token.html')
 
+
 def confirmation_sent(request):
   return render(request, 'registration/confirmation_sent.html')
 
+
 def confirmation_success(request):
   return render(request, 'registration/confirmation_success.html')
+
 
 def login(request):
   if request.method == 'POST':
@@ -100,6 +104,8 @@ def login(request):
       return redirect('accounts:login')
   else:
     return render(request, 'accounts/login.html')
+
+
 # def login(request):
 #   if request.method == 'POST':
 #     user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
@@ -118,6 +124,7 @@ def logout(request):
     auth.logout(request)
     return redirect('home')
 
+
 def add_to_group(cg, member):
   print('add_to_group', cg, member)
   cguser = CollectionGroupUser.objects.create(
@@ -126,6 +133,21 @@ def add_to_group(cg, member):
     user=member
   )
   cguser.save()
+
+
+@login_required
+def profile_edit(request):
+  if request.method == 'POST':
+    user = request.user
+    user.name = request.POST.get('name')
+    user.affiliation = request.POST.get('affiliation')
+    user.save()
+    return redirect('profile-edit')
+
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
+  context = {'is_admin': is_admin}
+  return render(request, 'accounts/profile.html', context=context)
+
 
 @login_required
 @transaction.atomic
@@ -173,8 +195,6 @@ def update_profile(request):
       # 'profile_form': profile_form,
       'context': context
     })
-
-
 
 # class ValidationErrorList(Exception):
 #   def __init__(self, errors):
