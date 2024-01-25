@@ -31,6 +31,7 @@ from datasets.models import Dataset, Hit
 from datasets.static.hashes.parents import ccodes as cchash
 from datasets.static.hashes.qtypes import qtypes
 from elastic.es_utils import makeDoc, build_qobj, profileHit
+from utils.emailing import new_emailer
 
 #from datasets.task_utils import *
 from datasets.utils import bestParent, elapsed, getQ, \
@@ -1579,16 +1580,30 @@ def align_idx(*args, **kwargs):
   # create log entry and update ds status
   post_recon_update(ds, user, 'idx', test)
 
+  # tid, dslabel, name, email, counthit, totalhits, test
+  new_emailer(
+    email_type='welcome',
+    subject='Welcome to WHG',
+    from_email=settings.DEFAULT_FROM_EMAIL,
+    to_email=[user.email],
+    name=user.username,
+    tid=task_id,
+    dslabel=ds.label,
+    email=user.email,
+    counthit=count_hit,
+    totalhits=total_hits,
+    test=test
+  )
   # email owner when complete
-  task_emailer.delay(
-    task_id,
-    ds.label,
-    user.name,
-    user.email,
-    count_hit,
-    total_hits,
-    test,
-  )    
+  # task_emailer.delay(
+  #   task_id,
+  #   ds.label,
+  #   user.name,
+  #   user.email,
+  #   count_hit,
+  #   total_hits,
+  #   test,
+  # )
   print('elapsed time:', elapsed(end-start))
 
 

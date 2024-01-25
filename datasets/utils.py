@@ -1285,8 +1285,8 @@ def status_emailer(ds, task_name):
   except:
     print('status_emailer() failed on dsid', ds.id, 'how come?')
   subject, from_email = 'WHG dataset status update', settings.DEFAULT_FROM_EMAIL
-  to_email = settings.EMAIL_STATUS_TO if task_name == 'wd' \
-    else settings.EMAIL_STATUS_TO + [ds.owner.email]
+  to_email = settings.EMAIL_TO_ADMINS if task_name == 'wd' \
+    else settings.EMAIL_TO_ADMINS + [ds.owner.email]
   conn = mail.get_connection(
     host=settings.EMAIL_HOST,
     user=settings.EMAIL_HOST_USER,

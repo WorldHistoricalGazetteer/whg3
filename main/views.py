@@ -9,30 +9,24 @@ from django.shortcuts import render, get_object_or_404, redirect #, render_to_re
 from django.urls import reverse_lazy
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import TemplateView
+
+from .forms import CommentModalForm, ContactForm
 from areas.models import Area
 from collection.models import Collection, CollectionGroup, CollectionGroupUser
 from datasets.models import Dataset
 from datasets.tasks import testAdd
 from main.models import Link
 from places.models import Place, PlaceGeom
+from utils.emailing import new_emailer
+
 from bootstrap_modal_forms.generic import BSModalCreateView
-from django.core import serializers
-from django.contrib.gis.geos import GEOSGeometry
 import json
 import random
-
-from .forms import CommentModalForm, ContactForm
-es = settings.ES_CONN
-from random import shuffle
-from urllib.parse import urlparse
-import sys
-
-from django.shortcuts import render, redirect
-from django import forms
-from django.contrib import messages
-
 import requests
-import json
+import sys
+from urllib.parse import urlparse
+
+es = settings.ES_CONN
 
 # initiated by main.tasks.request_tileset()
 def send_tileset_request(dataset_id=None, collection_id=None, tiletype='normal'):
@@ -118,7 +112,6 @@ class Home30a(TemplateView):
 
     return context
 
-
 def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
   from django.db.models import Max
   # Always apply extra filters if they are provided and the model is Area
@@ -138,7 +131,6 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
       objects = objects.order_by('-recent_log_timestamp')
 
   return objects
-
 
 def area_list(request):
   # Filter that applies to all Area objects to exclude system records.
@@ -209,9 +201,6 @@ def group_list(request, role):
     'section': 'groups'
   }
   return render(request, 'lists/group_list.html', context)
-
-from django.shortcuts import redirect
-from django.contrib.auth.decorators import login_required
 
 # get's the correct view based on user group
 @login_required
@@ -334,7 +323,6 @@ def home_modal(request):
   print('home_modal() url:', url)
   return render(request, url, context)
 
-
 def custom_error_view(request, exception=None):
     print('error request', request.GET.__dict__)
     return render(request, "main/500.html", {'error':'fubar'})
@@ -406,7 +394,6 @@ def remove_link(request, *args, **kwargs):
   link.delete()
   return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-
 # TODO on cron in v3?
 def statusView(request):
     context = {"status_site": "??",
@@ -428,6 +415,55 @@ def statusView(request):
         context["status_tasks"] = "down"
 
     return render(request, "main/status.html", {"context": context})
+
+def contact_view(request):
+  print('contact request.GET', request.GET)
+  sending_url = request.GET.get('from')
+  if request.method == 'GET':
+    form = ContactForm()
+  else:
+    form = ContactForm(request.POST)
+    if form.is_valid():
+      human = True
+      name = form.cleaned_data['name']
+      username = form.cleaned_data['username']  # hidden input
+      user_subject = form.cleaned_data['subject']
+      user_email = form.cleaned_data['from_email']
+      user_message = form.cleaned_data['message']
+      # message = (name + ' ('+username+'; '+user_email+'), on the subject of ' + user_subject +
+      #            ' says: \n\n'+form.cleaned_data['message'])
+      try:
+        # deliver form message to admins
+        print('EMAIL_TO_ADMINS', settings.EMAIL_TO_ADMINS)
+        new_emailer(
+          email_type='contact_form',
+          subject='Contact form submission',
+          from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt to admins
+          to_email=settings.EMAIL_TO_ADMINS,  # to editor
+          reply_to=[user_email],  # reply-to sender
+          name=name,  # user's name
+          username=username,  # user's username
+          user_subject=user_subject,  # user-submitted subject
+          user_email=user_email,  # user's email
+          user_message=user_message,  # user-submitted message
+        )
+        # deliver 'received' reply to sender
+        new_emailer(
+          email_type='contact_reply',
+          subject="Message to WHG received",  # got it
+          from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt
+          to_email=[user_email],  # to sender
+          reply_to=[settings.DEFAULT_FROM_EDITORIAL],  # reply-to editorial
+          name=name,  # user's name
+          user_subject=user_subject,  # user-submitted subject
+        )
+      except BadHeaderError:
+        return HttpResponse('Invalid header found.')
+      return redirect('/success?return=' + sending_url if sending_url else '/')
+    else:
+      print('not valid, why?')
+
+  return render(request, "main/contact.html", {'form': form, 'user': request.user})
 
 
 def contactView(request):
