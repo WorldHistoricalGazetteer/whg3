@@ -95,7 +95,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		    initiateSearch();
 		}, 300); 
     
-		updateSearchState(true);
+		updateSearchState(true); // Retrieve search options from LocalStorage
 
 		if (!!mapParameters.temporalControl) {
 			let datelineContainer = document.createElement('div');
@@ -136,9 +136,14 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 	        initiateSearch();
 	    });
         
-	    $('#a_clear').on('click', function () { // Clear the input
+	    $('#a_clear').on('click', function () { // Clear the input, results, and map
 	        $('#search_input').val('').focus();
-	        initiateSearch();
+			$('#search_results').empty();
+	        mappy
+	        .getSource('places')
+	        .setData(mappy.nullCollection());
+	        mappy.reset();
+			localStorage.removeItem('last_results');
 	    });
 	    
         var suggestions = new Bloodhound({ // https://github.com/twitter/typeahead.js/blob/master/doc/bloodhound.md#remote
@@ -154,13 +159,16 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
             }
         });
         
-        console.log(suggestions);
+        function wildcardMatcher(item, query) { // Need to use same filter as is used in Elastic search, because previous results are being kept with the `indexRemote` option
+		    var wildcardRegex = new RegExp('.*' + Bloodhound.tokenizers.whitespace(query).join('.*') + '.*', 'i');
+		    return wildcardRegex.test(item);
+		}
 		
 		$("#search_input").typeahead( // Bootstrap3 version: https://github.com/bassjobsen/Bootstrap-3-Typeahead/blob/master/README.md
 			{
 				items: 20,
 				source: suggestions.ttAdapter(),
-				matcher: function() { return true; }, // Offer all Elastic suggestions without filtering
+				matcher: wildcardMatcher,
 		  		afterSelect: function(title) {
 					console.log('selected', title);
 					initiateSearch();  
