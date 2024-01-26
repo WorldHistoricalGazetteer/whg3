@@ -290,3 +290,15 @@ input[type=range].slider.to::-moz-range-thumb {
   opacity: 0;
   pointer-events: none!important;
 }
+
+#dateline .fas.fa-question-circle.linky {
+	position: absolute;
+    z-index: 1;
+    top: 23px;
+    left: 20px;
+    cursor: pointer;
+}
+
+#dateline.expanded .fas.fa-question-circle.linky {
+	display: none;
+}

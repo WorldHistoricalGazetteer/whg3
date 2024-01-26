@@ -8,7 +8,7 @@
 
 @font-face {
   font-family: 'Raleway';
-  src: local('Raleway Bold'), url('../../static/webpack/fonts/Raleway/Raleway-Bold.ttf') format('truetype');
+  src: local('Raleway SemiBold'), url('../../static/webpack/fonts/Raleway/Raleway-SemiBold.ttf') format('truetype');
   font-weight: 600;
   font-style: normal;
 }
@@ -22,7 +22,7 @@
 
 @font-face {
   font-family: 'Raleway';
-  src: local('Raleway Bold Italic'), url('../../static/webpack/fonts/Raleway/Raleway-BoldItalic.ttf') format('truetype');
+  src: local('Raleway SemiBold Italic'), url('../../static/webpack/fonts/Raleway/Raleway-SemiBoldItalic.ttf') format('truetype');
   font-weight: 600;
   font-style: italic;
 }
@@ -34,7 +34,12 @@
   font-style: normal;
 }
 
-.raleway { font-family: 'Raleway', sans-serif; }
+.raleway {font-family: 'Raleway', sans-serif;}
+
+body {font-family: sans-serif;}
+.fonts-loaded body {
+  font-family: 'Raleway', sans-serif;
+}
 
 .container a {text-decoration: none !important;}
 

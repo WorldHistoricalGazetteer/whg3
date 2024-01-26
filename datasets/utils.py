@@ -434,7 +434,7 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     null_geometry = False
     if not tileset and not ignore_tilesets:
 
-        tiler_url = "http://tiles.whgazetteer.org:3000/tiler"
+        tiler_url = os.environ.get('TILER_URL') # Must be set in /.env/.dev-whg3
         response = requests.post(tiler_url, json={"getTilesets": {"type": "datasets", "id": dsid}})
 
         if response.status_code == 200:
