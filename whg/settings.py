@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'bootstrap_modal_forms',
     'captcha',
     'celery_progress',
+    'debug_toolbar',
     'django_celery_results',
     'django_extensions',
     'django_filters',
@@ -77,6 +78,7 @@ MIDDLEWARE = [
   'django.middleware.security.SecurityMiddleware',
   'django_user_agents.middleware.UserAgentMiddleware',
   'livereload.middleware.LiveReloadScript', # https://github.com/tjwalch/django-livereload-server
+  'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'whg.urls'
