@@ -5,9 +5,14 @@ export class CountryCacheFeatureCollection {
 		this.countryCache = this.loadFromLocalStorage();
 	}
 
-	loadFromLocalStorage() {
+	// loadFromLocalStorage() {
+	// 	const storedData = localStorage.getItem('countryCache');
+	// 	return storedData ? JSON.parse(storedData) : mappy.nullCollection();
+	// }
+
+  loadFromLocalStorage() {
 		const storedData = localStorage.getItem('countryCache');
-		return storedData ? JSON.parse(storedData) : mappy.nullCollection();
+		return storedData ? JSON.parse(storedData) : { type: 'FeatureCollection', features: [] };
 	}
 
 	saveToLocalStorage() {

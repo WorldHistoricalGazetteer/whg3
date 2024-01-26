@@ -34,8 +34,10 @@ _as of 10 Jan 2024_
 
 ### tests/test_wdlocal.py
 #### 6. [ReconWD](tests/test_wdlocal.py)
-    - testReconWDlocal (fails)
+    - test_ReconWDlocal (fails)
 
-
+### tests/test_tilesets.py
+#### 7. [TestSendTilesetRequestIntegration](tests/test_wdlocal.py)
+    - test_send_tileset_request
 
 

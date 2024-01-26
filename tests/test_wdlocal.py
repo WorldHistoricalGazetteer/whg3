@@ -26,7 +26,7 @@ class ReconWD(SimpleTestCase):
 #class ReconWD(TestCase):
   #databases = ['default']
   
-  def testReconWDlocal(self):
+  def test_ReconWDlocal(self):
     [nohits, count_hits, count_nohits] = [[],0,0]
     hit_parade = {"summary": {}, "hits": []}
 
