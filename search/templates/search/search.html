@@ -137,6 +137,9 @@
 			</div>
   </div>
   {% csrf_token %} <!-- Used for Django POST requests -->
+  <script type="text/javascript">
+	const dropdown_data = {{ dropdown_data|safe }};  // Used for spatial filter
+  </script>
   
 {% endblock %}
 

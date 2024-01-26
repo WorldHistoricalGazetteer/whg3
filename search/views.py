@@ -13,6 +13,7 @@ from collection.models import Collection
 from datasets.models import Dataset, Hit
 from datasets.tasks import normalize, get_bounds_filter
 from places.models import Place, PlaceGeom
+from utils.country_feature_collection import get_country_feature_collection
 
 def typeahead_suggester(q):
     indices = ['whg', 'pub']
@@ -61,6 +62,7 @@ class SearchPageView(TemplateView):
     context['search_params'] = self.request.session.get('search_params')
     context['es_whg'] = settings.ES_WHG
     #context['bboxes'] = bboxes
+    context['dropdown_data'] = get_country_feature_collection() # Used for spatial filter
     return context
 
 def fetchArea(request):

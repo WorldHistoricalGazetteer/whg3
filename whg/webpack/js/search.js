@@ -4,6 +4,7 @@ import Dateline from './dateline';
 import throttle from 'lodash/throttle';
 import { geomsGeoJSON } from './utilities';
 import { ccode_hash } from '../../../static/js/parents';
+import { CountryCacheFeatureCollection } from  './countryCache';
 import '../css/dateline.css';
 import '../css/search.css';
 
@@ -16,6 +17,7 @@ let initialTypeCounts = {};
 let initialCountryCounts = {};
 let draw;
 let $drawControl;
+let countryCache = new CountryCacheFeatureCollection();
 
 let mapParameters = {
 	maxZoom: 13,
@@ -45,6 +47,10 @@ function waitMapLoad() {
                     mappy.setLayoutProperty(layer.id, 'visibility', 'none');
                 }
             });
+            
+            mappy
+            .newSource('countries')  // Add empty source
+			.newLayerset('countries', 'countries', 'countries');
             
 		    mappy
 		    .newSource('places') // Add empty source
@@ -172,6 +178,29 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		  		afterSelect: function(title) {
 					console.log('selected', title);
 					initiateSearch();  
+				}
+			}
+		);
+		
+		$("#filter_spatial #input_area").typeahead(
+			{
+				source: [...dropdown_data[0].children, ...dropdown_data[1].children], // Concatenate regions and countries
+				displayText: item => item.text,
+				autoSelect: true,
+		  		afterSelect: function(item) {
+					const countries = item.ccodes || [item.id];
+			        countryCache.filter(countries).then(filteredCountries => {
+			            mappy.getSource('countries').setData(filteredCountries);
+			            try {
+			                mappy.fitBounds(bbox(filteredCountries), {
+			                    padding: 30,
+			                    maxZoom: 7,
+			                    duration: 1000,
+			                });
+			            } catch {
+			                mappy.reset();
+			            }
+			        });	
 				}
 			}
 		);
