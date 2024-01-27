@@ -129,7 +129,8 @@ class SearchView(View):
         [int] start: filter for timespans
         [int] end: filter for timespans
         [string] undated: text of boolean for inclusion of undated results        
-        [string] bounds: text of JSON geometry
+        [string] bounds: text of JSON geometry     
+        [string] countries: text of JSON cccodes array
     """
     qstr = request.GET.get('qstr') or request.POST.get('qstr')
     # idx = request.GET.get('idx')
@@ -139,6 +140,7 @@ class SearchView(View):
     end = request.GET.get('end') or request.POST.get('end')
     undated = request.GET.get('undated') or request.POST.get('undated')
     bounds = request.GET.get('bounds') or request.POST.get('bounds')
+    countries = request.GET.get('countries') or request.POST.get('countries')
     
     params = {
       "qstr":qstr,
@@ -150,6 +152,7 @@ class SearchView(View):
       "end": end,
       "undated": undated,
       "bounds": bounds,
+      "countries": countries # Array of country codes 
     }
     request.session["search_params"] = params 
     print('search_params set', params)
@@ -201,6 +204,15 @@ class SearchView(View):
                     }
                 })
           q['query']['bool']["filter"]={"bool": {"should": filters}}
+          
+    if countries:
+        if request.method == 'GET':
+            countries=json.loads(countries)
+        q['query']['bool']['must'].append({
+            "terms": {
+                "ccodes": countries
+            }
+        })    
 
     print('query q in search', q)
     suggestions = suggester(q, [idx, 'pub'])

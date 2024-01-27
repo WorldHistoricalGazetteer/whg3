@@ -154,7 +154,7 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(select2_CDN_fallbac
 	    });
     
 	    function updateAreaMap() {
-	    	const countries = countryDropdown.select2('data').map(country => country.id);
+	    	const countries = $('#countryDropdown').select2('data').map(country => country.id);
 	        countryCache.filter(countries).then(filteredCountries => {
 	            mappy.getSource('countries').setData(filteredCountries);
 	
@@ -745,7 +745,8 @@ function gatherOptions() {
 		"start": window.dateline.open ? window.dateline.fromValue : '', 
 		"end": window.dateline.open ? window.dateline.toValue : '',
 		"undated": window.dateline.open ? window.dateline.includeUndated : true,
-		"bounds": area_filter
+		"bounds": area_filter,
+		"countries": $('#countryDropdown').select2('data').map(country => country.id) // Array of country codes
 	}
 	return options;
 }
