@@ -17,7 +17,7 @@ from datasets.models import Dataset
 from datasets.tasks import testAdd
 from main.models import Link
 from places.models import Place, PlaceGeom
-# from utils.emailing import new_emailer
+from utils.emailing import new_emailer
 
 from bootstrap_modal_forms.generic import BSModalCreateView
 import json
@@ -289,31 +289,6 @@ def dashboard_admin_view(request):
   # return render(request, 'main/dashboard_admin.html', {'initial_section': section})
   return render(request, 'main/dashboard_admin.html', context)
 
-# first take at a dashboard for all users
-def dashboard_view(request):
-  is_admin = request.user.groups.filter(name='whg_admins').exists()
-  is_leader = request.user.groups.filter(name='group_leaders').exists()
-  user_groups = [group.name for group in request.user.groups.all()]
-
-  user_datasets_count = Dataset.objects.filter(owner=request.user.id).count()
-  user_collections_count = Collection.objects.filter(owner=request.user).count()
-
-  section = request.GET.get('section', 'datasets')
-
-  datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
-  collections = get_objects_for_user(Collection, request.user, {'owner': request.user}, is_admin)
-
-  context = {
-    'datasets': datasets,
-    'collections': collections,
-    'has_datasets': user_datasets_count > 0,
-    'has_collections': user_collections_count > 0,
-    'section': section,
-    'user_groups': user_groups,
-    'is_admin': is_admin,
-    'is_leader': is_leader,
-  }
-  return render(request, 'main/dashboard.html', context)
 
 @csrf_exempt
 def home_modal(request):
@@ -416,22 +391,24 @@ def statusView(request):
 
     return render(request, "main/status.html", {"context": context})
 
+# {'name': ['Test User'],
+#  'username': ['testuser'],
+#  'subject': ['Test Subject'],
+#  'from_email': ['testuser@example.com'],
+#  'message': ['Test Message']}
 def contact_view(request):
-  print('contact request.GET', request.GET)
+  print('contact_view() request.POST', request.POST)
   sending_url = request.GET.get('from')
   if request.method == 'GET':
     form = ContactForm()
   else:
     form = ContactForm(request.POST)
     if form.is_valid():
-      human = True
       name = form.cleaned_data['name']
-      username = form.cleaned_data['username']  # hidden input
+      username = form.cleaned_data.get('username', None)
       user_subject = form.cleaned_data['subject']
       user_email = form.cleaned_data['from_email']
       user_message = form.cleaned_data['message']
-      # message = (name + ' ('+username+'; '+user_email+'), on the subject of ' + user_subject +
-      #            ' says: \n\n'+form.cleaned_data['message'])
       try:
         # deliver form message to admins
         print('EMAIL_TO_ADMINS', settings.EMAIL_TO_ADMINS)
@@ -461,38 +438,38 @@ def contact_view(request):
         return HttpResponse('Invalid header found.')
       return redirect('/success?return=' + sending_url if sending_url else '/')
     else:
-      print('not valid, why?')
+      print('Form errors from contact_view():', form.errors)
 
   return render(request, "main/contact.html", {'form': form, 'user': request.user})
 
 
-def contactView(request):
-    print('contact request.GET', request.GET)
-    sending_url = request.GET.get('from')
-    if request.method == 'GET':
-        form = ContactForm()
-    else:
-        form = ContactForm(request.POST)
-        if form.is_valid():
-            human = True
-            name = form.cleaned_data['name']
-            username = form.cleaned_data['name'] # hidden input
-            subject = form.cleaned_data['subject']
-            from_email = form.cleaned_data['from_email']
-            message = name +'('+from_email+'), on the subject of '+subject+' says: \n\n'+form.cleaned_data['message']
-            subject_reply = "WHG message received"
-            message_reply = '\nWe received your message concerning "'+subject+'" and will respond soon.\n\n regards,\nThe WHG project team'
-            try:
-                send_mail(subject, message, from_email, ["karl@kgeographer.org"])
-                send_mail(subject_reply, message_reply, 'karl@kgeographer.org', [from_email])
-            except BadHeaderError:
-                return HttpResponse('Invalid header found.')
-            return redirect('/success?return='+sending_url if sending_url else '/')
-            # return redirect(sending_url)
-        else:
-            print('not valid, why?')
-                
-    return render(request, "main/contact.html", {'form': form, 'user': request.user})
+# def contactView(request):
+#     print('contact request.GET', request.GET)
+#     sending_url = request.GET.get('from')
+#     if request.method == 'GET':
+#         form = ContactForm()
+#     else:
+#         form = ContactForm(request.POST)
+#         if form.is_valid():
+#             human = True
+#             name = form.cleaned_data['name']
+#             username = form.cleaned_data['name'] # hidden input
+#             subject = form.cleaned_data['subject']
+#             from_email = form.cleaned_data['from_email']
+#             message = name +'('+from_email+'), on the subject of '+subject+' says: \n\n'+form.cleaned_data['message']
+#             subject_reply = "WHG message received"
+#             message_reply = '\nWe received your message concerning "'+subject+'" and will respond soon.\n\n regards,\nThe WHG project team'
+#             try:
+#                 send_mail(subject, message, from_email, ["karl@kgeographer.org"])
+#                 send_mail(subject_reply, message_reply, 'karl@kgeographer.org', [from_email])
+#             except BadHeaderError:
+#                 return HttpResponse('Invalid header found.')
+#             return redirect('/success?return='+sending_url if sending_url else '/')
+#             # return redirect(sending_url)
+#         else:
+#             print('not valid, why?')
+#
+#     return render(request, "main/contact.html", {'form': form, 'user': request.user})
 
 
 def contactSuccessView(request, *args, **kwargs):

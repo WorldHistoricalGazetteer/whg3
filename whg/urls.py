@@ -72,7 +72,7 @@ urlpatterns = [
     path('modal_home/', views.home_modal, name="modal-home"),
 
     path('comment/<int:rec_id>', views.CommentCreateView.as_view(), name='comment-create'),
-    path('contact/', views.contactView, name='contact'),
+    path('contact/', views.contact_view, name='contact'),
     path('success/', views.contactSuccessView, name='success'),
     path('status/', views.statusView, name='status'),
     path('create_link/', views.create_link, name="create-link"),
