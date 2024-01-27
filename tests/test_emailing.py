@@ -1,10 +1,82 @@
+# ./manage.py test --settings=tests.settings tests.test_emailing.EmailerTestCase
+
 from django.test import TestCase
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
-User = get_user_model()
 from datasets.models import Dataset
-# ./manage.py test --settings=tests.settings tests.test_emailing.EmailerTestCase
+
+User = get_user_model()
+
+class DatasetSignalTestCase(TestCase):
+    def setUp(self):
+        # Create a user and a dataset for testing
+        self.user = User.objects.create_user(username='testuser', name="Test User", email='testuser@example.com', password='testpass')
+        self.dataset = Dataset.objects.create(owner=self.user, title='Test Dataset', label='test_dataset')
+
+    def test_send_new_dataset_email(self):
+        # Check if an email was sent
+        self.assertEqual(len(mail.outbox), 1)
+
+        # Check the subject of the email
+        self.assertEqual(mail.outbox[0].subject, 'New Dataset Created')
+
+        # Check recipient is admins
+        self.assertEqual(mail.outbox[0].to, settings.EMAIL_TO_ADMINS)
+
+        # Clear the outbox
+        mail.outbox = []
+
+    def test_handle_public_flag(self):
+      # Clear the outbox
+      mail.outbox = []
+
+      # Change the public status of the dataset
+      self.dataset.public = True
+      self.dataset.save()
+
+      # Check if an email was sent
+      self.assertEqual(len(mail.outbox), 1)
+
+      # Check the subject of the email
+      self.assertEqual(mail.outbox[0].subject, 'Your WHG dataset has been published')
+
+      # Check recipient is owner
+      self.assertIn(self.user.email, mail.outbox[0].to)
+
+    def test_handle_wdcomplete(self):
+      # Clear the outbox
+      mail.outbox = []
+
+      # Change the ds_status of the dataset
+      self.dataset.ds_status = 'wd-complete'
+      self.dataset.save()
+
+      # Check if an email was sent
+      self.assertGreaterEqual(len(mail.outbox), 1)
+
+      # Check the subject of the email
+      self.assertEqual(mail.outbox[0].subject, 'WHG reconciliation review complete')
+
+      # Check recipient is admins
+      self.assertEqual(mail.outbox[0].to, [settings.EMAIL_TO_ADMINS])
+
+    def test_handle_indexed(self):
+      # Clear the outbox
+      mail.outbox = []
+
+      # Change the ds_status of the dataset
+      self.dataset.ds_status = 'indexed'
+      self.dataset.save()
+
+      # Check if an email was sent
+      self.assertGreaterEqual(len(mail.outbox), 1)
+
+      # Check the subject of the email
+      self.assertEqual(mail.outbox[0].subject, 'Your WHG dataset is fully indexed')
+
+      # Check recipient is owner
+      self.assertIn(self.user.email, mail.outbox[0].to)
 
 class EmailerTestCase(TestCase):
   def setUp(self):
@@ -65,23 +137,34 @@ class EmailerTestCase(TestCase):
     # Check the recipient of the email
     self.assertEqual(mail.outbox[0].to, settings.EMAIL_TO_ADMINS)
 
-  # def test_dataset_wdcomplete_email(self):
-  #   """ reconciliation to wikidata complete: 'wd-complete' """
-  #   print('test_dataset_wdcomplete_email')
-  #   initial_outbox_length = len(mail.outbox)
-  #
-  #   # Set the dataset to private
-  #   self.dataset.status = 'wd-complete'
-  #   self.dataset.save()
-  #
-  #   # email sent?
-  #   self.assertEqual(len(mail.outbox), initial_outbox_length + 1)
-  #
-  #   # Check subject
-  #   self.assertEqual(mail.outbox[-1].subject, 'WHG reconciliation review complete')
-  #
-  #   # recipient is dataset owner
-  #   self.assertIn(self.user.email, mail.outbox[-1].to)
+  def print_email_contents(self, email):
+    print("----")
+    print("Subject:", email.subject)
+    print("Body:", email.body)
+    print("----")
+
+  def test_dataset_wdcomplete_email(self):
+    """ reconciliation to wikidata complete: 'wd-complete' """
+    initial_outbox_length = len(mail.outbox)
+    print('in test_dataset_wdcomplete_email, initial_outbox_length', initial_outbox_length)
+    for email in mail.outbox:
+      self.print_email_contents(email)
+    # Set the dataset to private
+    self.dataset.status = 'wd-complete'
+    self.dataset.save()
+
+    # email sent?
+    print('len(mail.outbox)', len(mail.outbox))
+    for email in mail.outbox:
+      self.print_email_contents(email)
+
+    self.assertEqual(len(mail.outbox), initial_outbox_length + 1)
+
+    # Check subject
+    self.assertEqual(mail.outbox[-2].subject, 'WHG reconciliation review complete')
+
+    # recipient is dataset owner
+    self.assertIn(self.user.email, mail.outbox[-1].to)
   #
   # def test_dataset_published_email(self):
   #   """ dataset published (public set to True) """

@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=Dataset)
 def send_new_dataset_email(sender, instance, created, **kwargs):
+  # print('send_new_dataset_email: created?', created)
   try:
     if created:
       if not instance.owner.groups.filter(name='whg_team').exists():
@@ -35,14 +36,14 @@ def send_new_dataset_email(sender, instance, created, **kwargs):
 # if public changes to False, unindex from pub, notify owner
 @receiver(pre_save, sender=Dataset)
 def handle_public_flag(sender, instance, **kwargs):
+  # print('\nhandle_public_flag: public?', instance.public)
   from .tasks import index_to_pub, unindex_from_pub
   from main.tasks import request_tileset
   threshold = 2000
   if instance.id:  # Check if it's an existing instance, not new
     old_instance = sender.objects.get(pk=instance.pk)
-    print('handle_public_status_change old_instance', old_instance)
-
     if old_instance.public != instance.public:  # There's a change in 'public' status
+      # print('handle_public_flag: changed', old_instance.public, instance.public)
       # notify the owner
       if instance.public:
         new_emailer(
@@ -87,14 +88,14 @@ def handle_public_flag(sender, instance, **kwargs):
 # notify the owner when status changes to 'wd-complete' or 'indexed'
 @receiver(pre_save, sender=Dataset)
 def handle_status_change(sender, instance, **kwargs):
-  print('ds_status, public:', instance.ds_status, instance.public)
+  # print('\n\nhandle_status_change: status, is public?:', instance.ds_status, instance.public)
   try:
     if instance.pk is not None:  # Check if it's an existing instance, not new
       old_instance = sender.objects.get(pk=instance.pk)
       # Check whether 'ds_status' has been changed to 'wd-complete'
       # and notify the owner, bcc to editorial
       if old_instance.ds_status != instance.ds_status and instance.ds_status == 'wd-complete':
-        print('send_dataset_email: ds_status changed to wd-complete')
+        # print('handle_status_change: ds_status changed to wd-complete')
         new_emailer(
           email_type='wikidata_recon_complete',
           subject='WHG reconciliation review complete',
@@ -110,7 +111,7 @@ def handle_status_change(sender, instance, **kwargs):
         )
       # Check whether 'ds_status' has been changed to 'indexed'
       if old_instance.ds_status != instance.ds_status and instance.ds_status == 'indexed':
-        print('send_dataset_email: ds_status changed to indexed')
+        # print('handle_status_change: ds_status changed to indexed')
         new_emailer(
           email_type='dataset_indexed',
           subject='Your WHG dataset is fully indexed',
