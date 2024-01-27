@@ -114,6 +114,8 @@ def suggester(q, indices):
 class SearchView(View):
   @staticmethod
   def handle_request(request):
+    # gets calling ip, useful for djang-debug-toolbar
+    # print(' SearchView() request.META', request.META['REMOTE_ADDR'])
     print('SearchView() request',request.GET or request.POST)
     print('SearchView() bounds',request.GET.get('fclasses') or request.POST.get('fclasses'))
     """

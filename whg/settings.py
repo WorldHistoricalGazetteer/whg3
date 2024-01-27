@@ -31,7 +31,8 @@ INSTALLED_APPS = [
     'bootstrap_modal_forms',
     'captcha',
     'celery_progress',
-    'debug_toolbar',
+    # uncomment for debug toolbar
+    # 'debug_toolbar',
     'django_celery_results',
     'django_extensions',
     'django_filters',
@@ -68,6 +69,8 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'users.User'
 
 MIDDLEWARE = [
+  # uncomment for debug toolbar
+  # 'debug_toolbar.middleware.DebugToolbarMiddleware',
   'django.contrib.sessions.middleware.SessionMiddleware',
   'django.contrib.auth.middleware.AuthenticationMiddleware',
   'django.contrib.messages.middleware.MessageMiddleware',
@@ -78,7 +81,7 @@ MIDDLEWARE = [
   'django.middleware.security.SecurityMiddleware',
   'django_user_agents.middleware.UserAgentMiddleware',
   'livereload.middleware.LiveReloadScript', # https://github.com/tjwalch/django-livereload-server
-  'debug_toolbar.middleware.DebugToolbarMiddleware',
+
 ]
 
 ROOT_URLCONF = 'whg.urls'
