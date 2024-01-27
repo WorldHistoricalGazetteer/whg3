@@ -2,6 +2,7 @@
 
 import Dateline from './dateline';
 import throttle from 'lodash/throttle';
+import debounce from 'lodash/debounce';
 import { geomsGeoJSON } from './utilities';
 import { ccode_hash } from '../../../static/js/parents';
 import { CountryCacheFeatureCollection } from  './countryCache';
@@ -87,7 +88,7 @@ function waitDocumentReady() {
     });
 }
 
-Promise.all([waitMapLoad(), waitDocumentReady()])
+Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(select2_CDN_fallbacks.map(loadResource))])
     .then(() => {
 		
 		draw = mappy._draw;
@@ -151,59 +152,83 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 	        mappy.reset();
 			localStorage.removeItem('last_results');
 	    });
+    
+	    function updateAreaMap() {
+	    	const countries = countryDropdown.select2('data').map(country => country.id);
+	        countryCache.filter(countries).then(filteredCountries => {
+	            mappy.getSource('countries').setData(filteredCountries);
+	
+	            try {
+	                mappy.fitBounds(bbox(filteredCountries), {
+	                    padding: 30,
+	                    maxZoom: 7,
+	                    duration: 1000,
+	                });
+	            } catch {
+	                mappy.reset();
+	            }
+	        });
+	    }
+	
+		const debouncedUpdates = debounce(() => { // Uses imported lodash function
+		    updateAreaMap();
+		}, 400);    
+		
+	    const countryDropdown = $('#countryDropdown');
+	    countryDropdown.select2({
+	        data: dropdown_data,
+	        width: 'element', // Use CSS rules
+	        placeholder: $(this).data('placeholder'),
+	        closeOnSelect: false,
+	        allowClear: false,
+	    }).on('select2:selecting', function (e) {
+	        if(!!e.params.args.data['ccodes']) { // Region selected: add countries from its ccodes
+	        	e.preventDefault();
+	        	let ccodes = Array.from(new Set([...e.params.args.data['ccodes'], ...countryDropdown.select2('data').map(country => country.id)]));
+	        	countryDropdown.val(ccodes).trigger('change');
+	        }
+	    }).on('change', function (e) {
+			debouncedUpdates();
+	    });
 	    
-        var suggestions = new Bloodhound({ // https://github.com/twitter/typeahead.js/blob/master/doc/bloodhound.md#remote
-            datumTokenizer: Bloodhound.tokenizers.whitespace,
-            queryTokenizer: Bloodhound.tokenizers.whitespace,
-            local:  [],
-            indexRemote: true,
-            remote: { // Returns simple array, like ["Glasgow","Glasgo"]
-                url: '/search/suggestions/?q=%QUERY',
-                wildcard: '%QUERY',
-                rateLimitBy: 'debounce',
-        		rateLimitWait: 100
-            }
-        });
-        
-        function wildcardMatcher(item, query) { // Need to use same filter as is used in Elastic search, because previous results are being kept with the `indexRemote` option
+		$('#clearCountryDropdown').on('click', function() {
+	        countryDropdown.val(null).trigger('change');
+	    });
+		
+/*		// Spatial search implementation using typeahead - single result selection. Tagsinput not found to be compatible with software versions.
+        function wildcardMatcher(item, query) {
 		    var wildcardRegex = new RegExp('.*' + Bloodhound.tokenizers.whitespace(query).join('.*') + '.*', 'i');
 		    return wildcardRegex.test(item);
 		}
 		
-		$("#search_input").typeahead( // Bootstrap3 version: https://github.com/bassjobsen/Bootstrap-3-Typeahead/blob/master/README.md
-			{
-				items: 20,
-				source: suggestions.ttAdapter(),
-				matcher: wildcardMatcher,
-		  		afterSelect: function(title) {
-					console.log('selected', title);
-					initiateSearch();  
-				}
-			}
-		);
-		
-		$("#filter_spatial #input_area").typeahead(
-			{
-				source: [...dropdown_data[0].children, ...dropdown_data[1].children], // Concatenate regions and countries
-				displayText: item => item.text,
-				autoSelect: true,
-		  		afterSelect: function(item) {
-					const countries = item.ccodes || [item.id];
-			        countryCache.filter(countries).then(filteredCountries => {
-			            mappy.getSource('countries').setData(filteredCountries);
-			            try {
-			                mappy.fitBounds(bbox(filteredCountries), {
-			                    padding: 30,
-			                    maxZoom: 7,
-			                    duration: 1000,
-			                });
-			            } catch {
-			                mappy.reset();
-			            }
-			        });	
-				}
-			}
-		);
+		$('#filter_spatial input.typeahead').typeahead({
+			highlight: true,
+			hint: true,
+			minLength: 1,
+		},
+		{
+			name: 'Countries',
+			display: item => item.text,
+			source: function (query, sync) {
+				const filteredData = [...dropdown_data[0].children, ...dropdown_data[1].children]
+		        .filter(item => wildcardMatcher(item.text, query));
+				sync(filteredData);
+		    }
+		}).on('typeahead:select', function(e, item) {
+			const countries = item.ccodes || [item.id];
+	        countryCache.filter(countries).then(filteredCountries => {
+	            mappy.getSource('countries').setData(filteredCountries);
+	            try {
+	                mappy.fitBounds(bbox(filteredCountries), {
+	                    padding: 30,
+	                    maxZoom: 7,
+	                    duration: 1000,
+	                });
+	            } catch {
+	                mappy.reset();
+	            }
+	        });	
+		});*/
 
 		// START Ids to session (kg 2023-10-31)
 		function getCookie(name) {

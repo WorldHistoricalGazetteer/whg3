@@ -70,7 +70,13 @@
                  title="Spatial filter" data-content="" tabindex="0" data-trigger="focus">
               <i class="fas fa-question-circle linky"></i></a></span>
             </p>
-            <input id="input_area" type="text" size="25" placeholder="Region, country, study area" />
+            <!-- <input id="input_area" class="typeahead" autocomplete="off" type="text" size="25" placeholder="Regions/Countries" /> -->
+            <div class="input-group mb-3">
+			    <select id="countryDropdown" class="form-select" data-type="country" data-placeholder="Country filter(s)" multiple></select>
+			    <button class="btn btn-outline-secondary clear-button" type="button" id="clearCountryDropdown">Clear</button>
+			</div>
+            
+            
           </div>
 				</div>
 	      <div id="result_facets" class="p-1 hidden bg-light">

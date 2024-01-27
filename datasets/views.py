@@ -54,7 +54,7 @@ from .tasks import align_wdlocal, align_idx, maxID
 
 # from datasets.update import deleteFromIndex
 from .utils import *
-from utils.country_feature_collection import get_country_feature_collection
+from utils.regions_countries import get_regions_countries
 from elastic.es_utils import makeDoc, removePlacesFromIndex, replaceInIndex, removeDatasetFromIndex
 from main.choices import AUTHORITY_BASEURI
 from main.models import Log, Comment
@@ -83,7 +83,7 @@ class DatasetGalleryView(ListView):
     context['num_datasets'] = Dataset.objects.filter(public=True).count()
     context['num_collections'] = Collection.objects.filter(public=True).count()
             
-    context['dropdown_data'] = get_country_feature_collection()
+    context['dropdown_data'] = get_regions_countries()
     
     country_feature_collection = {
         'type': 'FeatureCollection',

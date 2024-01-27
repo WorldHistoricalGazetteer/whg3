@@ -13,36 +13,7 @@ from collection.models import Collection
 from datasets.models import Dataset, Hit
 from datasets.tasks import normalize, get_bounds_filter
 from places.models import Place, PlaceGeom
-from utils.country_feature_collection import get_country_feature_collection
-
-def typeahead_suggester(q):
-    indices = ['whg', 'pub']
-    query_body = {
-        "size": 20,
-        "query": {
-            "bool": {
-                "must": [
-                    {"exists": {"field": "whg_id"}},
-                    {
-                        "query_string": {
-                            "query": f"*{q}*",
-                            "fields": ["title^3", "names.toponym", "searchy"]
-                        }
-                    }
-                ]
-            }
-        }
-    }
-
-    response = suggester(query_body, indices)
-    unique_titles = list({item['hit']['title'] for item in response if 'hit' in item and 'title' in item['hit']})
-
-    return unique_titles
-
-def TypeaheadSuggestions(request):
-    q = request.GET.get('q', '')
-    suggestions = typeahead_suggester(q)
-    return JsonResponse(suggestions, safe=False)
+from utils.regions_countries import get_regions_countries
 
 # new
 class SearchPageView(TemplateView):
@@ -62,7 +33,7 @@ class SearchPageView(TemplateView):
     context['search_params'] = self.request.session.get('search_params')
     context['es_whg'] = settings.ES_WHG
     #context['bboxes'] = bboxes
-    context['dropdown_data'] = get_country_feature_collection() # Used for spatial filter
+    context['dropdown_data'] = get_regions_countries() # Used for spatial filter
     return context
 
 def fetchArea(request):
