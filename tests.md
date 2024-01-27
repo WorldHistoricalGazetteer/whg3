@@ -37,7 +37,11 @@ _as of 10 Jan 2024_
     - test_ReconWDlocal (fails)
 
 ### tests/test_tilesets.py
-#### 7. [TestSendTilesetRequestIntegration](tests/test_wdlocal.py)
+#### 7. [TestSendTilesetRequestIntegration](tests/tilesets.py)
     - test_send_tileset_request
+
+### tests/test_emailing.py
+#### 7. [TestSendTilesetRequestIntegration](tests/test_emailing.py)
+    - test_new_user_emails
 
 

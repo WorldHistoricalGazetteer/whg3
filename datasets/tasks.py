@@ -1124,17 +1124,33 @@ def align_wdlocal(*args, **kwargs):
 
   # create log entry and update ds status
   post_recon_update(ds, user, 'wdlocal', test)
-    
+
   # email owner when complete
-  task_emailer.delay(
-    task_id,
-    ds.label,
-    user.name,
-    user.email,
-    count_hit,
-    total_hits,
-    test
+  # tid, dslabel, name, email, counthit, totalhits, test
+  from utils.emailing import new_emailer
+  new_emailer(
+    email_type='align_wdlocal',
+    subject='WHG Wikidata alignment task complete',
+    from_email=settings.DEFAULT_FROM_EMAIL,
+    to_email=[user.email],
+    name=user.username,
+    tid=task_id,
+    dslabel=ds.label,
+    email=user.email,
+    counthit=count_hit,
+    totalhits=total_hits,
+    test=test
   )
+  # email owner when complete
+  # task_emailer.delay(
+  #   task_id,
+  #   ds.label,
+  #   user.name,
+  #   user.email,
+  #   count_hit,
+  #   total_hits,
+  #   test
+  # )
   
   return hit_parade['summary']
 
@@ -1582,30 +1598,30 @@ def align_idx(*args, **kwargs):
 
   # email owner when complete
   # tid, dslabel, name, email, counthit, totalhits, test
-  # from utils.emailing import new_emailer
-  # new_emailer(
-  #   email_type='welcome',
-  #   subject='Welcome to WHG',
-  #   from_email=settings.DEFAULT_FROM_EMAIL,
-  #   to_email=[user.email],
-  #   name=user.username,
-  #   tid=task_id,
-  #   dslabel=ds.label,
-  #   email=user.email,
-  #   counthit=count_hit,
-  #   totalhits=total_hits,
-  #   test=test
-  # )
-
-  task_emailer.delay(
-    task_id,
-    ds.label,
-    user.name,
-    user.email,
-    count_hit,
-    total_hits,
-    test,
+  from utils.emailing import new_emailer
+  new_emailer(
+    email_type='align_idx',
+    subject='WHG alignment task complete',
+    from_email=settings.DEFAULT_FROM_EMAIL,
+    to_email=[user.email],
+    name=user.username,
+    tid=task_id,
+    dslabel=ds.label,
+    email=user.email,
+    counthit=count_hit,
+    totalhits=total_hits,
+    test=test
   )
+
+  # task_emailer.delay(
+  #   task_id,
+  #   ds.label,
+  #   user.name,
+  #   user.email,
+  #   count_hit,
+  #   total_hits,
+  #   test,
+  # )
   print('elapsed time:', elapsed(end-start))
 
 

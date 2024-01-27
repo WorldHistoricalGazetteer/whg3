@@ -9,7 +9,7 @@ from datasets.views import emailer
 from datetime import timedelta
 
 def new_emailer(email_type, subject, from_email, to_email, **kwargs):
-  print('new_emailer() called, to_email', to_email)
+  print('new_emailer() for', email_type)
   reply_to = kwargs.get('reply_to', None)
   cc = kwargs.get('cc', None)
   bcc = kwargs.get('bcc', None)
@@ -25,17 +25,20 @@ def new_emailer(email_type, subject, from_email, to_email, **kwargs):
   html_message = email_body.replace('\n', '<br>')
 
   # Create and send the email
-  email = EmailMultiAlternatives(
-    subject,
-    email_body,
-    from_email,
-    to_email,
-    reply_to=reply_to,
-    cc=cc,
-    bcc=bcc,
-  )
-  email.attach_alternative(html_message, "text/html")
-  email.send()
+  try:
+    email = EmailMultiAlternatives(
+      subject,
+      email_body,
+      from_email,
+      to_email,
+      reply_to=reply_to,
+      cc=cc,
+      bcc=bcc,
+    )
+    email.attach_alternative(html_message, "text/html")
+    email.send()
+  except Exception as e:
+    print(f'new_emailer failed, error: {e}')
 
 
 def send_maintenance_email():

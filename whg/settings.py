@@ -63,7 +63,7 @@ INSTALLED_APPS = [
     'resources.apps.ResourcesConfig', # for teaching
     'search.apps.SearchConfig',
     'traces.apps.TracesConfig',
-    'users',
+    'users.apps.UsersConfig',
 ]
 
 AUTH_USER_MODEL = 'users.User'

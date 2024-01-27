@@ -1,33 +1,22 @@
 # email body content used with main.utils.new_emailer() throughout the project
-# / = done; * = checked
-# from_email = whg@pitt
-# admins = [Karl, Ali]
-# editor = [Ali]
-# developer = [Karl]
-# reply_to = editor or developer for fails
-
-# /* welcome: "welcome to WHG -> new user
-# /* new_user: "new registration" -> admins
-# /* new_dataset: "thanks for uploading" ->  dataset owner, cc editor, bcc developer
-
-# ***  TODO: validate & insert errors ***
-# failed_upload: "we'll look into it" -> dataset owner, cc developer
-
-# *** TODO: now in task_emailer() ***
-# wikidata_recon_complete: "thanks for reconciling" -> dataset owner, cc editor
-# wikidata_recon_failed: "we'll look into it" -> dataset owner, cc developer
-
-# signal on dataset save after status
-# /*dataset_published: "thanks for publishing" -> dataset owner, cc admins
-# /*dataset_indexed: "thanks for indexing" -> dataset owner, cc admins
-
-
-# /* contact_form: "user says: yada yada" -> admins, reply_to sender
-# /* contact_reply: "thanks for contacting us" -> sender, cc editor
-
+"""
+welcome, new_user: user.email_confirmed = True; name, id
+new_dataset: new dataset created
+dataset_published: public=True
+dataset_unpublished: public=False
+dataset_indexed: ds_status='indexed'
+contact_form, contact_reply: contact form submitted
+recon_result: reconciliation task completed (wdlocal or idx
+wikidata_recon_complete: ds_status='wd-complete'
+failed_upload: upload failed
+recon_failed: reconciliation task FAILURE (wdlocal or idx)
+align_idx: alignment task completed (idx)
+align_wdlocal: alignment task completed (wdlocal)
+maintenance: TODO
+"""
 EMAIL_MESSAGES = {
   'welcome': (
-    'Greetings {name}! \n\n'
+    'Greetings {greeting_name}! \n\n'
     'Thank you for registering for the World Historical Gazetteer (WHG). You can visit '
     '<a href="https://whgazetteer.org/tutorials/guide/">the WHG site guide</a> '
     'to learn more about services and features the platform provides.\n\n'
@@ -115,19 +104,20 @@ EMAIL_MESSAGES = {
     'We will look into it and get back to you soon.\n\n'
     'regards,\nThe WHG project team'
   ),
-  'task_emailer_align_idx': (
+  # # tid, dslabel, name, email, counthit, totalhits, test
+  'align_idx': (
     'Dear {name},\n\n'
-    'Your alignment task for the {dslabel} dataset has completed. '
+    'Your WHG alignment task for the {dslabel} dataset has completed. '
     'You got {counthit} hits out of {totalhits}.\n\n'
     'regards,\nThe WHG project team'
   ),
-  'task_emailer_align_wdlocal': (
+  # # tid, dslabel, name, email, counthit, totalhits, test
+  'align_wdlocal': (
     'Dear {name},\n\n'
-    'Your local Wikidata alignment task for the {dslabel} dataset has completed. '
+    'Your Wikidata alignment task for the {dslabel} dataset has completed. '
     'You got {counthit} hits out of {totalhits}.\n\n'
     'regards,\nThe WHG project team'
   ),
-
   'maintenance': (
     'Dear {name},\n\n'
     'Because you have logged in to WHG within the last month or so, we are letting you know that'
@@ -144,6 +134,32 @@ EMAIL_MESSAGES = {
   ),
   # Add more email bodies as needed
 }
+
+# / = done; * = checked
+# from_email = whg@pitt
+# admins = [Karl, Ali]
+# editor = [Ali]
+# developer = [Karl]
+# reply_to = editor or developer for fails
+
+# /* welcome: "welcome to WHG -> new user
+# /* new_user: "new registration" -> admins
+# /* new_dataset: "thanks for uploading" ->  dataset owner, cc editor, bcc developer
+
+# ***  TODO: validate & insert errors ***
+# failed_upload: "we'll look into it" -> dataset owner, cc developer
+
+# *** TODO: now in task_emailer() ***
+# wikidata_recon_complete: "thanks for reconciling" -> dataset owner, cc editor
+# wikidata_recon_failed: "we'll look into it" -> dataset owner, cc developer
+
+# signal on dataset save after status
+# /*dataset_published: "thanks for publishing" -> dataset owner, cc admins
+# /*dataset_indexed: "thanks for indexing" -> dataset owner, cc admins
+
+
+# /* contact_form: "user says: yada yada" -> admins, reply_to sender
+# /* contact_reply: "thanks for contacting us" -> sender, cc editor
 
 # (
 # 		'Hello {name},\n\n'
