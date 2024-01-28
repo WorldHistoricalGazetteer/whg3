@@ -8,11 +8,77 @@ from django.contrib.auth import get_user_model
 from django.core import mail
 from django.urls import reverse
 from datasets.models import Dataset
+from places.models import Place
 from unittest.mock import patch
 import sys
 
 User = get_user_model()
+from datasets.tasks import align_idx
+from datasets.tasks import align_wdlocal
 
+# Set up any necessary preconditions for your task here.
+# setUp: dataset, places, user, etc.
+""" {'ds': 22,
+    'dslabel': 'diamonds10',
+    'owner': 2,
+    'user': 2,
+    'bounds': {'type': ['userarea'], 'id': ['0']},
+    'aug_geom': 'on',
+    'scope': 'all',
+    'lang': 'en',
+    'test': 'on',
+    'collection_id': ''}
+"""
+
+class TestAlignIdx(TestCase):
+    def setUp(self):
+        # Create a User instance
+        self.user = User.objects.create_user(username='testuser', email='testuser@example.com', password='testpass')
+
+        # Create a Dataset instance
+        self.dataset = Dataset.objects.create(label='diamonds10',
+                                              title='Diamonds 10',
+                                              description='Test description',
+                                              owner=self.user)
+
+        # Create several Place instances associated with the Dataset
+        self.place1 = Place.objects.create(dataset=self.dataset.label, src_id='p1', title='Place 1')
+        self.place2 = Place.objects.create(dataset=self.dataset.label, src_id='p2', title='Place 2')
+        # Add more Place instances as needed...
+
+        # Set up the kwargs for the align_idx task
+        self.kwargs = {
+            'ds': self.dataset.id,
+            'dslabel': self.dataset.label,
+            'owner': self.user.id,
+            'user': self.user.id,
+            'bounds': {'type': ['userarea'], 'id': ['0']},
+            'aug_geom': 'on',
+            'scope': 'all',
+            'lang': 'en',
+            'test': 'on',
+            'collection_id': ''
+        }
+
+    @patch('utils.emailing.new_emailer')
+    def test_align_idx_sends_email(self, mock_new_emailer):
+        # Run the task synchronously within your test case.
+        align_idx.apply(kwargs=self.kwargs)
+
+        # Check that new_emailer was called with the correct arguments.
+        mock_new_emailer.assert_called_once_with(
+            email_type='align_idx',
+            subject='WHG alignment task complete',
+            from_email='your_from_email@example.com',
+            to_email=[self.user.email],
+            name=self.user.username,
+            tid='your_task_id',
+            dslabel=self.dataset.label,
+            email=self.user.email,
+            counthit='your_count_hit',
+            totalhits='your_total_hits',
+            test='on'
+        )
 
 
 class ContactFormTestCase(TestCase):

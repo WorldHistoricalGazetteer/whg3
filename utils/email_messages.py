@@ -99,24 +99,38 @@ EMAIL_MESSAGES = {
   ),
   'recon_failed': (
     'Dear {name},\n\n'
-    'We are sorry to inform you that your reconciliation task for '
+    'We are sorry to inform you that your {taskname} reconciliation task for '
     '{dataset_title} ({dataset_label}, {dataset_id}) failed. '
     'We will look into it and get back to you soon.\n\n'
     'regards,\nThe WHG project team'
   ),
   # # tid, dslabel, name, email, counthit, totalhits, test
-  'align_idx': (
+  'align_success': (
     'Dear {name},\n\n'
-    'Your WHG alignment task for the {dslabel} dataset has completed. '
-    'You got {counthit} hits out of {totalhits}.\n\n'
+    'Your {taskname} reconciliation task for the {dstitle} dataset ({dslabel}) has completed.'
+    '{counthit} records got a total of {totalhits} hits.\n'
+    'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
     'regards,\nThe WHG project team'
   ),
-  # # tid, dslabel, name, email, counthit, totalhits, test
+  'align_test': (
+    'Greetings {name}! Your TEST index alignment task for the {dstitle} dataset ({dslabel}) has completed.'
+    '{counthit} records got a total of {totalhits} hits.\n'
+    'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
+    'regards,\nThe WHG project team'
+  ),
+  'align_idx': (
+    'Dear {name},\n\n'
+    'Your WHG index alignment task for the {dstitle} dataset ({dslabel}) has completed. '
+    '{counthit} records got a total of {totalhits} hits.\n'
+    'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
+    'regards,\nThe WHG project team'
+  ),
   'align_wdlocal': (
     'Dear {name},\n\n'
-    'Your Wikidata alignment task for the {dslabel} dataset has completed. '
-    'You got {counthit} hits out of {totalhits}.\n\n'
-    'regards,\nThe WHG project team'
+    'Your Wikidata alignment task for the {dstitle} dataset ({dslabel}) has completed.'
+    '{counthit} records got a total of {totalhits} hits.\n'
+    'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
+    'regards,\nThe WHG project team, via new_emailer()'
   ),
   'maintenance': (
     'Dear {name},\n\n'

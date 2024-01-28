@@ -996,7 +996,6 @@ def align_wdlocal(*args, **kwargs):
   bounds = kwargs['bounds']
   scope = kwargs['scope']
   print('kwargs from align_wdlocal() task', kwargs)
-  #bounds = {'type': ['userarea'], 'id': ['0']}
   language = kwargs['lang']
   hit_parade = {"summary": {}, "hits": []}
   [nohits,wdlocal_es_errors,features] = [[],[],[]]
@@ -1126,32 +1125,23 @@ def align_wdlocal(*args, **kwargs):
   post_recon_update(ds, user, 'wdlocal', test)
 
   # email owner when complete
-  # tid, dslabel, name, email, counthit, totalhits, test
   from utils.emailing import new_emailer
   new_emailer(
     email_type='align_wdlocal',
-    subject='WHG Wikidata alignment task complete',
+    subject='Wikidata alignment task complete',
     from_email=settings.DEFAULT_FROM_EMAIL,
     to_email=[user.email],
     name=user.username,
-    tid=task_id,
     dslabel=ds.label,
+    dstitle=ds.title,
     email=user.email,
-    counthit=count_hit,
-    totalhits=total_hits,
-    test=test
+    # TODO: get correct counts for message
+    counthit=count_hit,  # of records with any hit(s)
+    totalhits=total_hits,  # of hits
+    taskname='Wikidata',
+    status=align_wdlocal.request.status,
   )
-  # email owner when complete
-  # task_emailer.delay(
-  #   task_id,
-  #   ds.label,
-  #   user.name,
-  #   user.email,
-  #   count_hit,
-  #   total_hits,
-  #   test
-  # )
-  
+
   return hit_parade['summary']
 
 
@@ -1574,10 +1564,10 @@ def align_idx(*args, **kwargs):
         #print(json.dumps(jsonic,indent=2))
   
   # testing: write new index seed/parent docs for inspection
-  fout1.write(str(new_seeds))
-  fout1.write('\n\nFor Review\n'+str(for_review))
-  fout1.close()
-  print(str(len(new_seeds)+len(for_review)) + ' IDs written to '+ fn1)
+  # fout1.write(str(new_seeds))
+  # fout1.write('\n\nFor Review\n'+str(for_review))
+  # fout1.close()
+  # print(str(len(new_seeds)+len(for_review)) + ' IDs written to '+ fn1)
   
   end = datetime.datetime.now()
   
@@ -1605,11 +1595,14 @@ def align_idx(*args, **kwargs):
     from_email=settings.DEFAULT_FROM_EMAIL,
     to_email=[user.email],
     name=user.username,
-    tid=task_id,
     dslabel=ds.label,
+    dstitle=ds.title,
     email=user.email,
-    counthit=count_hit,
-    totalhits=total_hits,
+    # TODO: get correct counts for message
+    counthit=count_hit,  # of records with any hit(s)
+    totalhits=total_hits,  # of hits
+    taskname='WHG index',
+    status=align_idx.request.status,
     test=test
   )
 
