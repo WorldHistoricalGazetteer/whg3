@@ -54,6 +54,7 @@ from .tasks import align_wdlocal, align_idx, maxID
 
 # from datasets.update import deleteFromIndex
 from .utils import *
+from utils.regions_countries import get_regions_countries
 from elastic.es_utils import makeDoc, removePlacesFromIndex, replaceInIndex, removeDatasetFromIndex
 from main.choices import AUTHORITY_BASEURI
 from main.models import Log, Comment
@@ -82,30 +83,7 @@ class DatasetGalleryView(ListView):
     context['num_datasets'] = Dataset.objects.filter(public=True).count()
     context['num_collections'] = Collection.objects.filter(public=True).count()
 
-    regions = Area.objects.all().filter((Q(type='predefined'))).values('id','type','title','geojson')
-    countries = Area.objects.all().filter((Q(type='country'))).values('id','type','title','ccodes','geojson')
-    country_codes = {country['id']: country['ccodes'] for country in countries}
-    country_geometries = {country['id']: GEOSGeometry(json.dumps(country['geojson'])) for country in countries}
-
-    # TODO: This code block would be unnecessary if all predefined areas had populated ccodes in database
-    for region in regions:
-        region_geojson = GEOSGeometry(json.dumps(region['geojson']))
-        intersecting_ccodes = []
-
-        # Check intersection with each country
-        # for country_id, country_geometry in country_geometries.items():
-        #     if region_geojson.intersects(country_geometry):
-        #         intersecting_ccodes.extend(country_codes[country_id])
-
-        region['ccodes'] = intersecting_ccodes
-
-    # Transform lists for grouping in dropdown
-    regions = [{'id': region['id'], 'text': region['title'], 'ccodes': region['ccodes']} for region in sorted(regions, key=lambda x: x['title'])]
-    countries = [{'id': country['ccodes'][0], 'text': country['title']} for country in sorted(countries, key=lambda x: x['title'])]
-
-    dropdown_data = [{'text':'Regions', 'children': list(regions)}, {'text': 'Countries', 'children': list(countries)}]
-
-    context['dropdown_data'] = json.dumps(dropdown_data, default=str)
+    context['dropdown_data'] = get_regions_countries()
 
     country_feature_collection = {
         'type': 'FeatureCollection',
@@ -540,7 +518,7 @@ def review(request, pk, tid, passnum):
     )
     formset = HitFormset(request.POST or None, queryset=raw_hits)
     context["formset"] = formset
-    
+
     # Create FeatureCollection for mapping
     index_offset = sum(1 for record in records for geom in record.geoms.all().values('jsonb'))
     feature_collection = {
@@ -563,7 +541,7 @@ def review(request, pk, tid, passnum):
                 "properties": {
                     **{key: value for key, value in geom.items() if key not in ["coordinates", "type"]},
                     "green": False, # Set to True for green markers - following 2 lines are redundant v2 code
-                        # (review_page=="accession.html" and geom["ds"]==ds.label) or 
+                        # (review_page=="accession.html" and geom["ds"]==ds.label) or
                         # (review_page=="review.html" and not geom["ds"] in ['tgn', 'wd', 'whg'])
                 },
                 "geometry": {"type": geom["type"], "coordinates": geom.get("coordinates")},

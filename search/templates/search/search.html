@@ -25,9 +25,12 @@
 			</div>
 	    <div id="d_input" class="col-8 ps-1">
 	        <div id="input" class="w-75 input-group">
-	            <input id="search_input" class="form-control" type="text" placeholder="Enter place name"
-	                   aria-label="Search" aria-describedby="search-addon" autocomplete="off">
-	            <span class="input-group-text" id="search-addon">
+	            <input id="search_input" class="form-control typeahead" data-provide="typeahead" type="text" placeholder="Enter place name"
+	                   aria-label="Search" aria-describedby="search-addon" autocomplete="off" spellcheck="false">
+	            <span class="input-group-text" id="clear_search" title="Clear search">
+	                <a href="#" id="a_clear"><i class="fas fa-times"></i></a>
+	            </span>
+	            <span class="input-group-text" id="search-addon" title="Initiate search">
 	                <a href="#" id="a_search"><i class="fas fa-search"></i></a>
 	            </span>
 	        </div>
@@ -67,7 +70,13 @@
                  title="Spatial filter" data-content="" tabindex="0" data-trigger="focus">
               <i class="fas fa-question-circle linky"></i></a></span>
             </p>
-            <input id="input_area" type="text" size="25" placeholder="Region, country, study area" />
+            <!-- <input id="input_area" class="typeahead" autocomplete="off" type="text" size="25" placeholder="Regions/Countries" /> -->
+            <div class="input-group mb-3">
+			    <select id="countryDropdown" class="form-select" data-type="country" data-placeholder="Country filter(s)" multiple></select>
+			    <button class="btn btn-outline-secondary clear-button" type="button" id="clearCountryDropdown">Clear</button>
+			</div>
+            
+            
           </div>
 				</div>
 	      <div id="result_facets" class="p-1 hidden bg-light">
@@ -134,6 +143,9 @@
 			</div>
   </div>
   {% csrf_token %} <!-- Used for Django POST requests -->
+  <script type="text/javascript">
+	const dropdown_data = {{ dropdown_data|safe }};  // Used for spatial filter
+  </script>
   
 {% endblock %}
 

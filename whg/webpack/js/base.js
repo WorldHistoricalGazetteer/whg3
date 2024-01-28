@@ -58,28 +58,8 @@ var CDN_fallbacks = [
 		position: 'head'
 	},
 	{
-		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-3-typeahead/4.0.2/bootstrap3-typeahead.min.js',
-		localUrl: 'bootstrap3-typeahead.min.js',
-		position: 'head'
-	},
-	{
-		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js',
-		localUrl: 'bootstrap-tagsinput.min.js',
-		position: 'head'
-	},
-	{
-		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css',
-		localUrl: 'bootstrap-tagsinput.css',
-		position: 'head'
-	},
-	{
-		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput-typeahead.css',
-		localUrl: 'bootstrap-tagsinput-typeahead.css',
-		position: 'head'
-	},
-	{
-		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/corejs-typeahead/1.3.3/bloodhound.min.js',
-		localUrl: 'bloodhound.min.js',
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js', // Includes both typeahead and bloodhound
+		localUrl: 'typeahead.bundle.min.js',
 		position: 'head'
 	},
 	{

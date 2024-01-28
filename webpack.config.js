@@ -98,23 +98,7 @@ module.exports = {
 		          to: '/app/CDNfallbacks/',
 		        },
 		        {
-		          from: 'node_modules/bootstrap-3-typeahead/bootstrap3-typeahead.min.js',
-		          to: '/app/CDNfallbacks/',
-		        },
-		        {
-		          from: 'node_modules/bootstrap-tagsinput/dist/bootstrap-tagsinput.min.js',
-		          to: '/app/CDNfallbacks/',
-		        },
-		        {
-		          from: 'node_modules/bootstrap-tagsinput/dist/bootstrap-tagsinput.css',
-		          to: '/app/CDNfallbacks/',
-		        },
-		        {
-		          from: 'node_modules/bootstrap-tagsinput/dist/bootstrap-tagsinput-typeahead.css',
-		          to: '/app/CDNfallbacks/',
-		        },
-		        {
-		          from: 'node_modules/bloodhound-js/dist/bloodhound.min.js',
+		          from: 'node_modules/twitter-typeahead-components-bundle/main.js',
 		          to: '/app/CDNfallbacks/',
 		        },
 		        {

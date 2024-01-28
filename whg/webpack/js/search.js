@@ -2,8 +2,10 @@
 
 import Dateline from './dateline';
 import throttle from 'lodash/throttle';
+import debounce from 'lodash/debounce';
 import { geomsGeoJSON } from './utilities';
 import { ccode_hash } from '../../../static/js/parents';
+import { CountryCacheFeatureCollection } from  './countryCache';
 import '../css/dateline.css';
 import '../css/search.css';
 
@@ -16,6 +18,7 @@ let initialTypeCounts = {};
 let initialCountryCounts = {};
 let draw;
 let $drawControl;
+let countryCache = new CountryCacheFeatureCollection();
 
 let mapParameters = {
 	maxZoom: 13,
@@ -45,6 +48,10 @@ function waitMapLoad() {
                     mappy.setLayoutProperty(layer.id, 'visibility', 'none');
                 }
             });
+            
+            mappy
+            .newSource('countries')  // Add empty source
+			.newLayerset('countries', 'countries', 'countries');
             
 		    mappy
 		    .newSource('places') // Add empty source
@@ -81,7 +88,7 @@ function waitDocumentReady() {
     });
 }
 
-Promise.all([waitMapLoad(), waitDocumentReady()])
+Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(select2_CDN_fallbacks.map(loadResource))])
     .then(() => {
 		
 		draw = mappy._draw;
@@ -95,7 +102,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		    initiateSearch();
 		}, 300); 
     
-		updateSearchState(true);
+		updateSearchState(true); // Retrieve search options from LocalStorage
 
 		if (!!mapParameters.temporalControl) {
 			let datelineContainer = document.createElement('div');
@@ -124,18 +131,104 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         $('#advanced_search-toggle').click(() => $('#advanced_search').slideToggle(300));
 
         $('#close-advanced_search').click(() => $('#advanced_search').slideUp(300));
-
-        $("#a_search, #d_input input").on('click keypress keyup', function(event) {
-            if (
-					(event.type === 'click' && $(event.target).is("#a_search")) || 
-					(event.type === 'keypress' && event.which === 13) 
-					// || (event.type === 'keyup' && $.trim($(this).val()).length >= 3)
-				) {
-                event.preventDefault();
-				console.log('entered value for search')
-                initiateSearch();
-            }
-        });
+        
+	    $('#search_input').on('keyup', function (event) {
+			if(event.which === 13) {
+				event.preventDefault();
+	        	initiateSearch();
+			}
+	    });
+        
+	    $('#a_search').on('click', function () {
+	        initiateSearch();
+	    });
+        
+	    $('#a_clear').on('click', function () { // Clear the input, results, and map
+	        $('#search_input').val('').focus();
+			$('#search_results').empty();
+	        mappy
+	        .getSource('places')
+	        .setData(mappy.nullCollection());
+	        mappy.reset();
+			localStorage.removeItem('last_results');
+	    });
+    
+	    function updateAreaMap() {
+	    	const countries = $('#countryDropdown').select2('data').map(country => country.id);
+	        countryCache.filter(countries).then(filteredCountries => {
+	            mappy.getSource('countries').setData(filteredCountries);
+	
+	            try {
+	                mappy.fitBounds(bbox(filteredCountries), {
+	                    padding: 30,
+	                    maxZoom: 7,
+	                    duration: 1000,
+	                });
+	            } catch {
+	                mappy.reset();
+	            }
+	        });
+	    }
+	
+		const debouncedUpdates = debounce(() => { // Uses imported lodash function
+		    updateAreaMap();
+		}, 400);    
+		
+	    const countryDropdown = $('#countryDropdown');
+	    countryDropdown.select2({
+	        data: dropdown_data,
+	        width: 'element', // Use CSS rules
+	        placeholder: $(this).data('placeholder'),
+	        closeOnSelect: false,
+	        allowClear: false,
+	    }).on('select2:selecting', function (e) {
+	        if(!!e.params.args.data['ccodes']) { // Region selected: add countries from its ccodes
+	        	e.preventDefault();
+	        	let ccodes = Array.from(new Set([...e.params.args.data['ccodes'], ...countryDropdown.select2('data').map(country => country.id)]));
+	        	countryDropdown.val(ccodes).trigger('change');
+	        }
+	    }).on('change', function (e) {
+			debouncedUpdates();
+	    });
+	    
+		$('#clearCountryDropdown').on('click', function() {
+	        countryDropdown.val(null).trigger('change');
+	    });
+		
+/*		// Spatial search implementation using typeahead - single result selection. Tagsinput not found to be compatible with software versions.
+        function wildcardMatcher(item, query) {
+		    var wildcardRegex = new RegExp('.*' + Bloodhound.tokenizers.whitespace(query).join('.*') + '.*', 'i');
+		    return wildcardRegex.test(item);
+		}
+		
+		$('#filter_spatial input.typeahead').typeahead({
+			highlight: true,
+			hint: true,
+			minLength: 1,
+		},
+		{
+			name: 'Countries',
+			display: item => item.text,
+			source: function (query, sync) {
+				const filteredData = [...dropdown_data[0].children, ...dropdown_data[1].children]
+		        .filter(item => wildcardMatcher(item.text, query));
+				sync(filteredData);
+		    }
+		}).on('typeahead:select', function(e, item) {
+			const countries = item.ccodes || [item.id];
+	        countryCache.filter(countries).then(filteredCountries => {
+	            mappy.getSource('countries').setData(filteredCountries);
+	            try {
+	                mappy.fitBounds(bbox(filteredCountries), {
+	                    padding: 30,
+	                    maxZoom: 7,
+	                    duration: 1000,
+	                });
+	            } catch {
+	                mappy.reset();
+	            }
+	        });	
+		});*/
 
 		// START Ids to session (kg 2023-10-31)
 		function getCookie(name) {
@@ -652,7 +745,8 @@ function gatherOptions() {
 		"start": window.dateline.open ? window.dateline.fromValue : '', 
 		"end": window.dateline.open ? window.dateline.toValue : '',
 		"undated": window.dateline.open ? window.dateline.includeUndated : true,
-		"bounds": area_filter
+		"bounds": area_filter,
+		"countries": $('#countryDropdown').select2('data').map(country => country.id) // Array of country codes
 	}
 	return options;
 }
