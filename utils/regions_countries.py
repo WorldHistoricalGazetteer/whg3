@@ -35,7 +35,7 @@ def get_regions_countries():
     # with open('static/js/regions_countries.json', 'w') as json_file:
     #     json.dump(dropdown_data, json_file, default=str)
     
-    with open('static/js/regions_countries.json', 'r') as file:
+    with open('media/data/regions_countries.json', 'r') as file:
         dropdown_data = json.load(file)
     
     return json.dumps(dropdown_data, default=str)
