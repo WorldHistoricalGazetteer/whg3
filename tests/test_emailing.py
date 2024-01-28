@@ -8,11 +8,12 @@ from django.contrib.auth import get_user_model
 from django.core import mail
 from django.urls import reverse
 from datasets.models import Dataset
+from unittest.mock import patch
+import sys
 
 User = get_user_model()
 
-from unittest.mock import patch
-import sys
+
 
 class ContactFormTestCase(TestCase):
     def setUp(self):
