@@ -3,163 +3,224 @@
 {% load static %}
 
 {% block maplibre %}
-	<script type="text/javascript">
-		const loadMaplibre = true;
-	</script>
-	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" /> 
+  <script type="text/javascript">
+    const loadMaplibre = true;
+  </script>
+  <link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet"/>
 {% endblock %}
 
 {% block extra_head %}
-	<link href="{% static 'webpack/search.bundle.css' %}" rel="stylesheet" /> 
+  <link href="{% static 'webpack/search.bundle.css' %}" rel="stylesheet"/>
 {% endblock %}
 
 {% block title %}
-	<title>WHG Search</title>
+  <title>WHG Search</title>
 {% endblock %}
 
 {% block content %}
   <div class="container-md">
-	  <div id="search_bar" class="row py-2 position-relative">
-	    <div class="col-4 ps-1">
-	      <span class="float-start fs-4 ms-0">Search</span>
-			</div>
-	    <div id="d_input" class="col-8 ps-1">
-	        <div id="input" class="w-75 input-group">
-	            <input id="search_input" class="form-control typeahead" data-provide="typeahead" type="text" placeholder="Enter place name"
-	                   aria-label="Search" aria-describedby="search-addon" autocomplete="off" spellcheck="false">
-	            <span class="input-group-text" id="clear_search" title="Clear search">
-	                <a href="#" id="a_clear"><i class="fas fa-times"></i></a>
-	            </span>
-	            <span class="input-group-text" id="search-addon" title="Initiate search">
-	                <a href="#" id="a_search"><i class="fas fa-search"></i></a>
-	            </span>
-	        </div>
-	    </div>
-	  </div>
-	  <div id="search_content" class="row pt-1">
-			<div id="search_left" class="col-4 p-2 bg-white">
-				<div id="adv_options" class="hidden">
-					<h5>Advanced options</h5>
-			    <p class="mb-0"><span class="categories ms-1">place categories</span>
-            <span class="ms-1 categories">
+    <div id="search_bar" class="row py-2 position-relative">
+      <div class="col-4 ps-1">
+        <span class="float-start fs-4 ms-0">Search</span>
+      </div>
+      <div id="d_input" class="col-8 ps-1">
+        <div class="row gx-0">
+          <div class="col-6 pe-1">
+            <div id="input" class="w-100 input-group">
+          <input id="search_input" class="form-control typeahead" data-provide="typeahead" type="text"
+                 placeholder="Enter place name"
+                 aria-label="Search" aria-describedby="search-addon" autocomplete="off" spellcheck="false">
+          <span class="input-group-text" id="clear_search" title="Clear search">
+  	                <a href="#" id="a_clear"><i class="fas fa-times"></i></a></span>
+          <span class="input-group-text" id="search-addon" title="Initiate search">
+  	                <a href="#" id="a_search"><i class="fas fa-search"></i></a></span>
+        </div>
+          </div>
+          <div class="col-6 d-flex justify-content-end align-items-center"">
+          <a href="#"><i class="fas fa-question linky me-2"></i></a>
+          <div class="form-check form-check-inline me-2">
+            <input class="form-check-input" type="radio" name="foo" id="r_exact" checked="checked">
+            <label class="form-check-label small" for="radio1">exact</label>
+          </div>
+          <div class="form-check form-check-inline me-2">
+            <input class="form-check-input" type="radio" name="foo" id="r_starts">
+            <label class="form-check-label small" for="radio2">starts</label>
+          </div>
+          <div class="form-check form-check-inline me-2">
+            <input class="form-check-input" type="radio" name="foo" id="r_in">
+            <label class="form-check-label small" for="radio3">in</label>
+          </div>
+          <div class="form-check form-check-inline me-0">
+            <input class="form-check-input" type="radio" name="foo" id="r_fuzzy">
+            <label class="form-check-label small" for="radio4">'fuzzy'</label>
+          </div>
+          </div>
+        </div>
+      </div>
+    </div>
+{#  <div id="search_bar" class="row py-2 position-relative">#}
+{#    <div class="col-4 ps-1">#}
+{#      <span class="float-start fs-4 ms-0">Search</span>#}
+{#    </div>#}
+{#    <div class="col-8 ps-1">#}
+{#      <div class="row gx-0"> <!-- Remove gutters for tighter spacing -->#}
+{#        <div class="col-6 pe-1"> <!-- Adjusted right padding -->#}
+{#          <div id="input" class="input-group w-100"> <!-- Full width for the input group -->#}
+{#          <input id="search_input" class="form-control typeahead" data-provide="typeahead" type="text"#}
+{#                 placeholder="Enter place name"#}
+{#                 aria-label="Search" aria-describedby="search-addon" autocomplete="off" spellcheck="false">#}
+{#          <span class="input-group-text" id="clear_search" title="Clear search">#}
+{#  	                <a href="#" id="a_clear"><i class="fas fa-times"></i></a></span>#}
+{#          <span class="input-group-text" id="search-addon" title="Initiate search">#}
+{#  	                <a href="#" id="a_search"><i class="fas fa-search"></i></a></span>#}
+{#          </div>#}
+{#        </div>#}
+{#        <div class="col-6 d-flex justify-content-end align-items-center">#}
+{#          <a href="#"><i class="fas fa-random linky me-2"></i></a>#}
+{#          <div class="form-check form-check-inline">#}
+{#            <input class="form-check-input" type="checkbox" id="checkbox1">#}
+{#            <label class="form-check-label small" for="checkbox1">starts with</label>#}
+{#          </div>#}
+{#          <div class="form-check form-check-inline">#}
+{#            <input class="form-check-input" type="checkbox" id="checkbox2">#}
+{#            <label class="form-check-label small" for="checkbox2">within</label>#}
+{#          </div>#}
+{#          <div class="form-check form-check-inline me-0">#}
+{#            <input class="form-check-input" type="checkbox" id="checkbox3">#}
+{#            <label class="form-check-label small" for="checkbox3">'fuzzy'</label>#}
+{#          </div>#}
+{#           <i class="fas fa-question small me-2"></i>#}
+{#        </div>#}
+{#      </div>#}
+{#    </div>#}
+{#  </div>#}
+
+  <div id="search_content" class="row pt-1">
+    <div id="search_left" class="col-4 p-2 bg-white">
+      <div id="adv_options" class="hidden">
+        <h5>Advanced options</h5>
+        <p class="mb-0"><span class="categories ms-1">place categories</span>
+          <span class="ms-1 categories">
               <span class="me-1"><a id="check_toggle" href="#">clear all</a></span>
               <a id="filter_help" class="pointer" data-toggle="popover" title="Place categories"
                  data-content="" tabindex="0" data-trigger="focus"><i class="fas fa-question-circle linky"></i></a>
             </span>
-          </p>
-          <div id="adv_checkboxes" class="small mt-2 ps-1">
-		        <p><input type="checkbox" id="cb_a" checked="checked" value="A"/>
-			        <span for="cb_a"> Administrative entities (A)</span></p>
-		        <p><input type="checkbox" id="cb_p" checked="checked" value="P"/>
-			        <span for="cb_p"> Cities, towns, hamlets (P)</span></p>
-		        <p><input type="checkbox" id="cb_s" checked="checked" value="S"/>
-			        <span for="cb_s"> Sites, buildings, complexes (S)</span></p>
-		        <p><input type="checkbox" id="cb_r" checked="checked" value="R"/>
-			        <span for="cb_r"> Roads, routes, rail... (R)</span></p>
-		        <p><input type="checkbox" id="cb_l" checked="checked" value="L"/>
-			        <span for="cb_l"> Regions, landscape areas (L)</span></p>
-		        <p><input type="checkbox" id="cb_t" checked="checked" value="T"/>
-			        <span for="cb_t"> Terrestrial landforms (T)</span></p>
-		        <p><input type="checkbox" id="cb_h" checked="checked" value="H"/>
-			        <span for="cb_h"> Water bodies (H)</span></p>
-          </div>
-          <div id="filter_spatial">
-            <p class="mb-0"><span class="categories ms-1">spatial</span>
-              <span class="float-end">
+        </p>
+        <div id="adv_checkboxes" class="small mt-2 ps-1">
+          <p><input type="checkbox" id="cb_a" checked="checked" value="A"/>
+            <span for="cb_a"> Administrative entities (A)</span></p>
+          <p><input type="checkbox" id="cb_p" checked="checked" value="P"/>
+            <span for="cb_p"> Cities, towns, hamlets (P)</span></p>
+          <p><input type="checkbox" id="cb_s" checked="checked" value="S"/>
+            <span for="cb_s"> Sites, buildings, complexes (S)</span></p>
+          <p><input type="checkbox" id="cb_r" checked="checked" value="R"/>
+            <span for="cb_r"> Roads, routes, rail... (R)</span></p>
+          <p><input type="checkbox" id="cb_l" checked="checked" value="L"/>
+            <span for="cb_l"> Regions, landscape areas (L)</span></p>
+          <p><input type="checkbox" id="cb_t" checked="checked" value="T"/>
+            <span for="cb_t"> Terrestrial landforms (T)</span></p>
+          <p><input type="checkbox" id="cb_h" checked="checked" value="H"/>
+            <span for="cb_h"> Water bodies (H)</span></p>
+        </div>
+        <div id="filter_spatial">
+          <p class="mb-0"><span class="categories ms-1">spatial</span>
+            <span class="float-end">
               <a id="spatial_help" class="pointer" data-toggle="popover"
                  title="Spatial filter" data-content="" tabindex="0" data-trigger="focus">
               <i class="fas fa-question-circle linky"></i></a></span>
-            </p>
-            <!-- <input id="input_area" class="typeahead" autocomplete="off" type="text" size="25" placeholder="Regions/Countries" /> -->
-            <div class="input-group mb-3">
-			    <select id="countryDropdown" class="form-select" data-type="country" data-placeholder="Country filter(s)" multiple></select>
-			    <button class="btn btn-outline-secondary clear-button" type="button" id="clearCountryDropdown">Clear</button>
-			</div>
-            
-            
+          </p>
+          <!-- <input id="input_area" class="typeahead" autocomplete="off" type="text" size="25" placeholder="Regions/Countries" /> -->
+          <div class="input-group mb-3">
+            <select id="countryDropdown" class="form-select" data-type="country" data-placeholder="Country filter(s)"
+                    multiple></select>
+            <button class="btn btn-outline-secondary clear-button" type="button" id="clearCountryDropdown">Clear
+            </button>
           </div>
-				</div>
-	      <div id="result_facets" class="p-1 hidden bg-light">
-	        <h5>Filter Results</h5>
-					<!-- Place Types Accordion -->
-					<div class="accordion-item">
-					    <h4 class="accordion-header" id="headingTypes">
-					        <button class="accordion-button" type="button" data-bs-toggle="collapse"
-					                data-bs-target="#collapseTypes" aria-expanded="true" aria-controls="collapseTypes">
-					                Place Types <span id="typesCount">(0)</span>
-						              <span class="accordion-toggle-indicator float-end me-2">
+
+
+        </div>
+      </div>
+      <div id="result_facets" class="p-1 hidden bg-light">
+        <h5>Filter Results</h5>
+        <!-- Place Types Accordion -->
+        <div class="accordion-item">
+          <h4 class="accordion-header" id="headingTypes">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseTypes" aria-expanded="true" aria-controls="collapseTypes">
+              Place Types <span id="typesCount">(0)</span>
+              <span class="accordion-toggle-indicator float-end me-2">
 						              <i class="info-collapse fas fa-chevron-up"></i></span>
-					        </button>
-					    </h4>
-					    <div id="collapseTypes" class="accordion-collapse collapse show" aria-labelledby="headingTypes">
-					        <div class="accordion-body">
-					            <div id="type_checkboxes"></div> <!-- Existing div -->
-					        </div>
-					    </div>
-					</div>
+            </button>
+          </h4>
+          <div id="collapseTypes" class="accordion-collapse collapse show" aria-labelledby="headingTypes">
+            <div class="accordion-body">
+              <div id="type_checkboxes"></div> <!-- Existing div -->
+            </div>
+          </div>
+        </div>
 
-					<!-- Countries Accordion -->
-					<div class="accordion-item mt-2">
-					    <h4 class="accordion-header" id="headingCountries">
-					        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-					                data-bs-target="#collapseCountries" aria-expanded="false" aria-controls="collapseCountries">
-						              Countries <span id="countriesCount">(0)</span>
-						            <span class="accordion-toggle-indicator float-end me-2">
+        <!-- Countries Accordion -->
+        <div class="accordion-item mt-2">
+          <h4 class="accordion-header" id="headingCountries">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseCountries" aria-expanded="false" aria-controls="collapseCountries">
+              Countries <span id="countriesCount">(0)</span>
+              <span class="accordion-toggle-indicator float-end me-2">
 						            <i class="info-collapse fas fa-chevron-down"></i></span>
-					        </button>
-					    </h4>
-					    <div id="collapseCountries" class="accordion-collapse collapse" aria-labelledby="headingCountries">
-					        <div class="accordion-body">
-					            <div id="country_checkboxes"></div> <!-- Existing div -->
-					        </div>
-					    </div>
-					</div>
-	      </div>
+            </button>
+          </h4>
+          <div id="collapseCountries" class="accordion-collapse collapse" aria-labelledby="headingCountries">
+            <div class="accordion-body">
+              <div id="country_checkboxes"></div> <!-- Existing div -->
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <!-- info box -->
-	      <div id="search_info" class="p-1 mt-2 collapse show">
-	        <p class="search_info-header">So you know...</p>
-		      <p>Results include linked sets of records from the WHG "union index" (blue)
-			      and may include records from public datasets yet to be indexed (green). Result sets from the union index
-			      have a Place Portal page aggregating information from all linked records.</p>
-		      </p>
-	      </div>
-	    </div>
-			<div id="search_right" class="col-8">
-				<div id="search_right_top" class="row px-1">
-{#					<div id="map" class="col-9 bg-lighterblue"></div>#}
-{# sg fix: remove col-9 to correct map width; still needs some padding-right reduction for alignment, and padding-bottom increase to avoid scrollbar collision #}
-					<div id="map" class="bg-lighterblue"></div>
-{#					<div id="map_notes" class="col-3 bg-lightyellow p-2">legend? note?</div>#}
-				</div>
-				<div id="result_container" class="row p-1">
-					<div id="search_results" class="col-12 bg-light p-2">
-						<h6>Search in WHG</h6>
-						<p>You are searching all place records published in WHG.
-							Some results are sets of attestations linked in our "<b>union index</b>";
-							others have yet to be linked. Good luck understanding that!</p>
-					</div>
-				</div>
-			</div>
+      <!-- info box -->
+      <div id="search_info" class="p-1 mt-2 collapse show">
+        <p class="search_info-header">So you know...</p>
+        <p>Results include linked sets of records from the WHG "union index" (blue)
+          and may include records from public datasets yet to be indexed (green). Result sets from the union index
+          have a Place Portal page aggregating information from all linked records.</p>
+        </p>
+      </div>
+    </div>
+    <div id="search_right" class="col-8">
+      <div id="search_right_top" class="row px-1">
+        {#					<div id="map" class="col-9 bg-lighterblue"></div>#}
+        {# sg fix: remove col-9 to correct map width; still needs some padding-right reduction for alignment, and padding-bottom increase to avoid scrollbar collision #}
+        <div id="map" class="bg-lighterblue"></div>
+        {#					<div id="map_notes" class="col-3 bg-lightyellow p-2">legend? note?</div>#}
+      </div>
+      <div id="result_container" class="row p-1">
+        <div id="search_results" class="col-12 bg-light p-2">
+          <h6>Search in WHG</h6>
+          <p>You are searching all place records published in WHG.
+            Some results are sets of attestations linked in our "<b>union index</b>";
+            others have yet to be linked. Good luck understanding that!</p>
+        </div>
+      </div>
+    </div>
   </div>
   {% csrf_token %} <!-- Used for Django POST requests -->
   <script type="text/javascript">
-	const dropdown_data = {{ dropdown_data|safe }};  // Used for spatial filter
+    const dropdown_data = {{ dropdown_data|safe }};  // Used for spatial filter
   </script>
-  
+
 {% endblock %}
 
 {% block deferredScripts %}
-   	
-   	var scripts = [
-		{
-			src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
-			type: 'text/javascript',
-		},
-		{
-			src: '{% static 'webpack/search.bundle.js' %}',
-			type: 'module',
-		},
-   	]
+
+  var scripts = [
+  {
+  src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
+  type: 'text/javascript',
+  },
+  {
+  src: '{% static 'webpack/search.bundle.js' %}',
+  type: 'module',
+  },
+  ]
 
 {% endblock %}
