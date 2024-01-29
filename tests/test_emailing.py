@@ -1,5 +1,5 @@
 # ./manage.py test --settings=tests.settings tests.test_emailing.ContactFormTestCase
-# ./manage.py test --settings=tests.settings tests.test_emailing.EmailerTestCase
+# ./manage.py test --settings=tests.settings tests.test_emailing.NewUserTestCase
 # ./manage.py test --settings=tests.settings tests.test_emailing.DatasetSignalTestCase
 
 from django.test import TestCase
