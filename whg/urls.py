@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import path, re_path, include, get_resolver
 from django.views.generic.base import TemplateView
 
+from accounts.views import profile_edit
 from main import views
 from datasets.views import PublicListsView #, DataListsView
 from resources.views import TeachingPortalView
@@ -28,7 +29,6 @@ handler500 = 'main.views.custom_error_view'
 urlpatterns = [
     # path('', views.splash, name='splash'),
     path('', views.Home30a.as_view(), name="home"),
-    path('libre/', views.LibreView.as_view(), name='libre'),
 
     # apps
     path('areas/', include('areas.urls')),
@@ -46,7 +46,7 @@ urlpatterns = [
     path('public_data/', PublicListsView.as_view(), name='public-lists'),
 
     # profile and settings
-    path('profile/', views.profile_edit, name="profile-edit"),
+    path('profile/', profile_edit, name="profile-edit"),
 
     path('dashboard/', views.dashboard_redirect, name="dashboard"),  # redirect to user or admin
     path('dashboard_user/', views.dashboard_user_view, name="dashboard-user"),
@@ -67,12 +67,12 @@ urlpatterns = [
     path('build/', TemplateView.as_view(template_name="home/build_new.html"), name="build"),
     path('pipeline/', TemplateView.as_view(template_name="home/pipeline.html"), name="pipeline"),
 
-    path('tinymce/', include('tinymce.urls')),
+    # path('tinymce/', include('tinymce.urls')),
 
     path('modal_home/', views.home_modal, name="modal-home"),
 
     path('comment/<int:rec_id>', views.CommentCreateView.as_view(), name='comment-create'),
-    path('contact/', views.contactView, name='contact'),
+    path('contact/', views.contact_view, name='contact'),
     path('success/', views.contactSuccessView, name='success'),
     path('status/', views.statusView, name='status'),
     path('create_link/', views.create_link, name="create-link"),

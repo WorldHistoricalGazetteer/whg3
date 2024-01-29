@@ -9,30 +9,24 @@ from django.shortcuts import render, get_object_or_404, redirect #, render_to_re
 from django.urls import reverse_lazy
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import TemplateView
+
+from .forms import CommentModalForm, ContactForm
 from areas.models import Area
 from collection.models import Collection, CollectionGroup, CollectionGroupUser
 from datasets.models import Dataset
 from datasets.tasks import testAdd
 from main.models import Link
 from places.models import Place, PlaceGeom
+from utils.emailing import new_emailer
+
 from bootstrap_modal_forms.generic import BSModalCreateView
-from django.core import serializers
-from django.contrib.gis.geos import GEOSGeometry
 import json
 import random
-
-from .forms import CommentModalForm, ContactForm
-es = settings.ES_CONN
-from random import shuffle
-from urllib.parse import urlparse
-import sys
-
-from django.shortcuts import render, redirect
-from django import forms
-from django.contrib import messages
-
 import requests
-import json
+import sys
+from urllib.parse import urlparse
+
+es = settings.ES_CONN
 
 # initiated by main.tasks.request_tileset()
 def send_tileset_request(dataset_id=None, collection_id=None, tiletype='normal'):
@@ -55,7 +49,7 @@ def send_tileset_request(dataset_id=None, collection_id=None, tiletype='normal')
   # Send the POST request
   response = requests.post(url, headers={"Content-Type": "application/json"}, data=json.dumps(data))
 
-  # Check the response
+  # Check the response7
   print("Response:", response)
   print("Response status:", response.status_code)
   if response.status_code == 200:
@@ -118,19 +112,6 @@ class Home30a(TemplateView):
 
     return context
 
-@login_required
-def profile_edit(request):
-    if request.method == 'POST':
-        user = request.user
-        user.name = request.POST.get('name')
-        user.affiliation = request.POST.get('affiliation')
-        user.save()
-        return redirect('profile-edit')
-
-    is_admin = request.user.groups.filter(name='whg_admins').exists()
-    context={'is_admin': is_admin}
-    return render(request, 'main/profile.html', context=context)
-
 def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
   from django.db.models import Max
   # Always apply extra filters if they are provided and the model is Area
@@ -150,7 +131,6 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
       objects = objects.order_by('-recent_log_timestamp')
 
   return objects
-
 
 def area_list(request):
   # Filter that applies to all Area objects to exclude system records.
@@ -221,9 +201,6 @@ def group_list(request, role):
     'section': 'groups'
   }
   return render(request, 'lists/group_list.html', context)
-
-from django.shortcuts import redirect
-from django.contrib.auth.decorators import login_required
 
 # get's the correct view based on user group
 @login_required
@@ -312,31 +289,6 @@ def dashboard_admin_view(request):
   # return render(request, 'main/dashboard_admin.html', {'initial_section': section})
   return render(request, 'main/dashboard_admin.html', context)
 
-# first take at a dashboard for all users
-def dashboard_view(request):
-  is_admin = request.user.groups.filter(name='whg_admins').exists()
-  is_leader = request.user.groups.filter(name='group_leaders').exists()
-  user_groups = [group.name for group in request.user.groups.all()]
-
-  user_datasets_count = Dataset.objects.filter(owner=request.user.id).count()
-  user_collections_count = Collection.objects.filter(owner=request.user).count()
-
-  section = request.GET.get('section', 'datasets')
-
-  datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
-  collections = get_objects_for_user(Collection, request.user, {'owner': request.user}, is_admin)
-
-  context = {
-    'datasets': datasets,
-    'collections': collections,
-    'has_datasets': user_datasets_count > 0,
-    'has_collections': user_collections_count > 0,
-    'section': section,
-    'user_groups': user_groups,
-    'is_admin': is_admin,
-    'is_leader': is_leader,
-  }
-  return render(request, 'main/dashboard.html', context)
 
 @csrf_exempt
 def home_modal(request):
@@ -345,7 +297,6 @@ def home_modal(request):
   url = 'home/' + page + '.html'
   print('home_modal() url:', url)
   return render(request, url, context)
-
 
 def custom_error_view(request, exception=None):
     print('error request', request.GET.__dict__)
@@ -357,6 +308,7 @@ def is_url(url):
     return all([result.scheme, result.netloc])
   except ValueError:
     return False
+
 """ 
   create link associated with instance of various models, so far:
   Collection, CollectionGroup, TraceAnnotation, Place 
@@ -417,50 +369,7 @@ def remove_link(request, *args, **kwargs):
   link.delete()
   return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-# experiment with MapLibre
-class LibreView(TemplateView):
-    template_name = 'datasets/libre.html'
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(LibreView, self).get_context_data(*args, **kwargs)
-        context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-        context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-        context['maptilerkey'] = settings.MAPTILER_KEY
-        context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
-        context['maptilerkey'] = settings.MAPTILER_KEY
-        context['media_url'] = settings.MEDIA_URL
-        return context
-
-class Home2b(TemplateView):
-    # template_name = 'main/home_v2a.html'
-    template_name = 'main/home_v2b.html'
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(Home2b, self).get_context_data(*args, **kwargs)
-        
-        # deliver featured datasets and collections
-        f_collections = Collection.objects.exclude(featured__isnull=True)
-        f_datasets = list(Dataset.objects.exclude(featured__isnull=True))
-        shuffle(f_datasets)
-        
-        # 2 collections, rotate datasets randomly
-        context['featured_coll'] = f_collections.order_by('featured')[:2]
-        context['featured_ds'] = f_datasets
-        context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-        context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-        context['maptilerkey'] = settings.MAPTILER_KEY
-        context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
-        context['maptilerkey'] = settings.MAPTILER_KEY
-        context['media_url'] = settings.MEDIA_URL
-        context['base_dir'] = settings.BASE_DIR
-        context['beta_or_better'] = True if self.request.user.groups.filter(
-            name__in=['beta', 'admins']).exists() else False
-        context['teacher'] = True if self.request.user.groups.filter(
-            name__in=['teacher']).exists() else False
-
-        return context
-
-
+# TODO on cron in v3?
 def statusView(request):
     context = {"status_site": "??",
                "status_database": "??",
@@ -473,17 +382,6 @@ def statusView(request):
     except:
         context["status_database"] = "down"
 
-    # whg index
-    # TODO: 20221203 something happened to cause
-    # ElasticsearchWarning: The client is unable to verify that the server is Elasticsearch due security privileges on the server side
-    # try:
-    #     q = {"query": {"bool": {"must": [{"match": {"place_id": "81011"}}]}}}
-    #     res1 = es.search(index=, body=q)
-    #     context["status_index"] = "up" if (res1['hits']['total'] == 1 and res1['hits']['hits'][0]['_source']['title'] == 'Abydos') \
-    #         else "error"
-    # except:
-    #     context["status_index"] = "down"
-
     # celery recon task
     try:
         result = testAdd.delay(8, 8)
@@ -493,34 +391,86 @@ def statusView(request):
 
     return render(request, "main/status.html", {"context": context})
 
-
-def contactView(request):
-    print('contact request.GET', request.GET)
-    sending_url = request.GET.get('from')
-    if request.method == 'GET':
-        form = ContactForm()
+# {'name': ['Test User'],
+#  'username': ['testuser'],
+#  'subject': ['Test Subject'],
+#  'from_email': ['testuser@example.com'],
+#  'message': ['Test Message']}
+def contact_view(request):
+  print('contact_view() request.POST', request.POST)
+  sending_url = request.GET.get('from')
+  if request.method == 'GET':
+    form = ContactForm()
+  else:
+    form = ContactForm(request.POST)
+    if form.is_valid():
+      name = form.cleaned_data['name']
+      username = form.cleaned_data.get('username', None)
+      user_subject = form.cleaned_data['subject']
+      user_email = form.cleaned_data['from_email']
+      user_message = form.cleaned_data['message']
+      try:
+        # deliver form message to admins
+        print('EMAIL_TO_ADMINS', settings.EMAIL_TO_ADMINS)
+        new_emailer(
+          email_type='contact_form',
+          subject='Contact form submission',
+          from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt to admins
+          to_email=settings.EMAIL_TO_ADMINS,  # to editor
+          reply_to=[user_email],  # reply-to sender
+          name=name,  # user's name
+          username=username,  # user's username
+          user_subject=user_subject,  # user-submitted subject
+          user_email=user_email,  # user's email
+          user_message=user_message,  # user-submitted message
+        )
+        # deliver 'received' reply to sender
+        new_emailer(
+          email_type='contact_reply',
+          subject="Message to WHG received",  # got it
+          from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt
+          to_email=[user_email],  # to sender
+          reply_to=[settings.DEFAULT_FROM_EDITORIAL],  # reply-to editorial
+          name=name,  # user's name
+          greeting_name=name if name else username,
+          user_subject=user_subject,  # user-submitted subject
+        )
+      except BadHeaderError:
+        return HttpResponse('Invalid header found.')
+      return redirect('/success?return=' + sending_url if sending_url else '/')
     else:
-        form = ContactForm(request.POST)
-        if form.is_valid():
-            human = True
-            name = form.cleaned_data['name']
-            username = form.cleaned_data['name'] # hidden input
-            subject = form.cleaned_data['subject']
-            from_email = form.cleaned_data['from_email']
-            message = name +'('+from_email+'), on the subject of '+subject+' says: \n\n'+form.cleaned_data['message']
-            subject_reply = "WHG message received"
-            message_reply = '\nWe received your message concerning "'+subject+'" and will respond soon.\n\n regards,\nThe WHG project team'
-            try:
-                send_mail(subject, message, from_email, ["karl@kgeographer.org"])
-                send_mail(subject_reply, message_reply, 'karl@kgeographer.org', [from_email])
-            except BadHeaderError:
-                return HttpResponse('Invalid header found.')
-            return redirect('/success?return='+sending_url if sending_url else '/')
-            # return redirect(sending_url)
-        else:
-            print('not valid, why?')
-                
-    return render(request, "main/contact.html", {'form': form, 'user': request.user})
+      print('Form errors from contact_view():', form.errors)
+
+  return render(request, "main/contact.html", {'form': form, 'user': request.user})
+
+
+# def contactView(request):
+#     print('contact request.GET', request.GET)
+#     sending_url = request.GET.get('from')
+#     if request.method == 'GET':
+#         form = ContactForm()
+#     else:
+#         form = ContactForm(request.POST)
+#         if form.is_valid():
+#             human = True
+#             name = form.cleaned_data['name']
+#             username = form.cleaned_data['name'] # hidden input
+#             subject = form.cleaned_data['subject']
+#             from_email = form.cleaned_data['from_email']
+#             message = name +'('+from_email+'), on the subject of '+subject+' says: \n\n'+form.cleaned_data['message']
+#             subject_reply = "WHG message received"
+#             message_reply = '\nWe received your message concerning "'+subject+'" and will respond soon.\n\n regards,\nThe WHG project team'
+#             try:
+#                 send_mail(subject, message, from_email, ["karl@kgeographer.org"])
+#                 send_mail(subject_reply, message_reply, 'karl@kgeographer.org', [from_email])
+#             except BadHeaderError:
+#                 return HttpResponse('Invalid header found.')
+#             return redirect('/success?return='+sending_url if sending_url else '/')
+#             # return redirect(sending_url)
+#         else:
+#             print('not valid, why?')
+#
+#     return render(request, "main/contact.html", {'form': form, 'user': request.user})
 
 
 def contactSuccessView(request, *args, **kwargs):

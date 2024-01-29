@@ -1,4 +1,5 @@
 from django import forms
+from django.conf import settings
 from django.db import models
 from django.utils.safestring import mark_safe
 
@@ -6,11 +7,9 @@ from main.models import Comment
 from main.choices import COMMENT_TAGS, COMMENT_TAGS_REVIEW
 from bootstrap_modal_forms.forms import BSModalForm
 from captcha.fields import CaptchaField
+import sys
 
 class ContactForm(forms.Form):
-    name = forms.CharField(
-        widget=forms.TextInput(attrs={'size': 50}),
-        required=True)
     name = forms.CharField(
         widget=forms.TextInput(attrs={'size': 50}),
         required=True)
@@ -22,7 +21,29 @@ class ContactForm(forms.Form):
         widget=forms.TextInput(attrs={'size': 50}),
         required=True)
     message = forms.CharField(widget=forms.Textarea(attrs={'cols': 50, 'rows': 5}), required=True)
+    username = forms.CharField(widget=forms.HiddenInput(), required=False)
     captcha = CaptchaField()
+
+    def clean_captcha(self):
+        print('in clean_captcha')
+        if settings.TESTING:
+            # Bypass CAPTCHA validation
+            return self.cleaned_data.get('captcha')
+
+    # def clean_captcha(self):
+    #     print('in clean_captcha')
+    #     print('test in sys.argv?', 'test' in sys.argv)
+    #     captcha = self.cleaned_data.get('captcha')
+    #
+    #     # Skip captcha validation if 'test' is in sys.argv
+    #     if 'test' in sys.argv:
+    #         print('test in sys.argv, skipping captcha validation')
+    #         return captcha
+    #
+    #     # Your custom captcha validation logic (if any) goes here
+    #     # If there's no additional validation needed, just return the captcha value
+    #     return captcha
+
 
 class CommentModalForm(BSModalForm):
     class Meta:

@@ -42,8 +42,7 @@ from .exceptions import LPFValidationError, DelimValidationError, \
   DelimInsertError, DataAlreadyProcessedError
 from .forms import (HitModelForm, DatasetDetailModelForm,
                     DatasetUploadForm, DatasetCreateModelForm, DatasetCreateEmptyModelForm)
-from .insert import ds_insert_json, ds_insert_delim, \
-  ds_insert_lpf, ds_insert_tsv, failed_upload_notification
+from .insert import ds_insert_json, ds_insert_delim, ds_insert_lpf, ds_insert_tsv
 from .validation import validate_delim, validate_lpf, validate_tsv
 
 from .models import Dataset, Hit, DatasetFile
@@ -749,11 +748,12 @@ def review(request, pk, tid, passnum):
         ds.save()
         status_emailer(ds, "wd")
         print("sent status email")
-      elif auth == "idx" and ds.recon_status["idx"] == 0:
-        ds.ds_status = "indexed"
-        ds.save()
-        status_emailer(ds, "idx")
-        print("sent status email")
+      # handled by signal now
+      # elif auth == "idx" and ds.recon_status["idx"] == 0:
+      #   ds.ds_status = "indexed"
+      #   ds.save()
+      #   status_emailer(ds, "idx")
+      #   print("sent status email")
 
       print("review_field", review_field)
       setattr(place_post, review_field, 1)
@@ -2150,7 +2150,6 @@ def ds_insert_tsv(request, pk):
     try:
       infile = dsf.file.open(mode="r")
       reader = csv.reader(infile, delimiter=dsf.delimiter)
-      # reader = csv.reader(infile, delimiter='\t')
 
       infile.seek(0)
       header = next(reader, None)
@@ -2172,7 +2171,6 @@ def ds_insert_tsv(request, pk):
         # build attributes for new Place instance
         src_id = r[header.index('id')]
         title = r[header.index('title')].strip()  # don't try to correct incoming except strip()
-        # title = r[header.index('title')].replace("' ","'") # why?
         # strip anything in parens for title only
         # title = re.sub('\(.*?\)', '', title)
         title_source = r[header.index('title_source')]
@@ -2530,19 +2528,20 @@ class PublicListsView(ListView):
     return context
 
 
-def failed_upload_notification(user, fn, ds=None):
-  subj = 'World Historical Gazetteer error followup '
-  subj += 'on dataset (' + ds + ')' if ds else ''
-  msg = 'Hello ' + user.name + \
-        ', \n\nWe see your recent upload was not successful '
-  if ds:
-    msg += 'on insert to the database '
-  else:
-    msg += 'on initial validation '
-  msg += '-- very sorry about that! ' + \
-         '\nWe will look into why and get back to you within a day.\n\nRegards,\nThe WHG Team\n\n\n[' + fn + ']'
-  emailer(subj, msg, settings.DEFAULT_FROM_EMAIL,
-          [user.email, settings.EMAIL_HOST_USER])
+# def failed_upload_notification(user, fn, ds=None):
+#   subj = 'World Historical Gazetteer error followup '
+#   subj += 'on dataset (' + ds + ')' if ds else ''
+#   msg = 'Hello ' + user.name + \
+#         ', \n\nWe see your recent upload was not successful '
+#   if ds:
+#     msg += 'on insert to the database '
+#   else:
+#     msg += 'on initial validation '
+#   msg += '-- very sorry about that! ' + \
+#          '\nWe will look into why and get back to you within a day.\n\nRegards,\nThe WHG Team\n\n\n[' + fn + ']'
+#   # TODO: new_emailer()
+#   emailer(subj, msg, settings.DEFAULT_FROM_EMAIL,
+#           [user.email, settings.EMAIL_HOST_USER])
 
 
 """
@@ -2706,7 +2705,7 @@ def read_file_into_dataframe(file, ext):
 
 """
   DatasetCreate()
-  2023-08; replaces DatasetCreateView(); bot-guided
+  2023-08; replaces DatasetCreateView()
   - validates form
   - checks file encoding, gets mimetype
   - initiates content validation (validation.py)

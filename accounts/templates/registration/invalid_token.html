@@ -1,0 +1,13 @@
+<!-- templates/registration/confirmation_sent.html -->
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container">
+  <div class="d-flex justify-content-center mt-3">
+  <div>
+  <h2>Expired email token, sorry</h2>
+    <p>The confirmation link sent has expired. Please complete the registration form again. <a href="{% url 'register' %}">contact us</a>.</p>
+  </div>
+  </div>
+</div>
+{% endblock %}

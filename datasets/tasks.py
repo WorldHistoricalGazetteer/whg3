@@ -31,6 +31,7 @@ from datasets.models import Dataset, Hit
 from datasets.static.hashes.parents import ccodes as cchash
 from datasets.static.hashes.qtypes import qtypes
 from elastic.es_utils import makeDoc, build_qobj, profileHit
+# from utils.emailing import new_emailer
 
 #from datasets.task_utils import *
 from datasets.utils import bestParent, elapsed, getQ, \
@@ -428,55 +429,54 @@ def make_download(request, *args, **kwargs):
   return completed_message
 
 
-@shared_task(name="task_emailer")
-def task_emailer(tid, dslabel, name, email, counthit, totalhits, test):
-  # TODO: sometimes a valid tid is not recognized (race?)
-  time.sleep(15)
-  try:
-    task = get_object_or_404(TaskResult, task_id=tid) or False
-    tasklabel = 'Wikidata' if task.task_name[6:8]=='wd' else \
-      'Getty TGN' if task.task_name.endswith('tgn') else 'WHGazetteer'
-    if task.status == "FAILURE":
-      fail_msg = task.result['exc_message']
-      text_content="Greetings "+name+"! Unfortunately, your "+tasklabel+" reconciliation task has completed with status: "+ \
-        task.status+". \nError: "+fail_msg+"\nWHG staff have been notified. We will troubleshoot the issue and get back to you."
-      html_content_fail="<h3>Greetings, "+name+"</h3> <p>Unfortunately, your <b>"+tasklabel+"</b> reconciliation task for the <b>"+dslabel+"</b> dataset has completed with status: "+ task.status+".</p><p>Error: "+fail_msg+". WHG staff have been notified. We will troubleshoot the issue and get back to you soon.</p>"
-    elif test == 'off':
-      text_content="Greetings "+name+"! Your "+tasklabel+" reconciliation task has completed with status: "+ \
-        task.status+". \n"+str(counthit)+" records got a total of "+str(totalhits)+" hits.\nRefresh the dataset page and view results on the 'Reconciliation' tab."
-      html_content_success="<h3>Greetings, "+name+"</h3> <p>Your <b>"+tasklabel+"</b> reconciliation task for the <b>"+dslabel+"</b> dataset has completed with status: "+ task.status+". "+str(counthit)+" records got a total of "+str(totalhits)+" hits.</p>" + \
-        "<p>View results on the 'Reconciliation' tab (you may have to refresh the page).</p>"
-    else:
-      text_content="Greetings "+name+"! Your "+tasklabel+" TEST task has completed with status: "+ \
-        task.status+". \n"+str(counthit)+" records got a total of "+str(totalhits)+".\nRefresh the dataset page and view results on the 'Reconciliation' tab."
-      html_content_success="<h3>Greetings, "+name+"</h3> <p>Your <b>TEST "+tasklabel+"</b> reconciliation task for the <b>"+dslabel+"</b> dataset has completed with status: "+ task.status+". "+str(counthit)+" records got a total of "+str(totalhits)+" hits.</p>" + \
-        "<p>View results on the 'Reconciliation' tab (you may have to refresh the page).</p>"
-  except:
-    print('task lookup in task_emailer() failed on tid', tid, 'how come?')
-    text_content="Greetings "+name+"! Your reconciliation task for the <b>"+dslabel+"</b> dataset has completed.\n"+ \
-      str(counthit)+" records got a total of "+str(totalhits)+" hits.\nRefresh the dataset page and view results on the 'Reconciliation' tab."
-    html_content_success="<h3>Greetings, "+name+"</h3> <p>Your reconciliation task for the <b>"+dslabel+"</b> dataset has completed. "+str(counthit)+" records got a total of "+str(totalhits)+" hits.</p>" + \
-      "<p>View results on the 'Reconciliation' tab (you may have to refresh the page).</p>"
-
-  subject, from_email = 'WHG reconciliation result', 'whg@kgeographer.org'
-  conn = mail.get_connection(
-    host=settings.EMAIL_HOST,
-    user=settings.EMAIL_HOST_USER,
-    use_ssl=settings.EMAIL_USE_SSL,
-    password=settings.EMAIL_HOST_PASSWORD,
-    port=settings.EMAIL_PORT
-  )
-  # msg=EmailMessage(
-  msg = EmailMultiAlternatives(
-    subject,
-    text_content,
-    from_email,
-    [email],
-    connection=conn
-  )
-  msg.bcc = ['karl@kgeographer.org']
-  msg.attach_alternative(html_content_success if task and task.status == 'SUCCESS' else html_content_fail, "text/html")
-  msg.send(fail_silently=False)
+# @shared_task(name="task_emailer")
+# def task_emailer(tid, dslabel, name, email, counthit, totalhits, test):
+#   # TODO: sometimes a valid tid is not recognized (race?)
+#   time.sleep(15)
+#   try:
+#     task = get_object_or_404(TaskResult, task_id=tid) or False
+#     tasklabel = 'Wikidata' if task.task_name[6:8]=='wd' else 'WHGazetteer'
+#     if task.status == "FAILURE":
+#       fail_msg = task.result['exc_message']
+#       text_content="Greetings "+name+"! Unfortunately, your "+tasklabel+" reconciliation task has completed with status: "+ \
+#         task.status+". \nError: "+fail_msg+"\nWHG staff have been notified. We will troubleshoot the issue and get back to you."
+#       html_content_fail="<h3>Greetings, "+name+"</h3> <p>Unfortunately, your <b>"+tasklabel+"</b> reconciliation task for the <b>"+dslabel+"</b> dataset has completed with status: "+ task.status+".</p><p>Error: "+fail_msg+". WHG staff have been notified. We will troubleshoot the issue and get back to you soon.</p>"
+#     elif test == 'off':
+#       text_content="Greetings "+name+"! Your "+tasklabel+" reconciliation task has completed with status: "+ \
+#         task.status+". \n"+str(counthit)+" records got a total of "+str(totalhits)+" hits.\nRefresh the dataset page and view results on the 'Reconciliation' tab."
+#       html_content_success="<h3>Greetings, "+name+"</h3> <p>Your <b>"+tasklabel+"</b> reconciliation task for the <b>"+dslabel+"</b> dataset has completed with status: "+ task.status+". "+str(counthit)+" records got a total of "+str(totalhits)+" hits.</p>" + \
+#         "<p>View results on the 'Reconciliation' tab (you may have to refresh the page).</p>"
+#     else:
+#       text_content="Greetings "+name+"! Your "+tasklabel+" TEST task has completed with status: "+ \
+#         task.status+". \n"+str(counthit)+" records got a total of "+str(totalhits)+".\nRefresh the dataset page and view results on the 'Reconciliation' tab."
+#       html_content_success="<h3>Greetings, "+name+"</h3> <p>Your <b>TEST "+tasklabel+"</b> reconciliation task for the <b>"+dslabel+"</b> dataset has completed with status: "+ task.status+". "+str(counthit)+" records got a total of "+str(totalhits)+" hits.</p>" + \
+#         "<p>View results on the 'Reconciliation' tab (you may have to refresh the page).</p>"
+#   except:
+#     print('task lookup in task_emailer() failed on tid', tid, 'how come?')
+#     text_content="Greetings "+name+"! Your reconciliation task for the <b>"+dslabel+"</b> dataset has completed.\n"+ \
+#       str(counthit)+" records got a total of "+str(totalhits)+" hits.\nRefresh the dataset page and view results on the 'Reconciliation' tab."
+#     html_content_success="<h3>Greetings, "+name+"</h3> <p>Your reconciliation task for the <b>"+dslabel+"</b> dataset has completed. "+str(counthit)+" records got a total of "+str(totalhits)+" hits.</p>" + \
+#       "<p>View results on the 'Reconciliation' tab (you may have to refresh the page).</p>"
+#
+#   subject, from_email = 'WHG reconciliation result', 'whg@kgeographer.org'
+#   conn = mail.get_connection(
+#     host=settings.EMAIL_HOST,
+#     user=settings.EMAIL_HOST_USER,
+#     use_ssl=settings.EMAIL_USE_SSL,
+#     password=settings.EMAIL_HOST_PASSWORD,
+#     port=settings.EMAIL_PORT
+#   )
+#   # msg=EmailMessage(
+#   msg = EmailMultiAlternatives(
+#     subject,
+#     text_content,
+#     from_email,
+#     [email],
+#     connection=conn
+#   )
+#   msg.bcc = ['karl@kgeographer.org']
+#   msg.attach_alternative(html_content_success if task and task.status == 'SUCCESS' else html_content_fail, "text/html")
+#   msg.send(fail_silently=False)
 
 # test task for uptimerobot
 @shared_task(name="testAdd")
@@ -996,7 +996,6 @@ def align_wdlocal(*args, **kwargs):
   bounds = kwargs['bounds']
   scope = kwargs['scope']
   print('kwargs from align_wdlocal() task', kwargs)
-  #bounds = {'type': ['userarea'], 'id': ['0']}
   language = kwargs['lang']
   hit_parade = {"summary": {}, "hits": []}
   [nohits,wdlocal_es_errors,features] = [[],[],[]]
@@ -1124,18 +1123,26 @@ def align_wdlocal(*args, **kwargs):
 
   # create log entry and update ds status
   post_recon_update(ds, user, 'wdlocal', test)
-    
+
   # email owner when complete
-  task_emailer.delay(
-    task_id,
-    ds.label,
-    user.name,
-    user.email,
-    count_hit,
-    total_hits,
-    test
+  from utils.emailing import new_emailer
+  new_emailer(
+    email_type='align_wdlocal',
+    subject='Wikidata alignment task complete',
+    from_email=settings.DEFAULT_FROM_EMAIL,
+    to_email=[user.email],
+    name=user.username,
+    greeting_name=user.name if user.name else user.username,
+    dslabel=ds.label,
+    dstitle=ds.title,
+    email=user.email,
+    # TODO: get correct counts for message
+    counthit=count_hit,  # of records with any hit(s)
+    totalhits=total_hits,  # of hits
+    taskname='Wikidata',
+    status=align_wdlocal.request.status,
   )
-  
+
   return hit_parade['summary']
 
 
@@ -1558,10 +1565,10 @@ def align_idx(*args, **kwargs):
         #print(json.dumps(jsonic,indent=2))
   
   # testing: write new index seed/parent docs for inspection
-  fout1.write(str(new_seeds))
-  fout1.write('\n\nFor Review\n'+str(for_review))
-  fout1.close()
-  print(str(len(new_seeds)+len(for_review)) + ' IDs written to '+ fn1)
+  # fout1.write(str(new_seeds))
+  # fout1.write('\n\nFor Review\n'+str(for_review))
+  # fout1.close()
+  # print(str(len(new_seeds)+len(for_review)) + ' IDs written to '+ fn1)
   
   end = datetime.datetime.now()
   
@@ -1581,15 +1588,26 @@ def align_idx(*args, **kwargs):
   post_recon_update(ds, user, 'idx', test)
 
   # email owner when complete
-  task_emailer.delay(
-    task_id,
-    ds.label,
-    user.name,
-    user.email,
-    count_hit,
-    total_hits,
-    test,
-  )    
+  # tid, dslabel, name, email, counthit, totalhits, test
+  from utils.emailing import new_emailer
+  new_emailer(
+    email_type='align_idx',
+    subject='WHG alignment task complete',
+    from_email=settings.DEFAULT_FROM_EMAIL,
+    to_email=[user.email],
+    name=user.username,
+    greeting_name=user.name if user.name else user.username,
+    dslabel=ds.label,
+    dstitle=ds.title,
+    email=user.email,
+    # TODO: get correct counts for message
+    counthit=count_hit,  # of records with any hit(s)
+    totalhits=total_hits,  # of hits
+    taskname='WHG index',
+    status=align_idx.request.status,
+    test=test
+  )
+
   print('elapsed time:', elapsed(end-start))
 
 

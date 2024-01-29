@@ -37,7 +37,21 @@ _as of 10 Jan 2024_
     - test_ReconWDlocal (fails)
 
 ### tests/test_tilesets.py
-#### 7. [TestSendTilesetRequestIntegration](tests/test_wdlocal.py)
+#### 7. [TestSendTilesetRequestIntegration](tests/tilesets.py)
     - test_send_tileset_request
+
+### tests/test_emailing.py
+#### 8. [NewUserTestCase](tests/test_emailing.py)
+    - test_new_user_emails
+
+#### 9. [DatasetSignalTestCase](tests/test_emailing.py)
+    - test_send_new_dataset_email
+    - test_handle_public_true
+    - test_handle_public_false
+    - test_handle_wdcomplete
+    - test_handle_indexed
+
+#### 10. [ContactFormTestCase](tests/test_emailing.py)
+    - test_contact_form_email
 
 

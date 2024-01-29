@@ -1,0 +1,13 @@
+<!-- templates/registration/confirmation_success.html -->
+{% extends 'main/base.html' %}
+
+{% block content %}
+<div class="container">
+  <div class="d-flex justify-content-center text-center mt-5">
+  <div>
+  <h3>Thank you for registering at World Historical Gazetteer</h3>
+  <h5>You can <a href="{% url 'accounts:login' %}">login now</a>!</h5>
+  </div>
+  </div>
+</div>
+{% endblock %}

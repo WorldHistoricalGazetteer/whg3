@@ -5,18 +5,124 @@ from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 
 User = get_user_model()
+from django.conf import settings
 from django.contrib import auth, messages
+from django.core.mail import EmailMultiAlternatives
+from django.core.signing import Signer
+from django.core.mail import send_mail
 from django.db import transaction
-from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django import forms
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect, reverse, get_object_or_404
 
 from accounts.forms import UserModelForm
 from collection.models import Collection, CollectionGroup, CollectionGroupUser, CollectionUser
 from datasets.models import Dataset, DatasetUser
-from datasets.static.hashes import mimetypes_plus as mthash_plus
-import codecs, json, os, re, sys, tempfile
-import pandas as pd
+
+
+def register(request):
+  if request.method == 'POST':
+    if request.POST['password1'] == request.POST['password2']:
+      try:
+        User.objects.get(username=request.POST['username'])
+        return render(request, 'registration/register.html',
+                      {'error': 'That username is already taken. Try another, please.'})
+      except User.DoesNotExist:
+        print('request.POST', request.POST)
+        user = User.objects.create_user(
+          # request.POST['email'],
+          request.POST['username'],
+          password=request.POST['password1'],
+          email=request.POST['email'],
+          affiliation=request.POST['affiliation'],
+          name=request.POST['name'],
+          role='normal',
+        )
+        user.email_confirmed = False
+        user.save()
+
+        signer = Signer()
+        token = signer.sign(user.pk)
+
+        confirm_url = request.build_absolute_uri(reverse('accounts:confirm-email', args=[token]))
+
+        subject = 'Confirm your registration at World Historical Gazetteer'
+        text_content = f'Please click the link to confirm your WHG registration:\n\n {confirm_url}'
+        html_content = f'Please click the link to <a href="{confirm_url}">confirm your WHG registration</a>.'
+
+        email = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [user.email])
+        email.attach_alternative(html_content, "text/html")
+        email.send(fail_silently=False)
+
+        # send_mail(
+        #   'Confirm your registration at World Historical Gazetteer',
+        #   f'Please click the link to confirm your WHG registration: <br/>{confirm_url}',
+        #   settings.DEFAULT_FROM_EMAIL,
+        #   [user.email],
+        #   fail_silently=False,
+        # )
+
+        return redirect('accounts:confirmation-sent')
+
+    else:
+      return render(request, 'registration/register.html', {'error': 'Sorry, password mismatch!'})
+
+  else:
+    return render(request, 'registration/register.html')
+
+
+def confirm_email(request, token):
+  signer = Signer()
+  try:
+    user_id = signer.unsign(token)
+    user = User.objects.get(pk=user_id)
+    user.email_confirmed = True
+    user.save()
+
+    # Redirect to a success page
+    return redirect('accounts:confirmation-success')
+  except:
+    # Handle invalid or expired token
+    return render(request, 'accounts:invalid_token.html')
+
+
+def confirmation_sent(request):
+  return render(request, 'registration/confirmation_sent.html')
+
+
+def confirmation_success(request):
+  return render(request, 'registration/confirmation_success.html')
+
+
+def login(request):
+  if request.method == 'POST':
+    user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
+    if user is not None:
+      auth.login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+      return redirect('home')
+    else:
+      messages.error(request, "Sorry, that username is not recognized.")
+      return redirect('accounts:login')
+  else:
+    return render(request, 'accounts/login.html')
+
+
+# def login(request):
+#   if request.method == 'POST':
+#     user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
+#     # user = auth.authenticate(email=request.POST['email'],password=request.POST['password'])
+#     if user is not None:
+#       auth.login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+#       return redirect('home')
+#     else:
+#       raise forms.ValidationError("Sorry, that login was invalid. Please try again.")
+#   else:
+#     return render(request, 'accounts/login.html')
+
+
+def logout(request):
+  if request.method == 'POST':
+    auth.logout(request)
+    return redirect('home')
 
 
 def add_to_group(cg, member):
@@ -27,6 +133,21 @@ def add_to_group(cg, member):
     user=member
   )
   cguser.save()
+
+
+@login_required
+def profile_edit(request):
+  if request.method == 'POST':
+    user = request.user
+    user.name = request.POST.get('name')
+    user.affiliation = request.POST.get('affiliation')
+    user.save()
+    return redirect('profile-edit')
+
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
+  context = {'is_admin': is_admin}
+  return render(request, 'accounts/profile.html', context=context)
+
 
 @login_required
 @transaction.atomic
@@ -74,53 +195,6 @@ def update_profile(request):
       # 'profile_form': profile_form,
       'context': context
     })
-
-
-def register(request):
-  if request.method == 'POST':
-    if request.POST['password1'] == request.POST['password2']:
-      try:
-        User.objects.get(email=request.POST['username'])
-        # User.objects.get(email=request.POST['email'])
-        return render(request, 'accounts/register.html', {'error': 'That username is already taken'})
-      except User.DoesNotExist:
-        print('request.POST', request.POST)
-        user = User.objects.create_user(
-          # request.POST['email'],
-          request.POST['username'],
-          password=request.POST['password1'],
-          email=request.POST['email'],
-          affiliation=request.POST['affiliation'],
-          name=request.POST['name'],
-          role='normal',
-        )
-        auth.login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-        return redirect('home')
-    else:
-      return render(request, 'accounts/register.html', {'error': 'Sorry, password mismatch!'})
-  else:
-    return render(request, 'accounts/register.html')
-
-
-def login(request):
-  if request.method == 'POST':
-    user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
-    # user = auth.authenticate(email=request.POST['email'],password=request.POST['password'])
-    if user is not None:
-      auth.login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-      return redirect('home')
-    else:
-      raise forms.ValidationError("Sorry, that login was invalid. Please try again.")
-  else:
-    return render(request, 'accounts/login.html')
-
-
-def logout(request):
-  if request.method == 'POST':
-    auth.logout(request)
-    return redirect('home')
-
-
 
 # class ValidationErrorList(Exception):
 #   def __init__(self, errors):
