@@ -8,12 +8,19 @@
     <div class="d-flex justify-content-center mt-3">
       <div>
         <h2>Login</h2>
+        {% if messages %}
+          {% for message in messages %}
+            {% if not message.tags == 'success' %}
+              <p class="red-head alert-{{ message.tags }}">
+                  {{ message }}
+              </p>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
         <form method="post" action="{% url 'accounts:login' %}">
           {% csrf_token %}
           Username:<br/>
           <input type="text" name="username" size = 30 />
-{#          Username:<br/>#}
-{#          <input type="text" name="username" />#}
           <br/>
           Password:<br/>
           <input type="password" name="password" size = 30/>

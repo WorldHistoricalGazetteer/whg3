@@ -624,19 +624,28 @@ def ds_insert_json(data, pk, user):
     print('insert_ skipped, data already in')
     return redirect('/mydata')
 
-def failed_upload_notification(user, fn, ds=None):
+def failed_insert_notification(user, fn, ds=None):
+  """ send email to user, cc admins when insert fails """
+  from utils.emailing import new_emailer
   subj = 'World Historical Gazetteer error followup '
   subj += 'on dataset (' + ds + ')' if ds else ''
-  msg = 'Hello ' + user.username + \
-        ', \n\nWe see your recent upload was not successful '
-  if ds:
-    msg += 'on insert to the database '
-  else:
-    msg += 'on initial validation '
-  msg += '-- very sorry about that! ' + \
-         '\nWe will look into why and get back to you within a day.\n\nRegards,\nThe WHG Team\n\n\n[' + fn + ']'
-  emailer(subj, msg, settings.DEFAULT_FROM_EMAIL,
-          [user.email, settings.EMAIL_HOST_USER])
+  # kitchen sink
+  new_emailer(
+    email_type='failed_insert',
+    subject=subj,
+    from_email=settings.DEFAULT_FROM_EMAIL,
+    to_email=user.email,
+    cc=settings.EMAIL_TO_ADMINS,
+    reply_to=[settings.EMAIL_TO_ADMINS],
+    greeting_name=user.name if user.name else user.username,
+    filename=fn,
+    dataset_title=ds.title,
+    dataset_label=ds.label,
+    dataset_id=ds.id
+
+  )
+  # emailer(subj, msg, settings.DEFAULT_FROM_EMAIL,
+  #         [user.email, settings.EMAIL_HOST_USER])
 
 
 """ 
@@ -1185,7 +1194,7 @@ def ds_insert_tsv(request, pk):
       # drop the (empty) dataset if insert wasn't complete
       ds.delete()
       # email to user, admin
-      failed_upload_notification(user, dsf.file.name, ds.label)
+      failed_insert_notification(user, dsf.file.name, ds.label)
 
       # return message to 500.html
       messages.error(request, "Database insert failed, but we don't know why. The WHG team has been notified and will follow up by email to <b>"+user.username+'</b> ('+user.email+')')
