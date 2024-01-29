@@ -126,34 +126,6 @@ services:
     depends_on:
       - redis
       - db
-      
-  swagger-ui:
-    image: swaggerapi/swagger-ui
-    container_name: swagger-ui
-    networks:
-      - WHG3
-    volumes:
-    - ./api:/app/api
-    env_file:
-      - ./.env/.swagger
-    ports:
-      - 8080:8080
-    depends_on:
-      - web      
-      
-  swagger-editor:
-    image: swaggerapi/swagger-editor
-    container_name: swagger-editor
-    networks:
-      - WHG3
-    volumes:
-    - ./api:/app/api
-    environment:
-      - SWAGGER_FILE=/app/api/swagger/swagger.yaml
-    ports:
-      - 8081:8080
-    depends_on:
-      - web      
 
 volumes:
   app:
