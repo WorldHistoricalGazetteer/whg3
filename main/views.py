@@ -432,6 +432,7 @@ def contact_view(request):
           to_email=[user_email],  # to sender
           reply_to=[settings.DEFAULT_FROM_EDITORIAL],  # reply-to editorial
           name=name,  # user's name
+          greeting_name=name if name else username,
           user_subject=user_subject,  # user-submitted subject
         )
       except BadHeaderError:

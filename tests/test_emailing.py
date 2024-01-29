@@ -13,109 +13,29 @@ from unittest.mock import patch
 import sys
 
 User = get_user_model()
-from datasets.tasks import align_idx
-from datasets.tasks import align_wdlocal
+# from datasets.tasks import align_idx
+# from datasets.tasks import align_wdlocal
 
-# Set up any necessary preconditions for your task here.
-# setUp: dataset, places, user, etc.
-""" {'ds': 22,
-    'dslabel': 'diamonds10',
-    'owner': 2,
-    'user': 2,
-    'bounds': {'type': ['userarea'], 'id': ['0']},
-    'aug_geom': 'on',
-    'scope': 'all',
-    'lang': 'en',
-    'test': 'on',
-    'collection_id': ''}
-"""
+# CASES for new_emailer()
+# ======================
+# /welcome, new_user: user.email_confirmed = True; name, id
+# /contact_form, contact_reply: contact form submitted
 
-class TestAlignIdx(TestCase):
-    def setUp(self):
-        # Create a User instance
-        self.user = User.objects.create_user(username='testuser', email='testuser@example.com', password='testpass')
+# DATASET SIGNALS
+# ===============
+# /new_dataset: new dataset created
+# /dataset_published: public=True
+# /dataset_unpublished: public=False
+# /wikidata_complete: ds_status='wd-complete' -> to editorial
+# /dataset_indexed: ds_status='indexed'
 
-        # Create a Dataset instance
-        self.dataset = Dataset.objects.create(label='diamonds10',
-                                              title='Diamonds 10',
-                                              description='Test description',
-                                              owner=self.user)
+# TASKS
+# =====
+# not testable at this time (can't simulate recon task); but they work
+# recon_task_success: reconciliation task SUCCESS (wdlocal or idx)
+# recon_task_failed: reconciliation task FAILURE (wdlocal or idx)
+# recon_task_test: test index reconciliation task SUCCESS
 
-        # Create several Place instances associated with the Dataset
-        self.place1 = Place.objects.create(dataset=self.dataset.label, src_id='p1', title='Place 1')
-        self.place2 = Place.objects.create(dataset=self.dataset.label, src_id='p2', title='Place 2')
-        # Add more Place instances as needed...
-
-        # Set up the kwargs for the align_idx task
-        self.kwargs = {
-            'ds': self.dataset.id,
-            'dslabel': self.dataset.label,
-            'owner': self.user.id,
-            'user': self.user.id,
-            'bounds': {'type': ['userarea'], 'id': ['0']},
-            'aug_geom': 'on',
-            'scope': 'all',
-            'lang': 'en',
-            'test': 'on',
-            'collection_id': ''
-        }
-
-    @patch('utils.emailing.new_emailer')
-    def test_align_idx_sends_email(self, mock_new_emailer):
-        # Run the task synchronously within your test case.
-        align_idx.apply(kwargs=self.kwargs)
-
-        # Check that new_emailer was called with the correct arguments.
-        mock_new_emailer.assert_called_once_with(
-            email_type='align_idx',
-            subject='WHG alignment task complete',
-            from_email='your_from_email@example.com',
-            to_email=[self.user.email],
-            name=self.user.username,
-            tid='your_task_id',
-            dslabel=self.dataset.label,
-            email=self.user.email,
-            counthit='your_count_hit',
-            totalhits='your_total_hits',
-            test='on'
-        )
-
-
-class ContactFormTestCase(TestCase):
-    def setUp(self):
-        self.user = User.objects.create_user(username='testuser', email='testuser@example.com',
-                                             password='testpass')
-        self.client.login(username='testuser', password='testpass')
-
-    @patch("captcha.fields.CaptchaField.clean")
-    def test_contact_form_email(self, validate_method):
-      print('test in sus.argv?', 'test' in sys.argv)
-
-      data = {
-          'name': 'Test User',
-          'username': 'testuser',
-          'subject': 'Test Subject',
-          'from_email': 'testuser@example.com',
-          'message': 'Test Message',
-          'captcha': 'XXX'
-      }
-      validate_method.return_value = True
-      response = self.client.post(reverse('contact'), data=data)
-
-      # if response.status_code != 200:
-      if response.status_code != 302:
-        print("Form errors:", response.context['form'].errors)
-
-      self.assertEqual(response.status_code, 302)  # form submission was successful
-      self.assertEqual(len(mail.outbox), 2) # 2 emails? (1 to user, 1 to admins)
-
-      self.assertEqual(mail.outbox[0].to, settings.EMAIL_TO_ADMINS)
-      self.assertEqual(mail.outbox[0].subject, 'Contact form submission')
-      self.assertIn('on the subject of', mail.outbox[0].body )
-
-      self.assertEqual(mail.outbox[1].to, ['testuser@example.com'])
-      self.assertEqual(mail.outbox[1].subject, 'Message to WHG received')
-      self.assertIn('We received your message',mail.outbox[1].body)
 
 class NewUserTestCase(TestCase):
   def setUp(self):
@@ -161,6 +81,42 @@ class NewUserTestCase(TestCase):
     self.assertEqual(mail.outbox[2].to, settings.EMAIL_TO_ADMINS)
 
     mail.outbox.clear()
+
+class ContactFormTestCase(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', email='testuser@example.com',
+                                             password='testpass')
+        self.client.login(username='testuser', password='testpass')
+
+    @patch("captcha.fields.CaptchaField.clean")
+    def test_contact_form_email(self, validate_method):
+      print('test in sus.argv?', 'test' in sys.argv)
+
+      data = {
+          'name': 'Test User',
+          'username': 'testuser',
+          'subject': 'Test Subject',
+          'from_email': 'testuser@example.com',
+          'message': 'Test Message',
+          'captcha': 'XXX'
+      }
+      validate_method.return_value = True
+      response = self.client.post(reverse('contact'), data=data)
+
+      # if response.status_code != 200:
+      if response.status_code != 302:
+        print("Form errors:", response.context['form'].errors)
+
+      self.assertEqual(response.status_code, 302)  # form submission was successful
+      self.assertEqual(len(mail.outbox), 2) # 2 emails? (1 to user, 1 to admins)
+
+      self.assertEqual(mail.outbox[0].to, settings.EMAIL_TO_ADMINS)
+      self.assertEqual(mail.outbox[0].subject, 'Contact form submission')
+      self.assertIn('on the subject of', mail.outbox[0].body )
+
+      self.assertEqual(mail.outbox[1].to, ['testuser@example.com'])
+      self.assertEqual(mail.outbox[1].subject, 'Message to WHG received')
+      self.assertIn('We received your message',mail.outbox[1].body)
 
 class DatasetSignalTestCase(TestCase):
     def setUp(self):
@@ -252,3 +208,4 @@ class DatasetSignalTestCase(TestCase):
 
       # Check recipient is owner
       self.assertIn(self.user.email, mail.outbox[0].to)
+

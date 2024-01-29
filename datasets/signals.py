@@ -45,14 +45,16 @@ def handle_public_flag(sender, instance, **kwargs):
     if old_instance.public != instance.public:  # There's a change in 'public' status
       # print('handle_public_flag: changed', old_instance.public, instance.public)
       # notify the owner
+      owner = instance.owner
       if instance.public:
         new_emailer(
           email_type='dataset_published',
           subject='Your WHG dataset has been published',
           from_email=settings.DEFAULT_FROM_EMAIL,
-          to_email=[instance.owner.email],
+          to_email=[owner.email],
           reply_to=[settings.DEFAULT_FROM_EDITORIAL],
-          name=instance.owner.get_full_name(),
+          name=owner.name,
+          greeting_name=owner.name if owner.name else owner.username,
           dataset_title=instance.title,
           dataset_label=instance.label,
           dataset_id=instance.id
@@ -73,13 +75,15 @@ def handle_public_flag(sender, instance, **kwargs):
         # Changed from True to False, remove the records from the index
         transaction.on_commit(lambda: unindex_from_pub.delay(instance.id))
         # notify the owner
+        owner=instance.owner
         new_emailer(
           email_type='dataset_unpublished',
           subject='Your WHG dataset has been unpublished',
           from_email=settings.DEFAULT_FROM_EMAIL,
-          to_email=[instance.owner.email],
+          to_email=[owner.email],
           reply_to=[settings.DEFAULT_FROM_EDITORIAL],
-          name=instance.owner.get_full_name(),
+          name=owner.name,
+          greeting_name=owner.name if owner.name else owner.username,
           dataset_title=instance.title,
           dataset_label=instance.label,
           dataset_id=instance.id
@@ -96,14 +100,16 @@ def handle_status_change(sender, instance, **kwargs):
       # and notify the owner, bcc to editorial
       if old_instance.ds_status != instance.ds_status and instance.ds_status == 'wd-complete':
         # print('handle_status_change: ds_status changed to wd-complete')
+        owner = instance.owner
         new_emailer(
-          email_type='wikidata_recon_complete',
+          email_type='wikidata_review_complete',
           subject='WHG reconciliation review complete',
           from_email=settings.DEFAULT_FROM_EMAIL,
           to_email=[settings.EMAIL_TO_ADMINS],
           reply_to=[settings.DEFAULT_FROM_EDITORIAL],
           bcc=[settings.DEFAULT_FROM_EDITORIAL],
-          name=instance.owner.get_full_name(),
+          name=owner.name,
+          greeting_name=owner.name if owner.name else owner.username,
           dataset_title=instance.title,
           dataset_label=instance.label,
           dataset_id=instance.id,
@@ -112,14 +118,16 @@ def handle_status_change(sender, instance, **kwargs):
       # Check whether 'ds_status' has been changed to 'indexed'
       if old_instance.ds_status != instance.ds_status and instance.ds_status == 'indexed':
         # print('handle_status_change: ds_status changed to indexed')
+        owner = instance.owner
         new_emailer(
           email_type='dataset_indexed',
           subject='Your WHG dataset is fully indexed',
           from_email=settings.DEFAULT_FROM_EMAIL,
-          to_email=[instance.owner.email],
+          to_email=[owner.email],
           reply_to=[settings.DEFAULT_FROM_EDITORIAL],
           bcc=[settings.DEFAULT_FROM_EDITORIAL],
-          name=instance.owner.get_full_name(),
+          name=owner.name,
+          greeting_name=owner.name if owner.name else owner.username,
           dataset_title=instance.title,
           dataset_label=instance.label,
           dataset_id=instance.id

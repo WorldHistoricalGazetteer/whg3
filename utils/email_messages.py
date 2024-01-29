@@ -6,7 +6,7 @@ dataset_published: public=True
 dataset_unpublished: public=False
 dataset_indexed: ds_status='indexed'
 contact_form, contact_reply: contact form submitted
-recon_result: reconciliation task completed (wdlocal or idx
+align_success: reconciliation task completed (wdlocal or idx)
 wikidata_recon_complete: ds_status='wd-complete'
 failed_upload: upload failed
 recon_failed: reconciliation task FAILURE (wdlocal or idx)
@@ -40,31 +40,6 @@ EMAIL_MESSAGES = {
     'So you know...{name} ({username}, id {id}) just registered on the site.\n\n'
     'regards,\nThe WHG auto emailer bot'
   ),
-  'new_dataset': (
-    'So you know...the user {name} ({username}) has created a new dataset, '
-    '{dataset_title} ({dataset_label}, {dataset_id}).\n\n'
-    'regards,\nThe WHG auto emailer bot'
-  ),
-  'dataset_published': (
-    'Dear {name},\n\n'
-    'Thank you for publishing your dataset, {dataset_title} ({dataset_label}, {dataset_id}).\n'
-    'It is now publicly viewable, and its records accessible in search and our API .\n\n'
-    'regards,\nThe WHG project team'
-  ),
-  'dataset_unpublished': (
-    'Dear {name},\n\n'
-    'Your previously published dataset, {dataset_title} ({dataset_label}, {dataset_id}), '
-    'has been made private again, and its records are no longer accessible in search and our API .\n\n'
-    'If you have any questions, please contact our editor at {reply_to}\n\n'
-    'regards,\nThe WHG project team'
-  ),
-  'dataset_indexed': (
-    'Dear {name},\n\n'
-    'Thank you for indexing your dataset, {dataset_title} ({dataset_label}, {dataset_id}).\n\n'
-    'All of its records were already public; now many are linked with those for closely '
-    'matched places coming from other projects.\n\n'
-    'regards,\nThe WHG project team'
-  ),
   'contact_form': (
     'Hello there,\n\n'
     '{name} ({username}; {user_email}), on the subject of {user_subject} says: \n\n'
@@ -72,66 +47,70 @@ EMAIL_MESSAGES = {
     'regards,\nThe WHG auto emailer bot'
   ),
   'contact_reply': (
-    'Hello {name},\n\n'
+    'Hello {greeting_name},\n\n'
     'We received your message concerning "{user_subject}" and will respond soon.\n\n'
     'regards,\nThe WHG project team'
   ),
-  'recon_result': (
-    'Dear {name},\n\n'
-    'Your reconciliation task for '
-    '{dataset_title} ({dataset_label}, {dataset_id}) has completed. '
-    'You can view the results at {result_url}.\n\n'
+  'new_dataset': (
+    'So you know...the user {name} ({username}) has created a new dataset, '
+    '{dataset_title} ({dataset_label}, {dataset_id}).\n\n'
+    'regards,\nThe WHG auto emailer bot'
+  ),
+  'dataset_published': (
+    'Dear {greeting_name},\n\n'
+    'Thank you for publishing your dataset, {dataset_title} ({dataset_label}, {dataset_id}).\n'
+    'It is now publicly viewable, and its records accessible in search and our API .\n\n'
     'regards,\nThe WHG project team'
   ),
-  'wikidata_recon_complete': (
-    'Dear {name},\n\n'
+  'dataset_unpublished': (
+    'Dear {greeting_name},\n\n'
+    'Your previously published dataset, {dataset_title} ({dataset_label}, {dataset_id}), '
+    'has been made private again, and its records are no longer accessible in search and our API .\n\n'
+    'If you have any questions, please contact our editor at {reply_to}\n\n'
+    'regards,\nThe WHG project team'
+  ),
+  'dataset_indexed': (
+    'Dear {greeting_name},\n\n'
+    'Thank you for indexing your dataset, {dataset_title} ({dataset_label}, {dataset_id}).\n\n'
+    'All of its records were already public; now many are linked with those for closely '
+    'matched places coming from other projects.\n\n'
+    'regards,\nThe WHG project team'
+  ),
+  'wikidata_review_complete': (
+    'Dear {greeting_name},\n\n'
     're: {dataset_title} ({dataset_label}, {dataset_id})\n\n'
     'Thank you for reconciling your dataset to Wikidata.\n'
     'If you would like it to be published, please ensure its metadata is complete, then request a review '
     'by WHG editorial staff, in reply to this message.\n\n'
     'regards,\nThe WHG project team'
   ),
-  'failed_upload': (
-    'Dear {name},\n\n'
-    'We are sorry to inform you that your upload of {fn} failed. '
-    'We will look into it and get back to you soon.\n\n'
+  'failed_insert': (
+    'Dear {greeting_name},\n\n'
+    'We see that your upload of {filename} failed upon insert to our database\n\n'
+    'We are look into why and will get back to you within a day.\n\n'
     'regards,\nThe WHG project team'
   ),
-  'recon_failed': (
-    'Dear {name},\n\n'
-    'We are sorry to inform you that your {taskname} reconciliation task for '
-    '{dataset_title} ({dataset_label}, {dataset_id}) failed. '
-    'We will look into it and get back to you soon.\n\n'
-    'regards,\nThe WHG project team'
-  ),
-  # # tid, dslabel, name, email, counthit, totalhits, test
-  'align_success': (
-    'Dear {name},\n\n'
+  'recon_task_success': (
+    'Dear {greeting_name},\n\n'
     'Your {taskname} reconciliation task for the {dstitle} dataset ({dslabel}) has completed.'
     '{counthit} records got a total of {totalhits} hits.\n'
     'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
     'regards,\nThe WHG project team'
   ),
-  'align_test': (
-    'Greetings {name}! Your TEST index alignment task for the {dstitle} dataset ({dslabel}) has completed.'
+  'recon_task_failed': (
+    'Dear {greeting_name},\n\n'
+    'Your {taskname} reconciliation task for the {dstitle} dataset ({dslabel}) failed to complete.'
+    'We are looking into why and will get back to you within a day.\n'
+    'apologies and regards,\nThe WHG project team'
+  ),
+  'recon_task_test': (
+    'Greetings {greeting_name}! Your TEST index alignment task for the {dstitle} dataset ({dslabel}) has completed.'
     '{counthit} records got a total of {totalhits} hits.\n'
+    'This only previews potential results; no records were written to the index.\n'
     'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
     'regards,\nThe WHG project team'
   ),
-  'align_idx': (
-    'Dear {name},\n\n'
-    'Your WHG index alignment task for the {dstitle} dataset ({dslabel}) has completed. '
-    '{counthit} records got a total of {totalhits} hits.\n'
-    'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
-    'regards,\nThe WHG project team'
-  ),
-  'align_wdlocal': (
-    'Dear {name},\n\n'
-    'Your Wikidata alignment task for the {dstitle} dataset ({dslabel}) has completed.'
-    '{counthit} records got a total of {totalhits} hits.\n'
-    'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
-    'regards,\nThe WHG project team, via new_emailer()'
-  ),
+  # TODO: down for 'maintenance' or 'upgrade'
   'maintenance': (
     'Dear {name},\n\n'
     'Because you have logged in to WHG within the last month or so, we are letting you know that'
@@ -146,6 +125,20 @@ EMAIL_MESSAGES = {
     'The site might be temporarily unavailable during this period.\n\n'
     'Thank you for your understanding.'
   ),
+  # 'align_idx': (
+  #   'Dear {greeting_name},\n\n'
+  #   'Your WHG index alignment task for the {dstitle} dataset ({dslabel}) has completed. '
+  #   '{counthit} records got a total of {totalhits} hits.\n'
+  #   'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
+  #   'regards,\nThe WHG project team'
+  # ),
+  # 'align_wdlocal': (
+  #   'Dear {greeting_name},\n\n'
+  #   'Your Wikidata alignment task for the {dstitle} dataset ({dslabel}) has completed.'
+  #   '{counthit} records got a total of {totalhits} hits.\n'
+  #   'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
+  #   'regards,\nThe WHG project team, via new_emailer()'
+  # ),
   # Add more email bodies as needed
 }
 

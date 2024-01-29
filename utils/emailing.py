@@ -20,11 +20,11 @@ def new_emailer(email_type, subject, from_email, to_email, **kwargs):
   if email_type in ['align_idx', 'align_wdlocal']:
     # status and test and taskname are passed in kwargs
     if test == 'on':
-      email_type = 'align_test'
+      email_type = 'recon_task_test'
     elif status == 'FAILURE':
-      email_type = 'recon_failed'
+      email_type = 'recon_task_failed'
     else:
-      email_type = 'align_success'
+      email_type = 'recon_task_success'
 
   # Get the correct email body from the dictionary
   email_body = EMAIL_MESSAGES.get(email_type).format(**kwargs)
