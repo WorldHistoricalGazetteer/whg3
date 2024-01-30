@@ -85,8 +85,8 @@ def suggestionItem(s):
   performs the ES search of 'whg' and 'pub'
 """
 def suggester(q, indices):
-  print('suggester q', q)
-  print('suggester indices', indices)
+  # print('suggester q', q)
+  # print('suggester indices', indices)
   try:
     es = settings.ES_CONN
   except:
@@ -108,7 +108,7 @@ def suggester(q, indices):
       )
 
   sortedsugs = sorted(suggestions, key=lambda x: x['linkcount'], reverse=True)
-  print('sortedsugs', sortedsugs)
+  # print('sortedsugs', sortedsugs)
   # TODO: there may be parents and children
   return sortedsugs
 
@@ -278,12 +278,12 @@ class SearchViewNew(View):
       }}
     }
 
-    if params.fclasses:
+    if params.get('fclasses'):
       fclist = params.fclasses.split(',')
       fclist.append('X')
       q['query']['bool']['must'].append({"terms": {"fclasses": fclist}})
 
-    if params.start:
+    if params.get('start'):
       timespan_filter = {"range": {"timespans": {"gte": params.start, "lte": params.end if params.end else 2005}}}
       if params.undated:  # Include records with empty timespans
         q['query']['bool']['must'].append({
@@ -292,7 +292,7 @@ class SearchViewNew(View):
       else:
         q['query']['bool']['must'].append(timespan_filter)
 
-    if params.bounds:
+    if params.get('bounds'):
       if params.request.method == 'GET':
         bounds = json.loads(params.bounds)
         q['query']['bool']["filter"] = get_bounds_filter(bounds, 'whg')
@@ -312,7 +312,7 @@ class SearchViewNew(View):
           })
         q['query']['bool']["filter"] = {"bool": {"should": filters}}
 
-    if params.countries:
+    if params.get('countries'):
       if params.request.method == 'GET':
         countries = json.loads(params.countries)
       q['query']['bool']['must'].append({

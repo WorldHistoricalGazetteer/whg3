@@ -1,0 +1,79 @@
+"Abydos": "exact" (Exactly)
+{"title": "Çanakkale", "variants": ["Canakkale", "Chanak", "Chanak Kallessi", "Chanakkale", "Kale Sultaniye", "Kale-i Sultaniye", "Tchanak Kalessi", "Abydus", "Nara Burnu", "Chanaq", "Chanak", "Kale-Sultanie", "nara burnu", "Kale-Sultanieh", "Abydos", "Nazara Point", "Dardanelles", "Abydus Asiae", "abydos", "Nagara Point", "Abydos", "Avido", "Abydos", "Canakkale", "Chanaq", "Chanak", "Kale-Sultanie", "Dardanelles", "Abydus", "Hellespont", "Abydos", "Hellespont", "Dardanelles", "Hellespont"], "fclasses": ["P"]}
+{"title": "Ma'bad Abīdūs", "variants": ["Abdju", "Abdou", "Abedju", "Abydos", "Abydus", "Abydus Aegyptiae", "Abīdūs, Ma'bad", "Ebot", "Ἄβυδος", "أبيدوس", "Abydos", "Abydos Egypt", "Abydos", "Abydos"], "fclasses": ["S"]}
+{"title": "Abydos", "variants": [], "fclasses": ["P"]}
+
+"Abydos": "in" (Contains)
+{"title": "Çanakkale", "variants": ["Canakkale", "Chanak", "Chanak Kallessi", "Chanakkale", "Kale Sultaniye", "Kale-i Sultaniye", "Tchanak Kalessi", "Abydus", "Nara Burnu", "Chanaq", "Chanak", "Kale-Sultanie", "nara burnu", "Kale-Sultanieh", "Abydos", "Nazara Point", "Dardanelles", "Abydus Asiae", "abydos", "Nagara Point", "Abydos", "Avido", "Abydos", "Canakkale", "Chanaq", "Chanak", "Kale-Sultanie", "Dardanelles", "Abydus", "Hellespont", "Abydos", "Hellespont", "Dardanelles", "Hellespont"], "fclasses": ["P"]}
+{"title": "Ma'bad Abīdūs", "variants": ["Abdju", "Abdou", "Abedju", "Abydos", "Abydus", "Abydus Aegyptiae", "Abīdūs, Ma'bad", "Ebot", "Ἄβυδος", "أبيدوس", "Abydos", "Abydos Egypt", "Abydos", "Abydos"], "fclasses": ["S"]}
+{"title": "Abydos", "variants": [], "fclasses": ["P"]}
+{"title": "Al 'Arābā al Madfūnah", "variants": ["Al 'Arābah al Madfūnah", "Araba al-Madfuna", "العربة المدفونة‎", "El-'Arâba el-Madfûna", "El ʻArâba el Madfûna", "El Araba El Madfuna", "Arabet Abydos", "Arabat El Madune"], "fclasses": ["P"]}
+
+"Abyd": "starts" (Starts with)
+{"title": "Çanakkale", "variants": ["Canakkale", "Chanak", "Chanak Kallessi", "Chanakkale", "Kale Sultaniye", "Kale-i Sultaniye", "Tchanak Kalessi", "Abydus", "Nara Burnu", "Chanaq", "Chanak", "Kale-Sultanie", "nara burnu", "Kale-Sultanieh", "Abydos", "Nazara Point", "Dardanelles", "Abydus Asiae", "abydos", "Nagara Point", "Abydos", "Avido", "Abydos", "Canakkale", "Chanaq", "Chanak", "Kale-Sultanie", "Dardanelles", "Abydus", "Hellespont", "Abydos", "Hellespont", "Dardanelles", "Hellespont"], "fclasses": ["P"]}
+{"title": "Ma'bad Abīdūs", "variants": ["Abdju", "Abdou", "Abedju", "Abydos", "Abydus", "Abydus Aegyptiae", "Abīdūs, Ma'bad", "Ebot", "Ἄβυδος", "أبيدوس", "Abydos", "Abydos Egypt", "Abydos", "Abydos"], "fclasses": ["S"]}
+{"title": "Abidjan", "variants": ["아비장", "阿比让", "阿必仁", "アビジャン", "აბიჯანი", "อาบีจาน", "അബിജാൻ", "ਅਬੀਜਾਨ", "আবিজান", "आबिजान", "أبيدجان", "آبیجان", "آبدجان", "אבידזשאן", "אבידגאן", "Աբիջան", "Абіджан", "Абиџан", "Абижан хот", "Абиджан шаары", "Абиджан", "Αμπιτζάν", "ʼbydgʼn", "xabi can", "abyjan", "abydjan", "abijani", "abijang", "abijana", "abijan", "abdjan", "a bi ren", "a bi rang", "Ampitzan", "Abiĝano", "Abizhan khot", "Abiyán", "Abiyan", "Abijan", "Abigano", "Abidžans", "Abidžanas", "Abidžana", "Abidžan", "Abidżan", "Abidzhan shaary", "Abidzhan", "Abidzans", "Abidzanas", "Abidzana", "Abidzan", "Abican", "ABJ", "Abijan"], "fclasses": ["P"]}
+{"title": "Abydos", "variants": [], "fclasses": ["P"]}
+{"title": "Abydel", "variants": ["Abbey Dell"], "fclasses": ["P"]}
+
+"Abydos": "fuzzy" (Similar to)
+{"title": "Çanakkale", "variants": ["Canakkale", "Chanak", "Chanak Kallessi", "Chanakkale", "Kale Sultaniye", "Kale-i Sultaniye", "Tchanak Kalessi", "Abydus", "Nara Burnu", "Chanaq", "Chanak", "Kale-Sultanie", "nara burnu", "Kale-Sultanieh", "Abydos", "Nazara Point", "Dardanelles", "Abydus Asiae", "abydos", "Nagara Point", "Abydos", "Avido", "Abydos", "Canakkale", "Chanaq", "Chanak", "Kale-Sultanie", "Dardanelles", "Abydus", "Hellespont", "Abydos", "Hellespont", "Dardanelles", "Hellespont"], "fclasses": ["P"]}
+{"title": "Ma'bad Abīdūs", "variants": ["Abdju", "Abdou", "Abedju", "Abydos", "Abydus", "Abydus Aegyptiae", "Abīdūs, Ma'bad", "Ebot", "Ἄβυδος", "أبيدوس", "Abydos", "Abydos Egypt", "Abydos", "Abydos"], "fclasses": ["S"]}
+{"title": "Aytos", "variants": ["Ajtos", "aytos", "aydos", "aitos", "ajtos", "Aïdos", "Aetos"], "fclasses": ["P"]}
+{"title": "Óbidos", "variants": ["Obidos"], "fclasses": ["P"]}
+{"title": "Eceabat", "variants": ["eceabat", "acaabat", "maitos", "madytus", "maydos", "maidos"], "fclasses": ["P"]}
+{"title": "Abydos", "variants": [], "fclasses": ["P"]}
+{"title": "Abidos", "variants": [], "fclasses": ["P"]}
+{"title": "Abdos", "variants": [], "fclasses": ["P"]}
+{"title": "Apidos", "variants": [], "fclasses": ["H"]}
+{"title": "Alykos", "variants": [], "fclasses": ["P"]}
+{"title": "Amyros", "variants": [], "fclasses": ["P"]}
+{"title": "Amykos", "variants": [], "fclasses": ["P"]}
+{"title": "Baldos", "variants": [], "fclasses": ["P"]}
+{"title": "Abadon", "variants": [], "fclasses": ["P"]}
+{"title": "Agudos", "variants": [], "fclasses": ["P"]}
+{"title": "Abades", "variants": [], "fclasses": ["P"]}
+{"title": "Amados", "variants": [], "fclasses": ["P"]}
+{"title": "Abydel", "variants": ["Abbey Dell"], "fclasses": ["P"]}
+{"title": "Abedes", "variants": [], "fclasses": ["P"]}
+{"title": "Bardos", "variants": [], "fclasses": ["P"]}
+{"title": "Abades", "variants": [], "fclasses": ["P"]}
+{"title": "Abades", "variants": ["San Pelayo"], "fclasses": ["P"]}
+{"title": "Sabidos", "variants": [], "fclasses": ["P"]}
+{"title": "Abodom", "variants": [], "fclasses": ["P"]}
+{"title": "Abades", "variants": [], "fclasses": ["P"]}
+{"title": "Abīdūs", "variants": [], "fclasses": ["P"]}
+{"title": "Maydos", "variants": [], "fclasses": ["P"]}
+{"title": "Avidos", "variants": [], "fclasses": ["P"]}
+{"title": "Óbidos", "variants": [], "fclasses": ["P"]}
+{"title": "Haydos", "variants": ["Aydos"], "fclasses": ["P"]}
+{"title": "Ábalos", "variants": [], "fclasses": ["P"]}
+{"title": "Cabidos", "variants": [], "fclasses": ["P"]}
+{"title": "Agudos", "variants": [], "fclasses": ["P"]}
+{"title": "Baydon", "variants": [], "fclasses": ["P"]}
+{"title": "Obidos", "variants": ["Óbidos"], "fclasses": ["P"]}
+{"title": "Magydos", "variants": [], "fclasses": ["S"]}
+{"title": "Áyios", "variants": ["Hagios", "Áyias"], "fclasses": ["P"]}
+{"title": "Abdon", "variants": ["Abetune"], "fclasses": ["P"]}
+{"title": "Aydon", "variants": [], "fclasses": ["P"]}
+{"title": "Budos", "variants": [], "fclasses": ["P"]}
+{"title": "Abado", "variants": [], "fclasses": ["X"]}
+{"title": "Abyor", "variants": [], "fclasses": ["X"]}
+{"title": "Abos", "variants": [], "fclasses": ["P"]}
+{"title": "Ayos", "variants": [], "fclasses": ["P"]}
+{"title": "Ayós", "variants": [], "fclasses": ["P"]}
+{"title": "Koite/Akytos (island)", "variants": ["Akytos", "Koite"], "fclasses": ["T"]}
+{"title": "Leiro", "variants": ["Asados", "Santa Maria", "Santa María"], "fclasses": ["P"]}
+{"title": "Abaroa", "variants": ["Abanoa", "Abanos"], "fclasses": ["P"]}
+{"title": "Les Abîmes", "variants": ["Abimes", "Abymes"], "fclasses": ["P"]}
+{"title": "Alkıncılar", "variants": ["Hoydos"], "fclasses": ["P"]}
+{"title": "Arwād, Jazīrat", "variants": ["Arados", "Aradus", "Arvad", "Jazīrat Arwād", "Île Rouad"], "fclasses": ["T"]}
+{"title": "Alissós", "variants": ["Alysós", "Alisós"], "fclasses": ["T"]}
+{"title": "Arwād", "variants": ["Arados", "Aradus", "Arvad", "Rawāḑ", "Rouad", "Rouâd", "Ruad", "Ruwad", "أرواد"], "fclasses": ["P"]}
+{"title": "Ayros-Arbouix", "variants": ["Ayros"], "fclasses": ["P"]}
+{"title": "Akbaba", "variants": ["Ardos"], "fclasses": ["P"]}
+{"title": "Abdu", "variants": ["Abdoo"], "fclasses": ["P"]}
+{"title": "Değirmenler", "variants": ["Ardos"], "fclasses": ["P"]}
+{"title": "Çamlıbel", "variants": ["Azdu", "Ardus", "Ardos"], "fclasses": ["P"]}
+{"title": "Bürüncek", "variants": ["Ardos"], "fclasses": ["P"]}
+{"title": "Kulcak", "variants": ["Abdo", "Kulaç"], "fclasses": ["P"]}
