@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework_datatables',
     'rest_framework_gis',
+    'drf_spectacular',
     'tinymce',
 
     # apps
@@ -132,8 +133,8 @@ DJANGORESIZED_DEFAULT_NORMALIZE_ROTATION = True
 # replacement section from drf-datatables
 # https://django-rest-framework-datatables.readthedocs.io/en/latest/
 REST_FRAMEWORK = {
-  'DEFAULT_RENDERER_CLASSES': (
-      'rest_framework.renderers.JSONRenderer',
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
         #'api.views.PrettyJsonRenderer',
         #'rest_framework.renderers.BrowsableAPIRenderer',
         'rest_framework_datatables.renderers.DatatablesRenderer',
@@ -145,6 +146,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework_datatables.pagination.DatatablesPageNumberPagination',
     'PAGE_SIZE': 15000,
     'PAGE_SIZE': 20,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 TEMPLATES = [
@@ -297,6 +299,9 @@ STATICFILES_DIRS = [
 ## GIS Libraries
 GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
 GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
+
+SWAGGER_SETTINGS = {
+}
 
 try:
   from .local_settings import *

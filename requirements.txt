@@ -57,6 +57,7 @@ djangorestframework==3.14.0
 djangorestframework-datatables==0.7.0
 djangorestframework-gis==1.0
 djangorestframework-simplejwt==4.8.0
+drf-spectacular==0.24.1
 docutils==0.19
 edtf==4.0.1
 elasticsearch8==8.9.0

@@ -156,7 +156,7 @@ class PlaceRemoteSerializer(serializers.ModelSerializer):
 	"""basic place record for lists"""
 	names = PlaceNameRemoteSerializer(many=True, required=False)
 	links = PlaceLinkRemoteSerializer(many=True, required=False)
-	geoms = PlaceGeomRemoteSerializer(many=True, required=False)
+	#geoms = PlaceGeomRemoteSerializer(many=True, required=False)
 	whens = PlaceWhenRemoteSerializer(required=False)
 	types = PlaceTypeRemoteSerializer(many=True, required=False)
 	descriptions = PlaceDescriptionRemoteSerializer(many=True, required=False)
