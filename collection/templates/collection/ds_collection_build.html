@@ -298,9 +298,7 @@
 		              <div class="ds_fields">
 		                <p class="my-1"><b>Description</b>: {{ d.description|truncatechars:150 }}</p>
 		                <p class="my-1"><b>Create date</b>: {{ d.create_date|date:"d M Y" }}</p>
-
 				              <p>has_task={{ d.builder_hastask }}; remaining={{ d.builder_remaining }}</p>
-
 		                <p class="my-1"><b># rows</b>: {{ d.numrows }}
 			                <span id="s_dsremove" class="float-end">
 											<a href="#" onclick="confirmRemove({{ d.id }}, '{{ object.id }}', this)">
@@ -438,7 +436,8 @@
 
     $("#dscoll_seed").click(function(e){
         e.preventDefault()
-        console.log('gonna index '+ $("#seed_id").val() + ' for collection '+'{{ object.id }}')
+        console.log('gonna index '+ $("#seed_id").val() + ' for collection '+
+          '{{ object.id }}')
 		    startSpinner()
 		    index_to_builder($("#seed_id").val())
     })
@@ -755,10 +754,10 @@
     $("#select_ds").val(0)
   }
 
-  function clearDataset(dsid){
+  {#function clearDataset(dsid){#}
     {#console.log('clear card for ds', dsid)#}
-    $("#card_"+dsid).remove()
-  }
+  {#  $("#card_"+dsid).remove()#}
+  {# }#}
 
 </script>
 

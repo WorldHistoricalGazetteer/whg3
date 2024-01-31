@@ -1,34 +1,36 @@
-from django.db import models
-from django.db.models import Q, JSONField
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-User = get_user_model()
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import URLValidator
+from django.db import models
+from django.db.models import Q, JSONField
 from django.urls import reverse
+
 from datasets.models import Dataset
 from main.choices import COLLECTIONCLASSES, LINKTYPES, TEAMROLES, STATUS_COLL, \
   USER_ROLE, COLLECTIONTYPES, COLLECTIONGROUP_TYPES
 from places.models import Place
 from traces.models import TraceAnnotation
-from django_resized import ResizedImageField
-from multiselectfield import MultiSelectField
-from django.contrib.gis.geos import GEOSGeometry
-import simplejson as json
-from geojson import Feature
 from utils.cluster_geometries import clustered_geometries
 from utils.heatmap_geometries import heatmapped_geometries
 from utils.hull_geometries import hull_geometries
 from utils.feature_collection import feature_collection
 from utils.carousel_metadata import carousel_metadata
-
+# from multiselectfield import MultiSelectField
+# from django.contrib.gis.geos import GEOSGeometry
+# import simplejson as json
+# from geojson import Feature
 """ for images """
 from io import BytesIO
 import sys
 from PIL import Image
 from django.core.files.uploadedfile import InMemoryUploadedFile
 """ end """
+
+from django_resized import ResizedImageField
+
+User = get_user_model()
 
 def collection_path(instance, filename):
   # upload to MEDIA_ROOT/collections/<coll id>/<filename>
@@ -46,7 +48,7 @@ def default_relations():
   return 'locale'.split(', ')
 
 # needed b/c collection place_list filters on it
-# migration olook for these, even though field was deleted
+# ? huh: migration look for these, even though field was deleted
 def default_omitted():
   return '{}'
 

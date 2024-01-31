@@ -8,7 +8,7 @@ dataset_indexed: ds_status='indexed'
 contact_form, contact_reply: contact form submitted
 align_success: reconciliation task completed (wdlocal or idx)
 wikidata_recon_complete: ds_status='wd-complete'
-failed_upload: upload failed
+# failed_upload: upload failed
 recon_failed: reconciliation task FAILURE (wdlocal or idx)
 align_idx: alignment task completed (idx)
 align_wdlocal: alignment task completed (wdlocal)

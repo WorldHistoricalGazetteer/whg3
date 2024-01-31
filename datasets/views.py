@@ -42,7 +42,8 @@ from .exceptions import LPFValidationError, DelimValidationError, \
   DelimInsertError, DataAlreadyProcessedError
 from .forms import (HitModelForm, DatasetDetailModelForm,
                     DatasetUploadForm, DatasetCreateModelForm, DatasetCreateEmptyModelForm)
-from .insert import ds_insert_json, ds_insert_delim, ds_insert_lpf, ds_insert_tsv
+from .insert import (ds_insert_json, ds_insert_delim, ds_insert_lpf,
+                     failed_insert_notification, ds_insert_tsv)
 from .validation import validate_delim, validate_lpf, validate_tsv
 
 from .models import Dataset, Hit, DatasetFile
@@ -2713,7 +2714,6 @@ def read_file_into_dataframe(file, ext):
   - raises errors from each stage to dataset_create.html form
 """
 
-
 class DatasetCreate(LoginRequiredMixin, CreateView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -2841,8 +2841,9 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
           message += f"<li>{reason}</li>"
           # message += f"<li>Row {row}: {reason}</li>"
         message += "</ul>"
-
         messages.error(self.request, message)
+
+        failed_insert_notification(user, file, ds=None)
         return self.render_to_response(self.get_context_data(form=form))
 
     else:

@@ -249,7 +249,6 @@ def dashboard_user_view(request):
   return render(request, 'main/dashboard_user.html', context)
 
 # all-purpose for admins
-# login required decorator in urls.py
 @login_required
 def dashboard_admin_view(request):
   print('request.GET', request.GET)
@@ -289,7 +288,6 @@ def dashboard_admin_view(request):
   # return render(request, 'main/dashboard_admin.html', {'initial_section': section})
   return render(request, 'main/dashboard_admin.html', context)
 
-
 @csrf_exempt
 def home_modal(request):
   page = request.POST['page']
@@ -308,6 +306,7 @@ def is_url(url):
     return all([result.scheme, result.netloc])
   except ValueError:
     return False
+
 
 """ 
   create link associated with instance of various models, so far:
@@ -391,11 +390,7 @@ def statusView(request):
 
     return render(request, "main/status.html", {"context": context})
 
-# {'name': ['Test User'],
-#  'username': ['testuser'],
-#  'subject': ['Test Subject'],
-#  'from_email': ['testuser@example.com'],
-#  'message': ['Test Message']}
+# contact form used throughout
 def contact_view(request):
   print('contact_view() request.POST', request.POST)
   sending_url = request.GET.get('from')
@@ -442,36 +437,6 @@ def contact_view(request):
       print('Form errors from contact_view():', form.errors)
 
   return render(request, "main/contact.html", {'form': form, 'user': request.user})
-
-
-# def contactView(request):
-#     print('contact request.GET', request.GET)
-#     sending_url = request.GET.get('from')
-#     if request.method == 'GET':
-#         form = ContactForm()
-#     else:
-#         form = ContactForm(request.POST)
-#         if form.is_valid():
-#             human = True
-#             name = form.cleaned_data['name']
-#             username = form.cleaned_data['name'] # hidden input
-#             subject = form.cleaned_data['subject']
-#             from_email = form.cleaned_data['from_email']
-#             message = name +'('+from_email+'), on the subject of '+subject+' says: \n\n'+form.cleaned_data['message']
-#             subject_reply = "WHG message received"
-#             message_reply = '\nWe received your message concerning "'+subject+'" and will respond soon.\n\n regards,\nThe WHG project team'
-#             try:
-#                 send_mail(subject, message, from_email, ["karl@kgeographer.org"])
-#                 send_mail(subject_reply, message_reply, 'karl@kgeographer.org', [from_email])
-#             except BadHeaderError:
-#                 return HttpResponse('Invalid header found.')
-#             return redirect('/success?return='+sending_url if sending_url else '/')
-#             # return redirect(sending_url)
-#         else:
-#             print('not valid, why?')
-#
-#     return render(request, "main/contact.html", {'form': form, 'user': request.user})
-
 
 def contactSuccessView(request, *args, **kwargs):
     returnurl = request.GET.get('return')

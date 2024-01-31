@@ -1,0 +1,90 @@
+# dataset collections 30 Jan 2024
+scenario:
+- create new empty dataset collection ('create gazetteer'?)
+  - optional collaborators (co-owner, member)
+  - description, image, pdf, links, keywords
+  - build_type:
+    - 'discrete': link datasets
+    - 'conflated': link datasets and their places
+    - 'merged': merge places > new dataset; propose, manage groupings
+
+- build discrete:
+  - add datasets, one by one, no further action
+
+- build conflated ('gazetteer builder')
+  - presentation
+    - place list shows records as linked
+    - how? set id?
+  - seed with existing dataset from dropdown of [owned | co-owned]
+    - indexed in ES 'builder'
+    - CollDataset instance (collection_colldataset)
+    - ds_status = 'builder_seed'
+  - add dataset #2
+    - no ds_status change (requires wd-complete or better)
+    - "Reconcile to collection" button in card
+      > TODO: initiate datasets.ds_recon(), or ??
+      > TODO: Browse tab?? map & table; dataset column, filter
+      - limits match candidates to records with collection id
+      - task listed in card, with "review" link
+      > datasets.review(pk, tid)
+        - 'closeMatch' generates PlaceLink? CloseMatch?
+
+  - QUESTIONS
+    - how to index if their components haven't been? or have been?
+
+  - TODO:
+    - create informational page "Building a Gazetteer in WHG"
+      - 4 columns
+          simple (1 dataset),
+          discrete dscoll,
+          conflated dscoll
+          merged dscoll
+      - figures
+    - generate close_matches records from whg index
+    - test queries
+
+
+- build merged:
+  - a whole 'nother story
+
+
+
+
+
+'Add Dataset Collection' -> collections/create_ds
+=================================================
+DatasetCollectionCreateView()
+> CollectionModelForm
+  form_valid:
+    collection/ds_collection_build.html
+
+'Edit/Update' -> collections/update_ds
+======================================
+DatasetCollectionUpdateView()
+> CollectionModelForm
+  fields: title, description, keywords, image, essay,
+    links, build_type
+  form_valid:
+    save()
+    collection/ds_collection_build.html
+
+JavaScript
+----------
+listDataset()
+  removeDataset()
+  confirmRemove()
+addDataset()
+  generateModalContent() # checks status, ok/cancel
+    add dataset: /collections/add_ds/
+create_collection_link()
+
+#dscoll_seed.click()
+  index_to_builder()
+    celery task
+
+AJAX
+----
+add collaborator: $('#sharing_form').submit({}) # add collaborator
+remove collaborator: /collections/collab-remove/' ...
+add dataset: /collections/add_ds/
+index seed dataset: /datasets/index_to_builder/

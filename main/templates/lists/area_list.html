@@ -1,7 +1,7 @@
 <!--
 id, title, label, created, format, #rows, ds_status (if)owner
 -->
-{% if datasets %}
+{% if areas %}
   {% if areas|length == 0 %}<p class="smaller"><i>None yet...</i></p>
   {% else %}
   <table id="table_ds" class="table table-striped">
@@ -18,7 +18,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
         <tr class="place-row">
           <td>{{ item.id }}</td>
           <td>
-            <a href="{% url 'areas:ds_summary' item.id %}" rel="tooltip">
+            <a href="{% url 'areas:area-update' item.id %}" rel="tooltip">
             {{ item.title }}</a>
             {% if not user == item.owner_id %}
               <span class="smaller ms-3">
