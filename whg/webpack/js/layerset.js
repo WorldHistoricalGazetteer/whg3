@@ -83,8 +83,14 @@ const paintOptions = {
 	},
 	'countries': {
 		'Polygon': {
-			'fill-color': 'rgba(0,255,0,.3)', // green
-			'fill-outline-color': 'rgba(0,255,0,.8)' // green
+			'fill-color': 'rgba(0,255,0,.1)', // green
+			'fill-outline-color': 'rgba(0,255,0,.7)' // green
+		}
+	},
+	'userareas': {
+		'Polygon': {
+			'fill-color': 'rgba(255,0,0,.1)', // red
+			'fill-outline-color': 'rgba(255,0,0,.7)' // red
 		}
 	},
 	'hulls': {

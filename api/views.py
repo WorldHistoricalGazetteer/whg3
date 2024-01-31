@@ -1,6 +1,7 @@
 # api.views
 
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -16,11 +17,13 @@ from django.http import JsonResponse, HttpResponse#, FileResponse
 from django.shortcuts import get_object_or_404
 from django.views.generic import View, ListView
 from django.core.paginator import PageNotAnInteger, EmptyPage, Paginator
+from django.utils.decorators import method_decorator
 
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework import viewsets
+from rest_framework import status
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import api_view
 from rest_framework.pagination import PageNumberPagination
@@ -29,6 +32,7 @@ from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework.reverse import reverse
 from rest_framework.generics import ListAPIView
+from rest_framework.views import APIView
 from accounts.permissions import IsOwnerOrReadOnly
 from api.serializers import (
   UserSerializer, DatasetSerializer, PlaceSerializer,
@@ -711,6 +715,30 @@ class AreaFeaturesView(generics.ListAPIView):
       areas.append(feat)
       
     return JsonResponse(areas, safe=False)  
+
+"""
+  /api/user_area_features
+"""
+# geojson feature for api
+@method_decorator(login_required, name='dispatch')
+class UserAreaFeaturesView(APIView):
+
+    def get(self, request, format=None, *args, **kwargs):
+        user = self.request.user
+        areas = []
+
+        # Filter areas based on the user
+        qs = Area.objects.filter(owner=user, type__in=['ccodes', 'copied', 'drawn']).values('id', 'title', 'type', 'description', 'geojson')
+
+        for a in qs:
+            feat = {
+                "type": "Feature",
+                "properties": {"id": a['id'], "title": a['title'], "type": a['type'], "description": a['description']},
+                "geometry": a['geojson']
+            }
+            areas.append(feat)
+
+        return Response(areas, status=status.HTTP_200_OK) 
   
 class UserList(generics.ListAPIView):
   queryset = User.objects.all()

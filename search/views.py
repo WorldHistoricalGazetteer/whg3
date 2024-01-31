@@ -15,6 +15,34 @@ from datasets.tasks import normalize, get_bounds_filter
 from places.models import Place, PlaceGeom
 from utils.regions_countries import get_regions_countries
 
+def typeahead_suggester(q):
+    indices = ['whg', 'pub']
+    query_body = {
+        "size": 20,
+        "query": {
+            "bool": {
+                "must": [
+                    {"exists": {"field": "whg_id"}},
+                    {
+                        "query_string": {
+                            "query": f"*{q}*",
+                            "fields": ["title^3", "names.toponym", "searchy"]
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    response = suggester(query_body, indices)
+    unique_titles = list({item['hit']['title'] for item in response if 'hit' in item and 'title' in item['hit']})
+
+    return unique_titles
+
+def TypeaheadSuggestions(request):
+    q = request.GET.get('q', '')
+    suggestions = typeahead_suggester(q)
+    return JsonResponse(suggestions, safe=False)
 
 # new
 class SearchPageView(TemplateView):
@@ -35,8 +63,22 @@ class SearchPageView(TemplateView):
     context['es_whg'] = settings.ES_WHG
     # context['bboxes'] = bboxes
     context['dropdown_data'] = get_regions_countries()  # Used for spatial filter
+    
+    user_areas = []
+    if self.request.user.is_authenticated:
+        qs = Area.objects.filter(owner=self.request.user, type__in=['ccodes', 'copied', 'drawn']).values('id', 'title', 'type', 'description', 'geojson')
+        for a in qs:
+            feature = {
+                "type": "Feature",
+                "properties": {"id": a['id'], "title": a['title'], "type": a['type'], "description": a['description']},
+                "geometry": a['geojson']
+            }
+            user_areas.append(feature)  
+        
+    context['has_areas'] = len(user_areas) > 0
+    context['user_areas'] = user_areas
+    
     return context
-
 
 def fetchArea(request):
   aid = request.GET.get('pk')
@@ -133,30 +175,38 @@ class SearchView(View):
         [string] idx: index to be queried
         [int] year: filter for timespans including this
         [string[]] fclasses: filter on geonames class (A,H,L,P,S,T)
+        [string] temporal: text of boolean for temporal filtering
         [int] start: filter for timespans
         [int] end: filter for timespans
         [string] undated: text of boolean for inclusion of undated results        
         [string] bounds: text of JSON geometry     
         [string] countries: text of JSON cccodes array
+        [string] userareas: text of JSON userareas array
     """
     qstr = request.GET.get('qstr') or request.POST.get('qstr')
+    mode = request.GET.get('mode') or request.POST.get('mode')
     idx = settings.ES_WHG
     fclasses = request.GET.get('fclasses') or request.POST.get('fclasses')
+    temporal = request.GET.get('temporal') or request.POST.get('temporal')
     start = request.GET.get('start') or request.POST.get('start')
     end = request.GET.get('end') or request.POST.get('end')
     undated = request.GET.get('undated') or request.POST.get('undated')
     bounds = request.GET.get('bounds') or request.POST.get('bounds')
     countries = request.GET.get('countries') or request.POST.get('countries')
+    userareas = request.GET.get('userareas') or request.POST.get('userareas')
 
     params = {
       "qstr": qstr,
+      "mode": mode,
       "idx": idx,
       "fclasses": fclasses,
+      "temporal": temporal,
       "start": start,
       "end": end,
       "undated": undated,
       "bounds": bounds,
-      "countries": countries  # Array of country codes
+      "countries": countries,  # Array of country codes
+      "userareas": userareas  # Array of userarea codes
     }
     request.session["search_params"] = params
     print('search_params set', params)
