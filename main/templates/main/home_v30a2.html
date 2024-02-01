@@ -189,8 +189,8 @@
 
 <script type="text/javascript">
     let galleries = [
-        ["Datasets","{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"],
-		["Collections","{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}"]
+      ["Datasets","{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"],
+		  {#["Collections","{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}"]#}
     ];
     let carousel_metadata = {{ carousel_metadata|safe }}
     let startCarousels = false; // Determines whether galleries are to be auto-cycled

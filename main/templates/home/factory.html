@@ -1,66 +1,57 @@
-<html>
-<div class="container">
-  <div class="row">
-    <div class="col col-sm-6 small">
-			<h4 class="bg-lightyellow">
-				<span class="me-2">
-					<img src="static/images/008-collect.png" class="" height=28 width=28 alt=""/>
-				</span>
-				WHG Gazetteer Factory
-			</h4>
-	    <div>
-		    <div>
-			    <p>A WHG <b>dataset collection</b> logically links two or more datasets, in order to visualize and query
-			      their combined contents together. The Dataset Collection feature can also be considered a
-			      <b>gazetteer builder</b> tool, as explained below.</p>
-			    <div>
-						<h5>Simple linking
-							<span class="fs-6 float-end me-1">
-								<a href="">guide</a>
-							</span>
-						</h5>
-				    <p class="mb-2">Declare multiple datasets as linked, and add an explanatory abstract, an essay, an image,
-					    and links to related web resources.</p>
-			    </div>
-			    <div id="">
-						<h5>Gazetteer building
-							<span class="fs-6 float-end me-1">
-								<a class="a-modal" href="">guide</a>
-							</span>
-						</h5>
-				    <p>Often, place references are drawn from multiple sources&mdash;sometimes from multiple projects.
-				      In this case, records for the same place must be conflated&mdash;that is, reconciled with each other.
-				      Version 3 of the WHG introduces the capability to assemble a <b>dataset collection</b> by reconciling
-					    datasets with each other.</p>
-			    </div>
-		    </div>
-	    </div>
-    </div>
-    <div class="col col-sm-6 small" style="border-left: 1px dotted lightgray;">
-	    <h4 class="bg-lightblue">
-		    <img src="static/images/008-collect.png" class="" height=28 width=28 alt=""/></span>
-		    Place Collections</h4>
-	    <p>A <b>place collection</b> in WHG consists of individual place records drawn from multiple public datasets.
-		    Each can be annotated to explain its inclusion and to describe its relation to other places in the collection.</p>
-			<h5>Connecting places
-				<span class="fs-6 float-end me-1">
-					<a class="a-modal" href="">guide</a>
-				</span>
-			</h5>
-	    <p>Much to say, para 1	    </p>
-			<h5>For teaching
-				<span class="fs-6 float-end me-1">
-					<a class="a-modal" href="">guide</a>
-				</span>
-			</h5>
-	    <p>More to say, para 1	    </p>
-    </div>
-  </div>
-</div>
+{% extends "main/base.html" %}
+{% block title %}<title>WHG::</title>{% endblock %}
+{% block extra_head %}
+  <style>
+    body { font-family: 'Raleway', sans-serif; }
+  </style>
+{% endblock %}
+{% load static %}
 
-	<script>
-      $(".a-modal").click(function(){
-        $('#exampleModal').modal('toggle');
-      })
-	</script>
-</html>
+{% block content %}
+  {% load dataset_extras %}
+  <div class="container">
+    <div class="d-flex justify-content-center">
+      <h3>The WHG Gazetteer Factory</h3>
+    </div>
+    <div id="build_content" class="px-5">
+      <div>
+      <p>There are two ways to develop and publish gazetteer data in World Historical Gazetteer.</p>
+      </div>
+      <div class="row">
+        <div class="col col-sm-6 small" style="border-left: 1px dotted lightgray;">
+          <h4 class="bg-lightblue p-2">Path A
+            <span class="fs-6 ms-3"><a href="">get started</a></span>
+            <span class="float-end me-2">
+              <img src="{% static 'images/001-up-arrow.png' %}" class="" height=28 width=28 alt=""/>
+              <img src="{% static 'images/003-browser.png' %}" class="" height=28 width=28 alt=""/>
+            </span>
+          </h4>
+          <div class="bg-light" style="min-height: 155px;">
+            <p class="p-1 mb-0">Path A is the simplest: (a) create a dataset by uploading a file in Linked Places or LP-TSV format, then (b) augment it by reconciling with our Wikidata index. The resulting dataset can be downloaded for further processing on your own, and optionally published to WHG&mdash;making its records searchable and providing a public presentation page and permanent URL.</p>
+          </div>
+          <img src="{% static 'images/pipeline_path_a.png' %}" class="img-fluid" alt=""/>
+          <!-- image of path A -->
+        </div>
+        <div class="col col-sm-6 small">
+          <h4 class="bg-lightyellow p-2">Path B
+            <span class="fs-6 ms-3"><a href="">get started</a></span>
+            <span class="float-end me-2">
+                <img src="{% static 'images/001-up-arrow.png' %}" class="" height=28 width=28 alt=""/>
+                <img src="{% static 'images/003-browser.png' %}" class="" height=28 width=28 alt=""/>
+                <img src="{% static 'images/008-collect.png' %}" class="" height=28 width=28 alt=""/>
+            </span>
+          </h4>
+          <div class="bg-light" style="min-height: 155px;">
+            <p class="p-1 mb-0">In version 3, the Dataset Collection feature has been extended and enhanced. An individual or group can assemble a gazetteer resource by adding datasets to a collection, reconciling each with those already added. In this way, records for the same (or closely matched) places are explicitly linked. The resulting collection can then be published as is, as a collection of discrete datasets having linked places, or linked records from different gazetteers can be merged, producing a new dataset.</p>
+          </div>
+          <img src="{% static 'images/pipeline_path_b.png' %}" class="img-fluid" alt=""/>
+        </div>
+      </div>
+    </div> <!-- build_content -->
+  </div> <!-- container -->
+  <script type="text/javascript">
+    // js imports here
+  </script>
+{% endblock %}
+```
+

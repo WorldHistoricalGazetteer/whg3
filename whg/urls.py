@@ -27,9 +27,10 @@ def serve_cdnfallbacks(request, path):
 handler500 = 'main.views.custom_error_view'
 
 urlpatterns = [
+    # home page
     # path('', views.splash, name='splash'),
+    path('home/<str:version>/', views.Home30a.as_view(), name="home-version"),
     path('', views.Home30a.as_view(), name="home"),
-    path('<str:version>/', views.Home30a.as_view(), name="home-version"),
 
     # apps
     path('areas/', include('areas.urls')),
