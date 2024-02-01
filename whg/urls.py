@@ -29,6 +29,7 @@ handler500 = 'main.views.custom_error_view'
 urlpatterns = [
     # path('', views.splash, name='splash'),
     path('', views.Home30a.as_view(), name="home"),
+    path('<str:version>/', views.Home30a.as_view(), name="home-version"),
 
     # apps
     path('areas/', include('areas.urls')),
@@ -65,6 +66,7 @@ urlpatterns = [
 
     # static content - 2024-01
     path('build/', TemplateView.as_view(template_name="home/build_new.html"), name="build"),
+    path('factory/', TemplateView.as_view(template_name="home/factory.html"), name="factory"),
     path('pipeline/', TemplateView.as_view(template_name="home/pipeline.html"), name="pipeline"),
 
     # path('tinymce/', include('tinymce.urls')),

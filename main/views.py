@@ -77,7 +77,14 @@ class SplashCheckMixin:
     return super().dispatch(request, *args, **kwargs)
 
 class Home30a(TemplateView):
-  template_name = 'main/home_v30a.html'
+  default_template_name = 'main/home_v30a.html'
+
+  def get_template_names(self):
+    version = self.kwargs.get('version', 'v30a')
+    if version == 'v30a2':
+      return 'main/home_v30a2.html'
+    else:
+      return self.default_template_name
 
   def get_context_data(self, *args, **kwargs):
     context = super(Home30a, self).get_context_data(*args, **kwargs)

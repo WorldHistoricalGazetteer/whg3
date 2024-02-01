@@ -29,9 +29,9 @@
 			</div>
 		{% else %}
 			<div class="centered w-100">
-        <!-- alternate home page -->
-        <span class="position-absolute top-0 end-0"><b>TAKE 1</b>
-          <a href="{% url 'home-version' version='v30a2'%}">take 2</a>
+        <!-- default home page -->
+        <span class="position-absolute top-0 end-0"><b>TAKE 2</b>
+          <a href="{% url 'home-version' version='default'%}">take 1</a>
         </span>
 			  <span class="title mb-2">
 				  <img src="{% static 'images/whg_logo.svg'%}" class="d-inline-block align-bottom me-2"
@@ -146,9 +146,9 @@
 			<div class="h-100 border p-1">
 				<div class="home-icon-row">
           <img src="{% static 'images/008-collect.png'%}" class="" height=42 width=42 alt=""/></div>
-				<h5><span class="home-button-hilite">Build</span>, annotate, and publish custom collections</h5>
+				<h5><span class="home-button-hilite">Gazetteer Factory</span><br/>build and publish custom collections</h5>
 			</div>
-			<a href="{% url 'build' %}">
+			<a href="{% url 'factory' %}">
 				<span class="link-spanner"></span>
 			</a>
 {#			<span class="link-spanner btn" data-bs-toggle="modal"#}
