@@ -28,7 +28,7 @@ let dateRangeChanged = throttle(() => { // Uses imported lodash function
 }, 300);
 
 let mapParameters = {
-	maxZoom: 13,
+	maxZoom: 8,
 	fullscreenControl: true,
 	downloadMapControl: true,
 	drawingControl: {

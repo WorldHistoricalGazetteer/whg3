@@ -14,6 +14,7 @@ from datasets.models import Dataset, Hit
 from datasets.tasks import normalize, get_bounds_filter
 from places.models import Place, PlaceGeom
 from utils.regions_countries import get_regions_countries
+from datetime import datetime
 
 def typeahead_suggester(q):
     indices = ['whg', 'pub']
@@ -154,6 +155,173 @@ def suggester(q, indices):
   # TODO: there may be parents and children
   return sortedsugs
 
+class SearchViewV3(View):
+    """
+    /search/index/?
+    Performs Elastic search with extended parameters.
+    """
+    @staticmethod
+    def build_search_query(params):
+        qstr = params["qstr"]
+        fields = ["title^3", "names.toponym", "searchy"]
+        
+        search_mode = params.get("mode", "default")  # Default to "default" if "mode" is not present
+        if search_mode == "starts":
+            search_query = {"bool": {"should": [{"prefix": {field: qstr}} for field in fields]}}
+        elif search_mode == "in":
+            search_query = {"bool": {"should": [{"wildcard": {field: f"*{qstr}*"}} for field in fields]}}
+        elif search_mode == "fuzzy":
+            search_query = {"multi_match": {"query": qstr, "fields": fields, "fuzziness": 2}}
+        else:
+            search_query = {"multi_match": {"query": qstr, "fields": fields}}
+
+        # Construct the full query with additional filters
+        q = {
+            "size": 100,
+            "query": {"bool": {"must": [{"exists": {"field": "whg_id"}}, search_query]}}
+        }
+
+        if params.get("fclasses"):
+            fclist = params["fclasses"].split(',')
+            fclist.append('X')
+            q['query']['bool']['must'].append({"terms": {"fclasses": fclist}})
+        
+        if params.get("temporal"):
+            current_year = datetime.now().year
+            start_year = str(params["start"])
+            end_year = str(params.get("end", current_year))
+            timespan_filter = {"range": {"timespans": {"gte": start_year, "lte": end_year}}}
+        
+            if params.get("undated"):
+                q['query']['bool']['must'].append({
+                    "bool": {"should": [timespan_filter, {"bool": {"must_not": {"exists": {"field": "timespans"}}}}]}
+                })
+            else:
+                q['query']['bool']['must'].append(timespan_filter)
+        
+        if params.get("countries"):
+            countries = params["countries"]
+            q['query']['bool']['must'].append({
+                "terms": {
+                    "ccodes": countries
+                }
+            })
+        
+
+        print('q before spatial:', q)
+        
+        ''' 
+        Spatial filters >>>
+        query will return features that intersect with at least one of the `bounds` or `userareas` geometries
+        '''
+        geometry_filters = []
+        
+        if params.get("bounds"):
+            bounds = params["bounds"]["geometries"]
+            for geometry in bounds:
+                geometry_filters.append({
+                    "geo_shape": {
+                        "geoms.location": {
+                            "shape": {
+                                "type": geometry['type'],
+                                "coordinates": geometry['coordinates']
+                            },
+                            "relation": "intersects"
+                        }
+                    }
+                })
+        
+        if params.get("userareas"):
+            userareas = params["userareas"]
+            for userarea_id in userareas:
+                # Fetch user area by ID
+                user_area = Area.objects.filter(id=userarea_id).values('geojson').first()
+                if user_area:
+                    geometry_filters.append({
+                        "geo_shape": {
+                            "geoms.location": {
+                                "shape": user_area['geojson'],
+                                "relation": "intersects"
+                            }
+                        }
+                    })
+        
+        if len(geometry_filters) > 0:
+            q['query']['bool']['must'].append({"bool": {"should": geometry_filters, "minimum_should_match": 1}})
+        
+        ''' 
+        <<< Spatial filters
+        '''
+
+        return q
+
+    @staticmethod
+    def handle_request(request):
+        """
+        args in request.POST:
+            [string] qstr: query string
+            [string] mode: search mode (starts, in, fuzzy)
+            [string] idx: index to be queried
+            [string] fclasses: filter on geonames class (A,H,L,P,S,T)
+            [string] temporal: text of boolean for consideration of temporal parameters
+            [string] start: filter for timespans
+            [string] end: filter for timespans
+            [string] undated: text of boolean for inclusion of undated results
+            [string] bounds: text of JSON geometry
+            [string] countries: text of JSON cccodes array
+            [string] userareas: text of JSON userareas array
+        """
+        
+        if request.method == 'GET':
+            return JsonResponse({'error': 'GET requests are not allowed for this endpoint'}, status=400)
+
+        qstr = request.POST.get('qstr')
+        idx = request.POST.get('idx') or settings.ES_WHG
+        fclasses = request.POST.get('fclasses')
+        temporal = request.POST.get('temporal')
+        start = request.POST.get('start')
+        end = request.POST.get('end')
+        undated = request.POST.get('undated')
+        bounds = request.POST.get('bounds')
+        countries = request.POST.get('countries')
+        userareas = request.POST.get('userareas')
+        mode = request.POST.get('mode')
+
+        params = {
+            "qstr": qstr,
+            "idx": idx,
+            "fclasses": fclasses,
+            "temporal": temporal,
+            "start": start,
+            "end": end,
+            "undated": undated,
+            "bounds": bounds,
+            "countries": countries,  # Array of country codes
+            "userareas": userareas,  # Array of userarea ids
+            "method": request.method,
+            "mode": mode
+        }
+        request.session["search_params"] = params
+
+        q = SearchViewV3.build_search_query(params)
+        suggestions = suggester(q, [idx, 'pub'])
+        suggestions = [suggestionItem(s) for s in suggestions]
+        result = {'parameters': params, 'suggestions': suggestions}
+
+        return JsonResponse(result, safe=False)
+
+    def post(self, request):
+        # Attempt to parse and decode any JSON data from the request body
+        try:
+            json_data = json.loads(request.body.decode('utf-8'))
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+
+        # Merge any JSON data with request.POST
+        request.POST = request.POST.copy()
+        request.POST.update(json_data)
+
+        return self.handle_request(request)
 
 """ 
   /search/index/?
