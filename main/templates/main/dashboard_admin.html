@@ -1,331 +1,336 @@
 {% extends "main/base.html" %}
 
 {% block extra_head %}
-    <style>
-			.no-wrap {
-			    white-space: nowrap;
-			}
-      .my {color: #993300;}
-        /* Custom styles for the dashboard */
-        .sidebar {
-            border-right: 1px solid #ddd;
-            height: 100vh; /* Full viewport height */
-            padding-top: 20px;
-        }
-        .profile-info {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        .sidebar-nav-item {
-            display: block;
-            padding: 10px;
-            margin: 5px 0;
-            text-align: center;
-            cursor: pointer;
-            border: 1px solid transparent;
-            border-radius: 5px;
-        }
-        .sidebar-nav-item:hover,
-        .sidebar-nav-item.active {
-            background-color: #f8f9fa;
-            border: 1px solid #ddd;
-        }
-			.profile-placeholder {
-			    width: 100px;
-			    height: 100px;
-			    background-color: #f2f2f2;
-			    border-radius: 50%;  /* circle */
-			    display: flex;
-			    align-items: center;
-			    justify-content: center;
-			    font-size: 50px;  /* Adjust based on your preference */
-			    font-weight: bold;  /* Makes the letter thicker */
-			    line-height: 1;  /* Ensures the letter is vertically centered */
-			    vertical-align: middle;
-			    margin-bottom: 1rem;
-					margin-left: auto;
-          margin-right: auto;
-			}
-
-			#dashboard_header {
-					{#text-align: center;#}
-					background-color: #F9EAD7;
-					border-radius: 5px;
-					box-shadow: #e5e5e5;
-			}
-
-    </style>
-{% endblock %}
-{% block content %}
-    <div id="container" class="container mt-4" >
-        <div class="row">
-            <!-- Sidebar -->
-            <div class="col-md-2 sidebar">
-                <!-- Profile Info -->
-                <div class="profile-info">
-	                <div class="profile-placeholder">{{ user.name|first }}</div>
-                    <h5>{{ user.name }}</h5>
-                </div>
-                <!-- Sidebar Navigation -->
-                <a href="{% url 'main:dataset-list' %}" class="sidebar-nav-item">Datasets</a>
-                <a href="{% url 'main:collection-list' collection_class='place' %}"
-                   class="sidebar-nav-item">Place Collections</a>
-                <a href="{% url 'main:collection-list' collection_class='dataset' %}"
-                   class="sidebar-nav-item">Dataset Collections</a>
-                <a href="{% url 'main:area-list' %}"
-                   class="sidebar-nav-item">Study Areas</a>
-                {% if user.role == 'group_leader' %}
-                  <a href="{% url 'main:group-list' role='leader' %}" class="sidebar-nav-item">Groups</a>
-                {% else %}
-	                <a href="{% url 'main:group-list' role='member' %}" class="sidebar-nav-item">Groups</a>
-                {% endif %}
-            </div>
-
-            <!-- Main Content -->
-            <div class="col-md-10 ">
-              <div id="dashboard_header" class="fs-4 text-center">Admin Dashboard</div>
-							<div id="options" class="fs-6 mb-1 my">
-								{% if is_admin %}All{% else %}My{% endif %}
-								<span id="section_title" rel="Datasets">Datasets</span>
-								<span class="ps-3 small">
-									<a href="{% url 'datasets:dataset-create' %}"
-									   id="add_dataset" style="display: none;">Add Dataset</a>
-									<a href="{% url 'collection:place-collection-create' %}"
-									   id="add_place_collection" style="display: none;">Add Place Collection</a>
-									<a href="{% url 'collection:ds-collection-create' %}"
-									   id="add_dataset_collection" style="display: none;">Add Dataset Collection</a>
-									{% if is_admin %}
-									<a href="{% url 'collection:collection-group-create' %}"
-									   id="add_group" style="display: none;">Add Group</a>
-									{% endif %}
-									<a href="{% url 'areas:area-create' %}"
-									   id="add_area" style="display: none;">Add Study Area</a>
-								</span>
-
-								<span id="ds_status" class="float-end">
-				          <select id="filter_select" class="small">
-				          <option value="all">Filter status</option>
-				          <option value="uploaded">Uploaded</option>
-				          <option value="reconciling">Reconciling</option>
-				          <option value="wd-complete">Wikidata complete</option>
-				          <option value="accessioning">Accessioning</option>
-				          <option value="indexed">Indexed</option>
-				          <option value="remote">Remote</option>
-			            </select>
-								</span>
-					    </div>
-
-              <div class="main-content py-1">
-						    {% if has_datasets %}
-						        {% include "lists/dataset_list.html" %}
-	              {% endif %}
-{#						    {% elif has_collections %}#}
-{#						        {% include "lists/collection_list.html" %}#}
-{#						    {% else %}#}
-{#						        {% include "lists/dataset_list.html" %}#}
-{#						    {% endif %}#}
-              </div>
-            </div>
-        </div>
-    </div>
-
-<script>
-
-$(document).ready(function() {
-    var initialSection = '{{ initial_section }}';
-    if (initialSection) {
-        loadSection(initialSection);
-    } else {
-        window.sectionName = "Datasets"
-		    its_datasets()
+  <style>
+    .no-wrap {
+      white-space: nowrap;
     }
 
-    $('.sidebar-nav-item').on('click', function(e) {
+    .my {
+      color: #993300;
+    }
+
+    /* Custom styles for the dashboard */
+    .sidebar {
+      border-right: 1px solid #ddd;
+      height: 100vh; /* Full viewport height */
+      padding-top: 20px;
+    }
+
+    .profile-info {
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .sidebar-nav-item {
+      display: block;
+      padding: 10px;
+      margin: 5px 0;
+      text-align: center;
+      cursor: pointer;
+      border: 1px solid transparent;
+      border-radius: 5px;
+    }
+
+    .sidebar-nav-item:hover,
+    .sidebar-nav-item.active {
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+    }
+
+    .profile-placeholder {
+      width: 100px;
+      height: 100px;
+      background-color: #f2f2f2;
+      border-radius: 50%; /* circle */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 50px; /* Adjust based on your preference */
+      font-weight: bold; /* Makes the letter thicker */
+      line-height: 1; /* Ensures the letter is vertically centered */
+      vertical-align: middle;
+      margin-bottom: 1rem;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    #dashboard_header {
+    {#text-align: center;#} background-color: #F9EAD7;
+      border-radius: 5px;
+      box-shadow: #e5e5e5;
+    }
+
+  </style>
+{% endblock %}
+{% block content %}
+  <div id="container" class="container mt-4">
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-md-2 sidebar">
+        <!-- Profile Info -->
+        <div class="profile-info">
+          <div class="profile-placeholder">{{ user.name|first }}</div>
+          <h5>{{ user.name }}</h5>
+        </div>
+        <!-- Sidebar Navigation -->
+        <a href="{% url 'main:dataset-list' %}" class="sidebar-nav-item">Datasets</a>
+        <a href="{% url 'main:collection-list' collection_class='place' %}"
+           class="sidebar-nav-item">Place Collections</a>
+        <a href="{% url 'main:collection-list' collection_class='dataset' %}"
+           class="sidebar-nav-item">Dataset Collections</a>
+        <a href="{% url 'main:area-list' %}"
+           class="sidebar-nav-item">Study Areas</a>
+        {% if user.role == 'group_leader' %}
+          <a href="{% url 'main:group-list' role='leader' %}" class="sidebar-nav-item">Groups</a>
+        {% else %}
+          <a href="{% url 'main:group-list' role='member' %}" class="sidebar-nav-item">Groups</a>
+        {% endif %}
+      </div>
+
+      <!-- Main Content -->
+      <div class="col-md-10 ">
+        <div id="dashboard_header" class="fs-4 text-center">Admin Dashboard</div>
+        <div id="options" class="fs-6 mb-1 my">
+          {% if is_admin %}All{% else %}My{% endif %}
+          <span id="section_title" rel="Datasets">Datasets</span>
+          <span class="ps-3 small">
+            <a href="{% url 'datasets:dataset-create' %}"
+               id="add_dataset" style="display: none;">Add Dataset</a>
+            <a href="{% url 'collection:place-collection-create' %}"
+               id="add_place_collection" style="display: none;">Add Place Collection</a>
+            <a href="{% url 'collection:ds-collection-create' %}"
+               id="add_dataset_collection" style="display: none;">Add Dataset Collection</a>
+            {% if is_admin %}
+              <a href="{% url 'collection:collection-group-create' %}"
+                 id="add_group" style="display: none;">Add Group</a>
+            {% endif %}
+            <a href="{% url 'areas:area-create' %}"
+               id="add_area" style="display: none;">Add Study Area</a>
+          </span>
+
+          <span id="ds_status" class="float-end">
+            <select id="filter_select" class="small">
+            <option value="all">Filter status</option>
+            <option value="uploaded">Uploaded</option>
+            <option value="reconciling">Reconciling</option>
+            <option value="wd-complete">Wikidata complete</option>
+            <option value="accessioning">Accessioning</option>
+            <option value="indexed">Indexed</option>
+            <option value="remote">Remote</option>
+            </select>
+          </span>
+        </div>
+
+        <div class="main-content py-1">
+          {% if has_datasets %}
+            {% include "lists/dataset_list.html" %}
+          {% endif %}
+          {#						    {% elif has_collections %}#}
+          {#						        {% include "lists/collection_list.html" %}#}
+          {#						    {% else %}#}
+          {#						        {% include "lists/dataset_list.html" %}#}
+          {#						    {% endif %}#}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="application/javascript">
+
+    $(document).ready(function() {
+      var initialSection = '{{ initial_section }}';
+      if (initialSection) {
+        loadSection(initialSection);
+      } else {
+        window.sectionName = 'Datasets';
+        its_datasets();
+      }
+
+      $('.sidebar-nav-item').on('click', function(e) {
         e.preventDefault();
         var sectionName = $(this).text();
         var url = $(this).attr('href');
         loadSection(sectionName, url);
+      });
     });
-});
 
-// TODO: this kluge is needed to reload the page when the back button is pressed
-// refactor to use ajax
-// When navigating away from the dashboard_admin screen
-history.pushState({ page: "dashboard_admin" }, "");
-console.log("Pushed state to history");
+    // TODO: this kluge is needed to reload the page when the back button is pressed
+    // refactor to use ajax
+    // When navigating away from the dashboard_admin screen
+    history.pushState({page: 'dashboard_admin'}, '');
+    console.log('Pushed state to history');
 
-// Listen for the popstate event
-window.addEventListener("popstate", function(event) {
-  // If the previous state was the dashboard_admin screen, reload the page
-	console.log("Popstate event fired", event.state);
-  if (event.state && event.state.page === "dashboard_admin") {
-		console.log("Reloading page");
-		location.reload();
-  }
- });
+    // Listen for the popstate event
+    window.addEventListener('popstate', function(event) {
+      // If the previous state was the dashboard_admin screen, reload the page
+      console.log('Popstate event fired', event.state);
+      if (event.state && event.state.page === 'dashboard_admin') {
+        console.log('Reloading page');
+        location.reload();
+      }
+    });
 
-$("#filter_select").change(function() {
-    let term = $(this).val()
-    if(term == 'all'){
-      $("#filter_select option")[0].innerHTML='Filter status'
-    }
-    statusFilter(term)
-})
+    $('#filter_select').change(function() {
+      let term = $(this).val();
+      if (term == 'all') {
+        $('#filter_select option')[0].innerHTML = 'Filter status';
+      }
+      statusFilter(term);
+    });
 
-statusFilter = function(term) {
-    sel = $('#filter_select').find(":selected").val()
-		console.log('term, sel', term, sel)
-    if (sel != 'all'){
-			$("#filter_select option")[0].innerHTML='Show all'
-    }
-    results = $("#table_ds tbody tr")
-    for (i = 0; i < results.length; i++) {
-        ds_status = results[i].cells[5].innerHTML
-		    {#console.log('ds_status', ds_status)#}
+    statusFilter = function(term) {
+      sel = $('#filter_select').find(':selected').val();
+      console.log('term, sel', term, sel);
+      if (sel != 'all') {
+        $('#filter_select option')[0].innerHTML = 'Show all';
+      }
+      results = $('#table_ds tbody tr');
+      for (i = 0; i < results.length; i++) {
+        ds_status = results[i].cells[5].innerHTML;
+        {#console.log('ds_status', ds_status)#}
         if (term == ds_status || term == 'all') {
-            results[i].style.display = "";
+          results[i].style.display = '';
         } else if (term != ds_status) {
-            results[i].style.display = "none";
+          results[i].style.display = 'none';
         }
+      }
+    };
+
+    function its_datasets() {
+      $('#add_dataset').show();
+      $('#ds_status').show();
+      $('#add_place_collection').hide();
+      $('#add_dataset_collection').hide();
+      $('#add_group').hide();
+      $('#add_area').hide();
     }
-}
 
-function its_datasets() {
-		$('#add_dataset').show();
-		$('#ds_status').show();
-    $('#add_place_collection').hide();
-    $('#add_dataset_collection').hide();
-    $('#add_group').hide();
-    $('#add_area').hide();
-}
+    function loadSection(sectionName, url) {
+      var targetUrl = url;
+      console.log('sectionName', sectionName);
+      console.log('targetUrl', targetUrl);
 
-
-function loadSection(sectionName, url) {
-    var targetUrl = url
-    console.log('sectionName', sectionName)
-		console.log('targetUrl', targetUrl)
-
-    // Show/hide 'Add' buttons based on sectionName
-    if (sectionName == "Datasets") {
-        its_datasets()
-    } else if (sectionName == "Place Collections") {
+      // Show/hide 'Add' buttons based on sectionName
+      if (sectionName == 'Datasets') {
+        its_datasets();
+      } else if (sectionName == 'Place Collections') {
         $('#add_dataset').hide();
         $('#add_place_collection').show();
         $('#add_dataset_collection').hide();
         $('#add_group').hide();
         $('#add_area').hide();
-				$('#ds_status').hide();
-    } else if (sectionName == "Dataset Collections") {
+        $('#ds_status').hide();
+      } else if (sectionName == 'Dataset Collections') {
         $('#add_dataset').hide();
         $('#add_place_collection').hide();
         $('#add_dataset_collection').show();
         $('#add_group').hide();
         $('#add_area').hide();
-				$('#ds_status').hide();
-     //} else if (sectionName == "Groups" && userGroups.includes('group_leader'))
-     } else if (sectionName == "Groups") {
+        $('#ds_status').hide();
+        //} else if (sectionName == "Groups" && userGroups.includes('group_leader'))
+      } else if (sectionName == 'Groups') {
         $('#add_dataset').hide();
         $('#add_place_collection').hide();
         $('#add_dataset_collection').hide();
         $('#add_group').show();
         $('#add_area').hide();
-				$('#ds_status').hide();
-    } else if (sectionName == "Study Areas") {
+        $('#ds_status').hide();
+      } else if (sectionName == 'Study Areas') {
         $('#add_dataset').hide();
         $('#add_place_collection').hide();
         $('#add_dataset_collection').hide();
         $('#add_group').hide();
         $('#add_area').show();
-				$('#ds_status').hide();
-    } else {
+        $('#ds_status').hide();
+      } else {
         $('#add_dataset').hide();
         $('#add_place_collection').hide();
         $('#add_dataset_collection').hide();
         $('#add_group').hide();
         $('#add_area').hide();
-				$('#ds_status').hide();
-    }
+        $('#ds_status').hide();
+      }
 
-    $.get(targetUrl, function(data) {
+      $.get(targetUrl, function(data) {
         $('.main-content').html(data);
         history.pushState({}, '', targetUrl);
         $('#section_title').text(sectionName);
 
         $('.sidebar-nav-item').removeClass('active');
         $('.sidebar-nav-item').filter(function() {
-            return $(this).text() === sectionName;
+          return $(this).text() === sectionName;
         }).addClass('active');
-    });
-}
+      });
+    }
 
+    {#$(document).ready(function() {#}
+    {#    var userGroups = {{ user_groups|safe }};#}
+    {#    console.log('groups:', userGroups)#}
+    {##}
+    {#    $('.sidebar-nav-item').on('click', function(e) {#}
+    {#        e.preventDefault();  // Prevent default navigation#}
+    {##}
+    {#        // set section variable#}
+    {#        var sectionName = $(this).text();#}
+    {#        var targetUrl = $(this).attr('href');#}
+    {#				console.log('sectionName', sectionName)#}
+    {#				console.log('targetUrl', targetUrl)#}
+    {##}
+    {#        if (sectionName == "Datasets") {#}
+    {#            $('#add_dataset').show();#}
+    {#            $('#add_place_collection').hide();#}
+    {#            $('#add_dataset_collection').hide();#}
+    {#            $('#add_group').hide();#}
+    {#            $('#add_area').hide();#}
+    {#        } if (sectionName == "Place Collections") {#}
+    {#            $('#add_dataset').hide();#}
+    {#            $('#add_place_collection').show();#}
+    {#            $('#add_dataset_collection').hide();#}
+    {#            $('#add_group').hide();#}
+    {#            $('#add_area').hide();#}
+    {#        } else if (sectionName == "Dataset Collections") {#}
+    {#            $('#add_dataset').hide();#}
+    {#            $('#add_place_collection').hide();#}
+    {#            $('#add_dataset_collection').show();#}
+    {#            $('#add_group').hide();#}
+    {#            $('#add_area').hide();#}
+    {# } else if (sectionName == "Groups" && userGroups.includes('group_leader')) {#}
+    {#        } else if (sectionName == "Groups") {#}
+    {#            $('#add_dataset').hide();#}
+    {#            $('#add_place_collection').hide();#}
+    {#            $('#add_dataset_collection').hide();#}
+    {#            $('#add_group').show();#}
+    {#            $('#add_area').hide();#}
+    {#        } else if (sectionName == "Study Areas") {#}
+    {#            $('#add_dataset').hide();#}
+    {#            $('#add_place_collection').hide();#}
+    {#            $('#add_dataset_collection').hide();#}
+    {#            $('#add_group').hide();#}
+    {#            $('#add_area').show();#}
+    {#        } else {#}
+    {#$('#add_dataset').hide();#}
+    {#            $('#add_place_collection').hide();#}
+    {#            $('#add_dataset_collection').hide();#}
+    {#            $('#add_group').hide();#}
+    {#            $('#add_area').hide();#}
+    {#        }#}
+    {##}
+    {#        // Fetch content via AJAX#}
+    {#        $.get(targetUrl, function(data) {#}
+    {#            $('.main-content').html(data);  // Update the main content div#}
+    {#        });#}
+    {##}
+    {#        // Update the section title#}
+    {#        $('#section_title').text(sectionName).attr('rel', sectionName);#}
+    {##}
+    {#        // Highlight the active sidebar item#}
+    {#        $('.sidebar-nav-item').removeClass('active');#}
+    {#        $(this).addClass('active');#}
+    {#    });#}
+    {# });#}
 
-{#$(document).ready(function() {#}
-{#    var userGroups = {{ user_groups|safe }};#}
-{#    console.log('groups:', userGroups)#}
-{##}
-{#    $('.sidebar-nav-item').on('click', function(e) {#}
-{#        e.preventDefault();  // Prevent default navigation#}
-{##}
-{#        // set section variable#}
-{#        var sectionName = $(this).text();#}
-{#        var targetUrl = $(this).attr('href');#}
-{#				console.log('sectionName', sectionName)#}
-{#				console.log('targetUrl', targetUrl)#}
-{##}
-{#        if (sectionName == "Datasets") {#}
-{#            $('#add_dataset').show();#}
-{#            $('#add_place_collection').hide();#}
-{#            $('#add_dataset_collection').hide();#}
-{#            $('#add_group').hide();#}
-{#            $('#add_area').hide();#}
-{#        } if (sectionName == "Place Collections") {#}
-{#            $('#add_dataset').hide();#}
-{#            $('#add_place_collection').show();#}
-{#            $('#add_dataset_collection').hide();#}
-{#            $('#add_group').hide();#}
-{#            $('#add_area').hide();#}
-{#        } else if (sectionName == "Dataset Collections") {#}
-{#            $('#add_dataset').hide();#}
-{#            $('#add_place_collection').hide();#}
-{#            $('#add_dataset_collection').show();#}
-{#            $('#add_group').hide();#}
-{#            $('#add_area').hide();#}
-        {# } else if (sectionName == "Groups" && userGroups.includes('group_leader')) {#}
-{#        } else if (sectionName == "Groups") {#}
-{#            $('#add_dataset').hide();#}
-{#            $('#add_place_collection').hide();#}
-{#            $('#add_dataset_collection').hide();#}
-{#            $('#add_group').show();#}
-{#            $('#add_area').hide();#}
-{#        } else if (sectionName == "Study Areas") {#}
-{#            $('#add_dataset').hide();#}
-{#            $('#add_place_collection').hide();#}
-{#            $('#add_dataset_collection').hide();#}
-{#            $('#add_group').hide();#}
-{#            $('#add_area').show();#}
-{#        } else {#}
-            {#$('#add_dataset').hide();#}
-{#            $('#add_place_collection').hide();#}
-{#            $('#add_dataset_collection').hide();#}
-{#            $('#add_group').hide();#}
-{#            $('#add_area').hide();#}
-{#        }#}
-{##}
-{#        // Fetch content via AJAX#}
-{#        $.get(targetUrl, function(data) {#}
-{#            $('.main-content').html(data);  // Update the main content div#}
-{#        });#}
-{##}
-{#        // Update the section title#}
-{#        $('#section_title').text(sectionName).attr('rel', sectionName);#}
-{##}
-{#        // Highlight the active sidebar item#}
-{#        $('.sidebar-nav-item').removeClass('active');#}
-{#        $(this).addClass('active');#}
-{#    });#}
-{# });#}
-
-</script>
+  </script>
 
 {% endblock %}
 

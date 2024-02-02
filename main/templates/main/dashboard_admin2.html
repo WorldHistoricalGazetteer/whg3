@@ -1,0 +1,57 @@
+{% extends "main/base.html" %}
+
+{% block extra_head %}
+  <style>
+    /* Add your custom styles here */
+  </style>
+{% endblock %}
+
+{% block content %}
+
+  <div id="container" class="container mt-4">
+    <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <a class="nav-link active" id="datasets-tab" data-bs-toggle="tab" href="#datasets" role="tab"
+           aria-controls="datasets" aria-selected="true">Datasets</a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link" id="place-collections-tab" data-bs-toggle="tab" href="#place-collections" role="tab"
+           aria-controls="place-collections" aria-selected="false">Place Collections</a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link" id="dataset-collections-tab" data-bs-toggle="tab" href="#dataset-collections" role="tab"
+           aria-controls="dataset-collections" aria-selected="false">Dataset Collections</a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link" id="areas-tab" data-bs-toggle="tab" href="#areas" role="tab" aria-controls="areas"
+           aria-selected="false">Areas</a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link" id="collection-groups-tab" data-bs-toggle="tab" href="#collection-groups" role="tab"
+           aria-controls="collection-groups" aria-selected="false">Collection Groups</a>
+      </li>
+    </ul>
+    <div class="tab-content" id="adminTabsContent">
+      <div class="tab-pane fade show active" id="datasets" role="tabpanel" aria-labelledby="datasets-tab">
+         Datasets content goes here
+      </div>
+      <div class="tab-pane fade" id="place-collections" role="tabpanel" aria-labelledby="place-collections-tab">
+        Place Collections content goes here
+      </div>
+      <div class="tab-pane fade" id="dataset-collections" role="tabpanel" aria-labelledby="dataset-collections-tab">
+        Dataset Collections content goes here
+      </div>
+      <div class="tab-pane fade" id="areas" role="tabpanel" aria-labelledby="areas-tab">
+        Areas content goes here
+      </div>
+      <div class="tab-pane fade" id="collection-groups" role="tabpanel" aria-labelledby="collection-groups-tab">
+        Collection Groups content goes here
+      </div>
+    </div>
+  </div> <!-- .container -->
+
+  <script type="application/javascript">
+    // Add your custom JavaScript here
+  </script>
+
+{% endblock %} <!-- content -->
