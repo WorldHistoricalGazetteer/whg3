@@ -7,13 +7,13 @@ id, title, label, created, format, #rows, ds_status (if)owner
   <table id="table_ds" class="table table-striped">
     <thead class="small strong">
       <th>id</th>
-      <th>name <i class="fa fa-sort ms-1" data-id=1 ref=asc></i></th>
-      <th>label <i class="fa fa-sort ms-1" data-id=2 ref=asc></i></th>
-      <th>modified <i class="fa fa-sort ms-1" data-id=3 title="UTC"></i></th>
-      <th># rows</th>
-      <th>status <i class="fa fa-sort ms-1" data-id=6 ref=asc></i></th>
+      <th>name <i class="fa fa-sort ms-1" data-id='title' ></i></th>
+      <th>label <i class="fa fa-sort ms-1" data-id='label' ></i></th>
+      <th>modified <i class="fa fa-sort ms-1" data-id='last_modified' title="UTC"></i></th>
+      <th># rows<i class="fa fa-sort ms-1" data-id='numrows' ></i></th>
+      <th>status <i class="fa fa-sort ms-1" data-id='ds_status' ></i></th>
       {% if is_admin %}
-      <th>owner <i class="fa fa-sort ms-1" data-id=7 ref=asc></i></th>{% endif %}
+      <th>owner <i class="fa fa-sort ms-1" data-id='owner' ></i></th>{% endif %}
     </thead>
     <tbody>
       {% for d in datasets %}
@@ -46,3 +46,97 @@ id, title, label, created, format, #rows, ds_status (if)owner
 {% else %}
     <p>You have no datasets yet. <a href="{% url 'datasets:dataset-create' %}">Create one?</a></p>
 {% endif %}
+{% block extra_js %}
+<script type="text/javascript">
+$(document).ready(function() {
+    // Try to retrieve the saved sort state from local storage, or initialize if not present
+    var sortOrders = JSON.parse(localStorage.getItem('sortOrders')) || {
+        'title': 'asc',
+        'label': 'none',
+        'last_modified': 'none',
+        'numrows': 'none',
+        'ds_status': 'none',
+        'owner': 'none'
+    };
+
+    function updateSortIcons() {
+        // Update icons based on current sort state
+        // Implement this function based on your UI requirements
+    }
+
+    $('.fa-sort').on('click', function() {
+        var columnId = $(this).data('id');
+        var currentSortOrder = sortOrders[columnId];
+        console.log('Clicked column: ' + columnId + ', Current sort order: ' + currentSortOrder);
+
+        var newSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+        sortOrders[columnId] = newSortOrder; // Update the sort order in the state
+
+        // Save the updated state to local storage
+        localStorage.setItem('sortOrders', JSON.stringify(sortOrders));
+
+        console.log('Updated sort order for ' + columnId + ': ' + newSortOrder);
+        console.log('Current state of sortOrders:', sortOrders);
+
+        var url = '/main/dataset_list/' + columnId + '/' + newSortOrder + '/';
+        console.log('AJAX request URL: ' + url);
+
+        $.get(url, function(data) {
+            $('#datasets').empty().html(data);
+        }).fail(function() {
+            console.log('AJAX request failed');
+        });
+
+        {#updateSortIcons();#}
+    });
+});
+
+
+  {#function updateSortIcons() {#}
+  {#  $('.fa-sort').each(function() {#}
+  {#      var columnId = $(this).data('id');#}
+  {#      var sortOrder = sortOrders[columnId];#}
+  {##}
+  {#      // Remove existing sort classes#}
+  {#      $(this).removeClass('fa-sort-up fa-sort-down fas fa-sort');#}
+  {##}
+  {#      // Depending on the sortOrder, add the appropriate Font Awesome class#}
+  {#      if (sortOrder === 'asc') {#}
+  {#          $(this).addClass('fas fa-sort-up');#}
+  {#      } else if (sortOrder === 'desc') {#}
+  {#          $(this).addClass('fas fa-sort-down');#}
+  {#      } else {#}
+  {#          $(this).addClass('fas fa-sort');#}
+  {#      }#}
+  {#  });#}
+  {# }#}
+  {##}
+
+{#  $(document).ready(function() {#}
+{#    var sortOrders = {};#}
+{#    // Add click event listener to each sortable column header#}
+{#    $('.fa-sort').on('click', function() {#}
+{#        var columnId = $(this).data('id');  // Get the id of the column#}
+{##}
+{#        var sortOrder = sortOrders[columnId] || 'asc';#}
+{#        console.log('columnId: ' + columnId + ', sortOrder: ' + sortOrder)#}
+{#        // Toggle the sort order for the next request#}
+{#        var newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';#}
+{#        // Update the sortOrder object#}
+{#        sortOrders[columnId] = newSortOrder;#}
+{##}
+        {#$(this).attr('ref', newSortOrder);#}
+{#        console.log('New sort order for ' + columnId + ': ' + newSortOrder);#}
+{#        console.log('Updated sortOrders:', JSON.stringify(sortOrders, null, 2));#}
+{##}
+{#        var url = '/main/dataset_list/' + columnId + '/' + newSortOrder + '/';#}
+        {#var url = '/main/dataset_list/' + columnId + '/' + sortOrder + '/';#}
+{#        console.log('AJAX request URL: ' + url);#}
+        {#return#}
+{#        $.get(url, function(data) {#}
+{#            $('#datasets').empty().html(data);#}
+{#        }.bind(this));#}
+{#    });#}
+{# });#}
+</script>
+{% endblock %}

@@ -155,11 +155,49 @@ def area_list(request):
 
   return render(request, 'lists/area_list.html', {'areas': user_areas, 'is_admin': is_admin, 'section': 'areas'})
 
-def dataset_list(request):
-  is_admin = request.user.groups.filter(name='whg_admins').exists()
-  user_datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
-  return render(request, 'lists/dataset_list.html',
-                {'datasets': user_datasets, 'is_admin': is_admin, 'section': 'datasets'})
+
+# def dataset_list(request, sort='', order=''):
+#   is_admin = request.user.groups.filter(name='whg_admins').exists()
+#   user_datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+#
+#   # Sort the datasets based on the parameters
+#   if sort and order:
+#     if order == 'desc':
+#       sort = '-' + sort
+#     user_datasets = user_datasets.order_by(sort)
+#
+#   return render(request, 'lists/dataset_list.html',
+#                 {'datasets': user_datasets, 'is_admin': is_admin, 'section': 'datasets'})
+
+import logging
+
+def dataset_list(request, sort='', order=''):
+    print("dataset_list function called")
+    print(f"Sort parameter: {sort}")
+    print(f"Order parameter: {order}")
+
+    is_admin = request.user.groups.filter(name='whg_admins').exists()
+    user_datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+
+    # Sort the datasets based on the parameters
+    if sort == 'last_modified':
+      if order == 'desc':
+          user_datasets = user_datasets.annotate(last_log_timestamp=Max('log__timestamp')).order_by('-last_log_timestamp')
+      else:
+          user_datasets = user_datasets.annotate(last_log_timestamp=Max('log__timestamp')).order_by('last_log_timestamp')
+    elif sort and order:
+      sort_param = f'-{sort}' if order == 'desc' else sort
+      user_datasets = user_datasets.order_by(sort_param)
+      print(f"Sorting with parameter: {sort_param}")
+
+    return render(request, 'lists/dataset_list.html',
+                  {'datasets': user_datasets, 'is_admin': is_admin, 'section': 'datasets'})
+
+# def dataset_list(request):
+#   is_admin = request.user.groups.filter(name='whg_admins').exists()
+#   user_datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+#   return render(request, 'lists/dataset_list.html',
+#                 {'datasets': user_datasets, 'is_admin': is_admin, 'section': 'datasets'})
 
 def collection_list(request, *args, **kwargs):
   print('collection_list() kwargs', kwargs)
@@ -180,35 +218,51 @@ def collection_list(request, *args, **kwargs):
   return render(request, 'lists/collection_list.html',
                 {'collections': user_collections, 'is_admin': is_admin, 'section': 'collections'})
 
-def group_list(request, role):
-  user = request.user
+def group_list(request):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
-  # Check for admin
-  # if user.groups.filter(name='whg_admins').exists() or user.is_superuser:
-  if is_admin or user.is_superuser:
+
+  if is_admin:
+    # Admins see all CollectionGroups
     groups = CollectionGroup.objects.all()
-    # return early
-    context = {'groups': groups, 'is_admin': is_admin, 'section': 'groups'}
-    return render(request, 'lists//group_list.html', context)
-
-  # This will fetch groups where the user is a member
-  member_groups = CollectionGroup.objects.filter(members__user=user)
-
-  # If they are a leader, add the groups they own
-  if role == 'leader':
-    owned_groups = CollectionGroup.objects.filter(owner=user)
-    groups = (owned_groups | member_groups).distinct()
   else:
-    groups = member_groups.distinct()
+    # Non-admins see only the CollectionGroups where they are a member
+    groups = CollectionGroup.objects.filter(members__user=request.user)
 
   context = {
     'groups': groups,
-    'role': role,
     'is_admin': is_admin,
     'section': 'groups'
   }
   return render(request, 'lists/group_list.html', context)
 
+# def group_list(request, role):
+#   user = request.user
+#   is_admin = request.user.groups.filter(name='whg_admins').exists()
+#   # Check for admin
+#   # if user.groups.filter(name='whg_admins').exists() or user.is_superuser:
+#   if is_admin or user.is_superuser:
+#     groups = CollectionGroup.objects.all()
+#     # return early
+#     context = {'groups': groups, 'is_admin': is_admin, 'section': 'groups'}
+#     return render(request, 'lists//group_list.html', context)
+#
+#   # This will fetch groups where the user is a member
+#   member_groups = CollectionGroup.objects.filter(members__user=user)
+#
+#   # If they are a leader, add the groups they own
+#   if role == 'leader':
+#     owned_groups = CollectionGroup.objects.filter(owner=user)
+#     groups = (owned_groups | member_groups).distinct()
+#   else:
+#     groups = member_groups.distinct()
+#
+#   context = {
+#     'groups': groups,
+#     'role': role,
+#     'is_admin': is_admin,
+#     'section': 'groups'
+#   }
+#   return render(request, 'lists/group_list.html', context)
 
 # get's the correct view based on user group
 @login_required
@@ -316,9 +370,9 @@ def is_url(url):
     return False
 
 
-""" 
+"""
   create link associated with instance of various models, so far:
-  Collection, CollectionGroup, TraceAnnotation, Place 
+  Collection, CollectionGroup, TraceAnnotation, Place
 """
 def create_link(request, *args, **kwargs):
   if request.method == 'POST':
