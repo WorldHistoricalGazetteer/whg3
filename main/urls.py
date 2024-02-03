@@ -1,10 +1,9 @@
 # main.urls
 
-from django.urls import path, include
+from django.urls import path
 from django.conf.urls.static import static
 from django.conf import settings
 from django.views.generic.base import TemplateView
-from resources.views import TeachingPortalView
 from . import views
 
 # actions

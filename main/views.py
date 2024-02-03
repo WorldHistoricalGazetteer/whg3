@@ -209,6 +209,7 @@ def group_list(request, role):
   }
   return render(request, 'lists/group_list.html', context)
 
+
 # get's the correct view based on user group
 @login_required
 def dashboard_redirect(request):
@@ -216,6 +217,46 @@ def dashboard_redirect(request):
         return redirect('dashboard-admin')
     else:
         return redirect('dashboard-user')
+
+
+# all-purpose for admins
+@login_required
+def dashboard_admin_view(request):
+  print('request.GET', request.GET)
+  user = request.user
+  is_admin = user.groups.filter(name='whg_admins').exists()
+  is_leader = user.groups.filter(name='group_leaders').exists()
+  django_groups = [group.name for group in user.groups.all()]
+
+
+  user_datasets_count = Dataset.objects.filter(owner=user.id).count()
+  user_collections_count = Collection.objects.filter(owner=user).count()
+
+  # section = request.GET.get('section')
+  section = request.GET.get('section', 'datasets')
+
+  # TODO: for admins, show all datasets, collections, areas
+  datasets = get_objects_for_user(Dataset, request.user, {}, is_admin)
+  collections = get_objects_for_user(Collection, request.user, {}, is_admin)
+  areas = get_objects_for_user(Area, request.user, {'type': ['predefined', 'country']}, is_admin)
+  groups_member = CollectionGroup.objects.filter(members__user=user)
+  groups_led = CollectionGroup.objects.filter(owner=user)
+
+  context = {
+    'datasets': datasets,
+    'collections': collections,
+    'areas': areas,
+    'has_datasets': user_datasets_count > 0,
+    'has_collections': user_collections_count > 0,
+    'section': section,
+    'django_groups': django_groups,
+    'groups_member': groups_member,
+    'groups_led': groups_led,
+    'is_admin': is_admin,
+    'is_leader': is_leader,
+  }
+  # return render(request, 'main/dashboard_admin.html', {'initial_section': section})
+  return render(request, 'main/dashboard_admin.html', context)
 
 # for non-admins
 @login_required
@@ -254,46 +295,6 @@ def dashboard_user_view(request):
 
   }
   return render(request, 'main/dashboard_user.html', context)
-
-# all-purpose for admins
-@login_required
-def dashboard_admin_view(request):
-  print('request.GET', request.GET)
-  user = request.user
-  is_admin = user.groups.filter(name='whg_admins').exists()
-  is_leader = user.groups.filter(name='group_leaders').exists()
-  django_groups = [group.name for group in user.groups.all()]
-
-
-  user_datasets_count = Dataset.objects.filter(owner=user.id).count()
-  user_collections_count = Collection.objects.filter(owner=user).count()
-  user_collections_count = Collection.objects.filter(owner=user).count()
-
-  # section = request.GET.get('section')
-  section = request.GET.get('section', 'datasets')
-
-  # TODO: for admins, show all datasets, collections, areas
-  datasets = get_objects_for_user(Dataset, request.user, {}, is_admin)
-  collections = get_objects_for_user(Collection, request.user, {}, is_admin)
-  areas = get_objects_for_user(Area, request.user, {'type': ['predefined', 'country']}, is_admin)
-  groups_member = CollectionGroup.objects.filter(members__user=user)
-  groups_led = CollectionGroup.objects.filter(owner=user)
-
-  context = {
-    'datasets': datasets,
-    'collections': collections,
-    'areas': areas,
-    'has_datasets': user_datasets_count > 0,
-    'has_collections': user_collections_count > 0,
-    'section': section,
-    'django_groups': django_groups,
-    'groups_member': groups_member,
-    'groups_led': groups_led,
-    'is_admin': is_admin,
-    'is_leader': is_leader,
-  }
-  # return render(request, 'main/dashboard_admin.html', {'initial_section': section})
-  return render(request, 'main/dashboard_admin.html', context)
 
 @csrf_exempt
 def home_modal(request):
