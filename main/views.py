@@ -140,39 +140,48 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
   return objects
 
 def area_list(request, sort='', order=''):
-  # Filter that applies to all Area objects to exclude system records.
-  area_filters = {'type__in': ['ccodes', 'copied', 'drawn']}
-
-  # Check if the user is an admin to determine visibility scope.
   is_admin = request.user.groups.filter(name='whg_admins').exists()
+  # only user-created areas
+  areas = Area.objects.filter(type__in=['ccodes', 'copied', 'drawn'])
 
-  if is_admin:
-    # Admins see all Areas matching the filtered types without the owner filter.
-    user_areas = Area.objects.filter(**area_filters)
-  else:
-    # Non-admins see only their Areas matching the filtered types.
-    user_areas = Area.objects.filter(**area_filters, owner=request.user)
+  # Apply filters from request if any
+  filters = request.GET.get('filters', {})
+  if filters:
+    pass
+  # Logic to apply filters to user_datasets
+  # ...
 
-  return render(request, 'lists/area_list.html', {'areas': user_areas, 'is_admin': is_admin, 'section': 'areas'})
+  # Sort the datasets based on the parameters
+  if sort and order:
+    sort_param = f'-{sort}' if order == 'desc' else sort
+    areas = areas.order_by(sort_param)
 
+  # # Check if the user is an admin to determine visibility scope.
+  # is_admin = request.user.groups.filter(name='whg_admins').exists()
+  #
+  # if is_admin:
+  #   # Admins see all Areas matching the filtered types without the owner filter.
+  #   user_areas = Area.objects.filter(**area_filters)
+  # else:
+  #   # Non-admins see only their Areas matching the filtered types.
+  #   user_areas = Area.objects.filter(**area_filters, owner=request.user)
 
-# def dataset_list(request, sort='', order=''):
-#   is_admin = request.user.groups.filter(name='whg_admins').exists()
-#   user_datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
-#
-#   # Sort the datasets based on the parameters
-#   if sort and order:
-#     if order == 'desc':
-#       sort = '-' + sort
-#     user_datasets = user_datasets.order_by(sort)
-#
-#   return render(request, 'lists/dataset_list.html',
-#                 {'datasets': user_datasets, 'is_admin': is_admin, 'section': 'datasets'})
+  return render(request, 'lists/area_list.html', {'areas': areas, 'is_admin': is_admin, 'section': 'areas'})
 
 def dataset_list(request, sort='', order=''):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
-  datasets = Dataset.objects.all()
-  # user_datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+  datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+
+  # Sort the datasets based on the parameters
+  if sort == 'last_modified':
+    if order == 'desc':
+      datasets = datasets.annotate(last_log_timestamp=Max('log__timestamp')).order_by('-last_log_timestamp')
+    else:
+      datasets = datasets.annotate(last_log_timestamp=Max('log__timestamp')).order_by('last_log_timestamp')
+  elif sort and order:
+    sort_param = f'-{sort}' if order == 'desc' else sort
+    datasets = datasets.order_by(sort_param)
+    print(f"Sorting with parameter: {sort_param}")
 
   # Apply filters from request if any
   filters = request.GET.get('filters', {})
@@ -189,18 +198,6 @@ def dataset_list(request, sort='', order=''):
   return render(request, 'lists/dataset_list.html',
                 {'datasets': datasets, 'is_admin': is_admin, 'section': 'datasets'})
 
-
-
-# def dataset_list(request, sort='', order=''):
-#   is_admin = request.user.groups.filter(name='whg_admins').exists()
-#   user_datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
-#   # Sort the datasets based on the parameters
-#   if sort and order:
-#     sort_param = f'-{sort}' if order == 'desc' else sort
-#     user_datasets = user_datasets.order_by(sort_param)
-#
-#   return render(request, 'lists/dataset_list.html',
-#                 {'datasets': user_datasets, 'is_admin': is_admin, 'section': 'datasets'})
 
 def collection_list(request, *args, **kwargs):
   print('collection_list() kwargs', kwargs)

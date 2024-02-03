@@ -7,11 +7,11 @@ id, title, label, created, format, #rows, ds_status (if)owner
   <table id="table_ds" class="table table-striped">
     <thead class="small strong">
       <th>id</th>
-      <th>name <i class="fa fa-sort ms-1" data-id=1 ref=asc></i></th>
-      <th>created <i class="fa fa-sort ms-1" data-id=3 title="UTC"></i></th>
-      <th>description <i class="fa fa-sort ms-1" data-id=6 ref=asc></i></th>
+      <th>title <i class="fa fa-sort ms-1" data-id="title" ref="asc"></i></th>
+      <th>created <i class="fa fa-sort ms-1" data-id="created" ref="asc" title="UTC"></i></th>
+      <th>description <i class="fa fa-sort ms-1" data-id="description" ref="asc"></i></th>
       {% if is_admin %}
-      <th>owner <i class="fa fa-sort ms-1" data-id=7 ref=asc></i></th>{% endif %}
+      <th>owner <i class="fa fa-sort ms-1" data-id="owner" ref="asc"></i></th>{% endif %}
     </thead>
     <tbody>
       {% for item in areas %}
