@@ -376,6 +376,16 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(select2_CDN_fallbac
 			toggleButtonState();
 		});
 		toggleButtonState();
+	
+	    $('.accordion-button').each(function () { // Initialise Filter Accordions
+			var accordion = $($(this).data('bs-target'));
+			var accordionHeader = accordion.siblings('.accordion-header');
+			var chevron = accordionHeader.find('.accordion-toggle-indicator i');
+			accordionHeader.on('click', function () {
+				chevron.toggleClass('fa-chevron-up fa-chevron-down');
+				accordion.collapse('toggle');
+			});
+	    });
 
 	})
 	.catch(error => console.error("An error occurred:", error));
@@ -397,7 +407,6 @@ function toggleButtonState() {
 			.attr('title', $(this).data('title').split('|')[disable ? 1 : 0])
 			.attr('aria-label', $(this).data('title').split('|')[disable ? 1 : 0]);
 	});
-	console.log('toggleButtonState', disable);
 }
 
 function flashSearchButton(toggle = true) {
@@ -576,6 +585,11 @@ function buildResultFilters() {
 	});
 
 	const allTypes = Array.from(typesSet).sort();
+	
+	var typesShowing = $('#headingTypes').find('.accordion-toggle-indicator i').hasClass('fa-chevron-up');
+	if ((allTypes.length <= 5 && !typesShowing) || (allTypes.length > 5 && typesShowing)) {
+		$('#headingTypes button').click();
+	}
 
 	$('#type_checkboxes').html(allTypes.map(type => {
 		const count = typeCounts[type] || 0;
@@ -612,6 +626,11 @@ function buildResultFilters() {
 	});
 
 	const allCountries = Array.from(countriesSet).sort();
+	
+	var countriesShowing = $('#headingCountries').find('.accordion-toggle-indicator i').hasClass('fa-chevron-up');
+	if ((allCountries.length <= 5 && !countriesShowing) || (allCountries.length > 5 && countriesShowing)) {
+		$('#headingCountries button').click();
+	}
 
 	$('#country_checkboxes').html(allCountries.map(country => {
 		const cName = ccode_hash[country]['gnlabel'];
@@ -630,44 +649,9 @@ function buildResultFilters() {
 	$('#typesCount').text(`(${allTypes.length})`);
 	$('#countriesCount').text(`(${allCountries.length})`);
 
-	// var chevronIcon = $('#headingCountries .accordion-toggle-indicator i');
-
-	// 5 or fewer countries? open accordion; more? close it
-	if (allCountries.length <= 5) {
-		$('#collapseCountries').addClass('show').removeClass('collapse');
-		$('#headingCountries .accordion-button').removeClass('collapsed').attr('aria-expanded', 'true');
-		$("#headingCountries button .accordion-toggle-indicator").hide();
-	} else {
-		$('#collapseCountries').removeClass('show').addClass('collapse');
-		$('#headingCountries .accordion-button').addClass('collapsed').attr('aria-expanded', 'false');
-		$("#headingCountries button .accordion-toggle-indicator").show();
-	}
-
-	$('#collapseTypes').on('show.bs.collapse', function() {
-		$('#headingTypes .accordion-toggle-indicator').html('<i class="info-collapse fas fa-chevron-up"></i>');
-	}).on('hide.bs.collapse', function() {
-		$('#headingTypes .accordion-toggle-indicator').html('<i class="info-collapse fas fa-chevron-down"></i>');
-	});
-
-	$('#collapseCountries').on('show.bs.collapse', function() {
-		$('#headingCountries .accordion-toggle-indicator').html('<i class="info-collapse fas fa-chevron-up"></i>');
-	}).on('hide.bs.collapse', function() {
-		$('#headingCountries .accordion-toggle-indicator').html('<i class="info-collapse fas fa-chevron-down"></i>');
-	});
-	$('.accordion-button').on('click', function() {
-		var indicator = $(this).find('.accordion-toggle-indicator');
-		if ($(this).hasClass('collapsed')) {
-			indicator.html('<i class="info-collapse fas fa-chevron-down');
-		} else {
-			indicator.html('<i class="info-collapse fas fa-chevron-up');
-		}
-	});
-
-
 	$('.filter-checkbox').change(function() {
 		// store state
 		checkboxStates[this.value] = this.checked;
-		console.log('checkboxStates', checkboxStates);
 
 		// Get all checked checkboxes
 		let checkedTypes = $('.type-checkbox:checked').map(function() {

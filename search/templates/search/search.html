@@ -97,9 +97,51 @@
 
         </div>
       </div>
-      <div id="result_facets" class="p-1 bg-light">
+      
+	  <div id="result_facets" class="p-1 bg-light">
+		  <h5>Filter Results</h5>
+		  <!-- Place Types Accordion -->
+		  <div class="accordion-item">
+		    <h4 class="accordion-header" id="headingTypes">
+		      <button class="accordion-button" type="button" data-bs-toggle="collapse"
+		              data-bs-target="#collapseTypes" aria-expanded="true" aria-controls="collapseTypes">
+		        Place Types <span id="typesCount">(0)</span>
+		        <span class="accordion-toggle-indicator float-end me-2">
+		          <i class="info-collapse fas fa-chevron-up"></i>
+		        </span>
+		      </button>
+		    </h4>
+		    <div id="collapseTypes" class="accordion-collapse collapse show" aria-labelledby="headingTypes">
+		      <div class="accordion-body">
+		        <div id="type_checkboxes"></div> <!-- Existing div -->
+		      </div>
+		    </div>
+		  </div>
+		
+		  <!-- Countries Accordion -->
+		  <div class="accordion-item mt-2">
+		    <h4 class="accordion-header" id="headingCountries">
+		      <button class="accordion-button" type="button" data-bs-toggle="collapse"
+		              data-bs-target="#collapseCountries" aria-expanded="true" aria-controls="collapseCountries">
+		        Countries <span id="countriesCount">(0)</span>
+		        <span class="accordion-toggle-indicator float-end me-2">
+		          <i class="info-collapse fas fa-chevron-up"></i>
+		        </span>
+		      </button>
+		    </h4>
+		    <div id="collapseCountries" class="accordion-collapse collapse show" aria-labelledby="headingCountries">
+		      <div class="accordion-body">
+		        <div id="country_checkboxes"></div> <!-- Existing div -->
+		      </div>
+		    </div>
+		  </div>
+      </div>
+      
+      
+      
+<!--       <div id="result_facets" class="p-1 bg-light">
         <h5>Filter Results</h5>
-        <!-- Place Types Accordion -->
+        Place Types Accordion
         <div class="accordion-item">
           <h4 class="accordion-header" id="headingTypes">
             <button class="accordion-button" type="button" data-bs-toggle="collapse"
@@ -111,12 +153,12 @@
           </h4>
           <div id="collapseTypes" class="accordion-collapse collapse show" aria-labelledby="headingTypes">
             <div class="accordion-body">
-              <div id="type_checkboxes"></div> <!-- Existing div -->
+              <div id="type_checkboxes"></div> Existing div
             </div>
           </div>
         </div>
 
-        <!-- Countries Accordion -->
+        Countries Accordion
         <div class="accordion-item mt-2">
           <h4 class="accordion-header" id="headingCountries">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
@@ -128,11 +170,11 @@
           </h4>
           <div id="collapseCountries" class="accordion-collapse collapse" aria-labelledby="headingCountries">
             <div class="accordion-body">
-              <div id="country_checkboxes"></div> <!-- Existing div -->
+              <div id="country_checkboxes"></div> Existing div
             </div>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <!-- info box -->
       <div id="search_info" class="p-1 mt-2 collapse show">
