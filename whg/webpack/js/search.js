@@ -3,257 +3,139 @@
 import Dateline from './dateline';
 import throttle from 'lodash/throttle';
 import debounce from 'lodash/debounce';
-import { geomsGeoJSON } from './utilities';
-import { ccode_hash } from '../../../static/js/parents';
-import { CountryCacheFeatureCollection } from  './countryCache';
+import {
+	geomsGeoJSON
+} from './utilities';
+import {
+	ccode_hash
+} from '../../../static/js/parents';
+import {
+	CountryCacheFeatureCollection
+} from './countryCache';
+import '../css/typeahead.css';
 import '../css/dateline.css';
 import '../css/search.css';
 
 let results = null;
 let checkboxStates = {};
-let allTypes = [];
-let allCountries = [];
-let isInitialLoad = true;
-let initialTypeCounts = {};
-let initialCountryCounts = {};
 let draw;
 let $drawControl;
 let countryCache = new CountryCacheFeatureCollection();
+let searchDisabled = false;
+
+let dateRangeChanged = throttle(() => { // Uses imported lodash function
+	initiateSearch();
+}, 300);
 
 let mapParameters = {
-	maxZoom: 13,
-    fullscreenControl: true,
-    downloadMapControl: true,
-    drawingControl: {hide: true},
-    temporalControl: {
-        fromValue: 800,
-        toValue: 1800,
-        minValue: -2000,
-        maxValue: 2100,
-        open: false,
-        includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
-        epochs: null,
-        automate: null,
-    },
+	maxZoom: 8,
+	fullscreenControl: true,
+	downloadMapControl: true,
+	drawingControl: {
+		hide: true
+	},
+	temporalControl: {
+		fromValue: 800,
+		toValue: 1800,
+		minValue: -2000,
+		maxValue: 2100,
+		open: false,
+		includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
+		epochs: null,
+		automate: null,
+		onChange: dateRangeChanged,
+		onClick: initiateSearch
+	},
 }
 let mappy = new whg_maplibre.Map(mapParameters);
 
 function waitMapLoad() {
-    return new Promise((resolve) => {
-        mappy.on('load', () => {
-            console.log('Map loaded.');
-            const style = mappy.getStyle();
-            style.layers.forEach(layer => {
-                if (layer.id.includes('label')) {
-                    mappy.setLayoutProperty(layer.id, 'visibility', 'none');
-                }
-            });
-            
-            mappy
-            .newSource('countries')  // Add empty source
-			.newLayerset('countries', 'countries', 'countries');
-            
-		    mappy
-		    .newSource('places') // Add empty source
-			.newLayerset('places');			
+	return new Promise((resolve) => {
+		mappy.on('load', () => {
+			console.log('Map loaded.');
+			const style = mappy.getStyle();
+			style.layers.forEach(layer => {
+				if (layer.id.includes('label')) {
+					mappy.setLayoutProperty(layer.id, 'visibility', 'none');
+				}
+			});
 			
+			if (has_areas) {
+				mappy
+					.newSource('userareas') // Add empty source
+					.newLayerset('userareas', 'userareas', 'userareas');
+			}
+
+			mappy
+				.newSource('countries') // Add empty source
+				.newLayerset('countries', 'countries', 'countries');
+
+			mappy
+				.newSource('places') // Add empty source
+				.newLayerset('places');
+
 			function getFeatureId(e) {
 				const features = mappy.queryRenderedFeatures(e.point);
 				if (features.length > 0) {
 					if (features[0].layer.id.startsWith('places_')) { // Query only the top-most feature
 						mappy.getCanvas().style.cursor = 'pointer';
-				        return features[0].id;
+						return features[0].id;
 					}
 				}
 				mappy.getCanvas().style.cursor = 'grab';
-		        return null;
+				return null;
 			}
-			
+
 			mappy.on('mousemove', function(e) {
 				getFeatureId(e);
 			});
-			
+
 			mappy.on('click', function(e) {
 				$('.result').eq(getFeatureId(e)).attr('data-map-clicked', 'true').click();
 			});
-            
-            resolve();
-        });
-    });
+
+			resolve();
+		});
+	});
 }
 
 function waitDocumentReady() {
-    return new Promise((resolve) => {
-        $(document).ready(() => resolve());
-    });
+	return new Promise((resolve) => {
+		$(document).ready(() => resolve());
+	});
 }
 
 Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(select2_CDN_fallbacks.map(loadResource))])
-    .then(() => {
-		
+	.then(() => {
+
+		const checkboxesContainer = $('#adv_checkboxes');
+		adv_filters.forEach(filter => { // Construct advanced search filters
+			const [value, label] = filter;
+			const checkboxContainer = $('<p>');
+			const checkboxInput = $('<input>', {
+				type: 'checkbox',
+				id: `cb_${value.toLowerCase()}`,
+				value: value,
+				checked: true
+			});
+			const checkboxLabel = $('<label>', {
+				for: `cb_${value.toLowerCase()}`
+			}).text(` ${label} (${value})`);
+			checkboxContainer.append(checkboxInput, checkboxLabel);
+			checkboxesContainer.append(checkboxContainer);
+		});
+		$('#adv_filters script').remove(); // Remove `adv_filters` from the DOM
+
 		draw = mappy._draw;
 		$drawControl = $(mappy._drawControl);
-		
-		mappy.on('draw.create', initiateSearch); // draw events fail to register if not done individually
-		mappy.on('draw.delete', initiateSearch);
-		mappy.on('draw.update', initiateSearch);
-		
-		const dateRangeChanged = throttle(() => { // Uses imported lodash function
-		    initiateSearch();
-		}, 300); 
-    
-		updateSearchState(true); // Retrieve search options from LocalStorage
 
-		if (!!mapParameters.temporalControl) {
-			let datelineContainer = document.createElement('div');
-			datelineContainer.id = 'dateline';
-			document.querySelector('.maplibregl-control-container').appendChild(datelineContainer);
-			window.dateline = new Dateline({
-				...mapParameters.temporalControl,
-				onChange: dateRangeChanged
-			});
-			$(window.dateline.button).on('click', initiateSearch);
-		};
-			
-        const storedResults = localStorage.getItem('last_results');
-        results = storedResults ? JSON.parse(storedResults) : results;
-
-        if (results) {
-            renderResults(results);
-            $("#result_facets").show();
-        } else {
-            console.log('no results');
-            $("#adv_options").show();
-        }
-
-        $('#advanced_search').hide();
-
-        $('#advanced_search-toggle').click(() => $('#advanced_search').slideToggle(300));
-
-        $('#close-advanced_search').click(() => $('#advanced_search').slideUp(300));
-        
-	    $('#search_input').on('keyup', function (event) {
-			if(event.which === 13) {
-				event.preventDefault();
-	        	initiateSearch();
-			}
-	    });
-        
-	    $('#a_search').on('click', function () {
-	        initiateSearch();
-	    });
-        
-	    $('#a_clear').on('click', function () { // Clear the input, results, and map
-	        $('#search_input').val('').focus();
-			$('#search_results').empty();
-	        mappy
-	        .getSource('places')
-	        .setData(mappy.nullCollection());
-	        mappy.reset();
-			localStorage.removeItem('last_results');
-	    });
-    
-	    function updateAreaMap() {
-	    	const countries = $('#countryDropdown').select2('data').map(country => country.id);
-	        countryCache.filter(countries).then(filteredCountries => {
-	            mappy.getSource('countries').setData(filteredCountries);
-	
-	            try {
-	                mappy.fitBounds(bbox(filteredCountries), {
-	                    padding: 30,
-	                    maxZoom: 7,
-	                    duration: 1000,
-	                });
-	            } catch {
-	                mappy.reset();
-	            }
-	        });
-	    }
-	
-		const debouncedUpdates = debounce(() => { // Uses imported lodash function
-		    updateAreaMap();
-		}, 400);    
-		
-	    const countryDropdown = $('#countryDropdown');
-	    countryDropdown.select2({
-	        data: dropdown_data,
-	        width: 'element', // Use CSS rules
-	        placeholder: $(this).data('placeholder'),
-	        closeOnSelect: false,
-	        allowClear: false,
-	    }).on('select2:selecting', function (e) {
-	        if(!!e.params.args.data['ccodes']) { // Region selected: add countries from its ccodes
-	        	e.preventDefault();
-	        	let ccodes = Array.from(new Set([...e.params.args.data['ccodes'], ...countryDropdown.select2('data').map(country => country.id)]));
-	        	countryDropdown.val(ccodes).trigger('change');
-	        }
-	    }).on('change', function (e) {
-			debouncedUpdates();
-	    });
-	    
-		$('#clearCountryDropdown').on('click', function() {
-	        countryDropdown.val(null).trigger('change');
-	    });
-		
-/*		// Spatial search implementation using typeahead - single result selection. Tagsinput not found to be compatible with software versions.
-        function wildcardMatcher(item, query) {
-		    var wildcardRegex = new RegExp('.*' + Bloodhound.tokenizers.whitespace(query).join('.*') + '.*', 'i');
-		    return wildcardRegex.test(item);
-		}
-		
-		$('#filter_spatial input.typeahead').typeahead({
-			highlight: true,
-			hint: true,
-			minLength: 1,
-		},
-		{
-			name: 'Countries',
-			display: item => item.text,
-			source: function (query, sync) {
-				const filteredData = [...dropdown_data[0].children, ...dropdown_data[1].children]
-		        .filter(item => wildcardMatcher(item.text, query));
-				sync(filteredData);
-		    }
-		}).on('typeahead:select', function(e, item) {
-			const countries = item.ccodes || [item.id];
-	        countryCache.filter(countries).then(filteredCountries => {
-	            mappy.getSource('countries').setData(filteredCountries);
-	            try {
-	                mappy.fitBounds(bbox(filteredCountries), {
-	                    padding: 30,
-	                    maxZoom: 7,
-	                    duration: 1000,
-	                });
-	            } catch {
-	                mappy.reset();
-	            }
-	        });	
-		});*/
-
-		// START Ids to session (kg 2023-10-31)
-		function getCookie(name) {
-		  let cookieValue = null;
-		  if (document.cookie && document.cookie !== '') {
-			const cookies = document.cookie.split(';');
-			for (let i = 0; i < cookies.length; i++) {
-			  const cookie = cookies[i].trim();
-			  if (cookie.substring(0, name.length + 1) === (name + '=')) {
-				cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-				break;
-			  }
-			}
-		  }
-		  return cookieValue;
-		}
-
-		// $('.portal-link').click(function(e) {
+		// Delegated event listener for Portal links
 		$(document).on('click', '.portal-link', function(e) {
-		// $('.result').on('click', '.portal-link', function(e) {
 			e.preventDefault();
 			e.stopPropagation();
 
 			const pid = $(this).data('pid');
-			const children= $(this).data('children') ?
+			const children = $(this).data('children') ?
 				decodeURIComponent($(this).data('children')).split(',').map(id => parseInt(id, 10)) : [];
 			const placeIds = [pid, ...children].filter(id => !isNaN(id) && id !== null && id !== undefined);
 			const csrfToken = getCookie('csrftoken');
@@ -264,25 +146,249 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(select2_CDN_fallbac
 			console.log('csrfToken', csrfToken)
 
 			$.ajax({
-			  url: '/places/set-current-result/',
-			  type: 'POST',
-			  data: {
-				'place_ids': placeIds,
-				'csrfmiddlewaretoken': csrfToken
-			  },
-			  traditional: true,
-			  success: function(response) {
-				window.location.href = '/places/portal/';
-			  },
-			  error: function(xhr, status, error) {
-				console.error("AJAX POST error:", error);
-			  }
+				url: '/places/set-current-result/',
+				type: 'POST',
+				data: {
+					'place_ids': placeIds,
+					'csrfmiddlewaretoken': csrfToken
+				},
+				traditional: true,
+				success: function(response) {
+					window.location.href = '/places/portal/';
+				},
+				error: function(xhr, status, error) {
+					console.error("AJAX POST error:", error);
+				}
 			});
 
 		});
 		// END Ids to session
-    })
-    .catch(error => console.error("An error occurred:", error));
+
+		// Delegated event listener for Result links
+		$(document).on('click', '.result', function(e) {
+
+			const index = $(this).index(); // Get index of clicked card
+
+			mappy.removeFeatureState({
+				source: 'places'
+			});
+			mappy.setFeatureState({
+				source: 'places',
+				id: index
+			}, {
+				highlight: true
+			});
+
+			const featureCollection = mappy.getSource('places')._data;
+
+			if ($(this).attr('data-map-clicked') === 'true') { // Scroll table
+				$(this).removeAttr('data-map-clicked');
+				const $container = $('#result_container');
+				$container.scrollTop($(this).offset().top - $container.offset().top);
+			} else if ($(this).attr('data-map-initialising') === 'true') {
+				$(this).removeAttr('data-map-initialising');
+				mappy.fitBounds(bbox(featureCollection), {
+					padding: 30,
+					// maxZoom: 5,
+					duration: 1000,
+				});
+			} else {
+				mappy.flyTo({ // Adjust map
+					center: centroid(featureCollection.features[index]).geometry.coordinates,
+					duration: 1000,
+				});
+			}
+
+			$('.result').removeClass('selected');
+			$(this).addClass('selected');
+
+		});
+
+		// Delegated event listener for togglable links		
+		$(document).on('click', '.toggleControl', function(e) {
+			e.stopPropagation(); // Prevent click from acting on parent elements
+			e.preventDefault();
+		    const $toggleTarget = $(e.target).siblings('.toggleTarget');
+		    $toggleTarget.toggle();
+		    $(e.target).text($toggleTarget.is(':visible') ? 'view fewer' : 'view all');
+		});
+
+		function updateAreaMap() {
+			const countries = $('#countryDropdown').select2('data').map(country => country.id);
+			countryCache.filter(countries).then(filteredCountries => {
+				mappy.getSource('countries').setData(filteredCountries);
+
+				try {
+					mappy.fitBounds(bbox(filteredCountries), {
+						padding: 30,
+						maxZoom: 7,
+						duration: 1000,
+					});
+				} catch {
+					mappy.reset();
+				}
+			});
+		}
+
+		const debouncedUpdates = debounce(() => { // Uses imported lodash function
+			updateAreaMap();
+		}, 400);
+
+		const countryDropdown = $('#countryDropdown');
+		countryDropdown.select2({
+			data: dropdown_data,
+			width: 'element', // Use CSS rules
+			placeholder: $(this).data('placeholder'),
+			closeOnSelect: false,
+			allowClear: false,
+		}).on('select2:selecting', function(e) {
+			if (!!e.params.args.data['ccodes']) { // Region selected: add countries from its ccodes
+				e.preventDefault();
+				let ccodes = Array.from(new Set([...e.params.args.data['ccodes'], ...countryDropdown.select2('data').map(country => country.id)]));
+				countryDropdown.val(ccodes).trigger('change');
+			}
+		}).on('change', function(e) {
+			if (!searchDisabled) {
+				flashSearchButton();
+				debouncedUpdates();
+			}
+		});
+
+		$('#clearCountryDropdown').on('click', function() {
+			countryDropdown.val(null).trigger('change');
+		});
+
+		if (has_areas) { // Element will not be present if user is not logged in, or has no study areas defined
+			const userAreaDropdown = $('#userAreaDropdown');
+			userAreaDropdown.select2({
+				data: user_areas.map(feature => ({
+	                id: feature.properties.id,
+	                text: feature.properties.title,
+	                feature: feature
+	            })),
+				width: 'element', // Use CSS rules
+				placeholder: $(this).data('placeholder'),
+				closeOnSelect: false,
+				allowClear: false,
+			}).on('change', function(e) {
+				if (!searchDisabled) flashSearchButton();
+				mappy.getSource('userareas').setData({
+				    type: "FeatureCollection",
+				    features: userAreaDropdown.select2('data').map(feature => feature.feature)
+				});
+			});
+
+			$('#clearUserAreaDropdown').on('click', function() {
+				userAreaDropdown.val(null).trigger('change');
+			});
+		}
+
+		// Load and render any results from any previous visit to the page
+		const storedResults = localStorage.getItem('last_search'); // Includes both `.parameters` and `.suggestions` objects
+		results = storedResults ? JSON.parse(storedResults) : results;
+		if (results) {
+			renderResults(results, true); // Pass a `true` flag to indicate that results are from storage
+		} else {
+			// Initialise default temporal control
+			let datelineContainer = document.createElement('div');
+			datelineContainer.id = 'dateline';
+			document.querySelector('.maplibregl-control-container').appendChild(datelineContainer);
+			window.dateline = new Dateline(mapParameters.temporalControl);
+		}
+
+		//$('#advanced_search').hide();
+
+		var suggestions = new Bloodhound({ // https://github.com/twitter/typeahead.js/blob/master/doc/bloodhound.md#remote
+			datumTokenizer: Bloodhound.tokenizers.whitespace,
+			queryTokenizer: Bloodhound.tokenizers.whitespace,
+			local: [],
+			indexRemote: false,
+			remote: { // Returns simple array, like ["Glasgow","Glasgo"]
+				url: '/search/suggestions/?q=%QUERY',
+				wildcard: '%QUERY',
+				rateLimitBy: 'debounce',
+				rateLimitWait: 100
+			}
+		});
+
+		$('#search_input').on('keyup', function(event) { // Allow [Enter] key to initiate search
+			if (event.which === 13) {
+				event.preventDefault();
+				$('#initiate_search').focus();
+				initiateSearch();
+			}
+		}).typeahead({ // https://github.com/twitter/typeahead.js/blob/master/doc/jquery_typeahead.md
+			highlight: true,
+			hint: true,
+			minLength: 3,
+		}, {
+			name: 'Places',
+			source: suggestions.ttAdapter(),
+		}).on('typeahead:select', function(e, item) {
+			$(this).val(item);
+			toggleButtonState();
+		});
+
+		$('#clear_search').on('click', function() { // Clear the input, results, and map
+			if (!$(this).hasClass('disabledButton')) clearResults();
+		});
+
+		$('#initiate_search').on('click', function() {
+			if (!$(this).hasClass('disabledButton')) initiateSearch();
+		});
+
+		$('#check_select').on('click', () => {
+			$('#adv_checkboxes input').prop('checked', true);
+			flashSearchButton();
+		});
+
+		$('#check_clear').on('click', () => {
+			$('#adv_checkboxes input').prop('checked', false);
+			flashSearchButton();
+		});
+
+		// START Ids to session (kg 2023-10-31)
+		function getCookie(name) {
+			let cookieValue = null;
+			if (document.cookie && document.cookie !== '') {
+				const cookies = document.cookie.split(';');
+				for (let i = 0; i < cookies.length; i++) {
+					const cookie = cookies[i].trim();
+					if (cookie.substring(0, name.length + 1) === (name + '=')) {
+						cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+						break;
+					}
+				}
+			}
+			return cookieValue;
+		}
+
+		mappy.on('draw.create', initiateSearch); // draw events fail to register if not done individually
+		mappy.on('draw.delete', initiateSearch);
+		mappy.on('draw.update', initiateSearch);
+
+		$('#adv_checkboxes input, #search_mode, #countryDropdown').change(function() {
+			flashSearchButton();
+		});
+
+		$('#search_input').on('input', function() {
+			flashSearchButton();
+			toggleButtonState();
+		});
+		toggleButtonState();
+	
+	    $('.accordion-button').each(function () { // Initialise Filter Accordions
+			var accordion = $($(this).data('bs-target'));
+			var accordionHeader = accordion.siblings('.accordion-header');
+			var chevron = accordionHeader.find('.accordion-toggle-indicator i');
+			accordionHeader.on('click', function () {
+				chevron.toggleClass('fa-chevron-up fa-chevron-down');
+				accordion.collapse('toggle');
+			});
+	    });
+
+	})
+	.catch(error => console.error("An error occurred:", error));
 
 // $(window).resize(function() {
 //   if ($('#result_facets').height() > someValue) { // Replace someValue with the maximum height you want for #result_facets
@@ -292,538 +398,348 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(select2_CDN_fallbac
 //   }
 // }).resize(); // Trigger the resize event initially
 
-// Filter results based on checked checkboxes
-function filterResults(checkedTypes, checkedCountries) {
-	let filteredResults = results.features.filter(function(feature) {
-		let result = feature.properties
-		return (checkedTypes.length === 0 || checkedTypes.some(type => result.types.includes(type))) &&
-			(checkedCountries.length === 0 || checkedCountries.some(country => result.ccodes.includes(country)));
+function toggleButtonState() {
+	const disable = $('#search_input').val().trim() == '';
+	$('#initiate_search, #clear_search').each(function() {
+		$(this)
+			//.prop('disabled', disable) // Cannot use this because it disables the title
+			.toggleClass('disabledButton', disable)
+			.attr('title', $(this).data('title').split('|')[disable ? 1 : 0])
+			.attr('aria-label', $(this).data('title').split('|')[disable ? 1 : 0]);
 	});
-	for (let i = 0; i < filteredResults.length; i++) {
-	    filteredResults[i].id = i;
-	}
-	console.log('Filtering...', results, filteredResults);
-	return {type: "FeatureCollection", features: filteredResults, query: results.query}
 }
 
-function getCheckedTypes() {
-	let checkedTypes = $('.type-checkbox:checked').map(function() {
-		return this.value;
-	}).get();
-	return checkedTypes
+function flashSearchButton(toggle = true) {
+	$('#initiate_search')
+		.toggleClass('flashing', toggle)
+		.attr('title', toggle ? 'Update search results' : 'Initiate search');
 }
 
-function getCheckedCountries() {
-	let checkedCountries = $('.country-checkbox:checked').map(function() {
-		return this.value;
-	}).get();
-	return checkedCountries
-}
-
-// render results and facet checkboxes
-function renderResults(featureCollection) {
-	console.log('results (global)', featureCollection)
-	$("#adv_options").hide()
-	$("#result_facets").show()
-	// $("#detail_box").show()
-	// $("#result_count").html(featureCollection.features.length)
-	// Clear previous results
+function clearResults() { // Reset all inputs to default values
+	searchDisabled = true;
+	$('#search_mode').val('exactly');
+	$('#search_input').typeahead('close');
+	$('#search_input').val('');
+	$('#result_facets input[type="checkbox"]').prop('checked', false);
+	$('#adv_checkboxes input').prop('checked', true);
+	window.dateline.reset(mapParameters.temporalControl.fromValue, mapParameters.temporalControl.toValue, mapParameters.temporalControl.open);
+	draw.deleteAll();
+	mappy.getSource('places').setData(mappy.nullCollection());
+	mappy.reset();
+	$('#countryDropdown').val(null).trigger('change');
+	$('#userAreaDropdown').val(null).trigger('change'); // Ignored if not present
+	mappy.getSource('countries').setData(mappy.nullCollection());
+	$('#search_content').toggleClass('no-results', true);
+	$('#search_content').toggleClass('no-filtered-results', false);
 	$('#search_results').empty();
+	localStorage.removeItem('last_search');
+	searchDisabled = false;
+	flashSearchButton(false);
+	toggleButtonState();
+	return;
+}
 
-	mappy.getSource('places').setData(featureCollection);    
+function renderResults(data, fromStorage = false) {
 
-	// Select the search_results div
-	const $resultsDiv = $('#search_results');
+	let $resultsDiv = $('#search_results');
+	$resultsDiv.empty();
+	$('#search_content').toggleClass('initial', false);
+	$('#search_content').toggleClass('no-filtered-results', false);
 
-	// search term to search input
-	$("#d_input input").val(!!featureCollection.query ? featureCollection.query : '');
+	if (fromStorage) { // Initialise by setting all inputs to retrieved values
+		$('#search_mode').val(data.parameters.mode);
+		$('#search_input').val(data.parameters.qstr);
+		$('#result_facets input[type="checkbox"]').prop('checked', false);
 
-	// Iterate over the results and append HTML for each
-	let results = featureCollection.features;
-	
-	$drawControl.toggle(results.length > 0 || draw.getAll().features.length > 0); // Leave control to allow deletion of areas
+		const checkedOptions = data.parameters.fclasses.toLowerCase().split(',');
+		$('#adv_checkboxes input').each(function(index, checkbox) {
+			$(checkbox).prop('checked', checkedOptions.includes($(checkbox).attr('id').split('_')[1]));
+		});
+
+		// Initialise temporal control
+		let datelineContainer = document.createElement('div');
+		datelineContainer.id = 'dateline';
+		document.querySelector('.maplibregl-control-container').appendChild(datelineContainer);
+		window.dateline = new Dateline({
+			...mapParameters.temporalControl,
+			fromValue: data.parameters.start == '' ? mapParameters.temporalControl.fromValue : data.parameters.start,
+			toValue: data.parameters.end == '' ? mapParameters.temporalControl.toValue : data.parameters.end,
+			open: data.parameters.temporal,
+			includeUndated: data.parameters.undated
+		});
+
+		// Initialise drawing
+		if (!!data.parameters.bounds && data.parameters.bounds.geometries.length > 0) {
+			data.parameters.bounds.geometries.forEach(geometry => {
+				draw.add(geometry);
+			});
+		}
+
+		if (data.parameters.countries !== null) {
+			searchDisabled = true; // Prevent zoom to selected countries
+			$('#countryDropdown').val(data.parameters.countries).trigger('change');
+			countryCache.filter(data.parameters.countries).then(filteredCountries => {
+				mappy.getSource('countries').setData(filteredCountries);
+			});
+			searchDisabled = false;
+		}
+
+		if (data.parameters.userareas !== null) {
+			searchDisabled = true; // Prevent flashSearchButton()
+			$('#userAreaDropdown').val(data.parameters.userareas).trigger('change');
+			searchDisabled = false;
+		}
+	}
+
+	let featureCollection = data.features ? data : geomsGeoJSON(data['suggestions']); // `data` may already be a FeatureCollection
+
+	results = featureCollection.features;
+
+	// Update Results
+	$('#search_content').toggleClass('no-results', results.length == 0); // CSS hides #search_results, #result_facets
+
 	results.forEach(feature => {
 		let result = feature.properties;
 		const count = parseInt(result.linkcount) + 1;
 		const pid = result.pid;
 		const children = result.children;
-		// Encode children as a comma-separated string
 		const encodedChildren = encodeURIComponent(children.join(','));
 
-		// _index property
 		let resultIdx = result.index.startsWith('whg') ? 'whg' : 'pub';
 
-		// Add a class and a text descriptor based on the result type
 		let html = `
-            <div class="result ${resultIdx}-result">
-                <p><span class="red-head">${result.title}</span> 
-                  (${resultIdx === 'pub' ? 'unlinked record' : (count > 1 ? `${count} linked index records <i class="fas fa-link"></i>` : 'unlinked index record')})
-                  <span class="float-end">
-					<a href="#" class="portal-link"	data-pid="${pid}" 
-						data-children="${encodedChildren}">${resultIdx === 'whg' ? 'place portal' : 'place detail'}
-					</a>
-					<!--<span class="result-idx">${resultIdx}</span>-->
-                  </span>`;
-
-		// if (children.length > 0) {
-		// 	html += `<span class="ml-2">children: ${children.join(', ')}</span>`;
-		// };
-		html += `</p>`
-		if (result.types && result.types.length > 0) {
-			html += `<p>Type(s): ${result.types.join(', ')}</p>`;
-		}
+	        <div class="result ${resultIdx}-result">
+	            <span>
+	                <span class="red-head">${result.title}</span> 
+	                (${resultIdx === 'pub' ? 'unlinked record' : (count > 1 ? `${count} linked index records <i class="fas fa-link"></i>` : 'unlinked index record')})
+	                <span class="float-end">
+	                    <a href="#" class="portal-link" data-pid="${pid}" data-children="${encodedChildren}">
+	                        ${resultIdx === 'whg' ? 'place portal' : 'place detail'}
+	                    </a>
+	                </span>
+	            </span>
+	    `;
 
 		if (result.variants && result.variants.length > 0) {
-		  const threshold = 12;
-		  const limitedVariants = result.variants.slice(0, threshold).join(', ');
-		  const allVariants = result.variants.join(', ');
+			const threshold = 12;
+			const limitedVariants = result.variants.slice(0, threshold).join(', ');
+			const allVariants = result.variants.join(', ');
 
-		  html += '<p>Variants ('+result.variants.length+'): ';
-		  if (result.variants.length > threshold) {
-			html += `<a href="#" id="variantsToggle" class="ms-2 italic">view all</a><br/>`;
-		  }
-		  html += `<span id="limitedVariants">${limitedVariants}</span>`;
-		  if (result.variants.length > threshold) {
-			html += `<span id="allVariants" style="display:none">${allVariants}</span>`;
-		  }
-		  html += '</p>';
-
-		  // add listener
-		  setTimeout(() => {
-			const variantsToggleLink = document.getElementById('variantsToggle');
-			if (variantsToggleLink) {
-			  variantsToggleLink.addEventListener('click', toggleVariants);
-			} else {
-			  console.log('variantsToggle link not found');
-			}
-		  }, 0)
+			html += `
+		        <p>Variants (${result.variants.length}):
+		            ${result.variants.length > threshold ? `<a href="#" class="toggleControl ms-2 italic">view all</a><br/>` : ''}
+		            <span>${limitedVariants}</span>
+		            ${result.variants.length > threshold ? `<span class="toggleTarget" style="display:none">${allVariants}</span>` : ''}
+		        </p>
+		    `;
 		} else {
-			html += `<p> Variants: none provided</p>`; // Or you can just skip adding this line
+			html += `<p>Variants: none provided</p>`;
 		}
+		
+		html += (result.types && result.types.length > 0) ? `<p>Type(s): ${result.types.join(', ')}</p>` : '';
+		html += (result.ccodes && result.ccodes.length > 0) ? `<p>Country Codes: ${result.ccodes.join(', ')}</p>` : '';
+		html += (result.fclasses && result.fclasses.length > 0) ? `<p>Feature Classes: ${result.fclasses.join(', ')}</p>` : '';
+		html += (result.types && result.types.length > 0) ? `<p>Types: ${result.types.join(', ')}</p>` : '';
 
+		html += `</div>`;
 		$resultsDiv.append(html);
-
 	});
 
-	if (isInitialLoad) {
-		// sets values of global variables
-		allTypes = getAllTypes(results);
-		allCountries = getAllCountries(results);
-		isInitialLoad = false;
+	// Update Map & Detail with first result (if any)
+	mappy.getSource('places').setData(featureCollection);
+	$drawControl.toggle(results.length > 0 || draw.getAll().features.length > 0); // Leave control to allow deletion of areas	
+
+	if (fromStorage || results.length > 0) {
+		// Highlight first result and render its detail
+		$('.result').first().attr('data-map-initialising', 'true').click();
+	} else {
+		mappy.reset();
+		$('#detail').empty(); // Clear the detail view
 	}
 
-	// checkboxes for types in initial results
-	// $('#type_checkboxes').empty().append('<p>Place Types</p>');
-	$('#type_checkboxes').empty();
-	allTypes.forEach(type => {
-		const checkbox = $('<input>', {
-			type: 'checkbox',
-			id: 'type_' + type.replace(' ','_'),
-			value: type,
-			class: 'filter-checkbox type-checkbox',
-			checked: checkboxStates[type] || false
+	buildResultFilters();
+
+}
+
+function buildResultFilters() {
+
+	const {
+		typesSet,
+		typeCounts
+	} = results.reduce(({
+		typesSet,
+		typeCounts
+	}, feature) => {
+		const result = feature.properties;
+		result.types.forEach(type => {
+			typesSet.add(type);
+			typeCounts[type] = (typeCounts[type] || 0) + 1;
 		});
-		const count = initialTypeCounts[type] || 0;
-		const label = $('<label>', {
-			'for': 'type_' + type,
-			text: `${type} (${count})`
-		});
-		$('#type_checkboxes').append(checkbox).append(label).append('<br>');
+		return {
+			typesSet,
+			typeCounts
+		};
+	}, {
+		typesSet: new Set(),
+		typeCounts: {}
 	});
 
-	// checkboxes for countries in initial results
-	// $('#country_checkboxes').empty().append('<p>Countries</p>');
-	$('#country_checkboxes').empty();
-	allCountries.forEach(country => {
+	const allTypes = Array.from(typesSet).sort();
+	
+	var typesShowing = $('#headingTypes').find('.accordion-toggle-indicator i').hasClass('fa-chevron-up');
+	if ((allTypes.length <= 5 && !typesShowing) || (allTypes.length > 5 && typesShowing)) {
+		$('#headingTypes button').click();
+	}
+
+	$('#type_checkboxes').html(allTypes.map(type => {
+		const count = typeCounts[type] || 0;
+		return `
+	    <p><input
+	      type="checkbox"
+	      id="type_${type.replace(' ', '_')}"
+	      value="${type}"
+	      class="filter-checkbox type-checkbox"
+	      checked="${checkboxStates[type] || false}"
+	    />
+	    <label for="type_${type}">${type} (${count})</label></p>`;
+	}).join(''));
+
+	const {
+		countriesSet,
+		countryCounts
+	} = results.reduce(({
+		countriesSet,
+		countryCounts
+	}, feature) => {
+		const result = feature.properties;
+		result.ccodes.forEach(country => {
+			countriesSet.add(country);
+			countryCounts[country] = (countryCounts[country] || 0) + 1;
+		});
+		return {
+			countriesSet,
+			countryCounts
+		};
+	}, {
+		countriesSet: new Set(),
+		countryCounts: {}
+	});
+
+	const allCountries = Array.from(countriesSet).sort();
+	
+	var countriesShowing = $('#headingCountries').find('.accordion-toggle-indicator i').hasClass('fa-chevron-up');
+	if ((allCountries.length <= 5 && !countriesShowing) || (allCountries.length > 5 && countriesShowing)) {
+		$('#headingCountries button').click();
+	}
+
+	$('#country_checkboxes').html(allCountries.map(country => {
 		const cName = ccode_hash[country]['gnlabel'];
-		const checkbox = $('<input>', {
-			type: 'checkbox',
-			id: 'country_' + country,
-			value: country,
-			class: 'filter-checkbox country-checkbox',
-			checked: checkboxStates[country] || false
-		});
-		const count = initialCountryCounts[country] || 0;
-		const label = $('<label>', {
-			'for': 'country_' +
-				country,
-			text: `${cName} (${country}; ${count})`
-		});
-
-		$('#country_checkboxes').append(checkbox).append(label).append('<br>');
-	});
+		const count = countryCounts[country] || 0;
+		return `
+	    <p><input
+	      type="checkbox"
+	      id="country_${country}"
+	      value="${country}"
+	      class="filter-checkbox country-checkbox"
+	      checked="${checkboxStates[country] || false}"
+	    />
+	    <label for="country_${country}">${cName} (${country}; ${count})</label></p>`;
+	}).join(''));
 
 	$('#typesCount').text(`(${allTypes.length})`);
 	$('#countriesCount').text(`(${allCountries.length})`);
 
-	// var chevronIcon = $('#headingCountries .accordion-toggle-indicator i');
-
-	// 5 or fewer countries? open accordion; more? close it
-	if (allCountries.length <= 5) {
-		$('#collapseCountries').addClass('show').removeClass('collapse');
-		$('#headingCountries .accordion-button').removeClass('collapsed').attr('aria-expanded', 'true');
-		$("#headingCountries button .accordion-toggle-indicator").hide();
-	} else {
-		$('#collapseCountries').removeClass('show').addClass('collapse');
-		$('#headingCountries .accordion-button').addClass('collapsed').attr('aria-expanded', 'false');
-		$("#headingCountries button .accordion-toggle-indicator").show();
-	}
-
-	$('#collapseTypes').on('show.bs.collapse', function () {
-		$('#headingTypes .accordion-toggle-indicator').html('<i class="info-collapse fas fa-chevron-up"></i>');
-	}).on('hide.bs.collapse', function () {
-		$('#headingTypes .accordion-toggle-indicator').html('<i class="info-collapse fas fa-chevron-down"></i>');
-	});
-
-	$('#collapseCountries').on('show.bs.collapse', function () {
-		$('#headingCountries .accordion-toggle-indicator').html('<i class="info-collapse fas fa-chevron-up"></i>');
-	}).on('hide.bs.collapse', function () {
-		$('#headingCountries .accordion-toggle-indicator').html('<i class="info-collapse fas fa-chevron-down"></i>');
-	});
-	$('.accordion-button').on('click', function() {
-		var indicator = $(this).find('.accordion-toggle-indicator');
-		if ($(this).hasClass('collapsed')) {
-			indicator.html('<i class="info-collapse fas fa-chevron-down');
-		} else {
-			indicator.html('<i class="info-collapse fas fa-chevron-up');
-		}
-	});
-
-
 	$('.filter-checkbox').change(function() {
 		// store state
 		checkboxStates[this.value] = this.checked;
-		console.log('checkboxStates', checkboxStates);
-		if (!programmaticChange) {
-			updateSearchState();
-		}
 
 		// Get all checked checkboxes
-		let checkedTypes = getCheckedTypes();
-		let checkedCountries = getCheckedCountries();
+		let checkedTypes = $('.type-checkbox:checked').map(function() {
+			return this.value;
+		}).get();
+		let checkedCountries = $('.country-checkbox:checked').map(function() {
+			return this.value;
+		}).get();
 
-		// Log the current selected types and countries for debugging
-		// console.log('Selected Types:', checkedTypes);
-		// console.log('Selected Countries:', checkedCountries);
-
-		let filteredResults = filterResults(checkedTypes, checkedCountries);
-
-		// Log the filtered results for debugging
-		console.log('Filtered Results:', filteredResults);
-
-		// Render the filtered results
-		if (filteredResults.features.length > 0) {
-			renderResults(filteredResults);
-		} else {
-			// Handle the case where there are no matching results
-			$('#search_results').html('<p>No results match the selected filters.</p>');
-			$('#detail').empty(); // Clear the detail view
-		}
-	});
-
-	$('.result').click(function() {
-		const index = $(this).index(); // Get index of clicked card
-	
-		mappy.removeFeatureState({ source: 'places' });	
-		mappy.setFeatureState({ source: 'places', id: index }, { highlight: true });
-	    
-	    if ($(this).attr('data-map-clicked') === 'true') { // Scroll table
-			$(this).removeAttr('data-map-clicked');
-			const $container = $('#result_container');
-			$container.scrollTop($(this).offset().top - $container.offset().top);
-		}
-		else if ($(this).attr('data-map-initialising') === 'true') {
-			$(this).removeAttr('data-map-initialising');
-			mappy.fitBounds(bbox(featureCollection), {
-		        padding: 30,
-		        // maxZoom: 5,
-		        duration: 1000,
-		    });
-		}
-		else {
-		    mappy.flyTo({ // Adjust map
-				center: centroid(featureCollection.features[index]).geometry.coordinates,
-				duration: 1000,
-		    });
-		}
-		
-		// renderDetail(results[index]); // Update detail view with clicked result data
-		$('.result').removeClass('selected');
-		$(this).addClass('selected');
-	});
-	
-
-	if (featureCollection.features.length > 0) {
-		// Highlight first result and render its detail
-		$('.result').first().attr('data-map-initialising', 'true').click();
-	}
-	else {
-	    mappy.reset();
-		$('#detail').empty(); // Clear the detail view
-	}
-}
-
-function getAllTypes(results) {
-	let typesSet = new Set();
-	let typeCounts = {};
-
-	results.forEach(feature => {
-		let result = feature.properties;
-		result.types.forEach(type => {
-			typesSet.add(type);
-
-			// Increment count for this type
-			if (!typeCounts[type]) {
-				typeCounts[type] = 0;
-			}
-			typeCounts[type]++;
+		const filteredResults = results.filter(feature => {
+			const hasCommonType = feature.properties.types.some(type => checkedTypes.includes(type));
+			const hasCommonCountry = feature.properties.ccodes.some(country => checkedCountries.includes(country));
+			return hasCommonType && hasCommonCountry;
 		});
-	});
 
-	// Set the global variable for initial type counts
-	initialTypeCounts = typeCounts;
-
-	return Array.from(typesSet).sort();
-}
-
-function getAllCountries(results) {
-	let countriesSet = new Set();
-	let countryCounts = {};
-
-	results.forEach(feature => {
-		let result = feature.properties;
-		result.ccodes.forEach(country => {
-			countriesSet.add(country);
-
-			// Increment count for this country
-			if (!countryCounts[country]) {
-				countryCounts[country] = 0;
-			}
-			countryCounts[country]++;
+		mappy.getSource('places').setData({
+			type: "FeatureCollection",
+			features: filteredResults
 		});
-	});
-
-	// Set the global variable for initial country counts
-	initialCountryCounts = countryCounts;
-
-	return Array.from(countriesSet).sort();
-}
-
-function updateCheckboxCounts(features) {
-	// Count the number of results for each type and country
-	let typeCounts = {};
-	let countryCounts = {};
-	features.forEach(feature => {
-		let result = feature.properties;
-		result.types.forEach(type => {
-			typeCounts[type] = (typeCounts[type] || 0) + 1;
+		const $pidLinks = $('#result_container .portal-link');
+		$pidLinks.each(function() {
+			const show = filteredResults.some(feature => feature.properties.pid === $(this).data('pid'));
+			$(this).closest('.result').toggle(show);
 		});
-		result.ccodes.forEach(country => {
-			countryCounts[country] = (countryCounts[country] || 0) + 1;
-		});
+		$('#search_content').toggleClass('no-filtered-results', filteredResults.length == 0);
+
 	});
 
-	// Update the checkbox labels with the counts
-	$('.type-checkbox').each(function() {
-		const type = this.value;
-		$(`label[for='type_${type}']`).text(`${type} (${typeCounts[type] || 0})`);
-	});
-	$('.country-checkbox').each(function() {
-		const country = this.value;
-		const countryName = ccode_hash[country] ? ccode_hash[country]['gnlabel'] : country;
-		$(`label[for='country_${country}']`).text(`${countryName} (${countryCounts[country] || 0})`);
-	});
-}
-
-let programmaticChange = false;
-function updateSearchState(retrieve=false, results=false) {
-	// search_input, checkboxes, temporal filter, spatial filter, results
-	if (retrieve) {
-		const searchStateJSON = localStorage.getItem('search_state');
-		if (searchStateJSON) {
-			programmaticChange = true;
-			const searchState = JSON.parse(searchStateJSON);
-			$('#search_input').val(searchState['search_input']);
-			$('#result_facets input[type="checkbox"]').prop('checked', false);
-	        searchState['checkedboxes'].forEach(function(id) {
-		    	$('#' + id).prop('checked', true);
-		    });
-		    mapParameters.temporalControl = searchState['temporal_filter'];
-			draw.add(searchState['spatial_filter']);
-			programmaticChange = false;
-		}
-	}
-	else {
-		let searchState = {}
-		searchState['search_input'] = $('#search_input').val();
-		searchState['checkedboxes'] = $('#result_facets input[type="checkbox"]:checked')
-			.map(function() {
-				return this.id;
-			})
-			.get();
-			
-		if (results) {
-			console.log('updateSearchState results', results);
-			searchState['temporal_filter'] = {
-				'fromValue': dateline.fromValue,
-				'toValue': dateline.toValue,
-				'minValue': dateline.minValue,
-				'maxValue': dateline.maxValue,
-				'open': dateline.open,
-				'includeUndated': dateline.includeUndated,
-				'epochs': dateline.epochs,
-				'automate': dateline.automate			
-			};
-			searchState['spatial_filter'] = draw.getAll();
-			searchState['suggestions'] = results.suggestions;
-		}
-			
-		localStorage.setItem('search_state', JSON.stringify(searchState));
-	}	
 }
 
 function initiateSearch() {
-	
-	if (programmaticChange) return; // initiateSearch has been triggered by initialisation of filters
-	
-	isInitialLoad = true;
-	localStorage.removeItem('last_results')
 
-	const query = $('#search_input').val(); // Get the query from the input
-	const options = gatherOptions(); //
-	console.log('initiateSearch()', query, options)
+	if (searchDisabled) return;
 
-/*	// AJAX GET request to SearchView() with the options (includes qstr)
-	$.get("/search/index", options, function(data) {
+	flashSearchButton(false);
+	const options = gatherOptions();
 
-		results = geomsGeoJSON(data['suggestions']); // Convert to GeoJSON and replace global variable
-		results.query = query;
-		localStorage.setItem('last_results', JSON.stringify(results));
-		updateSearchState();
-		renderResults(results);
+	if (options.qstr == '') {
+		console.log('Cannot search without an input place name.');
+		return;
+	}
 
-	});*/
+	console.log('Initiating search...', options)
 
-  	// AJAX POST request to SearchView() with the options (includes qstr)
-    $.ajax({
-        type: 'POST',
-        url: '/search/index/',
-	    data: JSON.stringify(options),
-	    contentType: 'application/json',
-        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },  // Include CSRF token in headers for Django POST requests
-        success: function(data) {
-            results = geomsGeoJSON(data['suggestions']);
-            results.query = query;
-            localStorage.setItem('last_results', JSON.stringify(results));
-            updateSearchState(false, data);
-            renderResults(results);
-        },
-        error: function(error) {
-            console.error('Error:', error);
-        }
-    });
+	// AJAX POST request to SearchView() with the options (includes qstr)
+	$.ajax({
+		type: 'POST',
+		url: '/search/index/',
+		data: JSON.stringify(options),
+		contentType: 'application/json',
+		headers: {
+			'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+		}, // Include CSRF token in headers for Django POST requests
+		success: function(data) {
+			console.log('...search completed.', data);
+			localStorage.setItem('last_search', JSON.stringify(data)); // Includes both `.parameters` and `.suggestions` objects
+			renderResults(data);
+		},
+		error: function(error) {
+			console.error('Error:', error);
+		}
+	});
 }
 
-function gatherOptions() {
-	// gather and return option values from the UI
-	let fclasses = [];
-	// the whg index, for dev or prod according to local_settings
-	var eswhg = "{{ es_whg|escapejs }}";
-	$('#search_filters input:checked').each(function() {
-		fclasses.push($(this).val());
-	});
-	
-	let area_filter = {
-	  "type": "GeometryCollection",
-	  "geometries": draw.getAll().features.map(feature => feature.geometry)
-	}
-	
-	let options = {
-		"qstr": $('#d_input input').val(),
-		"idx": eswhg,
-		"fclasses": fclasses.join(','),
-		"start": window.dateline.open ? window.dateline.fromValue : '', 
-		"end": window.dateline.open ? window.dateline.toValue : '',
-		"undated": window.dateline.open ? window.dateline.includeUndated : true,
-		"bounds": area_filter,
-		"countries": $('#countryDropdown').select2('data').map(country => country.id) // Array of country codes
-	}
+function gatherOptions() { // gather and return option values from the UI
+
+	const fclasses = $('#adv_checkboxes input:checked').map(function() {
+		return $(this).val();
+	}).get(); // .get() converts jQuery object to an array
+
+	const areaFilter = {
+		type: "GeometryCollection",
+		geometries: draw.getAll().features.map(feature => feature.geometry)
+	};
+
+	const options = {
+		qstr: $('#search_input').val(),
+		mode: $('#search_mode').val(),
+		idx: eswhg, // hard-coded in `search.html` template
+		fclasses: fclasses.join(','),
+		temporal: window.dateline.open,
+		start: window.dateline.open ? window.dateline.fromValue : '',
+		end: window.dateline.open ? window.dateline.toValue : '',
+		undated: window.dateline.open ? window.dateline.includeUndated : true,
+		bounds: areaFilter,
+		countries: $('#countryDropdown').select2('data').map(country => country.id),
+		userareas: $('#userAreaDropdown').select2('data').map(feature => feature.id)
+	};
+
 	return options;
 }
-
-// variant list can grow too long
-function toggleVariants(event) {
-	console.log('toggleVariants called');
-    event.preventDefault();
-    const fullListDiv = document.getElementById('allVariants');
-    const limitedListDiv = document.getElementById('limitedVariants');
-    const moreLink = event.target;
-
-    if (fullListDiv.style.display === 'none') {
-        fullListDiv.style.display = 'block';
-        limitedListDiv.style.display = 'none';
-        moreLink.innerHTML = 'view fewer';
-    } else {
-        fullListDiv.style.display = 'none';
-        limitedListDiv.style.display = 'block';
-        moreLink.innerHTML = 'view all';
-    }
-}
-
-// function renderDetail(feature) {
-// 	let result = feature.properties;
-// 	let detailHtml = "";
-//
-// 	detailHtml += `<h5>${result.title}</h5>`
-//
-// 	if (result.variants && result.variants.length > 0) {
-// 		const threshold = 5;
-// 		const limitedVariants = result.variants.slice(0, threshold).join(', ');
-// 		const allVariants = result.variants.join(', ');
-//
-// 		detailHtml += '<p>Variants: ';
-//         if (result.variants.length > threshold) {
-//             detailHtml += `<a href="#" id="variantsToggle" class="ms-2 italic">view all</a><br/>`;
-//         }
-// 		detailHtml += `<span id="limitedVariants">${limitedVariants}</span>`;
-// 		if (result.variants && result.variants.length > threshold) {
-// 			detailHtml += `<span id="allVariants" style="display:none">${allVariants}</span>`;
-// 		}
-// 		detailHtml += '</p>';
-//
-// 		// add listener
-// 		setTimeout(() => {
-// 			const variantsToggleLink = document.getElementById('variantsToggle');
-// 			if (variantsToggleLink) {
-// 				// console.log('Attaching event listener to variantsToggle');
-// 				variantsToggleLink.addEventListener('click', toggleVariants);
-// 			} else {
-// 				console.log('variantsToggle link not found');
-// 			}
-// 		}, 0)
-//
-// 	} else {
-// 		detailHtml += `<p>No Variants Available</p>`; // Or you can just skip adding this line
-// 	}
-//
-// 	if (result.ccodes && result.ccodes.length > 0) {
-// 		detailHtml += `<p>Country Codes: ${result.ccodes.join(', ')}</p>`;
-// 	} else {
-// 		detailHtml += `<p>No Country Codes Available</p>`; // Or you can just skip adding this line
-// 	}
-//
-// 	if (result.fclasses && result.fclasses.length > 0) {
-// 		detailHtml += `<p>Feature Classes: ${result.fclasses.join(', ')}</p>`;
-// 	} else {
-// 		detailHtml += `<p>No Feature Classes Available</p>`; // Or you can just skip adding this line
-// 	}
-//
-// 	if (result.types && result.types.length > 0) {
-// 		detailHtml += `<p>Types: ${result.types.join(', ')}</p>`;
-// 	} else {
-// 		detailHtml += `<p>No Types Available</p>`; // Or you can just skip adding this line
-// 	}
-//
-// 	$('#detail').html(detailHtml);
-//
-// }

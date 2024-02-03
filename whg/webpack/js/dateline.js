@@ -51,6 +51,7 @@ export default class Dateline {
 		minValue = 1066,
 		maxValue = 2000,
 		onChange = null,
+		onClick = null,
 		open = false,
 		includeUndated = true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
 		epochs = true,
@@ -75,6 +76,7 @@ export default class Dateline {
 		this.observeResize();
 		
 		this.onChangeCallback = onChange;
+        this.onClickCallback = onClick;
 	}
 
 	addGoogleFont() {
@@ -123,6 +125,7 @@ export default class Dateline {
 
 		const datelineButton = document.querySelector('.dateline-button');
 		this.button = datelineButton;
+        
 		this.rangeContainer.parentNode.insertBefore(datelineButton, this.rangeContainer);
 		datelineButton.parentNode.insertBefore(document.querySelector('.fa-question-circle'), datelineButton);
 		datelineButton.addEventListener('click', () => {
@@ -143,6 +146,9 @@ export default class Dateline {
 			};
 
 			this.rangeContainer.addEventListener('transitionend', onTransitionEnd);
+            if (typeof this.onClickCallback === 'function') {
+                this.onClickCallback();
+            }
 		});
 
 		this.fromSlider = this.rangeContainer.querySelector('.slider.from');
@@ -322,6 +328,14 @@ export default class Dateline {
 		if (typeof this.onChangeCallback === 'function') {
             this.onChangeCallback(this.fromValue, this.toValue, this.includeUndated);
         }
+	}
+	
+	reset(newFromValue=false, newToValue=false, newOpen=false) {
+		this.fromValue = newFromValue || this.fromValue;
+		this.toValue = newToValue || this.toValue;
+		this.open = newOpen || this.open;
+		this.updateFormInputs();
+		this.toggle(this.open);
 	}
 	
 	reconfigure(newMinValue, newMaxValue, newFromValue=false, newToValue=false) {
