@@ -4,67 +4,94 @@ id, title, label, created, format, #rows, ds_status (if)owner
 {% if datasets %}
   {% if datasets|length == 0 %}<p class="smaller"><i>None yet...</i></p>
   {% else %}
-  <table id="table_ds" class="table table-striped">
-    <thead class="small strong">
+    <div class="list-options" style="display: flex; justify-content: flex-end; align-items: center;">
+      <div style="display: flex; align-items: center; margin-right: auto;">
+        <input type="text" id="title_search" class="form-control"
+               style="width: 300px; max-width: 100%; margin-left:47px;" placeholder="Search titles">
+      </div>
+      <div style="display: flex; align-items: center; margin-right: 10px;">
+        <label for="ds_status" style="margin-right: 10px;">Status:</label>
+        <select id="ds_status" class="form-control">
+          <option value="all">All</option>
+          <option value="uploaded">Uploaded</option>
+          <option value="reconciling">Reconciling</option>
+          <option value="wd-complete">WD-Complete</option>
+          <option value="accessioning">Accessioning</option>
+          <option value="indexed">Indexed</option>
+          <option value="builder">Builder</option>
+        </select>
+      </div>
+      <div style="display: flex; align-items: center;">
+{#        <label for="owners" style="margin-right: 10px;">Owners:</label>#}
+        <select id="owners" class="form-control">
+          <option value="all">All owners</option>
+          <option value="staff">Staff</option>
+          <option value="contributors">Contributors</option>
+        </select>
+      </div>
+    </div>
+    <table id="table_ds" class="table table-striped">
+      <thead class="small strong">
       <th>id</th>
-      <th>name <i class="fa fa-sort ms-1" data-id='title' ></i></th>
-      <th>label <i class="fa fa-sort ms-1" data-id='label' ></i></th>
+      <th>title <i class="fa fa-sort ms-1" data-id='title'></i></th>
+      <th>label <i class="fa fa-sort ms-1" data-id='label'></i></th>
       <th>modified <i class="fa fa-sort ms-1" data-id='last_modified' title="UTC"></i></th>
-      <th># rows<i class="fa fa-sort ms-1" data-id='numrows' ></i></th>
-      <th>status <i class="fa fa-sort ms-1" data-id='ds_status' ></i></th>
+      <th># rows<i class="fa fa-sort ms-1" data-id='numrows'></i></th>
+      <th>status <i class="fa fa-sort ms-1" data-id='ds_status'></i></th>
       {% if is_admin %}
-      <th>owner <i class="fa fa-sort ms-1" data-id='owner' ></i></th>{% endif %}
-    </thead>
-    <tbody>
+        <th>owner <i class="fa fa-sort ms-1" data-id='owner'></i></th>{% endif %}
+      </thead>
+      <tbody>
       {% for d in datasets %}
         <tr class="place-row">
           <td>{{ d.id }}</td>
           <td>
-          <a href="{% url 'datasets:ds_summary' d.id %}" title="Dataset details" rel="tooltip">
-            {{ d.title }}</a>
+            <a href="{% url 'datasets:ds_summary' d.id %}" title="Dataset details" rel="tooltip">
+              {{ d.title }}</a>
             {% if not user == d.owner %}
               <span class="smaller ms-3">
                 <i class="small fa fa-users" style="color:grey;"></i></span>
             {% endif %}
           </td>
           <td>{% if d.core == True %}
-                {{ d.label }} <span class="corerow"> (core)</span>
-              {% else %}{{ d.label }}{% endif %}
+            {{ d.label }} <span class="corerow"> (core)</span>
+          {% else %}{{ d.label }}{% endif %}
           </td>
           <td class="small">{{ d.log.last.timestamp|date:"Y-m-d" }}</td>
-{#          <td class="small">{{ d.create_date|date:"Y-m-d, H:i" }}</td>#}
+          {#          <td class="small">{{ d.create_date|date:"Y-m-d, H:i" }}</td>#}
           <td>{{ d.numrows }}</td>
           <td>{{ d.ds_status }}</td>
           {% if is_admin %}
-	          <td>{{ d.owner|truncatechars:20 }}</td>
+            <td>{{ d.owner|truncatechars:20 }}</td>
           {% endif %}
         </tr>
       {% endfor %}
-    </tbody>
-  </table>
+      </tbody>
+    </table>
   {% endif %}
 {% else %}
-    <p>You have no datasets yet. <a href="{% url 'datasets:dataset-create' %}">Create one?</a></p>
+  <p>You have no datasets yet. <a href="{% url 'datasets:dataset-create' %}">Create one?</a></p>
 {% endif %}
 {% block extra_js %}
-<script type="text/javascript">
-$(document).ready(function() {
-    // Try to retrieve the saved sort state from local storage, or initialize if not present
-    var sortOrders = JSON.parse(localStorage.getItem('sortOrders')) || {
+  <script type="text/javascript">
+
+    $(document).ready(function() {
+      // Try to retrieve the saved sort state from local storage, or initialize if not present
+      var sortOrders = JSON.parse(localStorage.getItem('sortOrders')) || {
         'title': 'asc',
         'label': 'none',
         'last_modified': 'none',
         'numrows': 'none',
         'ds_status': 'none',
-        'owner': 'none'
-    };
+        'owner': 'none',
+      };
 
-    function updateSortIcons() {
+      function updateSortIcons() {
         // Update icons based on current sort state
         // Implement this function based on your UI requirements
-    }
+      }
 
-    $('.fa-sort').on('click', function() {
+      $('.fa-sort').on('click', function() {
         var columnId = $(this).data('id');
         var currentSortOrder = sortOrders[columnId];
         console.log('Clicked column: ' + columnId + ', Current sort order: ' + currentSortOrder);
@@ -78,65 +105,41 @@ $(document).ready(function() {
         console.log('Updated sort order for ' + columnId + ': ' + newSortOrder);
         console.log('Current state of sortOrders:', sortOrders);
 
+        {#var filters = getFilterValues();#}
+        {#var url = '/main/dataset_list/' + columnId + '/' + newSortOrder + '/' +#}
+        {#           '?owners=' + filters.owners +#}
+        {#           '&ds_status=' + filters.ds_status +#}
+        {#           '&title_search=' + filters.title_search;#}
+
         var url = '/main/dataset_list/' + columnId + '/' + newSortOrder + '/';
         console.log('AJAX request URL: ' + url);
 
         $.get(url, function(data) {
-            $('#datasets').empty().html(data);
+          $('#datasets').empty().html(data);
         }).fail(function() {
-            console.log('AJAX request failed');
+          console.log('AJAX request failed');
         });
 
         {#updateSortIcons();#}
+      });
+      // Add event listeners for the change event on the ds_status and owners selects
+      $('#ds_status').on('change', function() {
+          loadTabContent('datasets');
+      });
+      $('#owners').on('change', function() {
+          loadTabContent('datasets');
+      });
     });
-});
-
-
-  {#function updateSortIcons() {#}
-  {#  $('.fa-sort').each(function() {#}
-  {#      var columnId = $(this).data('id');#}
-  {#      var sortOrder = sortOrders[columnId];#}
-  {##}
-  {#      // Remove existing sort classes#}
-  {#      $(this).removeClass('fa-sort-up fa-sort-down fas fa-sort');#}
-  {##}
-  {#      // Depending on the sortOrder, add the appropriate Font Awesome class#}
-  {#      if (sortOrder === 'asc') {#}
-  {#          $(this).addClass('fas fa-sort-up');#}
-  {#      } else if (sortOrder === 'desc') {#}
-  {#          $(this).addClass('fas fa-sort-down');#}
-  {#      } else {#}
-  {#          $(this).addClass('fas fa-sort');#}
-  {#      }#}
-  {#  });#}
-  {# }#}
-  {##}
-
-{#  $(document).ready(function() {#}
-{#    var sortOrders = {};#}
-{#    // Add click event listener to each sortable column header#}
-{#    $('.fa-sort').on('click', function() {#}
-{#        var columnId = $(this).data('id');  // Get the id of the column#}
-{##}
-{#        var sortOrder = sortOrders[columnId] || 'asc';#}
-{#        console.log('columnId: ' + columnId + ', sortOrder: ' + sortOrder)#}
-{#        // Toggle the sort order for the next request#}
-{#        var newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';#}
-{#        // Update the sortOrder object#}
-{#        sortOrders[columnId] = newSortOrder;#}
-{##}
-        {#$(this).attr('ref', newSortOrder);#}
-{#        console.log('New sort order for ' + columnId + ': ' + newSortOrder);#}
-{#        console.log('Updated sortOrders:', JSON.stringify(sortOrders, null, 2));#}
-{##}
-{#        var url = '/main/dataset_list/' + columnId + '/' + newSortOrder + '/';#}
-        {#var url = '/main/dataset_list/' + columnId + '/' + sortOrder + '/';#}
-{#        console.log('AJAX request URL: ' + url);#}
-        {#return#}
-{#        $.get(url, function(data) {#}
-{#            $('#datasets').empty().html(data);#}
-{#        }.bind(this));#}
-{#    });#}
-{# });#}
-</script>
+    {#function getFilterValues() {#}
+    {#    var owners = document.getElementById('owners').value;#}
+    {#    var ds_status = document.getElementById('ds_status').value;#}
+    {#    var title_search = document.getElementById('title_search').value;#}
+    {##}
+    {#    return {#}
+    {#        'owners': owners,#}
+    {#        'ds_status': ds_status,#}
+    {#        'title_search': title_search#}
+    {#    };#}
+    {# }#}
+  </script>
 {% endblock %}

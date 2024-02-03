@@ -169,29 +169,56 @@ def area_list(request):
 #   return render(request, 'lists/dataset_list.html',
 #                 {'datasets': user_datasets, 'is_admin': is_admin, 'section': 'datasets'})
 
-import logging
 
 def dataset_list(request, sort='', order=''):
-    print("dataset_list function called")
-    print(f"Sort parameter: {sort}")
-    print(f"Order parameter: {order}")
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
+  user_datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
 
-    is_admin = request.user.groups.filter(name='whg_admins').exists()
-    user_datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+  # # Get filter parameters from the request
+  # owners = request.GET.get('owners')
+  # ds_status = request.GET.get('ds_status')
+  # title_search = request.GET.get('title_search')
+  # print('owners', owners)
+  # print('ds_status', ds_status)
+  # print('title_search', title_search)
+  #
+  # # Apply filters to the queryset
+  # if owners and owners != 'all':
+  #   user_datasets = user_datasets.filter(owner__username=owners)
+  # if ds_status and ds_status != 'all':
+  #   user_datasets = user_datasets.filter(ds_status=ds_status)
+  # if title_search:
+  #   user_datasets = user_datasets.filter(title__icontains=title_search)
 
-    # Sort the datasets based on the parameters
-    if sort == 'last_modified':
-      if order == 'desc':
-          user_datasets = user_datasets.annotate(last_log_timestamp=Max('log__timestamp')).order_by('-last_log_timestamp')
-      else:
-          user_datasets = user_datasets.annotate(last_log_timestamp=Max('log__timestamp')).order_by('last_log_timestamp')
-    elif sort and order:
-      sort_param = f'-{sort}' if order == 'desc' else sort
-      user_datasets = user_datasets.order_by(sort_param)
-      print(f"Sorting with parameter: {sort_param}")
+  # Sort the datasets based on the parameters
+  if sort and order:
+    sort_param = f'-{sort}' if order == 'desc' else sort
+    user_datasets = user_datasets.order_by(sort_param)
 
-    return render(request, 'lists/dataset_list.html',
-                  {'datasets': user_datasets, 'is_admin': is_admin, 'section': 'datasets'})
+  return render(request, 'lists/dataset_list.html',
+                {'datasets': user_datasets, 'is_admin': is_admin, 'section': 'datasets'})
+
+# def dataset_list(request, sort='', order=''):
+#     print("dataset_list function called")
+#     print(f"Sort parameter: {sort}")
+#     print(f"Order parameter: {order}")
+#
+#     is_admin = request.user.groups.filter(name='whg_admins').exists()
+#     user_datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+#
+#     # Sort the datasets based on the parameters
+#     if sort == 'last_modified':
+#       if order == 'desc':
+#           user_datasets = user_datasets.annotate(last_log_timestamp=Max('log__timestamp')).order_by('-last_log_timestamp')
+#       else:
+#           user_datasets = user_datasets.annotate(last_log_timestamp=Max('log__timestamp')).order_by('last_log_timestamp')
+#     elif sort and order:
+#       sort_param = f'-{sort}' if order == 'desc' else sort
+#       user_datasets = user_datasets.order_by(sort_param)
+#       print(f"Sorting with parameter: {sort_param}")
+#
+#     return render(request, 'lists/dataset_list.html',
+#                   {'datasets': user_datasets, 'is_admin': is_admin, 'section': 'datasets'})
 
 # def dataset_list(request):
 #   is_admin = request.user.groups.filter(name='whg_admins').exists()
@@ -310,7 +337,8 @@ def dashboard_admin_view(request):
     'is_leader': is_leader,
   }
   # return render(request, 'main/dashboard_admin.html', {'initial_section': section})
-  return render(request, 'main/dashboard_admin.html', context)
+  # return render(request, 'main/dashboard_admin.html', context)
+  return render(request, 'main/dashboard_admin2.html', context)
 
 # for non-admins
 @login_required
