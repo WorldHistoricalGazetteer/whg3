@@ -12,114 +12,245 @@
   <ul class="nav nav-tabs" id="adminTabs" role="tablist">
     <li class="nav-item" role="presentation">
       <a class="nav-link active" id="datasets-tab" data-bs-toggle="tab" href="#datasets" role="tab"
-         aria-controls="datasets" aria-selected="true">Datasets</a>
+         ref="dataset" aria-controls="datasets" aria-selected="true">Datasets</a>
     </li>
     <li class="nav-item" role="presentation">
-      <a class="nav-link" id="place-collections-tab" data-bs-toggle="tab" href="#place-collections" role="tab"
-         aria-controls="place-collections" aria-selected="false">Place Collections</a>
+      <a class="nav-link" id="place-collections-tab" data-bs-toggle="tab" href="#place_collections" role="tab"
+         ref="pcoll" aria-controls="place_collections" aria-selected="false">Place Collections</a>
     </li>
     <li class="nav-item" role="presentation">
-      <a class="nav-link" id="dataset-collections-tab" data-bs-toggle="tab" href="#dataset-collections" role="tab"
-         aria-controls="dataset-collections" aria-selected="false">Dataset Collections</a>
+      <a class="nav-link" id="dataset-collections-tab" data-bs-toggle="tab" href="#dataset_collections" role="tab"
+         ref="dscoll" aria-controls="dataset_collections" aria-selected="false">Dataset Collections</a>
     </li>
     <li class="nav-item" role="presentation">
       <a class="nav-link" id="areas-tab" data-bs-toggle="tab" href="#areas" role="tab" aria-controls="areas"
-         aria-selected="false">Areas</a>
+         ref="area" aria-selected="false">Areas</a>
     </li>
     <li class="nav-item" role="presentation">
-      <a class="nav-link" id="collection-groups-tab" data-bs-toggle="tab" href="#collection-groups" role="tab"
-         aria-controls="collection-groups" aria-selected="false">Collection Groups</a>
+      <a class="nav-link" id="collection-groups-tab" data-bs-toggle="tab" href="#groups" role="tab"
+         ref="group" aria-controls="groups" aria-selected="false">Collection Groups</a>
     </li>
   </ul>
   <div class="tab-content" id="adminTabsContent">
     <div class="tab-pane fade show active" id="datasets" role="tabpanel" aria-labelledby="datasets-tab">
-       Datasets content goes here
     </div>
-    <div class="tab-pane fade" id="place-collections" role="tabpanel" aria-labelledby="place-collections-tab">
-      Place Collections content goes here
+    <div class="tab-pane fade" id="place_collections" role="tabpanel" aria-labelledby="place_collections-tab">
+    place collections
     </div>
-    <div class="tab-pane fade" id="dataset-collections" role="tabpanel" aria-labelledby="dataset-collections-tab">
-      Dataset Collections content goes here
+    <div class="tab-pane fade" id="dataset_collections" role="tabpanel" aria-labelledby="dataset_collections-tab">
+    dataset collections
     </div>
     <div class="tab-pane fade" id="areas" role="tabpanel" aria-labelledby="areas-tab">
-      Areas content goes here
+    areas
     </div>
-    <div class="tab-pane fade" id="collection-groups" role="tabpanel" aria-labelledby="collection-groups-tab">
-      Collection Groups content goes here
+    <div class="tab-pane fade" id="groups" role="tabpanel" aria-labelledby="collection-groups-tab">
+
     </div>
   </div>
 </div> <!-- .container -->
 
 <script type="application/javascript">
-  $(document).ready(function() {
+var currentState = {
+    datasets: { sort: 'title', order: 'asc', filters: {} },
+    place_collections: { sort: 'title', order: 'asc', filters: {} },
+    dataset_collections: { sort: 'title', order: 'asc', filters: {} },
+    areas: { sort: 'title', order: 'asc', filters: {} },
+    groups: { sort: 'title', order: 'asc', filters: {} },
+};
+function initializeSorting(tabId) {
+    switch (tabId) {
+        case 'datasets':
+            initializeDatasetSorting();
+            break;
+        case 'areas':
+            // Initialize sorting for place-collections tab, if needed
+            break;
+        // Add cases for other tabs as needed
+    }
+}
+function initializeDatasetSorting() {
+    var sortOrders = JSON.parse(localStorage.getItem('sortOrders')) || {
+        'title': 'asc',
+        'label': 'none',
+        'last_modified': 'none',
+        'numrows': 'none',
+        'ds_status': 'none',
+        'owner': 'none',
+    };
+
+    $('.fa-sort').off('click').on('click', function() {
+        var columnId = $(this).data('id');
+        var currentSortOrder = sortOrders[columnId];
+
+        var newSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+        sortOrders[columnId] = newSortOrder;
+
+        localStorage.setItem('sortOrders', JSON.stringify(sortOrders));
+
+        var url = '/main/datasets_list/' + columnId + '/' + newSortOrder + '/';
+        $.get(url, function(data) {
+            $('#datasets').empty().html(data);
+            initializeSorting(tabId);  // Reinitialize sorting for the newly loaded content
+        }).fail(function() {
+            console.log('AJAX request failed');
+        });
+    });
+
+    // Call updateSortIcons here if necessary
+    // updateSortIcons();
+}
+
+$(document).ready(function() {
     // Add event listener for tab change
     $('#adminTabs a').on('shown.bs.tab', function(event) {
         var tabId = $(event.target).attr('href').substring(1);  // Get the id of the tab
+        console.log('Tab changed: ' + tabId);
         loadTabContent(tabId);
     });
 
     // Load initial tab content
     var initialTabId = $('#adminTabs .nav-link.active').attr('href').substring(1);
+    console.log('Initial tab: ' + initialTabId);
     loadTabContent(initialTabId);
 
-    // Add event listeners for the change event on the ds_status and owners selects
-    $(document).on('change', '#ds_status', function() {
-      console.log('ds_status changed:', $('#ds_status').val()
-        loadTabContent('datasets');
-     });
-    $(document).on('change', '#owners', function() {
-      console.log('owners changed:', $('#owners').val()
-        loadTabContent('datasets');
-     });
+    // Add event listeners for the change event on the filter inputs
+    $(document).on('change', '.filter-input', function() {
+        var tabId = $(this).closest('.tab-pane').attr('id');
+        var filterKey = $(this).attr('name');
+        var filterValue = $(this).val();
+
+        currentState[tabId].filters[filterKey] = filterValue;
+        console.log('Updated filters for ' + tabId + ':', currentState[tabId].filters);
+        loadTabContent(tabId);
+    });
 });
 
-// fetch current filter values
-{#function getFilterValues() {#}
-{#    var owners = document.getElementById('owners').value;#}
-{#    var ds_status = document.getElementById('ds_status').value;#}
-{#    var title_search = document.getElementById('title_search').value;#}
-{##}
-{#    return {#}
-{#        'owners': owners,#}
-{#        'ds_status': ds_status,#}
-{#        'title_search': title_search#}
-{#    };#}
-{# }#}
-
 function loadTabContent(tabId) {
-    var url;
-    switch(tabId) {
-        case 'datasets':
-            var defaultSort = 'title';
-            var defaultOrder = 'asc';
+    console.log('Loading tab content for ' + tabId);
+    console.log('currentState:', currentState); // Directly log currentState
 
-            url = '/main/dataset_list/' + defaultSort + '/' + defaultOrder + '/';
-            break;
-        case 'place-collections':
-            url = '/main/collection_list/place/';
-            break;
-        case 'dataset-collections':
-            url = '/main/collection_list/dataset/';
-            break;
-        case 'areas':
-            url = '/main/area_list/';
-            break;
-        case 'collection-groups':
-            url = '/main/group_list/';
-            break;
+    // Check if the currentState for the given tabId is defined
+    if (!currentState[tabId]) {
+        console.error('No state found for tabId:', tabId);
+        return; // Exit the function if no state found
     }
-    $.get(url, function(data) {
-        // Update the tab content with the new data
+
+    var state = currentState[tabId];
+    console.log('Current state:', state);
+    var url = '/main/' + tabId + '_list/' + state.sort + '/' + state.order + '/';
+    console.log('URL: ' + url);
+    console.log('state filters: ' + JSON.stringify(state.filters));
+
+    $.get(url, { filters: state.filters }, function(data) {
         $('#' + tabId).html(data);
-        if (tabId === 'datasets') {
-            $.get(url, function(data) {
-                // Update the datasets tab content with the filtered data
-                $('#datasets').html(data);
-            });
-        }
+        initializeSorting();
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        console.error('Error loading tab content:', textStatus, errorThrown);
     });
 }
 
+{#function loadTabContent(tabId) {#}
+{#    console.log('Loading tab content for ' + tabId);#}
+{#    var state = currentState[tabId];#}
+{#    console.log('Current state:', state);#}
+{#    var url = '/main/' + tabId + '_list/' + state.sort + '/' + state.order + '/';#}
+{#    console.log('URL: ' + url);#}
+{#    console.log('state filters: ' + JSON.stringify(state.filters));#}
+{#    $.get(url, { filters: state.filters }, function(data) {#}
+{#        $('#' + tabId).html(data);#}
+{#        // Additional logic to reattach event listeners if needed#}
+{#    });#}
+{# }#}
+
 </script>
+{#  currentState = {#}
+{#    datasets: { sort: 'title', order: 'asc', filters: {} },#}
+{#    // ... similar state objects for other tabs#}
+{#  };#}
+{##}
+{#$(document).ready(function() {#}
+{##}
+{#  // Add event listener for tab change#}
+{#  $('#adminTabs a').on('shown.bs.tab', function(event) {#}
+{#      var tabId = $(event.target).attr('href').substring(1);  // Get the id of the tab#}
+{#      console.log('Tab changed: ' + tabId);#}
+{#      loadTabContent(tabId);#}
+{#  });#}
+{##}
+{#  // Load initial tab content#}
+{#  var initialTabId = $('#adminTabs .nav-link.active').attr('href').substring(1);#}
+{#  console.log('Initial tab: ' + initialTabId)#}
+{#  loadTabContent(initialTabId);#}
+{##}
+{#  // Add event listeners for the change event on the ds_status and owners selects#}
+{#  $(document).on('change', '.filter-input', function() {#}
+{#      //dataset, pcoll, dscoll, area, group#}
+{#      var tabId = $(this).closest('.tab-content').attr('ref');#}
+{#      var filterKey = $(this).attr('name');#}
+{#      var filterValue = $(this).val();#}
+{##}
+{#      currentState[tabId].filters[filterKey] = filterValue;#}
+{#      loadTabContent(tabId);#}
+{#  });#}
+{# });#}
+{##}
+{#$('.sort-column').on('click', function() {#}
+{#    var tabId = $(this).closest('.tab-content').attr('id');#}
+{#    var sortField = $(this).data('sort-field');#}
+{##}
+{#    // Toggle sort order and update state#}
+{#    // ...#}
+{##}
+{#    loadTabContent(tabId);#}
+{# });#}
+{##}
+{#function loadTabContent(tabId) {#}
+{#    console.log('Loading tab content for ' + tabId);#}
+{#    var state = currentState[tabId];#}
+{#    var url = '/main/' + tabId + '_list/' + state.sort + '/' + state.order + '/';#}
+{#    console.log('URL: ' + url);#}
+{#    console.log('state filters: ' + JSON.stringify(state.filters));#}
+{##}
+{#    $.get(url, { filters: state.filters }, function(data) {#}
+{#        $('#' + tabId).html(data);#}
+{#        // Additional logic to reattach event listeners if needed#}
+{#    });#}
+{# }#}
+{##}
+{#function loadTabContent(tabId) {#}
+{#    var url;#}
+{#    switch(tabId) {#}
+{#        case 'datasets':#}
+{#            var defaultSort = 'title';#}
+{#            var defaultOrder = 'asc';#}
+{##}
+{#            url = '/main/dataset_list/' + defaultSort + '/' + defaultOrder + '/';#}
+{#            break;#}
+{#        case 'place-collections':#}
+{#            url = '/main/collection_list/place/';#}
+{#            break;#}
+{#        case 'dataset-collections':#}
+{#            url = '/main/collection_list/dataset/';#}
+{#            break;#}
+{#        case 'areas':#}
+{#            url = '/main/area_list/';#}
+{#            break;#}
+{#        case 'collection-groups':#}
+{#            url = '/main/group_list/';#}
+{#            break;#}
+{#    }#}
+{#    $.get(url, function(data) {#}
+{#        // Update the tab content with the new data#}
+{#        $('#' + tabId).html(data);#}
+{#        if (tabId === 'datasets') {#}
+{#            $.get(url, function(data) {#}
+{#                // Update the datasets tab content with the filtered data#}
+{#                $('#datasets').html(data);#}
+{#            });#}
+{#        }#}
+{#    });#}
+{# }#}
+{##}
+{#</script>#}
 
 {% endblock %} <!-- content -->

@@ -11,7 +11,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
       </div>
       <div style="display: flex; align-items: center; margin-right: 10px;">
         <label for="ds_status" style="margin-right: 10px;">Status:</label>
-        <select id="ds_status" class="form-control">
+        <select id="ds_status" class="filter-input form-control" name="ds_status">
           <option value="all">All</option>
           <option value="uploaded">Uploaded</option>
           <option value="reconciling">Reconciling</option>
@@ -23,7 +23,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
       </div>
       <div style="display: flex; align-items: center;">
 {#        <label for="owners" style="margin-right: 10px;">Owners:</label>#}
-        <select id="owners" class="form-control">
+        <select id="owners" class="filter-input form-control" name="owners">
           <option value="all">All owners</option>
           <option value="staff">Staff</option>
           <option value="contributors">Contributors</option>
@@ -111,7 +111,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
         {#           '&ds_status=' + filters.ds_status +#}
         {#           '&title_search=' + filters.title_search;#}
 
-        var url = '/main/dataset_list/' + columnId + '/' + newSortOrder + '/';
+        var url = '/main/datasets_list/' + columnId + '/' + newSortOrder + '/';
         console.log('AJAX request URL: ' + url);
 
         $.get(url, function(data) {
@@ -121,15 +121,6 @@ id, title, label, created, format, #rows, ds_status (if)owner
         });
 
         {#updateSortIcons();#}
-      });
-      // Add event listeners for the change event on the ds_status and owners selects
-      $('#ds_status').on('change', function() {
-        console.log('ds_status changed:', $(this).val());
-          {#loadTabContent('datasets');#}
-      });
-      $('#owners').on('change', function() {
-        console.log('owners changed:', $(this).val());
-          {#loadTabContent('datasets');#}
       });
     });
     {#function getFilterValues() {#}
