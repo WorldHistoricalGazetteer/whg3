@@ -182,7 +182,9 @@
 	</div>
 </div>
 
+{% csrf_token %} <!-- Used for Django POST requests -->
 <script type="text/javascript">
+	var eswhg = "{{ es_whg|escapejs }}";
     let galleries = [
         ["Datasets","{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"],
 		["Collections","{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}"]

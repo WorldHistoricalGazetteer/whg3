@@ -227,28 +227,29 @@ $(function() {
 	function initiateSearchHome() {
 		const query = $('#search_map input').val();
 		const filters = gatherOptions();
-		localStorage.setItem('last_query', query)
 
-		$.get("/search/index", filters, function(data) {
-			window.searchres = data['suggestions']
-			window.session = data['session']
-
-			console.log(filters);
-
-			// store locally
-			let results = geomsGeoJSON(searchres); // Convert to GeoJSON
-			results.query = query;
-			localStorage.setItem('checkedboxes', '[]');
-			localStorage.setItem('last_results', JSON.stringify(results));
-
-			console.log(searchres)
-			// if results, deliver to search_new.html
-			if (searchres.length > 0) {
-				window.location.href = "/search";
-			} else {
-				alert('no results for "' + query + '", sorry')
+		// AJAX POST request to SearchView() with the options (includes qstr)
+		$.ajax({
+			type: 'POST',
+			url: '/search/index/',
+			data: JSON.stringify(filters),
+			contentType: 'application/json',
+			headers: {
+				'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+			}, // Include CSRF token in headers for Django POST requests
+			success: function(data) {
+				console.log('...search completed.', data);
+				localStorage.setItem('last_search', JSON.stringify(data)); // Includes both `.parameters` and `.suggestions` objects	
+				if (data.suggestions.length > 0) { // if results, load and render on Search page
+					window.location.href = "/search";
+				} else {
+					alert('no results for "' + query + '", sorry')
+				}
+			},
+			error: function(error) {
+				console.error('Error:', error);
 			}
-		});
+		});	
 	}
 
 	// toggle all fclass checkboxes
@@ -270,15 +271,14 @@ $(function() {
 		//{#options = {"fclasses":"P"}#}
 		// gather and return option values from the UI
 		let fclasses = [];
-		// the whg index, for dev or prod according to local_settings
-		var eswhg = "{{ es_whg|escapejs }}";
 		$('#adv_checkboxes input:checked').each(function() {
 			fclasses.push($(this).val());
 		});
 		console.log('checked', fclasses)
 		let options = {
 			"qstr": $('#search_map input').val(),
-			"idx": eswhg,
+			"mode": 'exactly',
+			"idx": eswhg, // hard-coded in html template
 			// "idx": "whg",
 			"fclasses": fclasses.join(','),
 			"start": $("#input_start").val(),
