@@ -64,27 +64,27 @@
 
     // Add event listeners for the change event on the ds_status and owners selects
     $(document).on('change', '#ds_status', function() {
-      console.log('ds_status changed')
+      console.log('ds_status changed:', $('#ds_status').val()
         loadTabContent('datasets');
-    });
+     });
     $(document).on('change', '#owners', function() {
-      console.log('owners changed')
+      console.log('owners changed:', $('#owners').val()
         loadTabContent('datasets');
-    });
+     });
 });
 
 // fetch current filter values
-function getFilterValues() {
-    var owners = document.getElementById('owners').value;
-    var ds_status = document.getElementById('ds_status').value;
-    var title_search = document.getElementById('title_search').value;
-
-    return {
-        'owners': owners,
-        'ds_status': ds_status,
-        'title_search': title_search
-    };
- }
+{#function getFilterValues() {#}
+{#    var owners = document.getElementById('owners').value;#}
+{#    var ds_status = document.getElementById('ds_status').value;#}
+{#    var title_search = document.getElementById('title_search').value;#}
+{##}
+{#    return {#}
+{#        'owners': owners,#}
+{#        'ds_status': ds_status,#}
+{#        'title_search': title_search#}
+{#    };#}
+{# }#}
 
 function loadTabContent(tabId) {
     var url;
@@ -92,10 +92,6 @@ function loadTabContent(tabId) {
         case 'datasets':
             var defaultSort = 'title';
             var defaultOrder = 'asc';
-            {#url = '/main/dataset_list/' + defaultSort + '/' + defaultOrder + '/' +#}
-            {#      '?owners=' + filters.owners +#}
-            {#      '&ds_status=' + filters.ds_status +#}
-            {#      '&title_search=' + filters.title_search;#}
 
             url = '/main/dataset_list/' + defaultSort + '/' + defaultOrder + '/';
             break;
@@ -115,11 +111,7 @@ function loadTabContent(tabId) {
     $.get(url, function(data) {
         // Update the tab content with the new data
         $('#' + tabId).html(data);
-        // Get the filter values after the new content has been loaded
-        var filters = getFilterValues();
         if (tabId === 'datasets') {
-            url += '?owners=' + filters.owners + '&ds_status=' + filters.ds_status +
-              '&title_search=' + filters.title_search;
             $.get(url, function(data) {
                 // Update the datasets tab content with the filtered data
                 $('#datasets').html(data);
@@ -127,6 +119,7 @@ function loadTabContent(tabId) {
         }
     });
 }
+
 </script>
 
 {% endblock %} <!-- content -->

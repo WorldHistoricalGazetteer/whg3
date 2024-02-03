@@ -124,10 +124,12 @@ id, title, label, created, format, #rows, ds_status (if)owner
       });
       // Add event listeners for the change event on the ds_status and owners selects
       $('#ds_status').on('change', function() {
-          loadTabContent('datasets');
+        console.log('ds_status changed:', $(this).val());
+          {#loadTabContent('datasets');#}
       });
       $('#owners').on('change', function() {
-          loadTabContent('datasets');
+        console.log('owners changed:', $(this).val());
+          {#loadTabContent('datasets');#}
       });
     });
     {#function getFilterValues() {#}
