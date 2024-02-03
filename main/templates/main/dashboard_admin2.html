@@ -15,12 +15,8 @@
          ref="dataset" aria-controls="datasets" aria-selected="true">Datasets</a>
     </li>
     <li class="nav-item" role="presentation">
-      <a class="nav-link" id="place-collections-tab" data-bs-toggle="tab" href="#place_collections" role="tab"
-         ref="pcoll" aria-controls="place_collections" aria-selected="false">Place Collections</a>
-    </li>
-    <li class="nav-item" role="presentation">
-      <a class="nav-link" id="dataset-collections-tab" data-bs-toggle="tab" href="#dataset_collections" role="tab"
-         ref="dscoll" aria-controls="dataset_collections" aria-selected="false">Dataset Collections</a>
+      <a class="nav-link" id="collections-tab" data-bs-toggle="tab" href="#collections" role="tab"
+         ref="pcoll" aria-controls="collections" aria-selected="false">Collections</a>
     </li>
     <li class="nav-item" role="presentation">
       <a class="nav-link" id="areas-tab" data-bs-toggle="tab" href="#areas" role="tab" aria-controls="areas"
@@ -34,16 +30,11 @@
   <div class="tab-content" id="adminTabsContent">
     <div class="tab-pane fade show active" id="datasets" role="tabpanel" aria-labelledby="datasets-tab">
     </div>
-    <div class="tab-pane fade" id="place_collections" role="tabpanel" aria-labelledby="place_collections-tab">
-    place collections
-    </div>
-    <div class="tab-pane fade" id="dataset_collections" role="tabpanel" aria-labelledby="dataset_collections-tab">
-    dataset collections
+    <div class="tab-pane fade" id="collections" role="tabpanel" aria-labelledby="collections-tab">
     </div>
     <div class="tab-pane fade" id="areas" role="tabpanel" aria-labelledby="areas-tab">
     </div>
     <div class="tab-pane fade" id="groups" role="tabpanel" aria-labelledby="collection-groups-tab">
-
     </div>
   </div>
 </div> <!-- .container -->
@@ -51,45 +42,55 @@
 <script type="application/javascript">
 var currentState = {
     datasets: { sort: 'title', order: 'asc', filters: {} },
-    place_collections: { sort: 'title', order: 'asc', filters: {} },
-    dataset_collections: { sort: 'title', order: 'asc', filters: {} },
+    collections: { sort: 'title', order: 'asc', filters: {} },
     areas: { sort: 'title', order: 'asc', filters: {} },
     groups: { sort: 'title', order: 'asc', filters: {} },
 };
-function initializeSorting(tabId) {
-    switch (tabId) {
-        case 'datasets':
-            initializeDatasetSorting();
-            break;
-        case 'areas':
-            // Initialize sorting for place-collections tab, if needed
-            break;
-        // Add cases for other tabs as needed
-    }
-}
-function initializeDatasetSorting() {
-    var sortOrders = JSON.parse(localStorage.getItem('sortOrders')) || {
-        'title': 'asc',
-        'label': 'none',
-        'last_modified': 'none',
-        'numrows': 'none',
-        'ds_status': 'none',
-        'owner': 'none',
-    };
 
-    $('.fa-sort').off('click').on('click', function() {
+var initialSortOrders = {
+  datasets:{
+    'title': 'asc',
+    'label': 'none',
+    'last_modified': 'none',
+    'numrows': 'none',
+    'ds_status': 'none',
+    'owner': 'none',
+  },
+  areas:{
+    'title': 'asc',
+    'created': 'none',
+    'owner': 'none',
+  },
+  collections:{
+    'title': 'asc',
+    'type': 'none',
+    'last_modified': 'none',
+    'numrows': 'none',
+    'status': 'none',
+    'owner': 'none',
+  },
+  groups:{
+    'title': 'asc',
+    'last_modified': 'none',
+    'owner:': 'none',
+  },
+};
+
+function initializeSorting(tabId) {
+    var sortOrders = JSON.parse(localStorage.getItem('sortOrders-' + tabId)) || initialSortOrders[tabId];
+
+    $('#' + tabId + ' .fa-sort').off('click').on('click', function() {
         var columnId = $(this).data('id');
         var currentSortOrder = sortOrders[columnId];
-
         var newSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
         sortOrders[columnId] = newSortOrder;
 
-        localStorage.setItem('sortOrders', JSON.stringify(sortOrders));
+        localStorage.setItem('sortOrders-' + tabId, JSON.stringify(sortOrders));
 
-        var url = '/main/datasets_list/' + columnId + '/' + newSortOrder + '/';
+        var url = '/main/' + tabId + '_list/' + columnId + '/' + newSortOrder + '/';
         $.get(url, function(data) {
-            $('#datasets').empty().html(data);
-            initializeSorting(tabId);  // Reinitialize sorting for the newly loaded content
+            $('#' + tabId).empty().html(data);
+            initializeSorting(tabId);  // Reinitialize sorting
         }).fail(function() {
             console.log('AJAX request failed');
         });
@@ -98,7 +99,6 @@ function initializeDatasetSorting() {
     // Call updateSortIcons here if necessary
     // updateSortIcons();
 }
-
 $(document).ready(function() {
     // Add event listener for tab change
     $('#adminTabs a').on('shown.bs.tab', function(event) {
@@ -142,7 +142,7 @@ function loadTabContent(tabId) {
 
     $.get(url, { filters: state.filters }, function(data) {
         $('#' + tabId).html(data);
-        initializeSorting();
+        initializeSorting(tabId);
     }).fail(function(jqXHR, textStatus, errorThrown) {
         console.error('Error loading tab content:', textStatus, errorThrown);
     });

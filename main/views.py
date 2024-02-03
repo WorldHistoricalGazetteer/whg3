@@ -119,6 +119,7 @@ class Home30a(TemplateView):
 
     return context
 
+# used for dashboard_user() and dataset_list()
 def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
   from django.db.models import Max
   # Always apply extra filters if they are provided and the model is Area
@@ -151,20 +152,10 @@ def area_list(request, sort='', order=''):
   # Logic to apply filters to user_datasets
   # ...
 
-  # Sort the datasets based on the parameters
+  # Sort based on the parameters
   if sort and order:
     sort_param = f'-{sort}' if order == 'desc' else sort
     areas = areas.order_by(sort_param)
-
-  # # Check if the user is an admin to determine visibility scope.
-  # is_admin = request.user.groups.filter(name='whg_admins').exists()
-  #
-  # if is_admin:
-  #   # Admins see all Areas matching the filtered types without the owner filter.
-  #   user_areas = Area.objects.filter(**area_filters)
-  # else:
-  #   # Non-admins see only their Areas matching the filtered types.
-  #   user_areas = Area.objects.filter(**area_filters, owner=request.user)
 
   return render(request, 'lists/area_list.html', {'areas': areas, 'is_admin': is_admin, 'section': 'areas'})
 
@@ -190,7 +181,7 @@ def dataset_list(request, sort='', order=''):
   # Logic to apply filters to user_datasets
   # ...
 
-  # Sort the datasets based on the parameters
+  # Sort based on the parameters
   if sort and order:
     sort_param = f'-{sort}' if order == 'desc' else sort
     datasets = datasets.order_by(sort_param)
@@ -199,26 +190,33 @@ def dataset_list(request, sort='', order=''):
                 {'datasets': datasets, 'is_admin': is_admin, 'section': 'datasets'})
 
 
-def collection_list(request, *args, **kwargs):
+def collection_list(request, sort='', order='', **kwargs):
   print('collection_list() kwargs', kwargs)
-  collection_class = kwargs.get('collection_class')
+  # collection_class = kwargs.get('collection_class')
   is_admin = request.user.groups.filter(name='whg_admins').exists()
 
   if is_admin:
-    # Admins see all Collections of the specified class
-    user_collections = Collection.objects.filter(collection_class=collection_class)
+    collections = Collection.objects.all()
   else:
-    # Non-admins see only their Collections of the specified class
-    user_collections = Collection.objects.filter(collection_class=collection_class,
-                                                 owner=request.user)
+    collections = Collection.objects.filter(owner=request.user)
 
-  user_collections = user_collections.annotate(recent_log_timestamp=Max('log__timestamp'))
-  user_collections = user_collections.order_by('-recent_log_timestamp')
+  collections = collections.annotate(recent_log_timestamp=Max('log__timestamp'))
+
+  filters = request.GET.get('filters', {})
+  if filters:
+    pass
+  # Logic to apply filters to user_datasets
+  # ...
+
+  # Sort based on the parameters
+  if sort and order:
+    sort_param = f'-{sort}' if order == 'desc' else sort
+    collections = collections.order_by(sort_param)
 
   return render(request, 'lists/collection_list.html',
-                {'collections': user_collections, 'is_admin': is_admin, 'section': 'collections'})
+                {'collections': collections, 'is_admin': is_admin, 'section': 'collections'})
 
-def group_list(request):
+def group_list(request, sort='', order=''):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
 
   if is_admin:
@@ -228,41 +226,20 @@ def group_list(request):
     # Non-admins see only the CollectionGroups where they are a member
     groups = CollectionGroup.objects.filter(members__user=request.user)
 
-  context = {
-    'groups': groups,
-    'is_admin': is_admin,
-    'section': 'groups'
-  }
-  return render(request, 'lists/group_list.html', context)
+  filters = request.GET.get('filters', {})
+  if filters:
+    pass
+  # Logic to apply filters to user_datasets
+  # ...
 
-# def group_list(request, role):
-#   user = request.user
-#   is_admin = request.user.groups.filter(name='whg_admins').exists()
-#   # Check for admin
-#   # if user.groups.filter(name='whg_admins').exists() or user.is_superuser:
-#   if is_admin or user.is_superuser:
-#     groups = CollectionGroup.objects.all()
-#     # return early
-#     context = {'groups': groups, 'is_admin': is_admin, 'section': 'groups'}
-#     return render(request, 'lists//group_list.html', context)
-#
-#   # This will fetch groups where the user is a member
-#   member_groups = CollectionGroup.objects.filter(members__user=user)
-#
-#   # If they are a leader, add the groups they own
-#   if role == 'leader':
-#     owned_groups = CollectionGroup.objects.filter(owner=user)
-#     groups = (owned_groups | member_groups).distinct()
-#   else:
-#     groups = member_groups.distinct()
-#
-#   context = {
-#     'groups': groups,
-#     'role': role,
-#     'is_admin': is_admin,
-#     'section': 'groups'
-#   }
-#   return render(request, 'lists/group_list.html', context)
+  # Sort based on the parameters
+  if sort and order:
+    sort_param = f'-{sort}' if order == 'desc' else sort
+    groups = groups.order_by(sort_param)
+
+  return render(request, 'lists/group_list.html',
+                {'groups': groups, 'is_admin': is_admin, 'section': 'groups'})
+
 
 # get's the correct view based on user group
 @login_required
@@ -271,7 +248,6 @@ def dashboard_redirect(request):
         return redirect('dashboard-admin')
     else:
         return redirect('dashboard-user')
-
 
 # all-purpose for admins
 @login_required

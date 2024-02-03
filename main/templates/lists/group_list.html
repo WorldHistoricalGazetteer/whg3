@@ -1,14 +1,26 @@
 {% if groups %}
-    {% for group in groups %}
-	    <p><b class="large">{{ group.title }}</b> (<i>owner: {{ group.owner.name }}</i>)
-		    <span class="ms-2">
-			    <a href="{% url 'collection:collection-group-detail' group.id %}">view</a>
-			    {% if user == group.owner or is_admin %}
-		      <a href="{% url 'collection:collection-group-update' group.id %}" class="ms-1">manage</a>
-			    {% endif %}
-		    </span>
-	    </p>
-    {% endfor %}
+  <table id="table_groups"class="table table-striped">
+    <thead class="small">
+      <th>id</th>
+      <th>title</th>
+      <th>type</th>
+      <th>count</th>
+      <th>created</th>
+      <th>owner</th>
+    </thead>
+    <tbody>
+      {% for group in groups %}
+        <tr>
+          <td>{{ group.id }}</td>
+          <td><a href="{% url 'collection:collection-group-detail' group.id %}">{{ group.title }}</a></td>
+          <td>{{ group.type }}</td>
+          <td>{{ group.collection_set.count }}</td>
+          <td>{{ group.created }}</td>
+          <td>{{ group.owner }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 {% else %}
     <p>You have no groups yet <a href="{% url 'collection:collection-group-create' %}">Create one?</a></p>
 {% endif %}

@@ -12,10 +12,9 @@ urlpatterns = [
 
     # new 'dashboard' LIST VIEWS
     path('datasets_list/<str:sort>/<str:order>/', views.dataset_list, name='dataset-list'),
-    path('collection_list/<str:collection_class>/', views.collection_list, name='collection-list'),
+    path('collections_list/<str:sort>/<str:order>/', views.collection_list, name='collection-list'),
     path('areas_list/<str:sort>/<str:order>/', views.area_list, name='area-list'),
-    path('groups_list/', views.group_list, name='group-list'),
-    # path('group_list/<str:role>/', views.group_list, name='group-list'),
+    path('groups_list/<str:sort>/<str:order>/', views.group_list, name='group-list'),
 
     path('modal/', TemplateView.as_view(template_name="main/modal.html"), name="dynamic-modal"),
 ]

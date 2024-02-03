@@ -26,7 +26,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
             {% endif %}
           </td>
           <td class="small">{{ item.created }}</td>
-          <td>{{ item.decription|truncatechars:20 }}</td>
+          <td>{{ item.description|truncatechars:40 }}</td>
 	        {% if is_admin %}
         	  <td>{{ item.owner.name }}</td>
 	        {% endif %}
@@ -38,21 +38,3 @@ id, title, label, created, format, #rows, ds_status (if)owner
 {% else %}
     <p>You have no areas yet</p>
 {% endif %}
-
-
-{##}
-{#{% if areas %}#}
-{#  {% if areas|length == 0 %}<p class="smaller"><i>None yet...</i></p>#}
-{#  {% else %}#}
-{#	  {% for area in areas %}#}
-{#		  <p>#}
-{#			  <a href="{% url 'areas:area-update' area.id %}">{{ area.title }}</a>#}
-{#			  {% if is_admin %}#}
-{#		      (creator: {{ area.owner.name }})#}
-{#		    {% endif %}#}
-{#		  </p>#}
-{#	  {% endfor %}#}
-{#  {% endif %}#}
-{#{% else %}#}
-{#    <p>You have no Study Areas yet. <a href="{% url 'areas:area-create' %}">Create one?</a></p>#}
-{#{% endif %}#}
