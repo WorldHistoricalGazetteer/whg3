@@ -198,10 +198,6 @@ function loadTabContent(tabId, filters) {
         FontAwesome.dom.i2svg();
         initializeSorting(tabId);
         initializeFilters(tabId);
-        {#var appliedStatus = "{{ applied_filters.ds_status }}";#}
-        {#if (appliedStatus) {#}
-        {#  $('#ds_status').val(appliedStatus);#}
-        {# }#}
      }).fail(function(jqXHR, textStatus, errorThrown) {
         console.error('Error loading tab content:', textStatus, errorThrown);
      }).always(function() {
