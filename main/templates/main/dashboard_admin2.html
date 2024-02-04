@@ -84,9 +84,51 @@ var initialSortOrders = {
   },
 };
 
+function getFilterValues(tabId) {
+    var titleSearch = $('#' + tabId + ' .title-search').val();
+    var status = $('#' + tabId + ' .status').val(); // Adjust based on tab
+    var owners = $('#' + tabId + ' .owners').val();
+    var types = $('#' + tabId + ' .types').val(); // If applicable
+
+    return {
+        title_search: titleSearch,
+        status: status,
+        owners: owners,
+        types: types
+    };
+}
+{#function initializeFilters(tabId) {#}
+{#    // Update currentState when a filter input changes#}
+{#    $(document).off('input change', '#' + tabId + ' .filter-input').on('input change', '#' + tabId + ' .filter-input', function() {#}
+{#        var filterKey = $(this).attr('name');#}
+{#        var filterValue = $(this).val();#}
+{##}
+{#        currentState[tabId].filters[filterKey] = filterValue;#}
+{#        loadTabContent(tabId, currentState[tabId].filters); // Pass updated filters#}
+{#    });#}
+{# }#}
+function initializeFilters(tabId) {
+    $(document).off('change', '#' + tabId + ' .filter-input').on('change', '#' + tabId + ' .filter-input', function() {
+        var filterKey = $(this).attr('name');
+        var filterValue = $(this).val();
+
+        currentState[tabId].filters[filterKey] = filterValue;
+
+        // Flatten the filters for the AJAX request
+        var flattenedFilters = {};
+        for (var key in currentState[tabId].filters) {
+            if (currentState[tabId].filters.hasOwnProperty(key)) {
+                flattenedFilters[key] = currentState[tabId].filters[key];
+            }
+        }
+
+        loadTabContent(tabId, flattenedFilters); // Pass updated filters
+    });
+}
+
 function initializeSorting(tabId) {
     console.log('Initializing sorting for ' + tabId);
-    console.log('Found .fa-sort elements:', $('#' + tabId + ' .fa-sort').length);
+    {#console.log('Found .fa-sort elements:', $('#' + tabId + ' .fa-sort').length);#}
     var sortOrders = JSON.parse(localStorage.getItem('sortOrders-' + tabId)) || initialSortOrders[tabId];
     console.log('sortOrders:', sortOrders);
 
@@ -127,22 +169,13 @@ $(document).ready(function() {
     console.log('Initial tab: ' + initialTabId);
     loadTabContent(initialTabId);
 
-    // Add event listeners for the change event on the filter inputs
-    $(document).on('change', '.filter-input', function() {
-        var tabId = $(this).closest('.tab-pane').attr('id');
-        var filterKey = $(this).attr('name');
-        var filterValue = $(this).val();
-
-        currentState[tabId].filters[filterKey] = filterValue;
-        console.log('Updated filters for ' + tabId + ':', currentState[tabId].filters);
-        loadTabContent(tabId);
-    });
 });
 
-function loadTabContent(tabId) {
+{#function loadTabContent(tabId) {#}
+function loadTabContent(tabId, filters) {
     console.log('Loading tab content for ' + tabId);
     console.log('currentState:', currentState); // Directly log currentState
-    $('#loading_spinner').show();
+    {#$('#loading_spinner').show();#}
     // Check if the currentState for the given tabId is defined
     if (!currentState[tabId]) {
         console.error('No state found for tabId:', tabId);
@@ -150,20 +183,22 @@ function loadTabContent(tabId) {
     }
 
     var state = currentState[tabId];
-    console.log('Current state:', state);
+    {#console.log('Current state:', state);#}
     var url = '/main/' + tabId + '_list/' + state.sort + '/' + state.order + '/';
-    console.log('URL: ' + url);
-    console.log('state filters: ' + JSON.stringify(state.filters));
+    console.log('constructed url: ' + url);
+    console.log('state filters for ' + tabId + ':', JSON.stringify(state.filters));
 
-    $.get(url, { filters: state.filters }, function(data) {
+    {#$.get(url, { filters: state.filters }, function(data) {#}
+    $.get(url, filters, function(data) {
         $('#' + tabId).html(data);
         FontAwesome.dom.i2svg();
         initializeSorting(tabId);
-    }).fail(function(jqXHR, textStatus, errorThrown) {
+        initializeFilters(tabId);
+     }).fail(function(jqXHR, textStatus, errorThrown) {
         console.error('Error loading tab content:', textStatus, errorThrown);
-    }).always(function() {
+     }).always(function() {
         $('#loading_spinner').hide();
-    });
+     });
 }
 
 </script>

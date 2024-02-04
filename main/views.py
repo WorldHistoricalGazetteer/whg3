@@ -2,6 +2,7 @@
 from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import Group
 from django.core.mail import send_mail, BadHeaderError
 from django.db.models import Max, Count, Case, When
 from django.db.models.functions import Lower
@@ -176,6 +177,9 @@ def area_list(request, sort='', order=''):
   return render(request, 'lists/area_list.html', {'areas': areas, 'is_admin': is_admin, 'section': 'areas'})
 
 def dataset_list(request, sort='', order=''):
+  filters = request.GET
+  print("Request GET parameters:", request.GET)
+
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
   text_fields = ['title', 'label', 'status', 'owner']
@@ -198,15 +202,23 @@ def dataset_list(request, sort='', order=''):
         sort_param = f'-{sort}' if order == 'desc' else sort
         datasets = datasets.order_by(sort_param)
 
-    # if order == 'desc':
-    #     datasets = datasets.order_by(Lower(sort).desc())
-    # else:
-    #     datasets = datasets.order_by(Lower(sort))
-
   # Apply filters from request if any
-  filters = request.GET.get('filters', {})
+  print("Filters received:", filters)
   if filters:
-    pass
+    if 'ds_status' in filters and filters['ds_status'] != 'all':
+      datasets = datasets.filter(ds_status=filters['ds_status'])
+
+    if 'owner' in filters:
+      if filters['owner'] == 'staff':
+        staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
+        datasets = datasets.filter(owner__groups__in=staff_groups)
+      elif filters['owner'] == 'contributors':
+        staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
+        datasets = datasets.exclude(owner__groups__in=staff_groups)
+
+    if 'title' in filters and filters['title']:
+      datasets = datasets.filter(title__icontains=filters['title'])
+
   # Logic to apply filters to user_datasets
   # ...
 
