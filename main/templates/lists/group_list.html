@@ -1,4 +1,31 @@
 {% if groups %}
+ <div class="list-options" style="display: flex; justify-content: flex-end; align-items: center;">
+    <div style="display: flex; align-items: center; margin-right: auto;">
+      <input type="text" id="title_search" class="form-control"
+             style="width: 300px; max-width: 100%; margin-left:47px;" placeholder="Search titles">
+    </div>
+    <div style="display: flex; align-items: center; margin-right: 10px;">
+      <label for="coll_status" style="margin-right: 10px;">Status:</label>
+      <select id="coll_status" class="filter-input form-control" name="coll_status">
+          <option value="all">All</option>
+          <option value="sandbox">Sandbox</option>
+          <option value="demo">Demo</option>
+        <optgroup label="">
+          <option value="group">Group</option>
+          <option value="reviewed">Reviewed</option>
+          <option value="nominated">Nominated</option>
+          <option value="published">Published</option>
+        </optgroup>
+      </select>
+    </div>
+    <div style="display: flex; align-items: center;">
+      <select id="owners" class="filter-input form-control" name="owners">
+        <option value="all">All owners</option>
+        <option value="staff">Staff</option>
+        <option value="contributors">Contributors</option>
+      </select>
+    </div>
+  </div>
   <table id="table_groups"class="table table-striped">
     <thead class="small">
       <th>id</th>

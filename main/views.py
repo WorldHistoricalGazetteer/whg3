@@ -3,7 +3,7 @@ from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail, BadHeaderError
-from django.db.models import Max
+from django.db.models import Max, Count, Case, When
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect #, render_to_response
 from django.urls import reverse_lazy
@@ -182,9 +182,9 @@ def dataset_list(request, sort='', order=''):
   # ...
 
   # Sort based on the parameters
-  if sort and order:
-    sort_param = f'-{sort}' if order == 'desc' else sort
-    datasets = datasets.order_by(sort_param)
+  # if sort and order:
+  #   sort_param = f'-{sort}' if order == 'desc' else sort
+  #   datasets = datasets.order_by(sort_param)
 
   return render(request, 'lists/dataset_list.html',
                 {'datasets': datasets, 'is_admin': is_admin, 'section': 'datasets'})
@@ -202,16 +202,35 @@ def collection_list(request, sort='', order='', **kwargs):
 
   collections = collections.annotate(recent_log_timestamp=Max('log__timestamp'))
 
+  collections = collections.annotate(
+    count=Case(
+      When(collection_class='place', then=Count('annos')),
+      When(collection_class='dataset', then=Count('datasets__places')),  # Adjust based on your model relationships
+      default=0
+    )
+  )
+
   filters = request.GET.get('filters', {})
   if filters:
     pass
-  # Logic to apply filters to user_datasets
+  # Logic to apply filters to collections
   # ...
 
   # Sort based on the parameters
-  if sort and order:
+  if sort == 'last_modified':
+    if order == 'desc':
+      collections = collections.annotate(last_log_timestamp=Max('log__timestamp')).order_by('-last_log_timestamp')
+    else:
+      collections = collections.annotate(last_log_timestamp=Max('log__timestamp')).order_by('last_log_timestamp')
+  elif sort == 'count':
+    if order == 'desc':
+      collections = collections.order_by('-count')
+    else:
+      collections = collections.order_by('count')
+  elif sort and order:
     sort_param = f'-{sort}' if order == 'desc' else sort
     collections = collections.order_by(sort_param)
+    print(f"Sorting with parameter: {sort_param}")
 
   return render(request, 'lists/collection_list.html',
                 {'collections': collections, 'is_admin': is_admin, 'section': 'collections'})
@@ -229,7 +248,7 @@ def group_list(request, sort='', order=''):
   filters = request.GET.get('filters', {})
   if filters:
     pass
-  # Logic to apply filters to user_datasets
+  # Logic to apply filters to groups
   # ...
 
   # Sort based on the parameters
@@ -241,7 +260,7 @@ def group_list(request, sort='', order=''):
                 {'groups': groups, 'is_admin': is_admin, 'section': 'groups'})
 
 
-# get's the correct view based on user group
+# gets the correct view based on user group
 @login_required
 def dashboard_redirect(request):
     if request.user.groups.filter(name='whg_admins').exists():

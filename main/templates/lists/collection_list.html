@@ -1,25 +1,64 @@
 {% if collections %}
+  <div class="list-options" style="display: flex; justify-content: flex-end; align-items: center;">
+    <div style="display: flex; align-items: center; margin-right: auto;">
+      <input type="text" id="title_search" class="form-control"
+             style="width: 300px; max-width: 100%; margin-left:47px;" placeholder="Search titles">
+    </div>
+     <div style="display: flex; align-items: center; margin-right: 10px;">
+      <label for="coll_type" style="margin-right: 10px;">Type:</label>
+      <select id="coll_type" class="filter-input form-control" name="ds_status">
+        <option value="all">All</option>
+        <option value="place">Place</option>
+        <option value="dataset">Dataset</option>
+        <option value="builder">Builder</option>
+      </select>
+    </div>
+    <div style="display: flex; align-items: center; margin-right: 10px;">
+      <label for="coll_status" style="margin-right: 10px;">Status:</label>
+      <select id="coll_status" class="filter-input form-control" name="coll_status">
+        <optgroup label="">
+          <option value="all">All</option>
+          <option value="sandbox">Sandbox</option>
+          <option value="demo">Demo</option>
+        </optgroup>
+        <optgroup label="">
+          <option value="group">Group</option>
+          <option value="reviewed">Reviewed</option>
+          <option value="nominated">Nominated</option>
+          <option value="published">Published</option>
+        </optgroup>
+      </select>
+    </div>
+    <div style="display: flex; align-items: center;">
+      <select id="owners" class="filter-input form-control" name="owners">
+        <option value="all">All owners</option>
+        <option value="staff">Staff</option>
+        <option value="contributors">Contributors</option>
+      </select>
+    </div>
+  </div>
   <table id="table_collections"class="table table-striped">
     <thead class="small">
       <th>id</th>
-      <th>title</th>
-      <th>type</th>
-      <th>count</th>
-      <th>modified</th>
-      <th>owner</th>
-      <th>status</th>
+      <th>title <i class="fa fa-sort ms-1" data-id='title'></i></th>
+      <th></th>
+      <th>count <i class="fa fa-sort ms-1" data-id='count'></i></th>
+      <th>type <i class="fa fa-sort ms-1" data-id='collection_class'></i></th>
+      <th>modified <i class="fa fa-sort ms-1" data-id='last_modified'></i></th>
+      <th>status <i class="fa fa-sort ms-1" data-id='status'></i></th>
+      <th>owner <i class="fa fa-sort ms-1" data-id='owner'></i></th>
     </thead>
     <tbody>
       {% for c in collections %}
         <tr class="place-row">
-          <td>{{ c.id }}</td>
+          <td>{{ c.id }}</td> <!-- id -->
           <td>
             {{ c.title }}
             {% if not user == c.owner %}
               <span class="smaller ms-2">
                 <i class="small fa fa-users" style="color:grey;"></i></span>
             {% endif %}
-          </td>
+          </td> <!-- title -->
 					<td class="no-wrap">
 				    {% if c.collection_class == 'dataset' %}
 			        <a href="{% url 'collection:ds-collection-browse' c.id %}">view</a>&nbsp;
@@ -28,13 +67,23 @@
 			        <a href="{% url 'collection:place-collection-browse' c.id %}">view</a>&nbsp;
 			        <a href="{% url 'collection:place-collection-update' c.id %}">edit</a>
 				    {% endif %}
-					</td>
-{#          <td>{{ c.rowcount }}</td>#}
-          <td>{{ c.annos.count }}</td>
-{#					<td class="small">{{ c.created|date:"Y-m-d, H:i" }}</td>#}
-					<td class="small">{{ c.log.last.timestamp|date:"Y-m-d" }}</td>
-          <td>{{ c.owner.name }}</td>
-          <td>{{ c.status }}</td>
+					</td> <!-- view/edit -->
+
+{#          <td>{{ c.annos.count }}</td> <!-- count -->#}
+          <td>
+            {% if c.collection_class == 'place' %}
+              {{ c.annos.count }}
+            {% elif c.collection_class == 'dataset' %}
+              {{ c.count }}
+            {% else %}
+              0  {# Fallback in case neither condition is met #}
+            {% endif %}
+          </td>
+
+          <td>{{ c.collection_class }}</td> <!-- type -->
+					<td class="small">{{ c.log.last.timestamp|date:"Y-m-d" }}</td> <!-- modified -->
+          <td>{{ c.status }}</td> <!-- status -->
+          <td>{{ c.owner.name }}</td> <!-- owner -->
         </tr>
       {% endfor %}
     </tbody>

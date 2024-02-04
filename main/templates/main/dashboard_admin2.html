@@ -9,13 +9,16 @@
 {% block content %}
 
 <div id="container" class="container mt-4">
+  <div id="loading_spinner" class="text-center" style="position: absolute; top: 180px; left:200px;">
+    <i class="fa fa-spinner fa-spin fa-2x"></i>
+  </div>
   <ul class="nav nav-tabs" id="adminTabs" role="tablist">
     <li class="nav-item" role="presentation">
-      <a class="nav-link active" id="datasets-tab" data-bs-toggle="tab" href="#datasets" role="tab"
+      <a class="nav-link" id="datasets-tab" data-bs-toggle="tab" href="#datasets" role="tab"
          ref="dataset" aria-controls="datasets" aria-selected="true">Datasets</a>
     </li>
     <li class="nav-item" role="presentation">
-      <a class="nav-link" id="collections-tab" data-bs-toggle="tab" href="#collections" role="tab"
+      <a class="nav-link active" id="collections-tab" data-bs-toggle="tab" href="#collections" role="tab"
          ref="pcoll" aria-controls="collections" aria-selected="false">Collections</a>
     </li>
     <li class="nav-item" role="presentation">
@@ -28,9 +31,9 @@
     </li>
   </ul>
   <div class="tab-content" id="adminTabsContent">
-    <div class="tab-pane fade show active" id="datasets" role="tabpanel" aria-labelledby="datasets-tab">
+    <div class="tab-pane fade" id="datasets" role="tabpanel" aria-labelledby="datasets-tab">
     </div>
-    <div class="tab-pane fade" id="collections" role="tabpanel" aria-labelledby="collections-tab">
+    <div class="tab-pane fade show active" id="collections" role="tabpanel" aria-labelledby="collections-tab">
     </div>
     <div class="tab-pane fade" id="areas" role="tabpanel" aria-labelledby="areas-tab">
     </div>
@@ -63,9 +66,9 @@ var initialSortOrders = {
   },
   collections:{
     'title': 'asc',
+    'count': 'none',
     'type': 'none',
-    'last_modified': 'none',
-    'numrows': 'none',
+    'modified': 'none',
     'status': 'none',
     'owner': 'none',
   },
@@ -77,10 +80,15 @@ var initialSortOrders = {
 };
 
 function initializeSorting(tabId) {
+    console.log('Initializing sorting for ' + tabId);
+    console.log('Found .fa-sort elements:', $('#' + tabId + ' .fa-sort').length);
     var sortOrders = JSON.parse(localStorage.getItem('sortOrders-' + tabId)) || initialSortOrders[tabId];
+    console.log('sortOrders:', sortOrders);
 
-    $('#' + tabId + ' .fa-sort').off('click').on('click', function() {
+    {#$('#' + tabId + ' .fa-sort').off('click').on('click', function() {#}
+    $(document).off('click').on('click', '#' + tabId + ' .fa-sort', function() {
         var columnId = $(this).data('id');
+        console.log('Sorting clicked', columnId);
         var currentSortOrder = sortOrders[columnId];
         var newSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
         sortOrders[columnId] = newSortOrder;
@@ -94,11 +102,9 @@ function initializeSorting(tabId) {
         }).fail(function() {
             console.log('AJAX request failed');
         });
-    });
-
-    // Call updateSortIcons here if necessary
-    // updateSortIcons();
+     });
 }
+
 $(document).ready(function() {
     // Add event listener for tab change
     $('#adminTabs a').on('shown.bs.tab', function(event) {
@@ -127,7 +133,7 @@ $(document).ready(function() {
 function loadTabContent(tabId) {
     console.log('Loading tab content for ' + tabId);
     console.log('currentState:', currentState); // Directly log currentState
-
+    $('#loading-spinner').show();
     // Check if the currentState for the given tabId is defined
     if (!currentState[tabId]) {
         console.error('No state found for tabId:', tabId);
@@ -145,111 +151,10 @@ function loadTabContent(tabId) {
         initializeSorting(tabId);
     }).fail(function(jqXHR, textStatus, errorThrown) {
         console.error('Error loading tab content:', textStatus, errorThrown);
+    }).always(function() {
+        $('#loading_spinner').hide();
     });
 }
 
-{#function loadTabContent(tabId) {#}
-{#    console.log('Loading tab content for ' + tabId);#}
-{#    var state = currentState[tabId];#}
-{#    console.log('Current state:', state);#}
-{#    var url = '/main/' + tabId + '_list/' + state.sort + '/' + state.order + '/';#}
-{#    console.log('URL: ' + url);#}
-{#    console.log('state filters: ' + JSON.stringify(state.filters));#}
-{#    $.get(url, { filters: state.filters }, function(data) {#}
-{#        $('#' + tabId).html(data);#}
-{#        // Additional logic to reattach event listeners if needed#}
-{#    });#}
-{# }#}
-
 </script>
-{#  currentState = {#}
-{#    datasets: { sort: 'title', order: 'asc', filters: {} },#}
-{#    // ... similar state objects for other tabs#}
-{#  };#}
-{##}
-{#$(document).ready(function() {#}
-{##}
-{#  // Add event listener for tab change#}
-{#  $('#adminTabs a').on('shown.bs.tab', function(event) {#}
-{#      var tabId = $(event.target).attr('href').substring(1);  // Get the id of the tab#}
-{#      console.log('Tab changed: ' + tabId);#}
-{#      loadTabContent(tabId);#}
-{#  });#}
-{##}
-{#  // Load initial tab content#}
-{#  var initialTabId = $('#adminTabs .nav-link.active').attr('href').substring(1);#}
-{#  console.log('Initial tab: ' + initialTabId)#}
-{#  loadTabContent(initialTabId);#}
-{##}
-{#  // Add event listeners for the change event on the ds_status and owners selects#}
-{#  $(document).on('change', '.filter-input', function() {#}
-{#      //dataset, pcoll, dscoll, area, group#}
-{#      var tabId = $(this).closest('.tab-content').attr('ref');#}
-{#      var filterKey = $(this).attr('name');#}
-{#      var filterValue = $(this).val();#}
-{##}
-{#      currentState[tabId].filters[filterKey] = filterValue;#}
-{#      loadTabContent(tabId);#}
-{#  });#}
-{# });#}
-{##}
-{#$('.sort-column').on('click', function() {#}
-{#    var tabId = $(this).closest('.tab-content').attr('id');#}
-{#    var sortField = $(this).data('sort-field');#}
-{##}
-{#    // Toggle sort order and update state#}
-{#    // ...#}
-{##}
-{#    loadTabContent(tabId);#}
-{# });#}
-{##}
-{#function loadTabContent(tabId) {#}
-{#    console.log('Loading tab content for ' + tabId);#}
-{#    var state = currentState[tabId];#}
-{#    var url = '/main/' + tabId + '_list/' + state.sort + '/' + state.order + '/';#}
-{#    console.log('URL: ' + url);#}
-{#    console.log('state filters: ' + JSON.stringify(state.filters));#}
-{##}
-{#    $.get(url, { filters: state.filters }, function(data) {#}
-{#        $('#' + tabId).html(data);#}
-{#        // Additional logic to reattach event listeners if needed#}
-{#    });#}
-{# }#}
-{##}
-{#function loadTabContent(tabId) {#}
-{#    var url;#}
-{#    switch(tabId) {#}
-{#        case 'datasets':#}
-{#            var defaultSort = 'title';#}
-{#            var defaultOrder = 'asc';#}
-{##}
-{#            url = '/main/dataset_list/' + defaultSort + '/' + defaultOrder + '/';#}
-{#            break;#}
-{#        case 'place-collections':#}
-{#            url = '/main/collection_list/place/';#}
-{#            break;#}
-{#        case 'dataset-collections':#}
-{#            url = '/main/collection_list/dataset/';#}
-{#            break;#}
-{#        case 'areas':#}
-{#            url = '/main/area_list/';#}
-{#            break;#}
-{#        case 'collection-groups':#}
-{#            url = '/main/group_list/';#}
-{#            break;#}
-{#    }#}
-{#    $.get(url, function(data) {#}
-{#        // Update the tab content with the new data#}
-{#        $('#' + tabId).html(data);#}
-{#        if (tabId === 'datasets') {#}
-{#            $.get(url, function(data) {#}
-{#                // Update the datasets tab content with the filtered data#}
-{#                $('#datasets').html(data);#}
-{#            });#}
-{#        }#}
-{#    });#}
-{# }#}
-{##}
-{#</script>#}
-
 {% endblock %} <!-- content -->
