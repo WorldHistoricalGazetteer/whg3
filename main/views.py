@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail, BadHeaderError
 from django.db.models import Max, Count, Case, When
+from django.db.models.functions import Lower
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect #, render_to_response
 from django.urls import reverse_lazy
@@ -142,6 +143,8 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
 
 def area_list(request, sort='', order=''):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
+  text_fields = ['title', 'description', 'type', 'owner']
+
   # only user-created areas
   areas = Area.objects.filter(type__in=['ccodes', 'copied', 'drawn'])
 
@@ -154,14 +157,28 @@ def area_list(request, sort='', order=''):
 
   # Sort based on the parameters
   if sort and order:
-    sort_param = f'-{sort}' if order == 'desc' else sort
-    areas = areas.order_by(sort_param)
+    if sort in text_fields:
+        # Apply Lower function for text fields
+        if order == 'desc':
+            areas = areas.order_by(Lower(sort).desc())
+        else:
+            areas = areas.order_by(Lower(sort))
+    else:
+        # Standard sorting for non-text fields
+        sort_param = f'-{sort}' if order == 'desc' else sort
+        areas = areas.order_by(sort_param)
+    #
+    # if order == 'desc':
+    #     areas = areas.order_by(Lower(sort).desc())
+    # else:
+    #     areas = areas.order_by(Lower(sort))
 
   return render(request, 'lists/area_list.html', {'areas': areas, 'is_admin': is_admin, 'section': 'areas'})
 
 def dataset_list(request, sort='', order=''):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+  text_fields = ['title', 'label', 'status', 'owner']
 
   # Sort the datasets based on the parameters
   if sort == 'last_modified':
@@ -170,9 +187,21 @@ def dataset_list(request, sort='', order=''):
     else:
       datasets = datasets.annotate(last_log_timestamp=Max('log__timestamp')).order_by('last_log_timestamp')
   elif sort and order:
-    sort_param = f'-{sort}' if order == 'desc' else sort
-    datasets = datasets.order_by(sort_param)
-    print(f"Sorting with parameter: {sort_param}")
+    if sort in text_fields:
+        # Apply Lower function for text fields
+        if order == 'desc':
+            datasets = datasets.order_by(Lower(sort).desc())
+        else:
+            datasets = datasets.order_by(Lower(sort))
+    else:
+        # Standard sorting for non-text fields
+        sort_param = f'-{sort}' if order == 'desc' else sort
+        datasets = datasets.order_by(sort_param)
+
+    # if order == 'desc':
+    #     datasets = datasets.order_by(Lower(sort).desc())
+    # else:
+    #     datasets = datasets.order_by(Lower(sort))
 
   # Apply filters from request if any
   filters = request.GET.get('filters', {})
@@ -180,11 +209,6 @@ def dataset_list(request, sort='', order=''):
     pass
   # Logic to apply filters to user_datasets
   # ...
-
-  # Sort based on the parameters
-  # if sort and order:
-  #   sort_param = f'-{sort}' if order == 'desc' else sort
-  #   datasets = datasets.order_by(sort_param)
 
   return render(request, 'lists/dataset_list.html',
                 {'datasets': datasets, 'is_admin': is_admin, 'section': 'datasets'})
@@ -194,6 +218,7 @@ def collection_list(request, sort='', order='', **kwargs):
   print('collection_list() kwargs', kwargs)
   # collection_class = kwargs.get('collection_class')
   is_admin = request.user.groups.filter(name='whg_admins').exists()
+  text_fields = ['title', 'type', 'status', 'owner']
 
   if is_admin:
     collections = Collection.objects.all()
@@ -228,15 +253,30 @@ def collection_list(request, sort='', order='', **kwargs):
     else:
       collections = collections.order_by('count')
   elif sort and order:
-    sort_param = f'-{sort}' if order == 'desc' else sort
-    collections = collections.order_by(sort_param)
-    print(f"Sorting with parameter: {sort_param}")
+    if sort in text_fields:
+        # Apply Lower function for text fields
+        if order == 'desc':
+            collections = collections.order_by(Lower(sort).desc())
+        else:
+            collections = collections.order_by(Lower(sort))
+    else:
+        # Standard sorting for non-text fields
+        sort_param = f'-{sort}' if order == 'desc' else sort
+        collections = collections.order_by(sort_param)
+
+    # if order == 'desc':
+    #     collections = collections.order_by(Lower(sort).desc())
+    # else:
+    #     collections = collections.order_by(Lower(sort))
+
 
   return render(request, 'lists/collection_list.html',
                 {'collections': collections, 'is_admin': is_admin, 'section': 'collections'})
 
 def group_list(request, sort='', order=''):
   is_admin = request.user.groups.filter(name='whg_admins').exists()
+
+  text_fields = ['title', 'category', 'owner']
 
   if is_admin:
     # Admins see all CollectionGroups
@@ -251,10 +291,22 @@ def group_list(request, sort='', order=''):
   # Logic to apply filters to groups
   # ...
 
-  # Sort based on the parameters
   if sort and order:
-    sort_param = f'-{sort}' if order == 'desc' else sort
-    groups = groups.order_by(sort_param)
+    if sort in text_fields:
+        # Apply Lower function for text fields
+        if order == 'desc':
+            groups = groups.order_by(Lower(sort).desc())
+        else:
+            groups = groups.order_by(Lower(sort))
+    else:
+        # Standard sorting for non-text fields
+        sort_param = f'-{sort}' if order == 'desc' else sort
+        groups = groups.order_by(sort_param)
+
+    # if order == 'desc':
+    #     groups = groups.order_by(Lower(sort).desc())
+    # else:
+    #     groups = groups.order_by(Lower(sort))
 
   return render(request, 'lists/group_list.html',
                 {'groups': groups, 'is_admin': is_admin, 'section': 'groups'})

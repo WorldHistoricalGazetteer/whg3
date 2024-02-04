@@ -9,16 +9,17 @@
 {% block content %}
 
 <div id="container" class="container mt-4">
-  <div id="loading_spinner" class="text-center" style="position: absolute; top: 180px; left:200px;">
+  <div id="loading_spinner" class="text-center"
+       style="position: absolute; top: 180px; left:200px; display:none;">
     <i class="fa fa-spinner fa-spin fa-2x"></i>
   </div>
   <ul class="nav nav-tabs" id="adminTabs" role="tablist">
     <li class="nav-item" role="presentation">
-      <a class="nav-link" id="datasets-tab" data-bs-toggle="tab" href="#datasets" role="tab"
+      <a class="nav-link active" id="datasets-tab" data-bs-toggle="tab" href="#datasets" role="tab"
          ref="dataset" aria-controls="datasets" aria-selected="true">Datasets</a>
     </li>
     <li class="nav-item" role="presentation">
-      <a class="nav-link active" id="collections-tab" data-bs-toggle="tab" href="#collections" role="tab"
+      <a class="nav-link" id="collections-tab" data-bs-toggle="tab" href="#collections" role="tab"
          ref="pcoll" aria-controls="collections" aria-selected="false">Collections</a>
     </li>
     <li class="nav-item" role="presentation">
@@ -31,9 +32,9 @@
     </li>
   </ul>
   <div class="tab-content" id="adminTabsContent">
-    <div class="tab-pane fade" id="datasets" role="tabpanel" aria-labelledby="datasets-tab">
+    <div class="tab-pane fade show active" id="datasets" role="tabpanel" aria-labelledby="datasets-tab">
     </div>
-    <div class="tab-pane fade show active" id="collections" role="tabpanel" aria-labelledby="collections-tab">
+    <div class="tab-pane fade" id="collections" role="tabpanel" aria-labelledby="collections-tab">
     </div>
     <div class="tab-pane fade" id="areas" role="tabpanel" aria-labelledby="areas-tab">
     </div>
@@ -62,6 +63,7 @@ var initialSortOrders = {
   areas:{
     'title': 'asc',
     'created': 'none',
+    'description': 'none',
     'owner': 'none',
   },
   collections:{
@@ -74,7 +76,9 @@ var initialSortOrders = {
   },
   groups:{
     'title': 'asc',
-    'last_modified': 'none',
+    'count': 'none',
+    'created': 'none',
+    'type': 'none',
     'owner:': 'none',
   },
 };
@@ -96,11 +100,15 @@ function initializeSorting(tabId) {
         localStorage.setItem('sortOrders-' + tabId, JSON.stringify(sortOrders));
 
         var url = '/main/' + tabId + '_list/' + columnId + '/' + newSortOrder + '/';
+        $('#loading_spinner').show();
+        console.log('AJAX request, where is my spinner?:', url);
         $.get(url, function(data) {
             $('#' + tabId).empty().html(data);
             initializeSorting(tabId);  // Reinitialize sorting
         }).fail(function() {
             console.log('AJAX request failed');
+        }).always(function() {
+            $('#loading_spinner').hide();
         });
      });
 }
@@ -133,7 +141,7 @@ $(document).ready(function() {
 function loadTabContent(tabId) {
     console.log('Loading tab content for ' + tabId);
     console.log('currentState:', currentState); // Directly log currentState
-    $('#loading-spinner').show();
+    $('#loading_spinner').show();
     // Check if the currentState for the given tabId is defined
     if (!currentState[tabId]) {
         console.error('No state found for tabId:', tabId);
@@ -148,6 +156,7 @@ function loadTabContent(tabId) {
 
     $.get(url, { filters: state.filters }, function(data) {
         $('#' + tabId).html(data);
+        FontAwesome.dom.i2svg();
         initializeSorting(tabId);
     }).fail(function(jqXHR, textStatus, errorThrown) {
         console.error('Error loading tab content:', textStatus, errorThrown);

@@ -35,8 +35,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
     <th>modified <i class="fa fa-sort ms-1" data-id='last_modified' title="UTC"></i></th>
     <th># rows<i class="fa fa-sort ms-1" data-id='numrows'></i></th>
     <th>status <i class="fa fa-sort ms-1" data-id='ds_status'></i></th>
-    {% if is_admin %}
-      <th>owner <i class="fa fa-sort ms-1" data-id='owner'></i></th>{% endif %}
+    <th>owner <i class="fa fa-sort ms-1" data-id='owner'></i></th>
     </thead>
     <tbody>
     {% for d in datasets %}
@@ -45,10 +44,11 @@ id, title, label, created, format, #rows, ds_status (if)owner
         <td>
           <a href="{% url 'datasets:ds_summary' d.id %}" title="Dataset details" rel="tooltip">
             {{ d.title }}</a>
-          {% if not user == d.owner %}
-            <span class="smaller ms-3">
-              <i class="small fa fa-users" style="color:grey;"></i></span>
-          {% endif %}
+          <span class="float-end">
+            <a href="{% url 'datasets:ds_summary' d.id %}">
+              <i class="fa fa-edit"></i>
+            </a>
+          </span>
         </td>
         <td>{% if d.core == True %}
           {{ d.label }} <span class="corerow"> (core)</span>

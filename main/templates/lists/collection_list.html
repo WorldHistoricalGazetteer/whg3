@@ -41,8 +41,8 @@
     <thead class="small">
       <th>id</th>
       <th>title <i class="fa fa-sort ms-1" data-id='title'></i></th>
-      <th></th>
-      <th>count <i class="fa fa-sort ms-1" data-id='count'></i></th>
+{#      <th>count <i class="fa fa-sort ms-1" data-id='count'></i></th>#}
+      <th>count</th>
       <th>type <i class="fa fa-sort ms-1" data-id='collection_class'></i></th>
       <th>modified <i class="fa fa-sort ms-1" data-id='last_modified'></i></th>
       <th>status <i class="fa fa-sort ms-1" data-id='status'></i></th>
@@ -53,23 +53,27 @@
         <tr class="place-row">
           <td>{{ c.id }}</td> <!-- id -->
           <td>
-            {{ c.title }}
-            {% if not user == c.owner %}
-              <span class="smaller ms-2">
-                <i class="small fa fa-users" style="color:grey;"></i></span>
+            {% if c.collection_class == 'place' %}
+              <a href="{% url 'collection:place-collection-browse' c.id %}">{{ c.title }}</a>
+            {% elif c.collection_class == 'dataset' %}
+              <a href="{% url 'collection:ds-collection-browse' c.id %}">{{ c.title }}</a>
+            {% else %}
+              {{ c.title }}
             {% endif %}
+            <span class="float-end me-2">
+              {% if c.collection_class == 'place' %}
+                <a href="{% url 'collection:place-collection-update' c.id %}">
+                  <i class="fa fa-edit"></i>
+                </a>
+              {% elif c.collection_class == 'dataset' %}
+                <a href="{% url 'collection:ds-collection-update' c.id %}">
+                  <i class="fa fa-edit"></i>
+                </a>
+              {% else %}
+                {{ c.title }}
+              {% endif %}
+            </span>
           </td> <!-- title -->
-					<td class="no-wrap">
-				    {% if c.collection_class == 'dataset' %}
-			        <a href="{% url 'collection:ds-collection-browse' c.id %}">view</a>&nbsp;
-			        <a href="{% url 'collection:ds-collection-update' c.id %}">edit</a>
-				    {% elif c.collection_class == 'place' %}
-			        <a href="{% url 'collection:place-collection-browse' c.id %}">view</a>&nbsp;
-			        <a href="{% url 'collection:place-collection-update' c.id %}">edit</a>
-				    {% endif %}
-					</td> <!-- view/edit -->
-
-{#          <td>{{ c.annos.count }}</td> <!-- count -->#}
           <td>
             {% if c.collection_class == 'place' %}
               {{ c.annos.count }}
@@ -79,7 +83,6 @@
               0  {# Fallback in case neither condition is met #}
             {% endif %}
           </td>
-
           <td>{{ c.collection_class }}</td> <!-- type -->
 					<td class="small">{{ c.log.last.timestamp|date:"Y-m-d" }}</td> <!-- modified -->
           <td>{{ c.status }}</td> <!-- status -->
