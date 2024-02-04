@@ -201,6 +201,7 @@ def dataset_list(request, sort='', order=''):
         # Standard sorting for non-text fields
         sort_param = f'-{sort}' if order == 'desc' else sort
         datasets = datasets.order_by(sort_param)
+  context = {'datasets': datasets, 'is_admin': is_admin, 'section': 'datasets'}
 
   # Apply filters from request if any
   print("Filters received:", filters)
@@ -219,11 +220,19 @@ def dataset_list(request, sort='', order=''):
     if 'title' in filters and filters['title']:
       datasets = datasets.filter(title__icontains=filters['title'])
 
-  # Logic to apply filters to user_datasets
-  # ...
-
-  return render(request, 'lists/dataset_list.html',
-                {'datasets': datasets, 'is_admin': is_admin, 'section': 'datasets'})
+    context = {
+        'datasets': datasets,
+        'is_admin': is_admin,
+        'section': 'datasets',
+        'applied_filters': {
+            'ds_status': request.GET.get('ds_status', ''),
+            'owner': request.GET.get('owner', ''),
+            'title': request.GET.get('title', '')
+        }
+    }
+  # return render(request, 'lists/dataset_list.html',
+  #               {'datasets': datasets, 'is_admin': is_admin, 'section': 'datasets'})
+  return render(request, 'lists/dataset_list.html', context)
 
 
 def collection_list(request, sort='', order='', **kwargs):

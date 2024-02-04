@@ -5,28 +5,31 @@ id, title, label, created, format, #rows, ds_status (if)owner
   <div class="list-options" style="display: flex; justify-content: flex-end; align-items: center;">
     <div style="display: flex; align-items: center; margin-right: auto;">
       <input type="text" id="title_search" class="filter-input form-control"
-             name="title" style="width: 300px; max-width: 100%; margin-left:47px;" placeholder="Search titles">
+             name="title" style="width: 300px; max-width: 100%; margin-left:47px;"
+             value="{{ applied_filters.title|default_if_none:'' }}"
+             placeholder="Search titles">
     </div>
     <div style="display: flex; align-items: center; margin-right: 10px;">
       <label for="ds_status" style="margin-right: 10px;">Status:</label>
       <select id="ds_status" class="filter-input form-control" name="ds_status">
         <option value="all">All</option>
-        <option value="uploaded">Uploaded</option>
-        <option value="reconciling">Reconciling</option>
-        <option value="wd-complete">WD-Complete</option>
-        <option value="accessioning">Accessioning</option>
-        <option value="indexed">Indexed</option>
-        <option value="builder">Builder</option>
+        <option value="uploaded" {% if applied_filters.ds_status == 'uploaded' %}selected{% endif %}>Uploaded</option>
+        <option value="reconciling" {% if applied_filters.ds_status == 'reconciling' %}selected{% endif %}>Reconciling</option>
+        <option value="wd-complete" {% if applied_filters.ds_status == 'wd-complete' %}selected{% endif %}>WD-Complete</option>
+        <option value="accessioning" {% if applied_filters.ds_status == 'accessioning' %}selected{% endif %}>Accessioning</option>
+        <option value="indexed" {% if applied_filters.ds_status == 'indexed' %}selected{% endif %}>Indexed</option>
+        <option value="builder" {% if applied_filters.ds_status == 'builder' %}selected{% endif %}>Builder</option>
       </select>
     </div>
     <div style="display: flex; align-items: center;">
       <select id="owners" class="filter-input form-control" name="owner">
-        <option value="all">All owners</option>
-        <option value="staff">Staff</option>
-        <option value="contributors">Contributors</option>
+        <option value="all" {% if applied_filters.ds_status == 'all' %}selected{% endif %}>All owners</option>
+        <option value="staff" {% if applied_filters.owner == 'staff' %}selected{% endif %}>Staff</option>
+        <option value="contributors" {% if applied_filters.owner == 'contributors' %}selected{% endif %}>Contributors</option>
       </select>
     </div>
   </div>
+{#  context: {{ applied_filters }}#}
   <table id="table_ds" class="table table-striped">
     <thead class="small strong">
     <th>id</th>
