@@ -6,34 +6,34 @@
     </div>
      <div style="display: flex; align-items: center; margin-right: 10px;">
       <label for="coll_class" style="margin-right: 10px;">Type:</label>
-      <select id="coll_class" class="filter-input form-control" name="collection_class">
-        <option value="all">All</option>
-        <option value="place">Place</option>
-        <option value="dataset">Dataset</option>
-        <option value="builder">Builder</option>
+      <select id="coll_class" class="filter-input form-control" name="class">
+        <option value="all" {% if filters.class == 'all' %}selected{% endif %}>All</option>
+        <option value="place" {% if filters.class == 'place' %}selected{% endif %}>Place</option>
+        <option value="dataset" {% if filters.class == 'dataset' %}selected{% endif %}>Dataset</option>
+        <option value="builder" {% if filters.class == 'builder' %}selected{% endif %}>Builder</option>
       </select>
     </div>
     <div style="display: flex; align-items: center; margin-right: 10px;">
       <label for="coll_status" style="margin-right: 10px;">Status:</label>
       <select id="coll_status" class="filter-input form-control" name="status">
         <optgroup label="">
-          <option value="all">All</option>
-          <option value="sandbox">Sandbox</option>
-          <option value="demo">Demo</option>
+          <option value="all" {% if filters.status == 'all' %}selected{% endif %}>All</option>
+          <option value="sandbox" {% if filters.status == 'sandbox' %}selected{% endif %}>Sandbox</option>
+          <option value="demo" {% if filters.status == 'demo' %}selected{% endif %}>Demo</option>
         </optgroup>
         <optgroup label="">
-          <option value="group">Group</option>
-          <option value="reviewed">Reviewed</option>
-          <option value="nominated">Nominated</option>
-          <option value="published">Published</option>
+          <option value="group" {% if filters.status == 'group' %}selected{% endif %}>Group</option>
+          <option value="reviewed" {% if filters.status == 'reviewed' %}selected{% endif %}>Reviewed</option>
+          <option value="nominated" {% if filters.status == 'nominated' %}selected{% endif %}>Nominated</option>
+          <option value="published" {% if filters.status == 'published' %}selected{% endif %}>Published</option>
         </optgroup>
       </select>
     </div>
     <div style="display: flex; align-items: center;">
       <select id="owners" class="filter-input form-control" name="owner">
-        <option value="all">All owners</option>
-        <option value="staff">Staff</option>
-        <option value="contributors">Contributors</option>
+        <option value="all" {% if filters.owner == 'all' %}selected{% endif %}>All owners</option>
+        <option value="staff" {% if filters.owner == 'staff' %}selected{% endif %}>Staff</option>
+        <option value="contributors" {% if filters.owner == 'contributors' %}selected{% endif %}>Contributors</option>
       </select>
     </div>
   </div>
@@ -41,7 +41,6 @@
     <thead class="small">
       <th>id</th>
       <th>title <i class="fa fa-sort ms-1" data-id='title'></i></th>
-{#      <th>count <i class="fa fa-sort ms-1" data-id='count'></i></th>#}
       <th>count</th>
       <th>type <i class="fa fa-sort ms-1" data-id='collection_class'></i></th>
       <th>modified <i class="fa fa-sort ms-1" data-id='last_modified'></i></th>
@@ -92,8 +91,6 @@
     </tbody>
   </table>
 {% else %}
-    <p>You have no collections. Create one now?</p>
-		<p><a href="{% url 'collection:place-collection-create' %}">Place Collection builder</a></p>
-		<p><a href="{% url 'collection:ds-collection-create' %}">Dataset Collection builder</a></p>
+    <p>No collections met that criteria, <a href="javascript:location.reload()">refresh</a></p>
 {% endif %}
 

@@ -178,13 +178,13 @@ def area_list(request, sort='', order=''):
 
 def dataset_list(request, sort='', order=''):
   filters = request.GET
-  print("Request GET parameters:", request.GET)
+  print("dataset_list GET:", request.GET)
 
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
   text_fields = ['title', 'label', 'status', 'owner']
 
-  # Sort the datasets based on the parameters
+  # Sort based on the parameters
   if sort == 'last_modified':
     if order == 'desc':
       datasets = datasets.annotate(last_log_timestamp=Max('log__timestamp')).order_by('-last_log_timestamp')
@@ -203,18 +203,18 @@ def dataset_list(request, sort='', order=''):
         datasets = datasets.order_by(sort_param)
   context = {'datasets': datasets, 'is_admin': is_admin, 'section': 'datasets'}
 
-  # Apply filters from request if any
+
   print("Filters received:", filters)
+  # ds_status, owner, title
   if filters:
     if 'ds_status' in filters and filters['ds_status'] != 'all':
       datasets = datasets.filter(ds_status=filters['ds_status'])
 
     if 'owner' in filters:
+      staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
       if filters['owner'] == 'staff':
-        staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
         datasets = datasets.filter(owner__groups__in=staff_groups)
       elif filters['owner'] == 'contributors':
-        staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
         datasets = datasets.exclude(owner__groups__in=staff_groups)
 
     if 'title' in filters and filters['title']:
@@ -224,43 +224,34 @@ def dataset_list(request, sort='', order=''):
         'datasets': datasets,
         'is_admin': is_admin,
         'section': 'datasets',
-        'applied_filters': {
+        'filters': {
             'ds_status': request.GET.get('ds_status', ''),
             'owner': request.GET.get('owner', ''),
             'title': request.GET.get('title', '')
         }
     }
-  # return render(request, 'lists/dataset_list.html',
-  #               {'datasets': datasets, 'is_admin': is_admin, 'section': 'datasets'})
+
   return render(request, 'lists/dataset_list.html', context)
 
+def collection_list(request, sort='', order=''):
+  filters = request.GET
+  print("collection_list() GET (filters):", request.GET)
+  print('collection_list() sort, order', sort, order)
 
-def collection_list(request, sort='', order='', **kwargs):
-  print('collection_list() kwargs', kwargs)
-  # collection_class = kwargs.get('collection_class')
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   text_fields = ['title', 'type', 'status', 'owner']
 
-  if is_admin:
-    collections = Collection.objects.all()
-  else:
-    collections = Collection.objects.filter(owner=request.user)
+  collections = Collection.objects.all()
 
   collections = collections.annotate(recent_log_timestamp=Max('log__timestamp'))
 
   collections = collections.annotate(
     count=Case(
       When(collection_class='place', then=Count('annos')),
-      When(collection_class='dataset', then=Count('datasets__places')),  # Adjust based on your model relationships
+      # When(collection_class='dataset', then=Count('datasets__places')),
       default=0
     )
   )
-
-  filters = request.GET.get('filters', {})
-  if filters:
-    pass
-  # Logic to apply filters to collections
-  # ...
 
   # Sort based on the parameters
   if sort == 'last_modified':
@@ -284,33 +275,55 @@ def collection_list(request, sort='', order='', **kwargs):
         # Standard sorting for non-text fields
         sort_param = f'-{sort}' if order == 'desc' else sort
         collections = collections.order_by(sort_param)
-
-    # if order == 'desc':
-    #     collections = collections.order_by(Lower(sort).desc())
-    # else:
-    #     collections = collections.order_by(Lower(sort))
+  context = {'collections': collections, 'is_admin': is_admin, 'section': 'collections'}
 
 
-  return render(request, 'lists/collection_list.html',
-                {'collections': collections, 'is_admin': is_admin, 'section': 'collections'})
+  print("Filters received:", filters)
+  # status, collection_class, owner, title
+  if filters:
+    if 'status' in filters and filters['status'] != 'all':
+      collections = collections.filter(status=filters['status'])
+      print('status filter:', collections)
+
+    if 'class' in filters and filters['class'] != 'all':
+      collections = collections.filter(collection_class=filters['class'])
+      print('class filter:', collections)
+
+    if 'owner' in filters:
+      staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
+      if filters['owner'] == 'staff':
+        collections = collections.filter(owner__groups__in=staff_groups)
+      elif filters['owner'] == 'contributors':
+        collections = collections.exclude(owner__groups__in=staff_groups)
+      print('owner filter:', collections)
+
+    if 'title' in filters and filters['title']:
+      collections = collections.filter(title__icontains=filters['title'])
+      print('title filter:', collections)
+
+    context = {
+        'collections': collections,
+        'is_admin': is_admin,
+        'section': 'collections',
+        'filters': {
+            'status': request.GET.get('status', ''),
+            'class': request.GET.get('class', ''),
+            'owner': request.GET.get('owner', ''),
+            'title': request.GET.get('title', '')
+        }
+    }
+
+  return render(request, 'lists/collection_list.html', context)
 
 def group_list(request, sort='', order=''):
-  is_admin = request.user.groups.filter(name='whg_admins').exists()
+  filters = request.GET
+  print("group_list() GET (filters):", request.GET)
+  print('group_list() sort, order', sort, order)
 
+  is_admin = request.user.groups.filter(name='whg_admins').exists()
   text_fields = ['title', 'category', 'owner']
 
-  if is_admin:
-    # Admins see all CollectionGroups
-    groups = CollectionGroup.objects.all()
-  else:
-    # Non-admins see only the CollectionGroups where they are a member
-    groups = CollectionGroup.objects.filter(members__user=request.user)
-
-  filters = request.GET.get('filters', {})
-  if filters:
-    pass
-  # Logic to apply filters to groups
-  # ...
+  groups = CollectionGroup.objects.all()
 
   if sort and order:
     if sort in text_fields:
@@ -320,17 +333,41 @@ def group_list(request, sort='', order=''):
         else:
             groups = groups.order_by(Lower(sort))
     else:
-        # Standard sorting for non-text fields
         sort_param = f'-{sort}' if order == 'desc' else sort
         groups = groups.order_by(sort_param)
+  context = {'groups': groups, 'is_admin': is_admin, 'section': 'groups'}
 
-    # if order == 'desc':
-    #     groups = groups.order_by(Lower(sort).desc())
-    # else:
-    #     groups = groups.order_by(Lower(sort))
+  print("Filters received:", filters)
+  # type, owner, title
+  if filters:
+    if 'type' in filters and filters['type'] != 'all':
+      groups = groups.filter(type=filters['type'])
+      print('type filter:', groups)
 
-  return render(request, 'lists/group_list.html',
-                {'groups': groups, 'is_admin': is_admin, 'section': 'groups'})
+    if 'owner' in filters:
+      staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
+      if filters['owner'] == 'staff':
+        groups = groups.filter(owner__groups__in=staff_groups)
+      elif filters['owner'] == 'contributors':
+        groups = groups.exclude(owner__groups__in=staff_groups)
+      print('owner filter:', groups)
+
+    if 'title' in filters and filters['title']:
+      groups = groups.filter(title__icontains=filters['title'])
+      print('title filter:', groups)
+
+    context = {
+        'groups': groups,
+        'is_admin': is_admin,
+        'section': 'groups',
+        'filters': {
+            'type': request.GET.get('class', ''),
+            'owner': request.GET.get('owner', ''),
+            'title': request.GET.get('title', '')
+        }
+    }
+
+  return render(request, 'lists/group_list.html', context)
 
 
 # gets the correct view based on user group

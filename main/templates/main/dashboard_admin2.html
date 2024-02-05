@@ -16,7 +16,7 @@
   <div class="ps-2"><h5>Ali's thang</h5></div>
   <ul class="nav nav-tabs" id="adminTabs" role="tablist">
     <li class="nav-item" role="presentation">
-      <a class="nav-link active" id="datasets-tab" data-bs-toggle="tab" href="#datasets" role="tab"
+      <a class="nav-link" id="datasets-tab" data-bs-toggle="tab" href="#datasets" role="tab"
          ref="dataset" aria-controls="datasets" aria-selected="true">Datasets</a>
     </li>
     <li class="nav-item" role="presentation">
@@ -28,18 +28,18 @@
          ref="area" aria-selected="false">Areas</a>
     </li>
     <li class="nav-item" role="presentation">
-      <a class="nav-link" id="collection-groups-tab" data-bs-toggle="tab" href="#groups" role="tab"
+      <a class="nav-link active" id="collection-groups-tab" data-bs-toggle="tab" href="#groups" role="tab"
          ref="group" aria-controls="groups" aria-selected="false">Collection Groups</a>
     </li>
   </ul>
   <div class="tab-content" id="adminTabsContent">
-    <div class="tab-pane fade show active" id="datasets" role="tabpanel" aria-labelledby="datasets-tab">
+    <div class="tab-pane fade" id="datasets" role="tabpanel" aria-labelledby="datasets-tab">
     </div>
     <div class="tab-pane fade" id="collections" role="tabpanel" aria-labelledby="collections-tab">
     </div>
     <div class="tab-pane fade" id="areas" role="tabpanel" aria-labelledby="areas-tab">
     </div>
-    <div class="tab-pane fade" id="groups" role="tabpanel" aria-labelledby="collection-groups-tab">
+    <div class="tab-pane fade show active" id="groups" role="tabpanel" aria-labelledby="collection-groups-tab">
     </div>
   </div>
 </div> <!-- .container -->
@@ -97,16 +97,7 @@ function getFilterValues(tabId) {
         types: types
     };
 }
-{#function initializeFilters(tabId) {#}
-{#    // Update currentState when a filter input changes#}
-{#    $(document).off('input change', '#' + tabId + ' .filter-input').on('input change', '#' + tabId + ' .filter-input', function() {#}
-{#        var filterKey = $(this).attr('name');#}
-{#        var filterValue = $(this).val();#}
-{##}
-{#        currentState[tabId].filters[filterKey] = filterValue;#}
-{#        loadTabContent(tabId, currentState[tabId].filters); // Pass updated filters#}
-{#    });#}
-{# }#}
+
 function initializeFilters(tabId) {
     $(document).off('change', '#' + tabId + ' .filter-input').on('change', '#' + tabId + ' .filter-input', function() {
         var filterKey = $(this).attr('name');
@@ -183,7 +174,6 @@ function loadTabContent(tabId, filters) {
     }
 
     var state = currentState[tabId];
-    {#console.log('Current state:', state);#}
     var url = '/main/' + tabId + '_list/' + state.sort + '/' + state.order + '/';
     console.log('constructed url: ' + url);
     console.log('state filters for ' + tabId + ':', JSON.stringify(state.filters));
