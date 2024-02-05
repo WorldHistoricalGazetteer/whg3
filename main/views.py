@@ -143,38 +143,59 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
   return objects
 
 def area_list(request, sort='', order=''):
+  filters = request.GET
+  print("area_list() GET (filters):", request.GET)
+  print('area_list() sort, order', sort, order)
+
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   text_fields = ['title', 'description', 'type', 'owner']
 
   # only user-created areas
   areas = Area.objects.filter(type__in=['ccodes', 'copied', 'drawn'])
 
-  # Apply filters from request if any
-  filters = request.GET.get('filters', {})
-  if filters:
-    pass
-  # Logic to apply filters to user_datasets
-  # ...
-
-  # Sort based on the parameters
+ # Sort based on the parameters
   if sort and order:
     if sort in text_fields:
-        # Apply Lower function for text fields
         if order == 'desc':
             areas = areas.order_by(Lower(sort).desc())
         else:
             areas = areas.order_by(Lower(sort))
     else:
-        # Standard sorting for non-text fields
         sort_param = f'-{sort}' if order == 'desc' else sort
         areas = areas.order_by(sort_param)
-    #
-    # if order == 'desc':
-    #     areas = areas.order_by(Lower(sort).desc())
-    # else:
-    #     areas = areas.order_by(Lower(sort))
+  context = {'areas': areas, 'is_admin': is_admin, 'section': 'areas'}
 
-  return render(request, 'lists/area_list.html', {'areas': areas, 'is_admin': is_admin, 'section': 'areas'})
+  # Apply filters from request if any
+  print("area filters:", filters)
+  # type, owner, title
+  if filters:
+    if 'type' in filters and filters['type'] != 'all':
+      areas = areas.filter(type=filters['type'])
+      print('type filter:', areas)
+
+    if 'owner' in filters:
+      staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
+      if filters['owner'] == 'staff':
+        areas = areas.filter(owner__groups__in=staff_groups)
+      elif filters['owner'] == 'users':
+        areas = areas.exclude(owner__groups__in=staff_groups)
+      print('owner filter:', areas)
+
+    if 'title' in filters and filters['title']:
+      areas = areas.filter(title__icontains=filters['title'])
+      print('title filter:', areas)
+
+    context = {
+        'areas': areas,
+        'is_admin': is_admin,
+        'section': 'areas',
+        'filters': {
+            'type': request.GET.get('type', ''),
+            'owner': request.GET.get('owner', ''),
+            'title': request.GET.get('title', '')
+        }
+    }
+  return render(request, 'lists/area_list.html', context)
 
 def dataset_list(request, sort='', order=''):
   filters = request.GET
@@ -337,7 +358,7 @@ def group_list(request, sort='', order=''):
         groups = groups.order_by(sort_param)
   context = {'groups': groups, 'is_admin': is_admin, 'section': 'groups'}
 
-  print("Filters received:", filters)
+  print("group filters:", filters)
   # type, owner, title
   if filters:
     if 'type' in filters and filters['type'] != 'all':
@@ -348,7 +369,7 @@ def group_list(request, sort='', order=''):
       staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
       if filters['owner'] == 'staff':
         groups = groups.filter(owner__groups__in=staff_groups)
-      elif filters['owner'] == 'contributors':
+      elif filters['owner'] == 'users':
         groups = groups.exclude(owner__groups__in=staff_groups)
       print('owner filter:', groups)
 

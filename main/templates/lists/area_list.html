@@ -11,16 +11,16 @@ id, owner, title, type, title, description, ccodes, geojson, created
     <div style="display: flex; align-items: center; margin-right: 10px;">
       <label for="area_type" style="margin-right: 10px;">Type:</label>
       <select id="area_type" class="filter-input form-control" name="type">
-        <option value="all">All</option>
-        <option value="drawn">Drawn</option>
-        <option value="ccodes">Countries</option>
+        <option value="all" {% if filters.type == 'all' %}selected{% endif %}>All</option>
+        <option value="drawn" {% if filters.type == 'drawn' %}selected{% endif %}>Drawn</option>
+        <option value="ccodes" {% if filters.type == 'ccodes' %}selected{% endif %}>Countries</option>
       </select>
     </div>
     <div style="display: flex; align-items: center;">
       <select id="owners" class="filter-input form-control" name="owner">
-        <option value="all">All owners</option>
-        <option value="staff">Staff</option>
-        <option value="contributors">Contributors</option>
+        <option value="all" {% if filters.owner == 'all' %}selected{% endif %}>All owners</option>
+        <option value="staff" {% if filters.owner == 'staff' %}selected{% endif %}>Staff</option>
+        <option value="contributors" {% if filters.owner == 'contributors' %}selected{% endif %}>Contributors</option>
       </select>
     </div>
   </div>
