@@ -1,0 +1,81 @@
+{% extends "main/base.html" %}
+{% block title %}<title>WHG::</title>{% endblock %}
+{% block extra_head %}
+  <style>
+    body { font-family: 'Raleway', sans-serif; }
+  </style>
+{% endblock %}
+{% load static %}
+
+{% block content %}
+  {% load dataset_extras %}
+  <div class="container">
+    <div class="d-flex justify-content-center">
+      <h3>The WHG Gazetteer Builder</h3>
+    </div>
+    <div id="build_content" class="px-5">
+      <div>
+      <p>There are two pathways to developing and publishing gazetteer data in World Historical Gazetteer. Path A is for single datasets, Path B offers options for bringing for multiple datasets together.</p>
+      </div>
+      <div class="row">
+        <div class="col col-sm-6 small">
+          <h4 class="bg-lightblue p-2">Path A
+            <span class="fs-6 ms-3"><a href="">get started</a></span>
+            <span class="float-end me-2">
+              <img src="{% static 'images/001-up-arrow.png' %}" class="" height=28 width=28 alt=""/>
+              <img src="{% static 'images/003-browser.png' %}" class="" height=28 width=28 alt=""/>
+            </span>
+          </h4>
+          <div class="" style="min-height: 155px;">
+            <div class="d-flex">
+              <div class="col-md-6">
+                <p class="p-1 mb-0">
+                  Path A is the simplest: (a) create a dataset by uploading a file in Linked Places or LP-TSV format, then (b) augment it by reconciling with our Wikidata index. The resulting dataset can be downloaded for further processing on your own, and optionally published to WHG&mdash;making its records searchable and providing a public presentation page and permanent URL.
+                </p>
+              </div>
+              <div>
+                <img class="w-100" src="{% static 'images/button_upload-enhance.png' %}">
+                <img class="w-100" src="{% static 'images/pathA_steps.png' %}"  alt=""/>
+              </div>
+            </div>
+          </div>
+          <!-- image of path A -->
+        </div>
+        <div class="col col-sm-6 small">
+          <h4 class="bg-lightyellow p-2">Path B
+            <span class="fs-6 ms-3"><a href="">get started</a></span>
+            <span class="float-end me-2">
+                <img src="{% static 'images/001-up-arrow.png' %}" class="" height=28 width=28 alt=""/>
+                <img src="{% static 'images/003-browser.png' %}" class="" height=28 width=28 alt=""/>
+                <img src="{% static 'images/008-collect.png' %}" class="" height=28 width=28 alt=""/>
+            </span>
+          </h4>
+          <div class="" style="min-height: 155px;">
+            <div class="d-flex">
+              <div class="col-md-6">
+                <p class="p-1 mb-0">
+                  In version 3, the Dataset Collection feature has been extended and enhanced. An individual or group can assemble a gazetteer resource by adding datasets to a collection, reconciling each with those already added. In this way, records for the same (or closely matched) places are explicitly linked. The resulting collection can then be published as is&mdash;a collection of discrete datasets having linked places&mdash;or the linked records from different datasets can be merged, producing a new dataset.
+                </p>
+              </div>
+              <div>
+                <img class="w-100" src="{% static 'images/button_build.png' %}">
+                <img class="w-100" src="{% static 'images/pathb_steps.png' %}"  alt=""/>
+              </div>
+            </div>
+          </div>
+
+{#          <div class="" p-1 style="min-height: 155px;">#}
+{#            <p class="p-1 mb-0"><img class="float-start w-25" src="{% static 'images/button_build.png' %}"></p>#}
+{#          </div>#}
+{#          <img src="{% static 'images/pathB_steps.png' %}" class="img-fluid" alt=""/>#}
+
+        </div>
+      </div>
+    </div> <!-- build_content -->
+  </div> <!-- container -->
+  <script type="text/javascript">
+    // js imports here
+  </script>
+{% endblock %}
+```
+
