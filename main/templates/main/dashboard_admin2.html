@@ -149,53 +149,27 @@
       });
     }
 
-$(document).ready(function() {
-    // Function to load the content of the tab
-    function loadTabAndSetHash(tabId) {
-        window.location.hash = tabId; // Update the URL hash
-        console.log('Tab changed: ' + tabId);
-        loadTabContent(tabId);
-    }
+    $(document).ready(function() {
+        // Event listener for tab change
+        $('#adminTabs a').on('shown.bs.tab', function(event) {
+            var tabId = $(event.target).attr('href').substring(1);
+            sessionStorage.setItem('activeTab', tabId); // Store the active tab ID in sessionStorage
+            loadTabContent(tabId);
+        });
 
-    // Add event listener for tab change
-    $('#adminTabs a').on('shown.bs.tab', function(event) {
-        var tabId = $(event.target).attr('href').substring(1);
-        loadTabAndSetHash(tabId);
+        // Determine the initial tab to load
+        var activeTab = sessionStorage.getItem('activeTab');
+        if (activeTab) {
+            $('#adminTabs a[href="#' + activeTab + '"]').tab('show');
+        } else {
+            activeTab = $('#adminTabs .nav-link.active').attr('href').substring(1);
+        }
+        loadTabContent(activeTab);
+
+        // Scroll to the top of the page
+        window.scrollTo(0, 0);
     });
 
-    // Determine the initial tab to load
-    var initialTabId;
-    if (window.location.hash) {
-        // If there is a hash in the URL, use it to determine the initial tab
-        initialTabId = window.location.hash.substring(1);
-        $('#adminTabs a[href="' + window.location.hash + '"]').tab('show'); // Activate the tab with the hash
-    } else {
-        // Otherwise, use the default active tab
-        initialTabId = $('#adminTabs .nav-link.active').attr('href').substring(1);
-    }
-    console.log('Initial tab: ' + initialTabId);
-    loadTabContent(initialTabId);
-
-    // Scroll to the top of the page
-    window.scrollTo(0, 0);
-});
-
-    {#$(document).ready(function() {#}
-    {##}
-    {#  // Add event listener for tab change#}
-    {#  $('#adminTabs a').on('shown.bs.tab', function(event) {#}
-    {#    var tabId = $(event.target).attr('href').substring(1);#}
-    {#    window.location.hash = tabId;#}
-    {#    console.log('Tab changed: ' + tabId);#}
-    {#    loadTabContent(tabId);#}
-    {#  });#}
-    {##}
-    {#  // Load initial tab content#}
-    {#  var initialTabId = $('#adminTabs .nav-link.active').attr('href').substring(1);#}
-    {#  console.log('Initial tab: ' + initialTabId);#}
-    {#  loadTabContent(initialTabId);#}
-    {##}
-    {# });#}
 
     function loadTabContent(tabId, filters) {
       console.log('Loading tab content for ' + tabId);
