@@ -1,10 +1,22 @@
 {% if collections %}
   <div class="list-options" style="display: flex; justify-content: flex-end; align-items: center;">
     <div style="display: flex; align-items: center; margin-right: auto;">
-      <input type="text" id="title_search" class="filter-input form-control"
-             name="title" style="width: 300px; max-width: 100%; margin-left:47px;" placeholder="Search titles">
+      <div class="input-group" style="width: 300px; max-width: 100%; margin-left:47px;">
+        <input type="text" id="title_search" class="filter-input form-control"
+               name="title" value="{{ filters.title|default_if_none:'' }}"
+               placeholder="Search titles">
+        <span class="input-group-text">
+          <button class="btn btn-outline-secondary border-0 bg-transparent p-0"
+                  type="button" id="clear_search">
+            <i class="fa fa-times"></i>
+          </button>
+        </span>
+      </div>
     </div>
      <div style="display: flex; align-items: center; margin-right: 10px;">
+      {% if filtered %}
+        <span class="me-3"><a href="javascript:location.reload()">reset</a></span>
+      {% endif %}
       <label for="coll_class" style="margin-right: 10px;">Type:</label>
       <select id="coll_class" class="filter-input form-control" name="class">
         <option value="all" {% if filters.class == 'all' %}selected{% endif %}>All</option>
@@ -75,9 +87,10 @@
           </td> <!-- title -->
           <td>
             {% if c.collection_class == 'place' %}
-              {{ c.annos.count }}
+              {{ c.annos.count }} places
             {% elif c.collection_class == 'dataset' %}
-              {{ c.count }}
+              {{ c.datasets.count }} datasets
+{#              {{ c.count }}#}
             {% else %}
               0  {# Fallback in case neither condition is met #}
             {% endif %}

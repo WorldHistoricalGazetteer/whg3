@@ -8,123 +8,125 @@
 
 {% block content %}
 
-<div id="container" class="container mt-2">
-  <div id="loading_spinner" class="text-center"
-       style="position: absolute; top: 180px; left:200px; display:none;">
-    <i class="fa fa-spinner fa-spin fa-2x"></i>
-  </div>
-  <div class="ps-2"><h5>Ali's thang</h5></div>
-  <ul class="nav nav-tabs" id="adminTabs" role="tablist">
-    <li class="nav-item" role="presentation">
-      <a class="nav-link" id="datasets-tab" data-bs-toggle="tab" href="#datasets" role="tab"
-         ref="dataset" aria-controls="datasets" aria-selected="true">Datasets</a>
-    </li>
-    <li class="nav-item" role="presentation">
-      <a class="nav-link" id="collections-tab" data-bs-toggle="tab" href="#collections" role="tab"
-         ref="pcoll" aria-controls="collections" aria-selected="false">Collections</a>
-    </li>
-    <li class="nav-item" role="presentation">
-      <a class="nav-link active" id="areas-tab" data-bs-toggle="tab" href="#areas" role="tab" aria-controls="areas"
-         ref="area" aria-selected="false">Areas</a>
-    </li>
-    <li class="nav-item" role="presentation">
-      <a class="nav-link" id="collection-groups-tab" data-bs-toggle="tab" href="#groups" role="tab"
-         ref="group" aria-controls="groups" aria-selected="false">Collection Groups</a>
-    </li>
-  </ul>
-  <div class="tab-content" id="adminTabsContent">
-    <div class="tab-pane fade" id="datasets" role="tabpanel" aria-labelledby="datasets-tab">
+  <div id="container" class="container mt-2">
+    <div id="loading_spinner" class="text-center"
+         style="position: absolute; top: 180px; left:200px; display:none;">
+      <i class="fa fa-spinner fa-spin fa-2x"></i>
     </div>
-    <div class="tab-pane fade" id="collections" role="tabpanel" aria-labelledby="collections-tab">
+    <div class="ps-2"><h5>Admin Data Dashboard</h5></div>
+    <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <a class="nav-link active" id="datasets-tab" data-bs-toggle="tab" href="#datasets" role="tab"
+           ref="dataset" aria-controls="datasets" aria-selected="true">Datasets</a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link" id="collections-tab" data-bs-toggle="tab" href="#collections" role="tab"
+           ref="pcoll" aria-controls="collections" aria-selected="false">Collections</a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link" id="areas-tab" data-bs-toggle="tab" href="#areas" role="tab" aria-controls="areas"
+           ref="area" aria-selected="false">Areas</a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link" id="collection-groups-tab" data-bs-toggle="tab" href="#groups" role="tab"
+           ref="group" aria-controls="groups" aria-selected="false">Collection Groups</a>
+      </li>
+    </ul>
+    <div class="tab-content" id="adminTabsContent">
+      <div class="tab-pane fade show active" id="datasets" role="tabpanel" aria-labelledby="datasets-tab">
+      </div>
+      <div class="tab-pane fade" id="collections" role="tabpanel" aria-labelledby="collections-tab">
+      </div>
+      <div class="tab-pane fade" id="areas" role="tabpanel" aria-labelledby="areas-tab">
+      </div>
+      <div class="tab-pane fade" id="groups" role="tabpanel" aria-labelledby="collection-groups-tab">
+      </div>
     </div>
-    <div class="tab-pane fade show active" id="areas" role="tabpanel" aria-labelledby="areas-tab">
-    </div>
-    <div class="tab-pane fade" id="groups" role="tabpanel" aria-labelledby="collection-groups-tab">
-    </div>
-  </div>
-</div> <!-- .container -->
+  </div> <!-- .container -->
 
-<script type="application/javascript">
-var currentState = {
-    datasets: { sort: 'title', order: 'asc', filters: {} },
-    collections: { sort: 'title', order: 'asc', filters: {} },
-    areas: { sort: 'title', order: 'asc', filters: {} },
-    groups: { sort: 'title', order: 'asc', filters: {} },
-};
+  <script type="application/javascript">
+    var currentState = {
+      datasets: {sort: 'title', order: 'asc', filters: {}},
+      collections: {sort: 'title', order: 'asc', filters: {}},
+      areas: {sort: 'title', order: 'asc', filters: {}},
+      groups: {sort: 'title', order: 'asc', filters: {}},
+    };
 
-var initialSortOrders = {
-  datasets:{
-    'title': 'asc',
-    'label': 'none',
-    'last_modified': 'none',
-    'numrows': 'none',
-    'ds_status': 'none',
-    'owner': 'none',
-  },
-  areas:{
-    'title': 'asc',
-    'created': 'none',
-    'description': 'none',
-    'owner': 'none',
-  },
-  collections:{
-    'title': 'asc',
-    'count': 'none',
-    'type': 'none',
-    'modified': 'none',
-    'status': 'none',
-    'owner': 'none',
-  },
-  groups:{
-    'title': 'asc',
-    'count': 'none',
-    'created': 'none',
-    'type': 'none',
-    'owner:': 'none',
-  },
-};
+    var initialSortOrders = {
+      datasets: {
+        'title': 'asc',
+        'label': 'none',
+        'last_modified': 'none',
+        'numrows': 'none',
+        'ds_status': 'none',
+        'owner': 'none',
+      },
+      areas: {
+        'title': 'asc',
+        'created': 'none',
+        'description': 'none',
+        'owner': 'none',
+      },
+      collections: {
+        'title': 'asc',
+        'count': 'none',
+        'type': 'none',
+        'modified': 'none',
+        'status': 'none',
+        'owner': 'none',
+      },
+      groups: {
+        'title': 'asc',
+        'count': 'none',
+        'created': 'none',
+        'type': 'none',
+        'owner:': 'none',
+      },
+    };
 
-function getFilterValues(tabId) {
-    var titleSearch = $('#' + tabId + ' .title-search').val();
-    var status = $('#' + tabId + ' .status').val(); // Adjust based on tab
-    var owners = $('#' + tabId + ' .owners').val();
-    var types = $('#' + tabId + ' .types').val(); // If applicable
+    function getFilterValues(tabId) {
+      var titleSearch = $('#' + tabId + ' .title-search').val();
+      var status = $('#' + tabId + ' .status').val(); // Adjust based on tab
+      var owners = $('#' + tabId + ' .owners').val();
+      var types = $('#' + tabId + ' .types').val(); // If applicable
 
-    return {
+      return {
         title_search: titleSearch,
         status: status,
         owners: owners,
-        types: types
-    };
-}
+        types: types,
+      };
+    }
 
-function initializeFilters(tabId) {
-    $(document).off('change', '#' + tabId + ' .filter-input').on('change', '#' + tabId + ' .filter-input', function() {
-        var filterKey = $(this).attr('name');
-        var filterValue = $(this).val();
+    function initializeFilters(tabId) {
+      $(document).
+        off('change', '#' + tabId + ' .filter-input').
+        on('change', '#' + tabId + ' .filter-input', function() {
+          var filterKey = $(this).attr('name');
+          var filterValue = $(this).val();
 
-        currentState[tabId].filters[filterKey] = filterValue;
+          currentState[tabId].filters[filterKey] = filterValue;
 
-        // Flatten the filters for the AJAX request
-        var flattenedFilters = {};
-        for (var key in currentState[tabId].filters) {
+          // Flatten the filters for the AJAX request
+          var flattenedFilters = {};
+          for (var key in currentState[tabId].filters) {
             if (currentState[tabId].filters.hasOwnProperty(key)) {
-                flattenedFilters[key] = currentState[tabId].filters[key];
+              flattenedFilters[key] = currentState[tabId].filters[key];
             }
-        }
+          }
 
-        loadTabContent(tabId, flattenedFilters); // Pass updated filters
-    });
-}
+          loadTabContent(tabId, flattenedFilters); // Pass updated filters
+        });
+    }
 
-function initializeSorting(tabId) {
-    console.log('Initializing sorting for ' + tabId);
-    {#console.log('Found .fa-sort elements:', $('#' + tabId + ' .fa-sort').length);#}
-    var sortOrders = JSON.parse(localStorage.getItem('sortOrders-' + tabId)) || initialSortOrders[tabId];
-    console.log('sortOrders:', sortOrders);
+    function initializeSorting(tabId) {
+      console.log('Initializing sorting for ' + tabId);
+      {#console.log('Found .fa-sort elements:', $('#' + tabId + ' .fa-sort').length);#}
+      var sortOrders = JSON.parse(localStorage.getItem('sortOrders-' + tabId)) || initialSortOrders[tabId];
+      console.log('sortOrders:', sortOrders);
 
-    {#$('#' + tabId + ' .fa-sort').off('click').on('click', function() {#}
-    $(document).off('click').on('click', '#' + tabId + ' .fa-sort', function() {
+      {#$('#' + tabId + ' .fa-sort').off('click').on('click', function() {#}
+      $(document).off('click').on('click', '#' + tabId + ' .fa-sort', function() {
         var columnId = $(this).data('id');
         console.log('Sorting clicked', columnId);
         var currentSortOrder = sortOrders[columnId];
@@ -137,49 +139,81 @@ function initializeSorting(tabId) {
         $('#loading_spinner').show();
         console.log('AJAX request, where is my spinner?:', url);
         $.get(url, function(data) {
-            $('#' + tabId).empty().html(data);
-            initializeSorting(tabId);  // Reinitialize sorting
+          $('#' + tabId).empty().html(data);
+          initializeSorting(tabId);  // Reinitialize sorting
         }).fail(function() {
-            console.log('AJAX request failed');
+          console.log('AJAX request failed');
         }).always(function() {
-            $('#loading_spinner').hide();
+          $('#loading_spinner').hide();
         });
-     });
-}
+      });
+    }
 
 $(document).ready(function() {
-    // Add event listener for tab change
-    $('#adminTabs a').on('shown.bs.tab', function(event) {
-        var tabId = $(event.target).attr('href').substring(1);  // Get the id of the tab
+    // Function to load the content of the tab
+    function loadTabAndSetHash(tabId) {
+        window.location.hash = tabId; // Update the URL hash
         console.log('Tab changed: ' + tabId);
         loadTabContent(tabId);
+    }
+
+    // Add event listener for tab change
+    $('#adminTabs a').on('shown.bs.tab', function(event) {
+        var tabId = $(event.target).attr('href').substring(1);
+        loadTabAndSetHash(tabId);
     });
 
-    // Load initial tab content
-    var initialTabId = $('#adminTabs .nav-link.active').attr('href').substring(1);
+    // Determine the initial tab to load
+    var initialTabId;
+    if (window.location.hash) {
+        // If there is a hash in the URL, use it to determine the initial tab
+        initialTabId = window.location.hash.substring(1);
+        $('#adminTabs a[href="' + window.location.hash + '"]').tab('show'); // Activate the tab with the hash
+    } else {
+        // Otherwise, use the default active tab
+        initialTabId = $('#adminTabs .nav-link.active').attr('href').substring(1);
+    }
     console.log('Initial tab: ' + initialTabId);
     loadTabContent(initialTabId);
 
+    // Scroll to the top of the page
+    window.scrollTo(0, 0);
 });
 
-{#function loadTabContent(tabId) {#}
-function loadTabContent(tabId, filters) {
-    console.log('Loading tab content for ' + tabId);
-    console.log('currentState:', currentState); // Directly log currentState
-    {#$('#loading_spinner').show();#}
-    // Check if the currentState for the given tabId is defined
-    if (!currentState[tabId]) {
+    {#$(document).ready(function() {#}
+    {##}
+    {#  // Add event listener for tab change#}
+    {#  $('#adminTabs a').on('shown.bs.tab', function(event) {#}
+    {#    var tabId = $(event.target).attr('href').substring(1);#}
+    {#    window.location.hash = tabId;#}
+    {#    console.log('Tab changed: ' + tabId);#}
+    {#    loadTabContent(tabId);#}
+    {#  });#}
+    {##}
+    {#  // Load initial tab content#}
+    {#  var initialTabId = $('#adminTabs .nav-link.active').attr('href').substring(1);#}
+    {#  console.log('Initial tab: ' + initialTabId);#}
+    {#  loadTabContent(initialTabId);#}
+    {##}
+    {# });#}
+
+    function loadTabContent(tabId, filters) {
+      console.log('Loading tab content for ' + tabId);
+      console.log('currentState:', currentState); // Directly log currentState
+      {#$('#loading_spinner').show();#}
+      // Check if the currentState for the given tabId is defined
+      if (!currentState[tabId]) {
         console.error('No state found for tabId:', tabId);
         return; // Exit the function if no state found
-    }
+      }
 
-    var state = currentState[tabId];
-    var url = '/main/' + tabId + '_list/' + state.sort + '/' + state.order + '/';
-    console.log('constructed url: ' + url);
-    console.log('state filters for ' + tabId + ':', JSON.stringify(state.filters));
+      var state = currentState[tabId];
+      var url = '/main/' + tabId + '_list/' + state.sort + '/' + state.order + '/';
+      console.log('constructed url: ' + url);
+      console.log('state filters for ' + tabId + ':', JSON.stringify(state.filters));
 
-    {#$.get(url, { filters: state.filters }, function(data) {#}
-    $.get(url, filters, function(data) {
+      {#$.get(url, { filters: state.filters }, function(data) {#}
+      $.get(url, filters, function(data) {
         $('#' + tabId).html(data);
         var appliedStatus = "{{ applied_filters.ds_status }}";
         if (appliedStatus) {
@@ -188,12 +222,26 @@ function loadTabContent(tabId, filters) {
         FontAwesome.dom.i2svg();
         initializeSorting(tabId);
         initializeFilters(tabId);
-     }).fail(function(jqXHR, textStatus, errorThrown) {
-        console.error('Error loading tab content:', textStatus, errorThrown);
-     }).always(function() {
-        $('#loading_spinner').hide();
-     });
-}
+        // Add event listener for clear search button
+        $(document).on('click', '#clear_search', function() {
+          console.log('Clear search clicked');
+          // Clear the input field
+          $('#title_search').val('');
 
-</script>
+          // Remove the filter
+          var tabId = $('#adminTabs .nav-link.active').attr('href').substring(1);
+          if (currentState[tabId]) {
+            currentState[tabId].filters.title = '';
+            loadTabContent(tabId, currentState[tabId].filters);
+          }
+        });
+
+      }).fail(function(jqXHR, textStatus, errorThrown) {
+        console.error('Error loading tab content:', textStatus, errorThrown);
+      }).always(function() {
+        $('#loading_spinner').hide();
+      });
+    }
+
+  </script>
 {% endblock %} <!-- content -->

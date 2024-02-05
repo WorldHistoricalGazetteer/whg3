@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.core.mail import send_mail, BadHeaderError
-from django.db.models import Max, Count, Case, When
+from django.db.models import Max, Count, Case, When, Q
 from django.db.models.functions import Lower
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect #, render_to_response
@@ -182,13 +182,15 @@ def area_list(request, sort='', order=''):
       print('owner filter:', areas)
 
     if 'title' in filters and filters['title']:
-      areas = areas.filter(title__icontains=filters['title'])
+      search_term = filters['title']
+      areas = areas.filter(Q(title__icontains=search_term) | Q(description__icontains=search_term))
       print('title filter:', areas)
 
     context = {
         'areas': areas,
         'is_admin': is_admin,
         'section': 'areas',
+        'filtered': True,
         'filters': {
             'type': request.GET.get('type', ''),
             'owner': request.GET.get('owner', ''),
@@ -245,6 +247,7 @@ def dataset_list(request, sort='', order=''):
         'datasets': datasets,
         'is_admin': is_admin,
         'section': 'datasets',
+        'filtered': True,
         'filters': {
             'ds_status': request.GET.get('ds_status', ''),
             'owner': request.GET.get('owner', ''),
@@ -326,6 +329,7 @@ def collection_list(request, sort='', order=''):
         'collections': collections,
         'is_admin': is_admin,
         'section': 'collections',
+        'filtered': True,
         'filters': {
             'status': request.GET.get('status', ''),
             'class': request.GET.get('class', ''),
@@ -381,6 +385,7 @@ def group_list(request, sort='', order=''):
         'groups': groups,
         'is_admin': is_admin,
         'section': 'groups',
+        'filtered': True,
         'filters': {
             'type': request.GET.get('class', ''),
             'owner': request.GET.get('owner', ''),

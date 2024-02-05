@@ -4,12 +4,22 @@ id, title, label, created, format, #rows, ds_status (if)owner
 {% if datasets %}
   <div class="list-options" style="display: flex; justify-content: flex-end; align-items: center;">
     <div style="display: flex; align-items: center; margin-right: auto;">
-      <input type="text" id="title_search" class="filter-input form-control"
-             name="title" style="width: 300px; max-width: 100%; margin-left:47px;"
-             value="{{ filters.title|default_if_none:'' }}"
-             placeholder="Search titles">
+      <div class="input-group" style="width: 300px; max-width: 100%; margin-left:47px;">
+        <input type="text" id="title_search" class="filter-input form-control"
+               name="title" value="{{ filters.title|default_if_none:'' }}"
+               placeholder="Search titles">
+        <span class="input-group-text">
+          <button class="btn btn-outline-secondary border-0 bg-transparent p-0"
+                  type="button" id="clear_search">
+            <i class="fa fa-times"></i>
+          </button>
+        </span>
+      </div>
     </div>
     <div style="display: flex; align-items: center; margin-right: 10px;">
+      {% if filtered %}
+        <span class="me-3"><a href="javascript:location.reload()">reset</a></span>
+      {% endif %}
       <label for="ds_status" style="margin-right: 10px;">Status:</label>
       <select id="ds_status" class="filter-input form-control" name="ds_status">
         <option value="all">All</option>
@@ -22,12 +32,12 @@ id, title, label, created, format, #rows, ds_status (if)owner
       </select>
     </div>
     <div style="display: flex; align-items: center;">
-      <select id="owners" class="filter-input form-control" name="owner">
-        <option value="all" {% if filters.ds_status == 'all' %}selected{% endif %}>All owners</option>
-        <option value="staff" {% if filters.owner == 'staff' %}selected{% endif %}>Staff</option>
-        <option value="contributors" {% if filters.owner == 'contributors' %}selected{% endif %}>Contributors</option>
-      </select>
-    </div>
+        <select id="owners" class="filter-input form-control" name="owner">
+          <option value="all" {% if filters.ds_status == 'all' %}selected{% endif %}>All owners</option>
+          <option value="staff" {% if filters.owner == 'staff' %}selected{% endif %}>Staff</option>
+          <option value="contributors" {% if filters.owner == 'contributors' %}selected{% endif %}>Contributors</option>
+        </select>
+      </div>
   </div>
   {#  context: {{ applied_filters }}#}
   <table id="table_ds" class="table table-striped">
@@ -45,7 +55,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
       <tr class="place-row">
         <td>{{ d.id }}</td>
         <td>
-          <a href="{% url 'datasets:ds_summary' d.id %}" title="Dataset details" rel="tooltip">
+          <a href="{% url 'datasets:ds_places' d.id %}" title="Dataset browse" rel="tooltip">
             {{ d.title }}</a>
           <span class="float-end">
             <a href="{% url 'datasets:ds_summary' d.id %}">
