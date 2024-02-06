@@ -350,10 +350,9 @@ def fetch_mapdata_coll(request, *args, **kwargs):
     # Get the first annotation's sequence value
     first_anno = t.place.annos.first()
     sequence_value = first_anno.sequence if first_anno else None
-
+    # TODO: some places have no geometry
     geometry = t.place.geoms.all()[0].jsonb
 
-    # TODO: skipping places missing geometry NOT GOOD!!!
     if len(t.place.geoms.all()) > 0:
       feature = {
           "type": "Feature",
