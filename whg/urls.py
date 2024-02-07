@@ -64,6 +64,9 @@ urlpatterns = [
     path('licensing/', TemplateView.as_view(template_name="main/licensing.html"), name="licensing"),
     path('system/', TemplateView.as_view(template_name="main/system.html"), name="system"),
     path('usingapi/', TemplateView.as_view(template_name="main/usingapi.html"), name="usingapi"),
+    path('api/', TemplateView.as_view(template_name="main/api.html"), name="api"),
+    path('downloads/', TemplateView.as_view(template_name="main/downloads.html"), name="downloads"),
+
 
     # static content - 2024-01
     path('build/', TemplateView.as_view(template_name="home/build_new.html"), name="build"),

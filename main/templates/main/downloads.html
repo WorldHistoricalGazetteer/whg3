@@ -1,0 +1,28 @@
+{% extends "main/base.html" %}
+{% block title %}<title>WHG::APIs</title>{% endblock %}
+{% block extra_head %}
+  <style>
+  body {
+    font-family: 'Raleway', sans-serif;
+  }
+  </style>
+{% endblock %}
+{% load static %}
+{% block content %}
+  <div class="container">
+    <div class="d-flex justify-content-center mt-3">
+      <h3>Data Downloads</h3>
+    </div>
+      <ul>
+        <li>all the names</li>
+        <li>...</li>
+      </ul>
+    </div>
+  </div>
+  <script type="text/javascript">
+	$(function(){
+	  $("[rel='tooltip']").tooltip();
+	})
+  </script>
+{% endblock %}
+
