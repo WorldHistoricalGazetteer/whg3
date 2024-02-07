@@ -16,20 +16,23 @@ from places.models import Place, PlaceGeom
 from utils.regions_countries import get_regions_countries
 from datetime import datetime
 
-def typeahead_suggester(q):
+def typeahead_suggester(qstr, mode="default"):
+    fields = ["title^3", "names.toponym", "searchy"]
     indices = ['whg', 'pub']
+
+    query_constructors = { # Ignore `exactly` mode and use default `starts` instead
+        "default": {"bool": {"should": [{"prefix": {field: qstr}} for field in fields]}},
+        "in": {"bool": {"should": [{"wildcard": {field: f"*{qstr}*"}} for field in fields]}},
+        "fuzzy": {"multi_match": {"query": qstr, "fields": fields, "fuzziness": 2}}
+    }
+
     query_body = {
         "size": 20,
         "query": {
             "bool": {
                 "must": [
                     {"exists": {"field": "whg_id"}},
-                    {
-                        "query_string": {
-                            "query": f"*{q}*",
-                            "fields": ["title^3", "names.toponym", "searchy"]
-                        }
-                    }
+                    query_constructors.get(mode, query_constructors["default"])
                 ]
             }
         }
@@ -42,7 +45,8 @@ def typeahead_suggester(q):
 
 def TypeaheadSuggestions(request):
     q = request.GET.get('q', '')
-    suggestions = typeahead_suggester(q)
+    mode = request.GET.get('mode', 'default')
+    suggestions = typeahead_suggester(q, mode)
     return JsonResponse(suggestions, safe=False)
 
 # new
