@@ -23,11 +23,6 @@ if ('fonts' in document) {
 
 var CDN_fallbacks = [
 	{
-		cdnUrl: 'https://code.jquery.com/jquery-3.6.3.min.js',
-		localUrl: 'jquery.min.js',
-		position: 'head'
-	},
-	{
 		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.bundle.min.js',
 		localUrl: 'bootstrap.bundle.min.js',
 		position: 'body'
@@ -35,11 +30,6 @@ var CDN_fallbacks = [
 	{
 		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css',
 		localUrl: 'bootstrap.min.css',
-		position: 'head'
-	},
-	{
-		cdnUrl: 'https://code.jquery.com/ui/1.13.2/jquery-ui.min.js',
-		localUrl: 'jquery-ui.min.js',
 		position: 'head'
 	},
 	{
@@ -58,16 +48,33 @@ var CDN_fallbacks = [
 		position: 'head'
 	},
 	{
-		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js', // Includes both typeahead and bloodhound
-		localUrl: 'typeahead.bundle.min.js',
-		position: 'head'
-	},
-	{
 		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/d3/4.13.0/d3.min.js',
 		localUrl: 'd3.min.js',
 		position: 'head'
 	},
 ];
+
+var jquery_fallbacks = [
+	{
+		cdnUrl: 'https://code.jquery.com/jquery-3.6.3.min.js',
+		localUrl: 'jquery.min.js',
+		position: 'head'
+	},	
+]
+
+var jquery_dependent_fallbacks = [
+	{
+		cdnUrl: 'https://code.jquery.com/ui/1.13.2/jquery-ui.min.js',
+		localUrl: 'jquery-ui.min.js',
+		position: 'head'
+	},
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js', // Includes both typeahead and bloodhound
+		localUrl: 'typeahead.bundle.min.js',
+		position: 'head'
+	},
+	
+]
 
 var maplibre_fallbacks = [
 	{
@@ -166,13 +173,21 @@ if (typeof loadMaplibre !== 'undefined') {
 	CDN_fallbacks = [...CDN_fallbacks, ...maplibre_fallbacks];
 }
 
-Promise.all(CDN_fallbacks.map(loadResource))
+Promise.all([
+    Promise.all(CDN_fallbacks.map(loadResource)),
+	Promise.all(jquery_fallbacks.map(loadResource)) // Ensure that JQuery is loaded before proceeding with its dependents
+		.then(function() {
+			return Promise.all(jquery_dependent_fallbacks.map(loadResource));
+		})
+	])
 	.then(function() {
 		
 		document.querySelector('body').style.opacity = 1;
 		
-		console.log('Executing deferred scripts.');
-		executeDeferredScripts();
+		if (typeof scripts !== 'undefined') {
+			console.log('Executing deferred scripts.');
+			executeDeferredScripts();
+		}		
 		
 		if (typeof loadMaplibre !== 'undefined') {
 			window.bbox = turf.bbox;

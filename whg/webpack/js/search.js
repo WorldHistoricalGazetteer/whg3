@@ -297,18 +297,39 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(select2_CDN_fallbac
 		}
 
 		//$('#advanced_search').hide();
+		
+		function initialiseSuggestions() { // based on search mode
+		    var suggestions = new Bloodhound({ // https://github.com/twitter/typeahead.js/blob/master/doc/bloodhound.md#remote
+		        datumTokenizer: Bloodhound.tokenizers.whitespace,
+		        queryTokenizer: Bloodhound.tokenizers.whitespace,
+		        local: [],
+		        indexRemote: false,
+		        remote: {
+		            url: '/search/suggestions/?q=%QUERY&mode=' + $('#search_mode').val(),
+		            wildcard: '%QUERY',
+		            rateLimitBy: 'debounce',
+		            rateLimitWait: 100
+		        }
+		    });
 
-		var suggestions = new Bloodhound({ // https://github.com/twitter/typeahead.js/blob/master/doc/bloodhound.md#remote
-			datumTokenizer: Bloodhound.tokenizers.whitespace,
-			queryTokenizer: Bloodhound.tokenizers.whitespace,
-			local: [],
-			indexRemote: false,
-			remote: { // Returns simple array, like ["Glasgow","Glasgo"]
-				url: '/search/suggestions/?q=%QUERY',
-				wildcard: '%QUERY',
-				rateLimitBy: 'debounce',
-				rateLimitWait: 100
-			}
+		    $('#search_input').typeahead('destroy').typeahead({ // https://github.com/twitter/typeahead.js/blob/master/doc/jquery_typeahead.md
+		        highlight: true,
+		        hint: true,
+		        minLength: 3,
+		    }, {
+		        name: 'Places',
+		        source: suggestions.ttAdapter(),
+		    }).on('typeahead:select', function(e, item) {
+		        $(this).val(item);
+		        toggleButtonState();
+		    });
+		
+		    return suggestions;
+		}
+		
+		initialiseSuggestions();
+		$('#search_mode').on('change', function() {
+		    initialiseSuggestions();
 		});
 
 		$('#search_input').on('keyup', function(event) { // Allow [Enter] key to initiate search
@@ -317,16 +338,6 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(select2_CDN_fallbac
 				$('#initiate_search').focus();
 				initiateSearch();
 			}
-		}).typeahead({ // https://github.com/twitter/typeahead.js/blob/master/doc/jquery_typeahead.md
-			highlight: true,
-			hint: true,
-			minLength: 3,
-		}, {
-			name: 'Places',
-			source: suggestions.ttAdapter(),
-		}).on('typeahead:select', function(e, item) {
-			$(this).val(item);
-			toggleButtonState();
 		});
 
 		$('#clear_search').on('click', function() { // Clear the input, results, and map

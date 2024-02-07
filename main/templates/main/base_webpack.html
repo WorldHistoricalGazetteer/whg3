@@ -10,7 +10,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.ico' %}"/>
 	
-	<script defer src="{% static 'webpack/base.bundle.js' %}"></script>
+	<script defer src="{% static 'webpack/base.bundle.js' %}"></script> <!-- 'defer' allows rendering of HTML to continue while scripts load -->
     <link href="{% static 'webpack/base.bundle.css' %}" rel="stylesheet" />
   	<style>
     	body { /* Hide until CDN css files are fully loaded */ 
@@ -22,14 +22,15 @@
     {% block maplibre %}{% endblock %}
     {% block extra_head %}{% endblock %}
 	<script type="text/javascript">
+		{% block deferredScripts %}
+		{% endblock %}
 		function executeDeferredScripts() {
-			{% block deferredScripts %}
-			{% endblock %}
 			const loadNextScript = function(index) {
 			  	if (index < scripts.length) {
 			  		const script = scripts[index];
 			  		const scriptElement = document.createElement('script');
 			  		scriptElement.src = script.src;
+			  		scriptElement.defer = true; // Prevent loading before base.bundle.js
 			  		if (script.type) {
 			  			scriptElement.type = script.type;
 			  		}
