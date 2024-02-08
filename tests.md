@@ -54,4 +54,8 @@ _as of 10 Jan 2024_
 #### 10. [ContactFormTestCase](tests/test_emailing.py)
     - test_contact_form_email
 
+### tests/test_dumps.py
+#### 11. [DumpDistinctToponymsCommandTest](tests/test_dumps.py)
+    - test_command_output_zip
+
 
