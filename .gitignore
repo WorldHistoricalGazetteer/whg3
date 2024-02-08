@@ -1,11 +1,5 @@
-_dumps/
-_notes/
-_older/
-_scratch/
-*/_scratch/*
-_tests/
-_testdata/
-_v2models/
+# private local, untracked files
+_local/
 
 node_modules/
 
@@ -18,6 +12,8 @@ static/_older/
 media/scratch/
 media/user*
 media/downloads/*
+
+# in production these will be ignored
 #media/resources/
 #media/collections/
 #media/datasets/
