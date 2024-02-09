@@ -7,7 +7,7 @@ Every click should do what it suggests w/o error, whether it is the ultimate act
 
 To summarize SG priorities listed below:
 
-- Search debugging; testing w/Selenium?)
+- Search debugging; testing w/Selenium? ([issue](121))
 - wire up vis_parameters w/kg
 - set tileset creation signals; expose result in console
 - bug: place collection records with no geometry 
