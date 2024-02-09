@@ -125,8 +125,12 @@
                     </li>
                     {# <li><a class="dropdown-item" href="{% url 'dashboard' %}">My Data</a></li>#}
 	                <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}">Dataset Gallery</a></li>
-                  <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}">Collection Gallery</a></li>
+                    <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}">Published Datasets</a></li>
+                  <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}">Published Collections</a>
+                  </li>
+                  <li><hr class="dropdown-divider"></li>
+                  <li><a class="dropdown-item" href="{% url 'downloads' %}">Downloads</a></li>
+                  <li><a class="dropdown-item" href="{% url 'api' %}">API (developers)</a></li>
                 </ul>
 	            </li>
 	            <li class="nav-item larger">

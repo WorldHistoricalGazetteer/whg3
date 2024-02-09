@@ -440,9 +440,7 @@ def dashboard_admin_view(request):
     'is_admin': is_admin,
     'is_leader': is_leader,
   }
-  # return render(request, 'main/dashboard_admin.html', {'initial_section': section})
-  # return render(request, 'main/dashboard_admin.html', context)
-  return render(request, 'main/dashboard_admin2.html', context)
+  return render(request, 'main/dashboard_admin.html', context)
 
 # for non-admins
 @login_required

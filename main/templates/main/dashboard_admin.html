@@ -2,335 +2,230 @@
 
 {% block extra_head %}
   <style>
-    .no-wrap {
-      white-space: nowrap;
-    }
-
-    .my {
-      color: #993300;
-    }
-
-    /* Custom styles for the dashboard */
-    .sidebar {
-      border-right: 1px solid #ddd;
-      height: 100vh; /* Full viewport height */
-      padding-top: 20px;
-    }
-
-    .profile-info {
-      margin-bottom: 20px;
-      text-align: center;
-    }
-
-    .sidebar-nav-item {
-      display: block;
-      padding: 10px;
-      margin: 5px 0;
-      text-align: center;
-      cursor: pointer;
-      border: 1px solid transparent;
-      border-radius: 5px;
-    }
-
-    .sidebar-nav-item:hover,
-    .sidebar-nav-item.active {
-      background-color: #f8f9fa;
-      border: 1px solid #ddd;
-    }
-
-    .profile-placeholder {
-      width: 100px;
-      height: 100px;
-      background-color: #f2f2f2;
-      border-radius: 50%; /* circle */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 50px; /* Adjust based on your preference */
-      font-weight: bold; /* Makes the letter thicker */
-      line-height: 1; /* Ensures the letter is vertically centered */
-      vertical-align: middle;
-      margin-bottom: 1rem;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    #dashboard_header {
-    {#text-align: center;#} background-color: #F9EAD7;
-      border-radius: 5px;
-      box-shadow: #e5e5e5;
-    }
-
+    /* Add your custom styles here */
   </style>
 {% endblock %}
+
 {% block content %}
-  <div id="container" class="container mt-4">
-    <div class="row">
-      <!-- Sidebar -->
-      <div class="col-md-2 sidebar">
-        <!-- Profile Info -->
-        <div class="profile-info">
-          <div class="profile-placeholder">{{ user.name|first }}</div>
-          <h5>{{ user.name }}</h5>
-        </div>
-        <!-- Sidebar Navigation -->
-        <a href="{% url 'main:dataset-list' %}" class="sidebar-nav-item">Datasets</a>
-        <a href="{% url 'main:collection-list' collection_class='place' %}"
-           class="sidebar-nav-item">Place Collections</a>
-        <a href="{% url 'main:collection-list' collection_class='dataset' %}"
-           class="sidebar-nav-item">Dataset Collections</a>
-        <a href="{% url 'main:area-list' %}"
-           class="sidebar-nav-item">Study Areas</a>
-        {% if user.role == 'group_leader' %}
-          <a href="{% url 'main:group-list' role='leader' %}" class="sidebar-nav-item">Groups</a>
-        {% else %}
-          <a href="{% url 'main:group-list' role='member' %}" class="sidebar-nav-item">Groups</a>
-        {% endif %}
+
+  <div id="container" class="container mt-2">
+    <div id="loading_spinner" class="text-center"
+         style="position: absolute; top: 180px; left:200px; display:none;">
+      <i class="fa fa-spinner fa-spin fa-2x"></i>
+    </div>
+    <div class="ps-2"><h5>Admin Dashboard</h5></div>
+    <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <a class="nav-link active" id="datasets-tab" data-bs-toggle="tab" href="#datasets" role="tab"
+           ref="dataset" aria-controls="datasets" aria-selected="true">Datasets</a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link" id="collections-tab" data-bs-toggle="tab" href="#collections" role="tab"
+           ref="pcoll" aria-controls="collections" aria-selected="false">Collections</a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link" id="areas-tab" data-bs-toggle="tab" href="#areas" role="tab" aria-controls="areas"
+           ref="area" aria-selected="false">Areas</a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link" id="collection-groups-tab" data-bs-toggle="tab" href="#groups" role="tab"
+           ref="group" aria-controls="groups" aria-selected="false">Collection Groups</a>
+      </li>
+      <li class="nav-item" role="presentation">
+        <a class="nav-link" id="tools-tab" data-bs-toggle="tab" href="#tools" role="tab"
+           ref="tools" aria-controls="groups" aria-selected="false">Tools</a>
+      </li>
+    </ul>
+    <div class="tab-content" id="adminTabsContent">
+      <div class="tab-pane fade show active" id="datasets" role="tabpanel" aria-labelledby="datasets-tab">
       </div>
-
-      <!-- Main Content -->
-      <div class="col-md-10 ">
-        <div id="dashboard_header" class="fs-4 text-center">Admin Dashboard</div>
-        <div id="options" class="fs-6 mb-1 my">
-          {% if is_admin %}All{% else %}My{% endif %}
-          <span id="section_title" rel="Datasets">Datasets</span>
-          <span class="ps-3 small">
-            <a href="{% url 'datasets:dataset-create' %}"
-               id="add_dataset" style="display: none;">Add Dataset</a>
-            <a href="{% url 'collection:place-collection-create' %}"
-               id="add_place_collection" style="display: none;">Add Place Collection</a>
-            <a href="{% url 'collection:ds-collection-create' %}"
-               id="add_dataset_collection" style="display: none;">Add Dataset Collection</a>
-            {% if is_admin %}
-              <a href="{% url 'collection:collection-group-create' %}"
-                 id="add_group" style="display: none;">Add Group</a>
-            {% endif %}
-            <a href="{% url 'areas:area-create' %}"
-               id="add_area" style="display: none;">Add Study Area</a>
-          </span>
-
-          <span id="ds_status" class="float-end">
-            <select id="filter_select" class="small">
-            <option value="all">Filter status</option>
-            <option value="uploaded">Uploaded</option>
-            <option value="reconciling">Reconciling</option>
-            <option value="wd-complete">Wikidata complete</option>
-            <option value="accessioning">Accessioning</option>
-            <option value="indexed">Indexed</option>
-            <option value="remote">Remote</option>
-            </select>
-          </span>
-        </div>
-
-        <div class="main-content py-1">
-          {% if has_datasets %}
-            {% include "lists/dataset_list.html" %}
-          {% endif %}
-          {#						    {% elif has_collections %}#}
-          {#						        {% include "lists/collection_list.html" %}#}
-          {#						    {% else %}#}
-          {#						        {% include "lists/dataset_list.html" %}#}
-          {#						    {% endif %}#}
+      <div class="tab-pane fade" id="collections" role="tabpanel" aria-labelledby="collections-tab">
+      </div>
+      <div class="tab-pane fade" id="areas" role="tabpanel" aria-labelledby="areas-tab">
+      </div>
+      <div class="tab-pane fade" id="groups" role="tabpanel" aria-labelledby="collection-groups-tab">
+      </div>
+      <div class="tab-pane fade" id="tools" role="tabpanel" aria-labelledby="tools-tab">
+        <div><h5>Tools</h5><p>some useful ones, for sure, like</p>
+        <ul>
+          <li>relocate a misplaced record</li>
+          <li>???</li>
+        </ul>
         </div>
       </div>
     </div>
-  </div>
+  </div> <!-- .container -->
 
   <script type="application/javascript">
-
-    $(document).ready(function() {
-      var initialSection = '{{ initial_section }}';
-      if (initialSection) {
-        loadSection(initialSection);
-      } else {
-        window.sectionName = 'Datasets';
-        its_datasets();
-      }
-
-      $('.sidebar-nav-item').on('click', function(e) {
-        e.preventDefault();
-        var sectionName = $(this).text();
-        var url = $(this).attr('href');
-        loadSection(sectionName, url);
-      });
-    });
-
-    // TODO: this kluge is needed to reload the page when the back button is pressed
-    // refactor to use ajax
-    // When navigating away from the dashboard_admin screen
-    history.pushState({page: 'dashboard_admin'}, '');
-    console.log('Pushed state to history');
-
-    // Listen for the popstate event
-    window.addEventListener('popstate', function(event) {
-      // If the previous state was the dashboard_admin screen, reload the page
-      console.log('Popstate event fired', event.state);
-      if (event.state && event.state.page === 'dashboard_admin') {
-        console.log('Reloading page');
-        location.reload();
-      }
-    });
-
-    $('#filter_select').change(function() {
-      let term = $(this).val();
-      if (term == 'all') {
-        $('#filter_select option')[0].innerHTML = 'Filter status';
-      }
-      statusFilter(term);
-    });
-
-    statusFilter = function(term) {
-      sel = $('#filter_select').find(':selected').val();
-      console.log('term, sel', term, sel);
-      if (sel != 'all') {
-        $('#filter_select option')[0].innerHTML = 'Show all';
-      }
-      results = $('#table_ds tbody tr');
-      for (i = 0; i < results.length; i++) {
-        ds_status = results[i].cells[5].innerHTML;
-        {#console.log('ds_status', ds_status)#}
-        if (term == ds_status || term == 'all') {
-          results[i].style.display = '';
-        } else if (term != ds_status) {
-          results[i].style.display = 'none';
-        }
-      }
+    var currentState = {
+      datasets: {sort: 'title', order: 'asc', filters: {}},
+      collections: {sort: 'title', order: 'asc', filters: {}},
+      areas: {sort: 'title', order: 'asc', filters: {}},
+      groups: {sort: 'title', order: 'asc', filters: {}},
     };
 
-    function its_datasets() {
-      $('#add_dataset').show();
-      $('#ds_status').show();
-      $('#add_place_collection').hide();
-      $('#add_dataset_collection').hide();
-      $('#add_group').hide();
-      $('#add_area').hide();
+    var initialSortOrders = {
+      datasets: {
+        'title': 'asc',
+        'label': 'none',
+        'last_modified': 'none',
+        'numrows': 'none',
+        'ds_status': 'none',
+        'owner': 'none',
+      },
+      areas: {
+        'title': 'asc',
+        'created': 'none',
+        'description': 'none',
+        'owner': 'none',
+      },
+      collections: {
+        'title': 'asc',
+        'count': 'none',
+        'type': 'none',
+        'modified': 'none',
+        'status': 'none',
+        'owner': 'none',
+      },
+      groups: {
+        'title': 'asc',
+        'count': 'none',
+        'created': 'none',
+        'type': 'none',
+        'owner:': 'none',
+      },
+    };
+
+    function getFilterValues(tabId) {
+      var titleSearch = $('#' + tabId + ' .title-search').val();
+      var status = $('#' + tabId + ' .status').val(); // Adjust based on tab
+      var owners = $('#' + tabId + ' .owners').val();
+      var types = $('#' + tabId + ' .types').val(); // If applicable
+
+      return {
+        title_search: titleSearch,
+        status: status,
+        owners: owners,
+        types: types,
+      };
     }
 
-    function loadSection(sectionName, url) {
-      var targetUrl = url;
-      console.log('sectionName', sectionName);
-      console.log('targetUrl', targetUrl);
+    function initializeFilters(tabId) {
+      $(document).
+        off('change', '#' + tabId + ' .filter-input').
+        on('change', '#' + tabId + ' .filter-input', function() {
+          var filterKey = $(this).attr('name');
+          var filterValue = $(this).val();
 
-      // Show/hide 'Add' buttons based on sectionName
-      if (sectionName == 'Datasets') {
-        its_datasets();
-      } else if (sectionName == 'Place Collections') {
-        $('#add_dataset').hide();
-        $('#add_place_collection').show();
-        $('#add_dataset_collection').hide();
-        $('#add_group').hide();
-        $('#add_area').hide();
-        $('#ds_status').hide();
-      } else if (sectionName == 'Dataset Collections') {
-        $('#add_dataset').hide();
-        $('#add_place_collection').hide();
-        $('#add_dataset_collection').show();
-        $('#add_group').hide();
-        $('#add_area').hide();
-        $('#ds_status').hide();
-        //} else if (sectionName == "Groups" && userGroups.includes('group_leader'))
-      } else if (sectionName == 'Groups') {
-        $('#add_dataset').hide();
-        $('#add_place_collection').hide();
-        $('#add_dataset_collection').hide();
-        $('#add_group').show();
-        $('#add_area').hide();
-        $('#ds_status').hide();
-      } else if (sectionName == 'Study Areas') {
-        $('#add_dataset').hide();
-        $('#add_place_collection').hide();
-        $('#add_dataset_collection').hide();
-        $('#add_group').hide();
-        $('#add_area').show();
-        $('#ds_status').hide();
-      } else {
-        $('#add_dataset').hide();
-        $('#add_place_collection').hide();
-        $('#add_dataset_collection').hide();
-        $('#add_group').hide();
-        $('#add_area').hide();
-        $('#ds_status').hide();
-      }
+          currentState[tabId].filters[filterKey] = filterValue;
 
-      $.get(targetUrl, function(data) {
-        $('.main-content').html(data);
-        history.pushState({}, '', targetUrl);
-        $('#section_title').text(sectionName);
+          // Flatten the filters for the AJAX request
+          var flattenedFilters = {};
+          for (var key in currentState[tabId].filters) {
+            if (currentState[tabId].filters.hasOwnProperty(key)) {
+              flattenedFilters[key] = currentState[tabId].filters[key];
+            }
+          }
 
-        $('.sidebar-nav-item').removeClass('active');
-        $('.sidebar-nav-item').filter(function() {
-          return $(this).text() === sectionName;
-        }).addClass('active');
+          loadTabContent(tabId, flattenedFilters); // Pass updated filters
+        });
+    }
+
+    function initializeSorting(tabId) {
+      console.log('Initializing sorting for ' + tabId);
+      {#console.log('Found .fa-sort elements:', $('#' + tabId + ' .fa-sort').length);#}
+      var sortOrders = JSON.parse(localStorage.getItem('sortOrders-' + tabId)) || initialSortOrders[tabId];
+      console.log('sortOrders:', sortOrders);
+
+      {#$('#' + tabId + ' .fa-sort').off('click').on('click', function() {#}
+      $(document).off('click').on('click', '#' + tabId + ' .fa-sort', function() {
+        var columnId = $(this).data('id');
+        console.log('Sorting clicked', columnId);
+        var currentSortOrder = sortOrders[columnId];
+        var newSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+        sortOrders[columnId] = newSortOrder;
+
+        localStorage.setItem('sortOrders-' + tabId, JSON.stringify(sortOrders));
+
+        var url = '/main/' + tabId + '_list/' + columnId + '/' + newSortOrder + '/';
+        $('#loading_spinner').show();
+        console.log('AJAX request, where is my spinner?:', url);
+        $.get(url, function(data) {
+          $('#' + tabId).empty().html(data);
+          initializeSorting(tabId);  // Reinitialize sorting
+        }).fail(function() {
+          console.log('AJAX request failed');
+        }).always(function() {
+          $('#loading_spinner').hide();
+        });
       });
     }
 
-    {#$(document).ready(function() {#}
-    {#    var userGroups = {{ user_groups|safe }};#}
-    {#    console.log('groups:', userGroups)#}
-    {##}
-    {#    $('.sidebar-nav-item').on('click', function(e) {#}
-    {#        e.preventDefault();  // Prevent default navigation#}
-    {##}
-    {#        // set section variable#}
-    {#        var sectionName = $(this).text();#}
-    {#        var targetUrl = $(this).attr('href');#}
-    {#				console.log('sectionName', sectionName)#}
-    {#				console.log('targetUrl', targetUrl)#}
-    {##}
-    {#        if (sectionName == "Datasets") {#}
-    {#            $('#add_dataset').show();#}
-    {#            $('#add_place_collection').hide();#}
-    {#            $('#add_dataset_collection').hide();#}
-    {#            $('#add_group').hide();#}
-    {#            $('#add_area').hide();#}
-    {#        } if (sectionName == "Place Collections") {#}
-    {#            $('#add_dataset').hide();#}
-    {#            $('#add_place_collection').show();#}
-    {#            $('#add_dataset_collection').hide();#}
-    {#            $('#add_group').hide();#}
-    {#            $('#add_area').hide();#}
-    {#        } else if (sectionName == "Dataset Collections") {#}
-    {#            $('#add_dataset').hide();#}
-    {#            $('#add_place_collection').hide();#}
-    {#            $('#add_dataset_collection').show();#}
-    {#            $('#add_group').hide();#}
-    {#            $('#add_area').hide();#}
-    {# } else if (sectionName == "Groups" && userGroups.includes('group_leader')) {#}
-    {#        } else if (sectionName == "Groups") {#}
-    {#            $('#add_dataset').hide();#}
-    {#            $('#add_place_collection').hide();#}
-    {#            $('#add_dataset_collection').hide();#}
-    {#            $('#add_group').show();#}
-    {#            $('#add_area').hide();#}
-    {#        } else if (sectionName == "Study Areas") {#}
-    {#            $('#add_dataset').hide();#}
-    {#            $('#add_place_collection').hide();#}
-    {#            $('#add_dataset_collection').hide();#}
-    {#            $('#add_group').hide();#}
-    {#            $('#add_area').show();#}
-    {#        } else {#}
-    {#$('#add_dataset').hide();#}
-    {#            $('#add_place_collection').hide();#}
-    {#            $('#add_dataset_collection').hide();#}
-    {#            $('#add_group').hide();#}
-    {#            $('#add_area').hide();#}
-    {#        }#}
-    {##}
-    {#        // Fetch content via AJAX#}
-    {#        $.get(targetUrl, function(data) {#}
-    {#            $('.main-content').html(data);  // Update the main content div#}
-    {#        });#}
-    {##}
-    {#        // Update the section title#}
-    {#        $('#section_title').text(sectionName).attr('rel', sectionName);#}
-    {##}
-    {#        // Highlight the active sidebar item#}
-    {#        $('.sidebar-nav-item').removeClass('active');#}
-    {#        $(this).addClass('active');#}
-    {#    });#}
-    {# });#}
+    $(document).ready(function() {
+        // Event listener for tab change
+        $('#adminTabs a').on('shown.bs.tab', function(event) {
+            var tabId = $(event.target).attr('href').substring(1);
+            sessionStorage.setItem('activeTab', tabId); // Store the active tab ID in sessionStorage
+            loadTabContent(tabId);
+        });
+
+        // Determine the initial tab to load
+        var activeTab = sessionStorage.getItem('activeTab');
+        if (activeTab) {
+            $('#adminTabs a[href="#' + activeTab + '"]').tab('show');
+        } else {
+            activeTab = $('#adminTabs .nav-link.active').attr('href').substring(1);
+        }
+        loadTabContent(activeTab);
+
+        // Scroll to the top of the page
+        window.scrollTo(0, 0);
+    });
+
+
+    function loadTabContent(tabId, filters) {
+      // no state for tools tab
+      if (!currentState[tabId]) {
+        return; // bail
+      }
+      console.log('Loading tab content for ' + tabId);
+      console.log('currentState:', currentState);
+
+      var state = currentState[tabId];
+      var url = '/main/' + tabId + '_list/' + state.sort + '/' + state.order + '/';
+      console.log('constructed url: ' + url);
+      console.log('state filters for ' + tabId + ':', JSON.stringify(state.filters));
+
+      {#$.get(url, { filters: state.filters }, function(data) {#}
+      $.get(url, filters, function(data) {
+        $('#' + tabId).html(data);
+        var appliedStatus = "{{ applied_filters.ds_status }}";
+        if (appliedStatus) {
+          $('#ds_status').val(appliedStatus);
+        }
+        FontAwesome.dom.i2svg();
+        initializeSorting(tabId);
+        initializeFilters(tabId);
+        // Add event listener for clear search button
+        $(document).on('click', '#clear_search', function() {
+          console.log('Clear search clicked');
+          // Clear the input field
+          $('#title_search').val('');
+
+          // Remove the filter
+          var tabId = $('#adminTabs .nav-link.active').attr('href').substring(1);
+          if (currentState[tabId]) {
+            currentState[tabId].filters.title = '';
+            loadTabContent(tabId, currentState[tabId].filters);
+          }
+        });
+
+      }).fail(function(jqXHR, textStatus, errorThrown) {
+        console.error('Error loading tab content:', textStatus, errorThrown);
+      }).always(function() {
+        $('#loading_spinner').hide();
+      });
+    }
 
   </script>
-
-{% endblock %}
-
+{% endblock %} <!-- content -->

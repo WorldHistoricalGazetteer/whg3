@@ -1,0 +1,28 @@
+{#{% extends "main/base.html" %}#}
+<!-- NB these urls are only valid on the staging/production server -->
+
+{% extends "main/base_webpack.html" %}
+{% block title %}<title>WHG::APIs</title>{% endblock %}
+{% block extra_head %}
+{% endblock %}
+{% load static %}
+{% block content %}
+  <div class="container">
+    <div class="d-flex justify-content-center mt-3">
+      <h3>Data Downloads</h3>
+    </div>
+      <ul>
+        <li>
+          <a href="/data_dumps/distinct_names_20240203.tsv.zip">all the distinct names, 03 Feb 2024</a>
+        </li>
+        <li>...</li>
+      </ul>
+    </div>
+  </div>
+  <script type="text/javascript">
+	$(function(){
+	  $("[rel='tooltip']").tooltip();
+	})
+  </script>
+{% endblock %}
+
