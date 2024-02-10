@@ -163,8 +163,10 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
   else:
     objects = model.objects.filter(**filter_criteria).exclude(title__startswith='(stub)')
 
-  # If the user is an admin and we're looking at Area, apply the study_areas filter to all users including admins
-  if is_admin and model == Area:
+  if model == Area:
+    objects = objects.filter(type__in=['ccodes', 'copied', 'drawn'])
+
+  if is_admin and model == Area and 'type' in filter_criteria:
     objects = objects.exclude(type__in=filter_criteria['type'])
   elif model == Dataset: # reverse sort, and some dummy datasets need to be filtered
       objects = objects.exclude(title__startswith='(stub)').order_by()
@@ -487,9 +489,9 @@ def dashboard_user_view(request):
 
   section = request.GET.get('section')
 
-  datasets = get_objects_for_user(Dataset, request.user, {'owner': user}, is_admin)
-  collections = get_objects_for_user(Collection, request.user, {'owner': user}, is_admin)
-  areas = get_objects_for_user(Area, request.user, {'owner': user}, is_admin)
+  datasets = get_objects_for_user(Dataset, request.user, {'owner': user}, False)
+  collections = get_objects_for_user(Collection, request.user, {'owner': user}, False)
+  areas = get_objects_for_user(Area, request.user, {'owner': user}, False)
   groups_member = CollectionGroup.objects.filter(members__user=user)
   groups_led = CollectionGroup.objects.filter(owner=user)
 

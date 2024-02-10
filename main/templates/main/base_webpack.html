@@ -111,7 +111,8 @@
 		        </li>
 		        {% if user.is_authenticated %}
 	            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <a class="nav-link dropdown-toggle" href="#" role="button"
+                   data-bs-toggle="dropdown" aria-expanded="false">
                 Data
                 </a>
                 <ul class="dropdown-menu">
@@ -119,6 +120,7 @@
 	                  {% is_whg_admin as user_is_whg_admin %}
                       {% if user_is_whg_admin %}
                         <a class="dropdown-item" href="{% url 'dashboard-admin' %}">Admin Dashboard</a>
+                        <a class="dropdown-item" href="{% url 'dashboard-user' %}">My Data</a>
                       {% else %}
                         <a class="dropdown-item" href="{% url 'dashboard-user' %}">My Data</a>
                       {% endif %}
