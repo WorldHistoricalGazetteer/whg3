@@ -110,17 +110,19 @@
           </div>
         </div>
 
-<div class="p-1 border bg-white smallish" style="height: 24%;">
-    <p class="mb-0 red-head">ANNOUNCEMENTS</p>
-    <div id="announcement-container" class="mb-0">
-        {% for announcement in announcements|slice:":3" %}
-            <div class="announcement" {% if not forloop.first %}style="display: none;"{% endif %}>
-                <a href="{{ announcement.link }}" target="_blank"><i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}</a>
-                <span class="ms-2">{{ announcement.content }}</span>
+        <div class="p-1 border bg-white smallish" style="height: 24%;">
+            <p class="mb-0 red-head">ANNOUNCEMENTS</p>
+            <div id="announcement-container" class="mb-0">
+                {% for announcement in announcements|slice:":3" %}
+                    <div class="announcement" {% if not forloop.first %}style="display: none;"{% endif %}>
+                        <a href="{{ announcement.link }}" target="_blank">
+                          <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
+                        </a>
+                        <span class="ms-2">{{ announcement.content }}</span>
+                    </div>
+                {% endfor %}
             </div>
-        {% endfor %}
-    </div>
-</div>
+        </div>
 
       </div>
       <div id="carousel-outer-container" class="col-sm-3 d-flex flex-column p-0">
@@ -205,53 +207,6 @@
     let repositionMap = true; // Determines whether map should fly to loaded datacollection
     let homeModalURL = "{% url 'modal-home' %}";
   </script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    let currentIndex = 0;
-    const announcements = document.querySelectorAll('#announcement-container .announcement');
-    const totalAnnouncements = announcements.length;
-
-    function rotateAnnouncements() {
-        // Hide the current announcement
-        announcements[currentIndex].style.display = 'none';
-
-        // Calculate the index of the next announcement to show
-        currentIndex = (currentIndex + 1) % totalAnnouncements;
-
-        // Show the next announcement
-        announcements[currentIndex].style.display = 'block';
-    }
-
-    // Start rotating announcements every 5 seconds
-    setInterval(rotateAnnouncements, 5000);
-});
-</script>
-
-{#  <script>#}
-{#// TODO needs jquery for fadeOut/fadeIn#}
-{#$(document).ready(function() {#}
-{#    let currentIndex = 0;#}
-{#    const announcements = $('#announcement-container .announcement');#}
-{#    const totalAnnouncements = announcements.length;#}
-{##}
-{#    function rotateAnnouncements() {#}
-{#        const currentAnnouncement = $(announcements[currentIndex]);#}
-{#        const nextIndex = (currentIndex + 1) % totalAnnouncements;#}
-{#        const nextAnnouncement = $(announcements[nextIndex]);#}
-{##}
-{#        // Fade out the current announcement and fade in the next#}
-{#        currentAnnouncement.fadeOut(500, function() {#}
-{#            nextAnnouncement.fadeIn(500);#}
-{#        });#}
-{##}
-{#        currentIndex = nextIndex;#}
-{#    }#}
-{##}
-{#    // Start rotating announcements every 3 seconds, plus the fade time to ensure one fades out before the next fades in#}
-{#    setInterval(rotateAnnouncements, 3500); // Adjust time as needed#}
-{#});#}
-{#</script>#}
 
 {% endblock %}
 

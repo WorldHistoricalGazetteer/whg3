@@ -10,7 +10,7 @@ from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect #, render_to_response
 from django.urls import reverse_lazy
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import ListView, CreateView, UpdateView
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.base import TemplateView
 
 from .forms import CommentModalForm, ContactForm, AnnouncementForm
@@ -46,6 +46,12 @@ class AnnouncementCreateView(LoginRequiredMixin, PermissionRequiredMixin, Create
     template_name = 'announcements/announcement_form.html'
     success_url = reverse_lazy('announcements-list')
     permission_required = 'main.add_announcement' # Adjust based on your app's name and permissions
+
+class AnnouncementDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = Announcement
+    template_name = 'announcements/announcement_confirm_delete.html'
+    success_url = reverse_lazy('announcements-list')
+    permission_required = 'main.delete_announcement' # Adjust based on your app's name and permissions
 
 class AnnouncementUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Announcement
