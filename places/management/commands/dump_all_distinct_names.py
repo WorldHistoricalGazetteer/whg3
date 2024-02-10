@@ -26,7 +26,7 @@ class Command(BaseCommand):
     os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
 
     # Fetch distinct toponyms
-    distinct_toponyms = PlaceName.objects.values_list('toponym', flat=True).distinct()
+    distinct_toponyms = PlaceName.objects.values_list('toponym', flat=True).distinct().order_by('toponym')
 
     # Writing to a .txt file inside a .zip archive
     with zipfile.ZipFile(output_file_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
