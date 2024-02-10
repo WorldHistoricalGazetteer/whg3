@@ -135,7 +135,7 @@ class Home30a(TemplateView):
     context['teacher'] = True if self.request.user.groups.filter(
       name__in=['teacher']).exists() else False
     context['count'] = Place.objects.filter(dataset__public=True).count()
-    context['announcements'] = Announcement.objects.filter(active=True).order_by('-created_at')[:1]
+    context['announcements'] = Announcement.objects.filter(active=True).order_by('-created_at')[:3]
 
     # TODO: REMOVE THE FOLLOWING? ****************************************************
     # Serialize the querysets to JSON

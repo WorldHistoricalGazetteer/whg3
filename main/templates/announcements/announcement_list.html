@@ -8,7 +8,7 @@
     {% for announcement in announcements %}
       <div>
         <p>{{ announcement.created_at|date:"j F Y"}}<br/>
-          {{ announcement.content }} <span class="ms-3"><a href="{% url 'announcement-update' announcement.id %}">edit</a></span>
+          <b class="text-danger">{{ announcement.headline }}</b>: {{ announcement.content }} <span class="ms-3"><a href="{% url 'announcement-update' announcement.id %}">edit</a></span>
         </p>
       </div>
     {% endfor %}
