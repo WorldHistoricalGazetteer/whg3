@@ -22,6 +22,10 @@ class Announcement(models.Model):
     created_at = models.DateTimeField(default=timezone.now, help_text="Creation date of the announcement.")
     active = models.BooleanField(default=True, help_text="Whether the announcement is currently active.")
 
+    class Meta:
+        managed = True
+        db_table = 'announcements'
+
     def __str__(self):
         return self.content[:50]  # Return first 50 characters to identify it in the admin panel.
 

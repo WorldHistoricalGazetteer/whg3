@@ -636,6 +636,7 @@ def review(request, pk, tid, passnum):
                 task_id=tid,
                 src_id=place.src_id,
                 geom=gobj,
+                reviewer=request.user,
                 jsonb={
                   "type": gtype,
                   "citation": {
@@ -654,6 +655,7 @@ def review(request, pk, tid, passnum):
                 place=place_post,
                 task_id=tid,
                 src_id=place.src_id,
+                reviewer=request.user,
                 jsonb={
                   "type": hits[x]["match"],
                   "identifier": link_uri(
