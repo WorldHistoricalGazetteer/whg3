@@ -9,6 +9,15 @@ from bootstrap_modal_forms.forms import BSModalForm
 from captcha.fields import CaptchaField
 import sys
 
+from django import forms
+from .models import Announcement
+
+class AnnouncementForm(forms.ModelForm):
+    class Meta:
+        model = Announcement
+        fields = ['headline', 'content', 'link', 'active']
+
+
 class ContactForm(forms.Form):
     name = forms.CharField(
         widget=forms.TextInput(attrs={'size': 50}),

@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 from django.core.validators import URLValidator
 from django.urls import reverse
+from django.utils import timezone
 from collection.models import Collection, CollectionGroup
 from datasets.models import Dataset
 from places.models import Place
@@ -13,6 +14,16 @@ from main.choices import (COMMENT_TAGS, COMMENT_TAGS_REVIEW, LOG_CATEGORIES, LOG
                           LINKTYPES, TILESET_TYPES)
 
 # cross-app models
+
+class Announcement(models.Model):
+    content = models.CharField(max_length=255, help_text="A short announcement text.")
+    headline = models.CharField(max_length=255, help_text="Appears linked to the full announcement.")
+    link = models.URLField(help_text="Link to the full announcement on the external blog.")
+    created_at = models.DateTimeField(default=timezone.now, help_text="Creation date of the announcement.")
+    active = models.BooleanField(default=True, help_text="Whether the announcement is currently active.")
+
+    def __str__(self):
+        return self.content[:50]  # Return first 50 characters to identify it in the admin panel.
 
 class Tileset(models.Model):
     tiletype = models.CharField(max_length=20, null=True, blank=True, choices=TILESET_TYPES)

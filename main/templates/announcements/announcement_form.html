@@ -1,0 +1,13 @@
+<!-- templates/announcements/announcement_form.html -->
+{% extends 'main/base.html' %} <!-- Adjust this to your base template -->
+
+{% block content %}
+<div id="container" class="container mt-2">
+  <h2>{% if object %}Edit Announcement{% else %}Add Announcement{% endif %}</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save</button>
+  </form>
+</div>
+{% endblock %}

@@ -104,7 +104,10 @@
 			</div>
 			<div class="p-1 border bg-white smallish" style="height: 24%;">
 				<p class="mb-0 red-head">ANNOUNCEMENTS</p>
-				<div id="announce" class="mb-0">Volunteers wanted! Help us get some amazing datasets fully indexed in the system (<a href="#">details</a>)</div>
+				<div id="announce" class="mb-0">
+          <a href="{{ announcements.0.link }}" target="_blank"> <i class="fas fa-external-link small"></i> {{ announcements.0.headline }}
+            </a><span class="ms-2">{{ announcements.0.content }}</span>
+        </div>
 			</div>
 		</div>
 		<div id="carousel-outer-container" class="col-sm-3 d-flex flex-column p-0">

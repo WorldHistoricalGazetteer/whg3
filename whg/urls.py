@@ -77,6 +77,10 @@ urlpatterns = [
 
     path('modal_home/', views.home_modal, name="modal-home"),
 
+    path('announcement/', views.AnnouncementCreateView.as_view(), name='announcement-create'),
+    path('announcement/<int:pk>', views.AnnouncementUpdateView.as_view(), name='announcement-update'),
+    path('announcements/', views.AnnouncementListView.as_view(), name='announcements-list'),
+
     path('comment/<int:rec_id>', views.CommentCreateView.as_view(), name='comment-create'),
     path('contact/', views.contact_view, name='contact'),
     path('success/', views.contactSuccessView, name='success'),
