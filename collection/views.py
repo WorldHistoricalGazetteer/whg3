@@ -362,7 +362,7 @@ def fetch_mapdata_coll(request, *args, **kwargs):
               "cid": id_,
               "title": t.place.title,
               "ccodes": t.place.ccodes,
-              "relation": t.relation[0],
+              "relation": t.relation[0] if t.relation else None,
               "min": year_from_string(t.start),
               "max": year_from_string(t.end),
               "note": t.note,

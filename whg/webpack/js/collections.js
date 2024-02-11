@@ -118,13 +118,17 @@ export function init_collection_listeners(checked_rows) {
 	// })
 
 	// single pid for place portal; adapt for multi-select elsewhere
-	$(".action:radio").click(function(){
-			pid = $('input[name="r_anno"]:checked').data('id');
-			console.log('checked radio for pid:', pid)
-			$("#addtocoll").fadeIn()
-			let checked_cards = []
-			checked_cards.push($(this).data("id"))
-	})
+	// $(".action:radio").click(function(event){
+	// 		event.stopPropagation()
+	// 		console.log('radio clicked')
+	// 		let pid = $('input[name="r_anno"]:checked').data('id');
+	// 		console.log('checked radio for pid:', pid)
+	// 		$("#addtocoll").fadeIn()
+	// 		window.checked_cards = []
+	// 		// checked_cards.push($(this).data("id"))
+	// 		window.checked_cards.push(pid)
+	// 		console.log('checked_cards', window.checked_cards)
+	// })
 
 	// Used in ds_places.html publication page
 	// Listen for table row click (assigned using event delegation to allow for redrawing)

@@ -157,17 +157,27 @@ function waitDocumentReady() {
 			let checked_cards =[]
 
 			// Add an event listener for the radio buttons
+			// document.querySelectorAll('input[name="r_anno"]').forEach(radio => {
+			// 	radio.addEventListener('click', function() {
+			// 		// Add the data-id value of the .pop-link <a> tag to the checked_cards array
+			// 		const pid = this.closest('.source-box').querySelector('.pop-link').dataset.id;
+			// 		checked_cards.push(pid);
+			//
+			// 		// Unhide the #addtocoll span
+			// 		document.getElementById('addtocoll').style.display = 'block';
+			// 	});
+			// });
+
 			document.querySelectorAll('input[name="r_anno"]').forEach(radio => {
-				radio.addEventListener('click', function() {
-					// Add the data-id value of the .pop-link <a> tag to the checked_cards array
-					const pid = this.closest('.source-box').querySelector('.pop-link').dataset.id;
-					checked_cards.push(pid);
-
-					// Unhide the #addtocoll span
-					document.getElementById('addtocoll').style.display = 'block';
-				});
+					radio.addEventListener('click', function() {
+							// Add the data-id value of the radio input to the checked_cards array
+							const pid = $(this).data('id');
+							checked_cards = [pid];
+							console.log('checked_cards', checked_cards);
+							// Unhide the #addtocoll span
+							document.getElementById('addtocoll').style.display = 'block';
+					});
 			});
-
 			// Add an event listener for the #addchecked link
 			document.getElementById('addchecked').addEventListener('click', function(event) {
 				event.preventDefault();
