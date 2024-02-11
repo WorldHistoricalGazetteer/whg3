@@ -4,15 +4,15 @@
 {% load dataset_extras %}
 
 {% block maplibre %}
-	<script type="text/javascript">
-		const loadMaplibre = true;
-	</script>
-	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" />
+  <script type="text/javascript">
+    const loadMaplibre = true;
+  </script>
+  <link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet"/>
 {% endblock %}
 
 {% block extra_head %}
-    <link href="{% static 'webpack/mapAndTable.bundle.css' %}" rel="stylesheet"/>
-    <script src="{% static 'celery_progress/celery_progress.js' %}"></script>
+  <link href="{% static 'webpack/mapAndTable.bundle.css' %}" rel="stylesheet"/>
+  <script src="{% static 'celery_progress/celery_progress.js' %}"></script>
 {% endblock %}
 
 {% block title %}
@@ -97,12 +97,15 @@
     </div> <!-- ds_info -->
 
     <div id="ds_table" class="overlay right">
+      <span id="added_flash" class="mr-2 hidden" style="background-color: yellow; position:absolute; top:10px; right:10px;"> added! </span>
       <div id="selection_status">
-            <span id="actions">
-                <span id="addtocoll" class="float-end ">
-                    <a id="addchecked" href="#">add <mark id="sel_count"></mark>to collection <i class="fa fa-plus"></i></a>
-                </span>
-            </span>
+        <span id="actions">
+          <span id="addtocoll" class="float-end ">
+            <a id="addchecked" href="#">add <mark id="sel_count">
+            </mark>to collection <i class="fa fa-plus"></i>
+            </a>
+          </span>
+        </span>
       </div>
       <table id="placetable" class="table table-striped table-bordered small" style="width:100%">
       </table>
@@ -112,7 +115,7 @@
         </div>
         <ul id="my_collections" class="no-bullets">
           {% for c in my_collections %}
-          <li><a class="a_addtocoll" href="#" ref="{{ c.id }}">{{ c.title }}</a></li>
+            <li><a class="a_addtocoll" href="#" ref="{{ c.id }}">{{ c.title }}</a></li>
           {% endfor %}
         </ul>
         <hr/>
@@ -158,16 +161,17 @@
 
   <script type="text/javascript">
     const pageData = "{{ ds.id }}";
-    window.loggedin = "{{ loggedin }}"
-    window.dslabel = "{{ ds.label }}"
-    window.filter = "{{ filter }}"
-    window.ds_list = [{
-      bounds: {{ ds.bounds | safe }},
-      id: {{ ds.id }},
-      label: "{{ ds.label }}",
-      modified: "{{ ds.last_modified_text }}",
-      title: "{{ ds.title }}"
-    }]
+    window.loggedin = "{{ loggedin }}";
+    window.dslabel = "{{ ds.label }}";
+    window.filter = "{{ filter }}";
+    window.ds_list = [
+      {
+        bounds: {{ ds.bounds | safe }},
+        id: {{ ds.id }},
+        label: "{{ ds.label }}",
+        modified: "{{ ds.last_modified_text }}",
+        title: "{{ ds.title }}",
+      }];
   </script>
 
 {% endblock %}

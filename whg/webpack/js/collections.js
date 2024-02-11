@@ -15,11 +15,12 @@ function getCookie(name) {
     }
     return cookieValue;
 }
-export function add_to_collection(coll, pids) {
-	console.log('add_to_collection()', coll, pids)
+// export function add_to_collection(coll, pids, checked_rows) {
+export function add_to_collection(coll, checked_rows) {
+	console.log('add_to_collection()', coll, checked_rows)
 	var formData = new FormData()
 	formData.append('collection', coll)
-	formData.append('place_list', pids)
+	formData.append('place_list', checked_rows)
 
 	var csrftoken = getCookie('csrftoken');
   	formData.append('csrfmiddlewaretoken', csrftoken);
@@ -40,12 +41,10 @@ export function add_to_collection(coll, pids) {
 			if (dupes.length > 0) {
 				let msg = dupes.length + ' records ' + (dupes.length > 1 ? 'were' : "was") +
 					' already in the collection: [' + dupes + ']';
-				// if (added.length > 0) {
-				// 	msg += ']; ' + added.length + ' ' + (added.length > 1 ? 'were' : "was") + ' added'
-				// }
 				alert(msg)
 			} else {
 				// notify success & clear checks and list
+				checked_rows.length = 0
 				$("#added_flash").fadeIn().delay(2000).fadeOut()
 			}
 			// uncheck everything regardless
@@ -66,9 +65,10 @@ export function init_collection_listeners(checked_rows) {
 
 	$(".a_addtocoll").click(function() {
 		let coll = $(this).attr('ref')
-		let pids = checked_rows
-		add_to_collection(coll, pids)
-		/*console.log('pids to coll', pids, coll)*/
+		// let pids = checked_rows
+		// add_to_collection(coll, pids, checked_rows)
+		add_to_collection(coll, checked_rows)
+
 	})
 	
 	$("#b_create_coll").click(function() {
@@ -90,9 +90,10 @@ export function init_collection_listeners(checked_rows) {
 					el = $('<li><a class="a_addtocoll" href="#" ref=' + data.id + '>' + data.title + '</a></li>')
 					el.click(function() {
 						coll = data.id
-						pids = checked_rows
-						add_to_collection(coll, pids)
-						console.log('pids to coll', pids, coll)
+						// pids = checked_rows
+						// add_to_collection(coll, pids, checked_rows)
+						add_to_collection(coll, checked_rows)
+						console.log('checked_rows to coll', checked_rows, coll)
 					})
 					$("#my_collections").append(el)
 				}
