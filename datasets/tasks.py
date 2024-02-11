@@ -1,7 +1,7 @@
 # celery tasks for reconciliation and downloads
 # align_tgn(), align_wdlocal(), align_idx(), align_whg, make_download
 from __future__ import absolute_import, unicode_literals
-from celery import shared_task # these are @task decorators
+from celery import shared_task, current_task # these are @task decorators
 #from celery_progress.backend import ProgressRecorder
 from django_celery_results.models import TaskResult
 from django.conf import settings
@@ -241,29 +241,31 @@ def unindex_from_pub(dataset_id=None, place_id=None, idx='pub'):
   collection_detail.html (modal), place_collection_browse.html (modal)
 """
 @shared_task(name="make_download")
-def make_download(request, *args, **kwargs):
-  # TODO: integrate progress_recorder for better progress bar in GUI
-  # progress_recorder = ProgressRecorder(self) #accessed?
-  name = request['name'] or "AnonymousUser"
-  userid = request['userid'] or User.objects.get(email="AnonymousUser").id
-  req_format = kwargs['format']
-  dsid = kwargs['dsid'] or None
+def make_download(*args, **kwargs):
+  print('make_download() args, kwargs', args, kwargs)
+  # TODO: progress indicator
+  userid = kwargs['userid']
+  username = kwargs['username']
   collid = kwargs['collid'] or None
-  print('make_download() dsid, collid', dsid, collid)
-
-
+  dsid = kwargs['dsid'] or None
+  req_format = kwargs['format']
+  print('make_download() userid, dsid, collid, format',
+        userid, dsid, collid, req_format)
+  # return
   date = makeNow()
 
   if collid and not dsid:
     print('entire collection', collid)
-    coll=Collection.objects.get(id=collid)
+    coll = Collection.objects.get(id=collid)
     colltitle = coll.title
-    qs = coll.places.all()
+    qs = coll.places_all.all()
+    total_operations = qs.count()
+    print('coll places', qs.count())
     req_format = 'lpf'
     fn = 'media/downloads/'+str(userid)+'_'+str(collid)+'_'+date+'.json'
     outfile= open(fn, 'w', encoding='utf-8')
     features = []
-    for p in qs:
+    for i, p in enumerate(qs):
       rec = {"type":"Feature",
              "properties":{"id":p.id,"src_id":p.src_id,"title":p.title,"ccodes":p.ccodes},
              "geometry":{"type":"GeometryCollection",
@@ -274,6 +276,7 @@ def make_download(request, *args, **kwargs):
              "whens": [w.jsonb for w in p.whens.all()],
       }
       features.append(rec)
+      current_task.update_state(state='PROGRESS', meta={'current': i + 1, 'total': total_operations})
 
     count = str(len(qs))
     print('download file for '+count+' places in '+colltitle)
@@ -290,8 +293,9 @@ def make_download(request, *args, **kwargs):
       qs=coll.places.filter(dataset=ds)
       print('collection places from dataset', collid, dsid)
     else:
-      qs=ds.places.all()
+      qs = ds.places.all()
     count = str(len(qs))
+    total_operations = qs.count()
 
     print("tasks.make_download()", {"format": req_format, "ds": dsid})
 
@@ -317,7 +321,7 @@ def make_download(request, *args, **kwargs):
 
 
       # name and open csv file for writer
-      fn = 'media/downloads/'+userid+'_'+dslabel+'_'+date+'.tsv'
+      fn = 'media/downloads/'+str(userid)+'_'+dslabel+'_'+date+'.tsv'
       csvfile = open(fn, 'w', newline='', encoding='utf-8')
       writer = csv.writer(csvfile, delimiter='\t', quotechar='', quoting=csv.QUOTE_NONE)
 
@@ -374,16 +378,16 @@ def make_download(request, *args, **kwargs):
         index_map = {v: i for i, v in enumerate(newheader)}
         ordered_row = sorted(newrow.items(), key=lambda pair: index_map[pair[0]])
 
-        #progress_recorder.set_progress(counter + 1, len(features), description="tsv progress")
-
         # write it
         csvrow = [o[1] for o in ordered_row]
         writer.writerow(csvrow)
+
+        current_task.update_state(state='PROGRESS', meta={'current': i + 1, 'total': total_operations})
       csvfile.close()
     else:
       print('building lpf file')
       # make file name
-      fn = 'media/downloads/'+userid+'_'+dslabel+'_'+date+'.json'
+      fn = 'media/downloads/'+str(userid)+'_'+dslabel+'_'+date+'.json'
       outfile = open(fn, 'w', encoding='utf-8')
       features = []
       for p in qs:
@@ -403,6 +407,7 @@ def make_download(request, *args, **kwargs):
           "when": when
         }
         features.append(rec)
+        current_task.update_state(state='PROGRESS', meta={'current': i + 1, 'total': total_operations})
 
       count = str(len(qs))
       print('download file for ' + count + ' places')
@@ -419,64 +424,14 @@ def make_download(request, *args, **kwargs):
       # category, logtype, "timestamp", subtype, note, dataset_id, user_id
       category = 'dataset',
       logtype = 'ds_download',
-      note = {"format":req_format, "name":name},
+      note = {"format": req_format, "name": username},
       dataset_id = dsid,
       user_id = userid
     )
   
   # for ajax, just report filename
-  completed_message = {"msg": req_format+" written", "filename":fn, "rows":count}
+  completed_message = {"msg": req_format+" written", "filename": fn, "rows": count}
   return completed_message
-
-
-# @shared_task(name="task_emailer")
-# def task_emailer(tid, dslabel, name, email, counthit, totalhits, test):
-#   # TODO: sometimes a valid tid is not recognized (race?)
-#   time.sleep(15)
-#   try:
-#     task = get_object_or_404(TaskResult, task_id=tid) or False
-#     tasklabel = 'Wikidata' if task.task_name[6:8]=='wd' else 'WHGazetteer'
-#     if task.status == "FAILURE":
-#       fail_msg = task.result['exc_message']
-#       text_content="Greetings "+name+"! Unfortunately, your "+tasklabel+" reconciliation task has completed with status: "+ \
-#         task.status+". \nError: "+fail_msg+"\nWHG staff have been notified. We will troubleshoot the issue and get back to you."
-#       html_content_fail="<h3>Greetings, "+name+"</h3> <p>Unfortunately, your <b>"+tasklabel+"</b> reconciliation task for the <b>"+dslabel+"</b> dataset has completed with status: "+ task.status+".</p><p>Error: "+fail_msg+". WHG staff have been notified. We will troubleshoot the issue and get back to you soon.</p>"
-#     elif test == 'off':
-#       text_content="Greetings "+name+"! Your "+tasklabel+" reconciliation task has completed with status: "+ \
-#         task.status+". \n"+str(counthit)+" records got a total of "+str(totalhits)+" hits.\nRefresh the dataset page and view results on the 'Reconciliation' tab."
-#       html_content_success="<h3>Greetings, "+name+"</h3> <p>Your <b>"+tasklabel+"</b> reconciliation task for the <b>"+dslabel+"</b> dataset has completed with status: "+ task.status+". "+str(counthit)+" records got a total of "+str(totalhits)+" hits.</p>" + \
-#         "<p>View results on the 'Reconciliation' tab (you may have to refresh the page).</p>"
-#     else:
-#       text_content="Greetings "+name+"! Your "+tasklabel+" TEST task has completed with status: "+ \
-#         task.status+". \n"+str(counthit)+" records got a total of "+str(totalhits)+".\nRefresh the dataset page and view results on the 'Reconciliation' tab."
-#       html_content_success="<h3>Greetings, "+name+"</h3> <p>Your <b>TEST "+tasklabel+"</b> reconciliation task for the <b>"+dslabel+"</b> dataset has completed with status: "+ task.status+". "+str(counthit)+" records got a total of "+str(totalhits)+" hits.</p>" + \
-#         "<p>View results on the 'Reconciliation' tab (you may have to refresh the page).</p>"
-#   except:
-#     print('task lookup in task_emailer() failed on tid', tid, 'how come?')
-#     text_content="Greetings "+name+"! Your reconciliation task for the <b>"+dslabel+"</b> dataset has completed.\n"+ \
-#       str(counthit)+" records got a total of "+str(totalhits)+" hits.\nRefresh the dataset page and view results on the 'Reconciliation' tab."
-#     html_content_success="<h3>Greetings, "+name+"</h3> <p>Your reconciliation task for the <b>"+dslabel+"</b> dataset has completed. "+str(counthit)+" records got a total of "+str(totalhits)+" hits.</p>" + \
-#       "<p>View results on the 'Reconciliation' tab (you may have to refresh the page).</p>"
-#
-#   subject, from_email = 'WHG reconciliation result', 'whg@kgeographer.org'
-#   conn = mail.get_connection(
-#     host=settings.EMAIL_HOST,
-#     user=settings.EMAIL_HOST_USER,
-#     use_ssl=settings.EMAIL_USE_SSL,
-#     password=settings.EMAIL_HOST_PASSWORD,
-#     port=settings.EMAIL_PORT
-#   )
-#   # msg=EmailMessage(
-#   msg = EmailMultiAlternatives(
-#     subject,
-#     text_content,
-#     from_email,
-#     [email],
-#     connection=conn
-#   )
-#   msg.bcc = ['karl@kgeographer.org']
-#   msg.attach_alternative(html_content_success if task and task.status == 'SUCCESS' else html_content_fail, "text/html")
-#   msg.send(fail_silently=False)
 
 # test task for uptimerobot
 @shared_task(name="testAdd")

@@ -111,26 +111,27 @@ def downloadLP7(request):
   return response
 
 # initiate celery tasks for dataset downloads
-# TODO: add download Collection capability Apr 2022
-
 def downloader(request, *args, **kwargs):
-  user = request.user
-  print('request.user', request.user)
   print('downloader() request.POST', request.POST)
+  print('downloader() request.user', request.user)
   dsid = request.POST.get('dsid') or None
   collid = request.POST.get('collid') or None
+  user = request.user
   from datasets.tasks import make_download
   # POST *should* be the only case...
   if request.method == 'POST' and request.accepts('XMLHttpRequest'):
-  # if request.method == 'POST' and request.is_ajax:
     print('ajax == True')
     format=request.POST['format']
+
+    userid = request.user.id if request.user.is_authenticated else 1
     download_task = make_download.delay(
-      {"name":user.name, "userid":user.id},
-      dsid=dsid,
-      collid=collid,
-      format=format,
+      userid=user.id,
+      username=user.username,
+      dsid=dsid or None,
+      collid=collid or None,
+      format=format or None
     )
+
     print('task to Celery', download_task.task_id)
     # return task_id
     obj={'task_id':download_task.task_id}

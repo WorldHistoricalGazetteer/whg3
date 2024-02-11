@@ -108,33 +108,33 @@ export function initOverlays(whgMap) {
 	// Initialise Download link listener
 	$(".a-dl, .a-dl-celery").click(function(e) {
 		e.preventDefault();
+		console.log('a-dl click()')
 		let dsid = $(this).data('id');
 		let collid = $(this).data('collid');
+		let format = $('input[name="format"]:checked').val();
 		let urly = '/datasets/dlcelery/'
+		// let user = $(this).data('user');
+		// let username = user.username;
+
+		let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 		$.ajax({
 			type: 'POST',
 			url: urly,
 			data: {
-				"format": 'lpf',
 				"dsid": dsid,
 				"collid": collid,
-				"csrfmiddlewaretoken": window.csrfToken
+				"format": format,
+				// "user": user,
+				// "username": username,
+				"csrfmiddlewaretoken": csrfToken
 			},
 			datatype: 'json',
 			success: function(response) {
-				// window.spinner_download = startSpinner("metadata");
-				// TODO: window.spinner_download.stop() not yet implemented anywhere?
-				let task_id = response.task_id
-				var progressUrl = "/celery-progress/" + task_id + "/";
-				CeleryProgressBar.initProgressBar(progressUrl, {
-					pollingInterval: 500,
-					onResult: customResult,
-				})
+				console.log('.a-dl response:', response)
 			}
 		})
 	})
 
-			// called from a-dl click()
 
 	// TODO: Collection download event handlers
 	$(".btn-cancel").click(function() {
