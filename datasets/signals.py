@@ -10,27 +10,51 @@ from .models import Dataset, DatasetFile
 from utils.emailing import new_emailer
 
 import logging
+
 logger = logging.getLogger(__name__)
 
-@receiver(post_save, sender=Dataset)
-def send_new_dataset_email(sender, instance, created, **kwargs):
-  # print('send_new_dataset_email: created?', created)
-  try:
-    if created:
-      if not instance.owner.groups.filter(name='whg_team').exists():
-        new_emailer(
-          email_type='new_dataset',
-          subject='New Dataset Created',
-          from_email=settings.DEFAULT_FROM_EMAIL,
-          to_email=settings.EMAIL_TO_ADMINS,
-          name=instance.owner.first_name + ' ' + instance.owner.last_name,
-          username=instance.owner.username,
-          dataset_title=instance.title,
-          dataset_label=instance.label,
-          dataset_id=instance.id
-        )
-  except Exception as e:
-    logger.exception("Error occurred while sending new dataset email")
+
+@receiver(pre_save, sender=Dataset)
+def send_new_dataset_email(sender, instance, **kwargs):
+  if instance.pk:  # if instance exists
+    old_instance = Dataset.objects.get(pk=instance.pk)
+    if old_instance.ds_status != instance.ds_status and instance.ds_status == 'uploaded':
+      try:
+        if not instance.owner.groups.filter(name='whg_team').exists():
+          new_emailer(
+            email_type='new_dataset',
+            subject='New Dataset Created',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to_email=settings.EMAIL_TO_ADMINS,
+            name=instance.owner.first_name + ' ' + instance.owner.last_name,
+            username=instance.owner.username,
+            dataset_title=instance.title,
+            dataset_label=instance.label,
+            dataset_id=instance.id
+          )
+      except Exception as e:
+        logger.exception("Error occurred while sending new dataset email")
+
+
+# @receiver(post_save, sender=Dataset)
+# def send_new_dataset_email(sender, instance, created, **kwargs):
+#   # print('send_new_dataset_email: created?', created)
+#   try:
+#     if created:
+#       if not instance.owner.groups.filter(name='whg_team').exists():
+#         new_emailer(
+#           email_type='new_dataset',
+#           subject='New Dataset Created',
+#           from_email=settings.DEFAULT_FROM_EMAIL,
+#           to_email=settings.EMAIL_TO_ADMINS,
+#           name=instance.owner.first_name + ' ' + instance.owner.last_name,
+#           username=instance.owner.username,
+#           dataset_title=instance.title,
+#           dataset_label=instance.label,
+#           dataset_id=instance.id
+#         )
+#   except Exception as e:
+#     logger.exception("Error occurred while sending new dataset email")
 
 # if public changes to True, notify owner, index to pub and conditionally create tileset
 # if public changes to False, unindex from pub, notify owner
@@ -75,7 +99,7 @@ def handle_public_flag(sender, instance, **kwargs):
         # Changed from True to False, remove the records from the index
         transaction.on_commit(lambda: unindex_from_pub.delay(instance.id))
         # notify the owner
-        owner=instance.owner
+        owner = instance.owner
         new_emailer(
           email_type='dataset_unpublished',
           subject='Your WHG dataset has been unpublished',
@@ -88,6 +112,7 @@ def handle_public_flag(sender, instance, **kwargs):
           dataset_label=instance.label,
           dataset_id=instance.id
         )
+
 
 # notify the owner when status changes to 'wd-complete' or 'indexed'
 @receiver(pre_save, sender=Dataset)

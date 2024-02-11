@@ -121,10 +121,15 @@ class ContactFormTestCase(TestCase):
 class DatasetSignalTestCase(TestCase):
     def setUp(self):
         # Create a user and a dataset for testing
-        self.user = User.objects.create_user(username='testuser', name="Test User", email='testuser@example.com', password='testpass')
-        self.dataset = Dataset.objects.create(owner=self.user, title='Test Dataset', label='test_dataset')
+        self.user = User.objects.create_user(username='testuser', name="Test User", email='testuser@example.com',
+                                             password='testpass')
+        self.dataset = Dataset.objects.create(owner=self.user, title='Test Dataset',
+                                              label='test_dataset', ds_status='created')
 
     def test_send_new_dataset_email(self):
+        self.dataset.ds_status = 'uploaded'
+        self.dataset.save()
+
         # Check if an email was sent
         self.assertEqual(len(mail.outbox), 1)
 
