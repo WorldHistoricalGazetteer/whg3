@@ -65,8 +65,8 @@ export function add_to_collection(coll, pids) {
 export function init_collection_listeners(checked_rows) {
 
 	$(".a_addtocoll").click(function() {
-		coll = $(this).attr('ref')
-		pids = checked_rows
+		let coll = $(this).attr('ref')
+		let pids = checked_rows
 		add_to_collection(coll, pids)
 		/*console.log('pids to coll', pids, coll)*/
 	})

@@ -60,11 +60,12 @@
   font-size: 0.8rem;
   position: absolute;
   top: 16px;
-  right: 195px;
-  width: 170px;
+  right: 130px;
+  width: 200px;
   background-color: #fff;
   border: 1px solid #336699;
-  z-index: 2000;
+  border-radius: 8px;
+  z-index: 10000;
   box-shadow: 3px 3px #c3c3c3;
 }
 

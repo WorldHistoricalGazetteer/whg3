@@ -76,9 +76,11 @@ class Collection(models.Model):
   contact = models.CharField(null=True, blank=True, max_length=500)
   webpage = models.URLField(null=True, blank=True)
 
-  # modified, 20220902: no default
+  # modified, 20220902: 'place' or 'dataset'; no default
   collection_class = models.CharField(choices=COLLECTIONCLASSES, max_length=12)
-  build_type = models.CharField(choices=COLLECTIONTYPES, default="discrete", max_length=10)
+  # applies only to dataset collections ['discrete', 'conflated']
+  build_type = models.CharField(choices=COLLECTIONTYPES, default="discrete", max_length=10,
+                                null=True, blank=True)
 
   # single representative image
   image_file = ResizedImageField(size=[800, 600], upload_to=collection_path, blank=True, null=True)

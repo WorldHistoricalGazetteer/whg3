@@ -110,10 +110,10 @@
         <div style="position:relative;">
           <div class="closer" style="position:absolute; top:-6px; right:-2px">x</div>
         </div>
-        <ul id="my_collections" class="no-bullets"> {% for c in collections %}
-          <li>
-            <a class="a_addtocoll" href="#" ref="{{ c.id }}">{{ c.title }}</a>
-          </li> {% endfor %}
+        <ul id="my_collections" class="no-bullets">
+          {% for c in my_collections %}
+          <li><a class="a_addtocoll" href="#" ref="{{ c.id }}">{{ c.title }}</a></li>
+          {% endfor %}
         </ul>
         <hr/>
         <p class="mb-0 ital">

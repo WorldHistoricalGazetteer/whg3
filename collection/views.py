@@ -1151,4 +1151,4 @@ class CollectionDeleteView(DeleteView):
     return get_object_or_404(Collection, id=id_)
 
   def get_success_url(self):
-    return reverse('data-collections')
+    return reverse('dashboard')
