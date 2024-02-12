@@ -117,9 +117,8 @@ export function initOverlays(whgMap) {
     let collid = $(this).data('collid');
     let format = $('input[name="format"]:checked').val();
     let urly = '/datasets/dlcelery/';
-
-    let csrfToken = document.querySelector('meta[name="csrf-token"]').
-        getAttribute('content');
+    console.log('dsid:', dsid, 'collid:', collid, 'format:', format);
+    let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     $.ajax({
       type: 'POST',
       url: urly,
@@ -139,13 +138,14 @@ export function initOverlays(whgMap) {
         var intervalId = setInterval(function() {
           $.get('/task_progress/' + taskId, function(data) {
             console.log('Server response:', data);
+            $('#progress-message').text('working...');
             if (data.state == 'PROGRESS') {
               // Update the progress indicator
               $('#progress-bar').css('width',
                       data.progress.current / data.progress.total * 100 + '%');
             } else if (data.state == 'SUCCESS') {
               // Display a completion message and stop the interval
-              $('#progress-message').text('Download complete!');
+              $('#progress-message').text('download complete!');
               clearInterval(intervalId);
             }
           }).fail(function(jqXHR, textStatus, errorThrown) {
@@ -157,9 +157,9 @@ export function initOverlays(whgMap) {
   });
 
   // TODO: Collection download event handlers
-  $('.btn-cancel').click(function() {
-    $('#downloadModal').modal('hide');
-  });
+  // $('.btn-cancel').click(function() {
+  //   $('#downloadModal').modal('hide');
+  // });
   let clearEl = function(el) {
     $('#progress-bar').fadeOut();
     el.html('');

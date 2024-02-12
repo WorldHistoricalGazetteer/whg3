@@ -110,6 +110,12 @@ EMAIL_MESSAGES = {
     'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
     'regards,\nThe WHG project team'
   ),
+  'download_ready': (
+    'Dear {greeting_name},\n\n'
+    'Your requested download, {title} ({label}), is ready for download.\n'
+    'You will find it listed in the "Downloads" section of your dashboard.\n\n'
+    'regards,\nThe WHG project team'
+  ),
   # TODO: down for 'maintenance' or 'upgrade'
   'maintenance': (
     'Dear {name},\n\n'

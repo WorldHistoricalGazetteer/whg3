@@ -241,34 +241,39 @@ from django.http import JsonResponse
 
 """ 
   called by utils.downloader()
-  builds download file, retrieved via ajax JS in ds_summary.html, ds_meta.html,
-  collection_detail.html (modal), place_collection_browse.html (modal),
-  ds_places.html (modal), ...
+  builds download file for entire collection or single dataset
+  TODO: list usages
 """
 @shared_task(name="make_download", bind=True)
 def make_download(self, *args, **kwargs):
   print('make_download() args, kwargs', args, kwargs)
-  # TODO: progress indicator
-  userid = kwargs['userid']
-  username = kwargs['username']
+  user = User.objects.get(pk=kwargs['userid'])
   collid = kwargs['collid'] or None
   dsid = kwargs['dsid'] or None
   req_format = kwargs['format']
   print('make_download() userid, dsid, collid, format',
-        userid, dsid, collid, req_format)
-  # return
+        user.id, dsid, collid, req_format)
   date = makeNow()
 
+  # collection or dataset
   if collid and not dsid:
+    # it's an entire collection; all places in all its datasets
     print('entire collection', collid)
     coll = Collection.objects.get(id=collid)
     colltitle = coll.title
     qs = coll.places_all.all()
+
+    # count for progress
     total_operations = qs.count()
-    print('coll places', qs.count())
+
+    # ensure format is lpf
     req_format = 'lpf'
-    fn = 'media/downloads/'+str(userid)+'_'+str(collid)+'_'+date+'.json'
+
+    # name and open file for writing
+    fn = 'media/downloads/'+str(user.id)+'_'+str(collid)+'_'+date+'.json'
     outfile= open(fn, 'w', encoding='utf-8')
+
+    # build features list
     features = []
     for i, p in enumerate(qs):
       rec = {"type":"Feature",
@@ -281,28 +286,28 @@ def make_download(self, *args, **kwargs):
              "whens": [w.jsonb for w in p.whens.all()],
       }
       features.append(rec)
+      # update task state every 100 iterations
       if (i + 1) % 100 == 0:
         self.update_state(state='PROGRESS',
                                   meta={'current': i + 1, 'total': total_operations})
         print(f"Task state: PROGRESS, current: {i + 1}, total: {total_operations}")
 
-    count = str(len(qs))
-    print('download file for '+count+' places in '+colltitle)
+    print('download file for '+total_operations+' places in '+colltitle)
     result = {"type": "FeatureCollection", "features": features,
               "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
               "filename": "/" + fn}
     outfile.write(json.dumps(result,indent=2).replace('null','""'))
-    # TODO: Log object has dataset_id, no collection_id
   elif dsid:
+    # it's a single dataset
+    if collid:
+      print('single dataset in collection', dsid, collid)
+    else:
+      print('solo dataset', dsid)
     ds=Dataset.objects.get(pk=dsid)
     dslabel = ds.label
-    if collid:
-      coll = Collection.objects.get(id=collid)
-      qs=coll.places.filter(dataset=ds)
-      print('collection places from dataset', collid, dsid)
-    else:
-      qs = ds.places.all()
-    count = str(len(qs))
+    qs = ds.places.all()
+
+    # count for progress
     total_operations = qs.count()
 
     print("tasks.make_download()", {"format": req_format, "ds": dsid})
@@ -327,9 +332,15 @@ def make_download(self, *args, **kwargs):
       # all exports should have these, empty or not
       newheader = list(set(newheader+['lon','lat','matches','geo_id','geo_source','geowkt']))
 
+      # Reorder the DataFrame's columns
+      # column_order = ['id', 'title', 'title_source', 'start', 'end', 'attestation_year',
+      #                 'title_uri', 'ccodes', 'variants', 'types', 'aat_types', 'matches',
+      #                 'lon', 'lat', 'geowkt', 'geo_source', 'geo_id', 'description',
+      #                 'parent_name', 'parent_id']
+      # df = df[column_order]
 
       # name and open csv file for writer
-      fn = 'media/downloads/'+str(userid)+'_'+dslabel+'_'+date+'.tsv'
+      fn = 'media/downloads/'+str(user.id)+'_'+dslabel+'_'+date+'.tsv'
       csvfile = open(fn, 'w', newline='', encoding='utf-8')
       writer = csv.writer(csvfile, delimiter='\t', quotechar='', quoting=csv.QUOTE_NONE)
 
@@ -406,8 +417,11 @@ def make_download(self, *args, **kwargs):
     else:
       print('building lpf file')
       # make file name
-      fn = 'media/downloads/'+str(userid)+'_'+dslabel+'_'+date+'.json'
+      fn = 'media/downloads/'+str(user.id)+'_'+dslabel+'_'+date+'.json'
+      # open file for writing
       outfile = open(fn, 'w', encoding='utf-8')
+
+      # build features list
       features = []
       for i, p in enumerate(qs):
         when = p.whens.first().jsonb
@@ -426,13 +440,13 @@ def make_download(self, *args, **kwargs):
           "when": when
         }
         features.append(rec)
+        # update task state every 100 iterations
         if (i + 1) % 100 == 0:
           self.update_state(state='PROGRESS',
                                     meta={'current': i + 1, 'total': total_operations})
           print(f"Task updated: current iteration is {i + 1}, total operations are {total_operations}")
 
-      count = str(len(qs))
-      print('download file for ' + count + ' places')
+      print('download file for ' + total_operations + ' places')
 
       result={"type":"FeatureCollection",
               "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
@@ -442,19 +456,36 @@ def make_download(self, *args, **kwargs):
 
       outfile.write(json.dumps(result, indent=2).replace('null', '""'))
 
-    Log.objects.create(
-      # category, logtype, "timestamp", subtype, note, dataset_id, user_id
-      category = 'dataset',
-      logtype = 'ds_download',
-      note = {"format": req_format, "name": username},
-      dataset_id = dsid,
-      user_id = userid
-    )
+  # log the download, dataset or collection
+  Log.objects.create(
+    # category, logtype, "timestamp", subtype, note, dataset_id, collection_id, user_id
+    category = 'dataset' if dsid else 'collection',
+    logtype = 'ds_download' if dsid else 'coll_download',
+    note = {"format": req_format, "name": user.username},
+    dataset_id = dsid or None,
+    collection_id = collid or None,
+    user_id = user.id
+  )
+
+  from utils.emailing import new_emailer
+  new_emailer(
+    email_type='download_ready',
+    subject='WHG download file is ready',
+    from_email=settings.DEFAULT_FROM_EMAIL,
+    to_email=[user.email],
+    name=user.username,
+    greeting_name=user.name if user.name else user.username,
+    label=ds.label if dsid else coll.label,
+    title=ds.title,
+    email=user.email,
+    taskname='Download',
+  )
 
   self.update_state(state='SUCCESS')
   print("Task state: SUCCESS")
   # for ajax, just report filename
-  completed_message = {"msg": req_format+" written", "filename": fn, "rows": count}
+  # completed_message = {"msg": req_format+" written", "filename": fn, "rows": count}
+  completed_message = {"msg": req_format+" written", "filename": fn}
   return completed_message
 
 # test task for uptimerobot
@@ -594,7 +625,9 @@ def normalize(h, auth, language=None):
     # TODO: rewrite ccDecode to handle all conditions coming from index
     # ccodes might be [] or [''] or ['ZZ', ...]
     rec.countries = ccDecode(h['ccodes']) if ('ccodes' in h.keys() and (len(h['ccodes']) > 0 and h['ccodes'][0] !='')) else []
-    rec.parents = ['partOf: '+r.label+' ('+parseWhen(r['when']['timespans'])+')' for r in h['relations']] \
+    # rec.parents = ['partOf: '+r.label+' ('+parseWhen(r['when']['timespans'])+')' for r in h['relations']] \
+    # TODO: what happened to parseWhen()?
+    rec.parents = ['partOf: '+r.label+' ('+r['when']['timespans']+')' for r in h['relations']] \
                 if 'relations' in h.keys() and len(h['relations']) > 0 else []
     rec.descriptions = h['descriptions'] if len(h['descriptions']) > 0 else []
     

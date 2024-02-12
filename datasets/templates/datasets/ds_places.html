@@ -134,7 +134,7 @@
     <div id="detail" class="overlay right"></div>
     <div id="downloadModal" class="modal fade" tabindex="-1"
            aria-labelledby="downloadModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog modal-lg">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title" id="downloadModalLabel">
@@ -169,7 +169,8 @@
                   <p class="modal-col-head p-1 mb-2">
                     Datasets <small>({{ object.rowcount }} total rows)</small>
                     <span class="float-end me-2">
-                      <span id="progress-bar" style="display: block; height:10px;background-color: #0d6efd; width:0;"></span>
+                      <span id="progress-bar" style="display: block;
+                      height:8px;background-color: #0d6efd; width:0;"></span>
                       <span id="progress-message" class="ms-3 small"></span>
                     </span>
                   </p>
@@ -187,8 +188,10 @@
                         <td>{{ object.title }}&nbsp;
                           <a id="cite_{{ object.id }}" class="clippy" aria-label="
                             {% if object.citation %}{{ object.citation }}{% else %}{{ object.title }}. [Data file, last modified {{ object.last_modified_text }}]. Retrieved from http://whgazetteer.org/datasets/{{ object.id }}/places/, {% now 'd M Y' %}{% endif %}"
-                             rel="tooltip" title="copy to clipboard"><i class="fas fa-clipboard linky"></i></a><br/>
-                          <span class="ml-2 small" style="disply:block"><i>est. download time: {{ object.dl_est }}</i></span>
+                             rel="tooltip" title="copy to clipboard">
+                            <i class="fas fa-clipboard linky"></i></a><br/>
+                          <span class="ml-2 small" style="disply:block">
+                            <i>est. download time: {{ object.dl_est }}</i></span>
                         </td>
                         <td>{{ object.numrows }}</td>
                         <td> <!-- always offer lpf -->
@@ -198,7 +201,7 @@
                           </div>
                           {% if object.format == 'delimited' %}
                             <div class="form-check form-check-inline ml-1">
-                              <input class="form-check-input hover" type="radio" name="format" value="tsv">
+                              <input class="form-check-input hover" type="radio" name="format" value="tsv" checked="checked">
                               <label class="form-check-label" for="r_LP-TSV">LP-TSV</label>
                             </div>
                           {% endif %}
