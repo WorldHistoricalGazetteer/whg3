@@ -3,10 +3,10 @@
 {% load dataset_extras %}
 
 {% block maplibre %}
-	<script type="text/javascript">
-		const loadMaplibre = true;
-	</script>
-	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" />
+  <script type="text/javascript">
+    const loadMaplibre = true;
+  </script>
+  <link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet"/>
 {% endblock %}
 
 {% block extra_head %}
@@ -23,7 +23,7 @@
       border-radius: 4px;
       padding: 5px;
       z-index: 10;
-     }
+    }
   </style>
 {% endblock %}
 
@@ -40,9 +40,10 @@
         {#  work in progress #}
         <div id="sources" class="bg-light info-box">
           <h6 class="mb-0 strong-red">Sources
-            <span id="addtocoll" class="float-end me-1 small">
-          <a id="addchecked" href="#">add to collection <i class="fas fa-plus-circle"></i> </a>
-          </span>
+            <span id="addtocoll" class="float-end me-1 small hidden">
+              <span id="added_flash" class="mr-2 hidden" style="background-color: yellow; position:absolute; top:10px; right:10px;"> added! </span>
+            <a id="addchecked" href="#">add to collection <i class="fas fa-plus-circle"></i> </a>
+            </span>
           </h6>
           {% for rec in payload %}
             <div class="source-box">
@@ -53,9 +54,9 @@
 
               {% if user.is_authenticated %}
                 <span class="float-end">
-                              <input type="radio" name="r_anno" rel="tooltip" title="add to a collection"
-                                     class="action ml-2" data-id="{{ rec.id }}"/>
-                              </span>
+                  <input type="radio" name="r_anno" rel="tooltip" title="add to a collection"
+                         class="action ml-2" data-id="{{ rec.place_id }}"/>
+                </span>
               {% endif %}
               <div class="name-variants">Names:
                 <strong class="larger">{{ rec.title }}</strong>
@@ -136,9 +137,9 @@
       includeUndated: true,
       epochs: null,
       automate: null,
-    } {% else %} false {% endif %}
+    } {% else %} false; {% endif %}
     let allts =
-    {{ allts }}
+      {{ allts }};
   </script>
 
   {{ payload|json_script:"payload_data" }}

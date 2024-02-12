@@ -1,0 +1,83 @@
+Design discussion points, 6-7 March
+===================================
+
+Many things to consider:
+
+Home
+----
+- intro content
+- map
+	- search, advanced search
+	- hulls?
+- announcements
+- publications; "features"?
+	- static? looping?
+- big button terminology and navigation
+- main menu choices
+
+Search
+------
+everything about it
+- empty space to start
+- input box options
+- map layer options
+- result 'card' contents
+- country/region filters
+- zoom behavior
+
+Place Portal
+------------
+- base map(s)?
+- feature layers
+- what appears at what zoom?
+- what can be computed? regions
+	- summary under headword? i regions, we have so far annotations spanning {timespan}
+
+
+Publications page
+-----------------
+- other names
+- separate for Places and Datasets?
+- student gallery in Teaching?
+- map preview on hover?
+- map: hulls?
+- card content
+- page control
+- sorts and filters
+
+Published works
+---------------
+everything about them
+- Datasets
+- Place Collections
+- Dataset Collections
+
+Collection Groups & Teaching
+----------------------------
+- pathways
+- needs review and testing (user, code)
+- student gallery?
+
+Data
+----
+- option to add wikidata variants on reconciliation?
+- 
+
+About
+-----
+- right pages?
+- publications
+- staff bios?
+
+Profile
+-------
+
+User dashboard
+--------------
+
+Admin dashboard
+---------------
+
+
+
+

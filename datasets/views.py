@@ -636,6 +636,7 @@ def review(request, pk, tid, passnum):
                 task_id=tid,
                 src_id=place.src_id,
                 geom=gobj,
+                reviewer=request.user,
                 jsonb={
                   "type": gtype,
                   "citation": {
@@ -654,6 +655,7 @@ def review(request, pk, tid, passnum):
                 place=place_post,
                 task_id=tid,
                 src_id=place.src_id,
+                reviewer=request.user,
                 jsonb={
                   "type": hits[x]["match"],
                   "identifier": link_uri(
@@ -2785,7 +2787,7 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
       # print('df', df)
       # return
       #  END TEST
-
+      print('uploading in DatasetCreate()', filename, ext)
       df = read_file_into_dataframe(file, ext)
       try:
         validate_delim(df)
@@ -2812,6 +2814,9 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
 
       # Create the Dataset object
       dataset = form.save(commit=False)
+      # If base_uri is empty, set it to the default value
+      if not dataset.uri_base:
+        dataset.uri_base = 'https://whgazetteer.org/api/db/?id='
       dataset.save()
 
       # Directly process the DataFrame and create database entries

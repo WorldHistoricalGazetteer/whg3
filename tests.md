@@ -58,4 +58,11 @@ _as of 10 Jan 2024_
 #### 11. [DumpDistinctToponymsCommandTest](tests/test_dumps.py)
     - test_command_output_zip
 
+### tests/test_reviewer.py
+#### 12. [PlaceGeomPlaceLinkTest](tests/test_reconciliation.py)
+    - test_create_placegeom_with_task_id_without_reviewer
+    - test_create_placelink_with_task_id_without_reviewer
+    - test_create_placegeom_with_task_id
+    - test_create_placelink_with_task_id
+
 

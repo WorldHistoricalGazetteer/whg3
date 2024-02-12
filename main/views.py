@@ -10,14 +10,15 @@ from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect #, render_to_response
 from django.urls import reverse_lazy
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.base import TemplateView
 
-from .forms import CommentModalForm, ContactForm
+from .forms import CommentModalForm, ContactForm, AnnouncementForm
 from areas.models import Area
 from collection.models import Collection, CollectionGroup, CollectionGroupUser
 from datasets.models import Dataset
 from datasets.tasks import testAdd
-from main.models import Link
+from .models import Announcement, Link
 from places.models import Place, PlaceGeom
 from utils.emailing import new_emailer
 
@@ -29,6 +30,35 @@ import sys
 from urllib.parse import urlparse
 
 es = settings.ES_CONN
+
+
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+
+class AnnouncementListView(ListView):
+    model = Announcement
+    context_object_name = 'announcements'
+    template_name = 'announcements/announcement_list.html'
+    queryset = Announcement.objects.filter(active=True).order_by('-created_at')
+
+class AnnouncementCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+    model = Announcement
+    form_class = AnnouncementForm
+    template_name = 'announcements/announcement_form.html'
+    success_url = reverse_lazy('announcements-list')
+    permission_required = 'main.add_announcement' # Adjust based on your app's name and permissions
+
+class AnnouncementDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = Announcement
+    template_name = 'announcements/announcement_confirm_delete.html'
+    success_url = reverse_lazy('announcements-list')
+    permission_required = 'main.delete_announcement' # Adjust based on your app's name and permissions
+
+class AnnouncementUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    model = Announcement
+    form_class = AnnouncementForm
+    template_name = 'announcements/announcement_form.html'
+    success_url = reverse_lazy('announcements-list')
+    permission_required = 'main.change_announcement' # Adjust based on your app's name and permissions
 
 # initiated by main.tasks.request_tileset()
 def send_tileset_request(dataset_id=None, collection_id=None, tiletype='normal'):
@@ -111,6 +141,7 @@ class Home30a(TemplateView):
     context['teacher'] = True if self.request.user.groups.filter(
       name__in=['teacher']).exists() else False
     context['count'] = Place.objects.filter(dataset__public=True).count()
+    context['announcements'] = Announcement.objects.filter(active=True).order_by('-created_at')[:3]
 
     # TODO: REMOVE THE FOLLOWING? ****************************************************
     # Serialize the querysets to JSON
@@ -132,8 +163,10 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
   else:
     objects = model.objects.filter(**filter_criteria).exclude(title__startswith='(stub)')
 
-  # If the user is an admin and we're looking at Area, apply the study_areas filter to all users including admins
-  if is_admin and model == Area:
+  if model == Area:
+    objects = objects.filter(type__in=['ccodes', 'copied', 'drawn'])
+
+  if is_admin and model == Area and 'type' in filter_criteria:
     objects = objects.exclude(type__in=filter_criteria['type'])
   elif model == Dataset: # reverse sort, and some dummy datasets need to be filtered
       objects = objects.exclude(title__startswith='(stub)').order_by()
@@ -456,9 +489,9 @@ def dashboard_user_view(request):
 
   section = request.GET.get('section')
 
-  datasets = get_objects_for_user(Dataset, request.user, {'owner': user}, is_admin)
-  collections = get_objects_for_user(Collection, request.user, {'owner': user}, is_admin)
-  areas = get_objects_for_user(Area, request.user, {'owner': user}, is_admin)
+  datasets = get_objects_for_user(Dataset, request.user, {'owner': user}, False)
+  collections = get_objects_for_user(Collection, request.user, {'owner': user}, False)
+  areas = get_objects_for_user(Area, request.user, {'owner': user}, False)
   groups_member = CollectionGroup.objects.filter(members__user=user)
   groups_led = CollectionGroup.objects.filter(owner=user)
 

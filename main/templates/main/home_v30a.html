@@ -2,207 +2,225 @@
 {% load static %}
 
 {% block title %}
-	<title>WHG v3.0a</title>
+  <title>WHG v3.0a</title>
 {% endblock %}
 
 {% block maplibre %}
-	<script type="text/javascript">
-		const loadMaplibre = true;
-	</script>
-	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" /> 
+  <script type="text/javascript">
+    const loadMaplibre = true;
+  </script>
+  <link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet"/>
 {% endblock %}
 
-{% block extra_head %} 
-	<link href="{% static 'webpack/home.bundle.css' %}" rel="stylesheet" />
+{% block extra_head %}
+  <link href="{% static 'webpack/home.bundle.css' %}" rel="stylesheet"/>
 {% endblock %}
 
 {% block content %}
 
-<div class="container mt-1" style="min-height: calc(100vh - 210px);">
-	<div id="banner" class="banner-bare w-100 my-1 p-2">
-		{% if request.user_agent.is_mobile %}
-			<div class="centered ">
+  <div class="container mt-1" style="min-height: calc(100vh - 210px);">
+    <div id="banner" class="banner-bare w-100 my-1 p-2">
+      {% if request.user_agent.is_mobile %}
+        <div class="centered ">
 			  <span class="title-mobile mb-0">
 				  World Historical Gazetteer
 			  </span>
-			  <span id="tagline_mobile" class="mx-auto" style="display:block">linking knowledge about the past via place</span>
-			</div>
-		{% else %}
-			<div class="centered w-100">
-        <!-- alternate home page -->
-        <span class="position-absolute top-0 end-0"><b>TAKE 1</b>
-          <a href="{% url 'home-version' version='v30a2'%}">take 2</a>
+          <span id="tagline_mobile" class="mx-auto"
+                style="display:block">linking knowledge about the past via place</span>
+        </div>
+      {% else %}
+        <div class="centered w-100">
+          <!-- alternate home page -->
+          <span class="position-absolute top-0 end-0"><b>TAKE 1</b>
+          <a href="{% url 'home-version' version='v30a2' %}">take 2</a>
         </span>
-			  <span class="title mb-2">
-				  <img src="{% static 'images/whg_logo.svg'%}" class="d-inline-block align-bottom me-2"
+          <span class="title mb-2">
+				  <img src="{% static 'images/whg_logo.svg' %}" class="d-inline-block align-bottom me-2"
                height=80 width=80 alt=""/>
 				  World Historical Gazetteer
 			  </span>
-			  <span id="tagline" class="mx-auto" style="display:block">linking knowledge about the past via place</span>
-			</div>
-		{% endif %}
-	</div>
-	<div id="content_top" class="row gx-2 gy-2 mx-0 h-75">
-		<div class="col-sm-3" id="intro">
-			<div class="p-2 border h-100">
-        <div class="bg-lighterblue mb-3">Welcome to this "alpha" release of Version 3 of the World Historical Gazetteer! Feedback on this work-in-progress is much appreciated.</div><p>WHG is a collaborative open platform for gathering information about historical place, providing a collection of content and services that permit world historians, their students, and the general public to do spatial and temporal reasoning and visualization in a data rich environment at global and trans-regional scales.</p>
-				</p>
-			</div>
-		</div>
-		<div class="col-sm-6">
-			<div class="border mb-1 h-75 bg-white" style="position: relative;">
-				<div id="map"></div>
-		    <div id="advanced_search" class="bg-light">
-			    <p class="mb-0"><span class="categories ms-1">place categories</span>
-		            <span class="ms-1 categories">
+          <span id="tagline" class="mx-auto" style="display:block">linking knowledge about the past via place</span>
+        </div>
+      {% endif %}
+    </div>
+    <div id="content_top" class="row gx-2 gy-2 mx-0 h-75">
+      <div class="col-sm-3" id="intro">
+        <div class="p-2 border h-100">
+          <div class="bg-lighterblue mb-3">Welcome to this "alpha" release of Version 3 of the World Historical
+            Gazetteer! Feedback on this work-in-progress is much appreciated.
+          </div>
+          <p>WHG is a collaborative open platform for gathering information about historical place, providing a
+            collection of content and services that permit world historians, their students, and the general public to
+            do spatial and temporal reasoning and visualization in a data rich environment at global and trans-regional
+            scales.</p>
+          </p>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="border mb-1 h-75 bg-white" style="position: relative;">
+          <div id="map"></div>
+          <div id="advanced_search" class="bg-light">
+            <p class="mb-0"><span class="categories ms-1">place categories</span>
+              <span class="ms-1 categories">
 		              <span class="me-1"><a id="check_toggle" href="#">clear all</a></span>
 		              <a id="filter_help" class="pointer" data-toggle="popover" title="Place categories"
-		                 data-content="" tabindex="0" data-trigger="focus"><i class="fas fa-question-circle linky"></i></a>
+                     data-content="" tabindex="0" data-trigger="focus"><i class="fas fa-question-circle linky"></i></a>
 		            </span>
-	            </p>
-			      <div id="adv_checkboxes" class="small mt-2 ps-1">
-			        <p><input type="checkbox" id="cb_a" checked="checked" value="A"/>
-				        <span for="cb_a"> Administrative entities (A)</span></p>
-			        <p><input type="checkbox" id="cb_p" checked="checked" value="P"/>
-				        <span for="cb_p"> Cities, towns, hamlets (P)</span></p>
-			        <p><input type="checkbox" id="cb_s" checked="checked" value="S"/>
-				        <span for="cb_s"> Sites, buildings, complexes (S)</span></p>
-			        <p><input type="checkbox" id="cb_r" checked="checked" value="R"/>
-				        <span for="cb_r"> Roads, routes, rail... (R)</span></p>
-			        <p><input type="checkbox" id="cb_l" checked="checked" value="L"/>
-				        <span for="cb_l"> Regions, landscape areas (L)</span></p>
-			        <p><input type="checkbox" id="cb_t" checked="checked" value="T"/>
-				        <span for="cb_t"> Terrestrial landforms (T)</span></p>
-			        <p><input type="checkbox" id="cb_h" checked="checked" value="H"/>
-				        <span for="cb_h"> Water bodies (H)</span></p>
-		        </div>
+            </p>
+            <div id="adv_checkboxes" class="small mt-2 ps-1">
+              <p><input type="checkbox" id="cb_a" checked="checked" value="A"/>
+                <span for="cb_a"> Administrative entities (A)</span></p>
+              <p><input type="checkbox" id="cb_p" checked="checked" value="P"/>
+                <span for="cb_p"> Cities, towns, hamlets (P)</span></p>
+              <p><input type="checkbox" id="cb_s" checked="checked" value="S"/>
+                <span for="cb_s"> Sites, buildings, complexes (S)</span></p>
+              <p><input type="checkbox" id="cb_r" checked="checked" value="R"/>
+                <span for="cb_r"> Roads, routes, rail... (R)</span></p>
+              <p><input type="checkbox" id="cb_l" checked="checked" value="L"/>
+                <span for="cb_l"> Regions, landscape areas (L)</span></p>
+              <p><input type="checkbox" id="cb_t" checked="checked" value="T"/>
+                <span for="cb_t"> Terrestrial landforms (T)</span></p>
+              <p><input type="checkbox" id="cb_h" checked="checked" value="H"/>
+                <span for="cb_h"> Water bodies (H)</span></p>
+            </div>
             <div id="filter_spatial">
-				<p class="mb-0"><span class="categories ms-1">spatial</span>
-          <span class="small">
+              <p class="mb-0"><span class="categories ms-1">spatial</span>
+                <span class="small">
             <a id="spatial_help" class="pointer" data-toggle="popover"
                title="Spatial filter" data-content="" tabindex="0" data-trigger="focus">
             <i class="fas fa-question-circle linky"></i></a>
           </span>
-        </p>
-				<input id="input_area" type="text" size="25" placeholder="Region, country, study area" />
-	            <input type="hidden" id="boundsobj" />
+              </p>
+              <input id="input_area" type="text" size="25" placeholder="Region, country, study area"/>
+              <input type="hidden" id="boundsobj"/>
             </div>
-			    {#<button id="close-advanced_search" class="btn btn-sm btn-secondary">Close</button>#}
-		    </div>
+            {#<button id="close-advanced_search" class="btn btn-sm btn-secondary">Close</button>#}
+          </div>
 
-				<div id="search_map" class="input-group input-group-sm mb-3 shadow-sm">
-				  <input type="search" class="form-control" placeholder="Enter place name"
-				         aria-label="Search places" aria-describedby="addon-wrapping">
-				  <span class="input-group-text" id="addon-wrapping">
+          <div id="search_map" class="input-group input-group-sm mb-3 shadow-sm">
+            <input type="search" class="form-control" placeholder="Enter place name"
+                   aria-label="Search places" aria-describedby="addon-wrapping">
+            <span class="input-group-text" id="addon-wrapping">
 					  <a href="#" id="a_search"><i class="fas fa-search"></i></a>
 				  </span>
-				</div>
+          </div>
 
-				<div class="advanced-search-link px-1 py-0">
-					<a id="a_advanced" href="#">advanced search </a>
-				</div>
-			</div>
-			<div class="p-1 border bg-white smallish" style="height: 24%;">
-				<p class="mb-0 red-head">ANNOUNCEMENTS</p>
-				<p  class="mb-0">Volunteers wanted! Help us get some amazing datasets fully indexed in the system (<a href="#">details</a>)</p>
-			</div>
-		</div>
-		<div id="carousel-outer-container" class="col-sm-3 d-flex flex-column p-0">
-			{# Populated dynamically in JavaScript #}
-		</div>
-	</div> <!-- content_top -->
+          <div class="advanced-search-link px-1 py-0">
+            <a id="a_advanced" href="#">advanced search </a>
+          </div>
+        </div>
 
-	<div id="content_bottom" class="row gx-2 gy-2 mx-0 h-25">
-		<div class="col-sm-3 p-1 home-button">
-			<div class="h-100 border p-1">
-				<div class="home-icon-row">
-					<img src="{% static 'images/001-binoculars.png'%}" class="" height=40 width=40 alt=""/>
-				</div>
-				<h5><span class="home-button-hilite">Search</span> <span class="red-head">
-					{{ count}}</span> published place attestations</h5>
-			</div>
-			<a href="{% url 'search-page' %}">
-				<span class="link-spanner"></span>
-			</a>
-		</div>
-		<div class="col-sm-3 p-1 home-button">
-			<div class="h-100 border p-1">
-				<div class="home-icon-row">
-					<img src="{% static 'images/001-up-arrow.png'%}" class="" height=40 width=40 alt=""/>
-					<img src="{% static 'images/003-browser.png' %}" class="ms-3" height=40 width=40 alt=""/>
-				</div>
-				<h5><span class="home-button-hilite">Upload, enhance, link, and publish</span> your place data</h5>
-			</div>
-			<a href="{% url 'pipeline' %}">
-				<span class="link-spanner"></span>
-			</a>
-		</div>
-		<div class="col-sm-3 p-1 home-button">
-			<div class="h-100 border p-1">
-				<div class="home-icon-row">
-          <img src="{% static 'images/008-collect.png'%}" class="" height=42 width=42 alt=""/></div>
-				<h5><span class="home-button-hilite">Build</span>, annotate, and publish custom collections</h5>
-			</div>
-			<a href="{% url 'builder' %}">
-				<span class="link-spanner"></span>
-			</a>
-		</div>
-		<div class="col-sm-3 p-1 home-button">
-			<div class="h-100 border p-1">
-				<div class="home-icon-row">
-					<img src="{% static 'images/011-teaching.png'%}" class="" height=42 width=42 alt=""/>
-				</div>
-				<h5><span class="home-button-hilite">Use WHG data</span> in teaching</h5>
-			</div>
-      <a href="{% url 'teaching' %}">
-				<span class="link-spanner"></span>
-			</a>
-		</div>
-	</div> <!-- content_bottom-->
-	<!-- Modal -->
-	<div class="modal fade" id="homeModal" tabindex="-1"
-	     aria-labelledby="homeModalLabel" aria-hidden="true">
-	  <div class="modal-dialog modal-lg">
-	    <div class="modal-content">
-	      <div class="modal-header">
-	        <h5 class="modal-title" id="homeModalLabel">{ per-button title }</h5>
-	        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-	      </div>
-	      <div class="modal-body" style="overflow-y: scroll;"></div>
-	      <div class="modal-footer">
-	        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-	      </div>
-	    </div>
-	  </div>
-	</div>
-</div>
+        <div class="p-1 border bg-white smallish" style="height: 24%;">
+            <p class="mb-0 red-head">ANNOUNCEMENTS</p>
+            <div id="announcement-container" class="mb-0">
+                {% for announcement in announcements|slice:":3" %}
+                    <div class="announcement" {% if not forloop.first %}style="display: none;"{% endif %}>
+                        <a href="{{ announcement.link }}" target="_blank">
+                          <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
+                        </a>
+                        <span class="ms-2">{{ announcement.content }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
 
-{% csrf_token %} <!-- Used for Django POST requests -->
-<script type="text/javascript">
-	var eswhg = "{{ es_whg|escapejs }}";
+      </div>
+      <div id="carousel-outer-container" class="col-sm-3 d-flex flex-column p-0">
+        {# Populated dynamically in JavaScript #}
+      </div>
+    </div> <!-- content_top -->
+
+    <div id="content_bottom" class="row gx-2 gy-2 mx-0 h-25">
+      <div class="col-sm-3 p-1 home-button">
+        <div class="h-100 border p-1">
+          <div class="home-icon-row">
+            <img src="{% static 'images/001-binoculars.png' %}" class="" height=40 width=40 alt=""/>
+          </div>
+          <h5><span class="home-button-hilite">Search</span> <span class="red-head">
+					{{ count }}</span> published place attestations</h5>
+        </div>
+        <a href="{% url 'search-page' %}">
+          <span class="link-spanner"></span>
+        </a>
+      </div>
+      <div class="col-sm-3 p-1 home-button">
+        <div class="h-100 border p-1">
+          <div class="home-icon-row">
+            <img src="{% static 'images/001-up-arrow.png' %}" class="" height=40 width=40 alt=""/>
+            <img src="{% static 'images/003-browser.png' %}" class="ms-3" height=40 width=40 alt=""/>
+          </div>
+          <h5><span class="home-button-hilite">Upload, enhance, link, and publish</span> your place data</h5>
+        </div>
+        <a href="{% url 'pipeline' %}">
+          <span class="link-spanner"></span>
+        </a>
+      </div>
+      <div class="col-sm-3 p-1 home-button">
+        <div class="h-100 border p-1">
+          <div class="home-icon-row">
+            <img src="{% static 'images/008-collect.png' %}" class="" height=42 width=42 alt=""/></div>
+          <h5><span class="home-button-hilite">Build</span>, annotate, and publish custom collections</h5>
+        </div>
+        <a href="{% url 'builder' %}">
+          <span class="link-spanner"></span>
+        </a>
+      </div>
+      <div class="col-sm-3 p-1 home-button">
+        <div class="h-100 border p-1">
+          <div class="home-icon-row">
+            <img src="{% static 'images/011-teaching.png' %}" class="" height=42 width=42 alt=""/>
+          </div>
+          <h5><span class="home-button-hilite">Use WHG data</span> in teaching</h5>
+        </div>
+        <a href="{% url 'teaching' %}">
+          <span class="link-spanner"></span>
+        </a>
+      </div>
+    </div> <!-- content_bottom-->
+    <!-- Modal -->
+    <div class="modal fade" id="homeModal" tabindex="-1"
+         aria-labelledby="homeModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="homeModalLabel">{ per-button title }</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" style="overflow-y: scroll;"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {% csrf_token %} <!-- Used for Django POST requests -->
+  <script type="text/javascript">
+    var eswhg = "{{ es_whg|escapejs }}";
     let galleries = [
-        ["Datasets","{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"],
-		["Collections","{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}"]
+      ['Datasets', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"],
+      ['Collections', "{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}"],
     ];
-    let carousel_metadata = {{ carousel_metadata|safe }}
+    let carousel_metadata = {{ carousel_metadata|safe }};
     let startCarousels = false; // Determines whether galleries are to be auto-cycled
     let repositionMap = true; // Determines whether map should fly to loaded datacollection
-    let homeModalURL = "{% url 'modal-home' %}"
-</script>
+    let homeModalURL = "{% url 'modal-home' %}";
+  </script>
 
 {% endblock %}
 
 {% block deferredScripts %}
-   	
-   	var scripts = [
-		{
-			src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
-			type: 'text/javascript',
-		},
-		{
-			src: '{% static 'webpack/home.bundle.js' %}',
-			type: 'module',
-		},
-   	]
+
+  var scripts = [
+  {
+  src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
+  type: 'text/javascript',
+  },
+  {
+  src: '{% static 'webpack/home.bundle.js' %}',
+  type: 'module',
+  },
+  ]
 
 {% endblock %}

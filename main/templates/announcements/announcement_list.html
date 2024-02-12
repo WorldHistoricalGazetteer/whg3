@@ -1,0 +1,17 @@
+<!-- templates/announcements/announcement_list.html -->
+{% extends 'main/base.html' %}
+</style>
+{% block content %}
+  <div id="container" class="container mt-2">
+    <h2>Announcements</h2>
+    <p><a href="{% url 'announcement-create' %}">Create one</a></p>
+    {% for announcement in announcements %}
+      <div>
+        <p>{{ announcement.created_at|date:"j F Y"}}<br/>
+          <b class="text-decoration-underline p-1">{{ announcement.headline }}</b>: {{ announcement.content }}
+          <span class="ms-3"><a href="{% url 'announcement-update' announcement.id %}">edit</a></span>
+        </p>
+      </div>
+    {% endfor %}
+  </div>
+{% endblock %}

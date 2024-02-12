@@ -1,0 +1,42 @@
+<!-- templates/announcements/announcement_form.html -->
+{% extends 'main/base.html' %} <!-- Adjust this to your base template -->
+
+{% block content %}
+<div id="container" class="container mt-2">
+  <h2 class="mb-4">{% if object %}Edit Announcement{% else %}Add Announcement{% endif %}</h2>
+  <form method="post">
+    {% csrf_token %}
+    <table>
+      {% for field in form %}
+      <tr>
+        <td>{{ field.label_tag }}</td>
+        <td>{{ field }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <div class="mt-3">
+      <button type="submit">Save</button>
+      {% if object %}
+      <a href="{% url 'announcement-delete' object.id %}" class="btn btn-danger">
+        <i class="fas fa-trash"></i> Delete
+      </a>
+      {% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+
+
+{#{% extends 'main/base.html' %} <!-- Adjust this to your base template -->#}
+{##}
+{#{% block content %}#}
+{#<div id="container" class="container mt-2">#}
+{#  <h2>{% if object %}Edit Announcement{% else %}Add Announcement{% endif %}</h2>#}
+{#  <form method="post">#}
+{#    {% csrf_token %}#}
+{#    {{ form.as_p }}#}
+{#    <button type="submit">Save</button>#}
+{#  </form>#}
+{#</div>#}
+{#{% endblock %}#}

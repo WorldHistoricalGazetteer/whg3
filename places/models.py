@@ -199,6 +199,13 @@ class PlaceGeom(models.Model):
   s2 = ArrayField(models.CharField(max_length=255, null=True), null=True)
   # informs dataset last_update
   created = models.DateTimeField(null=True, auto_now_add=True)
+  # written only if task_id
+  reviewer = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+
+  def save(self, *args, **kwargs):
+    if self.task_id and not self.reviewer:
+      raise ValueError("Reviewer is required when task_id is provided")
+    super().save(*args, **kwargs)
 
   @property
   def title(self):
@@ -248,6 +255,13 @@ class PlaceLink(models.Model):
 
   # informs dataset last_update
   created = models.DateTimeField(null=True, auto_now_add=True)
+  # written only if task_id
+  reviewer = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+
+  def save(self, *args, **kwargs):
+    if self.task_id and not self.reviewer:
+      raise ValueError("Reviewer is required when task_id is provided")
+    super().save(*args, **kwargs)
 
   class Meta:
     managed = True
