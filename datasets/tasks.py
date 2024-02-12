@@ -235,13 +235,18 @@ def unindex_from_pub(dataset_id=None, place_id=None, idx='pub'):
 
   print(f"Unindexing complete")
 
+from celery.result import AsyncResult
+from django.http import JsonResponse
+
+
 """ 
   called by utils.downloader()
   builds download file, retrieved via ajax JS in ds_summary.html, ds_meta.html,
-  collection_detail.html (modal), place_collection_browse.html (modal)
+  collection_detail.html (modal), place_collection_browse.html (modal),
+  ds_places.html (modal), ...
 """
-@shared_task(name="make_download")
-def make_download(*args, **kwargs):
+@shared_task(name="make_download", bind=True)
+def make_download(self, *args, **kwargs):
   print('make_download() args, kwargs', args, kwargs)
   # TODO: progress indicator
   userid = kwargs['userid']
@@ -276,7 +281,10 @@ def make_download(*args, **kwargs):
              "whens": [w.jsonb for w in p.whens.all()],
       }
       features.append(rec)
-      current_task.update_state(state='PROGRESS', meta={'current': i + 1, 'total': total_operations})
+      if (i + 1) % 100 == 0:
+        self.update_state(state='PROGRESS',
+                                  meta={'current': i + 1, 'total': total_operations})
+        print(f"Task state: PROGRESS, current: {i + 1}, total: {total_operations}")
 
     count = str(len(qs))
     print('download file for '+count+' places in '+colltitle)
@@ -382,7 +390,18 @@ def make_download(*args, **kwargs):
         csvrow = [o[1] for o in ordered_row]
         writer.writerow(csvrow)
 
-        current_task.update_state(state='PROGRESS', meta={'current': i + 1, 'total': total_operations})
+        if (i + 1) % 100 == 0:  # Update state every 100 iterations
+          try:
+            self.update_state(state='PROGRESS',
+                                      meta={'current': i + 1, 'total': total_operations})
+            print(f"Task state: PROGRESS, current: {i + 1}, total: {total_operations}")
+
+            task_id = self.request.id
+            task_result = AsyncResult(task_id)
+            print(f"Immediate task state: {task_result.state}, info: {task_result.info}")
+          except Exception as e:
+            print(f"Error updating task state: {e}")
+
       csvfile.close()
     else:
       print('building lpf file')
@@ -390,7 +409,7 @@ def make_download(*args, **kwargs):
       fn = 'media/downloads/'+str(userid)+'_'+dslabel+'_'+date+'.json'
       outfile = open(fn, 'w', encoding='utf-8')
       features = []
-      for p in qs:
+      for i, p in enumerate(qs):
         when = p.whens.first().jsonb
         if 'minmax' in when:
           del when['minmax']
@@ -407,7 +426,10 @@ def make_download(*args, **kwargs):
           "when": when
         }
         features.append(rec)
-        current_task.update_state(state='PROGRESS', meta={'current': i + 1, 'total': total_operations})
+        if (i + 1) % 100 == 0:
+          self.update_state(state='PROGRESS',
+                                    meta={'current': i + 1, 'total': total_operations})
+          print(f"Task updated: current iteration is {i + 1}, total operations are {total_operations}")
 
       count = str(len(qs))
       print('download file for ' + count + ' places')
@@ -428,7 +450,9 @@ def make_download(*args, **kwargs):
       dataset_id = dsid,
       user_id = userid
     )
-  
+
+  self.update_state(state='SUCCESS')
+  print("Task state: SUCCESS")
   # for ajax, just report filename
   completed_message = {"msg": req_format+" written", "filename": fn, "rows": count}
   return completed_message

@@ -112,8 +112,7 @@ def downloadLP7(request):
 
 # initiate celery tasks for dataset downloads
 def downloader(request, *args, **kwargs):
-  print('downloader() request.POST', request.POST)
-  print('downloader() request.user', request.user)
+  print('downloader() user, request.POST', request.user, request.POST)
   dsid = request.POST.get('dsid') or None
   collid = request.POST.get('collid') or None
   user = request.user
@@ -134,7 +133,7 @@ def downloader(request, *args, **kwargs):
 
     print('task to Celery', download_task.task_id)
     # return task_id
-    obj={'task_id':download_task.task_id}
+    obj={'task_id': download_task.task_id}
     print('obj from downloader()', obj)
 
     #return render(request, 'datasets/ds_meta.html', context=context)

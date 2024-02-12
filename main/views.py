@@ -15,6 +15,7 @@ from django.views.generic.base import TemplateView
 
 from .forms import CommentModalForm, ContactForm, AnnouncementForm
 from areas.models import Area
+from celery.result import AsyncResult
 from collection.models import Collection, CollectionGroup, CollectionGroupUser
 from datasets.models import Dataset
 from datasets.tasks import testAdd
@@ -31,8 +32,19 @@ from urllib.parse import urlparse
 
 es = settings.ES_CONN
 
-
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+
+def get_task_progress(request, taskid):
+  print(f"Requested URL: {request.path}")
+  print('get_task_progress() taskid', taskid)
+  task = AsyncResult(taskid)
+  print('task', task)
+  response_data = {
+    'state': task.state,
+    'progress': task.result  # dict with 'current' and 'total' keys
+  }
+  print('response_data', response_data)
+  return JsonResponse(response_data)
 
 class AnnouncementListView(ListView):
     model = Announcement

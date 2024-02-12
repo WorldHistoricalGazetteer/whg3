@@ -67,13 +67,10 @@ urlpatterns = [
     path('api/', TemplateView.as_view(template_name="main/api.html"), name="api"),
     path('downloads/', TemplateView.as_view(template_name="main/downloads.html"), name="downloads"),
 
-
-    # static content - 2024-01
+    # more static content - 2024-01
     path('build/', TemplateView.as_view(template_name="home/build_new.html"), name="build"),
     path('builder/', TemplateView.as_view(template_name="home/builder.html"), name="builder"),
     path('pipeline/', TemplateView.as_view(template_name="home/pipeline.html"), name="pipeline"),
-
-    # path('tinymce/', include('tinymce.urls')),
 
     path('modal_home/', views.home_modal, name="modal-home"),
 
@@ -88,16 +85,15 @@ urlpatterns = [
     path('status/', views.statusView, name='status'),
     path('create_link/', views.create_link, name="create-link"),
 
-                  # backend stuff
+    # backend stuff
     path('api/', include('api.urls')),
     path('remote/', include('remote.urls')),
-    # path('accounts/', include('allauth.urls')),
     path('accounts/', include('accounts.urls')),
     path('admin/', admin.site.urls),
     path('captcha/', include('captcha.urls')),
+    # for celery tasks
+    path('task_progress/<str:taskid>/', views.get_task_progress, name='task-progress'),
 
-    re_path(r'^celery-progress/', include('celery_progress.urls')),  # the endpoint is configurable
-    
     # Serve the CDNfallbacks folder with host check
     re_path(r'^CDNfallbacks/(?P<path>.*)$', serve_cdnfallbacks),
 
