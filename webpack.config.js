@@ -17,6 +17,7 @@ module.exports = {
 	entry: {
 		areas: '/app/whg/webpack/js/areas.js',
 		base: '/app/whg/webpack/js/base.js',
+		builders: '/app/whg/webpack/js/builders.js',
 		ds_browse: '/app/whg/webpack/js/ds_browse.js',
 		gallery: '/app/whg/webpack/js/gallery.js',
 		home: '/app/whg/webpack/js/home.js',
