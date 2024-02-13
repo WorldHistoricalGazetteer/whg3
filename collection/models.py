@@ -135,6 +135,29 @@ class Collection(models.Model):
     teamusers = User.objects.filter(id__in=team)
     return teamusers
 
+  # download time estimate
+  @property
+  def dl_est(self):
+    # Get the number of associated Place records
+    num_records = self.places_all.count()
+
+    # Calculate the estimated download time in seconds
+    # (20 seconds per 1000 records)
+    est_time_in_sec = (num_records / 1000) * 20
+
+    # Convert the estimated time to minutes and seconds
+    min, sec = divmod(est_time_in_sec, 60)
+
+    # Format the result
+    if min < 1:
+      result = "%02d sec" % (sec)
+    elif sec >= 10:
+      result = "%02d min %02d sec" % (min, sec)
+    else:
+      result = "%02d min" % (min)
+
+    return result
+
   @property
   def feature_collection(self):
     return feature_collection(self)
