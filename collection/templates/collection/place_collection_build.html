@@ -1,6 +1,6 @@
 <!-- collection/place_collection_builder.html -->
-{#{% extends "main/base.html" %}#}
-{% extends "main/base_webpack.html" %}
+{% extends "main/base.html" %}
+{#{% extends "main/base_webpack.html" %}#}
 {% load leaflet_tags %}
 
 {% load static %}
@@ -1393,13 +1393,13 @@
 
 {% endblock %} {# content #}
 
-{% block deferredScripts %}
-
-var scripts = [
-  {
-  src: '{% static 'webpack/builders.bundle.js' %}',
-  type: 'text/javascript',
-  },
-]
-
-{% endblock %}
+{#{% block deferredScripts %}#}
+{##}
+{#var scripts = [#}
+{#  {#}
+{#  src: '{% static 'webpack/builders.bundle.js' %}',#}
+{#  type: 'text/javascript',#}
+{#  },#}
+{#]#}
+{##}
+{#{% endblock %}#}
