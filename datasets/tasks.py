@@ -276,13 +276,20 @@ def make_download(self, *args, **kwargs):
     # build features list
     features = []
     for i, p in enumerate(qs):
-      rec = {"type":"Feature",
-             "properties":{"id":p.id,"src_id":p.src_id,"title":p.title,"ccodes":p.ccodes},
-             "geometry":{"type":"GeometryCollection",
-                         "geometries":[g.jsonb for g in p.geoms.all()]},
+      geoms = p.geoms.all()
+      if len(geoms) == 1:
+        geometry = geoms[0].jsonb
+      else:
+        geometry = {
+          "type": "GeometryCollection",
+          "geometries": [g.jsonb for g in geoms]
+        }
+      rec = {"type": "Feature",
+             "properties": {"id": p.id, "src_id": p.src_id, "title": p.title, "ccodes": p.ccodes},
+             "geometry": geometry,
              "names": [n.jsonb for n in p.names.all()],
              "types": [t.jsonb for t in p.types.all()],
-             "links": [l.jsonb for l in p.links.all()],
+             "links": [ln.jsonb for ln in p.links.all()],
              "whens": [w.jsonb for w in p.whens.all()],
       }
       features.append(rec)
@@ -332,13 +339,6 @@ def make_download(self, *args, **kwargs):
       # all exports should have these, empty or not
       newheader = list(set(newheader+['lon','lat','matches','geo_id','geo_source','geowkt']))
 
-      # Reorder the DataFrame's columns
-      # column_order = ['id', 'title', 'title_source', 'start', 'end', 'attestation_year',
-      #                 'title_uri', 'ccodes', 'variants', 'types', 'aat_types', 'matches',
-      #                 'lon', 'lat', 'geowkt', 'geo_source', 'geo_id', 'description',
-      #                 'parent_name', 'parent_id']
-      # df = df[column_order]
-
       # name and open csv file for writer
       fn = 'media/downloads/'+str(user.id)+'_'+dslabel+'_'+date+'.tsv'
       csvfile = open(fn, 'w', newline='', encoding='utf-8')
@@ -367,7 +367,7 @@ def make_download(self, *args, **kwargs):
 
         # LINKS (matches)
         # get all distinct matches in db as string
-        links = (';').join(list(set([l.jsonb['identifier'] for l in p.links.all()])))
+        links = ';'.join(list(set([ln.jsonb['identifier'] for ln in p.links.all()])))
         # replace whatever was in file
         newrow['matches'] = links
 
@@ -427,16 +427,22 @@ def make_download(self, *args, **kwargs):
         when = p.whens.first().jsonb
         if 'minmax' in when:
           del when['minmax']
+        geoms = p.geoms.all()
+        if len(geoms) == 1:
+          geometry = geoms[0].jsonb
+        else:
+          geometry = {
+            "type": "GeometryCollection",
+            "geometries": [g.jsonb for g in geoms]
+          }
         rec = {
           "type": "Feature",
           "@id": ds.uri_base + (str(p.id) if 'whgazetteer' in ds.uri_base else p.src_id),
           "properties": {"pid": p.id, "src_id": p.src_id, "title": p.title, "ccodes": p.ccodes},
-          "geometry": {
-            "type": "GeometryCollection",
-            "geometries": [g.jsonb for g in p.geoms.all()]},
+          "geometry": geometry,
           "names": [n.jsonb for n in p.names.all()],
           "types": [t.jsonb for t in p.types.all()],
-          "links": [l.jsonb for l in p.links.all()],
+          "links": [ln.jsonb for ln in p.links.all()],
           "when": when
         }
         features.append(rec)
@@ -446,7 +452,7 @@ def make_download(self, *args, **kwargs):
                                     meta={'current': i + 1, 'total': total_operations})
           print(f"Task updated: current iteration is {i + 1}, total operations are {total_operations}")
 
-      print('download file for ' + total_operations + ' places')
+      print('download file for ' + str(total_operations) + ' places')
 
       result={"type":"FeatureCollection",
               "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",

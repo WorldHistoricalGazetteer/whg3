@@ -159,6 +159,25 @@ class Collection(models.Model):
     return result
 
   @property
+  def ds_list(self):
+    dsc = [{"id": d.id, "label": d.label, "bounds": d.bounds, "title": d.title, "dl_est": d.dl_est,
+            "numrows": d.numrows, "modified": d.last_modified_text} for d in self.datasets.all()]
+    # TODO: why is this here??
+    # dsp = [{"id": p.dataset.id, "label": p.dataset.label, "title": p.dataset.title,
+    #         "modified": p.dataset.last_modified_text} for p in self.places.all()]
+    # return list({ item['id'] : item for item in dsp+dsc}.values())
+    return list({ item['id'] : item for item in dsc}.values())
+
+  @property
+  def ds_counter(self):
+    from collections import Counter
+    from itertools import chain
+    dc = self.datasets.all().values_list('label', flat=True)
+    dp = self.places.all().values_list('dataset', flat=True)
+    all = Counter(list(chain(dc, dp)))
+    return dict(all)
+
+  @property
   def feature_collection(self):
     return feature_collection(self)
 
@@ -175,6 +194,11 @@ class Collection(models.Model):
     colors = ['orange', 'red', 'green', 'blue', 'purple',
       'red', 'green', 'blue', 'purple']
     return dict(zip(self.rel_keywords, colors))
+
+  @property
+  def last_modified_iso(self):
+    # TODO: log entries for collections
+    return self.created.strftime("%Y-%m-%d")
 
   @property
   def owners(self):
@@ -200,29 +224,6 @@ class Collection(models.Model):
     )
     return all
     # return all.exclude(id__in=self.omitted)
-
-  @property
-  def ds_list(self):
-    dsc = [{"id":d.id, "label":d.label, "bounds": d.bounds,
-            "title":d.title, "modified": d.last_modified_text} for d in self.datasets.all()]
-    dsp = [{"id":p.dataset.id, "label":p.dataset.label, "title":p.dataset.title #, "bounds": p.dataset.bounds
-            ,"modified": p.dataset.last_modified_text
-            } for p in self.places.all()]
-    return list({ item['id'] : item for item in dsp+dsc}.values())
-
-  @property
-  def ds_counter(self):
-    from collections import Counter
-    from itertools import chain
-    dc = self.datasets.all().values_list('label', flat=True)
-    dp = self.places.all().values_list('dataset', flat=True)
-    all = Counter(list(chain(dc, dp)))
-    return dict(all)
-
-  @property
-  def last_modified_iso(self):
-    # TODO: log entries for collections
-    return self.created.strftime("%Y-%m-%d")
 
   @property
   def rowcount(self):
