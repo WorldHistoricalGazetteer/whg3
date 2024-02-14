@@ -230,7 +230,7 @@ def unindex_from_pub(dataset_id=None, place_id=None, idx='pub'):
   helper for make_download()
   create a DownloadFile record
 """
-def create_downloadfile_record(user, ds, coll, fn):
+def create_downloadfile_record(user, ds, coll, zip_filename):
   # Determine the title based on whether it's a Collection or Dataset
   if coll and not ds:
     title = coll.title
@@ -245,28 +245,30 @@ def create_downloadfile_record(user, ds, coll, fn):
     dataset=ds or None,
     collection=coll or None,
     title=title,
-    filepath='/'+fn,
+    filepath='/' + zip_filename,
   )
 
 """
   helper for make_download()
   build a .zip file with download file + README.txt
 """
-def create_zip_with_readme(dataset):
-    # Convert the dataset record to JSON
-    dataset_json = dataset_to_json(dataset)
+def create_zip_with_readme(dataset, data_dump_filename):
+  # Convert the dataset to JSON
+  dataset_json = dataset_to_json(dataset)
 
-    # Create a README.txt file with the dataset JSON
-    with open('README.txt', 'w') as f:
-        f.write("This dataset conforms to the CC-BY 4.0 NC license.\n")
-        f.write("Dataset metadata:\n")
-        f.write(dataset_json)
+  # Create a README.txt file with the dataset JSON
+  with open('README.txt', 'w') as f:
+    f.write("This dataset conforms to the CC-BY 4.0 NC license.\n")
+    f.write("Dataset metadata:\n")
+    f.write(dataset_json)
 
-    # Create a .zip file that includes the README.txt file
-    with zipfile.ZipFile('dataset.zip', 'w') as zipf:
-        zipf.write('README.txt')
+  # Create a .zip file that includes the README.txt file and the data dump
+  with zipfile.ZipFile('dataset.zip', 'w') as zipf:
+    zipf.write('README.txt')
+    zipf.write(data_dump_filename)
 
-    os.remove('README.txt')
+  # Remember to delete the README.txt file if it's not needed anymore
+  os.remove('README.txt')
 
 """
   helper for make_download()
