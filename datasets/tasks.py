@@ -1,26 +1,23 @@
 # celery tasks for reconciliation and downloads
 # align_tgn(), align_wdlocal(), align_idx(), align_whg, make_download
 from __future__ import absolute_import, unicode_literals
-from celery import shared_task, current_task # these are @task decorators
-#from celery_progress.backend import ProgressRecorder
 from django_celery_results.models import TaskResult
 from django.conf import settings
-from django.core import mail
-from django.core.mail import EmailMultiAlternatives, EmailMessage
+from django.core import serializers
 from django.db import transaction, connection
 from django.db.models import Q
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-User = get_user_model()
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 
+from celery import shared_task
+from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
-logger = get_task_logger(__name__)
-
-import codecs, csv, datetime, itertools, re, sys, time
+import codecs, csv, datetime, itertools, os, re, sys, zipfile
 from copy import deepcopy
-from elasticsearch8.helpers import bulk, streaming_bulk
+from elasticsearch8.helpers import streaming_bulk
 from itertools import chain
 import pandas as pd
 import simplejson as json
@@ -31,25 +28,19 @@ from datasets.models import Dataset, Hit
 from datasets.static.hashes.parents import ccodes as cchash
 from datasets.static.hashes.qtypes import qtypes
 from elastic.es_utils import makeDoc, build_qobj, profileHit
-# from utils.emailing import new_emailer
-
-#from datasets.task_utils import *
 from datasets.utils import bestParent, elapsed, getQ, \
   HitRecord, hully, makeNow, parse_wkt, post_recon_update
-
-from main.models import Log
+from main.models import Log, DownloadFile
 from places.models import Place
-## global for all es connections in this file
+
+logger = get_task_logger(__name__)
 es = settings.ES_CONN
+User = get_user_model()
 
 """
   Adds a dataset's places to the builder index
   cases: 1) initial seed; 2) post-reconciliation
 """
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-
-
 def index_to_builder(request, idx='builder'):
   if request.method == 'POST':
     collection_id = request.POST.get('collection_id')
@@ -235,13 +226,61 @@ def unindex_from_pub(dataset_id=None, place_id=None, idx='pub'):
 
   print(f"Unindexing complete")
 
-from celery.result import AsyncResult
-from django.http import JsonResponse
+"""
+  helper for make_download()
+  create a DownloadFile record
+"""
+def create_downloadfile_record(user, ds, coll, fn):
+  # Determine the title based on whether it's a Collection or Dataset
+  if coll and not ds:
+    title = coll.title
+  elif ds:
+    title = ds.title
+  else:
+    title = None  # or some default value
 
+  # Create the DownloadFile instance
+  DownloadFile.objects.create(
+    user=user,
+    dataset=ds or None,
+    collection=coll or None,
+    title=title,
+    filepath='/'+fn,
+  )
+
+"""
+  helper for make_download()
+  build a .zip file with download file + README.txt
+"""
+def create_zip_with_readme(dataset):
+    # Convert the dataset record to JSON
+    dataset_json = dataset_to_json(dataset)
+
+    # Create a README.txt file with the dataset JSON
+    with open('README.txt', 'w') as f:
+        f.write("This dataset conforms to the CC-BY 4.0 NC license.\n")
+        f.write("Dataset metadata:\n")
+        f.write(dataset_json)
+
+    # Create a .zip file that includes the README.txt file
+    with zipfile.ZipFile('dataset.zip', 'w') as zipf:
+        zipf.write('README.txt')
+
+    os.remove('README.txt')
+
+"""
+  helper for make_download()
+  generate metadata for a single dataset
+"""
+def dataset_to_json(dataset):
+  # Serialize the dataset instance
+  dataset_json = serializers.serialize('json', [dataset])
+
+  return dataset_json
 
 """ 
   called by utils.downloader()
-  builds download file for entire collection or single dataset
+  builds download file for single dataset or entire collection
   TODO: list usages
 """
 @shared_task(name="make_download", bind=True)
@@ -303,7 +342,11 @@ def make_download(self, *args, **kwargs):
     result = {"type": "FeatureCollection", "features": features,
               "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
               "filename": "/" + fn}
-    outfile.write(json.dumps(result,indent=2).replace('null','""'))
+
+    # TODO: build zip file with README.txt
+    create_downloadfile_record(user, None, coll, fn)
+
+    outfile.write(json.dumps(result,indent=2).replace('null', '""'))
   elif dsid:
     # it's a single dataset
     if collid:
@@ -460,7 +503,10 @@ def make_download(self, *args, **kwargs):
               "decription": ds.description,
               "features":features}
 
+      create_downloadfile_record(user, ds, None, fn)
+
       outfile.write(json.dumps(result, indent=2).replace('null', '""'))
+      # TODO: build zip file with README.txt
 
   # log the download, dataset or collection
   Log.objects.create(

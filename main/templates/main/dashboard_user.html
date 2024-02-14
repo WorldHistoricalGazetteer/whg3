@@ -197,6 +197,25 @@
         	{% endif %}
         </div>
       </div>
+      {% if has_downloads %}
+        <div class="dashboard-box mt-3">
+          <div class="box-header">
+            <div class="box-header-title">Download files</div>
+          </div>
+          <div class="box-content">
+            {% for item in downloads %}
+            <div class="item-div">
+              <p class="fw-bold red-head">{{ item.title }}</p>
+              <div class="float-end">
+                <a href="{{ item.filepath }}">download
+                  <i class="fas fa-download linky"></i></a>
+              </div>
+            </div>
+            {% endfor %}
+            <p class="mt-2">NOTE: Download files will be deleted after 30 days</p>
+          </div>
+        </div>
+      {% endif %}
     </div>
 	  </div>
 

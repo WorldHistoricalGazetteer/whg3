@@ -14,6 +14,20 @@ from main.choices import (COMMENT_TAGS, COMMENT_TAGS_REVIEW, LOG_CATEGORIES, LOG
                           LINKTYPES, TILESET_TYPES)
 
 # cross-app models
+class DownloadFile(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255, null=True, blank=True)
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, null=True, blank=True)
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE, null=True, blank=True)
+    filepath = models.FilePathField(path="/path/to/files", recursive=True, blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        managed = True
+        db_table = 'download_files'
+
+    def __str__(self):
+        return self.filepath
 
 class Announcement(models.Model):
     content = models.CharField(max_length=255, help_text="A short announcement text.")
