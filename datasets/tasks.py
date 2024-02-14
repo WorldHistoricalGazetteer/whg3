@@ -346,9 +346,10 @@ def make_download(self, *args, **kwargs):
               "filename": "/" + fn}
 
     # TODO: build zip file with README.txt
-    create_downloadfile_record(user, None, coll, fn)
+    # create_downloadfile_record(user, None, coll, fn)
 
     outfile.write(json.dumps(result,indent=2).replace('null', '""'))
+
   elif dsid:
     # it's a single dataset
     if collid:
@@ -459,6 +460,9 @@ def make_download(self, *args, **kwargs):
             print(f"Error updating task state: {e}")
 
       csvfile.close()
+      create_zip_with_readme(ds, fn)
+      create_downloadfile_record(user, ds, None, 'dataset.zip')
+
     else:
       print('building lpf file')
       # make file name
