@@ -64,7 +64,7 @@ def validate_delim(df):
 
     # Check one of "start" or "attestation_year" is non-empty
     try:
-      start = parse(row.get("start")) if row.get("start") else None
+      start = parse(str(row.get("start"))) if row.get("start") else None
     except ValueError:
       start = None
 

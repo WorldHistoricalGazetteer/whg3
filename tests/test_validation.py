@@ -14,12 +14,12 @@ from datasets.validation import validate_delim
 from django.test import TestCase, Client
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
-
+# ./manage.py test tests.test_validation.DatasetCreateViewTest
 class DatasetCreateViewTest(TestCase):
     def setUp(self):
         # Create a User instance
         User = get_user_model()
-        self.user = User.objects.create_user(email='test@test.com', password='12345')
+        self.user = User.objects.create_user(username='testuser', email='test@test.com', password='12345')
 
         valid_ccodes = ['AD', 'AE', 'AF', 'AG', 'AL', 'AM', 'BG', 'AO', 'AR', 'BH', 'BI', 'PF', 'AT', 'AU', 'AZ', 'FM',
                         'JO', 'CV', 'BA', 'BB', 'BD', 'BE', 'BF', 'BJ', 'BN', 'BS', 'BT', 'GQ', 'BO', 'BR', 'SZ', 'BW',
