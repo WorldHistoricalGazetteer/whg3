@@ -1,5 +1,3 @@
-# docker-compose-dev.yml
-
 version: '2.19'
 
 networks:
@@ -128,27 +126,6 @@ services:
     depends_on:
       - redis
       - db
-      
-  selenium_chrome:
-    image: selenium/standalone-chrome
-    networks:
-      - WHG3
-    ports:
-      - "4444:4444"
-
-  selenium_firefox:
-    image: selenium/standalone-firefox
-    networks:
-      - WHG3
-    ports:
-      - "4445:4444"
-      
-  selenium_edge:
-    image: selenium/standalone-edge
-    networks:
-      - WHG3
-    ports:
-      - "4446:4444"
 
 volumes:
   app:
