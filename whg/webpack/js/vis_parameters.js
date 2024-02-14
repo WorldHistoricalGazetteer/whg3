@@ -3,24 +3,26 @@
 
 import '../css/vis_parameters.css';
 
-// Default vis_parameters object: update with any value previously configured for the dataset/collection
-var vis_parameters = {
-  min: {
-    tabulate: "initial",
-    temporal_control: "filter",
-    trail: false
-  },
-  max: {
-    tabulate: false,
-    temporal_control: "filter",
-    trail: false
-  },
-  seq: {
-    tabulate: false,
-    temporal_control: "player",
-    trail: true
-  }
-};
+// Check if vis_parameters has already been declared (possibly done with a preset value through context in the Django template)
+if (typeof vis_parameters === 'undefined') {
+	var vis_parameters = {
+	  min: {
+	    tabulate: "initial",
+	    temporal_control: "filter",
+	    trail: false
+	  },
+	  max: {
+	    tabulate: false,
+	    temporal_control: "filter",
+	    trail: false
+	  },
+	  seq: {
+	    tabulate: false,
+	    temporal_control: "player",
+	    trail: true
+	  }
+	};
+}
 
 // Dictionary to translate vis_parameters keys to labels
 const labelDictionary = {
