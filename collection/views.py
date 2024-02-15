@@ -306,7 +306,7 @@ def year_from_string(ts):
 def fetch_mapdata_coll(request, *args, **kwargs):
   from django.core.serializers import serialize
   from django.db.models import Min, Max
-  # print('fetch_geojson_coll kwargs',kwargs)
+  print('fetch_geojson_coll kwargs',kwargs)
   id_=kwargs['id']
   coll=get_object_or_404(Collection, id=id_)
   rel_keywords = coll.rel_keywords

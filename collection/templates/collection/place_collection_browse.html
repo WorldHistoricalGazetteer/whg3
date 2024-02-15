@@ -250,8 +250,15 @@
 <script type="text/javascript">
     const pageData = "{{ object.id }}";
     window.collimagepath = "{{ object.image_file.name }}"
-    let visParameters = {{ visParameters|safe }};
-    console.log('visualisation settings:',visParameters);
+
+    let visParametersString = "{{ object.vis_parameters|escapejs }}";
+    visParametersString = visParametersString.replace(/False/g, 'false');
+    visParametersString = visParametersString.replace(/True/g, 'true');
+    visParameters = JSON.parse(visParametersString.replace(/'/g, '"'));
+
+    {#let visParameters = {{ visParameters|safe }};#}
+    {#console.log('visualisation settings:',visParameters);#}
+    {#console.log('visualisation settings:',visParametersString);#}
     window.ds_list = [{
         ds_type: "collections",
         id: {{ object.id }},
