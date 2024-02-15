@@ -204,6 +204,7 @@
         {% endif %}
       </ul>
       <div id="content" class="tab-content" >
+        {# create/edit form #}
         <div id="coll_form" class="tab-pane fade show active h-100">
           <form id="collection_form" method="POST" enctype="multipart/form-data">
             {% csrf_token %}
@@ -231,48 +232,48 @@
                     keywords</label><br/>{{ form.rel_keywords }}
                 </div>
                 <div id="d_buttons" class="" style="">
-          <span class="">
-          {% if action == 'create' %}
-            <a href="/mycollections">Cancel</a>
-            <input id="btn_coll_save" class="btn btn-sm btn-primary mt-2"
-                   type="submit" value="Save"/>
-          {% else %}
-            <input id="btn_coll_save" name="display" class="btn btn-sm btn-success mt-2 "
-                   type="submit" value="Save & exit"/>
-            <input id="btn_coll_update" name="update" class="btn btn-sm btn-primary mt-2 ms-2"
-                   type="submit" value="Save"/>
-          {% endif %}
-          </span>
+                  <span class="">
+                  {% if action == 'create' %}
+                    <a href="/mycollections">Cancel</a>
+                    <input id="btn_coll_save" class="btn btn-sm btn-primary mt-2"
+                           type="submit" value="Save"/>
+                  {% else %}
+                    <input id="btn_coll_save" name="display" class="btn btn-sm btn-success mt-2 "
+                           type="submit" value="Save & exit"/>
+                    <input id="btn_coll_update" name="update" class="btn btn-sm btn-primary mt-2 ms-2"
+                           type="submit" value="Save"/>
+                  {% endif %}
+                  </span>
                 </div>
                 <p class="my-0 small">&#x02733;<i><b> required</b></i>
                   {% if action == 'update' and editorial %}
                     <span><a class="float-end show-hide" href="#">
-              editor options <i class="fas fa-cog linky"></i>
-            </a></span>
+                        editor options <i class="fas fa-cog linky"></i></a></span>
                   {% endif %}
                 </p>
-                <div id="editor_options" class="hidden">
-                  <p>Status: {{ form.status }}</p>
-                  <p>Featured rank: {{ form.featured }}</p>
-                  {% comment %}<p>Featured rank: {{ form.featured }}</p>{% endcomment %}
-                </div>
-                <div id="select_div" class="hidden">{{ form.datasets }}</div>
+{# deprecated #}
+{#                <div id="editor_options" class="hidden">#}
+{#                  <p>Status: {{ form.status }}</p>#}
+{#                  <p>Featured rank: {{ form.featured }}</p>#}
+{#                  {% comment %}<p>Featured rank: {{ form.featured }}</p>{% endcomment %}#}
+{#                </div>#}
+{#                <div id="select_div" class="">{{ form.datasets }}</div>#}
                 <div id="collection_options"></div>
                 {% if mygroups|length > 0 %}
                   <span id="submit_prompt">Submit{% if form.group.value %}ted{% endif %}
                     to group:</span>
                   <span id="submitter" class="">
-                {% if object.status != 'nominated' %}
-                  {{ form.group }}
-                {% else %}
-                  {{ form.group }} <span>nominated for the gallery -- no going back!</span>
-                {% endif %}
-            </span>
+                      {% if object.status != 'nominated' %}
+                        {{ form.group }}
+                      {% else %}
+                        {{ form.group }} <span>nominated for the gallery -- no going back!</span>
+                      {% endif %}
+                  </span>
                   {% if object.group %}
                     <span class="ms-2 small">
-                <a href="{% url 'collection:collection-group-detail' object.group.id %}"
-                   target="_blank">Info</a>
-            </span>
+                      <a href="{% url 'collection:collection-group-detail' object.group.id %}"
+                         target="_blank">Info</a>
+                    </span>
                   {% endif %}
                 {% endif %}
                 <div id="status_info" class="mt-5">
@@ -291,7 +292,7 @@
                 <i class="fas fa-question-circle linky"></i> making a collection public </span></a>
                   {% endif %}
                 </div>
-              </div>
+              </div> <!-- col-sm-5 -->
               <div class="col-sm-4">
                 {% if action == 'update' %}
                   <div class="form-group mb-2">
@@ -302,8 +303,7 @@
                     {% elif form.image_file.value %} {# update & there's an image #}
                       <img src="{% static 'images/noun-photo.svg' %}" width="16"/>
                       <a href="/media/{{ form.image_file.value }}" class="small">
-                        {{ object.image_file }}
-                      </a>
+                        {{ object.image_file }}</a>
                       (<a href="javascript:showChooser('img')" class="small">change</a>)
                     {% else %} {# update and there's no image yet #}
                       <span id="img_chooser_update">{{ form.image_file }}</span>
@@ -329,45 +329,45 @@
                     <label for="File">Links</label><br/>
                     {% if links|length < 3 %}
                       <a href="#" id="a_linkpopup">
-                        <button type="button" class="btn btn-sm btn-primary custom-button">
-                          Add
-                        </button>
+                        <button type="button" class="btn btn-sm btn-primary custom-button">Add</button>
                       </a>
                     {% endif %}
                     <i class="small link-counter">(3 maximum)</i><br/>
                     <span id="linklist">
-            {% if links|length > 0 %}
-              {% for l in links %}
-                {{ l.get_link_type_display|safe }}
-                <a href="{{ l.uri }}" target="_blank">{{ l.label }}</a>
-                [ <a href="{% url 'collection:remove-link' id=l.id %}" class="a_removelink">
-                <i>remove</i></a> ]<br/>
-              {% endfor %}
-            {% endif %}
-            </span>
+                      {% if links|length > 0 %}
+                        {% for l in links %}
+                          {{ l.get_link_type_display|safe }}
+                          <a href="{{ l.uri }}" target="_blank">{{ l.label }}</a>
+                          [ <a href="{% url 'collection:remove-link' id=l.id %}" class="a_removelink">
+                          <i>remove</i></a> ]<br/>
+                        {% endfor %}
+                      {% endif %}
+                    </span>
                   </div>
                   <div id="vis_options" class="mt-5">
-                      <h5 class="bg-beige ps-1">Visualization options</h5>
-
-{#<fieldset>#}
-{#<legend>Visualisation Configuration</legend>#}
-<p>We need to collect some information which will determine how your collection will be displayed and
-  temporally-filtered on pages that have both a map <i>and</i> a table of features.</p>
-<table id="configurationTable" class="w-100">
-  <thead>
-    <tr>
-      <th colspan="2" style="text-align: right;">Include</th>
-      <th>Temporal</th>
-      <th>Trail</th>
-      <th>Sort</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-{#</fieldset>#}
-
+                  {{ object.vis_parameters }}
+                    <input type="hidden" id="visParameters"
+                           name="vis_parameters" value="">
+                    <h5 class="bg-beige ps-1">Visualization options
+                      <span class="float-end me-2">
+                        <small><i class="fas fa-question-circle linkypop"></i></small></span>
+                    </h5>
+                    <p>These options control how your collection will be displayed and
+                      temporally filtered on this collection's display page.</p>
+                    <table id="configurationTable" class="w-100">
+                      <thead>
+                        <tr>
+                          <th colspan="2" style="text-align: right;">Include</th>
+                          <th>Temporal</th>
+                          <th>Trail</th>
+                          <th>Sort</th>
+                        </tr>
+                      </thead>
+                      <tbody></tbody>
+                    </table>
                   </div>
                 {% else %}
+                  <!-- action = 'create' -->
                   <div id="getting_started">
                     <h5 class="bg-beige ps-1">Getting started</h5>
                     <p>To create a new Place Collection, first fill out the required fields in the
@@ -408,7 +408,6 @@
               {% csrf_token %}
               {{ links_form }}
               <input type="hidden" name="collection" value="{{ object.id }}">
-              {#		        <div class="closer" style="position:absolute; top:5px; right:5px;">X</div>#}
               <table id="linkform_table" class="mb-2 small">
                 <tr>
                   <td>URI*:</td>
@@ -434,6 +433,7 @@
             </form>
           </div>
         </div>
+        {# add & annotate places #}
         <div id="coll_builder" class="tab-pane fade h-100" style="height: auto; position:relative;">
           <div class="d-flex h-100">
             <div class="col-sm-6" id="builder">
@@ -632,6 +632,7 @@
           </div>
           {# d-flex #}
         </div>
+        {# manage collaborators #}
         {% if action == 'update' %}
         <div id="coll_collaborators" class="tab-pane fade h-100">
           <form id="sharing_form" method="POST" action="{% url 'collection:collab-add' cid=object.id %}"
@@ -696,9 +697,19 @@
 </div> <!-- container -->
 
 <script type="text/javascript">
-    const object_id = "{{ object.id }}";
-    const place_list = "{{ place_list }}";
-    const csrf_token = "{{ csrf_token }}";
+  let visParametersString = "{{ object.vis_parameters|escapejs }}";
+  visParametersString = visParametersString.replace(/False/g, 'false');
+  visParametersString = visParametersString.replace(/True/g, 'true');
+  visParametersString = visParametersString.replace(/'/g, '"');
+  try {
+      window.saved_settings = JSON.parse(visParametersString);
+      console.log('saved settings, typeof', window.vis_parameters, typeof window.vis_parameters);
+  } catch (e) {
+      console.error("Parsing error:", e);
+  }
+  const object_id = "{{ object.id }}";
+  const place_list = "{{ place_list }}";
+  const csrf_token = "{{ csrf_token }}";
 </script>
 
 {% endblock %} {# content #}
