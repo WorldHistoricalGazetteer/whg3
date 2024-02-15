@@ -5,11 +5,6 @@ import '../css/vis_parameters.css';
 
 $('#collection_form').on('submit', updateVisParameters);
 
-// {
-// 	'min': {'trail': False, 'tabulate': 'initial', 'temporal_control': 'player'},
-// 	'max': {'trail': False, 'tabulate': False, 'temporal_control': 'player'},
-// 	'seq': {'trail': True, 'tabulate': False, 'temporal_control': 'player'}
-// }
 var vis_parameters;
 
 $(document).ready(function() {
@@ -19,12 +14,12 @@ $(document).ready(function() {
       min: {
         tabulate: "initial",
         temporal_control: "filter",
-        trail: true
+        trail: false
       },
       max: {
         tabulate: false,
         temporal_control: "filter",
-        trail: true
+        trail: false
       },
       seq: {
         tabulate: false,
@@ -40,38 +35,6 @@ $(document).ready(function() {
 
   generateConfigurationRows();
 });
-
-// $(document).ready(function() {
-// 	// Check if vis_parameters has already been declared (possibly done with a
-// 	// preset value through context in the Django template)
-// 	if (typeof vis_parameters === 'undefined' || Object.keys(vis_parameters).length === 0) {
-// 		console.log('vis_parameters is undefined or empty, so setting it to default values.	');
-// 		vis_parameters = {
-// 			min: {
-// 				tabulate: "initial",
-// 				temporal_control: "filter",
-// 				trail: true
-// 			},
-// 			max: {
-// 				tabulate: false,
-// 				temporal_control: "filter",
-// 				trail: true
-// 			},
-// 			seq: {
-// 				tabulate: false,
-// 				temporal_control: "player",
-// 				trail: true
-// 				trail: true
-// 			}
-// 		};
-// 		console.log('vis_parameters undefined, so...', vis_parameters);
-// 	} else {
-// 		vis_parameters = window.saved_settings;
-// 		console.log('vis_parameters', vis_parameters);
-// 	}
-//
-// 	generateConfigurationRows();
-// });
 
 // Dictionary to translate vis_parameters keys to labels
 const labelDictionary = {
