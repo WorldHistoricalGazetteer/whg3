@@ -83,39 +83,139 @@ def create_downloadfile_record(user, ds, coll, zip_filename):
     filepath='/' + zip_filename,
   )
 
-"""
-  helper for make_download()
-  build a .zip file with download file + README.txt
-"""
-def create_zipfile(dataset, data_dump_filename):
-  zipname = data_dump_filename[:-4]+'.zip'
-  # Convert the dataset to JSON
-  dataset_json = dataset_to_json(dataset)
-  print('dataset_json', dataset_json)
-  # Create a README.txt file with the dataset JSON
-  with open('README.txt', 'w') as f:
-    f.write("This dataset conforms to the CC-BY 4.0 NC license.\n")
-    f.write("Dataset metadata:\n")
-    f.write(dataset_json)
-    f.close()
-
-  # Create a .zip file that includes the README.txt file and the data dump
-  with zipfile.ZipFile(zipname, 'w') as zipf:
-    zipf.write('README.txt')
-    zipf.write(data_dump_filename)
-
-  # Remember to delete the README.txt file if it's not needed anymore
-  os.remove('README.txt')
+def format_metadata(metadata_dict):
+  formatted_lines = []
+  for key, value in metadata_dict.items():
+    formatted_line = f"{key}: {value}"
+    formatted_lines.append(formatted_line)
+  return "\n".join(formatted_lines)
 
 """
   helper for make_download()
   generate metadata for a single dataset
 """
-def dataset_to_json(dataset):
-  # Serialize the dataset instance
-  dataset_json = serializers.serialize('json', [dataset])
+# def dataset_to_json(dsid):
+#   dataset = Dataset.objects.get(id=dsid)
+#   # Serialize the dataset instance
+#   dataset_json = serializers.serialize('json', [dataset])
+#
+#   return dataset_json
+# import json
+# from django.core import serializers
+def filter_and_order(metadata_json, desired_fields):
+  # Directly using dict as Python 3.7+ maintains order
+  filtered = {field: metadata_json['fields'][field] for field in desired_fields if field in metadata_json['fields']}
+  return filtered
 
-  return dataset_json
+def dataset_to_json(dsid):
+  dataset = Dataset.objects.get(id=dsid)
+  dataset_json = json.loads(serializers.serialize('json', [dataset]))[0]  # Deserialize to get the first item
+
+  # Define the fields you want to keep
+  desired_fields = ['title', 'creator', 'create_date', 'description', 'numrows', 'source', 'webpage']
+
+  # Filter the dataset_json to include only the desired fields
+  # filtered_dataset = {field: dataset_json['fields'][field] for field in desired_fields if
+  #                     field in dataset_json['fields']}
+  filtered_dataset = filter_and_order(dataset_json, desired_fields)
+
+  # Include the model and pk in the filtered result if needed
+  filtered_dataset['model'] = dataset_json['model']
+  filtered_dataset['pk'] = dataset_json['pk']
+
+  return filtered_dataset
+
+def collection_to_json(collid):
+  coll = Collection.objects.get(id=collid)
+  metadata_json = json.loads(serializers.serialize('json', [coll]))[0]  # Deserialize to get the first item
+
+  # Define the fields you want to keep for collections
+  collection_fields = ['title', 'creator', 'created', 'description', 'keywords', 'rel_keywords', 'numrows', 'webpage']
+  dataset_fields = ['title', 'creator', 'create_date', 'description', 'numrows', 'source', 'webpage']
+
+  # Filter the metadata_json to include only the desired fields
+  # filtered_collection = {field: metadata_json['fields'][field] for field in desired_fields if
+  #                        field in metadata_json['fields']}
+
+  filtered_collection = filter_and_order(metadata_json, collection_fields)
+
+  # If it's a dataset collection, include datasets with specified fields
+  if coll.collection_class == 'dataset':
+    filtered_collection['datasets'] = []
+    for ds in coll.datasets.all():
+      dataset_json = json.loads(serializers.serialize('json', [ds]))[0]
+      # filtered_dataset = {field: dataset_json['fields'][field] for field in desired_fields if
+      #                     field in dataset_json['fields']}
+      filtered_dataset = filter_and_order(dataset_json, dataset_fields)
+
+      # Append the filtered dataset
+      filtered_collection['datasets'].append(filtered_dataset)
+
+  # Include the model and pk in the filtered result if needed
+  filtered_collection['model'] = metadata_json['model']
+  filtered_collection['pk'] = metadata_json['pk']
+
+  return filtered_collection
+
+"""
+  helper for make_download()
+  build a .zip file with download file + README.txt
+"""
+def create_zipfile(data_dump_filename, dsid=None, collid=None):
+  if dsid and not collid:
+    # It's a single dataset
+    metadata = dataset_to_json(dsid)
+  elif collid:
+    metadata = collection_to_json(collid)
+    print('metadata_json_str', type(metadata), metadata)
+    # return
+  else:
+    raise ValueError("Invalid parameters provided for zipfile creation.")
+
+  pretty_metadata = json.dumps(metadata, indent=1, sort_keys=False)
+  print('metadata_json', metadata)
+  dl_class = "Dataset" if dsid else "Collection"
+  # Create a README.txt file with the dataset JSON
+  readme_content = (f'World Historical Gazetteer (WHG) \n{dl_class} Download\n'
+                    '********************************\n'
+                    f'This dataset conforms to the CC-BY 4.0 NC license.\n\n'
+                    "This license enables reusers to distribute, remix, adapt, and build upon the material "
+                    "in any medium or format for noncommercial purposes only, and only so long as attribution "
+                    "is given to the creator. CC BY-NC includes the following elements:\n"
+                    "* Attribution — You must give appropriate credit, provide a link to the license, and indicate "
+                    "if changes were made.\n"
+                    "* NonCommercial — You may not use the material for commercial purposes.\n")
+  readme_content += "\n***********************************\n"
+  # for metadata_dict in metadata:
+  #   print('metadata_dict', metadata_dict)
+    # formatted_metadata = format_metadata(metadata_dict)
+  readme_content += "\nMetadata:\n" + pretty_metadata
+
+  # Write README.txt
+  with open('README.txt', 'w') as f:
+      f.write(readme_content)
+
+  zipname = generate_zip_filename(data_dump_filename)
+
+  # Create a .zip file that includes the README.txt file and the data dump
+  with zipfile.ZipFile(zipname, 'w') as zipf:
+    zipf.write('README.txt', arcname='README.txt')
+    data_filename = os.path.basename(data_dump_filename)
+    zipf.write(data_dump_filename, arcname=data_filename)
+
+  # Remember to delete the README.txt file if it's not needed anymore
+  os.remove('README.txt')
+
+data_dump_filename = 'media/downloads/2_tm200_20240214_110011.json'
+dsid = 9
+from django.core import serializers
+create_zipfile(data_dump_filename, 9, None) # dataset
+# create_zipfile(data_dump_filename, None, 6) # place collection
+
+def generate_zip_filename(data_dump_filename):
+    base_name, _ = os.path.splitext(data_dump_filename)
+    zipname = base_name + '.zip'
+    return zipname
 
 """ 
   called by utils.downloader()
