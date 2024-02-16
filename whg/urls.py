@@ -5,9 +5,10 @@ from django.urls import path, re_path, include, get_resolver
 from django.views.generic.base import TemplateView
 
 from accounts.views import profile_edit
-from main import views
 from datasets.views import PublicListsView #, DataListsView
+from main import views
 from resources.views import TeachingPortalView
+from utils.tasks import downloader
 
 # For CDNfallbacks
 from django.views.static import serve
@@ -92,6 +93,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('captcha/', include('captcha.urls')),
     # for celery tasks
+    # initiate downloads of augmented datasets via celery task (called from ajax)
+    path('dlcelery/', downloader, name='dl_celery'),
     path('task_progress/<str:taskid>/', views.get_task_progress, name='task-progress'),
 
     # Serve the CDNfallbacks folder with host check

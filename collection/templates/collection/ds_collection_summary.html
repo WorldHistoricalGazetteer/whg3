@@ -266,7 +266,7 @@
       format = cell.find('input[name="format"]:checked').val()
       dsid = $(this).data('id')
       // console.log('sending to downloader()', dsid, format)
-      urly='/datasets/dlcelery/'
+      urly='/dlcelery/'
       $.ajax({
           type: 'POST',
           url: urly,

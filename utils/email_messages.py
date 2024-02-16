@@ -112,7 +112,7 @@ EMAIL_MESSAGES = {
   ),
   'download_ready': (
     'Dear {greeting_name},\n\n'
-    'Your requested download, {title} ({label}), is ready for download.\n'
+    'Your requested download of "{title}" is ready.\n'
     'You will find it listed in the "Downloads" section of your dashboard.\n\n'
     'All data made public in WHG carries a CC-BY-4.0 NC license, so its re-use cannot '
     'have commercial purposes, and attribution is required in all cases. '

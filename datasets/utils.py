@@ -110,42 +110,6 @@ def downloadLP7(request):
   response['Content-Disposition'] = 'attachment;filename="lp7_100.tsv"'
   return response
 
-# initiate celery tasks for dataset downloads
-def downloader(request, *args, **kwargs):
-  print('downloader() user, request.POST', request.user, request.POST)
-  dsid = request.POST.get('dsid') or None
-  collid = request.POST.get('collid') or None
-  user = request.user
-  from datasets.tasks import make_download
-  # POST *should* be the only case...
-  if request.method == 'POST' and request.accepts('XMLHttpRequest'):
-    print('ajax == True')
-    format=request.POST['format']
-
-    userid = request.user.id if request.user.is_authenticated else 1
-    download_task = make_download.delay(
-      userid=user.id,
-      username=user.username,
-      dsid=dsid or None,
-      collid=collid or None,
-      format=format or None
-    )
-
-    print('task to Celery', download_task.task_id)
-    # return task_id
-    obj={'task_id': download_task.task_id}
-    print('obj from downloader()', obj)
-
-    #return render(request, 'datasets/ds_meta.html', context=context)
-    return HttpResponse(json.dumps(obj), content_type='application/json')
-
-  elif request.method == 'POST' and not request.is_ajax:
-    print('request.POST (not ajax)', request.POST)
-
-
-  elif request.method == 'GET':
-    print('request.GET', request.GET)
-
 
 """ deprecatING (still used from collection download modal ) """
 def download_augmented(request, *args, **kwargs):
