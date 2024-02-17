@@ -26,7 +26,10 @@ logger = get_task_logger(__name__)
 es = settings.ES_CONN
 User = get_user_model()
 
-# initiate make_download for datasets and collections
+"""
+  initiate make_download for datasets and collections
+  called from download modals, ds_metadata.html
+"""
 def downloader(request, *args, **kwargs):
   print('downloader() user, request.POST', request.user, request.POST)
   dsid = request.POST.get('dsid') or None
@@ -65,9 +68,7 @@ def generate_zip_filename(data_dump_filename):
     zipname = base_name + '.zip'
     return zipname
 
-
 """
-  helper for make_download()
   create a DownloadFile record
 """
 def create_downloadfile_record(user, ds, coll, zip_filename):
@@ -95,23 +96,15 @@ def format_metadata(metadata_dict):
     formatted_lines.append(formatted_line)
   return "\n".join(formatted_lines)
 
-"""
-  helper for make_download()
-  generate metadata for a single dataset
-"""
-# def dataset_to_json(dsid):
-#   dataset = Dataset.objects.get(id=dsid)
-#   # Serialize the dataset instance
-#   dataset_json = serializers.serialize('json', [dataset])
-#
-#   return dataset_json
-# import json
-# from django.core import serializers
+# return ordered dict of metadata fields
 def filter_and_order(metadata_json, desired_fields):
   # Directly using dict as Python 3.7+ maintains order
   filtered = {field: metadata_json['fields'][field] for field in desired_fields if field in metadata_json['fields']}
   return filtered
 
+"""
+  generate metadata for a single dataset
+"""
 def dataset_to_json(dsid):
   dataset = Dataset.objects.get(id=dsid)
   dataset_json = json.loads(serializers.serialize('json', [dataset]))[0]  # Deserialize to get the first item
@@ -130,6 +123,9 @@ def dataset_to_json(dsid):
 
   return filtered_dataset
 
+"""
+  generate metadata for a collection
+"""
 def collection_to_json(collid):
   coll = Collection.objects.get(id=collid)
   metadata_json = json.loads(serializers.serialize('json', [coll]))[0]  # Deserialize to get the first item
@@ -211,10 +207,10 @@ def create_zipfile(data_dump_filename, dsid=None, collid=None):
   # Remember to delete the README.txt file if it's not needed anymore
   os.remove('README.txt')
 
-data_dump_filename = 'media/downloads/2_tm200_20240214_110011.json'
-dsid = 9
-from django.core import serializers
-create_zipfile(data_dump_filename, 9, None) # dataset
+# data_dump_filename = 'media/downloads/2_tm200_20240214_110011.json'
+# dsid = 9
+# from django.core import serializers
+# create_zipfile(data_dump_filename, 9, None) # dataset
 # create_zipfile(data_dump_filename, None, 6) # place collection
 
 """ 
@@ -397,8 +393,9 @@ def make_download(self, *args, **kwargs):
             print(f"Error updating task state: {e}")
 
       csvfile.close()
-      create_zipfile(ds, fn)
-      create_downloadfile_record(user, ds, None, 'dataset.zip')
+      create_zipfile(ds, fn) # single dataset
+      zipname = generate_zip_filename(fn)
+      create_downloadfile_record(user, ds, None, zipname)
 
     else:
       print('building lpf file')
