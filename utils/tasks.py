@@ -73,6 +73,7 @@ def generate_zip_filename(data_dump_filename):
 """
 def create_downloadfile_record(user, ds, coll, zip_filename):
   # Determine the title based on whether it's a Collection or Dataset
+  print(f'@ create_downloadfile_record: user:{user}, ds: {ds}, coll: {coll}, zip_filename: {zip_filename}') # DEBUG
   if coll and not ds:
     title = coll.title
   elif ds:
@@ -163,6 +164,7 @@ def collection_to_json(collid):
   build a .zip file with download file + README.txt
 """
 def create_zipfile(data_dump_filename, dsid=None, collid=None):
+  today = makeNow()
   if dsid and not collid:
     # It's a single dataset
     metadata = dataset_to_json(dsid)
@@ -178,6 +180,7 @@ def create_zipfile(data_dump_filename, dsid=None, collid=None):
   dl_class = "Dataset" if dsid else "Collection"
   # Create a README.txt file with the dataset JSON
   readme_content = (f'World Historical Gazetteer (WHG) \n{dl_class} Download\n'
+                    f'data: {os.path.basename(data_dump_filename)}\n'
                     '********************************\n'
                     f'This dataset conforms to the CC-BY 4.0 NC license.\n\n'
                     "This license enables reusers to distribute, remix, adapt, and build upon the material "
@@ -204,8 +207,9 @@ def create_zipfile(data_dump_filename, dsid=None, collid=None):
     data_filename = os.path.basename(data_dump_filename)
     zipf.write(data_dump_filename, arcname=data_filename)
 
-  # Remember to delete the README.txt file if it's not needed anymore
+  # delete files - they  are in the zip now
   os.remove('README.txt')
+  os.remove(data_dump_filename)
 
 # data_dump_filename = 'media/downloads/2_tm200_20240214_110011.json'
 # dsid = 9
@@ -245,7 +249,7 @@ def make_download(self, *args, **kwargs):
 
     # name and open file for writing
     fn = 'media/downloads/'+str(user.id)+'_'+str(collid)+'_'+date+'.json'
-    outfile= open(fn, 'w', encoding='utf-8')
+    outfile = open(fn, 'w', encoding='utf-8')
 
     # build features list
     features = []
@@ -289,7 +293,7 @@ def make_download(self, *args, **kwargs):
       print('single dataset in collection', dsid, collid)
     else:
       print('solo dataset', dsid)
-    ds=Dataset.objects.get(pk=dsid)
+    ds = Dataset.objects.get(pk=dsid)
     dslabel = ds.label
     qs = ds.places.all()
 
@@ -370,7 +374,6 @@ def make_download(self, *args, **kwargs):
             xy = g.geom.coords[0] if g.jsonb['type'] == 'MultiPoint' else g.jsonb['coordinates']
             newrow['lon'] = xy[0]
             newrow['lat'] = xy[1]
-        #print(newrow)
 
         # match newrow order to newheader already written
         index_map = {v: i for i, v in enumerate(newheader)}
@@ -393,7 +396,7 @@ def make_download(self, *args, **kwargs):
             print(f"Error updating task state: {e}")
 
       csvfile.close()
-      create_zipfile(ds, fn) # single dataset
+      create_zipfile(fn, ds.id, None) # single dataset
       zipname = generate_zip_filename(fn)
       create_downloadfile_record(user, ds, None, zipname)
 
@@ -432,7 +435,7 @@ def make_download(self, *args, **kwargs):
         # update task state every 100 iterations
         if (i + 1) % 100 == 0:
           self.update_state(state='PROGRESS',
-                                    meta={'current': i + 1, 'total': total_operations})
+                            meta={'current': i + 1, 'total': total_operations})
           print(f"Task updated: current iteration is {i + 1}, total operations are {total_operations}")
 
       print('download file for ' + str(total_operations) + ' places')
@@ -441,16 +444,20 @@ def make_download(self, *args, **kwargs):
               "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
               "filename": "/"+fn,
               "decription": ds.description,
-              "features":features}
+              "features": features}
 
+      # write the data as json to fn
+      outfile.write(json.dumps(result, indent=2).replace('null', '""'))
+      outfile.close()
+      # create zip with README.txt
+      create_zipfile(fn, ds.id, None)
+      # create DownloadFile record
       create_downloadfile_record(user, ds, None, fn)
 
-      outfile.write(json.dumps(result, indent=2).replace('null', '""'))
-      # TODO: build zip file with README.txt
 
+  print(f'@ Log create: user_id:{user.id}, dsid: {dsid}, collid: {collid})') # DEBUG
   # log the download, dataset or collection
   Log.objects.create(
-    # category, logtype, "timestamp", subtype, note, dataset_id, collection_id, user_id
     category = 'dataset' if dsid else 'collection',
     logtype = 'ds_download' if dsid else 'coll_download',
     note = {"format": req_format, "name": user.username},

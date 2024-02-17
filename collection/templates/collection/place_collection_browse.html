@@ -13,6 +13,7 @@
 {% block extra_head %}
   <link href="{% static 'webpack/mapAndTable.bundle.css' %}" rel="stylesheet"/>
   <script src="{% static 'celery_progress/celery_progress.js' %}"></script>
+  <meta name="csrf-token" content="{{ csrf_token }}">
 {% endblock %}
 
 {% block title %}
@@ -106,7 +107,7 @@
           </table>
           <div class=""><p>
             <a href="#" id="a_download_modal"
-               class="a-dl me-2" data-collid="{{ object.id }}"
+               class="me-2" data-collid="{{ object.id }}"
                data-bs-toggle="modal"
                data-bs-target="#downloadModal"
                title="download options">

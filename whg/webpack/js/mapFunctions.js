@@ -115,7 +115,7 @@ export function initOverlays(whgMap) {
     console.log('a-dl click()');
     let dsid = $(this).data('id');
     let collid = $(this).data('collid');
-    let format = $('input[name="format"]:checked').val();
+    let format = $('input[name="format"]:checked').val() || 'lpf';
     let urly = '/dlcelery/';
     console.log('dsid:', dsid, 'collid:', collid, 'format:', format);
     let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
