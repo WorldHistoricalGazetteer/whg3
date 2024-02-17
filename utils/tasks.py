@@ -214,10 +214,13 @@ def make_download(self, *args, **kwargs):
 
   # collection or dataset
   if collid and not dsid:
-    # it's an entire collection; all places in all its datasets
-    print('entire collection', collid)
+    # it's an entire collection;
+    # if 'place': all places in all its datasets
+    # if 'dataset': all places in all its datasets (individual are handled below)
     coll = Collection.objects.get(id=collid)
     colltitle = coll.title
+    collclass = coll.collection_class
+
     qs = coll.places_all.all()
 
     # count for progress
@@ -292,7 +295,8 @@ def make_download(self, *args, **kwargs):
     # create zip with README.txt
     create_zipfile(fn, None, collid)
     # create DownloadFile record
-    create_downloadfile_record(user, None, coll, fn)
+    zipname = generate_zip_filename(fn)
+    create_downloadfile_record(user, None, coll, zipname)
 
   elif dsid:
     # it's a single dataset
@@ -459,7 +463,8 @@ def make_download(self, *args, **kwargs):
       # create zip with README.txt
       create_zipfile(fn, ds.id, None)
       # create DownloadFile record
-      create_downloadfile_record(user, ds, None, fn)
+      zipname = generate_zip_filename(fn)
+      create_downloadfile_record(user, ds, None, zipname)
 
 
   print(f'@ Log create: user_id:{user.id}, dsid: {dsid}, collid: {collid})') # DEBUG

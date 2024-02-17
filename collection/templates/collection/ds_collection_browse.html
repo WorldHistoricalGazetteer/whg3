@@ -164,6 +164,25 @@
                     </tr>
                     </thead>
                     <tbody>
+                    <tr>
+                      <td>All places</td>
+                      <td>{{ object.rowcount }}</td>
+                      <td>
+                        <div class="form-check form-check-inline">
+                          <input class="form-check-input hover" type="radio" name="format" value="lpf">
+                          <label class="form-check-label" for="r_lpf">LPF</label>
+                        </div>
+                        {% if d.format == 'delimited' %}
+                          <div class="form-check form-check-inline ml-1">
+                            <input class="form-check-input hover" type="radio" name="format" value="tsv"
+                                   checked="checked"><label class="form-check-label" for="r_LP-TSV">LP-TSV</label>
+                            </div>
+                          {% endif %}
+                      </td>
+                      <td class="px-1">
+                        <a class="a-dl" data-collid={{ object.id }} data-user={{ user }}><i class="fa fa-download" title="Download"></i></a>
+                      </td>
+                    </tr>
                     {% for item in ds_list %}
                       <tr class="align-top">
                         <td>{{ item.title }}&nbsp;
@@ -174,7 +193,7 @@
                             {% endif %}"
                              rel="tooltip" title="copy to clipboard">
                             <i class="fas fa-clipboard linky"></i></a><br/>
-                          <span class="ml-2 small" style="disply:block">
+                          <span class="ml-2 small" style="display:block">
                             <i>est. download time: {{ item.dl_est }}</i></span>
                         </td>
                         <td>{{ item.numrows }}</td>
@@ -195,8 +214,7 @@
                     {% endfor %}
                     </tbody>
                   </table>
-                  <p class="small mt-2">The download task will be queued and when ready, you will receive an email notification.
-                    It will also be listed on <a href="{% url 'dashboard' %}">your 'My Data' dashboard</a> </p>
+                  <p class="small mt-2">The download task will be queued and when ready, you will receive an email notification. It will also be listed on <a href="{% url 'dashboard' %}">your 'My Data' dashboard</a> </p>
                 </div>
                 <div class="col-sm-4">
                   <p class="modal-col-head p-1 mb-0">File Formats</p>
