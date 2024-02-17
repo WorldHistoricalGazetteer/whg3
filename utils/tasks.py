@@ -16,7 +16,7 @@ import pandas as pd
 import simplejson as json
 
 from areas.models import Area
-from collection.models import Collection
+from collection.models import Collection, CollPlace
 from datasets.models import Dataset
 from datasets.utils import makeNow
 from main.models import DownloadFile, Log
@@ -63,14 +63,13 @@ def downloader(request, *args, **kwargs):
   elif request.method == 'GET':
     print('request.GET', request.GET)
 
+# give file a .zip extension
 def generate_zip_filename(data_dump_filename):
     base_name, _ = os.path.splitext(data_dump_filename)
     zipname = base_name + '.zip'
     return zipname
 
-"""
-  create a DownloadFile record
-"""
+# create a DownloadFile record
 def create_downloadfile_record(user, ds, coll, zip_filename):
   # Determine the title based on whether it's a Collection or Dataset
   print(f'@ create_downloadfile_record: user:{user}, ds: {ds}, coll: {coll}, zip_filename: {zip_filename}') # DEBUG
@@ -90,22 +89,13 @@ def create_downloadfile_record(user, ds, coll, zip_filename):
     filepath='/' + zip_filename,
   )
 
-def format_metadata(metadata_dict):
-  formatted_lines = []
-  for key, value in metadata_dict.items():
-    formatted_line = f"{key}: {value}"
-    formatted_lines.append(formatted_line)
-  return "\n".join(formatted_lines)
-
 # return ordered dict of metadata fields
 def filter_and_order(metadata_json, desired_fields):
   # Directly using dict as Python 3.7+ maintains order
   filtered = {field: metadata_json['fields'][field] for field in desired_fields if field in metadata_json['fields']}
   return filtered
 
-"""
-  generate metadata for a single dataset
-"""
+# generate metadata for a single dataset
 def dataset_to_json(dsid):
   dataset = Dataset.objects.get(id=dsid)
   dataset_json = json.loads(serializers.serialize('json', [dataset]))[0]  # Deserialize to get the first item
@@ -124,9 +114,7 @@ def dataset_to_json(dsid):
 
   return filtered_dataset
 
-"""
-  generate metadata for a collection
-"""
+# generate metadata for a collection
 def collection_to_json(collid):
   coll = Collection.objects.get(id=collid)
   metadata_json = json.loads(serializers.serialize('json', [coll]))[0]  # Deserialize to get the first item
@@ -159,10 +147,7 @@ def collection_to_json(collid):
 
   return filtered_collection
 
-"""
-  helper for make_download()
-  build a .zip file with download file + README.txt
-"""
+# build a .zip file with data file + README.txt
 def create_zipfile(data_dump_filename, dsid=None, collid=None):
   today = makeNow()
   if dsid and not collid:
@@ -211,16 +196,10 @@ def create_zipfile(data_dump_filename, dsid=None, collid=None):
   os.remove('README.txt')
   os.remove(data_dump_filename)
 
-# data_dump_filename = 'media/downloads/2_tm200_20240214_110011.json'
-# dsid = 9
-# from django.core import serializers
-# create_zipfile(data_dump_filename, 9, None) # dataset
-# create_zipfile(data_dump_filename, None, 6) # place collection
-
 """ 
   called by utils.downloader()
-  builds download file for single dataset or entire collection
-  TODO: list usages
+  builds download .zip file for single dataset or entire collection
+  in lpf or tsv, as requested/required
 """
 @shared_task(name="make_download", bind=True)
 def make_download(self, *args, **kwargs):
@@ -262,8 +241,31 @@ def make_download(self, *args, **kwargs):
           "type": "GeometryCollection",
           "geometries": [g.jsonb for g in geoms]
         }
+      # Fetch annotation information
+      try:
+        anno = p.traces.filter(collection_id=collid, archived=False).first()
+        coll_place = CollPlace.objects.filter(collection=collid, place=p).first()
+
+        annotation = {
+          "place_id": p.id,
+          "sequence": coll_place.sequence if coll_place else None,
+          "note": anno.note if anno else "",
+          "relation": anno.relation if anno else [],
+          "start": anno.start if anno else "",
+          "end": anno.end if anno else "",
+          "created": anno.created.strftime('%Y-%m-%d') if anno else ""
+        }
+      except Exception as e:
+        # Handle cases where TraceAnnotation or CollPlace might not exist for a Place
+        annotation = {}
+        print(f"Error fetching annotation or sequence for place {p.id}: {e}")
+
       rec = {"type": "Feature",
-             "properties": {"id": p.id, "src_id": p.src_id, "title": p.title, "ccodes": p.ccodes},
+             "properties": {"id": p.id,
+                            "src_id": p.src_id,
+                            "title": p.title,
+                            "ccodes": p.ccodes,
+                            "annotation": annotation},
              "geometry": geometry,
              "names": [n.jsonb for n in p.names.all()],
              "types": [t.jsonb for t in p.types.all()],
@@ -277,15 +279,20 @@ def make_download(self, *args, **kwargs):
                                   meta={'current': i + 1, 'total': total_operations})
         print(f"Task state: PROGRESS, current: {i + 1}, total: {total_operations}")
 
+    features_sorted = sorted(features, key=lambda x: x['properties']['annotation'].get('sequence', float('inf')))
+
     print(f'download file for {total_operations} places in {colltitle}')
-    result = {"type": "FeatureCollection", "features": features,
+    result = {"type": "FeatureCollection", "features": features_sorted,
               "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
               "filename": "/" + fn}
 
-    # TODO: build zip file with README.txt
-    create_downloadfile_record(user, None, coll, fn)
-
+    # write the data as json to fn
     outfile.write(json.dumps(result,indent=2).replace('null', '""'))
+    outfile.close()
+    # create zip with README.txt
+    create_zipfile(fn, None, collid)
+    # create DownloadFile record
+    create_downloadfile_record(user, None, coll, fn)
 
   elif dsid:
     # it's a single dataset

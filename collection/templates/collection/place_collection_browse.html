@@ -142,7 +142,7 @@
       </div>
       <div id="downloadModal" class="modal fade" tabindex="-1"
            aria-labelledby="downloadModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
+        <div class="modal-dialog modal-lg">
           <div class="modal-content">
             <div class="modal-header">
               <h5 class="modal-title" id="downloadModalLabel">
@@ -154,23 +154,15 @@
               <div class="dl-blurb">
                 <p class="mb-1">Data uploaded as Linked Places format (LPF) are available only in that format.
                   Data uploaded as LP-TSV (delimited text files or spreadsheets) can be downloaded as
-                  either
-                  <sr>LPF</sr>
-                  or
-                  <sr>LP-TSV</sr>
-                  .
-                  <!--Downloads totaling more than {n} records will be queued, and a notification email sent when completed.-->
-                </p>
+                  either <sr>LPF</sr> or <sr>LP-TSV</sr></p>
                 <div id="dl_licensing">
-                  <p>
-                    <sr>IMPORTANT LICENSING INFORMATION</sr>
+                  <p><sr>IMPORTANT LICENSING INFORMATION</sr>
                     : Data made public in WHG by its creators are available under the Creative Commons Attribution 4.0
                     International (CC BY 4.0) License. They can be freely shared, re-used, and adapted, but "you
                     <b>must</b> give appropriate credit, provide a link to the license, and indicate if changes were
                     made." Please see <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC-BY-4.0
                     details</a>; and <a href="{% url 'licensing' %}" target="_blank">WHG policy.</a> Citations are
-                    provided below. <b>By clicking download on this form, you are agreeing to those terms</b>.
-                  </p>
+                    provided below. <b>By clicking download on this form, you are agreeing to those terms</b>.</p>
                 </div>
               </div>
               <div class="row">
@@ -180,33 +172,23 @@
                   </p>
                   <p>
                     <a href="#" class="a-dl" data-collid={{ object.id }}>
-                      <i class="fa fa-download" title="Download"></i> download entire collection </a>
-                  </p>
+                      <i class="fa fa-download" title="Download"></i> download entire collection w/metadata</a></p>
+                  <p class="small">The download task will be queued and when ready, you will receive an email notification.
+                    It will also be listed on <a href="{% url 'dashboard' %}">your 'My Data' dashboard</a> </p>
                   <p class="modal-col-head p-1 mb-2">Datasets represented <small>w/citations</small>
                   </p>
-                  <p>
-                    {% for d in ds_list %}{{ d.title }}&nbsp;
-                      <a id="cite_{{ d.id }}" class="clippy" aria-label="
-                        {% if d.citation %}{{ d.citation }}{% else %}{{ d.title }}. [Data file (partial), Retrieved from {{ url_front }}collections/{{ object.id }}/browse_pl, {% now 'd M Y' %}{% endif %}"
-                         rel="tooltip" title="copy to clipboard"> citation: <i class="fas fa-clipboard linky"></i></a>
-                      <br/>
+                    {% for d in ds_list %}<p class="my-1">{{ d.title }}&nbsp;
+                  <a id="cite_{{ d.id }}" class="clippy" aria-label="{% if d.citation %}{{ d.citation }}{% else %}{{ d.title }}. [Data file (partial), Retrieved from {{ url_front }}collections/{{ object.id }}/browse_pl, {% now 'd M Y' %}{% endif %}" rel="tooltip" title="copy to clipboard"> citation: <i class="fas fa-clipboard linky"></i></a></p>
                     {% endfor %}
-                  </p>
                   <div id=""></div>
                   <div id="celery-result"></div>
                 </div>
                 <div class="col-sm-4">
                   <p class="modal-col-head p-1 mb-2">File Formats</p>
                   <div class="p-1 small">
-                    <p class="my-1">
-                      <sr>Linked Places format (LPF)</sr>
-                      is JSON-based,
-                      valid GeoJSON and valid JSON-LD (rdf) with temporal extensions
-                    </p>
-                    <p class="my-1">
-                      <sr>LP-TSV downloads</sr>
-                      are tab-separated text files.
-                    </p>
+                    <p class="my-1"><sr>Linked Places format (LPF)</sr>is JSON-based,
+                      valid GeoJSON and valid JSON-LD (rdf) with temporal extensions</p>
+                    <p class="my-1"><sr>LP-TSV downloads</sr> are tab-separated text files.</p>
                   </div>
                   <div id="progress-bar-message" class="hidden">Waiting for progress to start...</div>
                   <span id='progress-bar' class='progress-bar'

@@ -159,16 +159,6 @@ class Collection(models.Model):
     return result
 
   @property
-  def ds_list(self):
-    dsc = [{"id": d.id, "label": d.label, "bounds": d.bounds, "title": d.title, "dl_est": d.dl_est,
-            "numrows": d.numrows, "modified": d.last_modified_text} for d in self.datasets.all()]
-    # TODO: why is this here??
-    # dsp = [{"id": p.dataset.id, "label": p.dataset.label, "title": p.dataset.title,
-    #         "modified": p.dataset.last_modified_text} for p in self.places.all()]
-    # return list({ item['id'] : item for item in dsp+dsc}.values())
-    return list({ item['id'] : item for item in dsc}.values())
-
-  @property
   def ds_counter(self):
     from collections import Counter
     from itertools import chain
@@ -176,6 +166,29 @@ class Collection(models.Model):
     dp = self.places.all().values_list('dataset', flat=True)
     all = Counter(list(chain(dc, dp)))
     return dict(all)
+
+  @property
+  def ds_list(self):
+    if self.collection_class == 'dataset':
+      dsc = [{"id": d.id, "label": d.label, "bounds": d.bounds, "title": d.title, "dl_est": d.dl_est,
+              "numrows": d.numrows, "modified": d.last_modified_text} for d in self.datasets.all()]
+      return list({item['id']: item for item in dsc}.values())
+    elif self.collection_class == 'place':
+      # Get all distinct datasets associated with all the places in the collection
+      datasets = set(place.dataset for place in self.places.all())
+      dsp = [{"id": d.id, "label": d.label, "title": d.title,
+              "modified": d.last_modified_text} for d in datasets]
+      return list({item['id']: item for item in dsp}.values())
+
+  # @property
+  # def ds_list(self):
+  #   dsc = [{"id": d.id, "label": d.label, "bounds": d.bounds, "title": d.title, "dl_est": d.dl_est,
+  #           "numrows": d.numrows, "modified": d.last_modified_text} for d in self.datasets.all()]
+  #   # TODO: list datasets represented in place collection
+  #   # dsp = [{"id": p.dataset.id, "label": p.dataset.label, "title": p.dataset.title,
+  #   #         "modified": p.dataset.last_modified_text} for p in self.places.all()]
+  #   # return list({ item['id'] : item for item in dsp+dsc}.values())
+  #   return list({ item['id'] : item for item in dsc}.values())
 
   @property
   def feature_collection(self):

@@ -179,7 +179,7 @@
       <ul id="tab-list" class="nav nav-tabs" role="tablist">
         {# create form & intro #}
         <li class="nav-item" role="presentation">
-          <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
+          <button class="nav-link" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
                   type="button" role="tab" aria-controls="coll_form" aria-selected="true">
             {% if action == 'create' %}Create{% else %}Edit{% endif %} Collection
           </button>
@@ -187,10 +187,7 @@
         {# add & annotate #}
         {% if action == "update" %}
           <li class="nav-item" role="presentation">
-            <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
-                    type="button" role="tab" aria-controls="coll_builder" aria-selected="false">
-              Add and annotate places
-            </button>
+            <button class="nav-link active" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder" type="button" role="tab" aria-controls="coll_builder" aria-selected="false">Add and annotate places</button>
           </li>
           {% if in_class == False or in_class == True and object.group.collaboration == True %}
             <li class="nav-item" role="presentation">
@@ -205,7 +202,7 @@
       </ul>
       <div id="content" class="tab-content" >
         {# create/edit form #}
-        <div id="coll_form" class="tab-pane fade show active h-100">
+        <div id="coll_form" class="tab-pane fadeh-100">
           <form id="collection_form" method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="row">
@@ -434,7 +431,7 @@
           </div>
         </div>
         {# add & annotate places #}
-        <div id="coll_builder" class="tab-pane fade h-100" style="height: auto; position:relative;">
+        <div id="coll_builder" class="tab-pane fade show active h-100" style="height: auto; position:relative;">
           <div class="d-flex h-100">
             <div class="col-sm-6" id="builder">
               <ul id="coll_tabs" class="nav nav-tabs " role="tablist">
