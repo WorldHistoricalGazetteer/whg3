@@ -151,24 +151,49 @@ class Dataset(models.Model):
     teamusers = User.objects.filter(id__in=team) | User.objects.filter(groups__name='whg_team')
     return teamusers
 
+  # dataset time estimates (local on mac laptop)
+  # delimited augmented: 20 sec per 1000 records
+  # lpf: 20 sec per 1000 records
+
   # download time estimate
   @property
   def dl_est(self):
-    file = self.files.all().order_by('id')[0]
-    if file.file:
-      size = int(file.file.size / 1000000)  # seconds +/-
-    else:
-      # substitute record count for *rough* estimate
-      size = self.places.count() / 1000
-    min, sec = divmod(size, 60)
+    # Get the number of associated Place records
+    num_records = self.places.count()
+
+    # Calculate the estimated download time in seconds
+    # (20 seconds per 1000 records)
+    est_time_in_sec = (num_records / 1000) * 20
+
+    # Convert the estimated time to minutes and seconds
+    min, sec = divmod(est_time_in_sec, 60)
+
+    # Format the result
     if min < 1:
       result = "%02d sec" % (sec)
     elif sec >= 10:
       result = "%02d min %02d sec" % (min, sec)
     else:
       result = "%02d min" % (min)
-      # print("est. %02d min %02d sec" % (min, sec))
+
     return result
+  # @property
+  # def dl_est(self):
+  #   file = self.files.all().order_by('id')[0]
+  #   if file.file:
+  #     size = int(file.file.size / 1000000)  # seconds +/-
+  #   else:
+  #     # substitute record count for *rough* estimate
+  #     size = self.places.count() / 1000
+  #   min, sec = divmod(size, 60)
+  #   if min < 1:
+  #     result = "%02d sec" % (sec)
+  #   elif sec >= 10:
+  #     result = "%02d min %02d sec" % (min, sec)
+  #   else:
+  #     result = "%02d min" % (min)
+  #     # print("est. %02d min %02d sec" % (min, sec))
+  #   return result
 
   @property
   def feature_collection(self):

@@ -6,7 +6,7 @@ from django.conf import settings
 
 from . import views
 from datasets.utils import download_file, UpdateCountsView, download_augmented, \
-  fetch_mapdata_ds, fetch_geojson_ds, downloader, fetch_geojson_flat, downloadLP7
+  fetch_mapdata_ds, fetch_geojson_ds, fetch_geojson_flat, downloadLP7
 from datasets.tasks import index_to_builder
 
 # dataset actions
@@ -53,8 +53,6 @@ urlpatterns = [
   # download latest file, as uploaded
   path('<int:id>/file/', download_file, name="dl-file"), #
 
-  # initiate downloads of augmented datasets via celery task (called from ajax)
-  path('dlcelery/', downloader, name='dl_celery'),
   ## DEPRECATing download augmented dataset
   path('<int:id>/augmented/<str:format>', download_augmented, name="dl-aug"), #
 

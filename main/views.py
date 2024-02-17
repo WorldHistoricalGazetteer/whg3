@@ -15,10 +15,11 @@ from django.views.generic.base import TemplateView
 
 from .forms import CommentModalForm, ContactForm, AnnouncementForm
 from areas.models import Area
+from celery.result import AsyncResult
 from collection.models import Collection, CollectionGroup, CollectionGroupUser
 from datasets.models import Dataset
 from datasets.tasks import testAdd
-from .models import Announcement, Link
+from .models import Announcement, Link, DownloadFile
 from places.models import Place, PlaceGeom
 from utils.emailing import new_emailer
 
@@ -31,8 +32,19 @@ from urllib.parse import urlparse
 
 es = settings.ES_CONN
 
-
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+
+def get_task_progress(request, taskid):
+  print(f"Requested URL: {request.path}")
+  print('get_task_progress() taskid', taskid)
+  task = AsyncResult(taskid)
+  print('task', task)
+  response_data = {
+    'state': task.state,
+    'progress': task.result  # dict with 'current' and 'total' keys
+  }
+  print('response_data', response_data)
+  return JsonResponse(response_data)
 
 class AnnouncementListView(ListView):
     model = Announcement
@@ -486,12 +498,14 @@ def dashboard_user_view(request):
   user_datasets_count = Dataset.objects.filter(owner=user.id).count()
   user_collections_count = Collection.objects.filter(owner=user).count()
   user_areas_count = Area.objects.filter(owner=user).count()
+  user_downloads_count = DownloadFile.objects.filter(user=user).count()
 
   section = request.GET.get('section')
 
   datasets = get_objects_for_user(Dataset, request.user, {'owner': user}, False)
   collections = get_objects_for_user(Collection, request.user, {'owner': user}, False)
   areas = get_objects_for_user(Area, request.user, {'owner': user}, False)
+  downloads = get_objects_for_user(DownloadFile, request.user, {'user': user}, False)
   groups_member = CollectionGroup.objects.filter(members__user=user)
   groups_led = CollectionGroup.objects.filter(owner=user)
 
@@ -499,9 +513,11 @@ def dashboard_user_view(request):
     'datasets': datasets,
     'collections': collections,
     'areas': areas,
+    'downloads': downloads,
     'has_datasets': user_datasets_count > 0,
     'has_collections': user_collections_count > 0,
     'has_areas': user_areas_count > 0,
+    'has_downloads': user_downloads_count > 0,
     'section': section,
     'django_groups': django_groups,
     'groups_member': groups_member,

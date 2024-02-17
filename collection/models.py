@@ -135,6 +135,61 @@ class Collection(models.Model):
     teamusers = User.objects.filter(id__in=team)
     return teamusers
 
+  # download time estimate
+  @property
+  def dl_est(self):
+    # Get the number of associated Place records
+    num_records = self.places_all.count()
+
+    # Calculate the estimated download time in seconds
+    # (20 seconds per 1000 records)
+    est_time_in_sec = (num_records / 1000) * 20
+
+    # Convert the estimated time to minutes and seconds
+    min, sec = divmod(est_time_in_sec, 60)
+
+    # Format the result
+    if min < 1:
+      result = "%02d sec" % (sec)
+    elif sec >= 10:
+      result = "%02d min %02d sec" % (min, sec)
+    else:
+      result = "%02d min" % (min)
+
+    return result
+
+  @property
+  def ds_counter(self):
+    from collections import Counter
+    from itertools import chain
+    dc = self.datasets.all().values_list('label', flat=True)
+    dp = self.places.all().values_list('dataset', flat=True)
+    all = Counter(list(chain(dc, dp)))
+    return dict(all)
+
+  @property
+  def ds_list(self):
+    if self.collection_class == 'dataset':
+      dsc = [{"id": d.id, "label": d.label, "bounds": d.bounds, "title": d.title, "dl_est": d.dl_est,
+              "numrows": d.numrows, "modified": d.last_modified_text} for d in self.datasets.all()]
+      return list({item['id']: item for item in dsc}.values())
+    elif self.collection_class == 'place':
+      # Get all distinct datasets associated with all the places in the collection
+      datasets = set(place.dataset for place in self.places.all())
+      dsp = [{"id": d.id, "label": d.label, "title": d.title,
+              "modified": d.last_modified_text} for d in datasets]
+      return list({item['id']: item for item in dsp}.values())
+
+  # @property
+  # def ds_list(self):
+  #   dsc = [{"id": d.id, "label": d.label, "bounds": d.bounds, "title": d.title, "dl_est": d.dl_est,
+  #           "numrows": d.numrows, "modified": d.last_modified_text} for d in self.datasets.all()]
+  #   # TODO: list datasets represented in place collection
+  #   # dsp = [{"id": p.dataset.id, "label": p.dataset.label, "title": p.dataset.title,
+  #   #         "modified": p.dataset.last_modified_text} for p in self.places.all()]
+  #   # return list({ item['id'] : item for item in dsp+dsc}.values())
+  #   return list({ item['id'] : item for item in dsc}.values())
+
   @property
   def feature_collection(self):
     return feature_collection(self)
@@ -152,6 +207,11 @@ class Collection(models.Model):
     colors = ['orange', 'red', 'green', 'blue', 'purple',
       'red', 'green', 'blue', 'purple']
     return dict(zip(self.rel_keywords, colors))
+
+  @property
+  def last_modified_iso(self):
+    # TODO: log entries for collections
+    return self.created.strftime("%Y-%m-%d")
 
   @property
   def owners(self):
@@ -177,29 +237,6 @@ class Collection(models.Model):
     )
     return all
     # return all.exclude(id__in=self.omitted)
-
-  @property
-  def ds_list(self):
-    dsc = [{"id":d.id, "label":d.label, "bounds": d.bounds,
-            "title":d.title, "modified": d.last_modified_text} for d in self.datasets.all()]
-    dsp = [{"id":p.dataset.id, "label":p.dataset.label, "title":p.dataset.title #, "bounds": p.dataset.bounds
-            ,"modified": p.dataset.last_modified_text
-            } for p in self.places.all()]
-    return list({ item['id'] : item for item in dsp+dsc}.values())
-
-  @property
-  def ds_counter(self):
-    from collections import Counter
-    from itertools import chain
-    dc = self.datasets.all().values_list('label', flat=True)
-    dp = self.places.all().values_list('dataset', flat=True)
-    all = Counter(list(chain(dc, dp)))
-    return dict(all)
-
-  @property
-  def last_modified_iso(self):
-    # TODO: log entries for collections
-    return self.created.strftime("%Y-%m-%d")
 
   @property
   def rowcount(self):

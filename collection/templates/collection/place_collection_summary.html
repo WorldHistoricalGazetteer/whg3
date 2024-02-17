@@ -238,7 +238,7 @@
       cell = $(this).closest('tr').find('td').eq(2)
       format = cell.find('input[name="format"]:checked').val()
       dsid = $(this).data('id')
-      urly='/datasets/dlcelery/'
+      urly='/dlcelery/'
       $.ajax({
           type: 'POST',
           url: urly,

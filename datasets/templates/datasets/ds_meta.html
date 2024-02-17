@@ -213,13 +213,13 @@
   // -> views_dl.downloader()
   $(".a-dl-celery").click(function(e){
     e.preventDefault()
-    <!--startDownloadSpinner()-->
+    //startDownloadSpinner()
     console.log('sending post')
     console.time('dl')
     format = $(this).attr('ref')
     dsid = '{{ object.id }}'
     console.log('send to downloader()')
-    urly='/datasets/dlcelery/'
+    urly='/dlcelery/'
     window.task_id = 'dummy-123-49506-fubar-29384'
     $.ajax({
         type: 'POST',
