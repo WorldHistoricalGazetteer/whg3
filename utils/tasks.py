@@ -60,6 +60,11 @@ def downloader(request, *args, **kwargs):
   elif request.method == 'GET':
     print('request.GET', request.GET)
 
+def generate_zip_filename(data_dump_filename):
+    base_name, _ = os.path.splitext(data_dump_filename)
+    zipname = base_name + '.zip'
+    return zipname
+
 
 """
   helper for make_download()
@@ -211,11 +216,6 @@ dsid = 9
 from django.core import serializers
 create_zipfile(data_dump_filename, 9, None) # dataset
 # create_zipfile(data_dump_filename, None, 6) # place collection
-
-def generate_zip_filename(data_dump_filename):
-    base_name, _ = os.path.splitext(data_dump_filename)
-    zipname = base_name + '.zip'
-    return zipname
 
 """ 
   called by utils.downloader()
