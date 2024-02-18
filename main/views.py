@@ -165,6 +165,7 @@ class Home30a(TemplateView):
     return context
 
 # used for dashboard_user() and dataset_list()
+# TODO: what rules? this or the *_list() functions?
 def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
   from django.db.models import Max
   # Always apply extra filters if they are provided and the model is Area
@@ -181,9 +182,10 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
   if is_admin and model == Area and 'type' in filter_criteria:
     objects = objects.exclude(type__in=filter_criteria['type'])
   elif model == Dataset: # reverse sort, and some dummy datasets need to be filtered
-      objects = objects.exclude(title__startswith='(stub)').order_by()
+      objects = objects.exclude(title__startswith='(stub)').order_by('create_date')
       objects = objects.annotate(recent_log_timestamp=Max('log__timestamp'))
-      objects = objects.order_by('-recent_log_timestamp')
+      # objects = objects.order_by('-recent_log_timestamp')
+      # objects = objects.order_by('label')
 
   return objects
 
@@ -246,7 +248,8 @@ def area_list(request, sort='', order=''):
 
 def dataset_list(request, sort='', order=''):
   filters = request.GET
-  print("dataset_list GET:", request.GET)
+  print("dataset_list() GET:", request.GET)
+  print('dataset_list() sort, order', sort, order)
 
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
@@ -312,7 +315,7 @@ def collection_list(request, sort='', order=''):
 
   collections = Collection.objects.all()
 
-  collections = collections.annotate(recent_log_timestamp=Max('log__timestamp'))
+  collections = collections.annotate(recent_log_timestamp=Max('log__timestamp')).order_by('recent_log_timestamp')
 
   collections = collections.annotate(
     count=Case(
@@ -452,7 +455,7 @@ def dashboard_redirect(request):
 # all-purpose for admins
 @login_required
 def dashboard_admin_view(request):
-  print('request.GET', request.GET)
+  print('dashboard_admin() request.GET', request.GET)
   user = request.user
   is_admin = user.groups.filter(name='whg_admins').exists()
   is_leader = user.groups.filter(name='group_leaders').exists()
@@ -467,6 +470,8 @@ def dashboard_admin_view(request):
 
   # TODO: for admins, show all datasets, collections, areas
   datasets = get_objects_for_user(Dataset, request.user, {}, is_admin)
+  datasets = datasets.order_by('create_date')
+
   collections = get_objects_for_user(Collection, request.user, {}, is_admin)
   areas = get_objects_for_user(Area, request.user, {'type': ['predefined', 'country']}, is_admin)
   groups_member = CollectionGroup.objects.filter(members__user=user)
