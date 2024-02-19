@@ -1,4 +1,5 @@
 import './vis_parameters';
+import { showChooser } from './utilities';
 
 $(function() {
 
@@ -184,10 +185,11 @@ $("#check_submitter").click(function(e) {
 	$("#submitter").toggle()
 })
 
-function showChooser(type) {
-	elem = "#" + type + "_chooser"
-	$(elem).toggle()
-}
+// function showChooser(type) {
+// 	consol.log('showChooser', type)
+// 	let elem = "#" + type + "_chooser"
+// 	$(elem).toggle()
+// }
 
 $("#btn_coll_submit").click(function(e) {
 	e.preventDefault()

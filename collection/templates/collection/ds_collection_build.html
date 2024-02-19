@@ -563,6 +563,11 @@
 
   })
 
+  function showChooser(type) {
+    console.log('showChooser', type)
+    let elem = "#" + type + "_chooser"
+    $(elem).toggle()
+  }
 	$("#a_linkpopup").click(function(){
     $("#linkform_popup").fadeIn()
 	})
