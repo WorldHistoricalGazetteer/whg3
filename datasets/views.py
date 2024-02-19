@@ -3465,6 +3465,14 @@ class DatasetPlacesView(DetailView):
     context['ds'] = ds
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
 
+    if not ds.vis_parameters:
+        # Populate with default values:
+        # tabulate: 'initial'|true|false - include sortable table column, 'initial' indicating the initial sort column
+        # temporal_control: 'player'|'filter'|null - control to be displayed when sorting on this column
+        # trail: true|false - whether to include ant-trail motion indicators on map
+        ds.vis_parameters = "{'seq': {'tabulate': false, 'temporal_control': 'player', 'trail': true},'min': {'tabulate': 'initial', 'temporal_control': 'filter', 'trail': true},'max': {'tabulate': true, 'temporal_control': 'filter', 'trail': false}}"
+    context['visParameters'] = ds.vis_parameters
+
     return context
 
 

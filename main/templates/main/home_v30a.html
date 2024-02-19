@@ -30,10 +30,11 @@
         </div>
       {% else %}
         <div class="centered w-100">
+          {% comment %}
           <!-- alternate home page -->
           <span class="position-absolute top-0 end-0"><b>TAKE 1</b>
-          <a href="{% url 'home-version' version='v30a2' %}">take 2</a>
-        </span>
+            <a href="{% url 'home-version' version='v30a2' %}">take 2</a>
+          </span>{% endcomment %}
           <span class="title mb-2">
 				  <img src="{% static 'images/whg_logo.svg' %}" class="d-inline-block align-bottom me-2"
                height=80 width=80 alt=""/>
