@@ -1,5 +1,6 @@
 import './vis_parameters';
 import { showChooser } from './utilities';
+window.showChooser = showChooser;
 
 $(function() {
 

@@ -351,6 +351,7 @@ def fetch_mapdata_coll(request, *args, **kwargs):
     first_anno = t.place.annos.first()
     sequence_value = first_anno.sequence if first_anno else None
     # some places have no geometry
+    # TODO: this returns null geometries, then unlisted in table
     geoms = t.place.geoms.all()
     geometry = t.place.geoms.all()[0].jsonb if geoms else None
 

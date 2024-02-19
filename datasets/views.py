@@ -30,7 +30,6 @@ import ast, shutil, tempfile  # , codecs, math, mimetypes, os, re, sys
 from deepdiff import DeepDiff as diff
 import numpy as np
 
-es = settings.ES_CONN
 from pathlib import Path
 from shapely import wkt
 from shutil import copyfile
@@ -42,8 +41,7 @@ from .exceptions import LPFValidationError, DelimValidationError, \
   DelimInsertError, DataAlreadyProcessedError
 from .forms import (HitModelForm, DatasetDetailModelForm,
                     DatasetUploadForm, DatasetCreateModelForm, DatasetCreateEmptyModelForm)
-from .insert import (ds_insert_json, ds_insert_delim, ds_insert_lpf,
-                     failed_insert_notification, ds_insert_tsv)
+from .insert import (ds_insert_json, ds_insert_delim, failed_insert_notification)
 from .validation import validate_delim, validate_lpf, validate_tsv
 
 from .models import Dataset, Hit, DatasetFile
@@ -61,8 +59,7 @@ from main.choices import AUTHORITY_BASEURI
 from main.models import Log, Comment
 from places.models import *
 
-from api.views import AreaListView
-
+es = settings.ES_CONN
 User = get_user_model()
 
 
