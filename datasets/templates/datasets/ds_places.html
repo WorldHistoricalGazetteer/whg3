@@ -30,7 +30,8 @@
                 <img src="{% static 'images/spreadsheet.png' %}" height=28 alt=""/>
                 {{ ds.title }}
             </span>
-        <span class="fs-6"> a WHG dataset </span>
+        <span class="fs-6"> a WHG dataset {% if not ds.public %}<mark>preview</mark>{% endif %}
+        </span>
         <span id="collapseExpand" class="float-end">
           <span class="info-collapse small">Hide</span>
           <i class="info-collapse fas fa-chevron-up"></i>
@@ -272,6 +273,7 @@
   </div>
 
   <script type="text/javascript">
+    const URL_FRONT = "{{ URL_FRONT }}";
     const pageData = "{{ ds.id }}";
     window.loggedin = "{{ loggedin }}";
     window.dslabel = "{{ ds.label }}";

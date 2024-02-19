@@ -57,13 +57,11 @@
                target="_blank" rel="tooltip">
               <i class="fas fa-trash linkyred"></i></a>
           </span>
-          <span class="float-end me-3">View publication page &nbsp;
-            <a href="{% url 'datasets:ds_places' id=ds.id %}" title="View publication page" rel="tooltip">
-              <i class="fas fa-eye linky"></i></a></span>
         {% endif %}
-        {% if user in collaborators or is_admin and ds.public %}
+        {% if user in collaborators or is_admin %}
           <span class="float-end me-3">
-            public view <a href="{% url 'datasets:ds_places' id=ds.id %}" title="View publication page" rel="tooltip">
+            publication {% if not ds.public %}pre{% endif %}view
+            <a href="{% url 'datasets:ds_places' id=ds.id %}" title="View publication page" rel="tooltip">
             <i class="fas fa-eye"></i></a>
           </span>
         {% endif %}

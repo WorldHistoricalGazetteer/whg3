@@ -3427,8 +3427,6 @@ class DatasetBrowseView(LoginRequiredMixin, DetailView):
 """
   returns public dataset browse table
 """
-
-
 class DatasetPlacesView(DetailView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -3445,6 +3443,7 @@ class DatasetPlacesView(DetailView):
     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
+    context['URL_FRONT'] = settings.URL_FRONT
 
     print('DatasetPlacesView get_context_data() kwargs:', self.kwargs)
     print('DatasetPlacesView get_context_data() request.user', self.request.user)
