@@ -110,6 +110,15 @@ EMAIL_MESSAGES = {
     'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
     'regards,\nThe WHG project team'
   ),
+  'download_ready': (
+    'Dear {greeting_name},\n\n'
+    'Your requested download of "{title}" is ready.\n'
+    'You will find it listed in the "Downloads" section of your dashboard.\n\n'
+    'All data made public in WHG carries a CC-BY-4.0 NC license, so its re-use cannot '
+    'have commercial purposes, and attribution is required in all cases. '
+    'The README.txt in the .zip file provides more information.\n\n'
+    'regards,\nThe WHG project team'
+  ),
   # TODO: down for 'maintenance' or 'upgrade'
   'maintenance': (
     'Dear {name},\n\n'

@@ -56,7 +56,7 @@ class CollectionModelForm(forms.ModelForm):
         model = Collection
         fields = ('id', 'owner', 'title','collection_class', 'description', 'keywords', 'rel_keywords',
                   'image_file', 'file', 'datasets', 'creator', 'contact', 'webpage', 'featured',
-                  'status', 'group', 'build_type')
+                  'status', 'group', 'build_type', 'vis_parameters')
 
         widgets = {
             # 'title': forms.TextInput(attrs={'size': 45}),

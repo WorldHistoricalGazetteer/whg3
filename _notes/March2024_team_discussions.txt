@@ -44,6 +44,7 @@ Publications page
 - card content
 - page control
 - sorts and filters
+- db record link to json or display page?
 
 Published works
 ---------------

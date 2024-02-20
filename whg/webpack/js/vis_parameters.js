@@ -3,26 +3,38 @@
 
 import '../css/vis_parameters.css';
 
-// Check if vis_parameters has already been declared (possibly done with a preset value through context in the Django template)
-if (typeof vis_parameters === 'undefined') {
-	var vis_parameters = {
-		min: {
-			tabulate: "initial",
-			temporal_control: "filter",
-			trail: false
-		},
-		max: {
-			tabulate: false,
-			temporal_control: "filter",
-			trail: false
-		},
-		seq: {
-			tabulate: false,
-			temporal_control: "player",
-			trail: true
-		}
-	};
-}
+$('#collection_form').on('submit', updateVisParameters);
+
+var vis_parameters;
+
+$(document).ready(function() {
+  if (typeof vis_parameters === 'undefined' || Object.keys(vis_parameters).length === 0) {
+    console.log('vis_parameters is undefined or empty, so setting it to default values.');
+    vis_parameters = {
+      min: {
+        tabulate: "initial",
+        temporal_control: "filter",
+        trail: false
+      },
+      max: {
+        tabulate: false,
+        temporal_control: "filter",
+        trail: false
+      },
+      seq: {
+        tabulate: false,
+        temporal_control: "player",
+        trail: true
+      }
+    };
+    console.log('vis_parameters undefined, so...', vis_parameters);
+  } else if (window.saved_settings) {
+    vis_parameters = window.saved_settings;
+    console.log('vis_parameters', vis_parameters);
+  }
+
+  generateConfigurationRows();
+});
 
 // Dictionary to translate vis_parameters keys to labels
 const labelDictionary = {
@@ -39,15 +51,29 @@ const temporalControlOptions = {
 };
 
 // Function to generate the configuration table rows dynamically based on vis_parameters
+
 function generateConfigurationRows() {
+	console.log('saved_settings in generateConfigurationRows', window.saved_settings);
+	console.log('vis_parameters in generateConfigurationRows', vis_parameters);
 	const tbody = $("#configurationTable tbody");
 	tbody.empty(); // Clear previous content
 
-	for (const [attribute, config] of Object.entries(vis_parameters)) {
+	// Use window.saved_settings if not empty otherwise use default vis_parameters
+	const settings = window.saved_settings !== 'undefined' && Object.keys(window.saved_settings).length == 3 ?
+			window.saved_settings : vis_parameters;
+	console.log('settings', settings);
+
+	for (const [attribute, config] of Object.entries(settings)) {
 		const label = labelDictionary[attribute];
 		const optionHTML = Object.entries(temporalControlOptions)
-			.map(([value, text]) => `<option value="${value}">${text}</option>`)
-			.join("");
+			.map(([value, text]) => {
+				 if (value === config.temporal_control) {
+					 return `<option value="${value}" selected>${text}</option>`;
+				 } else {
+					 return `<option value="${value}">${text}</option>`;
+				 }
+			 })
+   		.join("");
 
 		const tr = `
       <tr>
@@ -69,8 +95,10 @@ function generateConfigurationRows() {
 	$("#configurationTable input, #configurationTable select").change(updateVisParameters);
 }
 
+
 // Function to update vis_parameters based on form inputs
 function updateVisParameters() {
+	console.log('reached updateVisParameters');
 	$("#configurationTable .tabulate-checkbox").each(function() {
 		const attribute = this.id;
 		vis_parameters[attribute]["tabulate"] = this.checked;
@@ -93,12 +121,15 @@ function updateVisParameters() {
 		}
 	});
 
+	$('#visParameters').val(JSON.stringify(vis_parameters));
 	// Log the updated vis_parameters
-	console.log(vis_parameters);
+	console.log('vis_parameters', vis_parameters);
 }
+window.vis_parameters = vis_parameters;
+
 
 // Call the function to generate configuration table rows
-generateConfigurationRows();
+// generateConfigurationRows();
 
 // Function to toggle Control and Initial Sort controls based on Tabulate checkbox state
 function toggleControls() {

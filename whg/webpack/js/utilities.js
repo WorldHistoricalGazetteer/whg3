@@ -1,6 +1,12 @@
 
 import { lch } from 'd3-color' 
 
+export function showChooser(type) {
+	console.log('showChooser', type)
+	let elem = "#" + type + "_chooser"
+	$(elem).toggle()
+}
+
 export function deepCopy(obj) {
   if (obj === null || typeof obj !== 'object') {
     return obj;

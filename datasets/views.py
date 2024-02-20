@@ -30,7 +30,6 @@ import ast, shutil, tempfile  # , codecs, math, mimetypes, os, re, sys
 from deepdiff import DeepDiff as diff
 import numpy as np
 
-es = settings.ES_CONN
 from pathlib import Path
 from shapely import wkt
 from shutil import copyfile
@@ -42,8 +41,7 @@ from .exceptions import LPFValidationError, DelimValidationError, \
   DelimInsertError, DataAlreadyProcessedError
 from .forms import (HitModelForm, DatasetDetailModelForm,
                     DatasetUploadForm, DatasetCreateModelForm, DatasetCreateEmptyModelForm)
-from .insert import (ds_insert_json, ds_insert_delim, ds_insert_lpf,
-                     failed_insert_notification, ds_insert_tsv)
+from .insert import (ds_insert_json, ds_insert_delim, failed_insert_notification)
 from .validation import validate_delim, validate_lpf, validate_tsv
 
 from .models import Dataset, Hit, DatasetFile
@@ -61,8 +59,7 @@ from main.choices import AUTHORITY_BASEURI
 from main.models import Log, Comment
 from places.models import *
 
-from api.views import AreaListView
-
+es = settings.ES_CONN
 User = get_user_model()
 
 
@@ -3427,8 +3424,6 @@ class DatasetBrowseView(LoginRequiredMixin, DetailView):
 """
   returns public dataset browse table
 """
-
-
 class DatasetPlacesView(DetailView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -3445,6 +3440,7 @@ class DatasetPlacesView(DetailView):
     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
+    context['URL_FRONT'] = settings.URL_FRONT
 
     print('DatasetPlacesView get_context_data() kwargs:', self.kwargs)
     print('DatasetPlacesView get_context_data() request.user', self.request.user)
@@ -3465,6 +3461,14 @@ class DatasetPlacesView(DetailView):
     context['updates'] = {}
     context['ds'] = ds
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
+
+    if not ds.vis_parameters:
+        # Populate with default values:
+        # tabulate: 'initial'|true|false - include sortable table column, 'initial' indicating the initial sort column
+        # temporal_control: 'player'|'filter'|null - control to be displayed when sorting on this column
+        # trail: true|false - whether to include ant-trail motion indicators on map
+        ds.vis_parameters = "{'seq': {'tabulate': false, 'temporal_control': 'player', 'trail': true},'min': {'tabulate': 'initial', 'temporal_control': 'filter', 'trail': true},'max': {'tabulate': true, 'temporal_control': 'filter', 'trail': false}}"
+    context['visParameters'] = ds.vis_parameters
 
     return context
 

@@ -15,10 +15,11 @@ from django.views.generic.base import TemplateView
 
 from .forms import CommentModalForm, ContactForm, AnnouncementForm
 from areas.models import Area
+from celery.result import AsyncResult
 from collection.models import Collection, CollectionGroup, CollectionGroupUser
 from datasets.models import Dataset
 from datasets.tasks import testAdd
-from .models import Announcement, Link
+from .models import Announcement, Link, DownloadFile
 from places.models import Place, PlaceGeom
 from utils.emailing import new_emailer
 
@@ -31,8 +32,19 @@ from urllib.parse import urlparse
 
 es = settings.ES_CONN
 
-
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+
+def get_task_progress(request, taskid):
+  print(f"Requested URL: {request.path}")
+  print('get_task_progress() taskid', taskid)
+  task = AsyncResult(taskid)
+  print('task', task)
+  response_data = {
+    'state': task.state,
+    'progress': task.result  # dict with 'current' and 'total' keys
+  }
+  print('response_data', response_data)
+  return JsonResponse(response_data)
 
 class AnnouncementListView(ListView):
     model = Announcement
@@ -153,6 +165,7 @@ class Home30a(TemplateView):
     return context
 
 # used for dashboard_user() and dataset_list()
+# TODO: what rules? this or the *_list() functions?
 def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
   from django.db.models import Max
   # Always apply extra filters if they are provided and the model is Area
@@ -169,9 +182,10 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
   if is_admin and model == Area and 'type' in filter_criteria:
     objects = objects.exclude(type__in=filter_criteria['type'])
   elif model == Dataset: # reverse sort, and some dummy datasets need to be filtered
-      objects = objects.exclude(title__startswith='(stub)').order_by()
+      objects = objects.exclude(title__startswith='(stub)').order_by('create_date')
       objects = objects.annotate(recent_log_timestamp=Max('log__timestamp'))
-      objects = objects.order_by('-recent_log_timestamp')
+      # objects = objects.order_by('-recent_log_timestamp')
+      # objects = objects.order_by('label')
 
   return objects
 
@@ -234,7 +248,8 @@ def area_list(request, sort='', order=''):
 
 def dataset_list(request, sort='', order=''):
   filters = request.GET
-  print("dataset_list GET:", request.GET)
+  print("dataset_list() GET:", request.GET)
+  print('dataset_list() sort, order', sort, order)
 
   is_admin = request.user.groups.filter(name='whg_admins').exists()
   datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
@@ -300,7 +315,7 @@ def collection_list(request, sort='', order=''):
 
   collections = Collection.objects.all()
 
-  collections = collections.annotate(recent_log_timestamp=Max('log__timestamp'))
+  collections = collections.annotate(recent_log_timestamp=Max('log__timestamp')).order_by('recent_log_timestamp')
 
   collections = collections.annotate(
     count=Case(
@@ -440,7 +455,7 @@ def dashboard_redirect(request):
 # all-purpose for admins
 @login_required
 def dashboard_admin_view(request):
-  print('request.GET', request.GET)
+  print('dashboard_admin() request.GET', request.GET)
   user = request.user
   is_admin = user.groups.filter(name='whg_admins').exists()
   is_leader = user.groups.filter(name='group_leaders').exists()
@@ -455,6 +470,8 @@ def dashboard_admin_view(request):
 
   # TODO: for admins, show all datasets, collections, areas
   datasets = get_objects_for_user(Dataset, request.user, {}, is_admin)
+  datasets = datasets.order_by('create_date')
+
   collections = get_objects_for_user(Collection, request.user, {}, is_admin)
   areas = get_objects_for_user(Area, request.user, {'type': ['predefined', 'country']}, is_admin)
   groups_member = CollectionGroup.objects.filter(members__user=user)
@@ -486,12 +503,14 @@ def dashboard_user_view(request):
   user_datasets_count = Dataset.objects.filter(owner=user.id).count()
   user_collections_count = Collection.objects.filter(owner=user).count()
   user_areas_count = Area.objects.filter(owner=user).count()
+  user_downloads_count = DownloadFile.objects.filter(user=user).count()
 
   section = request.GET.get('section')
 
   datasets = get_objects_for_user(Dataset, request.user, {'owner': user}, False)
   collections = get_objects_for_user(Collection, request.user, {'owner': user}, False)
   areas = get_objects_for_user(Area, request.user, {'owner': user}, False)
+  downloads = get_objects_for_user(DownloadFile, request.user, {'user': user}, False)
   groups_member = CollectionGroup.objects.filter(members__user=user)
   groups_led = CollectionGroup.objects.filter(owner=user)
 
@@ -499,9 +518,11 @@ def dashboard_user_view(request):
     'datasets': datasets,
     'collections': collections,
     'areas': areas,
+    'downloads': downloads,
     'has_datasets': user_datasets_count > 0,
     'has_collections': user_collections_count > 0,
     'has_areas': user_areas_count > 0,
+    'has_downloads': user_downloads_count > 0,
     'section': section,
     'django_groups': django_groups,
     'groups_member': groups_member,

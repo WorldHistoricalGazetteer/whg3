@@ -1,4 +1,6 @@
 import './vis_parameters';
+import { showChooser } from './utilities';
+window.showChooser = showChooser;
 
 $(function() {
 
@@ -25,21 +27,20 @@ $(function() {
 		update: function(event, ui) {
 			/*console.log('$(this)', $(this))*/
 			/*console.log('$(elem)', $(elem))*/
-			new_sequence = {}
+			let new_sequence = {}
 			$('.col-place-card', cardList).each(function(index, elem) {
-				id = $(elem).data('id')
+				let id = $(elem).data('id')
 				new_sequence[id] = index
 				$("#" + id + " .seq-visible").text("id: " + id + "; seq: " + index)
 			});
 			// Persist the new indices.
-			var formData = new FormData()
+			let formData = new FormData()
 			formData.append('coll_id', object_id)
 			formData.append('seq', JSON.stringify(new_sequence))
 			formData.append('csrfmiddlewaretoken', csrf_token);
 			$.ajax({
 				type: 'POST',
-				/*enctype: 'multipart/form-data',*/
-				url: '{% url "collection:update-sequence" %}',
+				url: '/collections/update_sequence/',
 				processData: false,
 				contentType: false,
 				cache: false,
@@ -185,10 +186,11 @@ $("#check_submitter").click(function(e) {
 	$("#submitter").toggle()
 })
 
-function showChooser(type) {
-	elem = "#" + type + "_chooser"
-	$(elem).toggle()
-}
+// function showChooser(type) {
+// 	consol.log('showChooser', type)
+// 	let elem = "#" + type + "_chooser"
+// 	$(elem).toggle()
+// }
 
 $("#btn_coll_submit").click(function(e) {
 	e.preventDefault()
@@ -257,7 +259,7 @@ function create_collection_link() {
 			} else if (response.result == 'bad uri') {
 				alert('That url is not formed correctly!')
 			} else {
-				linky = response.result
+				let linky = response.result
 				console.log(linky)
 				$("#linklist").append(linky.link_icon + ' <a href="' + linky.uri +
 					'" target="_blank">' + linky.label + '</a>')
@@ -320,7 +322,7 @@ function remove_from_collection(coll, pids) {
 		}
 	})
 	// update count in tab
-	newcount = $(".col-place-card").length
+	var newcount = $(".col-place-card").length
 	$("#place_count").text(newcount)
 	remove_these = [];
 	$("#a_remove").text('')
@@ -328,7 +330,7 @@ function remove_from_collection(coll, pids) {
 
 // remove place(s) from collection
 $("#a_remove").click(function() {
-	coll = '{{ object.id }}'
+	var coll = '{{ object.id }}'
 	remove_from_collection(coll, remove_these)
 })
 
@@ -336,8 +338,8 @@ $("#a_remove").click(function() {
 $(".mark-place").click(function(e) {
 	let card;
 	e.stopPropagation()
-	pid = $(this).data('pid')
-	col = $(this).data('col')
+	var pid = $(this).data('pid')
+	var col = $(this).data('col')
 	/*console.log('mark ' + pid + ' in ' + col)*/
 	if (remove_these.indexOf(pid) > -1) {
 		console.log('unmarked', pid)
@@ -386,6 +388,7 @@ $('.show-hide').click(function(e) {
 // builds link for external place record
 function url_extplace(identifier) {
 	// abbreviate links not in aliases.base_urls
+	var link;
 	if (identifier.startsWith('http')) {
 		let tag = identifier.replace(/.+\/\/|www.|\..+/g, '')
 		link = '<a href="' + identifier + '" target="_blank">' + tag + '<i class="fas fa-external-link-alt linky"></i>,  </a>'
@@ -398,7 +401,7 @@ function url_extplace(identifier) {
 // builds link for external placetype record
 function url_exttype(type) {
 	/*console.dir(type)*/
-	link = ' <a href="#" class="exttab" data-id=' + type.identifier +
+	var link = ' <a href="#" class="exttab" data-id=' + type.identifier +
 		'>(' + type.label.label + ' <i class="fas fa-external-link-alt linky"></i>)</a>'
 	return link
 }
@@ -406,23 +409,24 @@ function url_exttype(type) {
 // extent of timespan list
 function minmaxer(timespans) {
 	//console.log('got to minmax()',JSON.stringify(timespans))
-	starts = [];
-	ends = []
-	for (t in timespans) {
+	var starts = [];
+	var ends = []
+	for (let t in timespans) {
 		// gets 'in', 'earliest' or 'latest'
 		starts.push(Object.values(timespans[t].start)[0])
 		ends.push(!!timespans[t].end ? Object.values(timespans[t].end)[0] : -1)
 	}
 	//console.log('starts',starts,'ends',ends)
-	minmax = [Math.max.apply(null, starts), Math.max.apply(null, ends)]
+	var minmax = [Math.max.apply(null, starts), Math.max.apply(null, ends)]
 	return minmax
 }
 
 // return html for display
 function parsePlace(data) {
+	var descrip;
 	window.featdata = data
-	trace = JSON.parse(data.traces).find(function(t) {
-		return t.fields.collection = object_id
+	let trace = JSON.parse(data.traces).find(function(t) {
+		return t.fields.collection === object_id
 	})
 	if (trace) {
 		/*console.log('has trace for this collection', trace.fields)*/
@@ -451,7 +455,7 @@ function parsePlace(data) {
 	descrip = '<p><b>Title</b>: <span id="row_title" class="larger text-danger">' + data.title + '</span>'
 	// NAME VARIANTS
 	descrip += '<p class="scroll65"><b>Variants</b>: '
-	for (n in data.names) {
+	for (let n in data.names) {
 		let name = data.names[n]
 		descrip += '<p>' + name.toponym != '' ? name.toponym + '; ' : ''
 	}
@@ -460,14 +464,14 @@ function parsePlace(data) {
 	// console.log('data.types',data.types)
 	//{"label":"","identifier":"aat:___","sourceLabels":[{"label":" ","lang":"en"}]}
 	descrip += '</p><p><b>Types</b>: '
-	typeids = ''
-	for (t in data.types) {
-		str = ''
-		var type = data.types[t]
+	var typeids;
+	for (let t in data.types) {
+		let str = ''
+		let type = data.types[t]
 		/*console.log('type',type)*/
 		if ('sourceLabels' in type) {
-			srclabels = type.sourceLabels
-			for (l in srclabels) {
+			let srclabels = type.sourceLabels
+			for (let l in srclabels) {
 				label = srclabels[l]['label']
 				str = label != '' ? label + '; ' : ''
 			}
@@ -484,13 +488,16 @@ function parsePlace(data) {
 	// LINKS
 	//
 	descrip += '<p class="mb-0"><b>Links</b>: <i>original: </i>'
-	close_count = added_count = related_count = 0
-	html_close = html_added = html_related = ''
+	let close_count = 0;
+	let added_count = 0;
+	let html_close = '';
+	let html_added = '';
+
 	if (data.links.length > 0) {
-		links = data.links
-		links_arr = onlyUnique(data.links)
+		let links = data.links
+		let links_arr = onlyUnique(data.links)
 		/*console.log('distinct data.links',links_arr)*/
-		for (l in links_arr) {
+		for (let l in links_arr) {
 			//console.log('link',links_arr[l])
 			if (links_arr[l].aug == true) {
 				added_count += 1
@@ -509,11 +516,13 @@ function parsePlace(data) {
 
 	// RELATED
 	//right=''
+	var related;
+	var parent;
 	if (data.related.length > 0) {
 		parent = '<p class="mb-0"><b>Parent(s)</b>: ';
 		related = '<p class="mb-0"><b>Related</b>: ';
-		for (r in data.related) {
-			rel = data.related[r]
+		for (let r in data.related) {
+			let rel = data.related[r]
 			//console.log('rel',rel)
 			if (rel.relation_type == 'gvp:broaderPartitive') {
 				parent += '<span class="h1em">' + rel.label
@@ -534,15 +543,13 @@ function parsePlace(data) {
 	// DESCRIPTIONS
 	// TODO: link description to identifier URI if present
 	if (data.descriptions.length > 0) {
-		val = data.descriptions[0]['value'].substring(0, 300)
+		let val = data.descriptions[0]['value'].substring(0, 300)
 		descrip += '<p><b>Description</b>: ' + (val.startsWith('http') ? '<a href="' + val + '" target="_blank">Link</a>' : val) +
 			' ... </p>'
-		//'<br/><span class="small red-bold">('+data.descriptions[0]['identifier']+')</span>
 	}
 
 	// CCODES
 	//
-	//if (data.ccodes.length > 0) {
 	if (!!data.countries) {
 		//console.log('data.countries',data.countries)
 		descrip += '<p><b>Modern country bounds</b>: ' + data.countries.join(', ') + '</p>'
@@ -550,8 +557,7 @@ function parsePlace(data) {
 
 	// MINMAX
 	//
-	//console.log('data.minmax',data.minmax)
-	mm = data.minmax
+	var mm = data.minmax
 	if (data.minmax && !(mm[0] == null && mm[1] == null)) {
 		descrip += '<p><b>When</b>: earliest: ' + data.minmax[0] + '; latest: ' + data.minmax[1]
 	}
@@ -563,7 +569,7 @@ function parsePlace(data) {
 
 	// if geom(s) and 'certainty', add it
 	if (data.geoms.length > 0) {
-		cert = data.geoms[0].certainty
+		let cert = data.geoms[0].certainty
 		if (cert != undefined) {
 			descrip += '<p><b>Location certainty</b>: ' + cert + '</p>'
 		}
@@ -630,8 +636,8 @@ function listDataset(d) {
 	/*console.log('listing this:', d.title)*/
 	dslist.push(d.id)
 	$("#id_datasets [value=" + d.id + "]").attr("checked", "checked");
-	coll_id = object_id
-	card = '<div class="ds_card" id="card_' + d.id + '">' +
+	let coll_id = object_id
+	let card = '<div class="ds_card" id="card_' + d.id + '">' +
 		'<p class="mb-0"><a href="#"><span class="ds_title">' + d.title + '</span></a> (' + d.label + '/' + d.id + ')</p>' +
 		'<div class="ds_fields">' +
 		'<p class="my-1"><b>Description</b>: ' + d.description + '</p>' +
@@ -642,7 +648,7 @@ function listDataset(d) {
 		d.numrows + ' places</a></span' +
 		'</p></div></div>'
 	$(".a_addplaces").click(function() {
-		thisy = $(this)
+		let thisy = $(this)
 		/*console.log('thisy', thisy)*/
 	})
 	$("#coll_dscards_create").append(card)
@@ -691,7 +697,7 @@ function removeDataset(dsid) {
 	$("#id_datasets [value=" + dsid + "]").prop("checked", false);
 	let idx = dslist.indexOf(dsid)
 	dslist.splice(idx, dslist.length);
-	card = "#card_" + dsid
+	let card = "#card_" + dsid
 	$(card).remove()
 	if (dslist.length == 0) {
 		$("#msg").html('None yet...').show()

@@ -196,7 +196,9 @@ export function initialiseTable(
         title: 'pid',
         data: 'properties.pid',
         render: function(data, type, row) {
-          return `<a href="http://localhost:8000//api/db/?id=${data}" target="_blank">${data}</a>`;
+          //return detail page, not json
+          //return `<a href="${URL_FRONT}api/db/?id=${data}" target="_blank">${data}</a>`;
+          return `<a href="/places/${data}/detail" target="_blank">${data}</a>`
         },
       },
       {

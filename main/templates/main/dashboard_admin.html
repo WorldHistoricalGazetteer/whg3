@@ -58,15 +58,15 @@
 
   <script type="application/javascript">
     var currentState = {
-      datasets: {sort: 'title', order: 'asc', filters: {}},
-      collections: {sort: 'title', order: 'asc', filters: {}},
+      datasets: {sort: 'last_modified', order: 'desc', filters: {}},
+      collections: {sort: 'last_modified', order: 'desc', filters: {}},
       areas: {sort: 'title', order: 'asc', filters: {}},
       groups: {sort: 'title', order: 'asc', filters: {}},
     };
 
     var initialSortOrders = {
       datasets: {
-        'title': 'asc',
+        'title': 'desc',
         'label': 'none',
         'last_modified': 'none',
         'numrows': 'none',

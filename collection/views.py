@@ -306,7 +306,7 @@ def year_from_string(ts):
 def fetch_mapdata_coll(request, *args, **kwargs):
   from django.core.serializers import serialize
   from django.db.models import Min, Max
-  # print('fetch_geojson_coll kwargs',kwargs)
+  print('fetch_geojson_coll kwargs',kwargs)
   id_=kwargs['id']
   coll=get_object_or_404(Collection, id=id_)
   rel_keywords = coll.rel_keywords
@@ -350,8 +350,10 @@ def fetch_mapdata_coll(request, *args, **kwargs):
     # Get the first annotation's sequence value
     first_anno = t.place.annos.first()
     sequence_value = first_anno.sequence if first_anno else None
-    # TODO: some places have no geometry
-    geometry = t.place.geoms.all()[0].jsonb
+    # some places have no geometry
+    # TODO: this returns null geometries, then unlisted in table
+    geoms = t.place.geoms.all()
+    geometry = t.place.geoms.all()[0].jsonb if geoms else None
 
     if len(t.place.geoms.all()) > 0:
       feature = {
