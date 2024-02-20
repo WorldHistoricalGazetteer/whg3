@@ -14,33 +14,52 @@ maplibregl.Map.prototype.nullCollection = function() {
 	return { type: 'FeatureCollection', features: [] }
 }
 
-maplibregl.Map.prototype.clearSource = function(sourceId) {
-	this.getSource(sourceId).setData(this.nullCollection());
+maplibregl.Map.prototype.eraseSource = function(sourceId) {
+	var layersToErase = this.getStyle().layers.filter(layer => {return layer.source === sourceId})
+	layersToErase.forEach(layer => {
+		this.removeLayer(layer.id);
+	});
+	if (this.getSource(sourceId)) {
+		this.removeSource(sourceId);
+	}
 	return this;
 }
 
+maplibregl.Map.prototype.tileBounds = null;
 maplibregl.Map.prototype.newSource = function (ds, fc=null) {
-	if (!!ds.tilesets && ds.tilesets.length > 0) {
-		return this.addSource(ds.ds_id, {
-			'type': 'vector',
-    		'url': `${process.env.TILEBOSS}/data/${ds.tilesets[0]}.json`
-		});
-	}
-	else {
-		if (!!ds.ds_id) { // Standard dataset or collection
-			return this.addSource(ds.ds_id, {
-				'type': 'geojson',
-				'data': ds,
-				'attribution': attributionString(ds),
-			});
-		}
-		else if (fc) { // Name and FeatureCollection provided
-			return this.addSource(ds, { 'type': 'geojson', 'data': fc });
-		}
-		else { // Only name given, add an empty FeatureCollection
-			return this.addSource(ds, { 'type': 'geojson', 'data': this.nullCollection() });			
-		}
-	}	
+    if (!!ds.tilesets && ds.tilesets.length > 0) {
+        const tilejsonUrl = `${process.env.TILEBOSS}/data/${ds.tilesets[0]}.json`;
+        var map = this;
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                url: tilejsonUrl,
+                dataType: 'json',
+                success: function(tilejson) {
+                    console.log('tilejson', tilejson);
+                    const sourceOptions = { ...tilejson, type: 'vector' };
+                    var source = map.addSource(ds.ds_id, sourceOptions);
+                    map.tileBounds = tilejson.bounds;
+                    resolve(source);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error prefetching TileJSON:', error);
+                    reject(error);
+                }
+            });
+        });
+    } else {
+        if (!!ds.ds_id) { // Standard dataset or collection
+            return this.addSource(ds.ds_id, {
+                'type': 'geojson',
+                'data': ds,
+                'attribution': attributionString(ds),
+            });
+        } else if (fc) { // Name and FeatureCollection provided
+            return this.addSource(ds, { 'type': 'geojson', 'data': fc });
+        } else { // Only name given, add an empty FeatureCollection
+            return this.addSource(ds, { 'type': 'geojson', 'data': this.nullCollection() });
+        }
+    }
 };
 
 maplibregl.Map.prototype.layersets = [];

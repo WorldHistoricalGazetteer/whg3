@@ -15,6 +15,7 @@ def heatmapped_geometries(caller):
     
     heatmapped_geometries = {
         "type": "FeatureCollection",
+        "mode": "heatmap",
         "features": [],
     }
     
@@ -46,7 +47,7 @@ def heatmapped_geometries(caller):
 
         heatmapped_geometries['features'].append(Feature(
             geometry=Point(coordinates=(centroid.x, centroid.y) if centroid else None),
-            properties={'area': area, 'mode': 'heatmap', 'original_type': geometry.geom_type}
+            properties={'area': area, 'original_type': geometry.geom_type}
         ))
     
     if caller_class == 'Dataset':

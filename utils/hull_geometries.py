@@ -14,6 +14,7 @@ def hull_geometries(caller):
     
     hull_geometries = {
         "type": "FeatureCollection",
+        "mode": "convexhull",
         "features": [],
     }
     geometry = None
@@ -35,6 +36,6 @@ def hull_geometries(caller):
             combined_geom = combined_geom.union(geom.convex_hull)
             
         geometry = json.loads(combined_geom.convex_hull.geojson)
-        hull_geometries['features'].append(Feature(geometry=geometry, properties={'mode': 'convexhull'}))
+        hull_geometries['features'].append(Feature(geometry=geometry))
 
     return hull_geometries

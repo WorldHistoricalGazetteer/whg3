@@ -22,6 +22,7 @@ let draw;
 let $drawControl;
 let countryCache = new CountryCacheFeatureCollection();
 let searchDisabled = false;
+let enteringPortal = false;
 
 let dateRangeChanged = throttle(() => { // Uses imported lodash function
 	initiateSearch();
@@ -154,6 +155,7 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(select2_CDN_fallbac
 				},
 				traditional: true,
 				success: function(response) {
+					enteringPortal = true;
 					window.location.href = '/places/portal/';
 				},
 				error: function(xhr, status, error) {
@@ -282,10 +284,23 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(select2_CDN_fallbac
 				userAreaDropdown.val(null).trigger('change');
 			});
 		}
+		
+	    var referringPage = document.referrer;
+	    if (referringPage) { // If arriving from `portal` or `home` pages, load and render any saved search+results
+	        if (referringPage.includes("/") || referringPage.includes("portal")) {
+	            const storedResults = localStorage.getItem('last_search'); // Includes both `.parameters` and `.suggestions` objects
+	            results = storedResults ? JSON.parse(storedResults) : results;
+	        } else { // otherwise clear any previous search+results from LocalStorage
+				console.log('Clearing last search from localStorage');
+	            localStorage.removeItem('last_search');
+	        }
+	    }
+	    $(window).on('beforeunload', function(event) { // Clear any search+results if not navigating away to a portal page
+	        if (!enteringPortal) {
+	            localStorage.removeItem('last_search');
+	        }
+	    });	    
 
-		// Load and render any results from any previous visit to the page
-		const storedResults = localStorage.getItem('last_search'); // Includes both `.parameters` and `.suggestions` objects
-		results = storedResults ? JSON.parse(storedResults) : results;
 		if (results) {
 			renderResults(results, true); // Pass a `true` flag to indicate that results are from storage
 		} else {
