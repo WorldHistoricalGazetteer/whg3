@@ -25,10 +25,10 @@ urlpatterns = [
   path('gallery/<str:gallery_type>/', views.DatasetGalleryView.as_view(), name='dataset-gallery-type'),
 
   # insert validated delimited file data to db (csv, tsv, spreadsheet)
-  path('<int:pk>/insert_tsv/', views.ds_insert_tsv, name="ds_insert_tsv"),
+  # path('<int:pk>/insert_tsv/', views.ds_insert_tsv, name="ds_insert_tsv"),
 
   # insert validated lpf file data to db
-  path('<int:pk>/insert_lpf/', views.ds_insert_lpf, name="ds_insert_lpf"),
+  # path('<int:pk>/insert_lpf/', views.ds_insert_lpf, name="ds_insert_lpf"),
 
   # upload excel
   path('xl/', views.xl_upload, name='xl-upload'),

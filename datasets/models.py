@@ -55,11 +55,10 @@ class Dataset(models.Model):
   create_date = models.DateTimeField(null=True, auto_now_add=True)
   uri_base = models.URLField(null=True, blank=True)
   image_file = ResizedImageField(size=[800, 600], upload_to=ds_image_path, blank=True, null=True)
-  # image_file = models.FileField(upload_to=ds_image_path, blank=True, null=True)
   featured = models.IntegerField(null=True, blank=True)
   bbox = geomodels.PolygonField(null=True, blank=True, srid=4326)
 
-  core = models.BooleanField(default=False) # non-historical
+  core = models.BooleanField(default=False) # e.g. tgn, geonames, physical geography
   public = models.BooleanField(default=False)
 
   ds_status = models.CharField(max_length=12, null=True, blank=True, choices=STATUS_DS)
@@ -98,8 +97,8 @@ class Dataset(models.Model):
     dsgeoms = PlaceGeom.objects.filter(place__dataset=self.label)
     # dsgeoms = self.geometries
     extent = dsgeoms.aggregate(Extent('geom'))['geom__extent'] if dsgeoms.count() > 0 else (0,0,1,1)
-    b=box(extent[0],extent[1],extent[2],extent[3])
-    feat = Feature(geometry=mapping(b),properties={"id":self.id,"label":self.label,"title":self.title})
+    b = box(extent[0],extent[1],extent[2],extent[3])
+    feat = Feature(geometry=mapping(b),properties={"id": self.id, "label": self.label, "title":self.title})
     # print(feat)
     return feat
     # return feat if dsgeoms.count() > 0 else None

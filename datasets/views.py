@@ -28,14 +28,18 @@ from celery import current_app as celapp
 from copy import deepcopy
 import ast, shutil, tempfile  # , codecs, math, mimetypes, os, re, sys
 from deepdiff import DeepDiff as diff
+from elastic.es_utils import makeDoc, removePlacesFromIndex, replaceInIndex, removeDatasetFromIndex
 import numpy as np
-
 from pathlib import Path
 from shapely import wkt
 from shutil import copyfile
 
 from areas.models import Area, Country
 from collection.models import Collection, CollectionGroup
+from main.choices import AUTHORITY_BASEURI
+from main.models import Log, Comment
+from places.models import *
+from utils.regions_countries import get_regions_countries
 
 from .exceptions import LPFValidationError, DelimValidationError, \
   DelimInsertError, DataAlreadyProcessedError
@@ -48,21 +52,14 @@ from .models import Dataset, Hit, DatasetFile
 from .static.hashes import mimetypes_plus as mthash_plus
 from .static.hashes.parents import ccodes as cchash
 
-# NB these task names ARE in use; they are generated dynamically
+# NB 'align_*' task names ARE in use; they are generated dynamically
 from .tasks import align_wdlocal, align_idx, maxID
-
-# from datasets.update import deleteFromIndex
 from .utils import *
-from utils.regions_countries import get_regions_countries
-from elastic.es_utils import makeDoc, removePlacesFromIndex, replaceInIndex, removeDatasetFromIndex
-from main.choices import AUTHORITY_BASEURI
-from main.models import Log, Comment
-from places.models import *
 
 es = settings.ES_CONN
 User = get_user_model()
 
-
+# TODO: in use?
 class DatasetGalleryView(ListView):
   redirect_field_name = 'redirect_to'
 
@@ -95,11 +92,10 @@ class DatasetGalleryView(ListView):
 
 
 """
+  TODO: replaced by new_emailer()??
   email various, incl. Celery down notice
   to ['whgazetteer@gmail.com','karl@kgeographer.org'],
 """
-
-
 def emailer(subj, msg, from_addr, to_addr):
   print('subj, msg, from_addr, to_addr', subj, msg, from_addr, to_addr)
   send_mail(
@@ -107,18 +103,12 @@ def emailer(subj, msg, from_addr, to_addr):
     fail_silently=False,
   )
 
-
-""" check Celery process is running before initiating reconciliation task """
-
-
+# check Celery process is running before initiating reconciliation task
 def celeryUp():
   response = celapp.control.ping(timeout=1.0)
   return len(response) > 0
 
-
-""" append src_id to base_uri"""
-
-
+# append src_id to base_uri
 def link_uri(auth, id):
   baseuri = AUTHORITY_BASEURI[auth]
   uri = baseuri + str(id)
@@ -130,8 +120,6 @@ def link_uri(auth, id):
   indexes a db record upon a single hit match in align_idx review
   new record becomes child in the matched hit group
 """
-
-
 def indexMatch(pid, hit_pid=None):
   print('indexMatch(): pid ' + str(pid) + ' w/hit_pid ' + str(hit_pid))
   es = settings.ES_CONN
@@ -235,8 +223,6 @@ def indexMatch(pid, hit_pid=None):
       - whg_id and children[] ids (if any) added to winner
       - name variants added to winner's searchy[] and suggest.item[] lists
 """
-
-
 def indexMultiMatch(pid, matchlist):
   print('indexMultiMatch(): pid ' + str(pid) + ' matches ' + str(matchlist))
   from elasticsearch8 import RequestError
@@ -347,8 +333,6 @@ def indexMultiMatch(pid, matchlist):
   GET   returns review.html for Wikidata, or accession.html for accessioning
   POST  for each record that got hits, process user matching decisions
 """
-
-
 def review(request, pk, tid, passnum):
   pid = None
   if "pid" in request.GET:
@@ -1871,639 +1855,9 @@ def ds_compare(request):
 
 
 """
-  ds_insert_lpf
-  insert LPF into database
-"""
-
-
-def ds_insert_lpf(request, pk):
-  import json
-  [countrows, countlinked, total_links] = [0, 0, 0]
-  ds = get_object_or_404(Dataset, id=pk)
-  user = request.user
-  # latest file
-  dsf = ds.files.all().order_by('-rev')[0]
-  uribase = ds.uri_base
-  print('new dataset, uri_base', ds.label, uribase)
-
-  # TODO: lpf can get big; support json-lines
-
-  # insert only if empty
-  dbcount = Place.objects.filter(dataset=ds.label).count()
-  print('dbcount', dbcount)
-
-  if dbcount == 0:
-    errors = []
-    try:
-      infile = dsf.file.open(mode="r")
-      print('ds_insert_lpf() for dataset', ds)
-      print('ds_insert_lpf() request.GET, infile', request.GET, infile)
-      with infile:
-        jdata = json.loads(infile.read())
-
-        print('count of features', len(jdata['features']))
-        # print('0th feature',jdata['features'][0])
-
-        for feat in jdata['features']:
-          # create Place, save to get id, then build associated records for each
-          objs = {"PlaceNames": [], "PlaceTypes": [], "PlaceGeoms": [], "PlaceWhens": [],
-                  "PlaceLinks": [], "PlaceRelated": [], "PlaceDescriptions": [],
-                  "PlaceDepictions": []}
-          countrows += 1
-
-          # build attributes for new Place instance
-          title = re.sub('\(.*?\)', '', feat['properties']['title'])
-
-          # geometry
-          geojson = feat['geometry'] if 'geometry' in feat.keys() else None
-
-          # ccodes
-          if 'ccodes' not in feat['properties'].keys():
-            if geojson:
-              # a GeometryCollection
-              ccodes = ccodesFromGeom(geojson)
-              print('ccodes', ccodes)
-            else:
-              ccodes = []
-          else:
-            ccodes = feat['properties']['ccodes']
-
-          # temporal
-          # send entire feat for time summary
-          # (minmax and intervals[])
-          datesobj = parsedates_lpf(feat)
-
-          # TODO: compute fclasses
-          try:
-            newpl = Place(
-              # strip uribase from @id
-              src_id=feat['@id'] if uribase in ['', None] else feat['@id'].replace(uribase, ''),
-              dataset=ds,
-              title=title,
-              ccodes=ccodes,
-              minmax=datesobj['minmax'],
-              timespans=datesobj['intervals']
-            )
-            newpl.save()
-            print('new place: ', newpl.title)
-          except:
-            print('failed id' + title + 'datesobj: ' + str(datesobj))
-            print(sys.exc_info())
-
-          # PlaceName: place,src_id,toponym,task_id,
-          # jsonb:{toponym, lang, citation[{label, year, @id}], when{timespans, ...}}
-          # TODO: adjust for 'ethnic', 'demonym'
-          for n in feat['names']:
-            if 'toponym' in n.keys():
-              # if comma-separated listed, get first
-              objs['PlaceNames'].append(PlaceName(
-                place=newpl,
-                src_id=newpl.src_id,
-                toponym=n['toponym'].split(', ')[0],
-                jsonb=n
-              ))
-
-          # PlaceType: place,src_id,task_id,jsonb:{identifier,label,src_label}
-          # try:
-          if 'types' in feat.keys():
-            fclass_list = []
-            for t in feat['types']:
-              if 'identifier' in t.keys() and t['identifier'][:4] == 'aat:' \
-                and int(t['identifier'][4:]) in Type.objects.values_list('aat_id', flat=True):
-                fc = get_object_or_404(Type, aat_id=int(t['identifier'][4:])).fclass \
-                  if t['identifier'][:4] == 'aat:' else None
-                fclass_list.append(fc)
-              else:
-                fc = None
-              print('from feat[types]:', t)
-              print('PlaceType record newpl,newpl.src_id,t,fc', newpl, newpl.src_id, t, fc)
-              objs['PlaceTypes'].append(PlaceType(
-                place=newpl,
-                src_id=newpl.src_id,
-                jsonb=t,
-                fclass=fc
-              ))
-            newpl.fclasses = fclass_list
-            newpl.save()
-
-          # PlaceWhen: place,src_id,task_id,minmax,jsonb:{timespans[],periods[],label,duration}
-          if 'when' in feat.keys() and feat['when'] != {}:
-            objs['PlaceWhens'].append(PlaceWhen(
-              place=newpl,
-              src_id=newpl.src_id,
-              jsonb=feat['when'],
-              minmax=newpl.minmax
-            ))
-
-          # PlaceGeom: place,src_id,task_id,jsonb:{type,coordinates[],when{},geo_wkt,src}
-          # if 'geometry' in feat.keys() and feat['geometry']['type']=='GeometryCollection':
-          if geojson and geojson['type'] == 'GeometryCollection':
-            # for g in feat['geometry']['geometries']:
-            for g in geojson['geometries']:
-              # print('from feat[geometry]:',g)
-              objs['PlaceGeoms'].append(PlaceGeom(
-                place=newpl,
-                src_id=newpl.src_id,
-                jsonb=g
-                , geom=GEOSGeometry(json.dumps(g))
-              ))
-          elif geojson:
-            objs['PlaceGeoms'].append(PlaceGeom(
-              place=newpl,
-              src_id=newpl.src_id,
-              jsonb=geojson
-              , geom=GEOSGeometry(json.dumps(geojson))
-            ))
-
-          # PlaceLink: place,src_id,task_id,jsonb:{type,identifier}
-          if 'links' in feat.keys() and len(feat['links']) > 0:
-            countlinked += 1  # record has *any* links
-            # print('countlinked',countlinked)
-            for l in feat['links']:
-              total_links += 1  # record has n links
-              objs['PlaceLinks'].append(PlaceLink(
-                place=newpl,
-                src_id=newpl.src_id,
-                # alias uri base for known authorities
-                jsonb={"type": l['type'], "identifier": aliasIt(l['identifier'].rstrip('/'))}
-              ))
-
-          # PlaceRelated: place,src_id,task_id,jsonb{relationType,relationTo,label,when{}}
-          if 'relations' in feat.keys():
-            for r in feat['relations']:
-              objs['PlaceRelated'].append(PlaceRelated(
-                place=newpl, src_id=newpl.src_id, jsonb=r))
-
-          # PlaceDescription: place,src_id,task_id,jsonb{@id,value,lang}
-          if 'descriptions' in feat.keys():
-            for des in feat['descriptions']:
-              objs['PlaceDescriptions'].append(PlaceDescription(
-                place=newpl, src_id=newpl.src_id, jsonb=des))
-
-          # PlaceDepiction: place,src_id,task_id,jsonb{@id,title,license}
-          if 'depictions' in feat.keys():
-            for dep in feat['depictions']:
-              objs['PlaceDepictions'].append(PlaceDepiction(
-                place=newpl, src_id=newpl.src_id, jsonb=dep))
-
-          # throw errors into user message
-          def raiser(model, e):
-            print('Bulk load for ' + model + ' failed on', newpl)
-            errors.append({"field": model, "error": e})
-            print('error', e)
-            raise DataError
-
-          # create related objects
-          try:
-            PlaceName.objects.bulk_create(objs['PlaceNames'])
-          except DataError as e:
-            raiser('Name', e)
-
-          try:
-            PlaceType.objects.bulk_create(objs['PlaceTypes'])
-          except DataError as de:
-            raiser('Type', e)
-
-          try:
-            PlaceWhen.objects.bulk_create(objs['PlaceWhens'])
-          except DataError as de:
-            raiser('When', e)
-
-          try:
-            PlaceGeom.objects.bulk_create(objs['PlaceGeoms'])
-          except DataError as de:
-            raiser('Geom', e)
-
-          try:
-            PlaceLink.objects.bulk_create(objs['PlaceLinks'])
-          except DataError as de:
-            raiser('Link', e)
-
-          try:
-            PlaceRelated.objects.bulk_create(objs['PlaceRelated'])
-          except DataError as de:
-            raiser('Related', e)
-
-          try:
-            PlaceDescription.objects.bulk_create(objs['PlaceDescriptions'])
-          except DataError as de:
-            raiser('Description', e)
-
-          try:
-            PlaceDepiction.objects.bulk_create(objs['PlaceDepictions'])
-          except DataError as de:
-            raiser('Depiction', e)
-
-          # TODO: compute newpl.ccodes (if geom), newpl.fclasses, newpl.minmax
-          # something failed in *any* Place creation; delete dataset
-
-        print('new dataset:', ds.__dict__)
-        infile.close()
-
-      return ({"numrows": countrows,
-               "numlinked": countlinked,
-               "total_links": total_links})
-    except:
-      # drop the (empty) database
-      # ds.delete()
-      # email to user, admin
-      subj = 'World Historical Gazetteer error followup'
-      msg = 'Hello ' + user.name + ', \n\nWe see your recent upload for the ' + ds.label + \
-            ' dataset failed, very sorry about that!' + \
-            '\nThe likely cause was: ' + str(errors) + '\n\n' + \
-            "If you can, fix the cause. If not, please respond to this email and we will get back to you soon.\n\nRegards,\nThe WHG Team"
-      emailer(subj, msg, 'whg@kgeographer.org', [user.email, 'whgadmin@kgeographer.com'])
-
-      # return message to 500.html
-      # messages.error(request, "Database insert failed, but we don't know why. The WHG team has been notified and will follow up by email to <b>"+user.username+'</b> ('+user.email+')')
-      # return redirect(request.GET.get('from'))
-      return HttpResponseServerError()
-
-  else:
-    print('insert_ skipped, already in')
-    messages.add_message(request, messages.INFO, 'data is uploaded, but problem displaying dataset page')
-    return redirect('/mydata')
-
-
-"""
-  ds_insert_tsv(pk)
-  insert tsv into database
-  file is validated, dataset exists
-  if insert fails anywhere, delete dataset + any related objects
-"""
-
-
-def ds_insert_tsv(request, pk):
-  import csv, re
-  csv.field_size_limit(300000)
-  ds = get_object_or_404(Dataset, id=pk)
-  user = request.user
-  print('ds_insert_tsv()', ds)
-  # retrieve just-added file
-  dsf = ds.files.all().order_by('-rev')[0]
-  print('ds_insert_tsv(): ds, file', ds, dsf)
-  # insert only if empty
-  dbcount = Place.objects.filter(dataset=ds.label).count()
-  # print('dbcount',dbcount)
-  insert_errors = []
-  if dbcount == 0:
-    try:
-      infile = dsf.file.open(mode="r")
-      reader = csv.reader(infile, delimiter=dsf.delimiter)
-
-      infile.seek(0)
-      header = next(reader, None)
-      header = [col.lower().strip() for col in header]
-      # print('header.lower()',[col.lower() for col in header])
-
-      # strip BOM character if exists
-      header[0] = header[0][1:] if '\ufeff' in header[0] else header[0]
-      print('header', header)
-
-      objs = {"PlaceName": [], "PlaceType": [], "PlaceGeom": [], "PlaceWhen": [],
-              "PlaceLink": [], "PlaceRelated": [], "PlaceDescription": []}
-
-      # TODO: what if simultaneous inserts?
-      countrows = 0
-      countlinked = 0
-      total_links = 0
-      for r in reader:
-        # build attributes for new Place instance
-        src_id = r[header.index('id')]
-        title = r[header.index('title')].strip()  # don't try to correct incoming except strip()
-        # strip anything in parens for title only
-        # title = re.sub('\(.*?\)', '', title)
-        title_source = r[header.index('title_source')]
-        title_uri = r[header.index('title_uri')] if 'title_uri' in header else ''
-        ccodes = r[header.index('ccodes')] if 'ccodes' in header else []
-        variants = [x.strip() for x in r[header.index('variants')].split(';')] \
-          if 'variants' in header and r[header.index('variants')] != '' else []
-        types = [x.strip() for x in r[header.index('types')].split(';')] \
-          if 'types' in header else []
-        aat_types = [x.strip() for x in r[header.index('aat_types')].split(';')] \
-          if 'aat_types' in header else []
-        parent_name = r[header.index('parent_name')] if 'parent_name' in header else ''
-        parent_id = r[header.index('parent_id')] if 'parent_id' in header else ''
-        coords = makeCoords(r[header.index('lon')], r[header.index('lat')]) \
-          if 'lon' in header and 'lat' in header else None
-        geowkt = r[header.index('geowkt')] if 'geowkt' in header else None
-        geosource = r[header.index('geo_source')] if 'geo_source' in header else None
-        geoid = r[header.index('geo_id')] if 'geo_id' in header else None
-        geojson = None  # zero it out
-        print('geosource:', geosource)
-        print('geoid:', geoid)
-        # make Point geometry from lon/lat if there
-        if coords and len(coords) == 2:
-          geojson = {"type": "Point", "coordinates": coords,
-                     "geowkt": 'POINT(' + str(coords[0]) + ' ' + str(coords[1]) + ')'}
-        # else make geometry (any) w/Shapely if geowkt
-        if geowkt and geowkt not in ['']:
-          geojson = parse_wkt(geowkt)
-        if geojson and (geosource or geoid):
-          geojson['citation'] = {'label': geosource, 'id': geoid}
-
-        # ccodes; compute if missing and there is geometry
-        if len(ccodes) == 0:
-          if geojson:
-            try:
-              ccodes = ccodesFromGeom(geojson)
-            except:
-              pass
-          else:
-            ccodes = []
-        else:
-          ccodes = [x.strip().upper() for x in r[header.index('ccodes')].split(';')]
-
-        # TODO: assign aliases if wd, tgn, pl, bnf, gn, viaf
-        matches = [aliasIt(x.strip()) for x in r[header.index('matches')].split(';')] \
-          if 'matches' in header and r[header.index('matches')] != '' else []
-
-        start = r[header.index('start')] if 'start' in header else None
-        # validate_tsv() ensures there is always a start
-        has_end = 'end' in header and r[header.index('end')] != ''
-        end = r[header.index('end')] if has_end else start
-
-        datesobj = parsedates_tsv(start, end)
-        # returns {timespans:[{}],minmax[]}
-
-        description = r[header.index('description')] \
-          if 'description' in header else ''
-
-        print('title, src_id (pre-newpl):', title, src_id)
-
-        # create new Place object
-        # TODO: generate fclasses
-        newpl = Place(
-          src_id=src_id,
-          dataset=ds,
-          title=title,
-          ccodes=ccodes,
-          minmax=datesobj['minmax'],
-          timespans=[datesobj['minmax']]  # list of lists
-        )
-        newpl.save()
-        countrows += 1
-
-        # build associated objects and add to arrays #
-        #
-        # PlaceName(); title, then variants
-        #
-        objs['PlaceName'].append(
-          PlaceName(
-            place=newpl,
-            src_id=src_id,
-            toponym=title,
-            jsonb={"toponym": title, "citations": [{"id": title_uri, "label": title_source}]}
-          ))
-        # variants if any; assume same source as title toponym
-        if len(variants) > 0:
-          for v in variants:
-            try:
-              haslang = re.search("@(.*)$", v.strip())
-              if len(v.strip()) > 200:
-                # print(v.strip())
-                pass
-              else:
-                # print('variant for', newpl.id, v)
-                new_name = PlaceName(
-                  place=newpl,
-                  src_id=src_id,
-                  toponym=v.strip(),
-                  jsonb={"toponym": v.strip(), "citations": [{"id": "", "label": title_source}]}
-                )
-                if haslang:
-                  new_name.jsonb['lang'] = haslang.group(1)
-
-                objs['PlaceName'].append(new_name)
-            except:
-              print('error on variant', sys.exc_info())
-              print('error on variant for newpl.id', newpl.id, v)
-
-        #
-        # PlaceType()
-        #
-        if len(types) > 0:
-          fclass_list = []
-          for i, t in enumerate(types):
-            aatnum = 'aat:' + aat_types[i] if len(aat_types) >= len(types) and aat_types[i] != '' else None
-            print('aatnum in insert_tsv() PlaceTypes', aatnum)
-            if aatnum:
-              try:
-                fclass_list.append(get_object_or_404(Type, aat_id=int(aatnum[4:])).fclass)
-              except:
-                # report type lookup issue
-                insert_errors.append(
-                  {'src_id': src_id,
-                   'title': newpl.title,
-                   'field': 'aat_type',
-                   'msg': aatnum + ' not in WHG-supported list;'}
-                )
-                raise
-                # messages.add_message(request, messages.INFO, 'choked on an invalid AAT place type id')
-                # return redirect('/mydata')
-                # continue
-            objs['PlaceType'].append(
-              PlaceType(
-                place=newpl,
-                src_id=src_id,
-                jsonb={"identifier": aatnum if aatnum else '',
-                       "sourceLabel": t,
-                       "label": aat_lookup(int(aatnum[4:])) if aatnum else ''
-                       }
-              ))
-          newpl.fclasses = fclass_list
-          newpl.save()
-
-        #
-        # PlaceGeom()
-        #
-        print('geojson', geojson)
-        if geojson:
-          objs['PlaceGeom'].append(
-            PlaceGeom(
-              place=newpl,
-              src_id=src_id,
-              jsonb=geojson
-              , geom=GEOSGeometry(json.dumps(geojson))
-            ))
-
-        #
-        # PlaceWhen()
-        # via parsedates_tsv(): {"timespans":[{start{}, end{}}]}
-        if start != '':
-          objs['PlaceWhen'].append(
-            PlaceWhen(
-              place=newpl,
-              src_id=src_id,
-              # jsonb=datesobj['timespans']
-              jsonb=datesobj
-            ))
-
-        #
-        # PlaceLink() - all are closeMatch
-        #
-        if len(matches) > 0:
-          countlinked += 1
-          for m in matches:
-            total_links += 1
-            objs['PlaceLink'].append(
-              PlaceLink(
-                place=newpl,
-                src_id=src_id,
-                jsonb={"type": "closeMatch", "identifier": m}
-              ))
-
-        #
-        # PlaceRelated()
-        #
-        if parent_name != '':
-          objs['PlaceRelated'].append(
-            PlaceRelated(
-              place=newpl,
-              src_id=src_id,
-              jsonb={
-                "relationType": "gvp:broaderPartitive",
-                "relationTo": parent_id,
-                "label": parent_name}
-            ))
-
-        #
-        # PlaceDescription()
-        # @id, value, lang
-        if description != '':
-          objs['PlaceDescription'].append(
-            PlaceDescription(
-              place=newpl,
-              src_id=src_id,
-              jsonb={
-                # "@id": "", "value":description, "lang":""
-                "value": description
-              }
-            ))
-
-      # bulk_create(Class, batch_size=n) for each
-      PlaceName.objects.bulk_create(objs['PlaceName'], batch_size=10000)
-      PlaceType.objects.bulk_create(objs['PlaceType'], batch_size=10000)
-      try:
-        PlaceGeom.objects.bulk_create(objs['PlaceGeom'], batch_size=10000)
-      except:
-        print('geom insert failed', newpl, sys.exc_info())
-        pass
-      PlaceLink.objects.bulk_create(objs['PlaceLink'], batch_size=10000)
-      PlaceRelated.objects.bulk_create(objs['PlaceRelated'], batch_size=10000)
-      PlaceWhen.objects.bulk_create(objs['PlaceWhen'], batch_size=10000)
-      PlaceDescription.objects.bulk_create(objs['PlaceDescription'], batch_size=10000)
-
-      infile.close()
-      print('insert_errors', insert_errors)
-      # print('rows,linked,links:', countrows, countlinked, total_links)
-    except:
-      print('tsv insert failed', newpl, sys.exc_info())
-      # drop the (empty) dataset if insert wasn't complete
-      ds.delete()
-      # email to user, admin
-      failed_upload_notification(user, dsf.file.name, ds.label)
-
-      # return message to 500.html
-      messages.error(request,
-                     "Database insert failed, but we don't know why. The WHG team has been notified and will follow up by email to <b>" + user.name + '</b> (' + user.email + ')')
-      return HttpResponseServerError()
-  else:
-    print('insert_tsv skipped, already in')
-    messages.add_message(request, messages.INFO, 'data is uploaded, but problem displaying dataset page')
-    return redirect('/mydata')
-
-  return ({"numrows": countrows,
-           "numlinked": countlinked,
-           "total_links": total_links})
-
-
-"""
-  DEPRECATED in v3
-  DataListsView()
-  Returns lists for various data types
-"""
-# class DataListsView(LoginRequiredMixin, ListView):
-#   login_url = '/accounts/login/'
-#   redirect_field_name = 'redirect_to'
-#
-#   # templates per list type
-#   template_d = 'datasets/data_datasets.html'
-#   template_c = 'datasets/data_collections.html'
-#   template_a = 'datasets/data_areas.html'
-#   template_r = 'datasets/data_resources.html'
-#   template_cg = 'datasets/data_collection_groups.html'
-#
-#   # which template to use?
-#   def get_template_names(self, *args, **kwargs):
-#     print('self.request.path', self.request.path)
-#     if self.request.path == reverse('data-datasets'):
-#       return [self.template_d]
-#     elif self.request.path == reverse('data-collections'):
-#       return [self.template_c]
-#     elif self.request.path == reverse('data-areas'):
-#       return [self.template_a]
-#     elif self.request.path == reverse('data-resources'):
-#       return [self.template_r]
-#     else:
-#       return [self.template_cg]
-#
-#   def get_queryset(self, **kwargs):
-#     me = self.request.user
-#     whgteam = me.is_superuser or 'whg_team' in [g.name for g in me.groups.all()]
-#     teaching = 'teaching' in [g.name for g in me.groups.all()]
-#     print('me in DataListsView', me)
-#
-#     if self.request.path == reverse('data-datasets'):
-#       idlist = [obj.id for obj in Dataset.objects.all() if me in obj.owners or
-#                    me in obj.collaborators or whgteam]
-#       list = Dataset.objects.filter(id__in=idlist).order_by('-create_date').exclude(title__startswith='(stub)')
-#       return list
-#     elif self.request.path == reverse('data-collections'):
-#       idlist = [obj.id for obj in Collection.objects.all() if me in obj.owners or
-#                    me in obj.collaborators or whgteam]
-#       list = Collection.objects.filter(id__in=idlist).order_by('-created')
-#       # list = Collection.objects.all().order_by('created') if whgteam \
-#       #   else Collection.objects.filter(owner=me).order_by('created')
-#       return list
-#     elif self.request.path == reverse('data-areas'):
-#       # print('areas...whgteam?', whgteam)
-#       study_areas = ['ccodes', 'copied', 'drawn']       # only user study areas
-#       alist = Area.objects.all().filter(type__in=study_areas).order_by('-id')
-#       list = alist if whgteam else alist.filter(owner=me)
-#       return list
-#     elif self.request.path == reverse('data-resources'):
-#       # print('resources...whgteam?', whgteam)
-#       list = Resource.objects.all().order_by('create_date') if whgteam or teaching \
-#         else Resource.objects.all().filter(owner=me).order_by('created')
-#       # print('list:', list)
-#       return list
-#     else:
-#       # print('collgroups...whgteam?', whgteam)
-#       list = CollectionGroup.objects.all().order_by('-created') \
-#         if whgteam or teaching else CollectionGroup.objects.filter(owner=me).order_by('-created')
-#       return list
-#
-#
-#   def get_context_data(self, *args, **kwargs):
-#     me = self.request.user
-#     context = super(DataListsView, self).get_context_data(*args, **kwargs)
-#     print('me in get_context_data()', me)
-#
-#     context['viewable'] = ['uploaded', 'inserted', 'reconciling', 'review_hits', 'reviewed', 'review_whg', 'indexed']
-#     context['beta_or_better'] = True if me.groups.filter(name__in=['beta', 'admins', 'whg_team']).exists() \
-#       else False
-#     context['whgteam'] = True if me.is_superuser or me.groups.filter(name__in=['admins', 'whg_team']).exists() else False
-#     # TODO: assign users to 'teacher' group
-#     context['teacher'] = True if self.request.user.groups.filter(name__in=['teacher']).exists() else False
-#     return context
-
-"""
   PublicListView()
   list public datasets and collections
 """
-
-
 class PublicListsView(ListView):
   redirect_field_name = 'redirect_to'
 
@@ -2528,28 +1882,10 @@ class PublicListsView(ListView):
     return context
 
 
-# def failed_upload_notification(user, fn, ds=None):
-#   subj = 'World Historical Gazetteer error followup '
-#   subj += 'on dataset (' + ds + ')' if ds else ''
-#   msg = 'Hello ' + user.name + \
-#         ', \n\nWe see your recent upload was not successful '
-#   if ds:
-#     msg += 'on insert to the database '
-#   else:
-#     msg += 'on initial validation '
-#   msg += '-- very sorry about that! ' + \
-#          '\nWe will look into why and get back to you within a day.\n\nRegards,\nThe WHG Team\n\n\n[' + fn + ']'
-#   # TODO: new_emailer()
-#   emailer(subj, msg, settings.DEFAULT_FROM_EMAIL,
-#           [user.email, settings.EMAIL_HOST_USER])
-
-
 """
   DatasetCreateEmptyView()
-  initial create, no file
+  initial create, no file; for remote, typically
 """
-
-
 class DatasetCreateEmptyView(LoginRequiredMixin, CreateView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -2669,13 +2005,10 @@ class DatasetCreateEmptyView(LoginRequiredMixin, CreateView):
   DatasetCreate() helpers
   alternate bot-guided
 """
-
-
 def get_file_type(file):
   """Determine the file type based on its MIME type."""
   mimetype = file.content_type
   return mthash_plus.mimetypes.get(mimetype, None)
-
 
 def read_file_into_dataframe(file, ext):
   """
@@ -2702,7 +2035,6 @@ def read_file_into_dataframe(file, ext):
 
   return df
 
-
 """
   DatasetCreate()
   2023-08; replaces DatasetCreateView()
@@ -2712,7 +2044,6 @@ def read_file_into_dataframe(file, ext):
   - initiates database writes (insert.py)
   - raises errors from each stage to dataset_create.html form
 """
-
 class DatasetCreate(LoginRequiredMixin, CreateView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -2886,265 +2217,8 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
 
 
 """
-    DEPRECATED in v3
-  DatasetCreateView()
-  initial create
-  upload file, validate format, create DatasetFile instance,
-  redirect to dataset.html for db insert if context['format_ok']
-"""
-# class DatasetCreateView(LoginRequiredMixin, CreateView):
-#   login_url = '/accounts/login/'
-#   redirect_field_name = 'redirect_to'
-#
-#   form_class = DatasetCreateModelForm
-#   template_name = 'datasets/dataset_create.html'
-#   success_message = 'dataset created'
-#
-#   def form_invalid(self, form):
-#     print('form invalid...', form.errors.as_data())
-#     context = {'form': form}
-#     return self.render_to_response(context=context)
-#
-#   def form_valid(self, form):
-#     data=form.cleaned_data
-#     context={"format":data['format']}
-#     user=self.request.user
-#     file=self.request.FILES['file']
-#     filename = file.name
-#     mimetype = file.content_type
-#
-#     newfn, newtempfn = ['', '']
-#     print('form_valid() mimetype', mimetype)
-#
-#
-#     # open & write tempf to a temp location;
-#     # call it tempfn for reference
-#     tempf, tempfn = tempfile.mkstemp()
-#     try:
-#       for chunk in data['file'].chunks():
-#         os.write(tempf, chunk)
-#     except:
-#       raise Exception("Problem with the input file %s" % self.request.FILES['file'])
-#     finally:
-#       os.close(tempf)
-#
-#     # print('tempfn in DatasetCreate()', tempfn)
-#
-#     # open, sniff, validate
-#     # pass to ds_insert_{tsv|lpf} if valid
-#
-#     fin = codecs.open(tempfn, 'r')
-#     valid_mime = mimetype in mthash_plus.mimetypes
-#
-#     if valid_mime:
-#       if mimetype.startswith('text/'):
-#         encoding = get_encoding_delim(tempfn)
-#       elif 'spreadsheet' in mimetype:
-#         encoding = get_encoding_excel(tempfn)
-#       elif mimetype.startswith('application/'):
-#         encoding = fin.encoding
-#       print('encoding in DatasetCreate()', encoding)
-#       if encoding.lower() not in ['utf-8', 'ascii']:
-#         context['errors'] = ["The encoding of uploaded files must be unicode (utf-8). This file seems to be "+encoding]
-#         context['action'] = 'errors'
-#         return self.render_to_response(self.get_context_data(form=form, context=context))
-#     else:
-#       context['errors'] = "Not a valid file type; must be one of [.csv, .tsv, .xlsx, .ods, .json]"
-#       return self.render_to_response(self.get_context_data(form=form, context=context))
-#
-#     # it's csv, tsv, spreadsheet, or json...
-#     # if utf8, get extension and validate
-#     # if encoding and encoding.lower().startswith('utf-8'):
-#     ext = mthash_plus.mimetypes[mimetype]
-#     print('DatasetCreateView() extension:', ext)
-#     fail_msg = "A database insert failed and we aren't sure why. The WHG team has been notified "+\
-#                "and will follow up by email to <b>"+user.name+"</b> ("+user.email+")"
-#
-#     # this validates per row and always gets a result, even if errors
-#     if ext == 'json':
-#       try:
-#         result = validate_lpf(tempfn, 'coll')
-#       except:
-#         # email to user, admin
-#         failed_upload_notification(user, tempfn)
-#         # return message to 500.html
-#         messages.error(self.request, fail_msg)
-#         return HttpResponseServerError()
-#
-#     # for delimited, fvalidate() is performed on the entire file
-#     # on fail, raises server error
-#     elif ext in ['csv', 'tsv']:
-#       try:
-#         # fvalidate() wants an extension
-#         newfn = tempfn+'.'+ext
-#         os.rename(tempfn, newfn)
-#         result = validate_tsv(newfn, ext)
-#         print('newfn in create()', newfn)
-#       except:
-#         # email to user, admin
-#         failed_upload_notification(user, tempfn)
-#         messages.error(self.request, fail_msg)
-#         return HttpResponseServerError()
-#
-#     elif ext in ['xlsx', 'ods']:
-#       try:
-#         print('spreadsheet, use pandas')
-#         import pandas as pd
-#
-#         # open new file for tsv write
-#         newfn = tempfn + '.tsv'
-#         fout=codecs.open(newfn, 'w', encoding='utf8')
-#
-#         # add ext to tempfn (pandas need this)
-#         newtempfn = tempfn+'.'+ext
-#         os.rename(tempfn, newtempfn)
-#         # print('renamed tempfn for pandas:', tempfn)
-#
-#         # dataframe from spreadsheet
-#         df = pd.read_excel(newtempfn, converters={
-#           'id': str, 'start':str, 'end':str,
-#           'aat_types': str, 'lon': float, 'lat': float})
-#
-#         # write it as tsv
-#         table=df.to_csv(sep='\t', index=False).replace('\nan','')
-#         fout.write(table)
-#         fout.close()
-#
-#         # print('to validate_tsv(newfn):', newfn)
-#         # validate it...
-#         result = validate_tsv(newfn, 'tsv')
-#       except:
-#         # email to user, admin
-#         failed_upload_notification(user, newfn)
-#         messages.error(self.request, "Database insert failed and we aren't sure why. "+
-#                        "The WHG team has been notified and will follow up by email to <b>" +
-#                        user.name+'</b> ('+user.email+')')
-#         return HttpResponseServerError()
-#
-#     print('validation complete, still in DatasetCreateView')
-#
-#     # validated -> create Dataset, DatasetFile, Log instances,
-#     # advance to dataset_detail
-#     # else present form again with errors
-#     if len(result['errors']) == 0:
-#       context['status'] = 'format_ok'
-#
-#       print('validated, no errors')
-#       # print('validated, no errors; result:', result)
-#       print('cleaned_data',form.cleaned_data)
-#       nolabel = form.cleaned_data["label"] == ''
-#       # new Dataset record ('owner','id','label','title','description')
-#       dsobj = form.save(commit=False)
-#       dsobj.ds_status = 'format_ok'
-#       dsobj.numrows = result['count']
-#       clean_label=form.cleaned_data['label'].replace(' ','_')
-#       if not form.cleaned_data['uri_base']:
-#         dsobj.uri_base = 'https://whgazetteer.org/api/db/?id='
-#
-#       # links will be counted later on insert
-#       dsobj.numlinked = 0
-#       dsobj.total_links = 0
-#       try:
-#         dsobj.save()
-#         ds = Dataset.objects.get(id=dsobj.id)
-#         label='ds_' + str(ds.id)
-#         print('new dataset label', 'ds_' + label)
-#         # generate a unique label if none was entered
-#         if dsobj.label == '':
-#           ds.label = 'ds_' + str(dsobj.id)
-#           ds.save()
-#       except:
-#         # self.args['form'] = form
-#         return render(self.request,'datasets/dataset_create.html', self.args)
-#
-#       #
-#       # create user directory if necessary
-#       userdir = r'media/user_'+str(user.id)+'/'
-#       if not Path(userdir).exists():
-#         os.makedirs(userdir)
-#
-#       # build path, and rename file if already exists in user area
-#       file_exists = Path(userdir+filename).exists()
-#       if not file_exists:
-#         filepath = userdir+filename
-#       else:
-#         splitty = filename.split('.')
-#         filename=splitty[0]+'_'+tempfn[-7:]+'.'+splitty[1]
-#         filepath = userdir+filename
-#
-#       # write log entry
-#       Log.objects.create(
-#         # category, logtype, "timestamp", subtype, dataset_id, user_id
-#         category = 'dataset',
-#         logtype = 'ds_create',
-#         subtype = data['datatype'],
-#         dataset_id = dsobj.id,
-#         user_id = user.id
-#       )
-#
-#       # print('pre-write')
-#       # print('ext='+ext+'; newfn='+newfn+'; filepath='+filepath+
-#       #       '; tempfn='+tempfn+'; newtempfn='+newtempfn)
-#
-#       # write request obj file to user directory
-#       if ext in ['csv', 'tsv', 'json']:
-#         fout = codecs.open(filepath,'w','utf8')
-#         try:
-#           for chunk in file.chunks():
-#             fout.write(chunk.decode("utf-8", errors="ignore"))
-#         except:
-#           print('error writing file; chunk'+str(chunk))
-#           sys.exit(sys.exc_info())
-#
-#       # if spreadsheet, copy newfn (tsv conversion)
-#       if ext in ['xlsx', 'ods']:
-#         print('copying newfn -> filepath', newfn, filepath)
-#         shutil.copy(newfn, filepath+'.tsv')
-#
-#
-#       # create initial DatasetFile record
-#       DatasetFile.objects.create(
-#         dataset_id = dsobj,
-#         # uploaded valid file as is
-#         file = filepath[6:]+'.tsv' if ext in ['xlsx','ods'] else filepath[6:],
-#         rev = 1,
-#         format = result['format'],
-#         delimiter = '\t' if ext in ['tsv','xlsx','ods'] else ',' if ext == 'csv' else 'n/a',
-#         df_status = 'format_ok',
-#         upload_date = None,
-#         header = result['columns'] if "columns" in result.keys() else [],
-#         numrows = result['count']
-#       )
-#
-#       # data will be written on load of dataset.html w/dsobj.status = 'format_ok'
-#       #return redirect('/datasets/'+str(dsobj.id)+'/detail')
-#       return redirect('/datasets/'+str(dsobj.id)+'/summary')
-#
-#     else:
-#       context['action'] = 'errors'
-#       context['format'] = result['format']
-#       context['errors'] = parse_errors_lpf(result['errors']) \
-#         if ext == 'json' else parse_errors_tsv(result['errors'])
-#       context['columns'] = result['columns'] \
-#         if ext != 'json' else []
-#
-#       #os.remove(tempfn)
-#
-#       return self.render_to_response(
-#         self.get_context_data(
-#           form=form, context=context
-#       ))
-#
-#   def get_context_data(self, *args, **kwargs):
-#     context = super(DatasetCreateView, self).get_context_data(*args, **kwargs)
-#     #context['action'] = 'create'
-#     return context
-
-"""
   returns public dataset 'mets' (summary) page
 """
-
-
 class DatasetPublicView(DetailView):
   template_name = 'datasets/ds_meta.html'
 
@@ -3178,8 +2252,6 @@ class DatasetPublicView(DetailView):
     - also deletes from index if indexed (fails silently if not)
     - also removes dataset_file records
 """
-
-
 # TODO: delete other stuff: disk files; archive??
 class DatasetDeleteView(DeleteView):
   template_name = 'datasets/dataset_delete.html'
@@ -3211,8 +2283,6 @@ class DatasetDeleteView(DeleteView):
   fetch places in specified dataset
   utility used for place collections
 """
-
-
 def ds_list(request, label):
   print('in ds_list() for', label)
   qs = Place.objects.all().filter(dataset=label)
@@ -3230,8 +2300,6 @@ def ds_list(request, label):
   - delete any geoms or links created
   - reset flags for hit.reviewed and place.review_xxx
 """
-
-
 def match_undo(request, ds, tid, pid):
   print('in match_undo() ds, task, pid:', ds, tid, pid)
   from django_celery_results.models import TaskResult
@@ -3264,8 +2332,6 @@ def match_undo(request, ds, tid, pid):
 """
   returns dataset owner metadata page
 """
-
-
 class DatasetSummaryView(LoginRequiredMixin, UpdateView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -3374,10 +2440,8 @@ class DatasetSummaryView(LoginRequiredMixin, UpdateView):
 
 
 """
-  returns dataset owner browse table
+  returns dataset owner's browse table
 """
-
-
 class DatasetBrowseView(LoginRequiredMixin, DetailView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -3476,8 +2540,6 @@ class DatasetPlacesView(DetailView):
 """
   returns dataset owner "Linking" tab listing reconciliation tasks
 """
-
-
 class DatasetReconcileView(LoginRequiredMixin, DetailView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -3518,8 +2580,6 @@ class DatasetReconcileView(LoginRequiredMixin, DetailView):
 """
   returns dataset owner "Collaborators" tab
 """
-
-
 class DatasetCollabView(LoginRequiredMixin, DetailView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -3562,8 +2622,6 @@ class DatasetCollabView(LoginRequiredMixin, DetailView):
 """
   returns add (reconciliation) task page
 """
-
-
 class DatasetAddTaskView(LoginRequiredMixin, DetailView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -3682,8 +2740,6 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
 """
   returns dataset owner "Log & Comments" tab
 """
-
-
 class DatasetLogView(LoginRequiredMixin, DetailView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -3719,8 +2775,552 @@ class DatasetLogView(LoginRequiredMixin, DetailView):
     return context
 
 
+"""
+  REPLACED by insert.ds_insert_json()
+"""
+# def ds_insert_lpf(request, pk):
+#   import json
+#   [countrows, countlinked, total_links] = [0, 0, 0]
+#   ds = get_object_or_404(Dataset, id=pk)
+#   user = request.user
+#   # latest file
+#   dsf = ds.files.all().order_by('-rev')[0]
+#   uribase = ds.uri_base
+#   print('new dataset, uri_base', ds.label, uribase)
+#
+#   # TODO: lpf can get big; support json-lines
+#
+#   # insert only if empty
+#   dbcount = Place.objects.filter(dataset=ds.label).count()
+#   print('dbcount', dbcount)
+#
+#   if dbcount == 0:
+#     errors = []
+#     try:
+#       infile = dsf.file.open(mode="r")
+#       print('ds_insert_lpf() for dataset', ds)
+#       print('ds_insert_lpf() request.GET, infile', request.GET, infile)
+#       with infile:
+#         jdata = json.loads(infile.read())
+#
+#         print('count of features', len(jdata['features']))
+#         # print('0th feature',jdata['features'][0])
+#
+#         for feat in jdata['features']:
+#           # create Place, save to get id, then build associated records for each
+#           objs = {"PlaceNames": [], "PlaceTypes": [], "PlaceGeoms": [], "PlaceWhens": [],
+#                   "PlaceLinks": [], "PlaceRelated": [], "PlaceDescriptions": [],
+#                   "PlaceDepictions": []}
+#           countrows += 1
+#
+#           # build attributes for new Place instance
+#           title = re.sub('\(.*?\)', '', feat['properties']['title'])
+#
+#           # geometry
+#           geojson = feat['geometry'] if 'geometry' in feat.keys() else None
+#
+#           # ccodes
+#           if 'ccodes' not in feat['properties'].keys():
+#             if geojson:
+#               # a GeometryCollection
+#               ccodes = ccodesFromGeom(geojson)
+#               print('ccodes', ccodes)
+#             else:
+#               ccodes = []
+#           else:
+#             ccodes = feat['properties']['ccodes']
+#
+#           # temporal
+#           # send entire feat for time summary
+#           # (minmax and intervals[])
+#           datesobj = parsedates_lpf(feat)
+#
+#           # TODO: compute fclasses
+#           try:
+#             newpl = Place(
+#               # strip uribase from @id
+#               src_id=feat['@id'] if uribase in ['', None] else feat['@id'].replace(uribase, ''),
+#               dataset=ds,
+#               title=title,
+#               ccodes=ccodes,
+#               minmax=datesobj['minmax'],
+#               timespans=datesobj['intervals']
+#             )
+#             newpl.save()
+#             print('new place: ', newpl.title)
+#           except:
+#             print('failed id' + title + 'datesobj: ' + str(datesobj))
+#             print(sys.exc_info())
+#
+#           # PlaceName: place,src_id,toponym,task_id,
+#           # jsonb:{toponym, lang, citation[{label, year, @id}], when{timespans, ...}}
+#           # TODO: adjust for 'ethnic', 'demonym'
+#           for n in feat['names']:
+#             if 'toponym' in n.keys():
+#               # if comma-separated listed, get first
+#               objs['PlaceNames'].append(PlaceName(
+#                 place=newpl,
+#                 src_id=newpl.src_id,
+#                 toponym=n['toponym'].split(', ')[0],
+#                 jsonb=n
+#               ))
+#
+#           # PlaceType: place,src_id,task_id,jsonb:{identifier,label,src_label}
+#           # try:
+#           if 'types' in feat.keys():
+#             fclass_list = []
+#             for t in feat['types']:
+#               if 'identifier' in t.keys() and t['identifier'][:4] == 'aat:' \
+#                 and int(t['identifier'][4:]) in Type.objects.values_list('aat_id', flat=True):
+#                 fc = get_object_or_404(Type, aat_id=int(t['identifier'][4:])).fclass \
+#                   if t['identifier'][:4] == 'aat:' else None
+#                 fclass_list.append(fc)
+#               else:
+#                 fc = None
+#               print('from feat[types]:', t)
+#               print('PlaceType record newpl,newpl.src_id,t,fc', newpl, newpl.src_id, t, fc)
+#               objs['PlaceTypes'].append(PlaceType(
+#                 place=newpl,
+#                 src_id=newpl.src_id,
+#                 jsonb=t,
+#                 fclass=fc
+#               ))
+#             newpl.fclasses = fclass_list
+#             newpl.save()
+#
+#           # PlaceWhen: place,src_id,task_id,minmax,jsonb:{timespans[],periods[],label,duration}
+#           if 'when' in feat.keys() and feat['when'] != {}:
+#             objs['PlaceWhens'].append(PlaceWhen(
+#               place=newpl,
+#               src_id=newpl.src_id,
+#               jsonb=feat['when'],
+#               minmax=newpl.minmax
+#             ))
+#
+#           # PlaceGeom: place,src_id,task_id,jsonb:{type,coordinates[],when{},geo_wkt,src}
+#           # if 'geometry' in feat.keys() and feat['geometry']['type']=='GeometryCollection':
+#           if geojson and geojson['type'] == 'GeometryCollection':
+#             # for g in feat['geometry']['geometries']:
+#             for g in geojson['geometries']:
+#               # print('from feat[geometry]:',g)
+#               objs['PlaceGeoms'].append(PlaceGeom(
+#                 place=newpl,
+#                 src_id=newpl.src_id,
+#                 jsonb=g
+#                 , geom=GEOSGeometry(json.dumps(g))
+#               ))
+#           elif geojson:
+#             objs['PlaceGeoms'].append(PlaceGeom(
+#               place=newpl,
+#               src_id=newpl.src_id,
+#               jsonb=geojson
+#               , geom=GEOSGeometry(json.dumps(geojson))
+#             ))
+#
+#           # PlaceLink: place,src_id,task_id,jsonb:{type,identifier}
+#           if 'links' in feat.keys() and len(feat['links']) > 0:
+#             countlinked += 1  # record has *any* links
+#             # print('countlinked',countlinked)
+#             for l in feat['links']:
+#               total_links += 1  # record has n links
+#               objs['PlaceLinks'].append(PlaceLink(
+#                 place=newpl,
+#                 src_id=newpl.src_id,
+#                 # alias uri base for known authorities
+#                 jsonb={"type": l['type'], "identifier": aliasIt(l['identifier'].rstrip('/'))}
+#               ))
+#
+#           # PlaceRelated: place,src_id,task_id,jsonb{relationType,relationTo,label,when{}}
+#           if 'relations' in feat.keys():
+#             for r in feat['relations']:
+#               objs['PlaceRelated'].append(PlaceRelated(
+#                 place=newpl, src_id=newpl.src_id, jsonb=r))
+#
+#           # PlaceDescription: place,src_id,task_id,jsonb{@id,value,lang}
+#           if 'descriptions' in feat.keys():
+#             for des in feat['descriptions']:
+#               objs['PlaceDescriptions'].append(PlaceDescription(
+#                 place=newpl, src_id=newpl.src_id, jsonb=des))
+#
+#           # PlaceDepiction: place,src_id,task_id,jsonb{@id,title,license}
+#           if 'depictions' in feat.keys():
+#             for dep in feat['depictions']:
+#               objs['PlaceDepictions'].append(PlaceDepiction(
+#                 place=newpl, src_id=newpl.src_id, jsonb=dep))
+#
+#           # throw errors into user message
+#           def raiser(model, e):
+#             print('Bulk load for ' + model + ' failed on', newpl)
+#             errors.append({"field": model, "error": e})
+#             print('error', e)
+#             raise DataError
+#
+#           # create related objects
+#           try:
+#             PlaceName.objects.bulk_create(objs['PlaceNames'])
+#           except DataError as e:
+#             raiser('Name', e)
+#
+#           try:
+#             PlaceType.objects.bulk_create(objs['PlaceTypes'])
+#           except DataError as de:
+#             raiser('Type', e)
+#
+#           try:
+#             PlaceWhen.objects.bulk_create(objs['PlaceWhens'])
+#           except DataError as de:
+#             raiser('When', e)
+#
+#           try:
+#             PlaceGeom.objects.bulk_create(objs['PlaceGeoms'])
+#           except DataError as de:
+#             raiser('Geom', e)
+#
+#           try:
+#             PlaceLink.objects.bulk_create(objs['PlaceLinks'])
+#           except DataError as de:
+#             raiser('Link', e)
+#
+#           try:
+#             PlaceRelated.objects.bulk_create(objs['PlaceRelated'])
+#           except DataError as de:
+#             raiser('Related', e)
+#
+#           try:
+#             PlaceDescription.objects.bulk_create(objs['PlaceDescriptions'])
+#           except DataError as de:
+#             raiser('Description', e)
+#
+#           try:
+#             PlaceDepiction.objects.bulk_create(objs['PlaceDepictions'])
+#           except DataError as de:
+#             raiser('Depiction', e)
+#
+#           # TODO: compute newpl.ccodes (if geom), newpl.fclasses, newpl.minmax
+#           # something failed in *any* Place creation; delete dataset
+#
+#         print('new dataset:', ds.__dict__)
+#         infile.close()
+#
+#       return ({"numrows": countrows,
+#                "numlinked": countlinked,
+#                "total_links": total_links})
+#     except:
+#       # drop the (empty) database
+#       # ds.delete()
+#       # email to user, admin
+#       subj = 'World Historical Gazetteer error followup'
+#       msg = 'Hello ' + user.name + ', \n\nWe see your recent upload for the ' + ds.label + \
+#             ' dataset failed, very sorry about that!' + \
+#             '\nThe likely cause was: ' + str(errors) + '\n\n' + \
+#             "If you can, fix the cause. If not, please respond to this email and we will get back to you soon.\n\nRegards,\nThe WHG Team"
+#       emailer(subj, msg, 'whg@kgeographer.org', [user.email, 'whgadmin@kgeographer.com'])
+#
+#       # return message to 500.html
+#       # messages.error(request, "Database insert failed, but we don't know why. The WHG team has been notified and will follow up by email to <b>"+user.username+'</b> ('+user.email+')')
+#       # return redirect(request.GET.get('from'))
+#       return HttpResponseServerError()
+#
+#   else:
+#     print('insert_ skipped, already in')
+#     messages.add_message(request, messages.INFO, 'data is uploaded, but problem displaying dataset page')
+#     return redirect('/mydata')
+#
+
+"""
+  REPLACED by insert.ds_insert_delim()
+  insert tsv into database
+  file is validated, dataset exists
+  if insert fails anywhere, delete dataset + any related objects
+"""
+# def ds_insert_tsv(request, pk):
+#   import csv, re
+#   csv.field_size_limit(300000)
+#   ds = get_object_or_404(Dataset, id=pk)
+#   user = request.user
+#   print('ds_insert_tsv()', ds)
+#   # retrieve just-added file
+#   dsf = ds.files.all().order_by('-rev')[0]
+#   print('ds_insert_tsv(): ds, file', ds, dsf)
+#   # insert only if empty
+#   dbcount = Place.objects.filter(dataset=ds.label).count()
+#   # print('dbcount',dbcount)
+#   insert_errors = []
+#   if dbcount == 0:
+#     try:
+#       infile = dsf.file.open(mode="r")
+#       reader = csv.reader(infile, delimiter=dsf.delimiter)
+#
+#       infile.seek(0)
+#       header = next(reader, None)
+#       header = [col.lower().strip() for col in header]
+#       # print('header.lower()',[col.lower() for col in header])
+#
+#       # strip BOM character if exists
+#       header[0] = header[0][1:] if '\ufeff' in header[0] else header[0]
+#       print('header', header)
+#
+#       objs = {"PlaceName": [], "PlaceType": [], "PlaceGeom": [], "PlaceWhen": [],
+#               "PlaceLink": [], "PlaceRelated": [], "PlaceDescription": []}
+#
+#       # TODO: what if simultaneous inserts?
+#       countrows = 0
+#       countlinked = 0
+#       total_links = 0
+#       for r in reader:
+#         # build attributes for new Place instance
+#         src_id = r[header.index('id')]
+#         title = r[header.index('title')].strip()  # don't try to correct incoming except strip()
+#         # strip anything in parens for title only
+#         # title = re.sub('\(.*?\)', '', title)
+#         title_source = r[header.index('title_source')]
+#         title_uri = r[header.index('title_uri')] if 'title_uri' in header else ''
+#         ccodes = r[header.index('ccodes')] if 'ccodes' in header else []
+#         variants = [x.strip() for x in r[header.index('variants')].split(';')] \
+#           if 'variants' in header and r[header.index('variants')] != '' else []
+#         types = [x.strip() for x in r[header.index('types')].split(';')] \
+#           if 'types' in header else []
+#         aat_types = [x.strip() for x in r[header.index('aat_types')].split(';')] \
+#           if 'aat_types' in header else []
+#         parent_name = r[header.index('parent_name')] if 'parent_name' in header else ''
+#         parent_id = r[header.index('parent_id')] if 'parent_id' in header else ''
+#         coords = makeCoords(r[header.index('lon')], r[header.index('lat')]) \
+#           if 'lon' in header and 'lat' in header else None
+#         geowkt = r[header.index('geowkt')] if 'geowkt' in header else None
+#         geosource = r[header.index('geo_source')] if 'geo_source' in header else None
+#         geoid = r[header.index('geo_id')] if 'geo_id' in header else None
+#         geojson = None  # zero it out
+#         print('geosource:', geosource)
+#         print('geoid:', geoid)
+#         # make Point geometry from lon/lat if there
+#         if coords and len(coords) == 2:
+#           geojson = {"type": "Point", "coordinates": coords,
+#                      "geowkt": 'POINT(' + str(coords[0]) + ' ' + str(coords[1]) + ')'}
+#         # else make geometry (any) w/Shapely if geowkt
+#         if geowkt and geowkt not in ['']:
+#           geojson = parse_wkt(geowkt)
+#         if geojson and (geosource or geoid):
+#           geojson['citation'] = {'label': geosource, 'id': geoid}
+#
+#         # ccodes; compute if missing and there is geometry
+#         if len(ccodes) == 0:
+#           if geojson:
+#             try:
+#               ccodes = ccodesFromGeom(geojson)
+#             except:
+#               pass
+#           else:
+#             ccodes = []
+#         else:
+#           ccodes = [x.strip().upper() for x in r[header.index('ccodes')].split(';')]
+#
+#         # TODO: assign aliases if wd, tgn, pl, bnf, gn, viaf
+#         matches = [aliasIt(x.strip()) for x in r[header.index('matches')].split(';')] \
+#           if 'matches' in header and r[header.index('matches')] != '' else []
+#
+#         start = r[header.index('start')] if 'start' in header else None
+#         # validate_tsv() ensures there is always a start
+#         has_end = 'end' in header and r[header.index('end')] != ''
+#         end = r[header.index('end')] if has_end else start
+#
+#         datesobj = parsedates_tsv(start, end)
+#         # returns {timespans:[{}],minmax[]}
+#
+#         description = r[header.index('description')] \
+#           if 'description' in header else ''
+#
+#         print('title, src_id (pre-newpl):', title, src_id)
+#
+#         # create new Place object
+#         # TODO: generate fclasses
+#         newpl = Place(
+#           src_id=src_id,
+#           dataset=ds,
+#           title=title,
+#           ccodes=ccodes,
+#           minmax=datesobj['minmax'],
+#           timespans=[datesobj['minmax']]  # list of lists
+#         )
+#         newpl.save()
+#         countrows += 1
+#
+#         # build associated objects and add to arrays #
+#         #
+#         # PlaceName(); title, then variants
+#         #
+#         objs['PlaceName'].append(
+#           PlaceName(
+#             place=newpl,
+#             src_id=src_id,
+#             toponym=title,
+#             jsonb={"toponym": title, "citations": [{"id": title_uri, "label": title_source}]}
+#           ))
+#         # variants if any; assume same source as title toponym
+#         if len(variants) > 0:
+#           for v in variants:
+#             try:
+#               haslang = re.search("@(.*)$", v.strip())
+#               if len(v.strip()) > 200:
+#                 # print(v.strip())
+#                 pass
+#               else:
+#                 # print('variant for', newpl.id, v)
+#                 new_name = PlaceName(
+#                   place=newpl,
+#                   src_id=src_id,
+#                   toponym=v.strip(),
+#                   jsonb={"toponym": v.strip(), "citations": [{"id": "", "label": title_source}]}
+#                 )
+#                 if haslang:
+#                   new_name.jsonb['lang'] = haslang.group(1)
+#
+#                 objs['PlaceName'].append(new_name)
+#             except:
+#               print('error on variant', sys.exc_info())
+#               print('error on variant for newpl.id', newpl.id, v)
+#
+#         #
+#         # PlaceType()
+#         #
+#         if len(types) > 0:
+#           fclass_list = []
+#           for i, t in enumerate(types):
+#             aatnum = 'aat:' + aat_types[i] if len(aat_types) >= len(types) and aat_types[i] != '' else None
+#             print('aatnum in insert_tsv() PlaceTypes', aatnum)
+#             if aatnum:
+#               try:
+#                 fclass_list.append(get_object_or_404(Type, aat_id=int(aatnum[4:])).fclass)
+#               except:
+#                 # report type lookup issue
+#                 insert_errors.append(
+#                   {'src_id': src_id,
+#                    'title': newpl.title,
+#                    'field': 'aat_type',
+#                    'msg': aatnum + ' not in WHG-supported list;'}
+#                 )
+#                 raise
+#                 # messages.add_message(request, messages.INFO, 'choked on an invalid AAT place type id')
+#                 # return redirect('/mydata')
+#                 # continue
+#             objs['PlaceType'].append(
+#               PlaceType(
+#                 place=newpl,
+#                 src_id=src_id,
+#                 jsonb={"identifier": aatnum if aatnum else '',
+#                        "sourceLabel": t,
+#                        "label": aat_lookup(int(aatnum[4:])) if aatnum else ''
+#                        }
+#               ))
+#           newpl.fclasses = fclass_list
+#           newpl.save()
+#
+#         #
+#         # PlaceGeom()
+#         #
+#         print('geojson', geojson)
+#         if geojson:
+#           objs['PlaceGeom'].append(
+#             PlaceGeom(
+#               place=newpl,
+#               src_id=src_id,
+#               jsonb=geojson
+#               , geom=GEOSGeometry(json.dumps(geojson))
+#             ))
+#
+#         #
+#         # PlaceWhen()
+#         # via parsedates_tsv(): {"timespans":[{start{}, end{}}]}
+#         if start != '':
+#           objs['PlaceWhen'].append(
+#             PlaceWhen(
+#               place=newpl,
+#               src_id=src_id,
+#               # jsonb=datesobj['timespans']
+#               jsonb=datesobj
+#             ))
+#
+#         #
+#         # PlaceLink() - all are closeMatch
+#         #
+#         if len(matches) > 0:
+#           countlinked += 1
+#           for m in matches:
+#             total_links += 1
+#             objs['PlaceLink'].append(
+#               PlaceLink(
+#                 place=newpl,
+#                 src_id=src_id,
+#                 jsonb={"type": "closeMatch", "identifier": m}
+#               ))
+#
+#         #
+#         # PlaceRelated()
+#         #
+#         if parent_name != '':
+#           objs['PlaceRelated'].append(
+#             PlaceRelated(
+#               place=newpl,
+#               src_id=src_id,
+#               jsonb={
+#                 "relationType": "gvp:broaderPartitive",
+#                 "relationTo": parent_id,
+#                 "label": parent_name}
+#             ))
+#
+#         #
+#         # PlaceDescription()
+#         # @id, value, lang
+#         if description != '':
+#           objs['PlaceDescription'].append(
+#             PlaceDescription(
+#               place=newpl,
+#               src_id=src_id,
+#               jsonb={
+#                 # "@id": "", "value":description, "lang":""
+#                 "value": description
+#               }
+#             ))
+#
+#       # bulk_create(Class, batch_size=n) for each
+#       PlaceName.objects.bulk_create(objs['PlaceName'], batch_size=10000)
+#       PlaceType.objects.bulk_create(objs['PlaceType'], batch_size=10000)
+#       try:
+#         PlaceGeom.objects.bulk_create(objs['PlaceGeom'], batch_size=10000)
+#       except:
+#         print('geom insert failed', newpl, sys.exc_info())
+#         pass
+#       PlaceLink.objects.bulk_create(objs['PlaceLink'], batch_size=10000)
+#       PlaceRelated.objects.bulk_create(objs['PlaceRelated'], batch_size=10000)
+#       PlaceWhen.objects.bulk_create(objs['PlaceWhen'], batch_size=10000)
+#       PlaceDescription.objects.bulk_create(objs['PlaceDescription'], batch_size=10000)
+#
+#       infile.close()
+#       print('insert_errors', insert_errors)
+#       # print('rows,linked,links:', countrows, countlinked, total_links)
+#     except:
+#       print('tsv insert failed', newpl, sys.exc_info())
+#       # drop the (empty) dataset if insert wasn't complete
+#       ds.delete()
+#       # email to user, admin
+#       failed_upload_notification(user, dsf.file.name, ds.label)
+#
+#       # return message to 500.html
+#       messages.error(request,
+#                      "Database insert failed, but we don't know why. The WHG team has been notified and will follow up by email to <b>" + user.name + '</b> (' + user.email + ')')
+#       return HttpResponseServerError()
+#   else:
+#     print('insert_tsv skipped, already in')
+#     messages.add_message(request, messages.INFO, 'data is uploaded, but problem displaying dataset page')
+#     return redirect('/mydata')
+#
+#   return ({"numrows": countrows,
+#            "numlinked": countlinked,
+#            "total_links": total_links})
+#
+
 """ REPLACED UPDATE FUNCTIONS Nov/Dec 2022 """
 """
+  DEPRECATED
   update_rels_tsv(pobj, row)
   backup 26 Nov 2022
 """
@@ -3960,6 +3560,7 @@ class DatasetLogView(LoginRequiredMixin, DetailView):
 #   print('descriptions done')
 
 """
+  DEPRECATED
   ds_update_bak() backup copy 5 Dec 2022; pre-refactor
   perform updates to database and index, given new datafile
   params: dsid, format, keepg, keepl, compare_data (json string)
@@ -4209,7 +3810,7 @@ class DatasetLogView(LoginRequiredMixin, DetailView):
 #       print("ds_update for lpf; doesn't get here yet")
 
 """
-  ds_compare_bak() backup copy 5 Dec 2022; pre-refactor
+  DEPRECATED ds_compare_bak() backup copy 5 Dec 2022; pre-refactor
 """
 # def ds_compare_bak():
 #   if request.method == 'POST':
