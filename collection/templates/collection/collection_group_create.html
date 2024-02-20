@@ -165,32 +165,16 @@
 		</div>
 	  <div id="mambers" class="col-sm-4 mt-2">
       <h5 class="sharing-header">Members
+      {% comment %}
 	      {% if action == 'update' %}
           <span class="float-end float-end-padded small">
               <a href="#" id="l_addusers">
                   <i class="fas fa-plus-square linky"></i></a>
           </span>
 	      {% endif %}
+	      {% endcomment %}
       </h5>
       {% if action == 'update' %}
-        <!-- DEPRECATED add users via email list-->
-{#	      <div id="div_addusers" class="mb-3 hidden">#}
-{#	        <form id="f_addusers">{% csrf_token %}#}
-{#	        <input class="form-control form-control-sm" id="userfile" type="file">#}
-{#	        <div id="addusers_info" class="form-text small mb-2">#}
-{#	          To add existing WHG users to this group, and/or create new WHG user#}
-{#		        accounts as group members, upload a .csv file with each line like so:#}
-{#		        <br/><span class="ms-3 fw-bold fs-6"> email, full name</span>#}
-{#	        </div>#}
-{#	        <div id="form_button" class="mt-2 hidden">#}
-{#		        <button id="b_upload" class="btn btn-sm btn-primary" type="submit">Upload file</button>#}
-{#		        <span id="s_cancel" class="hidden small float-end pe-3">#}
-{#			        <a id="a_cancel" class="ps-3" href="">Cancel</a>#}
-{#		        </span>#}
-{#	        </div>#}
-{#	        </form>#}
-{#	        <hr/>#}
-{#	      </div>#}
 	      <div id="results_text" class="my-2 small"></div>
 	      <div id="members_content">
 	          <ul class="small">
