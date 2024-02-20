@@ -163,17 +163,32 @@
         <button id="b_createlink" type="button">Save</button>
       </form>
 		</div>
+{#	  <div id="cg_options" class="col-sm-4 mt-2">#}
+{#      <h5 class="sharing-header">Options</h5>#}
+{#      <p class="mb-0 strong">Options#}
+{#        <span class="float-end">#}
+{#          <a class="pointer" tabindex="97" data-bs-toggle="popover" title="Group gallery options"#}
+{#               data-bs-content="<ul style='text-align: left;'>#}
+{#                <li>Will this group have a gallery page? If so, are all submitted collections required to appear?</li>#}
+{#                <li>Are members collaborators permitted to add collaborators</li>"#}
+{#               data-bs-trigger="hover focus" >#}
+{#            <i class="fas fa-question-circle linkypop"></i></a>#}
+{#        </span>#}
+{#      </p>#}
+{#      <p class=""><span>Group gallery? {{ form.gallery }}</span>#}
+{#        <span id="gallery_required" class="ms-3">required? {{ form.gallery_required }}</span></p>#}
+{#      <p class="">Collaboration allowed? {{ form.collaboration }}</p>#}
+{#      <p>Group code:#}
+{#        {% if not object.join_code %}#}
+{#          <button id="b_joincode" type="button">Create</button>#}
+{#        {% else %}#}
+{#          <span id="cg_joincode">{{ object.join_code }}<i class="ms-1 fas fa-check"></i></span>#}
+{#        {% endif %}#}
+{#        <span><button id="b_savejoincode" type="button">Save</button></span>#}
+{#      </p>#}
+{#    </div>  #}
 	  <div id="mambers" class="col-sm-4 mt-2">
-      <h5 class="sharing-header">Members
-      {% comment %}
-	      {% if action == 'update' %}
-          <span class="float-end float-end-padded small">
-              <a href="#" id="l_addusers">
-                  <i class="fas fa-plus-square linky"></i></a>
-          </span>
-	      {% endif %}
-	      {% endcomment %}
-      </h5>
+      <h5 class="sharing-header">Members</h5>
       {% if action == 'update' %}
 	      <div id="results_text" class="my-2 small"></div>
 	      <div id="members_content">

@@ -50,13 +50,12 @@ class CollectionModelForm(forms.ModelForm):
 
     # ** trying to return to referrer
     next = forms.CharField(required=False)
-    # group = forms.ModelChoiceField()
 
     class Meta:
         model = Collection
         fields = ('id', 'owner', 'title','collection_class', 'description', 'keywords', 'rel_keywords',
                   'image_file', 'file', 'datasets', 'creator', 'contact', 'webpage', 'featured',
-                  'status', 'group', 'build_type', 'vis_parameters')
+                  'status', 'group', 'build_type', 'vis_parameters', 'public')
 
         widgets = {
             # 'title': forms.TextInput(attrs={'size': 45}),

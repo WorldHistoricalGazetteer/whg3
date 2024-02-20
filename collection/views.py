@@ -710,6 +710,7 @@ class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
     context['is_owner'] = True if user in self.object.owners else False
     context['is_member'] = True if user in coll.owners or user in coll.collaborators else False
     context['whgteam'] = True if user.groups.filter(name__in=['whg_team','editorial']).exists() else False
+    context['whg_admins'] = True if user.groups.filter(name__in=['whg_admins','editorial']).exists() else False
     context['collabs'] = CollectionUser.objects.filter(collection=coll.id)
     context['mygroups'] = CollectionGroupUser.objects.filter(user_id=user)
     context['in_class'] = in_class

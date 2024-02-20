@@ -100,7 +100,7 @@
       <div class="col-8">
         <ul id="teaching_tabs" class="nav nav-tabs" role="tablist">
           <li class="nav-item" role="presentation">
-            <button class="nav-link" id="collections-tab" data-bs-toggle="tab" data-bs-target="#collections"
+            <button class="nav-link active" id="collections-tab" data-bs-toggle="tab" data-bs-target="#collections"
                   type="button" role="tab" aria-controls="collections" aria-selected="true">Place Collections
             </button>
           </li>
@@ -109,14 +109,14 @@
                   type="button" role="tab" aria-controls="lessonplans" aria-selected="true">Lesson Plans</button>
           </li>
           <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="gallery-tab"
+            <button class="nav-link" id="gallery-tab"
                     data-bs-toggle="tab" data-bs-target="#gallery"
                   type="button" role="tab"
                     aria-controls="gallery" aria-selected="true">Student Gallery</button>
           </li>
         </ul>
         <div class="tab-content">
-          <div id="collections" class="tab-pane fade" role="tabpanel"
+          <div id="collections" class="tab-pane fade show active" role="tabpanel"
                aria-labelledby="collections-tab">
             <p>A <b>Place Collection</b> is a themed set of place records, each annotated to
               indicate the reason for its inclusion. Any WHG user can create one, and they are especially useful in
@@ -171,7 +171,7 @@
               </div>
             </div>
           </div>
-          <div id="gallery" class="tab-pane show active">
+          <div id="gallery" class="tab-pane">
             <div class="row pt-2">
               {% for coll in nominated %}
               <div class="col-sm-6">

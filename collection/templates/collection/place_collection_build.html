@@ -228,10 +228,28 @@
                     Collection keywords &#x02733;</label><br/>{{ form.keywords }}
                 </div>
                 <div class="form-group">
-                  <label for="Annotation keywords">Annotation
-                    keywords</label><br/>{{ form.rel_keywords }}
+                  <label for="Annotation keywords">Annotation keywords</label><br/>{{ form.rel_keywords }}
                 </div>
-                <div id="d_buttons" class="" style="">
+                <p><span class="strong mt-2">Status</span>: &nbsp;{{ form.status.value }}</p>
+                {% if action == "update" and not object.group and not whgteam %}
+                  <p>
+                    <span class="strong mt-2">Public?</span>: &nbsp;{{ form.public.value }}
+                    <span class="ms-2"><a href="#">making a collection public
+                      <i class="fas fa-question-circle linky"></i></a></span>
+                  </p>
+                {% elif whg_admins %}
+                  <p>
+                    <span class="strong mt-2">Public?</span>: {{ form.public.value }} &nbsp;{{ form.public }}</p>
+                {% endif %}
+{#                    {% if not form.public.value %}#}
+{#                    <span class="help-matches" data-id="going_public_coll">#}
+{#                      {% if whgteam %}#}
+{#                      <span class="ms-1">{{ form.public }} <i>editor only </i></span>#}
+{#                      {% endif %}#}
+{##}
+{#                    {% endif %}#}
+                <div id="d_buttons" class=""
+                     style="display: flex; align-items: center; justify-content: space-between;">
                   <span class="">
                   {% if action == 'create' %}
                     <a href="/mycollections">Cancel</a>
@@ -244,22 +262,11 @@
                            type="submit" value="Save"/>
                   {% endif %}
                   </span>
+                  <span class="float-end">&#x02733;<i><b> required</b></i></span>
                 </div>
-                <p class="my-0 small">&#x02733;<i><b> required</b></i>
-                  {% if action == 'update' and editorial %}
-                    <span><a class="float-end show-hide" href="#">
-                        editor options <i class="fas fa-cog linky"></i></a></span>
-                  {% endif %}
-                </p>
-{# deprecated #}
-{#                <div id="editor_options" class="hidden">#}
-{#                  <p>Status: {{ form.status }}</p>#}
-{#                  <p>Featured rank: {{ form.featured }}</p>#}
-{#                  {% comment %}<p>Featured rank: {{ form.featured }}</p>{% endcomment %}#}
-{#                </div>#}
-{#                <div id="select_div" class="">{{ form.datasets }}</div>#}
                 <div id="collection_options"></div>
                 {% if mygroups|length > 0 %}
+                <div class="mt-2">
                   <span id="submit_prompt">Submit{% if form.group.value %}ted{% endif %}
                     to group:</span>
                   <span id="submitter" class="">
@@ -276,22 +283,15 @@
                     </span>
                   {% endif %}
                 {% endif %}
-                <div id="status_info" class="mt-5">
-                    <h5 class="">Status</h5>
-                    <p class="small">
-                      {% if in_class %}Submitted to class: {{ object.group }}<br/>Status: {{ object.status }}
-                        {% else %}{{ object.status }}
-                      {% endif %}
-                    </p>
-                  </div>
-                <div id="d_public" class="mt-5">
-                  {% if form.public.value == True %}
-                    Public: {{ form.public }}
-                  {% elif action == "update" and user == object.owner %}
-                    <a href="#"><span class="help-matches" data-id="going_public_coll">
-                <i class="fas fa-question-circle linky"></i> making a collection public </span></a>
-                  {% endif %}
                 </div>
+{#                <div id="d_public" class="mt-5">#}
+{#                  {% if form.public.value == True %}#}
+{#                    Public: {{ form.public }}#}
+{#                  {% elif action == "update" and user == object.owner %}#}
+{#                    <a href="#"><span class="help-matches" data-id="going_public_coll">#}
+{#                <i class="fas fa-question-circle linky"></i> making a collection public </span></a>#}
+{#                  {% endif %}#}
+{#                </div>#}
               </div> <!-- col-sm-5 -->
               <div class="col-sm-4">
                 {% if action == 'update' %}
