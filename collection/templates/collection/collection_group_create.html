@@ -98,29 +98,29 @@
         <span id="file_chooser" class="hidden">{{ form.file }}</span>
 			</p>
 
-      <div id="cg_options" class="bg-light">
-        <p class="mb-0 strong">Options
-          <span class="float-end">
-            <a class="pointer" tabindex="97" data-bs-toggle="popover" title="Group gallery options"
-                 data-bs-content="<ul style='text-align: left;'>
-                  <li>Will this group have a gallery page? If so, are all submitted collections required to appear?</li>
-                  <li>Are members collaborators permitted to add collaborators</li>"
-                 data-bs-trigger="hover focus" >
-              <i class="fas fa-question-circle linkypop"></i></a>
-          </span>
-        </p>
-        <p class=""><span>Group gallery? {{ form.gallery }}</span>
-          <span id="gallery_required" class="ms-3">required? {{ form.gallery_required }}</span></p>
-        <p class="">Collaboration allowed? {{ form.collaboration }}</p>
-        <p>Group code:
-          {% if not object.join_code %}
-            <button id="b_joincode" type="button">Create</button>
-          {% else %}
-            <span id="cg_joincode">{{ object.join_code }}<i class="ms-1 fas fa-check"></i></span>
-          {% endif %}
-          <span><button id="b_savejoincode" type="button">Save</button></span>
-        </p>
-      </div>
+{#      <div id="cg_options" class="bg-light">#}
+{#        <p class="mb-0 strong">Options#}
+{#          <span class="float-end">#}
+{#            <a class="pointer" tabindex="97" data-bs-toggle="popover" title="Group gallery options"#}
+{#                 data-bs-content="<ul style='text-align: left;'>#}
+{#                  <li>Will this group have a gallery page? If so, are all submitted collections required to appear?</li>#}
+{#                  <li>Are members collaborators permitted to add collaborators</li>"#}
+{#                 data-bs-trigger="hover focus" >#}
+{#              <i class="fas fa-question-circle linkypop"></i></a>#}
+{#          </span>#}
+{#        </p>#}
+{#        <p class=""><span>Group gallery? {{ form.gallery }}</span>#}
+{#          <span id="gallery_required" class="ms-3">required? {{ form.gallery_required }}</span></p>#}
+{#        <p class="">Collaboration allowed? {{ form.collaboration }}</p>#}
+{#        <p>Group code:#}
+{#          {% if not object.join_code %}#}
+{#            <button id="b_joincode" type="button">Create</button>#}
+{#          {% else %}#}
+{#            <span id="cg_joincode">{{ object.join_code }}<i class="ms-1 fas fa-check"></i></span>#}
+{#          {% endif %}#}
+{#          <span><button id="b_savejoincode" type="button">Save</button></span>#}
+{#        </p>#}
+{#      </div>#}
 			<div class="mt-3">Links
 				{% if links|length < 3 %}
 					<a href="#" id="a_linkpopup">
@@ -187,20 +187,51 @@
 {#        <span><button id="b_savejoincode" type="button">Save</button></span>#}
 {#      </p>#}
 {#    </div>  #}
-	  <div id="mambers" class="col-sm-4 mt-2">
-      <h5 class="sharing-header">Members</h5>
-      {% if action == 'update' %}
-	      <div id="results_text" class="my-2 small"></div>
-	      <div id="members_content">
-	          <ul class="small">
-	          {% for m in members %}
-	              <li>{{ m.name }} ({{ m.id }}) ({{ m.email }})</li>
-	          {% endfor %}
-	          </ul>
-	      </div>
-      {% else %}
-	      <div class="ps-1"><p>New group must be saved before members can be added.</p></div>
-      {% endif %}
+	  <div id="" class="col-sm-4 mt-2">
+      <h5 class="sharing-header">Options</h5>
+      <div class="ps-2">
+        {% if action == 'update' %}
+          <p class="mb-0 strong">
+            <span class="float-end">
+              <a class="pointer" tabindex="97" data-bs-toggle="popover" title="Group gallery options"
+                   data-bs-content="<ul style='text-align: left;'>
+                    <li>Will this group have a gallery page? If so, are all submitted collections
+                    required to appear?</li>
+                    <li>Are members collaborators permitted to add collaborators</li>"
+                   data-bs-trigger="hover focus" >
+                <i class="fas fa-question-circle linkypop"></i></a>
+            </span>
+          </p>
+          <p class=""><span>Group gallery? {{ form.gallery }}</span>
+            <span id="gallery_required" class="ms-3">required? {{ form.gallery_required }}</span></p>
+          <p class="">Collaboration allowed? {{ form.collaboration }}</p>
+          <p>Group code:
+            {% if not object.join_code %}
+              <button id="b_joincode" type="button">Create</button>
+              <span><button id="b_savejoincode" type="button">Save</button></span>
+            {% else %}
+              <span id="cg_joincode"><mark>{{ object.join_code }}</mark><i class="ms-1 fas fa-check"></i></span>
+            {% endif %}
+          </p>
+        {% else %}
+          <div class="ps-1"><p>New group must be saved before members can be added.</p></div>
+        {% endif %}
+      </div>
+      <div>
+        <h5 class="sharing-header">Members</h5>
+        {% if action == 'update' %}
+          <div id="results_text" class="my-2 small"></div>
+          <div id="members_content">
+              <ul class="small">
+              {% for m in members %}
+                  <li>{{ m.name }} ({{ m.id }}) ({{ m.email }})</li>
+              {% endfor %}
+              </ul>
+          </div>
+        {% else %}
+          <div class="ps-1"><p>New group must be saved before members can be added.</p></div>
+        {% endif %}
+      </div>
     </div>
     {% if action == 'update' %}
     <div id="collections" class="col-sm-4 mt-2">
