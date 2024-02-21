@@ -131,6 +131,7 @@ def index_to_pub(dataset_id, idx='pub'):
         print(f"Dataset with ID {dataset_id} does not exist or is not public/ready for accessioning.")
         return  # Exit if dataset conditions aren't met
 
+    print(f"Indexing dataset {dataset_id} to 'pub' index...")
     places_to_index = Place.objects.filter(dataset=dataset, indexed=False, idx_pub=False)
     place_ids_to_index = list(places_to_index.values_list('id', flat=True))
 

@@ -38,14 +38,14 @@ def send_new_dataset_email(sender, instance, **kwargs):
 
 @receiver(pre_save, sender=Dataset)
 def handle_public_flag(sender, instance, **kwargs):
-  # print('\nhandle_public_flag: public?', instance.public)
+  print('handle_public_flag: public?', instance.public)
   from .tasks import index_to_pub, unindex_from_pub
   from main.tasks import request_tileset
   threshold = 2000
   if instance.id:  # Check if it's an existing instance, not new
     old_instance = sender.objects.get(pk=instance.pk)
     if old_instance.public != instance.public:  # There's a change in 'public' status
-      # print('handle_public_flag: changed', old_instance.public, instance.public)
+      print('handle_public_flag: changed', old_instance.public, instance.public)
       # notify the owner
       owner = instance.owner
       if instance.public:
@@ -63,10 +63,11 @@ def handle_public_flag(sender, instance, **kwargs):
         )
 
         # Changed from False to True, index the records
+        print('passing to index_to_public()', instance.public)
         transaction.on_commit(lambda: index_to_pub.delay(instance.id))
 
         # Changed from False to True, create a tileset
-        if instance.places.count() > threshold:
+        if instance.places.count() >= threshold:
           print('handle_public_status_change: has tileset?', instance.tilesets.count() > 0)
           tiletype = instance.vis_parameters.get('tiletype', 'normal')
           transaction.on_commit(lambda: request_tileset.delay(instance.id, tiletype))
