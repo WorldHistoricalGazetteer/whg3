@@ -1,3 +1,7 @@
 #configurationTable input, #configurationTable select {
   cursor: pointer;
 }
+
+#vis_options {
+	overflow-x: auto; /* Necessary only because constrained in centre column of a flex table, and obscured by media image container in narrow viewports */
+}

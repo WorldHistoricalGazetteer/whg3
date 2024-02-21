@@ -1,8 +1,12 @@
-import './vis_parameters';
+import VisualisationControl from './visualisationControl.js';
 import { showChooser } from './utilities';
 window.showChooser = showChooser;
 
 $(function() {
+	
+    if ($("#configurationTable").length > 0) { // Element exists only for Place Collections (place_collection_build.html)
+		new VisualisationControl(vis_parameters);
+	}
 
 	$("#id_group option:first").text('None')
 
