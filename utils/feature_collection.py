@@ -14,6 +14,7 @@ def feature_collection(caller):
     
     feature_collection = {
         "type": "FeatureCollection",
+        "mode": "default",
         "features": [],
     }
     geom_list = None
@@ -27,6 +28,6 @@ def feature_collection(caller):
             
     if geom_list:
         for geometry in geom_list:
-            feature_collection['features'].append(Feature(geometry=geometry, properties={'mode': 'feature_collection'}))
+            feature_collection['features'].append(Feature(geometry=geometry))
 
     return feature_collection

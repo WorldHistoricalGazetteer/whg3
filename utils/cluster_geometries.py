@@ -16,6 +16,7 @@ def clustered_geometries(caller):
     
     clustered_geometries = {
         "type": "FeatureCollection",
+        "mode": "clusterhull",
         "features": [],
     }
 
@@ -85,11 +86,11 @@ def clustered_geometries(caller):
                 cluster_points = [GEOSGeometry(f"POINT ({coord[0]} {coord[1]})") for coord in coordinates[members_indices]]
                 multipoint_geom = MultiPoint(cluster_points)
                 convex_hull = multipoint_geom.convex_hull
-                clustered_geometries['features'].append(Feature(geometry=json.loads(GEOSGeometry(convex_hull).geojson), properties={'mode':'clusterhull'} ))
+                clustered_geometries['features'].append(Feature(geometry=json.loads(GEOSGeometry(convex_hull).geojson) ))
             else:
                 # Create points for clusters with 1 or 2 members
                 for member_index in members_indices:
-                    clustered_geometries['features'].append(Feature( geometry=Point(coordinates=coordinates[member_index].tolist()), properties={'mode':'clusterhull'} ))
+                    clustered_geometries['features'].append(Feature( geometry=Point(coordinates=coordinates[member_index].tolist()) ))
     
             processed_labels.add(current_label)
 

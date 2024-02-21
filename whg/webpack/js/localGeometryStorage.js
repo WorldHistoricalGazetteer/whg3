@@ -1,5 +1,6 @@
 
 import { startSpinner } from './utilities';
+import featuredDataLayers from './featuredDataLayerStyles';
 
 function fetchDataFromLocalStorage(type, id, mode) {
 	return new Promise((resolve, reject) => {
@@ -25,25 +26,46 @@ function fetchDataFromNetwork(url) {
 export async function fetchDataForHorse(thisHorse, mappy, repositionMap = true) {
     async function mapData(data) {
         return new Promise((resolve) => {
-            mappy.getSource('featured-data-source').setData(data);
-            mappy.once('sourcedata', () => {
-                if (repositionMap) {
-                    const bounding_box = bbox(data);
-                    if (bounding_box[0] == Infinity) {
-                        mappy.flyTo({
-                            center: mapParameters.center,
-                            zoom: mapParameters.zoom,
-                            speed: 0.5,
-                        });
-                    } else {					
-                        mappy.fitBounds(bounding_box, {
-                            padding: 100,
-                            speed: 0.5,
-                        });
-                    }
-                }
-                resolve();
-            });
+			
+			const hasTilesets = !!data.tilesets && data.tilesets.length > 0;
+			
+			var layersToRemove = mappy.getStyle().layers.filter(layer => !!layer.source && layer.source == 'featured-data-source');
+			layersToRemove.forEach(layer => {
+			    mappy.removeLayer(layer.id);
+			});
+			if (mappy.getSource('featured-data-source')) mappy.removeSource('featured-data-source');
+			mappy.newSource({...data, ds_id:'featured-data-source'});
+			
+			mappy.once('sourcedata', () => {
+				featuredDataLayers[data.mode == 'heatmap' ? 'heatmap' : 'default'].forEach(layer => {
+				    mappy.addLayer({...layer, 'source-layer': hasTilesets ? 'features' : ''});
+				});				
+				if (hasTilesets) {
+					mappy.fitBounds(mappy.tileBounds, {
+                        padding: 100,
+                        speed: 0.5,
+                    });
+					resolve();
+				}
+				else {
+		            mappy.once('sourcedata', () => {
+		                if (repositionMap) {
+		                    const bounding_box = bbox(data);
+		                    if (bounding_box[0] == Infinity) {
+		                        mappy.reset();
+		                    } else {					
+		                        mappy.fitBounds(bounding_box, {
+		                            padding: 100,
+		                            speed: 0.5,
+		                        });
+		                    }
+		                }
+		                resolve();
+		            });
+				}		
+			});
+		
+			
         });
     }
 
