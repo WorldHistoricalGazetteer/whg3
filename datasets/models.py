@@ -154,6 +154,14 @@ class Dataset(models.Model):
   # delimited augmented: 20 sec per 1000 records
   # lpf: 20 sec per 1000 records
 
+  @property
+  def coordinates_count(self):
+      total_coords = 0
+      for place in self.places.all():
+          for geom in place.geoms.all():
+              total_coords += geom.geom.num_coords
+      return total_coords
+
   # download time estimate
   @property
   def dl_est(self):

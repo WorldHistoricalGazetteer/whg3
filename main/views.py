@@ -85,6 +85,7 @@ def send_tileset_request(dataset_id=None, collection_id=None, tiletype='normal')
     raise ValueError("Either dataset_id or collection_id must be provided.")
 
   print('geoJSONUrl', geoJSONUrl)
+  print('tiler url', url)
 
   data = {
     "geoJSONUrl": geoJSONUrl,
