@@ -351,16 +351,8 @@
                     </h5>
                     <p>These options control how your collection will be displayed and
                       temporally filtered on this collection's display page.</p>
-                    <table id="configurationTable" class="w-100">
-                      <thead>
-                        <tr>
-                          <th colspan="2" style="text-align: right;">Include</th>
-                          <th>Temporal</th>
-                          <th>Trail</th>
-                          <th>Sort</th>
-                        </tr>
-                      </thead>
-                      <tbody></tbody>
+                    <table id="configurationTable">
+						{{ object.vis_parameters|json_script:"vis_parameters_data" }}
                     </table>
                   </div>
                 {% else %}
@@ -693,12 +685,10 @@
   {% endif %}
 </div> <!-- container -->
 
-{{ object.vis_parameters|json_script:"vis_parameters_data" }}
 <script type="text/javascript">
   const object_id = "{{ object.id }}";
   const place_list = "{{ place_list }}";
   const csrf_token = "{{ csrf_token }}";
-  var vis_parameters = JSON.parse(document.getElementById('vis_parameters_data').innerHTML);
 </script>
 
 {% endblock %} {# content #}

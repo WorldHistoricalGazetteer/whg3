@@ -4,9 +4,7 @@ window.showChooser = showChooser;
 
 $(function() {
 	
-    if ($("#configurationTable").length > 0) { // Element exists only for Place Collections (place_collection_build.html)
-		new VisualisationControl(vis_parameters);
-	}
+    new VisualisationControl(); // Returns `null` if #configurationTable element does not exist
 
 	$("#id_group option:first").text('None')
 

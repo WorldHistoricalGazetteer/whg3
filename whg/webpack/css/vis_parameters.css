@@ -2,6 +2,10 @@
   cursor: pointer;
 }
 
+#configurationTable td {
+  padding: 0 2px;
+}
+
 #vis_options {
-	overflow-x: auto; /* Necessary only because constrained in centre column of a flex table, and obscured by media image container in narrow viewports */
+	overflow-x: auto;
 }

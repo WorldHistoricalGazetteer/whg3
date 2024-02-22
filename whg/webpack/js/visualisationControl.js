@@ -1,15 +1,18 @@
 import '../css/vis_parameters.css';
 
 class VisualisationControl { 
-    constructor(vis_parameters) {
-        this.vis_parameters = vis_parameters;
+    constructor() {
+		this.configurationTable = $("#configurationTable");
+		if (this.configurationTable.length === 0) return null;
+        const visParametersData = JSON.parse(this.configurationTable.find('#vis_parameters_data').html());
+        this.vis_parameters = visParametersData || {}; // If JSON data is not available, initialize an empty object
         this.initialize();
+        return this.configurationTable;
     }
 
     initialize() {
-        console.log('Place Collection: vis_parameters:', this.vis_parameters);
 
-        if (typeof this.vis_parameters === 'undefined' || Object.keys(this.vis_parameters).length === 0) {
+        if (Object.keys(this.vis_parameters).length === 0) {
             this.vis_parameters = {
                 min: {
                     tabulate: "initial",
@@ -27,11 +30,13 @@ class VisualisationControl {
                     trail: true
                 }
             };
-            console.log('vis_parameters was undefined or empty, so set to default values:', this.vis_parameters);
-        } else if (window.saved_settings) {
-            this.vis_parameters = window.saved_settings;
-            console.log('vis_parameters', this.vis_parameters);
+            console.log('vis_parameters was undefined or empty, so set to default values.');
         }
+        console.log('vis_parameters:', this.vis_parameters);
+
+	    const thead = $('<thead><tr><th colspan="2" style="text-align: right;">Include</th><th>Temporal</th><th>Trail</th><th>Sort</th></tr></thead>');
+		const tbody = $('<tbody></tbody>');
+	    this.configurationTable.empty().append(thead).append(tbody);
 
         this.generateConfigurationRows();
 
