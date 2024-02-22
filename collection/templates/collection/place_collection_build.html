@@ -338,25 +338,14 @@
                     </span>
                   </div>
                   <div id="vis_options" class="mt-5">
-{#                  {{ object.vis_parameters }}#}
-                    <input type="hidden" id="visParameters"
-                           name="vis_parameters" value="">
                     <h5 class="bg-beige ps-1">Visualization options
                       <span class="float-end me-2">
                         <small><i class="fas fa-question-circle linkypop"></i></small></span>
                     </h5>
                     <p>These options control how your collection will be displayed and
                       temporally filtered on this collection's display page.</p>
-                    <table id="configurationTable" class="w-100">
-                      <thead>
-                        <tr>
-                          <th colspan="2" style="text-align: right;">Include</th>
-                          <th>Temporal</th>
-                          <th>Trail</th>
-                          <th>Sort</th>
-                        </tr>
-                      </thead>
-                      <tbody></tbody>
+                    <table id="configurationTable">
+						{{ object.vis_parameters|json_script:"vis_parameters_data" }}
                     </table>
                   </div>
                 {% else %}
@@ -690,16 +679,6 @@
 </div> <!-- container -->
 
 <script type="text/javascript">
-  let visParametersString = "{{ object.vis_parameters|escapejs }}";
-  visParametersString = visParametersString.replace(/False/g, 'false');
-  visParametersString = visParametersString.replace(/True/g, 'true');
-  visParametersString = visParametersString.replace(/'/g, '"');
-  try {
-      window.saved_settings = JSON.parse(visParametersString);
-      console.log('saved settings, typeof', window.vis_parameters, typeof window.vis_parameters);
-  } catch (e) {
-      console.error("Parsing error:", e);
-  }
   const object_id = "{{ object.id }}";
   const place_list = "{{ place_list }}";
   const csrf_token = "{{ csrf_token }}";

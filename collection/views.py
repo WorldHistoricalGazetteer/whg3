@@ -383,13 +383,11 @@ def fetch_mapdata_coll(request, *args, **kwargs):
     # Get the first annotation's sequence value
     first_anno = t.place.annos.first()
     sequence_value = first_anno.sequence if first_anno else None
-    # some places have no geometry
-    # TODO: this returns null geometries, then unlisted in table
+    
     geoms = t.place.geoms.all()
-    geometry = t.place.geoms.all()[0].jsonb if geoms else None
+    geometry = t.place.geoms.all()[0].jsonb if geoms else None # some places have no geometry
 
-    if len(t.place.geoms.all()) > 0:
-      feature = {
+    feature = {
           "type": "Feature",
           "geometry": geometry,
           "properties": {
@@ -404,19 +402,19 @@ def fetch_mapdata_coll(request, *args, **kwargs):
               "seq": sequence_value,
           },
           "id": i,  # Required for MapLibre conditional styling
-      }
+    }
 
-      if null_geometry: # Minimise data sent to browser when using a vector tileset
+    if null_geometry: # Minimise data sent to browser when using a vector tileset
         if geometry:
             del feature["geometry"]["coordinates"]
             if "geowkt" in feature["geometry"]:
                 del feature["geometry"]["geowkt"]
-      elif tileset: # Minimise data to be included in a vector tileset
+    elif tileset: # Minimise data to be included in a vector tileset
         # Drop all properties except any listed here
         properties_to_keep = ["pid"] # Perhaps ["pid", "min", "max"]
         feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}
 
-      feature_collection["features"].append(feature)
+    feature_collection["features"].append(feature)
 
   return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii':False,'indent':2})
 
@@ -796,12 +794,12 @@ class PlaceCollectionBrowseView(DetailView):
     context['updates'] = {}
     context['url_front'] = settings.URL_FRONT
 
-    if not coll.vis_parameters:
+    #if not coll.vis_parameters:
         # Populate with default values:
         # tabulate: 'initial'|true|false - include sortable table column, 'initial' indicating the initial sort column
         # temporal_control: 'player'|'filter'|null - control to be displayed when sorting on this column
         # trail: true|false - whether to include ant-trail motion indicators on map
-        coll.vis_parameters = "{'seq': {'tabulate': false, 'temporal_control': 'player', 'trail': true},'min': {'tabulate': 'initial', 'temporal_control': 'player', 'trail': true},'max': {'tabulate': true, 'temporal_control': 'filter', 'trail': false}}"
+        #coll.vis_parameters = "{'seq': {'tabulate': false, 'temporal_control': 'player', 'trail': true},'min': {'tabulate': 'initial', 'temporal_control': 'player', 'trail': true},'max': {'tabulate': true, 'temporal_control': 'filter', 'trail': false}}"
     context['visParameters'] = coll.vis_parameters
 
     return context

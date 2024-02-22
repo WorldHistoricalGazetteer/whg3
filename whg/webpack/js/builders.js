@@ -1,8 +1,10 @@
-import './vis_parameters';
+import VisualisationControl from './visualisationControl.js';
 import { showChooser } from './utilities';
 window.showChooser = showChooser;
 
 $(function() {
+	
+    new VisualisationControl(); // Returns `null` if #configurationTable element does not exist
 
 	$("#id_group option:first").text('None')
 

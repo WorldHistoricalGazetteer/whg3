@@ -1,3 +1,11 @@
 #configurationTable input, #configurationTable select {
   cursor: pointer;
 }
+
+#configurationTable td {
+  padding: 0 2px;
+}
+
+#vis_options {
+	overflow-x: auto;
+}

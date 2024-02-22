@@ -14,6 +14,10 @@ export default class SequenceArcs {
 		dashLength = 8
 	} = {}) {
 		this.map = map;
+		if (dataset.features.some(feature => !feature.geometry)) {
+			console.log('Dataset contains features with null geometry, so cannot create ant-trails.');
+			return null;
+		}		
 		this.dataset = this.convertToRepresentativePoints(dataset);
 		this.arcSourceId = 'sequence-arcs-source';
 		this.arcLayerId = 'sequence-arcs-layer';
