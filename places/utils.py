@@ -6,7 +6,9 @@ def attribListFromSet(attr, qs, exclude_title=None):
   attrib_list=[]
   value='toponym' if attr=='names' else 'sourceLabel'
   for item in qs:
-    label = item.jsonb['toponym'] if attr == 'names' else item.jsonb['sourceLabel']
+    label = item.jsonb['toponym'] if attr == 'names' \
+      else item.jsonb.get('sourceLabel', item.jsonb.get('source_label'))
+    # label = item.jsonb['toponym'] if attr == 'names' else item.jsonb['sourceLabel']
 
     # Exclude the title from the list of variants
     if exclude_title and label == exclude_title:
@@ -23,7 +25,9 @@ def attribListFromSet(attr, qs, exclude_title=None):
       }
       print(obj)
     else:
-      obj={"label":item.jsonb['toponym'] if attr=='names' \
-        else item.jsonb['sourceLabel']}
+      obj={"label": item.jsonb['toponym'] if attr == 'names'
+        else item.jsonb.get('sourceLabel', item.jsonb.get('source_label'))}
+        # else item.jsonb['sourceLabel']}
+
     attrib_list.append(obj)
   return attrib_list

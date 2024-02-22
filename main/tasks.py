@@ -17,6 +17,15 @@ from main.models import Log, Tileset
 from main.views import send_tileset_request
 import time
 
+@shared_task()
+def calculate_geometry_complexity(dataset_id):
+    from datasets.models import Dataset
+
+    dataset = Dataset.objects.get(id=dataset_id)
+    complexity = dataset.coordinates_count
+
+    return complexity
+
 @shared_task(bind=True)
 def request_tileset(self, dataset_id=None, collection_id=None, tiletype='normal'):
     print('request_tileset() task: dataset_id, collection_id, tiletype', dataset_id, collection_id, tiletype)

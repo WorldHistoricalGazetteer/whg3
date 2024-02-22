@@ -7,6 +7,7 @@ from django.db.models.signals import pre_delete, pre_save, post_save
 from django.dispatch import receiver
 
 from .models import Dataset, DatasetFile
+from main.tasks import calculate_geometry_complexity
 from utils.emailing import new_emailer
 
 import logging
@@ -35,40 +36,32 @@ def send_new_dataset_email(sender, instance, **kwargs):
       except Exception as e:
         logger.exception("Error occurred while sending new dataset email")
 
+def format_time(seconds):
+  minutes, seconds = divmod(seconds, 60)
+  return f"{minutes} minutes {seconds} seconds"
 
-# @receiver(post_save, sender=Dataset)
-# def send_new_dataset_email(sender, instance, created, **kwargs):
-#   # print('send_new_dataset_email: created?', created)
-#   try:
-#     if created:
-#       if not instance.owner.groups.filter(name='whg_team').exists():
-#         new_emailer(
-#           email_type='new_dataset',
-#           subject='New Dataset Created',
-#           from_email=settings.DEFAULT_FROM_EMAIL,
-#           to_email=settings.EMAIL_TO_ADMINS,
-#           name=instance.owner.first_name + ' ' + instance.owner.last_name,
-#           username=instance.owner.username,
-#           dataset_title=instance.title,
-#           dataset_label=instance.label,
-#           dataset_id=instance.id
-#         )
-#   except Exception as e:
-#     logger.exception("Error occurred while sending new dataset email")
+def test_complexity(dsid):
+  import time
+  start = time.time()
+  from main.tasks import calculate_geometry_complexity
+  # Call the function directly
+  complexity = calculate_geometry_complexity(dsid)
+  end = time.time()
+  # Print the result
+  duration = format_time(end - start)
+  print(f'complexity = {complexity}, time = {duration} ')
 
-# if public changes to True, notify owner, index to pub and conditionally create tileset
-# if public changes to False, unindex from pub, notify owner
 @receiver(pre_save, sender=Dataset)
 def handle_public_flag(sender, instance, **kwargs):
-  # print('\nhandle_public_flag: public?', instance.public)
   from .tasks import index_to_pub, unindex_from_pub
-  from main.tasks import request_tileset
-  threshold = 2000
+  from main.tasks import request_tileset, calculate_geometry_complexity
+
+  complexity_threshold = 1500
+  task_timeout = 60 * 5  # 5 minutes
+
   if instance.id:  # Check if it's an existing instance, not new
     old_instance = sender.objects.get(pk=instance.pk)
     if old_instance.public != instance.public:  # There's a change in 'public' status
-      # print('handle_public_flag: changed', old_instance.public, instance.public)
-      # notify the owner
       owner = instance.owner
       if instance.public:
         new_emailer(
@@ -87,15 +80,15 @@ def handle_public_flag(sender, instance, **kwargs):
         # Changed from False to True, index the records
         transaction.on_commit(lambda: index_to_pub.delay(instance.id))
 
-        # Changed from False to True, create a tileset
-        if instance.places.count() > threshold:
-          print('handle_public_status_change: has tileset?', instance.tilesets.count() > 0)
+        # Calculate the complexity of the geometries
+        complexity_task = calculate_geometry_complexity.apply_async(args=[instance.id], expires=task_timeout)
+        complexity = complexity_task.get(timeout=task_timeout)
+
+        # Changed from False to True, create a tileset if the complexity exceeds the threshold
+        if complexity >= complexity_threshold:
           tiletype = instance.vis_parameters.get('tiletype', 'normal')
           transaction.on_commit(lambda: request_tileset.delay(instance.id, tiletype))
-        else:
-          print('handle_public_status_change: no tileset created')
       else:
-        print('handle_public_status_change: unindex from public?', instance.public)
         # Changed from True to False, remove the records from the index
         transaction.on_commit(lambda: unindex_from_pub.delay(instance.id))
         # notify the owner
@@ -113,6 +106,63 @@ def handle_public_flag(sender, instance, **kwargs):
           dataset_id=instance.id
         )
 
+
+# @receiver(pre_save, sender=Dataset)
+# def handle_public_flag(sender, instance, **kwargs):
+#   print('handle_public_flag: public?', instance.public)
+#   from .tasks import index_to_pub, unindex_from_pub
+#   from main.tasks import request_tileset
+#   threshold = 1500
+#   if instance.id:  # Check if it's an existing instance, not new
+#     old_instance = sender.objects.get(pk=instance.pk)
+#     if old_instance.public != instance.public:  # There's a change in 'public' status
+#       print('handle_public_flag: changed', old_instance.public, instance.public)
+#       # notify the owner
+#       owner = instance.owner
+#       if instance.public:
+#         new_emailer(
+#           email_type='dataset_published',
+#           subject='Your WHG dataset has been published',
+#           from_email=settings.DEFAULT_FROM_EMAIL,
+#           to_email=[owner.email],
+#           reply_to=[settings.DEFAULT_FROM_EDITORIAL],
+#           name=owner.name,
+#           greeting_name=owner.name if owner.name else owner.username,
+#           dataset_title=instance.title,
+#           dataset_label=instance.label,
+#           dataset_id=instance.id
+#         )
+#
+#         # Changed from False to True, index the records
+#         print('passing to index_to_public()', instance.public)
+#         transaction.on_commit(lambda: index_to_pub.delay(instance.id))
+#
+#         # Changed from False to True, create a tileset
+#         if instance.places.count() >= threshold:
+#           print('handle_public_status_change: has tileset?', instance.tilesets.count() > 0)
+#           tiletype = instance.vis_parameters.get('tiletype', 'normal')
+#           transaction.on_commit(lambda: request_tileset.delay(instance.id, tiletype))
+#         else:
+#           print('handle_public_status_change: no tileset created')
+#       else:
+#         print('handle_public_status_change: unindex from public?', instance.public)
+#         # Changed from True to False, remove the records from the index
+#         transaction.on_commit(lambda: unindex_from_pub.delay(instance.id))
+#         # notify the owner
+#         owner = instance.owner
+#         new_emailer(
+#           email_type='dataset_unpublished',
+#           subject='Your WHG dataset has been unpublished',
+#           from_email=settings.DEFAULT_FROM_EMAIL,
+#           to_email=[owner.email],
+#           reply_to=[settings.DEFAULT_FROM_EDITORIAL],
+#           name=owner.name,
+#           greeting_name=owner.name if owner.name else owner.username,
+#           dataset_title=instance.title,
+#           dataset_label=instance.label,
+#           dataset_id=instance.id
+#         )
+#
 
 # notify the owner when status changes to 'wd-complete' or 'indexed'
 @receiver(pre_save, sender=Dataset)

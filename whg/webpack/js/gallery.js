@@ -1,7 +1,6 @@
 // gallery.js
 
 import debounce from 'lodash/debounce';
-import featuredDataLayers from './featuredDataLayerStyles';
 import {fetchDataForHorse} from './localGeometryStorage';
 import {CountryCacheFeatureCollection} from './countryCache';
 
@@ -21,17 +20,11 @@ let $select;
 function waitMapLoad() {
   return new Promise((resolve) => {
     mappy.on('load', () => {
-      console.log('Map loaded.');
 
       mappy.newSource('countries')  // Add empty source
           .newLayerset('countries', 'countries', 'countries');
 
-      mappy.newSource('featured-data-source');  // Add empty source
-
-      featuredDataLayers.forEach(layer => {
-        mappy.addLayer(layer);
-      });
-
+      console.log('Map loaded.');
       resolve();
     });
   });
@@ -40,6 +33,7 @@ function waitMapLoad() {
 function waitDocumentReady() {
   return new Promise((resolve) => {
     $(document).ready(() => {
+      console.log('Document ready.');
       resolve();
     });
   });
@@ -311,11 +305,11 @@ Promise.all([
         fetchData();
       });
 
-  // $('body').on('mouseenter', '.ds-card-container', (e) => {
-  //   fetchDataForHorse($(e.target).closest('.ds-card-container'), mappy);
-  // }).on('mouseleave', '.ds-card-container', () => {
-  //   mappy.clearSource('featured-data-source').reset();
-  // });
+  $('body').on('mouseenter', '.ds-card-container', (e) => {
+    fetchDataForHorse($(e.target).closest('.ds-card-container'), mappy);
+  }).on('mouseleave', '.ds-card-container', () => {
+    mappy.eraseSource('featured-data-source').reset();
+  });
 
   $('#searchInput').on('input', function() {
     fetchData();

@@ -48,6 +48,7 @@ from search.views import getGeomCollection
 import inspect
 import json
 import random
+import os, requests
 
 class GalleryView(ListAPIView):
     pagination_class = PageNumberPagination
@@ -881,19 +882,35 @@ class featureCollectionAPIView(generics.ListAPIView):
   
   def get(self, format=None, *args, **kwargs):
 
-    mode = self.request.GET.get('mode')
+    mode = self.request.GET.get('mode', 'default') or 'default'
     featureCollection = None
     
     if 'id' in self.request.GET:
         dsid = self.request.GET.get('id')
         datacollection = get_object_or_404(Dataset, pk=dsid)
+        tilesetquery = {"type": "datasets", "id": dsid}
         pass
     elif 'coll' in self.request.GET:
         cid = self.request.GET.get('coll')
         datacollection = get_object_or_404(Collection, id=cid)
+        tilesetquery = {"type": "collections", "id": cid}
         pass
     else:
         return Response({"error": "QueryString must include either an id or coll identifier"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Test for existence of a corresponding tileset
+    tiler_url = os.environ.get('TILER_URL') # Must be set in /.env/.dev-whg3
+    response = requests.post(tiler_url, json={"getTilesets": tilesetquery})
+    if response.status_code == 200:
+        available_tilesets = response.json().get('tilesets', [])
+        if len(available_tilesets) > 0: # Remove features and return tileset name(s) instead
+            featureCollection = {
+              "type": "FeatureCollection",
+              "mode": mode,
+              "features": None,
+              "tilesets": available_tilesets
+            }
+            return JsonResponse(featureCollection, content_type="application/json")
 
     if mode == 'clusterhull':
         featureCollection = datacollection.clustered_geometries
@@ -904,7 +921,7 @@ class featureCollectionAPIView(generics.ListAPIView):
     elif mode == 'convexhull':
         featureCollection = datacollection.hull_geometries
         pass
-    elif mode is None or mode == '':
+    elif mode == 'default':
         featureCollection = datacollection.feature_collection
         pass
     else:

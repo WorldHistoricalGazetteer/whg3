@@ -62,41 +62,41 @@
         Create Collection Group
     {% endif %}
   </h5>
-{#  <div class="flex row">#}
+  <!-- form spans all columns -->
+  {% if action == 'update' %}
+    <form id="cg_form" method="POST" action="{% url 'collection:collection-group-update' object.id %}"
+          enctype="multipart/form-data">
+    {% else %}
+    <form id="cg_form" method="POST" action="{% url 'collection:collection-group-create' %}"
+          enctype="multipart/form-data">
+  {% endif %}
+  {% csrf_token %}
   <div class="d-flex container row pe-0">
-    <div class="form-box mt-2 col-sm-4">
-	    {% if action == 'update' %}
-	    <form id="cg_form" method="POST" action="{% url 'collection:collection-group-update' object.id %}"
-	          enctype="multipart/form-data">
-      {% else %}
-      <form id="cg_form" method="POST" action="{% url 'collection:collection-group-create' %}"
-            enctype="multipart/form-data">
+  <div id="cg_left" class="form-box mt-2 col-sm-4">
+    <input type="hidden" name="owner" value='{{ user.id }}' />
+    <input type="hidden" name="action" value='{{ action }}' />
+    {% comment %}
+    {% if action == 'update' %}
+    {% endif %}{% endcomment %}
+    <p>Title<br/>{{ form.title }}</p>
+    <p><span class="top">Description</span><br/>{{ form.description }}</p>
+    <p><span class="top">Type</span><br/>{{ form.type }}</p>
+    <p><span class="top">Keywords</span><br/>{{ form.keywords }}</p>
+    <p><span class="top">Start date</span> {{ form.start_date }}</p>
+    <p><span class="top">Due date</span> {{ form.due_date }}</p>
+    <p class="form-group">
+      <label for="File">File <i class="small">(PDF format)</i></label><br/>
+      {% if action == 'create' %} {# create, no file yet #}
+        <span id="file_chooser_create">{{ form.file }}</span>
+      {% elif form.file.value %} {# update & there's an file #}
+        <i class="far fa-file-pdf linky"></i>
+        <a href="/media/{{ form.file.value }}" target="_blank">{{ object.file.url|remove:'/media/groups/' }}</a>
+        (<a href="javascript:$('#file_chooser').toggle()">change</a>)
+      {% else %} {# update and there's no image yet #}
+        <span id="file_chooser_update" >{{ form.file }}</span>
       {% endif %}
-      {% csrf_token %}
-      <input type="hidden" name="owner" value='{{ user.id }}' />
-      <input type="hidden" name="action" value='{{ action }}' />
-      {% comment %}
-      {% if action == 'update' %}
-      {% endif %}{% endcomment %}
-      <p>Title<br/>{{ form.title }}</p>
-      <p><span class="top">Description</span><br/>{{ form.description }}</p>
-      <p><span class="top">Type</span><br/>{{ form.type }}</p>
-      <p><span class="top">Keywords</span><br/>{{ form.keywords }}</p>
-      <p><span class="top">Start date</span> {{ form.start_date }}</p>
-      <p><span class="top">Due date</span> {{ form.due_date }}</p>
-      <p class="form-group">
-				<label for="File">File <i class="small">(PDF format)</i></label><br/>
-				{% if action == 'create' %} {# create, no file yet #}
-					<span id="file_chooser_create">{{ form.file }}</span>
-				{% elif form.file.value %} {# update & there's an file #}
-					<i class="far fa-file-pdf linky"></i>
-					<a href="/media/{{ form.file.value }}" target="_blank">{{ object.file.url|remove:'/media/groups/' }}</a>
-					(<a href="javascript:$('#file_chooser').toggle()">change</a>)
-				{% else %} {# update and there's no image yet #}
-					<span id="file_chooser_update" >{{ form.file }}</span>
-				{% endif %}
-        <span id="file_chooser" class="hidden">{{ form.file }}</span>
-			</p>
+      <span id="file_chooser" class="hidden">{{ form.file }}</span>
+    </p>
 
 {#      <div id="cg_options" class="bg-light">#}
 {#        <p class="mb-0 strong">Options#}
@@ -121,166 +121,143 @@
 {#          <span><button id="b_savejoincode" type="button">Save</button></span>#}
 {#        </p>#}
 {#      </div>#}
-			<div class="mt-3">Links
-				{% if links|length < 3 %}
-					<a href="#" id="a_linkpopup">
-						<button type="button" style="border-width: thin;">Add</button>
-					</a>
-					<i class="small">(1 or more)</i>
-				{% else %}(3 maximum) {% endif %}<br/>
-				<span id="linklist">
-				{% if links|length > 0 %}
-					{% for l in links %}
-						{{ l.get_link_type_display|safe }} <a href="{{ l.uri }}" target="_blank">{{ l.label }}</a>
-							[ <a href="{% url 'collection:remove-link' id=l.id %}" class="a_removelink"><i>remove</i></a> ]<br/>
-					{% endfor %}
-				{% endif %}
-				</span>
-			</div>
-	    <hr/>
-	    <input class="btn btn-sm btn-primary mt-2" type="submit" value="Save" />
-      <span title="back"><a href="{% url 'dashboard' %}">Cancel</a></span>
+    <div class="mt-3">Links
+      {% if links|length < 3 %}
+        <a href="#" id="a_linkpopup">
+          <button type="button" style="border-width: thin;">Add</button>
+        </a>
+        <i class="small">(1 or more)</i>
+      {% else %}(3 maximum) {% endif %}<br/>
+      <span id="linklist">
+      {% if links|length > 0 %}
+        {% for l in links %}
+          {{ l.get_link_type_display|safe }} <a href="{{ l.uri }}" target="_blank">{{ l.label }}</a>
+            [ <a href="{% url 'collection:remove-link' id=l.id %}" class="a_removelink"><i>remove</i></a> ]<br/>
+        {% endfor %}
+      {% endif %}
+      </span>
+    </div>
+    <hr/>
+    <input class="btn btn-sm btn-primary mt-2" type="submit" value="Save" />
+    <span title="back"><a href="{% url 'dashboard' %}">Cancel</a></span>
+  </div>
+  <div id="linkform_popup" class="pop">
+    <form action="#" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="collection" value="{{ object.id }}">
+      <div class="closer" style="position:absolute; top:7px; right:7px;">X</div>
+      <table class="mb-2">
+              <tr><td>URI*: </td><td><input id="l_uri" name="uri" value="{{ links_form.uri }}" /></td></tr>
+              <tr><td>Label*: </td><td><input id="l_label" name="label" value="{{ links_form.label }}" /></td></tr>
+              <tr><td>Type: </td>
+                <td>
+                  <select id="select_linktype" name="link_type">
+                    <option value="webpage">Web page</option>
+                    <option value="document">Document</option>
+                    <option value="image">Image</option>
+                  </select>
+                </td>
+              </tr>
+      </table>
+      <button id="b_createlink" type="button">Save</button>
     </form>
+  </div>
+  <div id="cg_center" class="col-sm-4 mt-2">
+    <h5 class="sharing-header">Settings</h5>
+    <div class="ps-2">
+      {% if action == 'update' %}
+        <p class="mb-0 strong">
+          <span class="float-end">
+            <a class="pointer" tabindex="97" data-bs-toggle="popover" title="Group gallery options"
+                 data-bs-content="<ul style='text-align: left;'>
+                  <li>Will this group have a gallery page? If so, are all submitted collections
+                  required to appear?</li>
+                  <li>Are members collaborators permitted to add collaborators</li>"
+                 data-bs-trigger="hover focus" >
+              <i class="fas fa-question-circle linkypop"></i></a>
+          </span>
+        </p>
+        <p class=""><span>Group gallery? {{ form.gallery }}</span>
+          <span id="gallery_required" class="ms-3">required? {{ form.gallery_required }}</span></p>
+        <p class="">Collaboration allowed? {{ form.collaboration }}</p>
+        <p>Group code:
+          {% if not object.join_code %}
+            <button id="b_joincode" type="button">Create</button>
+            <span><button id="b_savejoincode" type="button">Save</button></span>
+          {% else %}
+            <span id="cg_joincode"><mark>{{ object.join_code }}</mark><i class="ms-1 fas fa-check"></i></span>
+          {% endif %}
+        </p>
+      {% else %}
+        <div class="ps-1"><p>New group must be saved before members can be added.</p></div>
+      {% endif %}
     </div>
-    <div id="linkform_popup" class="pop">
-      <form action="#" method="post">
-        {% csrf_token %}
-        <input type="hidden" name="collection" value="{{ object.id }}">
-        <div class="closer" style="position:absolute; top:7px; right:7px;">X</div>
-        <table class="mb-2">
-				        <tr><td>URI*: </td><td><input id="l_uri" name="uri" value="{{ links_form.uri }}" /></td></tr>
-				        <tr><td>Label*: </td><td><input id="l_label" name="label" value="{{ links_form.label }}" /></td></tr>
-				        <tr><td>Type: </td>
-					        <td>
-						        <select id="select_linktype" name="link_type">
-						          <option value="webpage">Web page</option>
-						          <option value="document">Document</option>
-						          <option value="image">Image</option>
-					          </select>
-					        </td>
-				        </tr>
-        </table>
-        <button id="b_createlink" type="button">Save</button>
-      </form>
-		</div>
-{#	  <div id="cg_options" class="col-sm-4 mt-2">#}
-{#      <h5 class="sharing-header">Options</h5>#}
-{#      <p class="mb-0 strong">Options#}
-{#        <span class="float-end">#}
-{#          <a class="pointer" tabindex="97" data-bs-toggle="popover" title="Group gallery options"#}
-{#               data-bs-content="<ul style='text-align: left;'>#}
-{#                <li>Will this group have a gallery page? If so, are all submitted collections required to appear?</li>#}
-{#                <li>Are members collaborators permitted to add collaborators</li>"#}
-{#               data-bs-trigger="hover focus" >#}
-{#            <i class="fas fa-question-circle linkypop"></i></a>#}
-{#        </span>#}
-{#      </p>#}
-{#      <p class=""><span>Group gallery? {{ form.gallery }}</span>#}
-{#        <span id="gallery_required" class="ms-3">required? {{ form.gallery_required }}</span></p>#}
-{#      <p class="">Collaboration allowed? {{ form.collaboration }}</p>#}
-{#      <p>Group code:#}
-{#        {% if not object.join_code %}#}
-{#          <button id="b_joincode" type="button">Create</button>#}
-{#        {% else %}#}
-{#          <span id="cg_joincode">{{ object.join_code }}<i class="ms-1 fas fa-check"></i></span>#}
-{#        {% endif %}#}
-{#        <span><button id="b_savejoincode" type="button">Save</button></span>#}
-{#      </p>#}
-{#    </div>  #}
-	  <div id="" class="col-sm-4 mt-2">
-      <h5 class="sharing-header">Options</h5>
-      <div class="ps-2">
-        {% if action == 'update' %}
-          <p class="mb-0 strong">
-            <span class="float-end">
-              <a class="pointer" tabindex="97" data-bs-toggle="popover" title="Group gallery options"
-                   data-bs-content="<ul style='text-align: left;'>
-                    <li>Will this group have a gallery page? If so, are all submitted collections
-                    required to appear?</li>
-                    <li>Are members collaborators permitted to add collaborators</li>"
-                   data-bs-trigger="hover focus" >
-                <i class="fas fa-question-circle linkypop"></i></a>
-            </span>
-          </p>
-          <p class=""><span>Group gallery? {{ form.gallery }}</span>
-            <span id="gallery_required" class="ms-3">required? {{ form.gallery_required }}</span></p>
-          <p class="">Collaboration allowed? {{ form.collaboration }}</p>
-          <p>Group code:
-            {% if not object.join_code %}
-              <button id="b_joincode" type="button">Create</button>
-              <span><button id="b_savejoincode" type="button">Save</button></span>
-            {% else %}
-              <span id="cg_joincode"><mark>{{ object.join_code }}</mark><i class="ms-1 fas fa-check"></i></span>
-            {% endif %}
-          </p>
-        {% else %}
-          <div class="ps-1"><p>New group must be saved before members can be added.</p></div>
-        {% endif %}
-      </div>
-      <div>
-        <h5 class="sharing-header">Members</h5>
-        {% if action == 'update' %}
-          <div id="results_text" class="my-2 small"></div>
-          <div id="members_content">
-              <ul class="small">
-              {% for m in members %}
-                  <li>{{ m.name }} ({{ m.id }}) ({{ m.email }})</li>
-              {% endfor %}
-              </ul>
-          </div>
-        {% else %}
-          <div class="ps-1"><p>New group must be saved before members can be added.</p></div>
-        {% endif %}
-      </div>
+    <div>
+      <h5 class="sharing-header">Members</h5>
+      {% if action == 'update' %}
+        <div id="results_text" class="my-2 small"></div>
+        <div id="members_content">
+            <ul class="small">
+            {% for m in members %}
+                <li>{{ m.name }} ({{ m.id }}) ({{ m.email }})</li>
+            {% endfor %}
+            </ul>
+        </div>
+      {% else %}
+        <div class="ps-1"><p>New group must be saved before members can be added.</p></div>
+      {% endif %}
     </div>
-    {% if action == 'update' %}
-    <div id="collections" class="col-sm-4 mt-2">
-      <h5 class="sharing-header">Submitted Collections</h5>
+  </div>
+
+  {% if action == 'update' %}
+  <div id="collections" class="col-sm-4 mt-2">
+    <h5 class="sharing-header">Submitted Collections</h5>
 {#      <div id="collections_content">#}
-        <table id="coll_list" class="small w-100">
-	        <thead>
-	          <th>Collection (member, submitted)</th>
-	          <th><a class="pointer" tabindex="99" data-bs-toggle="popover"
-               data-bs-content="Reviewed? When checked, collection will appear in group gallery"
-                   data-bs-trigger="hover focus"><i class="fas fa-check"></i></a></th>
-	          <th id="nominated_heading" ><a class="pointer" tabindex="98" data-bs-toggle="popover"
-               data-bs-content="Check to nominate for inclusion in public WHG gallery"
-                   data-bs-trigger="hover focus"><i class="fas fa-star" style="color:#ffcc00"></i></a></th>
-	        </thead>
-          {% load dataset_extras %}
-	        {% for item in collections.all %}
-		        <tr data-id="{{ item.id }}" data-status="{{ item.status }}">
-		          <td><a href="{% url 'collection:place-collection-browse' item.id %}">
-			        {{ item.title }}</a><br/>({{ item.owner.name }}; {{ item.submit_date|date:'j M y' }})</td>
-		          <td class="text-center">
-			          <input type="checkbox" class="reviewed" data-id="{{ item.id }}"
-			            {% if item.status == 'reviewed' %} checked = 'checked'{% endif %} />
-		          </td>
-						  <td class="text-center">
-						   <input type="checkbox" class="nominate" data-id="{{ item.id }}"
-						     {% if item.nominated %} checked = 'checked'{% endif %}
-						     {% if item.status != 'reviewed' %} style="display: none;"{% endif %} /></td>
-		        </tr>
-	        {% endfor %}
-        </table>
+      <table id="coll_list" class="small w-100">
+        <thead>
+          <th>Collection (member, submitted)</th>
+          <th><a class="pointer" tabindex="99" data-bs-toggle="popover"
+             data-bs-content="Reviewed? When checked, collection will appear in group gallery"
+                 data-bs-trigger="hover focus"><i class="fas fa-check"></i></a></th>
+          <th id="nominated_heading" ><a class="pointer" tabindex="98" data-bs-toggle="popover"
+             data-bs-content="Check to nominate for inclusion in public WHG gallery"
+                 data-bs-trigger="hover focus"><i class="fas fa-star" style="color:#ffcc00"></i></a></th>
+        </thead>
+        {% load dataset_extras %}
+        {% for item in collections.all %}
+          <tr data-id="{{ item.id }}" data-status="{{ item.status }}">
+            <td><a href="{% url 'collection:place-collection-browse' item.id %}">
+            {{ item.title }}</a><br/>({{ item.owner.name }}; {{ item.submit_date|date:'j M y' }})</td>
+            <td class="text-center">
+              <input type="checkbox" class="reviewed" data-id="{{ item.id }}"
+                {% if item.status == 'reviewed' %} checked = 'checked'{% endif %} />
+            </td>
+            <td class="text-center">
+             <input type="checkbox" class="nominate" data-id="{{ item.id }}"
+               {% if item.nominated %} checked = 'checked'{% endif %}
+               {% if item.status != 'reviewed' %} style="display: none;"{% endif %} /></td>
+          </tr>
+        {% endfor %}
+      </table>
 {#      </div>#}
+  </div>
+  {% else %}
+  <div id="intro" class="col-sm-4 mt-2">
+    <h5 class="profile-header">Building a Collection Group</h5>
+    <div id="collections_content">
+      <h5>Welcome</h5>
+      <p>WHG collection groups can be created for either classroom or workshop scenarios.</p>
+      <h5>Quick Start</h5>
+      <ol>
+        <li>Fill out the form on the left and click 'Save' (these values can be edited at any time in the future).</li>
+        <li></li>
+        <li></li>
+      </ol>
     </div>
-		{% else %}
-    <div id="intro" class="col-sm-4 mt-2">
-      <h5 class="profile-header">Building a Collection Group</h5>
-      <div id="collections_content">
-				<h5>Welcome</h5>
-	      <p>WHG collection groups can be created for either classroom or workshop scenarios.</p>
-				<h5>Quick Start</h5>
-	      <ol>
-		      <li>Fill out the form on the left and click 'Save' (these values can be edited at any time in the future).</li>
-		      <li></li>
-		      <li></li>
-	      </ol>
-      </div>
-    </div>
-    {% endif %}
-  </div> <!-- d-flex -->
+  </div>
+  {% endif %}
+  </div> <!-- .row .d-flex -->
+  </form>
 </div> <!-- container -->
 
 <script type="text/javascript">
@@ -655,3 +632,27 @@ $(document).ready(function() {
 
 {% endblock %}
 
+{#	  <div id="cg_options" class="col-sm-4 mt-2">#}
+{#      <h5 class="sharing-header">Options</h5>#}
+{#      <p class="mb-0 strong">Options#}
+{#        <span class="float-end">#}
+{#          <a class="pointer" tabindex="97" data-bs-toggle="popover" title="Group gallery options"#}
+{#               data-bs-content="<ul style='text-align: left;'>#}
+{#                <li>Will this group have a gallery page? If so, are all submitted collections required to appear?</li>#}
+{#                <li>Are members collaborators permitted to add collaborators</li>"#}
+{#               data-bs-trigger="hover focus" >#}
+{#            <i class="fas fa-question-circle linkypop"></i></a>#}
+{#        </span>#}
+{#      </p>#}
+{#      <p class=""><span>Group gallery? {{ form.gallery }}</span>#}
+{#        <span id="gallery_required" class="ms-3">required? {{ form.gallery_required }}</span></p>#}
+{#      <p class="">Collaboration allowed? {{ form.collaboration }}</p>#}
+{#      <p>Group code:#}
+{#        {% if not object.join_code %}#}
+{#          <button id="b_joincode" type="button">Create</button>#}
+{#        {% else %}#}
+{#          <span id="cg_joincode">{{ object.join_code }}<i class="ms-1 fas fa-check"></i></span>#}
+{#        {% endif %}#}
+{#        <span><button id="b_savejoincode" type="button">Save</button></span>#}
+{#      </p>#}
+{#    </div>  #}

@@ -2,7 +2,6 @@
 
 import {geomsGeoJSON} from './utilities';
 import '../css/home.css';
-import featuredDataLayers from './featuredDataLayerStyles';
 import {fetchDataForHorse} from './localGeometryStorage';
 
 let mappy = new whg_maplibre.Map({
@@ -20,12 +19,6 @@ mappy.on('load', function() {
     if (layer.id.includes('label')) {
       mappy.setLayoutProperty(layer.id, 'visibility', 'none');
     }
-  });
-
-  mappy.newSource('featured-data-source');  // Add empty source
-
-  featuredDataLayers.forEach(layer => {
-    mappy.addLayer(layer);
   });
 
   $(document).ready(function() {
@@ -144,9 +137,8 @@ let area_list = [];
 let area_objs = [];
 
 $(function() {
-  // always clear last_results & last_query
-  localStorage.removeItem('last_results');
-  localStorage.removeItem('last_query');
+  // always clear last_search (if set)
+  localStorage.removeItem('last_search');
 
   // listen for search action
   // TODO: handle Enter key also

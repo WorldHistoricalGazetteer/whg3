@@ -241,13 +241,6 @@
                   <p>
                     <span class="strong mt-2">Public?</span>: {{ form.public.value }} &nbsp;{{ form.public }}</p>
                 {% endif %}
-{#                    {% if not form.public.value %}#}
-{#                    <span class="help-matches" data-id="going_public_coll">#}
-{#                      {% if whgteam %}#}
-{#                      <span class="ms-1">{{ form.public }} <i>editor only </i></span>#}
-{#                      {% endif %}#}
-{##}
-{#                    {% endif %}#}
                 <div id="d_buttons" class=""
                      style="display: flex; align-items: center; justify-content: space-between;">
                   <span class="">
@@ -282,8 +275,8 @@
                          target="_blank">Info</a>
                     </span>
                   {% endif %}
-                {% endif %}
                 </div>
+                {% endif %}
 {#                <div id="d_public" class="mt-5">#}
 {#                  {% if form.public.value == True %}#}
 {#                    Public: {{ form.public }}#}
