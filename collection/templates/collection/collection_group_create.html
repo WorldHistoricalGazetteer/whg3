@@ -183,9 +183,11 @@
         <p>Group code:
           {% if not object.join_code %}
             <button id="b_joincode" type="button">Create</button>
+            <span id="joincode_proposed"></span>
             <span><button id="b_savejoincode" type="button">Save</button></span>
           {% else %}
-            <span id="cg_joincode"><mark>{{ object.join_code }}</mark><i class="ms-1 fas fa-check"></i></span>
+            <span id="cg_joincode"><mark>{{ object.join_code }}</mark>
+              <i class="ms-1 fas fa-check"></i></span>
           {% endif %}
         </p>
       {% else %}
@@ -269,8 +271,9 @@ $(document).ready(function() {
         url: '/collections/get_joincode/',
         method: 'GET',
         success: function(data) {
+          console.log('joincode data', data)
           // Display the new join code
-          $('#cg_joincode').text(data.join_code);
+          $('#joincode_proposed').text(data.join_code);
 
           // Show the "Save" button
           $('#b_savejoincode').show();
@@ -284,7 +287,7 @@ $(document).ready(function() {
       $('#b_joincode').hide();
       var cgid = "{{ object.id }}"
       // Lock the join code (you might want to send it to the server here)
-      var join_code = $('#cg_joincode').text();
+      var join_code = $('#joincode_proposed').text();
       console.log('clicked save join code', cgid, join_code)
       $.ajax({
         url: '/collections/set_joincode/'+cgid+'/'+join_code+'/',

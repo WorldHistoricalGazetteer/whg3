@@ -25,7 +25,7 @@ from main.models import Log, Link
 from traces.forms import TraceAnnotationModelForm
 from traces.models import TraceAnnotation
 
-"""collection group joiner"""
+""" collection group joiner"; prevent duplicate """
 def join_group(request, *args, **kwargs):
   print('join_group() kwargs', kwargs)
   print('join_group() request.POST', request.POST)
@@ -40,13 +40,46 @@ def join_group(request, *args, **kwargs):
     return JsonResponse({'msg': 'Unknown code'}, safe=False)
 
   user = request.user
+  # Check if the user is already a member of the group
+  existing_membership = CollectionGroupUser.objects.filter(user=user, collectiongroup=cg).exists()
+  if existing_membership:
+    return JsonResponse({
+      'status': 'already_member',
+      'msg': 'You are already a member of group "<b>' + cg.title + '</b>"!',
+      'cg_title': cg.title,
+      'cg_id': cg.id,
+    }, safe=False)
+
   cgu = CollectionGroupUser.objects.create(
     user=user, collectiongroup=cg, role='member')
   return JsonResponse({
-    'msg': 'Joined group '+cg.title+'!',
+    'status': 'success',
+    'msg': 'Joined group ' + cg.title + '!',
     'cg_title': cg.title,
     'cg_id': cg.id,
   }, safe=False)
+
+# def join_group(request, *args, **kwargs):
+#   print('join_group() kwargs', kwargs)
+#   print('join_group() request.POST', request.POST)
+#
+#   entered_code = request.POST.get('join_code', None)
+#   if entered_code is None:
+#     return JsonResponse({'msg': 'No code provided'}, safe=False)
+#
+#   try:
+#     cg = CollectionGroup.objects.get(join_code=entered_code)
+#   except CollectionGroup.DoesNotExist:
+#     return JsonResponse({'msg': 'Unknown code'}, safe=False)
+#
+#   user = request.user
+#   cgu = CollectionGroupUser.objects.create(
+#     user=user, collectiongroup=cg, role='member')
+#   return JsonResponse({
+#     'msg': 'Joined group '+cg.title+'!',
+#     'cg_title': cg.title,
+#     'cg_id': cg.id,
+#   }, safe=False)
 
 
 """collection group join code generator"""
