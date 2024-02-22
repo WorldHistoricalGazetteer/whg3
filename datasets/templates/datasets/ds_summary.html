@@ -167,6 +167,24 @@
               <span class="hidden editing-uri_base">{{ form.uri_base }}</span>
             </td>
           </tr>
+          <tr>
+            <td style="vertical-align:top;"><b>Image</b>
+              <a href="#" class="edit-image"><i class="fas fa-edit linky fa-xs"></i></a>
+            </td>
+            <td>
+              <span class="form-image">{{ form.image_file.value}}</span>
+              <span class="hidden editing-image">{{ form.image_file }}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align:top;"><b>Essay file</b>
+              <a href="#" class="edit-pdf"><i class="fas fa-edit linky fa-xs"></i></a>
+            </td>
+            <td>
+              <span class="form-pdf">{{ form.pdf.value}}</span>
+              <span class="hidden editing-pdf">{{ form.pdf }}</span>
+            </td>
+          </tr>
           {% if user.is_superuser %}
             <tr>
               <td style="vertical-align:top;"><b>Featured rank</b>
@@ -175,15 +193,6 @@
               <td>
                 <span class="form-featured">{{ form.featured.value|default_if_none:"..." }}</span>
                 <span class="hidden editing-featured">{{ form.featured }}</span>
-              </td>
-            </tr>
-            <tr>
-              <td style="vertical-align:top;"><b>Image</b>
-                <a href="#" class="edit-image"><i class="fas fa-edit linky fa-xs"></i></a>
-              </td>
-              <td>
-                <span class="form-image">{{ form.image_file.value}}</span>
-                <span class="hidden editing-image">{{ form.image_file }}</span>
               </td>
             </tr>
           {% endif %}
@@ -624,7 +633,7 @@
 
   })
 
-  // TODO: refactor this ugly nonsense
+  // TODO: refactor this unholy mess
   // also, button is hidden on 2nd click
   $(".edit-title").click(function() {
     $(".editing-title").toggleClass("hidden")
@@ -680,6 +689,11 @@
   $(".edit-image").click(function() {
     $(".editing-image").toggleClass("hidden")
     $(".form-image").toggleClass("hidden")
+    $(".btn-ds").toggleClass("hidden")
+  })
+  $(".edit-pdf").click(function() {
+    $(".editing-pdf").toggleClass("hidden")
+    $(".form-pdf").toggleClass("hidden")
     $(".btn-ds").toggleClass("hidden")
   })
 </script>

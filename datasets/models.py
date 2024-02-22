@@ -37,7 +37,10 @@ def user_directory_path(instance, filename):
   return 'user_{0}/{1}'.format(instance.owner.name, filename)
 
 def dataset_file_path(instance, filename):
-  return 'user_{0}/{1}'.format(instance.dataset_id.owner.name, filename)
+  return 'user_{0}/{1}'.format(instance.dataset_id.owner.username, filename)
+
+def dataset_pdf_path(instance, filename):
+  return 'user_{0}/{1}'.format(instance.owner.username, filename)
 
 def ds_image_path(instance, filename):
   # upload to MEDIA_ROOT/datasets/<id>_<filename>
@@ -48,14 +51,18 @@ class Dataset(models.Model):
   owner = models.ForeignKey(settings.AUTH_USER_MODEL,
                             related_name='datasets', on_delete=models.CASCADE)
   label = models.CharField(max_length=20, null=False, unique="True", blank=True,
-            error_messages={'unique': 'The dataset label entered is already in use, and must be unique. Try appending a version # or initials.'})
+            error_messages={'unique': 'The dataset label entered is already in use, and must be unique. '
+                                      'Try appending a version # or initials.'})
   title = models.CharField(max_length=255, null=False)
   description = models.CharField(max_length=2044, null=False)
   webpage = models.URLField(null=True, blank=True)
   create_date = models.DateTimeField(null=True, auto_now_add=True)
   uri_base = models.URLField(null=True, blank=True)
   image_file = ResizedImageField(size=[800, 600], upload_to=ds_image_path, blank=True, null=True)
+  # essay pdf
+  pdf = models.FileField(upload_to=dataset_pdf_path, blank=True, null=True)
   featured = models.IntegerField(null=True, blank=True)
+  # fubar = models.IntegerField(null=True, blank=True)
   bbox = geomodels.PolygonField(null=True, blank=True, srid=4326)
 
   core = models.BooleanField(default=False) # e.g. tgn, geonames, physical geography

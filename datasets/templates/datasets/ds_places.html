@@ -83,18 +83,24 @@
             {% endif %}
           </table>
           <div class="">
-            <p><a href="#" id="a_download_modal"
-                  class="me-2" data-collid="{{ object.id }}"
+            <p>
+              {% if object.pdf %}<br/><b>Essay:</b>
+                <a href="/media/{{ object.pdf }}" target="_blank">
+                  {{ object.pdf.name|basename|cut:",pdf" }} <i class="fas fa-file-pdf linky"></i>
+                </a>
+              {% endif %}
+              <a href="#" id="a_download_modal"
+                  class="mx-2" data-collid="{{ object.id }}"
                   data-bs-toggle="modal"
                   data-bs-target="#downloadModal"
-                  title="download options">
-              Download options</a>
+                  title="download options">Download options</a>
               <i class="fas fa-download linky"></i>
               <span class="float-end">
 	                <label for="checkbox" class="small">
 		                Hide intro by default</label>
 	                <input type="checkbox" id="checkbox">
-                </span></p>
+              </span>
+            </p>
           </div>
         </div>
       </div> <!-- #metadata -->

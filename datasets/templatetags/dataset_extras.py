@@ -2,7 +2,7 @@ from django import template
 from django.contrib.auth.models import Group
 from django.template.defaultfilters import stringfilter
 from django.utils.lorem_ipsum import paragraphs
-import json, re, validators, textwrap, ast
+import ast, json, os, re, textwrap, validators
 
 register = template.Library()
 
@@ -16,6 +16,10 @@ def has_group(user, group_name):
 def addstr(arg1, arg2):
     """concatenate arg1 & arg2"""
     return str(arg1) + str(arg2)
+
+@register.filter
+def basename(value):
+    return os.path.basename(os.path.splitext(value)[0])
 
 @register.filter
 def cut(value, arg):
