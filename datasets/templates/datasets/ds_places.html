@@ -48,8 +48,12 @@
       <div id="metadata" class="mt-2">
         <div class="row pub-intro">
           <div class="col-sm-9">
-{#            {{ visParameters|safe }}#}
-            <p>{{ ds.description|safe }}</p>
+            <p>{{ ds.description|safe }}
+            {% if object.pdf %}<br/><b>Essay:</b>
+              <a href="/media/{{ object.pdf }}" target="_blank">
+                {{ object.pdf.name|basename|cut:",pdf" }} <i class="fas fa-file-pdf linky"></i>
+              </a>
+            {% endif %}</p>
           </div>
           <div class="col-sm-3" style="position: relative;">
             {% if ds.image_file %}
@@ -84,13 +88,8 @@
           </table>
           <div class="">
             <p>
-              {% if object.pdf %}<br/><b>Essay:</b>
-                <a href="/media/{{ object.pdf }}" target="_blank">
-                  {{ object.pdf.name|basename|cut:",pdf" }} <i class="fas fa-file-pdf linky"></i>
-                </a>
-              {% endif %}
               <a href="#" id="a_download_modal"
-                  class="mx-2" data-collid="{{ object.id }}"
+                  class="me-2" data-collid="{{ object.id }}"
                   data-bs-toggle="modal"
                   data-bs-target="#downloadModal"
                   title="download options">Download options</a>
@@ -100,6 +99,7 @@
 		                Hide intro by default</label>
 	                <input type="checkbox" id="checkbox">
               </span>
+              <span class="ms-3"><a href="#">Complete metadata<i class="fas fa-eye ms-1"></i></a></span>
             </p>
           </div>
         </div>
