@@ -217,26 +217,64 @@ export function initUtils(mappy) {
 	// activate all tooltips
 	$("[rel='tooltip']").tooltip();
 
-	new ClipboardJS('.clippy', {
-		text: function(trigger) {
-			let target = trigger.getAttribute('data-clipboard-target');
-			if (target == null) {
-				return trigger.getAttribute('aria-label');
-			} else {
-				return $(target).text();
-			}
-		},
-		container: document.getElementById('downloadModal') || document.body
-	}).on('success', function(e) {
-		console.log('clipped')
-		e.clearSelection();
-		var $trigger = $(e.trigger);
-		$trigger.tooltip('dispose').attr('title', 'Copied!').tooltip();
-		$trigger.tooltip('show');
-		setTimeout(function() {
-			$trigger.tooltip('hide');
-		}, 2000);
+	// generic clipboard for modal and non-modal containers
+	document.querySelectorAll('.clippy').forEach(element => {
+    element.addEventListener('click', function(e) {
+        // Prevent the default action to avoid navigating away or other unintended actions
+        e.preventDefault();
+
+        // Dynamically determine the container based on the trigger element
+        // Here we find the closest '.modal' parent but fallback to 'document.body' if not found
+        let container = $(this).closest('.modal')[0] || document.body;
+
+        // Now, initialize ClipboardJS for this specific action
+        let clipboard = new ClipboardJS(element, {
+            text: function(trigger) {
+                let target = trigger.getAttribute('data-clipboard-target');
+                return target ? $(target).text() : trigger.getAttribute('aria-label');
+            },
+            container: container
+        }).on('success', function(e) {
+            console.log('Content copied to clipboard successfully!');
+            e.clearSelection();
+
+            // Assuming you're using jQuery for tooltips
+            $(e.trigger).tooltip('dispose').attr('title', 'Copied!').tooltip('show');
+            setTimeout(() => $(e.trigger).tooltip('hide'), 2000);
+
+            // Cleanup: Remove the ClipboardJS instance after the copy action is complete
+            clipboard.destroy();
+        });
+
+        // Manually trigger the copy action
+        clipboard.onClick(e);
+    });
 	});
+
+	// new ClipboardJS('.clippy', {
+	// 	text: function(trigger) {
+	// 		let target = trigger.getAttribute('data-clipboard-target');
+	// 		if (target == null) {
+	// 			return trigger.getAttribute('aria-label');
+	// 		} else {
+	// 			return $(target).text();
+	// 		}
+	// 	},
+  //   container: function(trigger) {
+  //       return $(trigger).closest('.modal')[0];
+  //   }
+	// 	// container: document.getElementById('downloadModal') || document.body
+	// }).on('success', function(e) {
+	// 	console.log('clipped')
+	// 	e.clearSelection();
+	// 	var $trigger = $(e.trigger);
+	// 	$trigger.tooltip('destroy').attr('title', 'Copied!').tooltip();
+	// 	// $trigger.tooltip('dispose').attr('title', 'Copied!').tooltip();
+	// 	$trigger.tooltip('show');
+	// 	setTimeout(function() {
+	// 		$trigger.tooltip('hide');
+	// 	}, 2000);
+	// });
 
 	// image modal
 	$("body").on("click", ".pop, #anno_img", function() {

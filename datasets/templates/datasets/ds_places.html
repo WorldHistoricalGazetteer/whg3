@@ -13,6 +13,7 @@
 {% block extra_head %}
   <link href="{% static 'webpack/mapAndTable.bundle.css' %}" rel="stylesheet"/>
   <script src="{% static 'celery_progress/celery_progress.js' %}"></script>
+{#  <script src="{% static 'js/clipboard.min.js' %}"></script>#}
   {% csrf_token %}
   <meta name="csrf-token" content="{{ csrf_token }}">
 {% endblock %}
@@ -92,14 +93,22 @@
                   class="me-2" data-collid="{{ object.id }}"
                   data-bs-toggle="modal"
                   data-bs-target="#downloadModal"
-                  title="download options">Download options</a>
+                  title="download options">Download options
+              </a>
               <i class="fas fa-download linky"></i>
+              <span class="ms-3">
+                <a href="#" id="a_metadata_modal"
+                  class="me-2" data-collid="{{ object.id }}"
+                  data-bs-toggle="modal"
+                  data-bs-target="#metadataModal"
+                  title="dataset metadata">Complete metadata
+                </a><i class="fas fa-eye ms-1"></i>
+              </span>
               <span class="float-end">
 	                <label for="checkbox" class="small">
 		                Hide intro by default</label>
 	                <input type="checkbox" id="checkbox">
               </span>
-              <span class="ms-3"><a href="#">Complete metadata<i class="fas fa-eye ms-1"></i></a></span>
             </p>
           </div>
         </div>
@@ -140,6 +149,7 @@
       </div>
     </div> <!-- ds_table -->
     <div id="detail" class="overlay right"></div>
+
     <div id="downloadModal" class="modal fade" tabindex="-1"
            aria-labelledby="downloadModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg" style="height: fit-content;">
@@ -249,6 +259,104 @@
           </div>
         </div>
       </div>
+
+    <div id="metadataModal" class="modal fade" tabindex="-1"
+           aria-labelledby="metadataModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg" style="height: fit-content;">
+        <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="metadataModalLabel">
+{#                <i class="fas fa-download linky"></i>#}
+                Metadata for the <span class="text-danger">{{ object.title }}</span> dataset
+              </h5>
+            </div>
+            <div class="modal-body container">
+              <div class="dl-blurb mt-1">
+                <p class="mb-1"></p>
+                <div id="dl_licensing"><p><sr>IMPORTANT LICENSING INFORMATION</sr>: Data made public in WHG by its creators are available under the Creative Commons Attribution 4.0 International (CC BY 4.0) License. They can be freely shared, re-used, and adapted, but "you <b>must</b> give appropriate credit, provide a link to the license, and indicate if changes were made." Please see <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC-BY-4.0 details</a>; and <a href="{% url 'licensing' %}" target="_blank">WHG policy.</a> Citations are provided below.</p></div>
+              </div>
+              <div class="row">
+                <div class="col-12 pr-0 scroll-div">
+                  <p class="modal-col-head p-1 mb-2">
+                    {{ object.title }}
+                    <span class="small float-end">
+<a id="a_permalink" class="clippy" aria-label="https://whgazetteer.org/datasets/{{object.id}}/places" rel="tooltip" title="copy to clipboard">permalink <i class="fas fa-clipboard linky"></i></a>
+                    </span>
+                  </p>
+                  <table class="dl-table small">
+                    <tbody>
+                      <tr class="align-top">
+                        <td style="width:200px;"># Records)</td>
+                        <td>{{ object.numrows }}</td>
+                      </tr>
+                      <tr class="align-top">
+                        <td>WHG id</td>
+                        <td>{{ object.label }} ({{ object.id }})</td>
+                      </tr>
+                      <tr class="align-top">
+                        <td>Description</td>
+                        <td>{{ object.description }}</td>
+                      </tr>
+                      <tr class="align-top">
+                        <td>Creator</td>
+                        <td>{{ object.creator }}</td>
+                      </tr>
+                      <tr class="align-top">
+                        <td>Uploaded/last modified</td>
+                        <td>{{ object.create_date|date:"d M Y" }} / {{ object.last_modified_text }}</td>
+                      </tr>
+                      <tr class="align-top">
+                        <td>Source(s)</td>
+                        <td>{{ object.source }}</td>
+                      </tr>
+                      <tr class="align-top">
+                        <td>Contibutor(s)</td>
+                        <td>{{ object.contributors }}</td>
+                      </tr>
+                      <tr class="align-top">
+                        <td>Citation</td>
+                        <td>{{ object.citation }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+{#                      <tr> #}
+{#                        <td>Formats</td>#}
+{#                        #}
+{#                          <div class="form-check form-check-inline">#}
+{#                            <input class="form-check-input hover" type="radio" name="format" value="lpf">#}
+{#                            <label class="form-check-label" for="r_lpf">LPF</label>#}
+{#                          </div>#}
+{#                          {% if object.format == 'delimited' %}#}
+{#                            <div class="form-check form-check-inline ml-1">#}
+{#                              <input class="form-check-input hover" type="radio" name="format" value="tsv" checked="checked">#}
+{#                              <label class="form-check-label" for="r_LP-TSV">LP-TSV</label>#}
+{#                            </div>#}
+{#                          {% endif %}#}
+{#                        </tr>#}
+{#                        <td class="px-1">#}
+{#                          <a class="a-dl" data-id={{ object.id }} data-user={{ user }}>#}
+{#                            <i class="fa fa-download" title="Download"></i>#}
+{#                          </a>#}
+{#                        </td>#}
+{#                      </tr>#}
+                </div>
+{#                <div class="col-sm-4">#}
+{#                  <p class="modal-col-head p-1 mb-2">head col-4</p>#}
+{#                  <div class="p-1 small">#}
+{#                    <p class="my-1">foo</p>#}
+{#                    <p class="my-1">bar</p>#}
+{#                  </div>#}
+{#                </div>#}
+              </div>
+            </div> <!-- .modal-body -->
+            <!-- .modal-body -->
+            <div class="modal-footer">
+              <button type="button" class="btn btn-sm btn-secondary btn-cancel"
+                      data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+      </div>
+    </div>
 
     <div class="modal fade" id="" tabindex="-1" role="dialog"
          aria-labelledby="updateModalLabel" aria-hidden="true">
