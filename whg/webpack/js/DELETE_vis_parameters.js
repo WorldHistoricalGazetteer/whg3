@@ -1,79 +1,80 @@
-// builders.js is for the "build" pages
-// place_collection_build.html, ds_summary.html, and ds_collection_build.html
+// vis_parameters.js
+// Imported through `builders.js`, but operates only on `place_collection_build.html` (which has a #configurationTable)
 
 import '../css/vis_parameters.css';
 
-$('#collection_form').on('submit', updateVisParameters);
-
-var vis_parameters;
-
 $(document).ready(function() {
-  if (typeof vis_parameters === 'undefined' || Object.keys(vis_parameters).length === 0) {
-    console.log('vis_parameters is undefined or empty, so setting it to default values.');
-    vis_parameters = {
-      min: {
-        tabulate: "initial",
-        temporal_control: "filter",
-        trail: false
-      },
-      max: {
-        tabulate: false,
-        temporal_control: "filter",
-        trail: false
-      },
-      seq: {
-        tabulate: false,
-        temporal_control: "player",
-        trail: true
-      }
-    };
-    console.log('vis_parameters undefined, so...', vis_parameters);
-  } else if (window.saved_settings) {
-    vis_parameters = window.saved_settings;
-    console.log('vis_parameters', vis_parameters);
-  }
+	
+	const isPlaceCollection = $("#configurationTable").length > 0;
+	if (isPlaceCollection) {
+		
+		console.log('Place Collection: vis_parameters:', vis_parameters);
+	
+		if (typeof vis_parameters === 'undefined' || Object.keys(vis_parameters).length === 0) {
+			vis_parameters = {
+				min: {
+					tabulate: "initial",
+					temporal_control: "filter",
+					trail: false
+				},
+				max: {
+					tabulate: false,
+					temporal_control: "filter",
+					trail: false
+				},
+				seq: {
+					tabulate: false,
+					temporal_control: "player",
+					trail: true
+				}
+			};
+			console.log('vis_parameters was undefined or empty, so set to default values:', vis_parameters);
+		} else if (window.saved_settings) {
+			vis_parameters = window.saved_settings;
+			console.log('vis_parameters', vis_parameters);
+		}
+	
+		generateConfigurationRows();
 
-  generateConfigurationRows();
+		// Add event listeners to all input elements to update vis_parameters and toggle controls
+		$("#configurationTable").on("change", ".tabulate-checkbox", toggleControls);
+		$("#configurationTable").on("change", "input, select", updateVisParameters);
+		
+		// Call toggleControls initially to set initial state
+		toggleControls();
+		
+		$('#collection_form').on('submit', function() { // Update hidden Form value before submission
+			$('#visParameters').val(JSON.stringify(vis_parameters));
+		});
+		
+	}
 });
 
-// Dictionary to translate vis_parameters keys to labels
-const labelDictionary = {
-	seq: "Sequence",
-	min: "Start-date",
-	max: "End-date"
-};
-
-// Dictionary to translate temporal_control values to options in dropdown menus
-const temporalControlOptions = {
-	player: "Sequencer",
-	filter: "Date Slider",
-	null: "None"
-};
-
 // Function to generate the configuration table rows dynamically based on vis_parameters
-
 function generateConfigurationRows() {
-	console.log('saved_settings in generateConfigurationRows', window.saved_settings);
-	console.log('vis_parameters in generateConfigurationRows', vis_parameters);
+
+	// Dictionary to translate vis_parameters keys to labels
+	const labelDictionary = {
+		seq: "Sequence",
+		min: "Start-date",
+		max: "End-date"
+	};
+	
+	// Dictionary to translate temporal_control values to options in dropdown menus
+	const temporalControlOptions = {
+		player: "Sequencer",
+		filter: "Date Slider",
+		null: "None"
+	};
+	
 	const tbody = $("#configurationTable tbody");
 	tbody.empty(); // Clear previous content
 
-	// Use window.saved_settings if not empty otherwise use default vis_parameters
-	const settings = window.saved_settings !== 'undefined' && Object.keys(window.saved_settings).length == 3 ?
-			window.saved_settings : vis_parameters;
-	console.log('settings', settings);
-
-	for (const [attribute, config] of Object.entries(settings)) {
+	for (const [attribute, config] of Object.entries(vis_parameters)) {
 		const label = labelDictionary[attribute];
 		const optionHTML = Object.entries(temporalControlOptions)
-			.map(([value, text]) => {
-				 if (value === config.temporal_control) {
-					 return `<option value="${value}" selected>${text}</option>`;
-				 } else {
-					 return `<option value="${value}">${text}</option>`;
-				 }
-			 })
-   		.join("");
+			.map(([value, text]) => `<option value="${value}">${text}</option>`)
+			.join("");
 
 		const tr = `
       <tr>
@@ -90,15 +91,10 @@ function generateConfigurationRows() {
     `;
 		tbody.append(tr);
 	}
-
-	// Add event listeners to all input elements to update vis_parameters
-	$("#configurationTable input, #configurationTable select").change(updateVisParameters);
 }
-
 
 // Function to update vis_parameters based on form inputs
 function updateVisParameters() {
-	console.log('reached updateVisParameters');
 	$("#configurationTable .tabulate-checkbox").each(function() {
 		const attribute = this.id;
 		vis_parameters[attribute]["tabulate"] = this.checked;
@@ -120,16 +116,10 @@ function updateVisParameters() {
 			vis_parameters[attribute]["tabulate"] = "initial";
 		}
 	});
-
-	$('#visParameters').val(JSON.stringify(vis_parameters));
+	
 	// Log the updated vis_parameters
-	console.log('vis_parameters', vis_parameters);
+	console.log('Updated vis_parameters:', vis_parameters);
 }
-window.vis_parameters = vis_parameters;
-
-
-// Call the function to generate configuration table rows
-// generateConfigurationRows();
 
 // Function to toggle Control and Initial Sort controls based on Tabulate checkbox state
 function toggleControls() {
@@ -151,9 +141,3 @@ function toggleControls() {
 		}
 	});
 }
-
-// Add event listeners to Tabulate checkboxes to call toggleControls function
-$(".tabulate-checkbox").change(toggleControls);
-
-// Call toggleControls initially to set initial state
-toggleControls();

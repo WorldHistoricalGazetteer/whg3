@@ -113,7 +113,7 @@ class Collection(models.Model):
   # writes CollPlace record to collection_collplace
   places = models.ManyToManyField("places.Place", through='CollPlace', blank=True)
   
-  # Visualisation parameters (used in place_collection_browse.html)
+  # Visualisation parameters (used in place_collection_browse.html & place_collection_build.html)
   vis_parameters = JSONField(default=dict, null=True, blank=True)
 
   def get_absolute_url(self):
