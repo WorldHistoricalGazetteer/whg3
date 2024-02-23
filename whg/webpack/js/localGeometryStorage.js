@@ -1,3 +1,4 @@
+// /whg/webpack/js/localGeometryStorage.js
 
 import { startSpinner } from './utilities';
 import featuredDataLayers from './featuredDataLayerStyles';

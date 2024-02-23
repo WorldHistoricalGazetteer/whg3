@@ -26,40 +26,38 @@ maplibregl.Map.prototype.eraseSource = function(sourceId) {
 }
 
 maplibregl.Map.prototype.tileBounds = null;
-maplibregl.Map.prototype.newSource = function (ds, fc=null) {
+maplibregl.Map.prototype.newSource = function(ds, fc = null) {
+    var map = this;
     if (!!ds.tilesets && ds.tilesets.length > 0) {
         const tilejsonUrl = `${process.env.TILEBOSS}/data/${ds.tilesets[0]}.json`;
-        var map = this;
-        return new Promise((resolve, reject) => {
-            $.ajax({
-                url: tilejsonUrl,
-                dataType: 'json',
-                success: function(tilejson) {
-                    console.log('tilejson', tilejson);
-                    const sourceOptions = { ...tilejson, type: 'vector' };
-                    var source = map.addSource(ds.ds_id, sourceOptions);
-                    map.tileBounds = tilejson.bounds;
-                    resolve(source);
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error prefetching TileJSON:', error);
-                    reject(error);
-                }
-            });
+        $.ajax({
+            url: tilejsonUrl,
+            dataType: 'json',
+            async: false, // Make the AJAX call synchronous
+            success: function(tilejson) {
+                console.log('tilejson', tilejson);
+                const sourceOptions = { ...tilejson, type: 'vector' };
+                map.tileBounds = tilejson.bounds;
+                map.addSource(ds.ds_id, sourceOptions);
+            },
+            error: function(xhr, status, error) {
+                console.error('Error prefetching TileJSON:', error);
+            }
         });
     } else {
         if (!!ds.ds_id) { // Standard dataset or collection
-            return this.addSource(ds.ds_id, {
+            map.addSource(ds.ds_id, {
                 'type': 'geojson',
                 'data': ds,
                 'attribution': attributionString(ds),
             });
         } else if (fc) { // Name and FeatureCollection provided
-            return this.addSource(ds, { 'type': 'geojson', 'data': fc });
+            map.addSource(ds, { 'type': 'geojson', 'data': fc });
         } else { // Only name given, add an empty FeatureCollection
-            return this.addSource(ds, { 'type': 'geojson', 'data': this.nullCollection() });
+            map.addSource(ds, { 'type': 'geojson', 'data': this.nullCollection() });
         }
     }
+	return map;
 };
 
 maplibregl.Map.prototype.layersets = [];

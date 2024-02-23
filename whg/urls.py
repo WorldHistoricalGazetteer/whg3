@@ -30,8 +30,9 @@ handler500 = 'main.views.custom_error_view'
 urlpatterns = [
     # home page
     # path('', views.splash, name='splash'),
-    path('home/<str:version>/', views.Home30a.as_view(), name="home-version"),
     path('', views.Home30a.as_view(), name="home"),
+    path('home/<str:version>/', views.Home30a.as_view(), name='home-version'),
+
 
     # apps
     path('areas/', include('areas.urls')),
@@ -72,6 +73,10 @@ urlpatterns = [
     path('build/', TemplateView.as_view(template_name="home/build_new.html"), name="build"),
     path('builder/', TemplateView.as_view(template_name="home/builder.html"), name="builder"),
     path('pipeline/', TemplateView.as_view(template_name="home/pipeline.html"), name="pipeline"),
+    
+    # yet more static content - 2024-02
+    path('main_regions/', TemplateView.as_view(template_name="main/regions.html"), name="main-regions"),
+    path('journeys_routes/', TemplateView.as_view(template_name="main/journeys_routes.html"), name="journeys-routes"),
 
     path('modal_home/', views.home_modal, name="modal-home"),
 

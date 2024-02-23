@@ -106,7 +106,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     flex-grow: 1;
     min-height: 180px;
 }
-.carousel-inner .carousel-item {
+.carousel-inner, .carousel-item {
     height: 100%;
 }
 .carousel-item {
@@ -143,4 +143,24 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
 }
 #collectionsCarousel button {
     top: 50px;
+}
+.image-div {
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    cursor: pointer;
+}
+.image-div:hover {
+    border-color: #993333!important;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+}
+.image-div span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: "Archivo Black";
+    color: #993333;
+    text-align: center;
 }
