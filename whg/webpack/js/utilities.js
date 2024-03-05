@@ -219,9 +219,11 @@ export function startSpinner(spinnerId = 'dataset_content', scale = .5) {
 }
 
 export function initUtils(mappy) {
-
-  // activate all tooltips
-  $('[rel=\'tooltip\']').tooltip();
+	
+  $("[rel='tooltip']").each(function(index, element) { // Initialize Bootstrap tooltips
+    new bootstrap.Tooltip(element);
+  });  
+  // Formerly ambiguously jQuery/Bootstrap: $('[rel=\'tooltip\']').tooltip();
 
   // generic clipboard for modal and non-modal containers
   document.querySelectorAll('.clippy').forEach(element => {
@@ -242,14 +244,12 @@ export function initUtils(mappy) {
       }).on('success', function(e) {
         console.log('Content copied to clipboard successfully!');
         e.clearSelection();
-
-        $(e.trigger).
-            tooltip('dispose').
-            attr('title', 'Copied!').
-            tooltip('show');
-        setTimeout(() => $(e.trigger).tooltip('hide'), 2000);
-
-        clipboard.destroy();
+		    const tooltip = bootstrap.Tooltip.getInstance(e.trigger);
+		    tooltip.setContent({ '.tooltip-inner': 'Copied!' });
+		    setTimeout(function() { // Hide the tooltip after 2 seconds
+		        tooltip.hide();
+		    	tooltip.setContent({ '.tooltip-inner': tooltip._config.title }) // Restore original text
+		    }, 2000);
       });
 
       // Manually trigger the copy action

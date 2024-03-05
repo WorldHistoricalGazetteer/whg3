@@ -147,15 +147,15 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			})
 		})
 
-		$("[rel='tooltip']").tooltip();
-
-		var clip_geom = new ClipboardJS('#a_clipgeom');
-		clip_geom.on('success', function(e) {
-			e.clearSelection();
-			$("#a_clipgeom").tooltip('hide')
-				.attr('data-original-title', 'copied!')
-				.attr('data-bs-original-title', 'copied!')
-				.tooltip('show');
+		new ClipboardJS('#a_clipgeom')
+		.on('success', function(e) {
+		    e.clearSelection();
+		    const tooltip = bootstrap.Tooltip.getInstance(e.trigger);
+		    tooltip.setContent({ '.tooltip-inner': 'copied!' });
+		    setTimeout(function() { // Hide the tooltip after 2 seconds
+		        tooltip.hide();
+		    	tooltip.setContent({ '.tooltip-inner': tooltip._config.title }) // Restore original text
+		    }, 2000);
 		});
  
     })

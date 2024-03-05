@@ -14,6 +14,7 @@ from elasticsearch8 import Elasticsearch
 from collections import Counter
 import itertools, re
 from django.core.serializers import serialize
+from urllib.parse import unquote_plus
 
 from collection.models import Collection
 from datasets.models import Dataset
@@ -81,11 +82,25 @@ class PlacePortalView(TemplateView):
     context['allts'] = []
 
     context['core'] = ['ne_countries','ne_rivers982','ne_mountains','wri_lakes']
+    
+    # Extract any whg_id from a permalink URL
+    whg_id = kwargs.get('whg_id', '')    
+    # Extract any encoded IDs from a permalink URL
+    encoded_ids = kwargs.get('encoded_ids', '')
+    if whg_id:
+        print('Assembling parent and child place_ids')   
+        # TO DO - search ES - in the meantime, fall back to the IDs stored in the session variable
+        place_ids = self.request.session.get('current_result', {}).get('place_ids', [])
+    elif encoded_ids:
+        place_ids = list(map(int, encoded_ids.split(',')))
+    else:
+        # Fall back to the IDs stored in the session variable
+        place_ids = self.request.session.get('current_result', {}).get('place_ids', [])
 
-    place_ids = self.request.session.get('current_result', {}).get('place_ids', [])
     if not place_ids:
-      messages.error(self.request, "Place IDs are required to view this page")
-      raise Http404("Place IDs are required")
+        messages.error(self.request, "Place IDs are required to view this page")
+        raise Http404("Place IDs are required")
+
     alltitles = set()
     allvariants = []
     try:
