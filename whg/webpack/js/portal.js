@@ -318,6 +318,26 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
                 toggleVariants(event, this);
             });
         });
+
+		new ClipboardJS('#permalinkButton', {
+		    text: function() {
+		      return window.location.href;
+		    }
+	  	})
+		.on('success', function(e) {
+		    e.clearSelection();
+		    const tooltip = bootstrap.Tooltip.getInstance(e.trigger);
+		    tooltip.setContent({ '.tooltip-inner': 'Permalink copied to clipboard successfully!' });
+		    console.log('tooltip',tooltip);
+		    setTimeout(function() { // Hide the tooltip after 2 seconds
+		        tooltip.hide();
+		    	tooltip.setContent({ '.tooltip-inner': tooltip._config.title }) // Restore original text
+		    }, 2000);
+		})
+		.on('error', function(e) {
+		    console.error('Failed to copy:', e.trigger);
+		});
+        
     })
     .catch(error => console.error("An error occurred:", error));
 

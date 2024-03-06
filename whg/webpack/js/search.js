@@ -138,6 +138,7 @@ Promise.all([
     e.stopPropagation();
 
     const pid = $(this).data('pid');
+    const whg_id = $(this).data('whg-id');
     const children = $(this).data('children') ?
         decodeURIComponent($(this).data('children')).
             split(',').
@@ -163,7 +164,7 @@ Promise.all([
         if(children.length > 0) {
           console.log('Entering portal with children', children);
           enteringPortal = true;
-          window.location.href = '/places/portal/';
+          window.location.href = `/places/${whg_id}/portal/`;
         } else {
           console.log('no children, going to detail page');
           enteringPortal = true; // not really; setting flag to prevent clearing of last search
@@ -569,7 +570,7 @@ function renderResults(data, fromStorage = false) {
 	      <span class="red-head">${result.title}</span> 
 	      <span class="float-end small">(${resultIdx === 'pub' ? 'unlinked record' : (count > 1 ?
             `${count} linked records <i class="fas fa-link"></i>` : 'unlinked record')})
-	          <a href="#" class="ms-2 portal-link" data-pid="${pid}" data-children="${encodedChildren}">
+	          <a href="#" class="ms-2 portal-link" data-whg-id="${whg_id}" data-pid="${pid}" data-children="${encodedChildren}">
 						${resultIdx === 'whg' ? 'place portal' : 'place detail'}</a>
 	      </span>
 	    </span>`;
@@ -814,7 +815,7 @@ function gatherOptions() { // gather and return option values from the UI
     undated: window.dateline.open ? window.dateline.includeUndated : true,
     bounds: areaFilter,
     countries: $('#countryDropdown').select2('data').map(country => country.id),
-    userareas: $('#userAreaDropdown').select2('data').map(feature => feature.id),
+    userareas: has_areas ? $('#userAreaDropdown').select2('data').map(feature => feature.id) : null,
   };
 
   return options;

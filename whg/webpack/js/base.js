@@ -59,14 +59,14 @@ var jquery_fallbacks = [
 
 var jquery_dependent_fallbacks = [
 	{
-		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.bundle.min.js',
-		localUrl: 'bootstrap.bundle.min.js',
-		position: 'body'
-	},
-	{
 		cdnUrl: 'https://code.jquery.com/ui/1.13.2/jquery-ui.min.js',
 		localUrl: 'jquery-ui.min.js',
 		position: 'head'
+	},
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.bundle.min.js',
+		localUrl: 'bootstrap.bundle.min.js',
+		position: 'body'
 	},
 	{
 		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js', // Includes both typeahead and bloodhound
@@ -181,6 +181,10 @@ Promise.all([
 		})
 	])
 	.then(function() {
+		
+	    $("[data-toggle='tooltip']").each(function(index, element) { // Initialize Bootstrap tooltips
+		    new bootstrap.Tooltip(element);
+		});
 		
 		document.querySelector('body').style.opacity = 1;
 		

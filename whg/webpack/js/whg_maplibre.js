@@ -26,8 +26,6 @@ maplibregl.Map.prototype.eraseSource = function(sourceId) {
 }
 
 maplibregl.Map.prototype.tileBounds = null;
-
-// hotfix on PR #138; added 23 Feb 2024 per SG
 maplibregl.Map.prototype.newSource = function(ds, fc = null) {
     var map = this;
     if (!!ds.tilesets && ds.tilesets.length > 0) {
@@ -139,7 +137,7 @@ async function fetchJSON(jsonURL) {
         console.error('Error fetching JSON:', error);
         throw error;
     }
-}	 
+}
 
 class acmeStyleControl {
 
@@ -168,12 +166,12 @@ class acmeStyleControl {
             ...this.basemaps.map(item => fetchJSON(getTilejsonURL(item))),
             ...this.styles.map(item => fetchJSON(getStyleURL(item))),
         ];
-        
+
         Promise.all(promises)
             .then(results => {
                 [...this.basemaps, ...this.styles].forEach((item, index) => {
                     this.listDictionary[item] = results[index];
-                });				
+                });
                 this.createMapStyleList();
                 this.buildSwitcher(currentStyle);
             })
@@ -183,14 +181,14 @@ class acmeStyleControl {
 
         return this._listContainer.id == 'styleListContainer' ? document.createElement('div') : this._listContainer;
 	}
-	
+
 	buildSwitcher(styleJSON) {
 		const switches = document.createElement('span');
 		switches.id = 'layerSwitches';
         //switches.className = 'maplibre-styles-list';
 
     	var switchGroups = {};
-        
+
         for (const layer of styleJSON.layers) {
 			if (layer.metadata && layer.metadata['whg:switchgroup']) {
 	            const switchGroup = layer.metadata['whg:switchgroup'];
@@ -200,23 +198,23 @@ class acmeStyleControl {
 	            switchGroups[switchGroup].push(layer);
 	        }
 		}
-		
+
 		const sortedGroups = Object.keys(switchGroups).sort();
 
     	for (const group of sortedGroups) {
 			const layers = switchGroups[group];
             layers.sort((a, b) => a.metadata['whg:switchlabel'].localeCompare(b.metadata['whg:switchlabel']));
-	
+
 	        const groupItem = document.createElement('li');
 	        groupItem.textContent = group;
 	        groupItem.className = 'group-item strong-red';
 	        const itemList = document.createElement('ul');
 	        itemList.className = 'variant-list';
-	
+
 	        for (const layer of layers) {
 	            const itemElement = document.createElement('li');
 	            itemElement.className = 'variant-item';
-	
+
 	            const checkbox = document.createElement('input');
 	            checkbox.type = 'checkbox';
 	            checkbox.dataset.layerId = layer.id;
@@ -225,7 +223,7 @@ class acmeStyleControl {
 	                this._onSwitcherChange(event);
 				});
 	            itemElement.appendChild(checkbox);
-	
+
 	            const labelElement = document.createElement('label');
 	            labelElement.textContent = layer.metadata['whg:switchlabel'] || layer.id;
 	            labelElement.className = 'layer-label';
@@ -235,10 +233,10 @@ class acmeStyleControl {
 	                this._onSwitcherChange(event);
 	            });
 	            itemElement.appendChild(labelElement);
-	
+
 	            itemList.appendChild(itemElement);
 	        }
-	
+
 	        groupItem.appendChild(itemList);
 	        switches.appendChild(groupItem);
 	    }
@@ -250,9 +248,9 @@ class acmeStyleControl {
 	    } else {
 	        mapStyleList.appendChild(switches);
 	    }
-	    
+
 	}
-	
+
 	_onSwitcherChange(event) {
 	    const layerId = event.target.dataset.layerId;
 	    const layer = this._map.getLayer(layerId);
@@ -261,9 +259,9 @@ class acmeStyleControl {
 	        this._map.setLayoutProperty(layerId, 'visibility', visibility === 'visible' ? 'none' : 'visible');
 	    }
 	}
-		
+
     createMapStyleList() {
-		
+
         var styleList = document.createElement('ul');
         styleList.id = 'mapStyleList';
         styleList.className = 'maplibre-styles-list';
@@ -282,15 +280,15 @@ class acmeStyleControl {
 
             for (const [itemIndex, item] of group.items.entries()) {
                 const itemElement = document.createElement('li');
-                itemElement.className = 'variant-item';	                
+                itemElement.className = 'variant-item';
                 itemList.appendChild(itemElement);
-                
+
                 const radioInput = document.createElement('input');
                 radioInput.type = 'radio';
                 radioInput.name = group.type;
                 radioInput.dataset.type = group.type;
                 radioInput.dataset.value = item;
-                radioInput.checked = 
+                radioInput.checked =
                 	(group.type === 'style' && item === this.styles[0]) ||
                 	(group.type === 'basemap' && this.listDictionary[this.styles[0]].sources.basemap.url.includes(item));
                 radioInput.addEventListener('change', (event) => this._onVariantClick(event));
@@ -304,19 +302,19 @@ class acmeStyleControl {
                 labelElement.addEventListener('click', (event) => {
                     radioInput.checked = true;
                     this._onVariantClick(event);
-                });	
+                });
                 itemElement.appendChild(labelElement);
-                
+
             }
 
             groupItem.appendChild(itemList);
             styleList.appendChild(groupItem);
         }
-        
+
 	    const horizontalLine = document.createElement('hr');
         horizontalLine.className = 'style-list-divider';
 	    styleList.appendChild(horizontalLine);
-	
+
 	    const hillshadeGroupItem = document.createElement('li');
 	    hillshadeGroupItem.className = 'group-item';
 	    const hillshadeCheckboxItem = document.createElement('li');
@@ -324,15 +322,15 @@ class acmeStyleControl {
 	    hillshadeCheckbox.type = 'checkbox';
 	    hillshadeCheckbox.id = 'hillshadeCheckbox';
         hillshadeCheckbox.className = 'hillshade-checkbox';
-        
+
         const sources = this.listDictionary[this.styles[0]].sources || {};
 		const hasTerrariumSources = Object.keys(sources).some(source => source.startsWith('terrarium'));
 	    if (hasTerrariumSources) {
 	        hillshadeCheckbox.checked = true;
 	    } else {
 	        hillshadeCheckbox.disabled = true;
-	    }	        
-        
+	    }
+
 	    hillshadeCheckbox.addEventListener('change', (event) => this._toggleHillshadeLayers(event));
 	    const hillshadeLabel = document.createElement('label');
 	    hillshadeLabel.textContent = 'Hillshade';
@@ -341,10 +339,10 @@ class acmeStyleControl {
 	    hillshadeCheckboxItem.appendChild(hillshadeCheckbox);
 	    hillshadeCheckboxItem.appendChild(hillshadeLabel);
 	    hillshadeGroupItem.appendChild(hillshadeCheckboxItem);
-	    styleList.appendChild(hillshadeGroupItem);            
+	    styleList.appendChild(hillshadeGroupItem);
 
         this._listContainer.appendChild(styleList);
-    }	
+    }
 
 	onRemove() {
 		this._container.parentNode.removeChild(this._container);
@@ -357,7 +355,7 @@ class acmeStyleControl {
             styleList.classList.toggle('show');
         }
     }
-    
+
 	_toggleHillshadeLayers(event) {
 	    const isChecked = event.target.checked;
 	    const layers = this._map.getStyle().layers;
@@ -366,12 +364,12 @@ class acmeStyleControl {
 	            this._map.setLayoutProperty(layer.id, 'visibility', isChecked ? 'visible' : 'none');
 	        }
 	    }
-	}    
+	}
 
 	_onVariantClick(event) {
-	    
+
 	    if (event.target.dataset.type === 'basemap') {
-	    
+
 			const resultJSON = this.listDictionary[event.target.dataset.value];
 	        this._map.setStyle(this._map.getStyle(), {
 	            transformStyle: (previousStyle, nextStyle) => ({
@@ -381,18 +379,18 @@ class acmeStyleControl {
 	                    'basemap': resultJSON,
 	                }
 	            })
-	        }); 
-			    
+	        });
+
 		}
 		else {
-			
+
 	        const resultJSON = this.listDictionary[event.target.dataset.value];
 	        this.buildSwitcher(resultJSON);
-		
+
 			this._map.setStyle(resultJSON, {
 	            diff: false, // Force rebuild because native diff logic cannot handle this transformation
 	            transformStyle: (previousStyle, nextStyle) => {
-					
+
 					const modifiedSources = {
 	                    ...nextStyle.sources,
 	                    ...Object.keys(previousStyle.sources).reduce((acc, key) => {
@@ -402,42 +400,42 @@ class acmeStyleControl {
 	                        return acc;
 	                    }, {}),
 	                };
-	
+
 	                var modifiedLayers = [
 	                    ...nextStyle.layers,
 	                    ...previousStyle.layers.filter((layer) => !this._map.baseStyle.layers.includes(layer.id)),
 	                ];
-	                
+
 	                const hillshadeCheckbox = document.getElementById('hillshadeCheckbox');
 	                const isChecked = hillshadeCheckbox ? hillshadeCheckbox.checked : false;
 	                for (var layer of modifiedLayers) {
 	                    if (layer.type === 'hillshade') {
 							layer.layout.visibility = isChecked ? 'visible' : 'none';
 	                    }
-	                }	                
-	
+	                }
+
 	                this._map.baseStyle.sources = Object.keys(resultJSON.sources);
 	                this._map.baseStyle.layers = resultJSON.layers.map((layer) => layer.id);
-	                
-					// Set map container background colour to the value in the style metadata 
+
+					// Set map container background colour to the value in the style metadata
 			        const backgroundColor = resultJSON.metadata['whg:backgroundcolour'];
 			        if (backgroundColor) {
 			            this._map.getContainer().style.backgroundColor = backgroundColor;
-			        }			                
-	                
+			        }
+
 	                const styleName = resultJSON.sources.basemap.url.split('/').pop().replace('.json', '');
 				    const basemapInput = document.querySelector(`input[name="basemap"][value="${styleName}"]`);
 			        if (basemapInput) {
 			            basemapInput.checked = true;
 			        }
-		
+
 					return {
 	                    ...nextStyle,
 	                    sources: modifiedSources,
 	                    layers: modifiedLayers,
 	                };
 	            },
-	        });			
+	        });
 
 		}
 	}
@@ -457,12 +455,12 @@ class CustomTerrainControl {
         button.type = 'button';
         button.className = 'maplibregl-ctrl-terrain';
         button.title = 'Enable terrain';
-        
+
         const iconSpan = document.createElement('span');
         iconSpan.className = 'maplibregl-ctrl-icon';
         iconSpan.setAttribute('aria-hidden', 'true');
-        button.appendChild(iconSpan);        
-        
+        button.appendChild(iconSpan);
+
         button.addEventListener('click', () => this.toggleTerrain(button));
         this._container.appendChild(button);
     }
@@ -478,11 +476,11 @@ class CustomTerrainControl {
     }
 
     toggleTerrain(button) {
-        
+
         const enablingTerrain = !button.classList.contains('maplibregl-ctrl-terrain-enabled');
         button.classList.toggle('maplibregl-ctrl-terrain-enabled', enablingTerrain);
         button.title = enablingTerrain ? 'Disable terrain' : 'Enable terrain';
-        
+
         const hillshadeCheckbox = document.getElementById('hillshadeCheckbox');
         if (hillshadeCheckbox) {
 	        if (enablingTerrain) {
@@ -496,12 +494,12 @@ class CustomTerrainControl {
 			else {
 				hillshadeCheckbox.disabled = false;
 				if (!this._hillshadeState) hillshadeCheckbox.click();
-			}			
+			}
 		}
-        
+
         if (enablingTerrain) {
 			const mapStyle = this._map.getStyle();
-	        
+
 	        this._terrainSources = [];
             for (const source in mapStyle.sources) {
                 const demSource = mapStyle.sources[source];
@@ -509,7 +507,7 @@ class CustomTerrainControl {
                     this._terrainSources.push(demSource);
                 }
             }
-            
+
             this._zoomListener = () => this.handleZoomChange();
             this._map.on('zoom', this._zoomListener);
             this.handleZoomChange();
@@ -521,18 +519,18 @@ class CustomTerrainControl {
             this._terrainSources = [];
 			if (this._map.getSource(this._tempTerrain)) {
 			    this._map.removeSource(this._tempTerrain);
-			}      
+			}
             this._map
             	.setTerrain(null)
 				.setPitch(0)
 				.resetNorth();
 		}
-        
+
     }
-    
+
     handleZoomChange() {
         const currentZoom = this._map.getZoom();
-        
+
         // TODO: Disable terrain for zoom below 8?
 
         // Find the first terrain source for which the current map zoom is in range
@@ -544,7 +542,7 @@ class CustomTerrainControl {
             this._map.setTerrain(null);
 			if (this._map.getSource(this._tempTerrain)) {
 			    this._map.removeSource(this._tempTerrain);
-			}            
+			}
             this._map.addSource(this._tempTerrain, { ...selectedTerrainSource });
             this._currentTerrainSource = selectedTerrainSource;
             this._map.setTerrain({
@@ -672,7 +670,7 @@ class downloadMapControl {
 	constructor(mapInstance) {
 		this._map = mapInstance;
 	}
-	
+
     onAdd() {
         this._container = document.createElement('div');
         this._container.className = 'maplibregl-ctrl maplibregl-ctrl-group maplibregl-ctrl-download';
@@ -707,7 +705,7 @@ class CustomAttributionControl extends maplibregl.AttributionControl {
         const container = super.onAdd(map);
         // Automatically close the AttributionControl if autoClose is enabled
         if (this.autoClose) {
-            const attributionButton = container.querySelector('.maplibregl-ctrl-attrib-button');            
+            const attributionButton = container.querySelector('.maplibregl-ctrl-attrib-button');
             if (attributionButton) {
 				const delay = 500; // Delay required to ensure that listener is registered
                 setTimeout(() => {
@@ -742,27 +740,27 @@ maplibregl.Map.prototype.fitViewport = function (bbox) {
 	mapControls.style.height = '100%';
 	const mapControlsRect = mapControls.getBoundingClientRect();
 	const mapControlsRectMargin = parseFloat(getComputedStyle(mapControls).marginTop);
-	
+
 	const padding = 10; // Apply equal padding on all sides within viewport
-	
+
 	const bounds = [[bbox[0], bbox[1]], [bbox[2], bbox[3]]];
 	const sw = this.project(bounds[0]);
 	const ne = this.project(bounds[1]);
 	let zoom = Math.log2( // Returns Infinity for bbox(Point)
 		Math.min(
-			(mapControlsRect.width - 2 * padding) / (ne.x - sw.x), 
+			(mapControlsRect.width - 2 * padding) / (ne.x - sw.x),
 			(mapControlsRect.height- 2 * padding) / (sw.y - ne.y))
 		) + this.getZoom();
 	zoom = isNaN(zoom) ? this.getMaxZoom() : Math.min(zoom, this.getMaxZoom());
 	zoom = Math.max(zoom, this.getMinZoom());
-	
+
 	const viewportPadding = {
 		top: Math.round(mapControlsRect.top - mapContainerRect.top - mapControlsRectMargin),
 		bottom: Math.round(mapContainerRect.bottom - mapControlsRect.bottom - mapControlsRectMargin),
 		left: Math.round(mapControlsRect.left - mapContainerRect.left - mapControlsRectMargin),
 		right: Math.round(mapContainerRect.right - mapControlsRect.right - mapControlsRectMargin),
 	};
-	
+
 	this.flyTo({
 		center: [
 			(bbox[0] + bbox[2]) / 2,
@@ -805,7 +803,7 @@ class CustomDrawingControl {
 const originalMapConstructor = maplibregl.Map;
 maplibregl.Map.prototype.baseStyle = {}; // Updated by style control, and used for identifying layers that should be ignored when the map is clicked
 maplibregl.Map = function (options = {}) {
-		
+
     const defaultOptions = {
         container: 'map',
         style: ['whg-basic-light'/*, 'whg-basic-dark'*/],
@@ -826,47 +824,47 @@ maplibregl.Map = function (options = {}) {
 	    temporalControl: false,
 	    terrainControl: false, // If true, will force display of full navigation controls too
     };
-    
-    // replace defaultOptions with any passed options 
+
+    // replace defaultOptions with any passed options
     var chosenOptions = { ...defaultOptions, ...options };
-    
+
     if (chosenOptions.attributionControl) {
 		chosenOptions.customAttributionControl = {...chosenOptions.attributionControl, compact: true};
 		chosenOptions.attributionControl = false;
 	}
-    
+
     if (chosenOptions.terrainControl) {
 		chosenOptions.navigationControl = {position: 'top-right', showZoom: true, showCompass: true, visualizePitch: true};
 	}
-	
+
 	chosenOptions.basemaps = chosenOptions.basemap === "" ? [] : (Array.isArray(chosenOptions.basemap) ? chosenOptions.basemap : [chosenOptions.basemap]);
-	
+
 	chosenOptions.styles = [];
 	if (!(typeof chosenOptions.style === 'object' && chosenOptions.style !== null && !Array.isArray(chosenOptions.style))) { // style is not JSON object
 		chosenOptions.styles = Array.isArray(chosenOptions.style) ? chosenOptions.style : [chosenOptions.style];
 		chosenOptions.style = getStyleURL(chosenOptions.styles[0]);
 	}
-    
+
     const mapInstance = new originalMapConstructor(chosenOptions);
-    
+
     mapInstance.initOptions = chosenOptions;
-    
+
     mapInstance.on('load', () => { // Add chosen controls
-    
+
     	const currentStyle = mapInstance.getStyle();
 		mapInstance.baseStyle.sources = Object.keys(currentStyle.sources);
 		mapInstance.baseStyle.layers = currentStyle.layers.map((layer) => layer.id);
-		
-		// Set map container background colour to the value in the style metadata 
+
+		// Set map container background colour to the value in the style metadata
         const backgroundColor = currentStyle.metadata['whg:backgroundcolour'];
         if (backgroundColor) {
             mapInstance.getContainer().style.backgroundColor = backgroundColor;
-        }		
-    
+        }
+
 		if (chosenOptions.fullscreenControl) mapInstance.addControl(new maplibregl.FullscreenControl(), 'top-left');
 		if (chosenOptions.downloadMapControl) mapInstance.addControl(new downloadMapControl(mapInstance), 'top-left');
 		if (chosenOptions.drawingControl) mapInstance.addControl(new CustomDrawingControl(mapInstance, chosenOptions.drawingControl), 'top-left');
-		
+
 		if (chosenOptions.basemaps.length + chosenOptions.styles.length > 1) {
 			mapInstance.styleControl = new acmeStyleControl( mapInstance );
 			mapInstance.addControl(mapInstance.styleControl, 'top-right');

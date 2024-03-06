@@ -30,9 +30,11 @@
 		{% else %}
 			<div class="centered w-100">
         <!-- default home page -->
-        <span class="position-absolute top-0 end-0"><b>TAKE 2</b>
-          <a href="{% url 'home-version' version='default'%}">take 1</a>
-        </span>
+          <span class="position-absolute top-0 end-0">
+            <a href="{% url 'home' %}">v1</a>
+            <b>v2</b>
+            <a href="{% url 'home-version' version='3' %}">v3</a>
+          </span>
 			  <span class="title mb-2">
 				  <img src="{% static 'images/whg_logo.svg'%}" class="d-inline-block align-bottom me-2"
                height=80 width=80 alt=""/>
