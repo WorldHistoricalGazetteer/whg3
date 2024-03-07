@@ -32,9 +32,8 @@
         <div class="centered w-100">
           <!-- alternate home page -->
           <span class="position-absolute top-0 end-0">
-            <a href="{% url 'home' %}">v1</a>
-            <a href="{% url 'home-version' version='2' %}">v2</a>
-            <b>v3</b>
+            <a href="{% url 'home' %}">alt 1</a>
+            <b>alt 3</b>
           </span>
           <span class="title mb-2">
 				  <img src="{% static 'images/whg_logo.svg' %}" class="d-inline-block align-bottom me-2"
@@ -180,13 +179,23 @@
       <div class="col-sm-3 p-1 home-button">
         <div class="h-100 border p-1">
           <div class="home-icon-row">
-            <img src="{% static 'images/008-collect.png' %}" class="" height=42 width=42 alt=""/></div>
-          <h5><span class="home-button-hilite">Build</span>, annotate, and publish custom collections</h5>
+            <img src="{% static 'images/008-collect.png'%}" class="" height=42 width=42 alt=""/></div>
+          <h5><span class="home-button-hilite">Gazetteer Builder</span><br/>create, annotate, and publish custom collections</h5>
         </div>
         <a href="{% url 'builder' %}">
           <span class="link-spanner"></span>
         </a>
       </div>
+{#      <div class="col-sm-3 p-1 home-button">#}
+{#        <div class="h-100 border p-1">#}
+{#          <div class="home-icon-row">#}
+{#            <img src="{% static 'images/008-collect.png' %}" class="" height=42 width=42 alt=""/></div>#}
+{#          <h5><span class="home-button-hilite">Build</span>, annotate, and publish custom collections</h5>#}
+{#        </div>#}
+{#        <a href="{% url 'builder' %}">#}
+{#          <span class="link-spanner"></span>#}
+{#        </a>#}
+{#      </div>#}
       <div class="col-sm-3 p-1 home-button">
         <div class="h-100 border p-1">
           <div class="home-icon-row">
