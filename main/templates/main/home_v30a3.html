@@ -47,14 +47,16 @@
     <div id="content_top" class="row gx-2 gy-2 mx-0 h-75">
       <div class="col-sm-3" id="intro">
         <div class="p-2 border h-100">
-          <div class="bg-lighterblue mb-3">Welcome to this "alpha" release of Version 3 of the World Historical
-            Gazetteer! Feedback on this work-in-progress is much appreciated.
-          </div>
-          <p>WHG is a collaborative open platform for gathering information about historical place, providing a
+          <div class="mb-3">
+          <p>The WHG is a collaborative open platform for gathering information about historical place, providing a
             collection of content and services that permit world historians, their students, and the general public to
             do spatial and temporal reasoning and visualization in a data rich environment at global and trans-regional
             scales.</p>
-          </p>
+            <p class="bg-light"><b>What is a gazetteer?</b></p>
+            {% if not user.is_authenticated %}
+              <p><a href="{% url 'accounts:register' %}">Register as a WHG user</a></p>
+            {% endif %}
+          </div>
         </div>
       </div>
       <div class="col-sm-6">
@@ -99,16 +101,17 @@
           </div>
 
           <div id="search_map" class="input-group input-group-sm mb-3 shadow-sm">
-            <input type="search" class="form-control" placeholder="Enter place name"
+            <input type="search" class="form-control" placeholder="Enter a place name"
                    aria-label="Search places" aria-describedby="addon-wrapping">
             <span class="input-group-text" id="addon-wrapping">
 					  <a href="#" id="a_search"><i class="fas fa-search"></i></a>
 				  </span>
           </div>
-
+          {% comment %}
           <div class="advanced-search-link px-1 py-0">
             <a id="a_advanced" href="#">advanced search </a>
           </div>
+          {% endcomment %}
         </div>
 
         <div class="p-1 border bg-white smallish" style="height: 24%;">
@@ -127,27 +130,30 @@
 
       </div>
       <div class="col-sm-3">
-       	<div id="carousel-outer-container" class="border mb-1 h-75">
+{#       	<div id="carousel-outer-container" class="border mb-1 h-75">#}
+       	<div id="carousel-outer-container" class="border mb-1 h-100">
         	<!-- Populated dynamically in JavaScript -->
       	</div>
-		<div class="row p-.5" style="height: 24%;">
-		    <div class="col-md-6 p-0.25">
-		        <div class="border image-div rounded" style="margin-right: -0.5em; background-image: url('{% static 'images/regions.png' %}')">
-		        <span>Regions</span>	        
-		        <a href="{% url 'main-regions' %}">
-		          <span class="link-spanner"></span>
-		        </a>
-		        </div>	
-		    </div>
-		    <div class="col-md-6 p-0.25">
-		        <div class="border image-div rounded" style="margin-left: -0.5em; background-image: url('{% static 'images/routes-journeys.png' %}')">
-		        <span>Journeys & Routes</span>
-		        <a href="{% url 'journeys-routes' %}">
-		          <span class="link-spanner"></span>
-		        </a>
-		        </div>
-		    </div>
-		</div>      	
+        {% comment %}
+        <div class="row p-.5" style="height: 24%;">
+            <div class="col-md-6 p-0.25">
+                <div class="border image-div rounded" style="margin-right: -0.5em; background-image: url('{% static 'images/regions.png' %}')">
+                <span>Regions</span>
+                <a href="{% url 'main-regions' %}">
+                  <span class="link-spanner"></span>
+                </a>
+                </div>
+            </div>
+            <div class="col-md-6 p-0.25">
+                <div class="border image-div rounded" style="margin-left: -0.5em; background-image: url('{% static 'images/routes-journeys.png' %}')">
+                <span>Journeys & Routes</span>
+                <a href="{% url 'journeys-routes' %}">
+                  <span class="link-spanner"></span>
+                </a>
+                </div>
+            </div>
+        </div>
+		    {% endcomment %}
       </div>
     </div> <!-- content_top -->
 
@@ -230,7 +236,8 @@
   <script type="text/javascript">
     var eswhg = "{{ es_whg|escapejs }}";
     let galleries = [
-        ['Contributed Data', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"]
+        {#['Contributed Data', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"]#}
+        ['Data Publications', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"]
     ];
     let carouselMetadata = {{ carousel_metadata|safe }};
     let startCarousels = true; // Determines whether galleries are to be auto-cycled

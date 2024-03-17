@@ -11,7 +11,7 @@ export function initialiseCarousels(galleries, carouselMetadata, startCarousels,
 	    const [title, url] = gallery;
 	    const type = v3 ? 'datasets' : title.toLowerCase();
 	    const carouselContainer = $(
-	        `<div class="carousel-container ${v3 ? 'border mb-1 h-75' : 'p-1'} home-carousel"></div>`);
+	        `<div class="carousel-container ${v3 ? 'border mb-1 h-100' : 'p-1'} home-carousel"></div>`);
 	    const border = $('<div class="border p-1 h-100 d-flex flex-column"></div>'); // Added flex-column class
 	    const heading = $(`<h6 class="p-1 strong">${title}</h6>`);
 	    if (type == 'datasets') {
