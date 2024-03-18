@@ -430,10 +430,12 @@ def normalize(h, auth, language=None):
     # 'sitelinks', 'location', 'id', 'variants', 'type', 'descriptions', 'dataset', 'repr_point'])
     # hit['_source'] keys() for dataset='geonames': ['id', 'fclasses', 'location', 'repr_point', 'variants', 'dataset']
     try:
-      print('h in normalize',h)
+      print('h in normalize', h)
       # which index is the target?
       is_wdgn = 'dataset' in h.keys()
+      print('is_wdgn?', is_wdgn)
       dataset = h['dataset'] if is_wdgn else 'wd'
+      print('dataset', dataset)
       variants=h['variants']
       title = make_title(h, language)
 
@@ -446,7 +448,7 @@ def normalize(h, auth, language=None):
       else:
         v_array=[]
         for v in variants:
-          if h['dataset'] == 'wikidata':
+          if not is_wdgn:
             for n in v['names']:
               if n != title:
                 v_array.append(n+'@'+v['lang'])

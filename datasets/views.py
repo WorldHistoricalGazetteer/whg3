@@ -456,7 +456,7 @@ def review(request, pk, tid, passnum):
     # raw_hits = Hit.objects.filter(place_id=placeid, task_id=tid).order_by('-score')
     raw_hits = Hit.objects.filter(place_id=placeid, task_id=tid).order_by("-score")
 
-  # print('raw_hits', [h.json['titles'] for h in raw_hits])
+  print('raw_hits in review()', [h.__dict__ for h in raw_hits])
   # ??why? get pass contents for all of a place's hits
   passes = (
     list(
