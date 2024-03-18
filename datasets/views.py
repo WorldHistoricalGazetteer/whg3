@@ -870,7 +870,6 @@ def write_wd_pass0(request, tid):
   each align_{auth} task runs matching es_lookup_{auth}() and writes Hit instances
 """
 
-
 def ds_recon(request, pk):
   ds = get_object_or_404(Dataset, id=pk)
   # TODO: handle multipolygons from "#area_load" and "#area_draw"
@@ -909,7 +908,7 @@ def ds_recon(request, pk):
 
     print('ds_recon() scope', scope)
     print('ds_recon() auth', auth)
-    # which task? wdlocal, idx, builder
+    # which task? wdlocal, idx, builder. wdgn
     func = eval('align_' + auth)
 
     # TODO: let this vary per task?
