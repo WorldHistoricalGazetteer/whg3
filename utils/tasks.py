@@ -454,7 +454,7 @@ def make_download(self, *args, **kwargs):
       result={"type":"FeatureCollection",
               "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
               "filename": "/"+fn,
-              "decription": ds.description,
+              "description": ds.description,
               "features": features}
 
       # write the data as json to fn
