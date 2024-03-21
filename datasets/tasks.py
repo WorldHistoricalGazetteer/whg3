@@ -442,7 +442,7 @@ def normalize(h, auth, language=None):
 
       rec.links = h['authids']
 
-      # dont' know what happened here; h has key 'authids'
+      # don't know what happened here; h has key 'authids'
 
       # turn these identifier claims into links
       # qlinks = {'P1566':'gn', 'P1584':'pl', 'P244':'loc', 'P1667':'tgn', 'P214':'viaf', 'P268':'bnf', 'P1667':'tgn', 'P2503':'gov', 'P1871':'cerl', 'P227':'gnd'}

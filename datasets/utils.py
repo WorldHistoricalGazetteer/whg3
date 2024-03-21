@@ -73,7 +73,7 @@ def validator_delim(df):
     'end': "(-?\\d{1,4}(-\\d{2})?(-\\d{2})?)(\/(-?\\d{1,4}(-\\d{2})?(-\\d{2})?))?"
   }
 
-  # TODO: not all fields have contraints !?
+  # TODO: not all fields have constraints !?
   # for field, pattern in pattern_constraints.items():
   #   if field in df.columns and not df[field].str.contains(pattern).all():
   #     return f"Field {field} contains values that do not match the required pattern"

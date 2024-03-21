@@ -207,7 +207,7 @@
                             {% if object.citation %}{{ object.citation }}{% else %}{{ object.title }}. [Data file, last modified {{ object.last_modified_text }}]. Retrieved from http://whgazetteer.org/datasets/{{ object.id }}/places/, {% now 'd M Y' %}{% endif %}"
                              rel="tooltip" title="copy to clipboard">
                             <i class="fas fa-clipboard linky"></i></a><br/>
-                          <span class="ml-2 small" style="disply:block">
+                          <span class="ml-2 small" style="display:block">
                             <i>est. download time: {{ object.dl_est }}</i></span>
                         </td>
                         <td>{{ object.numrows }}</td>
@@ -310,7 +310,7 @@
                         <td>{{ object.source }}</td>
                       </tr>
                       <tr class="align-top">
-                        <td>Contibutor(s)</td>
+                        <td>Contributor(s)</td>
                         <td>{{ object.contributors }}</td>
                       </tr>
                       <tr class="align-top">

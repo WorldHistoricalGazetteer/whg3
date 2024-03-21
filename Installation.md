@@ -14,7 +14,7 @@ You will also need (from WHG administrators) copies of the following files, whic
 - a set of media directories
 
 ## Procedure
-1. Sign in to your GitHub account, navigate to the [WHG3 respository](https://github.com/docuracy/whg3-SG) and [Fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo) your own copy of the software.
+1. Sign in to your GitHub account, navigate to the [WHG3 repository](https://github.com/docuracy/whg3-SG) and [Fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo) your own copy of the software.
 2. Open GitHub Desktop and clone your forked repository to your local machine.
 3. Create a new directory `.env` in the root directory of your local clone, and copy the `.dev-whg3` file into that directory.
 4. Locate the `whg` directory in the root directory of your local clone, and copy the `local_settings.py` file into that directory.
