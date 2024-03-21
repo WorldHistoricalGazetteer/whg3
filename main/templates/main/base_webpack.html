@@ -57,7 +57,8 @@
   <header>
 		<nav class="navbar navbar-expand-lg bg-white">
 		  <div class="container">
-		    <a href="{% url 'home' %}">
+		    {% comment %}<a href="{% url 'home' %}">{% endcomment %}
+		    <a href="/home/3">
 		        <img src="{% static 'images/whg_logo.svg'%}" alt="WHG" width="50" height="38">
 		    </a>
 		    <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -101,7 +102,9 @@
 		            About
 		            </a>
 		            <ul class="dropdown-menu">
-	                <li><a class="dropdown-item" href="{% url 'about' %}">Introduction</a></li>
+	                <li><a class="dropdown-item" href="{% url 'about' %}">About the WHG</a></li>
+	                <li><a class="dropdown-item" href="{% url 'people' %}">People</a></li>
+                  <li><a class="dropdown-item" href="{% url 'partners' %}">Partners</a></li>
 	                <li><a class="dropdown-item" href="{% url 'system' %}">System details</a></li>
 	                <li><a class="dropdown-item" href="{% url 'licensing' %}">Licensing, Terms</a></li>
 	                <li><a class="dropdown-item" href="{% url 'credits' %}">Credits & Contacts</a></li>

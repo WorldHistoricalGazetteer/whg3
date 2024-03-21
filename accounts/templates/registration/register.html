@@ -13,6 +13,8 @@
     {% if error %} <p style="color:red">{{ error }}</p> {% endif %}
     <form method="post" action="{% url 'accounts:register' %}">
     <h2 class="">User Registration</h2>
+      <p>As a registered user in the WHG platform, you can upload and enhance your place data, and contribute to the development of the platform by creating, linking, and publishing place datasets and collections. Please fill in the form below to register.</p>
+      <p class="ps-2">Fields marked with <i class="fa fa-asterisk "></i> are required.</p>
       {% csrf_token %}
 {#      <input type="hidden" name="first_name" value="n/a"/> <input type="hidden" name="last_name" value="n/a"/>#}
       <table>

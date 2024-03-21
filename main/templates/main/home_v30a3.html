@@ -30,11 +30,13 @@
         </div>
       {% else %}
         <div class="centered w-100">
+          {% comment %}
           <!-- alternate home page -->
           <span class="position-absolute top-0 end-0">
             <a href="{% url 'home' %}">alt 1</a>
             <b>alt 3</b>
           </span>
+          {% endcomment %}
           <span class="title mb-2">
 				  <img src="{% static 'images/whg_logo.svg' %}" class="d-inline-block align-bottom me-2"
                height=80 width=80 alt=""/>
@@ -48,14 +50,14 @@
       <div class="col-sm-3" id="intro">
         <div class="p-2 border h-100">
           <div class="mb-3">
-          <p>The WHG is a collaborative open platform for gathering information about historical place, providing a
+          <p class="mb-0">The WHG is a collaborative open platform gathering information about historical place, and providing a
             collection of content and services that permit world historians, their students, and the general public to
-            do spatial and temporal reasoning and visualization in a data rich environment at global and trans-regional
-            scales.</p>
-            <p class="bg-light"><b>What is a gazetteer?</b></p>
-            {% if not user.is_authenticated %}
-              <p><a href="{% url 'accounts:register' %}">Register as a WHG user</a></p>
-            {% endif %}
+            do spatial and temporal reasoning and visualization at global and trans-regional scales.</p>
+            <p class="bg-light mb-0 mt-1"><b>What is a gazetteer?</b></p>
+            <p>An index of place information. People have made them for a long time. They do it because place names are complicated and places are cool. <a href="#">more...</a></p>
+            {% comment %}{% if not user.is_authenticated %}{% endcomment %}
+              <p my-0><a href="{% url 'accounts:register' %}">Register to get started</a></p>
+            {% comment %}{% endif %}{% endcomment %}
           </div>
         </div>
       </div>
@@ -134,26 +136,6 @@
        	<div id="carousel-outer-container" class="border mb-1 h-100">
         	<!-- Populated dynamically in JavaScript -->
       	</div>
-        {% comment %}
-        <div class="row p-.5" style="height: 24%;">
-            <div class="col-md-6 p-0.25">
-                <div class="border image-div rounded" style="margin-right: -0.5em; background-image: url('{% static 'images/regions.png' %}')">
-                <span>Regions</span>
-                <a href="{% url 'main-regions' %}">
-                  <span class="link-spanner"></span>
-                </a>
-                </div>
-            </div>
-            <div class="col-md-6 p-0.25">
-                <div class="border image-div rounded" style="margin-left: -0.5em; background-image: url('{% static 'images/routes-journeys.png' %}')">
-                <span>Journeys & Routes</span>
-                <a href="{% url 'journeys-routes' %}">
-                  <span class="link-spanner"></span>
-                </a>
-                </div>
-            </div>
-        </div>
-		    {% endcomment %}
       </div>
     </div> <!-- content_top -->
 
@@ -163,7 +145,7 @@
           <div class="home-icon-row">
             <img src="{% static 'images/001-binoculars.png' %}" class="" height=40 width=40 alt=""/>
           </div>
-          <h5><span class="home-button-hilite">Search</span> <span class="red-head">
+          <h5><span class="home-button-hilite">Search and browse</span> <span class="red-head">
 					{{ count }}</span> published place attestations</h5>
         </div>
         <a href="{% url 'search-page' %}">
@@ -186,7 +168,7 @@
         <div class="h-100 border p-1">
           <div class="home-icon-row">
             <img src="{% static 'images/008-collect.png'%}" class="" height=42 width=42 alt=""/></div>
-          <h5><span class="home-button-hilite">Gazetteer Builder</span><br/>create, annotate, and publish custom collections</h5>
+          <h5><span class="home-button-hilite">Gazetteer Workbench</span><br/>assemble and publish custom collections</h5>
         </div>
         <a href="{% url 'builder' %}">
           <span class="link-spanner"></span>
@@ -207,7 +189,7 @@
           <div class="home-icon-row">
             <img src="{% static 'images/011-teaching.png' %}" class="" height=42 width=42 alt=""/>
           </div>
-          <h5><span class="home-button-hilite">Use WHG data</span> in teaching</h5>
+          <h5><span class="home-button-hilite">Teaching</span> with WHG data</h5>
         </div>
         <a href="{% url 'teaching' %}">
           <span class="link-spanner"></span>

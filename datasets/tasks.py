@@ -567,8 +567,8 @@ from align_wdlocal()
 """
 def es_lookup_wdlocal(qobj, *args, **kwargs):
   #bounds = {'type': ['userarea'], 'id': ['0']}
-  # idx = 'wdgn'
-  idx = 'wd'
+  idx = 'wdgn'
+  # idx = 'wd'
   bounds = kwargs['bounds']
   print('kwargs in es_lookup_wdlocal()', kwargs)
   hit_count = 0
