@@ -24,6 +24,12 @@
       padding: 5px;
       z-index: 10;
     }
+    .portal-intro {
+      margin: 0;
+      padding: 2px;
+      background-color: #fff;
+      border: 1px solid #ccc;
+    }
   </style>
 {% endblock %}
 
@@ -36,8 +42,17 @@
   <div id="dataset_content" class="container mt-1 px-1">
     <div class="overlay left">
       <div id="info" class="m-2 p-1">
-        <button id="permalinkButton" class="btn btn-primary" data-toggle="tooltip" data-bs-title="Copy permalink to clipboard">Permalink</button>
-        <div><h5>{{ portal_headword }}</h5></div>
+        <button id="permalinkButton" class="btn btn-primary btn-sm" data-toggle="tooltip" data-bs-title="Copy permalink to clipboard">Permalink</button>
+        <div class="portal-intro">
+          <h5>{{ portal_headword }}</h5>
+          <p class="">You are looking at <b>{{ payload|length }}</b> attestations for {{ payload.0.title }}, {admin1}, [admin2}</p>
+          <p class="bg-light">This place is attested in {{ payload|length }} datasets as a {type 1} and {type 2}, with a temporal extent
+            so far of 710CE to 2000CE.
+            <!-- TODO: conditional if collections -->
+            It also appears in <b>{n}</b> collection(s), shown below. {{ payload.0.title }} lies in the
+            <a href="">{x} ecoregion</a>, within <a href="">the {x} biome</a>.
+          </p>
+        </div>
         {#  work in progress #}
         <div id="sources" class="bg-light info-box">
           <h6 class="mb-0 strong-red">Sources
@@ -88,7 +103,7 @@
 
     <div class="overlay left">
       <div id="source_detail" class="bg-light info-box">
-        <p class="mb-0 strong-red">In Collection(s)</p>
+        <h6 class="mb-0 strong-red">In Collection(s)</h6>
         <div id="collection_list"> <!-- Populated dynamically from context in JavaScript -->
         </div>
       </div>

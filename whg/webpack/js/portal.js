@@ -212,10 +212,13 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 
     	const collectionList = $('#collection_list');
     	const ul = $('<ul>').addClass('coll-list');
-    	payload.forEach(dataset => {
-		  	if (dataset.collections.length > 0) {
-				  dataset.collections.forEach(collection => {
+			// KG: this is not a dataset, it's place
+			// TODO:
+    	payload.forEach(place => {
+		  	if (place.collections.length > 0) {
+				  place.collections.forEach(collection => {
 			            let listItem = '';
+									// TODO: places are only ever in place collections
 			            if (collection.class === 'place') {
 			                listItem = `
 			                    <a href="${ collection.url }" target="_blank">
