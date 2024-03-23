@@ -78,6 +78,7 @@ urlpatterns = [
     # more static content - 2024-01
     path('build/', TemplateView.as_view(template_name="home/build_new.html"), name="build"),
     path('builder/', TemplateView.as_view(template_name="home/builder.html"), name="builder"),
+    path('workbench/', TemplateView.as_view(template_name="home/workbench.html"), name="workbench"),
     path('pipeline/', TemplateView.as_view(template_name="home/pipeline.html"), name="pipeline"),
     
     # yet more static content - 2024-02
