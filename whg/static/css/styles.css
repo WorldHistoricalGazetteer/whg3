@@ -289,12 +289,22 @@ i.fa-eye { margin-bottom: -5px; margin-left: -5px;}
   font-weight: 600;
   color: #004080;
 }
+.title_responsive {
+  font-family:  'Raleway', sans-serif;
+  font-size: 3rem;
+  font-weight: 600;
+  color: #004080;
+  line-height: 1;
+}
 .title-mobile {
   /*width: 100%;*/
   font-family:  'Raleway', sans-serif;
   font-size: 2rem;
   font-weight: 600;
   color: #004080;
+}
+.logo_responsive {
+  margin-bottom: 0.5rem;
 }
 .centered {
   position: absolute;
@@ -309,6 +319,12 @@ i.fa-eye { margin-bottom: -5px; margin-left: -5px;}
   color: #999;
   /*background-color: rgba(242,240,230,0.7);*/
   margin-top: -12px;
+}
+#tagline_responsive {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #999;
+  line-height: 1.1;
 }
 #tagline_mobile {
   width: 59%;
