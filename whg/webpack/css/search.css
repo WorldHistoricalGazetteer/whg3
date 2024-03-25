@@ -9,32 +9,19 @@
     height: calc(100vh - 80px); /* Adjust the subtraction value as needed */
 }
 
-#search_bar {
-    /*background-color: antiquewhite;*/
-    /*border-radius: 8px;*/
+#search_bar .input-group {
+	max-width: 630px;
 }
 
-#search_content {
-    display: flex;
-    flex-grow: 1;
-    overflow: hidden;
-}
-/*#search_left {*/
-/*  z-index:500;*/
-/*  margin:0; padding:5px;*/
-/*  border: 1px solid #ddd;*/
-/*  border-radius: 8px;*/
-/*  height: fit-content;*/
-/*}*/
 #search_left {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 100%;
   margin:0; padding:5px;
   border: 1px solid #ddd;
   border-radius: 8px;
 }
+
 #search_right {
     flex-grow: 1;
     overflow: hidden;
@@ -43,7 +30,7 @@
 }
 
 #search_right_top {
-    min-height: 45%;
+    min-height: 400px;
 }
 
 #input {
