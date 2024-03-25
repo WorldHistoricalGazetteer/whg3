@@ -62,9 +62,15 @@ urlpatterns = [
     path('builder_single/', TemplateView.as_view(template_name="main/builder_single.html"), name="builder-single"),
     path('builder_multiple/', TemplateView.as_view(template_name="main/builder_multiple.html"), name="builder-multiple"),
     path('contributing/', TemplateView.as_view(template_name="main/contributing.html"), name="contributing"),
+
     path('credits/', TemplateView.as_view(template_name="main/credits.html"), name="credits"),
     path('licensing/', TemplateView.as_view(template_name="main/licensing.html"), name="licensing"),
     path('system/', TemplateView.as_view(template_name="main/system.html"), name="system"),
+
+    path('people/', TemplateView.as_view(template_name="main/people.html"), name="people"),
+    path('partners/', TemplateView.as_view(template_name="main/partners.html"), name="partners"),
+    path('publications/', TemplateView.as_view(template_name="main/publications.html"), name="publications"),
+
     path('usingapi/', TemplateView.as_view(template_name="main/usingapi.html"), name="usingapi"),
     path('api/', TemplateView.as_view(template_name="main/api.html"), name="api"),
     path('downloads/', TemplateView.as_view(template_name="main/downloads.html"), name="downloads"),

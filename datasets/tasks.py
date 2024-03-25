@@ -283,18 +283,30 @@ def ccDecode(codes):
     countries.append(cchash[0][c]['gnlabel'])
   return countries
   
-# generate a language-dependent {name} ({en}) from wikidata variants
-def wdTitle(variants, lang):
-  if len(variants) == 0:
-    return 'unnamed'
+# generate an appropriate title, language-dependent {name} ({en}) in the case of wikidata
+def make_title(h, lang):
+  if 'dataset' in h and h['dataset'] == 'geonames':
+    title = h['variants']['names'][0]
+  elif len(h['variants']) == 0:
+    title = 'unnamed'
   else:
-    vl_en=next( (v for v in variants if v['lang'] == 'en'), None)#; print(vl_en)
-    vl_pref=next( (v for v in variants if v['lang'] == lang), None)#; print(vl_pref)
-    vl_first=next( (v for v in variants ), None); print(vl_first)
-  
+    vl_en = next((v for v in h['variants'] if v['lang'] == 'en'), None)
+    vl_pref = next((v for v in h['variants'] if v['lang'] == lang), None)
+    vl_first = next((v for v in h['variants']), None)
+
     title = vl_pref['names'][0] + (' (' + vl_en['names'][0] + ')' if vl_en else '') \
       if vl_pref and lang != 'en' else vl_en['names'][0] if vl_en else vl_first['names'][0]
-    return title
+  return title
+  # if len(variants) == 0:
+  #   return 'unnamed'
+  # else:
+  #   vl_en=next( (v for v in variants if v['lang'] == 'en'), None)#; print(vl_en)
+  #   vl_pref=next( (v for v in variants if v['lang'] == lang), None)#; print(vl_pref)
+  #   vl_first=next( (v for v in variants ), None); print(vl_first)
+  #
+  #   title = vl_pref['names'][0] + (' (' + vl_en['names'][0] + ')' if vl_en else '') \
+  #     if vl_pref and lang != 'en' else vl_en['names'][0] if vl_en else vl_first['names'][0]
+  #   return title
 
 def wdDescriptions(descrips, lang):
   dpref=next( (v for v in descrips if v['lang'] == lang), None)
@@ -335,6 +347,8 @@ def normalize_whg(hits):
 # normalize hit json from any authority
 # language relevant only for wikidata local)
 def normalize(h, auth, language=None):
+  print('auth in normalize', auth)
+  rec = None
   if auth.startswith('whg'):
     # for whg h is full hit, not only _source
     hit = deepcopy(h)
@@ -408,85 +422,71 @@ def normalize(h, auth, language=None):
       rec.links = links if len(links)>0 else []
       rec.minmax = []
       rec.inception = parseDateTime(h['inception']['value']) if 'inception' in h.keys() else ''
+      rec.dataset = h['dataset'] if 'dataset' in h.keys() else ''
     except:
       print("normalize(wd) error:", h['place']['value'][31:], sys.exc_info())    
   elif auth == 'wdlocal':
-    # hit['_source'] keys(): ['id', 'type', 'modified', 'descriptions', 'claims',
-    # 'sitelinks', 'variants', 'minmax', 'types', 'location']
+    # hit['_source'] keys() for dataset='wikidata': ['types', 'authids', 'claims', 'fclasses',
+    # 'sitelinks', 'location', 'id', 'variants', 'type', 'descriptions', 'dataset', 'repr_point'])
+    # hit['_source'] keys() for dataset='geonames': ['id', 'fclasses', 'location', 'repr_point', 'variants', 'dataset']
     try:
-      print('h in normalize',h)
-      # TODO: do it in index?
+      print('h in normalize', h)
+      # which index is the target?
+      is_wdgn = 'dataset' in h.keys()
+      print('is_wdgn?', is_wdgn)
+      dataset = h['dataset'] if is_wdgn else 'wd'
+      print('dataset', dataset)
       variants=h['variants']
-      title = wdTitle(variants, language)
+      title = make_title(h, language)
 
-      #  place_id, dataset, src_id, title
-      rec = HitRecord(-1, 'wd', h['id'], title)
-      #print('"rec" HitRecord',rec)
-      
-      # list of variant@lang (excldes chosen title)
-      #variants= [{'lang': 'ru', 'names': ['Toamasina', 'Туамасина']},{'lang': 'ja', 'names': ['タマタヴ', 'トゥアマシナ']}]
-      v_array=[]
-      for v in variants:
-        for n in v['names']:
-          if n != title:
-            v_array.append(n+'@'+v['lang'])
-      rec.variants = v_array
+      # create base HitRecord(place_id, dataset, auth_id, title
+      rec = HitRecord(-1, dataset, h['id'], title)
+
+      # build variants array per dataset
+      if is_wdgn and h['dataset'] == 'geonames':
+        rec.variants = variants['names']
+      else:
+        v_array=[]
+        for v in variants:
+          if not is_wdgn:
+            for n in v['names']:
+              if n != title:
+                v_array.append(n+'@'+v['lang'])
+        rec.variants = v_array
             
       if 'location' in h.keys():
         # single MultiPoint geometry
         loc = h['location']
         loc['id'] = h['id']
-        loc['ds'] = 'wd'        
+        loc['ds'] = dataset
         # single MultiPoint geom if exists
         rec.geoms = [loc]
 
-      rec.links = h['authids']
+      if not is_wdgn: # it's wd
+        rec.links = h['authids']
 
-      # don't know what happened here; h has key 'authids'
+        # look up Q class labels
+        htypes = set(h['claims']['P31'])
+        qtypekeys = set([t[0] for t in qtypes.items()])
+        rec.types = [qtypes[t] for t in list(set(htypes & qtypekeys))]
 
-      # turn these identifier claims into links
-      # qlinks = {'P1566':'gn', 'P1584':'pl', 'P244':'loc', 'P1667':'tgn', 'P214':'viaf', 'P268':'bnf', 'P1667':'tgn', 'P2503':'gov', 'P1871':'cerl', 'P227':'gnd'}
-      # links=[]
-      # hlinks = list(
-      #   set(h['claims'].keys()) & set(qlinks.keys()))
-      # if len(hlinks) > 0:
-      #   for l in hlinks:
-      #     links.append(qlinks[l]+':'+str(h['claims'][l][0]))
-      # non-English wp pages do not resolve well, ignore them
-      # add en and FIRST {language} wikipedia sitelink OR first sitelink
-      # wplinks = []
-      # wplinks += [l['title'] for l in h['sitelinks'] if l['lang'] == 'en']
-      # if language != 'en':
-      #   wplinks += [l['title'] for l in h['sitelinks'] if l['lang'] == language]
-      # links += ['wp:'+l for l in set(wplinks)]
-      #
-      # rec.links = links
-      #print('rec.links',rec.links)
+        # countries
+        rec.ccodes = [
+          cchash[0][c]['gnlabel'] for c in cchash[0] \
+            if cchash[0][c]['wdid'] in h['claims']['P17']
+        ]
 
-      # look up Q class labels
-      htypes = set(h['claims']['P31'])
-      qtypekeys = set([t[0] for t in qtypes.items()])
-      rec.types = [qtypes[t] for t in list(set(htypes & qtypekeys))]
+        # include en + native lang if not en
+        rec.descriptions = wdDescriptions(h['descriptions'], language) if 'descriptions' in h.keys() else []
 
-      # countries
-      rec.ccodes = [
-        cchash[0][c]['gnlabel'] for c in cchash[0] \
-          if cchash[0][c]['wdid'] in h['claims']['P17']
-      ]
-      
-      # include en + native lang if not en
-      #print('h["descriptions"]',h['descriptions'])
-      rec.descriptions = wdDescriptions(h['descriptions'], language) if 'descriptions' in h.keys() else []
-      
-      # not applicable
-      rec.parents = []
-      
-      # no minmax in hit if no inception value(s)
-      rec.minmax = [h['minmax']['gte'],h['minmax']['lte']] if 'minmax' in h else []
-    except:
-      # TODO: log error
-      print("normalize(wdlocal) error:", h['id'], sys.exc_info())
-      #print('h in normalize', h)
+        # not applicable
+        rec.parents = []
+
+        # no minmax in hit if no inception value(s)
+        rec.minmax = [h['minmax']['gte'],h['minmax']['lte']] if 'minmax' in h else []
+    except Exception as e:
+      print("normalize(wdlocal) error:", h['id'], str(e))
+      print('Hit rec', rec)
 
   elif auth == 'tgn':
     rec = HitRecord(-1, 'tgn', h['tgnid'], h['title'])
@@ -508,8 +508,10 @@ def normalize(h, auth, language=None):
     rec.minmax = []
     rec.links = []
     #print(rec)
-  #print('normalized hit record',rec.toJSON())
-  # TODO: raise any errors
+  else:
+    rec = HitRecord(-1, 'unknown', 'unknown', 'unknown')
+
+  print('normalized hit record', rec.toJSON())
   return rec.toJSON()
 
 # ***
@@ -565,6 +567,8 @@ from align_wdlocal()
 """
 def es_lookup_wdlocal(qobj, *args, **kwargs):
   #bounds = {'type': ['userarea'], 'id': ['0']}
+  idx = 'wdgn'
+  # idx = 'wd'
   bounds = kwargs['bounds']
   print('kwargs in es_lookup_wdlocal()', kwargs)
   hit_count = 0
@@ -670,7 +674,7 @@ def es_lookup_wdlocal(qobj, *args, **kwargs):
   # must[authid]; match any link
   # /\/\/\/\/\/
   try:
-    res0 = es.search(index="wd", body = q0)
+    res0 = es.search(index=idx, body = q0)
     hits0 = res0['hits']['hits']
   except:
     print('pid; pass0 error:', qobj, sys.exc_info())
@@ -688,7 +692,7 @@ def es_lookup_wdlocal(qobj, *args, **kwargs):
     # /\/\/\/\/\/
     #print('q1',q1)
     try:
-      res1 = es.search(index="wd", body = q1)
+      res1 = es.search(index=idx, body = q1)
       hits1 = res1['hits']['hits']
     except:
       print('pass1 error qobj:', qobj, sys.exc_info())
@@ -705,7 +709,7 @@ def es_lookup_wdlocal(qobj, *args, **kwargs):
       # /\/\/\/\/\/  
       #print('q1: no hits',q1)
       try:
-        res2 = es.search(index="wd", body = q2)
+        res2 = es.search(index=idx, body = q2)
         hits2 = res2['hits']['hits']
       except:
         print('pass2 error qobj', qobj, sys.exc_info())
@@ -731,7 +735,9 @@ parse, write Hit records for review
 """
 @shared_task(name="align_wdlocal")
 def align_wdlocal(*args, **kwargs):
+  print('align_wdlocal.request', align_wdlocal.request)
   task_id = align_wdlocal.request.id
+  task_status = AsyncResult(task_id).status
   ds = get_object_or_404(Dataset, id=kwargs['ds'])
   user = get_object_or_404(User, pk=kwargs['user'])
   bounds = kwargs['bounds']
@@ -808,7 +814,7 @@ def align_wdlocal(*args, **kwargs):
     # TODO: ??? skip records that already have a Wikidata record in l_list
     # they are returned as Pass 0 hits right now
     # run pass0-pass2 ES queries
-    #print('qobj in align_wd_local()',qobj)
+    # in progress: lookup on wdgn index instead of wd
     result_obj = es_lookup_wdlocal(qobj, bounds=bounds)
       
     if result_obj['hit_count'] == 0:
@@ -822,7 +828,8 @@ def align_wdlocal(*args, **kwargs):
       count_hit +=1
       total_hits += len(result_obj['hits'])
       for hit in result_obj['hits']:
-        #print('pre-write hit', hit)
+        hit_id = hit['_source']['id']
+        print("pre-write hit['_source']", hit['_source'])
         if hit['pass'] == 'pass0': 
           count_p0+=1 
         if hit['pass'] == 'pass1': 
@@ -831,8 +838,9 @@ def align_wdlocal(*args, **kwargs):
           count_p2+=1
         hit_parade["hits"].append(hit)
         new = Hit(
-          authority = 'wd',
-          authrecord_id = hit['_id'],
+          # authority = 'wd',
+          authority = 'wikidata' if 'Q' in hit_id else 'geonames',
+          authrecord_id = hit['_source']['id'],
           dataset = ds,
           place = place,
           task_id = task_id,
@@ -841,7 +849,6 @@ def align_wdlocal(*args, **kwargs):
           json = normalize(hit['_source'], 'wdlocal', language),
           src_id = qobj['src_id'],
           score = hit['_score'],
-          #geom = loc,
           reviewed = False,
           matched = False
         )
@@ -881,7 +888,7 @@ def align_wdlocal(*args, **kwargs):
     counthit=count_hit,  # of records with any hit(s)
     totalhits=total_hits,  # of hits
     taskname='Wikidata',
-    status=align_wdlocal.request.status,
+    status=task_status,
   )
 
   return hit_parade['summary']

@@ -30,11 +30,13 @@
         </div>
       {% else %}
         <div class="centered w-100">
+          {% comment %}
           <!-- alternate home page -->
           <span class="position-absolute top-0 end-0">
             <a href="{% url 'home' %}">alt 1</a>
             <b>alt 3</b>
           </span>
+          {% endcomment %}
           <span class="title mb-2">
 				  <img src="{% static 'images/whg_logo.svg' %}" class="d-inline-block align-bottom me-2"
                height=80 width=80 alt=""/>
@@ -47,14 +49,16 @@
     <div id="content_top" class="row gx-2 gy-2 mx-0 h-75">
       <div class="col-sm-3" id="intro">
         <div class="p-2 border h-100">
-          <div class="bg-lighterblue mb-3">Welcome to this "alpha" release of Version 3 of the World Historical
-            Gazetteer! Feedback on this work-in-progress is much appreciated.
-          </div>
-          <p>WHG is a collaborative open platform for gathering information about historical place, providing a
+          <div class="mb-3">
+          <p class="mb-0">The WHG is a collaborative open platform gathering information about historical place, and providing a
             collection of content and services that permit world historians, their students, and the general public to
-            do spatial and temporal reasoning and visualization in a data rich environment at global and trans-regional
-            scales.</p>
-          </p>
+            do spatial and temporal reasoning and visualization at global and trans-regional scales.</p>
+            <p class="bg-light mb-0 mt-1"><b>What is a gazetteer?</b></p>
+            <p>An index of place information. People have made them for a long time. They do it because place names are complicated and places are cool. <a href="#">more...</a></p>
+            {% comment %}{% if not user.is_authenticated %}{% endcomment %}
+              <p my-0><a href="{% url 'accounts:register' %}">Register to get started</a></p>
+            {% comment %}{% endif %}{% endcomment %}
+          </div>
         </div>
       </div>
       <div class="col-sm-6">
@@ -99,16 +103,17 @@
           </div>
 
           <div id="search_map" class="input-group input-group-sm mb-3 shadow-sm">
-            <input type="search" class="form-control" placeholder="Enter place name"
+            <input type="search" class="form-control" placeholder="Enter a place name"
                    aria-label="Search places" aria-describedby="addon-wrapping">
             <span class="input-group-text" id="addon-wrapping">
 					  <a href="#" id="a_search"><i class="fas fa-search"></i></a>
 				  </span>
           </div>
-
+          {% comment %}
           <div class="advanced-search-link px-1 py-0">
             <a id="a_advanced" href="#">advanced search </a>
           </div>
+          {% endcomment %}
         </div>
 
         <div class="p-1 border bg-white smallish" style="height: 24%;">
@@ -127,27 +132,10 @@
 
       </div>
       <div class="col-sm-3">
-       	<div id="carousel-outer-container" class="border mb-1 h-75">
+{#       	<div id="carousel-outer-container" class="border mb-1 h-75">#}
+       	<div id="carousel-outer-container" class="border mb-1 h-100">
         	<!-- Populated dynamically in JavaScript -->
       	</div>
-		<div class="row p-.5" style="height: 24%;">
-		    <div class="col-md-6 p-0.25">
-		        <div class="border image-div rounded" style="margin-right: -0.5em; background-image: url('{% static 'images/regions.png' %}')">
-		        <span>Regions</span>	        
-		        <a href="{% url 'main-regions' %}">
-		          <span class="link-spanner"></span>
-		        </a>
-		        </div>	
-		    </div>
-		    <div class="col-md-6 p-0.25">
-		        <div class="border image-div rounded" style="margin-left: -0.5em; background-image: url('{% static 'images/routes-journeys.png' %}')">
-		        <span>Journeys & Routes</span>
-		        <a href="{% url 'journeys-routes' %}">
-		          <span class="link-spanner"></span>
-		        </a>
-		        </div>
-		    </div>
-		</div>      	
       </div>
     </div> <!-- content_top -->
 
@@ -157,7 +145,7 @@
           <div class="home-icon-row">
             <img src="{% static 'images/001-binoculars.png' %}" class="" height=40 width=40 alt=""/>
           </div>
-          <h5><span class="home-button-hilite">Search</span> <span class="red-head">
+          <h5><span class="home-button-hilite">Search and browse</span> <span class="red-head">
 					{{ count }}</span> published place attestations</h5>
         </div>
         <a href="{% url 'search-page' %}">
@@ -180,7 +168,7 @@
         <div class="h-100 border p-1">
           <div class="home-icon-row">
             <img src="{% static 'images/008-collect.png'%}" class="" height=42 width=42 alt=""/></div>
-          <h5><span class="home-button-hilite">Gazetteer Builder</span><br/>create, annotate, and publish custom collections</h5>
+          <h5><span class="home-button-hilite">Gazetteer Workbench</span><br/>assemble and publish custom collections</h5>
         </div>
         <a href="{% url 'builder' %}">
           <span class="link-spanner"></span>
@@ -201,7 +189,7 @@
           <div class="home-icon-row">
             <img src="{% static 'images/011-teaching.png' %}" class="" height=42 width=42 alt=""/>
           </div>
-          <h5><span class="home-button-hilite">Use WHG data</span> in teaching</h5>
+          <h5><span class="home-button-hilite">Teaching</span> with WHG data</h5>
         </div>
         <a href="{% url 'teaching' %}">
           <span class="link-spanner"></span>
@@ -230,7 +218,8 @@
   <script type="text/javascript">
     var eswhg = "{{ es_whg|escapejs }}";
     let galleries = [
-        ['Contributed Data', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"]
+        {#['Contributed Data', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"]#}
+        ['Data Publications', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"]
     ];
     let carouselMetadata = {{ carousel_metadata|safe }};
     let startCarousels = true; // Determines whether galleries are to be auto-cycled

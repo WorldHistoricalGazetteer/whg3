@@ -97,6 +97,9 @@ class PlacePortalView(TemplateView):
         # Fall back to the IDs stored in the session variable
         place_ids = self.request.session.get('current_result', {}).get('place_ids', [])
 
+    place_ids = list(map(int, place_ids))
+    print('place_ids in portal.js', place_ids)
+
     if not place_ids:
         messages.error(self.request, "Place IDs are required to view this page")
         raise Http404("Place IDs are required")
@@ -128,6 +131,8 @@ class PlacePortalView(TemplateView):
         # add to global list
         annotations = annotations + attest_traces
         collections = list(set(collections + attest_collections))
+
+        # collections = Collection.objects.filter(collection_class="place", places__id__in = place_ids).distinct()
 
         geoms = [geom.jsonb for geom in place.geoms.all()]
         related = [rel.jsonb for rel in place.related.all()]

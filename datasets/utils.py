@@ -760,9 +760,9 @@ def validate_tsv(fn, ext):
   return result
 
 class HitRecord(object):
-  def __init__(self, place_id, dataset, src_id, title):
+  def __init__(self, place_id, dataset, auth_id, title):
     self.place_id = place_id
-    self.src_id = src_id
+    self.auth_id = auth_id
     self.title = title
     self.dataset = dataset
 

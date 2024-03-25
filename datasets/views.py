@@ -456,7 +456,7 @@ def review(request, pk, tid, passnum):
     # raw_hits = Hit.objects.filter(place_id=placeid, task_id=tid).order_by('-score')
     raw_hits = Hit.objects.filter(place_id=placeid, task_id=tid).order_by("-score")
 
-  # print('raw_hits', [h.json['titles'] for h in raw_hits])
+  print('raw_hits in review()', [h.__dict__ for h in raw_hits])
   # ??why? get pass contents for all of a place's hits
   passes = (
     list(
@@ -870,7 +870,6 @@ def write_wd_pass0(request, tid):
   each align_{auth} task runs matching es_lookup_{auth}() and writes Hit instances
 """
 
-
 def ds_recon(request, pk):
   ds = get_object_or_404(Dataset, id=pk)
   # TODO: handle multipolygons from "#area_load" and "#area_draw"
@@ -909,7 +908,7 @@ def ds_recon(request, pk):
 
     print('ds_recon() scope', scope)
     print('ds_recon() auth', auth)
-    # which task? wdlocal, idx, builder
+    # which task? wdlocal, idx, builder. wdgn
     func = eval('align_' + auth)
 
     # TODO: let this vary per task?
