@@ -752,7 +752,7 @@ class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
       {'id':cp.id,'p':cp.place,'seq':cp.sequence}
         for cp in CollPlace.objects.filter(collection=_id).order_by('sequence')
     ]
-    context['created'] = self.object.created.strftime("%Y-%m-%d")
+    context['created'] = self.object.create_date.strftime("%Y-%m-%d")
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
     # context['whgteam'] = User.objects.filter(groups__name='whg_team')
@@ -1064,7 +1064,7 @@ class DatasetCollectionUpdateView(UpdateView):
     context['action'] = 'update'
     context['ds_select'] = ds_select
     context['coll_dsset'] = datasets
-    context['created'] = self.object.created.strftime("%Y-%m-%d")
+    context['created'] = self.object.create_date.strftime("%Y-%m-%d")
 
     context['owner'] = True if user == coll.owner else False # actual owner
     context['is_owner'] = True if user in self.object.owners else False # owner or co-owner

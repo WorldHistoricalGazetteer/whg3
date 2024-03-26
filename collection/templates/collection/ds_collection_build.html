@@ -74,14 +74,14 @@
 	  </h5>
 	  <ul id="tablist" class="nav nav-tabs" role="tablist">
 		  <li class="nav-item" role="presentation">
-		    <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
+		    <button class="nav-link" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
           type="button" role="tab" aria-controls="coll_form" aria-selected="true">
 			    {% if action == 'create' %}Create{% else %}Edit{% endif %} Collection</button>
 		  </li>
 		  {% if action == "update" %}
 		  {# builder #}
 		  <li class="nav-item" role="presentation">
-		    <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
+		    <button class="nav-link active" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
           type="button" role="tab" aria-controls="coll_builder"
                 aria-selected="false">Add and manage datasets</button>
 		  </li>
@@ -98,7 +98,7 @@
 		  {% endif %}
 		</ul>
 		<div id="content" class="tab-content">
-			<div id="coll_form" class="tab-pane fade show active  h-100">
+			<div id="coll_form" class="tab-pane fade h-100">
 		    <form id="collection_form" method="POST" enctype="multipart/form-data">
 		    {% csrf_token %}
         <div class="row">
@@ -119,9 +119,11 @@
 					<div class="form-group">
 						<label for="Collection keywords">Collection keywords &#x02733;</label><br/>{{ form.keywords }}
 					</div>
+          {% comment %}
           <div class="form-group bg-light p-1">
             <label for="Build type">Build type</label><br/>{{ form.build_type }}
           </div>
+          {% endcomment %}
 		      <div id="d_buttons" class="" style="">
 	          <span class="">
 	          {% if action == 'create' %}
@@ -218,8 +220,9 @@
 					  <p>To create a new Dataset Collection, first fill out the required fields in the form on the left.
 						  and press <b>Save</b>. All information can be edited afterwards, and you can begin adding and
 						  linking datasets. The collection itself can include primary image, an essay file and
-						  links to related material.</p>
+						  links to related material, uploaded after creation.</p>
 			      <p><mark-b>Collection keywords</mark-b> are terms describing the collection.</p>
+            {% comment %}
             <p>There are two options for creating dataset collections, and each has its own
               <i>collection builder</i> screen. The options are:
             <p><span class="red-head">Discrete</span>.
@@ -228,6 +231,7 @@
             <p><span class="red-head">Conflated</span>. Each dataset added will be
               reconciled with the others in the growing collection. <mark>more to say here</mark></p>
             </p>
+            {% endcomment %}
 		      {% endif %}
 		      </div> {# col-sm-7 #}
         </div> {# row #}
@@ -255,7 +259,7 @@
 	          </form>
 		    </div>
 			</div> {# coll_form #}
-			<div id="coll_builder" class="tab-pane fade h-100">
+			<div id="coll_builder" class="tab-pane fade show active h-100">
 				<div class="row">
 					<div class="col-sm-7 position-relative">
 						<div>
@@ -328,7 +332,7 @@
 						<h5 class="bg-lighterblue ps-1">The Process</h5>
 						<div class="ps-3">
 							<ul class="flush-left">
-								<li>Add an initial dataset to "seed" the collection</li>
+								<li>Add an initial <i>published</i> dataset to "seed" the collection</li>
 								<li>Add a second dataset and reconcile it with the first, in order to link records for
 									closely matched places where they occur</li>
 								<li>Repeat for additional datasets, each time reconciling against the growing collection</li>
