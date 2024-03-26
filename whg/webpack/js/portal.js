@@ -2,7 +2,7 @@
 
 import throttle from 'lodash/throttle';
 import { attributionString, deepCopy, geomsGeoJSON } from './utilities';
-import Dateline from './dateline';
+import Historygram from './historygram';
 import { popupFeatureHTML } from './getPlace.js';
 import { init_collection_listeners } from './collections.js';
 import { add_to_collection } from './collections.js';
@@ -78,7 +78,7 @@ function waitMapLoad() {
 
 			$('#map_options').append(createNearbyPlacesControl());
 
-			const dateRangeChanged = throttle(() => { // Uses imported lodash function
+/*			const dateRangeChanged = throttle(() => { // Uses imported lodash function
 			    filterSources();
 			}, 300);
 
@@ -91,7 +91,11 @@ function waitMapLoad() {
 					onChange: dateRangeChanged
 				});
 			};
-			$(window.dateline.button).on('click', dateRangeChanged);
+			$(window.dateline.button).on('click', dateRangeChanged);*/
+
+			if (!!mapParameters.temporalControl) {
+				new Historygram(allts);
+			};
 
 			mappy.on('mousemove', function(e) {
 				const features = mappy.queryRenderedFeatures(e.point);
@@ -250,16 +254,6 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		// Do not use fitBounds or flyTo due to padding bug in MapLibre/Maptiler
 		mappy.fitViewport( bbox(featureCollection) );
 
-	  	var min = Math.min.apply(null, allts.map(function(row) {
-	  		return Math.min.apply(Math, row);
-	  	}));
-	  	var max = Math.max.apply(null, allts.map(function(row) {
-	  		return Math.max.apply(Math, row);
-	  	}));
-	  	let minmax = [min, max]
-	  	// feed to #histogram
-	  	histogram_data(allts, minmax)
-
 	  	$('.source-box')
 	  	.on('mousemove', function() {
 			  if (!showingRelated) {
@@ -361,120 +355,6 @@ function filterSources() {
 	});
 	mappy.getSource('places').setData(featureCollection);
 	noSources.toggle($('.source-box:visible').length == 0);
-}
-
-function range(start, stop, step) {
-	var a = [start],
-		b = start;
-	while (b < stop) {
-		a.push(b += step || 1);
-	}
-	return a;
-}
-
-function intersects(a, b) {
-	let min = (a[0] < b[0] ? a : b)
-	let max = (min == a ? b : a)
-	return !(min[1] < max[1])
-}
-
-function histogram_data(intervals, minmax) {
-	let step = Number(((minmax[1] - minmax[0]) / 200))
-	let bins = range(minmax[0], minmax[1], step)
-	let hist_array = Array.apply(null, Array(bins.length)).map(Number.prototype.valueOf, 0);
-	let labels = bins.map(function(d) {
-		return Math.round(d)
-	})
-	for (var b = 0; b < bins.length; b++) {
-		let bin = Array(bins[b], bins[b + 1])
-		for (var i in intervals) {
-			if (intersects(bin, intervals[i])) {
-				hist_array[b] += 1
-			}
-		}
-	}
-	let data = hist_array.map(function(d, i) {
-		return {
-			"bin": labels[i],
-			"count": d
-		}
-	})
-
-	// visualize it
-	histogram(data, labels, minmax)
-
-}
-
-function histogram(data, labels, minmax) {
-	// exit if no data
-	if (data[0].bin == "Infinity") {
-		$("#histogram").html('<i>None yet</i>');
-		return;
-	}
-	data = data.slice(0, 200)
-	let curwidth = $("#histogram").width()
-
-	var margin = {
-			top: 0,
-			right: 10,
-			bottom: 0,
-			left: 10
-		},
-		width = 400,
-		height = 30,
-		padding_h = 20,
-		padding_w = 30;
-
-	// set the ranges
-	window.xScale = d3.scaleLinear()
-		.range([0, width])
-	window.yScale = d3.scaleLinear()
-		.range([height, 0]);
-
-	xScale.domain(minmax);
-	yScale.domain([0, d3.max(data, function(d) {
-		return d.count;
-	})]);
-
-	// TODO: responsive scaling of svg width
-	window.svg_hist = d3.select("#histogram").append("svg")
-		.attr("width", '100%')
-		.attr("height", height + padding_h)
-
-		.attr('viewBox', '0 0 ' + Math.min(width, height + padding_h) + ' ' + Math.min(width, height + padding_h))
-		.attr('preserveAspectRatio', 'xMinYMin')
-
-		.append("g")
-		.attr("transform", "translate(" + margin.left + "," + margin.top + ")")
-
-	window.axisB = d3.axisBottom(xScale)
-		.tickValues(labels.filter(function(d, i) {
-			return !(i % 20)
-		}))
-		.tickFormat(d3.format("d"));
-
-	var axisL = d3.axisLeft(yScale)
-
-	svg_hist.selectAll(".bar")
-		.data(data)
-		.enter().append("rect")
-		.attr("class", "bar")
-		.attr("x", function(d) {
-			return xScale(d.bin);
-		})
-		//.attr("width", function(d) { return xScale(d.x1) - xScale(d.x0) -1 ; })
-		.attr("width", 2)
-		.attr("y", function(d) {
-			return yScale(d.count);
-		})
-		.attr("height", function(d) {
-			return height - yScale(d.count);
-		});
-
-	var xAxis = svg_hist.append("g")
-		.attr("id", "xaxis")
-		.attr("transform", "translate(0," + height + ")")
-		.call(axisB)
 }
 
 function nearbyPlaces() {

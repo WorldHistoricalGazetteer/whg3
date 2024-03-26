@@ -32,17 +32,19 @@
 	
 	<div class="row mx-0 h-100">
 		<div class="col-12 col-lg-4 mx-0 full-height-lg">
-			<div class="row h-75 border p-2 mb-2 me-0 me-lg-1">
+			<div class="row h-75 border p-2 mb-2">
           		<p class="mb-0">The WHG is a collaborative open platform gathering information about historical place, and providing a
 	            collection of content and services that permit world historians, their students, and the general public to
 	            do spatial and temporal reasoning and visualization at global and trans-regional scales.</p>
-	            <p class="bg-light mb-0 mt-1"><b>What is a gazetteer?</b></p>
-	            <p>An index of place information. People have made them for a long time. They do it because place names are complicated and places are cool. <a href="#">more...</a></p>
+	            <span class="d-none d-lg-block">
+		            <p class="bg-light mb-0 mt-1"><b>What is a gazetteer?</b></p>
+		            <p>An index of place information. People have made them for a long time. They do it because place names are complicated and places are cool. <a href="#">more...</a></p>
+	            </span>
 	            {% comment %}{% if not user.is_authenticated %}{% endcomment %}
 	              <p my-0><a href="{% url 'accounts:register' %}">Register to get started</a></p>
 	            {% comment %}{% endif %}{% endcomment %}			
 			</div>
-			<div class="row h-25 border p-2 mb-2 mb-lg-0 me-0 me-lg-1">
+			<div class="row h-25 border p-2 mb-2 mb-lg-0">
 	            <p class="mb-0 red-head">ANNOUNCEMENTS</p>
 	            <div id="announcement-container" class="mb-0">
 	                {% for announcement in announcements|slice:":3" %}
@@ -58,7 +60,7 @@
 		</div>
 		
 		<div class="col-12 col-lg-4 mx-0">
-			<div class="h-60 mx-0 mx-lg-1 mb-2 map-container">
+			<div class="h-60 mx-0 mb-2 map-container">
 	          <div id="map"></div>
 	          <div id="search_map" class="input-group input-group-sm mb-3 shadow-sm">
 	            <input type="search" class="form-control" placeholder="Enter a place name"
@@ -68,13 +70,13 @@
 					  </span>
 	          </div>		
 			</div>
-			<div id="carousel-outer-container" class="border mx-0 mx-lg-1 mb-2 mb-lg-0 h-40">	
+			<div id="carousel-outer-container" class="mx-0 mb-2 mb-lg-0 h-40">	
 		        <!-- Populated dynamically in JavaScript -->
 			</div>
 		</div>
 		
-		<div class="col-12 col-lg-4 mx-0 full-height-lg">
-			 <div class="h-33 border p-2 mb-2 ms-0 ms-lg-1 home-button">
+		<div class="col-12 col-lg-4 p-0 mx-0 full-height-lg">
+			 <div class="h-33 border p-2 mb-2 ms-0 home-button">
 			   <div>
 			     <div class="home-icon-row">
 			       <img src="{% static 'images/001-binoculars.png' %}" class="" height=40 width=40 alt=""/>
@@ -86,7 +88,7 @@
 			     <span class="link-spanner"></span>
 			   </a>
 			 </div>
-			 <div class="h-33 border p-2 mb-2 ms-0 ms-lg-1 home-button">
+			 <div class="h-33 border p-2 mb-2 ms-0 home-button">
 			   <div>
 			     <div class="home-icon-row">
 			       <img src="{% static 'images/001-up-arrow.png' %}" class="" height=40 width=40 alt=""/>
@@ -98,7 +100,7 @@
 			     <span class="link-spanner"></span>
 			   </a>
 			 </div>
-			 <div class="h-33 border p-2 mb-0 ms-0 ms-lg-1 home-button">
+			 <div class="h-33 border p-2 mb-0 ms-0 home-button">
 			   <div>
 			     <div class="home-icon-row">
 			       <img src="{% static 'images/008-collect.png'%}" class="" height=42 width=42 alt=""/></div>

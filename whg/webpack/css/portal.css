@@ -70,9 +70,23 @@ div.overlay .left .item {
     overflow: visible;
 }
 
-#temporal_attestations {
+#historygram {
 	height: 105px!important;
-	overflow: hidden;
+	overflow: visible;
+}
+
+#historygram > p, #historygram .undated_container {
+    position: absolute;
+    z-index: 1;
+}
+
+#historygram .undated_container {
+    top: 28px;	
+}
+
+#historygram .undated_container > label {
+    top: -5px;
+    position: relative;
 }
 
 #map_options {
