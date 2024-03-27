@@ -78,11 +78,11 @@ function waitMapLoad() {
 
 			$('#map_options').append(createNearbyPlacesControl());
 
-/*			const dateRangeChanged = throttle(() => { // Uses imported lodash function
-			    filterSources();
+			const dateRangeChanged = throttle((fromValue, toValue, includeUndated) => { // Uses imported lodash function
+			    filterSources(fromValue, toValue, includeUndated);
 			}, 300);
 
-			if (!!mapParameters.temporalControl) {
+/*			if (!!mapParameters.temporalControl) {
 				let datelineContainer = document.createElement('div');
 				datelineContainer.id = 'dateline';
 				document.getElementById('mapControls').appendChild(datelineContainer);
@@ -94,7 +94,7 @@ function waitMapLoad() {
 			$(window.dateline.button).on('click', dateRangeChanged);*/
 
 			if (!!mapParameters.temporalControl) {
-				new Historygram(allts);
+				new Historygram(allts, dateRangeChanged);
 			};
 
 			mappy.on('mousemove', function(e) {
@@ -335,7 +335,28 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
     })
     .catch(error => console.error("An error occurred:", error));
 
-function filterSources() {
+function filterSources(fromValue, toValue, includeUndated) {
+	console.log(`Filter dates: ${fromValue} - ${toValue} (includeUndated: ${includeUndated})`);
+	function inDateRange(source) {
+        const timespans = source.timespans;
+        if (timespans.length > 0) {
+		    return !timespans.every(timespan => {
+		        return timespan[1] < fromValue || timespan[0] > toValue;
+		    });
+        } else {
+            return includeUndated;
+        }
+    }
+	featureCollection.features.forEach((feature, index) => {
+		const outOfDateRange = !inDateRange(feature.properties)
+		feature.properties['outOfDateRange'] = outOfDateRange;
+		$('.source-box').eq(index).toggle(!outOfDateRange);
+	});
+	mappy.getSource('places').setData(featureCollection);
+	noSources.toggle($('.source-box:visible').length == 0);
+}
+
+/*function filterSources() {
 	console.log(`Filter dates: ${window.dateline.fromValue} - ${window.dateline.toValue} (includeUndated: ${window.dateline.includeUndated})`);
 	function inDateRange(source) {
 		if (!window.dateline.open) return true;
@@ -355,7 +376,7 @@ function filterSources() {
 	});
 	mappy.getSource('places').setData(featureCollection);
 	noSources.toggle($('.source-box:visible').length == 0);
-}
+}*/
 
 function nearbyPlaces() {
 	if ( $('#nearby_places').prop('checked') ) {

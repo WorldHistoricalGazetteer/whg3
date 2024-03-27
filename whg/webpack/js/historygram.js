@@ -1,22 +1,40 @@
+/*
+  Author: Stephen Gadd, Docuracy Ltd
+  File: historygram.js
+  Description: JavaScript date range visualisation and selector
 
+  Copyright (c) 2024 Stephen Gadd
+  Licensed under the Creative Commons Attribution 4.0 International License (CC-BY 4.0).
+  
+  Requires D3.js
+*/
 
 export default class Historygram {
-    constructor(intervals, drawHistogram=true, addControls=true, maxBins=100, includeUndated=true, containerId='historygram') {
+    constructor(intervals, onChange = null, drawHistogram=true, addControls=true, maxBins=100, includeUndated=true, containerId='historygram') {
         this.intervals = intervals;
         this.fromValue = null;
         this.toValue = null;
+        this.fromX = null;
+        this.toX = null;
+        this.scaleWidth = null;
 		this.includeUndated = includeUndated;
+		this.onChangeCallback = onChange;
         this.drawHistogram = drawHistogram;
         this.addControls = addControls;
         this.maxBins = maxBins;
         this.containerId = containerId;
         this.container = document.getElementById(containerId);
-	    d3.select(this.container).selectAll("svg").remove();
-        const [binInterval, binBounds, binCounts] = this.calculateBins();
-        console.log(intervals, binInterval, binBounds, binCounts);
-        this.histogram(binInterval, binBounds, binCounts);
+        this.initialise();
         this.appendUndatedCheckbox();
         this.appendStyles();
+        this.initialise = this.initialise.bind(this);
+        window.addEventListener('resize', this.initialise);
+    }
+    
+    initialise() {
+        d3.select(this.container).selectAll("svg").remove();
+        const [binInterval, binBounds, binCounts] = this.calculateBins();
+        this.histogram(binInterval, binBounds, binCounts);
     }
 
     calculateBins() {
@@ -93,8 +111,6 @@ export default class Historygram {
 		const maxLabels = Math.floor(width / (maxLabelWidth * 1.5)); // Add margin
 		const labelStep = Math.ceil(binBounds.length / maxLabels);
 		
-		console.log('maxLabel,negativePrefix,maxLabelWidth,maxLabels,labelStep',maxLabel,negativePrefix,maxLabelWidth,maxLabels,labelStep);
-		
 		// Add x-axis with calculated label step
 		svg.append("g")
 		    .attr("transform", `translate(0,${height})`)
@@ -103,21 +119,25 @@ export default class Historygram {
 		        .tickFormat((_, i) => binBounds[i * labelStep]));
 		        
 		if (this.addControls) {
+			
+			this.fromX = this.fromX ? this.fromX * width / this.scaleWidth : 0;
+			this.toX = this.toX ? this.toX * width / this.scaleWidth : width;
+						
 		    // Append a group for the slider elements
 	        const sliderGroup = svg.append('g')
 	            .attr('class', 'range-slider');          
 
 	        // Append bar indicating the range
 	        sliderGroup.append('rect')
-	            .attr('x', 0)
+	            .attr('x', this.fromX)
 	            .attr('y', height - 5)
-	            .attr('width', width)
+	            .attr('width', this.toX - this.fromX)
 	            .attr('height', 10)
 	            .attr('fill', 'orange')
 	            .attr('opacity', 0.3).call(d3.drag()
 		            .on('start', dragStarted)
 		            .on('drag', draggedBar.bind(this))
-		            .on('end', dragEnded)
+		            .on('end', dragEnded.bind(this))
 		        );
 
 	        // Append circles for slider ends
@@ -125,8 +145,7 @@ export default class Historygram {
 	        sliderGroup.selectAll('circle')
 	            .data([0, 1])
 	            .enter().append('circle')
-	            //.attr('cx', (d, i) => i * width)
-    			.attr('cx', d => d * width)
+    			.attr('cx', (_, i) => i === 0 ? this.fromX : this.toX )
 	            .attr('cy', height)
 	            .attr('r', circleRadius)
 	            .attr('fill', 'orange')
@@ -135,7 +154,7 @@ export default class Historygram {
 			    .call(d3.drag()
 				    .on('start', dragStarted)
 				    .on('drag', dragged.bind(this))
-				    .on('end', dragEnded)
+				    .on('end', dragEnded.bind(this))
 			    );
 			    
 			const valueRect = sliderGroup.append('rect')
@@ -155,6 +174,7 @@ export default class Historygram {
 		        .style('font-size', '12px')
 		        .style('fill', '#000');
 		
+			this.scaleWidth = width; // Used if resized
 		    this.valueDisplay = valueDisplay;	
 		    this.valueRect = valueRect;			
 			this.updateValueDisplay(sliderGroup, binBounds, binInterval, width);
@@ -181,27 +201,26 @@ export default class Historygram {
 			
 			function dragged(d, i, nodes) {
 			    const newX = Math.max(0, Math.min(width, d3.event.x));
-			    console.log('dragging', i, d3.event.x, d3.event.y);
 			    
-			    var fromX = parseFloat(d3.select(nodes[0]).attr('cx'));
-			    var toX = parseFloat(d3.select(nodes[1]).attr('cx'));
+			    this.fromX = parseFloat(d3.select(nodes[0]).attr('cx'));
+			    this.toX = parseFloat(d3.select(nodes[1]).attr('cx'));
 			    
-			    if (i === 0 && newX <= toX) {
+			    if (i === 0 && newX <= this.toX) {
 			    	d3.select(nodes[i]).attr('cx', newX);
-			    	fromX = newX;
+			    	this.fromX = newX;
 				}
-				else if (i === 1 && newX >= fromX) {
+				else if (i === 1 && newX >= this.fromX) {
 			    	d3.select(nodes[i]).attr('cx', newX);
-			    	toX = newX;					
+			    	this.toX = newX;					
 				}
 				
 			    // Update range rectangle position and size	
 			    sliderGroup.select('rect')
-			        .attr('x', fromX)
-			        .attr('width', toX - fromX);
+			        .attr('x', this.fromX)
+			        .attr('width', this.toX - this.fromX);
 			    
                 this.updateValueDisplay(sliderGroup, binBounds, binInterval, width);    
-			    console.log(this.fromValue, this.toValue);
+			    this.onChangeCallback(this.fromValue, this.toValue, this.includeUndated);
 			        
 			}
 			
@@ -213,8 +232,8 @@ export default class Historygram {
 			    sliderGroup.selectAll('.left-handle').attr('cx', newRectX);
 				sliderGroup.selectAll('.right-handle').attr('cx', newRectX + initialBarWidth);
 
-                this.updateValueDisplay(sliderGroup, binBounds, binInterval, width);    
-			    console.log(this.fromValue, this.toValue);
+                this.updateValueDisplay(sliderGroup, binBounds, binInterval, width);   
+			    this.onChangeCallback(this.fromValue, this.toValue, this.includeUndated);
 			}
 
 			sliderGroup.on('mouseover', () => {
@@ -284,8 +303,13 @@ export default class Historygram {
             const checkbox = document.getElementById('undated_checkbox');
             checkbox.addEventListener('change', () => {
                 this.includeUndated = checkbox.checked;
+			    this.onChangeCallback(this.fromValue, this.toValue, this.includeUndated);
             });
         }
+    }
+    
+    destroy() {
+        window.removeEventListener('resize', this.initialise);
     }
     
     appendStyles() {
@@ -294,6 +318,12 @@ export default class Historygram {
             .range-slider {
                 cursor: ew-resize;
             }
+			#historygram {
+			    user-select: none;
+			    -webkit-user-select: none; /* For Safari */
+			    -moz-user-select: none; /* For Firefox */
+			    -ms-user-select: none; /* For Internet Explorer/Edge */
+			}            
         `;
         document.head.appendChild(style);
     }
