@@ -17,7 +17,10 @@ let checked_cards = [];
 
 let mapParameters = {
 	maxZoom: 17,
-    style: ['whg-basic-light', 'whg-basic-dark'],
+    style: [
+		'whg-basic-light',
+		'OSM'
+	],
     basemap: ['natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade'],
     terrainControl: true,
 	temporalControl: temporal
