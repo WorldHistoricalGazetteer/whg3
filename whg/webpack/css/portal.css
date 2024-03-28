@@ -138,8 +138,13 @@ div.overlay .left .item {
     font-weight: normal;
     cursor: pointer;
     position: relative;
-    top: -2px;
     margin-bottom: -2px;
+}
+
+#map_options .group-item > input[type="checkbox"] {
+    margin-left: 5px;
+    top: 2px;
+    position: relative;	
 }
 
 #time_control {

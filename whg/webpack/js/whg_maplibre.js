@@ -2,6 +2,7 @@
 
 import Layerset from './layerset';
 import { attributionString } from './utilities';
+import languages from './languages.js';
 
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
@@ -183,64 +184,108 @@ class acmeStyleControl {
 	}
 
 	buildSwitcher(styleJSON) {
-		const switches = document.createElement('span');
-		switches.id = 'layerSwitches';
-        //switches.className = 'maplibre-styles-list';
-
-    	var switchGroups = {};
-
-        for (const layer of styleJSON.layers) {
-			if (layer.metadata && layer.metadata['whg:switchgroup']) {
-	            const switchGroup = layer.metadata['whg:switchgroup'];
-	            if (!switchGroups[switchGroup]) {
-	                switchGroups[switchGroup] = [];
+	    const switches = document.createElement('span');
+	    switches.id = 'layerSwitches';
+    	const checkboxIndex = {};
+	    
+	    if (styleJSON.metadata && styleJSON.metadata['whg:switchgroups']) {
+	        Object.entries(styleJSON.metadata['whg:switchgroups']).forEach(([groupName, group]) => {
+	            const groupItem = document.createElement('li');
+	            groupItem.className = 'group-item strong-red';
+	            groupItem.textContent = groupName;
+	
+	            if (typeof group === 'object' && group !== null) {
+	
+		            const itemList = document.createElement('ul');
+		            itemList.className = 'variant-list';
+		            
+	                Object.entries(group).forEach(([key, value]) => {
+	                    const listItem = document.createElement('li');
+	                    listItem.className = 'variant-item';
+	
+	                    const checkbox = document.createElement('input');
+	                    checkbox.type = 'checkbox';
+	                    checkbox.id = key;
+	                    checkbox.name = key;
+	                    checkbox.checked = value;
+	                    checkboxIndex[key] = checkbox;
+	
+	                    const label = document.createElement('label');
+	                    label.htmlFor = key;
+	                    label.textContent = key;
+	                    label.className = 'layer-label';
+	
+	                    listItem.appendChild(checkbox);
+	                    listItem.appendChild(label);
+	                    itemList.appendChild(listItem);
+	
+	                    checkbox.addEventListener('change', (event) => {
+	                        this._onSwitcherChange(event.target);
+	                    });
+	                });
+	                
+	            	groupItem.appendChild(itemList);
+	                
+	            } else {
+	
+	                const checkbox = document.createElement('input');
+	                checkbox.type = 'checkbox';
+	                checkbox.id = groupName;
+	                checkbox.name = groupName;
+	                checkbox.checked = group;
+	                checkboxIndex[groupName] = checkbox;
+	
+	                groupItem.appendChild(checkbox);
+	                
+	                if (groupName == 'Labels') {
+					    const languageSelect = document.createElement('select');
+					    languageSelect.id = 'lang';
+					    languageSelect.addEventListener('change', (event) => {
+						    styleJSON.layers.forEach(layer => {
+						        const metadata = layer.metadata;
+							    if (metadata && metadata['whg:group'] === 'Labels' && layer.source === 'openmaptiles') {
+					                this._map.setLayoutProperty(layer.id, 'text-field', ['coalesce', ['get', `name:${event.target.value}`], ['get', 'name'], ['get', 'name:en']]);
+							    }
+						    });
+		                });
+					    
+					    Object.entries(languages).forEach(([code, lang]) => {
+					        const option = document.createElement('option');
+					        option.value = code;
+					        option.textContent = lang.local;
+					        languageSelect.appendChild(option);
+					    });
+					
+					    groupItem.appendChild(languageSelect);
+					}
+	
+	                checkbox.addEventListener('change', (event) => {
+	                    this._onSwitcherChange(event.target);
+	                });
 	            }
-	            switchGroups[switchGroup].push(layer);
-	        }
-		}
-
-		const sortedGroups = Object.keys(switchGroups).sort();
-
-    	for (const group of sortedGroups) {
-			const layers = switchGroups[group];
-            layers.sort((a, b) => a.metadata['whg:switchlabel'].localeCompare(b.metadata['whg:switchlabel']));
-
-	        const groupItem = document.createElement('li');
-	        groupItem.textContent = group;
-	        groupItem.className = 'group-item strong-red';
-	        const itemList = document.createElement('ul');
-	        itemList.className = 'variant-list';
-
-	        for (const layer of layers) {
-	            const itemElement = document.createElement('li');
-	            itemElement.className = 'variant-item';
-
-	            const checkbox = document.createElement('input');
-	            checkbox.type = 'checkbox';
-	            checkbox.dataset.layerId = layer.id;
-	            checkbox.checked = layer.layout.visibility === 'visible';
-	            checkbox.addEventListener('change', (event) => {
-	                this._onSwitcherChange(event);
-				});
-	            itemElement.appendChild(checkbox);
-
-	            const labelElement = document.createElement('label');
-	            labelElement.textContent = layer.metadata['whg:switchlabel'] || layer.id;
-	            labelElement.className = 'layer-label';
-	            labelElement.dataset.layerId = layer.id;
-	            labelElement.addEventListener('click', (event) => {
-	                checkbox.checked = !checkbox.checked;
-	                this._onSwitcherChange(event);
-	            });
-	            itemElement.appendChild(labelElement);
-
-	            itemList.appendChild(itemElement);
-	        }
-
-	        groupItem.appendChild(itemList);
-	        switches.appendChild(groupItem);
+	
+	            switches.appendChild(groupItem);
+	        });
 	    }
-
+	    
+	    styleJSON.layers.forEach(layer => {
+	        const metadata = layer.metadata;
+	        if (metadata && metadata['whg:group']) {
+	            const group = metadata['whg:group'];
+	            const checkbox = checkboxIndex[group];
+	            if (checkbox) {
+		            let layerIds = checkbox.dataset.layers || '';
+		            layerIds += (layerIds ? '|' : '') + layer.id;
+		            checkbox.dataset.layers = layerIds;
+	            }
+		    	this._map.setLayoutProperty(layer.id, 'visibility', checkbox.checked ? 'visible' : 'none');
+	        }
+		    if (metadata && metadata['whg:group'] === 'Labels' && layer.source === 'openmaptiles') {
+	            // Update the text-field property to display local names if available
+                this._map.setLayoutProperty(layer.id, 'text-field', ['coalesce', ['get', 'name:local'], ['get', 'name'], ['get', 'name:en']]);
+		    }
+	    });
+	
 	    const existingSwitches = document.getElementById('layerSwitches');
 	    const mapStyleList = document.getElementById('mapStyleList');
 	    if (existingSwitches) {
@@ -248,16 +293,12 @@ class acmeStyleControl {
 	    } else {
 	        mapStyleList.appendChild(switches);
 	    }
-
 	}
 
-	_onSwitcherChange(event) {
-	    const layerId = event.target.dataset.layerId;
-	    const layer = this._map.getLayer(layerId);
-	    const visibility = this._map.getLayoutProperty(layerId, 'visibility');
-	    if (layer) {
-	        this._map.setLayoutProperty(layerId, 'visibility', visibility === 'visible' ? 'none' : 'visible');
-	    }
+	_onSwitcherChange(group) {
+		group.dataset.layers.split('|').forEach(layerId => {
+			this._map.setLayoutProperty(layerId, 'visibility', group.checked ? 'visible' : 'none');
+		});
 	}
 
     createMapStyleList() {
@@ -385,11 +426,13 @@ class acmeStyleControl {
 		else {
 
 	        const resultJSON = this.listDictionary[event.target.dataset.value];
+			console.log('Switching style', resultJSON);
 	        this.buildSwitcher(resultJSON);
 
 			this._map.setStyle(resultJSON, {
 	            diff: false, // Force rebuild because native diff logic cannot handle this transformation
 	            transformStyle: (previousStyle, nextStyle) => {
+					console.log('Next style', nextStyle);
 
 					const modifiedSources = {
 	                    ...nextStyle.sources,
