@@ -114,22 +114,22 @@ class Dataset(models.Model):
   def carousel_metadata(self):
     return carousel_metadata(self)
 
-  @property
-  def builder_hastask(self):
-    hastask = False
-    if self.tasks.filter(task_name='align_collection').count() > 0:
-      hastask = True
-    return hastask
+  # @property
+  # def builder_hastask(self):
+  #   hastask = False
+  #   if self.tasks.filter(task_name='align_collection').count() > 0:
+  #     hastask = True
+  #   return hastask
 
-  @property
-  def builder_remaining(self):
-    remaining = 0
-    if self.tasks.filter(task_name='align_collection').count() > 0:
-        remaining = Hit.objects.filter(
-            task_id=self.tasks.filter(task_name='align_collection')[0].task_id,
-            reviewed=False
-        ).values("place_id").distinct().count()
-    return remaining
+  # @property
+  # def builder_remaining(self):
+  #   remaining = 0
+  #   if self.tasks.filter(task_name='align_collection').count() > 0:
+  #       remaining = Hit.objects.filter(
+  #           task_id=self.tasks.filter(task_name='align_collection')[0].task_id,
+  #           reviewed=False
+  #       ).values("place_id").distinct().count()
+  #   return remaining
 
   @property
   def convex_hull(self):
