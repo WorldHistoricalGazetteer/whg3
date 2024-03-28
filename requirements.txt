@@ -79,6 +79,7 @@ jsonpointer==2.3
 jsonschema==4.17.3
 kombu==5.2.4
 linear-tsv==1.1.0
+networkx==3.2.1
 numpy==1.24.1
 oauthlib==3.2.2
 openpyxl==3.0.9
