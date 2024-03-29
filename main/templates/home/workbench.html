@@ -1,0 +1,191 @@
+{% extends "main/base.html" %}
+{% block title %}<title>WHG::</title>{% endblock %}
+{% block extra_head %}
+  <style>
+    body { font-family: 'Raleway', sans-serif; }
+    #intro p { margin-top: 0; margin-bottom: 0; }
+  </style>
+{% endblock %}
+{% load static %}
+
+{% block content %}
+  {% load dataset_extras %}
+<div class="container">
+  <div class="d-flex justify-content-center my-2">
+    <h3>WHG Gazetteer Workbench</h3>
+  </div>
+  <div class="row justify-content-center">
+    <div class="col-2"></div> <!-- Offset -->
+    <div id="intro" class="col-8">
+      <div class="row">
+        <div class="col-3">
+          <p><img src="{% static 'images/globi_400.jpg' %}" width="125" class="me-3"/></p>
+        </div>
+        <div class="col-9">
+          <p class="fs-5"> Hi, I'm Globi. How can I help you? I have feathers!</p>
+          <p class="smallish">Tools in the WHG platform can help you to enhance your uploaded place data and to create three kinds of gazetteer publications:
+            <ul class="smallish">
+          <li>A thematic annotated <span class="strong-red">place collection</span></li>
+          <li>A gazetteer <span class="strong-red">dataset</span> from a single upload file</li>
+          <li>A gazetteer from multiple datasets (a <span class="strong-red">dataset collection</span>)</li>
+            </ul>
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-2"></div> <!-- Offset -->
+  </div>
+    <div class="row">
+      <div class="col-12">
+        <ul id="workbench_tabs" class="nav nav-tabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="stories-tab" data-bs-toggle="tab" data-bs-target="#stories"
+                  type="button" role="tab" aria-controls="stories" aria-selected="true">Place Collections
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="enhance-tab" data-bs-toggle="tab" data-bs-target="#enhance"
+                  type="button" role="tab" aria-controls="enhance" aria-selected="true">Individual Datasets</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#build"
+                  type="button" role="tab" aria-controls="build" aria-selected="true">Dataset Collections</button>
+          </li>
+        </ul>
+        <div class="tab-content">
+          <div id="stories" class="tab-pane fade show active" role="tabpanel"
+               aria-labelledby="collections-tab">
+            <div class="row pt-2">
+              <div class="col-12">
+                <h5>Telling stories with Place Collections
+                  <span class="fs-6 float-end">
+                  {% if user.is_authenticated %}
+                    <a href="{% url 'collection:place-collection-create' %}">Get started</a>
+                  {% else %}<a href="{% url 'accounts:login' %}">log in</a>
+                    or <a href="{% url 'accounts:register' %}">register</a> to get started{% endif %}
+                </span>
+</h5>
+                <p class="smallish">The WHG <i>place collection builder</i> tool allows any user to add place records from any number of datasets to an authored thematic collection, and to annotate each record with a note, an image, and a keyword from a set created for that collection. Annotations can also include a date or timespan, or be arranged in sequence. The collection itself includes an explanatory essay, and up to three related external links. <a href="">example presentation</a> (modal popup).
+                </p>
+                <p class="d-block bg-beige mt-3 mb-1 fs-6">Place Collections for teaching and workshops</p>
+                <p class="smallish">Users assigned the <i>group leader</i> role can create class/session groups, invite students/members, review submitted collections, and nominate exceptional work for inclusion in a student gallery. For details see the <a href="{% url 'teaching' %}">Teaching with WHG page</a>.
+                <p class="d-block bg-beige mt-3 mb-1 fs-6">Another section appealing to researchers</p>
+                <p class="smallish">35 words max here</p>
+              </div>
+            </div>
+          </div>
+          <div id="enhance" class="tab-pane fade">
+            <div class="row pt-2">
+              <div class="col-12">
+                <h5>Creating a gazetteer dataset
+                <img src="{% static 'images/001-up-arrow.png' %}" height="28" style="vertical-align: text-bottom;"/>
+<img src="{% static 'images/003-browser.png' %}" height="28" style="vertical-align: text-bottom;"/>                  <span class="fs-6 float-end">
+                  {% if user.is_authenticated %}
+                    <a href="{% url 'datasets:dataset-create' %}">Get started</a>
+                  {% else %}<a href="{% url 'accounts:login' %}">log in</a>
+                    or <a href="{% url 'accounts:register' %}">register</a> to get started{% endif %}
+                </span>
+                </h5>
+                <p class="smallish">Registered users can upload a file of place data in one of <a href="#" class="pop-link">two supported formats</a> into their private workspace, view its contents in a map and table, and augment it using the WHG <i>reconciliation tool</i>. That process looks for possible matches to each of their records in WHG's indexes of 13 million Wikidata and GeoNames records. Then, records that received one or more "hit" are presented alongside those hits in a <i>review</i> screen. The dataset owner (or any designated collaborators) decide in each case: 'match' or 'no match.' Matches augment the user's record by adding geographic coordinates, name variants, and authority identifiers from the matched record.</p>
+                <p class="d-block bg-beige mt-3 mb-1 fs-6">Publish the dataset</p>
+                <p class="smallish">A reconciled dataset with completed metadata can be submitted to WHG editors for publication, making its presentation page public with a permanent URL <a href="">example</a> (modal popup) and its data searchable by site vistors in the WHG search page and via the WHG Application Programming Interface (API).
+                </p>
+                <p class="d-block bg-beige mt-3 mb-1 fs-6">Download the data for offline use</p>
+                <p class="smallish">An augmented dataset can be downloaded with its new geometry, name variants, and authority IDs, for offline use in other software. Or the dataset owner can choose to publish it as a gazetteer resource.</p>
+              </div>
+            </div>
+          </div>
+          <div id="build" class="tab-pane fade">
+            <div class="row pt-2">
+              <div class="col-12">
+                <h5>Assembling a Dataset Collection <img src="{% static 'images/008-collect.png' %}" height="28" style="vertical-align: text-bottom;"/>
+                  <span class="fs-6 float-end">
+                  {% if user.is_authenticated %}
+                    <a href="{% url 'collection:ds-collection-create' %}">Get started</a>
+                  {% else %}<a href="{% url 'accounts:login' %}">log in</a>
+                    or <a href="{% url 'accounts:register' %}">register</a> to get started{% endif %}
+                </span>
+                </h5>
+                <p class="smallish">
+                  The WHG <i>dataset collection builder</i> allows individuals and collaborating groups to gather multiple datasets in a collection, link records that are for the same place, and publish the collection as a single gazetteer resource in a presentation page with a permanent URL. <a href="">example</a> (modal popup).</p>
+                <p class="d-block bg-beige mt-3 mb-1 fs-6">The process</p>
+                <p class="smallish">A dataset collection is initiated, or "seeded" with a single published dataset (call it 'ds1'), and indexed in a distinct collection namespace. A second dataset ('ds2') is then added, and reconciled against the first. That is, potential matches between records are found and presented to the owner or collaborating team for review. These steps can be repeated for as many datasets as desired: 'ds3' reconciled against the combined 'ds1' and ds2' record set, and so forth. </p>
+              <p class="d-block bg-beige mt-3 mb-1 fs-6">Publication</p>
+              <p class="smallish">When all the component dataset places have been internally linked, the collection owner(s) will typically complete its metadata, add an explanatory essay, and request its publication. Its records can now be searched and browsed on the WHG site, and accessed as a discrete source via the WHG API.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% comment %}
+    <div id="workbench_content" class="px-5">
+      <div>
+        <p>There are two approaches to developing and publishing gazetteer data in World Historical Gazetteer. <br/><b>Path A</b> is for single datasets, <b>Path B</b> offers options for bringing for multiple datasets together.</p>
+      </div>
+      <div class="row">
+        <div class="col col-sm-6 small">
+          <h4 class="bg-lightblue p-2">Path A
+{#            <span class="fs-6 ms-3"><a href="">get started</a></span>#}
+            <span class="fs-6 ms-3 ital">single datasets</span>
+            <span class="float-end me-2">
+              <img src="{% static 'images/001-up-arrow.png' %}" class="" height=28 width=28 alt=""/>
+              <img src="{% static 'images/003-browser.png' %}" class="" height=28 width=28 alt=""/>
+            </span>
+          </h4>
+          <div class="" style="min-height: 155px;">
+            <div class="d-flex">
+              <div class="col-md-6">
+                <p class="p-1 mb-0">
+Path A is the simplest: (a) create a dataset by uploading a file in Linked Places or LP-TSV format, then (b) augment it by reconciling with our Wikidata index. The resulting dataset can be downloaded for further processing on your own, and optionally published to WHG&mdash;making its records searchable and providing a public presentation page and permanent URL.<br/><img class="w-25 opacity-50" src="{% static 'images/video_placeholder.png' %}"  alt=""/>
+                </p>
+              </div>
+              <div>
+                <img class="w-100" src="{% static 'images/button_upload-enhance.png' %}">
+                <img class="w-100" src="{% static 'images/pathA_steps.png' %}"  alt=""/>
+              </div>
+            </div>
+          </div>
+          <!-- image of path A -->
+        </div>
+        <div class="col col-sm-6 small">
+          <h4 class="bg-lightyellow p-2">Path B
+{#            <span class="fs-6 ms-3"><a href="">get started</a></span>#}
+            <span class="fs-6 ms-3 ital">multiple datasets</span>
+            <span class="float-end me-2">
+                <img src="{% static 'images/001-up-arrow.png' %}" class="" height=28 width=28 alt=""/>
+                <img src="{% static 'images/003-browser.png' %}" class="" height=28 width=28 alt=""/>
+                <img src="{% static 'images/008-collect.png' %}" class="" height=28 width=28 alt=""/>
+            </span>
+          </h4>
+          <div class="" style="min-height: 155px;">
+            <div class="d-flex">
+              <div class="col-md-6">
+                <p class="p-1 mb-0">
+In version 3, the Dataset Collection feature has been extended and enhanced. An individual or group can assemble a gazetteer resource by adding datasets to a collection, reconciling each with those already added. In this way, records for the same (or closely matched) places are explicitly linked. The resulting collection can then be published as is&mdash;a collection of discrete datasets having linked places&mdash;or the linked records from different datasets can be merged, producing a new, composite dataset.<br/>
+                  <img class="w-25 opacity-50" src="{% static 'images/video_placeholder.png' %}"  alt=""/>
+                </p>
+              </div>
+              <div>
+                <img class="w-100" src="{% static 'images/button_build.png' %}">
+                <img class="w-100" src="{% static 'images/pathB_steps.png' %}"  alt=""/>
+              </div>
+            </div>
+          </div>
+
+{#          <div class="" p-1 style="min-height: 155px;">#}
+{#            <p class="p-1 mb-0"><img class="float-start w-25" src="{% static 'images/button_build.png' %}"></p>#}
+{#          </div>#}
+{#          <img src="{% static 'images/pathB_steps.png' %}" class="img-fluid" alt=""/>#}
+
+        </div>
+      </div>
+    </div> <!-- build_content -->
+  </div> <!-- container -->
+{% endcomment %}
+  <script type="text/javascript">
+    // js imports here
+  </script>
+{% endblock %}
+```
+

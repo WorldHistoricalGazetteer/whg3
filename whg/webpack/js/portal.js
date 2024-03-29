@@ -218,26 +218,30 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 
     	const collectionList = $('#collection_list');
     	const ul = $('<ul>').addClass('coll-list');
-    	payload.forEach(dataset => {
-		  	if (dataset.collections.length > 0) {
-				  dataset.collections.forEach(collection => {
-			            let listItem = '';
-			            if (collection.class === 'place') {
-			                listItem = `
-			                    <a href="${ collection.url }" target="_blank">
-			                        <b>${ collection.title.trim() }</b>
-			                    </a>, a collection of <sr>${ collection.count }</sr> places.
-			                    <span class="showing"><p>${ collection.description }</p></span>
-			                    [<a href="javascript:void(0);" data-id="${ collection.id }" class="show-collection"><span>show</span><span class="showing">hide</span></a>]
-			                `;
-			            } else {
-			                listItem = `
-			                    <a href="${ collection.url }" target="_blank">
-			                        <b>${title}</b>
-			                    </a>, a collection of all <sr>${ collection.count }</sr> places in datasets
-			                `;
-			            }
-			            ul.append($('<li>').html(listItem));
+			// KG: this is not a dataset, it's place
+    	payload.forEach(place => {
+		  	if (place.collections.length > 0) {
+				  place.collections.forEach(collection => {
+						console.log('collection', collection);
+						let listItem = '';
+						// TODO: places are only ever in place collections
+						if (collection.class === 'place') {
+								listItem = `
+										<a href="${ collection.url }" target="_blank">
+												<b>${ collection.title.trim() } <i class="fas fa-external-link"></i></b>
+										</a>, <br/>a collection of <sr>${ collection.count }</sr> places by {collection.owner.name}.
+										<span class="showing"><p>${ collection.description }</p></span>
+										[<a href="javascript:void(0);" data-id="${ collection.id }" class="show-collection">
+										<span>preview</span><span class="showing">close</span></a>]
+								`;
+						} else {
+								listItem = `
+										<a href="${ collection.url }" target="_blank">
+												<b>${title}</b>
+										</a>, a collection of all <sr>${ collection.count }</sr> places in datasets
+								`;
+						}
+						ul.append($('<li>').html(listItem));
 				  });
 			}
 		});
