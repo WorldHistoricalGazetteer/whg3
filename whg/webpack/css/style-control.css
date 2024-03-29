@@ -1,5 +1,9 @@
 /* /whg/webpack/css/style-control.css */
 
+.maplibregl-ctrl.opaque {
+    background-color: rgba(255, 255, 255, .7);	
+}
+
 .style-button {
 	padding: 4px!important;
 	float: right;
@@ -85,10 +89,44 @@
 }
 
 #mapStyleList::-webkit-scrollbar-thumb {
-  background-color: #007bff; /* Customize the scrollbar thumb color */
+  background-color: #007bff;
   border-radius: 8px;
 }
 
 #mapStyleList::-webkit-scrollbar-thumb:hover {
-  background-color: #0056b3; /* Customize the scrollbar thumb color on hover */
+  background-color: #0056b3;
+}
+
+#mapStyleList .group-item > input[type="checkbox"] {
+    margin: 0 5px;
+    top: 2px;
+    position: relative;	
+}
+
+#nearbyPlacesControl {
+	display: none;
+}
+
+#update_nearby {
+	margin-left: 12px;
+    position: relative;
+    top: -3px;
+    cursor: pointer;
+}
+
+#update_nearby > i, #update_nearby > span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+#update_nearby > i {
+    font-size: 1.6em;
+    opacity: .4;
+    color: black;
+}
+
+#update_nearby > span {
+    font-size: 1rem;
 }

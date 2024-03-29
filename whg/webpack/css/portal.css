@@ -141,10 +141,9 @@ div.overlay .left .item {
     margin-bottom: -2px;
 }
 
-#map_options .group-item > input[type="checkbox"] {
-    margin-left: 5px;
-    top: 2px;
-    position: relative;	
+#nearbyPlacesControl {
+    display: flex !important;
+    align-items: baseline;
 }
 
 #time_control {
@@ -152,15 +151,6 @@ div.overlay .left .item {
   flex-shrink: 0;
   flex-basis: 60px;
   margin-top: auto;
-}
-
-button#update_nearby {
-    float: right;
-    padding: 0 0.4em;
-	border: 1px solid #888;
-	border-radius: 8px;
-	position: relative;
-	top: -.3em;
 }
 
 ul.coll-list {

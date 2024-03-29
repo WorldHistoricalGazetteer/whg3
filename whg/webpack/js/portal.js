@@ -19,10 +19,10 @@ let mapParameters = {
 	maxZoom: 17,
     style: [
 		'WHG',
-		'OSM',
 		'Satellite'
 	],
-    basemap: ['natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade'],
+/*    basemap: ['natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade'],
+    basemap: 'natural-earth-2-landcover',*/
     terrainControl: true,
 	temporalControl: temporal
 }
@@ -79,8 +79,6 @@ function waitMapLoad() {
 			.newSource('places') // Add empty source
 			.newLayerset('places')
 			.addFilter(['!=', 'outOfDateRange', true]);
-
-			$('#map_options').append(createNearbyPlacesControl());
 
 			const dateRangeChanged = throttle((fromValue, toValue, includeUndated) => { // Uses imported lodash function
 			    filterSources(fromValue, toValue, includeUndated);
@@ -316,6 +314,13 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
                 toggleVariants(event, this);
             });
         });
+                
+        $('body').on('change', '#nearby_places, #radiusSelect', function() {
+		    nearbyPlaces();
+		});        
+        $('body').on('click', '#update_nearby', function() {
+		    nearbyPlaces();
+		});
 
 		new ClipboardJS('#permalinkButton', {
 		    text: function() {
@@ -383,12 +388,14 @@ function filterSources(fromValue, toValue, includeUndated) {
 }*/
 
 function nearbyPlaces() {
+	console.log('nearbyPlaces');
+	
 	if ( $('#nearby_places').prop('checked') ) {
         const center = mappy.getCenter();
         const radius = $('#radiusSelect').val();
         const lon = center.lng;
         const lat = center.lat;
-        $('button#update_nearby').show();
+        $('#update_nearby').show();
 
         fetch(`/api/spatial/?type=nearby&lon=${lon}&lat=${lat}&km=${radius}`)
             .then((response) => {
@@ -402,7 +409,7 @@ function nearbyPlaces() {
                 nearbyFeatureCollection = data; // Set the global variable
                 console.log(nearbyFeatureCollection);
                 mappy.getSource('nearbyPlaces').setData(nearbyFeatureCollection);
-				$('button#update_nearby').html(`<span class="strong-red">${nearbyFeatureCollection.features.length}</span> Update`);
+				$('#update_nearby span').html(`${nearbyFeatureCollection.features.length}`);
 				if (!showingRelated && nearbyFeatureCollection.features.length > 0) {
 					mappy.fitViewport( bbox( nearbyFeatureCollection ) );
 				}
@@ -414,42 +421,6 @@ function nearbyPlaces() {
 	}
 	else {
 		mappy.clearSource('nearbyPlaces');
-        $('button#update_nearby').hide();
+        $('#update_nearby').hide();
 	}
-}
-
-function createNearbyPlacesControl() {
-    const $nearbyPlacesControl = $('<div>').addClass('option-block');
-    $('<p>').addClass('strong-red heading').text('Nearby Places').appendTo($nearbyPlacesControl);
-    const $itemDiv = $('<div>').addClass('geoLayer-choice');
-	const $checkboxItem = $('<input>')
-        .attr('id', 'nearby_places')
-        .attr('type', 'checkbox')
-        //.attr('disabled', 'disabled')
-        .on('change', nearbyPlaces);
-    const $label = $(`<label for = 'nearby_places'>`).text('Show');
-    $itemDiv.append($checkboxItem, $label);
-
-    const $button = $('<button>')
-    	.attr('id', 'update_nearby')
-    	.attr('title', 'Search again - based on map center')
-    	.html('Update')
-    	.on('click', nearbyPlaces)
-    	.hide();
-
-    const $radiusLabel = $(`<label for = 'radiusSelect'>`).text('Radius: ');
-    const $select = $('<select>')
-    	.attr('title', 'Search radius, based on map center')
-    	.attr('id', 'radiusSelect');
-    for (let i = 1; i <= 10; i++) {
-        const $option = $('<option>')
-            .attr('value', i**2)
-            .text(`${i**2} km`);
-        $select.append($option);
-    }
-    $select.val(16).on('change', nearbyPlaces);
-
-    $nearbyPlacesControl.append($button, $itemDiv, $radiusLabel, $select);
-
-    return $nearbyPlacesControl;
 }

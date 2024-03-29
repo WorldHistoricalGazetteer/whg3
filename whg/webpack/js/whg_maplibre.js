@@ -15,6 +15,10 @@ maplibregl.Map.prototype.nullCollection = function() {
 	return { type: 'FeatureCollection', features: [] }
 }
 
+maplibregl.Map.prototype.clearSource = function(sourceId) {
+    this.getSource(sourceId).setData(this.nullCollection());
+};
+
 maplibregl.Map.prototype.eraseSource = function(sourceId) {
 	var layersToErase = this.getStyle().layers.filter(layer => {return layer.source === sourceId})
 	layersToErase.forEach(layer => {
@@ -148,6 +152,7 @@ class acmeStyleControl {
 		this.basemaps = mapInstance.initOptions.basemaps; // e.g. ['natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade', 'kg-NE2_HR_LC_SR_W', 'kg-NE2_HR_LC_SR_W_DR']
 		this.styles = mapInstance.initOptions.styles; // e.g. ['whg-ne-dem']
 		this.listDictionary = {};
+		this.addNearby = false;
 	}
 
 	onAdd() {
@@ -161,6 +166,8 @@ class acmeStyleControl {
 				'</button>';
 			this._listContainer.querySelector('.style-button').addEventListener('click', this._onClick.bind(this));
 		}
+		else this.addNearby = true;
+		
 		const currentStyle = this._map.getStyle();
 
         const promises = [
@@ -267,6 +274,42 @@ class acmeStyleControl {
 	            switches.appendChild(groupItem);
 	        });
 	    }
+
+	    const horizontalLine = document.createElement('hr');
+        horizontalLine.className = 'style-list-divider';
+	    switches.appendChild(horizontalLine);
+
+	    const nearbyPlacesControl = document.createElement('li');
+	    nearbyPlacesControl.id = 'nearbyPlacesControl';
+	    nearbyPlacesControl.classList.add('group-item', 'strong-red');
+	    nearbyPlacesControl.textContent = 'Nearby Places';
+	
+	    const button = document.createElement('div');
+	    button.id = 'update_nearby';
+	    button.title = 'Search again - based on map center';
+	    button.innerHTML = '<i class="fas fa-sync-alt"></i><span class="strong-red"></span>';
+	    button.style.display = 'none';
+	
+	    const checkboxItem = document.createElement('input');
+	    checkboxItem.id = 'nearby_places';
+	    checkboxItem.type = 'checkbox';
+	
+	    const select = document.createElement('select');
+	    select.id = 'radiusSelect';
+	    select.title = 'Search radius, based on map center';
+	    for (let i = 1; i <= 10; i++) {
+	        const option = document.createElement('option');
+	        option.value = i ** 2;
+	        option.textContent = `${i ** 2} km`;
+	        select.appendChild(option);
+	    }
+	    select.value = 16;
+	
+	    nearbyPlacesControl.appendChild(checkboxItem);
+	    nearbyPlacesControl.appendChild(select);
+	    nearbyPlacesControl.appendChild(button);
+	    
+	    switches.appendChild(nearbyPlacesControl); // Event listeners coded in portal.js; hidden with css by default. 
 	    
 	    styleJSON.layers.forEach(layer => {
 	        const metadata = layer.metadata;
@@ -308,8 +351,9 @@ class acmeStyleControl {
         styleList.className = 'maplibre-styles-list';
 
         const groups = [
-            { title: 'Basemaps', items: this.basemaps, type: 'basemap' },
-            { title: 'Styles', items: this.styles, type: 'style' }
+            { title: 'Basemaps', items: this.styles, type: 'style' },
+/*            { title: 'Basemaps', items: this.basemaps, type: 'basemap' },
+            { title: 'Styles', items: this.styles, type: 'style' }*/
         ];
 
         for (const [index, group] of groups.entries()) {
@@ -357,8 +401,8 @@ class acmeStyleControl {
 	    styleList.appendChild(horizontalLine);
 
 	    const hillshadeGroupItem = document.createElement('li');
-	    hillshadeGroupItem.className = 'group-item';
-	    const hillshadeCheckboxItem = document.createElement('li');
+	    hillshadeGroupItem.textContent = 'Hillshade';
+	    hillshadeGroupItem.className = 'group-item strong-red';
 	    const hillshadeCheckbox = document.createElement('input');
 	    hillshadeCheckbox.type = 'checkbox';
 	    hillshadeCheckbox.id = 'hillshadeCheckbox';
@@ -373,13 +417,7 @@ class acmeStyleControl {
 	    }
 
 	    hillshadeCheckbox.addEventListener('change', (event) => this._toggleHillshadeLayers(event));
-	    const hillshadeLabel = document.createElement('label');
-	    hillshadeLabel.textContent = 'Hillshade';
-	    hillshadeLabel.setAttribute('for', 'hillshadeCheckbox');
-        hillshadeLabel.className = 'hillshade-label';
-	    hillshadeCheckboxItem.appendChild(hillshadeCheckbox);
-	    hillshadeCheckboxItem.appendChild(hillshadeLabel);
-	    hillshadeGroupItem.appendChild(hillshadeCheckboxItem);
+	    hillshadeGroupItem.appendChild(hillshadeCheckbox);
 	    styleList.appendChild(hillshadeGroupItem);
 
         this._listContainer.appendChild(styleList);
@@ -395,6 +433,7 @@ class acmeStyleControl {
         if (styleList) {
             styleList.classList.toggle('show');
         }
+        this._listContainer.classList.toggle('opaque');
     }
 
 	_toggleHillshadeLayers(event) {
@@ -427,7 +466,6 @@ class acmeStyleControl {
 
 	        const resultJSON = this.listDictionary[event.target.dataset.value];
 			console.log('Switching style', resultJSON);
-	        this.buildSwitcher(resultJSON);
 
 			this._map.setStyle(resultJSON, {
 	            diff: false, // Force rebuild because native diff logic cannot handle this transformation
@@ -478,7 +516,9 @@ class acmeStyleControl {
 	                    layers: modifiedLayers,
 	                };
 	            },
-	        });
+	        }, () => { // Callback function called after setStyle is completed
+			    this.buildSwitcher(resultJSON);
+			});
 
 		}
 	}
