@@ -71,7 +71,7 @@
 .maplibregl-ctrl #mapStyleList {
   display: none;
   overflow-y: scroll;
-  max-height: 150px;
+  /* max-height: 150px; */
   border: 1px solid #ccc; /* Add a border around the list */
   border-radius: 4px;
   padding: 4px;
