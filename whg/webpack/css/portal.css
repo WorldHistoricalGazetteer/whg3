@@ -1,19 +1,19 @@
 #dataset_content {
   position: relative;
-  height: calc(98vh - 60px);
-  overflow-y: auto;
+}
+
+@media (min-width: 992px) {
+    #dataset_content > div.row > div {
+        height: calc(100vh - 90px);
+    }
 }
 
 #map {
     background-color: #eaffea;
-    height: calc(98vh - 60px)
-    /*height: 80vh;*/
+    min-height: 400px;
 }
 #info {
-    /*background-color: #a8dadc;*/
-    /*background-color: blue;*/
     border: 1px solid #aaa;
-    height: 98%;
     margin:0 !important;
     font-family: 'Raleway', sans-serif !important;
 }
@@ -68,26 +68,6 @@ div.overlay .left .item {
 #mapOverlays .overlay.left.item:last-of-type {
     height: fit-content;
     overflow: visible;
-}
-
-#historygram {
-	height: 105px!important;
-	overflow: visible;
-}
-
-#historygram > p, #historygram .undated_container {
-    position: absolute;
-    z-index: 1;
-}
-
-#historygram .undated_container {
-    top: 28px;	
-}
-
-#historygram .undated_container > label {
-    color: #636a64;
-    top: -5px;
-    position: relative;
 }
 
 #map_options {

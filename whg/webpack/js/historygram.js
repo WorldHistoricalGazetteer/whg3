@@ -10,7 +10,8 @@
 */
 
 export default class Historygram {
-    constructor(intervals, onChange = null, drawHistogram=true, addControls=true, maxBins=100, includeUndated=true, containerId='historygram') {
+    constructor(map, intervals, onChange = null, drawHistogram=true, addControls=true, maxBins=100, includeUndated=true, containerId='historygram') {
+        this.map = map;
         this.intervals = intervals;
         this.fromValue = null;
         this.toValue = null;
@@ -23,19 +24,39 @@ export default class Historygram {
         this.addControls = addControls;
         this.maxBins = maxBins;
         this.containerId = containerId;
-        this.container = document.getElementById(containerId);
-        this.initialise();
-        this.appendUndatedCheckbox();
+        this.container = null;
         this.appendStyles();
+        this.initialise();
+        this.draw();
+        this.appendUndatedCheckbox();
         this.initialise = this.initialise.bind(this);
-        window.addEventListener('resize', this.initialise);
+        this.draw = this.draw.bind(this);
+        window.addEventListener('resize', this.draw);
     }
     
     initialise() {
+		const mapContainer = this.map.getContainer();
+        const controlContainer = mapContainer.querySelector('.maplibregl-control-container');
+        this.container = document.createElement('div');
+        this.container.id = this.containerId;
+        
+	    const wrapperDiv = document.createElement('div');
+	    wrapperDiv.id = 'controlWrapper';
+	    controlContainer.insertAdjacentElement('afterend', wrapperDiv);
+	    wrapperDiv.appendChild(controlContainer);
+	    wrapperDiv.appendChild(this.container);
+        
+	    const paragraph = document.createElement('p');
+	    paragraph.className = 'allcap-heading my-0';
+	    paragraph.textContent = 'TEMPORAL ATTESTATIONS';
+	    this.container.appendChild(paragraph);
+    }
+    
+    draw() {	
         d3.select(this.container).selectAll("svg").remove();
         const [binInterval, binBounds, binCounts] = this.calculateBins();
-        this.histogram(binInterval, binBounds, binCounts);
-    }
+        this.histogram(binInterval, binBounds, binCounts);		
+	}
 
     calculateBins() {
         const [min, max] = this.intervals.reduce(([min, max], row) => [
@@ -70,7 +91,7 @@ export default class Historygram {
 	histogram(binInterval, binBounds, binCounts) {
 	
 	    // Define SVG dimensions and margins
-	    const margin = { top: 10, right: 30, bottom: 30, left: 10 };
+	    const margin = { top: 10, right: 20, bottom: 30, left: 10 };
 	    const width = this.container.clientWidth - margin.left - margin.right;
 	    const height = this.container.clientHeight - margin.top - margin.bottom;
 	
@@ -309,7 +330,7 @@ export default class Historygram {
     }
     
     destroy() {
-        window.removeEventListener('resize', this.initialise);
+        window.removeEventListener('resize', this.draw);
     }
     
     appendStyles() {
@@ -318,12 +339,53 @@ export default class Historygram {
             .range-slider {
                 cursor: ew-resize;
             }
+            
+            #controlWrapper {
+			    display: flex;
+			    flex-direction: column;
+			    height: 100%;				
+			}
+            
+            #controlWrapper > div {
+			    flex: 0 1 auto;				
+			}
+            
 			#historygram {
 			    user-select: none;
 			    -webkit-user-select: none; /* For Safari */
 			    -moz-user-select: none; /* For Firefox */
 			    -ms-user-select: none; /* For Internet Explorer/Edge */
-			}            
+
+				height: 105px!important;
+				overflow: visible;
+				width: calc(100% - 16px);
+			    position: relative;
+			    margin: 0 8px 8px;
+			    background-color: rgba(255, 255, 255, .8);
+			    padding: 6px;
+			    border: 1px solid lightgrey;
+			    border-radius: 4px;
+			}
+
+			#historygram > p, #historygram .undated_container {
+			    position: absolute;
+			    z-index: 1;
+			}
+			
+			#historygram .undated_container {
+			    top: 28px;	
+			}
+			
+			#historygram .undated_container > label {
+			    color: #636a64;
+			    position: relative;
+			    top: -4px;
+			    font-size: 12px;
+			}
+			
+			.maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right {
+				bottom: 109px;				
+			}   
         `;
         document.head.appendChild(style);
     }

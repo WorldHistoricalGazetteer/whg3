@@ -46,31 +46,6 @@ function waitMapLoad() {
         mappy.on('load', () => {
             console.log('Map loaded.');
 
-			const controlContainer = document.querySelector('.maplibregl-control-container');
-			controlContainer.setAttribute('id', 'mapControls');
-			controlContainer.classList.add('item');
-
-			const mapOverlays = document.createElement('div');
-			mapOverlays.id = 'mapOverlays';
-			mappy.getContainer().appendChild(mapOverlays);
-
-			['left', 'centre', 'right'].forEach(function(side) {
-				const column = document.createElement('div');
-				column.classList.add('column', side);
-				mapOverlays.appendChild(column);
-				const overlays = document.querySelectorAll('.overlay.' + side);
-				overlays.forEach(function(overlay) {
-					if (overlay.id == 'map') {
-						column.appendChild(controlContainer);
-						overlay.classList.remove('overlay','left','right');
-					}
-					else {
-						column.appendChild(overlay);
-						overlay.classList.add('item');
-					}
-				})
-			});
-
             mappy
 			.newSource('nearbyPlaces') // Add empty source
 			.newLayerset('nearbyPlaces', 'nearbyPlaces', 'nearby-places');
@@ -84,19 +59,8 @@ function waitMapLoad() {
 			    filterSources(fromValue, toValue, includeUndated);
 			}, 300);
 
-/*			if (!!mapParameters.temporalControl) {
-				let datelineContainer = document.createElement('div');
-				datelineContainer.id = 'dateline';
-				document.getElementById('mapControls').appendChild(datelineContainer);
-				window.dateline = new Dateline({
-					...mapParameters.temporalControl,
-					onChange: dateRangeChanged
-				});
-			};
-			$(window.dateline.button).on('click', dateRangeChanged);*/
-
 			if (!!mapParameters.temporalControl) {
-				new Historygram(allts, dateRangeChanged);
+				new Historygram(mappy, allts, dateRangeChanged);
 			};
 
 			mappy.on('mousemove', function(e) {
