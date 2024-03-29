@@ -8,33 +8,54 @@
     }
 }
 
-#map {
-    background-color: #eaffea;
-    min-height: 400px;
+#sources,
+#source_detail,
+#graph_viz {
+    padding: .3rem;
+    border: 1px solid #aaa;
 }
+
+#textContent {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;	
+    position: relative;
+}
+
+#sources {
+    flex: 1;
+    max-height: 80%;
+    overflow-y: auto;
+}
+
+#source_detail {
+    max-height: 30%;
+    overflow-y: auto;
+    padding: .5rem;	
+}
+
 #info {
     border: 1px solid #aaa;
     margin:0 !important;
     font-family: 'Raleway', sans-serif !important;
 }
 
+#map {
+    background-color: #eaffea;
+    min-height: 400px;
+}
+
 #permalinkButton {
-    float: right;
+	float: right;
     font-size: .9em;
+    width: fit-content;
+    position: absolute;
+    top: 0.3rem;
+    right: 0.3rem;
 }
 
 div.overlay .left .item {
     padding: 2px !important;
-}
-#sources,
-#source_detail,
-#graph_viz {
-    padding: 2px;
-    border: 1px solid #aaa;
-}
-
-#source_detail {
-    padding-left: 0.3rem;
 }
 
 #histogram {
