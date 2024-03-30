@@ -113,16 +113,19 @@ function waitMapLoad() {
 				}
 			});
 			
-			const ecoFeatures = mappy.queryRenderedFeatures(mappy.project(centroid)).filter(feature => {
-			    return feature.source === 'ecoregions';
+			const ecoAdminFeatures = mappy.queryRenderedFeatures(mappy.project(centroid)).filter(feature => {
+			    return feature.source === 'ecoregions' || feature.source === 'natural_earth';
 			});
-			ecoFeatures.forEach(feature => {
+			console.log(ecoAdminFeatures);
+			ecoAdminFeatures.forEach(feature => {
 		        if (feature.layer['source-layer'] === 'biomes') {
 		            geoData.biome.name = feature.properties.label;
 		            geoData.biome.url = `https://en.wikipedia.org/wiki/${feature.properties.label.charAt(0) + feature.properties.label.slice(1).toLowerCase().replace('&','and').replace(' ','_')}`;
 		        } else if (feature.layer['source-layer'] === 'ecoregions') {
 		            geoData.ecoregion.name = feature.properties.label;
 		            geoData.ecoregion.url = `https://en.wikipedia.org/wiki/${feature.properties.label.charAt(0) + feature.properties.label.slice(1).toLowerCase().replace('&','and').replace(' ','_')}`;
+		        } else if (feature.layer['source-layer'] === 'countries' || feature.layer['source-layer'] === 'states') {
+		            geoData.admin.push(feature.properties['NAME']  || feature.properties['name']);
 		        }
 			});
 
