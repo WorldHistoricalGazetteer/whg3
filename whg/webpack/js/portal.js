@@ -126,18 +126,6 @@ function waitDocumentReady() {
 
 			let checked_cards =[]
 
-			// Add an event listener for the radio buttons
-			// document.querySelectorAll('input[name="r_anno"]').forEach(radio => {
-			// 	radio.addEventListener('click', function() {
-			// 		// Add the data-id value of the .pop-link <a> tag to the checked_cards array
-			// 		const pid = this.closest('.source-box').querySelector('.pop-link').dataset.id;
-			// 		checked_cards.push(pid);
-			//
-			// 		// Unhide the #addtocoll span
-			// 		document.getElementById('addtocoll').style.display = 'block';
-			// 	});
-			// });
-
 			document.querySelectorAll('input[name="r_anno"]').forEach(radio => {
 					radio.addEventListener('click', function() {
 							// Add the data-id value of the radio input to the checked_cards array
@@ -148,16 +136,24 @@ function waitDocumentReady() {
 							document.getElementById('addtocoll').style.display = 'block';
 					});
 			});
-			// Add an event listener for the #addchecked link
-			document.getElementById('addchecked').addEventListener('click', function(event) {
-				event.preventDefault();
-				let popup = document.getElementById('addtocoll_popup');
-				// Unhide the #addtocoll_popup div
-				popup.style.top = '40px';
-                popup.style.left = '468px';
-				popup.style.display = 'block';
+			
+		    // Initialize modal dialog
+		    $("#addtocoll_popup").dialog({
+		        autoOpen: false,
+		        modal: true,
+		        width: 500,
+		        title: "Add Place to a Collection",
+		        buttons: {
+		            "Close": function() {
+		                $(this).dialog("close"); // Close dialog when "Close" button is clicked
+		            }
+		        }
+		    });
 
-			});
+		    // Show modal dialog when needed
+		    $("#addchecked").click(function() {
+		        $("#addtocoll_popup").dialog("open");
+		    });
 
 			// Add an event listener for the .a_addtocoll links
 			document.querySelectorAll('.a_addtocoll').forEach(link => {
@@ -178,45 +174,139 @@ function waitDocumentReady() {
 }
 
 Promise.all([waitMapLoad(), waitDocumentReady()])
-    .then(() => {
+    .then(() => {	
+		
+		const allTimespans = payload.flatMap(place => place.timespans);
+		const { earliestStartYear, latestEndYear } = allTimespans.reduce((acc, timespan) => {
+		    const [startYear, endYear] = timespan;
+		    return {
+		        earliestStartYear: Math.min(acc.earliestStartYear, startYear),
+		        latestEndYear: Math.max(acc.latestEndYear, endYear)
+		    };
+		}, { earliestStartYear: Infinity, latestEndYear: -Infinity });
+		
+		const temporalRange = Number.isFinite(earliestStartYear) && Number.isFinite(latestEndYear) 
+			? `, and a temporal extent of <b>${Math.abs(earliestStartYear)}${earliestStartYear < 0 ? 'B' : ''}CE to ${Math.abs(latestEndYear)}${latestEndYear < 0 ? 'B' : ''}CE</b>` 
+			: '';
+			
+		const allNameVariants = payload.flatMap(place => place.names.map(label => label.label));
+		const distinctNameVariants = new Set(allNameVariants);
+
+		const allTypes = payload.flatMap(place => place.types.map(type => type.label));
+		const distinctTypes = new Set(allTypes);
+		const distinctTypesArray = [...distinctTypes].sort();
+		var distinctTypesText;
+		switch (distinctTypesArray.length) {
+		    case 0:
+		        distinctTypesText = '';
+		        break;
+		    case 1:
+				distinctTypesText = ` as having type <b>${distinctTypesArray[0]}</b>`;
+		        break;
+		    case 2:
+		        distinctTypesText = ` as having types ${distinctTypesArray.map(type => `<b>${type}</b>`).join(' and ')}`;
+		        break;
+		    default:
+		        const joinedTypes = distinctTypesArray.slice(0, -1).map(type => `<b>${type}</b>`).join(', ');
+			    const lastType = `, and <b>${distinctTypesArray[distinctTypesArray.length - 1]}</b>`;
+			    distinctTypesText = ` as having types ${joinedTypes}${lastType}`;
+		}
+		
+		$('#gloss').append($('<p>').addClass('mb-1').html(`
+			This place is attested (so far) in the <b>${payload.length}</b> source${payload.length > 1 ? 's' : ''} listed below${distinctTypesText}, 
+			with <b>${distinctNameVariants.size}</b> distinct name variant${distinctNameVariants.size > 1 ? 's' : ''}${temporalRange}. 
+			It lies within the modern political boundaries of {admin1}, {admin0}, 
+			and within the <a href="">{x} ecoregion</a> and <a href="#">{x} biome</a>.
+		`));	
 
     	const collectionList = $('#collection_list');
     	const ul = $('<ul>').addClass('coll-list');
-			// KG: this is not a dataset, it's place
+    	
+    	$('#sources').find('h6').text(`${payload.length} Source${payload.length > 1 ? 's' : ''}`);
+
+		payload.forEach(place => { // Reverse-sort each set of timespans by end year
+		    place.timespans.sort((a, b) => b[1] - a[1]);
+		});
+		
+		payload.sort((a, b) => { // Sort places based on the latest end year
+		    const endYearA = a.timespans.length > 0 ? a.timespans[0][1] : Number.NEGATIVE_INFINITY;
+		    const endYearB = b.timespans.length > 0 ? b.timespans[0][1] : Number.NEGATIVE_INFINITY;
+		    return endYearB - endYearA;
+		});
+
     	payload.forEach(place => {
+			
+			const moreNames = place.names.length > 10 ? `<div class="moreContent hidden">; ${place.names.slice(10).map(label => label.label).join('; ')}</div> [<a href="#" title="show more" class="more-link"><span><i class="fas fa-plus"></i></span><span class="hidden"><i class="fas fa-minus"></i></span></a>]` : '';
+			
+	        const sourceHTML = `
+	            in: <a class="pop-link pop-dataset"
+	                   data-id="${place.dataset.id}" data-toggle="popover"
+	                   title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
+	                ${place.dataset.name.replace('(stub) ', '').substring(0, 25)}
+	            </a>
+				<div class="name-variants">
+				    <strong class="larger">${place.title}</strong> ${place.names.slice(0, 10).map(label => label.label).join('; ') + moreNames}
+				</div>
+	            ${place.types.length > 0 ? `<div>Type${place.types.length > 1 ? 's' : ''}: ${place.types.map(type => type.label).join(', ')}</div>` : ''}
+    			${place.timespans.length > 0 ? `<div>Chronology: ${place.timespans.reverse().map(timespan => timespan.join('-')).join(', ')}</div>` : ''}
+	        `;
+	        
+	        $('#sources').append($('<div>').addClass('source-box').html(sourceHTML));		
+			
 		  	if (place.collections.length > 0) {
-				  place.collections.forEach(collection => {
-						console.log('collection', collection);
-						let listItem = '';
-						// TODO: places are only ever in place collections
-						if (collection.class === 'place') {
-								listItem = `
-										<a href="${ collection.url }" target="_blank">
-												<b>${ collection.title.trim() } <i class="fas fa-external-link"></i></b>
-										</a>, <br/>a collection of <sr>${ collection.count }</sr> places by {collection.owner.name}.
-										<span class="showing"><p>${ collection.description }</p></span>
-										[<a href="javascript:void(0);" data-id="${ collection.id }" class="show-collection">
-										<span>preview</span><span class="showing">close</span></a>]
-								`;
-						} else {
-								listItem = `
-										<a href="${ collection.url }" target="_blank">
-												<b>${title}</b>
-										</a>, a collection of all <sr>${ collection.count }</sr> places in datasets
-								`;
-						}
-						ul.append($('<li>').html(listItem));
-				  });
+				place.collections.forEach(collection => {
+					console.log('collection', collection);
+					let listItem = '';
+					// TODO: places are only ever in place collections
+					if (collection.class === 'place') {
+						listItem = `
+							<a href="${ collection.url }" target="_blank"><b>${ collection.title.trim() } <i class="fas fa-external-link"></i></b>
+							</a>, <br/>a collection of <sr>${ collection.count }</sr> places${!!collection.owner ? ` by ${collection.owner.name}` : ''}.
+							<span class="showing"><p>${ collection.description }</p></span>
+							[<a href="javascript:void(0);" data-id="${ collection.id }" class="show-collection"><span>preview</span><span class="showing">close</span></a>]
+						`;
+					} else {
+						listItem = `
+							<a href="${ collection.url }" target="_blank"><b>${title}</b>
+							</a>, a collection of all <sr>${ collection.count }</sr> places in datasets
+						`;
+					}
+					ul.append($('<li>').html(listItem));
+				});
 			}
 		});
-		if (ul.find('li').length > 0) {
+		
+		const collectionCount = ul.find('li').length;
+		if (collectionCount > 0) {
+    		collectionList.prev('h6').text(`In ${collectionCount} Collection${collectionCount > 1 ? 's' : ''}`);
 		    collectionList.append(ul);
+		    
+			switch (collectionCount) {
+			    case 0:
+			        $('#gloss').append(`It does not yet appear in any WHG collections.`);
+			        break;
+			    case 1:
+			        $('#gloss').append(`It appears in the WHG collection shown below.`);
+			        break;
+			    default:
+			        $('#gloss').append(`It appears in the ${collectionCount} WHG collections listed below.`);
+			}
+		    
 		}
 		else {
-			collectionList.html('<i>None yet</i>');
+			$('#source_detail').hide();
 		}
 
 		$('#sources').append(noSources);
+		
+	    $('.more-link').click(function(event) {
+	        event.preventDefault();
+    		event.stopPropagation();
+	        $(this).prev('.moreContent').toggleClass('hidden');
+	        $(this).find('span').toggleClass('hidden');
+	        const title = $(this).attr('title') === 'show more' ? 'show fewer' : 'show more';
+    		$(this).attr('title', title);
+	    });
 
 		featureCollection = geomsGeoJSON(payload);
 		console.log(featureCollection);

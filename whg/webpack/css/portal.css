@@ -54,6 +54,10 @@
     right: 0.3rem;
 }
 
+.name-variants > *:not(.hidden) {
+    display: inline;
+}
+
 div.overlay .left .item {
     padding: 2px !important;
 }
