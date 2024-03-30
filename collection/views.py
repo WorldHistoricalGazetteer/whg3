@@ -513,11 +513,10 @@ def add_dataset_places(request, *args, **kwargs):
   return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 """
-  adds dataset to dataset collection
-  - if it is the first in
-  - if no incomplete reviews of @align_builder tasks
+  add_dateset() and 4 helpers below
+  computes a graph of connected components, writes AggPlace summary to db
+  for consumption by mapAndTable.js functions and rendering in ds_collection_browse.html
 """
-
 def add_dataset(request, *args, **kwargs):
   coll = Collection.objects.get(id=kwargs['coll_id'])
   ds = Dataset.objects.get(id=kwargs['ds_id'])
@@ -526,9 +525,6 @@ def add_dataset(request, *args, **kwargs):
   if not coll.datasets.filter(id=ds.id).exists():
     coll.datasets.add(ds)
     sequence = coll.datasets.count()
-    if coll.datasets.count() == 1:
-      # index only the first
-      indexing_result = index_dataset_to_builder(ds.id, coll.id)
     dataset_details = {
       "id": ds.id,
       "label": ds.label,
@@ -538,11 +534,60 @@ def add_dataset(request, *args, **kwargs):
       "numrows": ds.places.count(),
       "sequence": sequence
     }
+
+    update_collection_components(coll)
+
     return JsonResponse({'status': 'success',
                          'dataset': dataset_details})
 
   return JsonResponse({'status': 'already_added'})
 
+def update_collection_components(coll):
+  import networkx as nx
+  from django.contrib.gis.geos import GeometryCollection
+  from places.models import Place, CloseMatch
+  place_ids = list(coll.places_all.values_list('id', flat=True))
+
+  edges = CloseMatch.objects.filter(
+    Q(place_a__in=place_ids) |
+    Q(place_b__in=place_ids)
+  ).values_list('place_a_id', 'place_b_id')
+
+  G = nx.Graph()
+  G.add_nodes_from(place_ids)
+  G.add_edges_from(edges)
+
+  # Step 2: Find connected components and process each for additional data
+  for i, component in enumerate(nx.connected_components(G)):
+    if i >= 100:
+      break
+    # Compute headword, GeometryCollection, and aggregated place types
+    headword = compute_headword_for_component(component)
+    # print(type(component))
+    print([place.geoms for place in Place.objects.filter(id__in=component)])
+    geometry = GeometryCollection(
+      [geom.geom for place in Place.objects.filter(id__in=component) for geom in place.geoms.all()])
+    # print(geometry)
+    place_types = aggregate_place_types(component)
+    print('Component:', component, '; Headword:', headword, '; Geometry:', geometry, '; Place Types:', place_types)
+    # Store or update component information in the database
+    # (This part will depend on your specific models and structure)
+    save_component_data(coll, component, headword, geometry, place_types)
+
+  # Placeholder functions for computations; implement according to your needs
+
+def compute_headword_for_component(component):
+  # Logic to compute headword
+  return "Example Headword"
+
+def aggregate_place_types(component):
+  # Logic to aggregate place types
+  return ["Type1", "Type2"]
+
+def save_component_data(coll, component, headword, geometry, place_types):
+  # Placeholder function to store component data
+  print('saving component data for collection:', coll)
+  pass
 
 """
   removes dataset from collection
@@ -752,7 +797,7 @@ class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
       {'id':cp.id,'p':cp.place,'seq':cp.sequence}
         for cp in CollPlace.objects.filter(collection=_id).order_by('sequence')
     ]
-    context['created'] = self.object.created.strftime("%Y-%m-%d")
+    context['created'] = self.object.create_date.strftime("%Y-%m-%d")
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
     # context['whgteam'] = User.objects.filter(groups__name='whg_team')
@@ -1058,13 +1103,18 @@ class DatasetCollectionUpdateView(UpdateView):
     datasets = coll.datasets.all()
 
     # populates dropdown
-    ds_select = [obj for obj in Dataset.objects.all().order_by('title').exclude(title__startswith='(stub)')
+
+    assigned_datasets = coll.datasets.all()
+    ds_select = [obj for obj in Dataset.objects.filter(ds_status='indexed').exclude(id__in=assigned_datasets).exclude(title__startswith='(stub)')
                  if user in obj.owners or user in obj.collaborators or user.is_superuser]
+
+    # ds_select = [obj for obj in Dataset.objects.filter(ds_status='indexed').order_by('title').exclude(title__startswith='(stub)')
+    #              if user in obj.owners or user in obj.collaborators or user.is_superuser]
 
     context['action'] = 'update'
     context['ds_select'] = ds_select
     context['coll_dsset'] = datasets
-    context['created'] = self.object.created.strftime("%Y-%m-%d")
+    context['created'] = self.object.create_date.strftime("%Y-%m-%d")
 
     context['owner'] = True if user == coll.owner else False # actual owner
     context['is_owner'] = True if user in self.object.owners else False # owner or co-owner

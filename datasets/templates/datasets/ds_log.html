@@ -62,7 +62,7 @@
             </thead>
             <tbody> 
               {% for c in comments %}
-              <tr><td>{{c.created|date:"Y-m-d"}}</td><td>{{c.place_id.id}}</td>
+              <tr><td>{{c.create_date|date:"Y-m-d"}}</td><td>{{c.place_id.id}}</td>
                 <td>{{c.tag}}</td><td>{{c.note}}</td><td>{{c.user}}</td></tr>
               {% endfor %}
             </tbody>

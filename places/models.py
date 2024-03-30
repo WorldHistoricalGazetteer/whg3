@@ -27,6 +27,7 @@ class Place(models.Model):
   dataset = models.ForeignKey('datasets.Dataset', db_column='dataset',
                                 to_field='label', related_name='places', on_delete=models.CASCADE)
   ccodes = ArrayField(models.CharField(max_length=2, null=True), blank=True)
+  create_date = models.DateTimeField(null=True, blank=True)
   minmax = ArrayField(models.IntegerField(blank=True, null=True),null=True,blank=True)
   timespans = JSONField(blank=True,null=True) # for list of lists
   fclasses = ArrayField(models.CharField(max_length=1, choices=FEATURE_CLASSES), null=True, blank=True)
@@ -160,6 +161,7 @@ class PlaceName(models.Model):
 
   toponym = models.CharField(max_length=2044)
   name_src = models.ForeignKey(Source, null=True, on_delete=models.SET_NULL)
+  create_date = models.DateTimeField(null=True, blank=True)
 
   def __str__(self):
     return self.toponym
@@ -198,7 +200,7 @@ class PlaceGeom(models.Model):
   geom = geomodels.GeometryField(null=True, blank=True, srid=4326)
   s2 = ArrayField(models.CharField(max_length=255, null=True), null=True)
   # informs dataset last_update
-  created = models.DateTimeField(null=True, auto_now_add=True)
+  create_date = models.DateTimeField(null=True, auto_now_add=True)
   # written only if task_id
   reviewer = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
 
@@ -254,7 +256,7 @@ class PlaceLink(models.Model):
   black_parent = models.IntegerField(blank=True, null=True)
 
   # informs dataset last_update
-  created = models.DateTimeField(null=True, auto_now_add=True)
+  create_date = models.DateTimeField(null=True, auto_now_add=True)
   # written only if task_id
   reviewer = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
 
