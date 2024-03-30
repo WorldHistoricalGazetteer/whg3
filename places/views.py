@@ -112,6 +112,7 @@ class PlacePortalView(TemplateView):
       #context['title'] = qs.first().title
       collections = []
       annotations = []
+      all_geoms = []
       print('qs', qs)
       print('place_ids', place_ids)
       for place in qs:
@@ -183,9 +184,21 @@ class PlacePortalView(TemplateView):
             allvariants.append(variant)
 
         context['payload'].append(record)
+        all_geoms.extend(geoms)
     except ValueError:
       messages.error(self.request, "Invalid place ID format")
       raise Http404("Invalid place ID format")
+  
+    if all_geoms:
+        coordinates_list = [geom['coordinates'] for geom in all_geoms]
+        min_x = min(coord[0] for coord in coordinates_list)
+        min_y = min(coord[1] for coord in coordinates_list)
+        max_x = max(coord[0] for coord in coordinates_list)
+        max_y = max(coord[1] for coord in coordinates_list)
+        extent = [min_x, min_y, max_x, max_y]
+        centroid = [(min_x + max_x) / 2, (min_y + max_y) / 2]
+        context['extent'] = extent
+        context['centroid'] = centroid
 
     title_counts = Counter(alltitles)
     variant_counts = Counter(allvariants)
@@ -199,32 +212,6 @@ class PlacePortalView(TemplateView):
     context['portal_headword'] = "; ".join(portal_headword)+"; ..."
     context['annotations'] = annotations
     context['collections'] = collections
-
-    
-    # Calculate initialisation values for temporal control
-    
-    min_ts = float('inf')
-    max_ts = float('-inf')
-    
-    for t in timespans:
-        start, end = t
-        min_ts = min(min_ts, start)
-        max_ts = max(max_ts, end)
-        
-    if min_ts == float('inf') or max_ts == float('-inf'):
-        min_ts = False
-        max_ts = False
-        from_value = False
-        to_value = False
-    else:
-        range_percentage = 5
-        from_value = min_ts - (range_percentage / 100) * (max_ts - min_ts)
-        to_value = max_ts + (range_percentage / 100) * (max_ts - min_ts)
-    
-    context['min_timespan'] = min_ts
-    context['max_timespan'] = max_ts
-    context['from_value'] = from_value
-    context['to_value'] = to_value
 
     return context
 

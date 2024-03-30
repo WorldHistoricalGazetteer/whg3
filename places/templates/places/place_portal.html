@@ -79,17 +79,9 @@
 </div>
 
 <script type="text/javascript">
-    let temporal = {% if from_value %} {
-      fromValue: {{ from_value }},
-      toValue: {{ to_value }},
-      minValue: {{ min_timespan }},
-      maxValue: {{ max_timespan }},
-      open: false,
-      includeUndated: true,
-      epochs: null,
-      automate: null,
-    } {% else %} false; {% endif %}
     let allts = {{ allts }};
+    const extent = {{ extent }};
+    const centroid = {{ centroid }};
 </script>
 
 {{ payload|json_script:"payload_data" }}

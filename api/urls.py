@@ -47,7 +47,6 @@ urlpatterns = [
     # TODO: place/<str:dslabel>/<str:src_id>
     path('place/<str:dslabel>/<str:src_id>/', views.PlaceDetailSourceAPIView.as_view(),name='place-detail-src'), 
 
-
     # 
     # *** GEOMETRY ***
     # 

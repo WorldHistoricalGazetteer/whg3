@@ -818,7 +818,6 @@ class PlaceDetailSourceAPIView(generics.RetrieveAPIView):
   permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
   authentication_classes = [SessionAuthentication]
 
-
 """ 
     /api/geoms?ds={{ ds.label }}} 
     /api/geoms?coll={{ coll.id }}} 

@@ -24,7 +24,7 @@ let mapParameters = {
 /*    basemap: ['natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade'],
     basemap: 'natural-earth-2-landcover',*/
     terrainControl: true,
-	temporalControl: temporal
+	temporalControl: true
 }
 let mappy = new whg_maplibre.Map(mapParameters);
 
@@ -174,7 +174,7 @@ function waitDocumentReady() {
 }
 
 Promise.all([waitMapLoad(), waitDocumentReady()])
-    .then(() => {	
+    .then(() => {
 		
 		const allTimespans = payload.flatMap(place => place.timespans);
 		const { earliestStartYear, latestEndYear } = allTimespans.reduce((acc, timespan) => {
@@ -195,29 +195,36 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		const allTypes = payload.flatMap(place => place.types.map(type => type.label));
 		const distinctTypes = new Set(allTypes);
 		const distinctTypesArray = [...distinctTypes].sort();
-		var distinctTypesText;
-		switch (distinctTypesArray.length) {
-		    case 0:
-		        distinctTypesText = '';
-		        break;
-		    case 1:
-				distinctTypesText = ` as having type <b>${distinctTypesArray[0]}</b>`;
-		        break;
-		    case 2:
-		        distinctTypesText = ` as having types ${distinctTypesArray.map(type => `<b>${type}</b>`).join(' and ')}`;
-		        break;
-		    default:
-		        const joinedTypes = distinctTypesArray.slice(0, -1).map(type => `<b>${type}</b>`).join(', ');
-			    const lastType = `, and <b>${distinctTypesArray[distinctTypesArray.length - 1]}</b>`;
-			    distinctTypesText = ` as having types ${joinedTypes}${lastType}`;
-		}
+        const distinctTypesText = distinctTypesArray.length > 0 ? 
+        	`  as having type${distinctTypesArray.length > 1 ? 's' : ''} ${distinctTypesArray.map((name, index) => index < distinctTypesArray.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${distinctTypesArray.length == 2 ? '' : ','} and$1`)}` 
+        	: '';
 		
 		$('#gloss').append($('<p>').addClass('mb-1').html(`
 			This place is attested (so far) in the <b>${payload.length}</b> source${payload.length > 1 ? 's' : ''} listed below${distinctTypesText}, 
-			with <b>${distinctNameVariants.size}</b> distinct name variant${distinctNameVariants.size > 1 ? 's' : ''}${temporalRange}. 
-			It lies within the modern political boundaries of {admin1}, {admin0}, 
-			and within the <a href="">{x} ecoregion</a> and <a href="#">{x} biome</a>.
-		`));	
+			with <b>${distinctNameVariants.size}</b> distinct name variant${distinctNameVariants.size > 1 ? 's' : ''}${temporalRange}.
+		`));
+		
+		$.ajax({
+		    url: '/api/geoattributes/',
+		    type: 'POST',
+		    headers: {
+		        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+		    },
+		    contentType: 'application/json',
+		    data: JSON.stringify({ coordinates: centroid }),
+		    success: function(data) {
+		        console.log(data);
+		        const adminString = data.admin.length > 0 ? 
+		        	` within the modern political boundaries of ${data.admin.map((name, index) => index < data.admin.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${data.admin.length == 2 ? '' : ','} and$1`)}, and` 
+		        	: ',';
+				$('<p>').addClass('mb-1').html(`
+				    It lies at an elevation of <b>${data.elevation}m</b>${adminString} within the <a href="${data.ecoregion.url}">${data.ecoregion.name}</a> ecoregion and <a href="${data.biome.url}">${data.biome.name}</a> biome.
+				`).insertAfter($('#gloss').find('p:first'));
+		    },
+		    error: function(jqXHR, textStatus, errorThrown) {
+		        console.error('Error:', textStatus, errorThrown);
+		    }
+		});
 
     	const collectionList = $('#collection_list');
     	const ul = $('<ul>').addClass('coll-list');
