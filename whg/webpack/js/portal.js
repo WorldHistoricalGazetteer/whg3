@@ -28,6 +28,7 @@ let mapParameters = {
     terrainControl: true,
 	temporalControl: true
 }
+const defaultZoom = 8;
 let mappy = new whg_maplibre.Map(mapParameters);
 
 const noSources = $('<div>').html('<i>None - please adjust time slider.</i>').hide();
@@ -118,10 +119,10 @@ function waitMapLoad() {
 			ecoFeatures.forEach(feature => {
 		        if (feature.layer['source-layer'] === 'biomes') {
 		            geoData.biome.name = feature.properties.label;
-		            geoData.biome.url = "";
+		            geoData.biome.url = `https://en.wikipedia.org/wiki/${feature.properties.label.charAt(0) + feature.properties.label.slice(1).toLowerCase().replace('&','and').replace(' ','_')}`;
 		        } else if (feature.layer['source-layer'] === 'ecoregions') {
 		            geoData.ecoregion.name = feature.properties.label;
-		            geoData.ecoregion.url = "";
+		            geoData.ecoregion.url = `https://en.wikipedia.org/wiki/${feature.properties.label.charAt(0) + feature.properties.label.slice(1).toLowerCase().replace('&','and').replace(' ','_')}`;
 		        }
 			});
 
@@ -226,7 +227,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         	` within the modern political boundaries of ${geoData.admin.map((name, index) => index < geoData.admin.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${geoData.admin.length == 2 ? '' : ','} and$1`)}, and` 
         	: '';
 		$('<p>').addClass('mb-1').html(`
-		    It lies${elevationString}${adminString} within the <a href="${geoData.ecoregion.url}">${geoData.ecoregion.name}</a> ecoregion and <a href="${geoData.biome.url}">${geoData.biome.name}</a> biome.
+		    It lies${elevationString}${adminString} within the <a href="${geoData.ecoregion.url} target="_blank">${geoData.ecoregion.name}</a> ecoregion and <a href="${geoData.biome.url}" target="_blank">${geoData.biome.name}</a> biome.
 		`).insertAfter($('#gloss').find('p:first'));
 
     	const collectionList = $('#collection_list');
@@ -322,7 +323,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		console.log(featureCollection);
 		mappy.getSource('places').setData(featureCollection);
 		// Do not use fitBounds or flyTo due to padding bug in MapLibre/Maptiler
-		mappy.fitViewport( bbox(featureCollection) );
+		mappy.fitViewport( bbox(featureCollection), defaultZoom );
 
 	  	$('.source-box')
 	  	.on('mousemove', function() {
@@ -341,7 +342,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 				  .removeClass('highlight');
 				  const index = $(this).index() - 1;
 				  mappy.setFeatureState({source: 'places', id: index}, { highlight: false });
-				  mappy.fitViewport( bbox( featureCollection ) );
+				  mappy.fitViewport( bbox( featureCollection ), defaultZoom );
 			  }
 		})
 	  	.on('click', function() {
@@ -366,13 +367,13 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 						relatedFeatureCollection = collgeom;
 			  			console.log('coll_places', relatedFeatureCollection);
 						mappy.getSource('places').setData(relatedFeatureCollection);
-						mappy.fitViewport( bbox(relatedFeatureCollection) );
+						mappy.fitViewport( bbox(relatedFeatureCollection), defaultZoom );
 			  		});
 			  	showingRelated = true;
 			}
 			else {
 				mappy.getSource('places').setData(featureCollection);
-				mappy.fitViewport( bbox(featureCollection) );
+				mappy.fitViewport( bbox(featureCollection), defaultZoom );
 				showingRelated = false;
 			}
 	  	})
@@ -479,7 +480,7 @@ function nearbyPlaces() {
                 mappy.getSource('nearbyPlaces').setData(nearbyFeatureCollection);
 				$('#update_nearby span').html(`${nearbyFeatureCollection.features.length}`);
 				if (!showingRelated && nearbyFeatureCollection.features.length > 0) {
-					mappy.fitViewport( bbox( nearbyFeatureCollection ) );
+					mappy.fitViewport( bbox( nearbyFeatureCollection ), defaultZoom );
 				}
             })
             .catch((error) => {

@@ -814,7 +814,7 @@ maplibregl.Map.prototype.reset = function () {
     });
 }
 
-maplibregl.Map.prototype.fitViewport = function (bbox) {
+maplibregl.Map.prototype.fitViewport = function (bbox, maxZoom) {
 	// This function addresses an apparent bug with flyTo and fitBounds in MapLibre/Maptiler,
 	// which crash and/or fail to center correctly with large mapPadding values.
 	const mapContainer = this.getContainer();
@@ -836,6 +836,8 @@ maplibregl.Map.prototype.fitViewport = function (bbox) {
 		) + this.getZoom();
 	zoom = isNaN(zoom) ? this.getMaxZoom() : Math.min(zoom, this.getMaxZoom());
 	zoom = Math.max(zoom, this.getMinZoom());
+	if (!isNaN(maxZoom)) zoom = Math.min(zoom, maxZoom); // Limit zoom if maxZoom parameter is passed
+	console.log('fitViewport', maxZoom, zoom);
 
 	const viewportPadding = {
 		top: Math.round(mapControlsRect.top - mapContainerRect.top - mapControlsRectMargin),
