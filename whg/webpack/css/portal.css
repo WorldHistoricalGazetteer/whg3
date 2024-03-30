@@ -1,40 +1,65 @@
 #dataset_content {
   position: relative;
-  height: calc(98vh - 60px);
-  overflow-y: auto;
 }
 
-#map {
-    background-color: #eaffea;
-    height: calc(98vh - 60px)
-    /*height: 80vh;*/
+@media (min-width: 992px) {
+    #dataset_content > div.row > div {
+        height: calc(100vh - 90px);
+    }
 }
-#info {
-    /*background-color: #a8dadc;*/
-    /*background-color: blue;*/
+
+#sources,
+#source_detail,
+#graph_viz {
+    padding: .3rem;
     border: 1px solid #aaa;
-    height: 98%;
+}
+
+#textContent {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;	
+    position: relative;
+}
+
+#sources {
+    flex: 1;
+    max-height: 80%;
+    overflow-y: auto;
+}
+
+#source_detail {
+    max-height: 30%;
+    overflow-y: auto;
+    padding: .5rem;	
+}
+
+#info {
+    border: 1px solid #aaa;
     margin:0 !important;
     font-family: 'Raleway', sans-serif !important;
 }
 
+#map {
+    background-color: #eaffea;
+    min-height: 400px;
+}
+
 #permalinkButton {
-    float: right;
+	float: right;
     font-size: .9em;
+    width: fit-content;
+    position: absolute;
+    top: 0.3rem;
+    right: 0.3rem;
+}
+
+.name-variants > *:not(.hidden) {
+    display: inline;
 }
 
 div.overlay .left .item {
     padding: 2px !important;
-}
-#sources,
-#source_detail,
-#graph_viz {
-    padding: 2px;
-    border: 1px solid #aaa;
-}
-
-#source_detail {
-    padding-left: 0.3rem;
 }
 
 #histogram {
@@ -68,11 +93,6 @@ div.overlay .left .item {
 #mapOverlays .overlay.left.item:last-of-type {
     height: fit-content;
     overflow: visible;
-}
-
-#temporal_attestations {
-	height: 105px!important;
-	overflow: hidden;
 }
 
 #map_options {
@@ -123,8 +143,12 @@ div.overlay .left .item {
     font-weight: normal;
     cursor: pointer;
     position: relative;
-    top: -2px;
     margin-bottom: -2px;
+}
+
+#nearbyPlacesControl {
+    display: flex !important;
+    align-items: baseline;
 }
 
 #time_control {
@@ -132,15 +156,6 @@ div.overlay .left .item {
   flex-shrink: 0;
   flex-basis: 60px;
   margin-top: auto;
-}
-
-button#update_nearby {
-    float: right;
-    padding: 0 0.4em;
-	border: 1px solid #888;
-	border-radius: 8px;
-	position: relative;
-	top: -.3em;
 }
 
 ul.coll-list {

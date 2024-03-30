@@ -9,6 +9,10 @@
     transition: opacity 2s ease;
 }
 
+.map-container {
+    height: 60%;
+}
+
 .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib:not(.fade-in) {
     display: none;
 }
@@ -49,10 +53,15 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     background-color: #54a1da;
     color: #fff;
 }
+.map-container {
+	position: relative;
+    min-height: 240px;
+}
 #map {
     position: absolute;
     top: 0;
     bottom: 0;
+    left: 0;
     width: 100%;
 }
 #search_map {

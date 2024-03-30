@@ -1,4 +1,15 @@
 
+@media (min-width: 992px) { /* Large screens and up */
+    .full-height-lg {
+        height: 100%;
+    }
+}
+@media (max-width: 991.98px) { /* Medium screens and down */
+    .full-height-lg {
+        height: auto; /* Default height on medium screens and down */
+    }
+}
+
 @font-face {
   font-family: 'Raleway';
   src: local('Raleway Regular'), url('../../static/webpack/fonts/Raleway/Raleway-Regular.ttf') format('truetype');

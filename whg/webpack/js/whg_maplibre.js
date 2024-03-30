@@ -2,6 +2,7 @@
 
 import Layerset from './layerset';
 import { attributionString } from './utilities';
+import languages from './languages.js';
 
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
@@ -13,6 +14,10 @@ import '../css/dateline.css';
 maplibregl.Map.prototype.nullCollection = function() {
 	return { type: 'FeatureCollection', features: [] }
 }
+
+maplibregl.Map.prototype.clearSource = function(sourceId) {
+    this.getSource(sourceId).setData(this.nullCollection());
+};
 
 maplibregl.Map.prototype.eraseSource = function(sourceId) {
 	var layersToErase = this.getStyle().layers.filter(layer => {return layer.source === sourceId})
@@ -147,6 +152,7 @@ class acmeStyleControl {
 		this.basemaps = mapInstance.initOptions.basemaps; // e.g. ['natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade', 'kg-NE2_HR_LC_SR_W', 'kg-NE2_HR_LC_SR_W_DR']
 		this.styles = mapInstance.initOptions.styles; // e.g. ['whg-ne-dem']
 		this.listDictionary = {};
+		this.addNearby = false;
 	}
 
 	onAdd() {
@@ -160,6 +166,8 @@ class acmeStyleControl {
 				'</button>';
 			this._listContainer.querySelector('.style-button').addEventListener('click', this._onClick.bind(this));
 		}
+		else this.addNearby = true;
+		
 		const currentStyle = this._map.getStyle();
 
         const promises = [
@@ -183,64 +191,144 @@ class acmeStyleControl {
 	}
 
 	buildSwitcher(styleJSON) {
-		const switches = document.createElement('span');
-		switches.id = 'layerSwitches';
-        //switches.className = 'maplibre-styles-list';
-
-    	var switchGroups = {};
-
-        for (const layer of styleJSON.layers) {
-			if (layer.metadata && layer.metadata['whg:switchgroup']) {
-	            const switchGroup = layer.metadata['whg:switchgroup'];
-	            if (!switchGroups[switchGroup]) {
-	                switchGroups[switchGroup] = [];
+	    const switches = document.createElement('span');
+	    switches.id = 'layerSwitches';
+    	const checkboxIndex = {};
+	    
+	    if (styleJSON.metadata && styleJSON.metadata['whg:switchgroups']) {
+	        Object.entries(styleJSON.metadata['whg:switchgroups']).forEach(([groupName, group]) => {
+	            const groupItem = document.createElement('li');
+	            groupItem.className = 'group-item strong-red';
+	            groupItem.textContent = groupName;
+	
+	            if (typeof group === 'object' && group !== null) {
+	
+		            const itemList = document.createElement('ul');
+		            itemList.className = 'variant-list';
+		            
+	                Object.entries(group).forEach(([key, value]) => {
+	                    const listItem = document.createElement('li');
+	                    listItem.className = 'variant-item';
+	
+	                    const checkbox = document.createElement('input');
+	                    checkbox.type = 'checkbox';
+	                    checkbox.id = key;
+	                    checkbox.name = key;
+	                    checkbox.checked = value;
+	                    checkboxIndex[key] = checkbox;
+	
+	                    const label = document.createElement('label');
+	                    label.htmlFor = key;
+	                    label.textContent = key;
+	                    label.className = 'layer-label';
+	
+	                    listItem.appendChild(checkbox);
+	                    listItem.appendChild(label);
+	                    itemList.appendChild(listItem);
+	
+	                    checkbox.addEventListener('change', (event) => {
+	                        this._onSwitcherChange(event.target);
+	                    });
+	                });
+	                
+	            	groupItem.appendChild(itemList);
+	                
+	            } else {
+	
+	                const checkbox = document.createElement('input');
+	                checkbox.type = 'checkbox';
+	                checkbox.id = groupName;
+	                checkbox.name = groupName;
+	                checkbox.checked = group;
+	                checkboxIndex[groupName] = checkbox;
+	
+	                groupItem.appendChild(checkbox);
+	                
+	                if (groupName == 'Labels') {
+					    const languageSelect = document.createElement('select');
+					    languageSelect.id = 'lang';
+					    languageSelect.addEventListener('change', (event) => {
+						    styleJSON.layers.forEach(layer => {
+						        const metadata = layer.metadata;
+							    if (metadata && metadata['whg:group'] === 'Labels' && layer.source === 'openmaptiles') {
+					                this._map.setLayoutProperty(layer.id, 'text-field', ['coalesce', ['get', `name:${event.target.value}`], ['get', 'name'], ['get', 'name:en']]);
+							    }
+						    });
+		                });
+					    
+					    Object.entries(languages).forEach(([code, lang]) => {
+					        const option = document.createElement('option');
+					        option.value = code;
+					        option.textContent = lang.local;
+					        languageSelect.appendChild(option);
+					    });
+					
+					    groupItem.appendChild(languageSelect);
+					}
+	
+	                checkbox.addEventListener('change', (event) => {
+	                    this._onSwitcherChange(event.target);
+	                });
 	            }
-	            switchGroups[switchGroup].push(layer);
-	        }
-		}
-
-		const sortedGroups = Object.keys(switchGroups).sort();
-
-    	for (const group of sortedGroups) {
-			const layers = switchGroups[group];
-            layers.sort((a, b) => a.metadata['whg:switchlabel'].localeCompare(b.metadata['whg:switchlabel']));
-
-	        const groupItem = document.createElement('li');
-	        groupItem.textContent = group;
-	        groupItem.className = 'group-item strong-red';
-	        const itemList = document.createElement('ul');
-	        itemList.className = 'variant-list';
-
-	        for (const layer of layers) {
-	            const itemElement = document.createElement('li');
-	            itemElement.className = 'variant-item';
-
-	            const checkbox = document.createElement('input');
-	            checkbox.type = 'checkbox';
-	            checkbox.dataset.layerId = layer.id;
-	            checkbox.checked = layer.layout.visibility === 'visible';
-	            checkbox.addEventListener('change', (event) => {
-	                this._onSwitcherChange(event);
-				});
-	            itemElement.appendChild(checkbox);
-
-	            const labelElement = document.createElement('label');
-	            labelElement.textContent = layer.metadata['whg:switchlabel'] || layer.id;
-	            labelElement.className = 'layer-label';
-	            labelElement.dataset.layerId = layer.id;
-	            labelElement.addEventListener('click', (event) => {
-	                checkbox.checked = !checkbox.checked;
-	                this._onSwitcherChange(event);
-	            });
-	            itemElement.appendChild(labelElement);
-
-	            itemList.appendChild(itemElement);
-	        }
-
-	        groupItem.appendChild(itemList);
-	        switches.appendChild(groupItem);
+	
+	            switches.appendChild(groupItem);
+	        });
 	    }
 
+	    const horizontalLine = document.createElement('hr');
+        horizontalLine.className = 'style-list-divider';
+	    switches.appendChild(horizontalLine);
+
+	    const nearbyPlacesControl = document.createElement('li');
+	    nearbyPlacesControl.id = 'nearbyPlacesControl';
+	    nearbyPlacesControl.classList.add('group-item', 'strong-red');
+	    nearbyPlacesControl.textContent = 'Nearby Places';
+	
+	    const button = document.createElement('div');
+	    button.id = 'update_nearby';
+	    button.title = 'Search again - based on map center';
+	    button.innerHTML = '<i class="fas fa-sync-alt"></i><span class="strong-red"></span>';
+	    button.style.display = 'none';
+	
+	    const checkboxItem = document.createElement('input');
+	    checkboxItem.id = 'nearby_places';
+	    checkboxItem.type = 'checkbox';
+	
+	    const select = document.createElement('select');
+	    select.id = 'radiusSelect';
+	    select.title = 'Search radius, based on map center';
+	    for (let i = 1; i <= 10; i++) {
+	        const option = document.createElement('option');
+	        option.value = i ** 2;
+	        option.textContent = `${i ** 2} km`;
+	        select.appendChild(option);
+	    }
+	    select.value = 16;
+	
+	    nearbyPlacesControl.appendChild(checkboxItem);
+	    nearbyPlacesControl.appendChild(select);
+	    nearbyPlacesControl.appendChild(button);
+	    
+	    switches.appendChild(nearbyPlacesControl); // Event listeners coded in portal.js; hidden with css by default. 
+	    
+	    styleJSON.layers.forEach(layer => {
+	        const metadata = layer.metadata;
+	        if (metadata && metadata['whg:group']) {
+	            const group = metadata['whg:group'];
+	            const checkbox = checkboxIndex[group];
+	            if (checkbox) {
+		            let layerIds = checkbox.dataset.layers || '';
+		            layerIds += (layerIds ? '|' : '') + layer.id;
+		            checkbox.dataset.layers = layerIds;
+	            }
+		    	this._map.setLayoutProperty(layer.id, 'visibility', checkbox.checked ? 'visible' : 'none');
+	        }
+		    if (metadata && metadata['whg:group'] === 'Labels' && layer.source === 'openmaptiles') {
+	            // Update the text-field property to display local names if available
+                this._map.setLayoutProperty(layer.id, 'text-field', ['coalesce', ['get', 'name:local'], ['get', 'name'], ['get', 'name:en']]);
+		    }
+	    });
+	
 	    const existingSwitches = document.getElementById('layerSwitches');
 	    const mapStyleList = document.getElementById('mapStyleList');
 	    if (existingSwitches) {
@@ -248,16 +336,12 @@ class acmeStyleControl {
 	    } else {
 	        mapStyleList.appendChild(switches);
 	    }
-
 	}
 
-	_onSwitcherChange(event) {
-	    const layerId = event.target.dataset.layerId;
-	    const layer = this._map.getLayer(layerId);
-	    const visibility = this._map.getLayoutProperty(layerId, 'visibility');
-	    if (layer) {
-	        this._map.setLayoutProperty(layerId, 'visibility', visibility === 'visible' ? 'none' : 'visible');
-	    }
+	_onSwitcherChange(group) {
+		group.dataset.layers.split('|').forEach(layerId => {
+			this._map.setLayoutProperty(layerId, 'visibility', group.checked ? 'visible' : 'none');
+		});
 	}
 
     createMapStyleList() {
@@ -267,8 +351,9 @@ class acmeStyleControl {
         styleList.className = 'maplibre-styles-list';
 
         const groups = [
-            { title: 'Basemaps', items: this.basemaps, type: 'basemap' },
-            { title: 'Styles', items: this.styles, type: 'style' }
+            { title: 'Basemaps', items: this.styles, type: 'style' },
+/*            { title: 'Basemaps', items: this.basemaps, type: 'basemap' },
+            { title: 'Styles', items: this.styles, type: 'style' }*/
         ];
 
         for (const [index, group] of groups.entries()) {
@@ -316,8 +401,8 @@ class acmeStyleControl {
 	    styleList.appendChild(horizontalLine);
 
 	    const hillshadeGroupItem = document.createElement('li');
-	    hillshadeGroupItem.className = 'group-item';
-	    const hillshadeCheckboxItem = document.createElement('li');
+	    hillshadeGroupItem.textContent = 'Hillshade';
+	    hillshadeGroupItem.className = 'group-item strong-red';
 	    const hillshadeCheckbox = document.createElement('input');
 	    hillshadeCheckbox.type = 'checkbox';
 	    hillshadeCheckbox.id = 'hillshadeCheckbox';
@@ -332,13 +417,7 @@ class acmeStyleControl {
 	    }
 
 	    hillshadeCheckbox.addEventListener('change', (event) => this._toggleHillshadeLayers(event));
-	    const hillshadeLabel = document.createElement('label');
-	    hillshadeLabel.textContent = 'Hillshade';
-	    hillshadeLabel.setAttribute('for', 'hillshadeCheckbox');
-        hillshadeLabel.className = 'hillshade-label';
-	    hillshadeCheckboxItem.appendChild(hillshadeCheckbox);
-	    hillshadeCheckboxItem.appendChild(hillshadeLabel);
-	    hillshadeGroupItem.appendChild(hillshadeCheckboxItem);
+	    hillshadeGroupItem.appendChild(hillshadeCheckbox);
 	    styleList.appendChild(hillshadeGroupItem);
 
         this._listContainer.appendChild(styleList);
@@ -354,6 +433,7 @@ class acmeStyleControl {
         if (styleList) {
             styleList.classList.toggle('show');
         }
+        this._listContainer.classList.toggle('opaque');
     }
 
 	_toggleHillshadeLayers(event) {
@@ -385,11 +465,12 @@ class acmeStyleControl {
 		else {
 
 	        const resultJSON = this.listDictionary[event.target.dataset.value];
-	        this.buildSwitcher(resultJSON);
+			console.log('Switching style', resultJSON);
 
 			this._map.setStyle(resultJSON, {
 	            diff: false, // Force rebuild because native diff logic cannot handle this transformation
 	            transformStyle: (previousStyle, nextStyle) => {
+					console.log('Next style', nextStyle);
 
 					const modifiedSources = {
 	                    ...nextStyle.sources,
@@ -435,7 +516,9 @@ class acmeStyleControl {
 	                    layers: modifiedLayers,
 	                };
 	            },
-	        });
+	        }, () => { // Callback function called after setStyle is completed
+			    this.buildSwitcher(resultJSON);
+			});
 
 		}
 	}
@@ -731,7 +814,7 @@ maplibregl.Map.prototype.reset = function () {
     });
 }
 
-maplibregl.Map.prototype.fitViewport = function (bbox) {
+maplibregl.Map.prototype.fitViewport = function (bbox, maxZoom) {
 	// This function addresses an apparent bug with flyTo and fitBounds in MapLibre/Maptiler,
 	// which crash and/or fail to center correctly with large mapPadding values.
 	const mapContainer = this.getContainer();
@@ -753,6 +836,8 @@ maplibregl.Map.prototype.fitViewport = function (bbox) {
 		) + this.getZoom();
 	zoom = isNaN(zoom) ? this.getMaxZoom() : Math.min(zoom, this.getMaxZoom());
 	zoom = Math.max(zoom, this.getMinZoom());
+	if (!isNaN(maxZoom)) zoom = Math.min(zoom, maxZoom); // Limit zoom if maxZoom parameter is passed
+	console.log('fitViewport', maxZoom, zoom);
 
 	const viewportPadding = {
 		top: Math.round(mapControlsRect.top - mapContainerRect.top - mapControlsRectMargin),
