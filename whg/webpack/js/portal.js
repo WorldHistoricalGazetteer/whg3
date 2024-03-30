@@ -16,6 +16,8 @@ const payload = JSON.parse($('#payload_data').text());
 let checked_cards = [];
 
 let mapParameters = {
+    zoom: 4, // Required initially to retrieve ecoregion data from the rendered layers
+    center: centroid,
 	maxZoom: 17,
     style: [
 		'WHG',
@@ -108,6 +110,19 @@ function waitMapLoad() {
 					console.log(mappy.highlights);
 					mappy.fitViewport( bbox( geomsGeoJSON(mappy.highlights) ) );
 				}
+			});
+			
+			const ecoFeatures = mappy.queryRenderedFeatures(mappy.project(centroid)).filter(feature => {
+			    return feature.source === 'ecoregions';
+			});
+			ecoFeatures.forEach(feature => {
+		        if (feature.layer['source-layer'] === 'biomes') {
+		            geoData.biome.name = feature.properties.label;
+		            geoData.biome.url = "";
+		        } else if (feature.layer['source-layer'] === 'ecoregions') {
+		            geoData.ecoregion.name = feature.properties.label;
+		            geoData.ecoregion.url = "";
+		        }
 			});
 
 			mappy.getContainer().style.opacity = 1;
@@ -204,27 +219,15 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			with <b>${distinctNameVariants.size}</b> distinct name variant${distinctNameVariants.size > 1 ? 's' : ''}${temporalRange}.
 		`));
 		
-		$.ajax({
-		    url: '/api/geoattributes/',
-		    type: 'POST',
-		    headers: {
-		        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-		    },
-		    contentType: 'application/json',
-		    data: JSON.stringify({ coordinates: centroid }),
-		    success: function(data) {
-		        console.log(data);
-		        const adminString = data.admin.length > 0 ? 
-		        	` within the modern political boundaries of ${data.admin.map((name, index) => index < data.admin.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${data.admin.length == 2 ? '' : ','} and$1`)}, and` 
-		        	: ',';
-				$('<p>').addClass('mb-1').html(`
-				    It lies at an elevation of <b>${data.elevation}m</b>${adminString} within the <a href="${data.ecoregion.url}">${data.ecoregion.name}</a> ecoregion and <a href="${data.biome.url}">${data.biome.name}</a> biome.
-				`).insertAfter($('#gloss').find('p:first'));
-		    },
-		    error: function(jqXHR, textStatus, errorThrown) {
-		        console.error('Error:', textStatus, errorThrown);
-		    }
-		});
+		const elevationString = geoData.elevation ?
+			` at an elevation of <b>${geoData.elevation}m</b>`
+			: '';
+        const adminString = geoData.admin.length > 0 ? 
+        	` within the modern political boundaries of ${geoData.admin.map((name, index) => index < geoData.admin.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${geoData.admin.length == 2 ? '' : ','} and$1`)}, and` 
+        	: '';
+		$('<p>').addClass('mb-1').html(`
+		    It lies${elevationString}${adminString} within the <a href="${geoData.ecoregion.url}">${geoData.ecoregion.name}</a> ecoregion and <a href="${geoData.biome.url}">${geoData.biome.name}</a> biome.
+		`).insertAfter($('#gloss').find('p:first'));
 
     	const collectionList = $('#collection_list');
     	const ul = $('<ul>').addClass('coll-list');

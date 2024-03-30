@@ -82,6 +82,12 @@
     let allts = {{ allts }};
     const extent = {{ extent }};
     const centroid = {{ centroid }};
+    let geoData = {
+        elevation: null,
+        admin: [],
+        ecoregion: {name: null, url: null},
+        biome: {name: null, url: null}
+    };
 </script>
 
 {{ payload|json_script:"payload_data" }}
