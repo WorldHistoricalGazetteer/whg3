@@ -903,12 +903,9 @@ def es_lookup_idx(qobj, *args, **kwargs):
   #print('kwargs from es_lookup_idx',kwargs)
   global whg_id
   idx = 'whg'
-  #bounds = {'type': ['userarea'], 'id': ['0']}
-  bounds = kwargs['bounds']
+  bounds = kwargs['bounds']  # e.g. {'type': ['userarea'], 'id': ['0']}
   [hitobjlist, _ids] = [[],[]]
-  #ds_hits = {}
-  #hit_count, err_count = [0,0]
-  
+
   # empty result object
   result_obj = {
     'place_id': qobj['place_id'], 
@@ -1139,12 +1136,8 @@ def align_idx(*args, **kwargs):
   task_id = align_idx.request.id
   ds = get_object_or_404(Dataset, id=kwargs['ds'])
   print('kwargs in align_idx()',kwargs)
-  test=kwargs['test']
+  test=kwargs['test']  # always 'on' for dev - no writing to the production index!
 
-  # TODO: testing dev via ES_WHG
-  # always 'on' for dev - no writing to the production index!
-  # test = 'on'
-  # idx = 'whg'
   idx = settings.ES_WHG
   print('idx in align_idx', idx)
   user = get_object_or_404(User, id=kwargs['user'])

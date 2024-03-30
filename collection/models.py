@@ -6,6 +6,7 @@ from django.core.validators import URLValidator
 from django.db import models
 from django.db.models import Q, JSONField
 from django.urls import reverse
+from django.utils import timezone
 
 from datasets.models import Dataset
 from main.choices import COLLECTIONCLASSES, LINKTYPES, TEAMROLES, STATUS_COLL, \
@@ -55,6 +56,8 @@ def default_omitted():
 class CollDataset(models.Model):
   collection = models.ForeignKey('Collection', on_delete=models.CASCADE)
   dataset = models.ForeignKey('datasets.Dataset', on_delete=models.CASCADE)
+  # date_added = models.DateTimeField(auto_now_add=True)
+  date_added = models.DateTimeField(default=timezone.now)
 
   class Meta:
     ordering = ['id']
@@ -87,7 +90,8 @@ class Collection(models.Model):
   # single pdf file
   file = models.FileField(upload_to=collection_path, blank=True, null=True)
 
-  created = models.DateTimeField(null=True, auto_now_add=True)
+  create_date = models.DateTimeField(null=True, auto_now_add=True)
+  version = models.CharField(null=True, blank=True, max_length=20)
   # modified = models.DateTimeField(null=True)
 
   # group, sandbox, demo, ready, public
@@ -211,7 +215,7 @@ class Collection(models.Model):
   @property
   def last_modified_iso(self):
     # TODO: log entries for collections
-    return self.created.strftime("%Y-%m-%d")
+    return self.create_date.strftime("%Y-%m-%d")
 
   @property
   def owners(self):

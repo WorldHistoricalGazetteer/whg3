@@ -59,8 +59,8 @@ class CollectionModelForm(forms.ModelForm):
 
         widgets = {
             # 'title': forms.TextInput(attrs={'size': 45}),
-            'title': forms.TextInput(),
-            'keywords': forms.TextInput(attrs={'placeholder': 'comma-delimited'}),
+            'title': forms.TextInput(attrs={'size': 45}),
+            'keywords': forms.TextInput(attrs={'placeholder': 'comma-delimited', 'size': 45}),
             'rel_keywords': forms.TextInput(attrs={'size': 45, 'placeholder':'comma-delimited'}),
             'creator': forms.TextInput(attrs={'size': 45}),
             'contact': forms.TextInput(attrs={'size': 45}),

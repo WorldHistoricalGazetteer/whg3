@@ -1,0 +1,285 @@
+{
+  "settings":{
+    "number_of_shards": 1,
+    "analysis": {
+      "normalizer": {
+        "standard": {
+          "type": "custom",
+          "char_filter": [],
+          "filter": ["lowercase", "asciifolding"]
+        }
+      }
+    }
+  },
+  "mappings" : {
+    "properties" : {
+      "place_id" : {
+        "type" : "long"
+      },
+      "src_id" : {
+        "type" : "keyword"
+      },
+      "title" : {
+        "type" : "keyword",
+        "normalizer": "standard"
+      },
+      "names" : {
+        "properties" : {
+          "toponym" : {
+            "type" : "keyword",
+            "normalizer": "standard"
+          },
+          "citation" : {
+            "properties" : {
+              "@id" : {
+                "type" : "text",
+                "fields" : {
+                  "keyword" : {
+                    "type" : "keyword",
+                    "ignore_above" : 256
+                  }
+                }
+              },
+              "id" : {
+                "type" : "text",
+                "fields" : {
+                  "keyword" : {
+                    "type" : "keyword",
+                    "ignore_above" : 256
+                  }
+                }
+              },
+              "label" : {
+                "type" : "text",
+                "fields" : {
+                  "keyword" : {
+                    "type" : "keyword",
+                    "ignore_above" : 256
+                  }
+                }
+              }
+            }
+          },
+          "citations" : {
+            "properties" : {
+              "@id" : {
+                "type" : "text",
+                "fields" : {
+                  "keyword" : {
+                    "type" : "keyword",
+                    "ignore_above" : 256
+                  }
+                }
+              },
+              "id" : {
+                "type" : "text",
+                "fields" : {
+                  "keyword" : {
+                    "type" : "keyword",
+                    "ignore_above" : 256
+                  }
+                }
+              },
+              "label" : {
+                "type" : "text",
+                "fields" : {
+                  "keyword" : {
+                    "type" : "keyword",
+                    "ignore_above" : 256
+                  }
+                }
+              }
+            }
+          },
+          "lang" : {
+            "type" : "keyword"
+          },
+          "when" : {
+            "properties" : {
+              "citation" : {
+                "properties" : {
+                  "id" : {
+                    "type" : "text",
+                    "fields" : {
+                      "keyword" : {
+                        "type" : "keyword",
+                        "ignore_above" : 256
+                      }
+                    }
+                  },
+                  "label" : {
+                    "type" : "text",
+                    "fields" : {
+                      "keyword" : {
+                        "type" : "keyword",
+                        "ignore_above" : 256
+                      }
+                    }
+                  }
+                }
+              },
+              "timespans" : {
+                "properties" : {
+                  "end" : {
+                    "properties" : {
+                      "in" : {
+                        "type" : "long"
+                      }
+                    }
+                  },
+                  "start" : {
+                    "properties" : {
+                      "in" : {
+                        "type" : "long"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "fclasses" : {
+        "type" : "keyword"
+      },
+      "geoms" : {
+        "properties" : {
+          "citation" : {
+            "properties" : {
+              "@id" : {
+                "type" : "text",
+                "fields" : {
+                  "keyword" : {
+                    "type" : "keyword",
+                    "ignore_above" : 256
+                  }
+                }
+              },
+              "id" : {
+                "type" : "text",
+                "fields" : {
+                  "keyword" : {
+                    "type" : "keyword",
+                    "ignore_above" : 256
+                  }
+                }
+              },
+              "label" : {
+                "type" : "text",
+                "fields" : {
+                  "keyword" : {
+                    "type" : "keyword",
+                    "ignore_above" : 256
+                  }
+                }
+              }
+            }
+          },
+          "geowkt" : {
+            "type" : "keyword"
+          },
+          "location" : {
+            "type" : "geo_shape",
+            "ignore_malformed": true
+          }
+        }
+      },
+      "links" : {
+        "properties" : {
+          "identifier" : {
+            "type" : "keyword"
+          },
+          "type" : {
+            "type" : "keyword"
+          }
+        }
+      },
+      "searchy" : {
+        "type" : "keyword",
+        "normalizer": "standard"
+      },
+      "ccodes" : {
+        "type" : "keyword"
+      },
+      "children" : {
+        "type" : "keyword"
+      },
+      "dataset" : {
+        "type" : "keyword"
+      },
+      "collection" : {
+        "type" : "keyword"
+      },
+      "minmax" : {
+        "type" : "integer_range"
+      },
+      "relation" : {
+        "type" : "join",
+        "eager_global_ordinals" : true,
+        "relations" : {
+          "parent" : "child"
+        }
+      },
+      "timespans" : {
+        "type" : "integer_range"
+      },
+      "types" : {
+        "properties" : {
+          "identifier" : {
+            "type" : "keyword"
+          },
+          "label" : {
+            "type" : "keyword"
+          },
+          "sourceLabel" : {
+            "type" : "text"
+          },
+          "src_label" : {
+            "type" : "text",
+            "fields" : {
+              "keyword" : {
+                "type" : "keyword",
+                "ignore_above" : 256
+              }
+            }
+          },
+          "when" : {
+            "properties" : {
+              "timespans" : {
+                "properties" : {
+                  "end" : {
+                    "properties" : {
+                      "in" : {
+                        "type" : "text",
+                        "fields" : {
+                          "keyword" : {
+                            "type" : "keyword",
+                            "ignore_above" : 256
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "start" : {
+                    "properties" : {
+                      "in" : {
+                        "type" : "text",
+                        "fields" : {
+                          "keyword" : {
+                            "type" : "keyword",
+                            "ignore_above" : 256
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -47,7 +47,6 @@
 		    flex-direction: row;
 		    height: 100%;
 		}
-
 		#coll_builder .col-sm-7 {
 		    display: flex;
 		    flex-direction: column;
@@ -74,20 +73,16 @@
 	  </h5>
 	  <ul id="tablist" class="nav nav-tabs" role="tablist">
 		  <li class="nav-item" role="presentation">
-		    <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
+		    <button class="nav-link" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
           type="button" role="tab" aria-controls="coll_form" aria-selected="true">
-			    {% if action == 'create' %}Create{% else %}Edit{% endif %} Collection</button>
+			    {% if action == 'create' %}Create Collection{% else %}Metadata{% endif %}</button>
 		  </li>
 		  {% if action == "update" %}
 		  {# builder #}
 		  <li class="nav-item" role="presentation">
-		    <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
+		    <button class="nav-link active" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
           type="button" role="tab" aria-controls="coll_builder"
                 aria-selected="false">Add and manage datasets</button>
-		  </li>
-		  <li class="nav-item" role="presentation">
-		    <button class="nav-link" id="conflator-tab" data-bs-toggle="tab" data-bs-target="#coll_conflator"
-           type="button" role="tab" aria-controls="coll_conflator" aria-selected="false">Conflator</button>
 		  </li>
 		  <li class="nav-item" role="presentation">
 		    <button class="nav-link" id="collaborators-tab" data-bs-toggle="tab"
@@ -98,7 +93,7 @@
 		  {% endif %}
 		</ul>
 		<div id="content" class="tab-content">
-			<div id="coll_form" class="tab-pane fade show active  h-100">
+			<div id="coll_form" class="tab-pane fade h-100">
 		    <form id="collection_form" method="POST" enctype="multipart/form-data">
 		    {% csrf_token %}
         <div class="row">
@@ -119,9 +114,11 @@
 					<div class="form-group">
 						<label for="Collection keywords">Collection keywords &#x02733;</label><br/>{{ form.keywords }}
 					</div>
+          {% comment %}
           <div class="form-group bg-light p-1">
             <label for="Build type">Build type</label><br/>{{ form.build_type }}
           </div>
+          {% endcomment %}
 		      <div id="d_buttons" class="" style="">
 	          <span class="">
 	          {% if action == 'create' %}
@@ -218,8 +215,9 @@
 					  <p>To create a new Dataset Collection, first fill out the required fields in the form on the left.
 						  and press <b>Save</b>. All information can be edited afterwards, and you can begin adding and
 						  linking datasets. The collection itself can include primary image, an essay file and
-						  links to related material.</p>
+						  links to related material, uploaded after creation.</p>
 			      <p><mark-b>Collection keywords</mark-b> are terms describing the collection.</p>
+            {% comment %}
             <p>There are two options for creating dataset collections, and each has its own
               <i>collection builder</i> screen. The options are:
             <p><span class="red-head">Discrete</span>.
@@ -228,6 +226,7 @@
             <p><span class="red-head">Conflated</span>. Each dataset added will be
               reconciled with the others in the growing collection. <mark>more to say here</mark></p>
             </p>
+            {% endcomment %}
 		      {% endif %}
 		      </div> {# col-sm-7 #}
         </div> {# row #}
@@ -255,11 +254,11 @@
 	          </form>
 		    </div>
 			</div> {# coll_form #}
-			<div id="coll_builder" class="tab-pane fade h-100">
+			<div id="coll_builder" class="tab-pane fade show active h-100">
 				<div class="row">
 					<div class="col-sm-7 position-relative">
 						<div>
-		        <h5 class="bg-lighterblue ps-1">Datasets</h5>
+		        <h5 class="bg-lighterblue ps-1">Datasets ({{ coll_dsset|length }})</h5>
 		        <p>
 		          <span class="me-2">
 		            <select id="select_ds" name="ds" class="custom-select-sm" style="width:auto; min-width:150px;">
@@ -285,40 +284,35 @@
 		          {% if coll_dsset|length == 0 %}
 			          <p id="msg" class="font-italic smaller">None yet...</p>{% endif %}
 		          {% for d in coll_dsset %}
-		            <div class="ds_card {% if forloop.first %}ds_card_first{% endif %}"
-		              data-id="{{ d.id }}"
-									data-has_task="{{ d.builder_hastask }}"
-							    data-remaining="{{ d.builder_remaining }}">
+		            <div class="ds_card" data-id="{{ d.id }}">
 		              <p class="mb-0"><a href="{% url 'datasets:ds_summary' id=d.id %}">
-		                <span class="ds_title">{{ d.title }}</span></a> <small>({{d.label}}/{{ d.id}})</small>
-			              <span class="float-end text-danger">
-				              {% if forloop.first %}seed{% endif %}{% if d.idx_builder %} (indexed){% endif %}
-			              </span>
+		                <span class="ds_title">{{ d.title }}</span></a>
+                    <small>({{d.label}}/{{ d.id}})</small>
 		              </p>
 		              <div class="ds_fields">
 		                <p class="my-1"><b>Description</b>: {{ d.description|truncatechars:150 }}</p>
 		                <p class="my-1"><b>Create date</b>: {{ d.create_date|date:"d M Y" }}</p>
-				              <p>has_task={{ d.builder_hastask }}; remaining={{ d.builder_remaining }}</p>
+{#				              <p>has_task={{ d.builder_hastask }}; remaining={{ d.builder_remaining }}</p>#}
 		                <p class="my-1"><b># rows</b>: {{ d.numrows }}
 			                <span id="s_dsremove" class="float-end">
 											<a href="#" onclick="confirmRemove({{ d.id }}, '{{ object.id }}', this)">
 												<i class="fas fa-minus-square" style="color:#336699"></i> remove</a>
 			                </span>
  		                </p>
-			              {% if not forloop.first %}
-			              <hr/>
-		                <p id="recon_results" class="">
-		                  {% if not d.builder_hastask %}
-				                <span><button type="button" class="btn btn-sm btn-primary">
-				                Reconcile to collection </button> (no tasks yet)</span>
-		                  {% endif %}
-			                {% if d.builder_hastask and d.builder_remaining > 0 %}
-				                <span class="float-end">
-					                <a href="">review</a> (remaining: {{ d.builder_remaining }})
-				                </span>
-			                {% endif %}
-		                </p>
-			              {% endif %}
+{#			              {% if not forloop.first %}#}
+{#			              <hr/>#}
+{#		                <p id="recon_results" class="">#}
+{#		                  {% if not d.builder_hastask %}#}
+{#				                <span><button type="button" class="btn btn-sm btn-primary">#}
+{#				                Reconcile to collection </button> (no tasks yet)</span>#}
+{#		                  {% endif %}#}
+{#			                {% if d.builder_hastask and d.builder_remaining > 0 %}#}
+{#				                <span class="float-end">#}
+{#					                <a href="">review</a> (remaining: {{ d.builder_remaining }})#}
+{#				                </span>#}
+{#			                {% endif %}#}
+{#		                </p>#}
+{#			              {% endif %}#}
 		              </div>
 		            </div>
 		          {% endfor %}
@@ -327,12 +321,10 @@
 					<div class="col-sm-5">
 						<h5 class="bg-lighterblue ps-1">The Process</h5>
 						<div class="ps-3">
-							<ul class="flush-left">
-								<li>Add an initial dataset to "seed" the collection</li>
-								<li>Add a second dataset and reconcile it with the first, in order to link records for
-									closely matched places where they occur</li>
-								<li>Repeat for additional datasets, each time reconciling against the growing collection</li>
-							</ul>
+              <p>Dataset Collections in WHG are assembled from published, indexed datasets you are owner or co-owner of.</p>
+							<ol class="flush-left">
+								<li>Select a dataset from the dropdown list on the left.</li>
+							</ol>
 						</div>
 						<div class="mt-2">
 							<h5 class="bg-lighterblue ps-1">Status</h5>
@@ -340,12 +332,6 @@
 						</div>
 					</div>
 				</div>
-			</div>
-			<div id="coll_conflator" class="tab-pane fade h-100" style="height: auto; position:relative;">
-				<h4>DS Collection functionality</h4>
-				<p>Seed dataset id: <input type="text" id="seed_id"/></p>
-				<p><button type="button" id="dscoll_seed">Seed this collection</button> </p>
-				<p id="idx_result"></p>
 			</div>
 			<div id="coll_collaborators" class="tab-pane fade h-100" style="height: auto; position:relative;">
         {% if action == 'update' %}
@@ -433,40 +419,6 @@
 						$("#a_add").addClass('hidden')
 					}
 				})
-
-    $("#dscoll_seed").click(function(e){
-        e.preventDefault()
-        console.log('gonna index '+ $("#seed_id").val() + ' for collection '+
-          '{{ object.id }}')
-		    startSpinner()
-		    index_to_builder($("#seed_id").val())
-    })
-
-	  // runs celery task index_to_builder
-		function index_to_builder(dsid){
-	      var formData = new FormData()
-				formData.append('collection_id', '{{ object.id }}')
-				formData.append('dataset_id', dsid)
-				formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-				$.ajax({
-			      type: 'POST',
-			      enctype: 'multipart/form-data',
-			      url: '/datasets/index_to_builder/',
-			      processData: false,
-			      contentType: false,
-			      cache: false,
-			      data: formData,
-			      success:function(response){
-				      if(response.result == 'error'){
-	              alert('That dataset is already in the builder index!')
-				      } else {
-					      console.log('response', response)
-					      $("#idx_result").html(
-                              '<p>indexed: '+response.indexed+'; failed: '+response.failed)
-				      }
-			      }
-				})
-		}
 
     dslist=[] // holds ids of selected datasets
     $( ".textarea" ).each(function(index) {
@@ -662,15 +614,15 @@
 	  $('.modal-body').empty();
 
 	  // Generate the modal content based on the dataset status
-	  if (dsStatus === 'uploaded' || dsStatus === 'reconciling') {
-	    $('.modal-body').append('<p>The status of '+dsTitle+' is "'+dsStatus+'". It must be reconciled to Wikidata at minimum ("wd-complete").</p>');
+	  if (dsStatus != 'indexed') {
+	    $('.modal-body').append('<p>The status of '+dsTitle+' is currently "'+dsStatus+'". It must be indexed before adding to a collection</p>');
 	    $('.modal-body').append('<button type="button" class="btn btn-secondary" ' +
 			    'data-bs-dismiss="modal">Cancel</button>');
-	  } else if (dsStatus === 'wd-complete' || dsStatus === 'accessioning' || dsStatus === 'indexed') {
-	    $('.modal-body').append('<p>OK to proceed.</p>');
+	  } else {
+	    $('.modal-body').append('<p>Dataset is indexed, OK to proceed!</p>');
 	    $('.modal-body').append('<button type="button" class="btn btn-secondary" ' +
 			    'data-bs-dismiss="modal">Cancel</button>');
-	    $('.modal-body').append('<button id="b_continue" type="button" class="btn btn-success">Continue</button>');
+	    $('.modal-body').append('<button id="b_continue" type="button" class="btn btn-success ms-2">Continue</button>');
 	  }
 
 	  // Add event listener to the 'continue' button
@@ -740,7 +692,7 @@
 
   function removeDataset(dsid) {
     if("{{ action }}" == 'update') {
-      alert('removing ' + dsid + 'from collection '+ "{{object.id}}")
+      alert('removing ' + dsid + ' from collection '+ "{{object.id}}")
       $.ajax("/collections/remove_ds/{{object.id}}/"+dsid,
         function(result){
           console.log('removeDataset() result', result)
