@@ -230,7 +230,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         	` within the modern political boundaries of ${geoData.admin.map((name, index) => index < geoData.admin.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${geoData.admin.length == 2 ? '' : ','} and$1`)}, and` 
         	: '';
 		$('<p>').addClass('mb-1').html(`
-		    It lies${elevationString}${adminString} within the <a href="${geoData.ecoregion.url} target="_blank">${geoData.ecoregion.name}</a> ecoregion and <a href="${geoData.biome.url}" target="_blank">${geoData.biome.name}</a> biome.
+		    It lies${elevationString}${adminString} within the <a href="${geoData.ecoregion.url}" target="_blank">${geoData.ecoregion.name}</a> ecoregion and <a href="${geoData.biome.url}" target="_blank">${geoData.biome.name}</a> biome.
 		`).insertAfter($('#gloss').find('p:first'));
 
     	const collectionList = $('#collection_list');
@@ -266,7 +266,8 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 	        `;
 	        
 	        $('#sources').append($('<div>').addClass('source-box').html(sourceHTML));		
-			
+				console.log('place', place);
+				console.log('place.collections', place.collections);
 		  	if (place.collections.length > 0) {
 				place.collections.forEach(collection => {
 					console.log('collection', collection);
