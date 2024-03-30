@@ -258,7 +258,7 @@
 				<div class="row">
 					<div class="col-sm-7 position-relative">
 						<div>
-		        <h5 class="bg-lighterblue ps-1">Datasets</h5>
+		        <h5 class="bg-lighterblue ps-1">Datasets ({{ coll_dsset|length }})</h5>
 		        <p>
 		          <span class="me-2">
 		            <select id="select_ds" name="ds" class="custom-select-sm" style="width:auto; min-width:150px;">
@@ -321,7 +321,7 @@
 					<div class="col-sm-5">
 						<h5 class="bg-lighterblue ps-1">The Process</h5>
 						<div class="ps-3">
-              <p>Assemble a Dataset Collection from published, indexed datasets in WHG you are owner or co-owner of.</p>
+              <p>Dataset Collections in WHG are assembled from published, indexed datasets you are owner or co-owner of.</p>
 							<ol class="flush-left">
 								<li>Select a dataset from the dropdown list on the left.</li>
 							</ol>
@@ -622,7 +622,7 @@
 	    $('.modal-body').append('<p>Dataset is indexed, OK to proceed!</p>');
 	    $('.modal-body').append('<button type="button" class="btn btn-secondary" ' +
 			    'data-bs-dismiss="modal">Cancel</button>');
-	    $('.modal-body').append('<button id="b_continue" type="button" class="btn btn-success">Continue</button>');
+	    $('.modal-body').append('<button id="b_continue" type="button" class="btn btn-success ms-2">Continue</button>');
 	  }
 
 	  // Add event listener to the 'continue' button

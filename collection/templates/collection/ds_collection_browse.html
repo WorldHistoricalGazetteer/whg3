@@ -31,12 +31,20 @@
               <img src="{% static 'images/010-jigsaw.png' %}" class="" height=28 alt=""/>
               {{ object.title }}
           </span>
+
         <span id="collapseExpand" class="float-end">
               <span class="info-collapse small">Hide</span>
               <i class="info-collapse fas fa-chevron-up"></i>
               <span class="info-expand small">Show Detail</span>
               <i class="info-expand fas fa-chevron-down"></i>
-          </span>
+        </span>
+        {% if user == object.owner or is_admin %}
+          <span class="float-end">
+            <a href="{% url 'collection:ds-collection-update' id=object.id %}">
+              edit <i class="fas fa-gear me-3"></i></a>
+            </span>
+        {% endif %}
+
       </div>
       <div id="metadata" class="mt-2">
         <div class="row pub-intro">
