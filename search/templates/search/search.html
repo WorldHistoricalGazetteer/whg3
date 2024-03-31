@@ -69,26 +69,30 @@
 	          	  ]    
 	          </script>
 	        </div>
-        	<div id="filter_spatial">
-				<p class="mb-0"><span class="categories ms-1">spatial</span>
-		            <span class="float-end">
-						<a id="spatial_help" class="pointer" data-toggle="popover" title="Spatial filter" data-content="" tabindex="0" data-trigger="focus">
-		              		<i class="fas fa-question-circle linky"></i>
-		              	</a>
-		            </span>
-				</p>
-				<div class="input-group mb-3">
-		            <select id="countryDropdown" class="form-select" data-type="country" data-placeholder="Country filter(s)" multiple></select>
-		            <button class="btn btn-outline-secondary clear-button" type="button" id="clearCountryDropdown">Clear</button>
-				</div>
-				{% if has_areas %}
-				<div class="input-group mb-3">
-	            	<select id="userAreaDropdown" class="form-select" data-type="userarea" data-placeholder="User area(s)" multiple></select>
-	            	<button class="btn btn-outline-secondary clear-button" type="button" id="clearUserAreaDropdown">Clear</button>
-	          	</div>
-			  	{% endif %}
-	
-			</div>
+	        
+			<div class="mt-3 mx-0">
+			  <p class="mb-0"><span class="categories ms-1">spatial filter</span>
+			  <div id="spatial_selector" class="input-group">
+			    <!-- Dropdown selector for Region, Country, or User Area -->
+			    <select class="form-select" id="categorySelector">
+			      <option value="none" selected>None</option>
+			      <option value="region">Region</option>
+			      <option value="country">Country</option>
+			      {% if has_areas %}
+			      <option value="userarea">Custom</option>
+			      {% endif %}
+			    </select>
+			
+			    <!-- Select2 input -->
+			    <select class="form-select" id="entrySelector" multiple>
+			      <option>(choose type)</option>
+			    </select>
+			
+			    <!-- Clear button -->
+			    <button class="btn btn-outline-secondary clearButton" type="button" id="clearButton"><i class="fas fa-times"></i></button>
+			  </div>
+			</div>	        
+	        
 		</div>
       
 		<div id="result_facets" class="p-1 bg-light">

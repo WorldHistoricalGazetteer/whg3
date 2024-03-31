@@ -56,11 +56,19 @@
 #input span.twitter-typeahead input {
 	border-radius: 0; /* Override typeahead default */
 }
-#input #clear_search {
+#input #clear_search, #spatial_selector .clearButton {
 	background-color: #e6e5b69e;
+	border-color: #ced4da;
 }
-#input #clear_search:hover {
+#input #clear_search:hover, #spatial_selector .clearButton:hover {
 	background-color: #e6e5b6;
+}
+#categorySelector {
+	max-width: 112px;
+    color: #777;
+}
+#spatial_selector span.select2-selection {
+    border-radius: 0 !important;
 }
 
 #map {

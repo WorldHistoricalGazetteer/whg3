@@ -230,14 +230,22 @@ Promise.all([
   });
 
   function updateAreaMap() {
-    const countries = $('#countryDropdown').
-        select2('data').
-        map(country => country.id);
-    countryCache.filter(countries).then(filteredCountries => {
-      mappy.getSource('countries').setData(filteredCountries);
-
+	console.log($('#entrySelector').select2('data'));
+	
+  	mappy.clearSource('userareas');
+	mappy.clearSource('countries');	
+	
+	var data = $('#entrySelector').select2('data');
+	if (data.length > 0 && !!data[0].feature) {
+	  
+	  const userAreas = {
+        type: 'FeatureCollection',
+        features: data.map(feature => feature.feature),
+      }
+	  
+      mappy.getSource('userareas').setData(userAreas);		
       try {
-        mappy.fitBounds(bbox(filteredCountries), {
+        mappy.fitBounds(bbox(userAreas), {
           padding: 30,
           maxZoom: 7,
           duration: 1000,
@@ -245,64 +253,75 @@ Promise.all([
       } catch {
         mappy.reset();
       }
-    });
+	}
+	else if (data.length > 0) {
+		let countries;
+		if (!!data[0].ccodes) {
+			countries = [].concat(...data.map(region => region.ccodes));
+		}
+		else {
+			countries = data.map(country => country.id);
+		}
+	    countryCache.filter(countries).then(filteredCountries => {
+	      mappy.getSource('countries').setData(filteredCountries);
+	
+	      try {
+	        mappy.fitBounds(bbox(filteredCountries), {
+	          padding: 30,
+	          maxZoom: 7,
+	          duration: 1000,
+	        });
+	      } catch {
+	        mappy.reset();
+	      }
+	    });
+	}
+	else mappy.reset();
   }
 
   const debouncedUpdates = debounce(() => { // Uses imported lodash function
     updateAreaMap();
   }, 400);
+  
+	$('#entrySelector').prop('disabled', true).select2({
+	    data: [],
+	    width: 'element',
+	    height: 'element',
+		placeholder: '(choose type)',
+		allowClear: false,
+	}).on('change', function(e) {
+	    if (!searchDisabled) {
+	      flashSearchButton();
+	      debouncedUpdates();
+	    }
+	});
+	
+	$('#categorySelector').on('change', function() {
+		$('#entrySelector').val(null).empty().trigger('change');
+	    switch($(this).val()) {
+	        case 'region':
+	            $('#entrySelector').prop('disabled', false).select2({ placeholder: 'None', data: dropdown_data[0].children });
+	            break;
+	        case 'country':
+	            $('#entrySelector').prop('disabled', false).select2({ placeholder: 'None', data: dropdown_data[1].children });
+	            break;
+	        case 'userarea':
+	            $('#entrySelector').prop('disabled', false).select2({ placeholder: 'None', data: user_areas.map(feature => ({
+			        id: feature.properties.id,
+			        text: feature.properties.title,
+			        feature: feature,
+			      })) });
+	            break;
+	        default:
+	            $('#entrySelector').prop('disabled', true).select2({ placeholder: '(choose type)', data: [] });
+				break;
+		}	
+	});
+	
+	$('#clearButton').on('click', function() {
+		$('#entrySelector').val(null).trigger('change');
+	});
 
-  const countryDropdown = $('#countryDropdown');
-  countryDropdown.select2({
-    data: dropdown_data,
-    width: 'element', // Use CSS rules
-    placeholder: $(this).data('placeholder'),
-    closeOnSelect: false,
-    allowClear: false,
-  }).on('select2:selecting', function(e) {
-    if (!!e.params.args.data['ccodes']) { // Region selected: add countries from its ccodes
-      e.preventDefault();
-      let ccodes = Array.from(new Set([
-        ...e.params.args.data['ccodes'],
-        ...countryDropdown.select2('data').map(country => country.id)]));
-      countryDropdown.val(ccodes).trigger('change');
-    }
-  }).on('change', function(e) {
-    if (!searchDisabled) {
-      flashSearchButton();
-      debouncedUpdates();
-    }
-  });
-
-  $('#clearCountryDropdown').on('click', function() {
-    countryDropdown.val(null).trigger('change');
-  });
-
-  if (has_areas) { // Element will not be present if user is not logged in, or has no study areas defined
-    const userAreaDropdown = $('#userAreaDropdown');
-    userAreaDropdown.select2({
-      data: user_areas.map(feature => ({
-        id: feature.properties.id,
-        text: feature.properties.title,
-        feature: feature,
-      })),
-      width: 'element', // Use CSS rules
-      placeholder: $(this).data('placeholder'),
-      closeOnSelect: false,
-      allowClear: false,
-    }).on('change', function(e) {
-      if (!searchDisabled) flashSearchButton();
-      mappy.getSource('userareas').setData({
-        type: 'FeatureCollection',
-        features: userAreaDropdown.select2('data').
-            map(feature => feature.feature),
-      });
-    });
-
-    $('#clearUserAreaDropdown').on('click', function() {
-      userAreaDropdown.val(null).trigger('change');
-    });
-  }
 
   var referringPage = document.referrer;
   if (referringPage) { // If arriving from `portal` or `home` pages, load and render any saved search+results
