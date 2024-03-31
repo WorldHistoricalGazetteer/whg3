@@ -17,7 +17,7 @@ let checked_cards = [];
 
 let mapParameters = {
     zoom: 4, // Required initially to retrieve ecoregion data from the rendered layers
-    center: centroid,
+    center: centroid, 
 	maxZoom: 17,
     style: [
 		'WHG',
@@ -128,6 +128,7 @@ function waitMapLoad() {
 		            geoData.admin.push(feature.properties['NAME']  || feature.properties['name']);
 		        }
 			});
+			geoData.elevation = Math.floor(mappy.queryTerrainElevation(centroid, { exaggerated: false }));
 
 			mappy.getContainer().style.opacity = 1;
 
@@ -223,8 +224,8 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			with <b>${distinctNameVariants.size}</b> distinct name variant${distinctNameVariants.size > 1 ? 's' : ''}${temporalRange}.
 		`));
 		
-		const elevationString = geoData.elevation ?
-			` at an elevation of <b>${geoData.elevation}m</b>`
+		const elevationString = geoData.elevation !== null ?
+			` at an elevation of <b>${geoData.elevation} metres</b>`
 			: '';
         const adminString = geoData.admin.length > 0 ? 
         	` within the modern political boundaries of ${geoData.admin.map((name, index) => index < geoData.admin.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${geoData.admin.length == 2 ? '' : ','} and$1`)}, and` 
@@ -387,6 +388,8 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
                 toggleVariants(event, this);
             });
         });
+			
+		fetchWatershed();	
                 
         $('body').on('change', '#nearby_places, #radiusSelect', function() {
 		    nearbyPlaces();
@@ -496,4 +499,72 @@ function nearbyPlaces() {
 		mappy.clearSource('nearbyPlaces');
         $('#update_nearby').hide();
 	}
+}
+
+function fetchWatershed() {			
+	fetch(`https://mghydro.com/app/watershed_api?lat=${centroid[1]}&lng=${centroid[0]}&precision=high`)
+	  .then(response => response.json())
+	  .then(data => {
+	    mappy.addSource('watershed', {
+	      type: 'geojson',
+	      data: data
+	    });
+	    mappy.addLayer({
+	      id: 'watershed-layer',
+	      type: 'fill',
+	      source: 'watershed',
+	      paint: {
+	        'fill-color': 'blue',
+	        'fill-opacity': 0.3
+	      },
+          layout: {
+            visibility: 'none'
+          }
+	    });
+		mappy.addSource('watershed-origin-marker', {
+		  type: 'geojson',
+		  data: {
+		    type: 'FeatureCollection',
+		    features: [{
+			  type: 'Feature',
+			  geometry: {
+			    type: 'Point',
+			    coordinates: centroid
+			  },
+			  properties: {
+			    marker: 'watershed-origin'
+			  }
+			}]
+		  }
+		});
+		mappy.addLayer({
+		  id: 'watershed-origin-marker',
+		  type: 'circle',
+		  source: 'watershed-origin-marker',
+		  paint: {
+		    'circle-radius': 10,
+		    'circle-color': 'blue',
+		    'circle-opacity': 0.5
+		  },
+          layout: {
+            visibility: 'none'
+          }
+		});
+		$(mappy.styleControl._listContainer).find('#layerSwitches').before(
+		    '<li class="group-item strong-red">Watershed<input type="checkbox" id="watershedCheckbox"></li>'
+		);
+        $('#watershedCheckbox').change(function() {
+          const isVisible = this.checked;
+          if (isVisible) {
+            mappy.setLayoutProperty('watershed-layer', 'visibility', 'visible');
+            mappy.setLayoutProperty('watershed-origin-marker', 'visibility', 'visible');
+          } else {
+            mappy.setLayoutProperty('watershed-layer', 'visibility', 'none');
+            mappy.setLayoutProperty('watershed-origin-marker', 'visibility', 'none');
+          }
+        });		
+	  })
+	  .catch(error => {
+	    console.error('Error fetching watershed data:', error);
+	  });		
 }
