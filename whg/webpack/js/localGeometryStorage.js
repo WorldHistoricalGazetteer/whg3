@@ -42,10 +42,11 @@ export async function fetchDataForHorse(thisHorse, mappy, repositionMap = true) 
 				    mappy.addLayer({...layer, 'source-layer': hasTilesets ? 'features' : ''});
 				});				
 				if (hasTilesets) {
-					mappy.fitBounds(mappy.tileBounds, {
+					mappy.fitViewport(mappy.tileBounds);
+					/*mappy.fitBounds(mappy.tileBounds, {
                         padding: 100,
                         speed: 0.5,
-                    });
+                    });*/
 					resolve();
 				}
 				else {
@@ -54,11 +55,12 @@ export async function fetchDataForHorse(thisHorse, mappy, repositionMap = true) 
 		                    const bounding_box = bbox(data);
 		                    if (bounding_box[0] == Infinity) {
 		                        mappy.reset();
-		                    } else {					
-		                        mappy.fitBounds(bounding_box, {
+		                    } else {	
+								mappy.fitViewport(bounding_box);				
+		                        /*mappy.fitBounds(bounding_box, {
 		                            padding: 100,
 		                            speed: 0.5,
-		                        });
+		                        });*/
 		                    }
 		                }
 		                resolve();

@@ -23,6 +23,10 @@ function waitMapLoad() {
 					mappy.setLayoutProperty(layer.id, 'visibility', 'none');
 				}
 			});
+			
+			$('.maplibregl-control-container')
+			.wrap('<div id="controlWrapper"></div>')
+			.after($('#carousel-outer-container'));
 
 			resolve();
 		});
@@ -46,12 +50,11 @@ Promise.all([
 	localStorage.removeItem('last_search');
 
 	// listen for search action
-	// TODO: handle Enter key also
-	$('#a_search').click(function() {
+	$('#initiate_search').click(function() {
 		initiateSearchHome();
 	});
 
-	$('#search_map input').on('keypress', function(event) {
+	$('#search_input').on('keyup', function(event) {
 		if (event.which == 13) { // 13 is the 'Enter' key code
 			event.preventDefault();
 			initiateSearchHome(); // Call the initiateSearch function when 'Enter' is pressed
@@ -127,11 +130,19 @@ Promise.all([
 			    {#mappy.fitBounds(arealayer.getBounds())#}*/
 		});
 	};
+	
 	// call views.search_new() with parameters
 	// search_new() will pass these to search_new.html
 	function initiateSearchHome() {
-		const query = $('#search_map input').val();
-		const filters = gatherOptions();
+		const filters = {
+			'qstr': $('#search_map input').val(),
+			'mode': 'exactly',
+			'idx': eswhg, // hard-coded in html template
+			'fclasses': '',
+			'start': null,
+			'end': null,
+			'bounds': null,
+		};
 
 		// AJAX POST request to SearchView() with the options (includes qstr)
 		$.ajax({
@@ -149,7 +160,7 @@ Promise.all([
 				if (data.suggestions.length > 0) { // if results, load and render on Search page
 					window.location.href = '/search';
 				} else {
-					alert('no results for "' + query + '", sorry');
+					alert('no results for "' + filters.qstr + '", sorry');
 				}
 			},
 			error: function(error) {
@@ -170,29 +181,6 @@ Promise.all([
 			$('#check_toggle').text('check all');
 		}
 	});
-
-	// get option values
-	function gatherOptions() {
-		// test
-		//{#options = {"fclasses":"P"}#}
-		// gather and return option values from the UI
-		let fclasses = [];
-		$('#adv_checkboxes input:checked').each(function() {
-			fclasses.push($(this).val());
-		});
-		console.log('checked', fclasses);
-		let options = {
-			'qstr': $('#search_map input').val(),
-			'mode': 'exactly',
-			'idx': eswhg, // hard-coded in html template
-			// "idx": "whg",
-			'fclasses': fclasses.join(','),
-			'start': $('#input_start').val(),
-			'end': $('#input_end').val(),
-			'bounds': $('#boundsobj').val(),
-		};
-		return options;
-	}
 
 	$('[rel=\'tooltip\']').tooltip();
 	// modal for images

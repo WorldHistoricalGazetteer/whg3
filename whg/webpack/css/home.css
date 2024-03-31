@@ -10,7 +10,7 @@
 }
 
 .map-container {
-    height: 60%;
+    height: 500px;
 }
 
 .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib:not(.fade-in) {
@@ -20,6 +20,37 @@
 .maplibregl-ctrl-attrib {
     opacity: 0;
     transition: opacity 1s ease;
+}
+
+#controlWrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;	
+}
+
+#controlWrapper > div {
+    flex: 0 1 auto;
+}
+
+#controlWrapper .maplibregl-control-container {
+	height: 100%
+}
+
+#controlWrapper .home-carousel {
+    z-index: 99;
+    background-color: #ffffff;
+    margin: 0.25rem !important;
+    background-color: rgba(255, 255, 255, .8);
+    border: 1px solid lightgrey;
+    border-radius: 4px;
+}
+
+#controlWrapper .maplibregl-ctrl-bottom-left, #controlWrapper .maplibregl-ctrl-bottom-right {
+    bottom: 188px;
+}
+
+#datasetsCarousel {
+    height: 260px;
 }
 
 .fade-in {

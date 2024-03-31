@@ -36,18 +36,8 @@
 #input {
 	padding-left: 0;
 }
-#input label {
-	font-weight: bold;
-	background-color: #c4ddec5c;
-}
 #search_mode {
 	max-width: 132px;
-}
-#input button.disabledButton {
-	opacity: .6;
-}
-#input button, #clearCountryDropdown, #clearUserAreaDropdown {
-    border: 1px solid #ced4da;
 }
 @keyframes flash {
     0%, 50%, 100% {
@@ -71,12 +61,6 @@
 }
 #input #clear_search:hover {
 	background-color: #e6e5b6;
-}
-#input #initiate_search {
-	background-color: #c3f3c89e;
-}
-#input #initiate_search:hover {
-	background-color: #c3f3c8;
 }
 
 #map {
