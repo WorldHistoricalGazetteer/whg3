@@ -58,9 +58,19 @@
 				    <input type="text" id="searchInput" class="form-control" placeholder="Filter titles and descriptions">
 				    <button class="btn btn-outline-secondary clear-button" type="button" id="clearSearchButton">Clear</button>
 				</div>
-	            <div class="input-group mb-3">
-				    <select id="countryDropdown" class="form-select" data-type="country" data-placeholder="Country filter(s)" multiple></select>
-				    <button class="btn btn-outline-secondary clear-button" type="button" id="clearCountryDropdown">Clear</button>
+				<div id="spatial_selector" class="input-group mb-3">
+				    <!-- Dropdown selector for Region, Country, or User Area -->
+				    <select class="form-select" id="categorySelector">
+				      <option value="none">None</option>
+				      <option value="regions" selected>Region</option>
+				      <option value="countries">Country</option>
+				    </select>
+				
+				    <!-- Select2 input -->
+				    <select class="form-select" id="entrySelector" multiple></select>
+				
+				    <!-- Clear button -->
+				    <button class="btn btn-outline-secondary clearButton" type="button" id="clearButton"><i class="fas fa-times"></i></button>
 				</div>
 	            
 				
