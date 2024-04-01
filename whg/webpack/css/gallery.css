@@ -63,16 +63,14 @@
 select.form-select {
     width: 100%;
 }
-span.select2-selection {
+.select2 {
+	width: calc(100% - 148px)!important;
+}
+ span.select2-selection {
     border: 1px solid #ced4da !important;
     border-radius: 0.375rem !important;
     border-top-right-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
-}
-.select2-search__field {
-    left: 8px;
-    top: 2px;
-    position: relative;
 }
 .clear-button {
     border: 1px solid #ced4da !important;
