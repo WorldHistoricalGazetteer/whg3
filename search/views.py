@@ -287,6 +287,8 @@ class SearchViewV3(View):
         end = request.POST.get('end')
         undated = request.POST.get('undated')
         bounds = request.POST.get('bounds')
+        spatial = request.POST.get('spatial')
+        regions = request.POST.get('regions')
         countries = request.POST.get('countries')
         userareas = request.POST.get('userareas')
         mode = request.POST.get('mode')
@@ -300,6 +302,8 @@ class SearchViewV3(View):
             "end": end,
             "undated": undated,
             "bounds": bounds,
+            "spatial": spatial,  # Spatial search mode (pass-through as not used in search)
+            "regions": regions,  # Array of region codes (pass-through as not used in search)
             "countries": countries,  # Array of country codes
             "userareas": userareas,  # Array of userarea ids
             "method": request.method,
