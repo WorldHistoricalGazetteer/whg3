@@ -196,9 +196,6 @@ Promise.all([
 				break;
 		}
 	});
-	
-	$('#categorySelector').click();
-	$('#categorySelector option:first-of-type').click();
 
 	$('#clearButton').on('click', function() {
 		spatialSelector.val(null).trigger('change');
