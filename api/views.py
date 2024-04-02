@@ -1083,3 +1083,29 @@ class CountryFeaturesAPIView(View):
 
         return JsonResponse(country_feature_collection, safe=False)
     
+# Fetch Watershed GeoJSON from remote URL
+class WatershedAPIView(APIView):
+    def get(self, request, *args, **kwargs):
+        lat = request.query_params.get('lat', None)
+        lng = request.query_params.get('lng', None)
+
+        if lat is None or lng is None:
+            raise Http404("Latitude and longitude parameters are required.")
+
+        # Construct the URL to fetch watershed GeoJSON
+        watershed_url = f"https://mghydro.com/app/watershed_api?lat={lat}&lng={lng}&precision=high"
+
+        try:
+            response = requests.get(watershed_url)
+            response.raise_for_status()  # Raise an exception for non-200 status codes
+            watershed_geojson = response.json()
+
+            # Add attribution
+            attribution = "Watershed: MERIT Hydro & Matthew Heberger"
+            watershed_geojson['attribution'] = attribution
+
+        except requests.RequestException as e:
+            # Handle request errors
+            raise Http404(f"Error fetching watershed GeoJSON: {str(e)}")
+
+        return Response(watershed_geojson)

@@ -89,7 +89,11 @@ urlpatterns = [
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('schema/swagger-ui/', SpectacularSwaggerView.as_view(), name='swagger-ui'),
     path('schema/redoc/', SpectacularRedocView.as_view(), name='redoc'),
-    
+
+#
+    # *** External Data ***
+    # Server-side fetching circumvents CORS restrictions on client-side
+    path('watershed/', views.WatershedAPIView.as_view(), name='watershed'),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns, allowed=['json', 'tsv', 'geojson'])
