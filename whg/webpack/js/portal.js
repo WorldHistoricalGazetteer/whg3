@@ -501,70 +501,74 @@ function nearbyPlaces() {
 	}
 }
 
-function fetchWatershed() {			
-	fetch(`https://mghydro.com/app/watershed_api?lat=${centroid[1]}&lng=${centroid[0]}&precision=high`)
-	  .then(response => response.json())
-	  .then(data => {
-	    mappy.addSource('watershed', {
-	      type: 'geojson',
-	      data: data
-	    });
-	    mappy.addLayer({
-	      id: 'watershed-layer',
-	      type: 'fill',
-	      source: 'watershed',
-	      paint: {
-	        'fill-color': 'blue',
-	        'fill-opacity': 0.3
-	      },
-          layout: {
-            visibility: 'none'
-          }
-	    });
-		mappy.addSource('watershed-origin-marker', {
-		  type: 'geojson',
-		  data: {
-		    type: 'FeatureCollection',
-		    features: [{
-			  type: 'Feature',
-			  geometry: {
-			    type: 'Point',
-			    coordinates: centroid
-			  },
-			  properties: {
-			    marker: 'watershed-origin'
-			  }
-			}]
-		  }
+function fetchWatershed() {
+	fetch(`/api/watershed/?lat=${centroid[1]}&lng=${centroid[0]}`)
+		.then(response => response.json())
+		.then(data => {
+			if (data && !!data.type && data.type === 'FeatureCollection') {
+				mappy.addSource('watershed', {
+					type: 'geojson',
+					data: data,
+					attribution: data.attribution
+				});
+				mappy.addLayer({
+					id: 'watershed-layer',
+					type: 'fill',
+					source: 'watershed',
+					paint: {
+						'fill-color': 'blue',
+						'fill-opacity': 0.3
+					},
+					layout: {
+						visibility: 'none'
+					}
+				});
+				mappy.addSource('watershed-origin-marker', {
+					type: 'geojson',
+					data: {
+						type: 'FeatureCollection',
+						features: [{
+							type: 'Feature',
+							geometry: {
+								type: 'Point',
+								coordinates: centroid
+							},
+							properties: {
+								marker: 'watershed-origin'
+							}
+						}]
+					}
+				});
+				mappy.addLayer({
+					id: 'watershed-origin-marker',
+					type: 'circle',
+					source: 'watershed-origin-marker',
+					paint: {
+						'circle-radius': 10,
+						'circle-color': 'blue',
+						'circle-opacity': 0.5
+					},
+					layout: {
+						visibility: 'none'
+					}
+				});
+				$(mappy.styleControl._listContainer).find('#layerSwitches').before(
+					'<li class="group-item strong-red">Watershed<input type="checkbox" id="watershedCheckbox"></li>'
+				);
+				$('#watershedCheckbox').change(function() {
+					const isVisible = this.checked;
+					if (isVisible) {
+						mappy.setLayoutProperty('watershed-layer', 'visibility', 'visible');
+						mappy.setLayoutProperty('watershed-origin-marker', 'visibility', 'visible');
+					} else {
+						mappy.setLayoutProperty('watershed-layer', 'visibility', 'none');
+						mappy.setLayoutProperty('watershed-origin-marker', 'visibility', 'none');
+					}
+				});
+
+			}
+		})
+		.catch(error => {
+			console.error('Error fetching watershed data:', error);
 		});
-		mappy.addLayer({
-		  id: 'watershed-origin-marker',
-		  type: 'circle',
-		  source: 'watershed-origin-marker',
-		  paint: {
-		    'circle-radius': 10,
-		    'circle-color': 'blue',
-		    'circle-opacity': 0.5
-		  },
-          layout: {
-            visibility: 'none'
-          }
-		});
-		$(mappy.styleControl._listContainer).find('#layerSwitches').before(
-		    '<li class="group-item strong-red">Watershed<input type="checkbox" id="watershedCheckbox"></li>'
-		);
-        $('#watershedCheckbox').change(function() {
-          const isVisible = this.checked;
-          if (isVisible) {
-            mappy.setLayoutProperty('watershed-layer', 'visibility', 'visible');
-            mappy.setLayoutProperty('watershed-origin-marker', 'visibility', 'visible');
-          } else {
-            mappy.setLayoutProperty('watershed-layer', 'visibility', 'none');
-            mappy.setLayoutProperty('watershed-origin-marker', 'visibility', 'none');
-          }
-        });		
-	  })
-	  .catch(error => {
-	    console.error('Error fetching watershed data:', error);
-	  });		
 }
