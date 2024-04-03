@@ -879,11 +879,12 @@ class CustomDrawingControl {
 		console.log('MapboxDraw control:', this._map._draw, this._map._draw.getMode());
 		switch(this._map._draw.getMode()) {
 			case 'draw_polygon':
-	            this._map.getCanvas().style.cursor = 'crosshair'; // Doesn't work - see https://github.com/mapbox/mapbox-gl-draw/issues/907
+	            this._map.getCanvas().style.cursor = 'crosshair';
 	            this._map._drawControl.trashButton.setAttribute('disabled', true);
 				this._map._drawControl.trashButton.classList.add('disabled');
 	            break;
 	        default:
+	            this._map.getCanvas().style.cursor = 'default';
 				this._map._drawControl.trashButton.removeAttribute('disabled');
 				this._map._drawControl.trashButton.classList.remove('disabled');
 		}
