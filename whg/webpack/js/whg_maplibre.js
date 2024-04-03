@@ -898,6 +898,7 @@ class CustomDrawingControl {
 	}
 
 	onAdd() {		
+		this._appendStyles();
 		
 		this._map._drawControl = this._map.getContainer().querySelector(".mapboxgl-ctrl-group.mapboxgl-ctrl");
 		this._map._drawControl.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group'); // Convert classnames for proper rendering
@@ -917,6 +918,20 @@ class CustomDrawingControl {
 	onRemove() {
 		this._map.removeControl(this._map._draw);
 	}
+    
+    _appendStyles() {
+        const style = document.createElement('style');
+        style.textContent = `
+			#map .mapbox-gl-draw_ctrl-draw-btn.active,
+			#map .mapbox-gl-draw_ctrl-draw-btn:hover {
+			  background-color: rgb(167 8 8 / 17%);
+			}
+			#map .mapbox-gl-draw_ctrl-draw-btn.disabled {
+			  opacity: .3;
+			}
+        `;
+        document.head.appendChild(style);
+    }
 }
 
 const originalMapConstructor = maplibregl.Map;
