@@ -232,7 +232,7 @@ Promise.all([
 
 	function updateAreaMap() {
 
-		mappy.clearSource('userareas');
+		if (has_areas) mappy.clearSource('userareas');
 		mappy.clearSource('countries');
 
 		var data = $('#entrySelector').select2('data');

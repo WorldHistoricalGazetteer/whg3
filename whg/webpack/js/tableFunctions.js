@@ -158,7 +158,7 @@ export function initialiseTable(
   spinner_table = startSpinner('drftable_list');
   spinner_detail = startSpinner('row_detail');
 
-  const isCollection = window.ds_list[0].ds_type == 'collections';
+  const isCollection = window.ds_list[0].ds_type == 'collections'; // i.e. *place* collection (not *dataset* collection or dataset)
 
   checked_rows = [];
 
