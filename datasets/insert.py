@@ -171,7 +171,7 @@ def process_when(row, newpl):
 
       # Check if start is less than end
       if start and end and start > end:
-          raise ValueError("Start date is greater than end date")
+          raise ValueError("Start date ("+str(start)+") is greater than end date ("+str(end)+")")
 
       # Either start or attestation_year is assured by validation
       dates = (start, end, attestation_year)
