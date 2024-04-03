@@ -89,10 +89,12 @@ function waitMapLoad() {
 			});
 
 			mappy.on('click', function(e) {
-				$('.result').
-				eq(getFeatureId(e)).
-				attr('data-map-clicked', 'true').
-				click();
+				if (!mappy._draw || mappy._draw.getMode() !== 'draw_polygon') {
+					$('.result')
+					.eq(getFeatureId(e))
+					.attr('data-map-clicked', 'true')
+					.click();
+				}
 			});
 
 			resolve();
@@ -182,8 +184,14 @@ Promise.all([
 
 	// Delegated event listener for Result links
 	$(document).on('click', '.result', function(e) {
-
-		const index = $(this).index(); // Get index of clicked card
+	    const $container = $('#result_container');
+    	const $searchResults = $('#search_results');
+	    const $clickedResult = $(this);
+	    const scrollTop = -30 + $clickedResult.position().top - $container.position().top + $container.scrollTop();
+	    
+		const index = $clickedResult.index(); // Get index of clicked card
+		
+		console.log('data-map-clicked', $clickedResult.attr('data-map-clicked'), index, scrollTop);
 
 		mappy.removeFeatureState({
 			source: 'places',
@@ -197,12 +205,11 @@ Promise.all([
 
 		const featureCollection = mappy.getSource('places')._data;
 
-		if ($(this).attr('data-map-clicked') === 'true') { // Scroll table
-			$(this).removeAttr('data-map-clicked');
-			const $container = $('#result_container');
-			$container.scrollTop($(this).offset().top - $container.offset().top);
-		} else if ($(this).attr('data-map-initialising') === 'true') {
-			$(this).removeAttr('data-map-initialising');
+		if ($clickedResult.attr('data-map-clicked') === 'true') { // Scroll table
+	        $clickedResult.removeAttr('data-map-clicked');
+	        $container.animate({ scrollTop: scrollTop }, 'slow');		
+		} else if ($clickedResult.attr('data-map-initialising') === 'true') {
+			$clickedResult.removeAttr('data-map-initialising');
 			mappy.fitBounds(bbox(featureCollection), {
 				padding: 30,
 				// maxZoom: 5,
@@ -217,7 +224,7 @@ Promise.all([
 		}
 
 		$('.result').removeClass('selected');
-		$(this).addClass('selected');
+		$clickedResult.addClass('selected');
 
 	});
 

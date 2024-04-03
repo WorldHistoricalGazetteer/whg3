@@ -246,3 +246,12 @@ span.select2-selection {
     top: 2px;
     position: relative;
 }
+
+#map .mapbox-gl-draw_ctrl-draw-btn.active,
+#map .mapbox-gl-draw_ctrl-draw-btn:hover {
+  background-color: rgb(167 8 8 / 17%);
+}
+
+#map .mapbox-gl-draw_ctrl-draw-btn.disabled {
+  opacity: .3;
+}

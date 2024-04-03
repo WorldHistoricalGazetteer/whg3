@@ -871,11 +871,44 @@ class CustomDrawingControl {
 		});
 
 		this._map.addControl(this._map._draw, 'top-left');
+		this._map.on('draw.modechange', this._modechange.bind(this));
+		this._map.on('draw.delete', this._delete.bind(this));
+	}
+	
+	_modechange() {
+		console.log('MapboxDraw control:', this._map._draw, this._map._draw.getMode());
+		switch(this._map._draw.getMode()) {
+			case 'draw_polygon':
+	            this._map.getCanvas().style.cursor = 'crosshair'; // Doesn't work - see https://github.com/mapbox/mapbox-gl-draw/issues/907
+	            this._map._drawControl.trashButton.setAttribute('disabled', true);
+				this._map._drawControl.trashButton.classList.add('disabled');
+	            break;
+	        default:
+				this._map._drawControl.trashButton.removeAttribute('disabled');
+				this._map._drawControl.trashButton.classList.remove('disabled');
+		}
+	}
+	
+	_delete() {
+		if (this._map._draw.getAll().features.length < 1) {
+            this._map._drawControl.trashButton.setAttribute('disabled', true);
+			this._map._drawControl.trashButton.classList.add('disabled');
+		}
 	}
 
-	onAdd() {
+	onAdd() {		
+		
 		this._map._drawControl = this._map.getContainer().querySelector(".mapboxgl-ctrl-group.mapboxgl-ctrl");
 		this._map._drawControl.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group'); // Convert classnames for proper rendering
+		
+		const drawPolygonButton = this._map._drawControl.querySelector('.mapbox-gl-draw_polygon');
+        drawPolygonButton.setAttribute('title', 'Draw polygon to filter results by area. Double-click to close polygon.');
+        
+        this._map._drawControl.trashButton = this._map._drawControl.querySelector('.mapbox-gl-draw_trash');
+        this._map._drawControl.trashButton.setAttribute('title', 'Delete selected polygon (select first by clicking it)');
+        this._map._drawControl.trashButton.setAttribute('disabled', true);
+		this._map._drawControl.trashButton.classList.add('disabled');
+		
 		if (this._options.hide) this._map._drawControl.style.display = 'none';
 		return this._map._drawControl;
 	}
