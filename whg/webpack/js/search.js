@@ -85,7 +85,9 @@ function waitMapLoad() {
 			}
 
 			mappy.on('mousemove', function(e) {
-				getFeatureId(e);
+				if (!mappy._draw || mappy._draw.getMode() !== 'draw_polygon') {
+					getFeatureId(e);
+				}
 			});
 
 			mappy.on('click', function(e) {
