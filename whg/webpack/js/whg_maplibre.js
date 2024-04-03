@@ -868,11 +868,121 @@ class CustomDrawingControl {
 				polygon: true,
 				trash: true,
 			},
+			styles: [
+			    // ACTIVE (being drawn)
+			    // line stroke
+			    {
+			        "id": "gl-draw-line",
+			        "type": "line",
+			        "filter": ["all", ["==", "$type", "LineString"], ['==', 'active', 'true']],
+			        "layout": {
+			          "line-cap": "round",
+			          "line-join": "round"
+			        },
+			        "paint": {
+			          "line-color": "#D20C0C",
+			          "line-dasharray": [0.2, 2],
+			          "line-width": 2
+			        }
+			    },
+			    // polygon mid points
+			    {
+			      'id': 'gl-draw-polygon-midpoint',
+			      'type': 'circle',
+			      'filter': ['all',
+			        ['==', '$type', 'Point'],
+			        ['==', 'meta', 'midpoint']],
+			      'paint': {
+			        'circle-radius': 3,
+			        'circle-color': '#fbb03b'
+			      }
+			    },
+			    // polygon outline stroke
+			    // This doesn't style the first edge of the polygon, which uses the line stroke styling instead
+			    {
+			      "id": "gl-draw-polygon-stroke-active",
+			      "type": "line",
+			      "filter": ["all", ["==", "$type", "Polygon"], ['==', 'active', 'true']],
+			      "layout": {
+			        "line-cap": "round",
+			        "line-join": "round"
+			      },
+			      "paint": {
+			        "line-color": "#D20C0C",
+			        "line-dasharray": [0.2, 2],
+			        "line-width": 2
+			      }
+			    },
+			    // vertex point halos
+			    {
+			      "id": "gl-draw-polygon-and-line-vertex-halo-active",
+			      "type": "circle",
+			      "filter": ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ['==', 'active', 'true']],
+			      "paint": {
+			        "circle-radius": 5,
+			        "circle-color": "#FFF"
+			      }
+			    },
+			    // vertex points
+			    {
+			      "id": "gl-draw-polygon-and-line-vertex-active",
+			      "type": "circle",
+			      "filter": ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ['==', 'active', 'true']],
+			      "paint": {
+			        "circle-radius": 3,
+			        "circle-color": "#D20C0C",
+			      }
+			    },
+			
+			    // INACTIVE (static, already drawn)
+			    // line stroke
+			    {
+			        "id": "gl-draw-line-static",
+			        "type": "line",
+			        "filter": ["all", ["==", "$type", "LineString"], ['!=', 'active', 'true']],
+			        "layout": {
+			          "line-cap": "round",
+			          "line-join": "round"
+			        },
+			        "paint": {
+			          "line-color": "#D20C0C",
+			          "line-width": 1,
+        			  "line-opacity": 0.5
+			        }
+			    },
+			    // polygon fill
+			    {
+			      "id": "gl-draw-polygon-fill-static",
+			      "type": "fill",
+			      "filter": ["all", ["==", "$type", "Polygon"]],
+			      "paint": {
+			        "fill-color": "#D20C0C",
+			        "fill-outline-color": "#D20C0C",
+			        "fill-opacity": 0.1
+			      }
+			    },
+			    // polygon outline
+			    {
+			      "id": "gl-draw-polygon-stroke-static",
+			      "type": "line",
+			      "filter": ["all", ["==", "$type", "Polygon"], ['!=', 'active', 'true']],
+			      "layout": {
+			        "line-cap": "round",
+			        "line-join": "round"
+			      },
+			      "paint": {
+			        "line-color": "#D20C0C",
+			        "line-width": 1,
+        			"line-opacity": 0.5
+			      }
+			    }
+			  ]		
 		});
 
 		this._map.addControl(this._map._draw, 'top-left');
 		this._map.on('draw.modechange', this._modechange.bind(this));
 		this._map.on('draw.delete', this._delete.bind(this));
+		this._map.on('draw.create', this._create.bind(this));
 	}
 	
 	_modechange() {
@@ -896,6 +1006,14 @@ class CustomDrawingControl {
 			this._map._drawControl.trashButton.classList.add('disabled');
 		}
 	}
+	
+	_create() { // This appears to be the simplest(!) way to deselect a polygon on completion
+		const allFeatures = this._map._draw.getAll();
+		this._map._draw.deleteAll();
+		allFeatures.features.forEach(feature => {feature.id = '';}); // Control stores ids of selected polygons
+		this._map._draw.add(allFeatures);
+		console.log('MapboxDrawn:', this._map.getStyle());
+	}
 
 	onAdd() {		
 		this._appendStyles();
@@ -903,8 +1021,8 @@ class CustomDrawingControl {
 		this._map._drawControl = this._map.getContainer().querySelector(".mapboxgl-ctrl-group.mapboxgl-ctrl");
 		this._map._drawControl.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group'); // Convert classnames for proper rendering
 		
-		const drawPolygonButton = this._map._drawControl.querySelector('.mapbox-gl-draw_polygon');
-        drawPolygonButton.setAttribute('title', 'Draw polygon to filter results by area. Double-click to close polygon.');
+		this._map._drawControl.drawPolygonButton = this._map._drawControl.querySelector('.mapbox-gl-draw_polygon');
+        this._map._drawControl.drawPolygonButton.setAttribute('title', 'Draw polygon to filter results by area. Double-click to close polygon.');
         
         this._map._drawControl.trashButton = this._map._drawControl.querySelector('.mapbox-gl-draw_trash');
         this._map._drawControl.trashButton.setAttribute('title', 'Delete selected polygon (select first by clicking it)');
@@ -912,6 +1030,7 @@ class CustomDrawingControl {
 		this._map._drawControl.trashButton.classList.add('disabled');
 		
 		if (this._options.hide) this._map._drawControl.style.display = 'none';
+		
 		return this._map._drawControl;
 	}
 
