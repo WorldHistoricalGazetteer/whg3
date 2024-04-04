@@ -21,6 +21,10 @@ if ('fonts' in document) {
 	});
 }
 
+String.prototype.toUpperCaseFirst = function() {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+};
+
 var CDN_fallbacks = [
 	{
 		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css',
@@ -64,14 +68,18 @@ var jquery_dependent_fallbacks = [
 		position: 'head'
 	},
 	{
-		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.bundle.min.js',
-		localUrl: 'bootstrap.bundle.min.js',
-		position: 'body'
-	},
-	{
 		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/typeahead.js/0.11.1/typeahead.bundle.min.js', // Includes both typeahead and bloodhound
 		localUrl: 'typeahead.bundle.min.js',
 		position: 'head'
+	},
+	
+]
+
+var jquery_ui_dependent_fallbacks = [
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/js/bootstrap.bundle.min.js',
+		localUrl: 'bootstrap.bundle.min.js',
+		position: 'body'
 	},
 	
 ]
@@ -179,10 +187,15 @@ Promise.all([
 		.then(function() {
 			return Promise.all(jquery_dependent_fallbacks.map(loadResource));
 		})
+		.then(function() {
+			//  Resolve name collision between jQuery UI and Bootstrap
+			$.widget.bridge('uitooltip', $.ui.tooltip);
+			return Promise.all(jquery_ui_dependent_fallbacks.map(loadResource));
+		})
 	])
 	.then(function() {
 		
-	    $("[data-toggle='tooltip']").each(function(index, element) { // Initialize Bootstrap tooltips
+		$("[data-toggle='tooltip']").each(function(index, element) { // Initialize Bootstrap tooltips
 		    new bootstrap.Tooltip(element);
 		});
 		
