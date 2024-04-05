@@ -295,6 +295,13 @@ Promise.all([
 			debouncedUpdates();
 		}
 		else updateAreaMap();
+	})
+	.parent().tooltip({
+    	selector: '.select2-container',
+    	trigger : 'hover',
+    	title: function() {
+		    return $(this).prev().attr('title');
+		}
 	});
 
 	$('#categorySelector').on('change', function() {
@@ -449,11 +456,23 @@ Promise.all([
 		flashSearchButton();
 	});
 
-	$('#search_input').on('input', function() {
+	$('#search_input')
+	.tooltip({
+    	trigger : 'hover'
+	})
+	.on('input', function() {
 		flashSearchButton();
 		toggleButtonState();
 	});
 	toggleButtonState();
+	$('#initiate_search, #clear_search').each(function() {
+		$(this).tooltip({
+    		trigger : 'hover',
+	    	title: function() {
+			    return $(this).data('title').split('|')[$(this).hasClass('disabledButton') ? 1 : 0 ];
+			}		
+		});
+	});
 
 	$('.accordion-button').each(function() { // Initialise Filter Accordions
 		var accordion = $($(this).data('bs-target'));
@@ -479,10 +498,8 @@ function toggleButtonState() {
 	const disable = $('#search_input').val().trim() == '';
 	$('#initiate_search, #clear_search').each(function() {
 		$(this)
-			//.prop('disabled', disable) // Cannot use this because it disables the title
-			.toggleClass('disabledButton', disable).
-		attr('title', $(this).data('title').split('|')[disable ? 1 : 0]).
-		attr('aria-label', $(this).data('title').split('|')[disable ? 1 : 0]);
+		//.prop('disabled', disable) // Cannot use this because it disables the title
+		.toggleClass('disabledButton', disable)
 	});
 }
 
