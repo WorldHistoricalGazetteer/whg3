@@ -161,7 +161,7 @@ class acmeStyleControl {
 			this._listContainer.className = 'maplibregl-ctrl maplibregl-ctrl-group';
 			this._listContainer.textContent = 'Basemap';
 			this._listContainer.innerHTML =
-				'<button type="button" class="style-button" aria-label="Change basemap style" title="Change basemap style">' +
+				'<button type="button" class="style-button" aria-label="Change basemap style" data-bs-title="Change basemap style">' +
 				'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
 				'</button>';
 			this._listContainer.querySelector('.style-button').addEventListener('click', this._onClick.bind(this));
@@ -286,7 +286,7 @@ class acmeStyleControl {
 	
 	    const button = document.createElement('div');
 	    button.id = 'update_nearby';
-	    button.title = 'Search again - based on map center';
+	    button.setAttribute('data-bs-title', 'Search again - based on map center');
 	    button.innerHTML = '<i class="fas fa-sync-alt"></i><span class="strong-red"></span>';
 	    button.style.display = 'none';
 	
@@ -296,7 +296,7 @@ class acmeStyleControl {
 	
 	    const select = document.createElement('select');
 	    select.id = 'radiusSelect';
-	    select.title = 'Search radius, based on map center';
+	    select.setAttribute('data-bs-title', 'Search radius, based on map center');
 	    for (let i = 1; i <= 10; i++) {
 	        const option = document.createElement('option');
 	        option.value = i ** 2;
@@ -537,7 +537,7 @@ class CustomTerrainControl {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'maplibregl-ctrl-terrain';
-        button.title = 'Enable terrain';
+        button.setAttribute('data-bs-title', 'Enable terrain');
 
         const iconSpan = document.createElement('span');
         iconSpan.className = 'maplibregl-ctrl-icon';
@@ -562,7 +562,7 @@ class CustomTerrainControl {
 
         const enablingTerrain = !button.classList.contains('maplibregl-ctrl-terrain-enabled');
         button.classList.toggle('maplibregl-ctrl-terrain-enabled', enablingTerrain);
-        button.title = enablingTerrain ? 'Disable terrain' : 'Enable terrain';
+        button.setAttribute('data-bs-title', enablingTerrain ? 'Disable terrain' : 'Enable terrain');
 
         const hillshadeCheckbox = document.getElementById('hillshadeCheckbox');
         if (hillshadeCheckbox) {
@@ -639,7 +639,7 @@ class CustomTerrainControl {
 function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 
 	// Create a modal dialog for copyright attribution and acknowledgment
-	const modal = $('<div id="map-download-dialog" title="Map Attribution"></div>');
+	const modal = $('<div id="map-download-dialog" data-bs-title="Map Attribution"></div>');
 	const injunctionText = $('<div id="injunction-text" class="injunction-text">The following attribution must be displayed together with any use of this map image:</div>');
 	const attributionText = $(`<div id="attribution-text" class="attribution-text">${$('.maplibregl-ctrl-attrib-inner').text()}</div>`);
 	const downloadButton = $('<button id="download" style="display: none;" disabled>...rendering...</button>');
@@ -762,7 +762,7 @@ class downloadMapControl {
         downloadButton.type = 'button';
         downloadButton.className = 'download-map-button';
         downloadButton.setAttribute('aria-label', 'Download map image');
-        downloadButton.setAttribute('title', 'Download map image');
+        downloadButton.setAttribute('data-bs-title', 'Download map image');
 
         const iconSpan = document.createElement('span');
         iconSpan.className = 'maplibregl-ctrl-icon';
@@ -1022,10 +1022,10 @@ class CustomDrawingControl {
 		this._map._drawControl.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group'); // Convert classnames for proper rendering
 		
 		this._map._drawControl.drawPolygonButton = this._map._drawControl.querySelector('.mapbox-gl-draw_polygon');
-        this._map._drawControl.drawPolygonButton.setAttribute('title', 'Draw polygon to filter results by area. Double-click to close polygon.');
+        this._map._drawControl.drawPolygonButton.setAttribute('data-bs-title', 'Draw polygon to filter results by area. Double-click to close polygon.');
         
         this._map._drawControl.trashButton = this._map._drawControl.querySelector('.mapbox-gl-draw_trash');
-        this._map._drawControl.trashButton.setAttribute('title', 'Delete selected polygon (select first by clicking it)');
+        this._map._drawControl.trashButton.setAttribute('data-bs-title', 'Delete selected polygon (select first by clicking it)');
         this._map._drawControl.trashButton.setAttribute('disabled', true);
 		this._map._drawControl.trashButton.classList.add('disabled');
 		
@@ -1127,6 +1127,13 @@ maplibregl.Map = function (options = {}) {
 		if (!!chosenOptions.customAttributionControl) {
 			mapInstance.addControl(new CustomAttributionControl(chosenOptions.customAttributionControl), chosenOptions.customAttributionControl.position);
 		}
+		
+		$(mapInstance.getContainer().querySelector('.maplibregl-control-container'))
+		.tooltip({
+	    	selector: 'button, select, summary.maplibregl-ctrl-attrib-button',
+	    	trigger : 'hover'
+		})
+		
     });
     return mapInstance;
 };
