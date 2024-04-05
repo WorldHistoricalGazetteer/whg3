@@ -71,6 +71,14 @@
 .previewButton.active {
     background-color: #99333330!important;
 }
+.custom-tooltip-red {
+  --bs-tooltip-bg: #993333!important;
+  --bs-tooltip-color: #fff!important;
+}
+.custom-tooltip-green {
+  --bs-tooltip-bg: #cad6ab!important;
+  --bs-tooltip-color: #000!important;
+}
 select.form-select {
     width: 100%;
 }

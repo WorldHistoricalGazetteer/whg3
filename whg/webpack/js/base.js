@@ -195,9 +195,7 @@ Promise.all([
 	])
 	.then(function() {
 		
-		$("[data-toggle='tooltip']").each(function(index, element) { // Initialize Bootstrap tooltips
-		    new bootstrap.Tooltip(element);
-		});
+		$("[data-bs-toggle='tooltip']").tooltip(); // Initialize Bootstrap tooltips
 		
 		document.querySelector('body').style.opacity = 1;
 		

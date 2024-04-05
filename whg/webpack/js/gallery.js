@@ -8,7 +8,7 @@ import {
 	CountryCacheFeatureCollection
 } from './countryCache';
 
-import '../css/gallery.css';
+import '../css/gallery.scss';
 
 let mappy = new whg_maplibre.Map({
 	maxZoom: 13,
@@ -58,11 +58,11 @@ function buildGallery(datacollections) {
     } else {
         datacollections.forEach(dc => {
             const dsCard = $(`
-                <div data-bs-toggle="tooltip" title="Click to view ${dc.type.toUpperCaseFirst()} ${dc.ds_or_c_id}" class="ds-card-container col-md-4 mt-1" data-type="${dc.type}" data-id="${dc.ds_or_c_id}" data-mode="${dc.display_mode}" data-geometry-url="${dc.geometry_url}" data-url="${dc.url}">
+                <div data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip-red" title="Click to view ${dc.type.toUpperCaseFirst()} ${dc.ds_or_c_id}" class="ds-card-container col-md-4 mt-1">
                     <div class="ds-card-gallery">
                         <div class="ds-card-content">
                             <span class="float-end">
-                                <button class="btn btn-light btn-sm previewButton" data-bs-toggle="tooltip" title="Click to preview ${dc.type.toUpperCaseFirst()} ${dc.ds_or_c_id} on map">
+                                <button class="btn btn-light btn-sm previewButton" data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip-green" title="Click to preview ${dc.type.toUpperCaseFirst()} ${dc.ds_or_c_id} on map">
                                     <i class="fas fa-globe-americas"></i> Preview
                                 </button>
                             </span>
@@ -75,22 +75,21 @@ function buildGallery(datacollections) {
 	                            <p class="ds-card-creator">${dc.creator}</p>
 	                            <p class="ds-card-owner">${dc.owner}</p>
                             <div>
-                        </div>
                     </div>
                 </div>
-            `);
-            dynamicGallery.append(dsCard);    /*        
-
-		    $("#dynamic-gallery [data-bs-toggle='tooltip']").each(function(_, element) { // Initialize Bootstrap tooltips
-			    new bootstrap.Tooltip(element, {
-				    trigger : 'hover' // Required in order to hide when moving off an element
-				});
-			});*/
-			
-			$('#dynamic-gallery .previewButton:first').trigger('click');
+            `)
+            .data({
+	            id: dc.ds_or_c_id,
+	            type: dc.type,
+	            mode: dc.display_mode,
+	            geometry_url: dc.geometry_url,
+	            url: dc.url
+			});
+            dynamicGallery.append(dsCard);
 			
         });
-    }
+    }		
+	$('#dynamic-gallery .previewButton:first').trigger('click');
 }
 
 Promise.all([
@@ -110,14 +109,22 @@ Promise.all([
 	spatialSelector.prop('disabled', true).select2({
 		width: 'element',
 		data: [],
-		placeholder: '(choose type)',
+		placeholder: '(select dropdown first)',
 		allowClear: false,
-	}).on('change', function(e) {
+	})
+	.on('change', function(e) {
     	const currentSpatialValue = spatialSelector.val().join(',');
 	    if (spatialSelector.data('selectedValue') !== currentSpatialValue) {
 	        debouncedUpdates();
 	        spatialSelector.data('selectedValue', currentSpatialValue);
 	    }
+	})
+	.parent().tooltip({
+    	selector: '.select2-container',
+    	trigger : 'hover',
+    	title: function() {
+		    return $(this).prev().attr('title');
+		}
 	});
 
 	$('#categorySelector').on('change', function() {
@@ -138,7 +145,7 @@ Promise.all([
 				break;
 			default:
 				$('#entrySelector').prop('disabled', true).select2({
-					placeholder: '(choose type)',
+					placeholder: '(select dropdown first)',
 					data: []
 				});
 				break;
@@ -372,7 +379,7 @@ Promise.all([
     	selector: '[data-bs-toggle="tooltip"]',
     	trigger : 'hover'
 	})
-	.on('show.bs.tooltip', '.previewButton', (e) => {
+	.on('show.bs.tooltip', '.previewButton', (e) => { // Prevent overlapping tooltips
 		bootstrap.Tooltip.getInstance($(e.target).closest('.ds-card-container')).hide();
 	})
 	.on('click', '.previewButton', (e) => {
