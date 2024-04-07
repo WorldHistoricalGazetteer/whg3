@@ -85,9 +85,9 @@
       <div id="area_options">
         <ul id="area_tabs_ul" class="nav nav-tabs">
           <li class="nav-item">
-            <a class="nav-link active" role="tab" data-toggle="tab" ref="ccodes" href="#areas_codes">Countries</a></li>
+            <a class="nav-link active" role="tab" data-bs-toggle="tab" ref="ccodes" href="#areas_codes">Countries</a></li>
           <li class="nav-item">
-            <a class="nav-link" role="tab" data-toggle="tab" ref="drawn" href="#areas_draw">Draw</a></li>
+            <a class="nav-link" role="tab" data-bs-toggle="tab" ref="drawn" href="#areas_draw">Draw</a></li>
         </ul>
         <div class="tab-content">
           <div id="areas_codes" class="tab-pane fade show active">
@@ -127,7 +127,7 @@
     $("#id_geojson").attr("placeholder","generated from country codes")
   })
 
-  $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+  $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
     var target = $(e.target).attr("href") // activated tab
     area_type = $(e.target).attr("ref") // activated tab
     map_clear() // switch create modes? clear the deck

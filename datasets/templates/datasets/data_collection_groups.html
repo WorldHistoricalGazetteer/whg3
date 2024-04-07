@@ -46,7 +46,7 @@
       {% endif %}
       {% if user.is_superuser or user.role == 'group_leader' %}
       <li class="nav-item">
-        <a class="nav-link active" id="resourcelist-tab" data-link="cglist" data-toggle="tab"
+        <a class="nav-link active" id="resourcelist-tab" data-link="cglist" data-bs-toggle="tab"
            role="tab" aria-controls="resourcelist" aria-selected="false">Collection groups
 	        {% if whgteam %} (all) {% endif %}
         </a>

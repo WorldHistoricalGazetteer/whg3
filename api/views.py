@@ -19,6 +19,8 @@ from django.views.generic import View, ListView
 from django.core.paginator import PageNotAnInteger, EmptyPage, Paginator
 from django.utils.decorators import method_decorator
 
+from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiParameter, OpenApiTypes, OpenApiExample
+
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import permissions
@@ -235,9 +237,65 @@ class RemoteIndexAPIView(View):
 class SpatialAPIView(generics.ListAPIView):
   renderer_classes = [JSONRenderer]
   filter_backends = [filters.SearchFilter]
+  serializer_class = LPFSerializer
   # search_fields = ['@title']
 
-  def get(self, format=None, *args, **kwargs):
+  @extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="type",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Type of spatial search, either 'nearby' or 'bbox'.",
+            # examples=[
+            #     OpenApiExample(
+            #         name="Example lon",
+            #         summary="Example of a longitude coordinate",
+            #         description="This is an example of a longitude coordinate.",
+            #         value=10.123456
+            #     )
+            # ],
+        ),
+        OpenApiParameter(
+            name="lon",
+            type=OpenApiTypes.FLOAT,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Nearby search: center-point longitude coordinate, between -180 and 180 degrees.",
+        ),
+        OpenApiParameter(
+            name="lat",
+            type=OpenApiTypes.FLOAT,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Nearby search: center-point latitude coordinate, between -90 and 90 degrees.",
+        ),
+        OpenApiParameter(
+            name="km",
+            type=OpenApiTypes.FLOAT,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Nearby search: radius (in km).",
+        ),
+        OpenApiParameter(
+            name="sw",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Bounding box search: southwest corner coordinates (lon,lat)."
+        ),
+        OpenApiParameter(
+            name="ne",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Bounding box search: northeast corner coordinates (lon,lat)."
+        )
+    ],
+  )
+
+  def get(self, *args, **kwargs):
     params = self.request.query_params
     print('SpatialAPIView() params', params)
 
@@ -256,60 +314,40 @@ class SpatialAPIView(generics.ListAPIView):
 
     err_note = None
 
+    # Use Place records and LPFSerializer
     if not qtype:
-      return HttpResponse(content=b'<div style="margin:3rem; font-size: 1.2rem; border:1px solid gainsboro; padding:.5rem;">' +
-        b'<p>Spatial query parameters must include either either <ul><li><b>?type=nearby</b> (with <b>&lng=</b> and <b>&lat=</b>) <i>or</i></li>' +
-        b'<li><b>?type=bbox</b> (with <b>&sw=</b> and <b>&ne+</b>).</p></div')
-
-    # uses PlaceGeom records and PlaceGeomSerializer
-    if qtype == 'nearby':
-      if not all(v for v in [lon, lat, dist]):
-        return HttpResponse(content=b'<div style="margin:3rem; font-size: 1.2rem; border:1px solid gainsboro; padding:.5rem;">' +
-          b'<p>A <b>nearby</b> spatial query requires <b>lng</b>, <b>lat</b>, and <b>km</b> parameters</p></div>')
-      pnt = Point(float(lon), float(lat), srid=4326)
-      # PlaceGeom records, only points
-      qs = PlaceGeom.objects.extra(
-          where=["geometrytype(geom) LIKE 'POINT'"]). \
-            annotate(distance=Distance('geom', pnt)). \
-              filter(geom__distance_lte=(pnt, D(km=dist))).order_by('distance')
-      # filter on params
-      if coll:
-        collids = Collection.objects.get(id=coll).places.all().values_list('id',flat=True)
-        qs = qs.filter(place_id__in=collids)
-      qs = qs.filter(place__dataset=ds) if ds else qs
-      qs = qs.filter(place__fclasses__overlap=fclasses) if fclasses else qs
-      # qs = qs.filter(place__minmax__0__lte=year, place__minmax__1__gte=year) if year else qs
-
-      msg = "nearby query (lon, lat): "+str(pnt.coords)+' w/'+str(dist)+'km buffer'
-      print(msg)
-
-    # uses Place records and LPFSerializer
+        return JsonResponse({"error": "Spatial query parameters must include either '?type=nearby' or '?type=bbox'."}, status=400)
+    elif qtype == 'nearby':
+        if not all(v for v in [lon, lat, dist]):
+            return JsonResponse({"error": "A 'nearby' spatial query requires 'lon', 'lat', and 'km' parameters."}, status=400)
+        else:
+            pnt = Point(float(lon), float(lat), srid=4326)
+            qs = Place.objects.filter(dataset__public=True, geoms__jsonb__type='Point')
+            placeids = PlaceGeom.objects.filter(geom__distance_lte=(pnt, D(km=float(dist)))).values_list('place_id')  
+            msg = "nearby query (lon, lat): " + str(pnt.coords) + ' w/' + str(dist) + 'km buffer'
+            print(msg)             
     elif qtype == 'bbox':
-      if not all(v for v in [sw, ne]):
-        return HttpResponse(content=b'<div style="margin:3rem; font-size: 1.2rem; border:1px solid gainsboro; padding:.5rem;">' +
-          b'<p>A <b>bbox</b> spatial query requires both <b>sw</b> and <b>ne</b> parameters</p></div>')
-      else:
-        qs = Place.objects.filter(dataset__public=True, geoms__jsonb__type='Point')
-        bb = [float(sw.split(',')[0]), float(sw.split(',')[1]),
-                  float(ne.split(',')[0]), float(ne.split(',')[1])]
-        bbox = Polygon.from_bbox(bb) # [xmin, ymin, xmax, ymax]
-        placeids = PlaceGeom.objects.filter(geom__within=bbox).values_list('place_id')
-        qs = qs.filter(id__in=placeids)
-        # filter on params
-        if coll:
-          collids = Collection.objects.get(
-              id=coll).places.all().values_list('id', flat=True)
-          qs = qs.filter(id__in=collids)
-        qs = qs.filter(dataset=ds) if ds else qs
-        qs = qs.filter(fclasses__overlap=fclasses) if fclasses else qs
-
-        msg="bbox query (sw, ne): "+str(bbox)
-        print(msg)
+        if not all(v for v in [sw, ne]):
+            return JsonResponse({"error": "A 'bbox' spatial query requires both 'sw' and 'ne' parameters."}, status=400)
+        else:
+            qs = Place.objects.filter(dataset__public=True, geoms__jsonb__type='Point')
+            bb = [float(sw.split(',')[0]), float(sw.split(',')[1]), float(ne.split(',')[0]), float(ne.split(',')[1])]
+            bbox = Polygon.from_bbox(bb) # [xmin, ymin, xmax, ymax]
+            placeids = PlaceGeom.objects.filter(geom__within=bbox).values_list('place_id')
+            msg="bbox query (sw, ne): "+str(bbox)
+            print(msg)
+            
+    qs = qs.filter(id__in=placeids)
+    # filter on params
+    if coll:
+      collids = Collection.objects.get(id=coll).places.all().values_list('id', flat=True)
+      qs = qs.filter(id__in=collids)
+    qs = qs.filter(dataset=ds) if ds else qs
+    qs = qs.filter(fclasses__overlap=fclasses) if fclasses else qs
 
     filtered = qs[:pagesize] if pagesize and pagesize < 200 else qs[:20]
-    serial = LPFSerializer if qtype == 'bbox' else PlaceGeoFeatureSerializer
-    serializer = serial(filtered, many=True, context={'request': self.request})
-    serialized_data = serializer.data
+    print(filtered)
+    serializer = LPFSerializer(filtered, many=True, context={'request': self.request})
     result = {
               "count": qs.count(),
               "pagesize": filtered.count(),
@@ -317,7 +355,7 @@ class SpatialAPIView(generics.ListAPIView):
               "errors": err_note,
               "type": "FeatureCollection",
               "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
-              "features": serialized_data if qtype == 'bbox' else serialized_data['features']
+              "features": serializer.data
               }
     #print('place result',result)
     return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})

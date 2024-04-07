@@ -515,15 +515,15 @@ class LPFSerializer(serializers.Serializer):
 
   # custom fields for LPF transform
   type = serializers.SerializerMethodField('get_type')
-  def get_type(self, place):
+  def get_type(self, place) -> str:
     return "Feature"
 
   uri = serializers.SerializerMethodField('get_uri')
-  def get_uri(self, place):
+  def get_uri(self, place) -> str:
     return "https://whgazetteer.org/api/place/" + str(place.id)
 
   properties = serializers.SerializerMethodField('get_properties')
-  def get_properties(self,place):
+  def get_properties(self,place) -> dict:
     props = {
       "place_id":place.id,
       "dataset_label":place.dataset.label,
@@ -538,7 +538,7 @@ class LPFSerializer(serializers.Serializer):
 
   geometry = serializers.SerializerMethodField('get_geometry')
   # {"type": "Point", "geowkt": "POINT(110.6 0.13333)", "coordinates": [110.6, 0.13333]}
-  def get_geometry(self, place):
+  def get_geometry(self, place) -> dict:
     gcoll = {"type":"GeometryCollection","geometries":[]}
     geoms = [g.jsonb for g in place.geoms.all()]
     for g in geoms:

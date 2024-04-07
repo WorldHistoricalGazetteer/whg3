@@ -300,7 +300,8 @@ STATICFILES_DIRS = [
 GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
 GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
 
-SWAGGER_SETTINGS = {
+SPECTACULAR_SETTINGS = {
+    'SORT_OPERATION_PARAMETERS': False,
 }
 
 try:
