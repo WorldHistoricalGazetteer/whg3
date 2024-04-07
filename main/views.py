@@ -34,6 +34,9 @@ es = settings.ES_CONN
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 
+def OpenAPIView(request):
+    return render(request, 'main/openapi.html', {'schema_url': '/api/schema/'})
+
 def get_task_progress(request, taskid):
   print(f"Requested URL: {request.path}")
   print('get_task_progress() taskid', taskid)
