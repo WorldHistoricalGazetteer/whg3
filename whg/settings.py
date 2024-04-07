@@ -302,7 +302,7 @@ GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'World Historical Gazetteer: Public API Endpoints',
-    'DESCRIPTION': 'Development of the external API is in draft stage. We plan to refine options and add endpoints in response to community feedback. Please use the form on the Website link below for suggestions.',
+    'DESCRIPTION': '<img alt="WHG" height="76" src="/static/images/whg_logo.svg" width="100"><br/>Development of the external API is in draft stage. We plan to refine options and add endpoints in response to community feedback. Please use <a href="http://localhost:8001/contact/?from=/usingapi/">this form</a> for suggestions.',
     'VERSION': '1.0.0',
     'CONTACT': {
         'name': 'Karl Grossner',

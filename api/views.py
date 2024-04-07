@@ -246,13 +246,19 @@ class RemoteIndexAPIView(View):
     return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
 
 
-"""
-  nearby and bbox spatial db queries
-"""
 class SpatialAPIView(generics.ListAPIView):
+  """
+  This endpoint will return a Feature Collection (in Linked Places Format) containing places either within a given bounding
+  box or within a given radial distance from a given point.
+  
+  A search `type` of either `bbox` or `nearby` is required. A `bbox` requires south-west (`sw`) and north-east (`ne`) coordinates, while 
+  a `nearby` search requires `lon` and `lat` of the search centre together with a `km` radius (in kilometres). 
+  """
   renderer_classes = [JSONRenderer]
-  filter_backends = [filters.SearchFilter]
   serializer_class = LPFSerializer
+  
+  # TODO: Add text filtering?
+  # filter_backends = [filters.SearchFilter]
   # search_fields = ['@title']
 
   @extend_schema(
@@ -348,7 +354,7 @@ class SpatialAPIView(generics.ListAPIView):
             type=OpenApiTypes.INT,
             location=OpenApiParameter.QUERY,
             required=False,
-            description="A page number within the paginated result set."
+            description="A page number within a paginated result set."
         ),
     ],
     responses = {
