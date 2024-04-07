@@ -19,15 +19,17 @@ from django.views.generic import View, ListView
 from django.core.paginator import PageNotAnInteger, EmptyPage, Paginator
 from django.utils.decorators import method_decorator
 
-from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiParameter, OpenApiTypes, OpenApiExample
+from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiParameter, OpenApiResponse, OpenApiTypes, OpenApiExample
 
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework import viewsets
 from rest_framework import status
+from rest_framework import serializers
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import api_view
+from rest_framework.exceptions import APIException
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -51,6 +53,19 @@ import inspect
 import json
 import random
 import os, requests
+
+class ErrorResponseSerializer(serializers.Serializer):
+    error = serializers.CharField()
+
+class BadRequestException(APIException):
+    serializer_class = ErrorResponseSerializer
+    status_code = status.HTTP_400_BAD_REQUEST
+    default_detail = 'Bad request.'
+
+    def __init__(self, detail=None, code=None):
+        if detail is None:
+            detail = self.default_detail
+        self.detail = {"error": detail}
 
 class GalleryView(ListAPIView):
     pagination_class = PageNumberPagination
@@ -248,14 +263,6 @@ class SpatialAPIView(generics.ListAPIView):
             location=OpenApiParameter.QUERY,
             required=False,
             description="Type of spatial search, either 'nearby' or 'bbox'.",
-            # examples=[
-            #     OpenApiExample(
-            #         name="Example lon",
-            #         summary="Example of a longitude coordinate",
-            #         description="This is an example of a longitude coordinate.",
-            #         value=10.123456
-            #     )
-            # ],
         ),
         OpenApiParameter(
             name="lon",
@@ -283,16 +290,71 @@ class SpatialAPIView(generics.ListAPIView):
             type=OpenApiTypes.STR,
             location=OpenApiParameter.QUERY,
             required=False,
-            description="Bounding box search: southwest corner coordinates (lon,lat)."
+            description="Bounding box search: southwest corner coordinates (comma-separated lon,lat values).",
+            examples=[
+                OpenApiExample(
+                    name="Example sw",
+                    summary="Example of southwest corner coordinates",
+                    #description="This is an example of southwest corner coordinates.",
+                    value="-150.123456,-52.345678"
+                )
+            ],
         ),
         OpenApiParameter(
             name="ne",
             type=OpenApiTypes.STR,
             location=OpenApiParameter.QUERY,
             required=False,
-            description="Bounding box search: northeast corner coordinates (lon,lat)."
-        )
+            description="Bounding box search: northeast corner coordinates (comma-separated lon,lat values).",
+            examples=[
+                OpenApiExample(
+                    name="Example ne",
+                    summary="Example of northeast corner coordinates",
+                    #description="This is an example of northeast corner coordinates.",
+                    value="150.123456,52.345678"
+                )
+            ],
+        ),
+        OpenApiParameter(
+            name="fc",
+            type=OpenApiTypes.STR,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Comma-separated list of feature classes to filter by."
+        ),
+        OpenApiParameter(
+            name="dataset",
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Filter by dataset ID."
+        ),
+        OpenApiParameter(
+            name="collection",
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Filter by collection ID."
+        ),
+        OpenApiParameter(
+            name="pagesize",
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Number of results per page."
+        ),
+        OpenApiParameter(
+            name="page",
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="A page number within the paginated result set."
+        ),
     ],
+    responses = {
+        200: LPFSerializer(many=True),
+        400: ErrorResponseSerializer,
+    }
   )
 
   def get(self, *args, **kwargs):
@@ -310,16 +372,20 @@ class SpatialAPIView(generics.ListAPIView):
     ds = params.get('dataset', None)
     coll = params.get('collection', None)
     pagesize = params.get('pagesize', None)
+    try:
+        pagesize = int(pagesize)
+    except (TypeError, ValueError):
+        pagesize = 20
     # year = params.get('year', None)
 
     err_note = None
 
     # Use Place records and LPFSerializer
     if not qtype:
-        return JsonResponse({"error": "Spatial query parameters must include either '?type=nearby' or '?type=bbox'."}, status=400)
+        raise BadRequestException("Spatial query parameters must include either 'type=nearby' or 'type=bbox'.")
     elif qtype == 'nearby':
         if not all(v for v in [lon, lat, dist]):
-            return JsonResponse({"error": "A 'nearby' spatial query requires 'lon', 'lat', and 'km' parameters."}, status=400)
+            raise BadRequestException("A 'nearby' spatial query requires 'lon', 'lat', and 'km' parameters.")
         else:
             pnt = Point(float(lon), float(lat), srid=4326)
             qs = Place.objects.filter(dataset__public=True, geoms__jsonb__type='Point')
@@ -328,7 +394,7 @@ class SpatialAPIView(generics.ListAPIView):
             print(msg)             
     elif qtype == 'bbox':
         if not all(v for v in [sw, ne]):
-            return JsonResponse({"error": "A 'bbox' spatial query requires both 'sw' and 'ne' parameters."}, status=400)
+            raise BadRequestException("A 'bbox' spatial query requires both 'sw' and 'ne' parameters.")
         else:
             qs = Place.objects.filter(dataset__public=True, geoms__jsonb__type='Point')
             bb = [float(sw.split(',')[0]), float(sw.split(',')[1]), float(ne.split(',')[0]), float(ne.split(',')[1])]
@@ -340,23 +406,23 @@ class SpatialAPIView(generics.ListAPIView):
     qs = qs.filter(id__in=placeids)
     # filter on params
     if coll:
-      collids = Collection.objects.get(id=coll).places.all().values_list('id', flat=True)
-      qs = qs.filter(id__in=collids)
+        collids = Collection.objects.get(id=coll).places.all().values_list('id', flat=True)
+        qs = qs.filter(id__in=collids)
     qs = qs.filter(dataset=ds) if ds else qs
     qs = qs.filter(fclasses__overlap=fclasses) if fclasses else qs
 
-    filtered = qs[:pagesize] if pagesize and pagesize < 200 else qs[:20]
+    filtered = qs[:pagesize]
     print(filtered)
     serializer = LPFSerializer(filtered, many=True, context={'request': self.request})
     result = {
-              "count": qs.count(),
-              "pagesize": filtered.count(),
-              "parameters": params,
-              "errors": err_note,
-              "type": "FeatureCollection",
-              "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
-              "features": serializer.data
-              }
+        "count": qs.count(),
+        "pagesize": filtered.count(),
+        "parameters": params,
+        "errors": err_note,
+        "type": "FeatureCollection",
+        "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
+        "features": serializer.data
+    }
     #print('place result',result)
     return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
 
@@ -917,6 +983,9 @@ class GeoJSONAPIView(generics.ListAPIView):
 class featureCollectionAPIView(generics.ListAPIView):
   permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
   
+  @extend_schema( # Not intended as a public API
+        exclude=True,
+  )
   def get(self, format=None, *args, **kwargs):
 
     mode = self.request.GET.get('mode', 'default') or 'default'
@@ -1100,6 +1169,9 @@ class RegionViewSet(View):
 
 # Country Geometries from ccode list
 class CountryFeaturesAPIView(View):
+    @extend_schema( # Not intended as a public API
+        exclude=True,
+    )
     def get(self, request, *args, **kwargs):
         country_codes_param = self.request.GET.get('country_codes', '')
         country_codes = [code.strip().upper() for code in country_codes_param.split(',') if code.strip()]
@@ -1123,6 +1195,9 @@ class CountryFeaturesAPIView(View):
     
 # Fetch Watershed GeoJSON from remote URL
 class WatershedAPIView(APIView):
+    @extend_schema( # Not intended as a public API
+        exclude=True,
+    )
     def get(self, request, *args, **kwargs):
         lat = request.query_params.get('lat', None)
         lng = request.query_params.get('lng', None)

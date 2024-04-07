@@ -301,7 +301,26 @@ GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
 GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
 
 SPECTACULAR_SETTINGS = {
+    'TITLE': 'World Historical Gazetteer: Public API Endpoints',
+    'DESCRIPTION': 'Development of the external API is in draft stage. We plan to refine options and add endpoints in response to community feedback. Please use the form on the Website link below for suggestions.',
+    'VERSION': '1.0.0',
+    'CONTACT': {
+        'name': 'Karl Grossner',
+        'url': 'http://localhost:8001/contact/?from=/usingapi/',
+        #'email': 'john@example.com',
+    },
+    # 'LICENSE': {
+    #     'name': 'MIT License',
+    #     'url': 'https://opensource.org/licenses/MIT',
+    # },
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+    },
     'SORT_OPERATION_PARAMETERS': False,
+    'PREPROCESSING_HOOKS': [
+        'drf_spectacular.hooks.preprocess_exclude_path_format',
+    ],
 }
 
 try:

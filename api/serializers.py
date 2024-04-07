@@ -523,7 +523,7 @@ class LPFSerializer(serializers.Serializer):
     return "https://whgazetteer.org/api/place/" + str(place.id)
 
   properties = serializers.SerializerMethodField('get_properties')
-  def get_properties(self,place) -> dict:
+  def get_properties(self, place) -> dict:
     props = {
       "place_id":place.id,
       "dataset_label":place.dataset.label,
@@ -537,13 +537,12 @@ class LPFSerializer(serializers.Serializer):
     return props
 
   geometry = serializers.SerializerMethodField('get_geometry')
-  # {"type": "Point", "geowkt": "POINT(110.6 0.13333)", "coordinates": [110.6, 0.13333]}
   def get_geometry(self, place) -> dict:
-    gcoll = {"type":"GeometryCollection","geometries":[]}
-    geoms = [g.jsonb for g in place.geoms.all()]
-    for g in geoms:
-      gcoll["geometries"].append(g)
-    return gcoll
+        geometries_data = PlaceGeomSerializer(place.geoms.all(), many=True).data
+        return {
+            "type": "GeometryCollection",
+            "geometries": geometries_data
+        }
 
   class Meta:
     model = Place
