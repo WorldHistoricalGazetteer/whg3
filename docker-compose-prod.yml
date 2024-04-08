@@ -47,19 +47,19 @@ services:
     volumes:
       - .:/app
 
-#  livereload: # https://github.com/tjwalch/django-livereload-server
-#    image: whg3_web
-#    networks:
-#      - WHG3
-#    platform: linux/amd64
-#    command: /start-livereload
-#    container_name: livereload
-#    volumes:
-#      - .:/app
-#    env_file:
-#      - ./.env/.prod-whg3
-#    ports:
-#      - 35729:35729
+  livereload: # https://github.com/tjwalch/django-livereload-server
+    image: whg3_web
+    networks:
+      - WHG3
+    platform: linux/amd64
+    command: /start-livereload
+    container_name: livereload
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env/.prod-whg3
+    ports:
+      - 35729:35729
 
   db:
     networks:
