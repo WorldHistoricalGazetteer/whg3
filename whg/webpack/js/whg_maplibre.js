@@ -297,7 +297,7 @@ class acmeStyleControl {
 	    const select = document.createElement('select');
 	    select.id = 'radiusSelect';
 	    select.setAttribute('data-bs-title', 'Search radius, based on map center');
-	    for (let i = 1; i <= 10; i++) {
+	    for (let i = 1; i <= 12; i++) {
 	        const option = document.createElement('option');
 	        option.value = i ** 2;
 	        option.textContent = `${i ** 2} km`;

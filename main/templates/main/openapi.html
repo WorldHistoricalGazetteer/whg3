@@ -1,0 +1,40 @@
+{% extends "main/base_webpack.html" %}
+{% block title %}
+    <title>WHG::API</title>
+{% endblock %}
+{% block extra_head %}
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.13.0/swagger-ui.min.css">
+    <style>
+        body {
+            font-family: 'Raleway', sans-serif;
+        }
+        div.information-container.wrapper {
+            display: none;
+        }
+    </style>
+{% endblock %}
+{% load static %}
+{% block content %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.13.0/swagger-ui-bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.13.0/swagger-ui-standalone-preset.js"></script>
+    <div class="container">
+        <div class="d-flex justify-content-center mt-3">
+            <h3>WHG API Endpoints</h3>
+        </div>
+        <p class="mb-2">Development of the external API is in draft stage. We plan to refine options and add endpoints in response to community feedback. Please use <a href="#" class="feedback">this form</a> for suggestions.</p>
+        <div id="openapi-ui"></div>
+    </div>
+    <script>
+        window.onload = function() {
+            SwaggerUIBundle({
+                url: '{{ schema_url }}',
+                dom_id: '#openapi-ui',
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIBundle.SwaggerUIStandalonePreset
+                ],
+                layout: "BaseLayout"
+            });
+        }
+    </script>
+{% endblock %}

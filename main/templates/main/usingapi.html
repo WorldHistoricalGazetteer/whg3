@@ -14,6 +14,9 @@
       <div class="row mt-2">
         <div class="col-sm-5"> 
 			<h4>Using the API</h4>
+			
+			<a href="{% url 'main:open_api' %}" target="_blank">OpenAPI Documentation</a>
+			
             <p class="mb-2">Development of the external API is in draft stage. We plan to refine options and add endpoints in response to community feedback. Please use <a href="#" class="feedback">this form</a> for suggestions.</p>
 			
 			<h5 class="red-head strong">Two place data stores</h5>
@@ -32,22 +35,22 @@
 			<!--<span class="text-danger"><b>NOTE:</b> Only the example links are confirmed to work right now.</span>.-->
 			<ul id="api_tabs" class="nav nav-tabs" role="tablist">
 			  <li class="nav-item">
-				<a class="nav-link" id="placedb-tab" data-toggle="tab" href="#place_db" role="tab" aria-controls="place_db" aria-selected="true">Places (database)</a>
+				<a class="nav-link" id="placedb-tab" data-bs-toggle="tab" href="#place_db" role="tab" aria-controls="place_db" aria-selected="true">Places (database)</a>
 			  </li>
 			  <li class="nav-item">
-				<a class="nav-link active" id="placeidx-tab" data-toggle="tab" href="#place_idx" role="tab" aria-controls="place_idx" aria-selected="false">Places (index)</a>
+				<a class="nav-link active" id="placeidx-tab" data-bs-toggle="tab" href="#place_idx" role="tab" aria-controls="place_idx" aria-selected="false">Places (index)</a>
 			  </li>
 			  <li class="nav-item">
-				<a class="nav-link" id="spatial-tab" data-toggle="tab" href="#spatial" role="tab" aria-controls="spatial" aria-selected="false">Spatial</a>
+				<a class="nav-link" id="spatial-tab" data-bs-toggle="tab" href="#spatial" role="tab" aria-controls="spatial" aria-selected="false">Spatial</a>
 			  </li>
 			  <!-- <li class="nav-item">
-				<a class="nav-link" id="traces-tab" data-toggle="tab" href="#traces" role="tab" aria-controls="traces" aria-selected="false">Traces</a>
+				<a class="nav-link" id="traces-tab" data-bs-toggle="tab" href="#traces" role="tab" aria-controls="traces" aria-selected="false">Traces</a>
 			  </li> -->
 			  <li class="nav-item">
-				<a class="nav-link" id="areas-tab" data-toggle="tab" href="#areas" role="tab" aria-controls="areas" aria-selected="false">Regions/Areas</a>
+				<a class="nav-link" id="areas-tab" data-bs-toggle="tab" href="#areas" role="tab" aria-controls="areas" aria-selected="false">Regions/Areas</a>
 			  </li>
 			  <li class="nav-item">
-				<a class="nav-link" id="datasets-tab" data-toggle="tab" href="#datasets" role="tab" aria-controls="datasets" aria-selected="false">Datasets</a>
+				<a class="nav-link" id="datasets-tab" data-bs-toggle="tab" href="#datasets" role="tab" aria-controls="datasets" aria-selected="false">Datasets</a>
 			  </li>
 			</ul>
 			<div class="tab-content">

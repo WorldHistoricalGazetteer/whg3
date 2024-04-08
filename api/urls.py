@@ -87,8 +87,8 @@ urlpatterns = [
     #url('union/', views.indexAPIView.as_view(), name='union_api')
     
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('schema/swagger-ui/', SpectacularSwaggerView.as_view(), name='swagger-ui'),
-    path('schema/redoc/', SpectacularRedocView.as_view(), name='redoc'),
+    # path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-docs'),
+    # path('schema/redoc/', SpectacularRedocView.as_view(), name='redoc'),
 
 #
     # *** External Data ***

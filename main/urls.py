@@ -17,6 +17,8 @@ urlpatterns = [
     path('groups_list/<str:sort>/<str:order>/', views.group_list, name='group-list'),
 
     path('modal/', TemplateView.as_view(template_name="main/modal.html"), name="dynamic-modal"),
+    
+    path('open-api/', views.OpenAPIView, name='open_api'),
 ]
 #] + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
 if settings.DEBUG is True:
