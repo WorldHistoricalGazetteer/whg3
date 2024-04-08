@@ -129,7 +129,7 @@ class DatasetViewSet(viewsets.ModelViewSet):
     create=extend_schema(
         description='Create a new place for authenticated user.',
         request=PlaceRemoteDetailSerializer,
-        parameters=[],
+        parameters=None,
         responses = {
             201: DatasetRemoteDetailSerializer,
             400: ErrorResponseSerializer,
