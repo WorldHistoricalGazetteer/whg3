@@ -25,6 +25,9 @@ numrows = models.IntegerField(null=True, blank=True)
 numlinked = models.IntegerField(null=True, blank=True)
 total_links = models.IntegerField(null=True, blank=True)
 
+class ErrorResponseSerializer(serializers.Serializer):
+    error = serializers.CharField()
+
 # ***
 # IN USE Apr 2020
 # ***

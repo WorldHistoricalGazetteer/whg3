@@ -41,7 +41,7 @@ from accounts.permissions import IsOwnerOrReadOnly
 from api.serializers import (
   UserSerializer, DatasetSerializer, PlaceSerializer,
   PlaceTableSerializer, PlaceGeomSerializer, PlaceGeoFeatureSerializer, AreaSerializer,
-  FeatureSerializer, LPFSerializer, PlaceCompareSerializer)
+  FeatureSerializer, LPFSerializer, PlaceCompareSerializer, ErrorResponseSerializer)
 from areas.models import Area
 from collection.models import Collection, CollPlace
 from datasets.models import Dataset
@@ -53,9 +53,6 @@ import inspect
 import json
 import random
 import os, requests
-
-class ErrorResponseSerializer(serializers.Serializer):
-    error = serializers.CharField()
 
 class BadRequestException(APIException):
     serializer_class = ErrorResponseSerializer
