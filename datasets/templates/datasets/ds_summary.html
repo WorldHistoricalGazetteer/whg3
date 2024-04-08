@@ -54,14 +54,14 @@
         {% if user == object.owner or user.is_superuser %}
           <span class="float-end">Delete dataset
             <a href="{% url 'datasets:dataset-delete' ds.id %}" class="" title="Delete dataset"
-               target="_blank" rel="tooltip">
+               target="_blank" data-bs-toggle="tooltip">
               <i class="fas fa-trash linkyred"></i></a>
           </span>
         {% endif %}
         {% if user in collaborators or is_admin %}
           <span class="float-end me-3">
             publication {% if not ds.public %}pre{% endif %}view
-            <a href="{% url 'datasets:ds_places' id=ds.id %}" title="View publication page" rel="tooltip">
+            <a href="{% url 'datasets:ds_places' id=ds.id %}" title="View publication page" data-bs-toggle="tooltip">
             <i class="fas fa-eye"></i></a>
           </span>
         {% endif %}
@@ -597,7 +597,7 @@
 
   $(function(){
 	  // activate all tooltips
-    $("[rel='tooltip']").tooltip();
+    $("[data-bs-toggle='tooltip']").tooltip();
     $("[data-toggle=popover]").popover({html:true})
 
     // help modals

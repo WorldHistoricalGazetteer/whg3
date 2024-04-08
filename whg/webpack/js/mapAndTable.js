@@ -55,6 +55,12 @@ let mapParameters = {
 }
 let mappy = new whg_maplibre.Map(mapParameters);
 
+if (typeof visParameters === 'undefined') { // Set defaults for datasets and dataset collections
+	let visParameters = {'seq': {'tabulate': false, 'temporal_control': 'player', 'trail': false},'min': {'tabulate': false, 'temporal_control': 'filter', 'trail': false},'max': {'tabulate': false, 'temporal_control': 'filter', 'trail': false}};
+	mapParameters.temporalControl = false;
+	mapParameters.controls.sequencer = false;
+}	
+
 const mapLoadPromise = new Promise(function (resolve, reject) {
     mappy.on('load', function () {
         console.log('Map loaded.');

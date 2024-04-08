@@ -257,6 +257,28 @@ def build_qobj(place):
 
   return qobj
 
+"""
+Fetch place ids for a given whg_id
+"""
+def findPortalPlaces(whg_id):
+    es = settings.ES_CONN
+    idx = 'whg'
+    
+    # Construct Elasticsearch query to find the document by whg_id
+    res = es.search(index=idx, query=esq_id(whg_id))
+    hits = res['hits']['hits']
+
+    # Check if the document exists in the index
+    if hits:
+        doc = hits[0]['_source']
+        place_id = int(doc.get('place_id'))
+        children = [int(child) for child in doc.get('children', [])]
+        
+    # Concatenate place_id and children into a single array
+    ids = [place_id] + children
+
+    # Return the array of IDs
+    return ids
 
 """
 summarize a WHG hit for analysis

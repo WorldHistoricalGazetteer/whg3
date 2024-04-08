@@ -100,7 +100,7 @@
                   <tr class="place-row">
                     <td>{{ d.id }}</td>
                     <td>
-                    <a href="{% url 'datasets:ds_summary' d.id %}" title="Dataset details" rel="tooltip">
+                    <a href="{% url 'datasets:ds_summary' d.id %}" title="Dataset details" data-bs-toggle="tooltip">
 	                    {{ d.title }}</a>
 	                    {% if not user == d.owner %}
 		                    <span class="smaller ms-3">
@@ -141,7 +141,7 @@
                 {% for d in shared_list %}
                   <tr class="place-row">
                     <td>{{ d.id }}</td>
-                    <td><a href="{% url 'datasets:ds_summary' d.id %}" title="Dataset details" rel="tooltip"
+                    <td><a href="{% url 'datasets:ds_summary' d.id %}" title="Dataset details" data-bs-toggle="tooltip"
                       >{{ d.title }}</a></td>
                     <td>{% if d.core == True %}
                           {{ d.label }} <span class="corerow"> (core)</span>
@@ -165,7 +165,7 @@
 
   <script>
     $(function(){
-      $("[rel='tooltip']").tooltip();
+      $("[data-bs-toggle='tooltip']").tooltip();
 
       // manage url
       var url = document.location.toString();

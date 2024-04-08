@@ -12,7 +12,7 @@ from django.db.models import Count
 from datetime import datetime
 from elasticsearch8 import Elasticsearch
 from collections import Counter
-import itertools, re
+import itertools, re, requests
 from django.core.serializers import serialize
 from urllib.parse import unquote_plus
 
@@ -20,6 +20,7 @@ from collection.models import Collection
 from datasets.models import Dataset
 from places.models import Place
 from places.utils import attribListFromSet
+from elastic.es_utils import findPortalPlaces
 
 # write review status = 2 (per authority)
 def defer_review(request, pid, auth, last):
@@ -88,9 +89,9 @@ class PlacePortalView(TemplateView):
     # Extract any encoded IDs from a permalink URL
     encoded_ids = kwargs.get('encoded_ids', '')
     if whg_id:
-        print('Assembling parent and child place_ids')   
-        # TO DO - search ES - in the meantime, fall back to the IDs stored in the session variable
-        place_ids = self.request.session.get('current_result', {}).get('place_ids', [])
+        portal_data = findPortalPlaces(whg_id)
+        print('portal_data:', portal_data)
+        place_ids = portal_data
     elif encoded_ids:
         place_ids = list(map(int, encoded_ids.split(',')))
     else:

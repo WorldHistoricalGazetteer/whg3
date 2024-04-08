@@ -55,22 +55,22 @@
 	            <input type="checkbox" id="reverseSortCheckbox">
 				<div id="map"></div>
 	            <div class="input-group mb-3">
-				    <input type="text" id="searchInput" class="form-control" placeholder="Filter titles and descriptions">
-				    <button class="btn btn-outline-secondary clear-button" type="button" id="clearSearchButton">Clear</button>
+				    <input type="text" id="searchInput" class="form-control" placeholder="Filter titles/descriptions/authors">
+				    <button data-bs-toggle="tooltip" title="Clear this filter" class="btn btn-outline-secondary clear-button" type="button" id="clearSearchButton">Clear</button>
 				</div>
 				<div id="spatial_selector" class="input-group mb-3">
 				    <!-- Dropdown selector for Region, Country, or User Area -->
-				    <select class="form-select" id="categorySelector">
+				    <select data-bs-toggle="tooltip" title="Filter by Regions or Countries" class="form-select" id="categorySelector">
 				      <option value="none">None</option>
 				      <option value="regions" selected>Region</option>
 				      <option value="countries">Country</option>
 				    </select>
 				
 				    <!-- Select2 input -->
-				    <select class="form-select" id="entrySelector" multiple></select>
+				    <select title="Filter by Regions or Countries (select dropdown first)" class="form-select" id="entrySelector" multiple></select>
 				
 				    <!-- Clear button -->
-				    <button class="btn btn-outline-secondary clearButton" type="button" id="clearButton"><i class="fas fa-times"></i></button>
+				    <button data-bs-toggle="tooltip" title="Clear this filter" class="btn btn-outline-secondary clearButton" type="button" id="clearButton"><i class="fas fa-times"></i></button>
 				</div>
 	            
 				
