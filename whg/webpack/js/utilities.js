@@ -220,10 +220,7 @@ export function startSpinner(spinnerId = 'dataset_content', scale = .5) {
 
 export function initUtils(mappy) {
 	
-  $("[rel='tooltip']").each(function(index, element) { // Initialize Bootstrap tooltips
-    new bootstrap.Tooltip(element);
-  });  
-  // Formerly ambiguously jQuery/Bootstrap: $('[rel=\'tooltip\']').tooltip();
+  $("[rel='tooltip']").tooltip();
 
   // generic clipboard for modal and non-modal containers
   document.querySelectorAll('.clippy').forEach(element => {

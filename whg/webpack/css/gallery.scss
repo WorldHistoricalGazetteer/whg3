@@ -42,7 +42,7 @@
 }
 .ds-card-gallery:hover {
     cursor: pointer;
-    opacity: 0.8;
+    background-color: #99333330!important;
 }
 .ds-card-content {
     font-size: 0.9rem;
@@ -56,9 +56,28 @@
     font-variant: small-caps;
     color: #993333;
 }
+.ds-card-content > div {
+	clear: both;
+}
 .ds-card-blurb {
     line-height: 1rem;
     font-size: small;
+}
+.previewButton {
+    font-size: .7rem;
+    margin: 0 0 0.5rem 0.5rem !important;
+    background-color: #cad6ab82 !important;
+}
+.previewButton.active {
+    background-color: #99333330!important;
+}
+.custom-tooltip-red {
+  --bs-tooltip-bg: #993333!important;
+  --bs-tooltip-color: #fff!important;
+}
+.custom-tooltip-green {
+  --bs-tooltip-bg: #cad6ab!important;
+  --bs-tooltip-color: #000!important;
 }
 select.form-select {
     width: 100%;

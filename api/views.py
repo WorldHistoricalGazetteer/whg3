@@ -74,7 +74,13 @@ class GalleryView(ListAPIView):
         # ADD TEXT FILTERS
         search_text = self.request.query_params.get('q', '') # Default to empty string
         if search_text:
-            filter &= (Q(title__icontains=search_text) | Q(description__icontains=search_text))
+            filter &= (
+                Q(title__icontains=search_text) |  # include title field search
+                Q(description__icontains=search_text) |  # include description field search
+                Q(creator__icontains=search_text)  # include creator field search
+            )
+            if hasattr(model, 'contributors'):  # Check if contributors field exists in the model (Datasets only)
+                filter |= Q(contributors__icontains=search_text)  # include contributors field search if it exists
         queryset = model.objects.filter(filter)
 
         # SPATIAL FILTERS

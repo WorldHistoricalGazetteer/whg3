@@ -47,7 +47,7 @@ function updateTotals(dsid){
     }
   )
 }
-$("[rel='tooltip']").tooltip();
+$("[data-bs-toggle='tooltip']").tooltip();
 
 $(".edit-name").click(function() {
   <!--$(".hidden").toggle()-->

@@ -70,7 +70,7 @@
         <h4 class="p-1">Initiate Reconciliation page</h4>
         <p>Reconciliation is the process of identifying matches of your Place records to existing records in online place name authorities. So far, reconciliation to Getty TGN and Wikidata are offered. <mark>DBpedia and GeoNames will likely be added before v1 launch</mark>. The purpose is to augment a dataset with associated "place_link" records, and optionally, geometry ("place_geom" records) derived from the authority. It is therefore possible to upload a dataset having no geometry, and use this reconciliation service to make it mappable, at least in part.</p>
         <p class="strong">NOTE: Making your dataset as rich with links to authorities as possible is a crucial step in making it ultimately a solid contribution to the WHG index.</p>
-        <p>In each case, the authority data store is queried for matches with your dataset records, one by one. Each query actually consists of multiple "passes," at first including as much context as your records may contain: name plus all variants; place type; one or more modern country <a href="" title="Provides a spatial constraint to aid queries; does not infer other relations" rel="tooltip"><i class="fas fa-question-circle linky"></i></a>; a user-defined Study Area; coordinate geometry for the feature; and name(s) of "parent" entities). Subsequent passes (two for TGN, one for Wikidata) relax the query if no potential matches (hits) are found. Resulting hits for all records are queued for <a href="#review">review by the dataset creator</a>. </p>
+        <p>In each case, the authority data store is queried for matches with your dataset records, one by one. Each query actually consists of multiple "passes," at first including as much context as your records may contain: name plus all variants; place type; one or more modern country <a href="" title="Provides a spatial constraint to aid queries; does not infer other relations" data-bs-toggle="tooltip"><i class="fas fa-question-circle linky"></i></a>; a user-defined Study Area; coordinate geometry for the feature; and name(s) of "parent" entities). Subsequent passes (two for TGN, one for Wikidata) relax the query if no potential matches (hits) are found. Resulting hits for all records are queued for <a href="#review">review by the dataset creator</a>. </p>
         <h5>Getty TGN</h5>
         <p>WHG maintains a locally indexed copy of the 2.5 million place records retrieved from a TGN dump file in March, 2018. Because it is local, the process is considerably faster than for Wikidata. <mark>We hope to periodically update this index in the future, or to use the newly announce TGN Open Refine endpoint if its results are comparable and speed is acceptable.</p>
         <p>Almost all TGN records include a point geometry, but no concordances with other authorities.</p>
@@ -110,6 +110,6 @@
     </div>
   </div>
   <script type="text/javascript">
-    $("[rel='tooltip']").tooltip();
+    $("[data-bs-toggle='tooltip']").tooltip();
   </script>
 {% endblock %}

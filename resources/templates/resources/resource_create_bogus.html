@@ -204,7 +204,7 @@
             }
         }
     })
-    $("[rel='tooltip']").tooltip();
+    $("[data-bs-toggle='tooltip']").tooltip();
     function startUploadSpinner() {
         window.spinner_upload = new Spin.Spinner().spin();
         $("#upload_spinner").append(spinner_upload.el);

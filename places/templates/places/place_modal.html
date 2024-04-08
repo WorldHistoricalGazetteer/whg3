@@ -76,7 +76,7 @@
               <span id="pgeom" style="opacity:0;position:absolute;z-index:-1">{% for g in object.geoms.all %}{{g.jsonb.coordinates}}{%endfor%}</span>
             </td>
             <td>
-            <a id="a_clipgeom" class="clippy" data-clipboard-target="#pgeom" rel="tooltip" title="copy to clipboard">copy coordinates to clipboard <i class="fas fa-clipboard linky"></i></a></td>
+            <a id="a_clipgeom" class="clippy" data-clipboard-target="#pgeom" data-bs-toggle="tooltip" title="copy to clipboard">copy coordinates to clipboard <i class="fas fa-clipboard linky"></i></a></td>
           </tr>
           {% endif %}
         </table>
@@ -170,7 +170,7 @@
     }
   }
 
-  $("[rel='tooltip']").tooltip();
+  $("[data-bs-toggle='tooltip']").tooltip();
 
   var clip_geom = new ClipboardJS('#a_clipgeom');
   clip_geom.on('success', function(e) {

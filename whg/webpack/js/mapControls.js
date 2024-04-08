@@ -208,7 +208,7 @@ class sequencerControl {
 let mapSequencer;
 function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table){
 
-	if (!!mapParameters.controls.sequencer) {
+	if (!!mapParameters.controls.sequencer && mapParameters.controls.sequencer) {
 		mapSequencer = new sequencerControl();
 		mappy.addControl(mapSequencer, 'bottom-left');
 	}
@@ -226,7 +226,7 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 		datelineContainer = null;
 	}
 
-	if (!!mapParameters.temporalControl) {
+	if (!!mapParameters.temporalControl && mapParameters.temporalControl) {
 		datelineContainer = document.createElement('div');
 		datelineContainer.id = 'dateline';
 		document.getElementById('mapControls').appendChild(datelineContainer);

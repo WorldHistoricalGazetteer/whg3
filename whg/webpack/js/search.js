@@ -85,14 +85,18 @@ function waitMapLoad() {
 			}
 
 			mappy.on('mousemove', function(e) {
-				getFeatureId(e);
+				if (!mappy._draw || mappy._draw.getMode() !== 'draw_polygon') {
+					getFeatureId(e);
+				}
 			});
 
 			mappy.on('click', function(e) {
-				$('.result').
-				eq(getFeatureId(e)).
-				attr('data-map-clicked', 'true').
-				click();
+				if (!mappy._draw || mappy._draw.getMode() !== 'draw_polygon') {
+					$('.result')
+					.eq(getFeatureId(e))
+					.attr('data-map-clicked', 'true')
+					.click();
+				}
 			});
 
 			resolve();
@@ -182,8 +186,14 @@ Promise.all([
 
 	// Delegated event listener for Result links
 	$(document).on('click', '.result', function(e) {
-
-		const index = $(this).index(); // Get index of clicked card
+	    const $container = $('#result_container');
+    	const $searchResults = $('#search_results');
+	    const $clickedResult = $(this);
+	    const scrollTop = -30 + $clickedResult.position().top - $container.position().top + $container.scrollTop();
+	    
+		const index = $clickedResult.index(); // Get index of clicked card
+		
+		console.log('data-map-clicked', $clickedResult.attr('data-map-clicked'), index, scrollTop);
 
 		mappy.removeFeatureState({
 			source: 'places',
@@ -197,12 +207,11 @@ Promise.all([
 
 		const featureCollection = mappy.getSource('places')._data;
 
-		if ($(this).attr('data-map-clicked') === 'true') { // Scroll table
-			$(this).removeAttr('data-map-clicked');
-			const $container = $('#result_container');
-			$container.scrollTop($(this).offset().top - $container.offset().top);
-		} else if ($(this).attr('data-map-initialising') === 'true') {
-			$(this).removeAttr('data-map-initialising');
+		if ($clickedResult.attr('data-map-clicked') === 'true') { // Scroll table
+	        $clickedResult.removeAttr('data-map-clicked');
+	        $container.animate({ scrollTop: scrollTop }, 'slow');		
+		} else if ($clickedResult.attr('data-map-initialising') === 'true') {
+			$clickedResult.removeAttr('data-map-initialising');
 			mappy.fitBounds(bbox(featureCollection), {
 				padding: 30,
 				// maxZoom: 5,
@@ -217,7 +226,7 @@ Promise.all([
 		}
 
 		$('.result').removeClass('selected');
-		$(this).addClass('selected');
+		$clickedResult.addClass('selected');
 
 	});
 
@@ -232,7 +241,7 @@ Promise.all([
 
 	function updateAreaMap() {
 
-		mappy.clearSource('userareas');
+		if (has_areas) mappy.clearSource('userareas');
 		mappy.clearSource('countries');
 
 		var data = $('#entrySelector').select2('data');
@@ -286,6 +295,13 @@ Promise.all([
 			debouncedUpdates();
 		}
 		else updateAreaMap();
+	})
+	.parent().tooltip({
+    	selector: '.select2-container',
+    	trigger : 'hover',
+    	title: function() {
+		    return $(this).prev().attr('title');
+		}
 	});
 
 	$('#categorySelector').on('change', function() {
@@ -440,11 +456,23 @@ Promise.all([
 		flashSearchButton();
 	});
 
-	$('#search_input').on('input', function() {
+	$('#search_input')
+	.tooltip({
+    	trigger : 'hover'
+	})
+	.on('input', function() {
 		flashSearchButton();
 		toggleButtonState();
 	});
 	toggleButtonState();
+	$('#initiate_search, #clear_search').each(function() {
+		$(this).tooltip({
+    		trigger : 'hover',
+	    	title: function() {
+			    return $(this).data('title').split('|')[$(this).hasClass('disabledButton') ? 1 : 0 ];
+			}		
+		});
+	});
 
 	$('.accordion-button').each(function() { // Initialise Filter Accordions
 		var accordion = $($(this).data('bs-target'));
@@ -470,10 +498,8 @@ function toggleButtonState() {
 	const disable = $('#search_input').val().trim() == '';
 	$('#initiate_search, #clear_search').each(function() {
 		$(this)
-			//.prop('disabled', disable) // Cannot use this because it disables the title
-			.toggleClass('disabledButton', disable).
-		attr('title', $(this).data('title').split('|')[disable ? 1 : 0]).
-		attr('aria-label', $(this).data('title').split('|')[disable ? 1 : 0]);
+		//.prop('disabled', disable) // Cannot use this because it disables the title
+		.toggleClass('disabledButton', disable)
 	});
 }
 

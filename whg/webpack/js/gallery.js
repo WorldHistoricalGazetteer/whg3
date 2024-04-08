@@ -8,7 +8,7 @@ import {
 	CountryCacheFeatureCollection
 } from './countryCache';
 
-import '../css/gallery.css';
+import '../css/gallery.scss';
 
 let mappy = new whg_maplibre.Map({
 	maxZoom: 13,
@@ -44,82 +44,52 @@ function waitDocumentReady() {
 }
 
 function buildGallery(datacollections) {
+    const dynamicGallery = $('#dynamic-gallery');
+    dynamicGallery.empty();
 
-	var dynamicGallery = $('#dynamic-gallery');
-	dynamicGallery.empty();
-
-	if (datacollections.length === 0) {
-		var noResultsMessage = $('<h3>').
-		text(`No matching ${datacollection} found`);
-		dynamicGallery.append(noResultsMessage);
-		let suggestion = $('.nav-link.active').
-		find('input[type="checkbox"]:not(:checked)').length == 3 ?
-			'You have not selected any Collection classes.' :
-			'Try adjusting the filters.';
-		noResultsMessage.after(
-			$('<p>').text(suggestion),
-		);
-	} else {
-		datacollections.forEach(function(dc) {
-			var dsCard = $('<div>', {
-				'class': 'ds-card-container col-md-4 mt-1'
-			}).
-			data({
-				'type': dc.type,
-				'id': dc.ds_or_c_id,
-				'mode': dc.display_mode,
-				'geometry_url': dc.geometry_url,
-				'url': dc.url,
+    if (datacollections.length === 0) {
+        const noResultsMessage = $(`
+            <h3>No matching ${datacollection} found</h3>
+            <p>${$('.nav-link.active').find('input[type="checkbox"]:not(:checked)').length == 3 ?
+                'You have not selected any Collection classes.' :
+                'Try adjusting the filters.'}</p>
+        `);
+        dynamicGallery.append(noResultsMessage);
+    } else {
+        datacollections.forEach(dc => {
+            const dsCard = $(`
+                <div data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip-red" title="Click to view ${dc.type.toUpperCaseFirst()} ${dc.ds_or_c_id}" class="ds-card-container col-md-4 mt-1">
+                    <div class="ds-card-gallery">
+                        <div class="ds-card-content">
+                            <span class="float-end">
+                                <button class="btn btn-light btn-sm previewButton" data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip-green" title="Click to preview ${dc.type.toUpperCaseFirst()} ${dc.ds_or_c_id} on map">
+                                    <i class="fas fa-globe-americas"></i> Preview
+                                </button>
+                            </span>
+                            <h6 class="ds-card-title strong-red">${dc.title}</h6>
+                            <div>
+	                            <p class="ds-card-blurb my-1">
+	                                <img src="${dc.image_file}" width="60" class="float-end">
+	                                ${dc.description}
+	                            </p>
+	                            <p class="ds-card-creator">${dc.creator}</p>
+	                            <p class="ds-card-owner">${dc.owner}</p>
+                            <div>
+                    </div>
+                </div>
+            `)
+            .data({
+	            id: dc.ds_or_c_id,
+	            type: dc.type,
+	            mode: dc.display_mode,
+	            geometry_url: dc.geometry_url,
+	            url: dc.url
 			});
-			var dsCardGallery = $('<div>', {
-				'class': 'ds-card-gallery'
-			});
-			var dsCardContent = $('<div>', {
-				'class': 'ds-card-content'
-			});
-			var dsCardTitle = $('<h6>', {
-				'class': 'ds-card-title',
-				text: dc.title
-			});
-			var idSpan = $('<span>', {
-				'class': 'float-end small',
-				text: dc.ds_or_c_id
-			});
-			var dsCardBlurb = $('<p>', {
-				'class': 'ds-card-blurb my-1'
-			});
-			var dsCardImage = $('<img>', {
-				'src': dc.image_file,
-				'width': '60',
-				'class': 'float-end'
-			});
-			var dsCardDescription = $('<span>', {
-				html: dc.description
-			});
-			var dsCardCreator = $('<p>', {
-				'class': 'ds-card-creator',
-				text: dc.creator
-			});
-			var dsCardOwner = $('<p>', {
-				'class': 'ds-card-owner',
-				text: dc.owner
-			});
-
-			dsCardBlurb.append(dsCardImage);
-			dsCardBlurb.append(dsCardDescription);
-
-			dsCardContent.append(dsCardTitle);
-			dsCardTitle.append(idSpan);
-			dsCardContent.append(dsCardBlurb);
-			dsCardContent.append(dsCardCreator);
-			dsCardContent.append(dsCardOwner);
-
-			dsCardGallery.append(dsCardContent);
-			dsCard.append(dsCardGallery);
-
-			dynamicGallery.append(dsCard);
-		});
-	}
+            dynamicGallery.append(dsCard);
+			
+        });
+    }		
+	$('#dynamic-gallery .previewButton:first').trigger('click');
 }
 
 Promise.all([
@@ -133,43 +103,28 @@ Promise.all([
 		updateAreaMap();
 	}, 400);
 
-	/*  const spatialSelector = $('#spatialSelector');
-	  spatialSelector.select2({
-	    data: dropdown_data,
-	    width: 'element', // Use CSS rules
-	    placeholder: $(this).data('placeholder'),
-	    closeOnSelect: false,
-	    allowClear: false,
-	  }).on('select2:selecting', function(e) {
-	    if (!!e.params.args.data['ccodes']) { // Region selected: add countries from its ccodes
-	      e.preventDefault();
-	      let ccodes = Array.from(new Set([
-	        ...e.params.args.data['ccodes'],
-	        ...spatialSelector.select2('data').map(country => country.id)]));
-	      spatialSelector.val(ccodes).trigger('change');
-	    }
-	  }).on('change', function(e) {
-	    debouncedUpdates();
-	  });
-
-	  $('#clearspatialSelector').on('click', function() {
-	    spatialSelector.val(null).trigger('change');
-	  });*/
-
 	// Spatial list-entry selector
 	const spatialSelector = $('#entrySelector');
 	spatialSelector.data('selectedValue', '');
 	spatialSelector.prop('disabled', true).select2({
 		width: 'element',
 		data: [],
-		placeholder: '(choose type)',
+		placeholder: '(select dropdown first)',
 		allowClear: false,
-	}).on('change', function(e) {
+	})
+	.on('change', function(e) {
     	const currentSpatialValue = spatialSelector.val().join(',');
 	    if (spatialSelector.data('selectedValue') !== currentSpatialValue) {
 	        debouncedUpdates();
 	        spatialSelector.data('selectedValue', currentSpatialValue);
 	    }
+	})
+	.parent().tooltip({
+    	selector: '.select2-container',
+    	trigger : 'hover',
+    	title: function() {
+		    return $(this).prev().attr('title');
+		}
 	});
 
 	$('#categorySelector').on('change', function() {
@@ -190,7 +145,7 @@ Promise.all([
 				break;
 			default:
 				$('#entrySelector').prop('disabled', true).select2({
-					placeholder: '(choose type)',
+					placeholder: '(select dropdown first)',
 					data: []
 				});
 				break;
@@ -397,12 +352,6 @@ Promise.all([
 		fetchData();
 	});
 
-	$('body').on('mouseenter', '.ds-card-container', (e) => {
-		fetchDataForHorse($(e.target).closest('.ds-card-container'), mappy);
-	}).on('mouseleave', '.ds-card-container', () => {
-		mappy.eraseSource('featured-data-source').reset();
-	});
-
 	$('#searchInput').on('input', function() {
 		fetchData();
 	});
@@ -425,16 +374,30 @@ Promise.all([
 	});
 	resizeObserver.observe($('#searchInput')[0]);
 
-	$('[data-bs-toggle="tooltip"]').tooltip();
-
-	$('#dynamic-gallery').on('click', '.ds-card-container', function(event) {
+	$('#dynamic-gallery')
+	.tooltip({
+    	selector: '[data-bs-toggle="tooltip"]',
+    	trigger : 'hover'
+	})
+	.on('show.bs.tooltip', '.previewButton', (e) => { // Prevent overlapping tooltips
+		bootstrap.Tooltip.getInstance($(e.target).closest('.ds-card-container')).hide();
+	})
+	.on('click', '.previewButton', (e) => {
+		e.stopPropagation();
+		fetchDataForHorse($(e.target).closest('.ds-card-container'), mappy);
+		$('#dynamic-gallery .previewButton').removeClass('active');
+		$(e.target).addClass('active');		
+	})
+	.on('click', '.ds-card-container', function(event) {
 		// Check that the clicked element is not a link within the container
 		if ($(event.target).closest('a').length === 0) {
 			window.location.href = $(this).data('url');
 		}
-	}).on('click', '.modal-link', function() {
+	})
+	.on('click', '.modal-link', function() {
 		$('.selector').data('modalPageId', $(this).data('id')).dialog('open');
 	});
+	
 	$('.selector').dialog({
 		resizable: true,
 		autoOpen: false,

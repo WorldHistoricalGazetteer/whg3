@@ -42,6 +42,8 @@
   "devDependencies": {
     "copy-webpack-plugin": "^11.0.0",
     "webpack": "^5.89.0",
-    "webpack-bundle-analyzer": "^4.10.1"
+    "webpack-bundle-analyzer": "^4.10.1",
+    "sass-loader": "^12.3.0",
+    "sass": "^1.50.2" 
   }
 }

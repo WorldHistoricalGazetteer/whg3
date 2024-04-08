@@ -150,7 +150,7 @@
 	          <p>
 		          {% for d in ds_list %}
 			          {{ d.title }}&nbsp;
-	                <a id="cite_{{d.id}}" class="clippy" aria-label="{% if d.citation %}{{ d.citation }}{% else %}{{d.title}}. [Data file (partial), Retrieved from {{ url_front}}collections/{{object.id}}/browse_pl, {% now 'd M Y' %}{% endif %}" rel="tooltip" title="copy to clipboard"> citation: <i class="fas fa-clipboard linky"></i></a><br/>
+	                <a id="cite_{{d.id}}" class="clippy" aria-label="{% if d.citation %}{{ d.citation }}{% else %}{{d.title}}. [Data file (partial), Retrieved from {{ url_front}}collections/{{object.id}}/browse_pl, {% now 'd M Y' %}{% endif %}" data-bs-toggle="tooltip" title="copy to clipboard"> citation: <i class="fas fa-clipboard linky"></i></a><br/>
 		          {% endfor %}
 	          </p>
             <div id=""></div>
@@ -598,7 +598,7 @@
   {#});#}
 
   // activate all tooltips
-  $("[rel='tooltip']").tooltip();
+  $("[data-bs-toggle='tooltip']").tooltip();
 
   // builds link for external place record
   function url_extplace(identifier) {

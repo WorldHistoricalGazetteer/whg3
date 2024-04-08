@@ -161,7 +161,7 @@ class acmeStyleControl {
 			this._listContainer.className = 'maplibregl-ctrl maplibregl-ctrl-group';
 			this._listContainer.textContent = 'Basemap';
 			this._listContainer.innerHTML =
-				'<button type="button" class="style-button" aria-label="Change basemap style" title="Change basemap style">' +
+				'<button type="button" class="style-button" aria-label="Change basemap style" data-bs-title="Change basemap style">' +
 				'<span class="maplibregl-ctrl-icon" aria-hidden="true"></span>' +
 				'</button>';
 			this._listContainer.querySelector('.style-button').addEventListener('click', this._onClick.bind(this));
@@ -286,7 +286,7 @@ class acmeStyleControl {
 	
 	    const button = document.createElement('div');
 	    button.id = 'update_nearby';
-	    button.title = 'Search again - based on map center';
+	    button.setAttribute('data-bs-title', 'Search again - based on map center');
 	    button.innerHTML = '<i class="fas fa-sync-alt"></i><span class="strong-red"></span>';
 	    button.style.display = 'none';
 	
@@ -296,7 +296,7 @@ class acmeStyleControl {
 	
 	    const select = document.createElement('select');
 	    select.id = 'radiusSelect';
-	    select.title = 'Search radius, based on map center';
+	    select.setAttribute('data-bs-title', 'Search radius, based on map center');
 	    for (let i = 1; i <= 10; i++) {
 	        const option = document.createElement('option');
 	        option.value = i ** 2;
@@ -537,7 +537,7 @@ class CustomTerrainControl {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'maplibregl-ctrl-terrain';
-        button.title = 'Enable terrain';
+        button.setAttribute('data-bs-title', 'Enable terrain');
 
         const iconSpan = document.createElement('span');
         iconSpan.className = 'maplibregl-ctrl-icon';
@@ -562,7 +562,7 @@ class CustomTerrainControl {
 
         const enablingTerrain = !button.classList.contains('maplibregl-ctrl-terrain-enabled');
         button.classList.toggle('maplibregl-ctrl-terrain-enabled', enablingTerrain);
-        button.title = enablingTerrain ? 'Disable terrain' : 'Enable terrain';
+        button.setAttribute('data-bs-title', enablingTerrain ? 'Disable terrain' : 'Enable terrain');
 
         const hillshadeCheckbox = document.getElementById('hillshadeCheckbox');
         if (hillshadeCheckbox) {
@@ -639,7 +639,7 @@ class CustomTerrainControl {
 function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 
 	// Create a modal dialog for copyright attribution and acknowledgment
-	const modal = $('<div id="map-download-dialog" title="Map Attribution"></div>');
+	const modal = $('<div id="map-download-dialog" data-bs-title="Map Attribution"></div>');
 	const injunctionText = $('<div id="injunction-text" class="injunction-text">The following attribution must be displayed together with any use of this map image:</div>');
 	const attributionText = $(`<div id="attribution-text" class="attribution-text">${$('.maplibregl-ctrl-attrib-inner').text()}</div>`);
 	const downloadButton = $('<button id="download" style="display: none;" disabled>...rendering...</button>');
@@ -762,7 +762,7 @@ class downloadMapControl {
         downloadButton.type = 'button';
         downloadButton.className = 'download-map-button';
         downloadButton.setAttribute('aria-label', 'Download map image');
-        downloadButton.setAttribute('title', 'Download map image');
+        downloadButton.setAttribute('data-bs-title', 'Download map image');
 
         const iconSpan = document.createElement('span');
         iconSpan.className = 'maplibregl-ctrl-icon';
@@ -868,21 +868,189 @@ class CustomDrawingControl {
 				polygon: true,
 				trash: true,
 			},
+			styles: [
+			    // ACTIVE (being drawn)
+			    // line stroke
+			    {
+			        "id": "gl-draw-line",
+			        "type": "line",
+			        "filter": ["all", ["==", "$type", "LineString"], ['==', 'active', 'true']],
+			        "layout": {
+			          "line-cap": "round",
+			          "line-join": "round"
+			        },
+			        "paint": {
+			          "line-color": "#D20C0C",
+			          "line-dasharray": [0.2, 2],
+			          "line-width": 2
+			        }
+			    },
+			    // polygon mid points
+			    {
+			      'id': 'gl-draw-polygon-midpoint',
+			      'type': 'circle',
+			      'filter': ['all',
+			        ['==', '$type', 'Point'],
+			        ['==', 'meta', 'midpoint']],
+			      'paint': {
+			        'circle-radius': 3,
+			        'circle-color': '#fbb03b'
+			      }
+			    },
+			    // polygon outline stroke
+			    // This doesn't style the first edge of the polygon, which uses the line stroke styling instead
+			    {
+			      "id": "gl-draw-polygon-stroke-active",
+			      "type": "line",
+			      "filter": ["all", ["==", "$type", "Polygon"], ['==', 'active', 'true']],
+			      "layout": {
+			        "line-cap": "round",
+			        "line-join": "round"
+			      },
+			      "paint": {
+			        "line-color": "#D20C0C",
+			        "line-dasharray": [0.2, 2],
+			        "line-width": 2
+			      }
+			    },
+			    // vertex point halos
+			    {
+			      "id": "gl-draw-polygon-and-line-vertex-halo-active",
+			      "type": "circle",
+			      "filter": ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ['==', 'active', 'true']],
+			      "paint": {
+			        "circle-radius": 5,
+			        "circle-color": "#FFF"
+			      }
+			    },
+			    // vertex points
+			    {
+			      "id": "gl-draw-polygon-and-line-vertex-active",
+			      "type": "circle",
+			      "filter": ["all", ["==", "meta", "vertex"], ["==", "$type", "Point"], ['==', 'active', 'true']],
+			      "paint": {
+			        "circle-radius": 3,
+			        "circle-color": "#D20C0C",
+			      }
+			    },
+			
+			    // INACTIVE (static, already drawn)
+			    // line stroke
+			    {
+			        "id": "gl-draw-line-static",
+			        "type": "line",
+			        "filter": ["all", ["==", "$type", "LineString"], ['!=', 'active', 'true']],
+			        "layout": {
+			          "line-cap": "round",
+			          "line-join": "round"
+			        },
+			        "paint": {
+			          "line-color": "#D20C0C",
+			          "line-width": 1,
+        			  "line-opacity": 0.5
+			        }
+			    },
+			    // polygon fill
+			    {
+			      "id": "gl-draw-polygon-fill-static",
+			      "type": "fill",
+			      "filter": ["all", ["==", "$type", "Polygon"]],
+			      "paint": {
+			        "fill-color": "#D20C0C",
+			        "fill-outline-color": "#D20C0C",
+			        "fill-opacity": 0.1
+			      }
+			    },
+			    // polygon outline
+			    {
+			      "id": "gl-draw-polygon-stroke-static",
+			      "type": "line",
+			      "filter": ["all", ["==", "$type", "Polygon"], ['!=', 'active', 'true']],
+			      "layout": {
+			        "line-cap": "round",
+			        "line-join": "round"
+			      },
+			      "paint": {
+			        "line-color": "#D20C0C",
+			        "line-width": 1,
+        			"line-opacity": 0.5
+			      }
+			    }
+			  ]		
 		});
 
 		this._map.addControl(this._map._draw, 'top-left');
+		this._map.on('draw.modechange', this._modechange.bind(this));
+		this._map.on('draw.delete', this._delete.bind(this));
+		this._map.on('draw.create', this._create.bind(this));
+	}
+	
+	_modechange() {
+		console.log('MapboxDraw control:', this._map._draw, this._map._draw.getMode());
+		switch(this._map._draw.getMode()) {
+			case 'draw_polygon':
+	            this._map.getCanvas().style.cursor = 'crosshair';
+	            this._map._drawControl.trashButton.setAttribute('disabled', true);
+				this._map._drawControl.trashButton.classList.add('disabled');
+	            break;
+	        default:
+	            this._map.getCanvas().style.cursor = 'default';
+				this._map._drawControl.trashButton.removeAttribute('disabled');
+				this._map._drawControl.trashButton.classList.remove('disabled');
+		}
+	}
+	
+	_delete() {
+		if (this._map._draw.getAll().features.length < 1) {
+            this._map._drawControl.trashButton.setAttribute('disabled', true);
+			this._map._drawControl.trashButton.classList.add('disabled');
+		}
+	}
+	
+	_create() { // This appears to be the simplest(!) way to deselect a polygon on completion
+		const allFeatures = this._map._draw.getAll();
+		this._map._draw.deleteAll();
+		allFeatures.features.forEach(feature => {feature.id = '';}); // Control stores ids of selected polygons
+		this._map._draw.add(allFeatures);
+		console.log('MapboxDrawn:', this._map.getStyle());
 	}
 
-	onAdd() {
+	onAdd() {		
+		this._appendStyles();
+		
 		this._map._drawControl = this._map.getContainer().querySelector(".mapboxgl-ctrl-group.mapboxgl-ctrl");
 		this._map._drawControl.classList.add('maplibregl-ctrl', 'maplibregl-ctrl-group'); // Convert classnames for proper rendering
+		
+		this._map._drawControl.drawPolygonButton = this._map._drawControl.querySelector('.mapbox-gl-draw_polygon');
+        this._map._drawControl.drawPolygonButton.setAttribute('data-bs-title', 'Draw polygon to filter results by area. Double-click to close polygon.');
+        
+        this._map._drawControl.trashButton = this._map._drawControl.querySelector('.mapbox-gl-draw_trash');
+        this._map._drawControl.trashButton.setAttribute('data-bs-title', 'Delete selected polygon (select first by clicking it)');
+        this._map._drawControl.trashButton.setAttribute('disabled', true);
+		this._map._drawControl.trashButton.classList.add('disabled');
+		
 		if (this._options.hide) this._map._drawControl.style.display = 'none';
+		
 		return this._map._drawControl;
 	}
 
 	onRemove() {
 		this._map.removeControl(this._map._draw);
 	}
+    
+    _appendStyles() {
+        const style = document.createElement('style');
+        style.textContent = `
+			#map .mapbox-gl-draw_ctrl-draw-btn.active,
+			#map .mapbox-gl-draw_ctrl-draw-btn:hover {
+			  background-color: rgb(167 8 8 / 17%);
+			}
+			#map .mapbox-gl-draw_ctrl-draw-btn.disabled {
+			  opacity: .3;
+			}
+        `;
+        document.head.appendChild(style);
+    }
 }
 
 const originalMapConstructor = maplibregl.Map;
@@ -959,6 +1127,13 @@ maplibregl.Map = function (options = {}) {
 		if (!!chosenOptions.customAttributionControl) {
 			mapInstance.addControl(new CustomAttributionControl(chosenOptions.customAttributionControl), chosenOptions.customAttributionControl.position);
 		}
+		
+		$(mapInstance.getContainer().querySelector('.maplibregl-control-container'))
+		.tooltip({
+	    	selector: 'button, select, summary.maplibregl-ctrl-attrib-button',
+	    	trigger : 'hover'
+		})
+		
     });
     return mapInstance;
 };
