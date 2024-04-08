@@ -1088,7 +1088,7 @@ class WatershedAPIView(APIView):
     def get(self, request, *args, **kwargs):
         lat = request.query_params.get('lat', None)
         lng = request.query_params.get('lng', None)
-        
+
         if lat is None or lng is None:
             raise Http404("Latitude and longitude parameters are required.")
         

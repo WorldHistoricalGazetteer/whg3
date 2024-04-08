@@ -47,20 +47,19 @@ services:
     volumes:
       - .:/app
 
-
-  livereload: # https://github.com/tjwalch/django-livereload-server
-    image: whg3_web
-    networks:
-      - WHG3
-    platform: linux/amd64
-    command: /start-livereload
-    container_name: livereload
-    volumes:
-      - .:/app
-    env_file:
-      - ./.env/.prod-whg3
-    ports:
-      - 35729:35729
+#  livereload: # https://github.com/tjwalch/django-livereload-server
+#    image: whg3_web
+#    networks:
+#      - WHG3
+#    platform: linux/amd64
+#    command: /start-livereload
+#    container_name: livereload
+#    volumes:
+#      - .:/app
+#    env_file:
+#      - ./.env/.prod-whg3
+#    ports:
+#      - 35729:35729
 
   db:
     networks:
@@ -132,29 +131,29 @@ services:
       - redis
       - db
 
-  selenium_chrome:
-    image: selenium/standalone-chrome
-    container_name: selenium_chrome
-    networks:
-      - WHG3
-    ports:
-      - "4444:4444"
-
-  selenium_firefox:
-    image: selenium/standalone-firefox
-    container_name: selenium_firefox
-    networks:
-      - WHG3
-    ports:
-      - "4445:4444"
-
-  selenium_edge:
-    image: selenium/standalone-edge
-    container_name: selenium_edge
-    networks:
-      - WHG3
-    ports:
-      - "4446:4444"
+#  selenium_chrome:
+#    image: selenium/standalone-chrome
+#    container_name: selenium_chrome
+#    networks:
+#      - WHG3
+#    ports:
+#      - "4444:4444"
+#
+#  selenium_firefox:
+#    image: selenium/standalone-firefox
+#    container_name: selenium_firefox
+#    networks:
+#      - WHG3
+#    ports:
+#      - "4445:4444"
+#
+#  selenium_edge:
+#    image: selenium/standalone-edge
+#    container_name: selenium_edge
+#    networks:
+#      - WHG3
+#    ports:
+#      - "4446:4444"
 volumes:
   app:
   dev-db-data:

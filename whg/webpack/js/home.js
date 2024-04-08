@@ -135,7 +135,7 @@ Promise.all([
 	// search_new() will pass these to search_new.html
 	function initiateSearchHome() {
 		const filters = {
-			'qstr': $('#search_map input').val(),
+			'qstr': $('#search_input').val(),
 			'mode': 'exactly',
 			'idx': eswhg, // hard-coded in html template
 			'fclasses': '',
