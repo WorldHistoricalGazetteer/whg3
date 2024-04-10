@@ -41,7 +41,7 @@ def needs_tileset(category=None, id=None, pointcount_threshold=1500, geometrycou
     total_geometries = obj.places.aggregate(total=Sum('geoms'))['total'] or 0
     total_places = obj.places.count()
 
-    return total_coords > pointcount_threshold or total_geometries > geometrycount_threshold, total_coords, total_geometries, total_places
+    return total_coords > pointcount_threshold or total_geometries > geometrycount_threshold or total_places > places_threshold, total_coords, total_geometries, total_places
 
 @shared_task(bind=True)
 def request_tileset(self, category=None, id=None):
