@@ -7,7 +7,6 @@ from django.db.models.signals import pre_delete, pre_save, post_save
 from django.dispatch import receiver
 
 from .models import Dataset, DatasetFile
-from main.tasks import calculate_geometry_complexity
 from utils.emailing import new_emailer
 
 import logging
@@ -43,20 +42,19 @@ def format_time(seconds):
 def test_complexity(dsid):
   import time
   start = time.time()
-  from main.tasks import calculate_geometry_complexity
+  from main.tasks import needs_tileset
   # Call the function directly
-  complexity = calculate_geometry_complexity(dsid)
+  object_needs_tileset, total_coords, total_geometries = needs_tileset('datasets', dsid)
   end = time.time()
   # Print the result
   duration = format_time(end - start)
-  print(f'complexity = {complexity}, time = {duration} ')
+  print(f'object_needs_tileset: {object_needs_tileset}, total_coords: {total_coords}, total_geometries: {total_geometries}, total_places: {total_places}, time: {duration} ')
 
 @receiver(pre_save, sender=Dataset)
 def handle_public_flag(sender, instance, **kwargs):
   from .tasks import index_to_pub, unindex_from_pub
-  from main.tasks import request_tileset, calculate_geometry_complexity
-
-  complexity_threshold = 1500
+  from main.tasks import request_tileset, needs_tileset
+  
   task_timeout = 60 * 5  # 5 minutes
 
   if instance.id:  # Check if it's an existing instance, not new
@@ -81,13 +79,12 @@ def handle_public_flag(sender, instance, **kwargs):
         transaction.on_commit(lambda: index_to_pub.delay(instance.id))
 
         # Calculate the complexity of the geometries
-        complexity_task = calculate_geometry_complexity.apply_async(args=[instance.id], expires=task_timeout)
-        complexity = complexity_task.get(timeout=task_timeout)
+        needs_tileset_task = needs_tileset.apply_async(args=['datasets',instance.id], expires=task_timeout)
+        object_needs_tileset, _, _, _ = needs_tileset_task.get(timeout=task_timeout)
 
-        # Changed from False to True, create a tileset if the complexity exceeds the threshold
-        if complexity >= complexity_threshold:
-          tiletype = instance.vis_parameters.get('tiletype', 'normal')
-          transaction.on_commit(lambda: request_tileset.delay(instance.id, tiletype))
+        # Changed from False to True, create a tileset if the geometry or coordinate counts exceeds the thresholds
+        if object_needs_tileset:
+          transaction.on_commit(lambda: request_tileset.delay(category='datasets', id=instance.id))
       else:
         # Changed from True to False, remove the records from the index
         transaction.on_commit(lambda: unindex_from_pub.delay(instance.id))

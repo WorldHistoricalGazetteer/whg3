@@ -76,41 +76,28 @@ class AnnouncementUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
     permission_required = 'main.change_announcement' # Adjust based on your app's name and permissions
 
 # initiated by main.tasks.request_tileset()
-def send_tileset_request(dataset_id=None, collection_id=None, tiletype='normal'):
-  print("sending a POST request to TILER_URL", dataset_id, collection_id, tiletype)
-  # Construct the URL and data payload
-  url = settings.TILER_URL
-  if dataset_id:
-    geoJSONUrl = f"https://dev.whgazetteer.org/datasets/{dataset_id}/mapdata/?variant=tileset"
-  elif collection_id:
-    geoJSONUrl = f"https://dev.whgazetteer.org/collections/{collection_id}/mapdata/?variant=tileset"
-  else:
-    raise ValueError("Either dataset_id or collection_id must be provided.")
+def send_tileset_request(category=None, id=None):
+    
+    if not category or not id:
+        return {
+            'status': 'failure',
+            'error': 'Both category and id must be provided.'
+        }
+        
+    print(f"Sending a POST request to TILER_URL for {category}-{id}.")
+    data = {
+        "geoJSONUrl": f"https://dev.whgazetteer.org/{category}/{id}/mapdata/?variant=tileset",
+    }
+    response = requests.post(settings.TILER_URL, headers={"Content-Type": "application/json"}, data=json.dumps(data))
+    
+    # Check the response
+    print("TILER_URL Response status:", response.status_code)
+    if hasattr(response, 'error'):
+        print("Response error:", response.error)
+    if hasattr(response, 'message'):
+        print("Response message:", response.message)
 
-  print('geoJSONUrl', geoJSONUrl)
-  print('tiler url', url)
-
-  data = {
-    "geoJSONUrl": geoJSONUrl,
-    "tilesetType": tiletype,
-  }
-  # Send the POST request
-  response = requests.post(url, headers={"Content-Type": "application/json"}, data=json.dumps(data))
-
-  # Check the response7
-  print("Response:", response)
-  print("Response status:", response.status_code)
-  if response.status_code == 200:
-    response_data = response.json()
-    if response_data.get("status") == "success":
-      print("Tileset created successfully.")
-      return {"status": "success", "data": response_data}
-    else:
-      print("Failed to create tileset:", response_data.get("message"))
-      return {"status": "failure", "message": response_data.get("message")}
-  else:
-    print("Failed to send request:", response.status_code)
-    return {"status": "failure", "message": f"Failed to send request: {response.status_code}"}
+    return response
 
 # {	"status":"success",
 # 	"message":"Tileset created.",
