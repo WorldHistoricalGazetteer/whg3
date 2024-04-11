@@ -2,6 +2,7 @@ from django import template
 from django.contrib.auth.models import Group
 from django.template.defaultfilters import stringfilter
 from django.utils.lorem_ipsum import paragraphs
+from django.utils.text import capfirst
 import ast, json, os, re, textwrap, validators
 
 register = template.Library()
@@ -31,6 +32,25 @@ def define(val=None):
     return val
 
 @register.filter
+def fclasser(val_list):
+    # Define a dictionary to map the single letters to their meanings
+    mapping = {
+        'A': 'Administrative area',
+        'P': 'Populated place',
+        'S': 'Site',
+        'T': 'Terrestrial landform',
+        'H': 'Water body',
+        'R': 'Road/route/railroad',
+        'L': 'Region/landscape area'
+    }
+
+    # Use a list comprehension to replace each letter in the list with its meaning
+    meanings = [mapping[val] for val in val_list]
+
+    # Join the meanings into a string with a '. ' delimiter and return it
+    return '. '.join(meanings)
+
+@register.filter
 def filename(val):
     nameonly = re.match(R"^.*\/(.*)\.", val)
     return nameonly.group(1)
@@ -43,6 +63,10 @@ def has_group(user, group_name):
 def haskey(objlist, arg):
     """True if any obj in objlist has key arg"""
     return any(arg in x for x in objlist)
+
+@register.filter
+def initcap(value):
+    return capfirst(value)
 
 @register.simple_tag(takes_context=True)
 def is_whg_admin(context):

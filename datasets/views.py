@@ -341,7 +341,7 @@ def review(request, pk, tid, passnum):
   ds = get_object_or_404(Dataset, id=pk)
   task = get_object_or_404(TaskResult, task_id=tid)
   auth = task.task_name[6:].replace("local", "")
-  authname = "Wikidata" if auth == "wd" else "Getty TGN" if auth == "tgn" else "WHG"
+  authname = "Wikidata" if auth == "wd" else "WHG"
   kwargs = ast.literal_eval(task.task_kwargs)
   kwargs = json.loads(kwargs.replace("'", '"'))
   print('auth, authname', auth, authname)
@@ -888,7 +888,7 @@ def ds_recon(request, pk):
     # previous successful task of this type?
     #   wdlocal? archive previous, scope = unreviewed
     #   idx? scope = unindexed
-    collection_id = request.POST.get('collection_id')
+    # collection_id = request.POST.get('collection_id')
     previous = ds.tasks.filter(task_name='align_' + auth, status='SUCCESS')
     prior = request.POST['prior'] if 'prior' in request.POST else 'na'
     if previous.count() > 0:
@@ -931,10 +931,6 @@ def ds_recon(request, pk):
       return redirect('/datasets/' + str(ds.id) + '/reconcile')
 
     # initiate celery/redis task
-    # 2023-12-13 new options for reconciliation
-    # NB 'func' resolves to align_wdlocal(), align_idx(), align_collection()
-    # NB#2 the dataset id is both positional and a keyword **intentionally** -
-    # required to generate a useful result record
     try:
       result = func.delay(
         ds.id,
@@ -947,10 +943,10 @@ def ds_recon(request, pk):
         scope=scope,
         lang=language,
         test=test,
-        collection_id=collection_id
+        # collection_id=collection_id
       )
       messages.add_message(request, messages.INFO,
-                           "<span class='text-danger'>Your reconciliation task is under way.</span><br/>When complete, you will receive an email and if successful, results will appear below (you may have to refresh screen). <br/>In the meantime, you can navigate elsewhere.")
+        "<span class='text-danger'>Your reconciliation task is under way.</span><br/>When complete, you will receive an email and if successful, results will appear below (you may have to refresh screen). <br/>In the meantime, you can navigate elsewhere.")
       return redirect('/datasets/' + str(ds.id) + '/reconcile')
     except:
       print('failed: align_' + auth)
@@ -959,7 +955,7 @@ def ds_recon(request, pk):
                            "Sorry! Reconciliation services appear to be down. The system administrator has been notified.<br/>" + str(
                              sys.exc_info()))
       emailer('WHG recon task failed',
-              'a reconciliation task has failed for dataset #' + ds.id + ', w/error: \n' + str(sys.exc_info()) + '\n\n',
+              'a reconciliation task has failed for dataset #' + str(ds.id) + ', w/error: \n' + str(sys.exc_info()) + '\n\n',
               'whg@kgeographer.org',
               'karl@kgeographer.org')
 
@@ -2653,22 +2649,19 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
     me = self.request.user
     area_types = ['ccodes', 'copied', 'drawn']
 
-    # user study areas
-    userareas = Area.objects.filter(type__in=area_types).values('id', 'title').order_by('-created')
-    context['area_list'] = userareas if me.id == 2 else userareas.filter(owner=me)
-
     # user datasets
     # userdatasets = Dataset.objects.filter(owner=me).values('id','title').order_by('-created')
-    context['ds_list'] = Dataset.objects.filter(owner=me, ds_status='indexed').values('id', 'title').order_by(
-      '-create_date')
+    # context['ds_list'] = Dataset.objects.filter(owner=me, ds_status='indexed').values('id', 'title').order_by(
+    #  '-create_date')
     # context['ds_list'] = userdatasets if me.username == 'whgadmin' else userdatasets.filter(owner=me)
 
     # user dataset collections
     # usercollections = Collection.objects.filter(type__in=area_types).values('id','title').order_by('-created')
-    context['coll_list'] = Collection.objects.filter(owner=me, collection_class='dataset').values('id',
-                                                                                                  'title').order_by(
-      '-created')
+    # context['coll_list'] = Collection.objects.filter(owner=me, collection_class='dataset').values('id','title').order_by('-create_date')
     # context['coll_list'] = usercollections if me.username == 'whgadmin' else usercollections.filter(owner=me)
+
+    # user study areas
+    userareas = Area.objects.filter(type__in=area_types).values('id', 'title').order_by('-created')
 
     # pre-defined UN regions
     predefined = Area.objects.all().filter(type='predefined').values('id', 'title')
@@ -2685,13 +2678,14 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
       and %s of the %s records that had hits have been reviewed. <span class='text-danger strong'>Starting this new task
       will archive the existing task and submit only unreviewed records.</span>.
       If you proceed, you can keep or delete prior match results (links and/or geometry):</p>"""
+    msg_done = """All records have been submitted for reconciliation to %s and reviewed.
+      To begin the step of accessioning to the WHG index, please <a href="%s">contact our editorial team.</a>"""
     msg_updating = """This dataset has been updated, <span class='strong'>Starting this new task
       will archive the previous task and re-submit all new and altered records. If you proceed, you can keep or delete prior
       matching results (links and geometry)</span>. <a href="%s">Questions? Contact our editorial team.</a>"""
-    msg_done = """All records have been submitted for reconciliation to %s and reviewed.
-      To begin the step of accessioning to the WHG index, please <a href="%s">contact our editorial team.</a>"""
+
     for i in ds.taskstats.items():
-      auth = i[0][6:]
+      auth = i[0][6:]  # strip 'align_'
       if len(i[1]) > 0:  # there's a SUCCESS task
         tid = i[1][0]['tid']
         remaining = i[1][0]['total']
@@ -2710,7 +2704,6 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
         elif ds.ds_status == 'updated':
           context['msg_' + auth] = {
             'msg': msg_updating % ("/contact"),
-            # 'msg': msg_updating%(auth, reviewed, hadhits),
             'type': 'inprogress'}
         else:
           context['msg_' + auth] = {
@@ -2727,7 +2720,9 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
     remaining = {}
     for t in active_tasks.items():
       remaining[t[0][6:]] = t[1][0]['total']
+
     context['region_list'] = predefined
+    context['area_list'] = userareas if me.id == 2 else userareas.filter(owner=me)
     context['ds'] = ds
     context['collaborators'] = ds.collabs.all()
     context['owners'] = ds.owners

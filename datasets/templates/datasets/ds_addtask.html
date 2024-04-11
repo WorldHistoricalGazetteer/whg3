@@ -44,6 +44,9 @@
   
   <div class="tab-content">
     <div id="addtask" class="tab-pane fade show active" role="tabpanel" aria-labelledby="addtask-tab">
+      <div>
+        <p class="small">Your task will enter a queue and and an email notification sent when completed.</p>
+      </div>
       <form action="{% url 'datasets:ds_recon' ds.id %}" method="POST">
       {% csrf_token %}
       <!-- only ds owner or superuser can run tasks -->
@@ -88,12 +91,11 @@
 	              please <a href="#" class="feedback">contact the editorial team</a>.</p>
             {% endif %}
             <p class="font-weight-bold mb-0">Reconciliation target</p>
-            <p class="small">Your task will enter a queue and and an email notification sent when completed.</p>
             <div class="form-check">
               <label class="form-check-label" for="r_wdlocal">
                 <input type="radio" class="form-check-input r_recon" id="r_wdlocal"
-                  name="recon" value="wdlocal" checked>Wikidata (wdlocal)
-	                  <span class="ms-2 font-italic small">estimated time: {{ ds.numrows|time_estimate }}</span>
+                  name="recon" value="wdlocal" checked>Wikidata + GeoNames
+	                  <span class="ms-2 font-italic small">(estimated time: {{ ds.numrows|time_estimate }})</span>
               </label>
               {% if msg_wdlocal %}
                 <div id="wdlocal_tasks" class="smaller">
@@ -108,27 +110,27 @@
                 </div>
               {% endif %}
             </div>
-            <div class="form-check">
-              <label class="form-check-label" for="r_wdlocal">
-                <input type="radio" class="form-check-input r_recon" id="r_collection"
-                  name="recon" value="collection">A Dataset Collection
-	                  <span class="ms-2 font-italic small">estimated time:
-		                  {{ ds.numrows|time_estimate }}</span>
-              </label>
-              <select id="select_colls" name="collection" class="custom-select-sm hidden"
-                      style="width:auto;">
-                <option value="0"><i>Select collection</i></option>
-                {% for c in coll_list %}
-                  <option value="{{ c.id }}">{{ c.title }}</option>
-                {% endfor %}
-              </select><br/>
-              <input type="hidden" id="collection_id" name="collection_id" value="">
-              <label class="form-check-label" for="r_wdlocal">
-                <input type="radio" class="form-check-input r_recon" id="r_collection"
-                  name="recon" value="self">"Conflator" (record grouping tool)
-	                  <span class="ms-2 font-italic small">estimated time: ?? </span>
-              </label>
-            </div>
+{#            <div class="form-check">#}
+{#              <label class="form-check-label" for="r_wdlocal">#}
+{#                <input type="radio" class="form-check-input r_recon" id="r_collection"#}
+{#                  name="recon" value="collection">A Dataset Collection#}
+{#	                  <span class="ms-2 font-italic small">estimated time:#}
+{#		                  {{ ds.numrows|time_estimate }}</span>#}
+{#              </label>#}
+{#              <select id="select_colls" name="collection" class="custom-select-sm hidden"#}
+{#                      style="width:auto;">#}
+{#                <option value="0"><i>Select collection</i></option>#}
+{#                {% for c in coll_list %}#}
+{#                  <option value="{{ c.id }}">{{ c.title }}</option>#}
+{#                {% endfor %}#}
+{#              </select><br/>#}
+{#              <input type="hidden" id="collection_id" name="collection_id" value="">#}
+{#              <label class="form-check-label" for="r_wdlocal">#}
+{#                <input type="radio" class="form-check-input r_recon" id="r_collection"#}
+{#                  name="recon" value="self">"Conflator" (record grouping tool)#}
+{#	                  <span class="ms-2 font-italic small">estimated time: ?? </span>#}
+{#              </label>#}
+{#            </div>#}
             {# geo bounds: regions, study areas #}
             <div id="addtask_lower">
               <div id="geo_constraint" class="mt-2">

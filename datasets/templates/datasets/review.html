@@ -4,309 +4,321 @@
 {% load dataset_extras %}
 
 {% block maplibre %}
-	<script type="text/javascript">
-		const loadMaplibre = true;
-	</script>
-	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" /> 
+  <script type="text/javascript">
+    const loadMaplibre = true;
+  </script>
+  <link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet"/>
 {% endblock %}
 
 {% block extra_head %}
-	<link href="{% static 'webpack/review.bundle.css' %}" rel="stylesheet" />
+  <link href="{% static 'webpack/review.bundle.css' %}" rel="stylesheet"/>
 {% endblock %}
 
 {% block title %}
-	<title>Review hits::{{ ds_label }}>{{authority}}</title>
+  <title>Review hits::{{ ds_label }}>{{ authority }}</title>
 {% endblock %}
 
 {% block content %}
-<div class="container">
-	<div class="row">
-		<div class="col-sm-4">
-			<!--<h5 class="mb-2 mt-3">-->
-			<h5 class="">
-				{% if authority == 'idx' %}Accessioning{%else%}Reconciliation{%endif%} Review
-				{% if deferred is True %}<span class="text-danger ms-2">(deferred)</span>{% endif %}
-			</h5>
-		</div> <!-- col 4-->
-		<div class="col-sm-8">
+  <div class="container">
+  <div class="row">
+    <div class="col-sm-4">
+      <!--<h5 class="mb-2 mt-3">-->
+      <h5 class="">
+        {% if authority == 'idx' %}Accessioning{% else %}Reconciliation{% endif %} Review
+        {% if deferred is True %}<span class="text-danger ms-2">(deferred)</span>{% endif %}
+      </h5>
+    </div> <!-- col 4-->
+    <div class="col-sm-8">
 			<span class="small">
 				{% if deferred is False %}
-					<select id="select_pass" name="pass" class="custom-select-sm me-2" style="width:auto;">
+          <select id="select_pass" name="pass" class="custom-select-sm me-2" style="width:auto;">
 						{% if count_pass0 > 0 %}
-							<option value="pass0">PASS 0 (auto-matched)&nbsp;</option>
-						{% endif %}
-						{% if count_pass1 > 0 %}
-							<option value="pass1">PASS 1&nbsp;</option>
-						{% endif %}
-						{% if count_pass2 > 0 %}
-							<option value="pass2">PASS 2&nbsp;</option>
-						{% endif %}
-						{% if count_pass3 > 0 %}
-							<option value="pass3">PASS 3&nbsp;</option>
-						{% endif %}
+              <option value="pass0">PASS 0 (auto-matched)&nbsp;</option>
+            {% endif %}
+            {% if count_pass1 > 0 %}
+              <option value="pass1">PASS 1&nbsp;</option>
+            {% endif %}
+            {% if count_pass2 > 0 %}
+              <option value="pass2">PASS 2&nbsp;</option>
+            {% endif %}
+            {% if count_pass3 > 0 %}
+              <option value="pass3">PASS 3&nbsp;</option>
+            {% endif %}
 					</select>
-					{% for m in messages %}{{ m }}{% endfor %}
-				{% endif %}
+          {% for m in messages %}{{ m }}{% endfor %}
+        {% endif %}
 			</span>
-			<span class="help-matches" data-id="review"><i class="fas fa-question-circle linkypop"></i></span>
-			<span class="half float-end me-2"><i>task id</i>: {{ task_id|truncatechars:10 }}...</span>
-		</div> <!-- col 8 -->
-	</div> <!-- .row -->
-	{% if nohits and passnum == 'def' %}
-		<p>No unreviewed records remaining in "deferred" queue</p>
-		<p><a href="{% url 'datasets:ds_reconcile' id=ds_id %}">return to task list</a></p>
-	{% elif nohits and authority != 'idx' %}
-		<div class="mt-3">
-			<p>All records in this dataset for this task have been reviewed, so the dataset is eligible for accessioning to the WHG index.</p>
-			<p>If you would like to begin that process, please <a href="{% url 'contact' %}">contact the editorial team</a>.</p>
-			<p><a class="btn btn-sm btn-secondary" href="{% url 'datasets:ds_reconcile' id=ds_id %}">Return to task list</a></p>
-		</div>
-	{% else %}
-		<form id="form_related" method="POST" action="" >
-			{% csrf_token %}
-			{{ formset.management_form }}
-			{% for record in records %}
-				<!-- there is only one; if last, do nothing -->
-				<div class="container">
-					<div id="review_nav" class="pagination row justify-content-center">
-						<div class="col-sm-4 ps-1">
-							<span>dataset: <a href="{% url 'datasets:ds_reconcile' id=ds_id %}"> {{ ds_label }}</a></span>
-						</div>
-						<div class="col-sm-8">
-							<button type="submit" id="btn_save" class="button-sm">Save</button>
-							{% if deferred is False %}
-								<a id="defer_link" rel="tooltip" title="flag for separate review" class="small" href="{% url 'places:defer-review' pid=record.id auth=authority last=records.paginator.num_pages %}">defer</a>
-							{% endif %}
-	         					<span class="step-links">
+      <span class="help-matches" data-id="review"><i class="fas fa-question-circle linkypop"></i></span>
+      <span class="half float-end me-2"><i>task id</i>: {{ task_id|truncatechars:10 }}...</span>
+    </div> <!-- col 8 -->
+  </div> <!-- .row -->
+  {% if nohits and passnum == 'def' %}
+    <p>No unreviewed records remaining in "deferred" queue</p>
+    <p><a href="{% url 'datasets:ds_reconcile' id=ds_id %}">return to task list</a></p>
+  {% elif nohits and authority != 'idx' %}
+    <div class="mt-3">
+      <p>All records in this dataset for this task have been reviewed, so the dataset is eligible for accessioning to
+        the WHG index.</p>
+      <p>If you would like to begin that process, please <a href="{% url 'contact' %}">contact the editorial team</a>.
+      </p>
+      <p><a class="btn btn-sm btn-secondary" href="{% url 'datasets:ds_reconcile' id=ds_id %}">Return to task list</a>
+      </p>
+    </div>
+  {% else %}
+    <form id="form_related" method="POST" action="">
+      {% csrf_token %}
+      {{ formset.management_form }}
+      {% for record in records %}
+        <!-- there is only one; if last, do nothing -->
+        <div class="container">
+          <div id="review_nav" class="pagination row justify-content-center">
+            <div class="col-sm-4 ps-1">
+              <span>dataset: <a href="{% url 'datasets:ds_reconcile' id=ds_id %}"> {{ ds_label }}</a></span>
+            </div>
+            <div class="col-sm-8">
+              <button type="submit" id="btn_save" class="button-sm">Save</button>
+              {% if deferred is False %}
+                <a id="defer_link" rel="tooltip" title="flag for separate review" class="small"
+                   href="{% url 'places:defer-review' pid=record.id auth=authority last=records.paginator.num_pages %}">defer</a>
+              {% endif %}
+              <span class="step-links">
 								{% if records.has_previous %}
-									<a href="?page=1">&laquo; first</a>&nbsp;&nbsp;
-									<a href="?page={{ records.previous_page_number }}">previous</a>
-								{% endif %}
-								<span class="current">
+                  <a href="?page=1">&laquo; first</a>&nbsp;&nbsp;
+                  <a href="?page={{ records.previous_page_number }}">previous</a>
+                {% endif %}
+                <span class="current">
 									Record {{ records.number }} of {{ records.paginator.num_pages }}
 								</span>
-								{% if records.has_next %}
-									<a href="?page={{ records.next_page_number }}">next</a>&nbsp;&nbsp;
-									<a href="?page={{ records.paginator.num_pages }}">last &raquo;</a>
-								{% endif %}
+                {% if records.has_next %}
+                  <a href="?page={{ records.next_page_number }}">next</a>&nbsp;&nbsp;
+                  <a href="?page={{ records.paginator.num_pages }}">last &raquo;</a>
+                {% endif %}
 							</span>
-							<span class="float-end">
-								<a id="undo" class="small hidden-imp" href="" data-url="{% url 'datasets:match-undo' ds=ds_id tid=task_id pid=999 %}">
+              <span class="float-end">
+								<a id="undo" class="small hidden-imp" href=""
+                   data-url="{% url 'datasets:match-undo' ds=ds_id tid=task_id pid=999 %}">
 									Undo last save <i class="fas fa-undo" style="color:#336699;"></i>
 								</a>
 							</span>
-						</div>
-					</div> <!-- #review_nav-->
-					<div class="row mt-2">
-						<div id="review_record" class="col-sm-4 ps-0 small">
-							<div class="bg-secondary font-weight-bold ps-2 text-light">{{ dataset_label }}</div>
-							<div id="place_record" class="mb-2">
-								<div>
-									<input type="hidden" name="place_id" value="{{ record.id }}" />
-									<span>
+            </div>
+          </div> <!-- #review_nav-->
+          <div class="row mt-2">
+            <div id="review_record" class="col-sm-4 ps-0 small">
+              <div class="bg-secondary font-weight-bold ps-2 text-light">{{ dataset_label }}</div>
+              <div id="place_record" class="mb-2">
+                <div>
+                  <input type="hidden" name="place_id" value="{{ record.id }}"/>
+                  <span>
 										<h4 class="text-danger">{{ record.title }}
-						                	{% if record.comment_set.count == 0 %}
-					                  			<span class="float-end create-comment-review btn" data-id="{{ record.id }}"
-					                      			data-src='record'>add note <i class="fas fa-edit linky fa-xs"></i>
+                      {% if record.comment_set.count == 0 %}
+                        <span class="float-end create-comment-review btn" data-id="{{ record.id }}"
+                              data-src='record'>add note <i class="fas fa-edit linky fa-xs"></i>
 					                  			</span>
-						                	{% elif record.comment_set.count > 0 %}
-							                	<span class="float-end view-comments btn">show note(s) <i class="fas fa-edit linky fa-xs"></i></span>
-						                	{% endif %}
+                      {% elif record.comment_set.count > 0 %}
+                        <span class="float-end view-comments btn">show note(s) <i
+                          class="fas fa-edit linky fa-xs"></i></span>
+                      {% endif %}
 					                	</h4>
 					              	</span>
-						            <div id="record_notes" class="hidden p-1" style="background-color: oldlace;">
-										{% for r in record.defer_comments %}{{ r.note }}{% endfor %}
-						            </div>
-					            </div>
-					            <p><strong>WHG place id</strong>: {{ record.id }} </p>
-					            <p><strong>Source id</strong>: {{ record.src_id }}</p>
-					            <p class="scroll100"><strong>Name variants</strong>:
-					            	<i>
-										{% for name in record.names.all %}
-											{{ name.jsonb.toponym }};
-										{% endfor %}
-									</i>
-								</p>
-					            {% if countries %}
-					            	<p>
-					            		<strong>Modern countries</strong>:
-						              	{% for c in countries %}
-						                	{{ c }};
-						              	{% endfor %}
-					              	</p>
-					            {% endif %}
-					            {% if record.related.all|length > 0 %}
-						            <p>
-						            	<strong>Relations</strong>:
-						              	{% for rel in record.related.all %}
-						                	{{ rel.jsonb.label }}; <!--({ rel.jsonb.relationType }); -->
-						              	{% endfor %}
-						            </p>
-					            {% endif %}
-					            <p>
-					            	<strong>Place type(s)</strong>:
-					              	{% for type in record.types.all %}
-					                	{{ type.jsonb.sourceLabel }} ({{ type.jsonb.label }});
-					              	{% endfor %}
-					            </p>
-					            {% if record.links.all|length > 0 %}
-					            	<p>
-					            		<strong>Links</strong>:
-					              		{% for link in record.links.all %}
-					                		<a href="" class="me-2 ext" data-toggle="modal" data-target="#ext_site">
-						                		{{ link.jsonb.identifier }} <i class="fas fa-external-link-alt linky"></i>
-					                		</a>
-					              		{% endfor %}
-					              	</p>
-					            {% endif %}
-					            {% if record.minmax %}
-					              	{% if record.minmax.0 == record.minmax.1 %}
-					              		<p><strong>Attested year</strong>: {{record.minmax.0}}</p>
-					              	{% else %}
-					              		<p><strong>Earliest/latest:</strong>: {{record.minmax.0}} / {{record.minmax.1}}</p>
-					              	{% endif %}
-					            {% endif %}
-				            	{% if record.descriptions %}
-				              		{% for d in record.descriptions.all %}
-				              			<p><strong>Description</strong>: {{d.jsonb.value}}</p>
-				              		{%endfor%}
-				            	{% endif %}
-				          </div>
-				          <div id="map" style="height:300px;"></div>
-        				</div>
-        				<!--available: ['whg_id', 'place_id', 'src_id', 'title', 'dataset', 'variants', 'types', 'ccodes', 'parents', 'descriptions', 'geoms', 'timespans', 'links']-->
-				        <div id="review_list" class="col-sm-8 pe-0">
-							{% for form in formset %}
-				              	<input type="hidden" name="id" value='{{ form.id.value }}'></input>
-				              	<input type="hidden" name="authrecord_id" value='{{ form.authrecord_id.value }}'></input>
-				              	<input type="hidden" name="score" value='{{ form.score.value }}'></input>
-				              	<input type="hidden" name="query_pass" value='{{ form.query_pass.value }}'></input>
-				              	{% for hidden in form.hidden_fields %}
-				                	{{ hidden }}
-				              	{% endfor %}
-				              	<div class="ps-2 pe-2 mb-1 matchbar">
-				                	<div class="match_radio custom-control custom-radio hovermap" data-id="{{ form.authrecord_id.value }}">
-				                  		{% if form.json.value|get:"geoms"|length > 0 %}
-				                    		<span class="me-2 globeflash">
+                  <div id="record_notes" class="hidden p-1" style="background-color: oldlace;">
+                    {% for r in record.defer_comments %}{{ r.note }}{% endfor %}
+                  </div>
+                </div>
+                <p><strong>WHG place id</strong>: {{ record.id }} </p>
+                <p><strong>Source id</strong>: {{ record.src_id }}</p>
+                <p class="scroll100"><strong>Name variants</strong>:
+                  <i>
+                    {% for name in record.names.all %}
+                      {{ name.jsonb.toponym }};
+                    {% endfor %}
+                  </i>
+                </p>
+                {% if countries %}
+                  <p>
+                    <strong>Modern countries</strong>:
+                    {% for c in countries %}
+                      {{ c }};
+                    {% endfor %}
+                  </p>
+                {% endif %}
+                {% if record.related.all|length > 0 %}
+                  <p>
+                    <strong>Relations</strong>:
+                    {% for rel in record.related.all %}
+                      {{ rel.jsonb.label }}; <!--({ rel.jsonb.relationType }); -->
+                    {% endfor %}
+                  </p>
+                {% endif %}
+                <p>
+                  <strong>Place type(s)</strong>:
+                  {% for type in record.types.all %}
+                    {{ type.jsonb.sourceLabel }} ({{ type.jsonb.label }});
+                  {% endfor %}
+                </p>
+                {% if record.links.all|length > 0 %}
+                  <p>
+                    <strong>Links</strong>:
+                    {% for link in record.links.all %}
+                      <a href="" class="me-2 ext" data-toggle="modal" data-target="#ext_site">
+                        {{ link.jsonb.identifier }} <i class="fas fa-external-link-alt linky"></i>
+                      </a>
+                    {% endfor %}
+                  </p>
+                {% endif %}
+                {% if record.minmax %}
+                  {% if record.minmax.0 == record.minmax.1 %}
+                    <p><strong>Attested year</strong>: {{ record.minmax.0 }}</p>
+                  {% else %}
+                    <p><strong>Earliest/latest:</strong>: {{ record.minmax.0 }} / {{ record.minmax.1 }}</p>
+                  {% endif %}
+                {% endif %}
+                {% if record.descriptions %}
+                  {% for d in record.descriptions.all %}
+                    <p><strong>Description</strong>: {{ d.jsonb.value }}</p>
+                  {% endfor %}
+                {% endif %}
+              </div>
+              <div id="map" style="height:300px;"></div>
+            </div>
+            <!--available: ['whg_id', 'place_id', 'src_id', 'title', 'dataset', 'variants', 'types', 'ccodes', 'parents', 'descriptions', 'geoms', 'timespans', 'links']-->
+            <div id="review_list" class="col-sm-8 pe-0">
+              {% for form in formset %}
+                <input type="hidden" name="id" value='{{ form.id.value }}'></input>
+                <input type="hidden" name="authrecord_id" value='{{ form.authrecord_id.value }}'></input>
+                <input type="hidden" name="score" value='{{ form.score.value }}'></input>
+                <input type="hidden" name="query_pass" value='{{ form.query_pass.value }}'></input>
+                {% for hidden in form.hidden_fields %}
+                  {{ hidden }}
+                {% endfor %}
+                <div class="ps-2 pe-2 mb-1 matchbar">
+                  <div class="match_radio custom-control custom-radio hovermap"
+                       data-id="{{ form.authrecord_id.value }}">
+                    {% if form.json.value|get:"geoms"|length > 0 %}
+                      <span class="me-2 globeflash">
 				                      			<a class="geolink" data-id="{{ form.authrecord_id.value }}" rel="tooltip"
-							                        {% if ds_label == 'tgn_filtered_01' or authority == 'whg' or authority == 'idx'%}
-							                          	id="{{ form.json.value|get:"place_id" }}"
-							                        {% else %}
-							                          	id="{{ form.authrecord_id.value }}"
-							                        {% endif %}
-							                        href='javascript:void(0)'>
+                                      {% if ds_label == 'tgn_filtered_01' or authority == 'whg' or authority == 'idx' %}
+                                       id="{{ form.json.value|get:"place_id" }}"
+                                      {% else %}
+                                       id="{{ form.authrecord_id.value }}"
+                                      {% endif %}
+                                       href='javascript:void(0)'>
 							                        <i class="fas fa-globe" style="color:#000;"></i>
 				                        		</a>
 				                    		</span>
-				                  		{% endif %}
-				                    	{% for choice in form.match %}
-									    	{{ choice }}&nbsp;
-										{% endfor %}
-					                  	{% if authority == 'idx' %}
-					                    	<button type="button"
-					                      		data-id="{{ form.json.value|get:"place_id" }}"
-					                      		class="create-comment-review btn btn-sm" style="background-color:oldlace;">
-					                    		<i class="fas fa-edit linky fa-xs"></i>
-					                    	</button>
-					                  	{% endif %}
-					                </div>
-					       		</div>
-					            {{ form.non_field_errors }}
-					            <div class="auth-match ps-2 mt-0 mb-2">
-					                <!-- {{ form.json.value }} -->
-					                <p><strong>Title/Preferred</strong>: <span class="text-danger h6">{{ form.json.value|get:"title" }}</p>
-					                {% if authority|startswith:'whg' %}
-					                  	<p><strong>WHG place id</strong>: {{ form.json.value|get:"place_id" }}</p>
-					                  	<p><strong>Source (id)</strong>: {{ form.json.value|get:"dataset" }} ({{ form.json.value|get:"src_id" }})</p>
-					                {% else %}
-					                  	<p>
-						                  	{% if authority|startswith:"wd" %}
-						                  		<strong>Wikidata ID</strong>:
-						                  	{% else %}
-						                  		<strong>{{ authority|upper }} ID</strong>:
-						                  	{% endif %}
-						                  	<a href="" data-auth={{authority}} class="me-2 ext-recon">
-						                    	{{ form.authrecord_id.value }}
-						                   	</a>
-						                   	<i class="fas fa-external-link-alt linky"></i>
-					                  	</p>
-					                {% endif %}
-					                {% if form.json.value|get:"variants"|length > 0 %}
-					                	<p class="scroll65">
-					                		<strong>Variants</strong>:
-					                  		{% for n in form.json.value|get:"variants" %}
-					                    		{{ n|add:"; " }}
-					                  		{% endfor %}
-					                	</p>
-					                {% endif %}
+                    {% endif %}
+                    {% for choice in form.match %}
+                      {{ choice }}&nbsp;
+                    {% endfor %}
+                    {% if authority == 'idx' %}
+                      <button type="button"
+                              data-id="{{ form.json.value|get:"place_id" }}"
+                              class="create-comment-review btn btn-sm" style="background-color:oldlace;">
+                        <i class="fas fa-edit linky fa-xs"></i>
+                      </button>
+                    {% endif %}
+                  </div>
+                </div>
+                {{ form.non_field_errors }}
+                <div class="auth-match ps-2 mt-0 mb-2">
+{#                  {{ form.json.value }}#}
+                  <p><strong>Title/Preferred</strong>:
+                    <span class="text-danger h6">{{ form.json.value|get:"title" }}</span>
+                  </p>
+                  {% if authority|startswith:'whg' %}
+                    <p><strong>WHG place id</strong>: {{ form.json.value|get:"place_id" }}</p>
+                    <p><strong>Source (id)</strong>: {{ form.json.value|get:"dataset" }}
+                      ({{ form.json.value|get:"src_id" }})</p>
+                  {% else %}
+                    <p>
+                      <strong>{{ form.json.value|get:"dataset"|initcap }} ID</strong>:
+                      <a href="" data-auth="{{ authority }}" class="me-2 ext-recon">
+                      {{ form.authrecord_id.value }}
+                      </a>
+                      <i class="fas fa-external-link-alt linky"></i>
+                    </p>
+                  {% endif %}
+                  {% if form.json.value|get:"variants"|length > 0 %}
+                    <p class="scroll65">
+                      <strong>Variants</strong>:
+                      {% for n in form.json.value|get:"variants" %}
+                        {{ n|add:"; " }}
+                      {% endfor %}
+                    </p>
+                  {% endif %}
 
-					                <p class="mt-2 strong">Types:
-					                	{% if authority == 'whg' %}
-					                  		{% for t in form.json.value|get:"types" %}
-					                    		{{ t|add:"; " }}
-					                  		{% endfor %}
-					                	{% else %}
-					                  		{% if form.json.value|get:"types"|length == 0 %}
-					                  			<i>none specified</i>
-					                  		{% else %}
-					                  			{{ form.json.value|get:"types"}}
-					                  		{% endif %}
-					                	{% endif %}
-					                 </p>
+                  <p class="mt-2"><strong>Types</strong>:
+                    {% if authority == 'whg' %}
+                      {% for t in form.json.value|get:"types" %}
+                        {{ t|add:"; " }}
+                      {% endfor %}
+                    {% else %}
 
-				                	{% if form.json.value|get:"links"|length > 0 %}
-				                  		<p>
-				                  			<strong>Links</strong>:
-				                  			{% for link in form.json.value|get:"links" %}
-				                    			<a href="" class="me-2 ext" data-toggle="modal" data-target="#ext_site">{{ link }} <i class="fas fa-external-link-alt linky"></i></a>
-				                  			{% endfor %}
-				                		</p>
-				                	{% endif %}
+                      {% if form.json.value|get:"dataset" == 'geonames' %}
+                        {{ form.json.value|get:"fclasses"|fclasser }}
+                      {% elif form.json.value|get:"types"|length == 0 %}
+                        <i>none specified</i>
+                      {% else %}
+                        {{ form.json.value|get:"types" }}
+                      {% endif %}
 
-					                {% if form.json.value|get:"parents" %}
-										<p>
-											<strong>Parents</strong>:
-					                  		{{ form.json.value|get:"parents" }}
-				                		</p>
-					                {% elif form.json.value|get:"ccodes" %}
-					                  	<p>
-					                  		<strong>Modern country</strong>:
-					                    	{{ form.json.value|get:"ccodes" }}
-				                		</p>
-					                {% endif %}
+                    {% endif %}
+                  </p>
 
-					                {% if form.json.value|get:"minmax"|length > 0 %}
-					                  	<p>
-					                  		<strong>Temporal attestations</strong>:
-					                  		{{ form.json.value|get:"minmax" }}
-					                  	</p>
-					                {% endif %}
+                  {% if form.json.value|get:"links"|length > 0 %}
+                    <p>
+                      <strong>Links</strong>:
+                      {% for link in form.json.value|get:"links" %}
+                        <a href="" class="me-2 ext" data-toggle="modal" data-target="#ext_site">{{ link }} <i
+                          class="fas fa-external-link-alt linky"></i></a>
+                      {% endfor %}
+                    </p>
+                  {% endif %}
 
-					                {% if form.json.value|get:"descriptions"|length > 0 %}
-										<p class="mb-0"><strong>Description(s)</strong>:</p>
-					                  	<div class="attest-element abbrev small">
-					                  		{% for d in form.json.value|get:"descriptions" %}
-					                    	({{d.lang}}) {{ d.text }}{% endfor %}
-					                  	</div>
-					                {% endif %}
-              					</div>
-            				{% endfor %}
-          				</div>
-      				</div> <!-- .row -->
-    			</div> <!-- container flex -->
-  			{% endfor %} <!-- record in records -->
-    	</form>
-  	{% endif %}
-  	<div id="modal" class="modal fade" tabindex="-1" role="dialog" >
-    	<div class="modal-dialog modal-form" role="document">
-      		<div class="modal-content"></div>
-    	</div>
-  	</div>
-  	<div class="selector py-3">
-     	<div id="helpme" class="my-3"><div>
-  	</div>
-</div>
-<script type="text/javascript">
+                  {% if form.json.value|get:"parents" %}
+                    <p>
+                      <strong>Parents</strong>:
+                      {{ form.json.value|get:"parents" }}
+                    </p>
+                  {% elif form.json.value|get:"ccodes" %}
+                    <p>
+                      <strong>Modern country</strong>:
+                      {{ form.json.value|get:"ccodes" }}
+                    </p>
+                  {% endif %}
+
+                  {% if form.json.value|get:"minmax"|length > 0 %}
+                    <p>
+                      <strong>Temporal attestations</strong>:
+                      {{ form.json.value|get:"minmax" }}
+                    </p>
+                  {% endif %}
+
+                  {% if form.json.value|get:"descriptions"|length > 0 %}
+                    <p class="mb-0"><strong>Description(s)</strong>:</p>
+                    <div class="attest-element abbrev small">
+                      {% for d in form.json.value|get:"descriptions" %}
+                        ({{ d.lang }}) {{ d.text }}{% endfor %}
+                    </div>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </div> <!-- .row -->
+        </div> <!-- container flex -->
+      {% endfor %} <!-- record in records -->
+    </form>
+  {% endif %}
+  <div id="modal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-form" role="document">
+      <div class="modal-content"></div>
+    </div>
+  </div>
+  <div class="selector py-3">
+  <div id="helpme" class="my-3">
+    <div>
+    </div>
+  </div>
+  <script type="text/javascript">
     const featureCollectionJSON = '{{ feature_collection|safe }}';
     let already = '{{ already }}';
     let ds_label = '{{ ds_label }}';
@@ -314,24 +326,28 @@
     let passnum = '{{ passnum }}';
     let mbtoken = '{{ mbtoken }}';
     let page_variant = 'accession';
-</script>
+  </script>
 {% endblock %}
 
 {% block deferredScripts %}
-   	
-   	var scripts = [
-		{
-			src: '{% static 'js/jquery.bootstrap.modal.forms.min.js' %}',
-			type: 'text/javascript',
-		},
-		{
-			src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
-			type: 'text/javascript',
-		},
-		{
-			src: '{% static 'webpack/review.bundle.js' %}',
-			type: 'module',
-		},
-   	]
+
+  var scripts = [
+  {
+  src: '{% static 'js/jquery.bootstrap.modal.forms.min.js' %}',
+  type: 'text/javascript',
+  },
+  {
+  src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
+  type: 'text/javascript',
+  },
+  {
+  src: '{% static 'webpack/review.bundle.js' %}',
+  type: 'module',
+  },
+  {
+  src: '{% static 'webpack/aliases.js' %}',
+  type: 'module',
+  },
+  ]
 
 {% endblock %}

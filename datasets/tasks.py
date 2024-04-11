@@ -436,7 +436,8 @@ def normalize(h, auth, language=None):
       print('is_wdgn?', is_wdgn)
       dataset = h['dataset'] if is_wdgn else 'wd'
       print('dataset', dataset)
-      variants=h['variants']
+      variants = h['variants']
+      fclasses = h['fclasses']
       title = make_title(h, language)
 
       # create base HitRecord(place_id, dataset, auth_id, title
@@ -445,6 +446,7 @@ def normalize(h, auth, language=None):
       # build variants array per dataset
       if is_wdgn and h['dataset'] == 'geonames':
         rec.variants = variants['names']
+        rec.fclasses = fclasses
       else:
         v_array=[]
         for v in variants:
@@ -462,7 +464,8 @@ def normalize(h, auth, language=None):
         # single MultiPoint geom if exists
         rec.geoms = [loc]
 
-      if not is_wdgn: # it's wd
+      # if not is_wdgn: # it's wd
+      if dataset != 'geonames':   # it's wd or wikidata
         rec.links = h['authids']
 
         # look up Q class labels
@@ -566,9 +569,10 @@ performs elasticsearch > wdlocal queries
 from align_wdlocal()
 """
 def es_lookup_wdlocal(qobj, *args, **kwargs):
-  #bounds = {'type': ['userarea'], 'id': ['0']}
-  idx = 'wdgn'
   # idx = 'wd'
+  idx = 'wdgn'  # wikidata + geonames
+
+  #bounds object: {'type': ['userarea'], 'id': ['0']}
   bounds = kwargs['bounds']
   print('kwargs in es_lookup_wdlocal()', kwargs)
   hit_count = 0
@@ -736,13 +740,13 @@ parse, write Hit records for review
 @shared_task(name="align_wdlocal")
 def align_wdlocal(*args, **kwargs):
   print('align_wdlocal.request', align_wdlocal.request)
+  print('kwargs from align_wdlocal() task', kwargs)
   task_id = align_wdlocal.request.id
   task_status = AsyncResult(task_id).status
   ds = get_object_or_404(Dataset, id=kwargs['ds'])
   user = get_object_or_404(User, pk=kwargs['user'])
   bounds = kwargs['bounds']
   scope = kwargs['scope']
-  print('kwargs from align_wdlocal() task', kwargs)
   language = kwargs['lang']
   hit_parade = {"summary": {}, "hits": []}
   [nohits,wdlocal_es_errors,features] = [[],[],[]]
@@ -755,9 +759,9 @@ def align_wdlocal(*args, **kwargs):
   qs = ds.places.all() if scope == 'all' else \
     ds.places.filter(~Q(review_wd = 1))
   
-  print('wtf? scope, count',scope,qs.count())
+  print('scope, count',scope,qs.count())
   for place in qs:
-    print('review_wd',place.review_wd)
+    # print('review_wd',place.review_wd)
     #place = get_object_or_404(Place, pk=6596036)
     # build query object
     qobj = {"place_id":place.id,
@@ -785,7 +789,6 @@ def align_wdlocal(*args, **kwargs):
     qobj['variants'] = list(set(variants))
 
     # parents
-    # TODO: other relations
     if len(place.related.all()) > 0:
       for rel in place.related.all():
         if rel.jsonb['relationType'] == 'gvp:broaderPartitive':
@@ -799,11 +802,12 @@ def align_wdlocal(*args, **kwargs):
       g_list =[g.jsonb for g in place.geoms.all()]
       # make simple polygon hull for ES shape filter
       qobj['geom'] = hully(g_list)
-      # make a representative_point for ES distance
+      # make a representative_point
       #qobj['repr_point'] = pointy(g_list)
       
 
-    # 'P1566':'gn', 'P1584':'pleiades', 'P244':'loc', 'P214':'viaf', 'P268':'bnf', 'P1667':'tgn', 'P2503':'gov', 'P1871':'cerl', 'P227':'gnd'
+    # 'P1566':'gn', 'P1584':'pleiades', 'P244':'loc', 'P214':'viaf', 'P268':'bnf', 'P1667':'tgn',
+    # 'P2503':'gov', 'P1871':'cerl', 'P227':'gnd'
     # links
     if len(place.links.all()) > 0:
       l_list = [l.jsonb['identifier'] for l in place.links.all()]
