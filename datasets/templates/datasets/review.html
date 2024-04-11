@@ -207,8 +207,8 @@
 				                    		</span>
                     {% endif %}
                     {% for choice in form.match %}
-                      {{ choice }}&nbsp;
-                    {% endfor %}
+                      {{ choice }}
+                    {% endfor %} &nbsp;
                     {% if authority == 'idx' %}
                       <button type="button"
                               data-id="{{ form.json.value|get:"place_id" }}"
@@ -228,14 +228,26 @@
                     <p><strong>WHG place id</strong>: {{ form.json.value|get:"place_id" }}</p>
                     <p><strong>Source (id)</strong>: {{ form.json.value|get:"dataset" }}
                       ({{ form.json.value|get:"src_id" }})</p>
-                  {% else %}
-                    <p>
-                      <strong>{{ form.json.value|get:"dataset"|initcap }} ID</strong>:
-                      <a href="" data-auth="{{ authority }}" class="me-2 ext-recon">
-                      {{ form.authrecord_id.value }}
-                      </a>
-                      <i class="fas fa-external-link-alt linky"></i>
-                    </p>
+                  {% else %} {# wdlocal #}
+                    {% if form.json.value|get:"dataset" == 'geonames' %}
+                      <p>
+                        <strong class="text-bg-success">
+                          {{ form.json.value|get:"dataset"|initcap }} ID
+                        </strong>:
+                        <a href="#" data-auth="gn" class="me-2 ext-recon">{{ form.authrecord_id.value }}</a>
+                        <i class="fas fa-external-link-alt linky"></i>
+                      </p>
+                    {% else %}
+                      <p>
+                        <strong class="text-bg-primary">
+                          {{ form.json.value|get:"dataset"|initcap }} ID
+                        </strong>:
+                        <a href="" data-auth="{{ authority }}" class="me-2 ext-recon">
+                        {{ form.authrecord_id.value }}
+                        </a>
+                        <i class="fas fa-external-link-alt linky"></i>
+                      </p>
+                    {% endif %}
                   {% endif %}
                   {% if form.json.value|get:"variants"|length > 0 %}
                     <p class="scroll65">

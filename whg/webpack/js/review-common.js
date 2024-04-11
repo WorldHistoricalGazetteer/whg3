@@ -160,8 +160,8 @@ export function addReviewListeners() {
 		e.preventDefault();
 		let id = $(this).text()
 		let url = base_urls[$(this).data('auth')] + id.toString()
-		//console.log('id, url',id,url)
-		window.open(url, '_blank')
+		console.log('id, url',id,url)
+		// window.open(url, '_blank')
 	});
 	
 	$("#btn_save").click(function() {
