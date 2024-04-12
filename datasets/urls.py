@@ -36,6 +36,7 @@ urlpatterns = [
   ## MANAGE/VIEW
   # dataset owner pages (tabs); names correspond to template names
   path('<int:id>/summary', views.DatasetSummaryView.as_view(), name='ds_summary'),
+  path('<int:id>/metadata', views.DatasetMetadataView.as_view(), name='ds_metadata'),
   path('<int:id>/browse', views.DatasetBrowseView.as_view(), name='ds_browse'),
   path('<int:id>/reconcile', views.DatasetReconcileView.as_view(), name='ds_reconcile'),
   path('<int:id>/collab', views.DatasetCollabView.as_view(), name='ds_collab'),
@@ -43,7 +44,7 @@ urlpatterns = [
   path('<int:id>/log', views.DatasetLogView.as_view(), name='ds_log'),
 
   # public dataset pages (tabs): metadata, browse
-  path('<int:pk>', views.DatasetPublicView.as_view(), name='ds_meta'),
+  # path('<int:pk>', views.DatasetPublicView.as_view(), name='ds_meta'),
   path('<int:id>/places', views.DatasetPlacesView.as_view(), name='ds_places'),
 
   ## DOWNLOADS

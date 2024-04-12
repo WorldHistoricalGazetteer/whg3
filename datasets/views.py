@@ -2326,7 +2326,7 @@ def match_undo(request, ds, tid, pid):
 
 
 """
-  returns dataset owner metadata page
+  returns dataset owner summary page
 """
 class DatasetSummaryView(LoginRequiredMixin, UpdateView):
   login_url = '/accounts/login/'
@@ -2368,6 +2368,116 @@ class DatasetSummaryView(LoginRequiredMixin, UpdateView):
 
   def get_context_data(self, *args, **kwargs):
     context = super(DatasetSummaryView, self).get_context_data(*args, **kwargs)
+
+    # print('DatasetSummaryView get_context_data() kwargs:',self.kwargs)
+    # print('DatasetSummaryView get_context_data() request.user',self.request.user)
+    id_ = self.kwargs.get("id")
+    ds = get_object_or_404(Dataset, id=id_)
+
+    """
+      when coming from DatasetCreateView() (file.df_status == format_ok)
+      runs ds_insert_tsv() or ds_insert_lpf()
+      using most recent dataset file
+    """
+    file = ds.file
+    if file.df_status == 'format_ok':
+      print('format_ok , inserting dataset ' + str(id_))
+      if file.format == 'delimited':
+        result = ds_insert_tsv(self.request, id_)
+        print('tsv result', result)
+      else:
+        result = ds_insert_lpf(self.request, id_)
+        print('lpf result', result)
+      print('ds_insert_xxx() result', result)
+      ds.numrows = result['numrows']
+      ds.numlinked = result['numlinked']
+      ds.total_links = result['total_links']
+      ds.ds_status = 'uploaded'
+      file.df_status = 'uploaded'
+      file.numrows = result['numrows']
+      ds.save()
+      file.save()
+
+    # build context for rendering ds_summary.html
+    me = self.request.user
+    placeset = ds.places.all()
+
+    context['updates'] = {}
+    context['ds'] = ds
+    context['collaborators'] = ds.collaborators.all()
+    context['owners'] = ds.owners
+    context['is_admin'] = True if me.groups.filter(name__in=['whg_admins']).exists() else False
+    context['editorial'] = True if me.groups.filter(name__in=['editorial']).exists() else False
+
+    # excludes datasets w/o an associated DatasetFile
+    if file and hasattr(file, 'file') and os.path.exists(file.file.path):
+      context['current_file'] = file
+      context['format'] = file.format
+      context['numrows'] = file.numrows
+      context['filesize'] = round(file.file.size / 1000000, 1)
+
+    # initial (non-task)
+    context['num_names'] = PlaceName.objects.filter(place_id__in=placeset).count()
+    context['num_links'] = PlaceLink.objects.filter(
+      place_id__in=placeset, task_id=None).count()
+    context['num_geoms'] = PlaceGeom.objects.filter(
+      place_id__in=placeset, task_id=None).count()
+
+    # augmentations (has task_id)
+    context['links_added'] = PlaceLink.objects.filter(
+      place_id__in=placeset, task_id__contains='-').count()
+    context['geoms_added'] = PlaceGeom.objects.filter(
+      place_id__in=placeset, task_id__contains='-').count()
+
+    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
+    context['statuses'] = ['uploaded', 'reconciling', 'wd-complete', 'public', 'accessioning', 'indexed']
+    # print('context from DatasetSummaryView', context)
+    return context
+
+"""
+  returns dataset owner metadata page
+  (formerly DatasetSummaryView)
+"""
+class DatasetMetadataView(LoginRequiredMixin, UpdateView):
+  login_url = '/accounts/login/'
+  redirect_field_name = 'redirect_to'
+
+  form_class = DatasetDetailModelForm
+
+  template_name = 'datasets/ds_metadata.html'
+
+  # Dataset has been edited, form submitted
+  def form_valid(self, form):
+    data = form.cleaned_data
+    ds = get_object_or_404(Dataset, pk=self.kwargs.get("id"))
+    dsid = ds.id
+    user = self.request.user
+    file = data['file']
+    filerev = ds.files.all().order_by('-rev')[0].rev
+    # print('DatasetSummaryView kwargs',self.kwargs)
+    print('DatasetSummaryView form_valid() data->', data)
+    if data["file"] == None:
+      print('data["file"] == None')
+      # no file, updating dataset only
+      ds.title = data['title']
+      ds.description = data['description']
+      ds.uri_base = data['uri_base']
+      ds.save()
+    return super().form_valid(form)
+
+  def form_invalid(self, form):
+    print('kwargs', self.kwargs)
+    context = {}
+    print('form not valid; errors:', form.errors)
+    print('cleaned_data', form.cleaned_data)
+    return super().form_invalid(form)
+
+  def get_object(self):
+    id_ = self.kwargs.get("id")
+    return get_object_or_404(Dataset, id=id_)
+
+  def get_context_data(self, *args, **kwargs):
+    context = super(DatasetMetadataView, self).get_context_data(*args, **kwargs)
 
     # print('DatasetSummaryView get_context_data() kwargs:',self.kwargs)
     # print('DatasetSummaryView get_context_data() request.user',self.request.user)

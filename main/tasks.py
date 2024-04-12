@@ -3,9 +3,10 @@ from celery import shared_task # these are @task decorators
 from django_celery_results.models import TaskResult
 from django.conf import settings
 from django.core import mail
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import EmailMultiAlternatives, EmailMessage
 from django.db import transaction, connection
-from django.db.models import Q, Count
+from django.db.models import Sum # import Q, Count
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
