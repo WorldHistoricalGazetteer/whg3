@@ -2383,10 +2383,10 @@ class DatasetSummaryView(LoginRequiredMixin, UpdateView):
     if file.df_status == 'format_ok':
       print('format_ok , inserting dataset ' + str(id_))
       if file.format == 'delimited':
-        result = ds_insert_tsv(self.request, id_)
+        result = ds_insert_delim(self.request, id_)
         print('tsv result', result)
       else:
-        result = ds_insert_lpf(self.request, id_)
+        result = ds_insert_json(self.request, id_)
         print('lpf result', result)
       print('ds_insert_xxx() result', result)
       ds.numrows = result['numrows']

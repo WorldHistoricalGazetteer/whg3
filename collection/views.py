@@ -589,6 +589,7 @@ def save_component_data(coll, component, headword, geometry, place_types):
   print('saving component data for collection:', coll)
   pass
 
+
 """
   removes dataset from collection
   clean up "omitted"; refreshes page
