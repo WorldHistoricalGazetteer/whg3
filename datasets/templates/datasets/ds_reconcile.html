@@ -6,304 +6,340 @@
 
 {% block extra_head %}
   <script src="{% static 'js/aliases.js' %}"></script>
-{#  <script src="{% static 'css/spin.css' %}"></script>#}
+  {#  <script src="{% static 'css/spin.css' %}"></script>#}
 {% endblock %}
 
 {% block title %}<title>Dataset::{{ ds.label }}</title>{% endblock %}
 
 {% block content %}
-<div id="dataset_content" class="container mt-1 px-1">
-  <ul id="dataset_tabs" class="nav nav-tabs" role="tablist">
-      <span class="ds-title ms-1 me-3">{{ ds.title }}</span>
+  <div id="dataset_content" class="container mt-1 px-1">
+    <ul id="dataset_tabs" class="nav nav-tabs" role="tablist">
       <li class="nav-item">
-          <a class="nav-link" id="summary-tab" data-link="summary" href="{% url 'datasets:ds_summary' id=ds.id %}" role="tab" aria-controls="summary" aria-selected="false">Metadata</a>
+          <a class="nav-link" id="summary-tab" data-link="summary" href="{% url 'datasets:ds_summary' id=ds.id %}"
+             role="tab" aria-controls="summary" aria-selected="false">Dataset Summary</a>
       </li>
       <li class="nav-item">
-          <a class="nav-link" id="browse-tab" href="{% url 'datasets:ds_browse' id=ds.id %}" role="tab" aria-controls="browse" aria-selected="false">Browse</a>
+        <a class="nav-link" id="browse-tab" href="{% url 'datasets:ds_browse' id=ds.id %}" role="tab"
+           aria-controls="browse" aria-selected="false">Browse</a>
       </li>
       <li class="nav-item">
-          <a class="nav-link active" id="reconciliation-tab" href="#" role="tab" aria-controls="reconciliation" aria-selected="true">Linking</a>
+        <a class="nav-link active" id="reconciliation-tab" href="#" role="tab" aria-controls="reconciliation"
+           aria-selected="true">Linking</a>
       </li>
       <li id="addtask_li" class="nav-item hidden">
-          <a class="nav-link" id="addtask-tab" href="" role="tab" aria-controls="addtask" aria-selected="false">Add task</a>
+        <a class="nav-link" id="addtask-tab" href="" role="tab" aria-controls="addtask" aria-selected="false">Add
+          task</a>
       </li>
       <li class="nav-item">
-          <a class="nav-link" id="sharing-tab" href="{% url 'datasets:ds_collab' id=ds.id %}" role="tab" aria-controls="sharing" aria-selected="false">Collaborators</a>
+        <a class="nav-link" id="metadata-tab" data-link="summary" href="{% url 'datasets:ds_metadata' id=ds.id %}"
+           role="tab" aria-controls="metadata" aria-selected="false">Metadata</a>
       </li>
       <li class="nav-item">
-          <a class="nav-link" id="log-tab" data-link="log" href="{% url 'datasets:ds_log' id=ds.id %}" role="tab" aria-controls="log" aria-selected="false">Log & Comments</a>
+        <a class="nav-link" id="sharing-tab" href="{% url 'datasets:ds_collab' id=ds.id %}" role="tab"
+           aria-controls="sharing" aria-selected="false">Collaborators</a>
       </li>
-  </ul>
-  <div class="tab-content">
-    <div id="reconciliation" class="tab-pane fade show active " role="tabpanel" aria-labelledby="reconciliation-tab">
-      <mark id="ds_tasks" class="small">
-        <h6 class="">Reconciliation Tasks 
-          <span class="small help-matches" data-id="reconciliation">
+      <li class="nav-item">
+        <a class="nav-link" id="log-tab" data-link="log" href="{% url 'datasets:ds_log' id=ds.id %}" role="tab"
+           aria-controls="log" aria-selected="false">Log & Comments</a>
+      </li>
+    </ul>
+    <div class="tab-content">
+      <div id="reconciliation" class="tab-pane fade show active " role="tabpanel" aria-labelledby="reconciliation-tab">
+        <div class="fs-5 mb-2">{{ ds.title }}</div>
+{#        <mark id="ds_tasks" class="small">#}
+          <h6 class="">Reconciliation Tasks
+            <span class="small help-matches" data-id="reconciliation">
             <i class="fas fa-question-circle linkypop"></i>
           </span>
-          {% comment %}who can add a task{% endcomment %}
-          {% if user.is_superuser or user in ds.owners %}
-            <span class="ms-4 small">
-            <a id="addtask_link" href="{% url 'datasets:ds_addtask' id=ds.id %}">Add new task <i class="fas fa-plus-square linky"></i></a>
+            {% comment %}who can add a task{% endcomment %}
+            {% if user.is_superuser or user in ds.owners %}
+              <span class="ms-4 small">
+            <a id="addtask_link" href="{% url 'datasets:ds_addtask' id=ds.id %}">Add new task <i
+              class="fas fa-plus-square linky"></i></a>
             </span>
+            {% endif %}
+          </h6>
+          {% if not messages and tasks|length < 1 %}
+            <p>Linking in WHG is the activity of matching records from one dataset with "close matches" in another, in a
+              method called
+              <sr>reconciliation</sr>
+              or
+              <sr>alignment</sr>
+              . It can also accomplish geocoding of place names for many records that are missing location.
+              Reconciliation tasks can be performed against our local
+              <sr>Wikidata</sr>
+              index. Fully accessioning data to WHG involves the further step of reconciling against our "union index."
+            </p>
           {% endif %}
-        </h6>
-        {% if not messages and tasks|length < 1 %}
-	        <p>Linking in WHG is the activity of matching records from one dataset with "close matches" in another, in a method called <sr>reconciliation</sr> or <sr>alignment</sr>. It can also accomplish geocoding of place names for many records that are missing location. Reconciliation tasks can be performed against our local <sr>Wikidata</sr> index. Fully accessioning data to WHG involves the further step of reconciling against our "union index."</p>
-        {% endif %}
-        {% if user in ds.owners or user in ds.collaborators or user.is_superuser %}
-	        {% if ds.ds_status == 'indexed' %}
-		        <div id="ready" class="hidden ps-2">
-	            <p class="my-0">This dataset has been fully indexed</p>
-		        </div>
-	        {% endif %}
-	        <!-- if already reconciled, notify need for new task -->
-	        {% if ds.ds_status == 'updated' and ds.recon_status %}
-		        <p class="larger my-0 py-0 strong-red">This dataset has been updated, so a new reconciliation to Wikidata task should be run.
-			        Only new and/or modified rows will be submitted.</p>
-	        {% endif %}
-	        {% if not ds.ds_status == 'accessioning' %}
-	          <div id="ready" class="hidden ps-2">
-	            <p class="my-0">All potential matches to <span id="authtag"></span> have been reviewed,
-		            so the dataset may be ready for accessioning to the WHG index.</p>
-	            <p class="my-0">If you would like to proceed, please <a class="btn btn-success btn-sm text-light py-0" href="{% url 'contact' %}">contact our editorial team.</a></p>
-	          </div>
-	        {% endif %}
+          {% if user in ds.owners or user in ds.collaborators or user.is_superuser %}
+            {% if ds.ds_status == 'indexed' %}
+              <div id="ready" class="hidden ps-2">
+                <p class="my-0">This dataset has been fully indexed</p>
+              </div>
+            {% endif %}
+            <!-- if already reconciled, notify need for new task -->
+            {% if ds.ds_status == 'updated' and ds.recon_status %}
+              <p class="larger my-0 py-0 strong-red">This dataset has been updated, so a new reconciliation to Wikidata
+                task should be run.
+                Only new and/or modified rows will be submitted.</p>
+            {% endif %}
+            {% if not ds.ds_status == 'accessioning' %}
+              <div id="ready" class="hidden ps-2">
+                <p class="my-0">All potential matches to <span id="authtag"></span> have been reviewed,
+                  so the dataset may be ready for accessioning to the WHG index.</p>
+                <p class="my-0">If you would like to proceed, please <a class="btn btn-success btn-sm text-light py-0"
+                                                                        href="{% url 'contact' %}">contact our editorial
+                  team.</a></p>
+              </div>
+            {% endif %}
 
-          {% if tasks|length < 1 %}<i id="none_yet">None yet...</i>{% endif %}
-          {% if messages %}<div>
-            {% for message in messages %}
-              {% if message.level == 20 %}
-              <p class="larger mb-2 strong">{{ message|safe }}</p>
-              {% endif %}
-            {% endfor %}</div>
-          {% endif %}        
-          {% for t in tasks %}
-            {% if t.status == 'SUCCESS' %}
-	            {% with t.task_kwargs|parsetest:"test" as test %}
-              <div class="{% if test == 'on' %}task-box-test{% else %}task-box{% endif %} mb-2 ">
-                <div class="row ">
-                  <div class="col-sm-4">
-                    <p><b>Task</b>: {{ t.task_name }} <span class="small">
+            {% if tasks|length < 1 %}<i id="none_yet">None yet...</i>{% endif %}
+            {% if messages %}
+              <div>
+                {% for message in messages %}
+                  {% if message.level == 20 %}
+                    <p class="larger mb-2 strong">{{ message|safe }}</p>
+                  {% endif %}
+                {% endfor %}</div>
+            {% endif %}
+            {% for t in tasks %}
+              {% if t.status == 'SUCCESS' %}
+                {% with t.task_kwargs|parsetest:"test" as test %}
+                  <div class="{% if test == 'on' %}task-box-test{% else %}task-box{% endif %} mb-2 ">
+                    <div class="row ">
+                      <div class="col-sm-4">
+                        <p><b>Task</b>: {{ t.task_name }} <span class="small">
                       ({{ t.date_done|date:"d-M-Y, H:i (e)" }}; elapsed: {{ t.result|get:"elapsed"|safe }})</span>
-                    </p>
-                    <p><b>ID</b>: {{ t.task_id }}</p>
-                  {% if t.task_name != 'align_idx' and user in ds.owners or user.is_superuser or test == 'on'%}
-	                  {% comment %}{% if t.task_name != 'align_idx' and user in ds.owners %}{% endcomment %}
-                      <p id="{{ t.task_name }}">
-                      <a class="confirm-del-all" data-id={{t.task_id}} href="{% url 'datasets:task-delete' tid=t.task_id scope='task' %}">Delete task & hits, clear matches <i class="fas fa-trash linkyred"></i></i>
-                      </a><br/>
-                      <a class="confirm-del-geoms" href="{% url 'datasets:task-delete' tid=t.task_id scope='geoms'%}">
-                        Delete geometries added so far</a>
-	                    </p>
-	                  {% endif %}
-                  </div>
-                  <div class="col-sm-6">
-                    <p>
-	                    <b>Result</b>: {{ t.result|get:"got_hits"|safe }} of the {{ t.result|get:"count"|safe }}
-	                      records got <b>{{ t.result|get:"total_hits"|safe }}</b> hits in total;
-	                    {% if t.task_name == 'align_idx' %}
-		                    {% with gothits=t.result|get:"got_hits" %}
-			                    {% if test != 'on' %}
-			                      {{ t.result|get:"count"|subtract:gothits}} were indexed automatically
-			                    {% else %}<br/>
-			                      <span class="text-danger italic">
-				                      {{ t.result|get:"count"|subtract:gothits}} would have been indexed automatically</span>.
-			                    {% endif %}
-		                    {% endwith %}
-	                    {% endif %}
-                    </p>
-                    <p class="mb-0">Remaining to review:
-											{# display total remaining only to owners #}
-	                    {% if user in ds.owners or user.is_staff %}<span id="{{t.task_id}}_remaining">nn</span>{% endif %}
-                    </p>
-                    <span id="spinner"></span>
-                    <ul>
-                      {% if t.result|get:"pass0" > 0 and t.task_name != "align_idx" %}
-	                      {% if user in ds.owners or user.is_staff  %}
-                        <li id="pass0_{{t.task_id}}" class="li-left">Pass 0 (matched links):
-                        <span class="mx-2 strong" id='{{t.task_id}}_0'>nn</span>
-                            <a href="{% url 'datasets:review' pk=ds.id tid=t.task_id passnum='pass0' %}">review</a>
-                            {# auto-accept only for wikidata #}
-                            {% if t.task_name == 'align_wdlocal'%}
-                                 <span class="pass0auto">
+                        </p>
+                        <p><b>ID</b>: {{ t.task_id }}</p>
+                        {% if t.task_name != 'align_idx' and user in ds.owners or user.is_superuser or test == 'on' %}
+                          {% comment %}{% if t.task_name != 'align_idx' and user in ds.owners %}{% endcomment %}
+                          <p id="{{ t.task_name }}">
+                            <a class="confirm-del-all"
+                               data-id={{ t.task_id }} href="{% url 'datasets:task-delete' tid=t.task_id scope='task' %}">Delete
+                              task & hits, clear matches <i class="fas fa-trash linkyred"></i></i>
+                            </a><br/>
+                            <a class="confirm-del-geoms"
+                               href="{% url 'datasets:task-delete' tid=t.task_id scope='geoms' %}">
+                              Delete geometries added so far</a>
+                          </p>
+                        {% endif %}
+                      </div>
+                      <div class="col-sm-6">
+                        <p>
+                          <b>Result</b>: {{ t.result|get:"got_hits"|safe }} of the {{ t.result|get:"count"|safe }}
+                          records got <b>{{ t.result|get:"total_hits"|safe }}</b> hits in total;
+                          {% if t.task_name == 'align_idx' %}
+                            {% with gothits=t.result|get:"got_hits" %}
+                              {% if test != 'on' %}
+                                {{ t.result|get:"count"|subtract:gothits }} were indexed automatically
+                              {% else %}<br/>
+                                <span class="text-danger italic">
+				                      {{ t.result|get:"count"|subtract:gothits }} would have been indexed automatically</span>.
+                              {% endif %}
+                            {% endwith %}
+                          {% endif %}
+                        </p>
+                        <p class="mb-0">Remaining to review:
+                          {# display total remaining only to owners #}
+                          {% if user in ds.owners or user.is_staff %}
+                            <span id="{{ t.task_id }}_remaining">nn</span>{% endif %}
+                        </p>
+                        <span id="spinner"></span>
+                        <ul>
+                          {% if t.result|get:"pass0" > 0 and t.task_name != "align_idx" %}
+                            {% if user in ds.owners or user.is_staff %}
+                              <li id="pass0_{{ t.task_id }}" class="li-left">Pass 0 (matched links):
+                                <span class="mx-2 strong" id='{{ t.task_id }}_0'>nn</span>
+                                <a href="{% url 'datasets:review' pk=ds.id tid=t.task_id passnum='pass0' %}">review</a>
+                                {# auto-accept only for wikidata #}
+                                {% if t.task_name == 'align_wdlocal' %}
+                                  <span class="pass0auto">
                                     | <a href="{% url 'datasets:wd_pass0' tid=t.task_id %}">auto-accept</a>
                                 </span>
-                                <span class="help-matches" data-id="auto-match">
+                                  <span class="help-matches" data-id="auto-match">
                                  <i class="fas fa-question-circle linkypop"></i>
                                 </span>
+                                {% endif %}
+                              </li>
                             {% endif %}
-                         </li>
-	                      {% endif %}
-                      {% elif t.task_name == "align_idx" %}
-	                      <li class="li-left">Passes 0, 1:
-                          <span class="strong mx-2" id='{{t.task_id}}_1'>nn</span>
-                          <a href="{% url 'datasets:review' pk=ds.id tid=t.task_id passnum='0and1' %}">review</a>
-                      {% endif %}
+                          {% elif t.task_name == "align_idx" %}
+                            <li class="li-left">Passes 0, 1:
+                            <span class="strong mx-2" id='{{ t.task_id }}_1'>nn</span>
+                            <a href="{% url 'datasets:review' pk=ds.id tid=t.task_id passnum='0and1' %}">review</a>
+                          {% endif %}
 
-                      {% if t.result|get:"pass1" > 0 and t.task_name != "align_idx"%}
-	                      <li class="li-left">Pass 1:
-                          <span class="strong mx-2" id='{{t.task_id}}_1'>nn</span>
-                          <a href="{% url 'datasets:review' pk=ds.id tid=t.task_id passnum='pass1' %}">review</a>
-                        </li>
-                      {% endif %}
+                          {% if t.result|get:"pass1" > 0 and t.task_name != "align_idx" %}
+                            <li class="li-left">Pass 1:
+                              <span class="strong mx-2" id='{{ t.task_id }}_1'>nn</span>
+                              <a href="{% url 'datasets:review' pk=ds.id tid=t.task_id passnum='pass1' %}">review</a>
+                            </li>
+                          {% endif %}
 
-                      {% if t.result|get:"pass2" > 0 %}
-                        <li class="li-left">Pass 2: 
-                        <span class="strong mx-2" id='{{t.task_id}}_2'>nn</span> 
-                        <a href="{% url 'datasets:review' pk=ds.id tid=t.task_id passnum='pass2' %}">review</a>
-                        </li>
-                      {% endif %}
-                      
-                      {% if t.result|get:"pass3" > 0 %} <!-- only TGN has pass3 -->
-                        <li class="li-left">Pass 3: <span class="strong mx-2" id='{{t.task_id}}_3'>nn</span> 
-                        <a href="{% url 'datasets:review' pk=ds.id tid=t.task_id passnum='pass3' %}">review</a></li>
-                      {% endif %}
-                      
-                      <li class="li-left">Deferred: 
-                        <span class="strong mx-2 hidden" id='{{t.task_id}}_def'>
+                          {% if t.result|get:"pass2" > 0 %}
+                            <li class="li-left">Pass 2:
+                              <span class="strong mx-2" id='{{ t.task_id }}_2'>nn</span>
+                              <a href="{% url 'datasets:review' pk=ds.id tid=t.task_id passnum='pass2' %}">review</a>
+                            </li>
+                          {% endif %}
+
+                          {% if t.result|get:"pass3" > 0 %} <!-- only TGN has pass3 -->
+                            <li class="li-left">Pass 3: <span class="strong mx-2" id='{{ t.task_id }}_3'>nn</span>
+                              <a href="{% url 'datasets:review' pk=ds.id tid=t.task_id passnum='pass3' %}">review</a>
+                            </li>
+                          {% endif %}
+
+                          <li class="li-left">Deferred:
+                            <span class="strong mx-2 hidden" id='{{ t.task_id }}_def'>
                         &nbsp;<a href="{% url 'datasets:review' pk=ds.id tid=t.task_id passnum='def' %}">review</a>
                         </span>
-                      </li>
-                    </ul>
-                  </div>
-                  <div id="task_logo" class="col-sm-2">
-                    {% if t.task_name == 'align_wdlocal' %}
-                      <img src="{% static 'images/wikidata-logo-local.png'%}" width="80"/>
-                    {% elif t.task_name == 'align_idx' and test != "on" %}
-                      `<img src="{% static 'images/whg_accessioning.svg'%}" width="80"/>`
-                    {% else %}
-                      <img src="{% static 'images/whg_aligning.svg'%}" width="80"/>
-                    {% endif %}
-                  </div>
-                </div> <!-- row -->
-              </div> <!-- task-box -->
-	            {% endwith %}
-            {% endif %}
-          {% endfor %}
-        {% endif %}
+                          </li>
+                        </ul>
+                      </div>
+                      <div id="task_logo" class="col-sm-2">
+                        {% if t.task_name == 'align_wdlocal' %}
+                          <img src="{% static 'images/wikidata-logo-local.png' %}" width="80"/>
+                        {% elif t.task_name == 'align_idx' and test != "on" %}
+                          `<img src="{% static 'images/whg_accessioning.svg' %}" width="80"/>`
+                        {% else %}
+                          <img src="{% static 'images/whg_aligning.svg' %}" width="80"/>
+                        {% endif %}
+                      </div>
+                    </div> <!-- row -->
+                  </div> <!-- task-box -->
+                {% endwith %}
+              {% endif %}
+            {% endfor %}
+          {% endif %}
       </div> <!-- #ds_tasks -->
     </div> <!-- #reconciliation -->
   </div> <!-- .tab-content -->
-</div> <!-- #dataset_content -->
+  </div> <!-- #dataset_content -->
 
-<script type="text/javascript">
-  // activate all
-  // tooltips
-  $("[data-bs-toggle='tooltip']").tooltip();
+  <script type="text/javascript">
+    // activate all
+    // tooltips
+    $('[data-bs-toggle=\'tooltip\']').tooltip();
 
-  spin_opts = { scale: .5, top: '50%'}
-  function startCountsSpinner(){
-    window.spinner_counts = new Spin.Spinner(spin_opts).spin();
-    $("#spinner").append(spinner_counts.el);   
-  }
-  
-  // on page load
-  $(function(){
-    startCountsSpinner()
-    
-    updateTotals('{{ ds.id }}')
-    if('{{ status }}' == 'updating'){
-      {#console.log('{{ status }}','{{ context }}')#}
-      $("#ds_info").addClass('hidden')
-      $("#ds_updating").removeClass('hidden')
-      $("#div_file").toggleClass('border-red')
-      $(".update-msg").removeClass('hidden')
+    spin_opts = {scale: .5, top: '50%'};
+
+    function startCountsSpinner() {
+      window.spinner_counts = new Spin.Spinner(spin_opts).spin();
+      $('#spinner').append(spinner_counts.el);
     }
-    
-    // generic help load
-    $(".help-matches").click(function(){
-      page=$(this).data('id')
-      {#console.log('help:', page)#}
-      $('.selector').dialog('open');
-    })
-    
-    $(".selector").dialog({
-      resizable: false,
-      autoOpen: false,
-      height: 500,
-      width: 700,
-      title: "WHG Help",
-      modal: true,
-      buttons: { 'Close': function() {console.log('close dialog'); $(this).dialog('close');} },
-      open: function(event, ui) {
-        $('#helpme').load('/media/help/'+page+'.html')
-      },
-      show: {effect: "fade",duration: 400 },
-      hide: {effect: "fade",duration: 400 }
+
+    // on page load
+    $(function() {
+      startCountsSpinner();
+
+      updateTotals('{{ ds.id }}');
+      if ('{{ status }}' == 'updating') {
+        {#console.log('{{ status }}','{{ context }}')#}
+        $('#ds_info').addClass('hidden');
+        $('#ds_updating').removeClass('hidden');
+        $('#div_file').toggleClass('border-red');
+        $('.update-msg').removeClass('hidden');
+      }
+
+      // generic help load
+      $('.help-matches').click(function() {
+        page = $(this).data('id');
+        {#console.log('help:', page)#}
+        $('.selector').dialog('open');
+      });
+
+      $('.selector').dialog({
+        resizable: false,
+        autoOpen: false,
+        height: 500,
+        width: 700,
+        title: 'WHG Help',
+        modal: true,
+        buttons: {
+          'Close': function() {
+            console.log('close dialog');
+            $(this).dialog('close');
+          },
+        },
+        open: function(event, ui) {
+          $('#helpme').load('/media/help/' + page + '.html');
+        },
+        show: {effect: 'fade', duration: 400},
+        hide: {effect: 'fade', duration: 400},
+      });
     });
-  })
-  // updates task card totals
-  function updateTotals(dsid){
-    {#console.log("admin? {{ user|has_group:'admin' }}")#}
-    $.get("/datasets/updatecounts",{ds_id: dsid},
-      function(data){
-        updates=Object.entries(data)
-        for(u in updates){
-          tid = updates[u][0]
-          counts = updates[u][1]
-          task = updates[u][1]['task']
-          console.log('updateTotals() counts', task, counts)
-          ds_status = "{{ ds.ds_status }}"
-          // if all are reviewed, disable radio button
-          if(counts['total'] == 0 ){
-            $('.'+task).css('border', '2px dashed darkseagreen')
-	          $("#authtag").html(task=='align_tgn'?'Getty TGN':'Wikidata')
-	          if(task == 'align_wdlocal' && ds_status != 'updated'){
-	            $("#ready").removeClass("hidden")
-	          }
-          }
-          
-          $("#"+tid+'_remaining').html(counts['total'])
-          $("#"+tid+'_0').html(counts['pass0'])
-	        running_count = (counts['total']-counts['deferred'])
-          if(task=='align_idx'){
-            $("#"+tid+'_1').html(counts['total']-counts['deferred'])
-          }
-          else {
-            $("#"+tid+'_1').html(counts['pass1'])
-          }
-          $("#"+tid+'_2').html(counts['pass2'])
-          $("#"+tid+'_3').html(counts['pass3'])
-          
-          // hide 'review' link if count is 0
-          // hide 'auto-accept' if it's pass0
-          Object.keys(counts).forEach(function(key) {
-	          {#console.log('key, counts', key, counts[key])#}
-            if(key.startsWith('pass') && counts[key] == 0){
-              // console.log('foo:', "#"+tid+'_'+key.slice(-1))
-	            if(task=='align_idx'){
-                $("#"+tid+'_'+key.slice(-1)).addClass('hidden')
-	            } else {
-			          $("#"+tid+'_'+key.slice(-1)).next().addClass('hidden')
-	            }
-              if(key == 'pass0'){
-                foo = "#pass0_"+tid+" .pass0auto"
-                $(foo).hide()
+
+    // updates task card totals
+    function updateTotals(dsid) {
+      {#console.log("admin? {{ user|has_group:'admin' }}")#}
+      $.get('/datasets/updatecounts', {ds_id: dsid},
+        function(data) {
+          updates = Object.entries(data);
+          for (u in updates) {
+            tid = updates[u][0];
+            counts = updates[u][1];
+            task = updates[u][1]['task'];
+            console.log('updateTotals() counts', task, counts);
+            ds_status = "{{ ds.ds_status }}";
+            // if all are reviewed, disable radio button
+            if (counts['total'] == 0) {
+              $('.' + task).css('border', '2px dashed darkseagreen');
+              $('#authtag').html(task == 'align_tgn' ? 'Getty TGN' : 'Wikidata');
+              if (task == 'align_wdlocal' && ds_status != 'updated') {
+                $('#ready').removeClass('hidden');
               }
             }
-          })
-          
-          if (counts['deferred'] > 0) {
-            //console.log('got deferred',counts['deferred'] )
-            $("#"+tid+'_def').html(counts['deferred']+$("#"+tid+'_def').html())
-            $("#"+tid+'_def').removeClass('hidden')
-          } else {
-            $("#"+tid+'_def').html('none') 
-            $("#"+tid+'_def').removeClass('hidden')
+
+            $('#' + tid + '_remaining').html(counts['total']);
+            $('#' + tid + '_0').html(counts['pass0']);
+            running_count = (counts['total'] - counts['deferred']);
+            if (task == 'align_idx') {
+              $('#' + tid + '_1').html(counts['total'] - counts['deferred']);
+            } else {
+              $('#' + tid + '_1').html(counts['pass1']);
+            }
+            $('#' + tid + '_2').html(counts['pass2']);
+            $('#' + tid + '_3').html(counts['pass3']);
+
+            // hide 'review' link if count is 0
+            // hide 'auto-accept' if it's pass0
+            Object.keys(counts).forEach(function(key) {
+              {#console.log('key, counts', key, counts[key])#}
+              if (key.startsWith('pass') && counts[key] == 0) {
+                // console.log('foo:', "#"+tid+'_'+key.slice(-1))
+                if (task == 'align_idx') {
+                  $('#' + tid + '_' + key.slice(-1)).addClass('hidden');
+                } else {
+                  $('#' + tid + '_' + key.slice(-1)).next().addClass('hidden');
+                }
+                if (key == 'pass0') {
+                  foo = '#pass0_' + tid + ' .pass0auto';
+                  $(foo).hide();
+                }
+              }
+            });
+
+            if (counts['deferred'] > 0) {
+              //console.log('got deferred',counts['deferred'] )
+              $('#' + tid + '_def').html(counts['deferred'] + $('#' + tid + '_def').html());
+              $('#' + tid + '_def').removeClass('hidden');
+            } else {
+              $('#' + tid + '_def').html('none');
+              $('#' + tid + '_def').removeClass('hidden');
+            }
           }
-        }
-      }
-    ).done(function(){
-      spinner_counts.stop()
-    })
-  }  
-  $(".confirm-del-geoms").click(function(){
-    return confirm('DANGER! Deletes all place_geom records created so far in Review step');
-  })
-  $(".confirm-del-all").click(function(){
-    id=$(this).data('id')
-    return confirm('DANGER! Destroys task, its hits, and clears matches confirmed in Review step...'+id);
-  })
-</script>
+        },
+      ).done(function() {
+        spinner_counts.stop();
+      });
+    }
+
+    $('.confirm-del-geoms').click(function() {
+      return confirm('DANGER! Deletes all place_geom records created so far in Review step');
+    });
+    $('.confirm-del-all').click(function() {
+      id = $(this).data('id');
+      return confirm('DANGER! Destroys task, its hits, and clears matches confirmed in Review step...' + id);
+    });
+  </script>
 {% endblock %}

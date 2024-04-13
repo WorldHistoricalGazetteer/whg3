@@ -26,8 +26,8 @@
   <ul id="dataset_tabs" class="nav nav-tabs" role="tablist">
       <span class="ds-title ms-1 me-3">{{ ds.title }}</span>
       <li class="nav-item">
-          <a class="nav-link" id="summary-tab" href="{% url 'datasets:ds_summary' id=ds.id %}" role="tab"
-             aria-controls="summary" aria-selected="false">Metadata</a>
+          <a class="nav-link" id="summary-tab" data-link="summary" href="{% url 'datasets:ds_summary' id=ds.id %}"
+             role="tab" aria-controls="summary" aria-selected="false">Dataset Summary</a>
       </li>
       <li class="nav-item">
           <a class="nav-link active" id="browse-tab" data-bs-toggle="tab" href="#" role="tab"
@@ -36,6 +36,10 @@
       <li class="nav-item">
           <a class="nav-link" id="reconciliation-tab" href="{% url 'datasets:ds_reconcile' id=ds.id %}" role="tab"
              aria-controls="reconciliation" aria-selected="false">Linking</a>
+      </li>
+      <li class="nav-item">
+          <a class="nav-link" id="metadata-tab" href="{% url 'datasets:ds_metadata' id=ds.id %}" role="tab"
+             aria-controls="metadata" aria-selected="false">Metadata</a>
       </li>
       <li class="nav-item">
           <a class="nav-link" id="sharing-tab" href="{% url 'datasets:ds_collab' id=ds.id %}" role="tab"

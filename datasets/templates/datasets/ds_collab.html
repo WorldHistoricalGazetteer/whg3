@@ -10,42 +10,53 @@
 {% block title %}<title>Dataset::{{ ds.label }}</title>{% endblock %}
 
 {% block content %}
-<div id="dataset_content" class="container mt-1 px-1">
-  <ul id="dataset_tabs" class="nav nav-tabs" role="tablist">
-      <span class="ds-title ms-1 me-3">{{ ds.title }}</span>
+  <div id="dataset_content" class="container mt-1 px-1">
+    <ul id="dataset_tabs" class="nav nav-tabs" role="tablist">
       <li class="nav-item">
-          <a class="nav-link" id="summary-tab" data-link="summary" href="{% url 'datasets:ds_summary' id=ds.id %}" role="tab" aria-controls="summary" aria-selected="false">Metadata</a>
+          <a class="nav-link" id="summary-tab" data-link="summary" href="{% url 'datasets:ds_summary' id=ds.id %}"
+             role="tab" aria-controls="summary" aria-selected="false">Dataset Summary</a>
       </li>
       <li class="nav-item">
-          <a class="nav-link" id="browse-tab" href="{% url 'datasets:ds_browse' id=ds.id %}" role="tab" aria-controls="browse" aria-selected="false">Browse</a>
+        <a class="nav-link" id="browse-tab" href="{% url 'datasets:ds_browse' id=ds.id %}" role="tab"
+           aria-controls="browse" aria-selected="false">Browse</a>
       </li>
       <li class="nav-item">
-          <a class="nav-link" id="reconciliation-tab" href="{% url 'datasets:ds_reconcile' id=ds.id %}" role="tab" aria-controls="reconciliation" aria-selected="true">Linking</a>
+        <a class="nav-link" id="reconciliation-tab" href="{% url 'datasets:ds_reconcile' id=ds.id %}" role="tab"
+           aria-controls="reconciliation" aria-selected="true">Linking</a>
       </li>
       <li class="nav-item">
-          <a class="nav-link active" id="collab-tab" href="#" role="tab" aria-controls="sharing" aria-selected="true">Collaborators</a>
+        <a class="nav-link" id="metadata-tab" data-link="metadata" href="{% url 'datasets:ds_metadata' id=ds.id %}"
+           role="tab" aria-controls="metadata" aria-selected="false">Metadata</a>
       </li>
       <li class="nav-item">
-          <a class="nav-link" id="log-tab" data-link="log" href="{% url 'datasets:ds_log' id=ds.id %}" role="tab" aria-controls="log" aria-selected="false">Log & Comments</a>
+        <a class="nav-link active" id="collab-tab" href="#" role="tab" aria-controls="sharing" aria-selected="true">Collaborators</a>
       </li>
-  </ul>
+      <li class="nav-item">
+        <a class="nav-link" id="log-tab" data-link="log" href="{% url 'datasets:ds_log' id=ds.id %}" role="tab"
+           aria-controls="log" aria-selected="false">Log & Comments</a>
+      </li>
+    </ul>
 
-  <div class="tab-content">
-    <div id="collab" class="tab-pane fade show active" role="tabpanel" aria-labelledby="collab-tab">
-      <form id="sharing_form" method="POST" action="{% url 'datasets:collab-add' dsid=ds.id v='2' %}"
-            enctype="multipart/form-data">
-      {% csrf_token %}
-      <div></div>
-      <div class="sharing-box my-3 w-50">
-        <div class="sharing-header mb-0 ps-2 strong">Collaborators</div>
-        <div class="smallish" style="padding-left: .3rem;">
-          <p class="">Collaborators are registered WHG users, assigned per dataset.</p>
-          <p><sr>Members</sr> can view its contents and metadata, and perform review of reconciliation task results.
-	          <br/><sr>Co-owners</sr> can perform all actions.</p>
-        </div>
-        {% if user.is_superuser or user in owners %}
-          <div class="ms-2 my-2">
-            <div class="form-check form-check-inline sharing-input">
+    <div class="tab-content">
+      <div id="collab" class="tab-pane fade show active" role="tabpanel" aria-labelledby="collab-tab">
+        <form id="sharing_form" method="POST" action="{% url 'datasets:collab-add' dsid=ds.id v='2' %}"
+              enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="sharing-box my-3 w-50">
+            <div class="sharing-header mb-0 ps-2 strong">Collaborators</div>
+            <div class="smallish" style="padding-left: .3rem;">
+              <p class="">Collaborators are registered WHG users, assigned per dataset.</p>
+              <p>
+                <sr>Members</sr>
+                can view its contents and metadata, and perform review of reconciliation task results.
+                <br/>
+                <sr>Co-owners</sr>
+                can perform all actions.
+              </p>
+            </div>
+            {% if user.is_superuser or user in owners %}
+              <div class="ms-2 my-2">
+                <div class="form-check form-check-inline sharing-input">
               <span class="input-group"> 
                 <input type="text" class="form-control input-sm" name="email"
                        placeholder="Enter user email">
@@ -53,61 +64,67 @@
                   <button class="btn btn-sm btn-outline-secondary" type="submit">Add</button>
                 </div>
               </span>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input hover" type="radio" name="role" id="r_place" value="member" checked="checked">
-              <label class="form-check-label" for="r_place">Member</label>
-            </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input hover" type="radio" name="role" id="r_trace" value="owner">
-              <label class="form-check-label" for="r_trace">Co-owner</label>
-            </div>
-          </div>
-        {% endif %}
-        <ul id="collabs_list">
-          {% for c in collabs %} 
-            <li>
-              {{ c|safe }} <!-- username, bold -->
-              {% if user.is_superuser or user in owners %}
-                <span class="float-end me-2">
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input hover" type="radio" name="role" id="r_place" value="member"
+                         checked="checked">
+                  <label class="form-check-label" for="r_place">Member</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input hover" type="radio" name="role" id="r_trace" value="owner">
+                  <label class="form-check-label" for="r_trace">Co-owner</label>
+                </div>
+              </div>
+            {% endif %}
+            <ul id="collabs_list">
+              {% for c in collabs %}
+                <li>
+                  {{ c|safe }} <!-- username, bold -->
+                  {% if user.is_superuser or user in owners %}
+                    <span class="float-end me-2">
                 <a href="{% url 'datasets:collab-delete' uid=c.user_id_id dsid=ds.id v='2' %}">
                 <i class="fas fa-times-circle linky"></i></a></span>
-              {% endif %}
-            </li>
-          {% endfor %}
-        </ul>
-      </div>
-      </form>
-    </div> <!-- #collab -->
-  </div> <!-- .tab-content -->
-</div>
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </form>
+      </div> <!-- #collab -->
+    </div> <!-- .tab-content -->
+  </div>
 
-<script type="text/javascript">
-  $(function(){
-    $("#collabs_list a").click(function(){
-    })   
-    $(".help-matches").click(function(){
-      page=$(this).data('id')
-      console.log('help:', page)
-      $('.selector').dialog('open');
-    })
-    $(".selector").dialog({
-      resizable: false,
-      autoOpen: false,
-      height: 500,
-      width: 700,
-      title: "WHG Help",
-      modal: true,
-      buttons: { 'Close': function() {console.log('close dialog'); $(this).dialog('close');} },
-      open: function(event, ui) {
-        $('#helpme').load('/media/help/'+page+'.html')
-      },
-      show: {effect: "fade",duration: 400 },
-      hide: {effect: "fade",duration: 400 }
+  <script type="text/javascript">
+    $(function() {
+      $('#collabs_list a').click(function() {
+      });
+      $('.help-matches').click(function() {
+        page = $(this).data('id');
+        console.log('help:', page);
+        $('.selector').dialog('open');
+      });
+      $('.selector').dialog({
+        resizable: false,
+        autoOpen: false,
+        height: 500,
+        width: 700,
+        title: 'WHG Help',
+        modal: true,
+        buttons: {
+          'Close': function() {
+            console.log('close dialog');
+            $(this).dialog('close');
+          },
+        },
+        open: function(event, ui) {
+          $('#helpme').load('/media/help/' + page + '.html');
+        },
+        show: {effect: 'fade', duration: 400},
+        hide: {effect: 'fade', duration: 400},
+      });
     });
-  })
-  // activate all tooltips
-  $("[data-bs-toggle='tooltip']").tooltip();
+    // activate all tooltips
+    $('[data-bs-toggle=\'tooltip\']').tooltip();
 
-</script>
+  </script>
 {% endblock %}
