@@ -35,7 +35,7 @@ urlpatterns = [
 
   ## MANAGE/VIEW
   # dataset owner pages (tabs); names correspond to template names
-  path('<int:id>/summary', views.DatasetSummaryView.as_view(), name='ds_summary'),
+  path('<int:id>/status', views.DatasetStatusView.as_view(), name='ds_status'),
   path('<int:id>/metadata', views.DatasetMetadataView.as_view(), name='ds_metadata'),
   path('<int:id>/browse', views.DatasetBrowseView.as_view(), name='ds_browse'),
   path('<int:id>/reconcile', views.DatasetReconcileView.as_view(), name='ds_reconcile'),

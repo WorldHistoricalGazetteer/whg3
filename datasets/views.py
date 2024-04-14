@@ -1729,9 +1729,10 @@ def ds_update(request):
 
 
 """
+  DEPRECATED for v3
   ds_compare() refactored 26 Nov 2022 (backup below)
   validates updated dataset file & compares w/existing
-  called by ajax function from modal in ds_summary.html
+  called by ajax function from modal in ds_status.html
   returns json result object 'comparison' for use by ds_update()
 """
 
@@ -2328,20 +2329,20 @@ def match_undo(request, ds, tid, pid):
 """
   returns dataset owner summary page
 """
-class DatasetSummaryView(LoginRequiredMixin, UpdateView):
+class DatasetStatusView(LoginRequiredMixin, UpdateView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
 
   form_class = DatasetDetailModelForm
 
-  template_name = 'datasets/ds_summary.html'
+  template_name = 'datasets/ds_status.html'
 
   def get_object(self):
     id_ = self.kwargs.get("id")
     return get_object_or_404(Dataset, id=id_)
 
   def get_context_data(self, *args, **kwargs):
-    context = super(DatasetSummaryView, self).get_context_data(*args, **kwargs)
+    context = super(DatasetStatusView, self).get_context_data(*args, **kwargs)
 
     id_ = self.kwargs.get("id")
     ds = get_object_or_404(Dataset, id=id_)
@@ -2494,7 +2495,7 @@ class DatasetMetadataView(LoginRequiredMixin, UpdateView):
       ds.save()
       file.save()
 
-    # build context for rendering ds_summary.html
+    # build context for rendering ds_status.html
     me = self.request.user
     placeset = ds.places.all()
 
