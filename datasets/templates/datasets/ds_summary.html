@@ -37,7 +37,7 @@
   <ul id="dataset_tabs" class="nav nav-tabs" role="tablist">
       <li class="nav-item">
           <a class="nav-link active" id="summary-tab" data-link="summary" href=""
-             role="tab" aria-controls="summary" aria-selected="false">Dataset Summary</a>
+             role="tab" aria-controls="summary" aria-selected="false">Dataset Status</a>
       </li>
       <li class="nav-item">
           <a class="nav-link" id="browse-tab" href="{% url 'datasets:ds_browse' id=ds.id %}"
@@ -45,7 +45,7 @@
       </li>
       <li class="nav-item">
           <a class="nav-link" id="reconciliation-tab" href="{% url 'datasets:ds_reconcile' id=ds.id %}"
-             role="tab" aria-controls="reconciliation" aria-selected="false">Linking</a>
+             role="tab" aria-controls="reconciliation" aria-selected="false">Reconciliation</a>
       </li>
       <li class="nav-item">
           <a class="nav-link" id="metadata-tab" data-link="metadata" href="{% url 'datasets:ds_metadata' id=ds.id %}"
@@ -116,12 +116,13 @@
           </div>
           <div id="status_message">
           {% if ds.ds_status == 'uploaded' %}
-            <p>Your dataset is uploaded to the WHG database and so far visible only in this private workspace.
+            <p>Your dataset is uploaded to the WHG database and is visible in this private workspace
+              and its publication preview page only to you and any collaborators you designate.
               Its records can be examined in the table and map under the
               <a href="{% url 'datasets:ds_browse' id=ds.id %}">Browse</a> tab. WHG offers a reconciliation tool
               that aids in finding close matches for your records in our index of Wikidata and GeoNames records.
             </p>
-            <p>Of your <mark>{{ ds.numrows }}</mark> records, <mark>{{ num_geoms }}</mark> have geometries,
+            <p>Of your <mark>{{ numrows }}</mark> records, <mark>{{ num_geoms }}</mark> have geometries,
               and there are <mark>{{ num_names }}</mark> name variants and <mark>{{ num_links }}</mark> links to other
               records among them.
             </p>
@@ -147,7 +148,11 @@
           {% elif ds.ds_status == 'reconciling' %}
             <p>The reconciliation task below has been run and review of its results is in progress. So far,
               candidate matches for <mark>{nn}</mark> records have been reviewed, and <mark>{nn}</mark> remain.</p>
-            <div class="task-box p-1">WDGN reconciliation task</div>
+            <div class="task-box p-1">
+              <p>Wikidata+GeoNames</p>
+                <p>{{ task_wdgn.task_name }} ({{ task_wdgn.task_id }})</p>
+                <p>{{ task_wdgn.result }}</p>
+            </div>
           {% elif ds.ds_status == 'wd-complete' and ds.public %}
             <p>Your dataset has been published! It is now visible to all site visitors in its
               <a href="{% url 'datasets:ds_places' ds.id %}" target="_blank">publication page</a>, and its records are accessible
@@ -162,11 +167,28 @@
           {% elif ds.ds_status == 'accessioning' %}
             <p>Your dataset is already published, and now in the process of accessioning to the WHG "union index,"
               linking individual records with any close matches to records from other datasets already in the index.
-              The accessioning task shown below indicates progress toward completion. Candidate matches for
-              <mark>{nn}</mark> records remain to be reviewed.</p>
-            <p>If you would like to list your dataset on WHG's <a href="">Match Review Contribution Board</a>, please
-              let us know: <a class="btn btn-sm btn-outline-primary" href="">Request review help</a></p>
-            <div class="task-box p-1">WHG union index accessioning task</div>
+              The task detail shown below indicates progress toward completion.</p>
+            <div class="row">
+              <div class="col-8">
+                <p>If you would like to list your dataset on WHG's
+                  <a href="" target="_blank">Match Review Contribution Board</a>, let us know</p>
+              </div>
+              <div class="col-4"><a class="btn btn-sm btn-outline-primary py-1" href="">Request review help</a></div>
+            </div>
+            <div class="task-box p-1">
+              <p class="d-block bg-lightblue ps-1"><b>Accessioning Task</b> ({{ task_idx.task_id|truncatechars:8 }});
+                initiated: {{ task_idx.date_created|date:"d M Y" }}</p> <!--elapsed: nn minutes.-->
+              <p>Of <b>{{ idx_status.rows }}</b> records in this dataset, <b>{{ idx_status.got_hits }}</b>
+                got 1 or more hits, and <b>{{ idx_status.remain }}</b> remain to be reviewed.
+              </p>
+              <p>task id:
+                Passes 0,1: <b class="mx-1">{{ idx_status.remain }}</b>
+                <a href="{% url 'datasets:review' pk=ds.id tid=task_idx.task_id passnum='0and1' %}">review</a>
+                <br/>
+                Deferred: {{ idx_status.deferred }}
+                {% if idx_status.deferred != 'none' %}; <a href="">review</a>{% endif %}
+              </p>
+            </div>
           {% elif ds.ds_status == 'indexed' %}
             <p>Congratulations! Your dataset is now fully accessioned in World Historical Gazetteer, <mark>{n}</mark>
             of its records were linked with records from other datasets, and <mark>{nn}</mark> are for places
@@ -186,7 +208,7 @@
               {% if ds.creator %}<i>Created by</i>: <strong>{{ ds.creator }}</strong>; {% endif %}
               {% if ds.contributors %}Contributed by:<strong>{{ ds.contributors }}</strong>{% endif %}
             </p>
-            <p>{{ form.description.value|trunc_it:300 }}</p>
+            <p>{{ form.description.value|truncatewords:40 }}</p>
             <p>
               {% if ds.image_file %}<strong><a href="/media/{{ form.image_file.value}}">Image file</a></strong>{% endif %}
               {% if ds.pdf %}Essay: <strong>{{ form.pdf.value}}</strong>; {% endif %}

@@ -1296,7 +1296,7 @@ class UpdateCountsView(View):
       pcounts['p0'] = th.filter(query_pass='pass0').values('place_id').distinct().count()
       pcounts['p1'] = th.filter(query_pass='pass1').values('place_id').distinct().count()
       pcounts['p2'] = th.filter(query_pass='pass2').values('place_id').distinct().count()
-      pcounts['p3'] = th.filter(query_pass='pass3').values('place_id').distinct().count()
+      # pcounts['p3'] = th.filter(query_pass='pass3').values('place_id').distinct().count()
       return pcounts
 
     updates={}

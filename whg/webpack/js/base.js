@@ -1,7 +1,8 @@
 // base.js
 
 import { Spinner } from 'spin.js';
-import '../../../static/js/aliases.js'; // /static/js/aliases.js
+// import '../../../static/js/aliases.js'; // /static/js/aliases.js
+import { base_urls } from './aliases.js';
 import '../css/base.css';
 import '../../static/css/styles.css'; // /whg/static/css/styles.css
 import 'spin.js/spin.css';

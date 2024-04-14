@@ -2336,32 +2336,6 @@ class DatasetSummaryView(LoginRequiredMixin, UpdateView):
 
   template_name = 'datasets/ds_summary.html'
 
-  # Dataset has been edited, form submitted
-  def form_valid(self, form):
-    data = form.cleaned_data
-    ds = get_object_or_404(Dataset, pk=self.kwargs.get("id"))
-    dsid = ds.id
-    user = self.request.user
-    file = data['file']
-    filerev = ds.files.all().order_by('-rev')[0].rev
-    # print('DatasetSummaryView kwargs',self.kwargs)
-    print('DatasetSummaryView form_valid() data->', data)
-    if data["file"] == None:
-      print('data["file"] == None')
-      # no file, updating dataset only
-      ds.title = data['title']
-      ds.description = data['description']
-      ds.uri_base = data['uri_base']
-      ds.save()
-    return super().form_valid(form)
-
-  def form_invalid(self, form):
-    print('kwargs', self.kwargs)
-    context = {}
-    print('form not valid; errors:', form.errors)
-    print('cleaned_data', form.cleaned_data)
-    return super().form_invalid(form)
-
   def get_object(self):
     id_ = self.kwargs.get("id")
     return get_object_or_404(Dataset, id=id_)
@@ -2369,36 +2343,55 @@ class DatasetSummaryView(LoginRequiredMixin, UpdateView):
   def get_context_data(self, *args, **kwargs):
     context = super(DatasetSummaryView, self).get_context_data(*args, **kwargs)
 
-    # print('DatasetSummaryView get_context_data() kwargs:',self.kwargs)
-    # print('DatasetSummaryView get_context_data() request.user',self.request.user)
     id_ = self.kwargs.get("id")
     ds = get_object_or_404(Dataset, id=id_)
+    place_count = ds.places.count()
+    wdgn_status = {
+      "rows": place_count,
+      "got_hits": ds.places.exclude(review_wd=None).count(),
+      "reviewed": ds.places.filter(review_wd=1).count(),
+      "remain": ds.places.filter(review_wd=0).count(),
+      "deferred": ds.places.filter(review_wd=2).count(),
+    }
 
-    """
-      when coming from DatasetCreateView() (file.df_status == format_ok)
-      runs ds_insert_tsv() or ds_insert_lpf()
-      using most recent dataset file
-    """
-    file = ds.file
-    if file.df_status == 'format_ok':
-      print('format_ok , inserting dataset ' + str(id_))
-      if file.format == 'delimited':
-        result = ds_insert_delim(self.request, id_)
-        print('tsv result', result)
-      else:
-        result = ds_insert_json(self.request, id_)
-        print('lpf result', result)
-      print('ds_insert_xxx() result', result)
-      ds.numrows = result['numrows']
-      ds.numlinked = result['numlinked']
-      ds.total_links = result['total_links']
-      ds.ds_status = 'uploaded'
-      file.df_status = 'uploaded'
-      file.numrows = result['numrows']
-      ds.save()
-      file.save()
+    idx_status = {
+      "rows": place_count,
+      "got_hits": ds.places.exclude(review_whg=None).count(),
+      "reviewed": ds.places.filter(review_whg=1).count(),
+      "remain": ds.places.filter(review_whg=0).count(),
+      "deferred": ds.places.filter(review_whg=2).count() or 'none',
+    }
 
-    # build context for rendering ds_summary.html
+    context['wdgn_status'] = wdgn_status
+    context['idx_status'] = idx_status
+    def placecounter(th):
+      pcounts={}
+      count0 = th.filter(query_pass='pass0').values('place_id').distinct().count()
+      count1 = th.filter(query_pass='pass1').values('place_id').distinct().count()
+      count2 = th.filter(query_pass='pass2').values('place_id').distinct().count()
+      count0and1 = th.filter(query_pass='pass1, pass0').values('place_id').distinct().count()
+
+      pcounts['p0'] = count0
+      pcounts['p1'] = count1
+      pcounts['p2'] = count2
+      pcounts['p0and1'] = count0and1
+      return pcounts
+
+    # omits FAILURE and ARCHIVED
+    ds_tasks = ds.tasks.exclude(status='FAILURE').exclude(status='ARCHIVED')
+    context['tasks'] = ds_tasks
+    # most recent successful, non-archived task for each type
+    task_wdgn = ds_tasks.filter(task_name__startswith='align_wd').order_by('-date_done').first()
+    context['task_wdgn'] = task_wdgn
+    task_idx = ds_tasks.filter(task_name__startswith='align_idx').order_by('-date_done').first()
+    context['task_idx'] = task_idx
+
+    remaining_wdgn = Hit.objects.filter(task_id=task_wdgn.task_id, reviewed=False)
+    remaining_idx = Hit.objects.filter(task_id=task_idx.task_id, reviewed=False)
+
+    context['wdgn_passes'] = placecounter(remaining_wdgn)
+    context['idx_passes'] = placecounter(remaining_idx)
+
     me = self.request.user
     placeset = ds.places.all()
 
@@ -2409,19 +2402,13 @@ class DatasetSummaryView(LoginRequiredMixin, UpdateView):
     context['is_admin'] = True if me.groups.filter(name__in=['whg_admins']).exists() else False
     context['editorial'] = True if me.groups.filter(name__in=['editorial']).exists() else False
 
-    # excludes datasets w/o an associated DatasetFile
-    if file and hasattr(file, 'file') and os.path.exists(file.file.path):
-      context['current_file'] = file
-      context['format'] = file.format
-      context['numrows'] = file.numrows
-      context['filesize'] = round(file.file.size / 1000000, 1)
-
     # initial (non-task)
     context['num_names'] = PlaceName.objects.filter(place_id__in=placeset).count()
     context['num_links'] = PlaceLink.objects.filter(
       place_id__in=placeset, task_id=None).count()
     context['num_geoms'] = PlaceGeom.objects.filter(
       place_id__in=placeset, task_id=None).count()
+    context['numrows'] = ds.places.count()
 
     # augmentations (has task_id)
     context['links_added'] = PlaceLink.objects.filter(
@@ -2430,8 +2417,7 @@ class DatasetSummaryView(LoginRequiredMixin, UpdateView):
       place_id__in=placeset, task_id__contains='-').count()
 
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
-    context['statuses'] = ['uploaded', 'reconciling', 'wd-complete', 'public', 'accessioning', 'indexed']
-    # print('context from DatasetSummaryView', context)
+
     return context
 
 """
@@ -2822,7 +2808,8 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
           }
       else:
         context['msg_' + auth] = {
-          'msg': "no tasks of this type",
+          # 'msg': "no current tasks of this type",
+          'msg': "",
           'type': 'none'
         }
 
@@ -2834,6 +2821,7 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
     context['region_list'] = predefined
     context['area_list'] = userareas if me.id == 2 else userareas.filter(owner=me)
     context['ds'] = ds
+    context['numrows'] = ds.places.count()
     context['collaborators'] = ds.collabs.all()
     context['owners'] = ds.owners
     context['remain_to_review'] = remaining
