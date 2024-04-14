@@ -63,12 +63,12 @@
 		    <div class="collapse navbar-collapse smallish pt-2" id="navbarSupportedContent">
 	        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 	        <div id="links_home">
-            <span id="version_badge" class="badge text-bg-success">v3.0a</span>
+            <span id="version_badge" class="badge text-bg-success">v3.0 beta</span>
             <span id="beta_links">
               <a href="{% url 'guides:site-guide' %}" class="text-decoration-none">guide</a> |
-              <a href="#" class="feedback text-decoration-none">contact us</a> |
+{#              <a href="#" class="feedback text-decoration-none">contact us</a> |#}
               <a href="https://twitter.com/whgazetteer" target="_blank">
-              <img src="{% static 'images/twitter30h.png'%}" height=14></a>
+{#              <img src="{% static 'images/twitter30h.png'%}" height=14></a>#}
             </span>
 	        </div>
 	        <div id="links_other" class="d-none">
@@ -98,20 +98,24 @@
 {#	            <li class="nav-item">#}
 {#	              <a class="nav-link" href="{% url 'usingapi' %}">API</a>#}
 {#	            </li>#}
-		          <li class="nav-item dropdown">
-		            <a class="nav-link dropdown-toggle" href="#" role="button"
-		               data-bs-toggle="dropdown" aria-expanded="false">
-		            About
-		            </a>
-		            <ul class="dropdown-menu">
-	                <li><a class="dropdown-item" href="{% url 'about' %}">Introduction</a></li>
-	                <li><a class="dropdown-item" href="{% url 'system' %}">System details</a></li>
-	                <li><a class="dropdown-item" href="{% url 'licensing' %}">Licensing, Terms</a></li>
-	                <li><a class="dropdown-item" href="{% url 'credits' %}">Credits & Contacts</a></li>
-	                <li><hr class="dropdown-divider"></li>
-	                <li><a class="dropdown-item" href="http://blog.whgazetteer.org" target="_blank">News</a></li>
-		            </ul>
-		        </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button"
+                   data-bs-toggle="dropdown" aria-expanded="false">
+                  About
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="{% url 'about' %}">About the WHG</a></li>
+                  <li><a class="dropdown-item" href="{% url 'people' %}">People</a></li>
+                  <li><a class="dropdown-item" href="{% url 'partners' %}">Partners</a></li>
+                  <li><a class="dropdown-item" href="{% url 'system' %}">System details</a></li>
+                  <li><a class="dropdown-item" href="{% url 'licensing' %}">Licensing, Terms</a></li>
+                  <li><a class="dropdown-item" href="{% url 'credits' %}">Credits & Contacts</a></li>
+                  <li>
+                    <hr class="dropdown-divider">
+                  </li>
+                  <li><a class="dropdown-item" href="http://blog.whgazetteer.org" target="_blank">News</a></li>
+                </ul>
+              </li>
 		        {% if user.is_authenticated %}
 	            <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">

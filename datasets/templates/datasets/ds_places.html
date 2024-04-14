@@ -41,7 +41,7 @@
         </span>
         {% if user == ds.owner or is_admin %}
           <span class="float-end">
-          <a href="{% url 'datasets:ds_summary' id=ds.id %}">
+          <a href="{% url 'datasets:ds_status' id=ds.id %}">
             edit <i class="fas fa-gear me-3"></i></a>
           </span>
         {% endif %}

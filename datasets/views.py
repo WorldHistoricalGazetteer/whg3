@@ -667,6 +667,7 @@ def review(request, pk, tid, passnum):
                       # "identifier": authid.strip()
                       "identifier": l.strip(),
                     },
+                    reviewer=request.user,
                   )
                   # print('PlaceLink record created',link.jsonb)
                   # update totals
@@ -2387,11 +2388,18 @@ class DatasetStatusView(LoginRequiredMixin, UpdateView):
     task_idx = ds_tasks.filter(task_name__startswith='align_idx').order_by('-date_done').first()
     context['task_idx'] = task_idx
 
-    remaining_wdgn = Hit.objects.filter(task_id=task_wdgn.task_id, reviewed=False)
-    remaining_idx = Hit.objects.filter(task_id=task_idx.task_id, reviewed=False)
+    # remaining_wdgn = Hit.objects.filter(task_id=task_wdgn.task_id, reviewed=False)
+    if task_wdgn is not None:
+      remaining_wdgn = Hit.objects.filter(task_id=task_wdgn.task_id, reviewed=False)
+      context['wdgn_passes'] = placecounter(remaining_wdgn)
+    else:
+      context['wdgn_passes'] = {}
 
-    context['wdgn_passes'] = placecounter(remaining_wdgn)
-    context['idx_passes'] = placecounter(remaining_idx)
+    if task_idx is not None:
+      remaining_idx = Hit.objects.filter(task_id=task_idx.task_id, reviewed=False)
+      context['idx_passes'] = placecounter(remaining_idx)
+    else:
+      context['idx_passes'] = {}
 
     me = self.request.user
     placeset = ds.places.all()

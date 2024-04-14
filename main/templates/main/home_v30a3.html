@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}
-  <title>WHG v3.0a</title>
+  <title>WHG v3.0beta</title>
 {% endblock %}
 
 {% block maplibre %}
@@ -44,19 +44,19 @@
 	              <p my-0><a href="{% url 'accounts:register' %}">Register to get started</a></p>
 	            {% comment %}{% endif %}{% endcomment %}			
 			</div>
-			<div class="border p-2 mb-2 mb-lg-0">
-	            <p class="mb-0 red-head">ANNOUNCEMENTS</p>
-	            <div id="announcement-container" class="mb-0">
-	                {% for announcement in announcements|slice:":3" %}
-	                    <div class="announcement" {% if not forloop.first %}style="display: none;"{% endif %}>
-	                        <a href="{{ announcement.link }}" target="_blank">
-	                          <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
-	                        </a>
-	                        <span class="ms-2">{{ announcement.content }}</span>
-	                    </div>
-	                {% endfor %}
-	            </div>			
-			</div>
+{#			<div class="border p-2 mb-2 mb-lg-0">#}
+{#	            <p class="mb-0 red-head">ANNOUNCEMENTS</p>#}
+{#	            <div id="announcement-container" class="mb-0">#}
+{#	                {% for announcement in announcements|slice:":3" %}#}
+{#	                    <div class="announcement" {% if not forloop.first %}style="display: none;"{% endif %}>#}
+{#	                        <a href="{{ announcement.link }}" target="_blank">#}
+{#	                          <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}#}
+{#	                        </a>#}
+{#	                        <span class="ms-2">{{ announcement.content }}</span>#}
+{#	                    </div>#}
+{#	                {% endfor %}#}
+{#	            </div>			#}
+{#			</div>#}
 		</div>
 		
 		<div class="col-12 col-lg-6 mx-0 p-0">
@@ -82,6 +82,21 @@
 		</div>
 		
 		<div class="col-12 col-lg-3 p-0 mx-0 p-0 full-height-lg">
+
+			<div class="border p-2 mb-2 mb-lg-2 small" style="height: 100px">
+	            <p class="mb-0 red-head">ANNOUNCEMENTS</p>
+	            <div id="announcement-container" class="mb-0">
+	                {% for announcement in announcements|slice:":3" %}
+	                    <div class="announcement" {% if not forloop.first %}style="display: none;"{% endif %}>
+	                        <a href="{{ announcement.link }}" target="_blank">
+	                          <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
+	                        </a>
+	                        <span class="ms-2">{{ announcement.content }}</span>
+	                    </div>
+	                {% endfor %}
+	            </div>
+			</div>
+
 			 <div class="border p-2 mb-2 ms-0 home-button">
 			   <div>
 			     <div class="home-icon-row">

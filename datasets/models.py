@@ -97,7 +97,7 @@ class Dataset(models.Model):
     # return '%d: %s' % (self.id, self.label)
 
   def get_absolute_url(self):
-    return reverse('datasets:ds_summary', kwargs={'id': self.id})
+    return reverse('datasets:ds_status', kwargs={'id': self.id})
 
   @property
   def bounds(self):

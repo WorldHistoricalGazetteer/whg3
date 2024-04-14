@@ -58,7 +58,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
           <a href="{% url 'datasets:ds_places' d.id %}" title="Dataset browse" rel="tooltip">
             {{ d.title }}</a>
           <span class="float-end">
-            <a href="{% url 'datasets:ds_summary' d.id %}">
+            <a href="{% url 'datasets:ds_status' d.id %}">
               <i class="fa fa-edit"></i>
             </a>
           </span>

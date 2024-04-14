@@ -44,7 +44,7 @@ Maps (sg/kg)
 ------------
 - **vis_parameters display options 
 	- basemap choice
-	- options in ds_summary, place_collection_build, 
+	- options in ds_metadata, place_collection_build, 
 			ds_collection_build
 	- time slider or player for place collections
 

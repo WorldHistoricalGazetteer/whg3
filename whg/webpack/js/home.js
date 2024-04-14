@@ -206,8 +206,8 @@ Promise.all([
 		const nextAnnouncement = $(announcements[nextIndex]);
 
 		// Fade out the current announcement and fade in the next
-		currentAnnouncement.fadeOut(500, function() {
-			nextAnnouncement.fadeIn(500);
+		currentAnnouncement.fadeOut(1000, function() {
+			nextAnnouncement.fadeIn(1000);
 		});
 
 		currentIndex = nextIndex;

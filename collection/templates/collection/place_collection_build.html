@@ -475,7 +475,7 @@
                     {% for d in coll_dsset %}
                       <div class="ds_card w-100">
                         <p class="mb-0">
-                          <a href="{% url 'datasets:ds_summary' id=d.id %}">
+                          <a href="{% url 'datasets:ds_status' id=d.id %}">
                             <span class="ds_title">{{ d.title }}</span></a>
                           <small>({{ d.label }}/{{ d.id }})</small>
                         </p>

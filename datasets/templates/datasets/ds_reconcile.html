@@ -15,7 +15,7 @@
   <div id="dataset_content" class="container mt-1 px-1">
     <ul id="dataset_tabs" class="nav nav-tabs" role="tablist">
       <li class="nav-item">
-          <a class="nav-link" id="summary-tab" data-link="summary" href="{% url 'datasets:ds_summary' id=ds.id %}"
+          <a class="nav-link" id="summary-tab" data-link="summary" href="{% url 'datasets:ds_status' id=ds.id %}"
              role="tab" aria-controls="summary" aria-selected="false">Dataset Status</a>
       </li>
       <li class="nav-item">
@@ -152,11 +152,10 @@
                               <li id="pass0_{{ t.task_id }}" class="li-left">Pass 0 (matched links):
                                 <span class="mx-2 strong" id='{{ t.task_id }}_0'>nn</span>
                                 <a href="{% url 'datasets:review' pk=ds.id tid=t.task_id passnum='pass0' %}">review</a>
-                                {# auto-accept only for wikidata #}
                                 {% if t.task_name == 'align_wdlocal' %}
                                   <span class="pass0auto">
                                     | <a href="{% url 'datasets:wd_pass0' tid=t.task_id %}">auto-accept</a>
-                                </span>
+                                  </span>
                                   <span class="help-matches" data-id="auto-match">
                                  <i class="fas fa-question-circle linkypop"></i>
                                 </span>
@@ -231,7 +230,6 @@
     // on page load
     $(function() {
       {#startCountsSpinner();#}
-
       {#updateTotals('{{ ds.id }}');#}
 
       if ('{{ status }}' == 'updating') {
