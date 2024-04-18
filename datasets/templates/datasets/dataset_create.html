@@ -64,7 +64,7 @@
           </tr>
           <tr>
             <td><b>URI base</b> 
-              <a class="pointer" id="uribase_help" data-toggle="popover" title="URI base" 
+              <a class="pointer" id="uribase_help" data-toggle="popover" title="Prefix for source place page url"
                 data-content="" tabindex=98 data-trigger="focus"><i class="fas fa-question-circle linky"></i></a>
             </td>
             <td>{{ form.uri_base }}</td>
@@ -77,11 +77,13 @@
             <td><b>Essay file</b></td>
             <td>{{ form.pdf }}</td>
           </tr>
+          {% comment %}
           <tr>
             <td><b>Public?</b></td>
             <td>{%if form.public == true%}Yes{%endif%}
               <a href="#"><span class="help-matches" data-id="going_public_ds">Making a dataset public. <i class="fas fa-question-circle linky"></i></span></a></td>
           </tr>
+          {% endcomment %}
           <tr><td class="my-0 small">&#x02733;<i><b> required</b></i></td><td></td></tr>
         </table>
         <hr/><!--<p class="my-0 ms-3">initial file</p>-->

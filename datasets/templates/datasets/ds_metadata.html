@@ -8,9 +8,15 @@
   <script src="{% static 'js/aliases.js' %}"></script>
   <link rel="stylesheet" href="{% static 'css/spin.css' %}"/>
   <script src="{% static 'celery_progress/celery_progress.js' %}"></script>
-{#  <style>#}
-{#    body {font-family: Raleway, san-serif;}#}
-{#  </style>#}
+  <style>
+    .container { max-height: calc(100vh - 110px); }
+    .form-switch { padding-left: 3em;}
+    #ds_details {
+      overflow-y: auto;
+      max-height: calc(100vh - 110px);
+    }
+
+  </style>
 {% endblock %}
 
 {% block title %}<title>Dataset::{{ ds.label }}</title>{% endblock %}
@@ -70,136 +76,136 @@
           </span>
         {% endif %}
         <table class="ds-table">
-          <tr>
-            <td><b>Title</b>
-              <a href="#" class="edit-title"><i class="fas fa-edit linky fa-xs"></i></a>
-            </td>
-            <td>
-              <span class="form-title h6 strong">{{ form.title.value }}</span>
-              <span class="hidden editing-title">{{ form.title }}</span>
-            </td>
-          </tr> <!-- title -->
-          <tr>
-            <td style="vertical-align:top;"><b>Webpage</b>
-              <a href="#" class="edit-webpage"><i class="fas fa-edit linky fa-xs"></i></a>
-            </td>
-            <td>
-              <span class="form-webpage">
-                <a href="{{ form.webpage.value|default_if_none:"..." }}" target="_blank">
-                {{ form.webpage.value|default_if_none:"..." }}</a>
-              </span>
-              <span class="hidden editing-webpage">{{ form.webpage }}</span>&nbsp;
-            </td>
-          </tr> <!-- webpage -->
-          <tr>
-            <td style="vertical-align:top;"><b>Description</b>
-              <a href="#" class="edit-description"><i class="fas fa-edit linky fa-xs"></i></a>
-            </td>
-            <td>
-              <span class="form-description">{{ form.description.value }}</span>
-              <span class="hidden editing-description">{{ form.description }}</span>
-            </td>
-          </tr> <!-- description -->
-          <tr>
-            <td><b>ID / label</b></td>
-            <td>{{ ds.id }} / {{ ds.label }}</td>
-          </tr> <!-- ID/label -->
-          <tr>
-            <td style="vertical-align:top;"><b>Creator(s)</b>
-              <a href="#" class="edit-creator"><i class="fas fa-edit linky fa-xs"></i></a>
-            </td>
-            <td>
-              <span class="form-creator">{{ form.creator.value }}</span>
-              <span class="hidden editing-creator">{{ form.creator }}</span>
-            </td>
-          </tr> <!-- creator -->
-          <tr>
-            <td style="vertical-align:top;"><b>Source(s)</b>
-              <a href="#" class="edit-source"><i class="fas fa-edit linky fa-xs"></i></a>
-            </td>
-            <td>
-              <span class="form-source">{{ form.source.value|default_if_none:"..." }}</span>
-              <span class="hidden editing-source">{{ form.source }}</span>
-            </td>
-          </tr> <!-- source(s) -->
-          <tr>
-            <td style="vertical-align:top;"><b>Contributors</b>
-              <a href="#" class="edit-contrib"><i class="fas fa-edit linky fa-xs"></i></a>
-            </td>
-            <td>
-              <span class="form-contrib">{{ form.contributors.value|default_if_none:"..." }}</span>
-              <span class="hidden editing-contrib">{{ form.contributors }}</span>
-            </td>
-          </tr> <!-- contributor(s) -->
-          <tr>
-            <td style="vertical-align:top;"><b>Citation</b>
-              <a href="#" class="edit-citation"><i class="fas fa-edit linky fa-xs"></i></a>
-            </td>
-            <td>
-              <span class="form-citation">{{ form.citation.value|default_if_none:"..." }}</span>
-              <span class="hidden editing-citation">{{ form.citation }}</span>
-            </td>
-          </tr> <!-- citation -->
-          <tr>
-            <td style="vertical-align:top;">
-              <b>Public?</b>
-              {% if editorial %}
-                <a href="#" class="edit-public"><i class="fas fa-edit linky fa-xs"></i></a>
-              {% endif %}
-            </td>
-            <td>
-              <span class="form-public">{{ form.public.value }}</span>
-              <span class="hidden editing-public">{{ form.public }}</span>
-
-              {% if not editorial and ds.public == False %}
-                  <a href="#"><span class="help-matches" data-id="going_public_ds">
-                    Details on making a dataset public. <i class="fas fa-question-circle linky"></i>
-                  </span></a>
-              {% endif %}
-            </td>
-          </tr> <!-- public? -->
-          <tr>
-            <td><b>Dataset status</b></td>
-            <td>{{ ds.ds_status }}</td>
-          </tr> <!-- status -->
-          <tr>
-            <td><b>URI base</b>
-              <a href="#" class="edit-uri_base"><i class="fas fa-edit linky fa-xs"></i></a>
-            </td>
-            <td>
-              <span class="form-uri_base">{{ form.uri_base.value }}</span>
-              <span class="hidden editing-uri_base">{{ form.uri_base }}</span>
-            </td>
-          </tr> <!-- URI base -->
-          <tr>
-            <td style="vertical-align:top;"><b>Image</b>
-              <a href="#" class="edit-image"><i class="fas fa-edit linky fa-xs"></i></a>
-            </td>
-            <td>
-              <span class="form-image">{{ form.image_file.value}}</span>
-              <span class="hidden editing-image">{{ form.image_file }}</span>
-            </td>
-          </tr> <!-- image -->
-          <tr>
-            <td style="vertical-align:top;"><b>Essay file</b>
-              <a href="#" class="edit-pdf"><i class="fas fa-edit linky fa-xs"></i></a>
-            </td>
-            <td>
-              <span class="form-pdf">{{ form.pdf.value}}</span>
-              <span class="hidden editing-pdf">{{ form.pdf }}</span>
-            </td>
-          </tr> <!-- essay file -->
-          {% if user.is_superuser %}
             <tr>
-              <td style="vertical-align:top;"><b>Featured rank</b>
-                <a href="#" class="edit-featured"><i class="fas fa-edit linky fa-xs"></i></a>
+              <td><b>Title</b>
+                <a href="#" class="edit-title"><i class="fas fa-edit linky fa-xs"></i></a>
               </td>
               <td>
-                <span class="form-featured">{{ form.featured.value|default_if_none:"..." }}</span>
-                <span class="hidden editing-featured">{{ form.featured }}</span>
+                <span class="form-title h6 strong">{{ form.title.value }}</span>
+                <span class="hidden editing-title">{{ form.title }}</span>
               </td>
-            </tr>
-          {% endif %} <!-- featured rank -->
+            </tr> <!-- title -->
+            <tr>
+              <td style="vertical-align:top;"><b>Webpage</b>
+                <a href="#" class="edit-webpage"><i class="fas fa-edit linky fa-xs"></i></a>
+              </td>
+              <td>
+                <span class="form-webpage">
+                  <a href="{{ form.webpage.value|default_if_none:"..." }}" target="_blank">
+                  {{ form.webpage.value|default_if_none:"..." }}</a>
+                </span>
+                <span class="hidden editing-webpage">{{ form.webpage }}</span>&nbsp;
+              </td>
+            </tr> <!-- webpage -->
+            <tr>
+              <td style="vertical-align:top;"><b>Description</b>
+                <a href="#" class="edit-description"><i class="fas fa-edit linky fa-xs"></i></a>
+              </td>
+              <td>
+                <span class="form-description">{{ form.description.value }}</span>
+                <span class="hidden editing-description">{{ form.description }}</span>
+              </td>
+            </tr> <!-- description -->
+            <tr>
+              <td><b>ID / label</b></td>
+              <td>{{ ds.id }} / {{ ds.label }}</td>
+            </tr> <!-- ID/label -->
+            <tr>
+              <td style="vertical-align:top;"><b>Creator(s)</b>
+                <a href="#" class="edit-creator"><i class="fas fa-edit linky fa-xs"></i></a>
+              </td>
+              <td>
+                <span class="form-creator">{{ form.creator.value }}</span>
+                <span class="hidden editing-creator">{{ form.creator }}</span>
+              </td>
+            </tr> <!-- creator -->
+            <tr>
+              <td style="vertical-align:top;"><b>Source(s)</b>
+                <a href="#" class="edit-source"><i class="fas fa-edit linky fa-xs"></i></a>
+              </td>
+              <td>
+                <span class="form-source">{{ form.source.value|default_if_none:"..." }}</span>
+                <span class="hidden editing-source">{{ form.source }}</span>
+              </td>
+            </tr> <!-- source(s) -->
+            <tr>
+              <td style="vertical-align:top;"><b>Contributors</b>
+                <a href="#" class="edit-contrib"><i class="fas fa-edit linky fa-xs"></i></a>
+              </td>
+              <td>
+                <span class="form-contrib">{{ form.contributors.value|default_if_none:"..." }}</span>
+                <span class="hidden editing-contrib">{{ form.contributors }}</span>
+              </td>
+            </tr> <!-- contributor(s) -->
+            <tr>
+              <td style="vertical-align:top;"><b>Citation</b>
+                <a href="#" class="edit-citation"><i class="fas fa-edit linky fa-xs"></i></a>
+              </td>
+              <td>
+                <span class="form-citation">{{ form.citation.value|default_if_none:"..." }}</span>
+                <span class="hidden editing-citation">{{ form.citation }}</span>
+              </td>
+            </tr> <!-- citation -->
+            <tr>
+              <td style="vertical-align:top;">
+                <b>Public?</b>
+                {% if editorial %}
+                  <a href="#" class="edit-public"><i class="fas fa-edit linky fa-xs"></i></a>
+                {% endif %}
+              </td>
+              <td>
+                <span class="form-public">{{ form.public.value }}</span>
+                <span class="hidden editing-public">{{ form.public }}</span>
+
+                {% if not editorial and ds.public == False %}
+                    <a href="#"><span class="help-matches" data-id="going_public_ds">
+                      Details on making a dataset public. <i class="fas fa-question-circle linky"></i>
+                    </span></a>
+                {% endif %}
+              </td>
+            </tr> <!-- public? -->
+            <tr>
+              <td><b>Dataset status</b></td>
+              <td>{{ ds.ds_status }}</td>
+            </tr> <!-- status -->
+            <tr>
+              <td><b>URI base</b>
+                <a href="#" class="edit-uri_base"><i class="fas fa-edit linky fa-xs"></i></a>
+              </td>
+              <td>
+                <span class="form-uri_base">{{ form.uri_base.value }}</span>
+                <span class="hidden editing-uri_base">{{ form.uri_base }}</span>
+              </td>
+            </tr> <!-- URI base -->
+            <tr>
+              <td style="vertical-align:top;"><b>Image</b>
+                <a href="#" class="edit-image"><i class="fas fa-edit linky fa-xs"></i></a>
+              </td>
+              <td>
+                <span class="form-image">{{ form.image_file.value}}</span>
+                <span class="hidden editing-image">{{ form.image_file }}</span>
+              </td>
+            </tr> <!-- image -->
+            <tr>
+              <td style="vertical-align:top;"><b>Essay file</b>
+                <a href="#" class="edit-pdf"><i class="fas fa-edit linky fa-xs"></i></a>
+              </td>
+              <td>
+                <span class="form-pdf">{{ form.pdf.value}}</span>
+                <span class="hidden editing-pdf">{{ form.pdf }}</span>
+              </td>
+            </tr> <!-- essay file -->
+            {% if user.is_superuser %}
+              <tr>
+                <td style="vertical-align:top;"><b>Featured rank</b>
+                  <a href="#" class="edit-featured"><i class="fas fa-edit linky fa-xs"></i></a>
+                </td>
+                <td>
+                  <span class="form-featured">{{ form.featured.value|default_if_none:"..." }}</span>
+                  <span class="hidden editing-featured">{{ form.featured }}</span>
+                </td>
+              </tr>
+            {% endif %} <!-- featured rank -->
         </table>
         <input class="btn btn-primary btn-sm hidden btn-ds" type="submit" value="Save" />
         {% if current_file and current_file.df_status != 'dummy' %}
@@ -270,7 +276,8 @@
         <input type="hidden" name="label" value="{{ ds.label }}">
         <input type="hidden" name="format" value="dummy">
         <input type="hidden" name="datatype" value="place">
-      </div>
+      </div> <!-- ds_details -->
+
       <div class="col-sm-5 small">
         <div id="ds_info">
           <div id="ds_stats" class="ds-card">
@@ -295,9 +302,22 @@
 	              {% endif %}
             </table>
           </div>
-          <div id="ds_access" class="pt-0 px-0 ds-card">
-            <p class="ds-card-header">Collaboration</p>
-            <p class="m-0 ps-2 pe-2">This screen and the tasks made available here are initially accessible only to the dataset "owner" - the user who created the record by uploading a dataset file. Dataset owners can then grant "co-owner" and/or "member" permissions to other registered users under the <a href="{% url 'datasets:ds_collab' ds.id %}">Collaborators</a> tab.</p>
+          <div id="ds_options" class="pt-0 px-0 ds-card">
+            <p class="ds-card-header">Options</p>
+            <div class="form-check form-switch">
+              <input id="year_filter" class="form-check-input" type="checkbox">
+              <label class="form-check-label" for="year_filter">Display temporal filter</label>
+              <a href="#"><i class="fas fa-question-circle red-head" data-toggle="popover"
+                             title="Show time slider on publication page"
+                             data-content="Show time slider on publication page"></i></a>
+            </div>
+            <div class="form-check form-switch">
+              <input id="volunteers" class="form-check-input" type="checkbox" {% if ds.volunteers %}checked{% endif %}>
+              <label class="form-check-label" for="review_help_requested">Volunteer help requested</label>
+              <a href="#"><i class="fas fa-question-circle red-head" data-toggle="popover"
+                             title="List on Volunteer Opportunities page"
+                             data-content="List this dataset on 'Volunteer Review Opportunities page"></i></a>
+            </div>
           </div>
           {% if user.is_superuser or user in owners %} <!-- must be or they wouldn't see this! -->
             <div id="ds_downloads" class="pt-0 px-0 ds-card">
@@ -600,6 +620,27 @@
   });
 
   $(function(){
+    $('#volunteers').change(function() {
+      var isChecked = $(this).is(':checked');
+      console.log('volunteers?', isChecked)
+      var datasetId = {{ ds.id }};
+      $.ajax({
+        url: '/datasets/toggle_volunteers',
+        type: 'POST',
+        data: {
+          'is_checked': isChecked,
+          'dataset_id': datasetId,
+          'csrfmiddlewaretoken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+          if (isChecked) {
+            alert('Dataset is now listed as a volunteer opportunity');
+          } else {
+            alert('Dataset is no longer listed as a volunteer opportunity');
+          }
+        }
+      });
+    });
 	  // activate all tooltips
     $("[data-bs-toggle='tooltip']").tooltip();
     $("[data-toggle=popover]").popover({html:true})

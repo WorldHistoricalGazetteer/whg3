@@ -60,6 +60,24 @@ from .utils import *
 es = settings.ES_CONN
 User = get_user_model()
 
+class VolunteeringView(ListView):
+  template_name = 'datasets/volunteering.html'
+  model = Dataset
+
+  def get_queryset(self):
+    qs = super().get_queryset()
+    return qs.filter(volunteers=True).order_by('-create_date')
+
+  def get_context_data(self, *args, **kwargs):
+    context = super(VolunteeringView, self).get_context_data(*args, **kwargs)
+    context['dataset_list'] = context.pop('object_list')
+
+    return context
+
+def volunteer_offer(request, pk):
+  print('volunteer_offer()', pk)
+  pass
+
 # TODO: in use?
 class DatasetGalleryView(ListView):
   redirect_field_name = 'redirect_to'

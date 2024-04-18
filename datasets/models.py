@@ -89,8 +89,10 @@ class Dataset(models.Model):
   numlinked = models.IntegerField(null=True, blank=True)
   total_links = models.IntegerField(null=True, blank=True)
 
-  # should come in handy`
+  # only filter display toggle valid for datasets
   vis_parameters = JSONField(default=dict, null=True, blank=True)
+  # list dataset on volunteers requested page?
+  volunteers = models.BooleanField(default=False)
 
   def __str__(self):
     return self.label

@@ -110,6 +110,23 @@ EMAIL_MESSAGES = {
     'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
     'regards,\nThe WHG project team'
   ),
+  "volunteer_offer_user": (
+    'Hello {volunteer_greeting},\n\n'
+    'Thank you for volunteering to help with reconciliation review for the datawet "{dataset_title}"'
+    ' on the World Historical Gazetteer platform.\n\n'
+    'The dataset owner, {owner_greeting} has been notified and should be in touch soon to discuss how you can help.\n\n'
+    "If you don't hear from them or have any questions, please contact us by replying to this email\n\n"
+    'regards,\nThe WHG project team'
+  ),
+  "volunteer_offer_owner": (
+    'Hello {owner_greeting},\n\n'
+    'The World Historical Gazetteer user {volunteer_greeting} (volunteer_username) has offered to help with '
+    'reconciliation review on your dataset, "{dataset_title}".\n'
+    'You can respond to them at {volunteer_email} or by replying to this email. When mutually agreed, simply add '
+    '{volunteer_username} as a colleborator and they will have the necessary access. \n\n'
+    'We recommend volunteers be made aware of your approach to match decisions before proceeding.\n\n'
+    'regards,\nThe WHG project team'
+  ),
   'download_ready': (
     'Dear {greeting_name},\n\n'
     'Your requested download of "{title}" is ready.\n'

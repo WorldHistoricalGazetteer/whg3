@@ -6,7 +6,8 @@ from django.conf import settings
 
 from . import views
 from datasets.utils import download_file, UpdateCountsView, download_augmented, \
-  fetch_mapdata_ds, fetch_geojson_ds, fetch_geojson_flat, downloadLP7
+  fetch_mapdata_ds, fetch_geojson_ds, fetch_geojson_flat, downloadLP7, \
+  toggle_volunteers
 from datasets.tasks import index_to_builder
 
 # dataset actions
@@ -90,6 +91,13 @@ urlpatterns = [
   ## COLLABORATORS
   # add DatasetUser collaborator
   path('collab-add/<int:dsid>/<str:v>', views.collab_add, name="collab-add"),
+  # list dataset on Volunteer Opportunities page
+  path('toggle_volunteers', toggle_volunteers, name="toggle-volunteers"),
+  # list datasets requesting volunteers
+  path('volunteer_requests/', views.VolunteeringView.as_view(), name="volunteer_requests"),
+  # offer to volunteer
+  path('volunteer_offer/<int:pk>', views.volunteer_offer, name="volunteer-offer"),
+
 
   # delete DatasetUser collaborator
   path('collab-delete/<int:uid>/<int:dsid>/<str:v>', views.collab_delete, name="collab-delete"),

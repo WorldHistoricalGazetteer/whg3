@@ -33,6 +33,101 @@ from main.models import Log
 from places.models import PlaceGeom, Type
 pp = pprint.PrettyPrinter(indent=1)
 
+
+
+def volunteer_offer(request, ds):
+  from utils.emailing import new_emailer
+  volunteer = request.user
+  owner = ds.owner
+
+  # common parameters for both emails
+  common_params = {
+    'from_email': settings.DEFAULT_FROM_EMAIL,
+    'bcc': [settings.DEFAULT_FROM_EDITORIAL],
+    'volunteer_username': volunteer.username,
+    'volunteer_name': volunteer.first_name + ' ' + volunteer.last_name,
+    'volunteer_email': volunteer.email,
+    'volunteer_greeting': volunteer.name if volunteer.name else volunteer.username,
+    'owner_username': volunteer.username,
+    'owner_name': owner.first_name + ' ' + owner.last_name,
+    'owner_email': volunteer.email,
+    'owner_greeting': owner.name if owner.name else owner.username,
+    'dataset_title': ds.title,
+    'dataset_label': ds.label,
+    'dataset_id': ds.id,
+    'editor_email': [settings.DEFAULT_FROM_EDITORIAL]
+  }
+
+  # send email to dataset owner
+  owner_params = common_params.copy()
+  owner_params.update({
+    'email_type': 'volunteer_offer_owner',
+    'subject': 'Volunteer offer for ' + ds.title + ' dataset in WHG',
+    'to_email': [owner.email],
+    'reply_to': [volunteer.email],
+  })
+  new_emailer(**owner_params)
+
+  # return success message
+  user_params = common_params.copy()
+  user_params.update({
+    'email_type': 'volunteer_offer_user',
+    'subject': 'Volunteer offer for ' + ds.title + ' dataset in WHG received',
+    'to_email': [volunteer.email],
+    'reply_to': [settings.DEFAULT_FROM_EDITORIAL],
+  })
+  new_emailer(**user_params)
+
+  # return success message
+  return 'volunteer offer for ' + ds
+
+# def volunteer_offer(request, ds):
+#   volunteer = request.user
+#   volunteer_name = volunteer.first_name + ' ' + volunteer.last_name
+#   # send email to dataset owner
+#   new_emailer(
+#     email_type='volunteer_offer_owner',
+#     subject='Volunteer offer for '+ ds.title + ' dataset in WHG',
+#     from_email=settings.DEFAULT_FROM_EMAIL,
+#     to_email=settings.EMAIL_TO_ADMINS,
+#     reply_to = [volunteer.email],
+#     bcc = [settings.DEFAULT_FROM_EDITORIAL],
+#     volunteer_username=volunteer.username,
+#     volunteer_name=volunteer_name,
+#     volunteer_email=volunteer.email,
+#     dataset_title=ds.title,
+#     dataset_label=ds.label,
+#     dataset_id=ds.id,
+#     owner_greeting=ds.owner.name if ds.owner.name else ds.owner.username,
+#     volunteer_greeting=volunteer.name if volunteer.name else volunteer.username,
+#   )
+#   # return success message
+#   new_emailer(
+#     email_type='volunteer_offer_user',
+#     subject='Volunteer offer for '+ ds.title + ' dataset in WHG received',
+#     from_email=settings.DEFAULT_FROM_EMAIL,
+#     editor_email=settings.DEFAULT_FROM_EDITORIAL,
+#     reply_to = [settings.DEFAULT_FROM_EDITORIAL],
+#     bcc = [settings.DEFAULT_FROM_EDITORIAL],
+#     name=ds.owner.first_name + ' ' + ds.owner.last_name,
+#     username=ds.owner.username,
+#     dataset_title=ds.title,
+#     dataset_label=ds.label,
+#     dataset_id=ds.id,
+#     greeting_name = ds.owner.name if ds.owner.name else ds.owner.username
+#   )
+#   # return success message
+#   return 'volunteer offer for ' + ds
+
+def toggle_volunteers(request):
+  if request.method == 'POST':
+    is_checked = request.POST.get('is_checked') == 'true'
+    dataset_id = request.POST.get('dataset_id')
+    dataset = Dataset.objects.get(id=dataset_id)
+    dataset.volunteers = is_checked
+    dataset.save()
+    return JsonResponse({'status': 'success'})
+
 # ***
 # NEW insert function Aug 2023
 # intended to replace ds_insert_tsv() and ds_insert_lpf()
