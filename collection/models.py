@@ -266,9 +266,9 @@ class CollPlace(models.Model):
   sequence = models.IntegerField()
 
 class CollectionUser(models.Model):
-  collection = models.ForeignKey(Collection, related_name='collections',
+  collection = models.ForeignKey(Collection, related_name='collabs',
                                    default=-1, on_delete=models.CASCADE)
-  user = models.ForeignKey(User, related_name='collaborators',
+  user = models.ForeignKey(User, related_name='collection_collab',
                                 default=-1, on_delete=models.CASCADE)
   role = models.CharField(max_length=20, null=False, choices=TEAMROLES)
 

@@ -103,7 +103,8 @@
                   <div class="form-check">
                     <label class="form-check-label" for="r_wdlocal">
                       <input type="radio" class="form-check-input r_recon" id="r_wdlocal"
-                             name="recon" value="wdlocal" checked>Wikidata + GeoNames
+                             name="recon" value="wdlocal" {% if not ds.recon_status.idx %}checked{% else %}disabled{% endif %}>
+                      Wikidata + GeoNames
                       <span class="ms-2 font-italic small">(estimated time: {{ numrows|time_estimate }})</span>
                     </label>
                     {% if msg_wdlocal %}
@@ -133,7 +134,9 @@
                             {% for r in region_list %}
                               <option value="{{ r.id }}">{{ r.title }}</option>
                             {% endfor %}
-                          </select><span class="ms-2"><b>or...</b></span></p>
+                          </select>
+                          <span class="ms-2"><b>or...</b></span>
+                        </p>
                         <p>
                           <select id="select_userarea" name="userarea" class="custom-select-sm" style="width:auto;">
                             <option value="0" selected="selected">Select user-defined study area</option>
@@ -144,8 +147,9 @@
                             <option value="create">{ new }</option>
                           </select>
                           <span class="ms-2 small">
-                    <a href="{% url 'areas:area-create' %}?next=/datasets/{{ ds.id }}/addtask">create user area</a>
-                  </span></p>
+                            <a href="{% url 'areas:area-create' %}?next=/datasets/{{ ds.id }}/addtask">create user area</a>
+                          </span>
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -186,8 +190,10 @@
               </div> <!-- recon_result -->
             </div> <!-- row -->
           {% else %}
-            <div><p class="ps-3 text-danger"><b>Sorry, reconciliation tasks can only be initiated by the dataset
-              owner.</b></p></div>
+            <div>
+              <p class="ps-3 text-danger"><b>Sorry, reconciliation tasks can only be initiated by dataset
+              owners.</b></p>
+            </div>
           {% endif %}
         </form>
         <div class="selector py-3">

@@ -2682,6 +2682,30 @@ class DatasetReconcileView(LoginRequiredMixin, DetailView):
     id_ = self.kwargs.get("id")
     ds = get_object_or_404(Dataset, id=id_)
 
+
+    id_ = self.kwargs.get("id")
+    ds = get_object_or_404(Dataset, id=id_)
+    place_count = ds.places.count()
+    wdgn_status = {
+      "rows": place_count,
+      "got_hits": ds.places.exclude(review_wd=None).count(),
+      "reviewed": ds.places.filter(review_wd=1).count(),
+      "remain": ds.places.filter(review_wd=0).count(),
+      "deferred": ds.places.filter(review_wd=2).count(),
+    }
+
+    idx_status = {
+      "rows": place_count,
+      "got_hits": ds.places.exclude(review_whg=None).count(),
+      "reviewed": ds.places.filter(review_whg=1).count(),
+      "remain": ds.places.filter(review_whg=0).count(),
+      "deferred": ds.places.filter(review_whg=2).count() or 'none',
+    }
+
+    context['wdgn_status'] = wdgn_status
+    context['idx_status'] = idx_status
+
+
     # build context for rendering dataset.html
     me = self.request.user
 
@@ -2772,17 +2796,6 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
     me = self.request.user
     area_types = ['ccodes', 'copied', 'drawn']
 
-    # user datasets
-    # userdatasets = Dataset.objects.filter(owner=me).values('id','title').order_by('-created')
-    # context['ds_list'] = Dataset.objects.filter(owner=me, ds_status='indexed').values('id', 'title').order_by(
-    #  '-create_date')
-    # context['ds_list'] = userdatasets if me.username == 'whgadmin' else userdatasets.filter(owner=me)
-
-    # user dataset collections
-    # usercollections = Collection.objects.filter(type__in=area_types).values('id','title').order_by('-created')
-    # context['coll_list'] = Collection.objects.filter(owner=me, collection_class='dataset').values('id','title').order_by('-create_date')
-    # context['coll_list'] = usercollections if me.username == 'whgadmin' else usercollections.filter(owner=me)
-
     # user study areas
     userareas = Area.objects.filter(type__in=area_types).values('id', 'title').order_by('-created')
 
@@ -2803,12 +2816,11 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
       If you proceed, you can keep or delete prior match results (links and/or geometry):</p>"""
     msg_done = """All records have been submitted for reconciliation to %s and reviewed.
       To begin the step of accessioning to the WHG index, please <a href="%s">contact our editorial team.</a>"""
-    msg_updating = """This dataset has been updated, <span class='strong'>Starting this new task
-      will archive the previous task and re-submit all new and altered records. If you proceed, you can keep or delete prior
-      matching results (links and geometry)</span>. <a href="%s">Questions? Contact our editorial team.</a>"""
 
     for i in ds.taskstats.items():
+      # auth = 'Wikidata+GeoNames' if i[0].startswith('align_wd') else 'WHG index'
       auth = i[0][6:]  # strip 'align_'
+      auth_name = 'Wikidata+GeoNames' if auth == 'wdlocal' else 'WHG index'
       if len(i[1]) > 0:  # there's a SUCCESS task
         tid = i[1][0]['tid']
         remaining = i[1][0]['total']
@@ -2818,19 +2830,15 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
         if remaining == 0 and ds.ds_status != 'updated':
           # if remaining == 0:
           context['msg_' + auth] = {
-            'msg': msg_done % (auth, "/contact"),
+            'msg': msg_done % (auth_name, "/contact"),
             'type': 'done'}
         elif remaining < hadhits and ds.ds_status != 'updated':
           context['msg_' + auth] = {
-            'msg': msg_inprogress % (auth, reviewed, hadhits),
-            'type': 'inprogress'}
-        elif ds.ds_status == 'updated':
-          context['msg_' + auth] = {
-            'msg': msg_updating % ("/contact"),
+            'msg': msg_inprogress % (auth_name, reviewed, hadhits),
             'type': 'inprogress'}
         else:
           context['msg_' + auth] = {
-            'msg': msg_unreviewed % (auth, hadhits),
+            'msg': msg_unreviewed % (auth_name, hadhits),
             'type': 'unreviewed'
           }
       else:
