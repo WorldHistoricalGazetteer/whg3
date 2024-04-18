@@ -286,6 +286,7 @@
     window.loggedin = "{{ loggedin }}";
     window.dslabel = "{{ object.label }}";
     window.filter = "{{ filter }}";
+    var familiedCollectionData = {{ familied_collection_json|safe }};
   </script>
 
   {{ ds_list|json_script:"ds_list_data" }}
