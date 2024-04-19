@@ -898,8 +898,21 @@ def ds_recon(request, pk):
     print('ds_recon() GET')
   elif request.method == 'POST' and request.POST:
     print('ds_recon() request.POST:', request.POST)
+    return
+    # "ds": ["58"],
+    # "wd_lang": [""],
+    # "recon": ["wdlocal"],
+    # "scope_geom": ["geom_free"],
+    # "accept_geom": ["on"],
+    # "accept_names": ["on"],
+    # "region": ["0"],
     test = 'on' if 'test' in request.POST else 'off'
     auth = request.POST['recon']
+    no_geonames = request.POST.get('no_geonames', False)
+    accept_geoms = request.POST.get('accept_geoms', False)
+    accept_names = request.POST.get('accept_names', False)
+    accept_authids = request.POST.get('accept_authids', False)
+
     language = request.LANGUAGE_CODE
     if auth == 'idx' and ds.public == False and test == 'off':
       messages.add_message(request, messages.ERROR, """Dataset must be public before indexing!""")
@@ -909,7 +922,7 @@ def ds_recon(request, pk):
     #   idx? scope = unindexed
     # collection_id = request.POST.get('collection_id')
     previous = ds.tasks.filter(task_name='align_' + auth, status='SUCCESS')
-    prior = request.POST['prior'] if 'prior' in request.POST else 'na'
+    prior = request.POST.get('prior', 'na')
     if previous.count() > 0:
       if auth == 'idx':
         scope = "unindexed"
@@ -933,7 +946,7 @@ def ds_recon(request, pk):
     # TODO: let this vary per task?
     region = request.POST['region']  # pre-defined UN regions
     userarea = request.POST['userarea']  # from ccodes, or drawn
-    aug_geom = request.POST['geom'] if 'geom' in request.POST else ''  # on == write geom if matched
+    # aug_geom = request.POST['geom'] if 'geom' in request.POST else ''  # on == write geom if matched
     bounds = {
       "type": ["region" if region != "0" else "userarea"],
       "id": [region if region != "0" else userarea]}
@@ -958,7 +971,7 @@ def ds_recon(request, pk):
         owner=ds.owner.id,
         user=user.id,
         bounds=bounds,
-        aug_geom=aug_geom,
+        aug_geom=accept_geoms,
         scope=scope,
         lang=language,
         test=test,

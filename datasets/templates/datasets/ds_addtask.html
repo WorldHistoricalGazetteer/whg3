@@ -70,31 +70,6 @@
                   <input type="hidden" name="ds" value="{{ ds.id }}">
                   <input type="hidden" name="wd_lang" value="">
 
-                  {# whg accession and test options if superuser or editor #}
-                  {% comment %}
-                  {% if user.is_superuser %}
-                    <div class="form-check mt-2">
-                      <label class="form-check-label text-danger" for="r_idx">
-                        <input type="radio" class="form-check-input r_recon" id="r_idx"
-                               name="recon" value="idx">WHG accession TO DEV (reconcile, index)
-                      </label>
-                      {#	test reconcile against whg index; no writes #}
-                      <span class="float-end">test only? <input type="checkbox" name="test"></span>
-                      <br/>
-                    </div>
-                    {% for message in messages %}
-                      <div class="container-fluid p-0">
-                        <div class="alert {{ message.tags }} alert-dismissible" role="alert">
-                          <button type="button" id="error_closer" class="close" data-dismiss="alert" aria-label="Close">
-                            <span aria-hidden="True">&times;</span>
-                          </button>
-                          {{ message }}
-                        </div>
-                      </div>
-                    {% endfor %}
-                    <hr/>
-                  {% endif %}
-                  {% endcomment %}
                   {% if ds.recon_status.idx %}
                     <p>Accessioning has begun for this dataset. Initiating another reconciliation task could disrupt
                       the workflow in progress. If you would like to stop the accessioning step and roll back the
@@ -133,18 +108,23 @@
                               <span class="help-matches" data-id="task_options">
                                   <i class="fas fa-question-circle linkypop"></i></span>
                             </p>
-                            <p><span id="q_accept" class="small">
-                                <input id="accept_geom" name="geom" type="radio" checked/>
-                                  send only records without geometry
-                              </span>
-                            </p>
-                            <p><span id="q_accept" class="small">
-                                <input id="accept_geom" name="geom" type="radio"/>
-                                  send all records</span>
-                            </p>
+                            <div class="form-check small">
+                              <input class="form-check-input" type="radio"
+                                     name="scope_geom" id="geom_free" value="geom_free" checked>
+                              <label class="form-check-label" for="geom_free">
+                                Send only those records missing geometry
+                              </label>
+                            </div>
+                            <div class="form-check small">
+                              <input class="form-check-input" type="radio"
+                                     name="scope_geom" id="all" value="all">
+                              <label class="form-check-label" for="all">
+                                Send all records
+                              </label>
+                            </div>
                             <hr/>
                             <p class="small">
-                              <input id="" name="geom" type="checkbox"/> exclude GeoNames</p>
+                              <input id="" name="no_geonames" type="checkbox"/> exclude GeoNames</p>
                           </div>
                         </div>
                         <div class="col-md-6">
@@ -154,15 +134,15 @@
                                     <i class="fas fa-question-circle linkypop"></i></span>
                             </p>
                             <p class="small">
-                                <input id="accept_geom" name="geom" type="checkbox" checked/>
+                                <input id="accept_geom" name="accept_geom" type="checkbox" checked/>
                                   accept new geometry upon match
                             </p>
                             <p class="small">
-                                <input id="accept_names" name="geom" type="checkbox" checked="checked"/>
+                                <input id="accept_names" name="accept_names" type="checkbox" checked="checked"/>
                                   accept new name variants upon match
                             </p>
                             <p class="small">
-                                <input id="accept_authids" name="geom" type="checkbox" checked disabled/>
+                                <input id="accept_authids" name="accept_authids" type="checkbox" checked disabled/>
                                   accept new authority IDs upon match
                             </p>
                           </div>
