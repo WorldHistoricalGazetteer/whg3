@@ -9,10 +9,6 @@
     transition: opacity 2s ease;
 }
 
-.map-container {
-    height: 500px;
-}
-
 .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib:not(.fade-in) {
     display: none;
 }
@@ -86,6 +82,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
 }
 .map-container {
 	position: relative;
+    height: 450px;
     min-height: 240px;
 }
 #map {

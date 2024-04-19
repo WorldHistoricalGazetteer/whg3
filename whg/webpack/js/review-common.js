@@ -158,10 +158,10 @@ export function addReviewListeners() {
 	// recon authority external links (wd, tgn)
 	$('.ext-recon').on('click', function(e) {
 		e.preventDefault();
-		let id = $(this).text()
+		let id = $.trim($(this).text());
 		let url = base_urls[$(this).data('auth')] + id.toString()
 		console.log('id, url',id,url)
-		// window.open(url, '_blank')
+		window.open(url, '_blank')
 	});
 	
 	$("#btn_save").click(function() {
