@@ -741,13 +741,16 @@ parse, write Hit records for review
 def align_wdlocal(*args, **kwargs):
   print('align_wdlocal.request', align_wdlocal.request)
   print('kwargs from align_wdlocal() task', kwargs)
+
   task_id = align_wdlocal.request.id
   task_status = AsyncResult(task_id).status
   ds = get_object_or_404(Dataset, id=kwargs['ds'])
   user = get_object_or_404(User, pk=kwargs['user'])
   bounds = kwargs['bounds']
   scope = kwargs['scope']
+  scope_geom = kwargs['scope_geom']
   language = kwargs['lang']
+
   hit_parade = {"summary": {}, "hits": []}
   [nohits,wdlocal_es_errors,features] = [[],[],[]]
   [count_hit, count_nohit, total_hits, count_p0, count_p1, count_p2] = [0,0,0,0,0,0]
@@ -758,11 +761,11 @@ def align_wdlocal(*args, **kwargs):
   # queryset depends on 'scope'
   qs = ds.places.all() if scope == 'all' else \
     ds.places.filter(~Q(review_wd = 1))
-  
-  print('scope, count',scope,qs.count())
+  if scope_geom == 'geom_free':
+    qs = qs.filter(geoms__isnull=True)
+
+  print('scope, count', scope, qs.count())
   for place in qs:
-    # print('review_wd',place.review_wd)
-    #place = get_object_or_404(Place, pk=6596036)
     # build query object
     qobj = {"place_id":place.id,
             "src_id":place.src_id,

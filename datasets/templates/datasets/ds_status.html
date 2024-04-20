@@ -153,8 +153,10 @@
             <div class="task-box p-1">
               <p class="d-block bg-lightblue ps-1"><b>Reconciliation Task</b> ({{ task_wdgn.task_id|truncatechars:8 }});
                 initiated: {{ task_wdgn.date_created|date:"d M Y" }}</p>
-              <p>Of <b>{{ wdgn_status.rows }}</b> records in this dataset, <b>{{ wdgn_status.got_hits }}</b>
-                got 1 or more hits, and <b>{{ wdgn_status.remain }}</b> remain to be reviewed.
+              <p>
+                <b>{{ task_wdgn.result|get:"count"|safe }}</b> records in this dataset were sent for reconciliation.
+                Of those, <b>{{ wdgn_status.got_hits }}</b> got 1 or more hits, and <b>{{ wdgn_status.remain }}</b>
+                remain to be reviewed.
               </p>
               <p>
                 {% if wdgn_passes.p0 > 0 %}
@@ -198,48 +200,20 @@
             <div class="task-box p-1">
               <p class="d-block bg-lightblue ps-1"><b>Reconciliation Task</b> ({{ task_wdgn.task_id|truncatechars:8 }});
                 initiated: {{ task_wdgn.date_created|date:"d M Y" }}</p>
-              <p>Of <b>{{ wdgn_status.rows }}</b> records in this dataset, <b>{{ wdgn_status.got_hits }}</b>
-                got 1 or more hits, and all have been reviewed. <i class="fas fa-check"></i>
+              <p>
+                <b>{{ task_wdgn.result|get:"count"|safe }}</b> records in this dataset were sent for reconciliation.
+                <b>{{ wdgn_status.got_hits }}</b> got 1 or more hits, and all have been reviewed.
+                <i class="fas fa-check"></i>
               </p>
             </div>
-
-{#            <div class="task-box p-1">#}
-{#              <p class="d-block bg-lightblue ps-1"><b>Reconciliation Task</b> ({{ task_wdgn.task_id|truncatechars:8 }});#}
-{#                initiated: {{ task_wdgn.date_created|date:"d M Y" }}</p>#}
-{#              <p>Of <b>{{ wdgn_status.rows }}</b> records in this dataset, <b>{{ wdgn_status.got_hits }}</b>#}
-{#                got 1 or more hits, and <b>{{ wdgn_status.remain }}</b> remain to be reviewed.#}
-{#                <br/>wdgn_passes: {{ wdgn_passes }}#}
-{#              </p>#}
-{#              <p>#}
-{#                {% if wdgn_passes.p0 > 0 %}#}
-{#                  Pass 0: <b class="mx-1">{{ wdgn_passes.p0 }}</b>#}
-{#                  <a href="{% url 'datasets:review' pk=ds.id tid=task_wdgn.task_id passnum='0' %}">review</a>#}
-{#                  <span class="pass0auto">#}
-{#                    | <a href="{% url 'datasets:wd_pass0' tid=task_wdgn.task_id %}">auto-accept</a>#}
-{#                  </span>#}
-{#                  <span class="help-matches" data-id="auto-match"><i class="fas fa-question-circle linkypop"></i></span>#}
-{#                  <br/>#}
-{#                {% endif %}#}
-{#                Pass 1: <b class="mx-1">{{ wdgn_passes.p1 }}</b>#}
-{#                <a href="{% url 'datasets:review' pk=ds.id tid=task_wdgn.task_id passnum='1' %}">review</a>#}
-{#                <br/>#}
-{#                {% if wdgn_passes.p2 > 0 %}#}
-{#                  Pass 2: <b class="mx-1">{{ wdgn_passes.p2 }}</b>#}
-{#                  <a href="{% url 'datasets:review' pk=ds.id tid=task_wdgn.task_id passnum='2' %}">review</a>#}
-{#                  <br/>#}
-{#                {% endif %}#}
-{#                Deferred: {{ wdgn_status.deferred }}#}
-{#                {% if idx_status.deferred != 'none' %};#}
-{#                  <a href="{% url 'datasets:review' pk=ds.id tid=task_wdgn.task_id passnum='def' %}">review</a>#}
-{#                {% endif %}#}
-{#              </p>#}
-{#            </div>#}
           {% elif ds.ds_status == 'wd-complete' %} <!-- only wd-complete, not yet public -->
             <div class="row">
               <div class="col-md-9">
-                <p>Review of results from the reconciliation task below is completed! If you would like to publish this
+                <p>Review of results from the reconciliation task below is completed! If you would like
+                  to publish this
                   dataset in the World Historical Gazetteer platform, please complete its metadata, then
-                  submit a request to WHG editors</a>. Once published, its presentation page will be publicly viewable
+                  submit a request to WHG editors</a>. Once published, its presentation page will be
+                  publicly viewable
                   and its data included in search results.</p>
               </div>
               <div class="col-md-3">
@@ -249,8 +223,9 @@
             <div class="task-box p-1">
               <p class="d-block bg-lightblue ps-1"><b>Reconciliation Task</b> ({{ task_wdgn.task_id|truncatechars:8 }});
                 initiated: {{ task_wdgn.date_created|date:"d M Y" }}</p>
-              <p>Of <b>{{ wdgn_status.rows }}</b> records in this dataset, <b>{{ wdgn_status.got_hits }}</b>
-                got 1 or more hits, and all have been reviewed. <i class="fas fa-check"></i>
+              <p>Of <b>{{ task_wdgn.result|get:"count"|safe }}</b> records sent in this dataset,
+                <b>{{ wdgn_status.got_hits }}</b> got 1 or more hits, and all have been reviewed.
+                <i class="fas fa-check"></i>
               </p>
             </div>
           {% elif ds.ds_status == 'accessioning' %}

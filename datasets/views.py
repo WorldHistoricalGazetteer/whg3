@@ -360,8 +360,7 @@ def review(request, pk, tid, passnum):
   task = get_object_or_404(TaskResult, task_id=tid)
   auth = task.task_name[6:].replace("local", "")
   authname = "Wikidata" if auth == "wd" else "WHG"
-  kwargs = ast.literal_eval(task.task_kwargs)
-  kwargs = json.loads(kwargs.replace("'", '"'))
+  kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
   print('auth, authname', auth, authname)
   test = kwargs["test"] if "test" in kwargs else "off"
   beta = "beta" in list(request.user.groups.all().values_list("name", flat=True))
@@ -692,7 +691,10 @@ def review(request, pk, tid, passnum):
                   ds.numlinked = (
                     ds.numlinked + 1 if ds.numlinked else 1
                   )
-                  ds.total_links = ds.total_links + 1
+                  ds.total_links = (
+                    ds.total_links + 1 if ds.total_links else 1
+                  )
+                  # ds.total_links = ds.total_links + 1
                   ds.save()
           # this is accessioning to whg index, add to matched[]
           elif task.task_name == "align_idx":
@@ -785,7 +787,6 @@ def review(request, pk, tid, passnum):
   called from dataset_detail>reconciliation tab
   accepts all pass0 wikidata matches, writes geoms and links
 """
-
 
 def write_wd_pass0(request, tid):
   task = get_object_or_404(TaskResult, task_id=tid)
@@ -898,20 +899,15 @@ def ds_recon(request, pk):
     print('ds_recon() GET')
   elif request.method == 'POST' and request.POST:
     print('ds_recon() request.POST:', request.POST)
-    return
-    # "ds": ["58"],
-    # "wd_lang": [""],
-    # "recon": ["wdlocal"],
-    # "scope_geom": ["geom_free"],
-    # "accept_geom": ["on"],
-    # "accept_names": ["on"],
-    # "region": ["0"],
-    test = 'on' if 'test' in request.POST else 'off'
+
+    # return
+
+    test = 'on' if 'test' in request.POST else 'off'  # for idx only
     auth = request.POST['recon']
-    no_geonames = request.POST.get('no_geonames', False)
-    accept_geoms = request.POST.get('accept_geoms', False)
-    accept_names = request.POST.get('accept_names', False)
-    accept_authids = request.POST.get('accept_authids', False)
+    scope_geom = request.POST.get('scope_geom', False)
+    aug_geoms = request.POST.get('accept_geoms', False)
+    aug_names = request.POST.get('accept_names', False)
+    aug_authids = request.POST.get('accept_authids', False)
 
     language = request.LANGUAGE_CODE
     if auth == 'idx' and ds.public == False and test == 'off':
@@ -923,10 +919,10 @@ def ds_recon(request, pk):
     # collection_id = request.POST.get('collection_id')
     previous = ds.tasks.filter(task_name='align_' + auth, status='SUCCESS')
     prior = request.POST.get('prior', 'na')
-    if previous.count() > 0:
+    if previous.count() > 0:  # there is a previous task
       if auth == 'idx':
         scope = "unindexed"
-      else:
+      else:  # wdlocal
         # get its id and archive it
         tid = previous.first().task_id
         task_archive(tid, prior)
@@ -935,7 +931,7 @@ def ds_recon(request, pk):
         print('ds_recon(): links & geoms were ' + ('kept' if prior == 'keep' else 'zapped'))
     else:
       # no existing task, submit all rows
-      print('ds_recon(): no previous, submitting all')
+      # print('ds_recon(): no previous, submitting all')
       scope = 'all'
 
     print('ds_recon() scope', scope)
@@ -955,14 +951,17 @@ def ds_recon(request, pk):
     if not celeryUp():
       print('Celery is down :^(')
       emailer('Celery is down :^(',
-              'if not celeryUp() -- look into it, bub!',
+              'if not celeryUp() -- look into it!',
               'whg@kgeographer.org',
-              ['karl@kgeographer.org'])
-      messages.add_message(request, messages.INFO, """Sorry! WHG reconciliation services appears to be down.
+              ['karlg@kgeographer.org'])
+      messages.add_message(request, messages.INFO, """Sorry! The WHG reconciliation service appears to be down.
         The system administrator has been notified.""")
       return redirect('/datasets/' + str(ds.id) + '/reconcile')
 
+    # 4ce548e4-b765-4f04-aaf6-2824da89f385
+
     # initiate celery/redis task
+    # needs positional and declared ds.id; don't know why
     try:
       result = func.delay(
         ds.id,
@@ -971,11 +970,13 @@ def ds_recon(request, pk):
         owner=ds.owner.id,
         user=user.id,
         bounds=bounds,
-        aug_geom=accept_geoms,
-        scope=scope,
+        aug_geom=aug_geoms,  # accept geoms (bool)
+        aug_names=aug_names,  # accept names (bool)
+        aug_authids=aug_authids,  # accept authids (bool)
+        scope=scope,  # all/unreviewed
+        scope_geom=scope_geom,  # all/geom_free
         lang=language,
-        test=test,
-        # collection_id=collection_id
+        test=test,  # for idx only
       )
       messages.add_message(request, messages.INFO,
         "<span class='text-danger'>Your reconciliation task is under way.</span><br/>When complete, you will receive an email and if successful, results will appear below (you may have to refresh screen). <br/>In the meantime, you can navigate elsewhere.")

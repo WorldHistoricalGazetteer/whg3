@@ -123,19 +123,27 @@ def parsejson(val,key):
         return 'off'
 
 @register.filter
-def parsetest(val,key):
-    print('val', val)
-    print('type(val)', type(val))
-    print('key', key)
+@register.filter
+def parsetest(val, key):
+    print('val before ast.literal_eval:', val)
+    val = val.strip('"')
     obj = ast.literal_eval(val)
-    # obj = ast.literal_eval(val.replace("'",'"'))
-    obj = json.loads(obj.replace("'",'"'))
-    # print('type(obj)', type(obj))
-    # print('obj[key]', obj[key])
-    if 'test' in obj:
+    print('obj after ast.literal_eval:', obj)
+    print('type(obj) after ast.literal_eval:', type(obj))
+    if key in obj:
         return obj[key]
     else:
         return 'off'
+# def parsetest(val,key):
+#     print('val', val)
+#     print('type(val)', type(val))
+#     print('key', key)
+#     obj = ast.literal_eval(val)
+#     print('type(obj)', type(obj))
+#     if 'test' in obj:
+#         return obj[key]
+#     else:
+#         return 'off'
 
 @register.filter
 def readmore(txt, numchars):

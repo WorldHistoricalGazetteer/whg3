@@ -15,6 +15,9 @@ AUTHORITIES = [
     ('wd','Wikidata'),
     ('core','WHG Spine'),
     ('whg','WHG'),
+    # conversion to wdgn results in these
+    ('geonames', 'Geonames'),
+    ('wikidata', 'Wikidata'),
 ]
 
 AUTHORITY_BASEURI = {

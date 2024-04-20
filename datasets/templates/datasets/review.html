@@ -73,7 +73,7 @@
         <div class="container">
           <div id="review_nav" class="pagination row justify-content-center">
             <div class="col-sm-4 ps-1">
-              <span>dataset: <a href="{% url 'datasets:ds_reconcile' id=ds_id %}"> {{ ds_label }}</a></span>
+              <span>dataset: <a href="{% url 'datasets:ds_status' id=ds_id %}"> {{ ds_label }}</a></span>
             </div>
             <div class="col-sm-8">
               <button type="submit" id="btn_save" class="button-sm">Save</button>
@@ -195,16 +195,16 @@
                        data-id="{{ form.authrecord_id.value }}">
                     {% if form.json.value|get:"geoms"|length > 0 %}
                       <span class="me-2 globeflash">
-				                      			<a class="geolink" data-id="{{ form.authrecord_id.value }}" rel="tooltip"
-                                      {% if ds_label == 'tgn_filtered_01' or authority == 'whg' or authority == 'idx' %}
+                        <a class="geolink" data-id="{{ form.authrecord_id.value }}" rel="tooltip"
+                          {% if ds_label == 'tgn_filtered_01' or authority == 'whg' or authority == 'idx' %}
                                        id="{{ form.json.value|get:"place_id" }}"
                                       {% else %}
                                        id="{{ form.authrecord_id.value }}"
                                       {% endif %}
                                        href='javascript:void(0)'>
 							                        <i class="fas fa-globe" style="color:#000;"></i>
-				                        		</a>
-				                    		</span>
+                        </a>
+                      </span>
                     {% endif %}
                     {% for choice in form.match %}
                       {{ choice }}

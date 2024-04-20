@@ -1,9 +1,14 @@
 """
 """
 
-import os
+import os, sys
 from celery.schedules import crontab
 from django.contrib.messages import constants as messages
+
+if 'test' in sys.argv:
+    CELERY_ALWAYS_EAGER = True
+else:
+    CELERY_ALWAYS_EAGER = False
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE_ID = 1
