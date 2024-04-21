@@ -447,13 +447,13 @@ def normalize(h, auth, language=None):
       if is_wdgn and h['dataset'] == 'geonames':
         rec.variants = variants['names']
         rec.fclasses = fclasses
-      else:
+      else:  # wikidata
         v_array=[]
         for v in variants:
-          if not is_wdgn:
-            for n in v['names']:
-              if n != title:
-                v_array.append(n+'@'+v['lang'])
+          # if not is_wdgn:
+          for n in v['names']:
+            if n != title:
+              v_array.append(n+'@'+v['lang'])
         rec.variants = v_array
             
       if 'location' in h.keys():
@@ -491,25 +491,25 @@ def normalize(h, auth, language=None):
       print("normalize(wdlocal) error:", h['id'], str(e))
       print('Hit rec', rec)
 
-  elif auth == 'tgn':
-    rec = HitRecord(-1, 'tgn', h['tgnid'], h['title'])
-    rec.variants = [n['toponym'] for n in h['names']] # always >=1 names
-    rec.types = [(t['placetype'] if 'placetype' in t and t['placetype'] != None else 'unspecified') + \
-                (' ('+t['id']  +')' if 'id' in t and t['id'] != None else '') for t in h['types']] \
-                if len(h['types']) > 0 else []
-    rec.ccodes = []
-    rec.parents = ' > '.join(h['parents']) if len(h['parents']) > 0 else []
-    rec.descriptions = [h['note']] if h['note'] != None else []
-    if 'location' in h.keys():
-      rec.geoms = [{
-        "type":"Point",
-        "coordinates":h['location']['coordinates'],
-        "id":h['tgnid'],
-          "ds":"tgn"}]
-    else: 
-      rec.geoms=[]
-    rec.minmax = []
-    rec.links = []
+  # elif auth == 'tgn':
+  #   rec = HitRecord(-1, 'tgn', h['tgnid'], h['title'])
+  #   rec.variants = [n['toponym'] for n in h['names']] # always >=1 names
+  #   rec.types = [(t['placetype'] if 'placetype' in t and t['placetype'] != None else 'unspecified') + \
+  #               (' ('+t['id']  +')' if 'id' in t and t['id'] != None else '') for t in h['types']] \
+  #               if len(h['types']) > 0 else []
+  #   rec.ccodes = []
+  #   rec.parents = ' > '.join(h['parents']) if len(h['parents']) > 0 else []
+  #   rec.descriptions = [h['note']] if h['note'] != None else []
+  #   if 'location' in h.keys():
+  #     rec.geoms = [{
+  #       "type":"Point",
+  #       "coordinates":h['location']['coordinates'],
+  #       "id":h['tgnid'],
+  #         "ds":"tgn"}]
+  #   else:
+  #     rec.geoms=[]
+  #   rec.minmax = []
+  #   rec.links = []
     #print(rec)
   else:
     rec = HitRecord(-1, 'unknown', 'unknown', 'unknown')

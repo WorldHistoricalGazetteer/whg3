@@ -64,7 +64,7 @@ EMAIL_MESSAGES = {
   ),
   'dataset_unpublished': (
     'Dear {greeting_name},\n\n'
-    'Your previously published dataset, {dataset_title} ({dataset_label}, {dataset_id}), '
+    'Your previously published dataset, "{dataset_title} ({dataset_label}", {dataset_id}), '
     'has been made private again, and its records are no longer accessible in search and our API .\n\n'
     'If you have any questions, please contact our editor at {reply_to}\n\n'
     'regards,\nThe WHG project team'

@@ -586,7 +586,7 @@ def review(request, pk, tid, passnum):
     place_post = get_object_or_404(Place, pk=request.POST["place_id"])
     review_status = getattr(place_post, review_field)
     # proceed with POST only if place is unreviewed or deferred; else return to a GET (and next place)
-    # NB. other reviewer(s) *not* notified
+    # NB. other reviewer(s) are *not* notified
     if review_status == 1:
       context["already"] = True
       messages.success(
@@ -603,6 +603,7 @@ def review(request, pk, tid, passnum):
       # are any of the listed hits matches?
       for x in range(len(hits)):
         hit = hits[x]["id"]
+        print("hit # " + str(hits[x]) + " reviewed")
         # is this hit a match?
         if hits[x]["match"] not in ["none"]:
           # print('json of matched hit/cluster (in review())', hits[x]['json'])
@@ -615,14 +616,16 @@ def review(request, pk, tid, passnum):
               "geoms" in hits[x]["json"]
               and len(hits[x]["json"]["geoms"]) > 0
             )
+            hasNames = (
+              "variants" in hits[x]["json"]
+              and len(hits[x]["json"]["variants"]) > 0
+            )
+            # GEOMS
             # create place_geom records if 'accept geometries' was checked
             if (
               kwargs["aug_geom"] == "on"
               and hasGeom
-              and tid
-              not in place_post.geoms.all().values_list(
-              "task_id", flat=True
-            )
+              and tid not in place_post.geoms.all().values_list("task_id", flat=True)
             ):
               gtype = hits[x]["json"]["geoms"][0]["type"]
               coords = hits[x]["json"]["geoms"][0]["coordinates"]
@@ -645,7 +648,37 @@ def review(request, pk, tid, passnum):
                   "coordinates": coords,
                 },
               )
+            # NAMES
+            if (kwargs['aug_names'] == 'on'
+              and hasNames
+              and tid not in place_post.names.all().values_list('task_id', flat=True)
+            ):
+              for n in hits[x]["json"]["variants"]:
+                # handle different name formats
+                if isinstance(n, dict) and hits[x]["json"]['dataset'] == 'wikidata':
+                  name = n['names'][0].split('@')[0]
+                elif isinstance(n, str) and hits[x]["json"]['dataset'] == 'geonames':
+                  name = n
+                else:
+                  continue  # Skip if n is not in the expected format
+                # exclude duplicates
+                if name not in place_post.names.all().values_list("toponym", flat=True):
+                  PlaceName.objects.create(
+                    place=place_post,
+                    task_id=tid,
+                    src_id=place.src_id,
+                    toponym=n,
+                    reviewer=request.user,
+                    jsonb={
+                      "variant": n,
+                      "citations": [{
+                        "id": auth + ":" + hits[x]["authrecord_id"],
+                        "label": authname,
+                      }],
+                    },
+                  )
 
+            # LINKS
             # create single PlaceLink for matched wikidata record
             if tid not in place_post.links.all().values_list(
               "task_id", flat=True
@@ -907,7 +940,7 @@ def ds_recon(request, pk):
     scope_geom = request.POST.get('scope_geom', False)
     aug_geoms = request.POST.get('accept_geoms', False)
     aug_names = request.POST.get('accept_names', False)
-    aug_authids = request.POST.get('accept_authids', False)
+    # aug_authids = request.POST.get('accept_authids', False)
 
     language = request.LANGUAGE_CODE
     if auth == 'idx' and ds.public == False and test == 'off':
@@ -972,7 +1005,7 @@ def ds_recon(request, pk):
         bounds=bounds,
         aug_geom=aug_geoms,  # accept geoms (bool)
         aug_names=aug_names,  # accept names (bool)
-        aug_authids=aug_authids,  # accept authids (bool)
+        # aug_authids=aug_authids,  # accept authids (bool)
         scope=scope,  # all/unreviewed
         scope_geom=scope_geom,  # all/geom_free
         lang=language,
@@ -1008,11 +1041,11 @@ def task_delete(request, tid, scope="foo"):
   hits = Hit.objects.all().filter(task_id=tid)
   tr = TaskResult.objects.get(task_id=tid)
   auth = tr.task_name[6:]  # wdlocal, idx
-  # dsid = tr.task_args[1:-1]
   dsid = int(tr.task_args[2:-3])
-  # test = json.loads(tr.task_kwargs.replace("'",'"'))['test'] \
-  test = json.loads(tr.task_kwargs[1:-1].replace("'", '"'))['test'] \
-    if 'test' in tr.task_kwargs else 'off'
+  kwargs = ast.literal_eval(tr.task_kwargs.strip('"'))
+  test = kwargs["test"] if "test" in kwargs else "off"
+  # test = json.loads(tr.task_kwargs[1:-1].replace("'", '"'))['test'] \
+  #   if 'test' in tr.task_kwargs else 'off'
   ds = get_object_or_404(Dataset, pk=dsid)
   ds_status = ds.ds_status
   print('task_delete() dsid', dsid)
@@ -1051,17 +1084,20 @@ def task_delete(request, tid, scope="foo"):
   # undoes any acceessioning work
   if auth in ['whg', 'idx'] and test == 'off':
     removeDatasetFromIndex('whg', dsid)
+
   # set status
   print('ds.tasks.all()', ds.tasks.all())
   print('ds.file.file.name', ds.file.file.name)
-  if ds.tasks.count() == 0:
+  # last SUCCESS task is gone, back to 'uploaded' or 'remote'
+  # 'remote' is new empty datasets created by API POST
+  if ds.tasks.filter(status='SUCCESS').count() == 0:
     if ds.file.file.name.startswith('dummy'):
       ds.ds_status = 'remote'
     else:
       ds.ds_status = 'uploaded'
   ds.save()
 
-  return redirect('/datasets/' + str(dsid) + '/reconcile')
+  return redirect('/datasets/' + str(dsid) + '/status')
 
 
 """

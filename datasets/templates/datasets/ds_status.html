@@ -221,7 +221,8 @@
               </div>
             </div>
             <div class="task-box p-1">
-              <p class="d-block bg-lightblue ps-1"><b>Reconciliation Task</b> ({{ task_wdgn.task_id|truncatechars:8 }});
+              <p class="d-block bg-lightblue ps-1"><b>Reconciliation Task</b>
+                ({{ task_wdgn.task_id|truncatechars:8 }});
                 initiated: {{ task_wdgn.date_created|date:"d M Y" }}</p>
               <p>Of <b>{{ task_wdgn.result|get:"count"|safe }}</b> records sent in this dataset,
                 <b>{{ wdgn_status.got_hits }}</b> got 1 or more hits, and all have been reviewed.

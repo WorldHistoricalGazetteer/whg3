@@ -69,7 +69,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
         </td>
         <td class="small">{{ d.log.last.timestamp|date:"Y-m-d" }}</td>
         {#          <td class="small">{{ d.create_date|date:"Y-m-d, H:i" }}</td>#}
-        <td>{{ d.numrows }}</td>
+        <td>{{ d.places.count }}</td>
         <td>{{ d.ds_status }}</td>
         {% if is_admin %}
           <td>{{ d.owner|truncatechars:20 }}</td>
