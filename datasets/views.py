@@ -361,7 +361,7 @@ def review(request, pk, tid, passnum):
   auth = task.task_name[6:].replace("local", "")
   authname = "Wikidata" if auth == "wd" else "WHG"
   kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
-  print('auth, authname', auth, authname)
+  print('kwargs', kwargs)
   test = kwargs["test"] if "test" in kwargs else "off"
   beta = "beta" in list(request.user.groups.all().values_list("name", flat=True))
   # filter place records by passnum for those with unreviewed hits on this task
@@ -473,7 +473,7 @@ def review(request, pk, tid, passnum):
     # raw_hits = Hit.objects.filter(place_id=placeid, task_id=tid).order_by('-score')
     raw_hits = Hit.objects.filter(place_id=placeid, task_id=tid).order_by("-score")
 
-  print('raw_hits in review()', [h.__dict__ for h in raw_hits])
+  # print('raw_hits in review()', [h.__dict__ for h in raw_hits])
   # ??why? get pass contents for all of a place's hits
   passes = (
     list(
@@ -517,7 +517,7 @@ def review(request, pk, tid, passnum):
     "passnum": passnum,
     "page": page if request.method == "GET" else str(int(page) - 1),
     # 'aug_geom': json.loads(task.task_kwargs.replace("'",'"'))['aug_geom'],
-    "aug_geom": kwargs["aug_geom"],
+    "aug_geoms": kwargs["aug_geoms"],
     "mbtoken": settings.MAPBOX_TOKEN_WHG,
     "maptilerkey": settings.MAPTILER_KEY,
     "count_pass0": cnt_pass0,
@@ -604,6 +604,8 @@ def review(request, pk, tid, passnum):
       for x in range(len(hits)):
         hit = hits[x]["id"]
         print("hit # " + str(hits[x]) + " reviewed")
+        print("hit['json']", hits[x]["json"])
+        print("dataset", hits[x]["json"]["dataset"])
         # is this hit a match?
         if hits[x]["match"] not in ["none"]:
           # print('json of matched hit/cluster (in review())', hits[x]['json'])
@@ -617,13 +619,14 @@ def review(request, pk, tid, passnum):
               and len(hits[x]["json"]["geoms"]) > 0
             )
             hasNames = (
-              "variants" in hits[x]["json"]
-              and len(hits[x]["json"]["variants"]) > 0
+              ("variants" in hits[x]["json"] and len(hits[x]["json"]["variants"]) > 0)
+              or
+              ("names" in hits[x]["json"] and len(hits[x]["json"]["names"]) > 0)
             )
             # GEOMS
             # create place_geom records if 'accept geometries' was checked
             if (
-              kwargs["aug_geom"] == "on"
+              kwargs["aug_geoms"] == 'on'
               and hasGeom
               and tid not in place_post.geoms.all().values_list("task_id", flat=True)
             ):
@@ -649,28 +652,34 @@ def review(request, pk, tid, passnum):
                 },
               )
             # NAMES
+            print('hasNames', hasNames, hits[x]["json"]["variants"])
             if (kwargs['aug_names'] == 'on'
               and hasNames
               and tid not in place_post.names.all().values_list('task_id', flat=True)
             ):
+              print('doing names in review() now')
               for n in hits[x]["json"]["variants"]:
                 # handle different name formats
-                if isinstance(n, dict) and hits[x]["json"]['dataset'] == 'wikidata':
-                  name = n['names'][0].split('@')[0]
-                elif isinstance(n, str) and hits[x]["json"]['dataset'] == 'geonames':
+                # print('n has type', type(n))
+                if hits[x]["json"]['dataset'] == 'wikidata':
+                  name = n.split('@')[0]
+                elif hits[x]["json"]['dataset'] == 'geonames':
                   name = n
                 else:
+                  print("failed to parse name", n)
                   continue  # Skip if n is not in the expected format
+                print('place_post, name', place_post, name)
+                print('existing:', place_post.names.all().values_list("toponym", flat=True))
                 # exclude duplicates
                 if name not in place_post.names.all().values_list("toponym", flat=True):
                   PlaceName.objects.create(
                     place=place_post,
                     task_id=tid,
                     src_id=place.src_id,
-                    toponym=n,
-                    reviewer=request.user,
+                    toponym=name,
+                    # reviewer=request.user,
                     jsonb={
-                      "variant": n,
+                      "toponym": n,
                       "citations": [{
                         "id": auth + ":" + hits[x]["authrecord_id"],
                         "label": authname,
@@ -844,7 +853,7 @@ def write_wd_pass0(request, tid):
     authids = place.links.all().values_list('jsonb__identifier', flat=True)
     # GEOMS
     # confirm another user hasn't just done this...
-    if hasGeom and kwargs['aug_geom'] == 'on' \
+    if hasGeom and kwargs['aug_geoms'] == 'on' \
       and tid not in place.geoms.all().values_list('task_id', flat=True):
       for g in h.json['geoms']:
         pg = PlaceGeom.objects.create(
@@ -940,7 +949,8 @@ def ds_recon(request, pk):
     scope_geom = request.POST.get('scope_geom', False)
     aug_geoms = request.POST.get('accept_geoms', False)
     aug_names = request.POST.get('accept_names', False)
-    # aug_authids = request.POST.get('accept_authids', False)
+    print('ds_recon() aug_geoms', aug_geoms)
+    print('ds_recon() aug_names', aug_names)
 
     language = request.LANGUAGE_CODE
     if auth == 'idx' and ds.public == False and test == 'off':
@@ -1003,9 +1013,8 @@ def ds_recon(request, pk):
         owner=ds.owner.id,
         user=user.id,
         bounds=bounds,
-        aug_geom=aug_geoms,  # accept geoms (bool)
-        aug_names=aug_names,  # accept names (bool)
-        # aug_authids=aug_authids,  # accept authids (bool)
+        aug_geoms=aug_geoms,  # accept geoms
+        aug_names=aug_names,  # accept names
         scope=scope,  # all/unreviewed
         scope_geom=scope_geom,  # all/geom_free
         lang=language,
@@ -1057,6 +1066,7 @@ def task_delete(request, tid, scope="foo"):
   # links and geometry added by a task have the task_id
   placelinks = PlaceLink.objects.all().filter(task_id=tid)
   placegeoms = PlaceGeom.objects.all().filter(task_id=tid)
+  placenames = PlaceName.objects.all().filter(task_id=tid)
   print('task_delete()', {'tid': tr, 'dsid': dsid, 'auth': auth})
 
   # reset Place.review_{auth} to null
@@ -1077,6 +1087,7 @@ def task_delete(request, tid, scope="foo"):
     hits.delete()
     placelinks.delete()
     placegeoms.delete()
+    placenames.delete()
   elif scope == 'geoms':
     placegeoms.delete()
 
@@ -2553,23 +2564,23 @@ class DatasetMetadataView(LoginRequiredMixin, UpdateView):
       using most recent dataset file
     """
     file = ds.file
-    if file.df_status == 'format_ok':
-      print('format_ok , inserting dataset ' + str(id_))
-      if file.format == 'delimited':
-        result = ds_insert_tsv(self.request, id_)
-        print('tsv result', result)
-      else:
-        result = ds_insert_lpf(self.request, id_)
-        print('lpf result', result)
-      print('ds_insert_xxx() result', result)
-      ds.numrows = result['numrows']
-      ds.numlinked = result['numlinked']
-      ds.total_links = result['total_links']
-      ds.ds_status = 'uploaded'
-      file.df_status = 'uploaded'
-      file.numrows = result['numrows']
-      ds.save()
-      file.save()
+    # if file.df_status == 'format_ok':
+    #   print('format_ok , inserting dataset ' + str(id_))
+    #   if file.format == 'delimited':
+    #     result = ds_insert_tsv(self.request, id_)
+    #     print('tsv result', result)
+    #   else:
+    #     result = ds_insert_lpf(self.request, id_)
+    #     print('lpf result', result)
+    #   print('ds_insert_xxx() result', result)
+    #   ds.numrows = result['numrows']
+    #   ds.numlinked = result['numlinked']
+    #   ds.total_links = result['total_links']
+    #   ds.ds_status = 'uploaded'
+    #   file.df_status = 'uploaded'
+    #   file.numrows = result['numrows']
+    #   ds.save()
+    #   file.save()
 
     # build context for rendering ds_status.html
     me = self.request.user
@@ -2853,7 +2864,7 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
     predefined = Area.objects.all().filter(type='predefined').values('id', 'title')
 
     gothits = {}
-    for t in ds.tasks.filter(status='SUCCESS'):
+    for t in ds.tasks.filter(status='SUCCESS', task_name__startswith='align_'):
       gothits[t.task_id] = int(json.loads(t.result)['got_hits'])
 
     # deliver status message(s) to template

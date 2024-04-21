@@ -20,7 +20,6 @@ from django.contrib.gis.db.models import Extent
 
 from .forms import CollectionModelForm, CollectionGroupModelForm
 from .models import *
-from datasets.tasks import index_dataset_to_builder
 from main.models import Log, Link
 from traces.forms import TraceAnnotationModelForm
 from traces.models import TraceAnnotation

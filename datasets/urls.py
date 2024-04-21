@@ -8,7 +8,6 @@ from . import views
 from datasets.utils import download_file, UpdateCountsView, download_augmented, \
   fetch_mapdata_ds, fetch_geojson_ds, fetch_geojson_flat, downloadLP7, \
   toggle_volunteers
-from datasets.tasks import index_to_builder
 
 # dataset actions
 app_name='datasets'
@@ -83,10 +82,6 @@ urlpatterns = [
 
   # refresh reconciliation counts (ds.id from $.get)
   path('updatecounts/', UpdateCountsView.as_view(), name='update_counts'),
-
-  # add dataset to 'builder' index, tagged for collection
-  # path('index_to_builder/<int:dsid>/<int:collid>', index_to_builder, name='index-to-builder'),
-  path('index_to_builder/', index_to_builder, name='index-to-builder'),
 
   ## COLLABORATORS
   # add DatasetUser collaborator

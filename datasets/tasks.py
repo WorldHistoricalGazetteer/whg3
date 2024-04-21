@@ -38,86 +38,6 @@ es = settings.ES_CONN
 User = get_user_model()
 
 """
-  Adds a dataset's places to the builder index
-  cases: 1) initial seed; 2) post-reconciliation
-"""
-def index_to_builder(request, idx='builder'):
-  if request.method == 'POST':
-    collection_id = request.POST.get('collection_id')
-    dataset_id = request.POST.get('dataset_id')
-    # Call the new indexing function
-    result = index_dataset_to_builder(dataset_id, collection_id, idx)
-    return JsonResponse(result)
-  else:
-    return JsonResponse({"result": "error", "message": "Invalid request"})
-
-
-# @shared_task()
-# def index_to_builder(request, idx='builder'):
-@csrf_exempt  # necessary?
-def index_dataset_to_builder(dataset_id, collection_id, idx='builder'):
-  print('in index_to_builder()', dataset_id, collection_id)
-  es = settings.ES_CONN
-  # Fetch dataset and collection
-  try:
-      dataset = Dataset.objects.get(pk=dataset_id, idx_builder=False)
-      collection = Collection.objects.get(pk=collection_id)
-  except Dataset.DoesNotExist:
-      print(f"Dataset with ID {dataset_id} does not exist or is already indexed.")
-      return JsonResponse({"result": "error", "message": "Dataset does not exist or is already indexed"})
-
-  places_to_index = Place.objects.filter(dataset=dataset, indexed=False, idx_pub=False)
-  place_ids_to_index = list(places_to_index.values_list('id', flat=True))
-
-  # convert a Place into a dict that's ready for indexing
-  def make_bulk_doc(place):
-      doc = makeDoc(place)
-      doc['collection_id'] = collection_id
-      # Add names and title to search field
-      searchy_content = set(doc.get('searchy', []))
-      searchy_content.update(n['toponym'] for n in doc['names'])
-      searchy_content.add(doc['title'])
-      doc['searchy'] = list(searchy_content)
-      return {
-          "_index": idx,
-          "_id": place.id,  # place ID as document ID
-          "_source": doc,
-      }
-
-  actions = (make_bulk_doc(place) for place in places_to_index.iterator())
-
-  # Perform the bulk index operation and collect the response
-  successes, failed_docs = 0, []
-  try:
-    with transaction.atomic():  # Use a transaction to prevent race conditions
-        for ok, action in streaming_bulk(es, actions, index=idx, raise_on_error=False):
-            if ok:
-                successes += 1
-            else:
-                failed_docs.append(action)
-  except Exception as e:
-    # Log the exception and return an error response
-    print(f"Exception during indexing: {e}")
-    return {"result": "error", "message": str(e)}
-
-  # Update the idx_builder flag for all successful Place objects using the Place IDs
-  Place.objects.filter(id__in=place_ids_to_index).update(idx_builder=True)
-
-  print(f"Indexing complete. Total indexed places: {successes}. Failed documents: {len(failed_docs)}")
-  if failed_docs:
-      print(f"Failed documents: {failed_docs}")
-
-  dataset.idx_builder = True
-  if collection.datasets.count() == 1:
-    dataset.ds_status = 'builder_seed'
-  dataset.save()
-
-  return JsonResponse({"result": "success",
-                       "indexed": successes,
-                       "failed": len(failed_docs)
-                       })
-
-"""
   adds newly public dataset to 'pub' index
   making it accessible to search (and API eventually)
 """
@@ -541,27 +461,6 @@ def get_bounds_filter(bounds, idx):
       }
   }} 
   return filter
-
-"""
-performs elasticsearch > builder queries
-from align_collection()
-"""
-def es_lookup_builder(qobj, *args, **kwargs):
-  #bounds = {'type': ['userarea'], 'id': ['0']}
-  bounds = kwargs['bounds']
-  print('kwargs in es_lookup_builder()', kwargs)
-
-"""
-manage align/reconcile to builder index 
-"""
-@shared_task(name="align_collection")
-def align_collection(*args, **kwargs):
-  task_id = align_wdlocal.request.id
-  ds = get_object_or_404(Dataset, id=kwargs['ds'])
-  user = get_object_or_404(User, pk=kwargs['user'])
-  bounds = kwargs['bounds']
-  scope = kwargs['scope']
-  print('kwargs from align_collection() task', kwargs)
 
 
 """

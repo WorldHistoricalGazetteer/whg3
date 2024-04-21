@@ -148,6 +148,7 @@ function parsePlace(data) { // TODO: See also commented code at bottom
 	//
 	// NAME VARIANTS
 	descrip += '<p class="scroll65"><b>Variants</b>: '
+	console.log('data.names', data.names)
 	for (var n in data.names) {
 		let name = data.names[n]
 		descrip += '<p>' + name.toponym != '' ? name.toponym + '; ' : ''

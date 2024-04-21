@@ -91,7 +91,8 @@
                           {% if msg_wdlocal.type == 'inprogress' %}
                             <label class="mb-0"><input type="radio" name="prior" value="keep" id="r_keep_wd">
                               keep prior match results</label>
-                            <label class="mb-0"><input type="radio" name="prior" value="zap"> delete prior match results</label>
+                            <label class="mb-0"><input type="radio" name="prior" value="zap">
+                              delete prior match results</label>
                           {% endif %}
                         </div>
                       </div>
@@ -133,17 +134,13 @@
                                     <i class="fas fa-question-circle linkypop"></i></span>
                             </p>
                             <p class="small">
-                                <input id="aug_geom" name="accept_geom" type="checkbox" checked/>
+                                <input id="aug_geoms" name="accept_geoms" type="checkbox" checked/>
                                   accept new geometry upon match
                             </p>
                             <p class="small">
-                                <input id="aug_names" name="accept_names" type="checkbox" checked="checked"/>
+                                <input id="aug_names" name="accept_names" type="checkbox" checked/>
                                   accept new name variants upon match
                             </p>
-{#                            <p class="small">#}
-{#                                <input id="aug_authids" name="accept_authids" type="checkbox" checked/>#}
-{#                                  accept new authority IDs upon match#}
-{#                            </p>#}
                           </div>
                         </div>
                       </div>
