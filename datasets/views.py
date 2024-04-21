@@ -1482,8 +1482,6 @@ def update_rels_tsv(pobj, row):
     filepath = 'media/'+filename_new
     copyfile(tempfn,filepath)
 """
-
-
 def ds_update(request):
   if request.method == 'POST':
     print('request.POST ds_update()', request.POST)
@@ -2177,6 +2175,8 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
 
       # Create the Dataset object
       dataset = form.save(commit=False)
+      if not dataset.uri_base:
+        dataset.uri_base = 'https://whgazetteer.org/api/db/?id='
       dataset.save()
 
       # Directly process the data and create database entries
@@ -2289,8 +2289,8 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
     )
 
     # If everything went well:
-    messages.info(self.request, f"{skipped_rows} rows were skipped.")
-    return redirect('/datasets/' + str(dataset.id) + '/summary')
+    # messages.info(self.request, f"{skipped_rows} rows were skipped.")
+    return redirect('/datasets/' + str(dataset.id) + '/status')
 
 
 """

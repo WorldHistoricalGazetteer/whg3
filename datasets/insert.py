@@ -26,7 +26,6 @@ from places.models import *
 # test setup
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
-
 def test_insert():
   from datasets.models import Dataset, DatasetFile
   Dataset.objects.get(label='delim_test').delete()

@@ -13,7 +13,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 @receiver(pre_save, sender=Dataset)
 def send_new_dataset_email(sender, instance, **kwargs):
   if instance.pk:  # if instance exists

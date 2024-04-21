@@ -33,8 +33,6 @@ from main.models import Log
 from places.models import PlaceGeom, Type
 pp = pprint.PrettyPrinter(indent=1)
 
-
-
 def volunteer_offer(request, ds):
   from utils.emailing import new_emailer
   volunteer = request.user
@@ -81,44 +79,6 @@ def volunteer_offer(request, ds):
   # return success message
   return 'volunteer offer for ' + ds
 
-# def volunteer_offer(request, ds):
-#   volunteer = request.user
-#   volunteer_name = volunteer.first_name + ' ' + volunteer.last_name
-#   # send email to dataset owner
-#   new_emailer(
-#     email_type='volunteer_offer_owner',
-#     subject='Volunteer offer for '+ ds.title + ' dataset in WHG',
-#     from_email=settings.DEFAULT_FROM_EMAIL,
-#     to_email=settings.EMAIL_TO_ADMINS,
-#     reply_to = [volunteer.email],
-#     bcc = [settings.DEFAULT_FROM_EDITORIAL],
-#     volunteer_username=volunteer.username,
-#     volunteer_name=volunteer_name,
-#     volunteer_email=volunteer.email,
-#     dataset_title=ds.title,
-#     dataset_label=ds.label,
-#     dataset_id=ds.id,
-#     owner_greeting=ds.owner.name if ds.owner.name else ds.owner.username,
-#     volunteer_greeting=volunteer.name if volunteer.name else volunteer.username,
-#   )
-#   # return success message
-#   new_emailer(
-#     email_type='volunteer_offer_user',
-#     subject='Volunteer offer for '+ ds.title + ' dataset in WHG received',
-#     from_email=settings.DEFAULT_FROM_EMAIL,
-#     editor_email=settings.DEFAULT_FROM_EDITORIAL,
-#     reply_to = [settings.DEFAULT_FROM_EDITORIAL],
-#     bcc = [settings.DEFAULT_FROM_EDITORIAL],
-#     name=ds.owner.first_name + ' ' + ds.owner.last_name,
-#     username=ds.owner.username,
-#     dataset_title=ds.title,
-#     dataset_label=ds.label,
-#     dataset_id=ds.id,
-#     greeting_name = ds.owner.name if ds.owner.name else ds.owner.username
-#   )
-#   # return success message
-#   return 'volunteer offer for ' + ds
-
 def toggle_volunteers(request):
   if request.method == 'POST':
     is_checked = request.POST.get('is_checked') == 'true'
@@ -128,244 +88,6 @@ def toggle_volunteers(request):
     dataset.save()
     return JsonResponse({'status': 'success'})
 
-# ***
-# NEW insert function Aug 2023
-# intended to replace ds_insert_tsv() and ds_insert_lpf()
-# ***
-
-def insert_delim():
-  return
-
-def insert_lpf():
-  return
-
-def sniff_file_type():
-  return
-
-def validator_delim(df):
-  df = pd.read_csv('your_file.csv')
-  # check for required fields
-  required_fields = ['id', 'title', 'title_source', 'start']
-  for field in required_fields:
-    if field not in df.columns:
-      return f"Required field missing: {field}"
-
-  # require either "start" or "attestation_year"
-  if not ("start" in df.columns or "attestation_year" in df.columns):
-    return "Either 'start' or 'attestation_year' must be present"
-
-  if not ("aat_types" in df.columns or "fclasses" in df.columns):
-    return "Either 'aat_types' or 'fclasses' must be present"
-
-  # check for pattern constraints
-  pattern_constraints = {
-    'attestation_year': "",
-    'ccodes': "([a-zA-Z]{2};?)+",
-    'fclasses': "",
-    'matches': "(https?:\\/\\/.*\\..*;?)+|([a-z]{1,8}:.*;?)+",
-    'parent_id': "(https?:\/\/.*\\..*|#\\d*)",
-    'start': "(-?\\d{1,4}(-\\d{2})?(-\\d{2})?)(\/(-?\\d{1,4}(-\\d{2})?(-\\d{2})?))?",
-    'end': "(-?\\d{1,4}(-\\d{2})?(-\\d{2})?)(\/(-?\\d{1,4}(-\\d{2})?(-\\d{2})?))?"
-  }
-
-  # TODO: not all fields have contraints !?
-  # for field, pattern in pattern_constraints.items():
-  #   if field in df.columns and not df[field].str.contains(pattern).all():
-  #     return f"Field {field} contains values that do not match the required pattern"
-
-  # check for numerical range constraints
-  range_constraints = {
-    'lon': (-180, 180),
-    'lat': (-90, 90)
-  }
-
-  for field, (min_val, max_val) in range_constraints.items():
-    if field in df.columns and (df[field].min() < min_val or df[field].max() > max_val):
-      return f"Field {field} contains values outside the required range"
-
-  return "Validation passed"
-
-# def validator_lpf():
-#   return
-
-# ***
-# DOWNLOAD FILES
-# ***
-# TODO: use DRF serializer? download_{format} methods on api.PlaceList() view?
-# https://stackoverflow.com/questions/38697529/how-to-return-generated-file-download-with-django-rest-framework
-
-# one-off download lp7 example tsv
-# forces text/plain content_type!?
-def downloadLP7(request):
-  file = open('static/files/lp7_100.tsv', 'r')  # Open the specified file
-  response = HttpResponse(file)  # Give file handle to HttpResponse object
-  # Set the header to tell the browser that this is a file
-  response['Content-Type'] = 'text/plain'
-  # This is a simple description of the file. Note that the writing is the fixed one
-  response['Content-Disposition'] = 'attachment;filename="lp7_100.tsv"'
-  return response
-
-
-""" deprecatING (still used from collection download modal ) """
-def download_augmented(request, *args, **kwargs):
-  from django.db import connection
-  print('download_augmented kwargs',kwargs)
-  print('download_augmented request',request)
-  name = request.user.name
-  ds=get_object_or_404(Dataset,pk=kwargs['id'])
-  dslabel = ds.label
-  url_prefix='http://whgazetteer.org/api/place/'
-  fileobj = ds.files.all().order_by('-rev')[0]
-  date=makeNow()
-
-  req_format = kwargs['format']
-  if req_format is not None:
-    print('download format',req_format)
-
-  features=ds.places.all().order_by('id')
-
-  print('download_augmented() file format', fileobj.format)
-  print('download_augmented() req. format', req_format)
-  start = datetime.datetime.now()
-  if fileobj.format == 'delimited' and req_format in ['tsv', 'delimited']:
-    # get header
-    header = ds.files.all().order_by('id')[0].header
-    print('making a tsv file')
-    # make file name
-    #fn = 'media/user_'+user+'/'+ds.label+'_aug_'+date+'.tsv'
-    fn = 'media/downloads/'+name+'_'+dslabel+'_'+date+'.tsv'
-
-    def augLinks(linklist):
-      aug_links = []
-      for l in linklist:
-        aug_links.append(l.jsonb['identifier'])
-      return ';'.join(aug_links)
-
-    def augGeom(qs_geoms):
-      gobj = {'new':[]}
-      for g in qs_geoms:
-        if not g.task_id:
-          # it's an original
-          gobj['lonlat'] = g.jsonb['coordinates']
-        else:
-          # it's an aug/add
-          gobj['new'].append({"id":g.jsonb['citation']['id'],"coordinates":g.jsonb['coordinates'][0]})
-      return gobj
-
-    # TODO: return valid LP-TSV, incl. geowkt where applic.
-    with open(fn, 'w', newline='', encoding='utf-8') as csvfile:
-      writer = csv.writer(csvfile, delimiter='\t', quotechar='', quoting=csv.QUOTE_NONE)
-      writer.writerow(['id','whg_pid','title','ccodes','lon','lat','added','matches'])
-      #writer.writerow(header)
-      for f in features:
-        geoms = f.geoms.all()
-        gobj = augGeom(geoms)
-        #print('gobj',f.id, gobj)
-        row = [str(f.src_id),
-               str(f.id),
-               f.title,
-               ';'.join(f.ccodes),
-               gobj['lonlat'][0] if 'lonlat' in gobj else None,
-               gobj['lonlat'][1] if 'lonlat' in gobj else None,
-               gobj['new'] if 'new' in gobj else None,
-               str(augLinks(f.links.all()))
-               ]
-        writer.writerow(row)
-        #progress_recorder.set_progress(i + 1, len(features), description="tsv progress")
-    response = FileResponse(open(fn, 'rb'), content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="'+os.path.basename(fn)+'"'
-    end = datetime.datetime.now()
-    print('elapsed tsv', end-start)
-    return response
-  else:
-    print('building lpf file')
-    # make file name
-    fn = 'media/downloads/'+name+'_'+dslabel+'_'+date+'.tsv'
-    result={"type":"FeatureCollection","features":[],
-            "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
-            "filename": "/"+fn}
-    print('augmented lpf template', result)
-    with open(fn, 'w', encoding='utf-8') as outfile:
-      with connection.cursor() as cursor:
-        cursor.execute("""with namings as
-          (select place_id, jsonb_agg(jsonb) as names from place_name pn
-          where place_id in (select id from places where dataset = '{ds}')
-          group by place_id ),
-          placetypes as
-          (select place_id, jsonb_agg(jsonb) as "types" from place_type pt
-          where place_id in (select id from places where dataset = '{ds}')
-          group by place_id ),
-          placelinks as
-          (select place_id, jsonb_agg(jsonb) as links from place_link pl
-          where place_id in (select id from places where dataset = '{ds}')
-          group by place_id ),
-          geometry as
-          (select place_id, jsonb_agg(jsonb) as geoms from place_geom pg
-          where place_id in (select id from places where dataset = '{ds}')
-          group by place_id ),
-          placewhens as
-          (select place_id, jsonb as whenobj from place_when pw
-          where place_id in (select id from places where dataset = '{ds}')),
-          placerelated as
-          (select place_id, jsonb_agg(jsonb) as rels from place_related pr
-          where place_id in (select id from places where dataset = '{ds}')
-          group by place_id ),
-          descriptions as
-          (select place_id, jsonb_agg(jsonb) as descrips from place_description pdes
-          where place_id in (select id from places where dataset = '{ds}')
-          group by place_id ),
-          depictions as
-          (select place_id, jsonb_agg(jsonb) as depicts from place_depiction pdep
-          where place_id in (select id from places where dataset = '{ds}')
-          group by place_id )
-          select jsonb_build_object(
-            'type','Feature',
-            '@id', p.src_id,
-            'properties', jsonb_build_object(
-                'pid', '{urlpre}'||p.id,
-                'title', p.title),
-            'names', n.names,
-            'types', coalesce(pt.types, '[]'),
-            'links', coalesce(pl.links, '[]'),
-            'geometry', case when g.geoms is not null
-                then jsonb_build_object(
-                'type','GeometryCollection',
-                'geometries', g.geoms)
-                else jsonb_build_object(
-                'type','Point','coordinates','{a}'::char[])
-                end,
-            'when', pw.whenobj,
-            'relations',coalesce(pr.rels, '[]'),
-            'descriptions',coalesce(pdes.descrips, '[]'),
-            'depictions',coalesce(pdep.depicts, '[]')
-          ) from places p
-          left join namings n on p.id = n.place_id
-          left join placetypes pt on p.id = pt.place_id
-          left join placelinks pl on p.id = pl.place_id
-          left join geometry g on p.id = g.place_id
-          left join placewhens pw on p.id = pw.place_id
-          left join placerelated pr on p.id = pr.place_id
-          left join descriptions pdes on p.id = pdes.place_id
-          left join depictions pdep on p.id = pdep.place_id
-          where dataset = '{ds}'
-        """.format(urlpre=url_prefix, ds=dslabel, a='{}'))
-        for row in cursor:
-          g = row[0]['geometry']
-          # get rid of empty/unknown geometry
-          if g['type'] != 'GeometryCollection' and g['coordinates'] == []:
-            row[0].pop('geometry')
-          result['features'].append(row[0])
-          #progress_recorder.set_progress(i + 1, len(features), description="lpf progress")
-        outfile.write(json.dumps(result,indent=2))
-        #outfile.write(json.dumps(result))
-
-    end = datetime.datetime.now()
-    print('elapsed lpf', end-start)
-    # response is reopened file
-    response = FileResponse(open(fn, 'rb'), content_type='text/json')
-    response['Content-Disposition'] = 'attachment; filename="'+os.path.basename(fn)+'"'
-
-    return response
 
 """ just gets a file and downloads it to File/Save window """
 def download_file(request, *args, **kwargs):
@@ -380,102 +102,6 @@ def download_file(request, *args, **kwargs):
 
   return response
 
-#
-# experiment (deprecated?)
-def download_augmented_slow(request, *args, **kwargs):
-  print('download_augmented kwargs',kwargs)
-  user = request.user.name
-  ds=get_object_or_404(Dataset,pk=kwargs['id'])
-  fileobj = ds.files.all().order_by('-rev')[0]
-  date=makeNow()
-
-  req_format = kwargs['format']
-  if req_format is not None:
-    print('got format',req_format)
-    #qs = qs.filter(title__icontains=query)
-
-  features=ds.places.all()
-
-  if fileobj.format == 'delimited' and req_format == 'tsv':
-    print('augmented for delimited')
-    # make file name
-    fn = 'media/user_'+user+'/'+ds.label+'_aug_'+date+'.tsv'
-    def augLinks(linklist):
-      aug_links = []
-      for l in linklist:
-        aug_links.append(l.jsonb['identifier'])
-      return ';'.join(aug_links)
-
-    def augGeom(qs_geoms):
-      gobj = {'new':[]}
-      for g in qs_geoms:
-        if not g.task_id:
-          # it's an original
-          gobj['lonlat'] = g.jsonb['coordinates']
-        else:
-          # it's an aug/add
-          gobj['new'].append({"id":g.jsonb['citation']['id'],"coordinates":g.jsonb['coordinates']})
-      return gobj
-
-    with open(fn, 'w', newline='', encoding='utf-8') as csvfile:
-      writer = csv.writer(csvfile, delimiter='\t', quotechar='', quoting=csv.QUOTE_NONE)
-      writer.writerow(['id','whg_pid','title','ccodes','lon','lat','added','matches'])
-      for f in features:
-        geoms = f.geoms.all()
-        gobj = augGeom(geoms)
-        row = [
-          str(f.src_id),
-          str(f.id),f.title,
-          ';'.join(f.ccodes),
-          gobj['lonlat'][0] if 'lonlat' in gobj else None,
-          gobj['lonlat'][1] if 'lonlat' in gobj else None,
-          gobj['new'] if 'new' in gobj else None,
-          str(augLinks(f.links.all())) ]
-        writer.writerow(row)
-        #print(row)
-    response = FileResponse(open(fn, 'rb'),content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="'+os.path.basename(fn)+'"'
-
-    return response
-  else:
-    # make file name
-    fn = 'media/user_'+user+'/'+ds.label+'_aug_'+date+'.json'
-
-    with open(fn, 'w', encoding='utf-8') as outfile:
-      #fcoll = {"type":"FeatureCollection","features":[]}
-      for f in features:
-        print('dl_aug, lpf adding feature:',f)
-        feat={"type":"Feature",
-              "properties":{
-                "@id":f.dataset.uri_base+f.src_id,
-                "src_id":f.src_id,
-                "title":f.title,
-                "whg_pid":f.id}}
-        if len(f.geoms.all()) >1:
-          feat['geometry'] = {'type':'GeometryCollection'}
-          feat['geometry']['geometries'] = [g.jsonb for g in f.geoms.all()]
-        elif len(f.geoms.all()) == 1:
-          feat['geometry'] = f.geoms.first().jsonb
-        else: # no geoms
-          feat['geometry'] = feat['geometry'] = {'type':'GeometryCollection','geometries':[]}
-        feat['names'] = [n.jsonb for n in f.names.all()]
-        feat['types'] = [t.jsonb for t in f.types.all()]
-        feat['when'] = [w.jsonb for w in f.whens.all()]
-        feat['relations'] = [r.jsonb for r in f.related.all()]
-        feat['links'] = [l.jsonb for l in f.links.all()]
-        feat['descriptions'] = [des.jsonb for des in f.descriptions.all()]
-        feat['depictions'] = [dep.jsonb for dep in f.depictions.all()]
-        #fcoll['features'].append(feat)
-        outfile.write(json.dumps(feat,indent=2))
-      #outfile.write(json.dumps(fcoll,indent=2))
-
-    # response is reopened file
-    response = FileResponse(open(fn, 'rb'), content_type='text/json')
-    #response['Content-Disposition'] = 'attachment; filename="'+os.path.basename(fn)+'"'
-    response['Content-Disposition'] = 'filename="'+os.path.basename(fn)+'"'
-
-    return response
-  # *** /end DOWNLOAD FILES
 
 # GeoJSON for all places in a dataset INCLUDING those without geometry
 def fetch_mapdata_ds(request, *args, **kwargs):
@@ -568,124 +194,12 @@ def fetch_mapdata_ds(request, *args, **kwargs):
 
     return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii': False})
 
-# GeoJSON for all places in a dataset
-# feeds ds_browse (owner view); ds_places, collection_places (public)
-def fetch_geojson_ds(request, *args, **kwargs):
-  print('fetch_geojson_ds kwargs',kwargs)
-  dsid=kwargs['dsid']
-  ds=get_object_or_404(Dataset,pk=dsid)
-
-  # build a fast FeatureCollection
-  features=PlaceGeom.objects.filter(place_id__in=ds.placeids).values_list(
-    'jsonb','place_id','src_id','place__title','place__minmax', 'place__fclasses')
-  fcoll = {"type":"FeatureCollection","features":[], "minmax":ds.minmax}
-  for f in features:
-    # some places have no temporal scoping (dplace, geonames, etc.)
-    minmax = f[4] if f[4] and len(f[4]) == 2 else None
-    feat={"type":"Feature",
-          "properties":{"pid":f[1],"src_id":f[2],"title":f[3],
-                        "fclasses":f[5], "ds":ds.label},
-          "geometry":f[0]}
-    if minmax:
-      feat["properties"]["min"] = minmax[0]
-      feat["properties"]["max"] = minmax[1]
-    fcoll['features'].append(feat)
-
-  result = {"minmax":ds.minmax, "collection":fcoll}
-  return JsonResponse(result, safe=False,json_dumps_params={'ensure_ascii':False})
-
-# flatten for gl time-mapping
-# one feature per geometry w/min & max
-def fetch_geojson_flat(request, *args, **kwargs):
-  print('fetch_geojson_flat kwargs',kwargs)
-  dsid=kwargs['dsid']
-  ds=get_object_or_404(Dataset,pk=dsid)
-
-  #from places.models import PlaceGeom
-  #from datasets.models import Dataset
-  #ds= Dataset.objects.get(pk=1106)
-
-  fcoll = {"type":"FeatureCollection","features":[]}
-
-  # build a FLAT FeatureCollection
-  pgobjects=PlaceGeom.objects.filter(place_id__in=ds.placeids)
-  #pgobjects=PlaceGeom.objects.filter(place_id__in=ds.placeids).values_list(
-    #'jsonb','place_id','src_id','minmax','place__title','place__minmax', 'place__fclasses')
-  for pg in pgobjects:
-    geom = json.loads(pg.geom.geojson)
-    if geom['type'] != 'GeometryCollection':
-      fcoll['features'].append({"type":"Feature",
-                  "geometry":geom,
-                  "properties":{
-                    "id":pg.place_id, "title":pg.place.title,
-                    "min":pg.minmax[0] if pg.minmax else None,
-                    "max":pg.minmax[1] if pg.minmax else None }}
-      )
-
-  result = {"minmax":ds.minmax, "collection":fcoll}
-  return JsonResponse(result, safe=False,json_dumps_params={'ensure_ascii':False})
-
-def get_encoding_excel(fn):
-  fin = codecs.open(fn, 'r')
-  encoding = fin.encoding
-  fin.close()
-  return encoding
-
-def get_encoding_delim(fn):
-  with open(fn, 'rb') as f:
-    rawdata = f.read()
-  # print('detect', detect(rawdata))
-  return detect(rawdata)['encoding']
-
-def groom_files(user):
-  return 'groomed files for ' + user
-
-  # ***
-# format validation errors for display
-# ***
-def parse_errors_tsv(errors):
-  new_errors = []
-  for e in errors:
-    newe = re.sub('a constraint: constraint', 'the constraint:', e)
-    newe = re.sub('at position "(\\d+)" does', 'does', newe)
-    newe = re.sub('row at position "(\\d+)"', 'row \\1', newe)
-    newe = re.sub('value', 'cell', newe)
-    new_errors.append(newe)
-  return new_errors
-# tsv error: ['The cell "" in row at position "2" and field "id" at position "1" does not conform to a constraint: constraint "required" is "True"', 'The row at position "2" does not conform to the primary key constraint: cells composing the primary keys are all "None"']
-
-# lpf error: [{'feat': 2, 'error': "'null' is not of type 'object'"}, {'feat': 3, 'error': "'null' is not of type 'object'"}]
-
-# *** NOT YET CALLED
-# format lpf validation errors for modal display
-# ***
-#def parse_errors_lpf(errors):
-  #new_errors = []
-  #for e in error
-  #print('parse_errors_lpf()',errors)
-
-# ***
-# parse start & end for insert to db
-# TODO: is year-only minmax useful in GUI?
-# parsedates for ds_insert_lpf will be different
-# ***
-#def intmap(arr):
-  #return [int(a) for a in arr]
-
-def parse_errors_lpf(errors):
-  print('relative_path 0',errors[0]['error'].relative_path)
-  "deque(['geometry', 'geometries', 0])"
-  msg = [{"row":e['feat'], "msg":e['error'].message, "path":
-         re.search('deque\(\[(.*)\]\)',
-          str(e['error'].relative_path)).group(1) } for e in errors]
-  return msg
 
 #
-# called by ds_insert_tsv()
+# called by process_when()
 # returns object for PlaceWhen.jsonb in db
 # and minmax int years for PlacePortalView()
 #
-
 def parsedates_tsv(dates):
     s, e, attestation_year = dates
     if s and e:
@@ -725,7 +239,7 @@ def timespansReduce(tsl):
   return result
 
 #
-# called by ds_insert_lpf()
+# called by ds_insert_json()
 # TODO: replicate outcome of parsedates_tsv()
 #
 def parsedates_lpf(feat):
@@ -775,84 +289,6 @@ def parsedates_lpf(feat):
   # de-duplicate
   unique=list(set(tuple(sorted(sub)) for sub in intervals))
   return {"intervals": unique, "minmax": minmax}
-#
-# validate Linked Places json-ld (w/jsonschema)
-# format ['coll' (FeatureCollection) | 'lines' (json-lines)]
-def validate_lpf(tempfn,format):
-  schema = json.loads(codecs.open('datasets/static/validate/schema_lpf_v1.2.json','r','utf8').read())
-  # rename tempfn
-  newfn = tempfn+'.jsonld'
-  os.rename(tempfn,newfn)
-  infile = codecs.open(newfn, 'r', 'utf8')
-  result = {"format":"lpf","errors":[]}
-  [countrows,count_ok] = [0,0]
-
-  # TODO: handle json-lines
-  jdata = json.loads(infile.read())
-  if len(set(['type', '@context', 'features'])-set(jdata.keys())) > 0 \
-     or jdata['type'] != 'FeatureCollection' \
-     or len(jdata['features']) == 0:
-    print('not valid GeoJSON-LD')
-  else:
-    for feat in jdata['features']:
-      countrows +=1
-      try:
-        validate(
-          instance=feat,
-          schema=schema,
-          format_checker=draft7_format_checker
-        )
-        count_ok +=1
-      except ValidationError as e:
-          # Extract detailed error information
-          path = " -> ".join([str(p) for p in e.absolute_path])
-          message = e.message
-          detailed_error = f"Error at {path}: {message}"
-          print('Validation error:', detailed_error)
-          result["errors"].append({"feat": countrows, 'error': detailed_error})
-    result['count'] = countrows
-  return result
-
-#
-# validate LP-TSV file (uses frictionless.py 3.31.0)
-#
-def validate_tsv(fn, ext):
-  # incoming csv or tsv; in cases converted from xlsx or ods via pandas
-  # print('validate_tsv() fn', fn)
-  # pull header for missing columns test below
-  header = codecs.open(fn, 'r').readlines()[0][:-1]
-  header = list(map(str.lower, header.split('\t' if '\t' in header else ',')))
-  # header = header.split('\t' if '\t' in header else ',')
-  list(map(str.lower, header))
-  # print('header', header)
-  result = {"format":"delimited", "errors":[], "columns":header}
-  schema_lptsv = json.loads(codecs.open('datasets/static/validate/schema_tsv.json', 'r', 'utf8').read())
-  try:
-    report = fvalidate(fn, schema=schema_lptsv, sync_schema=True)
-  except:
-    err = sys.exc_info()
-    result['errors'].append('File failed format validation. Error: '+err+'; '+str(err[1].args))
-    print('error on fvalidate',err)
-    print('error args',err[1].args)
-    return result
-
-  if len(report['tables']) > 0:
-    rpt = report['tables'][0]
-    result['count'] = rpt['stats']['rows']  # count
-    print('rpt errors', rpt['errors'])
-
-  req = ['id', 'title', 'title_source', 'start']
-  missing = list(set(req) - set(header))
-
-  # filter harmless errors
-  # TODO: is filtering encoding-error here problematic?
-  result['errors'] = [x['message'] for x in rpt['errors'] \
-            if x['code'] not in ["blank-header", "missing-header", "encoding-error"]]
-  if len(missing) > 0:
-    result['errors'].insert(0,'Required column(s) missing or header malformed: '+
-                            ', '.join(missing))
-
-  return result
 
 class HitRecord(object):
   def __init__(self, place_id, dataset, auth_id, title):
@@ -868,7 +304,6 @@ class HitRecord(object):
   def toJSON(self):
     import json
     return json.loads(json.dumps(self.__dict__,indent=2))
-
 
 class PlaceMapper(object):
   def __init__(self, id, src_id, title):
@@ -890,9 +325,6 @@ class PlaceMapper(object):
     import json
     return json.loads(json.dumps(self.__dict__, indent=2))
 
-def is_aat(string):
-  return True if string.startswith('aat') or 'aat/' in string else False
-
 # null fclass: 300239103, 300056006, 300155846
 # refactored to use Type model in db
 def aat_lookup(aid):
@@ -904,7 +336,7 @@ def aat_lookup(aid):
     # return {"label": None, "fclass":None}
     return None
 
-#u='https://catalogue.bnf.fr/ark:/12148/cb193409'
+# use: ds_insert)json()
 def aliasIt(url):
   r1=re.compile(r"\/(?:.(?!\/))+$")
   id=re.search(r1,url)
@@ -925,9 +357,6 @@ def flatten(l):
         yield sub
     else:
       yield el
-
-def format_size(num):
-  return round(num/1000000, 2)
 
 """
   'monkey patch' for hully() for acknowledged GEOS/Django issue
@@ -1135,7 +564,7 @@ def hully(g_list):
   #print(hull.geojson)
   return json.loads(hull.geojson) if hull.geojson !=None else []
 
-
+# use: insert.py process_geom()
 def parse_wkt(g):
     # Load the geometry from the WKT string
     gw = wkt_loads(g)
@@ -1152,34 +581,22 @@ def parse_wkt(g):
 
     return feature
 
-# from timestamp
-def makeDate(ts, form):
-  expr = ts.strftime("%Y-%m-%d") if form == 'iso' \
-    else ts.strftime("%d-%b-%Y")
-  return expr
-#
+# use: tasks.create_zipfile()
 def makeNow():
   ts = time.time()
   sttime = datetime.datetime.fromtimestamp(ts).strftime('%Y%m%d_%H%M%S')
   return sttime
-#
-def myprojects(me):
-  return DatasetUser.objects.filter(user_id_id=me.id).values_list('dataset_id_id')
-#
-def parsejson(value,key):
-  """returns value for given key"""
-  print('parsejson() value',value)
-  obj = json.loads(value.replace("'",'"'))
-  return obj[key]
-#
+
+# use: ds_update()
 def makeCoords(lonstr,latstr):
-  #print(type(lonstr),latstr)
   lon = float(lonstr) if lonstr not in ['','nan',None] else ''
   lat = float(latstr) if latstr not in ['','nan',None] else ''
   coords = [] if (lonstr == ''  or latstr == '') else [lon,lat]
   return coords
 
 # might be GeometryCollection or singleton
+# use: insert.ds_insert_json(); insert.process_geom(); remote
+#
 def ccodesFromGeom(geom):
   if geom['type'] == 'Point' and geom['coordinates'] ==[]:
     ccodes = []
@@ -1193,27 +610,14 @@ def ccodesFromGeom(geom):
       qs = Country.objects.filter(mpoly__intersects=g)
     ccodes = [c.iso for c in qs]
     return ccodes
-#
+
+# use: tasks
 def elapsed(delta):
   minutes, seconds = divmod(delta.seconds, 60)
   return '{:02}:{:02}'.format(int(minutes), int(seconds))
 
-# called from es_lookup_tgn(); applicable for tgn only
-def bestParent(qobj, flag=False):
-  best = []
-  # merge parent country/ies & parents
-  if len(qobj['countries']) > 0 and qobj['countries'][0] != '':
-    for c in qobj['countries']:
-      best.append(parents.ccodes[0][c.upper()]['tgnlabel'])
-  if len(qobj['parents']) > 0:
-    for p in qobj['parents']:
-      best.append(p)
-  if len(best) == 0:
-    best = ['World']
-  return best
-
 # wikidata Qs from ccodes
-#TODO: consolidate hashes
+# TODO: consolidate hashes
 def getQ(arr,what):
   #print('arr,what',arr, what)
   qids=[]
@@ -1298,7 +702,6 @@ def classy(gaz, typeArray):
     types.append(default)
   return list(set(types))
 
-
 # log recon action & update status
 def post_recon_update(ds, user, task, test):
   print('test in utils.post_recon_update()', test )
@@ -1364,6 +767,7 @@ def status_emailer(ds, task_name):
   msg.send(fail_silently=False)
 
 # TODO: faster?
+# deprecatING Apr 2024
 class UpdateCountsView(View):
   """ Returns counts of unreviewed records, per pass and total; also deferred per task
   """
@@ -1419,41 +823,434 @@ class UpdateCountsView(View):
     #print(json.dumps(updates, indent=2))
     return JsonResponse(updates, safe=False)
 
+
+# ***
+# DEPRECATED BELOW
+# ***
+# TODO: use DRF serializer? download_{format} methods on api.PlaceList() view?
+# https://stackoverflow.com/questions/38697529/how-to-return-generated-file-download-with-django-rest-framework
+
+# one-off download lp7 example tsv
+# forces text/plain content_type!?
+# def downloadLP7(request):
+#   file = open('static/files/lp7_100.tsv', 'r')  # Open the specified file
+#   response = HttpResponse(file)  # Give file handle to HttpResponse object
+#   # Set the header to tell the browser that this is a file
+#   response['Content-Type'] = 'text/plain'
+#   # This is a simple description of the file. Note that the writing is the fixed one
+#   response['Content-Disposition'] = 'attachment;filename="lp7_100.tsv"'
+#   return response
+
+""" deprecated  """
+# def download_augmented(request, *args, **kwargs):
+#   from django.db import connection
+#   print('download_augmented kwargs',kwargs)
+#   print('download_augmented request',request)
+#   name = request.user.name
+#   ds=get_object_or_404(Dataset,pk=kwargs['id'])
+#   dslabel = ds.label
+#   url_prefix='http://whgazetteer.org/api/place/'
+#   fileobj = ds.files.all().order_by('-rev')[0]
+#   date=makeNow()
+#
+#   req_format = kwargs['format']
+#   if req_format is not None:
+#     print('download format',req_format)
+#
+#   features=ds.places.all().order_by('id')
+#
+#   print('download_augmented() file format', fileobj.format)
+#   print('download_augmented() req. format', req_format)
+#   start = datetime.datetime.now()
+#   if fileobj.format == 'delimited' and req_format in ['tsv', 'delimited']:
+#     # get header
+#     header = ds.files.all().order_by('id')[0].header
+#     print('making a tsv file')
+#     # make file name
+#     #fn = 'media/user_'+user+'/'+ds.label+'_aug_'+date+'.tsv'
+#     fn = 'media/downloads/'+name+'_'+dslabel+'_'+date+'.tsv'
+#
+#     def augLinks(linklist):
+#       aug_links = []
+#       for l in linklist:
+#         aug_links.append(l.jsonb['identifier'])
+#       return ';'.join(aug_links)
+#
+#     def augGeom(qs_geoms):
+#       gobj = {'new':[]}
+#       for g in qs_geoms:
+#         if not g.task_id:
+#           # it's an original
+#           gobj['lonlat'] = g.jsonb['coordinates']
+#         else:
+#           # it's an aug/add
+#           gobj['new'].append({"id":g.jsonb['citation']['id'],"coordinates":g.jsonb['coordinates'][0]})
+#       return gobj
+#
+#     # TODO: return valid LP-TSV, incl. geowkt where applic.
+#     with open(fn, 'w', newline='', encoding='utf-8') as csvfile:
+#       writer = csv.writer(csvfile, delimiter='\t', quotechar='', quoting=csv.QUOTE_NONE)
+#       writer.writerow(['id','whg_pid','title','ccodes','lon','lat','added','matches'])
+#       #writer.writerow(header)
+#       for f in features:
+#         geoms = f.geoms.all()
+#         gobj = augGeom(geoms)
+#         #print('gobj',f.id, gobj)
+#         row = [str(f.src_id),
+#                str(f.id),
+#                f.title,
+#                ';'.join(f.ccodes),
+#                gobj['lonlat'][0] if 'lonlat' in gobj else None,
+#                gobj['lonlat'][1] if 'lonlat' in gobj else None,
+#                gobj['new'] if 'new' in gobj else None,
+#                str(augLinks(f.links.all()))
+#                ]
+#         writer.writerow(row)
+#         #progress_recorder.set_progress(i + 1, len(features), description="tsv progress")
+#     response = FileResponse(open(fn, 'rb'), content_type='text/csv')
+#     response['Content-Disposition'] = 'attachment; filename="'+os.path.basename(fn)+'"'
+#     end = datetime.datetime.now()
+#     print('elapsed tsv', end-start)
+#     return response
+#   else:
+#     print('building lpf file')
+#     # make file name
+#     fn = 'media/downloads/'+name+'_'+dslabel+'_'+date+'.tsv'
+#     result={"type":"FeatureCollection","features":[],
+#             "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
+#             "filename": "/"+fn}
+#     print('augmented lpf template', result)
+#     with open(fn, 'w', encoding='utf-8') as outfile:
+#       with connection.cursor() as cursor:
+#         cursor.execute("""with namings as
+#           (select place_id, jsonb_agg(jsonb) as names from place_name pn
+#           where place_id in (select id from places where dataset = '{ds}')
+#           group by place_id ),
+#           placetypes as
+#           (select place_id, jsonb_agg(jsonb) as "types" from place_type pt
+#           where place_id in (select id from places where dataset = '{ds}')
+#           group by place_id ),
+#           placelinks as
+#           (select place_id, jsonb_agg(jsonb) as links from place_link pl
+#           where place_id in (select id from places where dataset = '{ds}')
+#           group by place_id ),
+#           geometry as
+#           (select place_id, jsonb_agg(jsonb) as geoms from place_geom pg
+#           where place_id in (select id from places where dataset = '{ds}')
+#           group by place_id ),
+#           placewhens as
+#           (select place_id, jsonb as whenobj from place_when pw
+#           where place_id in (select id from places where dataset = '{ds}')),
+#           placerelated as
+#           (select place_id, jsonb_agg(jsonb) as rels from place_related pr
+#           where place_id in (select id from places where dataset = '{ds}')
+#           group by place_id ),
+#           descriptions as
+#           (select place_id, jsonb_agg(jsonb) as descrips from place_description pdes
+#           where place_id in (select id from places where dataset = '{ds}')
+#           group by place_id ),
+#           depictions as
+#           (select place_id, jsonb_agg(jsonb) as depicts from place_depiction pdep
+#           where place_id in (select id from places where dataset = '{ds}')
+#           group by place_id )
+#           select jsonb_build_object(
+#             'type','Feature',
+#             '@id', p.src_id,
+#             'properties', jsonb_build_object(
+#                 'pid', '{urlpre}'||p.id,
+#                 'title', p.title),
+#             'names', n.names,
+#             'types', coalesce(pt.types, '[]'),
+#             'links', coalesce(pl.links, '[]'),
+#             'geometry', case when g.geoms is not null
+#                 then jsonb_build_object(
+#                 'type','GeometryCollection',
+#                 'geometries', g.geoms)
+#                 else jsonb_build_object(
+#                 'type','Point','coordinates','{a}'::char[])
+#                 end,
+#             'when', pw.whenobj,
+#             'relations',coalesce(pr.rels, '[]'),
+#             'descriptions',coalesce(pdes.descrips, '[]'),
+#             'depictions',coalesce(pdep.depicts, '[]')
+#           ) from places p
+#           left join namings n on p.id = n.place_id
+#           left join placetypes pt on p.id = pt.place_id
+#           left join placelinks pl on p.id = pl.place_id
+#           left join geometry g on p.id = g.place_id
+#           left join placewhens pw on p.id = pw.place_id
+#           left join placerelated pr on p.id = pr.place_id
+#           left join descriptions pdes on p.id = pdes.place_id
+#           left join depictions pdep on p.id = pdep.place_id
+#           where dataset = '{ds}'
+#         """.format(urlpre=url_prefix, ds=dslabel, a='{}'))
+#         for row in cursor:
+#           g = row[0]['geometry']
+#           # get rid of empty/unknown geometry
+#           if g['type'] != 'GeometryCollection' and g['coordinates'] == []:
+#             row[0].pop('geometry')
+#           result['features'].append(row[0])
+#           #progress_recorder.set_progress(i + 1, len(features), description="lpf progress")
+#         outfile.write(json.dumps(result,indent=2))
+#         #outfile.write(json.dumps(result))
+#
+#     end = datetime.datetime.now()
+#     print('elapsed lpf', end-start)
+#     # response is reopened file
+#     response = FileResponse(open(fn, 'rb'), content_type='text/json')
+#     response['Content-Disposition'] = 'attachment; filename="'+os.path.basename(fn)+'"'
+#
+#     return response
+#
+# experiment (deprecated?)
+# def download_augmented_slow(request, *args, **kwargs):
+#   print('download_augmented kwargs',kwargs)
+#   user = request.user.name
+#   ds=get_object_or_404(Dataset,pk=kwargs['id'])
+#   fileobj = ds.files.all().order_by('-rev')[0]
+#   date=makeNow()
+#
+#   req_format = kwargs['format']
+#   if req_format is not None:
+#     print('got format',req_format)
+#     #qs = qs.filter(title__icontains=query)
+#
+#   features=ds.places.all()
+#
+#   if fileobj.format == 'delimited' and req_format == 'tsv':
+#     print('augmented for delimited')
+#     # make file name
+#     fn = 'media/user_'+user+'/'+ds.label+'_aug_'+date+'.tsv'
+#     def augLinks(linklist):
+#       aug_links = []
+#       for l in linklist:
+#         aug_links.append(l.jsonb['identifier'])
+#       return ';'.join(aug_links)
+#
+#     def augGeom(qs_geoms):
+#       gobj = {'new':[]}
+#       for g in qs_geoms:
+#         if not g.task_id:
+#           # it's an original
+#           gobj['lonlat'] = g.jsonb['coordinates']
+#         else:
+#           # it's an aug/add
+#           gobj['new'].append({"id":g.jsonb['citation']['id'],"coordinates":g.jsonb['coordinates']})
+#       return gobj
+#
+#     with open(fn, 'w', newline='', encoding='utf-8') as csvfile:
+#       writer = csv.writer(csvfile, delimiter='\t', quotechar='', quoting=csv.QUOTE_NONE)
+#       writer.writerow(['id','whg_pid','title','ccodes','lon','lat','added','matches'])
+#       for f in features:
+#         geoms = f.geoms.all()
+#         gobj = augGeom(geoms)
+#         row = [
+#           str(f.src_id),
+#           str(f.id),f.title,
+#           ';'.join(f.ccodes),
+#           gobj['lonlat'][0] if 'lonlat' in gobj else None,
+#           gobj['lonlat'][1] if 'lonlat' in gobj else None,
+#           gobj['new'] if 'new' in gobj else None,
+#           str(augLinks(f.links.all())) ]
+#         writer.writerow(row)
+#         #print(row)
+#     response = FileResponse(open(fn, 'rb'),content_type='text/csv')
+#     response['Content-Disposition'] = 'attachment; filename="'+os.path.basename(fn)+'"'
+#
+#     return response
+#   else:
+#     # make file name
+#     fn = 'media/user_'+user+'/'+ds.label+'_aug_'+date+'.json'
+#
+#     with open(fn, 'w', encoding='utf-8') as outfile:
+#       #fcoll = {"type":"FeatureCollection","features":[]}
+#       for f in features:
+#         print('dl_aug, lpf adding feature:',f)
+#         feat={"type":"Feature",
+#               "properties":{
+#                 "@id":f.dataset.uri_base+f.src_id,
+#                 "src_id":f.src_id,
+#                 "title":f.title,
+#                 "whg_pid":f.id}}
+#         if len(f.geoms.all()) >1:
+#           feat['geometry'] = {'type':'GeometryCollection'}
+#           feat['geometry']['geometries'] = [g.jsonb for g in f.geoms.all()]
+#         elif len(f.geoms.all()) == 1:
+#           feat['geometry'] = f.geoms.first().jsonb
+#         else: # no geoms
+#           feat['geometry'] = feat['geometry'] = {'type':'GeometryCollection','geometries':[]}
+#         feat['names'] = [n.jsonb for n in f.names.all()]
+#         feat['types'] = [t.jsonb for t in f.types.all()]
+#         feat['when'] = [w.jsonb for w in f.whens.all()]
+#         feat['relations'] = [r.jsonb for r in f.related.all()]
+#         feat['links'] = [l.jsonb for l in f.links.all()]
+#         feat['descriptions'] = [des.jsonb for des in f.descriptions.all()]
+#         feat['depictions'] = [dep.jsonb for dep in f.depictions.all()]
+#         #fcoll['features'].append(feat)
+#         outfile.write(json.dumps(feat,indent=2))
+#       #outfile.write(json.dumps(fcoll,indent=2))
+#
+#     # response is reopened file
+#     response = FileResponse(open(fn, 'rb'), content_type='text/json')
+#     #response['Content-Disposition'] = 'attachment; filename="'+os.path.basename(fn)+'"'
+#     response['Content-Disposition'] = 'filename="'+os.path.basename(fn)+'"'
+#
+#     return response
+#   # *** /end DOWNLOAD FILES
+# GeoJSON for all places in a dataset
+# feeds ds_browse (owner view); ds_places, collection_places (public)
+# def fetch_geojson_ds(request, *args, **kwargs):
+#   print('fetch_geojson_ds kwargs',kwargs)
+#   dsid=kwargs['dsid']
+#   ds=get_object_or_404(Dataset,pk=dsid)
+#
+#   # build a fast FeatureCollection
+#   features=PlaceGeom.objects.filter(place_id__in=ds.placeids).values_list(
+#     'jsonb','place_id','src_id','place__title','place__minmax', 'place__fclasses')
+#   fcoll = {"type":"FeatureCollection","features":[], "minmax":ds.minmax}
+#   for f in features:
+#     # some places have no temporal scoping (dplace, geonames, etc.)
+#     minmax = f[4] if f[4] and len(f[4]) == 2 else None
+#     feat={"type":"Feature",
+#           "properties":{"pid":f[1],"src_id":f[2],"title":f[3],
+#                         "fclasses":f[5], "ds":ds.label},
+#           "geometry":f[0]}
+#     if minmax:
+#       feat["properties"]["min"] = minmax[0]
+#       feat["properties"]["max"] = minmax[1]
+#     fcoll['features'].append(feat)
+#
+#   result = {"minmax":ds.minmax, "collection":fcoll}
+#   return JsonResponse(result, safe=False,json_dumps_params={'ensure_ascii':False})
+
+# flatten for gl time-mapping
+# one feature per geometry w/min & max
+# def fetch_geojson_flat(request, *args, **kwargs):
+#   print('fetch_geojson_flat kwargs',kwargs)
+#   dsid=kwargs['dsid']
+#   ds=get_object_or_404(Dataset,pk=dsid)
+#
+#   #from places.models import PlaceGeom
+#   #from datasets.models import Dataset
+#   #ds= Dataset.objects.get(pk=1106)
+#
+#   fcoll = {"type":"FeatureCollection","features":[]}
+#
+#   # build a FLAT FeatureCollection
+#   pgobjects=PlaceGeom.objects.filter(place_id__in=ds.placeids)
+#   #pgobjects=PlaceGeom.objects.filter(place_id__in=ds.placeids).values_list(
+#     #'jsonb','place_id','src_id','minmax','place__title','place__minmax', 'place__fclasses')
+#   for pg in pgobjects:
+#     geom = json.loads(pg.geom.geojson)
+#     if geom['type'] != 'GeometryCollection':
+#       fcoll['features'].append({"type":"Feature",
+#                   "geometry":geom,
+#                   "properties":{
+#                     "id":pg.place_id, "title":pg.place.title,
+#                     "min":pg.minmax[0] if pg.minmax else None,
+#                     "max":pg.minmax[1] if pg.minmax else None }}
+#       )
+#
+#   result = {"minmax":ds.minmax, "collection":fcoll}
+#   return JsonResponse(result, safe=False,json_dumps_params={'ensure_ascii':False})
+
+# def get_encoding_excel(fn):
+#   fin = codecs.open(fn, 'r')
+#   encoding = fin.encoding
+#   fin.close()
+#   return encoding
+
+# def get_encoding_delim(fn):
+#   with open(fn, 'rb') as f:
+#     rawdata = f.read()
+#   # print('detect', detect(rawdata))
+#   return detect(rawdata)['encoding']
+ # ***
+# format validation errors for display
+# ***
+# def parse_errors_tsv(errors):
+#   new_errors = []
+#   for e in errors:
+#     newe = re.sub('a constraint: constraint', 'the constraint:', e)
+#     newe = re.sub('at position "(\\d+)" does', 'does', newe)
+#     newe = re.sub('row at position "(\\d+)"', 'row \\1', newe)
+#     newe = re.sub('value', 'cell', newe)
+#     new_errors.append(newe)
+#   return new_errors
+#
+
+# def parse_errors_lpf(errors):
+#   print('relative_path 0',errors[0]['error'].relative_path)
+#   "deque(['geometry', 'geometries', 0])"
+#   msg = [{"row":e['feat'], "msg":e['error'].message, "path":
+#          re.search('deque\(\[(.*)\]\)',
+#           str(e['error'].relative_path)).group(1) } for e in errors]
+#   return msg
+# from timestamp
+# def makeDate(ts, form):
+#   expr = ts.strftime("%Y-%m-%d") if form == 'iso' \
+#     else ts.strftime("%d-%b-%Y")
+#   return expr
+
+# def parsejson(value,key):
+#   """returns value for given key"""
+#   print('parsejson() value',value)
+#   obj = json.loads(value.replace("'",'"'))
+#   return obj[key]
+
+# uses: es_lookup_tgn(); applicable for tgn only
+# def bestParent(qobj, flag=False):
+#   best = []
+#   # merge parent country/ies & parents
+#   if len(qobj['countries']) > 0 and qobj['countries'][0] != '':
+#     for c in qobj['countries']:
+#       best.append(parents.ccodes[0][c.upper()]['tgnlabel'])
+#   if len(qobj['parents']) > 0:
+#     for p in qobj['parents']:
+#       best.append(p)
+#   if len(best) == 0:
+#     best = ['World']
+#   return best
+
+# def is_aat(string):
+#   return True if string.startswith('aat') or 'aat/' in string else False
+
+
 # ***
 # UPLOAD UTILS
 # ***
-def xl_tester():
-  fn = '/Users/karlg/repos/_whgdata/data/_source/CentralEurasia/bregel_in progress.xlsx'
-  from openpyxl import load_workbook
-  wb = load_workbook(filename = fn)
-  sheet_ranges = wb['range names']
+# def xl_tester():
+#   fn = '/Users/karlg/repos/_whgdata/data/_source/CentralEurasia/bregel_in progress.xlsx'
+#   from openpyxl import load_workbook
+#   wb = load_workbook(filename = fn)
+#   sheet_ranges = wb['range names']
 
-def xl_upload(request):
-  if "GET" == request.method:
-    return render(request, 'datasets/xl.html', {})
-  else:
-    excel_file = request.FILES["excel_file"]
-
-    # you may put validations here to check extension or file size
-
-    wb = openpyxl.load_workbook(excel_file)
-
-    # getting all sheets
-    sheets = wb.sheetnames
-    print(sheets)
-
-    # getting a particular sheet by name out of many sheets
-    ws = wb["Sheet1"]
-    print(ws)
-
-    excel_data = list()
-    # iterating over the rows and
-    # getting value from each cell in row
-    for row in ws.iter_rows():
-      row_data = list()
-      for cell in row:
-        #row_data.append(str(cell.value))
-        row_data.append(cell.value)
-      excel_data.append(row_data)
-
-    return render(request, 'datasets/xl.html', {"excel_data":excel_data})
+# def xl_upload(request):
+#   if "GET" == request.method:
+#     return render(request, 'datasets/xl.html', {})
+#   else:
+#     excel_file = request.FILES["excel_file"]
+#
+#     # you may put validations here to check extension or file size
+#
+#     wb = openpyxl.load_workbook(excel_file)
+#
+#     # getting all sheets
+#     sheets = wb.sheetnames
+#     print(sheets)
+#
+#     # getting a particular sheet by name out of many sheets
+#     ws = wb["Sheet1"]
+#     print(ws)
+#
+#     excel_data = list()
+#     # iterating over the rows and
+#     # getting value from each cell in row
+#     for row in ws.iter_rows():
+#       row_data = list()
+#       for cell in row:
+#         #row_data.append(str(cell.value))
+#         row_data.append(cell.value)
+#       excel_data.append(row_data)
+#
+#     return render(request, 'datasets/xl.html', {"excel_data":excel_data})

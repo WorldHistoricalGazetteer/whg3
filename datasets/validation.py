@@ -143,7 +143,6 @@ def validate_delim(df):
 
   return errors
 
-
 #
 # validate Linked Places json-ld (w/jsonschema)
 # format ['coll' (FeatureCollection) | 'lines' (json-lines)]
