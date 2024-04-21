@@ -33,7 +33,8 @@ urlpatterns = [
         
     # use: single place for ds_browse:: PlaceSerializer
     # also search.html if search scope = 'db'
-    path('place/<int:pk>/', views.PlaceDetailAPIView.as_view(), name='place-detail'),
+    path('place/<int:pk>/', views.PlacesDetailAPIView.as_view(), name='place-detail'),
+    path('place/<str:pk_list>/', views.PlacesDetailAPIView.as_view(), name='places-detail'),
 
     # single place for record comparison in ds_update
     path('place_compare/<int:pk>/', views.PlaceCompareAPIView.as_view(), name='place-compare'),

@@ -283,13 +283,17 @@
 
   <script type="text/javascript">
     const pageData = "{{ object.id }}";
+    var visParameters = {{ visParameters|safe }};
     window.loggedin = "{{ loggedin }}";
     window.dslabel = "{{ object.label }}";
     window.filter = "{{ filter }}";
-    var familiedCollectionData = {{ familied_collection_json|safe }};
+    window.ds_list = [{
+        ds_type: "collections",
+        id: {{ object.id }},
+        title: "{{ object.title }}",
+        datasets: {{ datasets|safe }},
+    }];
   </script>
-
-  {{ ds_list|json_script:"ds_list_data" }}
 
 {% endblock %}
 

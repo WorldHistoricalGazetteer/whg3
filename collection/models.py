@@ -174,7 +174,7 @@ class Collection(models.Model):
   @property
   def ds_list(self):
     if self.collection_class == 'dataset':
-      dsc = [{"id": d.id, "label": d.label, "bounds": d.bounds, "title": d.title, "dl_est": d.dl_est,
+      dsc = [{"id": d.id, "label": d.label, "extent": d.extent, "bounds": d.bounds, "title": d.title, "dl_est": d.dl_est,
               "numrows": d.numrows, "modified": d.last_modified_text} for d in self.datasets.all()]
       return list({item['id']: item for item in dsc}.values())
     elif self.collection_class == 'place':

@@ -9,6 +9,7 @@ User = get_user_model()
 from django.contrib.gis.geos import Polygon, Point
 # from django.contrib.postgres import search
 from django.contrib.gis.measure import D
+from django.contrib.gis.db.models import Extent
 from django.contrib.gis.db.models.functions import Distance, GeometryField
 from django.contrib.gis.geos import GEOSGeometry
 from django.db.models import JSONField
@@ -883,25 +884,127 @@ class PrettyJsonRenderer(JSONRenderer):
 
 #
 """
-    place/<int:pk>/
+    place/<int:pk>/ **OR** 'place/<str:pk_list>/'
     uses: ds_browse.html; place_collection_browse.html
     "published record by place_id"
 """
-class PlaceDetailAPIView(generics.RetrieveAPIView):
-  """  returns single serialized database place record by id  """
-  queryset = Place.objects.all()
-  serializer_class = PlaceSerializer
-  renderer_classes = [PrettyJsonRenderer]
+## SUPERSEDED BY PlacesDetailAPIView BELOW
+# class PlaceDetailAPIView(generics.RetrieveAPIView):
+#   """  returns single serialized database place record by id  """
+#   queryset = Place.objects.all()
+#   serializer_class = PlaceSerializer
+#   renderer_classes = [PrettyJsonRenderer]
+#
+#   permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
+#   authentication_classes = [SessionAuthentication]
+#
+#   def get_serializer_context(self):
+#     # collection id is passed from place collection browse
+#     context = super().get_serializer_context()
+#     context["query_params"] = self.request.query_params
+#     return context
 
-  permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
-  authentication_classes = [SessionAuthentication]
-
-  def get_serializer_context(self):
-    # collection id is passed from place collection browse
-    context = super().get_serializer_context()
-    context["query_params"] = self.request.query_params
-    return context
-
+class PlacesDetailAPIView(View):
+    """  returns serialized multiple database place records by id  """
+    
+    def get(self, request, pk_list=None, pk=None):
+        if pk_list is not None:
+            # Split the string of IDs using the delimiter "-"
+            ids = pk_list.split("-")
+        elif pk is not None:
+            ids = [str(pk)]
+        else:
+            pass
+       
+        places = Place.objects.filter(id__in=ids)
+    
+        def sort_unique(arr, key=None, sort_key=None):
+            unique_items = []
+            seen_items = set()
+        
+            for item in arr:
+                item_unique = item[key] if key else json.dumps(item)
+                if item_unique not in seen_items:
+                    unique_items.append(item)
+                    seen_items.add(item_unique)
+        
+            sort_key = sort_key or key
+            if sort_key:
+                unique_items.sort(key=lambda x: x[sort_key])
+        
+            return unique_items
+        
+        with open(os.path.join(settings.STATIC_ROOT, 'aliases.json')) as json_file:
+            json_data = json_file.read()
+        base_urls = json.loads('{'+json_data+'}')['base_urls'] # Wrap the contents in {} to create a valid JSON object                
+        
+        def add_urls(data):
+            return [
+                {**item, 'url': identifier.join(':') if identifier[0].startswith("http") else base_urls.get(identifier[0], '') + identifier[1]} 
+                if identifier and (base_url := base_urls.get(identifier[0])) is not None 
+                else item
+                for item in data
+                for identifier in [item.get('identifier', '').split(':')]
+                if len(identifier) == 2 or not item.get('identifier')
+            ]  
+        
+        # Serialize the Place records
+        serialized_places = []
+        for place in places:
+            # Pass the request in the serializer context
+            serializer = PlaceSerializer(place, context={'request': request})
+            serialized_places.append(serializer.data)
+            
+        # Calculate the overall extent
+        aggregated_extent = None
+        for place in serialized_places:
+            extent = place["extent"]
+            if extent:
+                polygon = Polygon.from_bbox(extent)
+                aggregated_extent = aggregated_extent.union(polygon) if aggregated_extent else polygon
+        
+        # Convert the overall extent to the format expected in the JSON response
+        aggregated_extent = aggregated_extent.extent if aggregated_extent else None
+        
+        dataset_ids = set([place["dataset_id"] for place in serialized_places])
+        
+        # Extract the minmax values and filter out empty lists
+        minmax_values = [(place.get("minmax", [None, None])[0], place.get("minmax", [None, None])[1]) for place in serialized_places]
+        # Filter out None values
+        min_values = [value[0] for value in minmax_values if value[0] is not None]
+        max_values = [value[1] for value in minmax_values if value[1] is not None]
+        # Calculate the min and max values, handling the case of empty sequences
+        min_value = min(min_values, default=None)
+        max_value = max(max_values, default=None)
+        
+        country_codes_mapping = {country['id']: country['text'] for item in json.load(open('static/js/regions_countries.json')) if item.get('text') == 'Countries' for country in item.get('children', [])}
+        unique_country_codes = {ccode for place in serialized_places for ccode in place.get("ccodes", [])}
+        countries_with_labels = [{ 'ccode': ccode, 'label': country_codes_mapping.get(ccode, '') } for ccode in unique_country_codes]
+            
+        # Aggregate places into a single object
+        aggregated_place = {
+            "id": "-".join(ids),  # Concatenate the IDs
+            "datasets": sort_unique(list(Dataset.objects.filter(id__in=dataset_ids).values("id", "title")), 'title'),
+            "title": "|".join(set(place["title"] for place in serialized_places)),
+            "names": sort_unique([name for place in serialized_places for name in place["names"]], 'toponym'),
+            "types": add_urls(sort_unique([type for place in serialized_places for type in place["types"]], 'label')),
+            "geoms": [geom for place in serialized_places for geom in place["geoms"]],
+            "extent": aggregated_extent,
+            "links": add_urls(sort_unique([link for place in serialized_places for link in place["links"]], sort_key='identifier')),
+            "related": sort_unique([related for place in serialized_places for related in place["related"]], 'label'),
+            "descriptions": add_urls(sort_unique([description for place in serialized_places for description in place["descriptions"]], 'value')),
+            "depictions": sort_unique([depiction for place in serialized_places for depiction in place["depictions"]]),
+            "minmax": [min_value, max_value],
+            "countries": sorted(countries_with_labels, key=lambda x: x['ccode']),
+            # "whens": {
+            #     "timespans": sort_unique([timespan for place in serialized_places for when in place.get("whens", []) for timespan in when.get("timespans", [])]),
+            #     "periods": sort_unique([period for place in serialized_places for when in place.get("whens", []) for period in when.get("periods", [])]),
+            #     "label": "|".join(set(when.get("label", "") for place in serialized_places for when in place.get("whens", []) if when.get("label", ""))),
+            #     "duration": "|".join(set(when.get("duration", "") for place in serialized_places for when in place.get("whens", []) if when.get("duration", ""))),
+            # },
+        }        
+        
+        return JsonResponse(aggregated_place, safe=False)
 
 """
     place_compare/<int:pk>/
