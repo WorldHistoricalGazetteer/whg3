@@ -154,30 +154,65 @@ class Home30a(TemplateView):
 
     return context
 
-# used for dashboard_user() and dataset_list()
 # TODO: what rules? this or the *_list() functions?
+# used for dashboard_user() and dataset_list()
 def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
-  from django.db.models import Max
+  from django.db.models import Q
+  collaborator_objects = model.objects.none()
+
   # Always apply extra filters if they are provided and the model is Area
   if extra_filters and model == Area:
     objects = model.objects.filter(**extra_filters)
   elif is_admin:
     objects = model.objects.all()
   else:
-    objects = model.objects.filter(**filter_criteria).exclude(title__startswith='(stub)')
+    # Get the objects owned by the user
+    owned_objects = model.objects.filter(**filter_criteria).exclude(title__startswith='(stub)')
+
+    # Get the objects where the user is a collaborator
+    if model == Dataset:
+      collaborator_objects = Dataset.objects.filter(collabs__user_id=user.id)
+    elif model == Collection:
+      collaborator_objects = Collection.objects.filter(collabs__user_id=user.id)
+
+    # Combine the querysets
+    objects = owned_objects | collaborator_objects
 
   if model == Area:
     objects = objects.filter(type__in=['ccodes', 'copied', 'drawn'])
 
   if is_admin and model == Area and 'type' in filter_criteria:
     objects = objects.exclude(type__in=filter_criteria['type'])
-  elif model == Dataset: # reverse sort, and some dummy datasets need to be filtered
-      objects = objects.exclude(title__startswith='(stub)').order_by('create_date')
-      objects = objects.annotate(recent_log_timestamp=Max('log__timestamp'))
-      # objects = objects.order_by('-recent_log_timestamp')
-      # objects = objects.order_by('label')
+  elif model == Dataset:  # reverse sort, and some dummy datasets need to be filtered
+    objects = objects.exclude(title__startswith='(stub)').order_by('create_date')
+    objects = objects.annotate(recent_log_timestamp=Max('log__timestamp'))
+    # objects = objects.order_by('-recent_log_timestamp')
+    # objects = objects.order_by('label')
 
   return objects
+
+# def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
+#   from django.db.models import Max
+#   # Always apply extra filters if they are provided and the model is Area
+#   if extra_filters and model == Area:
+#     objects = model.objects.filter(**extra_filters)
+#   elif is_admin:
+#     objects = model.objects.all()
+#   else:
+#     objects = model.objects.filter(**filter_criteria).exclude(title__startswith='(stub)')
+#
+#   if model == Area:
+#     objects = objects.filter(type__in=['ccodes', 'copied', 'drawn'])
+#
+#   if is_admin and model == Area and 'type' in filter_criteria:
+#     objects = objects.exclude(type__in=filter_criteria['type'])
+#   elif model == Dataset: # reverse sort, and some dummy datasets need to be filtered
+#       objects = objects.exclude(title__startswith='(stub)').order_by('create_date')
+#       objects = objects.annotate(recent_log_timestamp=Max('log__timestamp'))
+#       # objects = objects.order_by('-recent_log_timestamp')
+#       # objects = objects.order_by('label')
+#
+#   return objects
 
 def area_list(request, sort='', order=''):
   filters = request.GET

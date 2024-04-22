@@ -64,7 +64,7 @@ EMAIL_MESSAGES = {
   ),
   'dataset_unpublished': (
     'Dear {greeting_name},\n\n'
-    'Your previously published dataset, {dataset_title} ({dataset_label}, {dataset_id}), '
+    'Your previously published dataset, "{dataset_title} ({dataset_label}", {dataset_id}), '
     'has been made private again, and its records are no longer accessible in search and our API .\n\n'
     'If you have any questions, please contact our editor at {reply_to}\n\n'
     'regards,\nThe WHG project team'
@@ -92,7 +92,7 @@ EMAIL_MESSAGES = {
   ),
   'recon_task_success': (
     'Dear {greeting_name},\n\n'
-    'Your {taskname} reconciliation task for the {dstitle} dataset ({dslabel}) has completed.'
+    'Your {taskname} reconciliation task for the "{dstitle}" dataset ({dslabel}) has completed.\n'
     '{counthit} records got a total of {totalhits} hits.\n'
     'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
     'regards,\nThe WHG project team'
@@ -108,6 +108,23 @@ EMAIL_MESSAGES = {
     '{counthit} records got a total of {totalhits} hits.\n'
     'This only previews potential results; no records were written to the index.\n'
     'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
+    'regards,\nThe WHG project team'
+  ),
+  "volunteer_offer_user": (
+    'Hello {volunteer_greeting},\n\n'
+    'Thank you for volunteering to help with reconciliation review for the datawet "{dataset_title}"'
+    ' on the World Historical Gazetteer platform.\n\n'
+    'The dataset owner, {owner_greeting} has been notified and should be in touch soon to discuss how you can help.\n\n'
+    "If you don't hear from them or have any questions, please contact us by replying to this email\n\n"
+    'regards,\nThe WHG project team'
+  ),
+  "volunteer_offer_owner": (
+    'Hello {owner_greeting},\n\n'
+    'The World Historical Gazetteer user {volunteer_greeting} (volunteer_username) has offered to help with '
+    'reconciliation review on your dataset, "{dataset_title}".\n'
+    'You can respond to them at {volunteer_email} or by replying to this email. When mutually agreed, simply add '
+    '{volunteer_username} as a colleborator and they will have the necessary access. \n\n'
+    'We recommend volunteers be made aware of your approach to match decisions before proceeding.\n\n'
     'regards,\nThe WHG project team'
   ),
   'download_ready': (

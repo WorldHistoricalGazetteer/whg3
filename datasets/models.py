@@ -89,15 +89,17 @@ class Dataset(models.Model):
   numlinked = models.IntegerField(null=True, blank=True)
   total_links = models.IntegerField(null=True, blank=True)
 
-  # should come in handy`
+  # only filter display toggle valid for datasets
   vis_parameters = JSONField(default=dict, null=True, blank=True)
+  # list dataset on volunteers requested page?
+  volunteers = models.BooleanField(default=False)
 
   def __str__(self):
     return self.label
     # return '%d: %s' % (self.id, self.label)
 
   def get_absolute_url(self):
-    return reverse('datasets:ds_summary', kwargs={'id': self.id})
+    return reverse('datasets:ds_status', kwargs={'id': self.id})
 
   @property
   def bounds(self):

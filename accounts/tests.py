@@ -23,7 +23,7 @@ from rest_framework.test import APIClient
 DATASETS_URL = reverse('data-datasets')
 def dataset_detail_url(dataset_id):
 	"""Create and return a dataset detail URL."""
-	return reverse('datasets:ds_summary', args=[dataset_id])
+	return reverse('datasets:ds_status', args=[dataset_id])
 
 # list a user's collections
 COLLECTIONS_URL = reverse('data-collections')

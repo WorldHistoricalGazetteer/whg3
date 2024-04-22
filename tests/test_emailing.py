@@ -2,15 +2,19 @@
 # ./manage.py test --settings=tests.settings tests.test_emailing.NewUserTestCase
 # ./manage.py test --settings=tests.settings tests.test_emailing.DatasetSignalTestCase
 
-from django.test import TestCase
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.gis.geos import Point
 from django.core import mail
+from django.db import transaction
+from django.test import TestCase
 from django.urls import reverse
 from datasets.models import Dataset
-from places.models import Place
+from places.models import Place, PlaceGeom
 from unittest.mock import patch
 import sys
+from main.tasks import needs_tileset
+import pdb
 
 User = get_user_model()
 # from datasets.tasks import align_idx
@@ -118,13 +122,31 @@ class ContactFormTestCase(TestCase):
       self.assertEqual(mail.outbox[1].subject, 'Message to WHG received')
       self.assertIn('We received your message',mail.outbox[1].body)
 
+
+from main.tasks import needs_tileset
+
 class DatasetSignalTestCase(TestCase):
     def setUp(self):
-        # Create a user and a dataset for testing
+      with transaction.atomic():
+        # Create a user, dataset, place and placegeom for testing
         self.user = User.objects.create_user(username='testuser', name="Test User", email='testuser@example.com',
                                              password='testpass')
         self.dataset = Dataset.objects.create(owner=self.user, title='Test Dataset',
-                                              label='test_dataset', ds_status='created')
+                                              label='test_dataset', ds_status=None)
+        print('dataset id', self.dataset.id)
+        print('settings.CELERY_ALWAYS_EAGER', settings.CELERY_ALWAYS_EAGER == True)
+
+        self.place = Place.objects.create(
+          src_id='abc123',
+          dataset=self.dataset,
+          title='Test Place',
+          ccodes=['TH'],
+        )
+        self.place_geom = PlaceGeom.objects.create(
+          place=self.place,
+          geom=Point(0, 0),
+        )
+        print(self.place_geom.geom)
 
     def test_send_new_dataset_email(self):
         self.dataset.ds_status = 'uploaded'
@@ -149,6 +171,8 @@ class DatasetSignalTestCase(TestCase):
       # Change the public status of the dataset
       self.dataset.public = True
       self.dataset.save()
+      print('dataset id', self.dataset.id)
+      # pdb.set_trace()
 
       # Check if an email was sent
       self.assertEqual(len(mail.outbox), 1)
@@ -178,7 +202,6 @@ class DatasetSignalTestCase(TestCase):
 
       # Check recipient is owner
       self.assertIn(self.user.email, mail.outbox[0].to)
-
 
     def test_handle_wdcomplete(self):
       # Clear the outbox

@@ -61,10 +61,11 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			e.preventDefault();
 			window.location.href = "{% url 'datasets:ds_reconcile' ds.id %}"
 		})
-	
+
+		let page;
 		// help modals
 		$(".help-matches").click(function() {
-			let page = $(this).data('id')
+			page = $(this).data('id')
 			console.log('help:', page)
 			$('.selector').dialog('open');
 		})

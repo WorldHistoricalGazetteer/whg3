@@ -62,6 +62,7 @@ label {vertical-align:text-top;}
 .bg-lightblue { background-color: powderblue !important; }
 .bg-lighterblue { background-color: azure !important; }
 .bg-lightgrey { background-color: ghostwhite !important; }
+.bg-grey { background-color: gainsboro !important; }
 .bg-white { background-color: white !important; }
 .bg-tan { background-color: burlywood !important; color:white;}
 .bg-seagreen { background-color: #3B8794 !important; color:white;}
@@ -103,7 +104,10 @@ label {vertical-align:text-top;}
 .ital {font-style: italic;}
 .larger {font-size: larger;}
 .linky {color: #5d96cd;}
-.linkypop {color: #993333;}
+.linkypop {color: #993333;
+  text-decoration-line: underline;
+  text-decoration-style: dotted;
+}
 .linkyred {color: #ff0000;}
 .linkylite {color: aliceblue;}
 

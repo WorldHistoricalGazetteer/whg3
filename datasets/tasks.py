@@ -28,94 +28,14 @@ from datasets.models import Dataset, Hit
 from datasets.static.hashes.parents import ccodes as cchash
 from datasets.static.hashes.qtypes import qtypes
 from elastic.es_utils import makeDoc, build_qobj, profileHit
-from datasets.utils import bestParent, elapsed, getQ, \
-  HitRecord, hully, makeNow, parse_wkt, post_recon_update
+from datasets.utils import elapsed, getQ, \
+  HitRecord, hully, parse_wkt, post_recon_update #  bestParent, makeNow,
 from main.models import Log, DownloadFile
 from places.models import Place
 
 logger = get_task_logger(__name__)
 es = settings.ES_CONN
 User = get_user_model()
-
-"""
-  Adds a dataset's places to the builder index
-  cases: 1) initial seed; 2) post-reconciliation
-"""
-def index_to_builder(request, idx='builder'):
-  if request.method == 'POST':
-    collection_id = request.POST.get('collection_id')
-    dataset_id = request.POST.get('dataset_id')
-    # Call the new indexing function
-    result = index_dataset_to_builder(dataset_id, collection_id, idx)
-    return JsonResponse(result)
-  else:
-    return JsonResponse({"result": "error", "message": "Invalid request"})
-
-
-# @shared_task()
-# def index_to_builder(request, idx='builder'):
-@csrf_exempt  # necessary?
-def index_dataset_to_builder(dataset_id, collection_id, idx='builder'):
-  print('in index_to_builder()', dataset_id, collection_id)
-  es = settings.ES_CONN
-  # Fetch dataset and collection
-  try:
-      dataset = Dataset.objects.get(pk=dataset_id, idx_builder=False)
-      collection = Collection.objects.get(pk=collection_id)
-  except Dataset.DoesNotExist:
-      print(f"Dataset with ID {dataset_id} does not exist or is already indexed.")
-      return JsonResponse({"result": "error", "message": "Dataset does not exist or is already indexed"})
-
-  places_to_index = Place.objects.filter(dataset=dataset, indexed=False, idx_pub=False)
-  place_ids_to_index = list(places_to_index.values_list('id', flat=True))
-
-  # convert a Place into a dict that's ready for indexing
-  def make_bulk_doc(place):
-      doc = makeDoc(place)
-      doc['collection_id'] = collection_id
-      # Add names and title to search field
-      searchy_content = set(doc.get('searchy', []))
-      searchy_content.update(n['toponym'] for n in doc['names'])
-      searchy_content.add(doc['title'])
-      doc['searchy'] = list(searchy_content)
-      return {
-          "_index": idx,
-          "_id": place.id,  # place ID as document ID
-          "_source": doc,
-      }
-
-  actions = (make_bulk_doc(place) for place in places_to_index.iterator())
-
-  # Perform the bulk index operation and collect the response
-  successes, failed_docs = 0, []
-  try:
-    with transaction.atomic():  # Use a transaction to prevent race conditions
-        for ok, action in streaming_bulk(es, actions, index=idx, raise_on_error=False):
-            if ok:
-                successes += 1
-            else:
-                failed_docs.append(action)
-  except Exception as e:
-    # Log the exception and return an error response
-    print(f"Exception during indexing: {e}")
-    return {"result": "error", "message": str(e)}
-
-  # Update the idx_builder flag for all successful Place objects using the Place IDs
-  Place.objects.filter(id__in=place_ids_to_index).update(idx_builder=True)
-
-  print(f"Indexing complete. Total indexed places: {successes}. Failed documents: {len(failed_docs)}")
-  if failed_docs:
-      print(f"Failed documents: {failed_docs}")
-
-  dataset.idx_builder = True
-  if collection.datasets.count() == 1:
-    dataset.ds_status = 'builder_seed'
-  dataset.save()
-
-  return JsonResponse({"result": "success",
-                       "indexed": successes,
-                       "failed": len(failed_docs)
-                       })
 
 """
   adds newly public dataset to 'pub' index
@@ -436,7 +356,8 @@ def normalize(h, auth, language=None):
       print('is_wdgn?', is_wdgn)
       dataset = h['dataset'] if is_wdgn else 'wd'
       print('dataset', dataset)
-      variants=h['variants']
+      variants = h['variants']
+      fclasses = h['fclasses']
       title = make_title(h, language)
 
       # create base HitRecord(place_id, dataset, auth_id, title
@@ -445,13 +366,14 @@ def normalize(h, auth, language=None):
       # build variants array per dataset
       if is_wdgn and h['dataset'] == 'geonames':
         rec.variants = variants['names']
-      else:
+        rec.fclasses = fclasses
+      else:  # wikidata
         v_array=[]
         for v in variants:
-          if not is_wdgn:
-            for n in v['names']:
-              if n != title:
-                v_array.append(n+'@'+v['lang'])
+          # if not is_wdgn:
+          for n in v['names']:
+            if n != title:
+              v_array.append(n+'@'+v['lang'])
         rec.variants = v_array
             
       if 'location' in h.keys():
@@ -462,7 +384,8 @@ def normalize(h, auth, language=None):
         # single MultiPoint geom if exists
         rec.geoms = [loc]
 
-      if not is_wdgn: # it's wd
+      # if not is_wdgn: # it's wd
+      if dataset != 'geonames':   # it's wd or wikidata
         rec.links = h['authids']
 
         # look up Q class labels
@@ -488,25 +411,25 @@ def normalize(h, auth, language=None):
       print("normalize(wdlocal) error:", h['id'], str(e))
       print('Hit rec', rec)
 
-  elif auth == 'tgn':
-    rec = HitRecord(-1, 'tgn', h['tgnid'], h['title'])
-    rec.variants = [n['toponym'] for n in h['names']] # always >=1 names
-    rec.types = [(t['placetype'] if 'placetype' in t and t['placetype'] != None else 'unspecified') + \
-                (' ('+t['id']  +')' if 'id' in t and t['id'] != None else '') for t in h['types']] \
-                if len(h['types']) > 0 else []
-    rec.ccodes = []
-    rec.parents = ' > '.join(h['parents']) if len(h['parents']) > 0 else []
-    rec.descriptions = [h['note']] if h['note'] != None else []
-    if 'location' in h.keys():
-      rec.geoms = [{
-        "type":"Point",
-        "coordinates":h['location']['coordinates'],
-        "id":h['tgnid'],
-          "ds":"tgn"}]
-    else: 
-      rec.geoms=[]
-    rec.minmax = []
-    rec.links = []
+  # elif auth == 'tgn':
+  #   rec = HitRecord(-1, 'tgn', h['tgnid'], h['title'])
+  #   rec.variants = [n['toponym'] for n in h['names']] # always >=1 names
+  #   rec.types = [(t['placetype'] if 'placetype' in t and t['placetype'] != None else 'unspecified') + \
+  #               (' ('+t['id']  +')' if 'id' in t and t['id'] != None else '') for t in h['types']] \
+  #               if len(h['types']) > 0 else []
+  #   rec.ccodes = []
+  #   rec.parents = ' > '.join(h['parents']) if len(h['parents']) > 0 else []
+  #   rec.descriptions = [h['note']] if h['note'] != None else []
+  #   if 'location' in h.keys():
+  #     rec.geoms = [{
+  #       "type":"Point",
+  #       "coordinates":h['location']['coordinates'],
+  #       "id":h['tgnid'],
+  #         "ds":"tgn"}]
+  #   else:
+  #     rec.geoms=[]
+  #   rec.minmax = []
+  #   rec.links = []
     #print(rec)
   else:
     rec = HitRecord(-1, 'unknown', 'unknown', 'unknown')
@@ -539,36 +462,16 @@ def get_bounds_filter(bounds, idx):
   }} 
   return filter
 
-"""
-performs elasticsearch > builder queries
-from align_collection()
-"""
-def es_lookup_builder(qobj, *args, **kwargs):
-  #bounds = {'type': ['userarea'], 'id': ['0']}
-  bounds = kwargs['bounds']
-  print('kwargs in es_lookup_builder()', kwargs)
-
-"""
-manage align/reconcile to builder index 
-"""
-@shared_task(name="align_collection")
-def align_collection(*args, **kwargs):
-  task_id = align_wdlocal.request.id
-  ds = get_object_or_404(Dataset, id=kwargs['ds'])
-  user = get_object_or_404(User, pk=kwargs['user'])
-  bounds = kwargs['bounds']
-  scope = kwargs['scope']
-  print('kwargs from align_collection() task', kwargs)
-
 
 """
 performs elasticsearch > wdlocal queries
 from align_wdlocal()
 """
 def es_lookup_wdlocal(qobj, *args, **kwargs):
-  #bounds = {'type': ['userarea'], 'id': ['0']}
-  idx = 'wdgn'
   # idx = 'wd'
+  idx = 'wdgn'  # wikidata + geonames
+
+  #bounds object: {'type': ['userarea'], 'id': ['0']}
   bounds = kwargs['bounds']
   print('kwargs in es_lookup_wdlocal()', kwargs)
   hit_count = 0
@@ -736,14 +639,17 @@ parse, write Hit records for review
 @shared_task(name="align_wdlocal")
 def align_wdlocal(*args, **kwargs):
   print('align_wdlocal.request', align_wdlocal.request)
+  print('kwargs from align_wdlocal() task', kwargs)
+
   task_id = align_wdlocal.request.id
   task_status = AsyncResult(task_id).status
   ds = get_object_or_404(Dataset, id=kwargs['ds'])
   user = get_object_or_404(User, pk=kwargs['user'])
   bounds = kwargs['bounds']
   scope = kwargs['scope']
-  print('kwargs from align_wdlocal() task', kwargs)
+  scope_geom = kwargs['scope_geom']
   language = kwargs['lang']
+
   hit_parade = {"summary": {}, "hits": []}
   [nohits,wdlocal_es_errors,features] = [[],[],[]]
   [count_hit, count_nohit, total_hits, count_p0, count_p1, count_p2] = [0,0,0,0,0,0]
@@ -754,11 +660,11 @@ def align_wdlocal(*args, **kwargs):
   # queryset depends on 'scope'
   qs = ds.places.all() if scope == 'all' else \
     ds.places.filter(~Q(review_wd = 1))
-  
-  print('wtf? scope, count',scope,qs.count())
+  if scope_geom == 'geom_free':
+    qs = qs.filter(geoms__isnull=True)
+
+  print('scope, count', scope, qs.count())
   for place in qs:
-    print('review_wd',place.review_wd)
-    #place = get_object_or_404(Place, pk=6596036)
     # build query object
     qobj = {"place_id":place.id,
             "src_id":place.src_id,
@@ -785,7 +691,6 @@ def align_wdlocal(*args, **kwargs):
     qobj['variants'] = list(set(variants))
 
     # parents
-    # TODO: other relations
     if len(place.related.all()) > 0:
       for rel in place.related.all():
         if rel.jsonb['relationType'] == 'gvp:broaderPartitive':
@@ -799,11 +704,12 @@ def align_wdlocal(*args, **kwargs):
       g_list =[g.jsonb for g in place.geoms.all()]
       # make simple polygon hull for ES shape filter
       qobj['geom'] = hully(g_list)
-      # make a representative_point for ES distance
+      # make a representative_point
       #qobj['repr_point'] = pointy(g_list)
       
 
-    # 'P1566':'gn', 'P1584':'pleiades', 'P244':'loc', 'P214':'viaf', 'P268':'bnf', 'P1667':'tgn', 'P2503':'gov', 'P1871':'cerl', 'P227':'gnd'
+    # 'P1566':'gn', 'P1584':'pleiades', 'P244':'loc', 'P214':'viaf', 'P268':'bnf', 'P1667':'tgn',
+    # 'P2503':'gov', 'P1871':'cerl', 'P227':'gnd'
     # links
     if len(place.links.all()) > 0:
       l_list = [l.jsonb['identifier'] for l in place.links.all()]

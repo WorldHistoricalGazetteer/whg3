@@ -5,9 +5,8 @@ from django.conf.urls.static import static
 from django.conf import settings
 
 from . import views
-from datasets.utils import download_file, UpdateCountsView, download_augmented, \
-  fetch_mapdata_ds, fetch_geojson_ds, fetch_geojson_flat, downloadLP7
-from datasets.tasks import index_to_builder
+from datasets.utils import download_file, UpdateCountsView, fetch_mapdata_ds, toggle_volunteers
+  # fetch_geojson_flat, fetch_geojson_ds, download_augmented, downloadLP7,
 
 # dataset actions
 app_name='datasets'
@@ -31,11 +30,12 @@ urlpatterns = [
   # path('<int:pk>/insert_lpf/', views.ds_insert_lpf, name="ds_insert_lpf"),
 
   # upload excel
-  path('xl/', views.xl_upload, name='xl-upload'),
+  # path('xl/', views.xl_upload, name='xl-upload'),
 
   ## MANAGE/VIEW
   # dataset owner pages (tabs); names correspond to template names
-  path('<int:id>/summary', views.DatasetSummaryView.as_view(), name='ds_summary'),
+  path('<int:id>/status', views.DatasetStatusView.as_view(), name='ds_status'),
+  path('<int:id>/metadata', views.DatasetMetadataView.as_view(), name='ds_metadata'),
   path('<int:id>/browse', views.DatasetBrowseView.as_view(), name='ds_browse'),
   path('<int:id>/reconcile', views.DatasetReconcileView.as_view(), name='ds_reconcile'),
   path('<int:id>/collab', views.DatasetCollabView.as_view(), name='ds_collab'),
@@ -43,18 +43,18 @@ urlpatterns = [
   path('<int:id>/log', views.DatasetLogView.as_view(), name='ds_log'),
 
   # public dataset pages (tabs): metadata, browse
-  path('<int:pk>', views.DatasetPublicView.as_view(), name='ds_meta'),
+  # path('<int:pk>', views.DatasetPublicView.as_view(), name='ds_meta'),
   path('<int:id>/places', views.DatasetPlacesView.as_view(), name='ds_places'),
 
   ## DOWNLOADS
   # one-off for LP7
-  path('download_lp7/', downloadLP7, name='download_lp7'),
+  # path('download_lp7/', downloadLP7, name='download_lp7'),
 
   # download latest file, as uploaded
   path('<int:id>/file/', download_file, name="dl-file"), #
 
   ## DEPRECATing download augmented dataset
-  path('<int:id>/augmented/<str:format>', download_augmented, name="dl-aug"), #
+  # path('<int:id>/augmented/<str:format>', download_augmented, name="dl-aug"), #
 
   ## UPDATES (in progress)
   path('compare/', views.ds_compare, name='dataset-compare'),
@@ -82,21 +82,24 @@ urlpatterns = [
   # refresh reconciliation counts (ds.id from $.get)
   path('updatecounts/', UpdateCountsView.as_view(), name='update_counts'),
 
-  # add dataset to 'builder' index, tagged for collection
-  # path('index_to_builder/<int:dsid>/<int:collid>', index_to_builder, name='index-to-builder'),
-  path('index_to_builder/', index_to_builder, name='index-to-builder'),
-
   ## COLLABORATORS
   # add DatasetUser collaborator
   path('collab-add/<int:dsid>/<str:v>', views.collab_add, name="collab-add"),
+  # list dataset on Volunteer Opportunities page
+  path('toggle_volunteers', toggle_volunteers, name="toggle-volunteers"),
+  # list datasets requesting volunteers
+  path('volunteer_requests/', views.VolunteeringView.as_view(), name="volunteer_requests"),
+  # offer to volunteer
+  path('volunteer_offer/<int:pk>', views.volunteer_offer, name="volunteer-offer"),
+
 
   # delete DatasetUser collaborator
   path('collab-delete/<int:uid>/<int:dsid>/<str:v>', views.collab_delete, name="collab-delete"),
 
   ## GEOMETRY
   path('<int:dsid>/mapdata/', fetch_mapdata_ds, name="mapdata"),
-  path('<int:dsid>/geojson/', fetch_geojson_ds, name="geojson"),
-  path('<int:dsid>/geojson_flat/', fetch_geojson_flat, name="geojson-flat"),
+  # path('<int:dsid>/geojson/', fetch_geojson_ds, name="geojson"),
+  # path('<int:dsid>/geojson_flat/', fetch_geojson_flat, name="geojson-flat"),
 
   # list places in a dataset; for physical geog layers
   path('<str:label>/places/', views.ds_list, name='ds_list'),

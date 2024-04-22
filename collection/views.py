@@ -566,7 +566,13 @@ def update_collection_components(coll):
   G.add_nodes_from(place_ids)
   G.add_edges_from(edges)
 
-  # Step 2: Find connected components and process each for additional data
+  # find connected components and inspect those w/>1 place
+  components = list(nx.connected_components(G))
+  multi_place_components = [component for component in components if len(component) > 1]
+  for component in multi_place_components:
+    print(f"Component: {component}, Size: {len(component)}")
+
+  # find connected components process each for additional data
   for i, component in enumerate(nx.connected_components(G)):
     if i >= 100:
       break
@@ -580,10 +586,7 @@ def update_collection_components(coll):
     place_types = aggregate_place_types(component)
     print('Component:', component, '; Headword:', headword, '; Geometry:', geometry, '; Place Types:', place_types)
     # Store or update component information in the database
-    # (This part will depend on your specific models and structure)
     save_component_data(coll, component, headword, geometry, place_types)
-
-  # Placeholder functions for computations; implement according to your needs
 
 def compute_headword_for_component(component):
   # Logic to compute headword
@@ -597,6 +600,7 @@ def save_component_data(coll, component, headword, geometry, place_types):
   # Placeholder function to store component data
   print('saving component data for collection:', coll)
   pass
+
 
 """
   removes dataset from collection

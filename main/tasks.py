@@ -3,9 +3,10 @@ from celery import shared_task # these are @task decorators
 from django_celery_results.models import TaskResult
 from django.conf import settings
 from django.core import mail
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import EmailMultiAlternatives, EmailMessage
 from django.db import transaction, connection
-from django.db.models import Q, Count
+from django.db.models import Sum # import Q, Count
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
@@ -28,19 +29,27 @@ def calculate_geometry_complexity(dataset_id):
 
 
 @shared_task()
-def needs_tileset(category=None, id=None, pointcount_threshold=1500, geometrycount_threshold=1000, places_threshold=500):    
+def needs_tileset(category=None, id=None, pointcount_threshold=1500, geometrycount_threshold=1000, places_threshold=500):
+    print(f'needs_tileset() task: {category}-{id}')
+    print('datasets:', Dataset.objects.all())
+    from django.db import connection
+    print('Initial query count:', len(connection.queries))
     try:
         if category == "datasets":
+            id = 22
             obj = Dataset.objects.get(id=id)
         elif category == "collections":
             obj = Collection.objects.get(id=id)
     except ObjectDoesNotExist:
         return False, 0, 0
 
-    total_coords = obj.places.aggregate(total=Sum('geoms__geom__coord'))['total'] or 0
+    # total_coords = obj.places.aggregate(total=Sum('geoms__geom__coords'))['total'] or 0
+    total_coords = sum(place_geom.geom.num_coords for place in obj.places.all() for place_geom in place.geoms.all()) or 0
     total_geometries = obj.places.aggregate(total=Sum('geoms'))['total'] or 0
     total_places = obj.places.count()
 
+    print(f'total_coords: {total_coords}, total_geometries: {total_geometries}, total_places: {total_places}')
+    print('Final query count:', len(connection.queries))
     return total_coords > pointcount_threshold or total_geometries > geometrycount_threshold or total_places > places_threshold, total_coords, total_geometries, total_places
 
 @shared_task(bind=True)

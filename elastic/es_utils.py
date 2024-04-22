@@ -641,7 +641,7 @@ def removePlacesFromIndex(es, idx, pids):
     else:
       print(str(pid) + ' not in index for some reason, passed')
       pass
-  es.delete_by_query(idx, body={"query": {"terms": {"place_id": delthese}}})
+  es.delete_by_query(index=idx, body={"query": {"terms": {"place_id": delthese}}})
   print('deleted '+str(len(delthese))+': '+str(delthese))
   msg = 'deleted '+str(len(delthese))+': '+str(delthese)
   return JsonResponse(msg, safe=False)

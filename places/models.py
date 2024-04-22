@@ -159,6 +159,9 @@ class PlaceName(models.Model):
   jsonb = JSONField(blank=True, null=True)
   task_id = models.CharField(max_length=100, blank=True, null=True)
 
+  # written only if task_id
+  reviewer = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+
   toponym = models.CharField(max_length=2044)
   name_src = models.ForeignKey(Source, null=True, on_delete=models.SET_NULL)
   create_date = models.DateTimeField(null=True, blank=True)

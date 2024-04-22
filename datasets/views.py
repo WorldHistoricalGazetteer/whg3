@@ -60,6 +60,24 @@ from .utils import *
 es = settings.ES_CONN
 User = get_user_model()
 
+class VolunteeringView(ListView):
+  template_name = 'datasets/volunteering.html'
+  model = Dataset
+
+  def get_queryset(self):
+    qs = super().get_queryset()
+    return qs.filter(volunteers=True).order_by('-create_date')
+
+  def get_context_data(self, *args, **kwargs):
+    context = super(VolunteeringView, self).get_context_data(*args, **kwargs)
+    context['dataset_list'] = context.pop('object_list')
+
+    return context
+
+def volunteer_offer(request, pk):
+  print('volunteer_offer()', pk)
+  pass
+
 # TODO: in use?
 class DatasetGalleryView(ListView):
   redirect_field_name = 'redirect_to'
@@ -341,10 +359,9 @@ def review(request, pk, tid, passnum):
   ds = get_object_or_404(Dataset, id=pk)
   task = get_object_or_404(TaskResult, task_id=tid)
   auth = task.task_name[6:].replace("local", "")
-  authname = "Wikidata" if auth == "wd" else "Getty TGN" if auth == "tgn" else "WHG"
-  kwargs = ast.literal_eval(task.task_kwargs)
-  kwargs = json.loads(kwargs.replace("'", '"'))
-  print('auth, authname', auth, authname)
+  authname = "Wikidata" if auth == "wd" else "WHG"
+  kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
+  print('kwargs', kwargs)
   test = kwargs["test"] if "test" in kwargs else "off"
   beta = "beta" in list(request.user.groups.all().values_list("name", flat=True))
   # filter place records by passnum for those with unreviewed hits on this task
@@ -456,7 +473,7 @@ def review(request, pk, tid, passnum):
     # raw_hits = Hit.objects.filter(place_id=placeid, task_id=tid).order_by('-score')
     raw_hits = Hit.objects.filter(place_id=placeid, task_id=tid).order_by("-score")
 
-  print('raw_hits in review()', [h.__dict__ for h in raw_hits])
+  # print('raw_hits in review()', [h.__dict__ for h in raw_hits])
   # ??why? get pass contents for all of a place's hits
   passes = (
     list(
@@ -500,7 +517,7 @@ def review(request, pk, tid, passnum):
     "passnum": passnum,
     "page": page if request.method == "GET" else str(int(page) - 1),
     # 'aug_geom': json.loads(task.task_kwargs.replace("'",'"'))['aug_geom'],
-    "aug_geom": kwargs["aug_geom"],
+    "aug_geoms": kwargs["aug_geoms"],
     "mbtoken": settings.MAPBOX_TOKEN_WHG,
     "maptilerkey": settings.MAPTILER_KEY,
     "count_pass0": cnt_pass0,
@@ -569,7 +586,7 @@ def review(request, pk, tid, passnum):
     place_post = get_object_or_404(Place, pk=request.POST["place_id"])
     review_status = getattr(place_post, review_field)
     # proceed with POST only if place is unreviewed or deferred; else return to a GET (and next place)
-    # NB. other reviewer(s) *not* notified
+    # NB. other reviewer(s) are *not* notified
     if review_status == 1:
       context["already"] = True
       messages.success(
@@ -586,6 +603,9 @@ def review(request, pk, tid, passnum):
       # are any of the listed hits matches?
       for x in range(len(hits)):
         hit = hits[x]["id"]
+        print("hit # " + str(hits[x]) + " reviewed")
+        print("hit['json']", hits[x]["json"])
+        print("dataset", hits[x]["json"]["dataset"])
         # is this hit a match?
         if hits[x]["match"] not in ["none"]:
           # print('json of matched hit/cluster (in review())', hits[x]['json'])
@@ -598,14 +618,17 @@ def review(request, pk, tid, passnum):
               "geoms" in hits[x]["json"]
               and len(hits[x]["json"]["geoms"]) > 0
             )
+            hasNames = (
+              ("variants" in hits[x]["json"] and len(hits[x]["json"]["variants"]) > 0)
+              or
+              ("names" in hits[x]["json"] and len(hits[x]["json"]["names"]) > 0)
+            )
+            # GEOMS
             # create place_geom records if 'accept geometries' was checked
             if (
-              kwargs["aug_geom"] == "on"
+              kwargs["aug_geoms"] == 'on'
               and hasGeom
-              and tid
-              not in place_post.geoms.all().values_list(
-              "task_id", flat=True
-            )
+              and tid not in place_post.geoms.all().values_list("task_id", flat=True)
             ):
               gtype = hits[x]["json"]["geoms"][0]["type"]
               coords = hits[x]["json"]["geoms"][0]["coordinates"]
@@ -628,7 +651,43 @@ def review(request, pk, tid, passnum):
                   "coordinates": coords,
                 },
               )
+            # NAMES
+            print('hasNames', hasNames, hits[x]["json"]["variants"])
+            if (kwargs['aug_names'] == 'on'
+              and hasNames
+              and tid not in place_post.names.all().values_list('task_id', flat=True)
+            ):
+              print('doing names in review() now')
+              for n in hits[x]["json"]["variants"]:
+                # handle different name formats
+                # print('n has type', type(n))
+                if hits[x]["json"]['dataset'] == 'wikidata':
+                  name = n.split('@')[0]
+                elif hits[x]["json"]['dataset'] == 'geonames':
+                  name = n
+                else:
+                  print("failed to parse name", n)
+                  continue  # Skip if n is not in the expected format
+                print('place_post, name', place_post, name)
+                print('existing:', place_post.names.all().values_list("toponym", flat=True))
+                # exclude duplicates
+                if name not in place_post.names.all().values_list("toponym", flat=True):
+                  PlaceName.objects.create(
+                    place=place_post,
+                    task_id=tid,
+                    src_id=place.src_id,
+                    toponym=name,
+                    # reviewer=request.user,
+                    jsonb={
+                      "toponym": n,
+                      "citations": [{
+                        "id": auth + ":" + hits[x]["authrecord_id"],
+                        "label": authname,
+                      }],
+                    },
+                  )
 
+            # LINKS
             # create single PlaceLink for matched wikidata record
             if tid not in place_post.links.all().values_list(
               "task_id", flat=True
@@ -667,13 +726,17 @@ def review(request, pk, tid, passnum):
                       # "identifier": authid.strip()
                       "identifier": l.strip(),
                     },
+                    reviewer=request.user,
                   )
                   # print('PlaceLink record created',link.jsonb)
                   # update totals
                   ds.numlinked = (
                     ds.numlinked + 1 if ds.numlinked else 1
                   )
-                  ds.total_links = ds.total_links + 1
+                  ds.total_links = (
+                    ds.total_links + 1 if ds.total_links else 1
+                  )
+                  # ds.total_links = ds.total_links + 1
                   ds.save()
           # this is accessioning to whg index, add to matched[]
           elif task.task_name == "align_idx":
@@ -767,7 +830,6 @@ def review(request, pk, tid, passnum):
   accepts all pass0 wikidata matches, writes geoms and links
 """
 
-
 def write_wd_pass0(request, tid):
   task = get_object_or_404(TaskResult, task_id=tid)
   kwargs = json.loads(task.task_kwargs.replace("'", '"'))
@@ -791,7 +853,7 @@ def write_wd_pass0(request, tid):
     authids = place.links.all().values_list('jsonb__identifier', flat=True)
     # GEOMS
     # confirm another user hasn't just done this...
-    if hasGeom and kwargs['aug_geom'] == 'on' \
+    if hasGeom and kwargs['aug_geoms'] == 'on' \
       and tid not in place.geoms.all().values_list('task_id', flat=True):
       for g in h.json['geoms']:
         pg = PlaceGeom.objects.create(
@@ -879,8 +941,17 @@ def ds_recon(request, pk):
     print('ds_recon() GET')
   elif request.method == 'POST' and request.POST:
     print('ds_recon() request.POST:', request.POST)
-    test = 'on' if 'test' in request.POST else 'off'
+
+    # return
+
+    test = 'on' if 'test' in request.POST else 'off'  # for idx only
     auth = request.POST['recon']
+    scope_geom = request.POST.get('scope_geom', False)
+    aug_geoms = request.POST.get('accept_geoms', False)
+    aug_names = request.POST.get('accept_names', False)
+    print('ds_recon() aug_geoms', aug_geoms)
+    print('ds_recon() aug_names', aug_names)
+
     language = request.LANGUAGE_CODE
     if auth == 'idx' and ds.public == False and test == 'off':
       messages.add_message(request, messages.ERROR, """Dataset must be public before indexing!""")
@@ -888,13 +959,13 @@ def ds_recon(request, pk):
     # previous successful task of this type?
     #   wdlocal? archive previous, scope = unreviewed
     #   idx? scope = unindexed
-    collection_id = request.POST.get('collection_id')
+    # collection_id = request.POST.get('collection_id')
     previous = ds.tasks.filter(task_name='align_' + auth, status='SUCCESS')
-    prior = request.POST['prior'] if 'prior' in request.POST else 'na'
-    if previous.count() > 0:
+    prior = request.POST.get('prior', 'na')
+    if previous.count() > 0:  # there is a previous task
       if auth == 'idx':
         scope = "unindexed"
-      else:
+      else:  # wdlocal
         # get its id and archive it
         tid = previous.first().task_id
         task_archive(tid, prior)
@@ -903,7 +974,7 @@ def ds_recon(request, pk):
         print('ds_recon(): links & geoms were ' + ('kept' if prior == 'keep' else 'zapped'))
     else:
       # no existing task, submit all rows
-      print('ds_recon(): no previous, submitting all')
+      # print('ds_recon(): no previous, submitting all')
       scope = 'all'
 
     print('ds_recon() scope', scope)
@@ -914,7 +985,7 @@ def ds_recon(request, pk):
     # TODO: let this vary per task?
     region = request.POST['region']  # pre-defined UN regions
     userarea = request.POST['userarea']  # from ccodes, or drawn
-    aug_geom = request.POST['geom'] if 'geom' in request.POST else ''  # on == write geom if matched
+    # aug_geom = request.POST['geom'] if 'geom' in request.POST else ''  # on == write geom if matched
     bounds = {
       "type": ["region" if region != "0" else "userarea"],
       "id": [region if region != "0" else userarea]}
@@ -923,18 +994,17 @@ def ds_recon(request, pk):
     if not celeryUp():
       print('Celery is down :^(')
       emailer('Celery is down :^(',
-              'if not celeryUp() -- look into it, bub!',
+              'if not celeryUp() -- look into it!',
               'whg@kgeographer.org',
-              ['karl@kgeographer.org'])
-      messages.add_message(request, messages.INFO, """Sorry! WHG reconciliation services appears to be down.
+              ['karlg@kgeographer.org'])
+      messages.add_message(request, messages.INFO, """Sorry! The WHG reconciliation service appears to be down.
         The system administrator has been notified.""")
       return redirect('/datasets/' + str(ds.id) + '/reconcile')
 
+    # 4ce548e4-b765-4f04-aaf6-2824da89f385
+
     # initiate celery/redis task
-    # 2023-12-13 new options for reconciliation
-    # NB 'func' resolves to align_wdlocal(), align_idx(), align_collection()
-    # NB#2 the dataset id is both positional and a keyword **intentionally** -
-    # required to generate a useful result record
+    # needs positional and declared ds.id; don't know why
     try:
       result = func.delay(
         ds.id,
@@ -943,14 +1013,15 @@ def ds_recon(request, pk):
         owner=ds.owner.id,
         user=user.id,
         bounds=bounds,
-        aug_geom=aug_geom,
-        scope=scope,
+        aug_geoms=aug_geoms,  # accept geoms
+        aug_names=aug_names,  # accept names
+        scope=scope,  # all/unreviewed
+        scope_geom=scope_geom,  # all/geom_free
         lang=language,
-        test=test,
-        collection_id=collection_id
+        test=test,  # for idx only
       )
       messages.add_message(request, messages.INFO,
-                           "<span class='text-danger'>Your reconciliation task is under way.</span><br/>When complete, you will receive an email and if successful, results will appear below (you may have to refresh screen). <br/>In the meantime, you can navigate elsewhere.")
+        "<span class='text-danger'>Your reconciliation task is under way.</span><br/>When complete, you will receive an email and if successful, results will appear below (you may have to refresh screen). <br/>In the meantime, you can navigate elsewhere.")
       return redirect('/datasets/' + str(ds.id) + '/reconcile')
     except:
       print('failed: align_' + auth)
@@ -959,7 +1030,7 @@ def ds_recon(request, pk):
                            "Sorry! Reconciliation services appear to be down. The system administrator has been notified.<br/>" + str(
                              sys.exc_info()))
       emailer('WHG recon task failed',
-              'a reconciliation task has failed for dataset #' + ds.id + ', w/error: \n' + str(sys.exc_info()) + '\n\n',
+              'a reconciliation task has failed for dataset #' + str(ds.id) + ', w/error: \n' + str(sys.exc_info()) + '\n\n',
               'whg@kgeographer.org',
               'karl@kgeographer.org')
 
@@ -979,11 +1050,11 @@ def task_delete(request, tid, scope="foo"):
   hits = Hit.objects.all().filter(task_id=tid)
   tr = TaskResult.objects.get(task_id=tid)
   auth = tr.task_name[6:]  # wdlocal, idx
-  # dsid = tr.task_args[1:-1]
   dsid = int(tr.task_args[2:-3])
-  # test = json.loads(tr.task_kwargs.replace("'",'"'))['test'] \
-  test = json.loads(tr.task_kwargs[1:-1].replace("'", '"'))['test'] \
-    if 'test' in tr.task_kwargs else 'off'
+  kwargs = ast.literal_eval(tr.task_kwargs.strip('"'))
+  test = kwargs["test"] if "test" in kwargs else "off"
+  # test = json.loads(tr.task_kwargs[1:-1].replace("'", '"'))['test'] \
+  #   if 'test' in tr.task_kwargs else 'off'
   ds = get_object_or_404(Dataset, pk=dsid)
   ds_status = ds.ds_status
   print('task_delete() dsid', dsid)
@@ -995,6 +1066,7 @@ def task_delete(request, tid, scope="foo"):
   # links and geometry added by a task have the task_id
   placelinks = PlaceLink.objects.all().filter(task_id=tid)
   placegeoms = PlaceGeom.objects.all().filter(task_id=tid)
+  placenames = PlaceName.objects.all().filter(task_id=tid)
   print('task_delete()', {'tid': tr, 'dsid': dsid, 'auth': auth})
 
   # reset Place.review_{auth} to null
@@ -1015,6 +1087,7 @@ def task_delete(request, tid, scope="foo"):
     hits.delete()
     placelinks.delete()
     placegeoms.delete()
+    placenames.delete()
   elif scope == 'geoms':
     placegeoms.delete()
 
@@ -1022,17 +1095,20 @@ def task_delete(request, tid, scope="foo"):
   # undoes any acceessioning work
   if auth in ['whg', 'idx'] and test == 'off':
     removeDatasetFromIndex('whg', dsid)
+
   # set status
   print('ds.tasks.all()', ds.tasks.all())
   print('ds.file.file.name', ds.file.file.name)
-  if ds.tasks.count() == 0:
+  # last SUCCESS task is gone, back to 'uploaded' or 'remote'
+  # 'remote' is new empty datasets created by API POST
+  if ds.tasks.filter(status='SUCCESS').count() == 0:
     if ds.file.file.name.startswith('dummy'):
       ds.ds_status = 'remote'
     else:
       ds.ds_status = 'uploaded'
   ds.save()
 
-  return redirect('/datasets/' + str(dsid) + '/reconcile')
+  return redirect('/datasets/' + str(dsid) + '/status')
 
 
 """
@@ -1406,8 +1482,6 @@ def update_rels_tsv(pobj, row):
     filepath = 'media/'+filename_new
     copyfile(tempfn,filepath)
 """
-
-
 def ds_update(request):
   if request.method == 'POST':
     print('request.POST ds_update()', request.POST)
@@ -1733,9 +1807,10 @@ def ds_update(request):
 
 
 """
+  DEPRECATED for v3
   ds_compare() refactored 26 Nov 2022 (backup below)
   validates updated dataset file & compares w/existing
-  called by ajax function from modal in ds_summary.html
+  called by ajax function from modal in ds_status.html
   returns json result object 'comparison' for use by ds_update()
 """
 
@@ -2100,6 +2175,8 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
 
       # Create the Dataset object
       dataset = form.save(commit=False)
+      if not dataset.uri_base:
+        dataset.uri_base = 'https://whgazetteer.org/api/db/?id='
       dataset.save()
 
       # Directly process the data and create database entries
@@ -2212,8 +2289,8 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
     )
 
     # If everything went well:
-    messages.info(self.request, f"{skipped_rows} rows were skipped.")
-    return redirect('/datasets/' + str(dataset.id) + '/summary')
+    # messages.info(self.request, f"{skipped_rows} rows were skipped.")
+    return redirect('/datasets/' + str(dataset.id) + '/status')
 
 
 """
@@ -2330,15 +2407,118 @@ def match_undo(request, ds, tid, pid):
 
 
 """
-  returns dataset owner metadata page
+  returns dataset owner summary page
 """
-class DatasetSummaryView(LoginRequiredMixin, UpdateView):
+class DatasetStatusView(LoginRequiredMixin, UpdateView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
 
   form_class = DatasetDetailModelForm
 
-  template_name = 'datasets/ds_summary.html'
+  template_name = 'datasets/ds_status.html'
+
+  def get_object(self):
+    id_ = self.kwargs.get("id")
+    return get_object_or_404(Dataset, id=id_)
+
+  def get_context_data(self, *args, **kwargs):
+    context = super(DatasetStatusView, self).get_context_data(*args, **kwargs)
+
+    id_ = self.kwargs.get("id")
+    ds = get_object_or_404(Dataset, id=id_)
+    place_count = ds.places.count()
+    wdgn_status = {
+      "rows": place_count,
+      "got_hits": ds.places.exclude(review_wd=None).count(),
+      "reviewed": ds.places.filter(review_wd=1).count(),
+      "remain": ds.places.filter(review_wd=0).count(),
+      "deferred": ds.places.filter(review_wd=2).count(),
+    }
+
+    idx_status = {
+      "rows": place_count,
+      "got_hits": ds.places.exclude(review_whg=None).count(),
+      "reviewed": ds.places.filter(review_whg=1).count(),
+      "remain": ds.places.filter(review_whg=0).count(),
+      "deferred": ds.places.filter(review_whg=2).count() or 'none',
+    }
+
+    context['wdgn_status'] = wdgn_status
+    context['idx_status'] = idx_status
+    def placecounter(th):
+      pcounts={}
+      count0 = th.filter(query_pass='pass0').values('place_id').distinct().count()
+      count1 = th.filter(query_pass='pass1').values('place_id').distinct().count()
+      count2 = th.filter(query_pass='pass2').values('place_id').distinct().count()
+      count0and1 = th.filter(query_pass='pass1, pass0').values('place_id').distinct().count()
+
+      pcounts['p0'] = count0
+      pcounts['p1'] = count1
+      pcounts['p2'] = count2
+      pcounts['p0and1'] = count0and1
+      return pcounts
+
+    # omits FAILURE and ARCHIVED
+    ds_tasks = ds.tasks.exclude(status='FAILURE').exclude(status='ARCHIVED')
+    context['tasks'] = ds_tasks
+    # most recent successful, non-archived task for each type
+    task_wdgn = ds_tasks.filter(task_name__startswith='align_wd').order_by('-date_done').first()
+    context['task_wdgn'] = task_wdgn
+    task_idx = ds_tasks.filter(task_name__startswith='align_idx').order_by('-date_done').first()
+    context['task_idx'] = task_idx
+
+    # remaining_wdgn = Hit.objects.filter(task_id=task_wdgn.task_id, reviewed=False)
+    if task_wdgn is not None:
+      remaining_wdgn = Hit.objects.filter(task_id=task_wdgn.task_id, reviewed=False)
+      context['wdgn_passes'] = placecounter(remaining_wdgn)
+    else:
+      context['wdgn_passes'] = {}
+
+    if task_idx is not None:
+      remaining_idx = Hit.objects.filter(task_id=task_idx.task_id, reviewed=False)
+      context['idx_passes'] = placecounter(remaining_idx)
+    else:
+      context['idx_passes'] = {}
+
+    me = self.request.user
+    placeset = ds.places.all()
+
+    context['updates'] = {}
+    context['ds'] = ds
+    context['collaborators'] = ds.collaborators.all()
+    context['owners'] = ds.owners
+    context['is_admin'] = True if me.groups.filter(name__in=['whg_admins']).exists() else False
+    context['editorial'] = True if me.groups.filter(name__in=['editorial']).exists() else False
+
+    # initial (non-task)
+    context['num_names'] = PlaceName.objects.filter(place_id__in=placeset).count()
+    context['num_links'] = PlaceLink.objects.filter(
+      place_id__in=placeset, task_id=None).count()
+    context['num_geoms'] = PlaceGeom.objects.filter(
+      place_id__in=placeset, task_id=None).count()
+    context['numrows'] = ds.places.count()
+
+    # augmentations (has task_id)
+    context['links_added'] = PlaceLink.objects.filter(
+      place_id__in=placeset, task_id__contains='-').count()
+    context['geoms_added'] = PlaceGeom.objects.filter(
+      place_id__in=placeset, task_id__contains='-').count()
+
+    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
+
+    return context
+
+"""
+  returns dataset owner metadata page
+  (formerly DatasetSummaryView)
+"""
+class DatasetMetadataView(LoginRequiredMixin, UpdateView):
+  login_url = '/accounts/login/'
+  redirect_field_name = 'redirect_to'
+
+  form_class = DatasetDetailModelForm
+
+  template_name = 'datasets/ds_metadata.html'
 
   # Dataset has been edited, form submitted
   def form_valid(self, form):
@@ -2371,7 +2551,7 @@ class DatasetSummaryView(LoginRequiredMixin, UpdateView):
     return get_object_or_404(Dataset, id=id_)
 
   def get_context_data(self, *args, **kwargs):
-    context = super(DatasetSummaryView, self).get_context_data(*args, **kwargs)
+    context = super(DatasetMetadataView, self).get_context_data(*args, **kwargs)
 
     # print('DatasetSummaryView get_context_data() kwargs:',self.kwargs)
     # print('DatasetSummaryView get_context_data() request.user',self.request.user)
@@ -2384,25 +2564,25 @@ class DatasetSummaryView(LoginRequiredMixin, UpdateView):
       using most recent dataset file
     """
     file = ds.file
-    if file.df_status == 'format_ok':
-      print('format_ok , inserting dataset ' + str(id_))
-      if file.format == 'delimited':
-        result = ds_insert_tsv(self.request, id_)
-        print('tsv result', result)
-      else:
-        result = ds_insert_lpf(self.request, id_)
-        print('lpf result', result)
-      print('ds_insert_xxx() result', result)
-      ds.numrows = result['numrows']
-      ds.numlinked = result['numlinked']
-      ds.total_links = result['total_links']
-      ds.ds_status = 'uploaded'
-      file.df_status = 'uploaded'
-      file.numrows = result['numrows']
-      ds.save()
-      file.save()
+    # if file.df_status == 'format_ok':
+    #   print('format_ok , inserting dataset ' + str(id_))
+    #   if file.format == 'delimited':
+    #     result = ds_insert_tsv(self.request, id_)
+    #     print('tsv result', result)
+    #   else:
+    #     result = ds_insert_lpf(self.request, id_)
+    #     print('lpf result', result)
+    #   print('ds_insert_xxx() result', result)
+    #   ds.numrows = result['numrows']
+    #   ds.numlinked = result['numlinked']
+    #   ds.total_links = result['total_links']
+    #   ds.ds_status = 'uploaded'
+    #   file.df_status = 'uploaded'
+    #   file.numrows = result['numrows']
+    #   ds.save()
+    #   file.save()
 
-    # build context for rendering ds_summary.html
+    # build context for rendering ds_status.html
     me = self.request.user
     placeset = ds.places.all()
 
@@ -2563,6 +2743,30 @@ class DatasetReconcileView(LoginRequiredMixin, DetailView):
     id_ = self.kwargs.get("id")
     ds = get_object_or_404(Dataset, id=id_)
 
+
+    id_ = self.kwargs.get("id")
+    ds = get_object_or_404(Dataset, id=id_)
+    place_count = ds.places.count()
+    wdgn_status = {
+      "rows": place_count,
+      "got_hits": ds.places.exclude(review_wd=None).count(),
+      "reviewed": ds.places.filter(review_wd=1).count(),
+      "remain": ds.places.filter(review_wd=0).count(),
+      "deferred": ds.places.filter(review_wd=2).count(),
+    }
+
+    idx_status = {
+      "rows": place_count,
+      "got_hits": ds.places.exclude(review_whg=None).count(),
+      "reviewed": ds.places.filter(review_whg=1).count(),
+      "remain": ds.places.filter(review_whg=0).count(),
+      "deferred": ds.places.filter(review_whg=2).count() or 'none',
+    }
+
+    context['wdgn_status'] = wdgn_status
+    context['idx_status'] = idx_status
+
+
     # build context for rendering dataset.html
     me = self.request.user
 
@@ -2655,26 +2859,12 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
 
     # user study areas
     userareas = Area.objects.filter(type__in=area_types).values('id', 'title').order_by('-created')
-    context['area_list'] = userareas if me.id == 2 else userareas.filter(owner=me)
-
-    # user datasets
-    # userdatasets = Dataset.objects.filter(owner=me).values('id','title').order_by('-created')
-    context['ds_list'] = Dataset.objects.filter(owner=me, ds_status='indexed').values('id', 'title').order_by(
-      '-create_date')
-    # context['ds_list'] = userdatasets if me.username == 'whgadmin' else userdatasets.filter(owner=me)
-
-    # user dataset collections
-    # usercollections = Collection.objects.filter(type__in=area_types).values('id','title').order_by('-created')
-    context['coll_list'] = Collection.objects.filter(owner=me, collection_class='dataset').values('id',
-                                                                                                  'title').order_by(
-      '-created')
-    # context['coll_list'] = usercollections if me.username == 'whgadmin' else usercollections.filter(owner=me)
 
     # pre-defined UN regions
     predefined = Area.objects.all().filter(type='predefined').values('id', 'title')
 
     gothits = {}
-    for t in ds.tasks.filter(status='SUCCESS'):
+    for t in ds.tasks.filter(status='SUCCESS', task_name__startswith='align_'):
       gothits[t.task_id] = int(json.loads(t.result)['got_hits'])
 
     # deliver status message(s) to template
@@ -2685,13 +2875,13 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
       and %s of the %s records that had hits have been reviewed. <span class='text-danger strong'>Starting this new task
       will archive the existing task and submit only unreviewed records.</span>.
       If you proceed, you can keep or delete prior match results (links and/or geometry):</p>"""
-    msg_updating = """This dataset has been updated, <span class='strong'>Starting this new task
-      will archive the previous task and re-submit all new and altered records. If you proceed, you can keep or delete prior
-      matching results (links and geometry)</span>. <a href="%s">Questions? Contact our editorial team.</a>"""
     msg_done = """All records have been submitted for reconciliation to %s and reviewed.
       To begin the step of accessioning to the WHG index, please <a href="%s">contact our editorial team.</a>"""
+
     for i in ds.taskstats.items():
-      auth = i[0][6:]
+      # auth = 'Wikidata+GeoNames' if i[0].startswith('align_wd') else 'WHG index'
+      auth = i[0][6:]  # strip 'align_'
+      auth_name = 'Wikidata+GeoNames' if auth == 'wdlocal' else 'WHG index'
       if len(i[1]) > 0:  # there's a SUCCESS task
         tid = i[1][0]['tid']
         remaining = i[1][0]['total']
@@ -2701,25 +2891,21 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
         if remaining == 0 and ds.ds_status != 'updated':
           # if remaining == 0:
           context['msg_' + auth] = {
-            'msg': msg_done % (auth, "/contact"),
+            'msg': msg_done % (auth_name, "/contact"),
             'type': 'done'}
         elif remaining < hadhits and ds.ds_status != 'updated':
           context['msg_' + auth] = {
-            'msg': msg_inprogress % (auth, reviewed, hadhits),
-            'type': 'inprogress'}
-        elif ds.ds_status == 'updated':
-          context['msg_' + auth] = {
-            'msg': msg_updating % ("/contact"),
-            # 'msg': msg_updating%(auth, reviewed, hadhits),
+            'msg': msg_inprogress % (auth_name, reviewed, hadhits),
             'type': 'inprogress'}
         else:
           context['msg_' + auth] = {
-            'msg': msg_unreviewed % (auth, hadhits),
+            'msg': msg_unreviewed % (auth_name, hadhits),
             'type': 'unreviewed'
           }
       else:
         context['msg_' + auth] = {
-          'msg': "no tasks of this type",
+          # 'msg': "no current tasks of this type",
+          'msg': "",
           'type': 'none'
         }
 
@@ -2727,8 +2913,11 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
     remaining = {}
     for t in active_tasks.items():
       remaining[t[0][6:]] = t[1][0]['total']
+
     context['region_list'] = predefined
+    context['area_list'] = userareas if me.id == 2 else userareas.filter(owner=me)
     context['ds'] = ds
+    context['numrows'] = ds.places.count()
     context['collaborators'] = ds.collabs.all()
     context['owners'] = ds.owners
     context['remain_to_review'] = remaining

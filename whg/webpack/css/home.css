@@ -9,10 +9,6 @@
     transition: opacity 2s ease;
 }
 
-.map-container {
-    height: 500px;
-}
-
 .maplibregl-ctrl-bottom-right .maplibregl-ctrl-attrib:not(.fade-in) {
     display: none;
 }
@@ -50,7 +46,7 @@
 }
 
 #datasetsCarousel {
-    height: 260px;
+    height: 140px;
 }
 
 .fade-in {
@@ -77,8 +73,8 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     font-family: "Archivo Black";
 }
 .ds-header {
-    background-color: #3979b1;
-    color: #fff;
+    background-color: gainsboro;
+    color: grey;
 }
 .coll-header {
     background-color: #54a1da;
@@ -86,6 +82,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
 }
 .map-container {
 	position: relative;
+    height: 450px;
     min-height: 240px;
 }
 #map {
@@ -144,7 +141,8 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
 
 .carousel-container {
     flex-grow: 1;
-    min-height: 180px;
+    /*min-height: 180px;*/
+    height: 120px;
 }
 .carousel-inner, .carousel-item {
     height: 100%;

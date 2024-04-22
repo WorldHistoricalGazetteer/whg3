@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}
-  <title>WHG v3.0a</title>
+  <title>WHG v3.0beta</title>
 {% endblock %}
 
 {% block maplibre %}
@@ -23,7 +23,7 @@
 	<div class="w-100 text-center">
 	  <div class="row mx-auto mb-2">
 	    <div class="d-flex mb-2 mb-lg-0 align-items-center justify-content-center">
-	      <img src="{% static 'images/whg_logo.svg' %}" class="logo_responsive d-none d-lg-inline-block align-bottom me-2" height="80" width="80" alt=""/>
+	      <img src="{% static 'images/whg_logo.svg' %}" class="logo_responsive d-none d-lg-inline-block align-bottom me-2" width="80" alt=""/>
 	      <h1 class="title_responsive d-lg-inline-block mb-0">World Historical Gazetteer</h1>
 	    </div>
 	    <p id="tagline_responsive" class="mb-0 mb-lg-2">linking knowledge about the past via place</p>
@@ -40,23 +40,23 @@
 		            <p class="bg-light mb-0 mt-1"><b>What is a gazetteer?</b></p>
 		            <p>An index of place information. People have made them for a long time. They do it because place names are complicated and places are cool. <a href="#">more...</a></p>
 	            </span>
-	            {% comment %}{% if not user.is_authenticated %}{% endcomment %}
+	            {% if not user.is_authenticated %}
 	              <p my-0><a href="{% url 'accounts:register' %}">Register to get started</a></p>
-	            {% comment %}{% endif %}{% endcomment %}			
+	            {% endif %}
 			</div>
-			<div class="border p-2 mb-2 mb-lg-0">
-	            <p class="mb-0 red-head">ANNOUNCEMENTS</p>
-	            <div id="announcement-container" class="mb-0">
-	                {% for announcement in announcements|slice:":3" %}
-	                    <div class="announcement" {% if not forloop.first %}style="display: none;"{% endif %}>
-	                        <a href="{{ announcement.link }}" target="_blank">
-	                          <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
-	                        </a>
-	                        <span class="ms-2">{{ announcement.content }}</span>
-	                    </div>
-	                {% endfor %}
-	            </div>			
-			</div>
+{#			<div class="border p-2 mb-2 mb-lg-0">#}
+{#	            <p class="mb-0 red-head">ANNOUNCEMENTS</p>#}
+{#	            <div id="announcement-container" class="mb-0">#}
+{#	                {% for announcement in announcements|slice:":3" %}#}
+{#	                    <div class="announcement" {% if not forloop.first %}style="display: none;"{% endif %}>#}
+{#	                        <a href="{{ announcement.link }}" target="_blank">#}
+{#	                          <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}#}
+{#	                        </a>#}
+{#	                        <span class="ms-2">{{ announcement.content }}</span>#}
+{#	                    </div>#}
+{#	                {% endfor %}#}
+{#	            </div>			#}
+{#			</div>#}
 		</div>
 		
 		<div class="col-12 col-lg-6 mx-0 p-0">
@@ -82,6 +82,21 @@
 		</div>
 		
 		<div class="col-12 col-lg-3 p-0 mx-0 p-0 full-height-lg">
+
+			<div class="border p-2 mb-2 mb-lg-2 small" style="height: 100px">
+	            <p class="mb-0 red-head">ANNOUNCEMENTS</p>
+	            <div id="announcement-container" class="mb-0">
+	                {% for announcement in announcements|slice:":3" %}
+	                    <div class="announcement" {% if not forloop.first %}style="display: none;"{% endif %}>
+	                        <a href="{{ announcement.link }}" target="_blank">
+	                          <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
+	                        </a>
+	                        <span class="ms-2">{{ announcement.content }}</span>
+	                    </div>
+	                {% endfor %}
+	            </div>
+			</div>
+
 			 <div class="border p-2 mb-2 ms-0 home-button">
 			   <div>
 			     <div class="home-icon-row">

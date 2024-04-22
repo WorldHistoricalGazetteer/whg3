@@ -1,4 +1,6 @@
 
+import { base_urls } from './aliases.js';
+
 export let mappy = new whg_maplibre.Map({
 	maxZoom: 10
 });
@@ -152,12 +154,13 @@ export function addReviewListeners() {
 		console.log('str, url', str, url)
 		window.open(url, '_blank')
 	});
+
 	// recon authority external links (wd, tgn)
 	$('.ext-recon').on('click', function(e) {
 		e.preventDefault();
-		let id = $(this).text()
+		let id = $.trim($(this).text());
 		let url = base_urls[$(this).data('auth')] + id.toString()
-		//console.log('id, url',id,url)
+		console.log('id, url',id,url)
 		window.open(url, '_blank')
 	});
 	

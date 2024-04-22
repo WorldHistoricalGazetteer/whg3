@@ -285,7 +285,7 @@
 			          <p id="msg" class="font-italic smaller">None yet...</p>{% endif %}
 		          {% for d in coll_dsset %}
 		            <div class="ds_card" data-id="{{ d.id }}">
-		              <p class="mb-0"><a href="{% url 'datasets:ds_summary' id=d.id %}">
+		              <p class="mb-0"><a href="{% url 'datasets:ds_status' id=d.id %}">
 		                <span class="ds_title">{{ d.title }}</span></a>
                     <small>({{d.label}}/{{ d.id}})</small>
 		              </p>

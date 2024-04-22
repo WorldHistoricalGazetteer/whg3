@@ -13,12 +13,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 @receiver(pre_save, sender=Dataset)
 def send_new_dataset_email(sender, instance, **kwargs):
   if instance.pk:  # if instance exists
     old_instance = Dataset.objects.get(pk=instance.pk)
-    if old_instance.ds_status != instance.ds_status and instance.ds_status == 'uploaded':
+    # if old_instance.ds_status != instance.ds_status and instance.ds_status == 'uploaded':
+    # Check if the old_instance.ds_status is None, indicating a new instance
+    if old_instance.ds_status is None and instance.ds_status == 'uploaded':
       try:
         if not instance.owner.groups.filter(name='whg_team').exists():
           new_emailer(

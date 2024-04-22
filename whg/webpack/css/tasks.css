@@ -1,3 +1,6 @@
+.recon-options p {
+    margin-bottom: 0;
+}
 .maplibregl-map {
     min-height: 300px;
 }

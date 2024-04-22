@@ -4,7 +4,7 @@ window.showChooser = showChooser;
 
 $(function() {
 	
-    new VisualisationControl(); // Returns `null` if #configurationTable element does not exist
+	new VisualisationControl(); // Returns `null` if #configurationTable element does not exist
 
 	$("#id_group option:first").text('None')
 
