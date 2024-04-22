@@ -1,0 +1,70 @@
+{% extends "main/base_webpack.html" %}
+{% load static %}
+
+{% block title %}
+  <title>WHG v3.0a | Documentation</title>
+{% endblock %}
+
+{% block extra_head %}
+  <link href="{% static 'webpack/docs.bundle.css' %}" rel="stylesheet" />
+  <style>
+    /* custom-docs.css */
+    body {
+      overflow-x: hidden;
+    }
+    .bg-light {
+      background-color: #f8f9fa!important;
+    }
+    .nav-pills .nav-link {
+      color: #555;
+    }
+    .nav-pills .nav-link.active {
+      color: #fff;
+      background-color: #007bff;
+    }
+  </style>
+{#  <link href="{% static 'css/docs.css' %}" rel="stylesheet">#}
+{% endblock %}
+
+{% block content %}
+
+{#<div class="container-fluid mt-1">#}
+<div id="dataset_content" class="container mt-1 px-1">
+  <div class="row flex-nowrap">
+    <!-- Sidebar navigation -->
+    <div class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-light">
+      <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 min-vh-100">
+        <h2 class="d-none d-sm-inline">Documentation</h2>
+        <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start" id="menu">
+          <li class="nav-item">
+            <h4 class="d-none d-sm-inline">WHG Documentation</h4>
+            <a href="#introduction" class="nav-link align-middle px-0">
+              <i class="fs-4 bi-house"></i> <span class="ms-1 d-none d-sm-inline">Introduction</span>
+            </a>
+          </li>
+          <!-- Additional links for other sections -->
+        </ul>
+      </div>
+    </div>
+    <!-- Content panel -->
+    <div class="col py-3">
+      <section id="introduction">
+        <h2>Introduction</h2>
+        <p>This section contains an overview of the WHG platform...</p>
+      </section>
+      <!-- Additional sections -->
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block deferredScripts %}
+
+   	var scripts = [
+      {
+        src: '{% static 'webpack/docs.bundle.js' %}',
+        type: 'text/javascript',
+      }
+   	]
+
+{% endblock %}
