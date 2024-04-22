@@ -113,6 +113,11 @@ class Dataset(models.Model):
     # return feat if dsgeoms.count() > 0 else None
 
   @property
+  def extent(self):
+    dsgeoms = PlaceGeom.objects.filter(place__dataset=self.label)
+    return list(dsgeoms.aggregate(Extent('geom'))['geom__extent'])
+
+  @property
   def carousel_metadata(self):
     return carousel_metadata(self)
 

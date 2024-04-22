@@ -100,7 +100,7 @@ export function highlightFeature(ds_pid, features, mappy, extent = false) {
   features = features.filter(f => f.properties.dsid === ds_pid.ds);
 
   var featureIndex = features.findIndex(
-      f => f.properties.pid === parseInt(ds_pid.pid));
+      f => String(f.properties.pid) === String(ds_pid.pid)); /* Usually an integer, but not in the case of aggregated places in Dataset Collections */
   if (featureIndex !== -1) {
     if (window.highlightedFeatureIndex !== undefined) mappy.setFeatureState(
         window.highlightedFeatureIndex, {
@@ -122,6 +122,7 @@ export function highlightFeature(ds_pid, features, mappy, extent = false) {
       });
       updatePadding();
       // zoom to feature
+      if (geom.type.toLowerCase() == 'geometrycollection') extent = false; /* Force use of feature geometry for aggregated places */
       if (extent) {
         window.mapBounds = extent;
         recenterMap('lazy');
@@ -162,16 +163,23 @@ export function initialiseTable(
 
   checked_rows = [];
 
-  if (window.ds_list.length > 1) { // Initialise dataset selector
+/*  if (!!window.ds_list[0].datasets) { // Initialise dataset selector for Dataset Collection
     let select = '<label>Datasets: <select id="ds_select">' +
         '<option value="-1" data="all" selected="selected">All</option>';
-    for (let ds of window.ds_list) {
-      select += '<option value="' + ds.label + '" data="' + ds.ds_id + '">' +
+    for (let ds of window.ds_list[0].datasets) {
+      select += '<option value="' + ds.label + '" data="' + ds.id + '">' +
           ds.title + '</option>';
     }
     select += '</select></label>';
     $('#ds_filter').html(select);
-  }
+  }*/
+  
+  $('#ds_table, #detail')
+	.tooltip({
+    	selector: '[data-bs-toggle="tooltip"]',
+    	trigger : 'hover',
+    	html: true
+	})
 
   // Define Datatable columns based on ds_type
   let columns;
@@ -274,6 +282,7 @@ export function initialiseTable(
     ];
 
     // Determine columns to be hidden
+    console.log('visParameters',visParameters);
     const hideColumns = columns.reduce((result, column, index) => {
       const tabulateValue = visParameters[column.data.split('.')[1]]?.tabulate;
       if (tabulateValue !== undefined && tabulateValue === false) {
@@ -336,6 +345,7 @@ export function initialiseTable(
         ds_id: data.properties.ds_id,
       });
       $(row).data('cid', data.properties.cid);
+      $(row).data('placedata', data.properties);
       if (!data.geometry) {
         $(row).addClass('no-geometry');
       }
@@ -379,25 +389,25 @@ export function initialiseTable(
     let val = $(this).val();
     localStorage.setItem('filter', val);
     window.spinner_map = startSpinner('dataset_content', 3);
-    if (val == -1) {
+/*    if (val == -1) {
       // clear search
       window.spinner_filter = startSpinner('status_filter');
       clearFilters();
     } else {
       clearFilters();
       filterColumn(3, val);
-    }
+    }*/
 
     // filter map
     let ds_id = $(this).find(':selected').attr('data');
-    const dsItem = window.ds_list.find(ds => ds.ds_id === ds_id);
+    const dsItem = window.ds_list[0].datasets.find(ds => String(ds.id) === ds_id);
     if (dsItem) {
       window.mapBounds = dsItem.extent;
     } else {
       window.mapBounds = window.ds_list_stats.extent;
     }
-    toggleMapLayers(mappy, ds_id); // Also recenters map on selected layer
-    if (ds_id == 'all') recenterMap('lazy');
+    //toggleMapLayers(mappy, ds_id); // Also recenters map on selected layer
+    recenterMap('lazy');
 
     window.spinner_map.stop();
   });
@@ -446,12 +456,16 @@ export function initialiseTable(
     if (!selected)
       $(this).removeClass('rowhover');
     $(this).addClass('highlight-row');
-
+    
     // fetch its detail
-    getPlace(ds_pid.pid, $(this).data('cid'), spinner_detail,
+    getPlace(
+		ds_pid.pid, 
+		$(this).data('cid'), 
+		spinner_detail,
         function(placedata) {
           highlightFeature(ds_pid, features, mappy, placedata.extent);
-        });
+        }
+    );
 
     if (!!mapSequencer) {
       mapSequencer.updateButtons();

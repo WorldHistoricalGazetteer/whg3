@@ -10,58 +10,133 @@ export function popupFeatureHTML(feature, clickable=true) { // TODO: Improve sty
 
 export const getPlace = debounce(getPlaceBouncing, 300);
 export function getPlaceBouncing(pid, cid, spinner_detail, callback) {
-	//console.log('getPlace()', pid);
-	if (isNaN(pid)) {
-		console.log('Invalid pid');
-		return;
-	}
-	const cidQueryParam = Number.isInteger(cid) ? `?cid=${cid}` : '';
-	$.ajax({
-		url: `/api/place/${pid}${cidQueryParam}`,
-	}).done(function(data) {
-		if (cidQueryParam == '') {
-			$("#detail").html(parsePlace(data));
-		} else {
-			window.payload = data;
-			$("#anno_title").html('<b>' + data.title + '</b>');
-			//console.log('img', data.traces.image_file);
-			$("#anno_body").html(parseAnno(data.traces));
-			$("#anno_img").html(data.traces.image_file);
-		}
-		if (spinner_detail) spinner_detail.stop()
-		
+    const cidQueryParam = Number.isInteger(cid) ? `?cid=${cid}` : '';
+    $.ajax({
+        url: `/api/place/${pid}${cidQueryParam}`,
+    }).done(handlePlaceData);		
+
+	function handlePlaceData(data) {
+	    if (cidQueryParam=='') {
+	        $("#detail").html(parsePlace(data));
+	    } else {
+	        window.payload = data;
+	        $("#anno_title").html('<b>' + data.title + '</b>');
+	        //console.log('img', data.traces.image_file);
+	        $("#anno_body").html(parseAnno(data.traces));
+	        $("#anno_img").html(data.traces.image_file);
+	    }
+	    if (spinner_detail) spinner_detail.stop()
+	
 	    if (typeof callback === 'function') {
-	      	callback(data);
-	    }		
-		
-		// events on detail items
-		$('.ext').on('click', function(e) {
-			e.preventDefault();
-			let str = $(this).text();
-			let url; // Must be scoped outwith if/else
-			//console.log('str (identifier)',str)-->
-			// URL identifiers can be 'http*' or an authority prefix
-			if (str.substring(0, 4).toLowerCase() == 'http') {
-				url = str;
-			} else {
-				var re = /(http|bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wdlocal|whg|wp):(.*?)$/;
-				const matches = str.match(re);
-				url = base_urls[matches[1]] + matches[2];
-				console.log(base_urls,matches,'url', url)
-			}
-			window.open(url, '_blank');
-		});
-		$('.exttab').on('click', function(e) {
-			e.preventDefault();
-			let id = $(this).data('id')
-			//console.log('id', id)
-			var re = /(http|dbp|gn|tgn|wd|loc|viaf|aat):(.*?)$/;
-			let url = id.match(re)[1] == 'http' ? id : base_urls[id.match(re)[1]] + id.match(re)[2]
-			//console.log('url', url)
-			window.open(url, '_blank')
-		});
-	});
-	//spinner_detail.stop()-->
+	        callback(data);
+	    }
+	}
+}
+
+function parsePlace(data) {
+	window.featdata = data
+	var descrip = '';
+	// DATASETS
+	if (!!data.datasets && data.datasets.length > 0) {
+		const dataset_links = data.datasets.map(ds => `<a href="/datasets/${ds.id}/places" target="_blank" data-bs-toggle="tooltip" data-bs-title="View <i>${ds.title}</i> in a new tab.">${ds.title} <i class="fas fa-external-link-alt linky"></i></a>`).join('; ')
+		descrip += `<p class="mb-0"><b>Dataset${data.datasets.length == 1 ? '' : 's'}</b>: ${dataset_links}.</p>`;
+	}
+	//
+	// NAME VARIANTS
+	if (!!data.names && data.names.length > 0) {
+	    const nameVariants = data.names
+		    .filter(name => !!name.toponym && name.toponym.trim() !== '')
+	    	.map(name => {
+	        let nameHtml = name.toponym;
+	        if (name.citations && name.citations.length > 0) {
+	            const citation = name.citations[0]; // Assuming only one citation is considered
+	            const label = citation.label || '';
+	            const id = citation.id || '';
+	            if (id !== '' && label !== '') {
+	                // If both id and label exist, wrap the name in a link with tooltip
+	                nameHtml = `<a href="${id}" target="_blank" data-bs-toggle="tooltip" title="${label}">${nameHtml} <i class="fas fa-external-link-alt linky"></i></a>`;
+	            } else {
+	                // If only label exists, show tooltip without link
+	                nameHtml = `<span data-bs-toggle="tooltip" title="${label}" class="pointer">${nameHtml}</span>`;
+	            }
+	        }
+	        return nameHtml;
+	    	})
+	    	.join('; ');
+	
+	    if (nameVariants !== '') descrip += `<p class="scroll65"><b>Variant${data.names.length == 1 ? '' : 's'}</b>: ${nameVariants}.</p>`;
+	}
+	//
+	// TYPES
+	// may include sourceLabel:"" **OR** sourceLabels[{"label":"","lang":""},...]
+	if (!!data.types && data.types.length > 0) {
+	    const types = data.types
+		    .filter(type => !!type.label && type.label.trim() !== '')
+		    .map(type => {
+		        const sourceLabels = type.sourceLabel || type.sourceLabels.map(sourceLabel => sourceLabel.label).join(' | ');
+		        return `<${!!type.url ? `a href="${type.url}" target="_blank"` : `span`} data-bs-toggle="tooltip" title="<b>${type.identifier}</b><p>${sourceLabels}</p>">${type.label}${!!type.url ? ` <i class="fas fa-external-link-alt linky"></i>` : ``}</${!!type.url ? `a` : `span`}>`;
+		    })
+		    .join('; ');
+	    if (types !== '') descrip += `<p class="mb-0"><b>Type${data.types.length == 1 ? '' : 's'}</b>: ${types}.</p>`;
+	}
+	
+	function build_links(name, links_array, link_text=false) {
+		if (links_array.length == 0) return '';
+		const links = links_array
+			.map(link => {
+				const timespan = (!!link.when && !!link.when.timespans) 
+				    ? ` (${minmaxer(link.when.timespans)})` 
+				    : (!!link.when && !link.when.timespans) 
+				    ? ` (${link.when.start.in}-${link.when.end.in})` 
+				    : '';
+	        	return `${link_text ? `${link.value}${!!link.url ? ' ' : ''}` : ''}
+	        			${link_text && !link.url ? '' : `
+		        			<${!!link.url ? `a href="${link.url}" target="_blank"` : `span`}${link_text ? ' class="pointer small red-bold"' : ''}>
+		        				${link_text || link.identifier || link.label}${timespan}${!!link.url ? ` <i class="fas fa-external-link-alt linky"></i>` : ``}
+		        			</${!!link.url ? `a` : `span`}>
+	        			`}
+	        			`;
+		    })
+		    .join('; ');
+		return links == '' ? '' : `<p class="mb-0"><b>${name}${links_array.length == 1 || name == 'Related' ? '' : 's'}</b>: ${links}</p>`;
+	}
+	//
+	// LINKS
+	//
+	if (!!data.links && data.links.length > 0) {
+	    descrip += build_links('Link', data.links.filter(link => !!link.identifier && link.identifier.trim() !== ''));	    
+	}
+	//
+	// RELATED
+	//
+	if (!!data.related && data.related.length > 0) {
+	    descrip += build_links('Parent', data.related.filter(relative => !!relative.relation_type && relative.relation_type == 'gvp:broaderPartitive'));
+	    descrip += build_links('Related', data.related.filter(relative => !!relative.relation_type && relative.relation_type !== 'gvp:broaderPartitive'));
+	}
+	//
+	// DESCRIPTIONS
+	//
+	if (!!data.descriptions && data.descriptions.length > 0) {
+	    descrip += build_links('Description', data.descriptions.filter(link => !!link.value && link.value.trim() !== ''), 'Link');	    
+	}
+	//
+	// CCODES
+	//
+	if (!!data.countries && data.countries.length > 0) {
+	    descrip += '<p><b>Modern country bounds</b>: ' + data.countries.map(country => `<span class="pointer" data-bs-toggle="tooltip" title="${country.label || ''}">${country.ccode}</span>`).join(', ') + '</p>';
+	}
+	//
+	// MINMAX
+	//
+	if (!!data.minmax && data.minmax.length == 2 && (data.minmax[0] || data.minmax[1]) ) {
+		descrip += `<p><b>When</b>: earliest: ${data.minmax[0] ? data.minmax[0] : '?'}; latest: ${data.minmax[1] ? data.minmax[1] : '?'}</p>`;
+	}	
+	//
+	// TITLE
+	//
+	descrip = `<div><p><b>Title</b>: <span id="row_title" class="larger text-danger">${data.title}</span></p>${descrip}</div>`;
+	
+	return descrip
 }
 
 // Traces (annotations)
@@ -122,172 +197,6 @@ function parseAnno(data) {
 	return descrip
 }
 
-// Single place
-function parsePlace(data) { // TODO: See also commented code at bottom
-	window.featdata = data
-
-	function onlyUnique(array) {
-		const map = new Map();
-		const result = [];
-		for (const item of array) {
-			if (!map.has(item.identifier)) {
-				map.set(item.identifier, true);
-				result.push({
-					identifier: item.identifier,
-					type: item.type,
-					aug: item.aug
-				});
-			}
-		}
-		return (result)
-	}
-	//timespan_arr = []-->
-	//
-	// TITLE
-	var descrip = '<p><b>Title</b>: <span id="row_title" class="larger text-danger">' + data.title + '</span>'
-	//
-	// NAME VARIANTS
-	descrip += '<p class="scroll65"><b>Variants</b>: '
-	console.log('data.names', data.names)
-	for (var n in data.names) {
-		let name = data.names[n]
-		descrip += '<p>' + name.toponym != '' ? name.toponym + '; ' : ''
-	}
-	//
-	// TYPES
-	// may include sourceLabel:"" **OR** sourceLabels[{"label":"","lang":""},...]
-	// console.log('data.types',data.types)
-	//{"label":"","identifier":"aat:___","sourceLabels":[{"label":" ","lang":"en"}]}
-	if(data.types.length > 0) {
-		descrip += '</p><p><b>Types</b>: '
-		var typeids = ''
-		for (var t in data.types) {
-			var str = ''
-			var type = data.types[t]
-			if ('sourceLabels' in type) {
-				let srclabels = type.sourceLabels
-				for (let l in srclabels) {
-					let label = srclabels[l]['label']
-					str = label != '' ? label + '; ' : ''
-				}
-			} else if ('sourceLabel' in type) {
-				str = type.sourceLabel != '' ? type.sourceLabel + '; ' : ''
-			}
-			if (type.label != '') {
-				str += url_exttype(type) + ' '
-			}
-			typeids += str
-		}
-		descrip += typeids.replace(/(; $)/g, "") + '</p>'
-	}
-	//
-	// LINKS
-	//
-	descrip += '<p class="mb-0"><b>Links</b>: '
-	//close_count = added_count = related_count = 0
-	var html = ''
-	if (data.links.length > 0) {
-		let links = data.links
-		let links_arr = onlyUnique(data.links)
-		/*console.log('distinct data.links',links_arr)*/
-		for (var l in links_arr) {
-			descrip += url_extplace(links_arr[l].identifier)
-		}
-	} else {
-		descrip += "<i class='small'>no links established yet</i>"
-	}
-	descrip += '</p>'
-
-	//
-	// RELATED
-	//right=''-->
-	if (data.related.length > 0) {
-		let parent = '<p class="mb-0"><b>Parent(s)</b>: ';
-		let related = '<p class="mb-0"><b>Related</b>: ';
-		for (var r in data.related) {
-			const rel = data.related[r]
-			//console.log('rel',rel)-->
-			if (rel.relation_type == 'gvp:broaderPartitive') {
-				parent += '<span class="small h1em">' + rel.label
-				parent += 'when' in rel && !('timespans' in rel.when) ?
-					', ' + rel.when.start.in + '-' + rel.when.end.in :
-					'when' in rel && ('timespans' in rel.when) ? ', ' +
-					minmaxer(rel.when.timespans) : ''
-				//rel.when.timespans : ''-->
-				parent += '</span>; '
-			} else {
-				related += '<p class="small h1em">' + rel.label + ', ' + rel.when.start.in + '-' + rel.when.end.in + '</p>'
-			}
-		}
-		descrip += parent.length > 39 ? parent : ''
-		descrip += related.length > 37 ? related : ''
-	}
-	//
-	// DESCRIPTIONS
-	// TODO: link description to identifier URI if present
-	if (data.descriptions.length > 0) {
-		let val = data.descriptions[0]['value'].substring(0, 300)
-		descrip += '<p><b>Description</b>: ' + (val.startsWith('http') ? '<a href="' + val + '" target="_blank">Link</a>' : val) +
-			' ... </p>'
-		//'<br/><span class="small red-bold">('+data.descriptions[0]['identifier']+')</span>-->
-	}
-	//
-	// CCODES
-	//
-	//if (data.ccodes.length > 0) {-->
-	if (!!data.countries) {
-		//console.log('data.countries',data.countries)-->
-		descrip += '<p><b>Modern country bounds</b>: ' + data.countries.join(', ') + '</p>'
-	}
-	//
-	// MINMAX
-	//
-	if (data.minmax && data.minmax.length > 0) {
-		descrip += '<p><b>When</b>: earliest: ' + data.minmax[0] + '; latest: ' + data.minmax[1]
-	}
-	descrip += '</div>'
-	return descrip
-}
-
-// builds link for external place record
-function url_extplace(identifier) {
-	var link = ''
-	// abbreviate links not in aliases.base_urls
-	if (identifier.startsWith('http')) {
-		const tag = identifier.replace(/.+\/\/|www.|\..+/g, '')
-		link = '<a href="' + identifier + '" target="_blank">' + tag + '<i class="fas fa-external-link-alt linky"></i>,  </a>';
-	} else {
-		link = '<a href="" class="ext" data-target="#ext_site">' + identifier + '&nbsp;<i class="fas fa-external-link-alt linky"></i></a>, ';
-	}
-	return link;
-}
-
-// builds link for external placetype record
-function url_exttype(type) {
-	let link = ' <a href="#" class="exttab" data-id=' + type.identifier +
-		'>(' + type.label + ' <i class="fas fa-external-link-alt linky"></i>)</a>'
-	return link
-}
-
-function showMore() {
-	let clicked = $(this)
-	$(".more").show()
-	console.log('clicked $this', clicked)
-	$(".a_more").hide()
-	$("#dots").hide()
-	clicked.next().show()
-	$(".a_less").show()
-}
-
-function showLess() {
-	let clicked = $(this)
-	console.log('clicked less', clicked)
-	clicked.hide() // hide 'less' link
-	$(".more").hide() // hide the extra text again
-	$("#dots").show() // show dots again
-	$(".a_more").show() // show more link again
-}
-
 // TODO: this is a mess, refactor or add 1-to-many annotation link field
 // truncate anno note, looking for embedded links
 function readMore(text, numchars, innerlink = '') {
@@ -300,153 +209,3 @@ function readMore(text, numchars, innerlink = '') {
 			' <a href="#" class="ms-2 a_less hidden" onclick="showLess()">less</a></span>'
 	}
 }
-
-/*
-
-THIS VERSION OF parsePlace is more developed, but not actually used where it was found, in places_collection_browse
-
-
-//
-function toggleLinks() {
-    label = $("#togglelinks").text()
-        $("#togglelinks").text(label == 'Show' ? 'Hide' : 'Show');
-    $('#p_links').toggle()
-}
-function toggleNames() {
-    label = $("#togglenames").text()
-        $("#togglenames").text(label == 'More' ? 'Less' : 'More');
-    $('#s_names').toggle()
-}
-
-
-// SINGLE PLACE
-function parsePlace(data) {
-    window.featdata = data
-
-    function onlyUnique(array) {
-        const map = new Map();
-        const result = [];
-        for (const item of array) {
-            if (!map.has(item.identifier)) {
-                map.set(item.identifier, true);
-                result.push({
-                    identifier: item.identifier,
-                    type: item.type,
-                    aug: item.aug
-                });
-            }
-        }
-        return (result)
-    }
-
-    //
-    // NAME VARIANTS
-    // display first 5
-    descrip = '<p class="scroll100"><b><u>Name variants</u></b>: '
-        for (n in data.names.slice(0, 5)) {
-            let name = data.names[n]
-                descrip += name.toponym != '' ? name.toponym + '; ' : ''
-        }
-        // if > 5 add link and toggle-able span
-        if (data.names.length > 5) {
-            descrip += ' <a href="#" onclick="toggleNames()" id="togglenames">More</a> <span id="s_names" class="mb-0 hidden">'
-            for (n in data.names.slice(6, )) {
-                let name = data.names[n]
-                    descrip += name.toponym != '' ? name.toponym + '; ' : ''
-            }
-            descrip += '</span>'
-        }
-        descrip += '</p>'
-        //
-        // TYPES
-        // may include sourceLabel:"" **OR** sourceLabels[{"label":"","lang":""},...]
-        // console.log('data.types',data.types)
-        if (data.types && data.types.length > 0) {
-            descrip += '</p><p><b><u>Place type</u></b>: '
-            typeids = ''
-                for (t in data.types) {
-                    str = ''
-                        var type = data.types[t]
-                        if ('sourceLabels' in type) {
-                            srclabels = type.sourceLabels
-                                for (l in srclabels) {
-                                    label = srclabels[l]['label']
-                                        str = label != '' ? label + '; ' : ''
-                                }
-                        } else if ('sourceLabel' in type) {
-                            str = type.sourceLabel != '' ? type.sourceLabel + '; ' : ''
-                        }
-                        typeids += str
-                }
-                descrip += typeids.replace(/(; $)/g, "") + '</p>'
-        }
-        //
-        // MINMAX
-        //
-        if (data.minmax && data.minmax[0]) {
-            descrip += '<p><b><u>When</u></b>: earliest: ' + data.minmax[0] +
-            (data.minmax[1] ? '; latest: ' + data.minmax[1] : '')
-        }
-        //
-        // LINKS
-        //
-        if (data.links.length > 0) {
-            descrip += '<p class="mb-0"><b><u>External links</u> (' + data.links.length + ') </b>' +
-            '<a href="#" onclick="toggleLinks()" id="togglelinks">Show</a>'
-            descrip += '<br/><span id="p_links" class="hidden">'
-            close_count = added_count = related_count = 0
-                html = ''
-                links = data.links
-                links_arr = onlyUnique(data.links)
-                for (l in links_arr) {
-                    descrip += url_extplace(links_arr[l].identifier)
-                }
-                descrip += '</span>'
-        }
-        descrip += '</p>'
-
-        //
-        // RELATED
-        if (data.related.length > 0) {
-            // TODO: this needs better logic; so far only relations are parents but LPF allows for others
-            parent = '<p class="mb-0"><b><u>Parent(s)</u></b>: ';
-            //
-            for (r in data.related) {
-                rel = data.related[r]
-                    if (rel.relation_type == 'gvp:broaderPartitive') {
-                        parent += '<span class="small h1em">' + rel.label
-                        parent += 'when' in rel && !('timespans' in rel.when) ?
-                        ', ' + rel.when.start.in + '-' + rel.when.end.in :
-                        'when' in rel && ('timespans' in rel.when) ? ', ' +
-                        minmaxer(rel.when.timespans) : ''
-                        parent += '</span>; '
-                    } else {
-                        related += '<p class="small h1em">' + rel.label + ', ' + rel.when.start.in + '-' + rel.when.end.in + '</p>'
-                    }
-            }
-
-            descrip += parent.length > 39 ? parent : ''
-        }
-
-        //
-        // DESCRIPTIONS
-        // TODO: link description to identifier URI if present
-        if (data.descriptions.length > 0) {
-            val = data.descriptions[0]['value'].substring(0, 300)
-                descrip += '<p><b><u>Description</u></b>: ' + (val.startsWith('http') ? '<a href="' + val + '" target="_blank">Link</a>' : val)
-                 + ' ... </p>'
-        }
-        //
-        // CCODES
-        //
-        if (!!data.countries) {
-            // console.log('data.countries',data.countries)
-            descrip += '<p><b><u>Modern country</u></b>: ' + data.countries.join(', ') + '</p>'
-        }
-        descrip += '</div>'
-        //
-
-        return descrip
-}
-
-*/

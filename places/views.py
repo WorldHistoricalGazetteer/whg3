@@ -8,6 +8,8 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, TemplateView
 from django.db.models import Count
+from django.contrib.gis.db.models.aggregates import Union
+from django.contrib.gis.db.models.functions import Centroid, Envelope
 
 from datetime import datetime
 from elasticsearch8 import Elasticsearch
@@ -18,9 +20,10 @@ from urllib.parse import unquote_plus
 
 from collection.models import Collection
 from datasets.models import Dataset
-from places.models import Place
+from places.models import Place, PlaceGeom
 from places.utils import attribListFromSet
 from elastic.es_utils import findPortalPlaces
+from shapely import wkt
 
 # write review status = 2 (per authority)
 def defer_review(request, pid, auth, last):
@@ -191,15 +194,19 @@ class PlacePortalView(TemplateView):
       raise Http404("Invalid place ID format")
   
     if all_geoms:
-        coordinates_list = [geom['coordinates'] for geom in all_geoms]
-        min_x = min(coord[0] for coord in coordinates_list)
-        min_y = min(coord[1] for coord in coordinates_list)
-        max_x = max(coord[0] for coord in coordinates_list)
-        max_y = max(coord[1] for coord in coordinates_list)
-        extent = [min_x, min_y, max_x, max_y]
-        centroid = [(min_x + max_x) / 2, (min_y + max_y) / 2]
-        context['extent'] = extent
-        context['centroid'] = centroid
+        # coordinates_list = [geom['coordinates'] for geom in all_geoms]
+        # min_x = min(coord[0] for coord in coordinates_list)
+        # min_y = min(coord[1] for coord in coordinates_list)
+        # max_x = max(coord[0] for coord in coordinates_list)
+        # max_y = max(coord[1] for coord in coordinates_list)
+        # extent = [min_x, min_y, max_x, max_y]
+        # centroid = [(min_x + max_x) / 2, (min_y + max_y) / 2]
+        # context['extent'] = extent
+        # context['centroid'] = centroid
+        # FIXED: the extent and centroid calculations above do not take account of International Date Line - use django.contrib.gis.db.models.functions instead
+        unioned_geometry = PlaceGeom.objects.filter(place_id__in=place_ids).aggregate(union=Union('geom'))['union']
+        context['extent'] = list(wkt.loads(unioned_geometry.envelope.wkt).bounds)
+        context['centroid'] = list(unioned_geometry.centroid.tuple)
 
     title_counts = Counter(alltitles)
     variant_counts = Counter(allvariants)

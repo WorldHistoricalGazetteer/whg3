@@ -223,6 +223,7 @@ class PlaceNameSerializer(serializers.ModelSerializer):
 """
 class PlaceSerializer(serializers.ModelSerializer):
   dataset = serializers.ReadOnlyField(source='dataset.title')
+  dataset_id = serializers.ReadOnlyField(source='dataset.id')
   names = PlaceNameSerializer(many=True, read_only=True)
   types = PlaceTypeSerializer(many=True, read_only=True)
   geoms = PlaceGeomSerializer(many=True, read_only=True)
@@ -236,8 +237,8 @@ class PlaceSerializer(serializers.ModelSerializer):
   # cid param passed only from place collection browse screen
   traces = serializers.SerializerMethodField('trace_anno')
   def trace_anno(self, place):
-    params = self.context["query_params"]
-    if 'cid' in params:
+    params = self.context.get("query_params")
+    if params and 'cid' in params:
       cid = params['cid']
       return json.loads(
         coreserializers.serialize("json", TraceAnnotation.objects.filter(
@@ -259,7 +260,7 @@ class PlaceSerializer(serializers.ModelSerializer):
 
   class Meta:
     model = Place
-    fields = ('url', 'id', 'title', 'src_id', 'dataset', 'ccodes', 'fclasses',
+    fields = ('url', 'id', 'title', 'src_id', 'dataset', 'dataset_id', 'ccodes', 'fclasses',
               'names', 'types', 'geoms', 'extent', 'links', 'related', 'whens',
               'descriptions', 'depictions', 'geo', 'minmax', 'traces'
             )

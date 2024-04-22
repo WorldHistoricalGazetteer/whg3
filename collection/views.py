@@ -15,14 +15,19 @@ from django.http import JsonResponse, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import (View, CreateView, UpdateView, DetailView, DeleteView, ListView )
 
-from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.geos import Point, GEOSGeometry, GeometryCollection
 from django.contrib.gis.db.models import Extent
+from django.contrib.gis.db.models.aggregates import Union
+from django.contrib.gis.db.models.functions import Centroid
 
 from .forms import CollectionModelForm, CollectionGroupModelForm
 from .models import *
+from datasets.tasks import index_dataset_to_builder
+from places.models import PlaceGeom
 from main.models import Log, Link
 from traces.forms import TraceAnnotationModelForm
 from traces.models import TraceAnnotation
+from array import array
 
 """ collection group joiner"; prevent duplicate """
 def join_group(request, *args, **kwargs):
@@ -341,10 +346,15 @@ def fetch_mapdata_coll(request, *args, **kwargs):
   print('fetch_geojson_coll kwargs',kwargs)
   id_=kwargs['id']
   coll=get_object_or_404(Collection, id=id_)
+  
   rel_keywords = coll.rel_keywords
 
   tileset = request.GET.get('variant', '') == 'tileset'
   ignore_tilesets = request.GET.get('variant', '') == 'ignore_tilesets'
+  
+  if coll.collection_class == 'dataset':
+    # Divert to fetch_mapdata_dscoll
+    return fetch_mapdata_dscoll(id_, coll, tileset, ignore_tilesets)
 
   ############################################################################################################
   # TODO: Force `ignore_tilesets` if any `visParameters` object has 'trail: true'                            #
@@ -1197,13 +1207,158 @@ class DatasetCollectionBrowseView(DetailView):
     placeset = coll.places.all()
     context['places'] = placeset
 
-    context['ds_list'] = coll.ds_list
+    # context['ds_list'] = coll.ds_list
     context['links'] = Link.objects.filter(collection=id_)
     context['updates'] = {}
-    context['coll'] = coll
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
-
+    #TODO: Remove hard-coding of vis_parameters
+    context['visParameters'] = "{'seq': {'tabulate': false, 'temporal_control': 'player', 'trail': true},'min': {'tabulate': 'initial', 'temporal_control': 'filter', 'trail': true},'max': {'tabulate': true, 'temporal_control': 'filter', 'trail': false}}"
+    context['datasets'] = [{"id":ds["id"], "label":ds["label"], "title":ds["title"], "extent":ds["extent"]} for ds in coll.ds_list]
+    
     return context
+
+# GeoJSON for all places in a Dataset Collection INCLUDING those without geometry
+def fetch_mapdata_dscoll(id_, coll, tileset, ignore_tilesets):
+    from django.db.models import Min, Max
+    from django.db.models.functions import Coalesce
+    import networkx as nx
+    from itertools import chain
+    from places.models import Place, CloseMatch
+    
+    coll_places_all = coll.places_all
+
+    available_tilesets = None
+    null_geometry = False
+    if not tileset and not ignore_tilesets:
+
+        tiler_url = os.environ.get('TILER_URL') # Must be set in /.env/.dev-whg3
+        response = requests.post(tiler_url, json={"getTilesets": {"type": "collections", "id": id_}})
+
+        if response.status_code == 200:
+            available_tilesets = response.json().get('tilesets', [])
+            null_geometry = len(available_tilesets) > 0
+
+    # Construct families of matched places within collection
+    close_matches = CloseMatch.objects.filter(
+        Q(place_a__in=coll_places_all) & Q(place_b__in=coll_places_all)
+    )
+    G = nx.Graph()
+    for match in close_matches:
+        G.add_edge(match.place_a_id, match.place_b_id)
+    families = list(nx.connected_components(G))
+
+    # Start places list with places which have no family connections
+    places = list(coll_places_all.exclude(id__in=G.nodes).prefetch_related('geoms').order_by('id'))
+    
+    print(f"Collection {id_}: {coll_places_all.count()} places sorted into {len(families)} families and {len(places)} unmatched.")
+    
+    if families:
+    
+        # Sort families by the first id of each sorted family - consistent ordering within the generated FeatureCollection is required between runs
+        # to maintain correlation with any associated tileset
+        for i, family in enumerate(families):
+            sorted_family = sorted(family)
+            families[i] = sorted_family
+        families = sorted(families, key=lambda x: sorted(x)[0])
+    
+        for i, family in enumerate(families):
+            print(f"Family {i + 1}: {family}")
+        
+        class FamilyPlace:  
+            
+            def __init__(self, family, family_members, family_place_geoms):
+                #Required for Place Table
+                self.id = "-".join(str(place_id) for place_id in sorted(family))
+                self.src_id = sorted(list(family_members.values_list('src_id', flat=True)))
+                self.title = "|".join(set(family_members.values_list('title', flat=True)))
+                self.ccodes = sorted(list(set(chain.from_iterable(family_members.values_list('ccodes', flat=True)))))
+                self.minmax = [
+                    min(filter(None, family_members.values_list('minmax__0', flat=True)), default=None),
+                    max(filter(None, family_members.values_list('minmax__1', flat=True)), default=None)
+                ]
+                self.geoms = family_place_geoms
+                self.seq = None
+    
+        # Loop through families
+        for family in families:
+            family_members = Place.objects.filter(id__in=family)
+            family_place_geoms = PlaceGeom.objects.filter(place_id__in=family).select_related('place')
+    
+            # Create a single pseudo-place object for each family
+            family_place = FamilyPlace(family, family_members, family_place_geoms)
+    
+            # Add the family place to `places`
+            places.append(family_place)
+    
+            print(f"Aggregated places {family_place.id}")
+    
+    extent = list(coll_places_all.aggregate(Extent('geoms__geom')).values())[0]
+
+    feature_collection = {
+        "title": coll.title,
+        "creator": coll.creator,
+        "relations": coll.rel_keywords,
+        "extent": extent,
+        "type": "FeatureCollection",
+        "features": [],
+    }
+        
+    featurecollection_min = None
+    featurecollection_max = None
+
+    if null_geometry:
+        feature_collection["tilesets"] = available_tilesets
+
+    for index, place in enumerate(places):
+        geometries = place.geoms.all() or None
+        geometry = None
+
+        if geometries:
+            unioned_geometry = geometries.aggregate(union=Union('geom'))['union']
+            geometry_collection = json.loads(GeometryCollection(unioned_geometry).geojson)
+        else:
+            geometry_collection = None
+        
+        place_min, place_max = place.minmax
+        if place_min is not None:
+            if featurecollection_min is None or place_min < featurecollection_min:
+                featurecollection_min = place_min
+        if place_max is not None:
+            if featurecollection_max is None or place_max > featurecollection_max:
+                featurecollection_max = place_max
+                
+        is_family = isinstance(place.src_id, list)
+
+        feature = {
+            "type": "Feature",
+            "properties": {
+                "pid": place.id,
+                "src_id": place.src_id if is_family else [place.src_id],
+                "title": place.title,
+                "ccodes": place.ccodes,
+                "min": "null" if place.minmax is None or place_min is None else place_min, # String required by Maplibre filter test
+                "max": "null" if place.minmax is None or place_max is None else place_max, # String required by Maplibre filter test
+                "seq": None,
+            },
+            "geometry": geometry_collection,
+            "id": index # Required for MapLibre conditional styling
+        }
+
+        if null_geometry: # Minimise data sent to browser when using a vector tileset
+            if geometry:
+                del feature["geometry"]["coordinates"]
+                if "geowkt" in feature["geometry"]:
+                    del feature["geometry"]["geowkt"]
+        elif tileset: # Minimise data to be included in a vector tileset
+            # Drop all properties except any listed here
+            properties_to_keep = ["pid", "min", "max"] # ["min", "max"] are required for layer styling and filtering
+            feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}
+
+        feature_collection["features"].append(feature)
+        
+    feature_collection["minmax"] = [featurecollection_min, featurecollection_max]
+
+    return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii': False})
 
 """ browse collection collections
     w/student section?

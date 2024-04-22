@@ -69,6 +69,10 @@ body {font-family: sans-serif;}
 	background-color: #c3f3c8;
 }
 
+.pointer {
+	cursor: pointer;
+}
+
 .container a {text-decoration: none !important;}
 
 /*.carousel-item h6 {*/

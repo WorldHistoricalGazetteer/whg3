@@ -55,11 +55,7 @@ let mapParameters = {
 }
 let mappy = new whg_maplibre.Map(mapParameters);
 
-if (typeof visParameters === 'undefined') { // Set defaults for datasets and dataset collections
-	let visParameters = {'seq': {'tabulate': false, 'temporal_control': 'player', 'trail': false},'min': {'tabulate': false, 'temporal_control': 'filter', 'trail': false},'max': {'tabulate': false, 'temporal_control': 'filter', 'trail': false}};
-	mapParameters.temporalControl = false;
-	mapParameters.controls.sequencer = false;
-}	
+console.log('visParameters',visParameters)
 
 const mapLoadPromise = new Promise(function (resolve, reject) {
     mappy.on('load', function () {
@@ -103,6 +99,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	let allFeatures = [];
 	let allExtents = [];
 	
+	/* TODO: This loop is redundant since the aggregation of Dataset Collections */
 	window.ds_list.forEach(function(ds) {
 		ds.features.forEach(feature => {
 		    feature.properties = feature.properties || {};
@@ -111,7 +108,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 		    feature.properties.ds_id = ds.ds_id; // Required for table->map linkage
 		});
 		allFeatures.push(...ds.features);
-		if (!!ds.tilesets && ds.tilesets.length > 0) {
+		if ((!!ds.tilesets && ds.tilesets.length > 0) || !!ds.extent) {
 			allExtents.push(ds.extent);
 		}
 		mappy
@@ -120,6 +117,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	});
 	console.log('Added layerset(s).', mappy.getStyle().layers);
 	
+	/* TODO: This call to get_ds_list_stats is redundant since the aggregation of Dataset Collections */
 	window.ds_list_stats = get_ds_list_stats(allFeatures, allExtents);
 	console.log('window.ds_list_stats', window.ds_list_stats);
 		
