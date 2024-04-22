@@ -22,7 +22,7 @@ from django.contrib.gis.db.models.functions import Centroid
 
 from .forms import CollectionModelForm, CollectionGroupModelForm
 from .models import *
-from datasets.tasks import index_dataset_to_builder
+#from datasets.tasks import index_dataset_to_builder
 from places.models import PlaceGeom
 from main.models import Log, Link
 from traces.forms import TraceAnnotationModelForm

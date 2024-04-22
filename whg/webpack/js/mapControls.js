@@ -208,7 +208,7 @@ class sequencerControl {
 let mapSequencer;
 function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table){
 
-	if (!!mapParameters.controls.sequencer && mapParameters.controls.sequencer) {
+	if (!!mapParameters.controls && !!mapParameters.controls.sequencer && mapParameters.controls.sequencer) {
 		mapSequencer = new sequencerControl();
 		mappy.addControl(mapSequencer, 'bottom-left');
 	}

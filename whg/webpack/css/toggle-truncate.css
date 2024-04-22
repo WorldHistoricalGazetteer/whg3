@@ -1,0 +1,25 @@
+.toggle-text-link {
+    display: inline-block;
+    cursor: pointer;
+    font-size: 0.7rem;
+    vertical-align: text-bottom;
+    line-height: normal;
+}
+.toggle-text-wrapper.toggle-text-more .toggle-text {
+    display: none;
+}
+.toggle-text-link > span {
+    display: inline-block;
+    padding: 0.2rem 0.4rem;
+    background-color: #004080;
+    color: white;
+    border-radius: 0.2rem;
+    margin-left: 0.4rem;
+}
+.toggle-text-link > span:hover {
+    background-color: #004080a3;
+}
+.toggle-text-wrapper:not(.toggle-text-more) .toggle-text-link > span:first-of-type,
+.toggle-text-wrapper:not(.toggle-text-more) .toggle-text-ellipsis {
+    display: none;
+}
