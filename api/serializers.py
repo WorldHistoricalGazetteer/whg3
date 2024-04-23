@@ -221,6 +221,7 @@ class PlaceNameSerializer(serializers.ModelSerializer):
     direct representation of normalized records in database
     used in multiple views
 """
+
 class PlaceSerializer(serializers.ModelSerializer):
   dataset = serializers.ReadOnlyField(source='dataset.title')
   dataset_id = serializers.ReadOnlyField(source='dataset.id')
@@ -237,15 +238,14 @@ class PlaceSerializer(serializers.ModelSerializer):
   # cid param passed only from place collection browse screen
   traces = serializers.SerializerMethodField('trace_anno')
   def trace_anno(self, place):
-    params = self.context.get("query_params")
-    if params and 'cid' in params:
-      cid = params['cid']
-      return json.loads(
-        coreserializers.serialize("json", TraceAnnotation.objects.filter(
-          place=place.id, collection=cid, archived=False)))
+    cid = self.context.get("cid")
+    if cid is not None:
+        return json.loads(
+            coreserializers.serialize("json", TraceAnnotation.objects.filter(
+                place=place.id, collection=cid, archived=False)))
     else:
-      print('no cid in params')
-      return json.loads('[]')
+        print('no cid in context')
+        return json.loads('[]')
 
   # traces = serializers.SerializerMethodField('trace_anno')
   # def trace_anno(self, place):

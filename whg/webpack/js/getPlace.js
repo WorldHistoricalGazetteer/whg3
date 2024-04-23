@@ -1,5 +1,6 @@
 import { minmaxer } from './utilities';
 import debounce from 'lodash/debounce';
+import './toggle-truncate.js';
 
 export function popupFeatureHTML(feature, clickable=true) { // TODO: Improve styling with css and content?
 	let HTML = '<b>' + feature.properties.title + '</b><br/>' +
@@ -20,12 +21,12 @@ export function getPlaceBouncing(pid, cid, spinner_detail, callback) {
 	        $("#detail").html(parsePlace(data));
 	    } else {
 	        window.payload = data;
-	        $("#anno_title").html('<b>' + data.title + '</b>');
-	        //console.log('img', data.traces.image_file);
-	        $("#anno_body").html(parseAnno(data.traces));
+	        $("#anno_title").html('<span class="larger text-danger"><b>' + data.title + '</b></span>');
+	        $("#anno_body").html(parseAnno(data));
 	        $("#anno_img").html(data.traces.image_file);
 	    }
-	    if (spinner_detail) spinner_detail.stop()
+	    $('.toggle-truncate').toggleTruncate();
+	    if (spinner_detail) spinner_detail.stop();
 	
 	    if (typeof callback === 'function') {
 	        callback(data);
@@ -36,13 +37,12 @@ export function getPlaceBouncing(pid, cid, spinner_detail, callback) {
 function parsePlace(data) {
 	window.featdata = data
 	var descrip = '';
-	// DATASETS
+
 	if (!!data.datasets && data.datasets.length > 0) {
 		const dataset_links = data.datasets.map(ds => `<a href="/datasets/${ds.id}/places" target="_blank" data-bs-toggle="tooltip" data-bs-title="View <i>${ds.title}</i> in a new tab.">${ds.title} <i class="fas fa-external-link-alt linky"></i></a>`).join('; ')
 		descrip += `<p class="mb-0"><b>Dataset${data.datasets.length == 1 ? '' : 's'}</b>: ${dataset_links}.</p>`;
 	}
-	//
-	// NAME VARIANTS
+
 	if (!!data.names && data.names.length > 0) {
 	    const nameVariants = data.names
 		    .filter(name => !!name.toponym && name.toponym.trim() !== '')
@@ -64,12 +64,10 @@ function parsePlace(data) {
 	    	})
 	    	.join('; ');
 	
-	    if (nameVariants !== '') descrip += `<p class="scroll65"><b>Variant${data.names.length == 1 ? '' : 's'}</b>: ${nameVariants}.</p>`;
+	    if (nameVariants !== '') descrip += `<p><b>Variant${data.names.length == 1 ? '' : 's'}</b>: <span class="toggle-truncate">${nameVariants}</span>.</p>`;
 	}
-	//
-	// TYPES
-	// may include sourceLabel:"" **OR** sourceLabels[{"label":"","lang":""},...]
-	if (!!data.types && data.types.length > 0) {
+
+	if (!!data.types && data.types.length > 0) { // may include sourceLabel:"" **OR** sourceLabels[{"label":"","lang":""},...]
 	    const types = data.types
 		    .filter(type => !!type.label && type.label.trim() !== '')
 		    .map(type => {
@@ -83,129 +81,82 @@ function parsePlace(data) {
 	function build_links(name, links_array, link_text=false) {
 		if (links_array.length == 0) return '';
 		const links = links_array
-			.map(link => {
-				const timespan = (!!link.when && !!link.when.timespans) 
-				    ? ` (${minmaxer(link.when.timespans)})` 
-				    : (!!link.when && !link.when.timespans) 
-				    ? ` (${link.when.start.in}-${link.when.end.in})` 
-				    : '';
-	        	return `${link_text ? `${link.value}${!!link.url ? ' ' : ''}` : ''}
-	        			${link_text && !link.url ? '' : `
-		        			<${!!link.url ? `a href="${link.url}" target="_blank"` : `span`}${link_text ? ' class="pointer small red-bold"' : ''}>
-		        				${link_text || link.identifier || link.label}${timespan}${!!link.url ? ` <i class="fas fa-external-link-alt linky"></i>` : ``}
-		        			</${!!link.url ? `a` : `span`}>
-	        			`}
-	        			`;
+		    .map(link => {
+		        const timespan = (!!link.when && !!link.when.timespans) 
+		            ? ` (${minmaxer(link.when.timespans)})` 
+		            : (!!link.when && !link.when.timespans) 
+		            ? ` (${link.when.start.in}-${link.when.end.in})` 
+		            : '';
+		        return (link_text ? `${link.value}${!!link.url ? ' ' : ''}` : '') +
+		            (link_text && !link.url ? '' :
+		                (`<${!!link.url ? `a href="${link.url}" target="_blank"` : `span`}${link_text ? ' class="pointer small red-bold"' : ''}>` +
+		                `${link_text || link.identifier || link.label}${timespan}${!!link.url ? ` <i class="fas fa-external-link-alt linky"></i>` : ``}` +
+		                `</${!!link.url ? `a` : `span`}>`)
+		            );
 		    })
 		    .join('; ');
-		return links == '' ? '' : `<p class="mb-0"><b>${name}${links_array.length == 1 || name == 'Related' ? '' : 's'}</b>: ${links}</p>`;
+		return links == '' ? '' : `<p class="mb-0"><b>${name}${links_array.length == 1 || name == 'Related' ? '' : 's'}</b>: <span class="toggle-truncate">${links}</span></p>`;
 	}
-	//
-	// LINKS
-	//
+
 	if (!!data.links && data.links.length > 0) {
 	    descrip += build_links('Link', data.links.filter(link => !!link.identifier && link.identifier.trim() !== ''));	    
 	}
-	//
-	// RELATED
-	//
+
 	if (!!data.related && data.related.length > 0) {
 	    descrip += build_links('Parent', data.related.filter(relative => !!relative.relation_type && relative.relation_type == 'gvp:broaderPartitive'));
 	    descrip += build_links('Related', data.related.filter(relative => !!relative.relation_type && relative.relation_type !== 'gvp:broaderPartitive'));
 	}
-	//
-	// DESCRIPTIONS
-	//
+
 	if (!!data.descriptions && data.descriptions.length > 0) {
 	    descrip += build_links('Description', data.descriptions.filter(link => !!link.value && link.value.trim() !== ''), 'Link');	    
 	}
-	//
-	// CCODES
-	//
+
 	if (!!data.countries && data.countries.length > 0) {
 	    descrip += '<p><b>Modern country bounds</b>: ' + data.countries.map(country => `<span class="pointer" data-bs-toggle="tooltip" title="${country.label || ''}">${country.ccode}</span>`).join(', ') + '</p>';
 	}
-	//
-	// MINMAX
-	//
+
 	if (!!data.minmax && data.minmax.length == 2 && (data.minmax[0] || data.minmax[1]) ) {
 		descrip += `<p><b>When</b>: earliest: ${data.minmax[0] ? data.minmax[0] : '?'}; latest: ${data.minmax[1] ? data.minmax[1] : '?'}</p>`;
-	}	
-	//
-	// TITLE
-	//
-	descrip = `<div><p><b>Title</b>: <span id="row_title" class="larger text-danger">${data.title}</span></p>${descrip}</div>`;
-	
-	return descrip
+	}
+
+	return `<div><p><b>Title</b>: <span id="row_title" class="larger text-danger">${data.title}</span></p>${descrip}</div>`;
 }
 
 // Traces (annotations)
 function parseAnno(data) {
 	let descrip = ''
-	if (data.length > 0) {
-		// there is *always* a trace, even if not saved
-		// TODO: no need to find/filter here? done in view?
-		let trace = data.find(function(d) {
-			return d.fields.collection == `${ pageData }`
-		})
-		let t = trace.fields
-		let imgpath = t.image_file
-		let blank = t.relation == '[""]' && t.note == null && t.start == null
-		if (blank) {
-			descrip += '<i>none yet</i>'
-		} else {
-			if (t.relation) {
-				descrip += "<span><b><u>Relation</u></b>: " +
-					JSON.parse(t.relation)[0] + "</span>"
-			}
-			if (t.note) {
-				// find & format embedded markdown link syntax
-				let linkish = t.note.replace(/\[(.*)\]\((.*)\)/gim,
-					'<a href="$2" target="_blank">$1</a>')
-				// index of link, -1 is none
-				let linkindex = linkish.search(/<a href/gim)
-				if (linkindex == -1) {
-					// no links, truncate if > 250 chars
-					descrip += '<p><b><u>Notes</u></b>: ' +
-						readMore(linkish, 250) + '</p>'
-				} else {
-					// TODO: Nothing appears to be happening with this variable?
-					// has a link, get initial text
-					let text = linkish.slice(0, linkindex)
-					let innerlink = linkish.slice(linkindex, )
-					descrip += '<p><b><u>Notes</u></b>: ' +
-						readMore(text, 250, innerlink) + '</p>'
+	
+	if (!!data.traces && data.traces.length > 0) {
+		data.traces.forEach(trace => {
+			const t = trace.fields;
+			if (t.relation == '[""]' && t.note == null && t.start == null) {
+				descrip += '<i>none yet</i>';
+			} else {
+				if (t.relation) {
+					descrip += `<p class="mb-0"><b>Relation</b>: ${JSON.parse(t.relation)[0]}</p>`;
+				}
+				if (t.note) {
+					descrip += `<p class="mb-0"><b>Notes</b>: <span class="toggle-truncate">${t.note}</span></p>`;
+				}
+				if (t.start) {
+					descrip += `<p class="mb-0"><b>Begin/End</b>: ${(t.start ?? "")}/${(t.end ?? '')}</p>`;
 				}
 			}
-			if (t.start) {
-				descrip += '<p><b><u>Begin/End</u></b>: ' + (t.start ?? "") + '/' +
-					(t.end ?? '') + '</p>'
+			let imgpath = t.image_file
+			if (imgpath != "") {
+				// display annotation image if any
+				$("#anno_img").attr('src', '/media/' + imgpath)
+			} else {
+				// trace has no image
+				$("#active_img").attr('src', `/media/${ window.collimagepath }`)
 			}
-		}
-		if (imgpath != "") {
-			// display annotation image if any
-			$("#anno_img").attr('src', '/media/' + imgpath)
-		} else {
-			// trace has no image
-			$("#active_img").attr('src', `/media/${ window.collimagepath }`)
-		}
-	} else {
+		});
+	}
+	else {
 		console.log('no trace for selected place')
 		// restore collection image if others have been viewed
-		$("#active_img").attr('src', `/media/${ window.collimagepath }`)
+		$("#active_img").attr('src', `/media/${ window.collimagepath }`)		
 	}
-	return descrip
-}
 
-// TODO: this is a mess, refactor or add 1-to-many annotation link field
-// truncate anno note, looking for embedded links
-function readMore(text, numchars, innerlink = '') {
-	let dots = '<span id="dots">...</span>'
-	let link = '<a href="#" class="a_more" onclick="showMore()">more</a><span class="more hidden">'
-	if (text.length < numchars) {
-		return innerlink != '' ? text + innerlink : text
-	} else {
-		return text.slice(0, numchars) + dots + link + text.slice(numchars, ) + innerlink +
-			' <a href="#" class="ms-2 a_less hidden" onclick="showLess()">less</a></span>'
-	}
+	return descrip
 }

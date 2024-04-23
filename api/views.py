@@ -908,6 +908,9 @@ class PlacesDetailAPIView(View):
     """  returns serialized multiple database place records by id  """
     
     def get(self, request, pk_list=None, pk=None):
+        
+        cid = request.GET.get('cid')
+        
         if pk_list is not None:
             # Split the string of IDs using the delimiter "-"
             ids = pk_list.split("-")
@@ -952,7 +955,7 @@ class PlacesDetailAPIView(View):
         serialized_places = []
         for place in places:
             # Pass the request in the serializer context
-            serializer = PlaceSerializer(place, context={'request': request})
+            serializer = PlaceSerializer(place, context={'cid': cid, 'request': request})
             serialized_places.append(serializer.data)
             
         # Calculate the overall extent
@@ -969,7 +972,9 @@ class PlacesDetailAPIView(View):
         dataset_ids = set([place["dataset_id"] for place in serialized_places])
         
         # Extract the minmax values and filter out empty lists
-        minmax_values = [(place.get("minmax", [None, None])[0], place.get("minmax", [None, None])[1]) for place in serialized_places]
+        #minmax_values = [(place.get("minmax", [None, None])[0], place.get("minmax", [None, None])[1]) for place in serialized_places]
+        minmax_values = [(place.get("minmax", [None, None])[0], place.get("minmax", [None, None])[1]) if place.get("minmax") is not None else (None, None) for place in serialized_places]
+
         # Filter out None values
         min_values = [value[0] for value in minmax_values if value[0] is not None]
         max_values = [value[1] for value in minmax_values if value[1] is not None]
@@ -983,7 +988,8 @@ class PlacesDetailAPIView(View):
             
         # Aggregate places into a single object
         aggregated_place = {
-            "id": "-".join(ids),  # Concatenate the IDs
+            "id": "-".join(ids),  # Concatenate the IDs,
+            "traces": [trace for place in serialized_places for trace in place["traces"]], ################################## FIX THIS!!!!!!!!!!!!!!!!!!!!!!!!
             "datasets": sort_unique(list(Dataset.objects.filter(id__in=dataset_ids).values("id", "title")), 'title'),
             "title": "|".join(set(place["title"] for place in serialized_places)),
             "names": sort_unique([name for place in serialized_places for name in place["names"]], 'toponym'),
