@@ -85,7 +85,7 @@ def join(value,delimit):
         value=map(str,value)
     return delimit.join(value)
 
-@register.simple_tag
+@register.filter
 def lorem_ipsum(count=1):
     return "\n".join(paragraphs(count, False))
 

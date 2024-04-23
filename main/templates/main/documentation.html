@@ -1,70 +1,235 @@
-{% extends "main/base_webpack.html" %}
+{% extends "main/base.html" %}
 {% load static %}
 
-{% block title %}
-  <title>WHG v3.0a | Documentation</title>
-{% endblock %}
+{% load mathfilters %}
+{% load dataset_extras %}
 
 {% block extra_head %}
-  <link href="{% static 'webpack/docs.bundle.css' %}" rel="stylesheet" />
-  <style>
-    /* custom-docs.css */
-    body {
-      overflow-x: hidden;
+<style>
+  .nav-link {
+    color: #007bff;
+    transition: color 0.3s;
+  }
+
+  .nav-link:hover {
+    color: #0056b3;
+  }
+  #docs_content, #docs_sidebar {
+      overflow-y: auto;
+      height: calc(100vh - 120px);
+  }
+  @media (max-width: 992px) { /* adjust this value as needed */
+    .accordion-body {
+      padding: unset !important;
     }
-    .bg-light {
-      background-color: #f8f9fa!important;
-    }
-    .nav-pills .nav-link {
-      color: #555;
-    }
-    .nav-pills .nav-link.active {
-      color: #fff;
-      background-color: #007bff;
-    }
-  </style>
-{#  <link href="{% static 'css/docs.css' %}" rel="stylesheet">#}
+  }
+</style>
 {% endblock %}
 
 {% block content %}
-
-{#<div class="container-fluid mt-1">#}
-<div id="dataset_content" class="container mt-1 px-1">
+<div id="docs_container" class="container mt-1 px-1">
+  <div><h4>WHG v3 Documentation</h4></div>
   <div class="row flex-nowrap">
-    <!-- Sidebar navigation -->
-    <div class="col-auto col-md-3 col-xl-2 px-sm-2 px-0 bg-light">
-      <div class="d-flex flex-column align-items-center align-items-sm-start px-3 pt-2 min-vh-100">
-        <h2 class="d-none d-sm-inline">Documentation</h2>
-        <ul class="nav nav-pills flex-column mb-sm-auto mb-0 align-items-center align-items-sm-start" id="menu">
-          <li class="nav-item">
-            <h4 class="d-none d-sm-inline">WHG Documentation</h4>
-            <a href="#introduction" class="nav-link align-middle px-0">
-              <i class="fs-4 bi-house"></i> <span class="ms-1 d-none d-sm-inline">Introduction</span>
-            </a>
-          </li>
-          <!-- Additional links for other sections -->
-        </ul>
+    <!-- Sidebar Navigation with Accordions -->
+    <div id="docs_sidebar" class="col-md-3 col-4 sticky-sidebar">
+      <div class="accordion" id="sidebarAccordion">
+        <!-- Introduction Section -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingIntro">
+            <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseIntro" aria-expanded="true" aria-controls="collapseIntro">
+              Introducing the WHG
+            </button>
+          </h2>
+          <div id="collapseIntro" class="accordion-collapse collapse show" aria-labelledby="headingIntro"
+               data-bs-parent="#sidebarAccordion">
+            <div class="accordion-body">
+              <ul class="nav flex-column">
+                <li class="nav-item"><a class="nav-link" href="#overview">Overview</a></li>
+                <li class="nav-item"><a class="nav-link" href="#purpose">Purpose</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <!-- Site Sections Section -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingSections">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseSections" aria-expanded="false" aria-controls="collapseSections">
+              Site Sections
+            </button>
+          </h2>
+          <div id="collapseSections" class="accordion-collapse collapse" aria-labelledby="headingSections"
+               data-bs-parent="#sidebarAccordion">
+            <div class="accordion-body">
+              <ul class="nav flex-column">
+                <li class="nav-item">
+                  <a class="nav-link" href="#home">Home page</a></li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#search">Search</a></li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#portal">Place Portals</a></li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#workbench">Gazetteer Workbench</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <!-- Tutorials Section -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingTutorials">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseTutorials" aria-expanded="false" aria-controls="collapseTutorials">
+              Tutorials
+            </button>
+          </h2>
+          <div id="collapseTutorials" class="accordion-collapse collapse" aria-labelledby="headingTutorials"
+               data-bs-parent="#sidebarAccordion">
+            <div class="accordion-body">
+              <ul class="nav flex-column">
+                <li class="nav-item">
+                  <a class="nav-link" href="#pathways">Workflow Pathways</a></li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#lpf">Linked Places format</a></li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#prepdata">Preparing data for upload</a></li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#pcolls">Create and publish a Place Collection</a></li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#dscolls">Create and publish a Dataset Collection</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
-    <!-- Content panel -->
-    <div class="col py-3">
+    <!-- Main Content -->
+    <div id="docs_content" class="col-md-9 col-8 content-area">
+      <!--Introduction Group -->
       <section id="introduction">
-        <h2>Introduction</h2>
-        <p>This section contains an overview of the WHG platform...</p>
+        <h5>Introducing WHG</h5>
+        <p>Introduction...</p>
+        <p>{% lorem 2 %}</p>
       </section>
-      <!-- Additional sections -->
-    </div>
+      <section id="overview">
+        <h5>Overview</h5>
+        <p>Overview of WHG, its purpose, and main features...</p>
+                <p>{% lorem 2 %}</p>
+      </section>
+      <section id="purpose">
+        <h5>Purpose</h5>
+        <p>Purpose of WHG and main features...</p>
+                <p>{% lorem 2 %}</p>
+      </section>
+      <!-- Site Sections Group -->
+      <section id="home">
+        <h5>Home page</h5>
+        <p>...</p>
+        <p>{% lorem 2 %}</p>
+      </section>
+      <section id="search">
+        <h5>Search in WHG</h5>
+        <p>...</p>
+        <p>{% lorem 2 %}</p>
+      </section>
+      <section id="portal">
+        <h5>Place Portals</h5>
+        <p>...</p>
+        <p>{% lorem 2 %}</p>
+      </section>
+      <section id="workbench">
+        <h5>The Gazetteer Workbench</h5>
+        <p>...</p>
+        <p>{% lorem 2 %}</p>
+      </section>
+      <!-- Tutorials Group -->
+      <section id="pathways">
+        <h5>Workflow Pathways</h5>
+        <p>...</p>
+        <p>{% lorem 2 %}</p>
+      </section>
+      <section id="lpf">
+        <h5>Linked Places format</h5>
+        <p>...</p>
+        <p>{% lorem 2 %}</p>
+      </section>
+      <section id="prepdata">
+        <h5>Preparing data for upload</h5>
+        <p>...</p>
+        <p>{% lorem 2 %}</p>
+      </section>
+      <section id="pcolls">
+        <h5>Create and publish a Place Collection</h5>
+        <p>...</p>
+        <p>{% lorem 2 %}</p>
+      </section>
+      <section id="dscolls">
+        <h5>Create and publish a Dataset Collection</h5>
+        <p>...</p>
+        <p>{% lorem 2 %}</p>
+        <p>{% lorem 8 %}</p>
+      </section>
   </div>
 </div>
-{% endblock %}
+</div>
+<script type="text/javascript">
+  document.addEventListener('DOMContentLoaded', function () {
+    console.log('Document is ready.');
+    var sidebarAccordion = document.getElementById('sidebarAccordion');
+    if (!sidebarAccordion) {
+      console.error('Sidebar accordion not found!');
+      return;
+    } else {
+      console.log('Sidebar accordion found:', sidebarAccordion);
+    }
 
-{% block deferredScripts %}
+    sidebarAccordion.addEventListener('show.bs.collapse', function (e) {
+      console.log('Accordion section is showing:', e.target);
 
-   	var scripts = [
-      {
-        src: '{% static 'webpack/docs.bundle.js' %}',
-        type: 'text/javascript',
+      // Find the closest .accordion-collapse to ensure we have the correct container
+      var accordionBody = e.target.closest('.accordion-collapse');
+      if (!accordionBody) {
+        console.error('Accordion collapse element not found.');
+        return;
+      } else {
+        console.log('Accordion collapse element:', accordionBody);
       }
-   	]
+
+      // Delay the action to wait for the collapse animation to complete
+      setTimeout(() => {
+        // Locate the first navigation link in the opened accordion body
+        var firstNavItem = accordionBody.querySelector('.nav-link');
+        if (!firstNavItem) {
+          console.error('No nav item found in the opened accordion section.');
+          return;
+        } else {
+          console.log('First nav item:', firstNavItem);
+        }
+
+        // Get the href attribute from the first nav item
+        var targetId = firstNavItem.getAttribute('href');
+        if (!targetId) {
+          console.error('Nav item href attribute is missing.');
+          return;
+        } else {
+          console.log('Nav item href:', targetId);
+        }
+
+        // Locate the content section that corresponds to the nav item's href
+        var targetElement = document.querySelector(targetId);
+        if (!targetElement) {
+          console.error('Target element not found:', targetId);
+          return;
+        } else {
+          console.log('Target element to scroll to:', targetElement);
+        }
+
+        // Execute the scroll to the target element
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 300);
+    });
+  });
+</script>
 
 {% endblock %}
