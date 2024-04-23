@@ -81,19 +81,18 @@ function parsePlace(data) {
 	function build_links(name, links_array, link_text=false) {
 		if (links_array.length == 0) return '';
 		const links = links_array
-			.map(link => {
-				const timespan = (!!link.when && !!link.when.timespans) 
-				    ? ` (${minmaxer(link.when.timespans)})` 
-				    : (!!link.when && !link.when.timespans) 
-				    ? ` (${link.when.start.in}-${link.when.end.in})` 
-				    : '';
-	        	return `${link_text ? `${link.value}${!!link.url ? ' ' : ''}` : ''}
-	        			${link_text && !link.url ? '' : `
-		        			<${!!link.url ? `a href="${link.url}" target="_blank"` : `span`}${link_text ? ' class="pointer small red-bold"' : ''}>
-		        				${link_text || link.identifier || link.label}${timespan}${!!link.url ? ` <i class="fas fa-external-link-alt linky"></i>` : ``}
-		        			</${!!link.url ? `a` : `span`}>
-	        			`}
-	        			`;
+		    .map(link => {
+		        const timespan = (!!link.when && !!link.when.timespans) 
+		            ? ` (${minmaxer(link.when.timespans)})` 
+		            : (!!link.when && !link.when.timespans) 
+		            ? ` (${link.when.start.in}-${link.when.end.in})` 
+		            : '';
+		        return (link_text ? `${link.value}${!!link.url ? ' ' : ''}` : '') +
+		            (link_text && !link.url ? '' :
+		                (`<${!!link.url ? `a href="${link.url}" target="_blank"` : `span`}${link_text ? ' class="pointer small red-bold"' : ''}>` +
+		                `${link_text || link.identifier || link.label}${timespan}${!!link.url ? ` <i class="fas fa-external-link-alt linky"></i>` : ``}` +
+		                `</${!!link.url ? `a` : `span`}>`)
+		            );
 		    })
 		    .join('; ');
 		return links == '' ? '' : `<p class="mb-0"><b>${name}${links_array.length == 1 || name == 'Related' ? '' : 's'}</b>: <span class="toggle-truncate">${links}</span></p>`;
