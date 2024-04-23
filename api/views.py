@@ -982,7 +982,7 @@ class PlacesDetailAPIView(View):
         min_value = min(min_values, default=None)
         max_value = max(max_values, default=None)
         
-        country_codes_mapping = {country['id']: country['text'] for item in json.load(open('static/js/regions_countries.json')) if item.get('text') == 'Countries' for country in item.get('children', [])}
+        country_codes_mapping = {country['id']: country['text'] for item in json.load(open('media/data/regions_countries.json')) if item.get('text') == 'Countries' for country in item.get('children', [])}
         unique_country_codes = {ccode for place in serialized_places for ccode in place.get("ccodes", [])}
         countries_with_labels = [{ 'ccode': ccode, 'label': country_codes_mapping.get(ccode, '') } for ccode in unique_country_codes]
             

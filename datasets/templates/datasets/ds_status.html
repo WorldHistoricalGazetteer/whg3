@@ -150,6 +150,7 @@
               The task detail shown below indicates progress of the review of candidate matches.
               <br/><!--{'p0': 2, 'p1': 1, 'p2': 0, 'p0and1': 0}-->
             </p>
+            {% if task_wdgn %}
             <div class="task-box p-1">
               <p class="d-block bg-lightblue ps-1"><b>Reconciliation Task</b> ({{ task_wdgn.task_id|truncatechars:8 }});
                 initiated: {{ task_wdgn.date_created|date:"d M Y" }}</p>
@@ -182,11 +183,18 @@
                 {% endif %}
               </p>
             </div>
+            {% else %}
+            <div class="task-box p-1">
+              <p class="d-block bg-lightblue ps-1"><b>Reconciliation Task</b>
+                (test date, no task_id);
+                initiated: test data, no date</p>
+              <p>Test data; no tasks</p>
+            </div>
+            {% endif %}
           {% elif ds.ds_status == 'wd-complete' and ds.public %}
             <p>Your dataset has been published! It is now visible to all site visitors in its
               <a href="{% url 'datasets:ds_places' ds.id %}" target="_blank">publication page</a>, and its records
               are accessible via the WHG search and API features. Many thanks for this contribution.</p>
-
             <div class="row">
               <div class="col-md-9">
                 <p>A next step we strongly encourage is to fully accession its records by reconciling
@@ -197,6 +205,7 @@
                 <a class="btn btn-sm btn-outline-primary py-1" href="">Request accessioning</a>
               </div>
             </div>
+            {% if task_wdgn %}
             <div class="task-box p-1">
               <p class="d-block bg-lightblue ps-1"><b>Reconciliation Task</b> ({{ task_wdgn.task_id|truncatechars:8 }});
                 initiated: {{ task_wdgn.date_created|date:"d M Y" }}</p>
@@ -206,6 +215,14 @@
                 <i class="fas fa-check"></i>
               </p>
             </div>
+            {% else %}
+            <div class="task-box p-1">
+              <p class="d-block bg-lightblue ps-1"><b>Reconciliation Task</b>
+                (test date, no task_id);
+                initiated: test data, no date</p>
+              <p>Test data; no tasks</p>
+            </div>
+            {% endif %}
           {% elif ds.ds_status == 'wd-complete' %} <!-- only wd-complete, not yet public -->
             <div class="row">
               <div class="col-md-9">
@@ -220,6 +237,7 @@
                 <a class="btn btn-sm btn-outline-primary py-1" href="">Request publication</a>
               </div>
             </div>
+            {% if task_wdgn %}
             <div class="task-box p-1">
               <p class="d-block bg-lightblue ps-1"><b>Reconciliation Task</b>
                 ({{ task_wdgn.task_id|truncatechars:8 }});
@@ -229,6 +247,14 @@
                 <i class="fas fa-check"></i>
               </p>
             </div>
+            {% else %}
+            <div class="task-box p-1">
+              <p class="d-block bg-lightblue ps-1"><b>Reconciliation Task</b>
+                (test date, no task_id);
+                initiated: test data, no date</p>
+              <p>Test data; no tasks</p>
+            </div>
+            {% endif %}
           {% elif ds.ds_status == 'accessioning' %}
             <p>Your dataset is already published, and now in the process of accessioning to the WHG "union index,"
               linking individual records with any close matches to records from other datasets already in the index.
@@ -240,6 +266,7 @@
               </div>
               <div class="col-4"><a class="btn btn-sm btn-outline-primary py-1" href="">Request review help</a></div>
             </div>
+            {% if task_idx %}
             <div class="task-box p-1">
               <p class="d-block bg-lightblue ps-1"><b>Accessioning Task</b> ({{ task_idx.task_id|truncatechars:8 }});
                 initiated: {{ task_idx.date_created|date:"d M Y" }}</p>
@@ -256,6 +283,14 @@
                 {% endif %}
               </p>
             </div>
+            {% else %}
+            <div class="task-box p-1">
+              <p class="d-block bg-lightblue ps-1"><b>Reconciliation Task</b>
+                (test date, no task_id);
+                initiated: test data, no date</p>
+              <p>Test data; no tasks</p>
+            </div>
+            {% endif %}
           {% elif ds.ds_status == 'indexed' %}
             <p>Congratulations! Your dataset is now fully accessioned in World Historical Gazetteer, <mark>{n}</mark>
             of its records were linked with records from other datasets, and <mark>{nn}</mark> are for places
