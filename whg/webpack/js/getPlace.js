@@ -25,7 +25,7 @@ export function getPlaceBouncing(pid, cid, spinner_detail, callback) {
 	        $("#anno_body").html(parseAnno(data));
 	        $("#anno_img").html(data.traces.image_file);
 	    }
-	    $('.toggle-truncate').toggleHTML();
+	    $('.toggle-truncate').toggleTruncate();
 	    if (spinner_detail) spinner_detail.stop();
 	
 	    if (typeof callback === 'function') {

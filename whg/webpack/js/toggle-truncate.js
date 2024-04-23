@@ -3,20 +3,22 @@
   File: toggle-truncate.js
   Description: JQuery HTML truncation toggler
   
+  This JQuery extension resolves the difficulties of truncating text which has embedded HTML tags.
+  
   Sample usage:
 
-  $('.some-class').toggleHTML(); <== use default maxChars
-  $('#some-element').toggleHTML(42); <== override default maxChars
-  $('.some-class').toggleHTML(18, { colour: 'red', lessText: 'Enough Already' }); <== override maxChars and named parameters
-  $('#some-element').toggleHTML({ ellipsis: '', moreText: '(...)' }); <== use default maxChars and override named parameters
+  $('.some-class').toggleTruncate(); <== use default maxChars
+  $('#some-element').toggleTruncate(42); <== override default maxChars
+  $('.some-class').toggleTruncate(18, { colour: 'red', lessText: 'Enough Already' }); <== override maxChars and named parameters
+  $('#some-element').toggleTruncate({ ellipsis: '', moreText: '(...)' }); <== use default maxChars and override named parameters
 
   Copyright (c) 2024 Stephen Gadd
   Licensed under the Creative Commons Attribution 4.0 International License (CC-BY 4.0).
 */
 
-$.fn.toggleHTML = function(arg1, arg2 = {}) {
+$.fn.toggleTruncate = function(arg1, arg2 = {}) {
 	
-	const maxChars = typeof arg1 === 'number' ? arg1 : 130;
+	const maxChars = typeof arg1 === 'number' ? arg1 : 130; // <== Set the default as an integer at the end of this line
 	const parameters = typeof arg1 === 'number' ? arg2 : arg1;
 		
 	// Customise defaults as required, and override with parameters when calling if necessary
@@ -26,25 +28,26 @@ $.fn.toggleHTML = function(arg1, arg2 = {}) {
 		lessText: 'Less', 
 		colour: '#fff', 
 		backgroundColour: '#004080',
-		backgroundColourHover: '#004080a3'		
+		backgroundColourHover: '#004080a3',
+		toggleTruncate: 'toggle-truncate' // basename for inserted classes: change needed only to resolve any conflict with existing code
 	}
 	
 	const options = {...defaultOptions, ...parameters};
 	
     // Inject required CSS styles into the head of the document if not done already
-    if (!$('style#toggle-truncate-styles').length) {
+    if (!$(`style#${options.toggleTruncate}-styles`).length) {
         const toggleTruncateStyles = `
-			.toggle-text-link {
+			.${options.toggleTruncate}-link {
 			    display: inline-block;
 			    cursor: pointer;
 			    font-size: 0.7rem;
 			    vertical-align: text-bottom;
 			    line-height: normal;
 			}
-			.toggle-text-wrapper.toggle-text-more .toggle-text {
+			.${options.toggleTruncate}-wrapper.${options.toggleTruncate}-more .${options.toggleTruncate} {
 			    display: none;
 			}
-			.toggle-text-link > span {
+			.${options.toggleTruncate}-link > span {
 			    display: inline-block;
 			    padding: 0.2rem 0.4rem;
 			    background-color: ${options.backgroundColour};
@@ -52,11 +55,11 @@ $.fn.toggleHTML = function(arg1, arg2 = {}) {
 			    border-radius: 0.2rem;
 			    margin-left: 0.4rem;
 			}
-			.toggle-text-link > span:hover {
+			.${options.toggleTruncate}-link > span:hover {
 			    background-color: ${options.backgroundColourHover};
 			}
-			.toggle-text-wrapper:not(.toggle-text-more) .toggle-text-link > span:first-of-type,
-			.toggle-text-wrapper:not(.toggle-text-more) .toggle-text-ellipsis {
+			.${options.toggleTruncate}-wrapper:not(.${options.toggleTruncate}-more) .${options.toggleTruncate}-link > span:first-of-type,
+			.${options.toggleTruncate}-wrapper:not(.${options.toggleTruncate}-more) .${options.toggleTruncate}-ellipsis {
 			    display: none;
 			}
         `;
@@ -82,18 +85,18 @@ $.fn.toggleHTML = function(arg1, arg2 = {}) {
                     const classNames = (segment.match(classRegex) || [])[1];
                     if (classNames) {
                         const classes = classNames.split(/\s+/).filter(className => className.trim() !== '');
-                        classes.push('toggle-text');
+                        classes.push(`${options.toggleTruncate}`);
                         const updatedClassNames = classes.join(' ');
                         segment = segment.replace(classRegex, `class="${updatedClassNames}"`);
                     }
                     else {
-                        segment = segment.replace('>', ' class="toggle-text">');
+                        segment = segment.replace('>', ` class="${options.toggleTruncate}">`);
                     }
                 }
                 return segment; // Preserve HTML tags
             } else {
                 if (charCount > maxChars) {
-                    return `<span class="toggle-text">${segment}</span>`;
+                    return `<span class="${options.toggleTruncate}">${segment}</span>`;
                 }
                 else {
                     charCount += segment.length;
@@ -102,16 +105,16 @@ $.fn.toggleHTML = function(arg1, arg2 = {}) {
                     }
                     else {
                         const splitIndex = maxChars - (charCount - segment.length);
-                        return `${segment.slice(0, splitIndex)}<span class="toggle-text">${segment.slice(splitIndex)}</span>`;
+                        return `${segment.slice(0, splitIndex)}<span class="${options.toggleTruncate}">${segment.slice(splitIndex)}</span>`;
                     }
                 }
             }
         }).join('');
 
-        el.html(`<span class="toggle-text-wrapper toggle-text-more">${wrappedContent}<span class="toggle-text-ellipsis">${options.ellipsis}</span><span class="toggle-text-link"><span>${options.moreText}</span><span class="toggle-text">${options.lessText}</span></span></span>`);
+        el.html(`<span class="${options.toggleTruncate}-wrapper ${options.toggleTruncate}-more">${wrappedContent}<span class="${options.toggleTruncate}-ellipsis">${options.ellipsis}</span><span class="${options.toggleTruncate}-link"><span>${options.moreText}</span><span class="${options.toggleTruncate}">${options.lessText}</span></span></span>`);
         
-        el.find('.toggle-text-link').click(function() {
-            el.find('.toggle-text-wrapper').toggleClass('toggle-text-more');
+        el.find(`.${options.toggleTruncate}-link`).click(function() {
+            el.find(`.${options.toggleTruncate}-wrapper`).toggleClass(`${options.toggleTruncate}-more`);
         });
     });
 };
