@@ -38,7 +38,7 @@ function parsePlace(data) {
 	window.featdata = data
 	var descrip = '';
 
-	if (!!data.datasets && data.datasets.length > 0) {
+	if (!!window.ds_list[0]['ds_type'] && !!window.ds_list[0]['ds_type'] == 'collections' && !!data.datasets && data.datasets.length > 0) {
 		const dataset_links = data.datasets.map(ds => `<a href="/datasets/${ds.id}/places" target="_blank" data-bs-toggle="tooltip" data-bs-title="View <i>${ds.title}</i> in a new tab.">${ds.title} <i class="fas fa-external-link-alt linky"></i></a>`).join('; ')
 		descrip += `<p class="mb-0"><b>Dataset${data.datasets.length == 1 ? '' : 's'}</b>: ${dataset_links}.</p>`;
 	}

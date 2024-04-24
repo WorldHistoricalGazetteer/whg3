@@ -184,3 +184,11 @@ li:not(.showing) span.showing {
 .maplibregl-ctrl-top-right .maplibregl-ctrl {
 	margin-top: 0;
 }
+
+.modal-content {
+	height: auto; /* Required to override setting in /static/css/styles.css */
+}
+
+.modal-content input[type="radio"] {
+    vertical-align: text-bottom;
+}

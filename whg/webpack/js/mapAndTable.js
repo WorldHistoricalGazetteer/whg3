@@ -10,7 +10,6 @@ import { initUtils, initInfoOverlay, startSpinner, minmaxer, get_ds_list_stats, 
 import { initialiseTable } from './tableFunctions';
 import { init_collection_listeners } from './collections';
 import SequenceArcs from './mapSequenceArcs';
-import { add_to_collection } from './collections.js';
 
 let ds_listJSON = document.getElementById('ds_list_data') || false;
 if (ds_listJSON) {

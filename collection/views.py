@@ -13,6 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.forms.models import inlineformset_factory
 from django.http import JsonResponse, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404, redirect
+from django.views.decorators.http import require_POST
 from django.views.generic import (View, CreateView, UpdateView, DetailView, DeleteView, ListView )
 
 from django.contrib.gis.geos import Point, GEOSGeometry, GeometryCollection
@@ -275,6 +276,81 @@ def add_places(request, *args, **kwargs):
       print('add_places() result', {"added": added, "dupes": dupes})
       msg = {"added": added, "dupes": dupes}
     return JsonResponse({'status': status, 'msg': msg}, safe=False)
+
+"""
+    create Collection if it doesn't yet exist
+    add list of >=1 places to Collection
+    ajax call from place_portal.html
+"""
+@require_POST
+def add_collection_places(request):
+    payload = request.POST
+
+    collection_id = int(payload.get('collection'))
+    title = payload.get('title')
+    place_ids = [int(place_id) for place_id in payload.get('place_ids').split(',')]
+    
+    # Initialize response data
+    response_data = {'status': 'success', 'msg': '', 'added_places': [], 'existing_places': [], 'payload_received': payload}
+    
+    # Perform data processing and database operations
+    try:
+        if collection_id == -1:
+            # Create a new collection
+            collobj = Collection.objects.create(
+                owner=request.user,
+                title=title,
+                collection_class='place',
+                description='new collection',
+            )
+            collobj.save()
+            collection_id = collobj.id
+            response_data['msg'] = 'New collection created successfully.'
+            response_data['new_collection_id'] = collection_id
+
+        # Add places to the collection
+        collection = Collection.objects.get(id=collection_id)
+        for place_id in place_ids:
+            place = Place.objects.get(id=place_id)
+            # Check if the place already exists in the collection
+            existing_place = TraceAnnotation.objects.filter(collection=collection, place=place, archived=False)
+            if not existing_place:
+                trace_annotation = TraceAnnotation.objects.create(
+                    place=place,
+                    src_id=place.src_id,
+                    collection=collection,
+                    motivation='locating',
+                    owner=request.user,
+                    anno_type='place',
+                    saved=0
+                )
+                trace_annotation.save()
+
+                CollPlace.objects.create(
+                    collection=collection,
+                    place=place,
+                    sequence=seq(collection)
+                )
+                
+                response_data['added_places'].append(place_id)
+            else:
+                response_data['existing_places'].append(place_id)
+
+        collection = Collection.objects.get(id=collection_id) # Refresh
+        response_data['collection'] = {
+            'class': collection.collection_class,
+            'id': collection.id,
+            'url': f"/collections/{collection.id}/browse_pl",
+            'title': collection.title,
+            'description': collection.description,
+            'count': collection.places.count()
+        }                
+
+    except Exception as e:
+        response_data['status'] = 'error'
+        response_data['msg'] = str(e)
+
+    return JsonResponse(response_data)
 
 """
   deletes CollPlace record(s) and

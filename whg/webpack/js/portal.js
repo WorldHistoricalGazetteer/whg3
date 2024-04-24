@@ -4,16 +4,14 @@ import throttle from 'lodash/throttle';
 import { attributionString, deepCopy, geomsGeoJSON } from './utilities';
 import Historygram from './historygram';
 import { popupFeatureHTML } from './getPlace.js';
-import { init_collection_listeners } from './collections.js';
-import { add_to_collection } from './collections.js';
+import './toggle-truncate.js';
 
 import '../css/mapAndTableMirrored.css';
 import '../css/dateline.css';
 import '../css/portal.css';
 
 const payload = JSON.parse($('#payload_data').text());
-
-let checked_cards = [];
+$('#collection_list').data('allCollections', [...new Set(payload.flatMap(place => place.collections))]);
 
 let mapParameters = {
     zoom: 4, // Required initially to retrieve ecoregion data from the rendered layers
@@ -140,9 +138,6 @@ function waitMapLoad() {
 function waitDocumentReady() {
     return new Promise((resolve) => {
         $(document).ready(() => {
-            // Get the 'add to collection' link and the 'addtocoll_popup' div
-            const link = document.getElementById('addchecked');
-            const popup = document.getElementById('addtocoll_popup');
 
 			let checked_cards =[]
 
@@ -155,39 +150,15 @@ function waitDocumentReady() {
 							// Unhide the #addtocoll span
 							document.getElementById('addtocoll').style.display = 'block';
 					});
-			});
-			
-		    // Initialize modal dialog
-		    $("#addtocoll_popup").dialog({
-		        autoOpen: false,
-		        modal: true,
-		        width: 500,
-		        title: "Add Place to a Collection",
-		        buttons: {
-		            "Close": function() {
-		                $(this).dialog("close"); // Close dialog when "Close" button is clicked
-		            }
-		        }
-		    });
+			});		    
 
 		    // Show modal dialog when needed
 		    $("#addchecked").click(function() {
-		        $("#addtocoll_popup").dialog("open");
+		        $("#addtocoll_popup").modal('show');
 		    });
+		    
+		    initCollectionForm();
 
-			// Add an event listener for the .a_addtocoll links
-			document.querySelectorAll('.a_addtocoll').forEach(link => {
-				link.addEventListener('click', function(event) {
-					event.preventDefault();
-
-					// Call the add_to_collection function with the appropriate arguments
-					const coll = this.getAttribute('ref');
-					add_to_collection(coll, checked_cards);
-
-					// Clear the checked_cards array
-					checked_cards = [];
-				});
-			});
             resolve();
         });
     });
@@ -233,9 +204,8 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		$('<p>').addClass('mb-1').html(`
 		    It lies${elevationString}${adminString} within the <a href="${geoData.ecoregion.url}" target="_blank">${geoData.ecoregion.name}</a> ecoregion and <a href="${geoData.biome.url}" target="_blank">${geoData.biome.name}</a> biome.
 		`).insertAfter($('#gloss').find('p:first'));
-
-    	const collectionList = $('#collection_list');
-    	const ul = $('<ul>').addClass('coll-list');
+		
+		$('#gloss').append($('<span id="collectionInfo">'));
     	
     	$('#sources').find('h6').text(`${payload.length} Source${payload.length > 1 ? 's' : ''}`);
 
@@ -250,79 +220,26 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		});
 
     	payload.forEach(place => {
-			
-			const moreNames = place.names.length > 10 ? `<div class="moreContent hidden">; ${place.names.slice(10).map(label => label.label).join('; ')}</div> [<a href="#" title="show more" class="more-link"><span><i class="fas fa-plus"></i></span><span class="hidden"><i class="fas fa-minus"></i></span></a>]` : '';
-			
-	        const sourceHTML = `
+			const sourceHTML = `
 	            in: <a class="pop-link pop-dataset"
 	                   data-id="${place.dataset.id}" data-toggle="popover"
 	                   title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
 	                ${place.dataset.name.replace('(stub) ', '').substring(0, 25)}
 	            </a>
-				<div class="name-variants">
-				    <strong class="larger">${place.title}</strong> ${place.names.slice(0, 10).map(label => label.label).join('; ') + moreNames}
+				<div class="name-variants toggle-truncate">
+				    <strong class="larger">${place.title}</strong> ${place.names.map(label => label.label.trim()).join('; ')}
 				</div>
 	            ${place.types.length > 0 ? `<div>Type${place.types.length > 1 ? 's' : ''}: ${place.types.map(type => type.label).join(', ')}</div>` : ''}
     			${place.timespans.length > 0 ? `<div>Chronology: ${place.timespans.reverse().map(timespan => timespan.join('-')).join(', ')}</div>` : ''}
 	        `;
 	        
-	        $('#sources').append($('<div>').addClass('source-box').html(sourceHTML));		
-				console.log('place', place);
-				console.log('place.collections', place.collections);
-		  	if (place.collections.length > 0) {
-				place.collections.forEach(collection => {
-					console.log('collection', collection);
-					let listItem = '';
-					// TODO: places are only ever in place collections
-					if (collection.class === 'place') {
-						listItem = `
-							<a href="${ collection.url }" target="_blank"><b>${ collection.title.trim() } <i class="fas fa-external-link"></i></b>
-							</a>, <br/>a collection of <sr>${ collection.count }</sr> places${!!collection.owner ? ` by ${collection.owner.name}` : ''}.
-							<span class="showing"><p>${ collection.description }</p></span>
-							[<a href="javascript:void(0);" data-id="${ collection.id }" class="show-collection"><span>preview</span><span class="showing">close</span></a>]
-						`;
-					} else {
-						listItem = `
-							<a href="${ collection.url }" target="_blank"><b>${title}</b>
-							</a>, a collection of all <sr>${ collection.count }</sr> places in datasets
-						`;
-					}
-					ul.append($('<li>').html(listItem));
-				});
-			}
+	        $('#sources').append($('<div>').addClass('source-box').html(sourceHTML));
 		});
-		
-		const collectionCount = ul.find('li').length;
-		if (collectionCount > 0) {
-    		collectionList.prev('h6').text(`In ${collectionCount} Collection${collectionCount > 1 ? 's' : ''}`);
-		    collectionList.append(ul);
-		    
-			switch (collectionCount) {
-			    case 0:
-			        $('#gloss').append(`It does not yet appear in any WHG collections.`);
-			        break;
-			    case 1:
-			        $('#gloss').append(`It appears in the WHG collection shown below.`);
-			        break;
-			    default:
-			        $('#gloss').append(`It appears in the ${collectionCount} WHG collections listed below.`);
-			}
-		    
-		}
-		else {
-			$('#source_detail').hide();
-		}
+		$('.toggle-truncate').toggleTruncate();
+
+		updateCollections();
 
 		$('#sources').append(noSources);
-		
-	    $('.more-link').click(function(event) {
-	        event.preventDefault();
-    		event.stopPropagation();
-	        $(this).prev('.moreContent').toggleClass('hidden');
-	        $(this).find('span').toggleClass('hidden');
-	        const title = $(this).attr('title') === 'show more' ? 'show fewer' : 'show more';
-    		$(this).attr('title', title);
-	    });
 
 		featureCollection = geomsGeoJSON(payload);
 		console.log(featureCollection);
@@ -359,29 +276,28 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			  }
 		})
 
-	  	// Show/Hide related Collection
-	  	$(".show-collection").click(function(e) {
-	  		e.preventDefault();
-	  		const parentItem = $(this).parent('li');
-	  		parentItem.toggleClass('showing');
-	  		if (parentItem.hasClass('showing')) {
-			  	$.get("/search/collgeom", {
-			  			coll_id: $(this).data('id')
-			  		},
-			  		function(collgeom) {
-						relatedFeatureCollection = collgeom;
-			  			console.log('coll_places', relatedFeatureCollection);
-						mappy.getSource('places').setData(relatedFeatureCollection);
-						mappy.fitViewport( bbox(relatedFeatureCollection), defaultZoom );
-			  		});
-			  	showingRelated = true;
-			}
-			else {
-				mappy.getSource('places').setData(featureCollection);
-				mappy.fitViewport( bbox(featureCollection), defaultZoom );
-				showingRelated = false;
-			}
-	  	})
+		// Show/Hide related Collection (propagate event delegation to dynamically added elements)
+		$('#collection_list').on('click', '.show-collection', function(e) {
+		    e.preventDefault();
+		    const parentItem = $(this).parent('li');
+		    parentItem.toggleClass('showing');
+		    if (parentItem.hasClass('showing')) {
+		        $.get("/search/collgeom", {
+		                coll_id: $(this).data('id')
+		            },
+		            function(collgeom) {
+		                relatedFeatureCollection = collgeom;
+		                console.log('coll_places', relatedFeatureCollection);
+		                mappy.getSource('places').setData(relatedFeatureCollection);
+		                mappy.fitViewport(bbox(relatedFeatureCollection), defaultZoom);
+		            });
+		        showingRelated = true;
+		    } else {
+		        mappy.getSource('places').setData(featureCollection);
+		        mappy.fitViewport(bbox(featureCollection), defaultZoom);
+		        showingRelated = false;
+		    }
+		});
 
         document.querySelectorAll('.toggle-link').forEach(link => {
             link.addEventListener('click', function(event) {
@@ -420,6 +336,160 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
     })
     .catch(error => console.error("An error occurred:", error));
 
+function initCollectionForm() {
+		    
+    function resetForm() {
+		$('#addtocoll_popup').modal('hide');
+		$('#title_input').prop('disabled', true).removeClass('is-invalid');
+		$('.form-inputs').show();
+		$('#submission_alerts').empty();
+		var form = $('#collection_form');
+		form[0].reset();
+		form.removeClass('was-validated');
+	}
+	
+	$('.modal-footer .btn-secondary, .modal-header .btn-close').click(resetForm);
+
+	$('#collection_form').submit(function(event) {
+	    event.preventDefault();
+	    event.stopPropagation();
+	
+	    var form = $(this);
+	
+	    if (form[0].checkValidity() === false) {
+	        form.addClass('was-validated');
+	    } 
+	    else if (!$('#title_input').hasClass('is-invalid')) {
+			var formData = new FormData(this);
+			formData.append('place_ids', payload.map(place => place.place_id));
+        	var selectedCollection = $('input[name="collection"]:checked');
+	        if (selectedCollection.val() !== "-1") {
+	            formData.append('title', selectedCollection.next('label').text().trim());
+	        }
+		    $.ajax({
+		        url: '/collections/add_collection_places/',
+		        method: 'POST',
+				headers: {
+					'X-CSRFToken': document.querySelector(
+						'[name=csrfmiddlewaretoken]').value,
+				}, // Include CSRF token in headers for Django POST requests
+		        data: formData,
+		        processData: false,
+		        contentType: false,
+		        success: function(response) {
+		            console.log('Form submitted successfully:', response);
+		            
+				    var submissionAlerts = $('#submission_alerts');
+				    submissionAlerts.empty();
+				    
+				    if (response.status === 'success') {
+				        if (!!response.new_collection_id) {
+				        	var successAlert = $('<div>').addClass('alert alert-success').html(`<p><b>Collection "<em>${response.payload_received.title}</em>" was created successfully.</b></p>`);
+				        	submissionAlerts.append(successAlert);
+						}
+			        	var successAlert = $('<div>').addClass('alert alert-success').html(
+							`<p><b>Collection "<em>${response.payload_received.title}</em>" was updated:</b></p>` +
+							`<p>${response.added_places.length} place${response.added_places.length == 1 ? ' was' : 's were'} added.</p>` +
+							`<p>${response.existing_places.length} of the submitted places ${response.existing_places.length == 1 ? 'was' : 'were'} already in the Collection.</p>`
+						);
+			        	submissionAlerts.append(successAlert);
+				        if (response.collection) {
+				            updateCollections(response.collection);
+				        }
+				    } else {
+				        var errorAlert = $('<div>').addClass('alert alert-danger').text('Error: ' + response.msg);
+				        submissionAlerts.append(errorAlert);
+				    }
+				    $('.form-inputs').hide();
+				    
+				    setTimeout(function() {
+						resetForm();
+				    }, 5000);
+		        },
+		        error: function(xhr, status, error) {
+		            console.error('Error submitting form:', error);
+				    var submissionAlerts = $('#submission_alerts');
+				    submissionAlerts.empty();
+				    
+				    var errorAlert = $('<div>').addClass('alert alert-danger').text('Error: ' + error);
+				    submissionAlerts.append(errorAlert);
+				    
+				    setTimeout(function() {
+				        submissionAlerts.fadeOut();
+				    }, 5000);
+		        }
+		    });
+		}
+	});
+	
+	$('input[name="collection"]').change(function() {
+        $('#title_input')
+        .prop('disabled', !($(this).val() == '-1' && $(this).prop('checked')));
+	});
+	
+	const collectionTitles = $('#my_collections input[type="radio"]').not('[value="-1"]').map(function() { return $(this).next('label').text().toLowerCase(); }).get();
+	$('#title_input').on('input', function() { $(this).toggleClass('is-invalid', collectionTitles.includes($(this).val().toLowerCase())); });
+	
+}
+		
+function updateCollections(addCollection = false) {
+	
+    if (addCollection !== false) {
+        const allCollections = $('#collection_list').data('allCollections') || [];
+        allCollections.push(addCollection);
+        $('#collection_list').data('allCollections', [...new Set(allCollections)]);
+    }
+	
+	var uniqueCollections = $('#collection_list').data('allCollections');	
+
+	if (uniqueCollections.length > 0) {
+		const ul = $('<ul>').addClass('coll-list');
+		uniqueCollections.forEach(collection => {
+			console.log('collection', collection);
+			let listItem = '';
+			// TODO: places are only ever in place collections
+			if (collection.class === 'place') {
+				listItem = `
+					<a href="${ collection.url }" target="_blank"><b>${ collection.title.trim() } <i class="fas fa-external-link"></i></b>
+					</a>, <br/>a collection of <sr>${ collection.count }</sr> places${!!collection.owner ? ` by ${collection.owner.name}` : ''}.
+					<span class="showing"><p>${ collection.description }</p></span>
+					[<a href="javascript:void(0);" data-id="${ collection.id }" class="show-collection"><span>preview</span><span class="showing">close</span></a>]
+				`;
+			} else {
+				listItem = `
+					<a href="${ collection.url }" target="_blank"><b>${title}</b>
+					</a>, a collection of all <sr>${ collection.count }</sr> places in datasets
+				`;
+			}
+			ul.append($('<li>').html(listItem));
+		});
+		
+		$('#collection_list')
+	    .find('.coll-list')
+	    .remove()
+	    .end()
+		.append(ul)
+		.prev('h6')
+		.text(`In ${uniqueCollections.length} Collection${uniqueCollections.length > 1 ? 's' : ''}`);
+	    
+		switch (uniqueCollections.length) {
+		    case 0:
+		        $('#collectionInfo').html(`<p>It does not yet appear in any WHG collections.</p>`);
+		        break;
+		    case 1:
+		        $('#collectionInfo').html(`<p>It appears in the WHG collection shown below.</p>`);
+		        break;
+		    default:
+		        $('#collectionInfo').html(`<p>It appears in the ${uniqueCollections.length} WHG collections listed below.</p>`);
+		}
+		$('#source_detail').show();
+	}
+	else {
+		$('#source_detail').hide();
+	}
+	
+}
+
 function filterSources(fromValue, toValue, includeUndated) {
 	console.log(`Filter dates: ${fromValue} - ${toValue} (includeUndated: ${includeUndated})`);
 	function inDateRange(source) {
@@ -440,28 +510,6 @@ function filterSources(fromValue, toValue, includeUndated) {
 	mappy.getSource('places').setData(featureCollection);
 	noSources.toggle($('.source-box:visible').length == 0);
 }
-
-/*function filterSources() {
-	console.log(`Filter dates: ${window.dateline.fromValue} - ${window.dateline.toValue} (includeUndated: ${window.dateline.includeUndated})`);
-	function inDateRange(source) {
-		if (!window.dateline.open) return true;
-        const timespans = source.timespans;
-        if (timespans.length > 0) {
-		    return !timespans.every(timespan => {
-		        return timespan[1] < window.dateline.fromValue || timespan[0] > window.dateline.toValue;
-		    });
-        } else {
-            return window.dateline.includeUndated;
-        }
-    }
-	featureCollection.features.forEach((feature, index) => {
-		const outOfDateRange = !inDateRange(feature.properties)
-		feature.properties['outOfDateRange'] = outOfDateRange;
-		$('.source-box').eq(index).toggle(!outOfDateRange);
-	});
-	mappy.getSource('places').setData(featureCollection);
-	noSources.toggle($('.source-box:visible').length == 0);
-}*/
 
 function nearbyPlaces() {
 	console.log('nearbyPlaces');

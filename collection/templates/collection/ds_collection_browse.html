@@ -281,9 +281,10 @@
     }
   </script>
 
+  {{ object.vis_parameters|json_script:"vis_parameters_data" }}
   <script type="text/javascript">
     const pageData = "{{ object.id }}";
-    var visParameters = {{ visParameters|safe }};
+    var visParameters = JSON.parse(document.getElementById('vis_parameters_data').innerHTML);
     window.loggedin = "{{ loggedin }}";
     window.dslabel = "{{ object.label }}";
     window.filter = "{{ filter }}";
