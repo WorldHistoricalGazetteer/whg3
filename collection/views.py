@@ -23,7 +23,6 @@ from django.contrib.gis.db.models.functions import Centroid
 
 from .forms import CollectionModelForm, CollectionGroupModelForm
 from .models import *
-#from datasets.tasks import index_dataset_to_builder
 from places.models import PlaceGeom
 from main.models import Log, Link
 from traces.forms import TraceAnnotationModelForm
@@ -422,12 +421,12 @@ def fetch_mapdata_coll(request, *args, **kwargs):
   print('fetch_geojson_coll kwargs',kwargs)
   id_=kwargs['id']
   coll=get_object_or_404(Collection, id=id_)
-  
+
   rel_keywords = coll.rel_keywords
 
   tileset = request.GET.get('variant', '') == 'tileset'
   ignore_tilesets = request.GET.get('variant', '') == 'ignore_tilesets'
-  
+
   if coll.collection_class == 'dataset':
     # Divert to fetch_mapdata_dscoll
     return fetch_mapdata_dscoll(id_, coll, tileset, ignore_tilesets)
@@ -1290,7 +1289,7 @@ class DatasetCollectionBrowseView(DetailView):
     #TODO: Remove hard-coding of vis_parameters
     context['visParameters'] = "{'seq': {'tabulate': false, 'temporal_control': 'player', 'trail': true},'min': {'tabulate': 'initial', 'temporal_control': 'filter', 'trail': true},'max': {'tabulate': true, 'temporal_control': 'filter', 'trail': false}}"
     context['datasets'] = [{"id":ds["id"], "label":ds["label"], "title":ds["title"], "extent":ds["extent"]} for ds in coll.ds_list]
-    
+
     return context
 
 # GeoJSON for all places in a Dataset Collection INCLUDING those without geometry
@@ -1300,7 +1299,7 @@ def fetch_mapdata_dscoll(id_, coll, tileset, ignore_tilesets):
     import networkx as nx
     from itertools import chain
     from places.models import Place, CloseMatch
-    
+
     coll_places_all = coll.places_all
 
     available_tilesets = None
@@ -1325,23 +1324,23 @@ def fetch_mapdata_dscoll(id_, coll, tileset, ignore_tilesets):
 
     # Start places list with places which have no family connections
     places = list(coll_places_all.exclude(id__in=G.nodes).prefetch_related('geoms').order_by('id'))
-    
+
     print(f"Collection {id_}: {coll_places_all.count()} places sorted into {len(families)} families and {len(places)} unmatched.")
-    
+
     if families:
-    
+
         # Sort families by the first id of each sorted family - consistent ordering within the generated FeatureCollection is required between runs
         # to maintain correlation with any associated tileset
         for i, family in enumerate(families):
             sorted_family = sorted(family)
             families[i] = sorted_family
         families = sorted(families, key=lambda x: sorted(x)[0])
-    
+
         for i, family in enumerate(families):
             print(f"Family {i + 1}: {family}")
-        
-        class FamilyPlace:  
-            
+
+        class FamilyPlace:
+
             def __init__(self, family, family_members, family_place_geoms):
                 #Required for Place Table
                 self.id = "-".join(str(place_id) for place_id in sorted(family))
@@ -1354,20 +1353,20 @@ def fetch_mapdata_dscoll(id_, coll, tileset, ignore_tilesets):
                 ]
                 self.geoms = family_place_geoms
                 self.seq = None
-    
+
         # Loop through families
         for family in families:
             family_members = Place.objects.filter(id__in=family)
             family_place_geoms = PlaceGeom.objects.filter(place_id__in=family).select_related('place')
-    
+
             # Create a single pseudo-place object for each family
             family_place = FamilyPlace(family, family_members, family_place_geoms)
-    
+
             # Add the family place to `places`
             places.append(family_place)
-    
+
             print(f"Aggregated places {family_place.id}")
-    
+
     extent = list(coll_places_all.aggregate(Extent('geoms__geom')).values())[0]
 
     feature_collection = {
@@ -1378,7 +1377,7 @@ def fetch_mapdata_dscoll(id_, coll, tileset, ignore_tilesets):
         "type": "FeatureCollection",
         "features": [],
     }
-        
+
     featurecollection_min = None
     featurecollection_max = None
 
@@ -1394,7 +1393,7 @@ def fetch_mapdata_dscoll(id_, coll, tileset, ignore_tilesets):
             geometry_collection = json.loads(GeometryCollection(unioned_geometry).geojson)
         else:
             geometry_collection = None
-        
+
         place_min, place_max = place.minmax
         if place_min is not None:
             if featurecollection_min is None or place_min < featurecollection_min:
@@ -1402,7 +1401,7 @@ def fetch_mapdata_dscoll(id_, coll, tileset, ignore_tilesets):
         if place_max is not None:
             if featurecollection_max is None or place_max > featurecollection_max:
                 featurecollection_max = place_max
-                
+
         is_family = isinstance(place.src_id, list)
 
         feature = {
@@ -1431,7 +1430,7 @@ def fetch_mapdata_dscoll(id_, coll, tileset, ignore_tilesets):
             feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}
 
         feature_collection["features"].append(feature)
-        
+
     feature_collection["minmax"] = [featurecollection_min, featurecollection_max]
 
     return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii': False})
