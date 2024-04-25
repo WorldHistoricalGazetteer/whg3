@@ -1,0 +1,7 @@
+{% extends "main/base" %}
+
+{% block content %}
+<h2>Activation Link Invalid or Expired</h2>
+<p>The activation link you clicked is invalid or has expired. This can happen if you have already used the link or if it has expired due to time constraints.</p>
+<p>Please <a href="{% url 'accounts:request_new_confirmation' %}">click here</a> to request a new activation link.</p>
+{% endblock %}

@@ -25,7 +25,7 @@ def register(request):
     if request.POST['password1'] == request.POST['password2']:
       try:
         User.objects.get(username=request.POST['username'])
-        return render(request, 'registration/register.html',
+        return render(request, 'register/register.html',
                       {'error': 'That username is already taken. Try another, please.'})
       except User.DoesNotExist:
         print('request.POST', request.POST)
@@ -65,10 +65,10 @@ def register(request):
         return redirect('accounts:confirmation-sent')
 
     else:
-      return render(request, 'registration/register.html', {'error': 'Sorry, password mismatch!'})
+      return render(request, 'register/register.html', {'error': 'Sorry, password mismatch!'})
 
   else:
-    return render(request, 'registration/register.html')
+    return render(request, 'register/register.html')
 
 
 def confirm_email(request, token):
@@ -87,11 +87,11 @@ def confirm_email(request, token):
 
 
 def confirmation_sent(request):
-  return render(request, 'registration/confirmation_sent.html')
+  return render(request, 'register/confirmation_sent.html')
 
 
 def confirmation_success(request):
-  return render(request, 'registration/confirmation_success.html')
+  return render(request, 'register/confirmation_success.html')
 
 from django.contrib.auth import views as auth_views
 from django.urls import reverse
