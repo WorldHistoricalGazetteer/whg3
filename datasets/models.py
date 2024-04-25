@@ -420,9 +420,9 @@ class DatasetFile(models.Model):
 class Hit(models.Model):
   # FK to celery_results_task_result.task_id
   place = models.ForeignKey(Place, on_delete=models.CASCADE)
-  # task_id = models.ForeignKey(TaskResult,
-    #related_name='task_id', on_delete=models.CASCADE)
-  task_id = models.CharField(max_length=50)
+  task_id = models.ForeignKey(TaskResult, to_field='task_id',
+    related_name='hits', on_delete=models.CASCADE)
+  # task_id = models.CharField(max_length=50)
   authority = models.CharField(max_length=12, choices=AUTHORITIES )
   dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE)
   query_pass = models.CharField(max_length=12, choices=PASSES )

@@ -45,16 +45,19 @@ class UserManager(BaseUserManager):
 class User(AbstractUser, PermissionsMixin):
     # username = None
     username = models.CharField(max_length=100, unique=True)
+    given_name = models.CharField(max_length=255)
+    surname = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
     email = models.EmailField(_('email address'), unique=True)
     affiliation = models.CharField(max_length=255, null=True)
+    web_page = models.URLField(max_length=255, null=True, blank=True)
     role = models.CharField(max_length=24, choices=USER_ROLE, default='normal')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
 
     email_confirmed = models.BooleanField(default=False)
+    must_reset_password = models.BooleanField(default=False)
 
-    # USERNAME_FIELD = 'email'
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email', 'name']
 
@@ -65,29 +68,3 @@ class User(AbstractUser, PermissionsMixin):
 
     def __str__(self):
         return self.username
-
-# class User(AbstractUser, PermissionsMixin):
-#
-#   email = models.EmailField(max_length=255, unique=True)
-#   name = models.CharField(max_length=255)
-#   affiliation = models.CharField(max_length=255, null=True)
-#   role = models.CharField(max_length=24, choices=USER_ROLE, default='normal')
-#   is_active = models.BooleanField(default=True)
-#   is_staff = models.BooleanField(default=False)
-#
-#   # horrible after-effect of switching to a custom user model:
-#   # abandoned fields are still embedded in the logic throughout!!
-#   # i.e. username is required to create a new User
-#   username = models.CharField(max_length=255,null=True,blank=True,unique=False)
-#   first_name = models.CharField(max_length=255,null=True,blank=True)
-#   last_name = models.CharField(max_length=255,null=True,blank=True)
-#
-#   USERNAME_FIELD = 'email'
-#   REQUIRED_FIELDS = ['username']
-#
-#   class Meta:
-#       # db_table = 'users'
-#       db_table = 'auth_user'
-#
-#   def __str__(self):
-#     return '%s: %s' % (self.name, self.id)
