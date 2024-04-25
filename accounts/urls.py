@@ -13,19 +13,13 @@ urlpatterns = [
     path('confirmation_sent/', views.confirmation_sent, name='confirmation-sent'),
     path('confirmation_success/', views.confirmation_success, name='confirmation-success'),
 
+    path('password_reset/', views.CustomPasswordResetView.as_view(email_template_name='accounts/password_reset_email.html'), name='password_reset'),
+    path('password_reset/done/', views.CustomPasswordResetDoneView.as_view(), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', views.CustomPasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('reset/done/', views.CustomPasswordResetCompleteView.as_view(), name='password_reset_complete'),
 
-    path('password_reset/', PasswordResetView.as_view(template_name='registration/password_reset_form.html'),
-         name='password_reset'),
-    path('password_reset/done/', PasswordResetDoneView.as_view(template_name='registration/password_reset_done.html'),
-         name='password_reset_done'),
-    path('reset/<uidb64>/<token>/', PasswordResetConfirmView.as_view(template_name='registration/password_reset_confirm.html'),
-         name='password_reset_confirm'),
-    path('reset/done/', PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'),
-         name='password_reset_complete'),
-    path('password_change/', PasswordChangeView.as_view(template_name='registration/password_change_form.html'),
-         name='password_change'),
-    path('password_change/done/',
-         PasswordChangeDoneView.as_view(template_name='registration/password_change_form.html'),
-         name='password_change_done'),
+    path('password_change/', PasswordChangeView.as_view(), name='password_change'),
+    path('password_change/done/', PasswordChangeDoneView.as_view(), name='password_change_done'),
+
 
 ]

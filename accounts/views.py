@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 
@@ -92,6 +93,32 @@ def confirmation_sent(request):
 def confirmation_success(request):
   return render(request, 'registration/confirmation_success.html')
 
+from django.contrib.auth import views as auth_views
+from django.urls import reverse
+
+class CustomPasswordResetView(auth_views.PasswordResetView):
+    template_name = 'register/password_reset_form.html'
+    def get_success_url(self):
+        return reverse('accounts:password_reset_done')
+
+class CustomPasswordResetDoneView(auth_views.PasswordResetDoneView):
+    template_name = 'register/password_reset_done.html'
+
+class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
+    template_name = 'register/password_reset_confirm.html'
+    def get_success_url(self):
+        return reverse('accounts:password_reset_complete')
+
+class CustomPasswordResetCompleteView(auth_views.PasswordResetCompleteView):
+    template_name = 'register/password_reset_complete.html'
+#
+# class CustomPasswordResetView(PasswordResetView):
+#     def get_success_url(self):
+#         return reverse('accounts:password_reset_done')
+#
+# class CustomPasswordResetConfirmView(PasswordResetConfirmView):
+#     def get_success_url(self):
+#         return reverse('accounts:password_reset_complete')
 
 def login(request):
   if request.method == 'POST':
