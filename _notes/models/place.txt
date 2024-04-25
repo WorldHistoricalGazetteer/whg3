@@ -1,0 +1,14 @@
+Place
+-----
++ccodes = ArrayField(models.CharField(max_length=2, null=True), blank=True)
++idx_builder = models.BooleanField(default=False)
+flag = models.BooleanField(default=False) # not in use
+-attestation_year = models.IntegerField(null=True,blank=True)
+
+Type
+aat_id = models.IntegerField(unique=True)
+parent_id = models.IntegerField(null=True,blank=True)
+term = models.CharField(max_length=100)
+term_full = models.CharField(max_length=100)
+note = models.TextField(max_length=3000)
+fclass = models.CharField(max_length=1,null=True,blank=True)

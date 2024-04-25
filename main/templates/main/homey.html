@@ -1,0 +1,135 @@
+{% extends "main/base_webpack.html" %}
+{% load static %}
+
+{% block title %}
+  <title>WHG v3.0beta</title>
+{% endblock %}
+
+{% block maplibre %}
+  <script type="text/javascript">
+    const loadMaplibre = true;
+  </script>
+  <link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .container {border: 1px solid gainsboro;}
+
+  .vh-100-minus-140 {
+    height: calc(100vh - 140px);
+  }
+  .full-height {
+    height: 100%;
+  }
+  .fill-remainder {
+    flex: 1; /* Makes the div take the remaining space */
+    background-color: white !important;
+  }
+  html, body {
+    height: 100%; /* Ensures that the body takes the full height of the viewport */
+    margin: 0; /* Removes default margin */
+  }
+  .container-full-height {
+    height: calc(100vh - 110px); /* Adjusted height calculation */
+  }
+  .full-height {
+    height: 100%; /* This ensures that each column takes up the full height of its container */
+  }
+  .bordered {
+    border: 1px solid #000; /* Adds a border for visibility */
+  }
+  .bg-color-1 { background-color: #f8d7da; }
+  .bg-color-2 { background-color: #d4edda; }
+  .bg-color-3 { background-color: #d1ecf1; }
+  .bg-color-4 { background-color: lightgoldenrodyellow; }
+  .bg-color-5 { background-color: #d6d8db; }
+  .bg-color-6 { background-color: #f5c6cb; }
+  .flex-fill-custom {
+    flex: 1 1 0px; /* Adds flex-fill but with zero pixel base size, allowing equal fill and spacing handling */
+    margin-bottom: 10px; /* Adds margin to the bottom of each div */
+  }
+  .flex-fill-custom:last-child {
+    margin-bottom: 0; /* Removes margin from the last child to maintain container alignment */
+  }
+  .big-button {
+    background-color: palegoldenrod;
+    color: #993333;
+    text-align: center;
+    padding: 10px;
+    cursor: pointer
+  }
+</style>
+  <link href="{% static 'webpack/home.bundle.css' %}" rel="stylesheet"/>
+{% endblock %}
+
+{% block content %}
+{#<div class="container-fluid container-full-height">#}
+{#<div class="container container-full-height">#}
+<div class="container container-full-height">
+  <div class="row bg-color-1">
+    <div class="col-12 fs-1">
+      Banner
+    </div>
+  </div>
+{#  <div class="row full-height">#}
+  <div class="row" style="height:90%;">
+    <div class="col-3 full-height bg-color-2 bordered">
+      Full height left column
+    </div>
+    <div class="col-6 full-height d-flex flex-column bordered">
+      <div class="bg-color-3" style="height: 60px;">
+        Search input
+      </div>
+      <div class="bg-color-4 fill-remainder">
+        Map and carousel
+      </div>
+    </div>
+    <div class="col-3 full-height d-flex flex-column bordered">
+      <div class="bg-color-6 fill-remainder d-flex flex-column">
+        <div class="flex-fill-custom big-button">Search</div>
+        <div class="flex-fill-custom big-button">Workbench</div>
+        <div class="flex-fill-custom big-button">Teaching</div>
+      </div>
+      <div class="mt-1" style="height: 100px;">
+        Announcements
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{#<div class="container-fluid vh-100-minus-140">#}
+{#<div class="container vh-100-minus-140">#}
+{#  <div class="row bg-color-1">#}
+{#    <div class="col-12">#}
+{#      Banner#}
+{#    </div>#}
+{#  </div>#}
+{#  <div class="row flex-grow-1 d-flex">#}
+{#    <div class="col-3 bg-color-2 full-height d-flex flex-column">#}
+{#      Full height left column#}
+{#    </div>#}
+{#    <div class="col-6 d-flex flex-column">#}
+{#      <div class="bg-color-3" style="height: 60px;">#}
+{#        Fixed 60px height#}
+{#      </div>#}
+{#      <div class="bg-color-4 fill-remainder">#}
+{#        Fills remaining height#}
+{#      </div>#}
+{#    </div>#}
+{#    <div class="col-3 d-flex flex-column">#}
+{#      <div class="bg-color-5" style="height: 60px;">#}
+{#        Fixed 60px height#}
+{#      </div>#}
+{#      <div class="bg-color-6 fill-remainder d-flex flex-column">#}
+{#        <div class="flex-fill bg-color-1">Div 1</div>#}
+{#        <div class="flex-fill bg-color-2">Div 2</div>#}
+{#        <div class="flex-fill bg-color-3">Div 3</div>#}
+{#      </div>#}
+{#    </div>#}
+{#  </div>#}
+{#</div>#}
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

@@ -1,0 +1,75 @@
+v2 models
+=========
+[
+ areas.models.Area,
+ areas.models.Country,
+
+ collection.models.Collection,
+ collection.models.CollectionLink,
+ collection.models.CollectionUser,
+ collection.models.CollectionImage,
+
+
+
+
+ datasets.models.Dataset,
+ datasets.models.DatasetFile,
+ datasets.models.DatasetUser,
+ datasets.models.Hit,
+
+ main.models.Log,
+ main.models.Comment,
+
+
+
+
+
+ places.models.CloseMatch,
+ places.models.Place,
+ places.models.PlaceDepiction,
+ places.models.PlaceDescription,
+ places.models.PlaceGeom,
+ places.models.PlaceLink,
+ places.models.PlaceName,
+ places.models.PlaceRelated,
+ places.models.PlaceType,
+ places.models.PlaceWhen,
+ places.models.Source,
+ places.models.Type,
+
+ resources.models.Resource,
+ resources.models.ResourceFile,
+ resources.models.ResourceImage,
+
+ traces.models.TraceAnnotation,
+ traces.models.TraceRelation
+
+ django_celery_results.models.TaskResult,
+
+
+
+ auth.models.User,
+
+ django.contrib.sites.models.Site,
+ django.contrib.sessions.models.Session,
+ captcha.models.CaptchaStore,
+
+ auth.models.Group,
+ auth.models.Permission,
+
+
+ admin.models.LogEntry,
+ guardian.models.models.UserObjectPermission,
+ guardian.models.models.GroupObjectPermission,
+ rest_framework.authtoken.models.Token,
+ accounts.models.Profile,
+ django.contrib.contenttypes.models.ContentType,
+ django.contrib.gis.db.backends.postgis.models.PostGISGeometryColumns,
+ django.contrib.gis.db.backends.postgis.models.PostGISSpatialRefSys,
+ allauth.account.models.EmailAddress,
+ allauth.account.models.EmailConfirmation,
+ allauth.socialaccount.models.SocialApp,
+ allauth.socialaccount.models.SocialAccount,
+ allauth.socialaccount.models.SocialToken,
+
+ ]

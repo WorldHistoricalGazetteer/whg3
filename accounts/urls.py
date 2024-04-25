@@ -13,8 +13,6 @@ urlpatterns = [
     path('confirmation_sent/', views.confirmation_sent, name='confirmation-sent'),
     path('confirmation_success/', views.confirmation_success, name='confirmation-success'),
 
-    # DEPRECATED
-    # path('addusers/', views.addusers, name='add-users'),
 
     path('password_reset/', PasswordResetView.as_view(template_name='registration/password_reset_form.html'),
          name='password_reset'),

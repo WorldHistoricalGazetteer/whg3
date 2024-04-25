@@ -8,6 +8,7 @@ networks:
         - subnet: 172.20.0.0/16
 
 services:
+
   web:
     networks:
       - WHG3
@@ -30,10 +31,12 @@ services:
     ports:
       - 8001:8003
     user: "1000:1000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - redis
       - db
-      - livereload
+      # - livereload
 
   webpack:
     networks:
@@ -46,20 +49,6 @@ services:
     container_name: webpack
     volumes:
       - .:/app
-
-  livereload: # https://github.com/tjwalch/django-livereload-server
-    image: whg3_web
-    networks:
-      - WHG3
-    platform: linux/amd64
-    command: /start-livereload
-    container_name: livereload
-    volumes:
-      - .:/app
-    env_file:
-      - ./.env/.prod-whg3
-    ports:
-      - 35729:35729
 
   db:
     networks:
@@ -76,8 +65,28 @@ services:
       - ./.env/.prod-whg3
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust  # Allow all connections without password authentication
+      DB_NAME: whgv3
     ports:
       - 127.0.0.1:5433:5432
+
+  db_beta:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    build:
+      context: ./compose/local/postgres
+      dockerfile: Dockerfile-postgres
+    container_name: postgres_beta
+    volumes:
+      - beta-db-data:/var/lib/postgresql/data
+      - ./data:/app/data
+    env_file:
+      - ./.env/.prod-whg3
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      DB_NAME: whgv3beta
+    ports:
+      - 127.0.0.1:5434:5432
 
   redis:
     networks:
@@ -131,30 +140,8 @@ services:
       - redis
       - db
 
-#  selenium_chrome:
-#    image: selenium/standalone-chrome
-#    container_name: selenium_chrome
-#    networks:
-#      - WHG3
-#    ports:
-#      - "4444:4444"
-#
-#  selenium_firefox:
-#    image: selenium/standalone-firefox
-#    container_name: selenium_firefox
-#    networks:
-#      - WHG3
-#    ports:
-#      - "4445:4444"
-#
-#  selenium_edge:
-#    image: selenium/standalone-edge
-#    container_name: selenium_edge
-#    networks:
-#      - WHG3
-#    ports:
-#      - "4446:4444"
 volumes:
   app:
   dev-db-data:
+  beta-db-data:
   data_dumps_volume:

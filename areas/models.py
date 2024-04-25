@@ -27,7 +27,6 @@ class Country(models.Model):
     geonameid = models.IntegerField('geonames id')
     un = models.CharField('UN name',max_length = 3, blank=True, null=True)
     variants = models.CharField(max_length=512, blank=True, null=True)
-    
     mpoly = geomodels.MultiPolygonField()
     
     def __str__(self):
