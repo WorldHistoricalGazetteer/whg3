@@ -1,0 +1,28 @@
+Migration order? (FKs)
+======================
+
+User (get_user_model)
+
+Dataset (owner)
+	DatasetFile
+
+Place (dataset label)
+	Place* (place_id)
+	...
+
+Collection (owner)
+	CollDataset (collection, dataset)
+	CollPlace (collection, place)
+	CollectionUser (collection, user)
+	CollectionLink
+
+CollectionGroup (owner)
+	CollectionGroupUser
+
+Resource (owner)
+	ResourceFile
+	ResourceImage
+
+TraceAnnotation (owner, place, collection)
+
+Area (owner)
