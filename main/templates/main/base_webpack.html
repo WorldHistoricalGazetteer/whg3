@@ -62,7 +62,6 @@
 <header>
   <nav class="navbar navbar-expand-lg bg-white">
     <div class="container">
-      {% comment %}<a href="{% url 'home' %}">{% endcomment %}
       <a href="/home/3">
         <img src="{% static 'images/whg_logo.svg' %}" alt="WHG" width="50" height="38">
       </a>
@@ -76,13 +75,12 @@
           <div id="links_home">
             <span id="version_badge" class="badge text-bg-success">v3.0 beta</span>
             <span id="beta_links"></span>
-{#				              <a href="{% url 'guides:site-guide' %}" class="text-decoration-none">guide</a> |#}
-				              <a href="#" class="feedback text-decoration-none">contact us</a>
-
+            <a href="#" class="feedback text-decoration-none">contact us</a>
           </div>
           <div id="links_other" class="d-none">
-            <a class="navbar-brand me-0" href="{% url 'home' %}">&nbsp;World Historical Gazetteer</a>
-            <a href="#" class="feedback text-decoration-none">contact us</a>
+            <a class="navbar-brand me-0" href="{% url 'home' %}">&nbsp;
+              World Historical Gazetteer</a>
+{#            <a href="#" class="feedback text-decoration-none hide-on-narrow">contact us</a>#}
           </div>
         </ul>
         <ul class="navbar-nav">

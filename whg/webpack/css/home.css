@@ -70,7 +70,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
 }
 .home-button {
     position: relative;
-    font-family: "Archivo Black";
+    font-family: "Archivo Black", sans-serif;
 }
 .ds-header {
     background-color: gainsboro;
@@ -198,7 +198,12 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    font-family: "Archivo Black";
+    font-family: "Archivo Black", sans-serif;
     color: #993333;
     text-align: center;
+}
+@media screen and (max-width: 1200px) {
+  .hide-on-narrow {
+    display: none;
+  }
 }

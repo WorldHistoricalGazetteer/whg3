@@ -1,0 +1,19 @@
+<html>
+<body>
+<div>
+    <a href=""></a><!-- avoids scroll to the bottom anchor-->
+    <h4>Assemble an historical gazetteer from multiple datasets</h4>
+    <p>
+Proin pellentesque, eros et vulputate viverra, est nibh interdum est, id luctus quam libero non nulla. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Suspendisse potenti. Sed ligula elit, dictum ut enim at, feugiat condimentum leo. Morbi efficitur neque et urna mollis, quis accumsan ex venenatis. Cras nec libero non nibh feugiat vestibulum. Sed dignissim ultrices nisl ac scelerisque. Sed tincidunt interdum dui, vel ornare purus mattis eget. Praesent condimentum felis urna, at ultrices nisi porta nec. Etiam commodo ex lacus, at lacinia quam consequat ac. Sed velit lacus, mollis sit amet imperdiet eget, elementum eget justo. Sed eu rutrum ligula. Vestibulum id placerat ipsum.
+    </p>
+</div>
+</body>
+</html>
+<script type="text/javascript">
+    $(function(){
+        $(".replace-content").click(function(){
+            console.log('loaded reconciliation help',$(this).data('id'))
+            $('#helpme').load('/media/help/'+$(this).data('id')+'.html');
+        })
+    })
+</script>    
