@@ -18,7 +18,11 @@
 {% block content %}
 <div class="container container-full-height">
   <div class="row mb-2">
-    <div id="wb_title" class="col-12 fs-2 text-center">Gazetteer Workbench</div>
+    <div id="wb_title" class="col-12 fs-2 text-center">
+      <span style="vertical-align: text-bottom;">
+        <img src="{% static 'images/noun-workbench-6022067.svg' %}" class="whg-icon" height="40"/></span>
+      Gazetteer Workbench
+    </div>
     <div id="wb_blurb" class="col-12 fs-5 text-center">
       Four pathways for using WHG tools and services to augment and publish historical place data
     </div>
@@ -27,7 +31,8 @@
     <div class="col-3 full-height workbench-column">
       <div class="workbench-column-inner">
         <div class="content-group">
-          <span class="path-number">1</span>
+          <span class="path-number">1
+          </span>
           <p>Augment your place records by discovering missing coordinate locations
             (geocoding) and adding name variants.</p>
           <p><img src=""/>image</p>

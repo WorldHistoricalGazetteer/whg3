@@ -1,10 +1,13 @@
 /* Workbench */
 
+.container {
+    border: none;
+}
 .container-full-height {
-    height: calc(100vh - 90px);
+    height: calc(100vh - 100px);
     display: flex;
     flex-direction: column;
-    border: 1px solid gainsboro;
+    /*border: 1px solid gainsboro;*/
 }
 .path-number {
     font-family: "Archivo Black", sans-serif;
