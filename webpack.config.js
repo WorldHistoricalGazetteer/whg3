@@ -31,6 +31,7 @@ module.exports = {
 		search_functions: '/app/whg/webpack/js/search_resources.js',
 		tasks: '/app/whg/webpack/js/tasks.js',
 		whg_maplibre: '/app/whg/webpack/js/whg_maplibre.js',
+		workbench: '/app/whg/webpack/js/workbench.js',
 	},
 	output: {
 		filename: '[name].bundle.js',
