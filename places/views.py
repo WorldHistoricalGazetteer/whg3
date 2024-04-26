@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 from django.http import JsonResponse, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect
 from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, TemplateView
@@ -22,7 +23,7 @@ from collection.models import Collection
 from datasets.models import Dataset
 from places.models import Place, PlaceGeom
 from places.utils import attribListFromSet
-from elastic.es_utils import findPortalPlaces
+from elastic.es_utils import findPortalPlaces, findPortalPIDs
 from shapely import wkt
 
 # write review status = 2 (per authority)
@@ -87,11 +88,19 @@ class PlacePortalView(TemplateView):
 
     context['core'] = ['ne_countries','ne_rivers982','ne_mountains','wri_lakes']
     
+    # Extract any pid from a permalink URL
+    pid = kwargs.get('pid', '')    
     # Extract any whg_id from a permalink URL
     whg_id = kwargs.get('whg_id', '')    
     # Extract any encoded IDs from a permalink URL
     encoded_ids = kwargs.get('encoded_ids', '')
-    if whg_id:
+    if pid:
+        portal_data = findPortalPIDs(pid)
+        print('portal_data:', portal_data)
+        if not portal_data:
+            return {'redirect_to': f'/places/{pid}/detail'} # Show Place Detail page if pid is from an unindexed dataset
+        place_ids = portal_data or [pid]
+    elif whg_id:
         portal_data = findPortalPlaces(whg_id)
         print('portal_data:', portal_data)
         place_ids = portal_data

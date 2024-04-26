@@ -199,6 +199,24 @@
 	max-height: 100%;
 }
 
+/* Styling for getPlace() Detail */
+#detail {
+    display: flex!important;	
+}
+#detail > img {
+    flex: 0 0 auto;
+    margin-right: 10px;
+    height: auto;
+    width: auto;
+    max-height: 8rem;
+    max-width: 30%;
+    order: 2;
+}
+#detail > div {
+    flex: 1 1 auto;
+    order: 1;
+}
+
 /* Styling for the attribution text */
 .attribution-text {
   margin: 10px 0;
