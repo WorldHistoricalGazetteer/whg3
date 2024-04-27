@@ -51,6 +51,30 @@
             </div>
           </div>
         </div>
+        <!-- Workbench Section -->
+        <div class="accordion-item">
+          <h2 class="accordion-header" id="headingWorkbench">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseWorkbench" aria-expanded="false" aria-controls="collapseWorkbench">
+              Workbench Pathways
+            </button>
+          </h2>
+          <div id="collapseWorkbench" class="accordion-collapse collapse" aria-labelledby="headingWorkbench"
+               data-bs-parent="#sidebarAccordion">
+            <div class="accordion-body">
+              <ul class="nav flex-column">
+                <li class="nav-item">
+                  <a class="nav-link" href="#augment">Upload and augment place data</a></li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#publish_ds">Publish your dataset as a gazetteer resource</a></li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#dscoll">Assemble a gazetteer from multiple datasets</a></li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#pcoll">Author a thematic place collection</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
         <!-- Site Sections Section -->
         <div class="accordion-item">
           <h2 class="accordion-header" id="headingSections">
@@ -66,11 +90,11 @@
                 <li class="nav-item">
                   <a class="nav-link" href="#home">Home page</a></li>
                 <li class="nav-item">
-                  <a class="nav-link" href="#search">Search</a></li>
+                  <a class="nav-link" href="#search">Search for places</a></li>
                 <li class="nav-item">
                   <a class="nav-link" href="#portal">Place Portals</a></li>
                 <li class="nav-item">
-                  <a class="nav-link" href="#workbench">Gazetteer Workbench</a></li>
+                  <a class="nav-link" href="#gallery">Browse publications</a></li>
               </ul>
             </div>
           </div>
@@ -108,8 +132,9 @@
     <div id="docs_content" class="col-md-9 col-8 content-area">
       <!--Introduction Group -->
       <section id="introduction">
-        <h5>Introducing WHG</h5>
-        <p>Introduction...</p>
+        <h4>Introduction</h4>
+        <hr/>
+        <h5>Vision and mission</h5>
         <p>{% lorem 2 %}</p>
       </section>
       <section id="overview">
@@ -122,8 +147,33 @@
         <p>Purpose of WHG and main features...</p>
                 <p>{% lorem 2 %}</p>
       </section>
+      <!-- Workbench Group -->
+      <section id="augment">
+        <h4>Workbench Pathways</h4>
+        <hr/>
+        <h5>Upload and augment place data</h5>
+        <p>...</p>
+        <p>{% lorem 2 %}</p>
+      </section>
+      <section id="publish_ds">
+        <h5>Publish your dataset as a gazetteer resource</h5>
+        <p>...</p>
+        <p>{% lorem 2 %}</p>
+      </section>
+      <section id="dscoll">
+        <h5>Assemble a gazetteer from multiple datasets</h5>
+        <p>...</p>
+        <p>{% lorem 2 %}</p>
+      </section>
+      <section id="pcoll">
+        <h5>Author a thematic place collection</h5>
+        <p>...</p>
+        <p>{% lorem 2 %}</p>
+      </section>
       <!-- Site Sections Group -->
       <section id="home">
+        <h4>Site Sections</h4>
+        <hr/>
         <h5>Home page</h5>
         <p>...</p>
         <p>{% lorem 2 %}</p>
@@ -138,13 +188,15 @@
         <p>...</p>
         <p>{% lorem 2 %}</p>
       </section>
-      <section id="workbench">
-        <h5>The Gazetteer Workbench</h5>
+      <section id="gallery">
+        <h5>Browse data publications</h5>
         <p>...</p>
         <p>{% lorem 2 %}</p>
       </section>
       <!-- Tutorials Group -->
       <section id="pathways">
+        <h4>Guides and Tutorials</h4>
+        <hr/>
         <h5>Workflow Pathways</h5>
         <p>...</p>
         <p>{% lorem 2 %}</p>
@@ -174,62 +226,158 @@
 </div>
 </div>
 <script type="text/javascript">
-  document.addEventListener('DOMContentLoaded', function () {
-    console.log('Document is ready.');
-    var sidebarAccordion = document.getElementById('sidebarAccordion');
-    if (!sidebarAccordion) {
-      console.error('Sidebar accordion not found!');
+
+$(document).ready(function() {
+  // Get the hash from the URL
+  var hash = window.location.hash;
+  if (!hash) {
+    console.log('No hash found in the URL.');
+    return;
+  } else {
+    console.log('Hash:', hash);
+  }
+
+  // Find the nav link that corresponds to the hash
+  var navLink = $(`.nav-link[href="${hash}"]`);
+  if (!navLink.length) {
+    console.log('No nav link found for the hash.');
+    return;
+  } else {
+    console.log('Nav link:', navLink);
+  }
+
+  // Find the parent accordion item of the nav link
+  var accordionItem = navLink.closest('.accordion-item');
+  if (!accordionItem.length) {
+    console.log('No parent accordion item found for the nav link.');
+    return;
+  } else {
+    console.log('Parent accordion item:', accordionItem);
+  }
+
+  // Find the accordion collapse element within the accordion item
+  var accordionCollapse = accordionItem.find('.accordion-collapse');
+  if (!accordionCollapse.length) {
+    console.log('No accordion collapse element found within the accordion item.');
+    return;
+  } else {
+    console.log('Accordion collapse element:', accordionCollapse);
+  }
+
+  // Use Bootstrap's JavaScript API to show the accordion collapse
+  accordionCollapse.collapse('show');
+
+  // Scroll to the target element
+  $('html, body').animate({
+    scrollTop: $(hash).offset().top
+  }, 800);
+});
+
+$(document).ready(function() {
+  console.log('Document is ready.');
+
+  // Get the hash from the URL
+  var hash = window.location.hash;
+  if (!hash) {
+    console.log('No hash found in the URL.');
+    return;
+  } else {
+    console.log('Hash:', hash);
+  }
+
+  // Find the nav link that corresponds to the hash
+  var navLink = $(`.nav-link[href="${hash}"]`);
+  if (!navLink.length) {
+    console.log('No nav link found for the hash.');
+    return;
+  } else {
+    console.log('Nav link:', navLink);
+  }
+
+  // Find the parent accordion item of the nav link
+  var accordionItem = navLink.closest('.accordion-item');
+  if (!accordionItem.length) {
+    console.log('No parent accordion item found for the nav link.');
+    return;
+  } else {
+    console.log('Parent accordion item:', accordionItem);
+  }
+
+  // Find the accordion collapse element within the accordion item
+  var accordionCollapse = accordionItem.find('.accordion-collapse');
+  if (!accordionCollapse.length) {
+    console.log('No accordion collapse element found within the accordion item.');
+    return;
+  } else {
+    console.log('Accordion collapse element:', accordionCollapse);
+  }
+
+  // Use Bootstrap's JavaScript API to show the accordion collapse
+  accordionCollapse.collapse('show');
+
+  // Scroll to the target element
+  $('html, body').animate({
+    scrollTop: $(hash).offset().top
+  }, 800);
+
+
+  var sidebarAccordion = $('#sidebarAccordion');
+  if (!sidebarAccordion.length) {
+    console.error('Sidebar accordion not found!');
+    return;
+  } else {
+    console.log('Sidebar accordion found:', sidebarAccordion);
+  }
+
+  sidebarAccordion.on('show.bs.collapse', function (e) {
+    console.log('Accordion section is showing:', e.target);
+
+    // Find the closest .accordion-collapse to ensure we have the correct container
+    var accordionBody = $(e.target).closest('.accordion-collapse');
+    if (!accordionBody.length) {
+      console.error('Accordion collapse element not found.');
       return;
     } else {
-      console.log('Sidebar accordion found:', sidebarAccordion);
+      console.log('Accordion collapse element:', accordionBody);
     }
 
-    sidebarAccordion.addEventListener('show.bs.collapse', function (e) {
-      console.log('Accordion section is showing:', e.target);
-
-      // Find the closest .accordion-collapse to ensure we have the correct container
-      var accordionBody = e.target.closest('.accordion-collapse');
-      if (!accordionBody) {
-        console.error('Accordion collapse element not found.');
+    // Delay the action to wait for the collapse animation to complete
+    setTimeout(() => {
+      // Locate the first navigation link in the opened accordion body
+      var firstNavItem = accordionBody.find('.nav-link');
+      if (!firstNavItem.length) {
+        console.error('No nav item found in the opened accordion section.');
         return;
       } else {
-        console.log('Accordion collapse element:', accordionBody);
+        console.log('First nav item:', firstNavItem);
       }
 
-      // Delay the action to wait for the collapse animation to complete
-      setTimeout(() => {
-        // Locate the first navigation link in the opened accordion body
-        var firstNavItem = accordionBody.querySelector('.nav-link');
-        if (!firstNavItem) {
-          console.error('No nav item found in the opened accordion section.');
-          return;
-        } else {
-          console.log('First nav item:', firstNavItem);
-        }
+      // Get the href attribute from the first nav item
+      var targetId = firstNavItem.attr('href');
+      if (!targetId) {
+        console.error('Nav item href attribute is missing.');
+        return;
+      } else {
+        console.log('Nav item href:', targetId);
+      }
 
-        // Get the href attribute from the first nav item
-        var targetId = firstNavItem.getAttribute('href');
-        if (!targetId) {
-          console.error('Nav item href attribute is missing.');
-          return;
-        } else {
-          console.log('Nav item href:', targetId);
-        }
+      // Locate the content section that corresponds to the nav item's href
+      var targetElement = $(targetId);
+      if (!targetElement.length) {
+        console.error('Target element not found:', targetId);
+        return;
+      } else {
+        console.log('Target element to scroll to:', targetElement);
+      }
 
-        // Locate the content section that corresponds to the nav item's href
-        var targetElement = document.querySelector(targetId);
-        if (!targetElement) {
-          console.error('Target element not found:', targetId);
-          return;
-        } else {
-          console.log('Target element to scroll to:', targetElement);
-        }
-
-        // Execute the scroll to the target element
-        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 300);
-    });
+      // Execute the scroll to the target element
+      $('html, body').animate({
+        scrollTop: targetElement.offset().top
+      }, 800);
+    }, 300);
   });
+});
+
 </script>
 
 {% endblock %}

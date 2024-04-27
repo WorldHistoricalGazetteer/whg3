@@ -59,8 +59,8 @@ urlpatterns = [
     # static content
     path('about/', TemplateView.as_view(template_name="main/about.html"), name="about"),
     # path('builder/', TemplateView.as_view(template_name="main/builder_start.html"), name="gazetteer-builder"),
-    path('builder_single/', TemplateView.as_view(template_name="main/builder_single.html"), name="builder-single"),
-    path('builder_multiple/', TemplateView.as_view(template_name="main/builder_multiple.html"), name="builder-multiple"),
+    # path('builder_single/', TemplateView.as_view(template_name="main/builder_single.html"), name="builder-single"),
+    # path('builder_multiple/', TemplateView.as_view(template_name="main/builder_multiple.html"), name="builder-multiple"),
     path('contributing/', TemplateView.as_view(template_name="main/contributing.html"), name="contributing"),
 
     path('credits/', TemplateView.as_view(template_name="main/credits.html"), name="credits"),
@@ -77,8 +77,8 @@ urlpatterns = [
     path('documentation/', TemplateView.as_view(template_name="main/documentation.html"), name="documentation"),
 
     # more static content - 2024-01
-    path('build/', TemplateView.as_view(template_name="home/build_new.html"), name="build"),
-    path('builder/', TemplateView.as_view(template_name="home/builder.html"), name="builder"),
+    # path('build/', TemplateView.as_view(template_name="home/build_new.html"), name="build"),
+    # path('builder/', TemplateView.as_view(template_name="home/builder.html"), name="builder"),
     path('workbench/', TemplateView.as_view(template_name="home/workbench_template.html"), name="workbench"),
     # path('workbench/', TemplateView.as_view(template_name="home/workbench.html"), name="workbench"),
     path('pipeline/', TemplateView.as_view(template_name="home/pipeline.html"), name="pipeline"),
