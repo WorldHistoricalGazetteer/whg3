@@ -39,10 +39,11 @@ def validate_delim(df):
   aliases = ["bnf", "cerl", "dbp", "gn", "gnd", "gov", "loc", "pl", "tgn", "viaf", "wd", "wp", "whg"]
   pattern = r"https?:\/\/.*\..*|(" + "|".join(aliases) + r"):\d+"
   valid_ccodes = [ccode.upper() for c in Area.objects.filter(type='country') for ccode in c.ccodes]
-  fclass_list = Type.objects.annotate(lower_fclass=Lower('fclass')).values_list('lower_fclass', flat=True).distinct()
+  # fclass_list = Type.objects.annotate(lower_fclass=Lower('fclass')).values_list('lower_fclass', flat=True).distinct()
+  fclass_list = ['a', 'p', 'h', 's', 'r', 't', 'l']
 
   # Define required fields and patterns
-  required_fields = ['id', 'title', 'title_source', 'start']
+  required_fields = ['id', 'title', 'title_source', 'start', 'fclasses']
   pattern_constraints = {
     'ccodes': "([a-zA-Z]{2};?)+",
     'matches': pattern,
@@ -76,11 +77,6 @@ def validate_delim(df):
     if start is None and attestation_year is None:
       errors.append({"row": index + 1, "error": "Either start or attestation_year must be present in all rows"})
 
-    # Check one of "start" or "attestation_year" is non-empty
-    # if (row.get("start") is None or math.isnan(row.get("start"))) and \
-    # 	(row.get("attestation_year") is None or math.isnan(row.get("attestation_year"))):
-    # 	errors.append({"row": index + 1, "error": "Either start or attestation_year must be present in all rows"})
-
     # Check for invalid ccodes (if present)
     if 'ccodes' in row:
       ccodes = [c.strip() for c in str(row['ccodes']).split(';') if c and c.lower() != 'nan']
@@ -91,14 +87,21 @@ def validate_delim(df):
           errors.append({"row": index + 1, "error": f"Invalid ccode: {ccode}"})
 
     # Check for invalid fclasses (if present)
+    # if 'fclasses' in row:
+    #   fclasses = [fc.strip() for fc in str(row['fclasses']).split(';') if fc]
+    #   # print('fclasses', fclasses)
+    #   for fclass in fclasses:
+    #     if fclass.lower() not in fclass_list:
+    #       print('invalid fclass', fclass)
+    #       errors.append({"row": index + 1,
+    #                      "error": f"Invalid fclass: {fclass}, must be one of A, P, H, S, R, T, L"})
     if 'fclasses' in row:
-      fclasses = [fc.strip() for fc in str(row['fclasses']).split(';') if fc]
-      # print('fclasses', fclasses)
-      for fclass in fclasses:
-        if fclass.lower() not in fclass_list:
-          print('invalid fclass', fclass)
-          errors.append({"row": index + 1,
-                         "error": f"Invalid fclass: {fclass}, must be one of A, P, H, S, R, T, L"})
+        fclass_entries = str(row['fclasses']).split(';')
+        if not fclass_entries or any(not fc.strip() or fc.strip().lower() not in fclass_list for fc in fclass_entries):
+            errors.append({
+                "row": index + 1,
+                "error": "Each 'fclasses' entry must be must be one or more of A, P, H, S, R, T, L - separated by ';' if multiple."
+            })
 
     # Check for unsupported aat_types
     supported_aat_types = {aat_id for aat_id in aat_fclass}

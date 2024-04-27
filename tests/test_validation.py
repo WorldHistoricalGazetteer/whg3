@@ -48,6 +48,7 @@ class DatasetCreateViewTest(TestCase):
             ('tests/data/unsupported_aat.tsv', ["Unsupported aat_type"]),  # Expected error message
             ('tests/data/unsupported_alias.tsv', ["unsupported alias"]),  # Expected error message
             ('tests/data/out_of_range.tsv', ["out of the allowed range"]),  # Expected error message
+            ('tests/data/invalid_fclasses.tsv', ["Each 'fclasses' entry must"]),
             ('tests/data/mixed_errors.tsv', [
               'Required field missing',
               "Either start or attestation_year",
@@ -69,6 +70,8 @@ class DatasetCreateViewTest(TestCase):
             print('testing file:', filename)
             # Load the file and make a DataFrame
             df = pd.read_csv(filename, sep='\t')
+            # print('df.head', df.head())
+            print('df.columns', df.columns)
             # print(df)
             # print('expected_errors:', expected_errors)
             try:

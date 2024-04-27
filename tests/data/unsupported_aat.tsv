@@ -1,2 +1,2 @@
-id	title	title_source	start	end	geowkt	description	variants	types	aat_types	parent_name	ccodes	lon	lat
-717_1	Marienborch	Croniken	1480	1491	POINT(19.03797 54.036131)	Marienborch stadt ende slot	Marienburg;Malbork	town; castle	300001	Dit sijn die steden ende sloten	PL	19.03797	54.036131
+id	title	title_source	start	end	geowkt	description	variants	types	aat_types	parent_name	ccodes	lon	lat	fclasses
+717_1	Marienborch	Croniken	1480	1491	POINT(19.03797 54.036131)	Marienborch stadt ende slot	Marienburg;Malbork	town; castle	300001	Dit sijn die steden ende sloten	PL	19.03797	54.036131	P
