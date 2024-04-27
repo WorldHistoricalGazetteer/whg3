@@ -73,14 +73,14 @@
 	  </h5>
 	  <ul id="tablist" class="nav nav-tabs" role="tablist">
 		  <li class="nav-item" role="presentation">
-		    <button class="nav-link" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
+		    <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
           type="button" role="tab" aria-controls="coll_form" aria-selected="true">
 			    {% if action == 'create' %}Create Collection{% else %}Metadata{% endif %}</button>
 		  </li>
 		  {% if action == "update" %}
 		  {# builder #}
 		  <li class="nav-item" role="presentation">
-		    <button class="nav-link active" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
+		    <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
           type="button" role="tab" aria-controls="coll_builder"
                 aria-selected="false">Add and manage datasets</button>
 		  </li>
@@ -93,7 +93,7 @@
 		  {% endif %}
 		</ul>
 		<div id="content" class="tab-content">
-			<div id="coll_form" class="tab-pane fade h-100">
+			<div id="coll_form" class="tab-pane show active fade h-100">
 		    <form id="collection_form" method="POST" enctype="multipart/form-data">
 		    {% csrf_token %}
         <div class="row">
@@ -202,14 +202,18 @@
 							{% endif %}
 							</span>
 						</div>
-			      <div id="d_public" class="mt-5">
-							{% if form.public.value == True %}
-								Public: {{ form.public }}
-							{% elif action == "update" and user == object.owner %}
-								<a href="#"><span class="help-matches" data-id="going_public_coll">
-									<i class="fas fa-question-circle linky"></i> making a collection public </span></a>
-							{% endif %}
-						</div>
+
+            <div id="ds_options" class="ds-card pt-0 px-0 mt-4 w-50">
+              <p class="ds-card-header">Options</p>
+              <div class="form-check form-switch ms-2">
+                <input id="year_filter" class="form-check-input" type="checkbox">
+                <label class="form-check-label" for="year_filter">Display temporal filter</label>
+                <a href="#"><i class="fas fa-question-circle red-head" data-toggle="popover"
+                               title="Show time slider on publication page"
+                               data-content="Show time slider on publication page"></i></a>
+              </div>
+            </div>
+
 		      {% else %}
 				    <h5 style="display:block;">Welcome</h5>
 					  <p>To create a new Dataset Collection, first fill out the required fields in the form on the left.
@@ -217,16 +221,6 @@
 						  linking datasets. The collection itself can include primary image, an essay file and
 						  links to related material, uploaded after creation.</p>
 			      <p><mark-b>Collection keywords</mark-b> are terms describing the collection.</p>
-            {% comment %}
-            <p>There are two options for creating dataset collections, and each has its own
-              <i>collection builder</i> screen. The options are:
-            <p><span class="red-head">Discrete</span>.
-              Each new dataset will be simply added to the collection, and no reconciliation will be performed
-              .<mark>more to say here</mark></p>
-            <p><span class="red-head">Conflated</span>. Each dataset added will be
-              reconciled with the others in the growing collection. <mark>more to say here</mark></p>
-            </p>
-            {% endcomment %}
 		      {% endif %}
 		      </div> {# col-sm-7 #}
         </div> {# row #}
@@ -254,7 +248,7 @@
 	          </form>
 		    </div>
 			</div> {# coll_form #}
-			<div id="coll_builder" class="tab-pane fade show active h-100">
+			<div id="coll_builder" class="tab-pane fadeh-100">
 				<div class="row">
 					<div class="col-sm-7 position-relative">
 						<div>
@@ -399,9 +393,6 @@
 						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 					</div>{# modal-header #}
 					<div class="modal-body"></div>{# modal-body #}
-{#					<div class="modal-footer">#}
-{#						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>#}
-{#					</div>{# modal-footer #}
 				</div>{# modal-content #}
 			</div>{# modal-dialog #}
 	  </div>{# modal #}
@@ -411,6 +402,9 @@
 
 <script type="text/javascript">
   $(function(){
+    $("#year_filter").on('change', function(){
+      console.log('year_filter state:', this.checked);
+    })
 		$("#select_ds").change(function(){
 		    // show add button if ds selected
 				if($(this).val() != 0){

@@ -554,6 +554,9 @@
   }
 
   $(function(){
+    $("#year_filter").on('change', function(){
+      console.log('year_filter state:', this.checked);
+    })
 	  // activate all tooltips
     $("[data-bs-toggle='tooltip']").tooltip();
     $("[data-toggle=popover]").popover({html:true})
