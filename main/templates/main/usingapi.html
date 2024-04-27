@@ -13,44 +13,48 @@
     <div id="api_content" class="mx-3">
       <div class="row mt-2">
         <div class="col-sm-5"> 
-			<h4>Using the API</h4>
-			
-			<a href="{% url 'main:open_api' %}" target="_blank">OpenAPI Documentation</a>
-			
-            <p class="mb-2">Development of the external API is in draft stage. We plan to refine options and add endpoints in response to community feedback. Please use <a href="#" class="feedback">this form</a> for suggestions.</p>
-			
+			    <h4>Using the API</h4>
+          <a href="{% url 'main:open_api' %}" target="_blank">OpenAPI Documentation</a>
+          <p class="mb-2">Development of the external API is in draft stage. We plan to refine options and
+            add endpoints in response to community feedback. Please use <a href="#" class="feedback">this form</a>
+            for suggestions.</p>
+			{% comment %}
 			<h5 class="red-head strong">Two place data stores</h5>
 			
             <p>The <b class="red-head">relational database</b> holds individual records from uploaded datasets</p>
             <p class="ms-2 notebox small">Note that records from all uploaded datasets are assigned a unique identifier within the WHG system (<b>place_id</b>). Both that place_id and the contributor's own <b>src_id</b> will be maintained unless and until the dataset is deleted by its owner. If a dataset is flagged as "public," its records will be accessible via the "database API" as indicated. In this way WHG can serve as a Linked Open Data publisher for those projects unable to stand up their own per-record landing pages.</p>
 			
-            <p>The <b class="red-head">"union index"</b>: links <i>contributed</i> records deemed to be close or exact matches in the optional accessioning step that follows initial uploading and reconciliation tasks. So, results of an index query will return a set of one or more records as distinct attestations of the "same" place.</p>
+            <p>The <b class="red-head">"union index"</b>: links <i>contributed</i> records deemed to be close or exact matches in the optional accessioning step that follows initial uploading and reconciliation tasks. So, results of an index query will return a set of one or more records as distinct attestations of the "same" place.</p>{% endcomment %}
 						{%comment%}
             <h5 class="red-head strong ">Trace data</h5>
             <p>We have indexed a limited number of "trace annotation" datasets, which can be searched by keyword. Trace records can optionally be returned in place searches,</p>
 						{%endcomment%}
-          </div>
+          </div> <!-- col-sm-5 -->
           <div class="col-sm-7 smallish">
 			<h4>Endpoints</h4>
 			<!--<span class="text-danger"><b>NOTE:</b> Only the example links are confirmed to work right now.</span>.-->
 			<ul id="api_tabs" class="nav nav-tabs" role="tablist">
+        {% comment %}
 			  <li class="nav-item">
-				<a class="nav-link" id="placedb-tab" data-bs-toggle="tab" href="#place_db" role="tab" aria-controls="place_db" aria-selected="true">Places (database)</a>
+				<a class="nav-link" id="placedb-tab" data-bs-toggle="tab" href="#place_db" role="tab"
+           aria-controls="place_db" aria-selected="true">Places (database)</a>
+			  </li>
+			  {% endcomment %}
+			  <li class="nav-item">
+				<a class="nav-link active" id="placeidx-tab" data-bs-toggle="tab" href="#place_idx" role="tab"
+           aria-controls="place_idx" aria-selected="false">Places</a>
 			  </li>
 			  <li class="nav-item">
-				<a class="nav-link active" id="placeidx-tab" data-bs-toggle="tab" href="#place_idx" role="tab" aria-controls="place_idx" aria-selected="false">Places (index)</a>
+				<a class="nav-link" id="spatial-tab" data-bs-toggle="tab" href="#spatial" role="tab"
+           aria-controls="spatial" aria-selected="false">Spatial</a>
 			  </li>
 			  <li class="nav-item">
-				<a class="nav-link" id="spatial-tab" data-bs-toggle="tab" href="#spatial" role="tab" aria-controls="spatial" aria-selected="false">Spatial</a>
-			  </li>
-			  <!-- <li class="nav-item">
-				<a class="nav-link" id="traces-tab" data-bs-toggle="tab" href="#traces" role="tab" aria-controls="traces" aria-selected="false">Traces</a>
-			  </li> -->
-			  <li class="nav-item">
-				<a class="nav-link" id="areas-tab" data-bs-toggle="tab" href="#areas" role="tab" aria-controls="areas" aria-selected="false">Regions/Areas</a>
+				<a class="nav-link" id="areas-tab" data-bs-toggle="tab" href="#areas" role="tab"
+           aria-controls="areas" aria-selected="false">Regions/Areas</a>
 			  </li>
 			  <li class="nav-item">
-				<a class="nav-link" id="datasets-tab" data-bs-toggle="tab" href="#datasets" role="tab" aria-controls="datasets" aria-selected="false">Datasets</a>
+				<a class="nav-link" id="datasets-tab" data-bs-toggle="tab" href="#datasets" role="tab"
+           aria-controls="datasets" aria-selected="false">Datasets</a>
 			  </li>
 			</ul>
 			<div class="tab-content">

@@ -466,6 +466,7 @@ def collectionItem(i):
   score = i['score']
   # serialize as geojson
   i = i['hit']
+  print("i['types']", i['types'])
   item = {
     "type":"Feature",
     "score": score,
@@ -477,7 +478,7 @@ def collectionItem(i):
       "child_place_ids":[int(c) for c in i['children']],
       "dataset":i['dataset'],
       "fclasses": [c for c in i['fclasses']],
-      "placetypes":[t['sourceLabel'] for t in i['types']],
+      "placetypes": [t.get('sourceLabel', t.get('source_label')) for t in i['types']],
       "variants":[n for n in i['suggest']['input'] if n != i['title']],
       'links':i['links'],
       "timespans":i['timespans'],
