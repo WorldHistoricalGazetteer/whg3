@@ -1,22 +1,22 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
-from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
-from django.core.validators import validate_email
-from django.core.exceptions import ValidationError
+from django.contrib.auth import views as auth_views
+# from django.urls import reverse
+# from django.contrib.auth.models import Group
+# from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
+# from django.core.validators import validate_email
+# from django.core.exceptions import ValidationError
 
 User = get_user_model()
 from django.conf import settings
 from django.contrib import auth, messages
 from django.core.mail import EmailMultiAlternatives
 from django.core.signing import Signer
-from django.core.mail import send_mail
 from django.db import transaction
-from django import forms
 from django.shortcuts import render, redirect, reverse, get_object_or_404
 
 from accounts.forms import UserModelForm
-from collection.models import Collection, CollectionGroup, CollectionGroupUser, CollectionUser
+from collection.models import Collection, CollectionGroupUser, CollectionUser  # CollectionGroup,
 from datasets.models import Dataset, DatasetUser
 
 
@@ -38,6 +38,8 @@ def register(request):
           name=request.POST['name'],
           role='normal',
         )
+        email = request.POST['email']
+        logo_url = request.build_absolute_uri(settings.STATIC_URL + 'images/whg_logo_38h.png')
         user.email_confirmed = False
         user.save()
 
@@ -47,20 +49,19 @@ def register(request):
         confirm_url = request.build_absolute_uri(reverse('accounts:confirm-email', args=[token]))
 
         subject = 'Confirm your registration at World Historical Gazetteer'
-        text_content = f'Please click the link to confirm your WHG registration:\n\n {confirm_url}'
-        html_content = f'Please click the link to <a href="{confirm_url}">confirm your WHG registration</a>.'
+        text_content = (f'World Historical Gazetteer\n\n'
+                        f'-----------------------------\n\n'
+                        f'Greetings!\n\n'
+                        f'We received a registration request from {email}. Please click the link to confirm your WHG registration:\n\n'
+                        f'{confirm_url}')
+        html_content = (f'<p><img src={logo_url} alt="WHG logo"/></p>'
+                        f'Greetings,<br/>'
+                        f'<p>We received a registration request from {email}.</p> '
+                        f'<p>Please click this link to <a href="{confirm_url}">confirm your WHG registration</a></p>.')
 
         email = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [user.email])
         email.attach_alternative(html_content, "text/html")
         email.send(fail_silently=False)
-
-        # send_mail(
-        #   'Confirm your registration at World Historical Gazetteer',
-        #   f'Please click the link to confirm your WHG registration: <br/>{confirm_url}',
-        #   settings.DEFAULT_FROM_EMAIL,
-        #   [user.email],
-        #   fail_silently=False,
-        # )
 
         return redirect('accounts:confirmation-sent')
 
@@ -69,6 +70,43 @@ def register(request):
 
   else:
     return render(request, 'register/register.html')
+
+
+def login(request):
+  if request.method == 'POST':
+    username = request.POST['username']
+    password = request.POST['password']
+
+    try:
+      # Check if user exists
+      user = User.objects.get(username=username)
+      if user.must_reset_password:
+        # User must reset their password; store username in session
+        request.session['username_for_reset'] = username
+        return redirect('accounts:password_reset')
+      else:
+        # Attempt to authenticate only if no password reset is required
+        user = auth.authenticate(request, username=username, password=password)
+        if user is not None:
+          auth.login(request, user)
+          return redirect('home')
+        else:
+          # Authentication fails
+          messages.error(request, "Invalid password.")
+          return redirect('accounts/login')
+    except User.DoesNotExist:
+      # User not found
+      messages.error(request, "Invalid username.")
+      return redirect('login')  # Or render with an error message
+  else:
+    return render(request, 'accounts/login.html')
+
+
+def logout(request):
+  if request.method == 'POST':
+    request.session.pop('username_for_reset', None)
+    auth.logout(request)
+    return redirect('home')
 
 
 def confirm_email(request, token):
@@ -93,63 +131,55 @@ def confirmation_sent(request):
 def confirmation_success(request):
   return render(request, 'register/confirmation_success.html')
 
-from django.contrib.auth import views as auth_views
-from django.urls import reverse
 
 class CustomPasswordResetView(auth_views.PasswordResetView):
-    template_name = 'register/password_reset_form.html'
-    def get_success_url(self):
-        return reverse('accounts:password_reset_done')
+  template_name = 'register/password_reset_form.html'
+
+  def get_success_url(self):
+    return reverse('accounts:password_reset_done')
+
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    username = self.request.session.get('username_for_reset')
+    context['user'] = username
+    return context
+
 
 class CustomPasswordResetDoneView(auth_views.PasswordResetDoneView):
-    template_name = 'register/password_reset_done.html'
+  template_name = 'register/password_reset_done.html'
+
 
 class CustomPasswordResetConfirmView(auth_views.PasswordResetConfirmView):
-    template_name = 'register/password_reset_confirm.html'
-    def get_success_url(self):
-        return reverse('accounts:password_reset_complete')
+  template_name = 'register/password_reset_confirm.html'
+
+  def form_valid(self, form):
+    # This method is called when the form is successfully submitted and valid
+    response = super().form_valid(form)
+    # Here, `form.user` is accessible because it's typically set in `PasswordResetConfirmView`
+    user = form.user
+    if hasattr(user, 'must_reset_password'):
+      user.must_reset_password = False
+      user.save()
+    return response
+
+  def get_success_url(self):
+    return reverse('accounts:password_reset_complete')
+
+  def get_context_data(self, **kwargs):
+    context = super().get_context_data(**kwargs)
+    # Assume `self.user` is the user object, depending on your URL config
+    context['user'] = self.user
+    return context
+
 
 class CustomPasswordResetCompleteView(auth_views.PasswordResetCompleteView):
-    template_name = 'register/password_reset_complete.html'
-#
-# class CustomPasswordResetView(PasswordResetView):
-#     def get_success_url(self):
-#         return reverse('accounts:password_reset_done')
-#
-# class CustomPasswordResetConfirmView(PasswordResetConfirmView):
-#     def get_success_url(self):
-#         return reverse('accounts:password_reset_complete')
+  template_name = 'register/password_reset_complete.html'
 
-def login(request):
-  if request.method == 'POST':
-    user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
-    if user is not None:
-      auth.login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-      return redirect('home')
-    else:
-      messages.error(request, "Sorry, that username is not recognized.")
-      return redirect('accounts:login')
-  else:
-    return render(request, 'accounts/login.html')
-
-
-# def login(request):
-#   if request.method == 'POST':
-#     user = auth.authenticate(username=request.POST['username'], password=request.POST['password'])
-#     # user = auth.authenticate(email=request.POST['email'],password=request.POST['password'])
-#     if user is not None:
-#       auth.login(request, user, backend='django.contrib.auth.backends.ModelBackend')
-#       return redirect('home')
-#     else:
-#       raise forms.ValidationError("Sorry, that login was invalid. Please try again.")
-#   else:
-#     return render(request, 'accounts/login.html')
-
-
-def logout(request):
-  if request.method == 'POST':
-    auth.logout(request)
-    return redirect('home')
+  def get(self, request, *args, **kwargs):
+    # clear the username from the session, set for v3 password reset
+    request.session.pop('username_for_reset', None)
+    # Call the original get method to continue normal processing
+    return super().get(request, *args, **kwargs)
 
 
 def add_to_group(cg, member):
@@ -160,7 +190,6 @@ def add_to_group(cg, member):
     user=member
   )
   cguser.save()
-
 
 @login_required
 def profile_edit(request):
@@ -223,123 +252,3 @@ def update_profile(request):
       'context': context
     })
 
-# class ValidationErrorList(Exception):
-#   def __init__(self, errors):
-#     self.errors = errors
-
-# def validate_usersfile(tempfn, cg):
-#   User = get_user_model()
-#   result = {"status": 'validated', "errors": [], "create_add": [], 'just_add': [], 'already': []}
-#   import csv
-#   email_set = set()  # Set to store emails for checking duplicates
-#   with open(tempfn, newline='') as csvfile:
-#     reader = csv.reader(csvfile, delimiter=',', skipinitialspace=True)
-#     for i, row in enumerate(reader):
-#       if len(row) < 2:
-#         result['errors'].append('row #' + str(i + 1) + ' does not have enough columns')
-#       else:
-#         email = row[0]
-#         try:
-#           validate_email(email)  # Use Django's validate_email function
-#         except ValidationError:
-#           result['errors'].append('invalid email on row #' + str(i + 1) + ': ' + email)
-#         if email in email_set:  # Check if email is already in the set
-#           result['errors'].append('Duplicate email on row #' + str(i + 1) + ': ' + email)
-#         else:
-#           email_set.add(email)  # Add email to the set
-#         if row[1] == '':
-#           result['errors'].append('no name for row #' + str(i + 1))
-#     if len(result['errors']) > 0:
-#       result['status'] = 'failed'
-#       return result
-#     else:
-#       user = User.objects.filter(email=email)
-#       members = [u.user_id for u in cg.members.all()]
-#       if user.exists():
-#         in_group = user[0].id in members
-#         if in_group:
-#           result['already'].append(row)
-#         else:
-#           result['just_add'].append(row)
-#       else:
-#         result['create_add'].append(row)
-#   return result
-#
-#
-# # add users to a CollectionGroup, or create new users and add them
-# @login_required
-# def addusers(request):
-#   if request.method == 'POST':
-#     action = request.POST['action']
-#     cgid = request.POST['cgid']
-#     cg = get_object_or_404(CollectionGroup, id=cgid)
-#     created_count = 0
-#     only_joined_count = 0
-#     new_members = []
-#
-#     if action == 'upload':
-#       file = request.FILES['file']
-#       mimetype = file.content_type
-#       tempf, tempfn = tempfile.mkstemp()
-#
-#       try:
-#         for chunk in file.chunks():
-#           os.write(tempf, chunk)
-#       except IOError:
-#         return JsonResponse({"status": "failed", "errors": "Problem opening/writing input file"}, safe=False)
-#       finally:
-#         os.close(tempf)
-#
-#       try:
-#         result = validate_usersfile(tempfn, cg)
-#       except Exception as e:
-#         return JsonResponse({"status": "failed", "errors": str(e)}, safe=False)
-#
-#     elif action == 'addem':
-#       try:
-#         create_add = json.loads(request.POST['create_add']) or None
-#         just_add = json.loads(request.POST['just_add']) or None
-#
-#         with transaction.atomic():
-#           if create_add:
-#             for u in create_add:
-#               email, name = u
-#               try:
-#                 validate_email(email)
-#               except ValidationError:
-#                 result = {'status': 'failed', 'errors': 'Invalid email address: ' + email}
-#                 return JsonResponse(result, safe=False)
-#               if email not in existing_users:
-#                 temp_password = User.objects.make_random_password()
-#                 new_user = User.objects.create(email=email,
-#                                                name=name, password=temp_password, must_change_password=True)
-#                 add_to_group(cg, new_user)
-#
-#                 # TODO: wire new_emailer from v2
-#                 print('emailing new user', email, temp_password)
-#                 # new_emailer(email, temp_password)
-#
-#                 created_count += 1
-#                 new_members.append([email, name, new_user.id])
-#
-#           if just_add:
-#             for u in just_add:
-#               email, name = u
-#               validate_email(email)
-#               user = User.objects.get(email=email)
-#               add_to_group(cg, user)
-#               only_joined_count += 1
-#               new_members.append([email, name, user.id])
-#
-#         total = created_count + only_joined_count
-#         result = {
-#           'status': 'added', 'errors': [],
-#           'newmembers': new_members,
-#           'msg': f'<p>Created {created_count} new WHG users</p><p>Added <b>{total}</b> new group members</p>'
-#         }
-#
-#       except ValidationError as e:
-#         result = {'status': 'failed', 'errors': str(e), 'msg': 'Invalid email address!'}
-#
-#     return JsonResponse(result, safe=False)
-#

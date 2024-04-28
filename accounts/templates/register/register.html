@@ -1,25 +1,30 @@
-{% extends 'main/base.html' %}
+{% extends 'main/base_webpack.html' %}
 
 {% block content %}
 {% block extra_head %}
-    <style>
-        .fa-asterisk {font-size: .4rem !important; vertical-align: text-top;}
-        th, td { padding: 2px 10px;}
-    </style>
+  <style>
+      .fa-asterisk {font-size: .4rem !important; vertical-align: text-top;}
+      th, td { padding: 2px 10px;}
+  </style>
 {% endblock %}
 <div class="container">
   <div class="d-flex justify-content-center mt-3">
-    <div class="justify-content-center">
+{#    <div class="justify-content-center">#}
+    <div>
     {% if error %} <p style="color:red">{{ error }}</p> {% endif %}
     <form method="post" action="{% url 'accounts:register' %}">
     <h2 class="">User Registration</h2>
-      <p>As a registered user in the WHG platform, you can upload and enhance your place data, and contribute to the development of the platform by creating, linking, and publishing place datasets and collections. Please fill in the form below to register.</p>
+      <p>As a registered user in the WHG platform, you can upload and enhance your place data, and contribute
+        to the platform by creating, linking, and publishing place datasets and collections. Please fill in the
+        form below to register.</p>
       <p class="ps-2">Fields marked with <i class="fa fa-asterisk "></i> are required.</p>
       {% csrf_token %}
-{#      <input type="hidden" name="first_name" value="n/a"/> <input type="hidden" name="last_name" value="n/a"/>#}
       <table>
-        <tr><td class="">Username <i class="fa fa-asterisk "></i></td><td><input type="text" name="username" /></td></tr>
+        <tr><td class="">Login username <i class="fa fa-asterisk "></i></td><td><input type="text" name="username" /></td></tr>
         <tr><td class="">Email <i class="fa fa-asterisk "></i></td><td><input type="text" name="email" /></td></tr>
+        {% comment %}TODO: add given_name, surname{% endcomment %}
+{#        <tr><td class="">Given name <i class="fa fa-asterisk "></i></td><td><input type="text" name="given_name" /></td></tr>#}
+{#        <tr><td class="">Surname <i class="fa fa-asterisk "></i></td><td><input type="text" name="surname" /></td></tr>#}
         <tr><td class="">Full name <i class="fa fa-asterisk "></i></td><td><input type="text" name="name" /></td></tr>
         <tr><td class="">Affiliation </td><td><input type="text" name="affiliation" /></td></tr>
         <tr><td class="">Web page </td><td><input type="text" name="web_page" /></td></tr>
