@@ -127,7 +127,12 @@ function parseAnno(data) {
 	if (!!data.traces && data.traces.length > 0) {
 		data.traces.forEach(trace => {
 			const t = trace.fields;
-			$descrip.append(`<p><b>Title</b>: <a href="/places/portal/${t.place}" target="_blank" data-bs-toggle="tooltip" title="View all WHG records for this place."><span id="row_title" class="larger text-danger">${data.title} <i class="fas fa-external-link-alt linky"></i></span></a></p>`);
+			$descrip.append(`
+				<p><b>Title</b>: 
+					<a href="${t.include_matches ? `/places/portal/${t.place}` : `/places/${t.place}/detail`}" target="_blank" data-bs-toggle="tooltip" title="View ${t.include_matches ? "all WHG records" : "details"} for this place.">
+						<span id="row_title" class="larger text-danger">${data.title} <i class="fas fa-external-link-alt linky"></i></span>
+					</a>
+				</p>`);
 			if (t.relation == '[""]' && t.note == null && t.start == null) {
 				$descrip.append('<i>none yet</i>');
 			} else {

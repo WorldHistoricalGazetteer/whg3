@@ -67,11 +67,11 @@ class Collection(models.Model):
       related_name='collections', on_delete=models.CASCADE)
   title = models.CharField(null=False, max_length=255)
   description = models.TextField(max_length=3000)
-  keywords = ArrayField(models.CharField(max_length=50), null=True)
+  keywords = ArrayField(models.CharField(max_length=50), null=True, default=list)
 
   # per-collection relation keyword choices, e.g. waypoint, birthplace, battle site
   # TODO: ?? need default or it errors for some reason
-  rel_keywords = ArrayField(models.CharField(max_length=30), blank=True, null=True)
+  rel_keywords = ArrayField(models.CharField(max_length=30), blank=True, null=True, default=list)
   # rel_keywords = ArrayField(models.CharField(max_length=30), blank=True, default=default_relations)
 
   # 3 new fields, 20210619

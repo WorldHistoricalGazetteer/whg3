@@ -88,6 +88,18 @@ class PlacePortalView(TemplateView):
 
     context['core'] = ['ne_countries','ne_rivers982','ne_mountains','wri_lakes']
     
+    """
+    TODO:
+    
+    The following code is inefficient because the Place `matches` @property returns Place objects
+    already sorted. The test data in the database is currently inadequate to allow refactoring of the code to make
+    use of this, and so the Places are unnecessarily fetched and ordered a second time.
+    
+    pid-based portal_data currently uses Elastic index in order to get useful results: this should be replaced
+    with the commented-out code-block to use the Place `matches` @property
+    
+    """
+    
     # Extract any pid from a permalink URL
     pid = kwargs.get('pid', '')    
     # Extract any whg_id from a permalink URL
@@ -95,11 +107,18 @@ class PlacePortalView(TemplateView):
     # Extract any encoded IDs from a permalink URL
     encoded_ids = kwargs.get('encoded_ids', '')
     if pid:
+        # TODO: Currently required for test dataset - REPLACE WITH CODE WHICH FOLLOWS IT
         portal_data = findPortalPIDs(pid)
         print('portal_data:', portal_data)
         if not portal_data:
             return {'redirect_to': f'/places/{pid}/detail'} # Show Place Detail page if pid is from an unindexed dataset
         place_ids = portal_data or [pid]
+        # # TODO: Replace the above with the following:
+        # portal_data = Place.objects.get(id=pid).matches
+        # print('portal_data:', portal_data)
+        # if len(portal_data) == 1:
+        #     return {'redirect_to': f'/places/{pid}/detail'} # Show Place Detail page if pid is from an unindexed dataset
+        # place_ids = [place.id for place in portal_data]
     elif whg_id:
         portal_data = findPortalPlaces(whg_id)
         print('portal_data:', portal_data)
@@ -121,7 +140,10 @@ class PlacePortalView(TemplateView):
     allvariants = []
     try:
       place_ids = [int(pid) for pid in place_ids]
-      qs = Place.objects.filter(id__in=place_ids).order_by('-whens__minmax')
+      # qs = Place.objects.filter(id__in=place_ids).order_by('-whens__minmax')      
+      qs = Place.objects.filter(id__in=place_ids)
+      # Sort the queryset by the number of links and then by id in descending order
+      qs = sorted(qs, key=lambda place: (place.links.count(), place.id), reverse=True)
       #context['title'] = qs.first().title
       collections = []
       annotations = []
@@ -140,7 +162,16 @@ class PlacePortalView(TemplateView):
 
         # get traces, collections for this attestation
         attest_traces = list(place.traces.all())
-        attest_collections = [t.collection for t in attest_traces if t.collection.status == "published"]
+        
+        #attest_collections = [t.collection for t in attest_traces if t.collection.status == "published"]
+        # Filter collections based on status (published or unpublished) and ownership
+        attest_collections = [
+            t.collection for t in attest_traces 
+            if (
+                t.collection.status == "published" or  # Published collections
+                (t.collection.owner == me and t.collection.status != "public")  # Unpublished collections owned by the current user
+            )
+        ]
 
         # add to global list
         annotations = annotations + attest_traces

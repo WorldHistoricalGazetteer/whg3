@@ -292,7 +292,8 @@ def add_collection_places(request):
 
     collection_id = int(payload.get('collection'))
     title = payload.get('title')
-    place_ids = [int(place_id) for place_id in payload.get('place_ids').split(',')]
+    place_id = payload.get('primarySource')
+    include_all = payload.get('includeAll')
     
     # Initialize response data
     response_data = {'status': 'success', 'msg': '', 'added_places': [], 'existing_places': [], 'payload_received': payload}
@@ -314,31 +315,32 @@ def add_collection_places(request):
 
         # Add places to the collection
         collection = Collection.objects.get(id=collection_id)
-        for place_id in place_ids:
-            place = Place.objects.get(id=place_id)
-            # Check if the place already exists in the collection
-            existing_place = TraceAnnotation.objects.filter(collection=collection, place=place, archived=False)
-            if not existing_place:
-                trace_annotation = TraceAnnotation.objects.create(
-                    place=place,
-                    src_id=place.src_id,
-                    collection=collection,
-                    motivation='locating',
-                    owner=request.user,
-                    anno_type='place',
-                    saved=0
-                )
-                trace_annotation.save()
 
-                CollPlace.objects.create(
-                    collection=collection,
-                    place=place,
-                    sequence=seq(collection)
-                )
-                
-                response_data['added_places'].append(place_id)
-            else:
-                response_data['existing_places'].append(place_id)
+        place = Place.objects.get(id=place_id)
+        # Check if the place already exists in the collection
+        existing_place = TraceAnnotation.objects.filter(collection=collection, place=place, archived=False)
+        if not existing_place:
+            trace_annotation = TraceAnnotation.objects.create(
+                place=place,
+                include_matches = True if include_all == "on" else False,
+                src_id=place.src_id,
+                collection=collection,
+                motivation='locating',
+                owner=request.user,
+                anno_type='place',
+                saved=0
+            )
+            trace_annotation.save()
+
+            CollPlace.objects.create(
+                collection=collection,
+                place=place,
+                sequence=seq(collection)
+            )
+            
+            response_data['added_places'].append(place_id)
+        else:
+            response_data['existing_places'].append(place_id)
 
         collection = Collection.objects.get(id=collection_id) # Refresh
         response_data['collection'] = {
@@ -468,12 +470,10 @@ def fetch_mapdata_coll(request, *args, **kwargs):
     if null_geometry:
         feature_collection["tilesets"] = available_tilesets
             
-    def reduceFeature(feature, geometry):
+    def reduceFeature(feature):
         if null_geometry: # Minimise data sent to browser when using a vector tileset
-            if geometry:
-                del feature["geometry"]["coordinates"]
-                if "geowkt" in feature["geometry"]:
-                    del feature["geometry"]["geowkt"]
+            if "geometry" in feature:
+                feature["geometry"] = {"type": feature["geometry"]["type"]}
         elif tileset: # Minimise data to be included in a vector tileset
             # Drop all properties except any listed here
             properties_to_keep = ["pid", "min", "max"] # ["min", "max"] are required for layer styling and filtering
@@ -486,10 +486,16 @@ def fetch_mapdata_coll(request, *args, **kwargs):
             # Get the first annotation's sequence value
             first_anno = t.place.annos.first()
             sequence_value = first_anno.sequence if first_anno else None
-    
-            geoms = t.place.geoms.all()
-            geometry = t.place.geoms.all()[0].jsonb if geoms else None  # some places have no geometry
-    
+            
+            # If include_matches, use geometry of first place.matches, which is its sibling with the most links
+            reference_place = t.place.matches[0] if t.include_matches else t.place 
+            geometries = reference_place.geoms.all() or None
+            if geometries:
+                unioned_geometry = geometries.aggregate(union=Union('geom'))['union']
+                geometry_collection = json.loads(GeometryCollection(unioned_geometry).geojson)
+            else:
+                geometry_collection = None
+        
             feature = {
                 "type": "Feature",
                 "properties": {
@@ -503,11 +509,14 @@ def fetch_mapdata_coll(request, *args, **kwargs):
                     "note": t.note,
                     "seq": sequence_value,
                 },
-                "geometry": geometry,
+                "geometry": geometry_collection,
                 "id": index,  # Required for MapLibre conditional styling
             }
             
-            feature = reduceFeature(feature, geometry)
+            if t.include_matches and t.place is not reference_place:
+                feature["properties"]["geometry_pid"] = reference_place.id
+            
+            feature = reduceFeature(feature)
     
             feature_collection["features"].append(feature)
         
@@ -574,7 +583,6 @@ def fetch_mapdata_coll(request, *args, **kwargs):
 
         for index, place in enumerate(places):
             geometries = place.geoms.all() or None
-            geometry = None
     
             if geometries:
                 unioned_geometry = geometries.aggregate(union=Union('geom'))['union']
@@ -610,7 +618,7 @@ def fetch_mapdata_coll(request, *args, **kwargs):
                 "id": index # Required for MapLibre conditional styling
             }
             
-            feature = reduceFeature(feature, geometry)
+            feature = reduceFeature(feature)
     
             feature_collection["features"].append(feature)  
 

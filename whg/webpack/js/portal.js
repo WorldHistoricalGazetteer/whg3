@@ -209,6 +209,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
     	
     	$('#sources').find('h6').text(`${payload.length} Source${payload.length > 1 ? 's' : ''}`);
 
+		payload[0]['primary'] = true; // Payload arrives with Places in descending link-count order
 		payload.forEach(place => { // Reverse-sort each set of timespans by end year
 		    place.timespans.sort((a, b) => b[1] - a[1]);
 		});
@@ -221,21 +222,35 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 
     	payload.forEach(place => {
 			const sourceHTML = `
-	            in: <a class="pop-link pop-dataset"
-	                   data-id="${place.dataset.id}" data-toggle="popover"
-	                   title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
-	                ${place.dataset.name.replace('(stub) ', '').substring(0, 25)}
-	            </a>
-				<div class="name-variants toggle-truncate">
-				    <strong class="larger">${place.title}</strong> ${place.names.map(label => label.label.trim()).join('; ')}
-				</div>
-	            ${place.types.length > 0 ? `<div>Type${place.types.length > 1 ? 's' : ''}: ${place.types.map(type => type.label).join(', ')}</div>` : ''}
-    			${place.timespans.length > 0 ? `<div>Chronology: ${place.timespans.reverse().map(timespan => timespan.join('-')).join(', ')}</div>` : ''}
+				<div class="source-box${ !!place.primary? ' primary-place' : ''}" data-bs-toggle="tooltip" data-bs-title="${ !!place.primary? 'This is considered to be the <i>Primary Source</i>. ' : ''}Click to zoom map to features associated with this source.">
+		            in: <a class="pop-link pop-dataset"
+		                   data-id="${place.dataset.id}" data-toggle="popover"
+		                   title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
+		                ${place.dataset.name.replace('(stub) ', '').substring(0, 25)}
+		            </a>
+					<div class="name-variants toggle-truncate">
+					    <strong class="larger">${place.title}</strong> ${place.names.map(label => label.label.trim()).join('; ')}
+					</div>
+		            ${place.types.length > 0 ? `<div>Type${place.types.length > 1 ? 's' : ''}: ${place.types.map(type => type.label).join(', ')}</div>` : ''}
+	    			${place.timespans.length > 0 ? `<div>Chronology: ${place.timespans.reverse().map(timespan => timespan.join('-')).join(', ')}</div>` : ''}
+    			</div>
 	        `;
 	        
-	        $('#sources').append($('<div>').addClass('source-box').html(sourceHTML));
+	        $('#sources').append(sourceHTML);
 		});
 		$('.toggle-truncate').toggleTruncate();
+			
+		var sourceOptions = payload.map(function(item) {
+	        return `<option value="${item.place_id}"${!!item.primary ? ' selected' : ''}>${item.dataset.name}: ${item.title}</option>`;
+	    }).join('');
+		$('#collection_form #primarySource').html(sourceOptions);
+		
+		$('#sources')
+		.tooltip({
+	    	selector: '[data-bs-toggle="tooltip"]:not([disabled])',
+	    	trigger : 'hover',
+	    	html: true,
+		})
 
 		updateCollections();
 
@@ -247,33 +262,24 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		// Do not use fitBounds or flyTo due to padding bug in MapLibre/Maptiler
 		mappy.fitViewport( bbox(featureCollection), defaultZoom );
 
-	  	$('.source-box')
-	  	.on('mousemove', function() {
-			  if (!showingRelated) {
-				  $(this)
-				  .prop('title', 'Click to zoom on map.')
-				  .addClass('highlight');
-				  const index = $(this).index() - 1;
-				  mappy.setFeatureState({source: 'places', id: index}, { highlight: true });
-			  }
+	  	$('#textContent')
+	  	.on('mousemove', '#sources:not([disabled]) .source-box', function() {
+			  $(this)
+			  .addClass('highlight');
+			  const index = $(this).index() - 1;
+			  mappy.setFeatureState({source: 'places', id: index}, { highlight: true });
 		})
-	  	.on('mouseleave', function() {
-			  if (!showingRelated) {
-				  $(this)
-				  .prop('title', '')
-				  .removeClass('highlight');
-				  const index = $(this).index() - 1;
-				  mappy.setFeatureState({source: 'places', id: index}, { highlight: false });
-				  mappy.fitViewport( bbox( featureCollection ), defaultZoom );
-			  }
+	  	.on('mouseleave', '#sources:not([disabled]) .source-box', function() {
+			  $(this)
+			  .removeClass('highlight');
+			  const index = $(this).index() - 1;
+			  mappy.setFeatureState({source: 'places', id: index}, { highlight: false });
+			  mappy.fitViewport( bbox( featureCollection ), defaultZoom );
 		})
-	  	.on('click', function() {
-			  if (!showingRelated) {
-				  $(this)
-				  .prop('title', '')
-				  const index = $(this).index() - 1;
-				  mappy.fitViewport( bbox( featureCollection.features[index].geometry ) );
-			  }
+	  	.on('click', '#sources:not([disabled]) .source-box', function() {
+			  $(this)
+			  const index = $(this).index() - 1;
+			  mappy.fitViewport( bbox( featureCollection.features[index].geometry ) );
 		})
 
 		// Show/Hide related Collection (propagate event delegation to dynamically added elements)
@@ -282,7 +288,8 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		    const parentItem = $(this).parent('li');
 		    parentItem.toggleClass('showing');
 		    if (parentItem.hasClass('showing')) {
-		        $.get("/search/collgeom", {
+				parentItem.siblings().removeClass('showing');
+		        $.get("/search/collgeom", { // TODO: This doesn't appear to be fetching geometries updated with new additions ######################
 		                coll_id: $(this).data('id')
 		            },
 		            function(collgeom) {
@@ -292,10 +299,12 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		                mappy.fitViewport(bbox(relatedFeatureCollection), defaultZoom);
 		            });
 		        showingRelated = true;
+		        $('#sources, .source-box').attr('disabled', true);
 		    } else {
 		        mappy.getSource('places').setData(featureCollection);
 		        mappy.fitViewport(bbox(featureCollection), defaultZoom);
 		        showingRelated = false;
+		        $('#sources, .source-box').removeAttr('disabled');
 		    }
 		});
 
@@ -361,7 +370,6 @@ function initCollectionForm() {
 	    } 
 	    else if (!$('#title_input').hasClass('is-invalid')) {
 			var formData = new FormData(this);
-			formData.append('place_ids', payload.map(place => place.place_id));
         	var selectedCollection = $('input[name="collection"]:checked');
 	        if (selectedCollection.val() !== "-1") {
 	            formData.append('title', selectedCollection.next('label').text().trim());
@@ -436,8 +444,10 @@ function updateCollections(addCollection = false) {
 	
     if (addCollection !== false) {
         const allCollections = $('#collection_list').data('allCollections') || [];
-        allCollections.push(addCollection);
-        $('#collection_list').data('allCollections', [...new Set(allCollections)]);
+        if (!allCollections.map(collection => collection.id).includes(addCollection.id)) {
+        	allCollections.push(addCollection);
+		}
+        $('#collection_list').data('allCollections');
     }
 	
 	var uniqueCollections = $('#collection_list').data('allCollections');	

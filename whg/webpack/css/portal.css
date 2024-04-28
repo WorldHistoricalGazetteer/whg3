@@ -75,10 +75,43 @@ div.overlay .left .item {
 .source-box {
     background-color: white;
     border: 1px gainsboro solid;
-    margin: 0.1rem;
-    padding: 0.1rem;
+    border-radius: .3rem;
+    margin: .1rem;
+    padding: .4rem;
 }
 
+.source-box:not([disabled]) {
+    cursor: pointer;
+}
+
+.source-box.primary-place {
+    border-color: #b13333;
+}
+
+#sourceOptions {
+    background-color: #ffc10736;
+    border: 1px gainsboro solid;
+    border-radius: 0.3rem;
+    margin-top: 1rem;
+    padding: 0.4rem;
+    font-size: smaller;
+    position: relative;
+}
+
+#sourceOptions > p:first-of-type {
+    position: absolute;
+    top: -0.7rem;
+    left: 0.5rem;
+    text-shadow: 0 0 0.3rem white;
+}
+
+#sourceOptions #primarySource {
+    vertical-align: middle;
+}
+
+#sourceOptions #includeAll {
+    vertical-align: text-bottom;
+}
 
 /*#mapOverlays .column .left .item {*/
 .overlay.left.item {
