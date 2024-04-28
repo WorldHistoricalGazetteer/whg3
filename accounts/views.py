@@ -11,13 +11,14 @@ User = get_user_model()
 from django.conf import settings
 from django.contrib import auth, messages
 from django.core.mail import EmailMultiAlternatives
-from django.core.signing import Signer
+from django.core.signing import Signer, BadSignature
 from django.db import transaction
 from django.shortcuts import render, redirect, reverse, get_object_or_404
 
 from accounts.forms import UserModelForm
 from collection.models import Collection, CollectionGroupUser, CollectionUser  # CollectionGroup,
 from datasets.models import Dataset, DatasetUser
+import traceback
 
 def register(request):
   if request.method == 'POST':
@@ -32,7 +33,7 @@ def register(request):
       logo_url = request.build_absolute_uri(settings.STATIC_URL + 'images/whg_logo_38h.png')
       signer = Signer()
       token = signer.sign(user.pk)
-
+      print('token in register()', token)
       confirm_url = request.build_absolute_uri(reverse('accounts:confirm-email', args=[token]))
 
       subject = 'Confirm your registration at World Historical Gazetteer'
@@ -58,58 +59,6 @@ def register(request):
     form = UserModelForm()
     return render(request, 'register/register.html', {'form': form})
 
-
-# def register(request):
-#   if request.method == 'POST':
-#     if request.POST['password1'] == request.POST['password2']:
-#       try:
-#         User.objects.get(username=request.POST['username'])
-#         return render(request, 'register/register.html',
-#                       {'error': 'That username is already taken. Try another, please.'})
-#       except User.DoesNotExist:
-#         print('request.POST', request.POST)
-#         user = User.objects.create_user(
-#           # request.POST['email'],
-#           request.POST['username'],
-#           password=request.POST['password1'],
-#           email=request.POST['email'],
-#           affiliation=request.POST['affiliation'],
-#           name=request.POST['name'],
-#           role='normal',
-#         )
-#         user.email_confirmed = False
-#         user.save()
-#
-#         email = request.POST['email']
-#         logo_url = request.build_absolute_uri(settings.STATIC_URL + 'images/whg_logo_38h.png')
-#         signer = Signer()
-#         token = signer.sign(user.pk)
-#
-#         confirm_url = request.build_absolute_uri(reverse('accounts:confirm-email', args=[token]))
-#
-#         subject = 'Confirm your registration at World Historical Gazetteer'
-#         text_content = (f'World Historical Gazetteer\n\n'
-#                         f'-----------------------------\n\n'
-#                         f'Greetings!\n\n'
-#                         f'We received a registration request from {email}. Please click the link to confirm your WHG registration:\n\n'
-#                         f'{confirm_url}')
-#         html_content = (f'<p><img src={logo_url} alt="WHG logo"/></p>'
-#                         f'Greetings,<br/>'
-#                         f'<p>We received a registration request from {email}.</p> '
-#                         f'<p>Please click this link to <a href="{confirm_url}">confirm your WHG registration</a></p>.')
-#
-#         email = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [user.email])
-#         email.attach_alternative(html_content, "text/html")
-#         email.send(fail_silently=False)
-#
-#         return redirect('accounts:confirmation-sent')
-#
-#     else:
-#       return render(request, 'register/register.html', {'error': 'Sorry, password mismatch!'})
-#
-#   else:
-#     return render(request, 'register/register.html')
-#
 
 def login(request):
   if request.method == 'POST':
@@ -158,10 +107,18 @@ def confirm_email(request, token):
 
     # Redirect to a success page
     return redirect('accounts:confirmation-success')
-  except:
-    # Handle invalid or expired token
-    return render(request, 'accounts:invalid_token.html')
-
+  except BadSignature:
+      # Handle invalid token
+      traceback.print_exc()
+      return render(request, 'register/invalid_token.html', {'error': 'Invalid token.'})
+  except User.DoesNotExist:
+      # Handle non-existent user
+      traceback.print_exc()
+      return render(request, 'register/invalid_token.html', {'error': 'User does not exist.'})
+  except Exception as e:
+      # Handle any other exceptions
+      traceback.print_exc()
+      return render(request, 'register/invalid_token.html', {'error': str(e)})
 
 def confirmation_sent(request):
   return render(request, 'register/confirmation_sent.html')

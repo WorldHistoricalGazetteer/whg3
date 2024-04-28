@@ -1,12 +1,62 @@
 from django.test import TestCase, Client
 from django.contrib import auth
 from django.contrib.auth import get_user_model
-from django.urls import reverse
 from django.core import mail
+from django.urls import reverse
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+import re
 
 User = get_user_model()
 
+
 # ./manage.py test tests.test_authentication.AuthenticationActionsTestCase.test_registration
+# ./manage.py test tests.test_authentication.UserPasswordResetTest
+
+class UserPasswordResetTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', email='test@example.com', password='old_password')
+
+    def test_password_reset(self):
+      # Access and submit the password reset form
+      self.client.get(reverse('accounts:password_reset'))
+      self.client.post(reverse('accounts:password_reset'), {'email': 'test@example.com'})
+
+      # Extract token and uidb64 from the email
+      email_body = mail.outbox[2].body
+      uidb64, token = re.search(r'/reset/(\w+)/(\w+-\w+)/', email_body).groups()
+
+      # Access the password reset confirmation page
+      response = self.client.get(reverse('accounts:password_reset_confirm', kwargs={'uidb64': uidb64, 'token': token}),
+                                 follow=True)
+
+      # Extract CSRF token
+      csrf_token = re.search(r'csrfmiddlewaretoken" value="([^"]+)"', response.content.decode()).group(1)
+
+      # Submit the new password form
+      new_password = '84Hfdh@LFNP8iLe'
+      response = self.client.post(
+        reverse('accounts:password_reset_confirm', kwargs={'uidb64': uidb64, 'token': token}),
+        {
+          'csrfmiddlewaretoken': csrf_token,
+          'new_password1': new_password,
+          'new_password2': new_password
+        },
+        follow=True
+      )
+
+      # Check for form errors
+      if 'form' in response.context:
+        form_errors = response.context['form'].errors
+        if form_errors:
+          print("Form errors:", form_errors)
+          self.fail(f"Password reset form submission failed with errors: {form_errors}")
+
+      # Refresh user instance and check the password
+      self.user.refresh_from_db()
+      self.assertTrue(self.user.check_password(new_password), "Password update failed.")
+
+
 class AuthenticationActionsTestCase(TestCase):
     def setUp(self):
         self.client = Client()
@@ -82,9 +132,50 @@ class AuthenticationActionsTestCase(TestCase):
       user = auth.get_user(self.client)
       self.assertFalse(user.is_authenticated)
 
-    def test_password_reset(self):
-      pass
-        # TODO: Implement password reset test
+
+    # test fails after 37 adjustments but password reset works perfectly in the browser
+    # def test_password_reset(self):
+    #   # Request the password reset page
+    #   response = self.client.get(reverse('accounts:password_reset'))
+    #   self.assertEqual(response.status_code, 200)
+    #
+    #   # Submit the password reset form
+    #   response = self.client.post(reverse('accounts:password_reset'), {'email': self.user_data['email']})
+    #   self.assertEqual(response.status_code, 302)
+    #
+    #   # Check that an email was sent
+    #   self.assertEqual(len(mail.outbox), 3)
+    #
+    #   # Extract the token from the email
+    #   email_body = mail.outbox[2].body
+    #   print('email_body', email_body)
+    #   url_match = re.search(
+    #     r'/accounts/reset/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,32})/', email_body,
+    #     re.DOTALL)
+    #   if url_match:
+    #     uidb64 = url_match.group('uidb64')
+    #     token = url_match.group('token')
+    #   else:
+    #     self.fail("Token not found in email body")
+    #
+    #   response = self.client.get(
+    #     reverse('accounts:password_reset_confirm', kwargs={'uidb64': uidb64, 'token': token}))
+    #   self.assertEqual(response.status_code, 302)
+    #
+    #
+    #   # Submit the new password
+    #   new_password = 'newpassword123'
+    #   print('token @ 2', token)
+    #   response = self.client.post(reverse('accounts:confirm-email', kwargs={'token': token}), {
+    #     'new_password1': new_password,
+    #     'new_password2': new_password,
+    #   })
+    #   print('Redirect location:', response['Location'])
+    #   self.assertEqual(response.status_code, 302)
+    #
+    #   # Check that the password was changed
+    #   self.user.refresh_from_db()
+    #   self.assertTrue(self.user.check_password(new_password))
 
     def test_password_change(self):
       pass
