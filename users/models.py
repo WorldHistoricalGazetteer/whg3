@@ -18,6 +18,7 @@ class UserManager(BaseUserManager):
         """
         Create and save a User with the given username, email and password.
         """
+        print('create_user', username, email, password, extra_fields)
         if not username:
             raise ValueError(_('The username must be set'))
         if not email:
@@ -45,9 +46,9 @@ class UserManager(BaseUserManager):
 class User(AbstractUser, PermissionsMixin):
     # username = None
     username = models.CharField(max_length=100, unique=True)
-    given_name = models.CharField(max_length=255)
-    surname = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
+    given_name = models.CharField(max_length=255, null=True)
+    surname = models.CharField(max_length=255, null=True)
     email = models.EmailField(_('email address'), unique=True)
     affiliation = models.CharField(max_length=255, null=True)
     web_page = models.URLField(max_length=255, null=True, blank=True)

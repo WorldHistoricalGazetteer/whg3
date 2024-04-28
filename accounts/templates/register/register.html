@@ -12,11 +12,24 @@
 {#    <div class="justify-content-center">#}
     <div>
     {% if error %} <p style="color:red">{{ error }}</p> {% endif %}
+
     <form method="post" action="{% url 'accounts:register' %}">
-    <h2 class="">User Registration</h2>
-      <p>As a registered user in the WHG platform, you can upload and enhance your place data, and contribute
-        to the platform by creating, linking, and publishing place datasets and collections. Please fill in the
-        form below to register.</p>
+    <h3 class="">User Registration</h3>
+      <p class="w-75">As a registered user in the WHG platform, you can upload and enhance your place data,
+        and contribute to the platform by creating, linking, and publishing place datasets and
+        collections. Please fill in the form below to register.</p>
+      {% if form.errors %}
+        <div class="bg-lighteryellow border-danger">
+          <h6 class="ms-3 mb-1">Form errors:</h6>
+          <ul class="mb-1">
+            {% for field in form %}
+              {% for error in field.errors %}
+                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
       <p class="ps-2">Fields marked with <i class="fa fa-asterisk "></i> are required.</p>
       {% csrf_token %}
       <table>

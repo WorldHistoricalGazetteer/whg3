@@ -1,8 +1,10 @@
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
-User = get_user_model()
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 
+User = get_user_model()
 # from accounts.models import Profile
 
 class LoginForm(forms.Form):
@@ -31,30 +33,35 @@ class LoginForm(forms.Form):
 
 # used to edit
 class UserModelForm(forms.ModelForm):
-    
+
     class Meta:
         model = User
         fields = ('username', 'email', 'name', 'affiliation', 'role')
         exclude = ('password',)
 
         widgets = {
-            'username': forms.TextInput(attrs={'size': 30}),
-            'email': forms.TextInput(attrs={'size': 30}),
-            'name': forms.TextInput(attrs={'size': 30}),
-            'affiliation': forms.TextInput(attrs={'size': 30}),
+            'username': forms.TextInput(attrs={'size': 40}),
+            'email': forms.TextInput(attrs={'size': 40}),
+            'name': forms.TextInput(attrs={'size': 40}),
+            'affiliation': forms.TextInput(attrs={'size': 40}),
         }
 
-# not in use
-# class ProfileModelForm(forms.ModelForm):
-#
-#     class Meta:
-#         model = User
-#         #fields = ('name','affiliation','web_page','user_type')
-#         #fields = ('affiliation','web_page','user_type')
-#         fields = ('name', 'affiliation', )
-#         widgets = {
-#             'name': forms.TextInput(attrs={'size': 40}),
-#             'affiliation': forms.TextInput(attrs={'size': 40}),
-#             # 'web_page': forms.TextInput(attrs={'size': 60}),
-#             'password': forms.PasswordInput(attrs={'size': 40}),
-#         }
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        try:
+            validate_email(email)
+        except ValidationError:
+            raise ValidationError("Invalid email address")
+        return email
+
+    def clean(self):
+        cleaned_data = super().clean()
+        for field in self.Meta.fields:
+            if field not in cleaned_data and self.fields[field].required and not self.errors.get(field):
+                self.add_error(field, "This field is required")
+        return cleaned_data
+
+    def __init__(self, *args, **kwargs):
+        super(UserModelForm, self).__init__(*args, **kwargs)
+        self.fields['affiliation'].required = False
+        self.fields['role'].required = False
