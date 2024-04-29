@@ -949,8 +949,10 @@ def ds_recon(request, pk):
     scope_geom = request.POST.get('scope_geom', False)
     aug_geoms = request.POST.get('accept_geoms', False)
     aug_names = request.POST.get('accept_names', False)
+    geonames = request.POST.get('no_geonames', False)
     print('ds_recon() aug_geoms', aug_geoms)
     print('ds_recon() aug_names', aug_names)
+    print('ds_recon() geonames', geonames)  # on/off
 
     language = request.LANGUAGE_CODE
     if auth == 'idx' and ds.public == False and test == 'off':
@@ -1017,6 +1019,7 @@ def ds_recon(request, pk):
         aug_names=aug_names,  # accept names
         scope=scope,  # all/unreviewed
         scope_geom=scope_geom,  # all/geom_free
+        geonames=geonames,  # on/off
         lang=language,
         test=test,  # for idx only
       )

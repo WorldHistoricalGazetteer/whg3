@@ -65,4 +65,17 @@ _as of 10 Jan 2024_
     - test_create_placegeom_with_task_id
     - test_create_placelink_with_task_id
 
+### tests/test_migration_password_change.py
+#### 13. [MigrationPwdTest](tests/tests/test_migration_password_change.py)
+    - test_login_redirects_when_must_change_password
+    - test_normal_login
+
+### tests/test_no_geonames.py
+#### 14. [TestExcludeGeonames](tests/tests/test_nogeonames.py)
+    - test_exclude_geonames_effectiveness
+
+
+
+
+
 

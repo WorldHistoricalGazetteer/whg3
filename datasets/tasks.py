@@ -473,7 +473,9 @@ def es_lookup_wdlocal(qobj, *args, **kwargs):
 
   #bounds object: {'type': ['userarea'], 'id': ['0']}
   bounds = kwargs['bounds']
+  exclude_geonames = True if kwargs['geonames'] == 'on' else False
   print('kwargs in es_lookup_wdlocal()', kwargs)
+  print('exclude_geonames?', exclude_geonames)
   hit_count = 0
 
   # empty result object
@@ -498,9 +500,10 @@ def es_lookup_wdlocal(qobj, *args, **kwargs):
   has_geom = 'geom' in qobj.keys()
   has_countries = len(countries) > 0
   if has_bounds:
+    print("Bounds filter is being added")
     area_filter = get_bounds_filter(bounds, 'wd')
   if has_geom:
-    # qobj['geom'] always a polygon hull
+    print("Geometric filter is being added")
     shape_filter = { "geo_shape": {
       "location": {
         "shape": {
@@ -544,7 +547,17 @@ def es_lookup_wdlocal(qobj, *args, **kwargs):
       "filter": []
     }
   }}
-  
+
+  # If exclude_geonames is True, add a must_not condition
+  if exclude_geonames:
+    exclude_condition = {"term": {"dataset": "geonames"}}
+    q0["query"]["bool"]["must_not"] = [exclude_condition]
+    qbase["query"]["bool"]["must_not"] = [exclude_condition]
+
+  print('q0',q0)
+  print('qbase',qbase)
+
+
   # add spatial filter as available in qobj
   if has_geom:
     # shape_filter is polygon hull ~100km diameter
@@ -576,11 +589,13 @@ def es_lookup_wdlocal(qobj, *args, **kwargs):
   # pass0 (q0): 
   # must[authid]; match any link
   # /\/\/\/\/\/
+  print("Attempting Elasticsearch query for q0")
   try:
     res0 = es.search(index=idx, body = q0)
     hits0 = res0['hits']['hits']
-  except:
-    print('pid; pass0 error:', qobj, sys.exc_info())
+    print("Query result for q0:", hits0)
+  except Exception as e:
+    print("Error during q0 search:", str(e), qobj)
 
   if len(hits0) > 0:
     for hit in hits0:
@@ -648,6 +663,7 @@ def align_wdlocal(*args, **kwargs):
   bounds = kwargs['bounds']
   scope = kwargs['scope']
   scope_geom = kwargs['scope_geom']
+  geonames = kwargs['geonames'] # exclude? on/off
   language = kwargs['lang']
 
   hit_parade = {"summary": {}, "hits": []}
@@ -721,7 +737,7 @@ def align_wdlocal(*args, **kwargs):
     # they are returned as Pass 0 hits right now
     # run pass0-pass2 ES queries
     # in progress: lookup on wdgn index instead of wd
-    result_obj = es_lookup_wdlocal(qobj, bounds=bounds)
+    result_obj = es_lookup_wdlocal(qobj, bounds=bounds, geonames=geonames)
       
     if result_obj['hit_count'] == 0:
       count_nohit +=1
