@@ -58,12 +58,9 @@
           </div>
           <div class="col-sm-3" style="position: relative;">
             {% if ds.image_file %}
-              <a href="#" class="pop">
                 <img id="active_img"
                      class="img-responsive thumbnail float-end"
-                     src="/media/{{ ds.image_file.name }}"
-                     width="220px"/>
-              </a>
+                     src="/media/{{ ds.image_file.name }}"/>
             {% else %}<span><i>image here</i></span>
             {% endif %}
           </div>
@@ -387,10 +384,11 @@
 
   </div>
 
+  {{ object.vis_parameters|json_script:"vis_parameters_data" }}
   <script type="text/javascript">
     const URL_FRONT = "{{ URL_FRONT }}";
     const pageData = "{{ ds.id }}";
-    var visParameters = {{ visParameters|safe }};
+    var visParameters = JSON.parse(document.getElementById('vis_parameters_data').innerHTML);
     window.loggedin = "{{ loggedin }}";
     window.dslabel = "{{ ds.label }}";
     window.filter = "{{ filter }}";
@@ -401,6 +399,7 @@
         label: "{{ ds.label }}",
         modified: "{{ ds.last_modified_text }}",
         title: "{{ ds.title }}",
+        ds_type: "datasets"
       }];
   </script>
 

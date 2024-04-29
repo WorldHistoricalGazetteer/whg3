@@ -15,6 +15,7 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
 // export function add_to_collection(coll, pids, checked_rows) {
 export function add_to_collection(coll, checked_rows) {
 	console.log('add_to_collection()', coll, checked_rows)
@@ -61,107 +62,47 @@ export function add_to_collection(coll, checked_rows) {
 	/*resetSearch()*/
 }
 
-export function init_collection_listeners(checked_rows) {
+function create_collection() {
+	let title = $("#title_input").val()
+	if (title != '') {
+		// create new place collection, return id
+		var formData = new FormData()
+		formData.append('title', title)
+		formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+		$.ajax({
+			type: 'POST',
+			enctype: 'multipart/form-data',
+			url: '/collections/flash_create/',
+			processData: false,
+			contentType: false,
+			cache: false,
+			data: formData,
+			success: function(data) {
+				el = $('<li><a class="a_addtocoll" href="#" ref=' + data.id + '>' + data.title + '</a></li>')
+				el.click(function() {
+					coll = data.id
+					// pids = checked_rows
+					// add_to_collection(coll, pids, checked_rows)
+					add_to_collection(coll, checked_rows)
+					console.log('checked_rows to coll', checked_rows, coll)
+				})
+				$("#my_collections").append(el)
+			}
+		})
+		$("#title_form").hide()
+	} else {
+		alert('Your new collection needs a title!')
+	}
+}
 
+export function init_collection_listeners(checked_rows) {
+	
+	// Used in `mapAndTable.js`
 	$(".a_addtocoll").click(function() {
 		let coll = $(this).attr('ref')
 		// let pids = checked_rows
 		// add_to_collection(coll, pids, checked_rows)
 		add_to_collection(coll, checked_rows)
-
 	})
 	
-	$("#b_create_coll").click(function() {
-		let title = $("#title_input").val()
-		if (title != '') {
-			// create new place collection, return id
-			var formData = new FormData()
-			formData.append('title', title)
-			formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-			$.ajax({
-				type: 'POST',
-				enctype: 'multipart/form-data',
-				url: '/collections/flash_create/',
-				processData: false,
-				contentType: false,
-				cache: false,
-				data: formData,
-				success: function(data) {
-					el = $('<li><a class="a_addtocoll" href="#" ref=' + data.id + '>' + data.title + '</a></li>')
-					el.click(function() {
-						coll = data.id
-						// pids = checked_rows
-						// add_to_collection(coll, pids, checked_rows)
-						add_to_collection(coll, checked_rows)
-						console.log('checked_rows to coll', checked_rows, coll)
-					})
-					$("#my_collections").append(el)
-				}
-			})
-			$("#title_form").hide()
-		} else {
-			alert('Your new collection needs a title!')
-		}
-	})
-
-	$("#create_coll_link").click(function() {
-		console.log('open title input')
-		$("#title_form").show()
-	})
-
-	$(".closer").click(function(){
-      $(this).parent().hide()
-	})
-
-	// $("#addchecked").click(function(){
-    //   $("#addtocoll_popup").fadeIn()
-	// })
-
-	// single pid for place portal; adapt for multi-select elsewhere
-	// $(".action:radio").click(function(event){
-	// 		event.stopPropagation()
-	// 		console.log('radio clicked')
-	// 		let pid = $('input[name="r_anno"]:checked').data('id');
-	// 		console.log('checked radio for pid:', pid)
-	// 		$("#addtocoll").fadeIn()
-	// 		window.checked_cards = []
-	// 		// checked_cards.push($(this).data("id"))
-	// 		window.checked_cards.push(pid)
-	// 		console.log('checked_cards', window.checked_cards)
-	// })
-
-	// Used in ds_places.html publication page
-	// Listen for table row click (assigned using event delegation to allow for redrawing)
-	$("body").on("click", "#placetable tbody tr", function() {
-		const thisy = $(this)
-		// get id
-		const pid = $(this)[0].cells[0].textContent
-		// is checkbox checked?
-		// if not, ensure row pid is not in checked_rows
-		if (window.loggedin == true) {
-			chkbox = thisy[0].cells[3].firstChild
-			if (chkbox.checked) {
-				console.log('chkbox.checked')
-				checked_rows.push(pid)
-				$("#selection_status").fadeIn()
-				/*$("#addtocoll").fadeIn()*/
-				console.log('checked_rows', checked_rows)
-				$("#sel_count").html(' ' + checked_rows.length + ' ')
-			} else {
-				const index = checked_rows.indexOf(pid);
-				if (index > -1) {
-					checked_rows.splice(index, 1)
-					if (checked_rows.length == 0) {
-						$("#addtocoll").fadeOut()
-						$("#addtocoll_popup").hide()
-					}
-				}
-				console.log(pid + ' removed from checked_rows[]', checked_rows)
-			}
-		}
-	
-	});
-
-
-
 }

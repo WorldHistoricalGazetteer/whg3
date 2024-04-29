@@ -57,18 +57,25 @@
             </p>
           </div>
           <div class="col-sm-3" style="position: relative;">
-            {% if object.image_file %} <a href="#" class="pop">
-              <img id="active_img" class="img-responsive thumbnail float-end"
-                   src="/media/{{ object.image_file.name }}" width="220px"/>
-            </a> {% else %} <span>
-                      <i>image here</i>
-                  </span> {% endif %} </div>
+            {% if object.image_file %}
+				<img id="active_img" class="img-responsive thumbnail float-end"
+                   src="/media/{{ object.image_file.name }}"/>
+            {% else %}
+            	<span><i>image here</i></span>
+            {% endif %}
+          </div>
         </div>
         <div id="coll_detail">
           <table>
             <tr>
               <td><b>Keywords</b></td>
-              <td>{{ object.keywords|join:', ' }}</td>
+              <td>
+			    {% if object.keywords %}
+			        {{ object.keywords|join:', ' }}
+			    {% else %}
+			    	None
+			    {% endif %}
+              </td>
             </tr>
             {% if links|length > 0 %}
               <tr>
@@ -128,18 +135,7 @@
         <table id="placetable" class="table table-striped table-bordered small"
                style="width:100%"></table>
       </div>
-      <div id="detail" class="overlay right">
-        <div class="row">
-          <div class="col-sm-9">
-            <span id="anno_title" class="pub-anno-title"></span>
-            <div id="anno_body"></div>
-          </div>
-          <div id="" class="col-sm-3" style="position: relative;">
-            <img id="anno_img" class="img-dscoll thumbnail float-end"
-                 src="" width="100px"/>
-          </div>
-        </div>
-      </div>
+      <div id="detail" class="overlay right"></div>
       <div id="downloadModal" class="modal fade" tabindex="-1"
            aria-labelledby="downloadModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -204,22 +200,6 @@
           </div>
         </div>
       </div>
-      <div id="imageModal" class="modal fade" tabindex="-1"
-           role="dialog" aria-hidden="true">
-        <div class="modal-dialog d-flex modal-custom">
-          <div class="modal-content flex-shrink-1 mx-auto h-auto w-auto ">
-            <div class="modal-header">
-              <span id="header_text"></span>
-              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div class="modal-body">
-              <img src="" class="imagepreview" style="max-height: 600px;">
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
   <!-- pcoll_content -->
@@ -257,7 +237,6 @@
   <script type="text/javascript">
     const pageData = "{{ object.id }}";
     var visParameters = JSON.parse(document.getElementById('vis_parameters_data').innerHTML);
-    window.collimagepath = "{{ object.image_file.name }}"
     window.ds_list = [{
         ds_type: "collections",
         id: {{ object.id }},

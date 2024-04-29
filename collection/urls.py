@@ -53,6 +53,7 @@ urlpatterns = [
     path('update_sequence/', views.update_sequence, name='update-sequence'),
 
     path('add_places/', views.add_places, name="collection-add-places"),
+    path('add_collection_places/', views.add_collection_places, name="add-collection-places"),
     path('archive_traces/', views.archive_traces, name="collection-archive_traces"),
     # path('create_link/', views.create_link, name="collection-create-link"),
     path('remove_link/<int:id>/', views.remove_link, name="remove-link"),

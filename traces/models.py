@@ -43,6 +43,9 @@ class TraceAnnotation(models.Model):
     motivation = models.CharField(max_length=20, default='locating') # choices? locating, describing
     owner = models.ForeignKey(User, related_name='annotations', on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True, null=False, blank=True)
+    
+    # Flag to indicate whether the Place is to be treated as a surrogate for its CloseMatch family of Places  
+    include_matches = models.BooleanField(default=True)
 
     # flagged True when edit is made to initial 'blank'
     saved = models.BooleanField(default=False)

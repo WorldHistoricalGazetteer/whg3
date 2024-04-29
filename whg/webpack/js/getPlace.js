@@ -14,31 +14,27 @@ export function getPlaceBouncing(pid, cid, spinner_detail, callback) {
     const cidQueryParam = Number.isInteger(cid) ? `?cid=${cid}` : '';
     $.ajax({
         url: `/api/place/${pid}${cidQueryParam}`,
-    }).done(handlePlaceData);		
-
-	function handlePlaceData(data) {
-	    if (cidQueryParam=='') {
-	        $("#detail").html(parsePlace(data));
-	    } else {
-	        window.payload = data;
-	        $("#anno_title").html('<span class="larger text-danger"><b>' + data.title + '</b></span>');
-	        $("#anno_body").html(parseAnno(data));
-	        $("#anno_img").html(data.traces.image_file);
-	    }
-	    $('.toggle-truncate').toggleTruncate();
-	    if (spinner_detail) spinner_detail.stop();
-	
-	    if (typeof callback === 'function') {
-	        callback(data);
-	    }
-	}
+    }).done(data => {
+        if (cidQueryParam === '') {
+            parsePlace(data);
+        } else {
+            window.payload = data;
+            parseAnno(data);
+        }
+        $('#detail .toggle-truncate').toggleTruncate();
+        $('#detail img').enlarge();
+        if (spinner_detail) spinner_detail.stop();
+        if (typeof callback === 'function') {
+            callback(data);
+        }
+    });
 }
 
 function parsePlace(data) {
 	window.featdata = data
 	var descrip = '';
 
-	if (!!data.datasets && data.datasets.length > 0) {
+	if (!!window.ds_list[0]['ds_type'] && window.ds_list[0]['ds_type'] == 'collections'/* && !!data.datasets && data.datasets.length > 0*/) {
 		const dataset_links = data.datasets.map(ds => `<a href="/datasets/${ds.id}/places" target="_blank" data-bs-toggle="tooltip" data-bs-title="View <i>${ds.title}</i> in a new tab.">${ds.title} <i class="fas fa-external-link-alt linky"></i></a>`).join('; ')
 		descrip += `<p class="mb-0"><b>Dataset${data.datasets.length == 1 ? '' : 's'}</b>: ${dataset_links}.</p>`;
 	}
@@ -118,45 +114,45 @@ function parsePlace(data) {
 	if (!!data.minmax && data.minmax.length == 2 && (data.minmax[0] || data.minmax[1]) ) {
 		descrip += `<p><b>When</b>: earliest: ${data.minmax[0] ? data.minmax[0] : '?'}; latest: ${data.minmax[1] ? data.minmax[1] : '?'}</p>`;
 	}
-
-	return `<div><p><b>Title</b>: <span id="row_title" class="larger text-danger">${data.title}</span></p>${descrip}</div>`;
+	
+	$("#detail").html(`<div><p><b>Title</b>: <a href="/places/portal/${data.id}" target="_blank" data-bs-toggle="tooltip" title="View all WHG records for this place."><span id="row_title" class="larger text-danger">${data.title} <i class="fas fa-external-link-alt linky"></i></span></a></p>${descrip}</div>`);
 }
 
 // Traces (annotations)
 function parseAnno(data) {
-	let descrip = ''
+    
+	var $descrip = $("<div></div>");
+	$("#detail").empty().append($descrip);
 	
 	if (!!data.traces && data.traces.length > 0) {
 		data.traces.forEach(trace => {
 			const t = trace.fields;
+			$descrip.append(`
+				<p><b>Title</b>: 
+					<a href="${t.include_matches ? `/places/portal/${t.place}` : `/places/${t.place}/detail`}" target="_blank" data-bs-toggle="tooltip" title="View ${t.include_matches ? "all WHG records" : "details"} for this place.">
+						<span id="row_title" class="larger text-danger">${data.title} <i class="fas fa-external-link-alt linky"></i></span>
+					</a>
+				</p>`);
 			if (t.relation == '[""]' && t.note == null && t.start == null) {
-				descrip += '<i>none yet</i>';
+				$descrip.append('<i>none yet</i>');
 			} else {
 				if (t.relation) {
-					descrip += `<p class="mb-0"><b>Relation</b>: ${JSON.parse(t.relation)[0]}</p>`;
+					$descrip.append(`<p class="mb-0"><b>Relation</b>: ${JSON.parse(t.relation)[0]}</p>`);
 				}
 				if (t.note) {
-					descrip += `<p class="mb-0"><b>Notes</b>: <span class="toggle-truncate">${t.note}</span></p>`;
+					$descrip.append(`<p class="mb-0"><b>Notes</b>: <span class="toggle-truncate">${t.note}</span></p>`);
 				}
 				if (t.start) {
-					descrip += `<p class="mb-0"><b>Begin/End</b>: ${(t.start ?? "")}/${(t.end ?? '')}</p>`;
+					$descrip.append(`<p class="mb-0"><b>Begin/End</b>: ${(t.start ?? "")}/${(t.end ?? '')}</p>`);
 				}
 			}
 			let imgpath = t.image_file
-			if (imgpath != "") {
-				// display annotation image if any
-				$("#anno_img").attr('src', '/media/' + imgpath)
-			} else {
-				// trace has no image
-				$("#active_img").attr('src', `/media/${ window.collimagepath }`)
+			if (imgpath != "") { // display annotation image if any
+				$("#detail").prepend(`<img src="/media/${imgpath}" class="thumbnail">`);
 			}
 		});
 	}
 	else {
-		console.log('no trace for selected place')
-		// restore collection image if others have been viewed
-		$("#active_img").attr('src', `/media/${ window.collimagepath }`)		
+		console.log('no trace for selected place');		
 	}
-
-	return descrip
 }

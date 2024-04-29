@@ -5,7 +5,7 @@ User = get_user_model()
 from django.contrib.gis.db import models as geomodels
 from django.contrib.gis.db.models import Extent
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import JSONField
+from django.db.models import JSONField, Q
 from django.db import models
 
 # from datasets.models import Dataset
@@ -90,6 +90,16 @@ class Place(models.Model):
   @property
   def hashits_tgn(self):
     return self.hit_set.filter(authority='tgn').count()>0
+
+  @property
+  def matches(self):
+    close_matches = CloseMatch.objects.filter(
+        Q(place_a=self) | Q(place_b=self)
+    )
+    distinct_places = set([self] + [match.place_a for match in close_matches] + [match.place_b for match in close_matches])
+    # First in returned list is the Primary Place, determined by having the most links
+    matches = sorted(distinct_places, key=lambda place: (place.links.count(), place.id), reverse=True)
+    return matches
 
   @property
   def public(self):

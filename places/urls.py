@@ -14,7 +14,8 @@ urlpatterns = [
 
     # START new urls-> views (kg 2023-10-31)
     path('portal/', views.PlacePortalView.as_view(), name='place-portal'),
-    path('portal/<str:encoded_ids>/', views.PlacePortalView.as_view(), name='place-portal-permalink'),
+    path('portal/<int:pid>/', views.PlacePortalView.as_view(), name='place-portal-pid'),
+    path('portal/<str:encoded_ids>/', views.PlacePortalView.as_view(), name='place-portal-multipid'),
     path('<int:whg_id>/portal/', views.PlacePortalView.as_view(), name='place-portal-whg-id'),
 
     # added for sessions approach

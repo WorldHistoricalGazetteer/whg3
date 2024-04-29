@@ -281,6 +281,37 @@ def findPortalPlaces(whg_id):
     return ids
 
 """
+Fetch place ids sharing a whg_id for a given place id
+"""
+def findPortalPIDs(pid):
+    es = settings.ES_CONN
+    idx = 'whg'
+
+    try:
+        es_result = es.search(index=idx, query=esq_pid(pid))
+
+        hits = es_result.get('hits', {}).get('hits', [])
+        if hits:
+            source = hits[0].get('_source', {})
+            whg_id = source.get('whg_id')
+            relation = source.get('relation', {})
+            if not whg_id:
+                whg_id = relation.get('parent')
+
+            if whg_id:
+                shared_ids = findPortalPlaces(whg_id)
+                return shared_ids
+            else:
+                #print(f"No whg_id found for pid {pid}")
+                return []
+        else:
+            #print(f"No document found for pid {pid}")
+            return []
+    except Exception as e:
+        #print(f"Error finding shared pids for pid {pid}: {e}")
+        return []
+
+"""
 summarize a WHG hit for analysis
 """
 def profileHit(hit):
