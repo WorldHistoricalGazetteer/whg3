@@ -614,6 +614,15 @@ function renderResults(data, fromStorage = false) {
 	    </span>`;
 
 		if (result.variants && result.variants.length > 0) {
+			// Sort variants so that strings with ASCII characters precede those with non-ASCII
+			result.variants.sort((a, b) => {
+					const aAscii = /^[\x00-\x7F]/.test(a);
+					const bAscii = /^[\x00-\x7F]/.test(b);
+					if (aAscii === bAscii) return a.localeCompare(b);
+					else if (aAscii && !bAscii) return -1;
+					else return 1;
+			});
+
 			const threshold = 12;
 			const limitedVariants = result.variants.slice(0, threshold).join(', ');
 			const allVariants = result.variants.join(', ');
