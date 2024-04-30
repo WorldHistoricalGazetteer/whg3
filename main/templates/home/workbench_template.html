@@ -8,11 +8,31 @@
 
 {% block extra_head %}
 <link href="{% static 'webpack/workbench.bundle.css' %}" rel="stylesheet"/>
-  <style>@media screen and (max-width: 1200px) {
+<style>
+@media screen and (max-width: 1200px) {
   .hide-on-narrow {
     display: none;
   }
-}</style>
+}
+.builder-list {
+  list-style-type: lower-alpha !important;
+  font-size: 0.9rem !important;
+  padding-left: 1.1rem !important;
+  color: slategray;
+}
+.btn-sm {
+  font-family: Raleway, san-serif !important;
+  font-weight: normal;
+}
+.btn-extra-sm {
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.675rem !important;
+  line-height: 1.5 !important;
+  border-radius: 0.2rem !important;
+  font-family: Raleway, san-serif !important;
+  font-weight: normal !important;
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -21,69 +41,120 @@
     <div id="wb_title" class="col-12 fs-2 text-center">
       <span style="vertical-align: text-bottom;">
         <img src="{% static 'images/noun-workbench-6022067.svg' %}" class="whg-icon" height="40"/></span>
-      Gazetteer Workbench
+      Gazetteer Builder
     </div>
-    <div id="wb_blurb" class="col-12 fs-5 text-center">
-      Four pathways for using WHG tools and services to augment and publish historical place data
+    <div id="wb_blurb" class="col-12 fs-6 text-center">
+      <p class="mb-1">WHG offers four pathways for using its tools and services <br/>to augment and publish historical place data</p>
     </div>
   </div>
   <div id="wb_columns" class="row">
     <div class="col-3 full-height workbench-column">
       <div class="workbench-column-inner">
         <div class="content-group">
-          <span class="path-number">1
+          <span class="path-number d-block bg-lightgrey ps-1">1
+          <span class="help-matches float-end me-2" data-id="wb_augment">
+            <a class="btn btn-sm btn-outline-success fw-normal">Learn more</a>
           </span>
-          <p>Augment your place records by discovering missing coordinate locations
-            (geocoding) and adding name variants.</p>
-          <p><img src=""/>image</p>
-        </div>
-        <div class="bottom-button">
-          <span class="help-matches" data-id="wb_augment">
-            <a class="btn btn-sm btn-outline-primary">Learn more</a>
           </span>
+          <p class="ps-1 mb-1">Augment your place records by discovering missing coordinate locations (geocoding) and adding name variants.</p>
+            <ol class="builder-list">
+              <li>Create a place data file</li>
+              <li>Upload it to your private workspace</li>
+              <li>Reconcile your place records with Wikidata and GeoNames</li>
+              <li>Download the augmented data for offline use</li>
+              <li>Optionally publish the dataset (see <b>Pathway 2</b>.)</li>
+            </ol>
+{#          <p><img src=""/>image instead?</p>#}
         </div>
+{#        <div class="bottom-button">#}
+{#          <span class="help-matches" data-id="wb_augment">#}
+{#            <a class="btn btn-sm btn-outline-primary">Learn more</a>#}
+{#          </span>#}
+{#        </div>#}
       </div>
     </div>
     <div class="col-3 full-height workbench-column">
       <div class="workbench-column-inner">
         <div class="content-group">
-        <span class="path-number">2</span>
-        <p>Publish your dataset as a gazetteer resource in WHG</p>
-        <p><img src=""/>image</p>
-        </div>
-        <div class="bottom-button">
-          <span class="help-matches" data-id="wb_dataset">
-            <a class="btn btn-sm btn-outline-primary">Learn more</a>
+        <span class="path-number d-block bg-lightgrey ps-1">2
+          <span class="help-matches float-end me-2" data-id="wb_dataset">
+            <a class="btn btn-sm btn-outline-success fw-normal">Learn more</a>
           </span>
+        </span>
+          <p class="ps-1 mb-1">Publish a single dataset built in <b>Pathway 1</b> as a gazetteer resource in WHG</p>
+          <ol class="builder-list">
+            <li>Add metadata, an image, and essay to your
+              augmented dataset</li>
+            <li>Notify WHG editors you wish to publish it</li>
+            <li>Once accepted, its public presentation will be visible to the public,
+            and its place records accessible in WHG's search, browse, and
+              API features</li>
+            <li>A further step of linking your records with those of other datasets
+              in the WHG index is strongly encouraged!</li>
+          </ol>
+{#          <p><img src=""/>image instead?</p>#}
         </div>
+{#        <div class="bottom-button">#}
+{#          <span class="help-matches" data-id="wb_dataset">#}
+{#            <a class="btn btn-sm btn-outline-primary">Learn more</a>#}
+{#          </span>#}
+{#        </div>#}
       </div>
     </div>
     <div class="col-3 full-height workbench-column">
       <div class="workbench-column-inner">
         <div class="content-group">
-        <span class="path-number">3</span>
-        <p>Assemble an historical gazetteer from multiple datasets published in WHG</p>
-        <p><img src=""/>image</p>
-        </div>
-        <div class="bottom-button">
-          <span class="help-matches" data-id="wb_dscoll">
-            <a class="btn btn-sm btn-outline-primary">Learn more</a>
+        <span class="path-number d-block bg-lightgrey ps-1">3
+          <span class="help-matches float-end me-2" data-id="wb_dscoll">
+            <a class="btn btn-sm btn-outline-success fw-normal">Learn more</a>
           </span>
+        </span>
+        <p class="ps-1 mb-1">Assemble an historical gazetteer from multiple datasets
+          created and published in <b>Pathways 1 and 2</b>.</p>
+          <ol class="builder-list">
+            <li>Create a new, empty <b>Dataset Collection</b></li>
+            <li>Add published datasets to it, one-by-one. These can be your own
+              or those of collaborators on the collection.</li>
+            <li>Records for closely matched places between datasets
+            will appear linked in the collection</li>
+            <li>Complete metadata, and add an image and essay to the collection</li>
+          </ol>
+{#        <p><img src=""/>image instead?</p>#}
         </div>
+{#        <div class="bottom-button">#}
+{#          <span class="help-matches" data-id="wb_dscoll">#}
+{#            <a class="btn btn-sm btn-outline-primary">Learn more</a>#}
+{#          </span>#}
+{#        </div>#}
       </div>
     </div>
     <div class="col-3 full-height workbench-column">
       <div class="workbench-column-inner">
         <div class="content-group">
-        <span class="path-number">4</span>
-        <p>Author and publish a thematic annotated <i>place collection</i></p>
-        <p><img src=""/>image</p>
+        <span class="path-number d-block bg-lightgrey ps-1">4
+          <span class="help-matches float-end me-2" data-id="wb_pcoll">
+            <a class="btn btn-sm btn-outline-success fw-normal">Learn more</a>
+          </span>
+        </span>
+        <p class="ps-1 mb-1">Author and publish a thematic annotated <i>place collection</i></p>
+        <ol class="builder-list">
+          <li>Create a new, empty <b>Place Collection</b></li>
+          <li>Search for and add places to your collection</li>
+          <li>Optionally, create a new dataset and add all its places at once</li>
+          <li>Annotate each place record with a note, time information, custom
+          keywords</li>
+          <li>Add metadata, external links, and an essay&ndash;then request publication</li>
+          <li>Once accepted, your collection will be visible to the public</li>
+        </ol>
+{#        <p><img src=""/>image instead?</p>#}
         </div>
+        {% comment %}
         <div class="bottom-button">
           <span class="help-matches" data-id="wb_pcoll">
             <a class="btn btn-sm btn-outline-primary">Learn more</a>
           </span>
         </div>
+        {% endcomment %}
       </div>
     </div>
     <div class="selector py-3">

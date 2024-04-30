@@ -21,7 +21,7 @@ export function initialiseCarousels(galleries, carouselMetadata, startCarousels,
 	    }
 	    const galleryLink = url == null ?
 	        '' :
-	        `<span class="float-end small"><a class="linkylite" href="${url}">view all</a></span>`;
+	        `<span class="float-end small"><a class="linky" href="${url}">view all</a></span>`;
 	    const carousel = $(
 	        `<div id="${type.toLowerCase()}Carousel" class="carousel slide carousel-fade flex-grow-1"></div>`); // Added flex-grow-1 class
 	    const carouselInner = $('<div class="carousel-inner"></div>');

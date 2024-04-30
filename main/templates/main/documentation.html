@@ -1,4 +1,4 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% load static %}
 
 {% load mathfilters %}
@@ -56,7 +56,7 @@
           <h2 class="accordion-header" id="headingWorkbench">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                     data-bs-target="#collapseWorkbench" aria-expanded="false" aria-controls="collapseWorkbench">
-              Workbench Pathways
+              Builder Pathways
             </button>
           </h2>
           <div id="collapseWorkbench" class="accordion-collapse collapse" aria-labelledby="headingWorkbench"
@@ -131,13 +131,14 @@
     <!-- Main Content -->
     <div id="docs_content" class="col-md-9 col-8 content-area">
       <!--Introduction Group -->
-      <section id="introduction">
-        <h4>Introduction</h4>
-        <hr/>
-        <h5>Vision and mission</h5>
-        <p>{% lorem 2 %}</p>
-      </section>
+{#      <section id="introduction">#}
+{#        <h4>Introduction</h4>#}
+{#        <hr/>#}
+{#        <h5>Vision and mission</h5>#}
+{#        <p>{% lorem 2 %}</p>#}
+{#      </section>#}
       <section id="overview">
+        <h4>Introducing the WHG</h4>
         <h5>Overview</h5>
         <p>Overview of WHG, its purpose, and main features...</p>
                 <p>{% lorem 2 %}</p>
@@ -149,25 +150,25 @@
       </section>
       <!-- Workbench Group -->
       <section id="augment">
-        <h4>Workbench Pathways</h4>
+        <h4>Builder Pathways</h4>
         <hr/>
         <h5>Upload and augment place data</h5>
-        <p>...</p>
+        <p></p>
         <p>{% lorem 2 %}</p>
       </section>
       <section id="publish_ds">
         <h5>Publish your dataset as a gazetteer resource</h5>
-        <p>...</p>
+        <p></p>
         <p>{% lorem 2 %}</p>
       </section>
       <section id="dscoll">
         <h5>Assemble a gazetteer from multiple datasets</h5>
-        <p>...</p>
+        <p></p>
         <p>{% lorem 2 %}</p>
       </section>
       <section id="pcoll">
         <h5>Author a thematic place collection</h5>
-        <p>...</p>
+        <p></p>
         <p>{% lorem 2 %}</p>
       </section>
       <!-- Site Sections Group -->
@@ -175,22 +176,22 @@
         <h4>Site Sections</h4>
         <hr/>
         <h5>Home page</h5>
-        <p>...</p>
+        <p></p>
         <p>{% lorem 2 %}</p>
       </section>
       <section id="search">
         <h5>Search in WHG</h5>
-        <p>...</p>
+        <p></p>
         <p>{% lorem 2 %}</p>
       </section>
       <section id="portal">
         <h5>Place Portals</h5>
-        <p>...</p>
+        <p></p>
         <p>{% lorem 2 %}</p>
       </section>
       <section id="gallery">
         <h5>Browse data publications</h5>
-        <p>...</p>
+        <p></p>
         <p>{% lorem 2 %}</p>
       </section>
       <!-- Tutorials Group -->
@@ -198,27 +199,27 @@
         <h4>Guides and Tutorials</h4>
         <hr/>
         <h5>Workflow Pathways</h5>
-        <p>...</p>
+        <p></p>
         <p>{% lorem 2 %}</p>
       </section>
       <section id="lpf">
         <h5>Linked Places format</h5>
-        <p>...</p>
+        <p></p>
         <p>{% lorem 2 %}</p>
       </section>
       <section id="prepdata">
         <h5>Preparing data for upload</h5>
-        <p>...</p>
+        <p></p>
         <p>{% lorem 2 %}</p>
       </section>
       <section id="pcolls">
         <h5>Create and publish a Place Collection</h5>
-        <p>...</p>
+        <p></p>
         <p>{% lorem 2 %}</p>
       </section>
       <section id="dscolls">
         <h5>Create and publish a Dataset Collection</h5>
-        <p>...</p>
+        <p></p>
         <p>{% lorem 2 %}</p>
         <p>{% lorem 8 %}</p>
       </section>

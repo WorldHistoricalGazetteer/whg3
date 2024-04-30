@@ -19,108 +19,124 @@
 {% block content %}
 
   <div class="container mt-1" style="min-height: calc(100vh - 210px);">
-  
-	<div class="w-100 text-center">
-	  <div class="row mx-auto mb-2">
-	    <div class="d-flex mb-2 mb-lg-0 align-items-center justify-content-center">
-	      <img src="{% static 'images/whg_logo.svg' %}" class="logo_responsive d-none d-lg-inline-block align-bottom me-2" width="80" alt=""/>
-	      <h1 class="title_responsive d-lg-inline-block mb-0">World Historical Gazetteer</h1>
-	    </div>
-	    <p id="tagline_responsive" class="mb-0 mb-lg-2">linking knowledge about the past via place</p>
-	  </div>
-	</div>
-	
-	<div class="row mx-0 h-100">
-		<div class="col-12 col-lg-3 mx-0 p-0 full-height-lg">
-			<div class="border p-2 mb-2">
-          		<p class="mb-0">The WHG is a collaborative open platform gathering information about historical place, and providing a
-	            collection of content and services that permit world historians, their students, and the general public to
-	            do spatial and temporal reasoning and visualization at global and trans-regional scales.</p>
-	            <span class="d-none d-lg-block">
+
+    <div class="w-100 text-center">
+      <div class="row mx-auto mb-2">
+        <div class="d-flex mb-2 mb-lg-0 align-items-center justify-content-center">
+          <img src="{% static 'images/whg_logo.svg' %}"
+               class="logo_responsive d-none d-lg-inline-block align-bottom me-2" width="80" alt=""/>
+          <h1 class="title_responsive d-lg-inline-block mb-0">World Historical Gazetteer</h1>
+        </div>
+        <p id="tagline_responsive" class="mb-0 mb-lg-2">linking knowledge about the past via place</p>
+      </div>
+    </div>
+
+    <div class="row mx-0 h-100">
+      <div id="home_left" class="col-12 col-lg-3 mx-0 p-0 full-height-lg">
+        <div class="border p-2 mb-2">
+          <p class="mb-2">The WHG project is empowering discovery by connecting place names across time and language. </p>
+          <p class="mb-0">This is a collaborative open platform gathering information about
+            historical place, and providing a collection of content and services that permit
+            world historians, their students, and the general public to
+            do spatial and temporal reasoning and visualization at global and trans-regional scales.</p>
+
+          <span class="d-none d-lg-block">
 		            <p class="bg-light mb-0 mt-1"><b>What is a gazetteer?</b></p>
-		            <p>An index of place information. People have made them for a long time. They do it because place names are complicated and places are cool. <a href="#">more...</a></p>
+		            <p>A gazetteer is a directory of named places. See:
+                  <a href="https://programminghistorian.org/en/lessons/space-place-gazetteers"
+                     target="_blank">How and why to build a gazetteer
+                  <i class="fas fa-external-link-alt small"></i></a>
+                </p>
 	            </span>
-	            {% if not user.is_authenticated %}
-	              <p my-0><a href="{% url 'accounts:register' %}">Register to get started</a></p>
-	            {% endif %}
-			</div>
-		</div>
-		
-		<div class="col-12 col-lg-6 mx-0 p-0">
-			<div id="search_bar" class="mx-0 mx-lg-2 mb-2">
-			    <div id="input" class="input-group mx-auto">
-			        <!-- Label only for Large Screens -->
-			        <label class="input-group-text" for="search_mode">Search</label>
-			        
-			        <!-- Search Input -->
-			        <input id="search_input" class="form-control typeahead" data-provide="typeahead" type="text" placeholder="Enter place name" aria-label="Search" aria-describedby="search-addon" autocomplete="off" spellcheck="false">
-			          
-			        <!-- Search Button -->
-			        <button id="initiate_search" data-title="Initiate search|Cannot search without a place name" class="btn btn-outline-secondary btn-success" type="button"><i class="fas fa-search"></i></button>
-			    </div>
-			</div>		
-			
-			<div class="mx-0 mx-lg-2 mb-2 mb-lg-0 map-container">
-				<div id="map"></div>
-				<div id="carousel-outer-container" class="mx-0 h-40">	
-			        <!-- Populated dynamically in JavaScript -->
-				</div>
-			</div>
-		</div>
-		
-		<div class="col-12 col-lg-3 p-0 mx-0 p-0 full-height-lg">
+          {% if not user.is_authenticated %}
+            <p my-0><a href="{% url 'accounts:register' %}">Register to get started</a></p>
+          {% endif %}
+        </div>
+      </div>
 
-			<div class="border p-2 mb-2 mb-lg-2 small" style="height: 100px">
-	            <p class="mb-0 red-head">ANNOUNCEMENTS</p>
-	            <div id="announcement-container" class="mb-0">
-	                {% for announcement in announcements|slice:":3" %}
-	                    <div class="announcement" {% if not forloop.first %}style="display: none;"{% endif %}>
-	                        <a href="{{ announcement.link }}" target="_blank">
-	                          <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
-	                        </a>
-	                        <span class="ms-2">{{ announcement.content }}</span>
-	                    </div>
-	                {% endfor %}
-	            </div>
-			</div>
+      <div id="home_center" class="col-12 col-lg-6 mx-0 p-0">
+        <div id="search_bar" class="mx-0 mx-lg-2 mb-2">
+          <div id="input" class="input-group mx-auto">
+            <!-- Label only for Large Screens -->
+            <label class="input-group-text" for="search_mode">Search</label>
 
-			 <div class="border p-2 mb-2 ms-0 home-button">
-			   <div>
-			     <div class="home-icon-row">
-			       <img src="{% static 'images/001-binoculars.png' %}" class="" height=40 width=40 alt=""/>
-			     </div>
-			     <h5><span class="home-button-hilite">Search and browse</span> <span class="red-head">
-			{{ count }}</span> published place attestations</h5>
-			   </div>
-			   <a href="{% url 'search-page' %}">
-			     <span class="link-spanner"></span>
-			   </a>
-			 </div>
+            <!-- Search Input -->
+            <input id="search_input" class="form-control typeahead" data-provide="typeahead" type="text"
+                   placeholder="Enter place name" aria-label="Search" aria-describedby="search-addon" autocomplete="off"
+                   spellcheck="false">
 
-			 <div class="border p-2 mb-2 ms-0 home-button">
-			   <div>
-			     <div class="home-icon-row">
-			       <img src="{% static 'images/noun-workbench-6022067.svg'%}" class="" height=42 width=42 alt=""/></div>
-			     <h5><span class="home-button-hilite">Gazetteer Workbench</span><br/>assemble and publish custom collections</h5>
-			   </div>
-			   <a href="{% url 'workbench' %}">
-			     <span class="link-spanner"></span>
-			   </a>
-			 </div>
+            <!-- Search Button -->
+            <button id="initiate_search" data-title="Initiate search|Cannot search without a place name"
+                    class="btn btn-outline-secondary btn-success" type="button"><i class="fas fa-search"></i></button>
+          </div>
+        </div>
 
-			 <div class="border p-2 mb-0 ms-0 home-button">
-			   <div>
-			     <div class="home-icon-row">
-			       <img src="{% static 'images/011-teaching.png' %}" class="" height=42 width=42 alt=""/>
-			     </div>
-			     <h5><span class="home-button-hilite">Teaching</span> with WHG data</h5>
-			   </div>
-			   <a href="{% url 'teaching' %}">
-			     <span class="link-spanner"></span>
-			   </a>
-			 </div>
-		</div>
-	</div>
+        <div class="mx-0 mx-lg-2 mb-2 mb-lg-0 map-container">
+          <div id="map"></div>
+          <div id="carousel-outer-container" class="mx-0 h-40">
+            <!-- Populated dynamically in JavaScript -->
+          </div>
+        </div>
+      </div>
+
+      <div id="home_right" class="col-12 col-lg-3 p-0 mx-0 p-0 full-height-lg">
+
+        <div class="border p-2 mb-2 mb-lg-2 small" style="height: 100px">
+          <p class="mb-0 red-head">ANNOUNCEMENTS</p>
+          <div id="announcement-container" class="mb-0">
+            {% for announcement in announcements|slice:":3" %}
+              <div class="announcement" {% if not forloop.first %}style="display: none;"{% endif %}>
+                <a href="{{ announcement.link }}" target="_blank">
+                  <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
+                </a>
+                <span class="ms-2">{{ announcement.content }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="border p-2 mb-2 ms-0 home-button">
+          <div>
+            <div class="home-icon-row">
+              <img src="{% static 'images/001-binoculars.png' %}" class="" height=40 width=40 alt=""/>
+            </div>
+            <h5>
+              <span class="home-button-hilite">Search and browse</span>
+              <span class="red-head">2,159,673
+			        {% comment %}{{ count }}{% endcomment %}
+              </span> places</h5>
+          </div>
+          <a href="{% url 'search-page' %}">
+            <span class="link-spanner"></span>
+          </a>
+        </div>
+
+        <div class="border p-2 mb-2 ms-0 home-button">
+            <div class="home-icon-row">
+              <img src="{% static 'images/noun-workbench-6022067.svg' %}"
+                   class="" height=42 width=42 alt=""/>
+            </div>
+            <h5><span class="home-button-hilite">Build and publish </span>
+              collections of places
+            </h5>
+          <a href="{% url 'workbench' %}">
+            <span class="link-spanner"></span>
+          </a>
+        </div>
+
+        <div class="border p-2 mb-0 ms-0 home-button">
+          <div>
+            <div class="home-icon-row">
+              <img src="{% static 'images/011-teaching.png' %}" class="" height=42 width=42 alt=""/>
+            </div>
+            <h5><span class="home-button-hilite">Teach</span> about places</h5>
+          </div>
+          <a href="{% url 'teaching' %}">
+            <span class="link-spanner"></span>
+          </a>
+        </div>
+      </div>
+    </div>
     <!-- Modal -->
     <div class="modal fade" id="homeModal" tabindex="-1"
          aria-labelledby="homeModalLabel" aria-hidden="true">
@@ -143,8 +159,8 @@
   <script type="text/javascript">
     var eswhg = "{{ es_whg|escapejs }}";
     let galleries = [
-        {#['Contributed Data', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"]#}
-        ['Selected Data Publications', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"]
+      {#['Contributed Data', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"]#}
+      ['Selected Data Publications', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"],
     ];
     let carouselMetadata = {{ carousel_metadata|safe }};
     let startCarousels = true; // Determines whether galleries are to be auto-cycled

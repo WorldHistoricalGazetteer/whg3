@@ -68,9 +68,28 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     font-size: 0.9rem;
     min-height: 360px;
 }
+#home_left p {
+    font-size: 0.95rem !important;
+}
 .home-button {
     position: relative;
     font-family: "Archivo Black", sans-serif;
+    border-radius: 6px; /* Add rounded corners */
+    box-shadow: 0px 0px 6px rgba(0, 0, 0, 0.1); /* Add box shadow */
+    transition: all 0.3s ease; /* Add transition for smooth hover effect */
+}
+
+.home-button:hover {
+    box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1); /* Increase box shadow on hover */
+    transform: scale(1.01); /* Slightly increase size on hover */
+}
+
+/*.home-button {*/
+/*    position: relative;*/
+/*    font-family: "Archivo Black", sans-serif;*/
+/*}*/
+.home-button h5 {
+    font-size: 1.1rem !important;
 }
 .ds-header {
     background-color: gainsboro;
