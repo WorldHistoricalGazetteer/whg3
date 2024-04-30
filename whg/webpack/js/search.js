@@ -344,6 +344,7 @@ Promise.all([
 
 
 	var referringPage = document.referrer;
+	console.log('Referring page:', referringPage);
 	if (referringPage) { // If arriving from `portal` or `home` pages, load and render any saved search+results
 		if (referringPage.includes('/') || referringPage.includes('portal')) {
 			const storedResults = localStorage.getItem('last_search'); // Includes both `.parameters` and `.suggestions` objects
@@ -604,9 +605,9 @@ function renderResults(data, fromStorage = false) {
 		// Aberaeron (in 'pub' and 'whg') will have two cards, one for each index
 		let html = `<div class="result ${resultIdx}-result">
 	    <span>
-	      <span class="red-head">${result.title}</span> 
-	      <span class="float-end small">(${resultIdx === 'pub' ? 'unlinked record' : (count > 1 ?
-            `${count} linked records <i class="fas fa-link"></i>` : 'unlinked record')})
+	      <span class="red-head">${result.title}</span>
+	      <span class="float-end small">${resultIdx === 'pub' ? '' : (count > 1 ?
+            `${count} linked records <i class="fas fa-link"></i>` : '')}
 	          <a href="#" class="ms-2 portal-link" data-whg-id="${whg_id}" data-pid="${pid}" data-children="${encodedChildren}">
 						${resultIdx === 'whg' ? 'place portal' : 'place detail'}</a>
 	      </span>

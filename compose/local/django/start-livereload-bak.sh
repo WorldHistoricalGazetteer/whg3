@@ -9,10 +9,9 @@ echo "Log directory and file created for livereload."
 #python manage.py livereload --host=livereload --port=35729 --ignore-template-dirs --ignore-static-dirs /app/whg/static/css/ /app/whg/static/js/ /app/whg/static/webpack/ /app/datasets/templates/datasets/
 
 python manage.py livereload --host=livereload --port=35729 \
-  /app/whg/webpack/*/ \
-  /app/datasets/templates/datasets/ /app/areas/templates/areas/ \
-  /app/places/templates/places/ /app/elastic/templates/elastic/  \
-  /app/search/templates/search/  /app/collection/templates/collection/ \
-  /app/resources/templates/resources/ /app/traces/templates/traces/ \
-  /app/main/templates/*/
-
+  /app/whg/static/css/ /app/whg/static/js/ /app/whg/static/webpack/ \
+  /app/datasets/templates/datasets/  /app/datasets/templates/datasets/ \
+  /app/areas/templates/areas/  /app/places/templates/places/  \
+  /app/main/templates/lists/  /app/main/templates/help/ \
+  /app/main/templates/main/  /app/main/templates/teaching/ \
+  /app/main/templates/tutorials/ /app/traces/templates/traces/ 

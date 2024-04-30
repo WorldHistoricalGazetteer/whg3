@@ -30,7 +30,8 @@
 }
 
 #search_right_top {
-    min-height: 400px;
+    /*min-height: 400px;*/
+    min-height: 300px;
 }
 
 #input {
@@ -92,7 +93,7 @@
     background-color: antiquewhite;
 }
 #search_content #search_results {
-    border: 1px gainsboro solid;
+    /*border: 1px gainsboro solid;*/
     height: fit-content;
     /*overflow-y: scroll;*/
 }
@@ -114,7 +115,7 @@
 }
 
 .whg-result {
-  background-color: #f0f7f9;
+  /*background-color: #f0f7f9;*/
 }
 
 .pub-result {
@@ -141,10 +142,12 @@
 }
 
 #result_container {
-    height: 200px;
+    /*height: 200px;*/
+    max-height: 300px;
     overflow-y: auto;
     flex-grow: 1;
 }
+#result_container p { font-size: small;}
 
 .result {
     border: 1px solid #ccc;
@@ -177,18 +180,19 @@
     font-size: 0.8rem;
     float: left;
     padding: 0.1rem 0.2rem;
-    border: 1px solid #ccc;
+    border: 1px solid #eee;
     border-radius: 5px;
 }
 .result:hover {
-    background-color: lightyellow;
+    background-color: #fffff2;
     cursor: pointer;
 }
 
 .result.selected {
-    border: 1px solid #bbb;
-    font-weight: bold;
+    border: 1px solid #c38c8c;
     box-shadow: gainsboro 2px 2px 2px;
+    background-color: #fffff2;
+    /*font-weight: bold;*/
     /*border: 1px solid #9d9d9d;*/
     /*background-color: lightyellow;*/
 }

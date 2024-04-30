@@ -56,7 +56,10 @@
 	                 data-content="" tabindex="0" data-trigger="focus"><i class="fas fa-question-circle linky"></i></a>
 	            </span>
 	        </p>
-	        <div id="adv_checkboxes" class="small mt-2 ps-1">
+	        <div class="ps-1 border-secondary small fw-lighter fst-italic">
+            <p class="mb-0">Select or clear place type categories to filter initial results</p>
+          </div>
+	        <div id="adv_checkboxes" class="small mt-1 ps-1">
 	          <script>
 	          	  const adv_filters = [ // Dynamic construction from array offers greater development flexibility
 	          		  ["A", "Administrative entities"],
@@ -69,7 +72,9 @@
 	          	  ]    
 	          </script>
 	        </div>
-	        
+{#	        <div class="mt-2 ps-1 border-secondary small fst-italic">#}
+{#            <p>Select or de-select place type categories to filter initial results</p>#}
+{#          </div>#}
 			<div class="mt-3 mx-0">
 			  <p class="mb-0"><span class="categories ms-1">spatial filter</span>
 			  <div id="spatial_selector" class="input-group">
@@ -141,14 +146,15 @@
       	</div>
 		<div id="result_container" class="row p-1">
         	<div id="initial_results" class="bg-light p-2">
-				<h6>Search in WHG</h6>
-				<p>You are searching all place records published in WHG.
-	            Some results are sets of attestations linked in our "<b>union index</b>";
-	            others have yet to be linked. Good luck understanding that!</p>
-        	</div>
-	        <div id="no_results" class="bg-light p-2">No results - please modify your search terms and options.</div>
-	        <div id="no_filtered_results" class="bg-light p-2">No filtered results - please adjust your filter selections.</div>
-	        <div id="search_results" class="col-12 bg-light p-2"></div>
+				<h6 class="strong">Search in WHG</h6>
+				<p>Many places have the same name. If your search returns multiple results, browse them to
+          discover what you are looking for. Places that have more linked records and name variants will
+          appear at the top of the list. You can also then filter results by modern country or place type.</p>
+        <p>Results appearing in green boxes are from published dataets, but not yet linked in our union index.</p>
+        </div>
+        <div id="no_results" class="bg-light p-2">No results - please modify your search terms and options.</div>
+        <div id="no_filtered_results" class="bg-light p-2">No filtered results - please adjust your filter selections.</div>
+        <div id="search_results" class="col-12 p-1"></div>
 		</div>
     </div>
 </div>
