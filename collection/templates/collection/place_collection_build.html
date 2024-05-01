@@ -1,154 +1,11 @@
 <!-- collection/place_collection_builder.html -->
 {% extends "main/base_webpack.html" %}
-{% load leaflet_tags %}
 
 {% load static %}
 {% load dataset_extras %}
-{% block title %}
-  <title>WHG::Create/Update Collection</title>
-{% endblock %}
+{% block title %}<title>WHG::Create/Update Collection</title>{% endblock %}
 {% block extra_head %}
-  <link href="{% static 'webpack/builders.bundle.css' %}" rel="stylesheet" />
-  <style>
-    body {
-      font-family: Raleway, san-serif;
-    }
-    .fileinput {
-      font-size: small;
-    }
-
-    .form-group input[type="text"] {
-      width: 100%;
-    }
-
-    .textarea {
-      width: 100%;
-    }
-
-    label {
-      font-weight: bold;
-    }
-
-    #linkform_popup {
-      position: absolute;
-      background-color: #ededed;
-      border: 1px solid #bbb;
-      box-shadow: #ededed 2px 2px;
-      border-radius: 6px;
-      padding: 8px 5px;
-      height: 150px;
-      width: 260px;
-      top: 265px;
-      left: 370px;
-      z-index: 1000;
-      display: none;
-    }
-
-    .coll-col {
-      border-right: 1px dashed lightgray;;
-    }
-
-    #coll_place_detail {
-      border-bottom: dashed 1px grey;
-      padding-bottom: .3rem;
-    {#background-color: aliceblue;#}
-    }
-
-    #coll_place_detail {
-      min-height: 80px;
-    }
-
-    #coll_place_detail p {
-      margin-bottom: 0
-    }
-
-    #coll_right_anno, #coll_right_intro {
-    {#margin-top:42px;#}
-    }
-
-    #anno_div table td {
-      padding-top: 3px;
-      padding-bottom: 3px;
-    }
-
-    #anno_div input {
-      height: 1.5rem;
-      font-size: .8rem;
-    }
-
-    {##annotator {background-color: #fafafa;}#}
-    .form-group {
-      margin-bottom: 4px !important;
-    }
-
-    .form-group label {
-      margin-bottom: 0 !important;
-    }
-
-    .col-place-card {
-      border: #c3c3c3 1px dashed;
-      margin-bottom: 3px;
-      background-color: #fafafa;
-      padding-left: 2px;
-      cursor: pointer;
-    }
-
-    .card-highlight {
-      border: 1px solid #993333;
-      background-color: lightyellow;
-    }
-
-    #coll_placelist, #coll_dslist {
-      padding: 3px;
-    {#position: absolute;#} max-height: 100%;
-      min-height: auto;
-    {#max-width: 50%;#} {#width: 100%;#} overflow-y: auto;
-    }
-
-    #builder_content {
-    {#position:absolute;#} {#width: 95%;#} height: 92%;
-      border-left: 1px solid gainsboro;
-      border-right: 1px solid gainsboro;
-      border-bottom: 1px solid gainsboro;
-    {#background-color: #fdf5e6;#} {#max-height: 92%;#}
-    }
-
-    #coll_tabs {
-    {#margin-right: 2px;#} background-color: #fdf5e6;
-      border-top: 1px solid gainsboro;
-      border-left: 1px solid gainsboro;
-      border-right: 1px solid gainsboro;
-      border-radius: 8px 8px 0 0;
-    }
-
-    .custom-button {
-      background-color: #dcdcdc;
-      color: #333;
-      line-height: 1rem;
-      font-size: small;
-    }
-
-    #linkform_table tr td {
-      padding: 3px;
-    }
-
-    #status_info {
-      border: 1px solid #bbb;
-      border-radius: 3px;
-      padding: 3px;
-    }
-
-    #status_info h5 {
-      padding: 2px;
-      margin-bottom: 0;
-      background-color: beige;
-    }
-    #getting_started, #vis_options {
-      padding: .5rem;
-      border: 1px solid #efefef;
-      border-radius: 3px;
-    }
-  </style>
+  <link href="{% static 'webpack/builders-collection-place.bundle.css' %}" rel="stylesheet" />
 {% endblock %}
 
 {% block content %}
@@ -209,7 +66,7 @@
           <form id="collection_form" method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="row">
-              <div class="col-sm-5 small">
+              <div class="col-sm-7 small">
                 {% if action == 'create' %}
                   <input type="hidden" name="owner" value='{{ user.id }}'/>
                 {% else %}
@@ -286,9 +143,12 @@
 {#                  {% endif %}#}
 {#                </div>#}
               </div> <!-- col-sm-5 -->
-              <div class="col-sm-4">
+              <div class="col-sm-5">
                 {% if action == 'update' %}
-                  <div class="form-group mb-2">
+                  <div id="image_selector" class="form-group mb-2">
+	              	{% if object.image_file %}
+	                	<img src="/media/{{ object.image_file.name }}" class="thumbnail float-end"/>
+	              	{% endif %}
                     <label for="Image">Collection image <i class="small">
                       (800px wide or less)</i></label><br/>
                     {% if action == 'create' %} {# create, no image yet #}
@@ -297,11 +157,11 @@
                       <img src="{% static 'images/noun-photo.svg' %}" width="16"/>
                       <a href="/media/{{ form.image_file.value }}" class="small">
                         {{ object.image_file }}</a>
-                      (<a href="javascript:showChooser('img')" class="small">change</a>)
+                      (<a class="show-chooser small" href="#">change</a>)
                     {% else %} {# update and there's no image yet #}
                       <span id="img_chooser_update">{{ form.image_file }}</span>
                     {% endif %}
-                    <span id="img_chooser" class="hidden">{{ form.image_file }}</span>
+                    <span class="chooser hidden">{{ form.image_file }}</span>
                   </div>
                   <div class="form-group mt-3">
                     <label for="File">Collection essay <i class="small">(PDF format)</i></label><br/>
@@ -311,11 +171,11 @@
                       <i class="far fa-file-pdf linky"></i>
                       <a href="/media/{{ form.file.value }}">
                         {{ object.file.url|remove:'/media/collections/' }}</a>
-                      (<a href="javascript:showChooser('file')">change</a>)
+                      (<a class="show-chooser" href="#">change</a>)
                     {% else %} {# update and there's no image yet #}
                       <span id="file_chooser_update">{{ form.file }}</span>
                     {% endif %}
-                    <span id="file_chooser" class="hidden">{{ form.file }}</span>
+                    <span class="chooser hidden">{{ form.file }}</span>
                   </div>
                   {# add link form #}
                   <div class="mt-3">
@@ -345,7 +205,7 @@
                     <p>These options control how your collection will be displayed and
                       temporally filtered on this collection's display page.</p>
                     <table id="configurationTable">
-						          {{ object.vis_parameters|json_script:"vis_parameters_data" }}
+						{{ object.vis_parameters|json_script:"vis_parameters_data" }}
                     </table>
                   </div>
                 {% else %}
@@ -373,11 +233,6 @@
                     </p>
                   </div>
                 {% endif %}
-              </div>
-              <div class="col-sm-3">
-              {% if action == 'update' and object.image_file %}
-                <p><img src="/media/{{ object.image_file.name }}" width="200px"/></p>
-              {% endif %}
               </div>
               <div id="added_flash" class="hidden">
                 <i class="fas fa-check-circle"></i> Added!
@@ -690,7 +545,7 @@
 
    	var scripts = [
 		{
-			src: '{% static 'webpack/builders.bundle.js' %}',
+			src: '{% static 'webpack/builders-collection-place.bundle.js' %}',
 			type: 'module',
 		},
    	]

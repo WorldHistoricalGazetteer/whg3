@@ -1,6 +1,7 @@
 import VisualisationControl from './visualisationControl.js';
-import { showChooser } from './utilities';
-window.showChooser = showChooser;
+import './enlarge.js';
+
+import '../css/builders-collection-place.css';
 
 $(function() {
 	
@@ -86,13 +87,6 @@ $(function() {
 
 	$("#id_geojson").attr("placeholder", "generated from country codes")
 
-	// help modals
-	$(".help-matches").click(function() {
-		let page = $(this).data('id')
-		/*console.log('help:', page)*/
-		$('.selector').dialog('open');
-	})
-
 	$(".selector").dialog({
 		resizable: false,
 		autoOpen: false,
@@ -118,90 +112,216 @@ $(function() {
 			duration: 400
 		}
 	});
+	
+	$('#image_selector .thumbnail').enlarge();
+	
+	// ******************* LISTENERS *******************
+
+	// help modals
+	$(".help-matches").click(function() {
+		let page = $(this).data('id')
+		/*console.log('help:', page)*/
+		$('.selector').dialog('open');
+	})
+
+	$('#sharing_form').submit(function(event) {
+		// Stop form from submitting normally
+		event.preventDefault();
+		console.log('sharing form submitted via ajax')
+	
+		var formData = new FormData(this);
+	
+		$.ajax({
+			url: $(this).attr('action'),
+			type: $(this).attr('method'),
+			data: formData,
+			processData: false,
+			contentType: false,
+			csrfmiddlewaretoken: csrf_token,
+			success: function(response) {
+				console.log('response', response)
+				if (response.status == 'ok') {
+					var removalMarkup = '<span class="float-end me-2"><a id="remove_collab" data-uid="' +
+						response.uid + '" href="/collections/collab-remove/' + response.uid +
+						'/' + response.cid + '/"><i class="fas fa-times-circle linky"></i></a></span>';
+					$("#collabs_list").append(
+						'<li>' + response.user + removalMarkup + '</li>')
+					history.replaceState(null, null, '#coll_collaborators');
+					$('.nav-link[data-bs-target="#coll_collaborators"]').tab('show');
+					$('input[name="username"]').val('');
+				} else {
+					alert(response.status)
+				}
+			},
+			error: function(response) {
+				alert('a problem occurred')
+			}
+		});
+	});
+	
+	// remove collaborator from collection
+	$(document).on('click', '#remove_collab', function(event) {
+		event.preventDefault();
+		console.log('remove collab')
+		var uid = $(this).data('uid');
+		var cid = '{{ object.id }}';
+	
+		$.ajax({
+			url: '/collections/collab-remove/' + uid + '/' + cid + '/',
+			type: 'POST',
+			data: {
+				'csrfmiddlewaretoken': csrf_token
+			},
+			success: function(response) {
+				console.log('response', response)
+				$('#remove_collab[data-uid="' + response.uid + '"]').parent().parent().remove();
+				// Instead of setting window.location.hash directly, use history.replaceState()
+				history.replaceState(null, null, '#coll_collaborators');
+				$('.nav-link[data-bs-target="#coll_collaborators"]').tab('show');
+	
+			},
+			error: function(response) {
+				// Handle error
+				console.log('error', response)
+			}
+		});
+	});
+	
+	$("#check_submitter").click(function(e) {
+		$("#submitter").toggle()
+	})
+	
+	$("#btn_coll_submit").click(function(e) {
+		e.preventDefault()
+		group_connect('submit')
+	})
+	$("#btn_coll_unsubmit").click(function(e) {
+		e.preventDefault()
+		group_connect('unsubmit')
+	})
+	
+	$("#a_linkpopup").click(function() {
+		$("#linkform_popup").fadeIn()
+	})
+	
+	$("#b_createlink").click(function() {
+		create_collection_link()
+	})
+	
+	// do something with place name (modal popup?)
+	$(".coll-place").click(function() {
+		/*console.log('place record', $(this).data('pid'));*/
+	})
+	
+	/*$(".closer").click(function(){*/
+	/*		$(".pop").fadeOut()*/
+	/* })*/
+	
+	$("#b_cancel_link").click(function() {
+		$(".pop").fadeOut()
+	})
+	
+	// remove place(s) from collection
+	$("#a_remove").click(function() {
+		var coll = '{{ object.id }}'
+		remove_from_collection(coll, remove_these)
+	})
+	
+	// mark/unmark place for removal from collection
+	$(".mark-place").click(function(e) {
+		let card;
+		e.stopPropagation()
+		var pid = $(this).data('pid')
+		var col = $(this).data('col')
+		/*console.log('mark ' + pid + ' in ' + col)*/
+		if (remove_these.indexOf(pid) > -1) {
+			console.log('unmarked', pid)
+			// unmark it
+			card = $(".col-place-card[data-id=" + pid + "]")
+			card.css('opacity', 1.0)
+			$(".col-place-card[data-id=" + pid + "] i.fa-plus-circle")
+				.addClass('fa-minus-circle')
+				.removeClass('fa-plus-circle')
+				.css('color', 'lightcoral')
+			$(card[0]).find('.restore-place').addClass('remove-place')
+				.removeClass('restore-place')
+			idx = remove_these.indexOf(pid)
+			remove_these.splice(idx, 1)
+			$("#a_remove").html('remove ' + remove_these.length)
+			if (remove_these.length == 0) {
+				$("#a_remove").html('')
+			}
+		} else {
+			// mark for removal
+			console.log('marked', pid, 'added to remove_these')
+			card = $(".col-place-card[data-id=" + pid + "]")
+			card.css('opacity', 0.5)
+			$(".col-place-card[data-id=" + pid + "] i.fa-minus-circle")
+				.addClass('fa-plus-circle')
+				.removeClass('fa-minus-circle')
+				.css('color', 'green')
+			$(card[0]).find('.remove-place').addClass('restore-place')
+				.removeClass('remove-place')
+			remove_these.push(pid)
+			$("#a_remove").html('remove ' + remove_these.length)
+		}
+	})
+	
+	// show/hide editor-restricted options
+	// $("#editor_options").hide();
+	$('.show-hide').click(function(e) {
+		$("#editor_options").slideToggle("fast");
+		var val = $(this).html() == "↑" ? "↓" : "↑";
+		/*var val = $(this).html() == "-" ? "+" : "-";*/
+		$(this).hide().html(val).fadeIn("fast");
+		/*$(this).hide().html(val).fadeIn("fast");*/
+		e.preventDefault();
+	});
+	
+	$(".col-place-card").click(function() {
+		// clear highlights
+		$(".col-place-card").removeClass('card-highlight')
+		// current index
+		/*console.log('idx', $(this).data('idx'))*/
+		// get pid
+		let pid = $(this).data('id')
+		/*console.log('clicked $(this), pid', $(this), pid)*/
+		let card = $(this).addClass('card-highlight')
+		// position of clicked card
+		let cardtop = card.offset().top
+		sessionStorage.setItem('cardtop', cardtop)
+		// position of list scroller
+		let scrolltop = $("#coll_placelist").scrollTop()
+		sessionStorage.setItem('scrolltop', scrolltop)
+		// permanent position of list on page
+		let listtop = $("#coll_placelist").offset().top
+		let offset = cardtop + scrolltop - listtop
+		sessionStorage.setItem('offset', offset)
+		/*console.log('offset',offset)*/
+		/*console.log('cardtop, scrolltop, listtop',*/
+		/*	  cardtop, scrolltop, listtop )*/
+		getAnno(pid)
+	})
+	
+	// add dataset to collection
+	$("#select_ds").change(function() {
+		/*console.log('selected from list', $(this).val())*/
+		$("further_explanation").hide()
+	
+		if ($("a.active").data('id') == 'pl' && place_list) {
+			$("#col_right_anno").fadeIn()
+		}
+		addDataset('create')
+	})
+	
+	$('.show-chooser').click(function(event) {
+        event.preventDefault();
+		$(this).parent().find('.chooser').show();
+	});
 
 }) // end doc ready
 
-$('#sharing_form').submit(function(event) {
-	// Stop form from submitting normally
-	event.preventDefault();
-	console.log('sharing form submitted via ajax')
 
-	var formData = new FormData(this);
-
-	$.ajax({
-		url: $(this).attr('action'),
-		type: $(this).attr('method'),
-		data: formData,
-		processData: false,
-		contentType: false,
-		csrfmiddlewaretoken: csrf_token,
-		success: function(response) {
-			console.log('response', response)
-			if (response.status == 'ok') {
-				var removalMarkup = '<span class="float-end me-2"><a id="remove_collab" data-uid="' +
-					response.uid + '" href="/collections/collab-remove/' + response.uid +
-					'/' + response.cid + '/"><i class="fas fa-times-circle linky"></i></a></span>';
-				$("#collabs_list").append(
-					'<li>' + response.user + removalMarkup + '</li>')
-				history.replaceState(null, null, '#coll_collaborators');
-				$('.nav-link[data-bs-target="#coll_collaborators"]').tab('show');
-				$('input[name="username"]').val('');
-			} else {
-				alert(response.status)
-			}
-		},
-		error: function(response) {
-			alert('a problem occurred')
-		}
-	});
-});
-
-// remove collaborator from collection
-$(document).on('click', '#remove_collab', function(event) {
-	event.preventDefault();
-	console.log('remove collab')
-	var uid = $(this).data('uid');
-	var cid = '{{ object.id }}';
-
-	$.ajax({
-		url: '/collections/collab-remove/' + uid + '/' + cid + '/',
-		type: 'POST',
-		data: {
-			'csrfmiddlewaretoken': csrf_token
-		},
-		success: function(response) {
-			console.log('response', response)
-			$('#remove_collab[data-uid="' + response.uid + '"]').parent().parent().remove();
-			// Instead of setting window.location.hash directly, use history.replaceState()
-			history.replaceState(null, null, '#coll_collaborators');
-			$('.nav-link[data-bs-target="#coll_collaborators"]').tab('show');
-
-		},
-		error: function(response) {
-			// Handle error
-			console.log('error', response)
-		}
-	});
-});
-
-$("#check_submitter").click(function(e) {
-	$("#submitter").toggle()
-})
-
-// function showChooser(type) {
-// 	consol.log('showChooser', type)
-// 	let elem = "#" + type + "_chooser"
-// 	$(elem).toggle()
-// }
-
-$("#btn_coll_submit").click(function(e) {
-	e.preventDefault()
-	group_connect('submit')
-})
-$("#btn_coll_unsubmit").click(function(e) {
-	e.preventDefault()
-	group_connect('unsubmit')
-})
 
 // flag collection as submitted, shows up on leader's list
 function group_connect(action) {
@@ -277,115 +397,6 @@ function create_collection_link() {
 	$("#linkform_popup input").val('')
 	$("#linkform_popup").hide()
 }
-
-$("#a_linkpopup").click(function() {
-	$("#linkform_popup").fadeIn()
-})
-
-$("#b_createlink").click(function() {
-	create_collection_link()
-})
-
-// do something with place name (modal popup?)
-$(".coll-place").click(function() {
-	/*console.log('place record', $(this).data('pid'));*/
-})
-
-/*$(".closer").click(function(){*/
-/*		$(".pop").fadeOut()*/
-/* })*/
-
-$("#b_cancel_link").click(function() {
-	$(".pop").fadeOut()
-})
-
-// remove places from collection (archiving annotations)
-function remove_from_collection(coll, pids) {
-	var formData = new FormData()
-	formData.append('collection', coll)
-	formData.append('place_list', pids)
-	formData.append('csrfmiddlewaretoken', csrf_token);
-	$.ajax({
-		type: 'POST',
-		enctype: 'multipart/form-data',
-		url: '/collections/archive_traces/',
-		processData: false,
-		contentType: false,
-		cache: false,
-		data: formData,
-		success: function(response) {
-			/*console.log('result:', response)*/
-		}
-	})
-	// remove card from dom & hide link
-	$(".col-place-card").each(function(index) {
-		if (remove_these.includes($(this).data('id'))) {
-			$(this).remove()
-		}
-	})
-	// update count in tab
-	var newcount = $(".col-place-card").length
-	$("#place_count").text(newcount)
-	remove_these = [];
-	$("#a_remove").text('')
-}
-
-// remove place(s) from collection
-$("#a_remove").click(function() {
-	var coll = '{{ object.id }}'
-	remove_from_collection(coll, remove_these)
-})
-
-// mark/unmark place for removal from collection
-$(".mark-place").click(function(e) {
-	let card;
-	e.stopPropagation()
-	var pid = $(this).data('pid')
-	var col = $(this).data('col')
-	/*console.log('mark ' + pid + ' in ' + col)*/
-	if (remove_these.indexOf(pid) > -1) {
-		console.log('unmarked', pid)
-		// unmark it
-		card = $(".col-place-card[data-id=" + pid + "]")
-		card.css('opacity', 1.0)
-		$(".col-place-card[data-id=" + pid + "] i.fa-plus-circle")
-			.addClass('fa-minus-circle')
-			.removeClass('fa-plus-circle')
-			.css('color', 'lightcoral')
-		$(card[0]).find('.restore-place').addClass('remove-place')
-			.removeClass('restore-place')
-		idx = remove_these.indexOf(pid)
-		remove_these.splice(idx, 1)
-		$("#a_remove").html('remove ' + remove_these.length)
-		if (remove_these.length == 0) {
-			$("#a_remove").html('')
-		}
-	} else {
-		// mark for removal
-		console.log('marked', pid, 'added to remove_these')
-		card = $(".col-place-card[data-id=" + pid + "]")
-		card.css('opacity', 0.5)
-		$(".col-place-card[data-id=" + pid + "] i.fa-minus-circle")
-			.addClass('fa-plus-circle')
-			.removeClass('fa-minus-circle')
-			.css('color', 'green')
-		$(card[0]).find('.remove-place').addClass('restore-place')
-			.removeClass('remove-place')
-		remove_these.push(pid)
-		$("#a_remove").html('remove ' + remove_these.length)
-	}
-})
-
-// show/hide editor-restricted options
-// $("#editor_options").hide();
-$('.show-hide').click(function(e) {
-	$("#editor_options").slideToggle("fast");
-	var val = $(this).html() == "↑" ? "↓" : "↑";
-	/*var val = $(this).html() == "-" ? "+" : "-";*/
-	$(this).hide().html(val).fadeIn("fast");
-	/*$(this).hide().html(val).fadeIn("fast");*/
-	e.preventDefault();
-});
 
 // builds link for external place record
 function url_extplace(identifier) {
@@ -597,42 +608,6 @@ function getAnno(pid) {
 		})
 }
 
-$(".col-place-card").click(function() {
-	// clear highlights
-	$(".col-place-card").removeClass('card-highlight')
-	// current index
-	/*console.log('idx', $(this).data('idx'))*/
-	// get pid
-	let pid = $(this).data('id')
-	/*console.log('clicked $(this), pid', $(this), pid)*/
-	let card = $(this).addClass('card-highlight')
-	// position of clicked card
-	let cardtop = card.offset().top
-	sessionStorage.setItem('cardtop', cardtop)
-	// position of list scroller
-	let scrolltop = $("#coll_placelist").scrollTop()
-	sessionStorage.setItem('scrolltop', scrolltop)
-	// permanent position of list on page
-	let listtop = $("#coll_placelist").offset().top
-	let offset = cardtop + scrolltop - listtop
-	sessionStorage.setItem('offset', offset)
-	/*console.log('offset',offset)*/
-	/*console.log('cardtop, scrolltop, listtop',*/
-	/*	  cardtop, scrolltop, listtop )*/
-	getAnno(pid)
-})
-
-// add dataset to collection
-$("#select_ds").change(function() {
-	/*console.log('selected from list', $(this).val())*/
-	$("further_explanation").hide()
-
-	if ($("a.active").data('id') == 'pl' && place_list) {
-		$("#col_right_anno").fadeIn()
-	}
-	addDataset('create')
-})
-
 // render dataset to html
 function listDataset(d) {
 	/*console.log('listing this:', d.title)*/
@@ -655,6 +630,37 @@ function listDataset(d) {
 	})
 	$("#coll_dscards_create").append(card)
 	// console.log(card)
+}
+
+// remove places from collection (archiving annotations)
+function remove_from_collection(coll, pids) {
+	var formData = new FormData()
+	formData.append('collection', coll)
+	formData.append('place_list', pids)
+	formData.append('csrfmiddlewaretoken', csrf_token);
+	$.ajax({
+		type: 'POST',
+		enctype: 'multipart/form-data',
+		url: '/collections/archive_traces/',
+		processData: false,
+		contentType: false,
+		cache: false,
+		data: formData,
+		success: function(response) {
+			/*console.log('result:', response)*/
+		}
+	})
+	// remove card from dom & hide link
+	$(".col-place-card").each(function(index) {
+		if (remove_these.includes($(this).data('id'))) {
+			$(this).remove()
+		}
+	})
+	// update count in tab
+	var newcount = $(".col-place-card").length
+	$("#place_count").text(newcount)
+	remove_these = [];
+	$("#a_remove").text('')
 }
 
 // adds all dataset places to placelist

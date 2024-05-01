@@ -1,716 +1,342 @@
 <!-- collection/collection_create.html -->
-{% extends "main/base.html" %}
-{% load leaflet_tags %}
+{% extends "main/base_webpack.html" %}
 
 {% load static %}
 {% load dataset_extras %}
-{% block title %}<title>WHG::Create/Update Collection</title>{% endblock %}
+{% block title %}
+<title>WHG::Create/Update Collection</title>
+{% endblock %}
 {% block extra_head %}
-  {% leaflet_js %}
-  {% leaflet_css %}
-  
-  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.css' rel='stylesheet' />
-  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v1.5.0/mapbox-gl.js'></script>
-  <script src="{% static 'js/leaflet-mapbox-gl.js' %}"></script>
-	<link rel="stylesheet" href="{% static 'css/spin.css' %}"/>
-
-	<style>
-    {#body { font-family: Raleway, san-serif; }#}
-    .custom-radio .form-check-input {
-      position: relative;
-      top: 3px;
-    }
-    .form-group {margin-bottom: .5rem !important;}
-    .form-group label {margin-bottom:0 !important;}
-    #linkform_popup {
-	    position:absolute;
-			background-color: whitesmoke;
-	    border: 1px solid grey;
-	    box-shadow: gainsboro 4px 4px;
-	    border-radius: 6px;
-	    padding: 15px;
-	    height: 150px;
-	    width: 300px;
-	    top: 145px;
-	    left: 600px;
-	    z-index: 1000;
-	    display:none;
-    }
-		.modal-dialog {
-		  display: flex;
-		  justify-content: center;
-		  align-items: center;
-		  min-height: calc(100vh - 20px);
-		}
-		#coll_builder .row {
-		    display: flex;
-		    flex-direction: row;
-		    height: 100%;
-		}
-		#coll_builder .col-sm-7 {
-		    display: flex;
-		    flex-direction: column;
-		}
-	</style>
+<link href="{% static 'webpack/builders-collection-dataset.bundle.css' %}" rel="stylesheet" />
 {% endblock %}
 
 {% block content %}
 <div class="container container-md" style="height: calc(100vh);">
   {% if action == 'update' and not is_member and not whgteam %}
-	  <p>Access to this page is limited to the collection owner <b>{{ object.owner.name }}</b>
-        ({{ object.owner.id }}) and designated collaborators.</p>
+  <p>Access to this page is limited to the collection owner <b>{{ object.owner.name }}</b>
+    ({{ object.owner.id }}) and designated collaborators.</p>
   {% else %}
-    <h5 class="mt-3">
-	    {% if action == 'update' %}<span class="text-secondary">Dataset Collection Builder: </span>
-		    <span class="text-bold red-head">{{ form.title.value }}</span>
-		    <span class="float-end fs-6">
-			    <a href="{% url 'collection:ds-collection-browse' object.id %}">
-				    view</a> <i class="fas fa-eye linky"></i>
-			    <a href="{% url 'collection:collection-delete' object.id %}"
-		      title="Delete collection" rel="tooltip" style="margin-top:-2px;">
-			    <i class="fas fa-trash linkyred"></i></a></span>
-	    {% else %}Create Dataset Collection{% endif %}
-	  </h5>
-	  <ul id="tablist" class="nav nav-tabs" role="tablist">
-		  <li class="nav-item" role="presentation">
-		    <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
-          type="button" role="tab" aria-controls="coll_form" aria-selected="true">
-			    {% if action == 'create' %}Create Collection{% else %}Metadata{% endif %}</button>
-		  </li>
-		  {% if action == "update" %}
-		  {# builder #}
-		  <li class="nav-item" role="presentation">
-		    <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
-          type="button" role="tab" aria-controls="coll_builder"
-                aria-selected="false">Add and manage datasets</button>
-		  </li>
-		  <li class="nav-item" role="presentation">
-		    <button class="nav-link" id="collaborators-tab" data-bs-toggle="tab"
-                data-bs-target="#coll_collaborators"
-          type="button" role="tab" aria-controls="coll_collaborators"
-                aria-selected="false">Collaborators</button>
-		  </li>
-		  {% endif %}
-		</ul>
-		<div id="content" class="tab-content">
-			<div id="coll_form" class="tab-pane show active fade h-100">
-		    <form id="collection_form" method="POST" enctype="multipart/form-data">
-		    {% csrf_token %}
+  <h5 class="mt-3">
+    {% if action == 'update' %}<span class="text-secondary">Dataset Collection Builder: </span>
+    <span class="text-bold red-head">{{ form.title.value }}</span>
+    <span class="float-end fs-6">
+      <a href="{% url 'collection:ds-collection-browse' object.id %}">
+        view</a> <i class="fas fa-eye linky"></i>
+      <a href="{% url 'collection:collection-delete' object.id %}" title="Delete collection" rel="tooltip" style="margin-top:-2px;">
+        <i class="fas fa-trash linkyred"></i></a></span>
+    {% else %}Create Dataset Collection{% endif %}
+  </h5>
+  <ul id="tablist" class="nav nav-tabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form" type="button" role="tab" aria-controls="coll_form" aria-selected="true">
+        {% if action == 'create' %}Create Collection{% else %}Metadata{% endif %}
+      </button>
+    </li>
+    {% if action == "update" %}
+    {# builder #}
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder" type="button" role="tab" aria-controls="coll_builder" aria-selected="false">Add and manage datasets</button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="collaborators-tab" data-bs-toggle="tab" data-bs-target="#coll_collaborators" type="button" role="tab" aria-controls="coll_collaborators" aria-selected="false">Collaborators</button>
+    </li>
+    {% endif %}
+  </ul>
+  <div id="content" class="tab-content">
+    <div id="coll_form" class="tab-pane show active fade h-100">
+      <form id="collection_form" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
         <div class="row">
-	        <div class="col-sm-5">
-		      {% if action == 'create' %}
-		        <input type="hidden" name="owner" value='{{ user.id }}' />
-		      {% else %}
-			      <input type="hidden" name="owner" value='{{ form.owner.value }}' />
-		      {% endif %}
-		      <input type="hidden" name="collection_class" value='dataset' />
-					{# status: {{ form.status.value }}#}
-					<div class="form-group">
-						<label for="Title">Title &#x02733;</label><br/>{{ form.title }}
-					</div>
-					<div class="form-group">
-						<label for="Description">Description &#x02733;</label><br/>{{ form.description }}
-					</div>
-					<div class="form-group">
-						<label for="Collection keywords">Collection keywords &#x02733;</label><br/>{{ form.keywords }}
-					</div>
-          {% comment %}
-          <div class="form-group bg-light p-1">
-            <label for="Build type">Build type</label><br/>{{ form.build_type }}
+          <div class="col-sm-7">
+            {% if action == 'create' %}
+            <input type="hidden" name="owner" value='{{ user.id }}' />
+            {% else %}
+            <input type="hidden" name="owner" value='{{ form.owner.value }}' />
+            {% endif %}
+            <input type="hidden" name="collection_class" value='dataset' />
+            {# status: {{ form.status.value }}#}
+            <div class="form-group">
+              <label for="Title">Title &#x02733;</label><br/>{{ form.title }}
+            </div>
+            <div class="form-group">
+              <label for="Description">Description &#x02733;</label><br/>{{ form.description }}
+            </div>
+            <div class="form-group">
+              <label for="Collection keywords">Collection keywords &#x02733;</label><br/>{{ form.keywords }}
+            </div>
+            {% comment %}
+            <div class="form-group bg-light p-1">
+              <label for="Build type">Build type</label><br/>{{ form.build_type }}
+            </div>
+            {% endcomment %}
+            <div id="d_buttons" class="" style="">
+              <span class="">
+                {% if action == 'create' %}
+                <a href="/dashboard">Cancel</a>
+                <input id="btn_coll_save" class="btn btn-sm btn-primary mt-2" type="submit" value="Save" />
+                {% else %}
+                <input id="btn_coll_save" name="display" class="btn btn-sm btn-success mt-2 " type="submit" value="Save & exit" />
+                <input id="btn_coll_update" name="update" class="btn btn-sm btn-primary mt-2 ms-2" type="submit" value="Save" />
+                {% endif %}
+              </span>
+            </div>
+            <p class="my-0 small">&#x02733;<i><b> required</b></i>
+              {% if action == 'update' and editorial %}
+              <span><a class="float-end show-hide" href="#">editor options <i class="fas fa-cog linky"></i></a></span>
+              {% endif %}
+            </p>
+            <div id="editor_options" class="hidden">
+              <p>Status: {{ form.status }}</p>
+              <p>Featured rank: {{ form.featured }}</p>
+              {% comment %}<p>Featured rank: {{ form.featured }}</p>{% endcomment %}
+            </div>
+            <div id="select_div" class="hidden">{{ form.datasets }}</div>
+            <div id="collection_options"></div>
+            {% if mygroups|length > 0 %}
+            <span id="submit_prompt">Submit{% if form.group.value %}ted{% endif %} to group:</span>
+            <span id="submitter" class="">
+              {{ form.group }}
+            </span>
+            {% if object.group %}
+            <span class="ms-2 small">
+              <a href="{% url 'collection:collection-group-detail' object.group.id %}" target="_blank">Info</a>
+            </span>
+            {% endif %}
+            {% endif %}
           </div>
-          {% endcomment %}
-		      <div id="d_buttons" class="" style="">
-	          <span class="">
-	          {% if action == 'create' %}
-			        <a href="/dashboard">Cancel</a>
-		          <input id="btn_coll_save" class="btn btn-sm btn-primary mt-2" type="submit" value="Save" />
-	          {% else %}
-		          <input id="btn_coll_save" name="display" class="btn btn-sm btn-success mt-2 "
-		                 type="submit" value="Save & exit" />
-		          <input id="btn_coll_update" name="update" class="btn btn-sm btn-primary mt-2 ms-2"
-		                 type="submit" value="Save" />
-	          {% endif %}
-	          </span>
-		      </div>
-					<p class="my-0 small">&#x02733;<i><b> required</b></i>
-		        {% if action == 'update' and editorial %}
-			        <span><a class="float-end show-hide" href="#">
-				        editor options <i class="fas fa-cog linky"></i>
-			        </a></span>
-		        {% endif %}
-					</p>
-		      <div id="editor_options" class="hidden">
-			      <p>Status: {{ form.status }}</p>
-						<p>Featured rank: {{ form.featured }}</p>
-						{% comment %}<p>Featured rank: {{ form.featured }}</p>{% endcomment %}
-		      </div>
-		      <div id="select_div" class="hidden">{{ form.datasets }}</div>
-		      <div id="collection_options"></div>
-		      {% if mygroups|length > 0 %}
-			      <span id="submit_prompt">Submit{% if form.group.value %}ted{% endif %} to group:</span>
-		        <span id="submitter" class="">
-			        {{ form.group }}
-		        </span>
-			      {% if object.group %}
-			      <span class="ms-2 small">
-				      <a href="{% url 'collection:collection-group-detail' object.group.id %}" target="_blank">Info</a>
-			      </span>
-			      {% endif %}
-					{% endif %}
-	      </div>
-	        <div class="col-sm-7">
-		      {% if action == 'update' %}
-			      <div class="form-group mb-2">
-				      <label for="Image">Collection image <i class="small">(800px wide or less)</i></label><br/>
-							{% if action == 'create' %} {# create, no image yet #}
-								<span id="img_chooser_create">{{ form.image_file }}</span>
-							{% elif form.image_file.value %} {# update & there's an image #}
-								<img src="{% static 'images/noun-photo.svg'%}" width="16"/>
-								<a href="/media/{{ form.image_file.value }}">
-									{{ object.image_file}}
-								</a>
-								(<a href="javascript:showChooser('img')">change</a>)
-							{% else %} {# update and there's no image yet #}
-								<span id="img_chooser_update" >{{ form.image_file }}</span>
-							{% endif %}
-			        <span id="img_chooser" class="hidden">{{ form.image_file }}</span>
-						</div>
-			      <div class="form-group mt-3">
-							<label for="File">Collection essay <i class="small">(PDF format)</i></label><br/>
-							{% if action == 'create' %} {# create, no file yet #}
-								<span id="file_chooser_create">{{ form.file }}</span>
-							{% elif form.file.value %} {# update & there's a file #}
-								<i class="far fa-file-pdf linky"></i>
-								<a href="/media/{{ form.file.value }}">{{ object.file.url|remove:'/media/collections/' }}</a>
-								(<a href="javascript:showChooser('file')">change</a>)
-							{% else %} {# update and there's no image yet #}
-								<span id="file_chooser_update" >{{ form.file }}</span>
-							{% endif %}
-			        <span id="file_chooser" class="hidden">{{ form.file }}</span>
-						</div>
-			      {# add link form #}
-						<div class="mt-3">Links
-							{% if links|length < 3 %}
-								<a href="#" id="a_linkpopup"><button type="button" style="border-width: thin;">Add</button></a>
-							{% endif %} <i class="small link-counter">(3 maximum)</i><br/>
-							<span id="linklist">
-							{% if links|length > 0 %}
-								{% for l in links %}
-									{{ l.get_link_type_display|safe }} <a href="{{ l.uri }}" target="_blank">{{ l.label }}</a>
-										[ <a href="{% url 'collection:remove-link' id=l.id %}" class="a_removelink"><i>remove</i></a> ]<br/>
-								{% endfor %}
-							{% endif %}
-							</span>
-						</div>
-
-            <div id="ds_options" class="ds-card pt-0 px-0 mt-4 w-50">
-              <p class="ds-card-header">Options</p>
-              <div class="form-check form-switch ms-2">
-                <input id="year_filter" class="form-check-input" type="checkbox">
-                <label class="form-check-label" for="year_filter">Display temporal filter</label>
-                <a href="#"><i class="fas fa-question-circle red-head" data-toggle="popover"
-                               title="Show time slider on publication page"
-                               data-content="Show time slider on publication page"></i></a>
-              </div>
+          <div class="col-sm-5">
+            {% if action == 'update' %}
+            <div id="image_selector" class="form-group mb-2">
+              {% if object.image_file %}
+              <img src="/media/{{ object.image_file.name }}" class="thumbnail float-end"/>
+              {% endif %}
+              <label for="Image">Collection image <i class="small">(800px wide or less)</i></label><br/>
+              {% if action == 'create' %} {# create, no image yet #}
+              <span id="img_chooser_create">{{ form.image_file }}</span>
+              {% elif form.image_file.value %} {# update & there's an image #}
+              <img src="{% static 'images/noun-photo.svg'%}" width="16"/>
+              <a href="/media/{{ form.image_file.value }}">
+                {{ object.image_file}}
+              </a>
+              (<a class="show-chooser" href="#">change</a>)
+              {% else %} {# update and there's no image yet #}
+              <span id="img_chooser_update" >{{ form.image_file }}</span>
+              {% endif %}
+              <span class="chooser hidden">{{ form.image_file }}</span>
+            </div>
+            <div class="form-group mt-3">
+              <label for="File">Collection essay <i class="small">(PDF format)</i></label><br/>
+              {% if action == 'create' %} {# create, no file yet #}
+              <span id="file_chooser_create">{{ form.file }}</span>
+              {% elif form.file.value %} {# update & there's a file #}
+              <i class="far fa-file-pdf linky"></i>
+              <a href="/media/{{ form.file.value }}">{{ object.file.url|remove:'/media/collections/' }}</a>
+              (<a class="show-chooser" href="#">change</a>)
+              {% else %} {# update and there's no image yet #}
+              <span id="file_chooser_update" >{{ form.file }}</span>
+              {% endif %}
+              <span class="chooser hidden">{{ form.file }}</span>
+            </div>
+            {# add link form #}
+            <div class="mt-3">Links
+              {% if links|length < 3 %}
+              <a href="#" id="a_linkpopup"><button type="button" style="border-width: thin;">Add</button></a>
+              {% endif %} <i class="small link-counter">(3 maximum)</i><br/>
+              <span id="linklist">
+                {% if links|length > 0 %}
+                {% for l in links %}
+                {{ l.get_link_type_display|safe }} <a href="{{ l.uri }}" target="_blank">{{ l.label }}</a>
+                [ <a href="{% url 'collection:remove-link' id=l.id %}" class="a_removelink"><i>remove</i></a> ]<br/>
+                {% endfor %}
+                {% endif %}
+              </span>
+            </div>
+            <div class="form-check form-switch mt-3">
+              <input id="year_filter" class="form-check-input" type="checkbox"{% if vis_parameters_dict.min.temporal_control != 'none' %} checked{% endif %}>
+              <label class="form-check-label" for="year_filter">Display temporal information</label>
+              <i class="fas fa-question-circle red-head" data-bs-toggle="tooltip" title="Switch this on if places in your datasets have meaningful temporal attributions. <i>Start</i> and <i>End</i> dates will be displayed on the publication page, together with a temporal filter control."></i>
             </div>
 
-		      {% else %}
-				    <h5 style="display:block;">Welcome</h5>
-					  <p>To create a new Dataset Collection, first fill out the required fields in the form on the left.
-						  and press <b>Save</b>. All information can be edited afterwards, and you can begin adding and
-						  linking datasets. The collection itself can include primary image, an essay file and
-						  links to related material, uploaded after creation.</p>
-			      <p><mark-b>Collection keywords</mark-b> are terms describing the collection.</p>
-		      {% endif %}
-		      </div> {# col-sm-7 #}
+            {% else %}
+            <h5 style="display:block;">Welcome</h5>
+            <p>To create a new Dataset Collection, first fill out the required fields in the form on the left.
+              and press <b>Save</b>. All information can be edited afterwards, and you can begin adding and linking datasets. The collection itself can include primary image, an essay file and links to related material, uploaded after creation.</p>
+            <p><mark-b>Collection keywords</mark-b> are terms describing the collection.</p>
+            {% endif %}
+          </div> {# col-sm-7 #}
         </div> {# row #}
-		    </form>
-		    <div id="linkform_popup" class="pop">
-		        <form action="#" method="post">
-		        {% csrf_token %}
-			        {{ links_form }}
-		        <input type="hidden" name="collection" value="{{ object.id }}">
-		        <div class="closer" style="position:absolute; top:7px; right:7px;">X</div>
-		        <table class="mb-2">
-			        <tr><td>URI*: </td><td><input id="l_uri" name="uri" value="{{ links_form.uri }}" /></td></tr>
-			        <tr><td>Label*: </td><td><input id="l_label" name="label" value="{{ links_form.label }}" /></td></tr>
-			        <tr><td>Type*: </td>
-				          <td>
-						        <select id="select_linktype" name="link_type">
-						          <option value="webpage">Web page</option>
-						          <option value="document">Document</option>
-						          <option value="image">Image</option>
-					          </select>
-			            </td>
-			        </tr>
-		        </table>
-		        <button id="b_createlink" type="button">Save</button>
-	          </form>
-		    </div>
-			</div> {# coll_form #}
-			<div id="coll_builder" class="tab-pane fadeh-100">
-				<div class="row">
-					<div class="col-sm-7 position-relative">
-						<div>
-		        <h5 class="bg-lighterblue ps-1">Datasets ({{ coll_dsset|length }})</h5>
-		        <p>
-		          <span class="me-2">
-		            <select id="select_ds" name="ds" class="custom-select-sm" style="width:auto; min-width:150px;">
-		            <option value="0">Select dataset</option>
-		            <option disabled>___________</option>
-		            {% for ds in ds_select %}
-		              {% if ds not in coll_dsset %}
-		                <option value="{{ ds.id }}" data-status="{{ ds.ds_status }}"
-		                        data-title="{{ ds.title }}">
-			                {{ ds.title }}</option>
-		              {% endif %}
-		            {% endfor %}
-		            </select>
-		          </span>
-		        <span id="a_add" class="hidden">
-		          <a href="javascript:{ addDataset() }" class="">
-		            <i class="fas fa-plus-square linky"></i> add to collection</a>
-		        </span>
-		        </p>
-						</div>
-						{# id, label, title, description, creator, create_date, webpage, numrows, datatype #}
-		        <div id="coll_dscards">
-		          {% if coll_dsset|length == 0 %}
-			          <p id="msg" class="font-italic smaller">None yet...</p>{% endif %}
-		          {% for d in coll_dsset %}
-		            <div class="ds_card" data-id="{{ d.id }}">
-		              <p class="mb-0"><a href="{% url 'datasets:ds_status' id=d.id %}">
-		                <span class="ds_title">{{ d.title }}</span></a>
-                    <small>({{d.label}}/{{ d.id}})</small>
-		              </p>
-		              <div class="ds_fields">
-		                <p class="my-1"><b>Description</b>: {{ d.description|truncatechars:150 }}</p>
-		                <p class="my-1"><b>Create date</b>: {{ d.create_date|date:"d M Y" }}</p>
-{#				              <p>has_task={{ d.builder_hastask }}; remaining={{ d.builder_remaining }}</p>#}
-		                <p class="my-1"><b># rows</b>: {{ d.numrows }}
-			                <span id="s_dsremove" class="float-end">
-											<a href="#" onclick="confirmRemove({{ d.id }}, '{{ object.id }}', this)">
-												<i class="fas fa-minus-square" style="color:#336699"></i> remove</a>
-			                </span>
- 		                </p>
-{#			              {% if not forloop.first %}#}
-{#			              <hr/>#}
-{#		                <p id="recon_results" class="">#}
-{#		                  {% if not d.builder_hastask %}#}
-{#				                <span><button type="button" class="btn btn-sm btn-primary">#}
-{#				                Reconcile to collection </button> (no tasks yet)</span>#}
-{#		                  {% endif %}#}
-{#			                {% if d.builder_hastask and d.builder_remaining > 0 %}#}
-{#				                <span class="float-end">#}
-{#					                <a href="">review</a> (remaining: {{ d.builder_remaining }})#}
-{#				                </span>#}
-{#			                {% endif %}#}
-{#		                </p>#}
-{#			              {% endif %}#}
-		              </div>
-		            </div>
-		          {% endfor %}
-		        </div>
-					</div>
-					<div class="col-sm-5">
-						<h5 class="bg-lighterblue ps-1">The Process</h5>
-						<div class="ps-3">
-              <p>Dataset Collections in WHG are assembled from published, indexed datasets you are owner or co-owner of.</p>
-							<ol class="flush-left">
-								<li>Select a dataset from the dropdown list on the left.</li>
-							</ol>
-						</div>
-						<div class="mt-2">
-							<h5 class="bg-lighterblue ps-1">Status</h5>
-							<p>hmmm, what here, vs in the cards themselves</p>
-						</div>
-					</div>
-				</div>
-			</div>
-			<div id="coll_collaborators" class="tab-pane fade h-100" style="height: auto; position:relative;">
-        {% if action == 'update' %}
-        <form id="sharing_form" method="POST" action="{% url 'collection:collab-add' cid=object.id %}"
-                  enctype="multipart/form-data">
-              {% csrf_token %}
-              <div class="sharing-box my-3 w-50">
-                <div class="sharing-header mb-0 ps-2 strong">Collaborators</div>
-                <div class="smallish" style="padding-left: .3rem;">
-                  <p class="">Collaborators are registered WHG users, assigned per collection.</p>
-                  <p>
-                    <sr>Members</sr>
-                    can ...
-                    <br/>
-                    <sr>Co-owners</sr>
-                    can perform all actions.
-                  </p>
-                </div>
-                {% if user.is_superuser or is_owner %}
-                  <div class="">
-                    <div class="form-check form-check-inline sharing-input ps-1">
-                    <span class="input-group">
-                      <input type="text" class="form-control input-sm" name="username"
-                             placeholder="Enter username">
-                      <div class="input-group-append">
-                        <button class="btn btn-sm btn-outline-secondary" type="submit">Add</button>
-                      </div>
-                    </span>
-                    </div>
-                    <div class="form-check form-check-inline">
-                      <input class="form-check-input hover" type="radio" name="role"
-                             id="r_place" value="member" checked="checked">
-                      <label class="form-check-label" for="r_place">Member</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                      <input class="form-check-input hover" type="radio" name="role"
-                             id="r_trace" value="owner">
-                      <label class="form-check-label" for="r_trace">Co-owner</label>
-                    </div>
-                  </div>
-                {% endif %}
-                <ul id="collabs_list" class="mt-2">
-                  {% for c in collabs %}
-                    <li>
-                      {{ c|safe }} <!-- username, bold -->
-                      {% if is_admin or is_owner %}
-                        <span class="float-end me-2">
-	                <a id="remove_collab" data-uid="{{ c.user_id }}" href="#">
-	                <i class="fas fa-times-circle linky"></i></a></span>
-                      {% endif %}
-                    </li>
+      </form>
+      <div id="linkform_popup" class="pop">
+        <form action="#" method="post">
+          {% csrf_token %}
+          {{ links_form }}
+          <input type="hidden" name="collection" value="{{ object.id }}">
+          <div class="closer" style="position:absolute; top:7px; right:7px;">X</div>
+          <table class="mb-2">
+            <tr><td>URI*: </td><td><input id="l_uri" name="uri" value="{{ links_form.uri }}" /></td></tr>
+            <tr><td>Label*: </td><td><input id="l_label" name="label" value="{{ links_form.label }}" /></td></tr>
+            <tr><td>Type*: </td>
+              <td>
+                <select id="select_linktype" name="link_type">
+                  <option value="webpage">Web page</option>
+                  <option value="document">Document</option>
+                  <option value="image">Image</option>
+                </select>
+              </td>
+            </tr>
+          </table>
+          <button id="b_createlink" type="button">Save</button>
+        </form>
+      </div>
+    </div> {# coll_form #}
+    <div id="coll_builder" class="tab-pane fadeh-100">
+      <div class="row">
+        <div class="col-sm-7 position-relative">
+          <div>
+            <h5 class="bg-lighterblue ps-1">Datasets ({{ coll_dsset|length }})</h5>
+            <p>
+              <span class="me-2">
+                <select id="select_ds" name="ds" class="custom-select-sm" style="width:auto; min-width:150px;">
+                  <option value="0">Select dataset</option>
+                  <option disabled>___________</option>
+                  {% for ds in ds_select %}
+                  {% if ds not in coll_dsset %}
+                  <option value="{{ ds.id }}" data-status="{{ ds.ds_status }}" data-title="{{ ds.title }}">
+                    {{ ds.title }}</option>
+                  {% endif %}
                   {% endfor %}
-                </ul>
+                </select>
+              </span>
+              <span id="a_add" class="hidden">
+                <a id="dataset_adder" href="#">
+                  <i class="fas fa-plus-square linky"></i> add to collection</a>
+              </span>
+            </p>
+          </div>
+          {# id, label, title, description, creator, create_date, webpage, numrows, datatype #}
+          <div id="coll_dscards">
+            {% if coll_dsset|length == 0 %}
+            <p id="msg" class="font-italic smaller">None yet...</p>{% endif %}
+            {% for d in coll_dsset %}
+            <div class="ds_card" data-id="{{ d.id }}">
+              <p class="mb-0"><a href="{% url 'datasets:ds_status' id=d.id %}">
+                  <span class="ds_title">{{ d.title }}</span></a>
+                <small>({{d.label}}/{{ d.id}})</small>
+              </p>
+              <div class="ds_fields">
+                <p class="my-1"><b>Description</b>: {{ d.description|truncatechars:150 }}</p>
+                <p class="my-1"><b>Create date</b>: {{ d.create_date|date:"d M Y" }}</p>
+                {# <p>has_task={{ d.builder_hastask }}; remaining={{ d.builder_remaining }}</p>#}
+                <p class="my-1"><b># rows</b>: {{ d.numrows }}
+                  <span id="s_dsremove" class="float-end">
+                  	<a href="#" class="confirm-remove" data-dataset-id="{{ d.id }}"><i class="fas fa-minus-square" style="color:#336699"></i> remove</a>
+                  </span>
+                </p>
               </div>
-            </form>
-        {% endif %}
-			</div>
-		</div> <!-- #content -->
-	  <div id="modal" class="modal fade" tabindex="-1" role="dialog"
-         aria-labelledby="modalLabel" aria-hidden="true">
-			<div class="modal-dialog modal-md">
-				<div class="modal-content" style="background-color:white; border:none; height: fit-content;">
-					<div class="modal-header">
-						<h5 class="modal-title" id="modalLabel">Add dataset to collection</h5>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-					</div>{# modal-header #}
-					<div class="modal-body"></div>{# modal-body #}
-				</div>{# modal-content #}
-			</div>{# modal-dialog #}
-	  </div>{# modal #}
-	  <div class="selector py-3"><div id="helpme"></div></div>
-  {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="col-sm-5">
+          <h5 class="bg-lighterblue ps-1">The Process</h5>
+          <div class="ps-3">
+            <p>Dataset Collections in WHG are assembled from published, indexed datasets you are owner or co-owner of.</p>
+            <ol class="flush-left">
+              <li>Select a dataset from the dropdown list on the left.</li>
+            </ol>
+          </div>
+          <div class="mt-2">
+            <h5 class="bg-lighterblue ps-1">Status</h5>
+            <p>hmmm, what here, vs in the cards themselves</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="coll_collaborators" class="tab-pane fade h-100" style="height: auto; position:relative;">
+      {% if action == 'update' %}
+      <form id="sharing_form" method="POST" action="{% url 'collection:collab-add' cid=object.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="sharing-box my-3 w-50">
+          <div class="sharing-header mb-0 ps-2 strong">Collaborators</div>
+          <div class="smallish" style="padding-left: .3rem;">
+            <p class="">Collaborators are registered WHG users, assigned per collection.</p>
+            <p>
+              <sr>Members</sr>
+              can ...
+              <br/>
+              <sr>Co-owners</sr>
+              can perform all actions.
+            </p>
+          </div>
+          {% if user.is_superuser or is_owner %}
+          <div class="">
+            <div class="form-check form-check-inline sharing-input ps-1">
+            <span class="input-group">
+              <input type="text" class="form-control input-sm" name="username" placeholder="Enter username">
+              <div class="input-group-append">
+                <button class="btn btn-sm btn-outline-secondary" type="submit">Add</button>
+              </div>
+            </span>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input hover" type="radio" name="role" id="r_place" value="member" checked="checked">
+              <label class="form-check-label" for="r_place">Member</label>
+            </div>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input hover" type="radio" name="role" id="r_trace" value="owner">
+              <label class="form-check-label" for="r_trace">Co-owner</label>
+            </div>
+          </div>
+          {% endif %}
+          <ul id="collabs_list" class="mt-2">
+            {% for c in collabs %}
+            <li>
+              {{ c|safe }} <!-- username, bold -->
+              {% if is_admin or is_owner %}
+              <span class="float-end me-2">
+              <a id="remove_collab" data-uid="{{ c.user_id }}" href="#">
+              <i class="fas fa-times-circle linky"></i></a></span>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </form>
+      {% endif %}
+    </div>
+  </div> <!-- #content -->
+  <div id="modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+      <div class="modal-content" style="background-color:white; border:none; height: fit-content;">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalLabel">Add dataset to collection</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>{# modal-header #}
+        <div class="modal-body"></div>{# modal-body #}
+      </div>{# modal-content #}
+    </div>{# modal-dialog #}
+  </div>{# modal #}
+  <div class="selector py-3"><div id="helpme"></div></div>
+{% endif %}
 </div> <!-- container -->
 
-<script type="text/javascript">
-  $(function(){
-    $("#year_filter").on('change', function(){
-      console.log('year_filter state:', this.checked);
-    })
-		$("#select_ds").change(function(){
-		    // show add button if ds selected
-				if($(this).val() != 0){
-						$("#a_add").removeClass('hidden')
-					} else {
-						$("#a_add").addClass('hidden')
-					}
-				})
-
-    dslist=[] // holds ids of selected datasets
-    $( ".textarea" ).each(function(index) {
-      if ( ["None","null"].includes( $(this).val() ) ) {
-        $(this).val('')
-      }
-    });
-
-    $("#id_geojson").attr("placeholder","generated from country codes")
+<script>
+    var context_objectId = "{{ object.id }}";
+    var context_action = "{{ action }}";
+    var context_createLinkUrl = '{% url "create-link" %}';
     
-    // help modals
-    $(".help-matches").click(function(){
-      page=$(this).data('id')
-      {#console.log('help:', page)#}
-      $('.selector').dialog('open');
-    })
-    $(".selector").dialog({
-      resizable: false,
-      autoOpen: false,
-      height: $(window).height() * 0.9,
-      width: $(window).width() * 0.8,
-      title: "WHG Help",
-      modal: true,
-      buttons: { 'Close': function() {console.log('close dialog'); $(this).dialog('close');} },
-      open: function(event, ui) {
-        $('#helpme').load('/media/help/'+page+'.html')
-      },
-      show: {effect: "fade",duration: 400 },
-      hide: {effect: "fade",duration: 400 }
-    });
-
-    // remove collaborator from collection
-    $(document).on('click', '#remove_collab', function (event) {
-        event.preventDefault();
-        console.log('remove collab')
-        var uid = $(this).data('uid');
-        var cid = '{{ object.id }}';
-
-        $.ajax({
-          url: '/collections/collab-remove/' + uid + '/' + cid + '/',
-          type: 'POST',
-          data: {
-            'csrfmiddlewaretoken': '{{ csrf_token }}'
-          },
-          success: function (response) {
-            console.log('response', response)
-            $('#remove_collab[data-uid="' + response.uid + '"]').parent().parent().remove();
-            // Instead of setting window.location.hash directly, use history.replaceState()
-            history.replaceState(null, null, '#coll_collaborators');
-            $('.nav-link[data-bs-target="#coll_collaborators"]').tab('show');
-
-          },
-          error: function (response) {
-            // Handle error
-            console.log('error', response)
-          }
-        });
-      });
-
-    $('#sharing_form').submit(function (event) {
-      // Stop form from submitting normally
-      event.preventDefault();
-      console.log('sharing form submitted via ajax')
-
-      var formData = new FormData(this);
-
-      $.ajax({
-        url: $(this).attr('action'),
-        type: $(this).attr('method'),
-        data: formData,
-        processData: false,
-        contentType: false,
-        csrfmiddlewaretoken: '{{ csrf_token }}',
-        success: function (response) {
-          console.log('response', response)
-          if (response.status == 'ok') {
-            var removalMarkup = '<span class="float-end me-2"><a id="remove_collab" data-uid="' +
-              response.uid + '" href="/collections/collab-remove/' + response.uid +
-              '/' + response.cid + '/"><i class="fas fa-times-circle linky"></i></a></span>';
-            $("#collabs_list").append(
-              '<li>' + response.user + removalMarkup + '</li>')
-            history.replaceState(null, null, '#coll_collaborators');
-            $('.nav-link[data-bs-target="#coll_collaborators"]').tab('show');
-            $('input[name="username"]').val('');
-          } else {
-            alert(response.status)
-          }
-        },
-        error: function (response) {
-          alert('a problem occurred')
-        }
-      });
-    });
-
-  })
-
-  function showChooser(type) {
-    console.log('showChooser', type)
-    let elem = "#" + type + "_chooser"
-    $(elem).toggle()
-  }
-	$("#a_linkpopup").click(function(){
-    $("#linkform_popup").fadeIn()
-	})
-	$(".closer").click(function(){
-			$(".pop").fadeOut()
-	})
-	$("#b_createlink").click(function(){
-    create_collection_link()
-	})
-	function create_collection_link(){
-      var formData = new FormData()
-			formData.append('model', 'Collection')
-			formData.append('objectid', '{{ object.id }}')
-			formData.append('uri', $("#l_uri").val())
-			formData.append('label',$("#l_label").val() )
-			formData.append('link_type',$("#select_linktype").val() )
-			formData.append('license', '')
-			formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-			$.ajax({
-		      type: 'POST',
-		      enctype: 'multipart/form-data',
-		      url: '{% url "create-link" %}',
-		      processData: false,
-		      contentType: false,
-		      cache: false,
-		      data: formData,
-		      success:function(response){
-			      if(response.result == 'dupe'){
-              alert('That url is already linked to this collection!')
-			      } else if (response.result == 'bad uri'){
-              alert('That url is not formed correctly!')
-			      } else {
-				      linky = response.result
-				      console.log(linky)
-				      $("#linklist").append(linky.link_icon+' <a href="'+linky.uri+
-						      '" target="_blank">'+linky.label+'</a>')
-				      $("#added_flash").fadeIn().delay(2000).fadeOut()
-				      if($("#linklist svg").length >=2 ){
-								$(".link-counter").html("(that's 3!)")
-				      }
-				      {#console.log('added! gimmee feedback', response.result)#}
-			      }
-		      }
-			})
-			{#$("#addtocoll").hide()#}
-			$("#linkform_popup input").val('')
-			$("#linkform_popup").hide()
-	}
-
-  $("#btn_coll_submit").click(function(e){
-    // at least two datasets selected?
-    if('{{action}}' == 'create' && dslist.length < 2) {
-      e.preventDefault()
-      $("#msg").html('<h6>Collections must contain at least 2 datasets!</h6>').addClass('strong-red').show()
-    }
-  })
-
-  function listDataset(d) {
-		// add to coll_dscards
-    dslist.push(d.id)
-    $("#id_datasets [value=" + d.id + "]").attr("checked", "checked");
-    card='<div class="ds_card" id="card_'+d.id+'">'
-        +'<p class="mb-0"><a href="#"><span class="ds_title">'+d.title+'</span></a> ('+d.label+'/'+d.id+')'
-		    +'<span id="ds_sequence" class="float-end"></span></p>'
-        +'<div class="ds_fields">'
-          +'<p class="my-1"><b>Description</b>: '+d.description+'</p>'
-          +'<p class="my-1"><b>Create date</b>: '+d.create_date+'</p>'
-          +'<p class="my-1"><b># rows</b>: '+d.numrows 
-            +'<a href="javascript:{ removeDataset('+d.id+') }" class="float-end">'
-              +'<i class="fas fa-minus-square" style="color:#336699"></i> remove</a>'
-          +'</p></div></div>'
-    $("#coll_dscards").append(card)
-  }
-
-	// initiates the add dataset step
-	function addDataset() {
-	  let selectedOption = $("#select_ds option:selected");
-	  let dsStatus = selectedOption.data('status');
-	  let dsTitle = selectedOption.data('title');
-		console.log('addDataset() selectedOption', selectedOption)
-		console.log('addDataset() dsStatus', dsStatus)
-		console.log('addDataset() dsTitle', dsTitle)
-	  // Generate the modal content based on the dataset status
-	  generateModalContent(dsStatus, dsTitle);
-
-	  // Show the modal
-	  $('#modal').modal('show');
-	}
-
-	function generateModalContent(dsStatus, dsTitle) {
-	  // Clear the modal content
-	  $('.modal-body').empty();
-
-	  // Generate the modal content based on the dataset status
-	  if (dsStatus != 'indexed') {
-	    $('.modal-body').append('<p>The status of '+dsTitle+' is currently "'+dsStatus+'". It must be indexed before adding to a collection</p>');
-	    $('.modal-body').append('<button type="button" class="btn btn-secondary" ' +
-			    'data-bs-dismiss="modal">Cancel</button>');
-	  } else {
-	    $('.modal-body').append('<p>Dataset is indexed, OK to proceed!</p>');
-	    $('.modal-body').append('<button type="button" class="btn btn-secondary" ' +
-			    'data-bs-dismiss="modal">Cancel</button>');
-	    $('.modal-body').append('<button id="b_continue" type="button" class="btn btn-success ms-2">Continue</button>');
-	  }
-
-	  // Add event listener to the 'continue' button
-		// fetch and display card info in dslist[]
-		// TODO: this should index the dataset to "builder"
-	  $('#b_continue').click(function() {
-	    let selectedOption = $("#select_ds option:selected");
-      // start a spinner
-		  {#startAddSpinner()#}
-	    $.ajax({
-	      url: "/collections/add_ds/{{object.id}}/" + selectedOption.val(),
-	      success: function(result) {
-	        if(result.status === 'success') {
-	          listDataset(result.dataset);
-            {#stopAddSpinner()#}
-	        } else if(result.status === 'already_added') {
-	          alert('Dataset already in the collection');
-	        }
-	      },
-	      error: function(xhr, status, error) {
-	        console.error('Error in addDataset:', error);
-	      }
-	    });
-
-	    // Reset select and hide message
-	    $("#select_ds").val(0);
-	    $("#msg").html('').hide();
-
-	    // Hide the modal
-	    $('#modal').modal('hide');
-	  });
-	}
-
-	function confirmRemove(dsId, collId, element) {
-	    console.log('dsId, collId', dsId, collId)
-
-    // Get the dataset list and the index of the dataset to remove
-    var datasetList = $("#coll_dscards").children().toArray();
-    var datasetElement = $("#coll_dscards").find("[data-id='" + dsId + "']");
-    var datasetIndex = datasetList.indexOf(datasetElement[0]);
-
-
-    // Check the state of the dataset
-    var hasAlignCollectionTask = datasetElement.data('has_task');
-    var remainingToReview = datasetElement.data('remaining');
-
-    // Determine the confirmation message based on the state of the dataset
-    var confirmMessage;
-    if (datasetIndex === 0 && datasetList.length > 1) {
-        confirmMessage = "You can't remove the seed dataset for a collection once others are added.";
-    } else if (hasAlignCollectionTask) {
-        confirmMessage = "Reconciliation of this dataset to the collection is under way, these are the consequences of removing it: blah blah";
-    } else if (remainingToReview === 0) {
-        confirmMessage = "Reconciliation of this dataset to the collection is completed, these are the consequences of removing it: blah blah";
-    } else {
-        confirmMessage = "Are you sure you want to remove this dataset?";
-    }
-
-    // Show the confirmation dialog
-    if (confirm(confirmMessage)) {
-        var url = `/collections/remove_ds/${collId}/${dsId}`;
-        window.location.href = url;
-    } else {
-        console.log("Removal canceled.");
-    }
-	}
-
-  function removeDataset(dsid) {
-    if("{{ action }}" == 'update') {
-      alert('removing ' + dsid + ' from collection '+ "{{object.id}}")
-      $.ajax("/collections/remove_ds/{{object.id}}/"+dsid,
-        function(result){
-          console.log('removeDataset() result', result)
-      });
-    } else {
-      // TODO: why would there be an else: here?
-      $("#id_datasets [value=" + dsid + "]").prop("checked", false);
-      let idx = dslist.indexOf(dsid)
-      dslist.splice(idx, dslist.length);
-      card = "#card_"+dsid
-      $(card).remove()
-      if(dslist.length == 0 ){ $("#msg").html('None yet...').show()}
-      {#console.log('removed '+dsid+' from dslist[] and dom')#}
-    }
-    // reset select
-    $("#select_ds").val(0)
-  }
-
-  {#function clearDataset(dsid){#}
-    {#console.log('clear card for ds', dsid)#}
-  {#  $("#card_"+dsid).remove()#}
-  {# }#}
-
+    console.log("Object ID:", context_objectId);
+    console.log("Action:", context_action);
+    console.log("Create Link URL:", context_createLinkUrl);
 </script>
-
+    
 {% endblock %}
 
+{% block deferredScripts %}
+  var scripts = [
+    {
+      src: '{% static 'webpack/builders-collection-dataset.bundle.js' %}',
+      type: 'module',
+    },
+  ]
+{% endblock %}

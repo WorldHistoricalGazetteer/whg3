@@ -846,6 +846,34 @@ def create_collection_group(request, *args, **kwargs):
 
   return JsonResponse(result, safe=False)
 
+@require_POST
+def update_vis_parameters(request, *args, **kwargs):
+    try:
+        coll_id = request.POST.get('coll_id')
+        checked = bool(request.POST.get('checked') == 'true')
+
+        if checked:
+            vis_parameters = {
+                'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
+                'min': {'tabulate': 'initial', 'temporal_control': 'filter', 'trail': False},
+                'max': {'tabulate': True, 'temporal_control': 'filter', 'trail': False}
+            }
+        else:
+            vis_parameters = {
+                'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
+                'min': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
+                'max': {'tabulate': False, 'temporal_control': 'none', 'trail': False}
+            }
+
+        # Update the vis_parameters field of the collection
+        collection = get_object_or_404(Collection, id=coll_id)
+        collection.vis_parameters = vis_parameters
+        collection.save()
+
+        return JsonResponse({'message': 'Visualisation parameters updated successfully', 'vis_parameters': json.dumps(vis_parameters)})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 CollectionLinkFormset = inlineformset_factory(
     Collection, CollectionLink, fields=('uri','label','link_type'), extra=2,
     widgets={
@@ -1272,7 +1300,7 @@ class DatasetCollectionCreateView(LoginRequiredMixin, CreateView):
     context['action'] = 'create'
     context['ds_select'] = ds_select
     context['coll_dsset'] = datasets
-
+    
     return context
 
 """ update dataset collection
@@ -1337,6 +1365,16 @@ class DatasetCollectionUpdateView(UpdateView):
     # TODO: deprecated?
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
+    
+    vis_parameters = coll.vis_parameters
+    if vis_parameters is None:
+        vis_parameters = {
+            'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
+            'min': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
+            'max': {'tabulate': False, 'temporal_control': 'none', 'trail': False}
+        }
+    context['visParameters'] = json.dumps(vis_parameters)
+    context['vis_parameters_dict'] = vis_parameters
 
     return context
 
@@ -1410,8 +1448,7 @@ class DatasetCollectionBrowseView(DetailView):
     context['links'] = Link.objects.filter(collection=id_)
     context['updates'] = {}
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
-    #TODO: Remove hard-coding of vis_parameters
-    context['visParameters'] = "{'seq': {'tabulate': false, 'temporal_control': 'player', 'trail': true},'min': {'tabulate': 'initial', 'temporal_control': 'filter', 'trail': true},'max': {'tabulate': true, 'temporal_control': 'filter', 'trail': false}}"
+    context['visParameters'] = coll.vis_parameters or "{'seq': {'tabulate': false, 'temporal_control': 'none', 'trail': false},'min': {'tabulate': false, 'temporal_control': 'none', 'trail': false},'max': {'tabulate': false, 'temporal_control': 'none', 'trail': false}}"
     context['datasets'] = [{"id":ds["id"], "label":ds["label"], "title":ds["title"], "extent":ds["extent"]} for ds in coll.ds_list]
 
     return context
