@@ -29,8 +29,14 @@ added to groups
 in dbeaver:
 /- datasets
 /- places, place_* from als512 datasets
-- collections
-- resources
+/- collections
+	nb. collections can include datasets/places not owned by 119
+	map created -> create_date
+	fields missing in v3: 'content', 'type', 'omitted'
+- collection_place -> collection_collplace (skip id)
+- collection_dataset
+/- resources
+/- log
 - trace_annotations
 - areas
 
@@ -57,7 +63,6 @@ DatasetFile (311 rows)
 ----------------------
 no need to cull existing files (311 files for 309 datasets)
 
-
 Place (2,641,399 rows)
 ----------------------
 v2 ids
@@ -65,8 +70,7 @@ v2 ids
 v3 ids
 	728-27872, Glasgow(6369230, 5657791, 2487384, 84374)
 
-
-Collection
+Collection ()
 ----------
 
 

@@ -36,11 +36,11 @@ class TraceAnnotation(models.Model):
 
     start = models.CharField(max_length=11, blank=True, null=True) # ISO8601 date, incl. '-'
     end = models.CharField(max_length=11, blank=True, null=True) # ISO8601 date, incl. '-'
-    # TODO: redundant to CollPlace.sequence; this one not used
+    # TODO: redundant to CollPlace.sequence; this one NOT used
     sequence = models.IntegerField(blank=True, null=True)
     anno_type = models.CharField(max_length=20, default='place', blank=True, null=True)
     # holdover from W3C anno model
-    motivation = models.CharField(max_length=20, default='locating') # choices? locating, describing
+    motivation = models.CharField(max_length=20, default='locating', null=True) # choices? locating, describing
     owner = models.ForeignKey(User, related_name='annotations', on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True, null=False, blank=True)
     

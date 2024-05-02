@@ -20,7 +20,8 @@ from collection.models import Collection, CollectionGroup, CollectionGroupUser
 from datasets.models import Dataset
 from datasets.tasks import testAdd
 from .models import Announcement, Link, DownloadFile
-from places.models import Place, PlaceGeom
+from places.models import Place
+from resources.models import Resource
 from utils.emailing import new_emailer
 
 from bootstrap_modal_forms.generic import BSModalCreateView
@@ -184,35 +185,14 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
   if is_admin and model == Area and 'type' in filter_criteria:
     objects = objects.exclude(type__in=filter_criteria['type'])
   elif model == Dataset:  # reverse sort, and some dummy datasets need to be filtered
-    objects = objects.exclude(title__startswith='(stub)').order_by('create_date')
+    objects = objects.exclude(
+      Q(title__startswith='(stub)')|Q(numrows__lt=1)
+    ).order_by('create_date')
     objects = objects.annotate(recent_log_timestamp=Max('log__timestamp'))
     # objects = objects.order_by('-recent_log_timestamp')
     # objects = objects.order_by('label')
 
   return objects
-
-# def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
-#   from django.db.models import Max
-#   # Always apply extra filters if they are provided and the model is Area
-#   if extra_filters and model == Area:
-#     objects = model.objects.filter(**extra_filters)
-#   elif is_admin:
-#     objects = model.objects.all()
-#   else:
-#     objects = model.objects.filter(**filter_criteria).exclude(title__startswith='(stub)')
-#
-#   if model == Area:
-#     objects = objects.filter(type__in=['ccodes', 'copied', 'drawn'])
-#
-#   if is_admin and model == Area and 'type' in filter_criteria:
-#     objects = objects.exclude(type__in=filter_criteria['type'])
-#   elif model == Dataset: # reverse sort, and some dummy datasets need to be filtered
-#       objects = objects.exclude(title__startswith='(stub)').order_by('create_date')
-#       objects = objects.annotate(recent_log_timestamp=Max('log__timestamp'))
-#       # objects = objects.order_by('-recent_log_timestamp')
-#       # objects = objects.order_by('label')
-#
-#   return objects
 
 def area_list(request, sort='', order=''):
   filters = request.GET
@@ -493,7 +473,7 @@ def dashboard_admin_view(request):
   # section = request.GET.get('section')
   section = request.GET.get('section', 'datasets')
 
-  # TODO: for admins, show all datasets, collections, areas
+  #
   datasets = get_objects_for_user(Dataset, request.user, {}, is_admin)
   datasets = datasets.order_by('create_date')
 
@@ -528,6 +508,7 @@ def dashboard_user_view(request):
   user_datasets_count = Dataset.objects.filter(owner=user.id).count()
   user_collections_count = Collection.objects.filter(owner=user).count()
   user_areas_count = Area.objects.filter(owner=user).count()
+  user_resources_count = Resource.objects.filter(owner=user).count()
   user_downloads_count = DownloadFile.objects.filter(user=user).count()
 
   section = request.GET.get('section')
@@ -535,6 +516,7 @@ def dashboard_user_view(request):
   datasets = get_objects_for_user(Dataset, request.user, {'owner': user}, False)
   collections = get_objects_for_user(Collection, request.user, {'owner': user}, False)
   areas = get_objects_for_user(Area, request.user, {'owner': user}, False)
+  resources = get_objects_for_user(Resource, request.user, {'owner': user}, False)
   downloads = get_objects_for_user(DownloadFile, request.user, {'user': user}, False)
   groups_member = CollectionGroup.objects.filter(members__user=user)
   groups_led = CollectionGroup.objects.filter(owner=user)
@@ -543,10 +525,12 @@ def dashboard_user_view(request):
     'datasets': datasets,
     'collections': collections,
     'areas': areas,
+    'resources': resources,
     'downloads': downloads,
     'has_datasets': user_datasets_count > 0,
     'has_collections': user_collections_count > 0,
     'has_areas': user_areas_count > 0,
+    'has_resources': user_resources_count > 0,
     'has_downloads': user_downloads_count > 0,
     'section': section,
     'django_groups': django_groups,

@@ -987,7 +987,7 @@ class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
     # populates dropdown
     ds_select = [obj for obj in Dataset.objects.all().order_by('title') if user in obj.owners or user.is_superuser]
     if not user.is_superuser:
-      ds_select.insert(len(ds_select)-1, Dataset.objects.get(label='owt10'))
+      ds_select.insert(len(ds_select)-1, Dataset.objects.get(label='owt10_foo'))
 
     context['action'] = 'update'
     context['ds_select'] = ds_select

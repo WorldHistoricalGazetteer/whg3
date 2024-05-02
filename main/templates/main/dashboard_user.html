@@ -102,6 +102,7 @@
         <div class="box-content">
         {% if has_datasets %}
         {% for item in datasets %}
+          {% if item.places.count > 0 %}
           <div class="item-div row">
           	<div class="col-10">
             <p class="fw-bold red-head">{{ item.title }}</p>
@@ -117,6 +118,7 @@
 		            <i class="fas fa-edit linky"></i></a>
             </div>
           </div>
+          {% endif %}
         {% endfor %}
         {% else %}
 					<p>no datasets yet</p>
@@ -218,7 +220,7 @@
     </div>
 	  </div>
 
-    <!-- column 3: Areas, Collection Groups -->
+    <!-- column 3: Areas, Collection Groups, Resources -->
 		<div class="col-md-4">
 		<div class="column-wrapper">
       <div class="dashboard-box">
@@ -291,6 +293,25 @@
           {% endif %}
         </div>
       </div>
+      {% if has_resources %}
+      <div class="dashboard-box mt-3">
+        <div class="box-header">
+          <div class="box-header-title">Resources</div>
+        </div>
+        <div class="box-content">
+          {% for item in resources %}
+          <div class="item-div">
+            <p class="fw-bold red-head">{{ item.title }}</p>
+            <div class="float-end">
+              <a href="{% url 'resources:resource-detail' item.id %}">
+                <i class="fas fa-edit linky"></i></a>
+{#              <a href=""><i class="fas fa-edit linky"></i></a>#}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
     </div>
 		</div>
   </div>

@@ -3,42 +3,30 @@ collections v3
 
 Collection
 ----------
-owner = models.ForeignKey(settings.AUTH_USER_MODEL,
-    related_name='collections', on_delete=models.CASCADE)
-title = models.CharField(null=False, max_length=255)
-description = models.TextField(max_length=3000)
-keywords = ArrayField(models.CharField(max_length=50), null=True)
-
-
-rel_keywords = ArrayField(models.CharField(max_length=30), blank=True, null=True)
-
-creator = models.CharField(null=True, blank=True, max_length=500)
-contact = models.CharField(null=True, blank=True, max_length=500)
-webpage = models.URLField(null=True, blank=True)
-
-collection_class = models.CharField(choices=COLLECTIONCLASSES, max_length=12)
-
-image_file = ResizedImageField(size=[800, 600], upload_to=collection_path, blank=True, null=True)
-file = models.FileField(upload_to=collection_path, blank=True, null=True)
-
-create_date = models.DateTimeField(null=True, auto_now_add=True)
-
-status = models.CharField(max_length=12, choices=STATUS_COLL, default='sandbox', null=True, blank=True)
-featured = models.IntegerField(null=True, blank=True)
-
+owner = models.ForeignKey(settings.AUTH_USER_MODEL,related_name='collections', on_delete=models.CASCADE)
+group = models.ForeignKey("CollectionGroup", db_column='group',related_name="group", null=True, blank=True, on_delete=models.PROTECT)
 datasets = models.ManyToManyField('datasets.Dataset', through='collection.CollDataset', related_name='new_datasets', blank=True)
 places = models.ManyToManyField("places.Place", through='CollPlace', blank=True)
 
-build_type = models.CharField(choices=COLLECTIONTYPES, default="discrete", max_length=10,
-                              null=True, blank=True)
-version = models.CharField(null=True, blank=True, max_length=20)
-public = models.BooleanField(default=False)
+contact = models.CharField(null=True, blank=True, max_length=500)
+collection_class = models.CharField(choices=COLLECTIONCLASSES, max_length=12)
+create_date = models.DateTimeField(null=True, auto_now_add=True)
+creator = models.CharField(null=True, blank=True, max_length=500)
+description = models.TextField(max_length=3000)
+featured = models.IntegerField(null=True, blank=True)
+file = models.FileField(upload_to=collection_path, blank=True, null=True)
+image_file = ResizedImageField(size=[800, 600], upload_to=collection_path, blank=True, null=True)
+keywords = ArrayField(models.CharField(max_length=50), null=True)
 nominated = models.BooleanField(default=False)
 nominate_date = models.DateTimeField(null=True, blank=True)
-group = models.ForeignKey("CollectionGroup", db_column='group',
-                          related_name="group", null=True, blank=True, on_delete=models.PROTECT)
+public = models.BooleanField(default=False)
+rel_keywords = ArrayField(models.CharField(max_length=30), blank=True, null=True)
+status = models.CharField(max_length=12, choices=STATUS_COLL, default='sandbox', null=True, blank=True)
 submit_date = models.DateTimeField(null=True, blank=True)
+title = models.CharField(null=False, max_length=255)
+version = models.CharField(null=True, blank=True, max_length=20)
 vis_parameters = JSONField(default=dict, null=True, blank=True)
+webpage = models.URLField(null=True, blank=True)
 
 
   def carousel_metadata(self):

@@ -56,8 +56,8 @@ def default_omitted():
 class CollDataset(models.Model):
   collection = models.ForeignKey('Collection', on_delete=models.CASCADE)
   dataset = models.ForeignKey('datasets.Dataset', on_delete=models.CASCADE)
-  # date_added = models.DateTimeField(auto_now_add=True)
-  date_added = models.DateTimeField(default=timezone.now)
+  # date_added = models.DateTimeField(auto_now_add=True, null=True)
+  date_added = models.DateTimeField(default=timezone.now, null=True)
 
   class Meta:
     ordering = ['id']
@@ -81,9 +81,6 @@ class Collection(models.Model):
 
   # modified, 20220902: 'place' or 'dataset'; no default
   collection_class = models.CharField(choices=COLLECTIONCLASSES, max_length=12)
-  # applies only to dataset collections ['discrete', 'conflated']
-  build_type = models.CharField(choices=COLLECTIONTYPES, default="discrete", max_length=10,
-                                null=True, blank=True)
 
   # single representative image
   image_file = ResizedImageField(size=[800, 600], upload_to=collection_path, blank=True, null=True)
@@ -256,14 +253,14 @@ class Collection(models.Model):
     db_table = 'collections'
 
 """ 
-  records membership of place in collection + sequence of its annotation
+  records membership of place in collection; sequence is managed in TraceAnnotation
 """
 class CollPlace(models.Model):
   collection = models.ForeignKey(Collection, related_name='annos',
                                  on_delete=models.CASCADE)
   place = models.ForeignKey(Place, related_name='annos',
                             on_delete=models.CASCADE)
-  sequence = models.IntegerField()
+  sequence = models.IntegerField(null=True, default=0)
 
 class CollectionUser(models.Model):
   collection = models.ForeignKey(Collection, related_name='collabs', default=-1, on_delete=models.CASCADE)
