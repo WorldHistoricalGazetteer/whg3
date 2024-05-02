@@ -40,6 +40,8 @@ let mapParameters = {
     fullscreenControl: true,
 }
 
+console.log('visParameters',visParameters);
+
 if (window.ds_list[0].ds_type == 'collections') {
 	mapParameters = {
 		...mapParameters,
@@ -59,10 +61,23 @@ if (window.ds_list[0].ds_type == 'collections') {
 		},
 	}
 }
+else if (visParameters.max.tabulate !== false && visParameters.min.tabulate !== false) { // for Datasets
+	mapParameters = {
+		...mapParameters,
+		temporalControl: {
+	        fromValue: 1550,
+	        toValue: 1720,
+	        minValue: -2000,
+	        maxValue: 2100,
+	        open: false,
+	        includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
+	        epochs: null,
+	        automate: null,
+	    },
+	}	
+}
 
 let mappy = new whg_maplibre.Map(mapParameters);
-
-console.log('visParameters',visParameters)
 
 const mapLoadPromise = new Promise(function (resolve, reject) {
     mappy.on('load', function () {

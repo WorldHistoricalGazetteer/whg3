@@ -17,7 +17,10 @@ module.exports = {
 	entry: {
 		areas: '/app/whg/webpack/js/areas.js',
 		base: '/app/whg/webpack/js/base.js',
-		builders: '/app/whg/webpack/js/builders.js',
+		'builders-collection-dataset': '/app/whg/webpack/js/builders-collection-dataset.js',
+		'builders-collection-place': '/app/whg/webpack/js/builders-collection-place.js',
+		'builders-dataset': '/app/whg/webpack/js/builders-dataset.js',
+		'builders-dataset-status': '/app/whg/webpack/js/builders-dataset-status.js',
 		docs: '/app/whg/webpack/js/docs.js',
 		ds_browse: '/app/whg/webpack/js/ds_browse.js',
 		gallery: '/app/whg/webpack/js/gallery.js',

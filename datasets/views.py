@@ -16,6 +16,7 @@ from django.http import HttpResponseServerError, HttpResponseRedirect, JsonRespo
 from django.shortcuts import redirect, get_object_or_404, render
 from django.test import Client
 from django.urls import reverse
+from django.views.decorators.http import require_POST
 from django.views.generic import (CreateView, ListView, UpdateView, DeleteView, DetailView)
 from django_celery_results.models import TaskResult
 from django.core.serializers import serialize
@@ -2508,8 +2509,46 @@ class DatasetStatusView(LoginRequiredMixin, UpdateView):
       place_id__in=placeset, task_id__contains='-').count()
 
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
+    
+    vis_parameters = ds.vis_parameters
+    if vis_parameters is None:
+        vis_parameters = {
+            'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
+            'min': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
+            'max': {'tabulate': False, 'temporal_control': 'none', 'trail': False}
+        }
+    #context['visParameters'] = json.dumps(vis_parameters)
+    context['vis_parameters_dict'] = vis_parameters
 
     return context
+
+@require_POST
+def update_vis_parameters(request, *args, **kwargs):
+    try:
+        ds_id = request.POST.get('ds_id')
+        checked = bool(request.POST.get('checked') == 'true')
+
+        if checked:
+            vis_parameters = {
+                'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
+                'min': {'tabulate': 'initial', 'temporal_control': 'filter', 'trail': False},
+                'max': {'tabulate': True, 'temporal_control': 'filter', 'trail': False}
+            }
+        else:
+            vis_parameters = {
+                'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
+                'min': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
+                'max': {'tabulate': False, 'temporal_control': 'none', 'trail': False}
+            }
+
+        # Update the vis_parameters field of the dataset
+        dataset = get_object_or_404(Dataset, pk=ds_id)
+        dataset.vis_parameters = vis_parameters
+        dataset.save()
+
+        return JsonResponse({'message': 'Visualisation parameters updated successfully', 'vis_parameters': json.dumps(vis_parameters)})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
 
 """
   returns dataset owner metadata page
