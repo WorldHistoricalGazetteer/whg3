@@ -92,7 +92,7 @@ class Dataset(models.Model):
   # only filter display toggle valid for datasets
   vis_parameters = JSONField(default=dict, null=True, blank=True)
   # list dataset on volunteers requested page?
-  volunteers = models.BooleanField(default=False)
+  volunteers = models.BooleanField(default=False, null=True)
 
   def __str__(self):
     return self.label

@@ -302,6 +302,7 @@ $("#b_cancel_link").click(function() {
 // remove places from collection (archiving annotations)
 function remove_from_collection(coll, pids) {
 	var formData = new FormData()
+	let remove_these = []
 	formData.append('collection', coll)
 	formData.append('place_list', pids)
 	formData.append('csrfmiddlewaretoken', csrf_token);
@@ -319,6 +320,7 @@ function remove_from_collection(coll, pids) {
 	})
 	// remove card from dom & hide link
 	$(".col-place-card").each(function(index) {
+		console.log('remove_these', remove_these)
 		if (remove_these.includes($(this).data('id'))) {
 			$(this).remove()
 		}
@@ -332,7 +334,7 @@ function remove_from_collection(coll, pids) {
 
 // remove place(s) from collection
 $("#a_remove").click(function() {
-	var coll = '{{ object.id }}'
+	var coll = object_id
 	remove_from_collection(coll, remove_these)
 })
 
@@ -634,29 +636,51 @@ $("#select_ds").change(function() {
 })
 
 // render dataset to html
-function listDataset(d) {
-	/*console.log('listing this:', d.title)*/
-	dslist.push(d.id)
-	$("#id_datasets [value=" + d.id + "]").attr("checked", "checked");
-	let coll_id = object_id
-	let card = '<div class="ds_card" id="card_' + d.id + '">' +
-		'<p class="mb-0"><a href="#"><span class="ds_title">' + d.title + '</span></a> (' + d.label + '/' + d.id + ')</p>' +
-		'<div class="ds_fields">' +
-		'<p class="my-1"><b>Description</b>: ' + d.description + '</p>' +
-		'<p class="my-1"><b>Create date</b>: ' + d.create_date.slice(0, 10) + '; <b># rows</b>: ' + d.numrows + '</p>' +
-		'<p class="my-1"><a href="javascript:{ removeDataset(' + d.id + ') }">' +
-		'<i class="fas fa-minus-square" style="color:#336699"></i> remove</a>' +
-		'<span class="float-end"><a class="a_addplaces" href="javascript:{addPlaces(' + d.id + ')}">add all ' +
-		d.numrows + ' places</a></span' +
-		'</p></div></div>'
-	$(".a_addplaces").click(function() {
-		let thisy = $(this)
-		/*console.log('thisy', thisy)*/
-	})
-	$("#coll_dscards_create").append(card)
-	// console.log(card)
-}
+// function listDataset(d) {
+// 	/*console.log('listing this:', d.title)*/
+// 	let dslist = []
+// 	dslist.push(d.id)
+// 	$("#id_datasets [value=" + d.id + "]").attr("checked", "checked");
+// 	let coll_id = object_id
+// 	let card = '<div class="ds_card" id="card_' + d.id + '">' +
+// 		'<p class="mb-0"><a href="#"><span class="ds_title">' + d.title + '</span></a> (' + d.label + '/' + d.id + ')</p>' +
+// 		'<div class="ds_fields">' +
+// 		'<p class="my-1"><b>Description</b>: ' + d.description + '</p>' +
+// 		'<p class="my-1"><b>Create date</b>: ' + d.create_date.slice(0, 10) + '; <b># rows</b>: ' + d.numrows + '</p>' +
+// 		'<p class="my-1"><a href="javascript:{ removeDataset(' + d.id + ') }">' +
+// 		'<i class="fas fa-minus-square" style="color:#336699"></i> remove</a>' +
+// 		'<span class="float-end"><a class="a_addplaces" href="javascript:{addPlaces(' + d.id + ')}">add all ' +
+// 		d.numrows + ' places</a></span></p></div></div>'
+// 	$(".a_addplaces").click(function() {
+// 		let thisy = $(this)
+// 		/*console.log('thisy', thisy)*/
+// 	})
+// 	$("#coll_dscards_create").append(card)
+// 	// console.log(card)
+// }
 
+function listDataset(d) {
+    let dslist = []
+    dslist.push(d.id)
+    $("#id_datasets [value=" + d.id + "]").attr("checked", "checked");
+    let coll_id = object_id
+    let card = $('<div class="ds_card" id="card_' + d.id + '">' +
+        '<p class="mb-0"><a href="#"><span class="ds_title">' + d.title + '</span></a> (' + d.label + '/' + d.id + ')</p>' +
+        '<div class="ds_fields">' +
+        '<p class="my-1"><b>Description</b>: ' + d.description + '</p>' +
+        '<p class="my-1"><b>Create date</b>: ' + d.create_date.slice(0, 10) + '; <b># rows</b>: ' + d.numrows + '</p>' +
+        '<p class="my-1"><a href="javascript:void(0)">' +
+        '<i class="fas fa-minus-square" style="color:#336699"></i> remove</a>' +
+        '<span class="float-end"><a class="a_addplaces" href="javascript:void(0)">add all ' +
+        d.numrows + ' places</a></span' +
+        '</p></div></div>');
+
+    card.find(".a_addplaces").click(function() {
+        addPlaces(d.id);
+    });
+
+    $("#coll_dscards_create").append(card);
+}
 // adds all dataset places to placelist
 function addPlaces(dsid) {
 	let url = "/collections/add_dsplaces/" + object_id + "/" + dsid

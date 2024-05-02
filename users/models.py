@@ -44,7 +44,6 @@ class UserManager(BaseUserManager):
         return self.create_user(username, email, password, **extra_fields)
 
 class User(AbstractUser, PermissionsMixin):
-    # username = None
     username = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=255)
     given_name = models.CharField(max_length=255, null=True)
@@ -58,6 +57,10 @@ class User(AbstractUser, PermissionsMixin):
 
     email_confirmed = models.BooleanField(default=False)
     must_reset_password = models.BooleanField(default=False)
+
+    # drop these
+    first_name = None
+    last_name = None
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email', 'name']

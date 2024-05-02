@@ -81,11 +81,11 @@ def login(request):
         else:
           # Authentication fails
           messages.error(request, "Invalid password.")
-          return redirect('accounts/login')
+          return redirect('accounts:login')
     except User.DoesNotExist:
       # User not found
       messages.error(request, "Invalid username.")
-      return redirect('login')  # Or render with an error message
+      return redirect('accounts:login')  # Or render with an error message
   else:
     return render(request, 'accounts/login.html')
 

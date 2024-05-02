@@ -1,0 +1,76 @@
+STEPS
+=====
+
+User (678 rows)
+---------------
+(v2)
+
+(v3 local) repeat on server after test
+need user id 52 (Ali) recreated as 1000 (als512), deleted
+need user id 4 (belle) recreated as 1001 (belletolls), deleted
+
+create new user als512/djangoish, id=1000; add to groups
+create new user belletolls/django9999, id=1001
+
+update collections set user_id = 1001 where user_id = 4
+update collection_group_user set user_id = 1001 where user_id = 4
+update log set user_id = 1001 where user_id = 4;
+update dataset_user set user_id_id = 1001 where user_id_id = 4;
+update trace_annotations set owner_id = 1001 where owner_id = 4;
+
+delete user 'belle'
+delete user 'Ali'
+
+EXAMPLE: als512 (Ali Straub)
+============================
+created User als512 (119)
+added to groups
+
+in dbeaver:
+/- datasets
+/- places, place_* from als512 datasets
+- collections
+- resources
+- trace_annotations
+- areas
+
+
+MODELS
+======
+
+Dataset (309 rows)
+------------------
+/set null=True for dataset.volunteers
+/in dbeaver, export all datasets for user 119 into dev database
+	/- user als512 is directed to change password
+	/- datasets appear in My Data
+
+dataset ids are referenced in: dataset_file, collection_colldataset, hits, dataset_users
+v3 datasets 6-10 need new ids, 28-32
+
+v2 ds ids
+	1-10 (core), 359-394, 636-1491
+v3 ds ids
+	6-27, 37-60
+
+DatasetFile (311 rows)
+----------------------
+no need to cull existing files (311 files for 309 datasets)
+
+
+Place (2,641,399 rows)
+----------------------
+v2 ids
+	80977-8139294
+v3 ids
+	728-27872, Glasgow(6369230, 5657791, 2487384, 84374)
+
+
+Collection
+----------
+
+
+
+
+
+
