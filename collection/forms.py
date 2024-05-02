@@ -55,7 +55,7 @@ class CollectionModelForm(forms.ModelForm):
         model = Collection
         fields = ('id', 'owner', 'title','collection_class', 'description', 'keywords', 'rel_keywords',
                   'image_file', 'file', 'datasets', 'creator', 'contact', 'webpage', 'featured',
-                  'status', 'group', 'build_type', 'vis_parameters', 'public')
+                  'status', 'group', 'vis_parameters', 'public')
 
         widgets = {
             # 'title': forms.TextInput(attrs={'size': 45}),
@@ -72,7 +72,7 @@ class CollectionModelForm(forms.ModelForm):
             'datasets': forms.CheckboxSelectMultiple,
             'featured': forms.TextInput(attrs={'size': 3}),
             'group': forms.Select(),
-            'build_type': forms.RadioSelect()
+            # 'build_type': forms.RadioSelect()
             # 'content': TinyMCE(attrs={'cols': 40, 'rows': 6})
         }
 
