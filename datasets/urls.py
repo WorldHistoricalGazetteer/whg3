@@ -59,6 +59,7 @@ urlpatterns = [
   ## UPDATES (in progress)
   path('compare/', views.ds_compare, name='dataset-compare'),
   path('update/', views.ds_update, name='dataset-update'),
+  path('update_vis_parameters/', views.update_vis_parameters, name='update-vis-parameters'),
 
   ## RECONCILIATION/REVIEW
   # initiate reconciliation

@@ -1373,7 +1373,7 @@ class DatasetCollectionUpdateView(UpdateView):
             'min': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
             'max': {'tabulate': False, 'temporal_control': 'none', 'trail': False}
         }
-    context['visParameters'] = json.dumps(vis_parameters)
+    #context['visParameters'] = json.dumps(vis_parameters)
     context['vis_parameters_dict'] = vis_parameters
 
     return context

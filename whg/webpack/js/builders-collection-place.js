@@ -317,400 +317,402 @@ $(function() {
 	$('.show-chooser').click(function(event) {
         event.preventDefault();
 		$(this).parent().find('.chooser').show();
-	});
+	});   
+	
+	// ******************* FUNCTIONS *******************
+	
+	// flag collection as submitted, shows up on leader's list
+	function group_connect(action) {
+		console.log('submitting collection {{ object.id }} to group ' + $("#id_group").val())
+		var formData = new FormData()
+		formData.append('action', action)
+		formData.append('coll', '{{ object.id }}')
+		formData.append('group', $("#id_group").val())
+		formData.append('csrfmiddlewaretoken', csrf_token);
+		$.ajax({
+			type: 'POST',
+			enctype: 'multipart/form-data',
+			url: '{% url "collection:group-connect" %}',
+			processData: false,
+			contentType: false,
+			cache: false,
+			data: formData,
+			success: function(response) {
+				if (response.status == 'ok') {
+					console.log(response)
+				} else {
+					console.log(response)
+				}
+			}
+		})
+	}
+	
+	/*function goBrowse() {*/
+	/*  window.location = '/collections/{{ object.id }}/browse_pl'*/
+	/* }*/
+	
+	function saveExit() {
+		$("#collection_form").submit()
+	}
+	
+	// add link to collection
+	function create_collection_link() {
+		var formData = new FormData()
+		formData.append('model', 'Collection')
+		formData.append('objectid', '{{ object.id }}')
+		formData.append('uri', $("#l_uri").val())
+		formData.append('label', $("#l_label").val())
+		formData.append('link_type', $("#select_linktype").val())
+		formData.append('license', '')
+		formData.append('csrfmiddlewaretoken', csrf_token);
+		$.ajax({
+			type: 'POST',
+			enctype: 'multipart/form-data',
+			url: '{% url "create-link" %}',
+			processData: false,
+			contentType: false,
+			cache: false,
+			data: formData,
+			success: function(response) {
+				if (response.result == 'dupe') {
+					alert('That url is already linked to this collection!')
+				} else if (response.result == 'bad uri') {
+					alert('That url is not formed correctly!')
+				} else {
+					let linky = response.result
+					console.log(linky)
+					$("#linklist").append(linky.link_icon + ' <a href="' + linky.uri +
+						'" target="_blank">' + linky.label + '</a>')
+					$("#added_flash").fadeIn().delay(2000).fadeOut()
+					if ($("#linklist svg").length >= 2) {
+						$(".link-counter").html("(that's 3!)")
+					}
+					/*console.log('added! gimmee feedback', response.result)*/
+				}
+			}
+		})
+		/*$("#addtocoll").hide()*/
+		$("#linkform_popup input").val('')
+		$("#linkform_popup").hide()
+	}
+	
+	// builds link for external place record
+	function url_extplace(identifier) {
+		// abbreviate links not in aliases.base_urls
+		var link;
+		if (identifier.startsWith('http')) {
+			let tag = identifier.replace(/.+\/\/|www.|\..+/g, '')
+			link = '<a href="' + identifier + '" target="_blank">' + tag + '<i class="fas fa-external-link-alt linky"></i>,  </a>'
+		} else {
+			link = '<a href="" class="ext" data-target="#ext_site">' + identifier + '<i class="fas fa-external-link-alt linky"></i></a>, '
+		}
+		return link
+	}
+	
+	// builds link for external placetype record
+	function url_exttype(type) {
+		/*console.dir(type)*/
+		var link = ' <a href="#" class="exttab" data-id=' + type.identifier +
+			'>(' + type.label.label + ' <i class="fas fa-external-link-alt linky"></i>)</a>'
+		return link
+	}
+	
+	// extent of timespan list
+	function minmaxer(timespans) {
+		//console.log('got to minmax()',JSON.stringify(timespans))
+		var starts = [];
+		var ends = []
+		for (let t in timespans) {
+			// gets 'in', 'earliest' or 'latest'
+			starts.push(Object.values(timespans[t].start)[0])
+			ends.push(!!timespans[t].end ? Object.values(timespans[t].end)[0] : -1)
+		}
+		//console.log('starts',starts,'ends',ends)
+		var minmax = [Math.max.apply(null, starts), Math.max.apply(null, ends)]
+		return minmax
+	}
+	
+	// return html for display
+	function parsePlace(data) {
+		var descrip;
+		window.featdata = data
+		let trace = JSON.parse(data.traces).find(function(t) {
+			return t.fields.collection === object_id
+		})
+		if (trace) {
+			/*console.log('has trace for this collection', trace.fields)*/
+			$("#anno_detail").html(JSON.stringify(trace.fields))
+		} else {
+			/*console.log('no trace for this collection')*/
+		}
+	
+		function onlyUnique(array) {
+			const map = new Map();
+			const result = [];
+			for (const item of array) {
+				if (!map.has(item.identifier)) {
+					map.set(item.identifier, true);
+					result.push({
+						identifier: item.identifier,
+						type: item.type,
+						aug: item.aug
+					});
+				}
+			}
+			return (result)
+		}
+	
+		// TITLE
+		descrip = '<p><b>Title</b>: <span id="row_title" class="larger text-danger">' + data.title + '</span>'
+		// NAME VARIANTS
+		descrip += '<p class="scroll65"><b>Variants</b>: '
+		for (let n in data.names) {
+			let name = data.names[n]
+			descrip += '<p>' + name.toponym != '' ? name.toponym + '; ' : ''
+		}
+		// TYPES
+		// may include sourceLabel:"" **OR** sourceLabels[{"label":"","lang":""},...]
+		// console.log('data.types',data.types)
+		//{"label":"","identifier":"aat:___","sourceLabels":[{"label":" ","lang":"en"}]}
+		descrip += '</p><p><b>Types</b>: '
+		var typeids;
+		for (let t in data.types) {
+			let str = ''
+			let type = data.types[t]
+			/*console.log('type',type)*/
+			if ('sourceLabels' in type) {
+				let srclabels = type.sourceLabels
+				for (let l in srclabels) {
+					label = srclabels[l]['label']
+					str = label != '' ? label + '; ' : ''
+				}
+			} else if ('sourceLabel' in type) {
+				str = type.sourceLabel != '' ? type.sourceLabel + '; ' : ''
+			}
+			if (type.label != '') {
+				str += url_exttype(type) + ' '
+			}
+			typeids += str
+		}
+		descrip += typeids.replace(/(; $)/g, "") + '</p>'
+	
+		// LINKS
+		//
+		descrip += '<p class="mb-0"><b>Links</b>: <i>original: </i>'
+		let close_count = 0;
+		let added_count = 0;
+		let html_close = '';
+		let html_added = '';
+	
+		if (data.links.length > 0) {
+			let links = data.links
+			let links_arr = onlyUnique(data.links)
+			/*console.log('distinct data.links',links_arr)*/
+			for (let l in links_arr) {
+				//console.log('link',links_arr[l])
+				if (links_arr[l].aug == true) {
+					added_count += 1
+					html_added += url_extplace(links_arr[l].identifier)
+				} else {
+					close_count += 1
+					html_close += url_extplace(links_arr[l].identifier)
+				}
+			}
+			descrip += close_count > 0 ? html_close : 'none; '
+			descrip += added_count > 0 ? '<i>added</i>: ' + html_added : '<i>added</i>: none'
+		} else {
+			descrip += "<i class='small'>no links established yet</i>"
+		}
+		descrip += '</p>'
+	
+		// RELATED
+		//right=''
+		var related;
+		var parent;
+		if (data.related.length > 0) {
+			parent = '<p class="mb-0"><b>Parent(s)</b>: ';
+			related = '<p class="mb-0"><b>Related</b>: ';
+			for (let r in data.related) {
+				let rel = data.related[r]
+				//console.log('rel',rel)
+				if (rel.relation_type == 'gvp:broaderPartitive') {
+					parent += '<span class="h1em">' + rel.label
+					parent += 'when' in rel && !('timespans' in rel.when) ?
+						', ' + rel.when.start.in + '-' + rel.when.end.in :
+						'when' in rel && ('timespans' in rel.when) ? ', ' +
+						minmaxer(rel.when.timespans) : ''
+					//rel.when.timespans : ''
+					parent += '</span>; '
+				} else {
+					related += '<p class="small h1em">' + rel.label + ', ' + rel.when.start.in + '-' + rel.when.end.in + '</p>'
+				}
+			}
+			descrip += parent.length > 39 ? parent : ''
+			descrip += related.length > 37 ? related : ''
+		}
+	
+		// DESCRIPTIONS
+		// TODO: link description to identifier URI if present
+		if (data.descriptions.length > 0) {
+			let val = data.descriptions[0]['value'].substring(0, 300)
+			descrip += '<p><b>Description</b>: ' + (val.startsWith('http') ? '<a href="' + val + '" target="_blank">Link</a>' : val) +
+				' ... </p>'
+		}
+	
+		// CCODES
+		//
+		if (!!data.countries) {
+			//console.log('data.countries',data.countries)
+			descrip += '<p><b>Modern country bounds</b>: ' + data.countries.join(', ') + '</p>'
+		}
+	
+		// MINMAX
+		//
+		var mm = data.minmax
+		if (data.minmax && !(mm[0] == null && mm[1] == null)) {
+			descrip += '<p><b>When</b>: earliest: ' + data.minmax[0] + '; latest: ' + data.minmax[1]
+		}
+	
+		// TRACES
+		trace = JSON.parse(data.traces).find(function(t) {
+			return t.fields.collection = object_id
+		})
+	
+		// if geom(s) and 'certainty', add it
+		if (data.geoms.length > 0) {
+			let cert = data.geoms[0].certainty
+			if (cert != undefined) {
+				descrip += '<p><b>Location certainty</b>: ' + cert + '</p>'
+			}
+		}
+		descrip += '</div>'
+		return descrip
+	}
+	
+	function getAnno(pid) {
+		//let coll_id = "{{ object.id }}"
+		// traces.views.get_form()
+		// returns TraceAnnotationForm; w/instance if trace_annotation record exists & not archived, else empty
+		const url = "/collections/annoform/?c=" + object_id + "&p=" + pid
+		fetch(url)
+			.then(function(response) {
+				return response.json();
+			})
+			.then(function(data) {
+				const formContainer = document.querySelector("#annotator");
+				formContainer.innerHTML = data.form;
+				$("[rel='tooltip']").tooltip();
+				$("#keyword_color").html('#keyword_color')
+			})
+	}
+	
+	// render dataset to html
+	function listDataset(d) {
+		/*console.log('listing this:', d.title)*/
+		dslist.push(d.id)
+		$("#id_datasets [value=" + d.id + "]").attr("checked", "checked");
+		let coll_id = object_id
+		let card = '<div class="ds_card" id="card_' + d.id + '">' +
+			'<p class="mb-0"><a href="#"><span class="ds_title">' + d.title + '</span></a> (' + d.label + '/' + d.id + ')</p>' +
+			'<div class="ds_fields">' +
+			'<p class="my-1"><b>Description</b>: ' + d.description + '</p>' +
+			'<p class="my-1"><b>Create date</b>: ' + d.create_date.slice(0, 10) + '; <b># rows</b>: ' + d.numrows + '</p>' +
+			'<p class="my-1"><a href="javascript:{ removeDataset(' + d.id + ') }">' +
+			'<i class="fas fa-minus-square" style="color:#336699"></i> remove</a>' +
+			'<span class="float-end"><a class="a_addplaces" href="javascript:{addPlaces(' + d.id + ')}">add all ' +
+			d.numrows + ' places</a></span' +
+			'</p></div></div>'
+		$(".a_addplaces").click(function() {
+			let thisy = $(this)
+			/*console.log('thisy', thisy)*/
+		})
+		$("#coll_dscards_create").append(card)
+		// console.log(card)
+	}
+	
+	// remove places from collection (archiving annotations)
+	function remove_from_collection(coll, pids) {
+		var formData = new FormData()
+		formData.append('collection', coll)
+		formData.append('place_list', pids)
+		formData.append('csrfmiddlewaretoken', csrf_token);
+		$.ajax({
+			type: 'POST',
+			enctype: 'multipart/form-data',
+			url: '/collections/archive_traces/',
+			processData: false,
+			contentType: false,
+			cache: false,
+			data: formData,
+			success: function(response) {
+				/*console.log('result:', response)*/
+			}
+		})
+		// remove card from dom & hide link
+		$(".col-place-card").each(function(index) {
+			if (remove_these.includes($(this).data('id'))) {
+				$(this).remove()
+			}
+		})
+		// update count in tab
+		var newcount = $(".col-place-card").length
+		$("#place_count").text(newcount)
+		remove_these = [];
+		$("#a_remove").text('')
+	}
+	
+	// adds all dataset places to placelist
+	function addPlaces(dsid) {
+		let url = "/collections/add_dsplaces/" + object_id + "/" + dsid
+		// collection.views.add_dataset
+		/*console.log('adding dataset w/o save',dsid, {{ object.id }}, url)*/
+		document.location.href = url
+		/*url = "{% url 'collection:add-ds' ds_id="+dsid+" coll_id=456 %}"*/
+		/*document.location.href = url.replace('123', dsid).replace('456',{{ object.id }})*/
+		/*)*/
+		/*$("#collection_form").submit('remain')*/
+	}
+	
+	// lists dataset on dropdown select
+	function addDataset(action) {
+		/*console.log('selected', $("#select_ds").val())*/
+	
+		$.get("/collections/list_ds", {
+				ds_id: $("#select_ds").val()
+			},
+			function(data) {
+				// render to html
+				listDataset(data)
+				/*console.log('ds to list:',data)*/
+				// append ds.id to form
+			});
+		// reset select
+		$("#select_ds").val(0)
+		$("#msg").html('').hide()
+	}
+	
+	// clears dataset card (cancels add)
+	function clearDataset(dsid) {
+		/*console.log('clear card for ds', dsid)*/
+		$("#card_" + dsid).remove()
+	}
+	
+	// removes dataset from collection
+	function removeDataset(dsid) {
+		/*console.log('removing ' + dsid + 'from collection '+ "{{object.id}}")*/
+		$("#id_datasets [value=" + dsid + "]").prop("checked", false);
+		let idx = dslist.indexOf(dsid)
+		dslist.splice(idx, dslist.length);
+		let card = "#card_" + dsid
+		$(card).remove()
+		if (dslist.length == 0) {
+			$("#msg").html('None yet...').show()
+		}
+		/*console.log('removed '+dsid+' from dslist[] and dom')*/
+		// reset select
+		$("#select_ds").val(0)
+	}
 
 }) // end doc ready
 
 
-
-// flag collection as submitted, shows up on leader's list
-function group_connect(action) {
-	console.log('submitting collection {{ object.id }} to group ' + $("#id_group").val())
-	var formData = new FormData()
-	formData.append('action', action)
-	formData.append('coll', '{{ object.id }}')
-	formData.append('group', $("#id_group").val())
-	formData.append('csrfmiddlewaretoken', csrf_token);
-	$.ajax({
-		type: 'POST',
-		enctype: 'multipart/form-data',
-		url: '{% url "collection:group-connect" %}',
-		processData: false,
-		contentType: false,
-		cache: false,
-		data: formData,
-		success: function(response) {
-			if (response.status == 'ok') {
-				console.log(response)
-			} else {
-				console.log(response)
-			}
-		}
-	})
-}
-
-/*function goBrowse() {*/
-/*  window.location = '/collections/{{ object.id }}/browse_pl'*/
-/* }*/
-
-function saveExit() {
-	$("#collection_form").submit()
-}
-
-// add link to collection
-function create_collection_link() {
-	var formData = new FormData()
-	formData.append('model', 'Collection')
-	formData.append('objectid', '{{ object.id }}')
-	formData.append('uri', $("#l_uri").val())
-	formData.append('label', $("#l_label").val())
-	formData.append('link_type', $("#select_linktype").val())
-	formData.append('license', '')
-	formData.append('csrfmiddlewaretoken', csrf_token);
-	$.ajax({
-		type: 'POST',
-		enctype: 'multipart/form-data',
-		url: '{% url "create-link" %}',
-		processData: false,
-		contentType: false,
-		cache: false,
-		data: formData,
-		success: function(response) {
-			if (response.result == 'dupe') {
-				alert('That url is already linked to this collection!')
-			} else if (response.result == 'bad uri') {
-				alert('That url is not formed correctly!')
-			} else {
-				let linky = response.result
-				console.log(linky)
-				$("#linklist").append(linky.link_icon + ' <a href="' + linky.uri +
-					'" target="_blank">' + linky.label + '</a>')
-				$("#added_flash").fadeIn().delay(2000).fadeOut()
-				if ($("#linklist svg").length >= 2) {
-					$(".link-counter").html("(that's 3!)")
-				}
-				/*console.log('added! gimmee feedback', response.result)*/
-			}
-		}
-	})
-	/*$("#addtocoll").hide()*/
-	$("#linkform_popup input").val('')
-	$("#linkform_popup").hide()
-}
-
-// builds link for external place record
-function url_extplace(identifier) {
-	// abbreviate links not in aliases.base_urls
-	var link;
-	if (identifier.startsWith('http')) {
-		let tag = identifier.replace(/.+\/\/|www.|\..+/g, '')
-		link = '<a href="' + identifier + '" target="_blank">' + tag + '<i class="fas fa-external-link-alt linky"></i>,  </a>'
-	} else {
-		link = '<a href="" class="ext" data-target="#ext_site">' + identifier + '<i class="fas fa-external-link-alt linky"></i></a>, '
-	}
-	return link
-}
-
-// builds link for external placetype record
-function url_exttype(type) {
-	/*console.dir(type)*/
-	var link = ' <a href="#" class="exttab" data-id=' + type.identifier +
-		'>(' + type.label.label + ' <i class="fas fa-external-link-alt linky"></i>)</a>'
-	return link
-}
-
-// extent of timespan list
-function minmaxer(timespans) {
-	//console.log('got to minmax()',JSON.stringify(timespans))
-	var starts = [];
-	var ends = []
-	for (let t in timespans) {
-		// gets 'in', 'earliest' or 'latest'
-		starts.push(Object.values(timespans[t].start)[0])
-		ends.push(!!timespans[t].end ? Object.values(timespans[t].end)[0] : -1)
-	}
-	//console.log('starts',starts,'ends',ends)
-	var minmax = [Math.max.apply(null, starts), Math.max.apply(null, ends)]
-	return minmax
-}
-
-// return html for display
-function parsePlace(data) {
-	var descrip;
-	window.featdata = data
-	let trace = JSON.parse(data.traces).find(function(t) {
-		return t.fields.collection === object_id
-	})
-	if (trace) {
-		/*console.log('has trace for this collection', trace.fields)*/
-		$("#anno_detail").html(JSON.stringify(trace.fields))
-	} else {
-		/*console.log('no trace for this collection')*/
-	}
-
-	function onlyUnique(array) {
-		const map = new Map();
-		const result = [];
-		for (const item of array) {
-			if (!map.has(item.identifier)) {
-				map.set(item.identifier, true);
-				result.push({
-					identifier: item.identifier,
-					type: item.type,
-					aug: item.aug
-				});
-			}
-		}
-		return (result)
-	}
-
-	// TITLE
-	descrip = '<p><b>Title</b>: <span id="row_title" class="larger text-danger">' + data.title + '</span>'
-	// NAME VARIANTS
-	descrip += '<p class="scroll65"><b>Variants</b>: '
-	for (let n in data.names) {
-		let name = data.names[n]
-		descrip += '<p>' + name.toponym != '' ? name.toponym + '; ' : ''
-	}
-	// TYPES
-	// may include sourceLabel:"" **OR** sourceLabels[{"label":"","lang":""},...]
-	// console.log('data.types',data.types)
-	//{"label":"","identifier":"aat:___","sourceLabels":[{"label":" ","lang":"en"}]}
-	descrip += '</p><p><b>Types</b>: '
-	var typeids;
-	for (let t in data.types) {
-		let str = ''
-		let type = data.types[t]
-		/*console.log('type',type)*/
-		if ('sourceLabels' in type) {
-			let srclabels = type.sourceLabels
-			for (let l in srclabels) {
-				label = srclabels[l]['label']
-				str = label != '' ? label + '; ' : ''
-			}
-		} else if ('sourceLabel' in type) {
-			str = type.sourceLabel != '' ? type.sourceLabel + '; ' : ''
-		}
-		if (type.label != '') {
-			str += url_exttype(type) + ' '
-		}
-		typeids += str
-	}
-	descrip += typeids.replace(/(; $)/g, "") + '</p>'
-
-	// LINKS
-	//
-	descrip += '<p class="mb-0"><b>Links</b>: <i>original: </i>'
-	let close_count = 0;
-	let added_count = 0;
-	let html_close = '';
-	let html_added = '';
-
-	if (data.links.length > 0) {
-		let links = data.links
-		let links_arr = onlyUnique(data.links)
-		/*console.log('distinct data.links',links_arr)*/
-		for (let l in links_arr) {
-			//console.log('link',links_arr[l])
-			if (links_arr[l].aug == true) {
-				added_count += 1
-				html_added += url_extplace(links_arr[l].identifier)
-			} else {
-				close_count += 1
-				html_close += url_extplace(links_arr[l].identifier)
-			}
-		}
-		descrip += close_count > 0 ? html_close : 'none; '
-		descrip += added_count > 0 ? '<i>added</i>: ' + html_added : '<i>added</i>: none'
-	} else {
-		descrip += "<i class='small'>no links established yet</i>"
-	}
-	descrip += '</p>'
-
-	// RELATED
-	//right=''
-	var related;
-	var parent;
-	if (data.related.length > 0) {
-		parent = '<p class="mb-0"><b>Parent(s)</b>: ';
-		related = '<p class="mb-0"><b>Related</b>: ';
-		for (let r in data.related) {
-			let rel = data.related[r]
-			//console.log('rel',rel)
-			if (rel.relation_type == 'gvp:broaderPartitive') {
-				parent += '<span class="h1em">' + rel.label
-				parent += 'when' in rel && !('timespans' in rel.when) ?
-					', ' + rel.when.start.in + '-' + rel.when.end.in :
-					'when' in rel && ('timespans' in rel.when) ? ', ' +
-					minmaxer(rel.when.timespans) : ''
-				//rel.when.timespans : ''
-				parent += '</span>; '
-			} else {
-				related += '<p class="small h1em">' + rel.label + ', ' + rel.when.start.in + '-' + rel.when.end.in + '</p>'
-			}
-		}
-		descrip += parent.length > 39 ? parent : ''
-		descrip += related.length > 37 ? related : ''
-	}
-
-	// DESCRIPTIONS
-	// TODO: link description to identifier URI if present
-	if (data.descriptions.length > 0) {
-		let val = data.descriptions[0]['value'].substring(0, 300)
-		descrip += '<p><b>Description</b>: ' + (val.startsWith('http') ? '<a href="' + val + '" target="_blank">Link</a>' : val) +
-			' ... </p>'
-	}
-
-	// CCODES
-	//
-	if (!!data.countries) {
-		//console.log('data.countries',data.countries)
-		descrip += '<p><b>Modern country bounds</b>: ' + data.countries.join(', ') + '</p>'
-	}
-
-	// MINMAX
-	//
-	var mm = data.minmax
-	if (data.minmax && !(mm[0] == null && mm[1] == null)) {
-		descrip += '<p><b>When</b>: earliest: ' + data.minmax[0] + '; latest: ' + data.minmax[1]
-	}
-
-	// TRACES
-	trace = JSON.parse(data.traces).find(function(t) {
-		return t.fields.collection = object_id
-	})
-
-	// if geom(s) and 'certainty', add it
-	if (data.geoms.length > 0) {
-		let cert = data.geoms[0].certainty
-		if (cert != undefined) {
-			descrip += '<p><b>Location certainty</b>: ' + cert + '</p>'
-		}
-	}
-	descrip += '</div>'
-	return descrip
-}
-
-function getAnno(pid) {
-	//let coll_id = "{{ object.id }}"
-	// traces.views.get_form()
-	// returns TraceAnnotationForm; w/instance if trace_annotation record exists & not archived, else empty
-	const url = "/collections/annoform/?c=" + object_id + "&p=" + pid
-	fetch(url)
-		.then(function(response) {
-			return response.json();
-		})
-		.then(function(data) {
-			const formContainer = document.querySelector("#annotator");
-			formContainer.innerHTML = data.form;
-			$("[rel='tooltip']").tooltip();
-			$("#keyword_color").html('#keyword_color')
-		})
-}
-
-// render dataset to html
-function listDataset(d) {
-	/*console.log('listing this:', d.title)*/
-	dslist.push(d.id)
-	$("#id_datasets [value=" + d.id + "]").attr("checked", "checked");
-	let coll_id = object_id
-	let card = '<div class="ds_card" id="card_' + d.id + '">' +
-		'<p class="mb-0"><a href="#"><span class="ds_title">' + d.title + '</span></a> (' + d.label + '/' + d.id + ')</p>' +
-		'<div class="ds_fields">' +
-		'<p class="my-1"><b>Description</b>: ' + d.description + '</p>' +
-		'<p class="my-1"><b>Create date</b>: ' + d.create_date.slice(0, 10) + '; <b># rows</b>: ' + d.numrows + '</p>' +
-		'<p class="my-1"><a href="javascript:{ removeDataset(' + d.id + ') }">' +
-		'<i class="fas fa-minus-square" style="color:#336699"></i> remove</a>' +
-		'<span class="float-end"><a class="a_addplaces" href="javascript:{addPlaces(' + d.id + ')}">add all ' +
-		d.numrows + ' places</a></span' +
-		'</p></div></div>'
-	$(".a_addplaces").click(function() {
-		let thisy = $(this)
-		/*console.log('thisy', thisy)*/
-	})
-	$("#coll_dscards_create").append(card)
-	// console.log(card)
-}
-
-// remove places from collection (archiving annotations)
-function remove_from_collection(coll, pids) {
-	var formData = new FormData()
-	formData.append('collection', coll)
-	formData.append('place_list', pids)
-	formData.append('csrfmiddlewaretoken', csrf_token);
-	$.ajax({
-		type: 'POST',
-		enctype: 'multipart/form-data',
-		url: '/collections/archive_traces/',
-		processData: false,
-		contentType: false,
-		cache: false,
-		data: formData,
-		success: function(response) {
-			/*console.log('result:', response)*/
-		}
-	})
-	// remove card from dom & hide link
-	$(".col-place-card").each(function(index) {
-		if (remove_these.includes($(this).data('id'))) {
-			$(this).remove()
-		}
-	})
-	// update count in tab
-	var newcount = $(".col-place-card").length
-	$("#place_count").text(newcount)
-	remove_these = [];
-	$("#a_remove").text('')
-}
-
-// adds all dataset places to placelist
-function addPlaces(dsid) {
-	let url = "/collections/add_dsplaces/" + object_id + "/" + dsid
-	// collection.views.add_dataset
-	/*console.log('adding dataset w/o save',dsid, {{ object.id }}, url)*/
-	document.location.href = url
-	/*url = "{% url 'collection:add-ds' ds_id="+dsid+" coll_id=456 %}"*/
-	/*document.location.href = url.replace('123', dsid).replace('456',{{ object.id }})*/
-	/*)*/
-	/*$("#collection_form").submit('remain')*/
-}
-
-// lists dataset on dropdown select
-function addDataset(action) {
-	/*console.log('selected', $("#select_ds").val())*/
-
-	$.get("/collections/list_ds", {
-			ds_id: $("#select_ds").val()
-		},
-		function(data) {
-			// render to html
-			listDataset(data)
-			/*console.log('ds to list:',data)*/
-			// append ds.id to form
-		});
-	// reset select
-	$("#select_ds").val(0)
-	$("#msg").html('').hide()
-}
-
-// clears dataset card (cancels add)
-function clearDataset(dsid) {
-	/*console.log('clear card for ds', dsid)*/
-	$("#card_" + dsid).remove()
-}
-
-// removes dataset from collection
-function removeDataset(dsid) {
-	/*console.log('removing ' + dsid + 'from collection '+ "{{object.id}}")*/
-	$("#id_datasets [value=" + dsid + "]").prop("checked", false);
-	let idx = dslist.indexOf(dsid)
-	dslist.splice(idx, dslist.length);
-	let card = "#card_" + dsid
-	$(card).remove()
-	if (dslist.length == 0) {
-		$("#msg").html('None yet...').show()
-	}
-	/*console.log('removed '+dsid+' from dslist[] and dom')*/
-	// reset select
-	$("#select_ds").val(0)
-}
