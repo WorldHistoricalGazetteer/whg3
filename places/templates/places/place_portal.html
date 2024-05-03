@@ -117,6 +117,7 @@
         ecoregion: {name: null, url: null},
         biome: {name: null, url: null}
     };
+    const loggedIn = {{ user.is_authenticated|yesno:"true,false" }};
 </script>
 
 {{ payload|json_script:"payload_data" }}

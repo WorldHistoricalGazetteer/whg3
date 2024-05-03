@@ -73,6 +73,7 @@ div.overlay .left .item {
 }
 
 .source-box {
+    display: flow-root;
     background-color: white;
     border: 1px gainsboro solid;
     border-radius: .3rem;
