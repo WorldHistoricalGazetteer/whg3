@@ -517,8 +517,7 @@ def review(request, pk, tid, passnum):
     "countries": countries,
     "passnum": passnum,
     "page": page if request.method == "GET" else str(int(page) - 1),
-    # 'aug_geom': json.loads(task.task_kwargs.replace("'",'"'))['aug_geom'],
-    "aug_geoms": kwargs["aug_geoms"],
+    "aug_geoms": kwargs["aug_geom"],
     "mbtoken": settings.MAPBOX_TOKEN_WHG,
     "maptilerkey": settings.MAPTILER_KEY,
     "count_pass0": cnt_pass0,
@@ -2697,12 +2696,12 @@ class DatasetBrowseView(LoginRequiredMixin, DetailView):
 
     context['collaborators'] = ds.collaborators.all()
     context['owners'] = ds.owners
+    context['is_admin'] = True if me.groups.filter(name__in=['whg_admins']).exists() else False
     context['updates'] = {}
     context['ds'] = ds
     context['tgntask'] = 'tgn' in ds_tasks
     context['whgtask'] = len(set(['whg', 'idx']) & set(ds_tasks)) > 0
     context['wdtask'] = len(set(['wd', 'wdlocal']) & set(ds_tasks)) > 0
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
 
     return context
 
@@ -2807,7 +2806,7 @@ class DatasetReconcileView(LoginRequiredMixin, DetailView):
 
     context['wdgn_status'] = wdgn_status
     context['idx_status'] = idx_status
-
+    context['is_admin'] = True if self.request.user.groups.filter(name__in=['whg_admins']).exists() else False
 
     # build context for rendering dataset.html
     me = self.request.user
@@ -2818,7 +2817,7 @@ class DatasetReconcileView(LoginRequiredMixin, DetailView):
     context['ds'] = ds
     context['tasks'] = ds_tasks
 
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
+    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
 
     return context
 
@@ -2963,7 +2962,8 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
     context['collaborators'] = ds.collabs.all()
     context['owners'] = ds.owners
     context['remain_to_review'] = remaining
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
+    context['is_admin'] = True if self.request.user.groups.filter(name__in=['whg_admins']).exists() else False
+    # context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
 
     return context
 

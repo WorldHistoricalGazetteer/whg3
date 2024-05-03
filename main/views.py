@@ -267,6 +267,8 @@ def dataset_list(request, sort='', order=''):
     else:
       datasets = datasets.annotate(last_log_timestamp=Max('log__timestamp')).order_by('last_log_timestamp')
   elif sort and order:
+    if sort == 'owner':
+      sort = 'owner__username'
     if sort in text_fields:
         # Apply Lower function for text fields
         if order == 'desc':

@@ -51,7 +51,7 @@
             <span class="small help-matches" data-id="reconciliation">
             <i class="fas fa-question-circle linkypop"></i>
           </span>
-            {% if user.is_superuser or user in ds.owners %}
+            {% if user.is_superuser or user in ds.owners or is_admin %}
               <span class="ms-4 small">
             <a id="addtask_link" href="{% url 'datasets:ds_addtask' id=ds.id %}">Add new task <i
               class="fas fa-plus-square linky"></i></a>

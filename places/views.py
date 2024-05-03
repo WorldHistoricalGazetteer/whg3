@@ -297,7 +297,7 @@ class PlaceDetailView(DetailView):
     context['timespans'] = {'ts':place.timespans or None}
     context['minmax'] = {'mm':place.minmax or None}
     context['dataset'] = ds
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
+    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
 
     return context
 
@@ -334,7 +334,7 @@ class PlaceModalView(DetailView):
     #geomids = [geom.jsonb['properties']['id'] for geom in place.geoms.all()]
     #context['geoms'] = geoms
     context['dataset'] = dsobj
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
+    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
 
     return context
 

@@ -36,14 +36,15 @@ class UserModelForm(forms.ModelForm):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'name', 'affiliation', 'role')
+        fields = ('username', 'email', 'name', 'affiliation', 'role', 'web_page')
         exclude = ('password',)
 
         widgets = {
-            'username': forms.TextInput(attrs={'size': 40}),
-            'email': forms.TextInput(attrs={'size': 40}),
-            'name': forms.TextInput(attrs={'size': 40}),
-            'affiliation': forms.TextInput(attrs={'size': 40}),
+            'username': forms.TextInput(attrs={'size': 50}),
+            'email': forms.TextInput(attrs={'size': 50}),
+            'name': forms.TextInput(attrs={'size': 50}),
+            'affiliation': forms.TextInput(attrs={'size': 50}),
+            'web_page': forms.TextInput(attrs={'size': 50}),
         }
 
     def clean_email(self):

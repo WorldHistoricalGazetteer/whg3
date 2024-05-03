@@ -1165,7 +1165,7 @@ class CollectionGroupDetailView(DetailView):
     context['submitted'] = Collection.objects.filter(group=cg.id).count()
     context['message'] = 'CollectionGroupDetailView() loud and clear'
     context['links'] = Link.objects.filter(collection_group_id=self.get_object())
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
+    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
 
     return context
 
@@ -1246,7 +1246,7 @@ class CollectionGroupGalleryView(ListView):
       group=cg.id,status__in=['reviewed','published']).order_by('submit_date')
     # context['viewable'] = ['uploaded','inserted','reconciling','review_hits','reviewed','review_whg','indexed']
 
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
+    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
     return context
 
 
@@ -1447,7 +1447,7 @@ class DatasetCollectionBrowseView(DetailView):
     # context['ds_list'] = coll.ds_list
     context['links'] = Link.objects.filter(collection=id_)
     context['updates'] = {}
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
+    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
     context['visParameters'] = coll.vis_parameters or "{'seq': {'tabulate': false, 'temporal_control': 'none', 'trail': false},'min': {'tabulate': false, 'temporal_control': 'none', 'trail': false},'max': {'tabulate': false, 'temporal_control': 'none', 'trail': false}}"
     context['datasets'] = [{"id":ds["id"], "label":ds["label"], "title":ds["title"], "extent":ds["extent"]} for ds in coll.ds_list]
 
@@ -1475,7 +1475,7 @@ class CollectionGalleryView(ListView):
     context['dataset_collections'] = Collection.objects.filter(collection_class='dataset', public=True)
     context['student_collections'] = Collection.objects.filter(nominated=True)
 
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
+    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
     return context
 
 class CollectionDeleteView(DeleteView):
