@@ -1,10 +1,15 @@
-{% extends "main/base_webpack.html" %}
+{% extends "main/base.html" %}
 {% load static %}
 
 {% load mathfilters %}
 {% load dataset_extras %}
 
 {% block extra_head %}
+	<script src="https://code.jquery.com/jquery-3.6.3.js"></script>
+
+	<script src="{% static 'jquery-ui-1.13.2/jquery-ui.min.js' %}"></script>
+  <link rel="stylesheet" href="{% static 'jquery-ui-1.13.2/jquery-ui.min.css' %}"/>
+
 <style>
   .nav-link {
     color: #007bff;
@@ -23,12 +28,16 @@
       padding: unset !important;
     }
   }
+  section h5 {
+    color: #993333;
+    {#font-weight: bold;#}
+  }
 </style>
 {% endblock %}
 
 {% block content %}
 <div id="docs_container" class="container mt-1 px-1">
-  <div><h4>WHG v3 Documentation</h4></div>
+  <div><h4>WHG v3 Documentation?</h4></div>
   <div class="row flex-nowrap">
     <!-- Sidebar Navigation with Accordions -->
     <div id="docs_sidebar" class="col-md-3 col-4 sticky-sidebar">
@@ -88,7 +97,7 @@
             <div class="accordion-body">
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" href="#home">Home page</a></li>
+                  <a class="nav-link" href="#homepage">Home page</a></li>
                 <li class="nav-item">
                   <a class="nav-link" href="#search">Search for places</a></li>
                 <li class="nav-item">
@@ -99,22 +108,20 @@
             </div>
           </div>
         </div>
-        <!-- Tutorials Section -->
+        <!-- Guides Section -->
         <div class="accordion-item">
-          <h2 class="accordion-header" id="headingTutorials">
+          <h2 class="accordion-header" id="headingGuides">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#collapseTutorials" aria-expanded="false" aria-controls="collapseTutorials">
-              Tutorials
+                    data-bs-target="#collapseGuides" aria-expanded="false" aria-controls="collapseGuides">
+              Tutorials & Guides
             </button>
           </h2>
-          <div id="collapseTutorials" class="accordion-collapse collapse" aria-labelledby="headingTutorials"
+          <div id="collapseGuides" class="accordion-collapse collapse" aria-labelledby="headingGuides"
                data-bs-parent="#sidebarAccordion">
             <div class="accordion-body">
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" href="#pathways">Workflow Pathways</a></li>
-                <li class="nav-item">
-                  <a class="nav-link" href="#lpf">Linked Places format</a></li>
+                  <a class="nav-link" href="#lpf">Choosing a data upload format</a></li>
                 <li class="nav-item">
                   <a class="nav-link" href="#prepdata">Preparing data for upload</a></li>
                 <li class="nav-item">
@@ -131,12 +138,6 @@
     <!-- Main Content -->
     <div id="docs_content" class="col-md-9 col-8 content-area">
       <!--Introduction Group -->
-{#      <section id="introduction">#}
-{#        <h4>Introduction</h4>#}
-{#        <hr/>#}
-{#        <h5>Vision and mission</h5>#}
-{#        <p>{% lorem 2 %}</p>#}
-{#      </section>#}
       <section id="overview">
         <h4>Introducing the WHG</h4>
         <h5>Overview</h5>
@@ -153,7 +154,8 @@
         <h4>Builder Pathways</h4>
         <hr/>
         <h5>Upload and augment place data</h5>
-        <p></p>
+        <p>
+The first step for working with your own data in WHG is to prepare an upload file in one of two formats: <b>Linked Places format (LPF)</b> if your data is relatively complex, or <b>LP-TSV</b>, a simpler delimited file format (e.g. a spreadsheet, CSV, or TSV).</p>
         <p>{% lorem 2 %}</p>
       </section>
       <section id="publish_ds">
@@ -172,7 +174,7 @@
         <p>{% lorem 2 %}</p>
       </section>
       <!-- Site Sections Group -->
-      <section id="home">
+      <section id="homepage">
         <h4>Site Sections</h4>
         <hr/>
         <h5>Home page</h5>
@@ -195,17 +197,15 @@
         <p>{% lorem 2 %}</p>
       </section>
       <!-- Tutorials Group -->
-      <section id="pathways">
-        <h4>Guides and Tutorials</h4>
-        <hr/>
-        <h5>Workflow Pathways</h5>
-        <p></p>
-        <p>{% lorem 2 %}</p>
-      </section>
       <section id="lpf">
-        <h5>Linked Places format</h5>
+        <h4>Tutorials & Guides</h4>
+        <hr/>
+        <h5>Choosing an upload data format</h5>
+<p>World Historical Gazetteer supports uploads of both Linked Places format (<a href="https://github.com/LinkedPasts/linked-places" target="_blank">v1.2 specification</a>) and its delimited file derivative, LP&#8209;TSV, useful for relatively simple data (<a href="https://github.com/LinkedPasts/linked-places/blob/master/tsv_0.3.md" target="_blank">v0.2 specification</a>). Their specifications provide details, and should be consulted in designing transformations. The following will help in deciding which is appropriate for your dataset. The WHG team is not able to transform data for you, but we can help guide you in this essential step; just let us know via <a href="#" class="feedback">the feedback form</a>.</p>
+        <h6>Linked Places format (LPF)</h6>
         <p></p>
-        <p>{% lorem 2 %}</p>
+        <h6>LP-TSV format</h6>
+        <p></p>
       </section>
       <section id="prepdata">
         <h5>Preparing data for upload</h5>
@@ -227,158 +227,140 @@
 </div>
 </div>
 <script type="text/javascript">
-
-$(document).ready(function() {
-  // Get the hash from the URL
-  var hash = window.location.hash;
-  if (!hash) {
-    console.log('No hash found in the URL.');
-    return;
-  } else {
-    console.log('Hash:', hash);
-  }
-
-  // Find the nav link that corresponds to the hash
-  var navLink = $(`.nav-link[href="${hash}"]`);
-  if (!navLink.length) {
-    console.log('No nav link found for the hash.');
-    return;
-  } else {
-    console.log('Nav link:', navLink);
-  }
-
-  // Find the parent accordion item of the nav link
-  var accordionItem = navLink.closest('.accordion-item');
-  if (!accordionItem.length) {
-    console.log('No parent accordion item found for the nav link.');
-    return;
-  } else {
-    console.log('Parent accordion item:', accordionItem);
-  }
-
-  // Find the accordion collapse element within the accordion item
-  var accordionCollapse = accordionItem.find('.accordion-collapse');
-  if (!accordionCollapse.length) {
-    console.log('No accordion collapse element found within the accordion item.');
-    return;
-  } else {
-    console.log('Accordion collapse element:', accordionCollapse);
-  }
-
-  // Use Bootstrap's JavaScript API to show the accordion collapse
-  accordionCollapse.collapse('show');
-
-  // Scroll to the target element
-  $('html, body').animate({
-    scrollTop: $(hash).offset().top
-  }, 800);
-});
-
+// copilot script
 $(document).ready(function() {
   console.log('Document is ready.');
 
-  // Get the hash from the URL
-  var hash = window.location.hash;
-  if (!hash) {
-    console.log('No hash found in the URL.');
-    return;
-  } else {
-    console.log('Hash:', hash);
-  }
-
-  // Find the nav link that corresponds to the hash
-  var navLink = $(`.nav-link[href="${hash}"]`);
-  if (!navLink.length) {
-    console.log('No nav link found for the hash.');
-    return;
-  } else {
-    console.log('Nav link:', navLink);
-  }
-
-  // Find the parent accordion item of the nav link
-  var accordionItem = navLink.closest('.accordion-item');
-  if (!accordionItem.length) {
-    console.log('No parent accordion item found for the nav link.');
-    return;
-  } else {
-    console.log('Parent accordion item:', accordionItem);
-  }
-
-  // Find the accordion collapse element within the accordion item
-  var accordionCollapse = accordionItem.find('.accordion-collapse');
-  if (!accordionCollapse.length) {
-    console.log('No accordion collapse element found within the accordion item.');
-    return;
-  } else {
-    console.log('Accordion collapse element:', accordionCollapse);
-  }
-
-  // Use Bootstrap's JavaScript API to show the accordion collapse
-  accordionCollapse.collapse('show');
-
-  // Scroll to the target element
-  $('html, body').animate({
-    scrollTop: $(hash).offset().top
-  }, 800);
-
-
-  var sidebarAccordion = $('#sidebarAccordion');
-  if (!sidebarAccordion.length) {
-    console.error('Sidebar accordion not found!');
-    return;
-  } else {
-    console.log('Sidebar accordion found:', sidebarAccordion);
-  }
-
-  sidebarAccordion.on('show.bs.collapse', function (e) {
-    console.log('Accordion section is showing:', e.target);
-
-    // Find the closest .accordion-collapse to ensure we have the correct container
-    var accordionBody = $(e.target).closest('.accordion-collapse');
-    if (!accordionBody.length) {
-      console.error('Accordion collapse element not found.');
-      return;
-    } else {
-      console.log('Accordion collapse element:', accordionBody);
-    }
-
-    // Delay the action to wait for the collapse animation to complete
+  // Setup event listeners for accordion opening
+  $('#sidebarAccordion').on('shown.bs.collapse', function(e) {
+    console.log('shown.bs.collapse event handler called');
+    var accordionBody = $(e.target);
     setTimeout(() => {
-      // Locate the first navigation link in the opened accordion body
-      var firstNavItem = accordionBody.find('.nav-link');
-      if (!firstNavItem.length) {
-        console.error('No nav item found in the opened accordion section.');
-        return;
-      } else {
-        console.log('First nav item:', firstNavItem);
+      var firstNavItem = accordionBody.find('.nav-link:first');
+      if (firstNavItem.length) {
+        var targetId = firstNavItem.attr('href');
+        if (targetId) {
+          var targetElement = $(targetId);
+          if (targetElement.length) {
+            var containerTop = $('#docs_content').offset().top;
+            var targetTop = targetElement.offset().top;
+            var currentScroll = $('#docs_content').scrollTop();
+            var relativeTop = targetTop - containerTop + currentScroll; // Add current scroll position
+            console.log('Scrolling to:', relativeTop);
+            $('#docs_content').animate({
+              scrollTop: relativeTop
+            }, 300);
+          }
+        }
       }
-
-      // Get the href attribute from the first nav item
-      var targetId = firstNavItem.attr('href');
-      if (!targetId) {
-        console.error('Nav item href attribute is missing.');
-        return;
-      } else {
-        console.log('Nav item href:', targetId);
-      }
-
-      // Locate the content section that corresponds to the nav item's href
-      var targetElement = $(targetId);
-      if (!targetElement.length) {
-        console.error('Target element not found:', targetId);
-        return;
-      } else {
-        console.log('Target element to scroll to:', targetElement);
-      }
-
-      // Execute the scroll to the target element
-      $('html, body').animate({
-        scrollTop: targetElement.offset().top
-      }, 800);
-    }, 300);
+    }, 300); // Adjust timeout as necessary
   });
-});
 
+  // Handle hash if present on initial load
+  var hash = window.location.hash;
+  if (hash) {
+    var navLink = $(`.nav-link[href="${hash}"]`);
+    if (navLink.length) {
+      navLink.closest('.accordion-item').find('.accordion-collapse').collapse('show');
+      setTimeout(() => {
+        var targetElement = $(hash);
+        var containerTop = $('#docs_content').offset().top;
+        var targetTop = targetElement.offset().top;
+        var currentScroll = $('#docs_content').scrollTop();
+        var relativeTop = targetTop - containerTop + currentScroll; // Add current scroll position
+        $('#docs_content').animate({
+          scrollTop: relativeTop
+        }, 800);
+      }, 300);
+    }
+  }
+});
+// end copilot script
+
+{#$(document).ready(function() {#}
+{#  console.log('Document is ready.');#}
+{##}
+{#  // Setup event listeners for accordion opening#}
+{#  $('#sidebarAccordion').on('shown.bs.collapse', function(e) {#}
+{#    console.log('shown.bs.collapse event handler called');#}
+{#    var accordionBody = $(e.target);#}
+{#    setTimeout(() => {#}
+{#      var firstNavItem = accordionBody.find('.nav-link:first');#}
+{#      if (firstNavItem.length) {#}
+{#        var targetId = firstNavItem.attr('href');#}
+{#        if (targetId) {#}
+{#          var targetElement = $(targetId);#}
+{#          if (targetElement.length) {#}
+{#            var containerTop = $('#docs_content').offset().top;#}
+{#            var targetTop = targetElement.offset().top;#}
+{#            var relativeTop = targetTop - containerTop - 110; // 110px for header or other fixed elements above#}
+{#            console.log('Scrolling to:', relativeTop);#}
+{#            $('#docs_content').animate({#}
+{#              scrollTop: relativeTop#}
+{#            }, 300);#}
+{#          }#}
+{#        }#}
+{#      }#}
+{#    }, 300); // Adjust timeout as necessary#}
+{#  });#}
+{##}
+{#  // Handle hash if present on initial load#}
+{#  var hash = window.location.hash;#}
+{#  if (hash) {#}
+{#    var navLink = $(`.nav-link[href="${hash}"]`);#}
+{#    if (navLink.length) {#}
+{#      navLink.closest('.accordion-item').find('.accordion-collapse').collapse('show');#}
+{#      setTimeout(() => {#}
+{#        var targetElement = $(hash);#}
+{#        var containerTop = $('#docs_content').offset().top;#}
+{#        var targetTop = targetElement.offset().top;#}
+{#        var relativeTop = targetTop - containerTop - 110;#}
+{#        $('#docs_content').animate({#}
+{#          scrollTop: relativeTop#}
+{#        }, 800);#}
+{#      }, 300);#}
+{#    }#}
+{#  }#}
+{# });#}
+
+{#$(document).ready(function() {#}
+{#  console.log('Document is ready.');#}
+{##}
+{#  // Setup event listeners for accordion opening#}
+{#  $('#sidebarAccordion').on('shown.bs.collapse', function(e) {#}
+{#    console.log('shown.bs.collapse event handler called');#}
+{#    var accordionBody = $(e.target);#}
+{#    setTimeout(() => {#}
+{#      var firstNavItem = accordionBody.find('.nav-link:first');#}
+{#      if (firstNavItem.length) {#}
+{#        console.log('First nav item:', firstNavItem);#}
+{#        var targetId = firstNavItem.attr('href');#}
+{#        if (targetId) {#}
+{#          console.log('supposedly heading to Nav item href:', targetId);#}
+{#          var targetElement = $(targetId);#}
+{#          if (targetElement.length) {#}
+            {#$('html, body').animate({#}
+{#            $('#docs_content').animate({#}
+{#              scrollTop: targetElement.offset().top - 110#}
+{#            }, 300);#}
+{#          }#}
+{#        }#}
+{#      }#}
+{#    }, 300); // Adjust timeout as necessary#}
+{#  });#}
+{##}
+{#  // Handle hash if present#}
+{#  var hash = window.location.hash;#}
+{#  if (hash) {#}
+{#    var navLink = $(`.nav-link[href="${hash}"]`);#}
+{#    if (navLink.length) {#}
+{#      navLink.closest('.accordion-item').find('.accordion-collapse').collapse('show');#}
+{#      $('html, body').animate({#}
+{#        scrollTop: $(hash).offset().top#}
+{#      }, 800);#}
+{#    }#}
+{#  }#}
+{# });#}
 </script>
 
 {% endblock %}
