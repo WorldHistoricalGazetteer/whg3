@@ -207,6 +207,8 @@ def area_list(request, sort='', order=''):
 
  # Sort based on the parameters
   if sort and order:
+    if sort == 'owner':
+      sort = 'owner__username'
     if sort in text_fields:
         if order == 'desc':
             areas = areas.order_by(Lower(sort).desc())
@@ -344,6 +346,8 @@ def collection_list(request, sort='', order=''):
     else:
       collections = collections.order_by('count')
   elif sort and order:
+    if sort == 'owner':
+      sort = 'owner__username'
     if sort in text_fields:
         # Apply Lower function for text fields
         if order == 'desc':
@@ -406,6 +410,8 @@ def group_list(request, sort='', order=''):
   groups = CollectionGroup.objects.all()
 
   if sort and order:
+    if sort == 'owner':
+      sort = 'owner__username'
     if sort in text_fields:
         # Apply Lower function for text fields
         if order == 'desc':
