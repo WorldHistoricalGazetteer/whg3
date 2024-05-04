@@ -107,8 +107,8 @@
               <div class="bg-secondary font-weight-bold ps-2 text-light">{{ dataset_label }}</div>
               <div id="place_record" class="mb-2">
                 <div>
-                  <span class="notes{% if user.is_authenticated %} logged-in{% endif %}" data-place-id="{{ record.id }}" data-force-tag="defer">
-					  {% for r in record.defer_comments %}<p data-bs-toggle="tooltip" title="{{ r.tag }}">{{ r.note }}</p>{% endfor %}
+                  <span class="notes" {% if user.is_authenticated %}data-user-id="{{ user.id }}" {% endif %}data-place-id="{{ record.id }}" data-force-tag="defer">
+					  {% for r in record.defer_comments %}<p title="{{ r.tag }}" data-bs-toggle="tooltip" data-creator="{{ r.user.id }}" data-note-id="{{ r.id }}">{{ r.note }}</p>{% endfor %}
                   </span>
 				  <h4 class="text-danger">{{ record.title }}</h4>
                 </div>

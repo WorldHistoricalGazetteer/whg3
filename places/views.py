@@ -222,7 +222,7 @@ class PlacePortalView(TemplateView):
           "minmax": place.minmax,
           "timespans": timespans,
           "collections": collection_records,
-          "notes": [{'user': comment.user.id, 'place_id': comment.place_id.id, 'tag': comment.tag, 'note': comment.note, 'created': comment.created.isoformat()} for comment in Comment.objects.filter(place_id_id=place.id)]
+          "notes": [{'id': comment.id, 'user': comment.user.id, 'place_id': comment.place_id.id, 'tag': comment.tag, 'note': comment.note, 'created': comment.created.isoformat()} for comment in Comment.objects.filter(place_id_id=place.id)]
         }
         for name in names:
           variant = name.get('label', '')

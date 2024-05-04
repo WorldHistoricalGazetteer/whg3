@@ -6,23 +6,46 @@
 
 $.fn.notes = function() {
 	
+	const tagVocabulary = [
+		['geom','Geometry Error'],
+		['mismatch','Misplaced in Set'],
+		['missing','Missing Record'],
+		['typo','Typographical Error'],
+		['other','Other Error'], // The last item is selected by default
+	];
+	
+	const vocabularyTags = `
+		  <label for="issue">Issue:</label>
+          <ul class="no-bullet">
+          	${
+				tagVocabulary.map(([value, label], index) => {
+				    const checked = index === tagVocabulary.length - 1 ? 'checked' : ''; // Select the last item
+				    return `<li><input type="radio" name="tag" value="${value}" class="no-bullet" required id="note_tag_${value}" ${checked}><label for="note_tag_${value}">${label}</label></li>`;
+				}).join('')
+			}
+          </ul>
+        `;
+        
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const trashHTML = ' <i class="fas fa-trash linky fa-xs" data-bs-toggle="tooltip" title="Delete this note"></i>';
+	
 	$('body').on('submit', '#commentForm', function(event) {
 		event.preventDefault();
 		var formData = $(this).serialize();
 		$.ajax({
 			url: '/comment/',
 			method: 'POST',
-			headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+			headers: { 'X-CSRFToken': csrfToken },
 			data: formData,
 			success: function(response) {
 				$('#commentModal').modal('hide');
 				console.log('Comment submitted successfully.');
 				$(`.notes[data-place-id="${response.comment.place_id}"]`)
-				.find('.record_notes')
-				.append(`<p data-bs-toggle="tooltip" title="${response.comment.tag}">${response.comment.note}</p>`)
+				.find('.record-notes')
+				.append(`<p title="${response.comment.tag}" data-bs-toggle="tooltip" data-creator="${response.comment.user}">${response.comment.note}${trashHTML}</p>`)
 				.end()
 				.addClass('has-notes')
-				.find("[data-bs-toggle='tooltip']").last().tooltip({html: true});
+				.find("[data-bs-toggle='tooltip']").last().tooltip({html: true, trigger : 'hover'});
 			},
 			error: function(xhr, status, error) {
 				alert('Sorry, an error occurred while submitting the comment.');
@@ -36,6 +59,34 @@ $.fn.notes = function() {
 
     $('body').on('hidden.bs.modal', '#commentModal', function (e) {
         $(this).remove();
+    });
+
+    $('body').on('click', 'i.fa-trash', function (e) {
+        e.stopPropagation();
+        const confirmed = window.confirm('Are you sure you want to delete this comment?');
+    
+    	if (confirmed) {
+	    	const noteId = $(this).closest('p').data('note-id');
+	    	const trashIcon = $(this);
+	    	$.ajax({
+		        url: '/comment/',
+		        method: 'POST',
+		        headers: { 'X-CSRFToken': csrfToken },
+		        data: {
+		            deleteId: noteId,
+		        },
+		        success: function(response) {
+		            console.log('Comment deleted successfully.');
+		            const notes = trashIcon.closest('.notes');
+		            notes.toggleClass('has-notes', notes.find('.record-notes p').length > 1);
+		            trashIcon.tooltip('dispose');
+		            trashIcon.closest('p').tooltip('dispose').remove();
+		        },
+		        error: function(xhr, status, error) {
+		            alert('Sorry, an error occurred while attempting to delete the comment.');
+		        }
+		    });
+		}
     });
 	
 	// Inject required CSS styles into the head of the document if not done already
@@ -75,7 +126,7 @@ $.fn.notes = function() {
 			}
 			
 			.notes .notes-list.hiding p.notes-toggler span:nth-child(2),
-			.notes .notes-list.hiding div.record_notes
+			.notes .notes-list.hiding div.record-notes
 			{
 				display: none;
 			}
@@ -84,12 +135,21 @@ $.fn.notes = function() {
 				display: none;
 			}
 			
-			.notes .record_notes p {
+			.notes .record-notes p {
 			    background-color: white;
 			    padding: 0.1rem 0.2rem;
 			    border: 1px solid grey;
 			    border-radius: 0.3rem;
     			margin: 0.1rem 0;		
+			}
+			
+			.notes .record-notes i.fa-trash {
+			    color: red;
+			    float: right;
+			    top: 0.6rem;
+			    position: relative;
+			    margin-right: 0.1rem;
+			    cursor: pointer;
 			}
 			
 			#commentModal {
@@ -169,41 +229,43 @@ $.fn.notes = function() {
 	}
 		
     return this.each(function() {
+	
 		const placeId = $(this).data('place-id');
-		const forceTag = $(this).data('force-tag') || '';
+		const userId = ($(this).data('user-id') || '');
+		const forceTag = ($(this).data('force-tag') || '').trim();
 		const addText = $(this).data('add-text') || 'add note';
 		const hasNotes = $(this).find('p').length > 0;
 		
-		const tagVocabulary = [
-			['geom','Geometry Error'],
-			['mismatch','Misplaced in Set'],
-			['missing','Missing Record'],
-			['typo','Typographical Error'],
-			['other','Other Error'], // The last item is selected by default
-		];
+		const chosenTags = forceTag == '' ? vocabularyTags : `<input type="hidden" name="tag" value="${forceTag}">`;
 		
-		const tags = forceTag.trim() == '' ? `
-			  <label for="issue">Issue:</label>
-	          <ul class="no-bullet">
-	          	${
-					tagVocabulary.map(([value, label], index) => {
-					    const checked = index === tagVocabulary.length - 1 ? 'checked' : ''; // Select the last item
-					    return `<li><input type="radio" name="tag" value="${value}" class="no-bullet" required id="note_tag_${value}" ${checked}><label for="note_tag_${value}">${label}</label></li>`;
-					}).join('')
-				}
-	          </ul>
-	        ` : `<input type="hidden" name="tag" value="${forceTag.trim()}">`;
+		if (!userId && !hasNotes) {
+			$(this).remove();
+			return;
+		}
 		
 		$(this)
 		.addClass('float-end')
 		.toggleClass('has-notes', hasNotes)
-		.wrapInner('<div class="record_notes"></div>')
-		.find('.record_notes')
+		.toggleClass('logged-in', userId !== '')
+		.wrapInner('<div class="record-notes"></div>')
+		.find('.record-notes')
 		.wrap('<div class="notes-list hiding"></div>')
 		.before('<p class="notes-toggler"><span>show</span><span>hide</span> notes<span> <i class="fas fa-edit linky fa-xs"></i></span></p>')
 		.end()
 	    .on('click', '.notes-toggler', function() {
 			$(this).parent().toggleClass('hiding');
+		})
+		.find(`.record-notes p[data-creator="${userId}"]`)
+		.append(trashHTML)
+		.find("[data-bs-toggle='tooltip']")
+		.tooltip({html: true, trigger : 'hover'})
+		.end()
+		.end()
+		.on('show.bs.tooltip', '.record-notes p', (e) => { // Prevent overlapping tooltips
+			bootstrap.Tooltip.getInstance($(e.target).closest('.source-box')).hide();
+		})
+		.on('show.bs.tooltip', 'i.fa-trash', (e) => { // Prevent overlapping tooltips
+			bootstrap.Tooltip.getInstance($(e.target).closest('p')).hide();
 		})
 		.filter('.logged-in')
 		.prepend(`<p class="add-note" data-place-id="${placeId}" data-text="add note">${addText}${addText == '' ? '' : ' '}<i class="fas fa-edit linky fa-xs"></i></p>`)
@@ -221,7 +283,7 @@ $.fn.notes = function() {
 	              </div>
 	              <div class="modal-body">
 	                <form id="commentForm">
-	                  ${tags}
+	                  ${chosenTags}
 	                  <label for="commentText">Note:</label>
 	                  <textarea id="commentText" name="commentText" rows="4" required></textarea>
 	                  <input type="hidden" id="placeId" name="placeId" value="${placeId}">

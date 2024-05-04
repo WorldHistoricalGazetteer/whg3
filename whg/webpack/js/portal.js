@@ -224,8 +224,8 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
     	payload.forEach(place => {
 			const sourceHTML = `
 				<div class="source-box${ !!place.primary? ' primary-place' : ''}" data-bs-toggle="tooltip" data-bs-title="${ !!place.primary? 'This is considered to be the <i>Primary Source</i>. ' : ''}Click to zoom map to features associated with this source.">
-		            <span class="notes${ loggedIn == true ? ' logged-in' : ''}" data-place-id="${place.place_id}">
-		            	${ place.notes.map(note => `<p data-bs-toggle="tooltip" title="${note.tag}">${note.note}</p>`).join('') }
+		            <span class="notes" ${ userId == false ? '' : `data-user-id="${userId}" `}data-place-id="${place.place_id}">
+		            	${ place.notes.map(note => `<p title="${note.tag}" data-bs-toggle="tooltip" data-creator="${note.user}" data-note-id="${note.id}">${note.note}</p>`).join('') }
 		            </span>
 		            in: <a class="pop-link pop-dataset"
 		                   data-id="${place.dataset.id}" data-toggle="popover"

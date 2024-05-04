@@ -94,7 +94,7 @@ urlpatterns = [
     path('announcement/update/<int:pk>/', views.AnnouncementUpdateView.as_view(), name='announcement-update'),
     path('announcements/', views.AnnouncementListView.as_view(), name='announcements-list'),
 
-    path('comment/', views.create_comment, name='comment-create'),
+    path('comment/', views.handle_comment, name='comment-handle'),
     path('contact/', views.contact_view, name='contact'),
     path('success/', views.contactSuccessView, name='success'),
     path('status/', views.statusView, name='status'),

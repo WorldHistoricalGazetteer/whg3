@@ -740,26 +740,35 @@ class CommentCreateView(BSModalCreateView):
     
 @login_required
 @require_POST
-def create_comment(request):
+def handle_comment(request):
     try:
         comment_text = escape(request.POST.get('commentText'))
         tag = request.POST.get('tag')
         place_id = request.POST.get('placeId')
+        delete_id = request.POST.get('deleteId')
         
-        place = get_object_or_404(Place, id=place_id)
+        if delete_id:
+            # Check that comment's creator is the current request.user
+            get_object_or_404(Comment, id=delete_id, user=request.user).delete()
+            
+            return JsonResponse({'success': True, 'message': f'Comment #{delete_id} deleted successfully'})
+            
+        else:
         
-        comment = Comment.objects.create(user=request.user, note=comment_text, tag=tag, place_id=place)
-        
-        comment_data = {
-            'id': comment.id,
-            'user': comment.user.username,
-            'note': comment.note,
-            'tag': comment.tag,
-            'place_id': comment.place_id.id,
-            'created': comment.created.strftime('%Y-%m-%d %H:%M:%S')
-        }
-
-        return JsonResponse({'success': True, 'message': 'Comment created successfully', 'comment': comment_data})
+            place = get_object_or_404(Place, id=place_id)
+            
+            comment = Comment.objects.create(user=request.user, note=comment_text, tag=tag, place_id=place)
+            
+            comment_data = {
+                'id': comment.id,
+                'user': comment.user.id,
+                'note': comment.note,
+                'tag': comment.tag,
+                'place_id': comment.place_id.id,
+                'created': comment.created.strftime('%Y-%m-%d %H:%M:%S')
+            }
+    
+            return JsonResponse({'success': True, 'message': f'Comment #{comment.id} created successfully', 'comment': comment_data})
     
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
