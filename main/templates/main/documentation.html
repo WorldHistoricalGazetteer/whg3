@@ -32,6 +32,10 @@
     color: #993333;
     {#font-weight: bold;#}
   }
+  section h6 {
+    font-weight: bold;
+    font-size: 1.1rem;
+  }
 </style>
 {% endblock %}
 
@@ -121,7 +125,7 @@
             <div class="accordion-body">
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" href="#lpf">Choosing a data upload format</a></li>
+                  <a class="nav-link" href="#lpf">Choosing an upload data format: LPF or LP-TSV?</a></li>
                 <li class="nav-item">
                   <a class="nav-link" href="#prepdata">Preparing data for upload</a></li>
                 <li class="nav-item">
@@ -200,12 +204,51 @@ The first step for working with your own data in WHG is to prepare an upload fil
       <section id="lpf">
         <h4>Tutorials & Guides</h4>
         <hr/>
-        <h5>Choosing an upload data format</h5>
-<p>World Historical Gazetteer supports uploads of both Linked Places format (<a href="https://github.com/LinkedPasts/linked-places" target="_blank">v1.2 specification</a>) and its delimited file derivative, LP&#8209;TSV, useful for relatively simple data (<a href="https://github.com/LinkedPasts/linked-places/blob/master/tsv_0.3.md" target="_blank">v0.2 specification</a>). Their specifications provide details, and should be consulted in designing transformations. The following will help in deciding which is appropriate for your dataset. The WHG team is not able to transform data for you, but we can help guide you in this essential step; just let us know via <a href="#" class="feedback">the feedback form</a>.</p>
+        <h5>Choosing an upload data format: LPF or LP-TSV?</h5>
+<p>World Historical Gazetteer supports uploads of both Linked Places format (LPF; <a href="https://github.com/LinkedPasts/linked-places" target="_blank">v1.2.2 specification</a>) and its delimited file derivative, LP&#8209;TSV, useful for relatively simple data (<a href="https://github.com/LinkedPasts/linked-places/blob/master/tsv_0.4.md" target="_blank">v0.4 specification</a>). In both cases, some level of transformation has to happen between your source data and the chosen format. <b>Both formats require that there be one record per place</b>. The distinction can be summarized this way:
+<ul>
+<li>LPF is JSON-based and supports both temporal scoping and citations for individual place names, geometries, types, and relations <b>within a single place record</b>.</li>
+<li>LP-TSV is a delimited file format&ndash;either a spreadsheet or text file in CSV or TSV format. Although it can handle multiple name variants and place types in a single column, it can have only one geometry per place, and citation is possible only for the principal name ('title').</li>
+</ul>
+<p>You should use LPF if:
+<ul>
+<li>You have multiple names, types, geometries, or relations for a single place that are temporally scoped; i.e. any of these attributes are associated in your data with a given year, timespan, or period&mdash;<i>and you want that represented in your WHG representation<i></li>
+<li></li>
+<li></li>
+</ul>
+</p>
+<p>You should use LP-TSV if:
+<ul>
+<li></li>
+<li></li>
+</ul>
+</p>
+
+{% comment %}
+<p>World Historical Gazetteer supports uploads of both Linked Places format (LPF; <a href="https://github.com/LinkedPasts/linked-places" target="_blank">v1.2.2 specification</a>) and its delimited file derivative, LP&#8209;TSV, useful for relatively simple data (<a href="https://github.com/LinkedPasts/linked-places/blob/master/tsv_0.4.md" target="_blank">v0.4 specification</a>). Their specifications provide details, and should be consulted in designing transformations. The following will help in deciding which is appropriate for your dataset. The WHG team is not able to transform data for you, but we can help guide you in this essential step; just let us know via <a href="#" class="feedback">the feedback form</a>.</p>
         <h6>Linked Places format (LPF)</h6>
-        <p></p>
+        <p>Linked Places format has been developed as an interconnection standard for place data contributions to the WHG and Pelagios projects, but we expect it to see wider use over time. It is both valid <span class="red-head strong">JSON-LD</span>, a syntax of RDF, and valid <span class="red-head strong">GeoJSON</span>. It also incorporates temporal extensions to GeoJSON proposed in its precursor <span class="red-head strong">GeoJSON-T</span>.</p>
+          <p class="mx-3"><span class="red-head strong">JSON-LD</span> is a lightweight Linked Data format. "It is primarily intended to be a way to use Linked Data in Web-based programming environments..." -- from JSON-LD <a href="https://json-ld.org/" target="_blank">web site</a> (<a href="https://w3c.github.io/json-ld-syntax/" target="_blank">v1.1 draft specification</a>)<p>
+          <p class="mx-3"><span class="red-head strong">GeoJSON</span> "is a format for encoding a variety of geographic data structures." -- from GeoJSON <a href="https://geojson.org/" target="_blank">web site</a> (<a href="https://tools.ietf.org/html/rfc7946" target="_blank"> RFC 7946 specification</a>)
+          </p>
+          <p class="mx-3">The draft <span class="red-head strong">GeoJSON-T</span> format added time to GeoJSON, expressed in "when" elements that can be added at the Feature level, in geometries of a GeometryCollection, in properties, or in the non-standard <i>foreign elements</i> allowed by the GeoJSON specification. It is a work-in-progress (<a href="https://github.com/kgeographer/geojson-t" target="_blank">GitHub</a>).
+          </p>
+          <p>Apart from its JSON-LD structure, the distinctive features of Linked Places format include:</p>
+          <ul>
+            <li>Permits temporal scoping of an entire place record and/or any individual name variant, geometry, place type, or place relation, expressed either as timespans or as named periods. Timespans are encouraged, as they enable temporal queries, filters and visualizations.</li>
+            <li>Permits any number of sourced names, geometries, and relations.</li>
+            <li>As the <a href="https://github.com/LinkedPasts/linked-places" target="_blank">specification</a> outlines, almost all elements are optional.</li>
+          </ul>
         <h6>LP-TSV format</h6>
-        <p></p>
+          <p><a href="https://github.com/LinkedPasts/linked-places/blob/master/tsv_0.3.md" target="_blank">LP-TSV is a delimited file format</a> developed by WHG to support users and contributors whose data is relatively simple. LP-TSV data can be stored in CSV, TSV, or spreadsheet form (the "TSV" is an artifact of an earlier draft). For example, an LP-TSV row can include a timespan for an entire record, but does not permit temporal scoping of individual components (names, geometries, etc.) as the full Linked Places format does.</p>
+          <p>The distinctive features of LP-TSV include:</p>
+          <ul>
+            <li>It requires one "title" toponym, a named source for it, and at minimum a "start" year integer.</li>
+            <li>It permits any number of name variants, 2-letter country codes (ccodes), types, and matches (links) but only as semicolon-delimited lists of strings within those columns.</li>
+            <li>It permits one geometry, expressed as either longitude and latitude or as a <a href="https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry" target="_blank">WKT (Well-Known Text) expression</a>.</li>
+            <li>With respect to relations, it permits only a single "parent_name"/"parent_id" combination.</li>
+</ul>
+{% endcomment %}
       </section>
       <section id="prepdata">
         <h5>Preparing data for upload</h5>
@@ -227,13 +270,16 @@ The first step for working with your own data in WHG is to prepare an upload fil
 </div>
 </div>
 <script type="text/javascript">
-// copilot script
+
 $(document).ready(function() {
   console.log('Document is ready.');
 
   // Setup event listeners for accordion opening
   $('#sidebarAccordion').on('shown.bs.collapse', function(e) {
     console.log('shown.bs.collapse event handler called');
+    var activeAccordion = $(e.target).parent().attr('id');
+
+    localStorage.setItem('activeAccordion', activeAccordion);
     var accordionBody = $(e.target);
     setTimeout(() => {
       var firstNavItem = accordionBody.find('.nav-link:first');
@@ -256,6 +302,28 @@ $(document).ready(function() {
     }, 300); // Adjust timeout as necessary
   });
 
+  // try to return to last scroll position
+  // disable when page content is complete
+  // On scroll event
+  $('#docs_content').on('scroll', function() {
+    var scrollPosition = $(this).scrollTop();
+    localStorage.setItem('scrollPosition', scrollPosition);
+  });
+
+  // On page load
+  var activeAccordion = localStorage.getItem('activeAccordion');
+  var scrollPosition = localStorage.getItem('scrollPosition');
+
+  if (activeAccordion) {
+    $('#' + activeAccordion + ' .accordion-collapse').collapse('show');
+  }
+
+  if (scrollPosition) {
+    $('#docs_content').scrollTop(scrollPosition);
+  }
+  // end try to return to last scroll position
+
+
   // Handle hash if present on initial load
   var hash = window.location.hash;
   if (hash) {
@@ -275,92 +343,7 @@ $(document).ready(function() {
     }
   }
 });
-// end copilot script
 
-{#$(document).ready(function() {#}
-{#  console.log('Document is ready.');#}
-{##}
-{#  // Setup event listeners for accordion opening#}
-{#  $('#sidebarAccordion').on('shown.bs.collapse', function(e) {#}
-{#    console.log('shown.bs.collapse event handler called');#}
-{#    var accordionBody = $(e.target);#}
-{#    setTimeout(() => {#}
-{#      var firstNavItem = accordionBody.find('.nav-link:first');#}
-{#      if (firstNavItem.length) {#}
-{#        var targetId = firstNavItem.attr('href');#}
-{#        if (targetId) {#}
-{#          var targetElement = $(targetId);#}
-{#          if (targetElement.length) {#}
-{#            var containerTop = $('#docs_content').offset().top;#}
-{#            var targetTop = targetElement.offset().top;#}
-{#            var relativeTop = targetTop - containerTop - 110; // 110px for header or other fixed elements above#}
-{#            console.log('Scrolling to:', relativeTop);#}
-{#            $('#docs_content').animate({#}
-{#              scrollTop: relativeTop#}
-{#            }, 300);#}
-{#          }#}
-{#        }#}
-{#      }#}
-{#    }, 300); // Adjust timeout as necessary#}
-{#  });#}
-{##}
-{#  // Handle hash if present on initial load#}
-{#  var hash = window.location.hash;#}
-{#  if (hash) {#}
-{#    var navLink = $(`.nav-link[href="${hash}"]`);#}
-{#    if (navLink.length) {#}
-{#      navLink.closest('.accordion-item').find('.accordion-collapse').collapse('show');#}
-{#      setTimeout(() => {#}
-{#        var targetElement = $(hash);#}
-{#        var containerTop = $('#docs_content').offset().top;#}
-{#        var targetTop = targetElement.offset().top;#}
-{#        var relativeTop = targetTop - containerTop - 110;#}
-{#        $('#docs_content').animate({#}
-{#          scrollTop: relativeTop#}
-{#        }, 800);#}
-{#      }, 300);#}
-{#    }#}
-{#  }#}
-{# });#}
-
-{#$(document).ready(function() {#}
-{#  console.log('Document is ready.');#}
-{##}
-{#  // Setup event listeners for accordion opening#}
-{#  $('#sidebarAccordion').on('shown.bs.collapse', function(e) {#}
-{#    console.log('shown.bs.collapse event handler called');#}
-{#    var accordionBody = $(e.target);#}
-{#    setTimeout(() => {#}
-{#      var firstNavItem = accordionBody.find('.nav-link:first');#}
-{#      if (firstNavItem.length) {#}
-{#        console.log('First nav item:', firstNavItem);#}
-{#        var targetId = firstNavItem.attr('href');#}
-{#        if (targetId) {#}
-{#          console.log('supposedly heading to Nav item href:', targetId);#}
-{#          var targetElement = $(targetId);#}
-{#          if (targetElement.length) {#}
-            {#$('html, body').animate({#}
-{#            $('#docs_content').animate({#}
-{#              scrollTop: targetElement.offset().top - 110#}
-{#            }, 300);#}
-{#          }#}
-{#        }#}
-{#      }#}
-{#    }, 300); // Adjust timeout as necessary#}
-{#  });#}
-{##}
-{#  // Handle hash if present#}
-{#  var hash = window.location.hash;#}
-{#  if (hash) {#}
-{#    var navLink = $(`.nav-link[href="${hash}"]`);#}
-{#    if (navLink.length) {#}
-{#      navLink.closest('.accordion-item').find('.accordion-collapse').collapse('show');#}
-{#      $('html, body').animate({#}
-{#        scrollTop: $(hash).offset().top#}
-{#      }, 800);#}
-{#    }#}
-{#  }#}
-{# });#}
 </script>
 
 {% endblock %}
