@@ -113,8 +113,6 @@ class SplashCheckMixin:
     return super().dispatch(request, *args, **kwargs)
 
 class Home30a(TemplateView):
-  # template_name = 'main/home_v30a{version}.html'
-  # template_name = 'main/homey.html'
   template_name = 'main/home_v30a3.html'
 
   def get_template_names(self):

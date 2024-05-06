@@ -34,6 +34,7 @@ class ErrorResponseSerializer(serializers.Serializer):
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
   # don't list all places in a dataset API record
   owner = serializers.ReadOnlyField(source='owner.name')
+  contributors = serializers.CharField(allow_null=True, allow_blank=True)
 
   place_count = serializers.SerializerMethodField('get_count')
   def get_count(self,ds):
@@ -41,7 +42,9 @@ class DatasetSerializer(serializers.HyperlinkedModelSerializer):
 
   class Meta:
     model = Dataset
-    fields = ('id', 'place_count', 'owner', 'label', 'title', 'description','datatype', 'ds_status', 'create_date', 'public', 'core','creator','webpage')
+    fields = ('id', 'place_count', 'owner', 'label', 'title', 'description','datatype',
+              'ds_status', 'create_date', 'public', 'core','creator', 'webpage',
+              'contributors')
     extra_kwargs = {
           'created_by': { 'read_only': True }}
 

@@ -1,0 +1,105 @@
+{% extends "main/base_webpack.html" %}
+{% load static %}
+{% load dataset_extras %}
+
+{% block title %}
+  <title xmlns="http://www.w3.org/1999/html">WHG v3.0beta</title>
+{% endblock %}
+
+{% block extra_head %}
+<link href="{% static 'webpack/workbench.bundle.css' %}" rel="stylesheet"/>
+<style>
+@media screen and (max-width: 1200px) {
+  .hide-on-narrow {
+    display: none;
+  }
+}
+.builder-list {
+  list-style-type: lower-alpha !important;
+  font-size: 0.9rem !important;
+  padding-left: 1.1rem !important;
+  color: slategray;
+}
+.btn-sm {
+  font-family: Raleway, san-serif !important;
+  font-weight: normal;
+}
+.btn-extra-sm {
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.675rem !important;
+  line-height: 1.5 !important;
+  border-radius: 0.2rem !important;
+  font-family: Raleway, san-serif !important;
+  font-weight: normal !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container container-full-height">
+  <div class="row mb-2">
+    <div id="wb_title" class="col-12 fs-2 text-center">
+      <span style="vertical-align: text-bottom;">
+        <img src="{% static 'images/noun-workbench-6022067.svg' %}" class="whg-icon" height="40"/>
+      </span>
+      Gazetteer Workbench
+    </div>
+    <div id="wb_blurb" class="col-12 fs-6 text-center">
+      <p class="mb-1">WHG offers three pathways for using its tools and services <br/>to augment and publish historical place data</p>
+    </div>
+  </div>
+  <div id="wb_columns" class="row">
+    <div class="col-4 full-height workbench-column">
+      <div class="workbench-column-inner">
+        <div class="content-group">
+          <span class="path-number d-block bg-lightgrey ps-1">1 <span class="fs-5">Individual Datasets</span></span>
+          <p class="ps-1 mb-1">Upload, augment and describe place data. You can download your augmented dataset for offline use in other software, and you can submit it for editorial review and publication in the WHG.</p>
+        </div>
+        <div class="help-matches mt-2 ps-1" data-id="wb_augment">
+          <a class="btn btn-sm btn-outline-primary">Learn more</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-4 full-height workbench-column">
+      <div class="workbench-column-inner">
+        <div class="content-group">
+        <span class="path-number d-block bg-lightgrey ps-1">2 <span class="fs-5">Multiple Datasets</span>
+        </span>
+        <p class="ps-1 mb-1">Gather multiple datasets into a WHG Dataset Collection, link records that refer to a single place, and publish the compiled information as a single gazetteer.</p>
+        </div>
+        <div class="help-matches mt-2 ps-1" data-id="wb_dscoll">
+          <a class="btn btn-sm btn-outline-primary">Learn more</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-4 full-height workbench-column">
+      <div class="workbench-column-inner">
+        <div class="content-group">
+          <span class="path-number d-block bg-lightgrey ps-1">3 <span class="fs-5">Place Collections</span></span>
+          <p class="ps-1 mb-1">Collect, sequence, annotate, and publish place records; or create collection
+              building groups for teaching and collaboration.</p>
+          <div class="ps-1 mt-2">
+            <p class="mb-1"><a href="">Example Place Collection</a></p>
+            <p class="mb-1"><a href="">Begin a collection</a></p>
+            <p class="mb-1"><a href="{% url 'contact' %}">Request <i>group leader</i> access</a></p>
+          </div>
+        </div>
+        <div class="help-matches mt-2 ps-1" data-id="wb_pcoll">
+          <a class="btn btn-sm btn-outline-primary">Learn more</a>
+        </div>
+      </div>
+    </div>
+    <div class="selector py-3">
+      <div id="helpme"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block deferredScripts %}
+  var scripts = [
+    {
+    src: '{% static 'webpack/workbench.bundle.js' %}',
+    type: 'text/javascript',
+    }]
+{% endblock %}

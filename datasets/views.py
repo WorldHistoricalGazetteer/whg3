@@ -89,7 +89,9 @@ class DatasetGalleryView(ListView):
 
   def get_queryset(self):
     qs = super().get_queryset()
-    return qs.filter(public=True).order_by('title')
+    # return qs.filter(public=True).order_by('title')
+    # TODO: remove this exclude
+    return qs.filter(public=True).exclude(owner_id=119).order_by('title')
 
   def get_context_data(self, *args, **kwargs):
     context = super(DatasetGalleryView, self).get_context_data(*args, **kwargs)

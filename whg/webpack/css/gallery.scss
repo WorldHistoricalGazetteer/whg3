@@ -42,7 +42,7 @@
 }
 .ds-card-gallery:hover {
     cursor: pointer;
-    background-color: #99333330!important;
+    background-color: #F2DEDE !important;
 }
 .ds-card-content {
     font-size: 0.9rem;
@@ -52,9 +52,10 @@
 }
 .ds-card-owner,
 .ds-card-creator {
-    font-size: 0.9rem;
-    font-variant: small-caps;
+    font-size: 0.85rem;
+    //font-variant: small-caps;
     color: #993333;
+    line-height: normal;
 }
 .ds-card-content > div {
 	clear: both;

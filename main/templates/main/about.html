@@ -12,30 +12,27 @@
     <div class="d-flex justify-content-center mt-3">
       <h3>About the World Historical Gazetteer</h3>
     </div>
-    <div id="contrib_content" class="px-5">
-      <div id="vision_mission" style="display: flex; justify-content: space-between;">
-        <div>
-          <h5>Vision</h5>
+    <div id="about_content" class="">
+      <div id="vision_mission" class="row">
+        <div class="col-sm-9">
+          <h5>Our Vision</h5>
           <p>Empowering discovery by connecting place names across time and language</p>
           <h5>Project Mission</h5>
-          <p>To build a platform for open linked historical place data accessible through tools and services that permit users to:
-            <ul>
-              <li>search and browse contributed data</li>
-              <li>augment and contribute their own data</li>
-              <li>assemble and publish datasets and collections</li>
-              <li>use WHG in teaching and communication, fostering a deeper understand of historical places</li>
-            </ul>
+          <p>The mission of the World Historical Gazetteer is to build a platform for open linked historical place data in order to foster deeper understanding of place history and to improve discovery of places that have had many names over time. The WHG place index is accessible through tools and services that permit users to search and browse information about places, augment and contribute their own place records, assemble and publish information about places, and use information about places in teaching and communication.
           </p>
         </div>
-        <div class="w-50">
-          <img src="{% static '/images/whg_logo.svg' %}" style="height: 100%; object-fit: cover;" alt="The World Historical Gazetteer"></div>
+        <div class="col-sm-3 d-flex align-items-center justify-content-center">
+          <img src="{% static '/images/whg_logo.svg' %}" alt="The World Historical Gazetteer"/>
+        </div>
       </div>
       <h5>Status</h5>
-      <p>This beta Version 3 of the WHG was released in June 2024. Our Version 1 beta launched in October, 2019. For an overview of what is here, what you can do, and what is in the works, please see the <a href="{% url 'guides:site-guide' %}">Site Guide</a> and <a href="{% url 'guides:guides-all' %}">the Guides</a> section.</p>
       <p>Development of the WHG platform is always ongoing. New content is added continually, from contributions of users and by WHG staff. Please <a href="{% url 'contact' %}">get in touch</a> to discuss prospective data contributions, and with feedback about any aspect of the project.</p>
+      <p>This beta Version 3 of the WHG was released in June 2024. Our Version 1 beta launched in October, 2019. For an overview of what is here, what you can do, and what is in the works, please see the <a href="{% url 'documentation' %}">project documentation page</a></p>
+      {% comment %}
       <h5>Content</h5>
       <p>Something about content</p>
       <p>Something more?</p>
+      {% endcomment %}
     </div>
   </div>
 {% endblock %}

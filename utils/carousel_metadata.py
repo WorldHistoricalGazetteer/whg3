@@ -54,6 +54,7 @@ def carousel_metadata(caller):
         "image_file": caller.image_file.url if caller.image_file else None,
         "description": caller.description,
         "creator": caller.creator,
+        "contributors": caller.contributors or None,
         "owner": caller.owner.name,
         "type": caller_class.lower(), 
         "featured": caller.featured,

@@ -28,6 +28,9 @@
       padding: unset !important;
     }
   }
+  section {
+    margin-bottom: 1rem;
+  }
   section h5 {
     color: #993333;
     {#font-weight: bold;#}
@@ -36,6 +39,11 @@
     font-weight: bold;
     font-size: 1.1rem;
   }
+  ol ol {
+    list-style-type: lower-alpha;
+  }
+  .row img {border: #e0e0e0 1px solid;}
+  .row ol {font-size: 0.9rem;}
 </style>
 {% endblock %}
 
@@ -58,8 +66,8 @@
                data-bs-parent="#sidebarAccordion">
             <div class="accordion-body">
               <ul class="nav flex-column">
-                <li class="nav-item"><a class="nav-link" href="#overview">Overview</a></li>
-                <li class="nav-item"><a class="nav-link" href="#purpose">Purpose</a></li>
+                <li class="nav-item"><a class="nav-link" href="#overview">Vision</a></li>
+                <li class="nav-item"><a class="nav-link" href="#mission">Mission</a></li>
               </ul>
             </div>
           </div>
@@ -69,7 +77,7 @@
           <h2 class="accordion-header" id="headingWorkbench">
             <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                     data-bs-target="#collapseWorkbench" aria-expanded="false" aria-controls="collapseWorkbench">
-              Builder Pathways
+              Workbench Pathways
             </button>
           </h2>
           <div id="collapseWorkbench" class="accordion-collapse collapse" aria-labelledby="headingWorkbench"
@@ -77,13 +85,11 @@
             <div class="accordion-body">
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link" href="#augment">Upload and augment place data</a></li>
+                  <a class="nav-link" href="#augment">Individual datasets</a></li>
                 <li class="nav-item">
-                  <a class="nav-link" href="#publish_ds">Publish your dataset as a gazetteer resource</a></li>
+                  <a class="nav-link" href="#dscoll">Multiple datasets</a></li>
                 <li class="nav-item">
-                  <a class="nav-link" href="#dscoll">Assemble a gazetteer from multiple datasets</a></li>
-                <li class="nav-item">
-                  <a class="nav-link" href="#pcoll">Author a thematic place collection</a></li>
+                  <a class="nav-link" href="#pcoll">Thematic place collections</a></li>
               </ul>
             </div>
           </div>
@@ -129,6 +135,8 @@
                 <li class="nav-item">
                   <a class="nav-link" href="#prepdata">Preparing data for upload</a></li>
                 <li class="nav-item">
+                  <a class="nav-link" href="#indexes">Explaining the WHG indexes</a></li>
+                <li class="nav-item">
                   <a class="nav-link" href="#pcolls">Create and publish a Place Collection</a></li>
                 <li class="nav-item">
                   <a class="nav-link" href="#dscolls">Create and publish a Dataset Collection</a></li>
@@ -144,36 +152,65 @@
       <!--Introduction Group -->
       <section id="overview">
         <h4>Introducing the WHG</h4>
-        <h5>Overview</h5>
-        <p>Overview of WHG, its purpose, and main features...</p>
-                <p>{% lorem 2 %}</p>
+        <h5>Vision</h5>
+        <p>Empowering discovery by connecting place names across time and language</p>
       </section>
-      <section id="purpose">
-        <h5>Purpose</h5>
-        <p>Purpose of WHG and main features...</p>
-                <p>{% lorem 2 %}</p>
+      <section id="mission">
+        <h5>Mission</h5>
+        <p>The mission of the World Historical Gazetteer is to build a platform for open linked historical place data in order to foster deeper understanding of place history and to improve discovery of places that have had many names over time. The WHG place index is accessible through tools and services that permit users to search and browse information about places, augment and contribute their own place records, assemble and publish information about places, and use information about places in teaching and communication.</p>
       </section>
       <!-- Workbench Group -->
       <section id="augment">
-        <h4>Builder Pathways</h4>
+        <h4>Workbench Pathways</h4>
         <hr/>
-        <h5>Upload and augment place data</h5>
-        <p>
-The first step for working with your own data in WHG is to prepare an upload file in one of two formats: <b>Linked Places format (LPF)</b> if your data is relatively complex, or <b>LP-TSV</b>, a simpler delimited file format (e.g. a spreadsheet, CSV, or TSV).</p>
-        <p>{% lorem 2 %}</p>
-      </section>
-      <section id="publish_ds">
-        <h5>Publish your dataset as a gazetteer resource</h5>
-        <p></p>
-        <p>{% lorem 2 %}</p>
+        <h5>Individual datasets</h5>
+        <p>The first step for working with your own data in WHG is to prepare an upload file in one of two formats: <b>Linked Places format (LPF)</b> if your data is relatively complex, or <b>LP-TSV</b>, a simpler delimited file format (e.g. a spreadsheet, CSV, or TSV). See <a href="#lpf">Choosing an upload data format: LPF or LP-TSV?</a> for more information.</p>
+        <p class="ps-1 mb-1">After making that choice, the steps are as follows:</p>
+        <ol class="builder-list">
+          <li>Create a place data file</li>
+          <li>Upload it to your private workspace.
+          </li>
+            <ol>
+              <li>Click the <span class="larger">"+"</span> from your <b>My Data</b> dashboard <br/>
+              <img src="{% static 'images/docs/add_dataset.png' %}" height="100"/></li>
+              <li>Fill in the required fields in the "Upload dataset" form<br/>
+              <img src="{% static 'images/docs/upload_form.png' %}" height="100"/></li>
+            </ol>
+          </li>
+          <li>The Status tab will show the progress through this workflow.<br/>
+            <img src="{% static 'images/docs/status_buttons.png' %}" height="80" class="pb-1"/>
+            <ol>
+              <li>View uploaded content in a map and table on the Browse tab</li>
+              <li>Initiate a reconciliation task from the Status tab, choosing desired options<br/>
+              <img src="{% static 'images/docs/task_options.png' %}" height="120" class="pb-1"/></li>
+            </ol>
+          </li>
+          <li>Upon task completion, proceed to review prospective matches, and monitor progress on the Status tab.<br/>
+            <img src="{% static 'images/docs/review_progress.png' %}" height="140"/></li>
+          </li>
+          <li>In the Review screen record your matching decisions: "closeMatch", "no match," or "defer."
+            A help screen <span style="white-space: nowrap;">(<i class="fas fa-question-circle linkypop"></i>)</span> explains the process in detail. With each decision,
+            the page advance to the next of your records in the queue of those that had any "hits."<br/>
+            <img src="{% static 'images/docs/review_decide.png' %}" height="80"/></li>
+          </li>
+          <li>When the Review step is complete, your options are to
+            <ol><li>Download your now augmented data for use in other software</li>
+            <li>Complete the metadata on the Metadata tab and request publication.</li>
+            <li>A further step is strongly encouraged: linking your data with records from other
+            datasets already in the WHG union index. This is accomplished in a second reconciliation task,
+            initiated on request by WHG editorial staff. See the <a href="#union_index">Union Index</a>
+            section for details</li>
+            </ol>
+          </li>
+        </ol>
       </section>
       <section id="dscoll">
-        <h5>Assemble a gazetteer from multiple datasets</h5>
+        <h5>Multiple datasets</h5>
         <p></p>
-        <p>{% lorem 2 %}</p>
+        <p>{% lorem 1 %}</p>
       </section>
       <section id="pcoll">
-        <h5>Author a thematic place collection</h5>
+        <h5>Thematic place collections</h5>
         <p></p>
         <p>{% lorem 2 %}</p>
       </section>
@@ -182,78 +219,144 @@ The first step for working with your own data in WHG is to prepare an upload fil
         <h4>Site Sections</h4>
         <hr/>
         <h5>Home page</h5>
-        <p></p>
-        <p>{% lorem 2 %}</p>
+        <div class="row">
+          <div class="col-md-8">
+            <img src="{% static 'images/docs/home_page.jpg' %}" class="img-fluid"/>
+          </div>
+          <div class="col-md-4">
+            <ol>
+              <li>Sitewide main menu</li>
+              <li>Introduction & "What is a gazetteer?"</li>
+              <li>Search for places (results returned in Search page)</li>
+              <li>Rotating previews of selected datasets and collections</li>
+              <li>Announcements</li>
+              <li>Site Section buttons </li>
+            </ol>
+          </div>
+        </div>
       </section>
       <section id="search">
-        <h5>Search in WHG</h5>
-        <p></p>
-        <p>{% lorem 2 %}</p>
+        <h5>Search page</h5>
+        <div class="row">
+          <div class="col-md-8">
+            <img src="{% static 'images/docs/search_page.jpg' %}" class="img-fluid"/>
+          </div>
+          <div class="col-md-4">
+            <ol>
+              <li>Search modes: Exactly, Starts with, Similar to, Contains</li>
+              <li>Prefilter by one or more place type categories</li>
+              <li>Prefilter by country, region, or user 'study area'</li>
+              <li>Filter results by place type and/or modern country</li>
+              <li>Map initial displays markers for all results</li>
+              <li>Time filter 'slider'</li>
+              <li>Results list, ordered by most linked</li>
+              <li>Display map full screen; option to save image</li>
+              <li>Spatial filter polygon draw control</li>
+            </ol>
+          </div>
+        </div>
       </section>
       <section id="portal">
         <h5>Place Portals</h5>
-        <p></p>
-        <p>{% lorem 2 %}</p>
+        <div class="row">
+          <div class="col-md-8">
+            <img src="{% static 'images/docs/portal_page.jpg' %}" class="img-fluid"/>
+          </div>
+          <div class="col-md-4">
+            <ol>
+            <li>Blurb auto generated from place data</li>
+            <li>Permalink to page for citation</li>
+            <li>Links to ecoregion and biome detail</li>
+            <li>List of attestations for the place</li>
+            <li>Appearance of place in WHG Place Collection(s)</li>
+            <li>Add place to a Place Collection</li>
+            <li>Map</li>
+            <li>Multiple layer options: physical geography; labels; nearby places</li>
+            <li>Temporal histogram and filter control</li>
+            </ol>
+          </div>
+        </div>
       </section>
       <section id="gallery">
         <h5>Browse data publications</h5>
-        <p></p>
-        <p>{% lorem 2 %}</p>
+        <div class="row">
+          <div class="col-md-8">
+            <img src="{% static 'images/docs/gallery.jpg' %}" class="img-fluid"/>
+          </div>
+          <div class="col-md-4">
+            <ol>
+              <li>Publications are grouped: Datasets and Collections</li>
+              <li>Preview button display spatial footprint on map</li>
+              <li>Map (heatmap if place count is large)</li>
+              <li>Sort options: title, latest, earliest, etc.</li>
+              <li>Free text search on titles, descriptions, authors (creators)</li>
+              <li>Filter for publications' coverage including selected country or region</li>
+            </ol>
+          </div>
+        </div>
       </section>
       <!-- Tutorials Group -->
       <section id="lpf">
         <h4>Tutorials & Guides</h4>
         <hr/>
         <h5>Choosing an upload data format: LPF or LP-TSV?</h5>
-<p>World Historical Gazetteer supports uploads of both Linked Places format (LPF; <a href="https://github.com/LinkedPasts/linked-places" target="_blank">v1.2.2 specification</a>) and its delimited file derivative, LP&#8209;TSV, useful for relatively simple data (<a href="https://github.com/LinkedPasts/linked-places/blob/master/tsv_0.4.md" target="_blank">v0.4 specification</a>). In both cases, some level of transformation has to happen between your source data and the chosen format. <b>Both formats require that there be one record per place</b>. The distinction can be summarized this way:
-<ul>
-<li>LPF is JSON-based and supports both temporal scoping and citations for individual place names, geometries, types, and relations <b>within a single place record</b>.</li>
-<li>LP-TSV is a delimited file format&ndash;either a spreadsheet or text file in CSV or TSV format. Although it can handle multiple name variants and place types in a single column, it can have only one geometry per place, and citation is possible only for the principal name ('title').</li>
-</ul>
-<p>You should use LPF if:
-<ul>
-<li>You have multiple names, types, geometries, or relations for a single place that are temporally scoped; i.e. any of these attributes are associated in your data with a given year, timespan, or period&mdash;<i>and you want that represented in your WHG representation<i></li>
-<li></li>
-<li></li>
-</ul>
-</p>
-<p>You should use LP-TSV if:
-<ul>
-<li></li>
-<li></li>
-</ul>
-</p>
-
-{% comment %}
-<p>World Historical Gazetteer supports uploads of both Linked Places format (LPF; <a href="https://github.com/LinkedPasts/linked-places" target="_blank">v1.2.2 specification</a>) and its delimited file derivative, LP&#8209;TSV, useful for relatively simple data (<a href="https://github.com/LinkedPasts/linked-places/blob/master/tsv_0.4.md" target="_blank">v0.4 specification</a>). Their specifications provide details, and should be consulted in designing transformations. The following will help in deciding which is appropriate for your dataset. The WHG team is not able to transform data for you, but we can help guide you in this essential step; just let us know via <a href="#" class="feedback">the feedback form</a>.</p>
-        <h6>Linked Places format (LPF)</h6>
-        <p>Linked Places format has been developed as an interconnection standard for place data contributions to the WHG and Pelagios projects, but we expect it to see wider use over time. It is both valid <span class="red-head strong">JSON-LD</span>, a syntax of RDF, and valid <span class="red-head strong">GeoJSON</span>. It also incorporates temporal extensions to GeoJSON proposed in its precursor <span class="red-head strong">GeoJSON-T</span>.</p>
-          <p class="mx-3"><span class="red-head strong">JSON-LD</span> is a lightweight Linked Data format. "It is primarily intended to be a way to use Linked Data in Web-based programming environments..." -- from JSON-LD <a href="https://json-ld.org/" target="_blank">web site</a> (<a href="https://w3c.github.io/json-ld-syntax/" target="_blank">v1.1 draft specification</a>)<p>
-          <p class="mx-3"><span class="red-head strong">GeoJSON</span> "is a format for encoding a variety of geographic data structures." -- from GeoJSON <a href="https://geojson.org/" target="_blank">web site</a> (<a href="https://tools.ietf.org/html/rfc7946" target="_blank"> RFC 7946 specification</a>)
-          </p>
-          <p class="mx-3">The draft <span class="red-head strong">GeoJSON-T</span> format added time to GeoJSON, expressed in "when" elements that can be added at the Feature level, in geometries of a GeometryCollection, in properties, or in the non-standard <i>foreign elements</i> allowed by the GeoJSON specification. It is a work-in-progress (<a href="https://github.com/kgeographer/geojson-t" target="_blank">GitHub</a>).
-          </p>
-          <p>Apart from its JSON-LD structure, the distinctive features of Linked Places format include:</p>
-          <ul>
-            <li>Permits temporal scoping of an entire place record and/or any individual name variant, geometry, place type, or place relation, expressed either as timespans or as named periods. Timespans are encouraged, as they enable temporal queries, filters and visualizations.</li>
-            <li>Permits any number of sourced names, geometries, and relations.</li>
-            <li>As the <a href="https://github.com/LinkedPasts/linked-places" target="_blank">specification</a> outlines, almost all elements are optional.</li>
-          </ul>
-        <h6>LP-TSV format</h6>
-          <p><a href="https://github.com/LinkedPasts/linked-places/blob/master/tsv_0.3.md" target="_blank">LP-TSV is a delimited file format</a> developed by WHG to support users and contributors whose data is relatively simple. LP-TSV data can be stored in CSV, TSV, or spreadsheet form (the "TSV" is an artifact of an earlier draft). For example, an LP-TSV row can include a timespan for an entire record, but does not permit temporal scoping of individual components (names, geometries, etc.) as the full Linked Places format does.</p>
-          <p>The distinctive features of LP-TSV include:</p>
-          <ul>
-            <li>It requires one "title" toponym, a named source for it, and at minimum a "start" year integer.</li>
-            <li>It permits any number of name variants, 2-letter country codes (ccodes), types, and matches (links) but only as semicolon-delimited lists of strings within those columns.</li>
-            <li>It permits one geometry, expressed as either longitude and latitude or as a <a href="https://en.wikipedia.org/wiki/Well-known_text_representation_of_geometry" target="_blank">WKT (Well-Known Text) expression</a>.</li>
-            <li>With respect to relations, it permits only a single "parent_name"/"parent_id" combination.</li>
-</ul>
-{% endcomment %}
+        <p>World Historical Gazetteer supports uploads of both Linked Places format (LPF; <a href="https://github.com/LinkedPasts/linked-places" target="_blank">v1.2.2 specification</a>) and its delimited file derivative, LP&#8209;TSV, which is more useful for relatively simple data (<a href="https://github.com/LinkedPasts/linked-places/blob/master/tsv_0.4.md" target="_blank">v0.4 specification</a>). In both cases, some level of transformation has to happen between your source data and the chosen format. <b>Both formats require that there be one record per place</b>. The main distinctions can be summarized this way:
+        <ul>
+          <li>LPF is JSON-based and supports both temporal scoping and citations for individual place names, geometries, types, and relations <b>within a single place record</b>.</li>
+          <li>LP-TSV is a delimited file format&mdash;either a spreadsheet or a text file in CSV or TSV format. Although it can handle multiple name variants and place types in a single column, it can have only one geometry per place, and citation is possible only for the principal name ('title').</li>
+        </ul>
+        <p>Choose LPF if:
+        <ul>
+          <li>You have multiple names, types, geometries, or relations <i>for a single place</i> that are temporally scoped; i.e. any of these attributes are associated in your data with a given year, timespan, or period&mdash;<i>and you want that represented in your WHG representation<i>.</li>
+          <li>You wish to include citations per name, type, geometry, or timespan.</li>
+        </ul>
+        </p>
+        <p>Choose LP-TSV if:
+        <ul>
+          <li>You have a single year or timespan that applies to the entire record (start/end or attestation year).</li>
+          <li>Your name variants and place types can be listed in a single column, e.g. this way: "name1;name2" </li>
+        </ul>
+        </p>
       </section>
       <section id="prepdata">
         <h5>Preparing data for upload</h5>
-        <p></p>
-        <p>{% lorem 2 %}</p>
+        <h6>The simple case</h6>
+        <p>If you have a list of distinct places with a name or names and basic attributes of the place, like coordinates, and place type in a spreadsheet, database table, etc., the task of preparing an upload file for WHG is straightforward. In almost all cases your format choice will be LP-TSV, and you can copy/paste columns from your file into WHG's <a href="https://tinyurl.com/2tspp7be" target="_blank">LP-TSV spreadsheet template</a>, as explained in the file itself. See also, "Quick Start" on the <a href="{% url 'datasets:dataset-create' %}" target="_blank">"Upload dataset" page</a></p>
+        <h6>The not so simple case: extracting places</h6>
+        <p>However, the data for most spatial historical projects is not only about places or locations, but principally about events or artifacts for which location is an important dimension. </p>
+        <p>Both LPF and LP-TSV require that there be one record per place. But for many projects, a single place can have multiple rows in a spreadsheet, or multiple features in a shapefile&mdash;each recording for example a change in some attribute at a given time. For this reason, data often takes the form of one row per event, or artifact, or observation of some kind, with a column for place name, and/or for latitude and longitude. In this case location information is often repeated on each row that is about that event, or artifact, etc. <b>The task is to extract the distinct places, into a separate places-only table or worksheet</b>.</p>
+        <p>Conflating multiple place references to a single place record often requires disambiguation or normalization, with several kinds of decisions only the data creator can make, e.g.:
+        <ul>
+          <li>Do two different names actually refer to the same place?</li>
+          <li>Are an archaeological site and a modern city with the same name the same place?</li>
+          <li>If there are multiple name variants, which should be the primary "title" of the record?</li>
+          <li>If some references are at the scale of settlement and others at the scale of county, should they be normalizzed to county for purposes of analysis?</li>
+        </ul>
+        </p>
+        <h6>Linked Places format (LPF), a GeoJSON extension</h6>
+        <p>Apart from conflating multiple place references to a single place record, converting data from a delimited format like a spreadsheet or shapefile attribute table to the JSON-base LPF will almost certainly require a script&mdash;using e.g. Python or SQL if a database is involved. A how-to for this is beyond the scope of this document, but <a href="https://csvjson.com/csv2json" target="_blank">this CSV&nbsp;>&nbsp;JSON tool</a> demonstrates how this will look, and a web search will locate other tools that may help.</p>
+        </p>
+      </section>
+      <section id="indexes">
+        <h5>Explaining the WHG Indexes</h5>
+        <p>WHG maintains three high-speed indexes for use in the platform, "<b>Wikidata+GeoNames</b>", the "<b>WHG Union Index</b>," and the "Pub" index.</p>
+        <h6>Wikidata+GeoNames</h6>
+        <p>This index of over 13 million place records from Wikidata (3.6m) and GeoNames (10m) is used for intitial
+        intitial reconciliation of uploaded datasets, enabling their augmentation with
+        <ul>
+        <li>Coordinate geometry their records may be missing (a "geocoding" function")</li>
+        <li>Additional name variants</li>
+        <li>Identifiers from additional gazetteer resources, including several national libraries, VIAF, and Getty's
+        Thesaurus of Geographic Names (TGN). This has the benefit of making user records significantly more linkable
+        &mdash;within in WHG's union index, and in other linked data contexts.</li>
+        </li>
+        </ul> </p>
+        <h6>WHG Union Index</h6>
+        <p>The WHG Union Index is where individual records for the same or "closely matched" places coming from different datasets
+        are linked. Search results privilege these linked sets or "clusters" of records, and present them in
+        Place Portal pages like <a href="/places/12346428/portal/" target="_blank">this one for Glasgow.</a></p>
+        <h6>WHG "Pub" index</h6>
+        <p>When a dataset has been reconciled to the Wikidata+Geonames index and published, it is automatically added to theLinked "Pub" index so that's its records can be discovered not only via browsing its publication page, but in search and via our Application Programming Interface (API). If and when the dataset is reconciled to the Union Index, its records are removed from "Pub," as they are now linked where possible and appear in Place Portal pages.</p>
       </section>
       <section id="pcolls">
         <h5>Create and publish a Place Collection</h5>
@@ -264,7 +367,7 @@ The first step for working with your own data in WHG is to prepare an upload fil
         <h5>Create and publish a Dataset Collection</h5>
         <p></p>
         <p>{% lorem 2 %}</p>
-        <p>{% lorem 8 %}</p>
+
       </section>
   </div>
 </div>
