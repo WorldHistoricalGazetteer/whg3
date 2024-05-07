@@ -29,6 +29,7 @@
     }
   }
   section {
+    {#margin-top: 2rem;#}
     margin-bottom: 1rem;
   }
   section h5 {
@@ -36,8 +37,11 @@
     {#font-weight: bold;#}
   }
   section h6 {
-    font-weight: bold;
+    {#font-weight: bold;#}
+    {#font-style: italic;#}
+    {#color: #993333;#}
     font-size: 1.1rem;
+    margin-bottom: 0;
   }
   ol ol {
     list-style-type: lower-alpha;
@@ -49,7 +53,7 @@
 
 {% block content %}
 <div id="docs_container" class="container mt-1 px-1">
-  <div><h4>WHG v3 Documentation?</h4></div>
+  <div><h4>WHG v3 Documentation</h4></div>
   <div class="row flex-nowrap">
     <!-- Sidebar Navigation with Accordions -->
     <div id="docs_sidebar" class="col-md-3 col-4 sticky-sidebar">
@@ -140,6 +144,8 @@
                   <a class="nav-link" href="#pcolls">Create and publish a Place Collection</a></li>
                 <li class="nav-item">
                   <a class="nav-link" href="#dscolls">Create and publish a Dataset Collection</a></li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#collgroups">Create and manage a Collection Group for a class or workshop</a></li>
               </ul>
             </div>
           </div>
@@ -160,7 +166,7 @@
         <p>The mission of the World Historical Gazetteer is to build a platform for open linked historical place data in order to foster deeper understanding of place history and to improve discovery of places that have had many names over time. The WHG place index is accessible through tools and services that permit users to search and browse information about places, augment and contribute their own place records, assemble and publish information about places, and use information about places in teaching and communication.</p>
       </section>
       <!-- Workbench Group -->
-      <section id="augment">
+      <section id="augment" class="mt-5">
         <h4>Workbench Pathways</h4>
         <hr/>
         <h5>Individual datasets</h5>
@@ -198,24 +204,63 @@
             <li>Complete the metadata on the Metadata tab and request publication.</li>
             <li>A further step is strongly encouraged: linking your data with records from other
             datasets already in the WHG union index. This is accomplished in a second reconciliation task,
-            initiated on request by WHG editorial staff. See the <a href="#union_index">Union Index</a>
-            section for details</li>
+            initiated on request by WHG editorial staff.</li>
+            </ol>
+          </li>
+          <li><b>Accessioning to the WHG union index</b>. This step procedes much like steps 4 & 5 above, with
+          these differences:
+            <ol>
+            <li>If no prospective match is found for a record, it is written to the index as a "seed"&mdash'a place
+            for which we had no previous information.</li>
+            <li>Prospective matches presented can be either a single record or a set of 2 or more that have been previously linked
+            during accessioning tasks for other datasets. A match to a set causes the incoming record to be added to that set.
+            This accessioning step is how <a href="#portal">Place Portal</a> pages are generated
+            (<a href="{% url 'places:place-portal-whg-id' 12346428 %}" target="_blank">example</a>).<br/>
+            <img src="{% static 'images/docs/review_linked.jpg' %}" height="200"/></li>
+            <li>When the task is complete, the dataset is considered fully accessioned, and its records are now linked with others
+            for the same places where possible. That said, it remains a distinct, published dataset within the platform,
+            discoverable in the WHG <a href="{% url 'datasets:dataset-gallery' %}">publications gallery</a> and browseable
+            and searchable in its own publication page.</li>
             </ol>
           </li>
         </ol>
       </section>
       <section id="dscoll">
         <h5>Multiple datasets</h5>
-        <p></p>
-        <p>{% lorem 1 %}</p>
+        <p>The <b>Dataset Collection</b> feature in WHG allows an individual or collaborative group to create
+         a historical gazetteer resource from multiple datasets, linking those records that refer to the same place.
+         Some examples, currently at various stages of development, include;
+         <ul>
+          <li>"A Historical Gazetteer of Ukraine," so far with five datasets from several timeperiods.</li>
+          <li>"Indigenous Place Names in North America," so far with four datasets for distinct regions, and a fifth covering
+          all of North America.</li>
+          <li>"A Historical Gazetteer of Central Asia"&mdash;an ambitious undertaking with, so far, 13 disparate datasets
+          drawn from many sources for this huge and ill-defined region.</li>
+         </ul>
+         </p>
+        <p>Published Dataset Collections can be browsed in a rich publication page including an explanatory essay, and
+        in the near future will be independently searchable via the WHG API&mdash;for example as a resource in
+        annotation software.</p>
+        <p>Note that in order for a dataset to be added to a Dataset Collection, it must have been fully accessioned
+        in the WHG union index. See the "WHG Union Index" section in <a href="#indexes">Explaining the WHG indexes</a> guide.</p>
       </section>
       <section id="pcoll">
         <h5>Thematic place collections</h5>
-        <p></p>
-        <p>{% lorem 2 %}</p>
+        <p>The <b>Place Collection</b> feature in WHG is designed for two use scenarios: as a teaching or workshop exercise,
+        or as a form of authored publication. The steps for creating a Place Collection are the same in all cases,
+        as detailed in the <a href="#pcolls">Create and publish a Place Collection</a> guide.</p>
+        <h6>Instructional exercise in a class setting, or workshop</h6>
+        <p>Registered WHG users can request "group leader" permissions, which allows them to create and manage a WHG <b>Collection Group</b>. This is a private space where students or workshop participants can create and share collections of places, annotated with custom keywords, notes, dates, and images. The group leader can review and comment on the collections, and can nominate exceptional collections for inclusion in the WHG Student Gallery. Students or workshop participants join the group by entering an access key
+        created and distributed by the instructor or workshop leader.</p>
+        <p><a>See <a href="#collgroups">"Create and manage a class or workshop Collection Group</a></p>
+        <p>As a member of a Collection Group, an option appears on all of their <i>collection builder pages</i> to submit the collection when complete&mdash;for review by the instructor or workshop leader.<br/>
+        <img src="{% static 'images/docs/submit-to-group.jpg' %}" height="60" class="ms-3"/></p>
+        <h6 class="mt-2">Authored publication</h6>
+        <p>Any registerd WHG user can create a thematic annotated Place Collection (<a href="#pcolls">guide</a>), and request its publication on the WHG
+        platform, subject to review and approval by WHG editorial staff.</p>
       </section>
       <!-- Site Sections Group -->
-      <section id="homepage">
+      <section id="homepage" class="mt-5">
         <h4>Site Sections</h4>
         <hr/>
         <h5>Home page</h5>
@@ -296,7 +341,7 @@
         </div>
       </section>
       <!-- Tutorials Group -->
-      <section id="lpf">
+      <section id="lpf" class="mt-5">
         <h4>Tutorials & Guides</h4>
         <hr/>
         <h5>Choosing an upload data format: LPF or LP-TSV?</h5>
@@ -355,19 +400,69 @@
         <p>The WHG Union Index is where individual records for the same or "closely matched" places coming from different datasets
         are linked. Search results privilege these linked sets or "clusters" of records, and present them in
         Place Portal pages like <a href="/places/12346428/portal/" target="_blank">this one for Glasgow.</a></p>
+        <p>Records from published datasets make their way into the union index by means of a second reconciliation step,
+        follwoing that for the Wikidata+Geonames index. This step is initiated by WHG editorial staff, and when complete
+        the dataset is considered fully accessioned. See "Accessioning to the WHG Index" in <a href="#augment">Individual datasets</a> for details.
+        </p>
         <h6>WHG "Pub" index</h6>
         <p>When a dataset has been reconciled to the Wikidata+Geonames index and published, it is automatically added to theLinked "Pub" index so that's its records can be discovered not only via browsing its publication page, but in search and via our Application Programming Interface (API). If and when the dataset is reconciled to the Union Index, its records are removed from "Pub," as they are now linked where possible and appear in Place Portal pages.</p>
+
       </section>
       <section id="pcolls">
         <h5>Create and publish a Place Collection</h5>
-        <p></p>
-        <p>{% lorem 2 %}</p>
+        <p>Place Collections in thw WHG are annotated sets of place records from published datasets. Places can be added
+        to a collection in three ways:
+          <ol>
+            <li>From a Place Portal page, using the "Add to Collection" button<br/>
+            <img src="{% static 'images/docs/addtocoll.jpg' %}"/></li>
+            <li>One or more from a published dataset's Browse page, using the "Add to Collection" button<br/>
+            <img src="{% static 'images/docs/addtocoll_ds.jpg' %}" height="120"/></li>
+            <li>By adding all of the places in one of your datasets&mdash;usually a small one created for the purpose<br/>
+            <img src="{% static 'images/docs/addtocoll_allds.jpg'%}" height="110" /></li>
+          </ol>
+        </p>
+        <p>Once places have been added, they can be annotated in the following way:
+          <ul>
+            <li>Create a set of "annotation keywords" for the collection&mdash;a custom vocabulary used to classify
+            each place's relation to the collection theme and to style map markers<br/>
+            <img src="{% static 'images/docs/anno_keywords.jpg' %}" height="60"/></li>
+            <li>For each place, choose a relation keyword, and a note and optional date(s) and image&mdash;then save.</li>
+            <li>If desired, drag and drop place "cards" to order them in a sequence</li>
+          </ul>
+        </p>
+        <p>At any time, add the following elements to the collection as a whole:
+          <ul>
+            <li>A title and description</li>
+            <li>Collection keywords (these are distinct from annotation keywords)</li>
+            <li>An image</li>
+            <li>Upload an explanatory essay as a PDF file</li>
+            <li>Up to three links to external web pages or resources</li>
+          </ul>
+        </p>
+        <p>Choose visualization options to control how temporal information will appear in the collection's
+        map and table displays (you can preview how your collection will display at any time). Options include:
+          <ul>
+          <li>Sort by sequence, start date, or end date?</li>
+          <li>Include animated "ant trail" lines between places?</li>
+          <li>Display a time "slider" filter or a sequence "player" control?</li>
+          </ul>
+        </p>
+        <p>If you have joined a collection group class or workshop, you have the option to submit it to the
+        instructor or workshop leader for review. If the group has a gallery, once reviewed, the collection will appear there.
+        Instructors have the option to nominate exceptional collections for the WHG Student Gallery.<br/>
+            <img src="{% static 'images/docs/submit-to-group.jpg' %}" height="60" class="ms-3"/>
+        </p>
+        <p>If your collection is <bold><i>not</i></bold> associated with a class or workshop, you can request it be published
+        in the <a href="{% url 'datasets:dataset-gallery' %}" target="_blank">site-wide WHG gallery</a> using <a href="{%  url 'contact' %}" target="_blank">the site contact form</a>.</p>
       </section>
       <section id="dscolls">
         <h5>Create and publish a Dataset Collection</h5>
         <p></p>
-        <p>{% lorem 2 %}</p>
-
+      </section>
+      <section id="collgroups">
+        <h5>Create and manage a Collection Group for a class or workshop</h5>
+        <p></p>
+        <p>{% lorem 6 %}</p>
       </section>
   </div>
 </div>
