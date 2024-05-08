@@ -346,14 +346,6 @@
       <section id="lpf" class="mt-5">
         <h4>Tutorials & Guides</h4>
         <hr/>
-
-        <h5>Create and manage a Collection Group for a class or workshop</h5>
-        <p>The <b>Collection Group</b> feature in WHG is designed primarily for instructional scenarios, but can also be used for workshops.
-        Any registered user can request "group leader" permissions, which allow them to create and manage a WHG Collection Group. This is a private space where students or workshop participants can create and share collections of places (WHG Place Collections), annotated with custom keywords, notes, dates, and images. The group leader can review submitted collections, and can nominate exceptional collections for inclusion in the WHG Student Gallery. Students or workshop participants join the group by entering an access key created and distributed by the instructor or workshop leader.</p>
-        <p></p>
-        <p></p>
-
-
         <h5>Choosing an upload data format: LPF or LP-TSV?</h5>
         <p>World Historical Gazetteer supports uploads of both Linked Places format (LPF; <a href="https://github.com/LinkedPasts/linked-places" target="_blank">v1.2.2 specification</a>) and its delimited file derivative, LP&#8209;TSV, which is more useful for relatively simple data (<a href="https://github.com/LinkedPasts/linked-places/blob/master/tsv_0.4.md" target="_blank">v0.4 specification</a>). In both cases, some level of transformation has to happen between your source data and the chosen format. <b>Both formats require that there be one record per place</b>. The main distinctions can be summarized this way:
         <ul>
@@ -486,8 +478,50 @@
       </section>
       <section id="collgroups">
         <h5>Create and manage a Collection Group for a class or workshop</h5>
-        <p></p>
-        <p>{% lorem 6 %}</p>
+{#        <h6>For group leaders</h6>#}
+        <p>The <b>Collection Group</b> feature in WHG is designed primarily for instructional scenarios, but can also be used for workshops.
+        Any registered user can request "group leader" permissions, which allow them to create and manage a WHG Collection Group. This is a private space where students or workshop participants can create and share collections of places (WHG Place Collections), annotated with custom keywords, notes, dates, and images. The group leader can review submitted collections, and can nominate exceptional collections for inclusion in the WHG Student Gallery. Students or workshop participants join the group by entering an access key created and distributed by the instructor or workshop leader.</p>
+        <p>The workflow in both cases is very similar:
+          <ul>
+            <li>Request group leader privileges using the site-wide <a href="{% url 'contact' %}" target="_blank"> contact form</a>.</li>
+            <li>On your "My Data" dashboard, a plus sign (<span class="fs-3 align-middle">+</span>) appears in the "Collection Groups" box.<br/>
+            <img src="{% static 'images/docs/group_add.jpg' %}" height="80"/>
+            </li>
+            <li>Add a new Collection Group by filling the required fields in the form. Upon save, you are brought to the
+            "Update Collection Group" screen where you will configure the group and manage submissions.<br/>
+            <div class="row">
+              <div class="col-md-8 d-flex align-items-center">
+                <img src="{% static 'images/docs/group_update.jpg' %}" class="img-fluid"/>
+              </div>
+              <div id="cg_captions" class="col-md-4">
+                  <ol>
+                    <li>Edit title and description.</li>
+                    <li>Choose type (class or workshop), add keywords, start date and if
+                     applicable, due date.</li>
+                    <li>Upload a file (PDF format) with the course or workshop description,
+                     requirements, etc.</li>
+                    <li>Add up to 3 links to external web resources.</li>
+                    <li>Will this class/workshop have a gallery of completed works, visible to its members after completion? If so, are all submissions required to appear in it?</li>
+                    <li>Are collaborators permitted?</li>
+                    <li>Generate a group signup code and distribute it to students/participants,
+                    who join by entering the code on their own dashboard.</li>
+                    <li>As members join, they appear on this list</li>
+                    <li>For each submission, flag as 'reviewed' and if appropriate, nominated for
+                    the WHG Student Gallery.</li>
+                  </ol>
+                </div>
+            </div>
+            </li>
+            <li>When a student/participant enters the group code in their My Data dashbooard, they get access to the
+            PDF guide you have created, with guidelines for this particular exercise&mdash;the theme, or goals.<br/>
+            <span class="red-bold">NOTE: Technical instructions for creating a Place Collection are <a href="#pcoll">covered in
+            site documentation</a> and need not be included in this group guide.</span></li>
+            <li>As collections are submitted to the group, they are listed (9) and you can review them and nominate
+            them for inclusion in the WHG Student Gallery (in deelopment).</li>
+            <li>Communication between instructor/leader and students/participants is left to normal email and/or
+            course management software if applicable.</li>
+          </ul>
+        </p>
       </section>
   </div>
 </div>
