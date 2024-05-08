@@ -9,7 +9,9 @@ from django.db.models.functions import Lower
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404, redirect #, render_to_response
 from django.urls import reverse_lazy
+from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.base import TemplateView
 
@@ -19,7 +21,7 @@ from celery.result import AsyncResult
 from collection.models import Collection, CollectionGroup, CollectionGroupUser
 from datasets.models import Dataset
 from datasets.tasks import testAdd
-from .models import Announcement, Link, DownloadFile
+from .models import Announcement, Link, DownloadFile, Comment
 from places.models import Place
 from resources.models import Resource
 from utils.emailing import new_emailer
@@ -741,3 +743,39 @@ class CommentCreateView(BSModalCreateView):
         print('kwargs in get_form_kwargs():', kwargs)
         return kwargs
     # ** END
+    
+@login_required
+@require_POST
+def handle_comment(request):
+    try:
+        comment_text = escape(request.POST.get('commentText'))
+        tag = request.POST.get('tag')
+        place_id = request.POST.get('placeId')
+        delete_id = request.POST.get('deleteId')
+        
+        if delete_id:
+            # Check that comment's creator is the current request.user
+            get_object_or_404(Comment, id=delete_id, user=request.user).delete()
+            
+            return JsonResponse({'success': True, 'message': f'Comment #{delete_id} deleted successfully'})
+            
+        else:
+        
+            place = get_object_or_404(Place, id=place_id)
+            
+            comment = Comment.objects.create(user=request.user, note=comment_text, tag=tag, place_id=place)
+            
+            comment_data = {
+                'id': comment.id,
+                'user': comment.user.id,
+                'note': comment.note,
+                'tag': comment.tag,
+                'place_id': comment.place_id.id,
+                'created': comment.created.strftime('%Y-%m-%d %H:%M:%S')
+            }
+    
+            return JsonResponse({'success': True, 'message': f'Comment #{comment.id} created successfully', 'comment': comment_data})
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+        

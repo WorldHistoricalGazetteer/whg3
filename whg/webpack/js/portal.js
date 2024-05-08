@@ -5,6 +5,7 @@ import { attributionString, deepCopy, geomsGeoJSON } from './utilities';
 import Historygram from './historygram';
 import { popupFeatureHTML } from './getPlace.js';
 import './toggle-truncate.js';
+import './notes.js';
 
 import '../css/mapAndTableMirrored.css';
 import '../css/dateline.css';
@@ -223,6 +224,9 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
     	payload.forEach(place => {
 			const sourceHTML = `
 				<div class="source-box${ !!place.primary? ' primary-place' : ''}" data-bs-toggle="tooltip" data-bs-title="${ !!place.primary? 'This is considered to be the <i>Primary Source</i>. ' : ''}Click to zoom map to features associated with this source.">
+		            <span class="notes" ${ userId == false ? '' : `data-user-id="${userId}" `}data-place-id="${place.place_id}">
+		            	${ place.notes.map(note => `<p title="${note.tag}" data-bs-toggle="tooltip" data-creator="${note.user}" data-note-id="${note.id}">${note.note}</p>`).join('') }
+		            </span>
 		            in: <a class="pop-link pop-dataset"
 		                   data-id="${place.dataset.id}" data-toggle="popover"
 		                   title="Dataset Profile" data-content="" tabindex="0" rel="clickover">
@@ -239,6 +243,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 	        $('#sources').append(sourceHTML);
 		});
 		$('.toggle-truncate').toggleTruncate();
+		$('.notes').notes();
 			
 		var sourceOptions = payload.map(function(item) {
 	        return `<option value="${item.place_id}"${!!item.primary ? ' selected' : ''}>${item.dataset.name}: ${item.title}</option>`;

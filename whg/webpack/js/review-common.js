@@ -191,4 +191,6 @@ export function addReviewListeners() {
 	$('.noteicon').hover(function() {
 		console.log('hovering')
 	})		
+	
+	$('.notes').notes();
 }

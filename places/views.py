@@ -19,6 +19,7 @@ import itertools, re, requests
 from django.core.serializers import serialize
 from urllib.parse import unquote_plus
 
+from main.models import Comment
 from collection.models import Collection
 from datasets.models import Dataset
 from places.models import Place, PlaceGeom
@@ -220,7 +221,8 @@ class PlacePortalView(TemplateView):
           "depictions": [depict.jsonb for depict in place.depictions.all()],
           "minmax": place.minmax,
           "timespans": timespans,
-          "collections": collection_records
+          "collections": collection_records,
+          "notes": [{'id': comment.id, 'user': comment.user.id, 'place_id': comment.place_id.id, 'tag': comment.tag, 'note': comment.note, 'created': comment.created.isoformat()} for comment in Comment.objects.filter(place_id_id=place.id)]
         }
         for name in names:
           variant = name.get('label', '')

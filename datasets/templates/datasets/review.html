@@ -107,22 +107,10 @@
               <div class="bg-secondary font-weight-bold ps-2 text-light">{{ dataset_label }}</div>
               <div id="place_record" class="mb-2">
                 <div>
-                  <input type="hidden" name="place_id" value="{{ record.id }}"/>
-                  <span>
-										<h4 class="text-danger">{{ record.title }}
-                      {% if record.comment_set.count == 0 %}
-                        <span class="float-end create-comment-review btn" data-id="{{ record.id }}"
-                              data-src='record'>add note <i class="fas fa-edit linky fa-xs"></i>
-					                  			</span>
-                      {% elif record.comment_set.count > 0 %}
-                        <span class="float-end view-comments btn">show note(s) <i
-                          class="fas fa-edit linky fa-xs"></i></span>
-                      {% endif %}
-					                	</h4>
-					              	</span>
-                  <div id="record_notes" class="hidden p-1" style="background-color: oldlace;">
-                    {% for r in record.defer_comments %}{{ r.note }}{% endfor %}
-                  </div>
+                  <span class="notes" {% if user.is_authenticated %}data-user-id="{{ user.id }}" {% endif %}data-place-id="{{ record.id }}" data-force-tag="defer">
+					  {% for r in record.defer_comments %}<p title="{{ r.tag }}" data-bs-toggle="tooltip" data-creator="{{ r.user.id }}" data-note-id="{{ r.id }}">{{ r.note }}</p>{% endfor %}
+                  </span>
+				  <h4 class="text-danger">{{ record.title }}</h4>
                 </div>
                 <p><strong>WHG place id</strong>: {{ record.id }} </p>
                 <p><strong>Source id</strong>: {{ record.src_id }}</p>

@@ -1,6 +1,7 @@
 // /whg/webpack/js/review.js
 
 import { mappy, initialiseMap, addReviewListeners } from './review-common';
+import './notes.js';
 
 import '../css/review.css';
 
@@ -30,7 +31,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			}
 		
 			$(".view-comments").click(function() {
-				$("#record_notes").toggle(300)
+				$(".record_notes").toggle(300)
 			})
 			
 		}
