@@ -53,7 +53,9 @@
 
 {% block content %}
 <div id="docs_container" class="container mt-1 px-1">
-  <div><h4>WHG v3 Documentation</h4></div>
+  <div class="mb-3">
+  <h4 class="ms-1">WHG v3 Documentation</h4>
+  </div>
   <div class="row flex-nowrap">
     <!-- Sidebar Navigation with Accordions -->
     <div id="docs_sidebar" class="col-md-3 col-4 sticky-sidebar">
@@ -240,7 +242,7 @@
          </p>
         <p>Published Dataset Collections can be browsed in a rich publication page including an explanatory essay, and
         in the near future will be independently searchable via the WHG API&mdash;for example as a resource in
-        annotation software.</p>
+        annotation software. See this step-by-step guide, <a href="#dscolls">Create and publish a Dataset Collection</a></p>
         <p>Note that in order for a dataset to be added to a Dataset Collection, it must have been fully accessioned
         in the WHG union index. See the "WHG Union Index" section in <a href="#indexes">Explaining the WHG indexes</a> guide.</p>
       </section>
@@ -457,7 +459,22 @@
       </section>
       <section id="dscolls">
         <h5>Create and publish a Dataset Collection</h5>
-        <p></p>
+        <p>A WHG Dataset Collection is a set of published, indexed datasets in WHG, whose place records have been linked with others for the same place where they occur. Its potential purposes and possibilities are outlined in the <a href="#dscoll">Multiple datasets</a> pathway section of this documentation.</p>
+        <p>All datasets in a Dataset Collection must be published and fully accessioned&mdash;that is, indexed in the WHG union index. This is because the linking of records for the same place from multiple datasets occurs during the final indexing step. See "Accessioning to the WHG union index" in the <a href="#augment">Individual datasets</a> section.</p>
+        <p>The steps in creating a Dataset Collection are as follows:
+        <ol>
+          <li>Click the <span class="larger strong">+</span> in that section of your My Data dashboard, then fill in the three required fields on the Create Dataset Collection form<br/>
+          <img src="{% static 'images/docs/add_dscoll.jpg' %}" height="80" /> </li>
+          <li>On the "Add and manage datasets" tab of Dataset Collection Builder screen that follows, you can begin adding
+          datasets. The dropdown menu lists accessioned datasets that you own are are a designated collaborator on. </li>
+          <li>You can add collaborators on the Collaborators tab. Co-owners are able to add datasets, and datasets they own will appear in the dropdown list of eligible datasets.</li>
+          <li>You can preview the still private presentation of the collection at any time by clicking the "view" icon in the upper right. <img src="{% static 'images/docs/view_dscoll.jpg' %}" height="40"/></li>
+          <li>Each Dataset Collection should have an accompanying essay and image prior to publication. You can also add up to
+          three links to related external web resources.</li>
+          <li>If a significant proportion of the collection's records have meaningful date information, turn on the "Display temporal information" switch. This will ensure the collection table has start and end columns, and that there is a time "slider" filter overlay on the map. </li>
+          <li>When you are ready to publish, click the "Request publication" button. This will notify WHG editorial staff that the collection is ready for review and publication. The timing of publication is up to its creators. Typically, datasets will be added over time, and it is sensible to publish the collection early, especially if it is a goal to attract addition datasets and collaborators.</li>
+        </ol>
+        </p>
       </section>
       <section id="collgroups">
         <h5>Create and manage a Collection Group for a class or workshop</h5>
