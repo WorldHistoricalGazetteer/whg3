@@ -191,7 +191,6 @@ STATUS_COLL = [
 ]
 
 STATUS_DS = [
-    ('builder', 'Indexed in builder'),
     ('seed', 'Seed'),
     ('format_error', 'Invalid format'),
     ('format_ok', 'Valid format'),
