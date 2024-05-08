@@ -8,7 +8,10 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django_resized import ResizedImageField
 
+def user_directory_path(instance, filename):
+  return 'user_{0}/{1}'.format(instance.username, filename)
 
 class UserManager(BaseUserManager):
     """
@@ -54,6 +57,7 @@ class User(AbstractUser, PermissionsMixin):
     role = models.CharField(max_length=24, choices=USER_ROLE, default='normal')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    image_file = ResizedImageField(size=[800, 600], upload_to=user_directory_path, blank=True, null=True)
 
     email_confirmed = models.BooleanField(default=False)
     must_reset_password = models.BooleanField(default=False)

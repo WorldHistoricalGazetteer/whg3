@@ -33,10 +33,10 @@ class LoginForm(forms.Form):
 
 # used to edit
 class UserModelForm(forms.ModelForm):
-
     class Meta:
         model = User
-        fields = ('username', 'email', 'name', 'affiliation', 'role', 'web_page')
+        fields = ('username', 'email', 'given_name', 'surname', 'name', 'affiliation',
+                  'role', 'web_page', 'image_file')
         exclude = ('password',)
 
         widgets = {
@@ -45,6 +45,7 @@ class UserModelForm(forms.ModelForm):
             'name': forms.TextInput(attrs={'size': 50}),
             'affiliation': forms.TextInput(attrs={'size': 50}),
             'web_page': forms.TextInput(attrs={'size': 50}),
+            'image_file': forms.FileInput(attrs={'class': 'fileinput'}),
         }
 
     def clean_email(self):
@@ -66,3 +67,4 @@ class UserModelForm(forms.ModelForm):
         super(UserModelForm, self).__init__(*args, **kwargs)
         self.fields['affiliation'].required = False
         self.fields['role'].required = False
+        self.fields['image_file'].required = False

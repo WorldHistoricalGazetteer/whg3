@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.contrib.auth import views as auth_views
+
 # from django.urls import reverse
 # from django.contrib.auth.models import Group
 # from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
@@ -19,6 +20,7 @@ from accounts.forms import UserModelForm
 from collection.models import Collection, CollectionGroupUser, CollectionUser  # CollectionGroup,
 from datasets.models import Dataset, DatasetUser
 import traceback
+
 
 def register(request):
   if request.method == 'POST':
@@ -108,17 +110,18 @@ def confirm_email(request, token):
     # Redirect to a success page
     return redirect('accounts:confirmation-success')
   except BadSignature:
-      # Handle invalid token
-      traceback.print_exc()
-      return render(request, 'register/invalid_token.html', {'error': 'Invalid token.'})
+    # Handle invalid token
+    traceback.print_exc()
+    return render(request, 'register/invalid_token.html', {'error': 'Invalid token.'})
   except User.DoesNotExist:
-      # Handle non-existent user
-      traceback.print_exc()
-      return render(request, 'register/invalid_token.html', {'error': 'User does not exist.'})
+    # Handle non-existent user
+    traceback.print_exc()
+    return render(request, 'register/invalid_token.html', {'error': 'User does not exist.'})
   except Exception as e:
-      # Handle any other exceptions
-      traceback.print_exc()
-      return render(request, 'register/invalid_token.html', {'error': str(e)})
+    # Handle any other exceptions
+    traceback.print_exc()
+    return render(request, 'register/invalid_token.html', {'error': str(e)})
+
 
 def confirmation_sent(request):
   return render(request, 'register/confirmation_sent.html')
@@ -177,6 +180,20 @@ class CustomPasswordResetCompleteView(auth_views.PasswordResetCompleteView):
     # Call the original get method to continue normal processing
     return super().get(request, *args, **kwargs)
 
+class CustomPasswordChangeView(auth_views.PasswordChangeView):
+  template_name = 'register/password_change_form.html'
+
+  def get_success_url(self):
+    return reverse('accounts:password_change_done')
+
+class CustomPasswordChangeDoneView(auth_views.PasswordChangeDoneView):
+  template_name = 'register/password_change_done.html'
+
+  def get(self, request, *args, **kwargs):
+    # clear the username from the session, set for v3 password reset
+    request.session.pop('username_for_reset', None)
+    # Call the original get method to continue normal processing
+    return super().get(request, *args, **kwargs)
 
 def add_to_group(cg, member):
   print('add_to_group', cg, member)
@@ -187,18 +204,37 @@ def add_to_group(cg, member):
   )
   cguser.save()
 
+
 @login_required
 def profile_edit(request):
-  if request.method == 'POST':
-    user = request.user
-    user.name = request.POST.get('name')
-    user.affiliation = request.POST.get('affiliation')
-    user.save()
-    return redirect('profile-edit')
+    if request.method == 'POST':
+        print('request.FILES', request.FILES)
+        form = UserModelForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('profile-edit')
+        else:
+            print("Form Errors:", form.errors)
+            print("Cleaned Data:", form.cleaned_data)
+    else:
+        form = UserModelForm(instance=request.user)
 
-  is_admin = request.user.groups.filter(name='whg_admins').exists()
-  context = {'is_admin': is_admin}
-  return render(request, 'accounts/profile.html', context=context)
+    is_admin = request.user.groups.filter(name='whg_admins').exists()
+    context = {'is_admin': is_admin, 'form': form}
+    return render(request, 'accounts/profile.html', context=context)
+
+# @login_required
+# def profile_edit(request):
+#   if request.method == 'POST':
+#     user = request.user
+#     user.name = request.POST.get('name')
+#     user.affiliation = request.POST.get('affiliation')
+#     user.save()
+#     return redirect('profile-edit')
+#
+#   is_admin = request.user.groups.filter(name='whg_admins').exists()
+#   context = {'is_admin': is_admin}
+#   return render(request, 'accounts/profile.html', context=context)
 
 
 @login_required
@@ -207,6 +243,7 @@ def update_profile(request):
   print('update_profile() request.method', request.method)
   context = {}
   if request.method == 'POST':
+    print('update_profile() POST', request.POST)
     user_form = UserModelForm(request.POST, instance=request.user)
     # profile_form = ProfileModelForm(request.POST, instance=request.user.profile)
     if user_form.is_valid():
@@ -216,7 +253,6 @@ def update_profile(request):
       messages.success(request, ('Your profile was successfully updated!'))
       return redirect('accounts:profile')
     else:
-      print()
       print('error, user_form', user_form.cleaned_data)
       # print('error, profile_form',profile_form.cleaned_data)
       messages.error(request, ('Please correct the error below.'))
@@ -247,4 +283,3 @@ def update_profile(request):
       # 'profile_form': profile_form,
       'context': context
     })
-
