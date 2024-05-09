@@ -254,7 +254,7 @@
         <h6>Instructional exercise in a class setting, or workshop</h6>
         <p>Registered WHG users can request "group leader" permissions, which allows them to create and manage a WHG <b>Collection Group</b>. This is a private space where students or workshop participants can create and share collections of places, annotated with custom keywords, notes, dates, and images. The group leader can review and comment on the collections, and can nominate exceptional collections for inclusion in the WHG Student Gallery. Students or workshop participants join the group by entering an access key
         created and distributed by the instructor or workshop leader.</p>
-        <p><a>See <a href="#collgroups">"Create and manage a class or workshop Collection Group</a></p>
+        <p><a>See <a href="#collgroups">"Create and manage a class or workshop Collection Group"</a></p>
         <p>As a member of a Collection Group, an option appears on all of their <i>collection builder pages</i> to submit the collection when complete&mdash;for review by the instructor or workshop leader.<br/>
         <img src="{% static 'images/docs/submit-to-group.jpg' %}" height="60" class="ms-3"/></p>
         <h6 class="mt-2">Authored publication</h6>
@@ -354,7 +354,7 @@
         </ul>
         <p>Choose LPF if:
         <ul>
-          <li>You have multiple names, types, geometries, or relations <i>for a single place</i> that are temporally scoped; i.e. any of these attributes are associated in your data with a given year, timespan, or period&mdash;<i>and you want that represented in your WHG representation<i>.</li>
+          <li>You have multiple names, types, geometries, or relations <i>for a single place</i> that are temporally scoped; i.e. any of these attributes are associated in your data with a given year, timespan, or period&mdash;<i>and you want that represented in your WHG representation</i>.</li>
           <li>You wish to include citations per name, type, geometry, or timespan.</li>
         </ul>
         </p>
@@ -408,7 +408,6 @@
         </p>
         <h6>WHG "Pub" index</h6>
         <p>When a dataset has been reconciled to the Wikidata+Geonames index and published, it is automatically added to theLinked "Pub" index so that's its records can be discovered not only via browsing its publication page, but in search and via our Application Programming Interface (API). If and when the dataset is reconciled to the Union Index, its records are removed from "Pub," as they are now linked where possible and appear in Place Portal pages.</p>
-
       </section>
       <section id="pcolls">
         <h5>Create and publish a Place Collection</h5>
@@ -416,7 +415,7 @@
         to a collection in three ways:
           <ol>
             <li>From a Place Portal page, using the "Add to Collection" button<br/>
-            <img src="{% static 'images/docs/addtocoll.jpg' %}"/></li>
+            <img src="{% static 'images/docs/addtocoll_portal.jpg' %}" height="40"/></li>
             <li>One or more from a published dataset's Browse page, using the "Add to Collection" button<br/>
             <img src="{% static 'images/docs/addtocoll_ds.jpg' %}" height="120"/></li>
             <li>By adding all of the places in one of your datasets&mdash;usually a small one created for the purpose<br/>
@@ -527,79 +526,212 @@
 </div>
 </div>
 <script type="text/javascript">
+$(document).ready(function() {
+  console.log('Document is ready.');
+  var hash = window.location.hash;
+  console.log('hash:', hash);
 
+  if (hash) {
+    // If there is a hash, find the corresponding accordion and open it
+    var navLink = $(`.nav-link[href="${hash}"]`);
+    if (navLink.length) {
+      var accordionCollapse = navLink.closest('.accordion-item').find('.accordion-collapse');
+
+      // Collapse any currently expanded accordion items
+      $('.accordion-collapse.show').collapse('hide');
+
+      accordionCollapse.collapse('show');
+    }
+    if (window.history.replaceState) {
+      // This will clear the hash in the URL
+      window.history.replaceState("", "/", window.location.pathname);
+    }
+  }
+
+  $('#sidebarAccordion').on('shown.bs.collapse', function(e) {
+    console.log('shown.bs.collapse event handler called');
+    var activeAccordion = $(e.target).parent().attr('id');
+    console.log('activeAccordion:', activeAccordion);
+
+    localStorage.setItem('activeAccordion', activeAccordion);
+    var accordionBody = $(e.target);
+
+    // Check if there is a hash in the URL
+    if (!hash) {
+      // If there is no hash, perform the scroll animation
+      setTimeout(() => {
+        var firstNavItem = accordionBody.find('.nav-link:first');
+        console.log('firstNavItem:', firstNavItem)
+        if (firstNavItem.length) {
+          var targetId = firstNavItem.attr('href');
+          console.log('Target ID:', targetId);
+          if (targetId) {
+            var targetElement = $(targetId);
+            console.log('Target Element:', targetElement);
+            if (targetElement.length) {
+              var containerTop = $('#docs_content').offset().top;
+              var targetTop = targetElement.offset().top;
+              var currentScroll = $('#docs_content').scrollTop();
+              var relativeTop = targetTop - containerTop + currentScroll; // Add current scroll position
+              console.log('Scrolling to:', relativeTop);
+              $('#docs_content').animate({
+                scrollTop: relativeTop
+              }, 300);
+            }
+          }
+        }
+      }, 300); // Adjust timeout as necessary
+    }
+  });
+
+  // Add click event listener to accordion headers
+  $('.accordion-header').click(function() {
+    var accordionBody = $(this).next('.accordion-collapse');
+    var firstNavItem = accordionBody.find('.nav-link:first');
+    if (firstNavItem.length) {
+      var targetId = firstNavItem.attr('href');
+      if (targetId) {
+        var targetElement = $(targetId);
+        if (targetElement.length) {
+          var containerTop = $('#docs_content').offset().top;
+          var targetTop = targetElement.offset().top;
+          var currentScroll = $('#docs_content').scrollTop();
+          var relativeTop = targetTop - containerTop + currentScroll; // Add current scroll position
+          console.log('Scrolling to:', relativeTop);
+          $('#docs_content').animate({
+            scrollTop: relativeTop
+          }, 300);
+        }
+      }
+    }
+  });
+
+});
+/*
 $(document).ready(function() {
   console.log('Document is ready.');
 
-  // Setup event listeners for accordion opening
   $('#sidebarAccordion').on('shown.bs.collapse', function(e) {
     console.log('shown.bs.collapse event handler called');
     var activeAccordion = $(e.target).parent().attr('id');
 
     localStorage.setItem('activeAccordion', activeAccordion);
     var accordionBody = $(e.target);
-    setTimeout(() => {
-      var firstNavItem = accordionBody.find('.nav-link:first');
-      if (firstNavItem.length) {
-        var targetId = firstNavItem.attr('href');
-        if (targetId) {
-          var targetElement = $(targetId);
-          if (targetElement.length) {
-            var containerTop = $('#docs_content').offset().top;
-            var targetTop = targetElement.offset().top;
-            var currentScroll = $('#docs_content').scrollTop();
-            var relativeTop = targetTop - containerTop + currentScroll; // Add current scroll position
-            console.log('Scrolling to:', relativeTop);
-            $('#docs_content').animate({
-              scrollTop: relativeTop
-            }, 300);
+
+    // Check if there is a hash in the URL
+    var hash = window.location.hash;
+    if (!hash) {
+      // If there is no hash, perform the scroll animation
+      setTimeout(() => {
+        var firstNavItem = accordionBody.find('.nav-link:first');
+        if (firstNavItem.length) {
+          var targetId = firstNavItem.attr('href');
+          if (targetId) {
+            var targetElement = $(targetId);
+            if (targetElement.length) {
+              var containerTop = $('#docs_content').offset().top;
+              var targetTop = targetElement.offset().top;
+              var currentScroll = $('#docs_content').scrollTop();
+              var relativeTop = targetTop - containerTop + currentScroll; // Add current scroll position
+              console.log('Scrolling to:', relativeTop);
+              $('#docs_content').animate({
+                scrollTop: relativeTop
+              }, 300);
+            }
           }
         }
-      }
-    }, 300); // Adjust timeout as necessary
+      }, 300); // Adjust timeout as necessary
+    }
   });
+});
+*/
 
-  // try to return to last scroll position
+  // Setup event listeners for accordion opening
+  // commented 9:25a 9 May 2024
+  {#$('#sidebarAccordion').on('shown.bs.collapse', function(e) {#}
+  {#  console.log('shown.bs.collapse event handler called');#}
+  {#  var activeAccordion = $(e.target).parent().attr('id');#}
+  {##}
+  {#  localStorage.setItem('activeAccordion', activeAccordion);#}
+  {#  var accordionBody = $(e.target);#}
+  {#  setTimeout(() => {#}
+  {#    var firstNavItem = accordionBody.find('.nav-link:first');#}
+  {#    if (firstNavItem.length) {#}
+  {#      var targetId = firstNavItem.attr('href');#}
+  {#      if (targetId) {#}
+  {#        var targetElement = $(targetId);#}
+  {#        if (targetElement.length) {#}
+  {#          var containerTop = $('#docs_content').offset().top;#}
+  {#          var targetTop = targetElement.offset().top;#}
+  {#          var currentScroll = $('#docs_content').scrollTop();#}
+  {#          var relativeTop = targetTop - containerTop + currentScroll; // Add current scroll position#}
+  {#          console.log('Scrolling to:', relativeTop);#}
+  {#          $('#docs_content').animate({#}
+  {#            scrollTop: relativeTop#}
+  {#          }, 300);#}
+  {#        }#}
+  {#      }#}
+  {#    }#}
+  {#  }, 300); // Adjust timeout as necessary#}
+  {# });#}
+
+  // *** try to return to last scroll position *** //
   // disable when page content is complete
   // On scroll event
-  $('#docs_content').on('scroll', function() {
-    var scrollPosition = $(this).scrollTop();
-    localStorage.setItem('scrollPosition', scrollPosition);
-  });
+  {#$('#docs_content').on('scroll', function() {#}
+  {#  var scrollPosition = $(this).scrollTop();#}
+  {#  localStorage.setItem('scrollPosition', scrollPosition);#}
+  {# });#}
 
   // On page load
-  var activeAccordion = localStorage.getItem('activeAccordion');
-  var scrollPosition = localStorage.getItem('scrollPosition');
-
-  if (activeAccordion) {
-    $('#' + activeAccordion + ' .accordion-collapse').collapse('show');
-  }
-
-  if (scrollPosition) {
-    $('#docs_content').scrollTop(scrollPosition);
-  }
-  // end try to return to last scroll position
+  {#var activeAccordion = localStorage.getItem('activeAccordion');#}
+  {#var scrollPosition = localStorage.getItem('scrollPosition');#}
+  {##}
+  {#if (activeAccordion) {#}
+  {#  $('#' + activeAccordion + ' .accordion-collapse').collapse('show');#}
+  {# }#}
+  {##}
+  {#if (scrollPosition) {#}
+  {#  $('#docs_content').scrollTop(scrollPosition);#}
+  {# }#}
+  // *** end try to return to last scroll position *** //
 
 
   // Handle hash if present on initial load
-  var hash = window.location.hash;
-  if (hash) {
-    var navLink = $(`.nav-link[href="${hash}"]`);
-    if (navLink.length) {
-      navLink.closest('.accordion-item').find('.accordion-collapse').collapse('show');
-      setTimeout(() => {
-        var targetElement = $(hash);
-        var containerTop = $('#docs_content').offset().top;
-        var targetTop = targetElement.offset().top;
-        var currentScroll = $('#docs_content').scrollTop();
-        var relativeTop = targetTop - containerTop + currentScroll; // Add current scroll position
-        $('#docs_content').animate({
-          scrollTop: relativeTop
-        }, 800);
-      }, 300);
-    }
-  }
-});
+  // this was proposed, now abandoned
+  {#var hash = window.location.hash;#}
+  {#if (hash) {#}
+  {#  var navLink = $(`.nav-link[href="${hash}"]`);#}
+  {#  if (navLink.length) {#}
+  {#    var accordionCollapse = navLink.closest('.accordion-item').find('.accordion-collapse');#}
+  {#    accordionCollapse.on('shown.bs.collapse', function() {#}
+  {#      $('html, body').animate({#}
+  {#        scrollTop: $(hash).offset().top#}
+  {#      }, 800); // adjust the timing as necessary#}
+  {#    });#}
+  {#    accordionCollapse.collapse('show');#}
+  {#  }#}
+  {# }#}
+
+  // this was the original code
+  {#var hash = window.location.hash;#}
+  {#if (hash) {#}
+  {#  var navLink = $(`.nav-link[href="${hash}"]`);#}
+  {#  if (navLink.length) {#}
+  {#    navLink.closest('.accordion-item').find('.accordion-collapse').collapse('show');#}
+  {#    setTimeout(() => {#}
+  {#      var targetElement = $(hash);#}
+  {#      var containerTop = $('#docs_content').offset().top;#}
+  {#      var targetTop = targetElement.offset().top;#}
+  {#      var currentScroll = $('#docs_content').scrollTop();#}
+  {#      var relativeTop = targetTop - containerTop + currentScroll; // Add current scroll position#}
+  {#      $('#docs_content').animate({#}
+  {#        scrollTop: relativeTop#}
+  {#      }, 800);#}
+  {#    }, 300);#}
+  {#  }#}
+  {# }#}
+
 
 </script>
 

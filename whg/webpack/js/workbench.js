@@ -3,12 +3,17 @@
 import '../css/workbench.css';
 
 $(document).ready(function() {
-  let page
   $(".help-matches").click(function() {
-      page = $(this).data('id')
-      console.log('help:', page)
-      $('.selector').dialog('open');
-    })
+    let page = $(this).data('id').replace('wb_', '');
+    console.log('help:', page);
+    // navigate to the new URL
+    window.location.href = '/documentation/#' + page;
+  });
+  // $(".help-matches").click(function() {
+  //     page = $(this).data('id')
+  //     console.log('help:', page)
+  //     $('.selector').dialog('open');
+  //   })
   $(".selector").dialog({
       resizable: false,
       autoOpen: false,
