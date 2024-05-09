@@ -66,7 +66,7 @@
             <span id="version_badge" class="badge text-bg-success">v3.0 beta</span>
             <span id="beta_links">
               <a href="{% url 'guides:site-guide' %}" class="text-decoration-none">guide</a> |
-{#              <a href="#" class="feedback text-decoration-none">contact us</a> |#}
+              <a href="#" class="feedback text-decoration-none">contact us</a> |
               <a href="https://twitter.com/whgazetteer" target="_blank">
 {#              <img src="{% static 'images/twitter30h.png'%}" height=14></a>#}
             </span>
@@ -136,18 +136,22 @@
                   <li><a class="dropdown-item" href="{% url 'downloads' %}">Downloads</a></li>
                 </ul>
 	            </li>
-	            <li class="nav-item larger">
-	            <a class="nav-link" rel="tooltip" title="{{ user.name }}'s profile"
-	               href="{% url 'profile-edit' %}">
-	                <i class="fas fa-user" style="color:#336699;"></i></a>
-	            </li>
-	            <li class="nav-item">
-		            <a class="nav-link `ms-5"
-		               href="javascript:{document.getElementById('logout').submit()}">Logout</a>
-		              <form id="logout" method="post" action="{% url 'accounts:logout' %}">
-			              {% csrf_token %}
-		              </form>
-	            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-user" style="color:#336699;"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li class="nav-item">
+                        <a class="nav-link" rel="tooltip" title="{{ user.name }}'s profile" href="{% url 'profile-edit' %}">
+                            Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:{document.getElementById('logout').submit()}">Logout</a>
+                        <form id="logout" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}</form>
+                    </li>
+                </ul>
+            </li>
 		        {% else %}
 	            <li class="nav-item">
 	                <a class="nav-link ms-5" href="{% url 'accounts:register' %}">Register</a>

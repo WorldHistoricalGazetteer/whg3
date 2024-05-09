@@ -111,10 +111,6 @@
               <li><a class="dropdown-item" href="{% url 'about' %}">Vision & mission</a></li>
               <li><a class="dropdown-item" href="{% url 'credits' %}">Project overview & people</a></li>
               <li><a class="dropdown-item" href="{% url 'publications' %}">Publications</a></li>
-{#              <li><a class="dropdown-item" href="{% url 'partners' %}">Partners</a></li>#}
-{#              <li><a class="dropdown-item" href="{% url 'system' %}">System details</a></li>#}
-{#              <li><a class="dropdown-item" href="{% url 'licensing' %}">Licensing, Terms</a></li>#}
-{#              <li><a class="dropdown-item" href="{% url 'credits' %}">Credits & Contacts</a></li>#}
               <li>
                 <hr class="dropdown-divider">
               </li>
@@ -139,7 +135,8 @@
                 <li>
                   <hr class="dropdown-divider">
                 </li>
-                <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}">Published
+                <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type'
+                gallery_type='datasets' %}">Published
                   Datasets</a></li>
                 <li><a class="dropdown-item"
                        href="{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}">Published
@@ -151,16 +148,22 @@
 {#                <li><a class="dropdown-item" href="{% url 'api' %}">API (developers)</a></li>#}
               </ul>
             </li>
-            <li class="nav-item larger">
-              <a class="nav-link" rel="tooltip" title="{{ user.name }}'s profile" href="{% url 'profile-edit' %}">
-                <i class="fas fa-user" style="color:#336699;"></i>
-              </a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link `ms-5" href="javascript:{document.getElementById('logout').submit()}">Logout</a>
-              <form id="logout" method="post" action="{% url 'accounts:logout' %}">
-                {% csrf_token %}
-              </form>
+
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-user" style="color:#336699;"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li class="nav-item">
+                        <a class="nav-link" rel="tooltip" title="{{ user.name }}'s profile" href="{% url 'profile-edit' %}">
+                            Profile
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:{document.getElementById('logout').submit()}">Logout</a>
+                        <form id="logout" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}</form>
+                    </li>
+                </ul>
             </li>
           {% else %}
             <li class="nav-item">
