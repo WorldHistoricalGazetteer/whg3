@@ -48,7 +48,8 @@
       </select>
     </div>
   </div>
-  <table id="table_collections"class="table table-striped">
+  <div class="scrollable-table">
+    <table id="table_collections"class="table table-striped">
     <thead class="small">
       <th>id</th>
       <th>title <i class="fa fa-sort ms-1" data-id='title'></i></th>
@@ -102,6 +103,7 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
 {% else %}
     <p>No collections met that criteria, <a href="javascript:location.reload()">refresh</a></p>
 {% endif %}

@@ -32,31 +32,33 @@
       </select>
     </div>
   </div>
-  <table id="table_groups"class="table table-striped">
-    <thead class="small">
-      <th>id</th>
-      <th>title <i class="fa fa-sort ms-1" data-id="title" ref="asc"></i></th>
-      <th class="text-center">members <i class="fa fa-sort ms-1" data-id="count" ref="asc"></i></th>
-      <th>created <i class="fa fa-sort ms-1" data-id="created" ref="asc"></i></th>
-      <th>category <i class="fa fa-sort ms-1" data-id="type" ref="asc"></i></th>
-      <th>owner <i class="fa fa-sort ms-1" data-id="owner" ref="asc"></i></th>
-    </thead>
-    <tbody>
-      {% for group in groups %}
-        <tr>
-          <td>{{ group.id }}</td>
-          <td>
-            <a href="{% url 'collection:collection-group-detail' group.id %}">{{ group.title }}</a>
-            <span class="float-end me-2"><a href=""><i class="fa fa-edit"></i></a></span>
-          </td>
-          <td class="text-center">{{ group.members.count }}</td>
-          <td class="small">{{ group.created }}</td>
-          <td>{{ group.type }}</td>
-          <td>{{ group.owner }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="scrollable-table">
+    <table id="table_groups"class="table table-striped">
+  <thead class="small">
+    <th>id</th>
+    <th>title <i class="fa fa-sort ms-1" data-id="title" ref="asc"></i></th>
+    <th class="text-center">members <i class="fa fa-sort ms-1" data-id="count" ref="asc"></i></th>
+    <th>created <i class="fa fa-sort ms-1" data-id="created" ref="asc"></i></th>
+    <th>category <i class="fa fa-sort ms-1" data-id="type" ref="asc"></i></th>
+    <th>owner <i class="fa fa-sort ms-1" data-id="owner" ref="asc"></i></th>
+  </thead>
+  <tbody>
+    {% for group in groups %}
+      <tr>
+        <td>{{ group.id }}</td>
+        <td>
+          <a href="{% url 'collection:collection-group-detail' group.id %}">{{ group.title }}</a>
+          <span class="float-end me-2"><a href=""><i class="fa fa-edit"></i></a></span>
+        </td>
+        <td class="text-center">{{ group.members.count }}</td>
+        <td class="small">{{ group.created }}</td>
+        <td>{{ group.type }}</td>
+        <td>{{ group.owner }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+  </div>
 {% else %}
     <p>No groups meet those criteria, <a href="javascript:location.reload()">refresh</a></p>
 {% endif %}

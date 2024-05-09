@@ -36,7 +36,8 @@ id, owner, title, type, title, description, ccodes, geojson, created
       </select>
     </div>
   </div>
-  <table id="table_ds" class="table table-striped">
+  <div class="scrollable-table">
+    <table id="table_ds" class="table table-striped">
     <thead class="small strong">
       <th>id</th>
       <th>title <i class="fa fa-sort ms-1" data-id="title" ref="asc"></i></th>
@@ -63,6 +64,7 @@ id, owner, title, type, title, description, ccodes, geojson, created
       {% endfor %}
     </tbody>
   </table>
+  </div>
 {% else %}
     <p>No areas meet those criteria, <a href="javascript:location.reload()">refresh</a></p>
 {% endif %}

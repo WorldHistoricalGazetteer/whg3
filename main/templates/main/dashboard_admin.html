@@ -1,9 +1,13 @@
 {% extends "main/base.html" %}
 
 {% block extra_head %}
-  <style>
-    /* Add your custom styles here */
-  </style>
+<style>
+  .scrollable-table {
+    max-height: 550px;
+    overflow-y: auto;
+    display: block;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
