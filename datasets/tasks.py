@@ -475,7 +475,7 @@ def es_lookup_wdlocal(qobj, *args, **kwargs):
   bounds = kwargs['bounds']
   exclude_geonames = True if kwargs['geonames'] == 'on' else False
   print('kwargs in es_lookup_wdlocal()', kwargs)
-  print('exclude_geonames?', exclude_geonames)
+  # print('exclude_geonames?', exclude_geonames)
   hit_count = 0
 
   # empty result object
@@ -676,6 +676,7 @@ def align_wdlocal(*args, **kwargs):
   # queryset depends on 'scope'
   qs = ds.places.all() if scope == 'all' else \
     ds.places.filter(~Q(review_wd = 1))
+  # TODO: scope_geom is not used presently
   if scope_geom == 'geom_free':
     qs = qs.filter(geoms__isnull=True)
 

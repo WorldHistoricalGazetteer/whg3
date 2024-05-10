@@ -66,9 +66,11 @@ urlpatterns = [
   path('<int:pk>/recon/', views.ds_recon, name="ds_recon"), # form submit
 
   # review, validate hits
+  # pk is dataset id, tid is task id, passnum is pass number
   path('<int:pk>/review/<str:tid>/<str:passnum>', views.review, name="review"),
 
   # direct load of deferred place to review screen
+  # pk is dataset id, tid is task id, pid is place id
   path('<int:pk>/review/<str:tid>/<str:pid>', views.review, name="review"),
 
   # accept any unreviewed wikidata pass0 hits from given task

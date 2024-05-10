@@ -1,4 +1,4 @@
-{% extends "main/base_webpack.html" %}
+{% extends "main/base.html" %}
 {% load static %}
 
 {% load mathfilters %}
@@ -299,7 +299,7 @@
     $('.confirm-del-geoms').click(function() {
       return confirm('DANGER! Deletes all place_geom records created so far in Review step');
     });
-    $('.confirm-del-all').click(function() {
+    $('.confirm-del-all').click(function(e) {
       id = $(this).data('id');
       return confirm('DANGER! Destroys task, its hits, and clears matches confirmed in Review step...' + id);
     });

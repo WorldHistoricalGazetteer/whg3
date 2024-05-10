@@ -582,11 +582,13 @@ def review(request, pk, tid, passnum):
   if method == "GET":
     print("review() GET, just displaying next")
   elif method == "POST":
+    print('request.POST in review()', request.POST)
     # process match/no match choices made by save in review or accession page
     # NB very different cases.
     #   For wikidata review, act on each hit considered (new place_geom and place_link records if matched)
     #   For accession, act on index 'clusters'
-    place_post = get_object_or_404(Place, pk=request.POST["place_id"])
+    # place_post = get_object_or_404(Place, pk=request.POST["place_id"])
+    place_post = get_object_or_404(Place, pk=placeid)
     review_status = getattr(place_post, review_field)
     # proceed with POST only if place is unreviewed or deferred; else return to a GET (and next place)
     # NB. other reviewer(s) are *not* notified
@@ -660,7 +662,7 @@ def review(request, pk, tid, passnum):
               and hasNames
               and tid not in place_post.names.all().values_list('task_id', flat=True)
             ):
-              print('doing names in review() now')
+              print('aug_names was "on", doing names in review() now')
               for n in hits[x]["json"]["variants"]:
                 # handle different name formats
                 # print('n has type', type(n))
@@ -953,9 +955,9 @@ def ds_recon(request, pk):
     aug_geoms = request.POST.get('accept_geoms', False)
     aug_names = request.POST.get('accept_names', False)
     geonames = request.POST.get('no_geonames', False)
-    print('ds_recon() aug_geoms', aug_geoms)
-    print('ds_recon() aug_names', aug_names)
-    print('ds_recon() geonames', geonames)  # on/off
+    # print('ds_recon() aug_geoms', aug_geoms)
+    # print('ds_recon() aug_names', aug_names)
+    # print('ds_recon() geonames', geonames)  # on/off
 
     language = request.LANGUAGE_CODE
     if auth == 'idx' and ds.public == False and test == 'off':
