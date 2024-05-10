@@ -2965,6 +2965,7 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
     context['collaborators'] = ds.collabs.all()
     context['owners'] = ds.owners
     context['remain_to_review'] = remaining
+    context['missing_geoms'] = ds.missing_geoms
     context['is_admin'] = True if self.request.user.groups.filter(name__in=['whg_admins']).exists() else False
     # context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
 

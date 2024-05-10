@@ -131,22 +131,24 @@
                               <span class="help-matches" data-id="task_options">
                                   <i class="fas fa-question-circle linkypop"></i></span>
                             </p>
+                            {% comment %}
+                            missing geoms? {{ ds.missing_geoms }}
                             <div class="form-check small">
                               <input class="form-check-input" type="radio"
-                                     name="scope_geom" id="geom_free" value="geom_free" checked>
+                                     name="scope_geom" id="geom_free" value="geom_free">
                               <label class="form-check-label" for="geom_free">
                                 Send only those records missing geometry</label>
                             </div>
+                            {% endcomment %}
                             <div class="form-check small">
-                              <input class="form-check-input" type="radio"
+                              <input class="form-check-input" type="radio" checked
                                      name="scope_geom" id="all" value="all">
                               <label class="form-check-label" for="all">
                                 Send all records
-                              </label>
+                              </label><br/>
                             </div>
-                            <hr/>
                             <p class="small">
-                              <input id="" name="no_geonames" type="checkbox"/> exclude GeoNames</p>
+                              <input id="" name="no_geonames" type="checkbox"/><span class="ms-2">exclude GeoNames from search</span></p>
                           </div>
                         </div>
                         <div class="col-md-6">

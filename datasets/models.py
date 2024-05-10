@@ -278,6 +278,18 @@ class Dataset(models.Model):
     return minmax
 
   @property
+  def missing_geoms(self):
+      # Get all Place instances related to this Dataset
+      places = self.places.all()
+
+      # Check if any of these Place instances do not have a corresponding PlaceGeom
+      for place in places:
+          if not place.geoms.exists():
+              return True
+
+      # If we've gone through all Place instances and none are missing a PlaceGeom, return False
+      return False
+  @property
   def owners(self):
     du_owner_ids = list(self.collabs.filter(role = 'owner').values_list('user_id_id',flat=True))
     du_owner_ids.append(self.owner.id)
