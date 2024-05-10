@@ -111,7 +111,7 @@ EMAIL_MESSAGES = {
     'regards,\nThe WHG project team'
   ),
   "volunteer_offer_user": (
-    'Hello {volunteer_greeting},\n\n'
+    'Hello {greeting_name},\n\n'
     'Thank you for volunteering to help with reconciliation review for the datawet "{dataset_title}"'
     ' on the World Historical Gazetteer platform.\n\n'
     'The dataset owner, {owner_greeting} has been notified and should be in touch soon to discuss how you can help.\n\n'
@@ -119,11 +119,11 @@ EMAIL_MESSAGES = {
     'regards,\nThe WHG project team'
   ),
   "volunteer_offer_owner": (
-    'Hello {owner_greeting},\n\n'
-    'The World Historical Gazetteer user {volunteer_greeting} (volunteer_username) has offered to help with '
-    'reconciliation review on your dataset, "{dataset_title}".\n'
-    'You can respond to them at {volunteer_email} or by replying to this email. When mutually agreed, simply add '
-    '{volunteer_username} as a colleborator and they will have the necessary access. \n\n'
+    'Hello {owner_name},\n\n'
+    'The World Historical Gazetteer user {greeting_name} (username: {username}) has offered to help with '
+    'reconciliation and/or accessioning review on your dataset, "{dataset_title}" ({dataset_id}).\n\n'
+    'You can respond to them at {user_email} (or by replying to this email). When mutually agreed, simply add '
+    '{username} as a colleborator and they will have the necessary access. \n\n'
     'We recommend volunteers be made aware of your approach to match decisions before proceeding.\n\n'
     'regards,\nThe WHG project team'
   ),

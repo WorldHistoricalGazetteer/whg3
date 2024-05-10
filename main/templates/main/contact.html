@@ -9,7 +9,11 @@
   <!--<div class="d-flex justify-content-center mt-3">-->
   <div class="d-flex mt-3 ms-5">
     <div>
-      <h5 class="mb-3">Questions, bug reports, feature requests, support requests and comments all welcome!</h5>
+      {% if is_volunteer %}
+        <h5>Volunteer to help with review tasks for {{ dataset.title }}</h5>
+      {% else %}
+        <h5 class="mb-3">Questions, bug reports, feature requests, support requests and comments all welcome!</h5>
+      {% endif %}
       <p></p> 
       <form method="post">
         {% csrf_token %}

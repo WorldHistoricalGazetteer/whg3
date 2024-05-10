@@ -36,6 +36,13 @@ class ContactForm(forms.Form):
     message = forms.CharField(widget=forms.Textarea(attrs={'cols': 50, 'rows': 5}), required=True)
     username = forms.CharField(widget=forms.HiddenInput(), required=False)
     captcha = CaptchaField()
+    dataset_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
+
+    def __init__(self, *args, **kwargs):
+        initial_subject = kwargs.pop('initial_subject', None)
+        super(ContactForm, self).__init__(*args, **kwargs)
+        if initial_subject:
+            self.fields['subject'].initial = initial_subject
 
     def clean_captcha(self):
         print('in clean_captcha')
@@ -43,19 +50,8 @@ class ContactForm(forms.Form):
             # Bypass CAPTCHA validation
             return self.cleaned_data.get('captcha')
 
-    # def clean_captcha(self):
-    #     print('in clean_captcha')
-    #     print('test in sys.argv?', 'test' in sys.argv)
-    #     captcha = self.cleaned_data.get('captcha')
-    #
-    #     # Skip captcha validation if 'test' is in sys.argv
-    #     if 'test' in sys.argv:
-    #         print('test in sys.argv, skipping captcha validation')
-    #         return captcha
-    #
-    #     # Your custom captcha validation logic (if any) goes here
-    #     # If there's no additional validation needed, just return the captcha value
-    #     return captcha
+class VolunteerForm(ContactForm):
+    subject = forms.CharField(initial='WHG Volunteer for Review')
 
 
 class CommentModalForm(BSModalForm):

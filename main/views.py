@@ -7,7 +7,7 @@ from django.core.mail import send_mail, BadHeaderError
 from django.db.models import Max, Count, Case, When, Q
 from django.db.models.functions import Lower
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404, redirect #, render_to_response
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
@@ -15,7 +15,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.views.generic.base import TemplateView
 
-from .forms import CommentModalForm, ContactForm, AnnouncementForm
+from .forms import CommentModalForm, ContactForm, AnnouncementForm, VolunteerForm
 from areas.models import Area
 from celery.result import AsyncResult
 from collection.models import Collection, CollectionGroup, CollectionGroupUser
@@ -653,53 +653,134 @@ def statusView(request):
 
     return render(request, "main/status.html", {"context": context})
 
+
+def volunteer_view(request):
+  if request.method == 'POST':
+    form = VolunteerForm(request.POST)
+    if form.is_valid():
+      # Extract the data from the form
+      name = form.cleaned_data['name']
+      email = form.cleaned_data['from_email']
+      message = form.cleaned_data['message']
+      dataset_id = form.cleaned_data.get('dataset_id')
+      dataset = Dataset.objects.get(id=dataset_id)
+
+      # Send the email
+      new_emailer(
+        email_type='volunteer_offer_owner',
+        subject='WHG Volunteer to Review',
+        from_email=email,
+        to_email=['dataset_owner_email'],  # Replace with the dataset owner's email
+        cc=['admin1@example.com', 'admin2@example.com'],  # Replace with the site admins' emails
+        name=name,
+        message=message,
+        dataset_title = dataset.title,
+        dataset_id = dataset.id
+      )
+
+      return redirect('/success?return=' + request.GET.get('from', '/'))
+  else:
+    form = VolunteerForm()
+
+  return render(request, 'volunteer.html', {'form': form})
 # contact form used throughout
 def contact_view(request):
-  print('contact_view() request.POST', request.POST)
   sending_url = request.GET.get('from')
+  if sending_url == '/datasets/volunteer_requests/':
+    is_volunteer = True
+    initial_subject = 'WHG Volunteer to Assist Review'
+  dataset_id = request.GET.get('dataset_id', None)
+  dataset = Dataset.objects.get(id=dataset_id) if dataset_id else None
+  print('contact_view() sending_url:', sending_url)
+  print('is_volunteer:', is_volunteer)
+  print('initial_subject:', initial_subject)
+  print('dataset:', dataset.title if dataset else None)
   if request.method == 'GET':
-    form = ContactForm()
+    form = ContactForm(initial_subject=initial_subject)
   else:
+    print('contact_view() request.POST', request.POST)
+    print('contact_view() sending_url', sending_url)
     form = ContactForm(request.POST)
+    # print("POST request. Form: ", form)
     if form.is_valid():
       name = form.cleaned_data['name']
       username = form.cleaned_data.get('username', None)
       user_subject = form.cleaned_data['subject']
       user_email = form.cleaned_data['from_email']
       user_message = form.cleaned_data['message']
-      try:
-        # deliver form message to admins
-        print('EMAIL_TO_ADMINS', settings.EMAIL_TO_ADMINS)
-        new_emailer(
-          email_type='contact_form',
-          subject='Contact form submission',
-          from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt to admins
-          to_email=settings.EMAIL_TO_ADMINS,  # to editor
-          reply_to=[user_email],  # reply-to sender
-          name=name,  # user's name
-          username=username,  # user's username
-          user_subject=user_subject,  # user-submitted subject
-          user_email=user_email,  # user's email
-          user_message=user_message,  # user-submitted message
-        )
-        # deliver 'received' reply to sender
-        new_emailer(
-          email_type='contact_reply',
-          subject="Message to WHG received",  # got it
-          from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt
-          to_email=[user_email],  # to sender
-          reply_to=[settings.DEFAULT_FROM_EDITORIAL],  # reply-to editorial
-          name=name,  # user's name
-          greeting_name=name if name else username,
-          user_subject=user_subject,  # user-submitted subject
-        )
-      except BadHeaderError:
-        return HttpResponse('Invalid header found.')
+      if not is_volunteer:
+        try:
+          # deliver form message to admins
+          print('EMAIL_TO_ADMINS', settings.EMAIL_TO_ADMINS)
+          new_emailer(
+            email_type='contact_form',
+            subject='Contact form submission',
+            from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt to admins
+            to_email=settings.EMAIL_TO_ADMINS,  # to editor
+            reply_to=[user_email],  # reply-to sender
+            name=name,  # user's name
+            username=username,  # user's username
+            user_subject=user_subject,  # user-submitted subject
+            user_email=user_email,  # user's email
+            user_message=user_message,  # user-submitted message
+          )
+          # deliver 'received' reply to sender
+          new_emailer(
+            email_type='contact_reply',
+            subject="Message to WHG received",  # got it
+            from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt
+            to_email=[user_email],  # to sender
+            reply_to=[settings.DEFAULT_FROM_EDITORIAL],  # reply-to editorial
+            name=name,  # user's name
+            greeting_name=name if name else username,
+            user_subject=user_subject,  # user-submitted subject
+          )
+        except BadHeaderError:
+          return HttpResponse('Invalid header found.')
+      else:
+        try:
+          # deliver form message to dataset owner, cc editors
+          # print('EMAIL_TO_ADMINS', settings.EMAIL_TO_ADMINS)
+          new_emailer(
+            email_type='volunteer_offer_owner',
+            subject=user_subject, # may have overridden default
+            from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt to admins
+            to_email=[dataset.owner.email],  # to ds owner
+            reply_to=[user_email],  # owner replies to user
+            owner_name=dataset.owner.name,  # owner's name
+            name=name,  # user's name
+            greeting_name=name if name else username,
+            username=username,  # user's username
+            user_subject=user_subject,  # user-submitted subject
+            user_email=user_email,  # user's email
+            user_message=user_message,  # user-submitted message
+            dataset_title=dataset.title,
+            dataset_id=dataset.id,
+          )
+          # deliver 'received' reply to sender
+          new_emailer(
+            email_type='volunteer_offer_user',
+            subject="WHG volunteering offer recieved",  # got it
+            from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt
+            to_email=[user_email],  # to sender
+            reply_to=[settings.DEFAULT_FROM_EDITORIAL],  # reply-to editorial
+            cc=[settings.DEFAULT_FROM_EDITORIAL], # cc editorial
+            name=name,  # user's name
+            owner_greeting=dataset.owner.name if dataset.owner.name else dataset.owner.username,  # owner's name
+            greeting_name=name if name else username,
+            user_subject=user_subject,  # user-submitted subject
+            dataset_title=dataset.title,
+          )
+        except BadHeaderError:
+          return HttpResponse('Invalid header found.')
       return redirect('/success?return=' + sending_url if sending_url else '/')
     else:
       print('Form errors from contact_view():', form.errors)
 
-  return render(request, "main/contact.html", {'form': form, 'user': request.user})
+  return render(request, "main/contact.html", {'form': form,
+                                               'user': request.user,
+                                               'is_volunteer': is_volunteer,
+                                               'dataset': dataset})
 
 def contactSuccessView(request, *args, **kwargs):
     returnurl = request.GET.get('return')
