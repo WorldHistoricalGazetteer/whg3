@@ -519,7 +519,8 @@ def review(request, pk, tid, passnum):
     "countries": countries,
     "passnum": passnum,
     "page": page if request.method == "GET" else str(int(page) - 1),
-    "aug_geoms": kwargs["aug_geom"],
+    # TODO: which is it - aug_geom or aug_geoms
+    "aug_geoms": kwargs["aug_geoms"],
     "mbtoken": settings.MAPBOX_TOKEN_WHG,
     "maptilerkey": settings.MAPTILER_KEY,
     "count_pass0": cnt_pass0,

@@ -101,7 +101,8 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
 }
 .map-container {
 	position: relative;
-    height: 450px;
+    /*height: 450px;*/
+    height: 400px;
     min-height: 240px;
 }
 #map {

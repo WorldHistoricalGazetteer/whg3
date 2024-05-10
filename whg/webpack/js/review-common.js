@@ -108,8 +108,10 @@ export function addReviewListeners() {
 		});
 	});
 
+	var page
 	$(".help-matches, .help").click(function() {
-		let page = $(this).data('id')
+		// let page = $(this).data('id')
+		page = $(this).data('id')
 		$('.selector').dialog('open');
 	})
 	

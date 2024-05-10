@@ -18,11 +18,12 @@
     </div>
     <div id="content_top" class="row gx-2 gy-2 mx-0 h-75">
     <h3>Volunteer Review Opportunities</h3>
-    <p>When a reconciliation task is run for a dataset, its creator and designated colleborators must review
-      the results and make match decisions. If you would like to volunteer to help with this process,
-      please click an "Offer to volunteer button below." The dataset creator will be notified, and will respond
-      to you directly.</p>
-  <p>An explanation of the review process can be found in the <a href="" target="_blank">site documentation</a>.</p>
+    <p>When reconciliation or accessioning tasks are run for a dataset, the dataset creator and designated
+      collaborators must review the results and make match decisions. If you would like to volunteer to help
+      with this process, please click an "Offer to volunteer button below." The dataset creator will be notified,
+      and will respond to you directly.</p>
+    <p>Explanations of the review processes can be found in the
+      <a href="/documentation/#reviewing" target="_blank">site documentation</a>.</p>
     {% if dataset_list %}
     {% for ds in dataset_list %}
       <div class="card col-12 col-md-6 col-lg-4 col-xl-3">
@@ -33,7 +34,7 @@
         </div>
     {% endfor %}
     {% else %}
-      <p>There are no datasets available for volunteer review at this time.</p>
+      <p>No datasets are currently available for volunteer review.</p>
     {% endif %}
     </div> <!-- content_top -->
 

@@ -11,11 +11,16 @@
   <link rel="stylesheet" href="{% static 'jquery-ui-1.13.2/jquery-ui.min.css' %}"/>
 
 <style>
+  .accordion-body {
+    font-size: 0.9rem;
+  }
   .nav-link {
     color: #007bff;
     transition: color 0.3s;
   }
-
+  .nav-link {
+    padding: .2rem !important;
+  }
   .nav-link:hover {
     color: #0056b3;
   }
@@ -143,12 +148,16 @@
                 <li class="nav-item">
                   <a class="nav-link" href="#indexes">Explaining the WHG indexes</a></li>
                 <li class="nav-item">
+                  <a class="nav-link" href="#reviewing">Reviewing <b><i>reconciliation</i></b> results</a></li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#accessioning">Reviewing <b><i>accessioning</i></b> results</a></li>
+                <li class="nav-item">
                   <a class="nav-link" href="#pcolls">Create and publish a Place Collection</a></li>
                 <li class="nav-item">
                   <a class="nav-link" href="#dscolls">Create and publish a Dataset Collection</a></li>
                 <li class="nav-item">
                   <a class="nav-link" href="#collgroups">Create and manage a Collection Group for a class or workshop</a></li>
-              </ul>
+             </ul>
             </div>
           </div>
         </div>
@@ -409,6 +418,59 @@
         <h6>WHG "Pub" index</h6>
         <p>When a dataset has been reconciled to the Wikidata+Geonames index and published, it is automatically added to theLinked "Pub" index so that's its records can be discovered not only via browsing its publication page, but in search and via our Application Programming Interface (API). If and when the dataset is reconciled to the Union Index, its records are removed from "Pub," as they are now linked where possible and appear in Place Portal pages.</p>
       </section>
+      <section id="reviewing">
+        <h5>Reviewing reconciliation results</h5>
+        <!-- from review help -->
+        <p><img src="/static/images/annotated-review-screen.png" height=400></p>
+        <p>The information displayed and options offered are explained below.</p>
+        <div>
+          <ol>
+            <li>The user-designated label of the current dataset</li>
+            <li>Save / defer: After making match decisions (closeMatch or no match), click the Save button, If you want to defer a decision on this record, click 'defer' and it will go in a 'deferred' queue where it can be revisited.</li>
+            <li>The current "PASS." If any automatic matches were made based on shared links, a PASS 0 is included, and these can be accepted <i>en masse</i> from the Linking screen. Otherwise, you  will be stepped through potential matches from PASS 1 and then PASS 2, and in the case of Getty TGN, possibly PASS 3.</li>
+            <li>It is possible to undo the las Save action; sometimes we click, then think better of it.</li>
+            <li>The record from your dataset, as sent for matching. If it had associate geometry it will appear as green markers.</li>
+            <li>Close match vs. no match. This is explained in depth in its own section below</li>
+            <li>The globe icon indicates the potential match includes geometry. Hovering the mouse over the link will highlight it on the map.</li>
+          </ol>
+        </div>
+        <div>
+          <h6>What does closeMatch mean?</h6>
+          <p>The meaning of <i>closeMatch</i> derives from the <a href="https://www.w3.org/TR/2009/REC-skos-reference-20090818/" target="_blank">Simple Knowledge Organization System (SKOS) vocabulary</a>, a widely used data model. Practically speaking, for WHG asserting a "clseMatch" serves as a linking "glue." Specifically, records that share one or more common linked asserted as (<i>closeMatch</i>) are joined/linked in our "union index" and returned together in response to queries. For example, records for Abyssinia and Ethiopia share two <i>closeMatch</i> links, to a DBPedia record and a TGN record. Therefore, they appear together when searching for either Abyssinia or Ethiopia. We have determined there is not a clear enough distinction with SKOS:exactMatch to offer that choice.</p>
+          <p>From the SKOS specification:</p>
+          <ul>
+            <li><i>closeMatch</i>: "...(the) two concepts are sufficiently similar that they can be used interchangeably
+              in some information retrieval applications"</li>
+            <li><i>exactMatch</i>: "...a high degree of confidence that two concepts can be used interchangeably
+              across a wide range of information retrieval applications."</li>
+          </ul>
+          <p>Furthermore, <i>closeMatch</i> is a super-property of <i>exactMatch</i>; that is, every <i>exactMatch</i>
+            is also a <i>closeMatch</i>. Remember, the purpose of the assertion is to ensure records that should
+            intuitively appear together, do.</p>
+        </div>
+
+
+      </section>
+      <section id="accessioning">
+        <h5>Reviewing accessioning results</h5>
+        <!-- from review help -->
+        <p>Review of results for accessioning to the WHG index is similar to <a href="#reviewing">review for
+        reconciliation</a> but differs in the following ways:</p>
+        <div>
+          <ol>
+            <li>Instead of matching to individual records from Wikidata or GeoNames, you are deciding on matches
+            to <b class="red-bold">sets</b> of records in the WHG union index&mdash;records that have been previously
+            linked to each other. If you decide to match to a set, your record will be added to that set; in
+            this case adding a third attestation for Lund.<br/>
+            <img src="{% static 'images/docs/review_linked.jpg' %}" height=250>
+            </li>
+            <li>If you decide there is no match and proceed, your record is indexed as a new first, or "seed", for
+            the place.</li>
+            <li>When the accessioning task was run, all of your records that had no prospective matches were
+            automatically indexed as new first ("seed") records for those places.</li>
+          </ol>
+        </div>
+      </section>
       <section id="pcolls">
         <h5>Create and publish a Place Collection</h5>
         <p>Place Collections in thw WHG are annotated sets of place records from published datasets. Places can be added
@@ -607,131 +669,6 @@ $(document).ready(function() {
   });
 
 });
-/*
-$(document).ready(function() {
-  console.log('Document is ready.');
-
-  $('#sidebarAccordion').on('shown.bs.collapse', function(e) {
-    console.log('shown.bs.collapse event handler called');
-    var activeAccordion = $(e.target).parent().attr('id');
-
-    localStorage.setItem('activeAccordion', activeAccordion);
-    var accordionBody = $(e.target);
-
-    // Check if there is a hash in the URL
-    var hash = window.location.hash;
-    if (!hash) {
-      // If there is no hash, perform the scroll animation
-      setTimeout(() => {
-        var firstNavItem = accordionBody.find('.nav-link:first');
-        if (firstNavItem.length) {
-          var targetId = firstNavItem.attr('href');
-          if (targetId) {
-            var targetElement = $(targetId);
-            if (targetElement.length) {
-              var containerTop = $('#docs_content').offset().top;
-              var targetTop = targetElement.offset().top;
-              var currentScroll = $('#docs_content').scrollTop();
-              var relativeTop = targetTop - containerTop + currentScroll; // Add current scroll position
-              console.log('Scrolling to:', relativeTop);
-              $('#docs_content').animate({
-                scrollTop: relativeTop
-              }, 300);
-            }
-          }
-        }
-      }, 300); // Adjust timeout as necessary
-    }
-  });
-});
-*/
-
-  // Setup event listeners for accordion opening
-  // commented 9:25a 9 May 2024
-  {#$('#sidebarAccordion').on('shown.bs.collapse', function(e) {#}
-  {#  console.log('shown.bs.collapse event handler called');#}
-  {#  var activeAccordion = $(e.target).parent().attr('id');#}
-  {##}
-  {#  localStorage.setItem('activeAccordion', activeAccordion);#}
-  {#  var accordionBody = $(e.target);#}
-  {#  setTimeout(() => {#}
-  {#    var firstNavItem = accordionBody.find('.nav-link:first');#}
-  {#    if (firstNavItem.length) {#}
-  {#      var targetId = firstNavItem.attr('href');#}
-  {#      if (targetId) {#}
-  {#        var targetElement = $(targetId);#}
-  {#        if (targetElement.length) {#}
-  {#          var containerTop = $('#docs_content').offset().top;#}
-  {#          var targetTop = targetElement.offset().top;#}
-  {#          var currentScroll = $('#docs_content').scrollTop();#}
-  {#          var relativeTop = targetTop - containerTop + currentScroll; // Add current scroll position#}
-  {#          console.log('Scrolling to:', relativeTop);#}
-  {#          $('#docs_content').animate({#}
-  {#            scrollTop: relativeTop#}
-  {#          }, 300);#}
-  {#        }#}
-  {#      }#}
-  {#    }#}
-  {#  }, 300); // Adjust timeout as necessary#}
-  {# });#}
-
-  // *** try to return to last scroll position *** //
-  // disable when page content is complete
-  // On scroll event
-  {#$('#docs_content').on('scroll', function() {#}
-  {#  var scrollPosition = $(this).scrollTop();#}
-  {#  localStorage.setItem('scrollPosition', scrollPosition);#}
-  {# });#}
-
-  // On page load
-  {#var activeAccordion = localStorage.getItem('activeAccordion');#}
-  {#var scrollPosition = localStorage.getItem('scrollPosition');#}
-  {##}
-  {#if (activeAccordion) {#}
-  {#  $('#' + activeAccordion + ' .accordion-collapse').collapse('show');#}
-  {# }#}
-  {##}
-  {#if (scrollPosition) {#}
-  {#  $('#docs_content').scrollTop(scrollPosition);#}
-  {# }#}
-  // *** end try to return to last scroll position *** //
-
-
-  // Handle hash if present on initial load
-  // this was proposed, now abandoned
-  {#var hash = window.location.hash;#}
-  {#if (hash) {#}
-  {#  var navLink = $(`.nav-link[href="${hash}"]`);#}
-  {#  if (navLink.length) {#}
-  {#    var accordionCollapse = navLink.closest('.accordion-item').find('.accordion-collapse');#}
-  {#    accordionCollapse.on('shown.bs.collapse', function() {#}
-  {#      $('html, body').animate({#}
-  {#        scrollTop: $(hash).offset().top#}
-  {#      }, 800); // adjust the timing as necessary#}
-  {#    });#}
-  {#    accordionCollapse.collapse('show');#}
-  {#  }#}
-  {# }#}
-
-  // this was the original code
-  {#var hash = window.location.hash;#}
-  {#if (hash) {#}
-  {#  var navLink = $(`.nav-link[href="${hash}"]`);#}
-  {#  if (navLink.length) {#}
-  {#    navLink.closest('.accordion-item').find('.accordion-collapse').collapse('show');#}
-  {#    setTimeout(() => {#}
-  {#      var targetElement = $(hash);#}
-  {#      var containerTop = $('#docs_content').offset().top;#}
-  {#      var targetTop = targetElement.offset().top;#}
-  {#      var currentScroll = $('#docs_content').scrollTop();#}
-  {#      var relativeTop = targetTop - containerTop + currentScroll; // Add current scroll position#}
-  {#      $('#docs_content').animate({#}
-  {#        scrollTop: relativeTop#}
-  {#      }, 800);#}
-  {#    }, 300);#}
-  {#  }#}
-  {# }#}
-
 
 </script>
 
