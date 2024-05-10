@@ -223,7 +223,8 @@ $(function() {
 	
 	// remove place(s) from collection
 	$("#a_remove").click(function() {
-		var coll = '{{ object.id }}'
+		var coll = object_id
+		console.log('remove these; coll', remove_these, coll)
 		remove_from_collection(coll, remove_these)
 	})
 	
@@ -245,7 +246,7 @@ $(function() {
 				.css('color', 'lightcoral')
 			$(card[0]).find('.restore-place').addClass('remove-place')
 				.removeClass('restore-place')
-			idx = remove_these.indexOf(pid)
+			let idx = remove_these.indexOf(pid)
 			remove_these.splice(idx, 1)
 			$("#a_remove").html('remove ' + remove_these.length)
 			if (remove_these.length == 0) {
@@ -608,28 +609,33 @@ $(function() {
 	
 	// render dataset to html
 	function listDataset(d) {
-		/*console.log('listing this:', d.title)*/
 		dslist.push(d.id)
 		$("#id_datasets [value=" + d.id + "]").attr("checked", "checked");
-		let coll_id = object_id
+
 		let card = '<div class="ds_card" id="card_' + d.id + '">' +
 			'<p class="mb-0"><a href="#"><span class="ds_title">' + d.title + '</span></a> (' + d.label + '/' + d.id + ')</p>' +
 			'<div class="ds_fields">' +
 			'<p class="my-1"><b>Description</b>: ' + d.description + '</p>' +
 			'<p class="my-1"><b>Create date</b>: ' + d.create_date.slice(0, 10) + '; <b># rows</b>: ' + d.numrows + '</p>' +
-			'<p class="my-1"><a href="javascript:{ removeDataset(' + d.id + ') }">' +
-			'<i class="fas fa-minus-square" style="color:#336699"></i> remove</a>' +
-			'<span class="float-end"><a class="a_addplaces" href="javascript:{addPlaces(' + d.id + ')}">add all ' +
+			'<p class="my-1"><a id="removeDataset_' + d.id + '" href="#"><i class="fas fa-minus-square" style="color:#336699"></i> remove</a>' +
+			'<span class="float-end"><a id="addPlaces_' + d.id + '" href="#">add all ' +
 			d.numrows + ' places</a></span' +
-			'</p></div></div>'
-		$(".a_addplaces").click(function() {
-			let thisy = $(this)
-			/*console.log('thisy', thisy)*/
-		})
+			'</p></div></div>';
+
 		$("#coll_dscards_create").append(card)
-		// console.log(card)
+
+		// Add event listeners
+		document.getElementById('addPlaces_' + d.id).addEventListener('click', function(event) {
+			event.preventDefault();
+			addPlaces(d.id);
+		});
+
+		document.getElementById('removeDataset_' + d.id).addEventListener('click', function(event) {
+			event.preventDefault();
+			removeDataset(d.id);
+		});
 	}
-	
+
 	// remove places from collection (archiving annotations)
 	function remove_from_collection(coll, pids) {
 		var formData = new FormData()
@@ -662,7 +668,7 @@ $(function() {
 	}
 	
 	// adds all dataset places to placelist
-	function addPlaces(dsid) {
+	function addPlaces(dsid) {``
 		let url = "/collections/add_dsplaces/" + object_id + "/" + dsid
 		// collection.views.add_dataset
 		/*console.log('adding dataset w/o save',dsid, {{ object.id }}, url)*/

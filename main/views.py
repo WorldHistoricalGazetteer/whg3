@@ -686,20 +686,25 @@ def volunteer_view(request):
 # contact form used throughout
 def contact_view(request):
   sending_url = request.GET.get('from')
+  initial_subject = None
+  is_volunteer = False
   if sending_url == '/datasets/volunteer_requests/':
     is_volunteer = True
     initial_subject = 'WHG Volunteer to Assist Review'
+    # print('is_volunteer:', is_volunteer)
+    # print('initial_subject:', initial_subject)
   dataset_id = request.GET.get('dataset_id', None)
   dataset = Dataset.objects.get(id=dataset_id) if dataset_id else None
   print('contact_view() sending_url:', sending_url)
-  print('is_volunteer:', is_volunteer)
-  print('initial_subject:', initial_subject)
   print('dataset:', dataset.title if dataset else None)
   if request.method == 'GET':
-    form = ContactForm(initial_subject=initial_subject)
+    if initial_subject:
+      form = ContactForm(initial_subject=initial_subject)
+    else:
+      form = ContactForm()
   else:
     print('contact_view() request.POST', request.POST)
-    print('contact_view() sending_url', sending_url)
+    # print('contact_view() sending_url', sending_url)
     form = ContactForm(request.POST)
     # print("POST request. Form: ", form)
     if form.is_valid():
@@ -779,7 +784,7 @@ def contact_view(request):
 
   return render(request, "main/contact.html", {'form': form,
                                                'user': request.user,
-                                               'is_volunteer': is_volunteer,
+                                               'is_volunteer': is_volunteer or False,
                                                'dataset': dataset})
 
 def contactSuccessView(request, *args, **kwargs):

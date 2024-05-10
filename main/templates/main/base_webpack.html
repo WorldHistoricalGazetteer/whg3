@@ -116,7 +116,7 @@
               </li>
               <li><a class="dropdown-item" href="http://blog.whgazetteer.org" target="_blank">News</a></li>
             </ul>
-          </li>
+          </li> <!-- about -->
           {% if user.is_authenticated %}
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
@@ -135,9 +135,8 @@
                 <li>
                   <hr class="dropdown-divider">
                 </li>
-                <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type'
-                gallery_type='datasets' %}">Published
-                  Datasets</a></li>
+                <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}">
+                  Published Datasets</a></li>
                 <li><a class="dropdown-item"
                        href="{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}">Published
                   Collections</a></li>
@@ -147,7 +146,7 @@
                 <li><a class="dropdown-item" href="{% url 'downloads' %}">Downloads</a></li>
 {#                <li><a class="dropdown-item" href="{% url 'api' %}">API (developers)</a></li>#}
               </ul>
-            </li>
+            </li> <!-- data -->
 
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -164,7 +163,7 @@
                         <form id="logout" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}</form>
                     </li>
                 </ul>
-            </li>
+            </li> <!-- user -->
           {% else %}
             <li class="nav-item">
               <a class="nav-link ms-5" href="{% url 'accounts:register' %}">Register</a>

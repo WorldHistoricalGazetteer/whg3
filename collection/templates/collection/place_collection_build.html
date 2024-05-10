@@ -36,7 +36,7 @@
       <ul id="tab-list" class="nav nav-tabs" role="tablist">
         {# create form & intro #}
         <li class="nav-item" role="presentation">
-          <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
+          <button class="nav-link" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
                   type="button" role="tab" aria-controls="coll_form" aria-selected="true">
             {% if action == 'create' %}Create{% else %}Edit{% endif %} Collection
           </button>
@@ -44,7 +44,7 @@
         {# add & annotate #}
         {% if action == "update" %}
           <li class="nav-item" role="presentation">
-            <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
+            <button class="nav-link active" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
                     type="button" role="tab" aria-controls="coll_builder" aria-selected="false">
               Add and annotate places
             </button>
@@ -62,7 +62,8 @@
       </ul>
       <div id="content" class="tab-content" >
         {# create/edit form #}
-        <div id="coll_form" class="tab-pane fade show active h-100">
+{#        <div id="coll_form" class="tab-pane fade show active h-100">#}
+        <div id="coll_form" class="tab-pane fade h-100">
           <form id="collection_form" method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="row">
@@ -271,7 +272,7 @@
           </div>
         </div>
         {# add & annotate places #}
-        <div id="coll_builder" class="tab-pane fade h-100" style="height: auto; position:relative;">
+        <div id="coll_builder" class="tab-pane fade show active h-100" style="height: auto; position:relative;">
           <div class="d-flex h-100">
             <div class="col-sm-6" id="builder">
               <ul id="coll_tabs" class="nav nav-tabs " role="tablist">
@@ -366,21 +367,21 @@
                           {% if seq_places|length > 1 %}
                             <span class="float-end me-3"> <span
                               class="seq-visible">id: {{ cp.p.id }}; seq:{{ cp.seq }}</span>
-                        <a class="mark-place" href="#" title="Remove from collection" rel="tooltip"
-                           data-pid="{{ cp.p.id }}" data-col="{{ object.id }}">
-                          <i class="fas fa-minus-square" style="color:#ff8080"></i></a>
-                      </span>
+                              <a class="mark-place" href="#" title="Remove from collection" rel="tooltip"
+                                 data-pid="{{ cp.p.id }}" data-col="{{ object.id }}">
+                                <i class="fas fa-minus-square" style="color:#ff8080"></i></a>
+                            </span>
                           {% else %}
                             <span class="float-end me-1">
-                        <a class="mark-place" href="#" title="Remove from collection"
-                           data-pid="{{ cp.p.id }}"
-                           data-col="{{ object.id }}">
-                          <i class="fas fa-minus-square" style="color:#ff8080"></i></a>
-                      </span>
+                              <a class="mark-place" href="#" title="Remove from collection"
+                                 data-pid="{{ cp.p.id }}"
+                                 data-col="{{ object.id }}">
+                                <i class="fas fa-minus-square" style="color:#ff8080"></i></a>
+                            </span>
                           {% endif %}
-                          {# TODO: CollPlace/TraceAnnotation redundancy issue #}
+                          <!-- annotated in THIS collection? -->
                           {% for t in cp.p.traces.all %}
-                            {% if t.saved and not t.archived %}
+                            {% if t.saved and t.collection.id == object.id and not t.archived %}
                               <i class="red-head ms-3">annotated</i>
                             {% endif %}
                           {% endfor %}
