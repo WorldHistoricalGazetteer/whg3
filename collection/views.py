@@ -1352,13 +1352,10 @@ class DatasetCollectionUpdateView(UpdateView):
     datasets = coll.datasets.all()
 
     # populates dropdown
-
     assigned_datasets = coll.datasets.all()
-    ds_select = [obj for obj in Dataset.objects.filter(ds_status='indexed').exclude(id__in=assigned_datasets).exclude(title__startswith='(stub)')
+    # eligible: public, not dev stubs, not already added, and user is owner or collaborator
+    ds_select = [obj for obj in Dataset.objects.filter(public=True).exclude(id__in=assigned_datasets).exclude(title__startswith='(stub)')
                  if user in obj.owners or user in obj.collaborators or user.is_superuser]
-
-    # ds_select = [obj for obj in Dataset.objects.filter(ds_status='indexed').order_by('title').exclude(title__startswith='(stub)')
-    #              if user in obj.owners or user in obj.collaborators or user.is_superuser]
 
     context['action'] = 'update'
     context['ds_select'] = ds_select
@@ -1456,7 +1453,7 @@ class DatasetCollectionBrowseView(DetailView):
     # context['ds_list'] = coll.ds_list
     context['links'] = Link.objects.filter(collection=id_)
     context['updates'] = {}
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
+    context['is_admin'] = True if self.request.user.groups.filter(name__in=['whg_admins']).exists() else False
     context['visParameters'] = coll.vis_parameters or "{'seq': {'tabulate': false, 'temporal_control': 'none', 'trail': false},'min': {'tabulate': false, 'temporal_control': 'none', 'trail': false},'max': {'tabulate': false, 'temporal_control': 'none', 'trail': false}}"
     context['datasets'] = [{"id":ds["id"], "label":ds["label"], "title":ds["title"], "extent":ds["extent"]} for ds in coll.ds_list]
 

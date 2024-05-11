@@ -37,7 +37,7 @@
       <ul id="tab-list" class="nav nav-tabs" role="tablist">
         {# create form & intro #}
         <li class="nav-item" role="presentation">
-          <button class="nav-link {% if not is_owner and not is_member and not whg_admins %}disabled{% endif %}"
+          <button class="nav-link active {% if not is_owner and not is_member and not whg_admins %}disabled{% endif %}"
                   id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form"
                   type="button" role="tab" aria-controls="coll_form" aria-selected="true">
             {% if action == 'create' %}Create{% else %}Edit{% endif %} Collection
@@ -46,7 +46,7 @@
         {# add & annotate #}
         {% if action == "update" %}
           <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
+            <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder"
                     type="button" role="tab" aria-controls="coll_builder" aria-selected="false">
               Add and annotate places
             </button>
@@ -65,12 +65,11 @@
       </ul>
       <div id="content" class="tab-content" >
         {# create/edit form #}
-{#        <div id="coll_form" class="tab-pane fade show active h-100">#}
-        <div id="coll_form" class="tab-pane fade h-100">
+        <div id="coll_form" class="tab-pane fade show active h-100">
           <form id="collection_form" method="POST" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="row">
-              <div class="col-sm-7 small">
+              <div class="col-sm-6 small">
                 {% if action == 'create' %}
                   <input type="hidden" name="owner" value='{{ user.id }}'/>
                 {% else %}
@@ -102,6 +101,7 @@
                   <p>
                     <span class="strong mt-2">Public?</span>: {{ form.public.value }} &nbsp;{{ form.public }}</p>
                 {% endif %}
+               <p>&#x02733;<i><b> required</b></i></p>
                 <div id="d_buttons" class=""
                      style="display: flex; align-items: center; justify-content: space-between;">
                   <span class="">
@@ -116,7 +116,6 @@
                            type="submit" value="Save"/>
                   {% endif %}
                   </span>
-                  <span class="float-end">&#x02733;<i><b> required</b></i></span>
                 </div>
                 <div id="collection_options"></div>
                 {% if mygroups|length > 0 %}
@@ -138,14 +137,6 @@
                   {% endif %}
                 </div>
                 {% endif %}
-{#                <div id="d_public" class="mt-5">#}
-{#                  {% if form.public.value == True %}#}
-{#                    Public: {{ form.public }}#}
-{#                  {% elif action == "update" and user == object.owner %}#}
-{#                    <a href="#"><span class="help-matches" data-id="going_public_coll">#}
-{#                <i class="fas fa-question-circle linky"></i> making a collection public </span></a>#}
-{#                  {% endif %}#}
-{#                </div>#}
               </div> <!-- col-sm-5 -->
               <div class="col-sm-5">
                 {% if action == 'update' %}
@@ -153,8 +144,7 @@
 	              	{% if object.image_file %}
 	                	<img src="/media/{{ object.image_file.name }}" class="thumbnail float-end"/>
 	              	{% endif %}
-                    <label for="Image">Collection image <i class="small">
-                      (800px wide or less)</i></label><br/>
+                    <label for="Image">Collection image</label><br/>
                     {% if action == 'create' %} {# create, no image yet #}
                       <span id="img_chooser_create">{{ form.image_file }}</span>
                     {% elif form.image_file.value %} {# update & there's an image #}
@@ -275,7 +265,7 @@
           </div>
         </div>
         {# add & annotate places #}
-        <div id="coll_builder" class="tab-pane fade show active h-100" style="height: auto; position:relative;">
+        <div id="coll_builder" class="tab-pane fade h-100" style="height: auto; position:relative;">
           <div class="d-flex h-100">
             <div class="col-sm-6" id="builder">
               <ul id="coll_tabs" class="nav nav-tabs " role="tablist">

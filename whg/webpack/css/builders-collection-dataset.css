@@ -8,8 +8,17 @@
 .form-group label {
     margin-bottom: 0 !important;
 }
+.form-group input[type="text"], .form-group textarea{
+    width: 70%;
+}
 .form-check-label {
     vertical-align: baseline;	
+}
+label {
+    font-weight: bold;
+}
+.twothirds {
+    width: 66%;
 }
 #linkform_popup {
     position: absolute;

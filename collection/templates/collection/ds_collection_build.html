@@ -27,14 +27,14 @@
   </h5>
   <ul id="tablist" class="nav nav-tabs" role="tablist">
     <li class="nav-item" role="presentation">
-      <button class="nav-link active" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form" type="button" role="tab" aria-controls="coll_form" aria-selected="true">
+      <button class="nav-link" id="form-tab" data-bs-toggle="tab" data-bs-target="#coll_form" type="button" role="tab" aria-controls="coll_form" aria-selected="true">
         {% if action == 'create' %}Create Collection{% else %}Metadata{% endif %}
       </button>
     </li>
     {% if action == "update" %}
     {# builder #}
     <li class="nav-item" role="presentation">
-      <button class="nav-link" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder" type="button" role="tab" aria-controls="coll_builder" aria-selected="false">Add and manage datasets</button>
+      <button class="nav-link active" id="build-tab" data-bs-toggle="tab" data-bs-target="#coll_builder" type="button" role="tab" aria-controls="coll_builder" aria-selected="false">Add and manage datasets</button>
     </li>
     <li class="nav-item" role="presentation">
       <button class="nav-link" id="collaborators-tab" data-bs-toggle="tab" data-bs-target="#coll_collaborators" type="button" role="tab" aria-controls="coll_collaborators" aria-selected="false">Collaborators</button>
@@ -42,11 +42,11 @@
     {% endif %}
   </ul>
   <div id="content" class="tab-content">
-    <div id="coll_form" class="tab-pane show active fade h-100">
+    <div id="coll_form" class="tab-pane fade h-100">
       <form id="collection_form" method="POST" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="row">
-          <div class="col-sm-7">
+          <div class="col-sm-6">
             {% if action == 'create' %}
             <input type="hidden" name="owner" value='{{ user.id }}' />
             {% else %}
@@ -63,11 +63,7 @@
             <div class="form-group">
               <label for="Collection keywords">Collection keywords &#x02733;</label><br/>{{ form.keywords }}
             </div>
-            {% comment %}
-            <div class="form-group bg-light p-1">
-              <label for="Build type">Build type</label><br/>{{ form.build_type }}
-            </div>
-            {% endcomment %}
+            <p class="my-0 small">&#x02733;<i><b> required</b></i>
             <div id="d_buttons" class="" style="">
               <span class="">
                 {% if action == 'create' %}
@@ -79,7 +75,6 @@
                 {% endif %}
               </span>
             </div>
-            <p class="my-0 small">&#x02733;<i><b> required</b></i>
               {% if action == 'update' and editorial %}
               <span><a class="float-end show-hide" href="#">editor options <i class="fas fa-cog linky"></i></a></span>
               {% endif %}
@@ -109,7 +104,7 @@
               {% if object.image_file %}
               <img src="/media/{{ object.image_file.name }}" class="thumbnail float-end"/>
               {% endif %}
-              <label for="Image">Collection image <i class="small">(800px wide or less)</i></label><br/>
+              <label for="Image">Collection image</label><br/>
               {% if action == 'create' %} {# create, no image yet #}
               <span id="img_chooser_create">{{ form.image_file }}</span>
               {% elif form.image_file.value %} {# update & there's an image #}
@@ -172,8 +167,10 @@
           <input type="hidden" name="collection" value="{{ object.id }}">
           <div class="closer" style="position:absolute; top:7px; right:7px;">X</div>
           <table class="mb-2">
-            <tr><td>URI*: </td><td><input id="l_uri" name="uri" value="{{ links_form.uri }}" /></td></tr>
-            <tr><td>Label*: </td><td><input id="l_label" name="label" value="{{ links_form.label }}" /></td></tr>
+            <tr><td>URI*: </td><td><input id="l_uri" name="uri"
+                                          value="{{ links_form.uri }}" /></td></tr>
+            <tr><td>Label*: </td><td><input id="l_label" name="label"
+                                            value="{{ links_form.label }}" /></td></tr>
             <tr><td>Type*: </td>
               <td>
                 <select id="select_linktype" name="link_type">
@@ -187,8 +184,9 @@
           <button id="b_createlink" type="button">Save</button>
         </form>
       </div>
-    </div> {# coll_form #}
-    <div id="coll_builder" class="tab-pane fadeh-100">
+    </div> <!-- coll_form -->
+    {% if action == 'update' %}
+    <div id="coll_builder" class="tab-pane fade show active h-100">
       <div class="row">
         <div class="col-sm-7 position-relative">
           <div>
@@ -200,7 +198,8 @@
                   <option disabled>___________</option>
                   {% for ds in ds_select %}
                   {% if ds not in coll_dsset %}
-                  <option value="{{ ds.id }}" data-status="{{ ds.ds_status }}" data-title="{{ ds.title }}">
+                  <option value="{{ ds.id }}" data-status="{{ ds.ds_status }}"
+                          data-title="{{ ds.title }}">
                     {{ ds.title }}</option>
                   {% endif %}
                   {% endfor %}
@@ -212,7 +211,6 @@
               </span>
             </p>
           </div>
-          {# id, label, title, description, creator, create_date, webpage, numrows, datatype #}
           <div id="coll_dscards">
             {% if coll_dsset|length == 0 %}
             <p id="msg" class="font-italic smaller">None yet...</p>{% endif %}
@@ -238,21 +236,32 @@
         </div>
         <div class="col-sm-5">
           <h5 class="bg-lighterblue ps-1">The Process</h5>
-          <div class="ps-3">
-            <p>Dataset Collections in WHG are assembled from published, indexed datasets you are owner or co-owner of.</p>
-            <ol class="flush-left">
-              <li>Select a dataset from the dropdown list on the left.</li>
+          <div class="ps-2">
+            <p class="mb-1">Dataset Collections in WHG are assembled from published,
+              indexed datasets you are owner or co-owner of. See <a href="/documentation/#dscolls">this guide</a>
+            for more information.</p>
+            <ol class="flush-left smallish">
+              <li>Select datasets from the dropdown list on the left, one at a time, and click "add to collection"</li>
+              <li>Add metadata, an image, links, essay and links on the Metadata tab</li>
+              <li>At any time, you can view a preview of the collection's publication page
+                <img src="{% static 'images/docs/view_dscoll.jpg' %}" height="26" class="align-bottom"/> </li>
+              <li>You can request WHG editorial staff review and publish the collection using the <a href="{% url 'contact' %}">
+                contact form</a>. It is not visible to the public until published.
+              </li>
+              <li>In most cases, dataset collections grow over time, and it is perfectly alright to publish it at an early stage
+              and let it grow in place as a published work.</li>
             </ol>
           </div>
-          <div class="mt-2">
-            <h5 class="bg-lighterblue ps-1">Status</h5>
+          {% comment %}
+          <h5 class="bg-lighterblue ps-1">Status</h5>
+          <div class="ps-2 mt-2">
             <p>hmmm, what here, vs in the cards themselves</p>
           </div>
+          {% endcomment %}
         </div>
       </div>
-    </div>
+    </div> <!-- coll_builder -->
     <div id="coll_collaborators" class="tab-pane fade h-100" style="height: auto; position:relative;">
-      {% if action == 'update' %}
       <form id="sharing_form" method="POST" action="{% url 'collection:collab-add' cid=object.id %}" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="sharing-box my-3 w-50">
@@ -260,9 +269,6 @@
           <div class="smallish" style="padding-left: .3rem;">
             <p class="">Collaborators are registered WHG users, assigned per collection.</p>
             <p>
-              <sr>Members</sr>
-              can ...
-              <br/>
               <sr>Co-owners</sr>
               can perform all actions.
             </p>
@@ -277,12 +283,15 @@
               </div>
             </span>
             </div>
+            {% comment %}
             <div class="form-check form-check-inline">
               <input class="form-check-input hover" type="radio" name="role" id="r_place" value="member" checked="checked">
               <label class="form-check-label" for="r_place">Member</label>
             </div>
+            {% endcomment %}
             <div class="form-check form-check-inline">
-              <input class="form-check-input hover" type="radio" name="role" id="r_trace" value="owner">
+              <input class="form-check-input hover" type="radio" name="role"
+                     id="r_trace" value="owner" checked>
               <label class="form-check-label" for="r_trace">Co-owner</label>
             </div>
           </div>
@@ -301,8 +310,8 @@
           </ul>
         </div>
       </form>
-      {% endif %}
-    </div>
+    </div> <!-- coll_collaorators -->
+    {% endif %}
   </div> <!-- #content -->
   <div id="modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="modalLabel" aria-hidden="true">
     <div class="modal-dialog modal-md">

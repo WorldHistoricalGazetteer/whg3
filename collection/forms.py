@@ -72,8 +72,6 @@ class CollectionModelForm(forms.ModelForm):
             'datasets': forms.CheckboxSelectMultiple,
             'featured': forms.TextInput(attrs={'size': 3}),
             'group': forms.Select(),
-            # 'build_type': forms.RadioSelect()
-            # 'content': TinyMCE(attrs={'cols': 40, 'rows': 6})
         }
 
     def __init__(self, *args, **kwargs):
