@@ -108,8 +108,8 @@ class TilesetListView(LoginRequiredMixin, TemplateView):
         # Pass both sets of data to the template
         context['data'] = []
         data = {
-            'collections': [(collection.id, collection_titles.get(collection.id, "")) for collection in collections],
             'datasets': [(dataset.id, dataset_titles.get(dataset.id, "")) for dataset in Dataset.objects.all()], 
+            'collections': [(collection.id, collection_titles.get(collection.id, "")) for collection in collections],
         }
         
         # Enqueue a Celery task for each category and id

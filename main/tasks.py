@@ -83,7 +83,7 @@ def request_tileset(category, id, action):
         task = process_tileset_request.delay(category, id, action)
         
         # Wait for the task to complete
-        AsyncResult(task.id).get()
+        AsyncResult(task.id).get() # Do not redefine and call `request_tileset` as a celery task because this line will break it
         
         # After processing the current request, check if there are pending requests in the queue
         while True:
@@ -93,7 +93,7 @@ def request_tileset(category, id, action):
             queued_category, queued_id, queued_action = queued_request.decode('utf-8').split('-')
             logger.info(f'Dequeuing and processing queued request: {queued_category}-{queued_id}')
             task = process_tileset_request.delay(queued_category, queued_id, queued_action)
-            AsyncResult(task.id).get()
+            AsyncResult(task.id).get() # Wait for the task to complete
     finally:
         redis_client.delete(f'request_tileset_lock')
 

@@ -141,8 +141,13 @@ $(document).ready(function() {
 				                    break;
 				                case 'success':
 				                    taskButton
-				                    .removeClass('processing')
+				                    .removeClass('processing generate-tileset remove-redundant')
+				                    .addClass(`${task.action == 'generate' ? 'tileset-available' : 'no-tileset'}`)
 				                    .html(`${task.action == 'generate' ? 'Generation' : 'Removal'} OK`)
+				                    .tooltip('dispose')
+				                    .prop('title', `${task.action == 'generate' ? 'Click to queue removal of this tileset' : 'Click to queue generation of a tileset'}`)
+				                    .tooltip()
+				                    .prop('disabled', false)
 				                    .closest('tr').find('td:eq(2) i')
 					                .toggleClass('fa-times', task.action == 'delete')
 					                .toggleClass('fa-check', task.action == 'generate');
@@ -178,6 +183,13 @@ $(document).ready(function() {
 		.click();
     });	
 
+    $('#tileset-table').on('click', '.no-tileset', function() {
+		$(this)
+		.removeClass('btn-secondary no-tileset')
+		.addClass('btn-success generate-tileset')
+		.click();
+    });	
+
     $('#tileset-table').on('click', '.generate-tileset, .remove-redundant', function() {
 		let button = $(this);
         let category = button.data('category');
@@ -204,6 +216,8 @@ $(document).ready(function() {
                 console.error(xhr.responseText);
             }
         });
+        
+		setTimeout(function(){if (!polling) pollTilerStatus();}, 3000);
     });	
 
     $('.queue-all').click(function() {
