@@ -982,6 +982,10 @@ class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
     return self.render_to_response(context=context)
 
   def form_valid(self, form):
+    context = self.get_context_data()
+    if not context['is_owner'] and not context['is_member']:
+      # messages.error(self.request, 'You do not have permission to save the form.')
+      return redirect('/collections/'+str(self.object.id)+'/update_pl')
     data = form.cleaned_data
     print('cleaned_data', data)
     print('referrer', self.request.META.get('HTTP_REFERER'))
