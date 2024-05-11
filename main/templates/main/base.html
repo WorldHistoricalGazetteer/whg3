@@ -104,7 +104,7 @@
                    data-bs-toggle="dropdown" aria-expanded="false">
                   About
                 </a>
-                <ul class="dropdown-menu">
+                <ul class="dropdown-menu dropdown-menu-end">
                   <li><a class="dropdown-item" href="{% url 'about' %}">Vision & mission</a></li>
                   <li><a class="dropdown-item" href="{% url 'credits' %}">Project overview & people</a></li>
                   <li><a class="dropdown-item" href="{% url 'publications' %}">Publications</a></li>
@@ -119,7 +119,7 @@
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                 Data
                 </a>
-                <ul class="dropdown-menu">
+                <ul class="dropdown-menu dropdown-menu-end">
 	                <li>
 	                  {% is_whg_admin as user_is_whg_admin %}
                       {% if user_is_whg_admin %}
@@ -130,20 +130,23 @@
                       {% endif %}
                     </li>
 	                <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}">Published Datasets</a></li>
-                  <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}">Published Collections</a></li>
+                  <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type'
+                  gallery_type='datasets' %}">Published Datasets</a></li>
+                  <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type'
+                  gallery_type='collections' %}">Published Collections</a></li>
                   <li><hr class="dropdown-divider"></li>
                   <li><a class="dropdown-item" href="{% url 'downloads' %}">Downloads</a></li>
                 </ul>
 	            </li>
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <a class="nav-link dropdown-toggle" href="#" role="button"
+                   data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="fas fa-user" style="color:#336699;"></i>
                 </a>
-                <ul class="dropdown-menu">
+                <ul class="dropdown-menu dropdown-menu-end">
                     <li class="nav-item">
-                        <a class="nav-link" rel="tooltip" title="{{ user.name }}'s profile" href="{% url 'profile-edit' %}">
-                            Profile
+                        <a class="nav-link" rel="tooltip" title="{{ user.name }}'s profile"
+                           href="{% url 'profile-edit' %}">Profile
                         </a>
                     </li>
                     <li class="nav-item">

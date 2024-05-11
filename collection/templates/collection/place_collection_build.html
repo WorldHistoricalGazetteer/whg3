@@ -20,15 +20,16 @@
           <span class="text-secondary">Place Collection Builder: </span>
           <span class="text-bold red-head">{{ form.title.value }}</span>
           <span class="float-end fs-6">
+          {% comment %}
           <span class="me-2 small">collab? {{ object.group.collaboration }};
             in class: {{ in_class }}; status: <b>{{ form.status.value }}</b>
-          </span>
-          <a href="{% url 'collection:place-collection-browse' object.id %}">
+          </span>{% endcomment %}
+          <a href="{% url 'collection:place-collection-browse' object.id %}" class="me-2">
             view</a> <i class="fas fa-eye linky"></i>
           <a href="{% url 'collection:collection-delete' object.id %}"
              title="Delete collection" rel="tooltip" style="margin-top:-2px;">
           <i class="fas fa-trash linkyred"></i></a>
-      </span>
+         </span>
         {% else %}
           Place Collection Builder: {<span class="red-head">new</span>}
         {% endif %}
