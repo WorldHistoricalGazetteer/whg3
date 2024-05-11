@@ -52,6 +52,7 @@ input[type="radio"] {
 **/
 mark-b { background-color: aliceblue;}
 mark-g { background-color: #cff3cf; padding:0 3px;}
+mark-g-lite { background-color: #e9f7e9; padding:0 3px;}
 mark-r { background-color: chocolate; color:white; padding:0 3px;}
 label {vertical-align:text-top;}
 .alert {padding: 0 1.25rem !important;}
