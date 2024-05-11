@@ -377,6 +377,11 @@ def archive_traces(request, *args, **kwargs):
       if place.traces:
         # can be only one but .update only works on filter
         TraceAnnotation.objects.filter(collection=coll,place=place).update(archived=True)
+    # reset sequence after removals (fill in the gaps)
+    coll_places = CollPlace.objects.filter(collection=coll).order_by('sequence')
+    for new_sequence, coll_place in enumerate(coll_places):
+        coll_place.sequence = new_sequence
+        coll_place.save()
     return JsonResponse({'result': str(len(place_list))+' places removed, we think'}, safe=False)
 
 """ update sequence of annotated places """

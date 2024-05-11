@@ -4,7 +4,7 @@ import './enlarge.js';
 import '../css/builders-collection-place.css';
 
 $(function() {
-	
+	$(".col-place-card").first().click();
 	new VisualisationControl(); // Returns `null` if #configurationTable element does not exist
 
 	$("#id_group option:first").text('None')
@@ -358,9 +358,10 @@ $(function() {
 	
 	// add link to collection
 	function create_collection_link() {
+		// console.log('create_collection_link', create_link_url)
 		var formData = new FormData()
 		formData.append('model', 'Collection')
-		formData.append('objectid', '{{ object.id }}')
+		formData.append('objectid', object_id)
 		formData.append('uri', $("#l_uri").val())
 		formData.append('label', $("#l_label").val())
 		formData.append('link_type', $("#select_linktype").val())
@@ -369,7 +370,8 @@ $(function() {
 		$.ajax({
 			type: 'POST',
 			enctype: 'multipart/form-data',
-			url: '{% url "create-link" %}',
+			// url: '{% url "create-link" %}',
+			url: create_link_url,
 			processData: false,
 			contentType: false,
 			cache: false,
@@ -719,6 +721,7 @@ $(function() {
 		$("#select_ds").val(0)
 	}
 
+	$(".col-place-card").first().click();
 }) // end doc ready
 
 

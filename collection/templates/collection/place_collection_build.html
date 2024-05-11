@@ -414,9 +414,7 @@
                         </li>
                       </ul>
                     {% endif %}
-                    {% if action == 'create' %}
-
-                    {% endif %}
+                    {% if action == 'create' %}{% endif %}
                   {% endif %}
                 </div>
               </div>
@@ -540,6 +538,7 @@
   const object_id = "{{ object.id }}";
   const place_list = "{{ place_list }}";
   const csrf_token = "{{ csrf_token }}";
+  const create_link_url = "{% url 'create-link' %}";
 </script>
 
 {% endblock %} {# content #}
