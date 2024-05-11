@@ -38,3 +38,7 @@
 #tileset-table button {
     width: 150px;
 }
+
+#tileset-table i.has-tileset.fa-check {
+	cursor: pointer;
+}

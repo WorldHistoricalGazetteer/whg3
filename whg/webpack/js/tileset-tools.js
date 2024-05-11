@@ -18,7 +18,9 @@ $(document).ready(function() {
 			row.addClass(item.category === 'datasets' ? 'dataset-row' : 'collection-row');
 			row.append($('<td>').text(item.id));
 			row.append($('<td>').text(item.title));
-			row.append($('<td>').html(item.has_tileset ? '<i class="fas fa-check"></i>' : '<i class="fas fa-times"></i>'));
+			row.append($('<td>')
+			.html(`<i data-bs-title="Click to inspect tileset"${item.has_tileset ? '' : ' disabled'} class="has-tileset fas fa-${item.has_tileset ? 'check' : 'times'}" data-category="${item.category}" data-id="${item.id}"></i>`))
+			.find('i.fa-check').tooltip();
 			row.append($('<td>').html('<i class="fas fa-spinner fa-spin"></i>')); // Placeholder for pending status
 			row.append($('<td>').text('')); // Placeholder for actions
 			tableBody.append(row);
@@ -148,9 +150,14 @@ $(document).ready(function() {
 				                    .prop('title', `${task.action == 'generate' ? 'Click to queue removal of this tileset' : 'Click to queue generation of a tileset'}`)
 				                    .tooltip()
 				                    .prop('disabled', false)
-				                    .closest('tr').find('td:eq(2) i')
-					                .toggleClass('fa-times', task.action == 'delete')
-					                .toggleClass('fa-check', task.action == 'generate');
+				                    .closest('tr')
+				                    .find('td:eq(2) i')
+					                .toggleClass('fa-times fa-check')
+					                .filter('.fa-times')
+					                .tooltip('dispose')
+					                .end()
+					                .filter('.fa-check')
+					                .tooltip();
 				                    break;
 				                case 'failed':
 				                    taskButton
@@ -176,21 +183,37 @@ $(document).ready(function() {
 		else polling = false;
 	}
 
-    $('#tileset-table').on('click', '.tileset-available', function() {
+    $('#tileset-table')
+    .on('click', 'i.has-tileset.fa-check', function() {
+		const el = $(this);
+	    var category = el.data('category');
+	    var id = el.data('id');
+	    var url = el.data('url');
+	    if (!url) {
+		    $.getJSON(`${process.env.TILEBOSS}/data/${category}-${id}.json`, function(tilejson) {
+		        var center = tilejson.center;
+		        url = `${process.env.TILEBOSS}/data/${category}-${id}/#${center[2]}/${center[1]}/${center[0]}`;
+		        el.data('url', url);
+		        window.open(url, '_blank');
+		    });
+		}
+		else {
+			window.open(url, '_blank');
+		}
+    })
+    .on('click', '.tileset-available', function() {
 		$(this)
 		.removeClass('btn-primary tileset-available')
 		.addClass('btn-warning remove-redundant')
 		.click();
-    });	
-
-    $('#tileset-table').on('click', '.no-tileset', function() {
+    })
+	.on('click', '.no-tileset', function() {
 		$(this)
 		.removeClass('btn-secondary no-tileset')
 		.addClass('btn-success generate-tileset')
 		.click();
-    });	
-
-    $('#tileset-table').on('click', '.generate-tileset, .remove-redundant', function() {
+    })
+	.on('click', '.generate-tileset, .remove-redundant', function() {
 		let button = $(this);
         let category = button.data('category');
         let id = button.data('id');
