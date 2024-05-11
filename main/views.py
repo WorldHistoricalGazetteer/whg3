@@ -6,10 +6,11 @@ from django.contrib.auth.models import Group
 from django.core.mail import send_mail, BadHeaderError
 from django.db.models import Max, Count, Case, When, Q
 from django.db.models.functions import Lower
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import render, get_object_or_404, redirect #, render_to_response
 from django.urls import reverse_lazy
 from django.utils.html import escape
+from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
@@ -21,7 +22,9 @@ from celery.result import AsyncResult
 from collection.models import Collection, CollectionGroup, CollectionGroupUser
 from datasets.models import Dataset
 from datasets.tasks import testAdd
+from main.tasks import needs_tileset, request_tileset
 from .models import Announcement, Link, DownloadFile, Comment
+from operator import itemgetter
 from places.models import Place
 from resources.models import Resource
 from utils.emailing import new_emailer
@@ -78,34 +81,85 @@ class AnnouncementUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
     success_url = reverse_lazy('announcements-list')
     permission_required = 'main.change_announcement' # Adjust based on your app's name and permissions
 
-# initiated by main.tasks.request_tileset()
-def send_tileset_request(category=None, id=None):
-    
-    if not category or not id:
-        return {
-            'status': 'failure',
-            'error': 'Both category and id must be provided.'
+class TilesetListView(LoginRequiredMixin, TemplateView):
+    template_name = 'main/tools_tilesets.html'
+    login_url = '/accounts/login/'
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.username != "whgadmin": ###################### PERHAPS THERE IS A CLASS OF USER RATHER THAN A SPECIFIC ONE?
+            return HttpResponseForbidden("You are not authorized to access this page.")
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Fetch tilesets
+        tilesets_url = settings.TILER_URL
+        tilesets_data = { "getTilesetsAll": {} }
+        tilesets_response = requests.post(tilesets_url, headers={"Content-Type": "application/json"}, data=json.dumps(tilesets_data))
+        tilesets = sorted(list(tilesets_response.json()))
+        
+        collections = Collection.objects.filter(collection_class='place')
+        
+        # Fetch dataset and collection titles
+        dataset_titles = {dataset.id: dataset.title for dataset in Dataset.objects.all()}
+        collection_titles = {collection.id: collection.title for collection in collections}
+        
+        # Pass both sets of data to the template
+        context['data'] = []
+        data = {
+            'collections': [(collection.id, collection_titles.get(collection.id, "")) for collection in collections],
+            'datasets': [(dataset.id, dataset_titles.get(dataset.id, "")) for dataset in Dataset.objects.all()], 
         }
         
-    print(f"Sending a POST request to TILER_URL for {category}-{id}.")
-    data = {
-        "geoJSONUrl": f"https://dev.whgazetteer.org/{category}/{id}/mapdata/?variant=tileset",
-    }
-    response = requests.post(settings.TILER_URL, headers={"Content-Type": "application/json"}, data=json.dumps(data))
+        # Enqueue a Celery task for each category and id
+        for category, items in data.items():
+            for id, title in sorted(items, key=itemgetter(0)):
+                # Check if the tileset exists for the current category and id
+                tileset_key = f"{category}-{id}"
+                has_tileset = tileset_key in tilesets
+                # Enqueue a Celery task for each category and id
+                task = needs_tileset.delay(category=category, id=id)
+                # Add the task id to the context for each category
+                context['data'].append( {'category': category, 'id': id, 'title': title, 'has_tileset': has_tileset, 'task_id': task.id} )
+        
+        return context
     
-    # Check the response
-    print("TILER_URL Response status:", response.status_code)
-    if hasattr(response, 'error'):
-        print("Response error:", response.error)
-    if hasattr(response, 'message'):
-        print("Response message:", response.message)
-
-    return response
-
-# {	"status":"success",
-# 	"message":"Tileset created.",
-# 	"command":"tippecanoe -o /srv/tileserver/tiles/datasets/40.mbtiles -f -n \"datasets-40\" -A \"Atlas of Mutual Heritage: Rombert Stapel\" -l \"features\" -B 4 -rg 10 -al -ap -zg -ac --no-tile-size-limit /srv/tiler/temp/18e6bb6e-635d-45e3-9833-10fe00f686f1.geojson"
-# }
+@login_required    
+def tileset_generate_view(request, category, id):
+    # Ensure that only the user with username "whgadmin" can access this view
+    if request.user.username == "whgadmin": ###################### PERHAPS THERE IS A CLASS OF USER RATHER THAN A SPECIFIC ONE?
+        if request.method == 'GET':
+            action = 'generate'
+        elif request.method == 'DELETE':
+            action = 'delete'
+        # task_result = request_tileset.delay(category, id, action)
+        # return JsonResponse({'task_id': task_result.id})
+        request_tileset(category, id, action)
+        return JsonResponse({'task_id': None})
+    else:
+        return JsonResponse({'error': 'Access forbidden'}, status=403)
+    
+# class TilesetGenerateView(LoginRequiredMixin, View):
+#     def get(self, request, category, id):
+#         # Ensure that only the user with username "whgadmin" can access this view
+#         if request.user.username == "whgadmin":
+#             action = 'generate'
+#             # Perform the tileset generation request
+#             request_tileset(category, id, action)
+#             return JsonResponse({'task_id': None})
+#         else:
+#             return JsonResponse({'error': 'Access forbidden'}, status=403)
+#
+#     def delete(self, request, category, id):
+#         # Ensure that only the user with username "whgadmin" can access this view
+#         if request.user.username == "whgadmin":
+#             action = 'delete'
+#             # Perform the tileset deletion request
+#             result = request_tileset(category, id, action)
+#             return JsonResponse({'result': result})
+#         else:
+#             return JsonResponse({'error': 'Access forbidden'}, status=403)    
 
 # Mixin for checking splash screen pass
 class SplashCheckMixin:

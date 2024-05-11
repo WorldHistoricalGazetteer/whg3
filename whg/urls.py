@@ -8,6 +8,7 @@ from accounts.views import profile_edit
 from datasets.views import PublicListsView #, DataListsView
 from main import views
 from resources.views import TeachingPortalView
+from main.tasks import get_tileset_task_progress
 from utils.tasks import downloader
 
 # For CDNfallbacks
@@ -92,6 +93,10 @@ urlpatterns = [
     path('announcement_delete/<int:pk>/', views.AnnouncementDeleteView.as_view(), name='announcement-delete'),
     path('announcement/update/<int:pk>/', views.AnnouncementUpdateView.as_view(), name='announcement-update'),
     path('announcements/', views.AnnouncementListView.as_view(), name='announcements-list'),
+    
+    path('tileset_management/', views.TilesetListView.as_view(), name='tools-tilesets'),
+    path('tileset_generate/<str:category>/<int:id>/', views.tileset_generate_view, name='tileset_generate'),
+    path('tileset_task_progress/', get_tileset_task_progress, name='tileset_task_progress'),
 
     path('comment/', views.handle_comment, name='comment-handle'),
     path('contact/', views.contact_view, name='contact'),
