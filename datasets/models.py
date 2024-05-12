@@ -1,14 +1,13 @@
 # datasets.models
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
-from django.db.models import JSONField
 from django.contrib.gis.db import models as geomodels
 from django.contrib.gis.db.models import Collect, Extent, Aggregate
 from django.contrib.gis.geos import GeometryCollection, Polygon, GEOSGeometry
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.db import models
-from django.db.models import Q
+from django.db.models import JSONField, Exists, OuterRef, Q, Func, CharField
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.urls import reverse
@@ -47,7 +46,7 @@ def ds_image_path(instance, filename):
   return 'datasets/{0}_{1}'.format(instance.id, filename)
 
 # owner = models.ForeignKey('auth.User', related_name='snippets', on_delete=models.CASCADE)
-class Dataset(models.Model):
+class Dataset(models.Model):  
   owner = models.ForeignKey(settings.AUTH_USER_MODEL,
                             related_name='datasets', on_delete=models.CASCADE)
   label = models.CharField(max_length=20, null=False, unique="True", blank=True,
@@ -175,6 +174,31 @@ class Dataset(models.Model):
           for geom in place.geoms.all():
               total_coords += geom.geom.num_coords
       return total_coords
+
+  @property
+  def display_mode(self):
+    #determine heatmap suitability
+    
+    if self.places.count() < 500:
+        return None
+    
+    # Annotate each place with a flag indicating if any non-point geometries exist
+    class GeometryType(Func):
+        function = "GeometryType"
+        output_field = CharField()  
+    places_with_non_point_geoms = self.places.annotate(
+        has_non_point_geoms=Exists(
+            PlaceGeom.objects.filter(
+                place=OuterRef('pk')
+            ).annotate(
+                geom_type=GeometryType("geom")
+            ).exclude(geom_type__in=["POINT", "MULTIPOINT"])
+        )
+    )
+    if places_with_non_point_geoms.filter(has_non_point_geoms=True).exists():
+        return None
+    
+    return "heatmap"
 
   # download time estimate
   @property
