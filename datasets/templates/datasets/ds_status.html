@@ -345,6 +345,7 @@
                                data-content="List this dataset on 'Volunteer Review Opportunities page"></i></a>
               </div>
             </div>
+            {% comment %}
             {% if user.is_superuser or user in owners %} <!-- must be or they wouldn't see this! -->
               <div id="ds_downloads" class="pt-0 px-0 ds-card">
                 <p class="ds-card-header pt-1"> Downloads
@@ -382,6 +383,7 @@
                 <div id="celery-result"></div>
               </div> <!-- ds_downloads_ajax -->
             {% endif %} <!-- owner or superuser -->
+            {% endcomment %}
           </div> <!-- ds_info -->
         </div> <!-- ds_details -->
       </div> <!-- row -->

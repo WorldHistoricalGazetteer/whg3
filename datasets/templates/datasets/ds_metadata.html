@@ -6,6 +6,7 @@
 
 {% block extra_head %}
   <script src="{% static 'js/aliases.js' %}"></script>
+  <script src="{% static 'js/spin.umd.js' %}"></script>
   <link rel="stylesheet" href="{% static 'css/spin.css' %}"/>
   <script src="{% static 'celery_progress/celery_progress.js' %}"></script>
   <link href="{% static 'webpack/builders-dataset.bundle.css' %}" rel="stylesheet" />
@@ -54,15 +55,15 @@
       <div class="row">
       <div id="ds_details" class="col-sm-7 small">
         {% if user == object.owner or user.is_superuser %}
-          <span class="float-end">Delete dataset
+          <span class="float-end ms-3">Delete dataset
             <a href="{% url 'datasets:dataset-delete' ds.id %}" class="" title="Delete dataset"
                target="_blank" data-bs-toggle="tooltip">
               <i class="fas fa-trash linkyred"></i></a>
           </span>
         {% endif %}
         {% if user in collaborators or is_admin %}
-          <span class="float-end me-3">
-            publication {% if not ds.public %}pre{% endif %}view
+          <span class="float-end ">
+            publication {% if not ds.public %}pre{% endif %}view&nbsp;
             <a href="{% url 'datasets:ds_places' id=ds.id %}" title="View publication page" data-bs-toggle="tooltip">
             <i class="fas fa-eye"></i></a>
           </span>
@@ -201,57 +202,6 @@
         </table>
         <input class="btn btn-primary btn-sm hidden btn-ds" type="submit" value="Save" />
         {% if current_file and current_file.df_status != 'dummy' %}
-{#        {% if current_file and current_file.df_status != 'dummy' and ds.ds_status != 'seed' %}#}
-          <p> <i>Current data file</i>
-          </p>
-          <div id="div_file">
-            <table id="file_metadata" class="ds-table table-striped">
-              <tr>
-                <td><b>Revision</b></td>
-                <td>{{ current_file.rev }}</td>
-              </tr>
-              <tr>
-                <td><b>File</b></td>
-                <td>
-                  <span class="display-field">
-                  <a href="{% url 'datasets:dl-file' ds.id %}" ref="current" download>{{ current_file.file }} <i class="fas fa-download linky"></i></a> ({{filesize}} mb)
-                  </span>
-                </td>
-              </tr>
-              <tr>
-                <td><b>File status</b></td>
-                <td>{{ current_file.df_status }}</td>
-              </tr>
-              <tr>
-                <td><b>Uploaded</b></td>
-                <td>{{ current_file.upload_date|date:"d-M-Y, H:i (e)" }}</td>
-              </tr>
-              <tr>
-                <td><b>Data type</b></td>
-                <td>{{ current_file.datatype }}</td>
-              </tr>
-              <tr>
-                <td><b>Format</b></td>
-                <td>
-                  <span class="display-field">
-                    {{ current_file.format }}
-                  </span>
-                  <span class="update-field hidden">{{ form.format }}</span>
-                </td>
-              </tr>
-              <tr>
-                <td><b>License</b></td>
-                <td><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a></td>
-              </tr>
-              {% if current_file.format == 'delimited' %}
-              <tr>
-                <td><b>Columns</b></td>
-                <td>{{ current_file.header }}</td>
-              </tr>
-              {% endif %}
-            </table>
-            <input class="btn btn-primary btn-sm hidden btn-file" type="submit" value="Upload" />
-          </div> <!-- #div_file -->
           <input type="hidden" name="datatype" value=
             {% if current_file %}{{ current_file.datatype }}{% else %}"place"{%endif%}>
           <input type="hidden" name="rev" value="{{ current_file.rev }}">
@@ -294,17 +244,54 @@
 	              {% endif %}
             </table>
           </div>
-          <div id="ds_options" class="pt-0 px-0 ds-card">
-            <p class="ds-card-header">Options</p>
-            <div class="form-check form-switch">
-              <input id="volunteers" class="form-check-input" type="checkbox" {% if ds.volunteers %}checked{% endif %}>
-              <label class="form-check-label" for="review_help_requested">Volunteer help requested</label>
-              <a href="#"><i class="fas fa-question-circle red-head" data-toggle="popover"
-                             title="List on Volunteer Opportunities page"
-                             data-content="List this dataset on 'Volunteer Review Opportunities page"></i></a>
-            </div>
-          </div>
-          {% if user.is_superuser or user in owners %} <!-- must be or they wouldn't see this! -->
+            <p class="mb-1 ps-2"><i>Current data file</i></p>
+            <div id="div_file" class="ps-2">
+            <table id="file_metadata" class="ds-table table-striped">
+              <tr>
+                <td><b>Revision</b></td>
+                <td>{{ current_file.rev }}</td>
+              </tr>
+              <tr>
+                <td><b>File</b></td>
+                <td>
+                  <span class="display-field">
+                  <a href="{% url 'datasets:dl-file' ds.id %}" ref="current" download>{{ current_file.file }} <i class="fas fa-download linky"></i></a> ({{filesize}} mb)
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td><b>File status</b></td>
+                <td>{{ current_file.df_status }}</td>
+              </tr>
+              <tr>
+                <td><b>Uploaded</b></td>
+                <td>{{ current_file.upload_date|date:"d-M-Y, H:i (e)" }}</td>
+              </tr>
+              <tr>
+                <td><b>Format</b></td>
+                <td>
+                  <span class="display-field">
+                    {% if current_file.format == 'lpf' %}
+                      Linked Places format (LPF)
+                    {% else %}
+                      Delimited (LP-TSV)
+                    {% endif %}
+                  </span>
+                  <span class="update-field hidden">{{ form.format }}</span>
+                </td>
+              </tr>
+              <tr>
+                <td><b>License</b></td>
+                <td><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a></td>
+              </tr>
+              {% if current_file.format == 'delimited' %}
+              <tr>
+                <td><b>Columns</b></td>
+                <td>{{ current_file.header }}</td>
+              </tr>
+              {% endif %}
+            </table>
+          </div> <!-- #div_file -->
             <div id="ds_downloads" class="pt-0 px-0 ds-card">
               <p class="ds-card-header pt-1"> Downloads
                 <span id='progress-bar' class='progress-bar' style="background-color: #68a9ef; width: 0%; line-height:.5rem;">&nbsp;</span>
@@ -340,7 +327,7 @@
               <div id="progress-bar-message" class="hidden">Waiting for progress to start...</div>
               <div id="celery-result"></div>
             </div> <!-- ds_downloads_ajax -->
-          {% endif %} <!-- owner or superuser -->
+{#          {% endif %} <!-- owner or superuser -->#}
         </div> <!-- ds_info -->
       </div> <!-- ds_details -->
       </div> <!-- row -->

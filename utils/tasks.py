@@ -421,9 +421,14 @@ def make_download(self, *args, **kwargs):
       # build features list
       features = []
       for i, p in enumerate(qs):
-        when = p.whens.first().jsonb
-        if 'minmax' in when:
-          del when['minmax']
+        print('place in make_download():424', p.__dict__)
+        whens = p.whens.all()
+        if len(whens) > 0:
+          when = p.whens.first().jsonb
+          if 'minmax' in when:
+            del when['minmax']
+        else:
+          when = {}
         geoms = p.geoms.all()
         if len(geoms) == 1:
           geometry = geoms[0].jsonb
