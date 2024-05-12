@@ -116,6 +116,7 @@ label {vertical-align:text-top;}
 .nobr {white-space: nowrap;}
 .no-bullet { list-style: none;}
 .notebox {box-shadow: 2px 2px #eee; border:1px dashed #ccc; border-radius:8px; padding:6px;}
+.oldlace {background-color: oldlace;}
 .pointer {cursor:pointer;}
 .pop-link {color: #993300; border-bottom: 1px dashed;cursor:pointer;}
 .popover-body p {margin:0;}

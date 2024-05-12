@@ -1186,7 +1186,7 @@ class CollectionGroupDeleteView(DeleteView):
     return get_object_or_404(CollectionGroup, id=id_)
 
   def get_success_url(self):
-    return reverse('accounts:profile')
+    return reverse('dashboard-user')
 
 """
   update (edit); uses same template as create;

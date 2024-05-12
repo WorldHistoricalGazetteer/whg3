@@ -13,383 +13,423 @@
   <link rel="stylesheet" href="{% static 'js/tags/bootstrap-tagsinput.css' %}"/>
   <link rel="stylesheet" href="{% static 'js/tags/bootstrap-tagsinput-typeahead.css' %}"/>
   <style>
-    textarea {width: 100%;}
-    #collections {position: relative;}
-    {##collections_content {position: absolute; overflow-y: scroll}#}
-    #results_text {background-color: #dff0d8;}
-    .form-box p {margin: .5rem;}
-    #linkform_popup {
-	    position:absolute;
-			background-color: whitesmoke;
-	    border: 1px solid grey;
-	    box-shadow: gainsboro 4px 4px;
-	    border-radius: 6px;
-	    padding: 15px;
-	    height: 150px;
-	    width: 300px;
-	    top: 350px;
-	    left: 300px;
-	    z-index: 1000;
-	    display:none;
+    textarea {
+      width: 100%;
     }
-    .flashspan {background-color: yellow;}
+
+    #collections {
+      position: relative;
+    }
+
+    {##collections_content {position: absolute; overflow-y: scroll}#}
+    #results_text {
+      background-color: #dff0d8;
+    }
+
+    .form-box p {
+      margin: .5rem;
+    }
+
+    #linkform_popup {
+      position: absolute;
+      background-color: whitesmoke;
+      border: 1px solid grey;
+      box-shadow: gainsboro 4px 4px;
+      border-radius: 6px;
+      padding: 15px;
+      height: 150px;
+      width: 300px;
+      top: 350px;
+      left: 300px;
+      z-index: 1000;
+      display: none;
+    }
+
+    .flashspan {
+      background-color: yellow;
+    }
+
     .popover-body ul, .popover-body li {
       padding-left: 0.2rem;
       list-style-position: inside;
     }
+    #cg_center p {
+      font-size: 0.9rem;
+    }
   </style>
 {% endblock %}
 {% block content %}
-<div class="container">
-  <h5 class="mt-3 pe-4">
-    {% if action == 'update' %}
+  <div class="container">
+    <h5 class="mt-3 pe-4">
+      {% if action == 'update' %}
         Update Collection Group
         <span class="text-danger">"{{ form.title.value }}"</span>
-	      <span class="float-end half">
+        <span class="float-end half">
 	        <span id="reviewed_flash" class="me-2 hidden flashspan"></span>
 	        <span id="nominated_flash" class="me-2 hidden flashspan"></span>
-	        {% if object.gallery %}
-			      <a href="{% url 'collection:collection-group-gallery' object.id %}">gallery</a>&nbsp;
-	        {% endif %}
-{#		      <i class="fas fa-eye linky"></i>#}
+          {% if object.gallery %}
+            <a href="{% url 'collection:collection-group-gallery' object.id %}">gallery</a>&nbsp;
+          {% endif %}
+          {#		      <i class="fas fa-eye linky"></i>#}
 			    <a href="{% url 'collection:collection-group-detail' object.id %}">
 					    view</a>&nbsp;<i class="fas fa-eye linky"></i>
 	        <a href="{% url 'collection:collection-group-delete' object.id %}"
-	          title="Delete group" rel="tooltip" style="margin-top:-2px;"> <i class="fas fa-trash linkyred"></i>
+             title="Delete group" rel="tooltip" style="margin-top:-2px;"> <i class="fas fa-trash linkyred"></i>
 	        </a>
 	      </span>
-    {% else %}
+      {% else %}
         Create Collection Group
-    {% endif %}
-  </h5>
-  <!-- form spans all columns -->
-  {% if action == 'update' %}
-    <form id="cg_form" method="POST" action="{% url 'collection:collection-group-update' object.id %}"
-          enctype="multipart/form-data">
+      {% endif %}
+    </h5>
+    <!-- form spans all columns -->
+    {% if action == 'update' %}
+      <form id="cg_form" method="POST" action="{% url 'collection:collection-group-update' object.id %}"
+            enctype="multipart/form-data">
     {% else %}
-    <form id="cg_form" method="POST" action="{% url 'collection:collection-group-create' %}"
-          enctype="multipart/form-data">
-  {% endif %}
-  {% csrf_token %}
-  <div class="d-flex container row pe-0">
-  <div id="cg_left" class="form-box mt-2 col-sm-4">
-    <input type="hidden" name="owner" value='{{ user.id }}' />
-    <input type="hidden" name="action" value='{{ action }}' />
-    {% comment %}
+      <form id="cg_form" method="POST" action="{% url 'collection:collection-group-create' %}"
+            enctype="multipart/form-data">
+    {% endif %}
+    {% csrf_token %}
+    <div class="d-flex container row pe-0">
+      <div id="cg_left" class="form-box mt-2 col-sm-4">
+        <input type="hidden" name="owner" value='{{ user.id }}'/>
+        <input type="hidden" name="action" value='{{ action }}'/>
+        {% comment %}
     {% if action == 'update' %}
     {% endif %}{% endcomment %}
-    <p>Title<br/>{{ form.title }}</p>
-    <p><span class="top">Description</span><br/>{{ form.description }}</p>
-    <p><span class="top">Type</span><br/>{{ form.type }}</p>
-    <p><span class="top">Keywords</span><br/>{{ form.keywords }}</p>
-    <p><span class="top">Start date</span> {{ form.start_date }}</p>
-    <p><span class="top">Due date</span> {{ form.due_date }}</p>
-    <p class="form-group">
-      <label for="File">File <i class="small">(PDF format)</i></label><br/>
-      {% if action == 'create' %} {# create, no file yet #}
-        <span id="file_chooser_create">{{ form.file }}</span>
-      {% elif form.file.value %} {# update & there's an file #}
-        <i class="far fa-file-pdf linky"></i>
-        <a href="/media/{{ form.file.value }}" target="_blank">{{ object.file.url|remove:'/media/groups/' }}</a>
-        (<a href="javascript:$('#file_chooser').toggle()">change</a>)
-      {% else %} {# update and there's no image yet #}
-        <span id="file_chooser_update" >{{ form.file }}</span>
-      {% endif %}
-      <span id="file_chooser" class="hidden">{{ form.file }}</span>
-    </p>
-
-{#      <div id="cg_options" class="bg-light">#}
-{#        <p class="mb-0 strong">Options#}
-{#          <span class="float-end">#}
-{#            <a class="pointer" tabindex="97" data-bs-toggle="popover" title="Group gallery options"#}
-{#                 data-bs-content="<ul style='text-align: left;'>#}
-{#                  <li>Will this group have a gallery page? If so, are all submitted collections required to appear?</li>#}
-{#                  <li>Are members collaborators permitted to add collaborators</li>"#}
-{#                 data-bs-trigger="hover focus" >#}
-{#              <i class="fas fa-question-circle linkypop"></i></a>#}
-{#          </span>#}
-{#        </p>#}
-{#        <p class=""><span>Group gallery? {{ form.gallery }}</span>#}
-{#          <span id="gallery_required" class="ms-3">required? {{ form.gallery_required }}</span></p>#}
-{#        <p class="">Collaboration allowed? {{ form.collaboration }}</p>#}
-{#        <p>Group code:#}
-{#          {% if not object.join_code %}#}
-{#            <button id="b_joincode" type="button">Create</button>#}
-{#          {% else %}#}
-{#            <span id="cg_joincode">{{ object.join_code }}<i class="ms-1 fas fa-check"></i></span>#}
-{#          {% endif %}#}
-{#          <span><button id="b_savejoincode" type="button">Save</button></span>#}
-{#        </p>#}
-{#      </div>#}
-    <div class="mt-3">Links
-      {% if links|length < 3 %}
-        <a href="#" id="a_linkpopup">
-          <button type="button" style="border-width: thin;">Add</button>
-        </a>
-        <i class="small">(1 or more)</i>
-      {% else %}(3 maximum) {% endif %}<br/>
-      <span id="linklist">
+        <p>Title &#x02733;<br/>{{ form.title }}</p>
+        <p><span class="top">Description &#x02733;</span><br/>{{ form.description }}</p>
+        <p><span class="top">Type</span><br/>{{ form.type }}</p>
+        <p><span class="top">Keywords &#x02733;</span><br/>{{ form.keywords }}</p>
+        <p><span class="top">Start date</span> {{ form.start_date }}</p>
+        <p><span class="top">Due date</span> {{ form.due_date }}</p>
+        <div class="mt-3 ms-2">Links
+          {% if links|length < 3 %}
+            <a href="#" id="a_linkpopup">
+              <button type="button" style="border-width: thin;">Add</button>
+            </a>
+            <i class="small">(1 or more)</i>
+          {% else %}(3 maximum) {% endif %}<br/>
+          <span id="linklist">
       {% if links|length > 0 %}
         {% for l in links %}
           {{ l.get_link_type_display|safe }} <a href="{{ l.uri }}" target="_blank">{{ l.label }}</a>
-            [ <a href="{% url 'collection:remove-link' id=l.id %}" class="a_removelink"><i>remove</i></a> ]<br/>
+          [ <a href="{% url 'collection:remove-link' id=l.id %}" class="a_removelink"><i>remove</i></a> ]<br/>
         {% endfor %}
       {% endif %}
       </span>
-    </div>
-    <hr/>
-    <input class="btn btn-sm btn-primary mt-2" type="submit" value="Save" />
-    <span title="back"><a href="{% url 'dashboard' %}">Cancel</a></span>
-  </div>
-  <div id="linkform_popup" class="pop">
-    <form action="#" method="post">
-      {% csrf_token %}
-      <input type="hidden" name="collection" value="{{ object.id }}">
-      <div class="closer" style="position:absolute; top:7px; right:7px;">X</div>
-      <table class="mb-2">
-              <tr><td>URI*: </td><td><input id="l_uri" name="uri" value="{{ links_form.uri }}" /></td></tr>
-              <tr><td>Label*: </td><td><input id="l_label" name="label" value="{{ links_form.label }}" /></td></tr>
-              <tr><td>Type: </td>
-                <td>
-                  <select id="select_linktype" name="link_type">
-                    <option value="webpage">Web page</option>
-                    <option value="document">Document</option>
-                    <option value="image">Image</option>
-                  </select>
-                </td>
-              </tr>
-      </table>
-      <button id="b_createlink" type="button">Save</button>
-    </form>
-  </div>
-  <div id="cg_center" class="col-sm-4 mt-2">
-    <h5 class="sharing-header">Settings</h5>
-    <div class="ps-2">
-      {% if action == 'update' %}
-        <p class="mb-0 strong">
+        </div>
+        <p class="form-group">
+          <label for="File">File <i class="small">(PDF format)</i></label><br/>
+          {% if action == 'create' %} {# create, no file yet #}
+            <span id="file_chooser_create">{{ form.file }}</span>
+          {% elif form.file.value %} {# update & there's an file #}
+            <i class="far fa-file-pdf linky"></i>
+            <a href="/media/{{ form.file.value }}" target="_blank">{{ object.file.url|remove:'/media/groups/' }}</a>
+            (<a href="javascript:$('#file_chooser').toggle()">change</a>)
+          {% else %} {# update and there's no image yet #}
+            <span id="file_chooser_update">{{ form.file }}</span>
+          {% endif %}
+          <span id="file_chooser" class="hidden">{{ form.file }}</span>
+        </p>
+        <hr/>
+        <p class="my-0">&#x02733;<i><b> required</b></i></p>
+        <input class="btn btn-sm btn-primary mt-2" type="submit" value="Save"/>
+        <span title="back"><a href="{% url 'dashboard' %}">Cancel</a></span>
+      </div>
+      <div id="linkform_popup" class="pop">
+        <form action="#" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="collection" value="{{ object.id }}">
+          <div class="closer" style="position:absolute; top:7px; right:7px;">X</div>
+          <table class="mb-2">
+            <tr>
+              <td>URI*:</td>
+              <td><input id="l_uri" name="uri" value="{{ links_form.uri }}"/></td>
+            </tr>
+            <tr>
+              <td>Label*:</td>
+              <td><input id="l_label" name="label" value="{{ links_form.label }}"/></td>
+            </tr>
+            <tr>
+              <td>Type:</td>
+              <td>
+                <select id="select_linktype" name="link_type">
+                  <option value="webpage">Web page</option>
+                  <option value="document">Document</option>
+                  <option value="image">Image</option>
+                </select>
+              </td>
+            </tr>
+          </table>
+          <button id="b_createlink" type="button">Save</button>
+        </form>
+      </div>
+      <div id="cg_center" class="col-sm-4 mt-2">
+        <h5 class="sharing-header">Options</h5>
+        <div class="ps-2">
+          {% if action == 'update' %}
+            <p class="mb-0 strong">
           <span class="float-end">
             <a class="pointer" tabindex="97" data-bs-toggle="popover" title="Group gallery options"
-                 data-bs-content="<ul style='text-align: left;'>
-                  <li>Will this group have a gallery page? If so, are all submitted collections
-                  required to appear?</li>
-                  <li>Are members permitted to add collaborators?</li>"
-                 data-bs-trigger="hover focus" >
+               data-bs-content="<ul style='text-align: left;'>
+                  <p>Will this group have a gallery page? If so, are all submitted collections
+                  required to appear?</p>
+                  <p class='mt-2'>Are members permitted to add collaborators?</p>"
+               data-bs-trigger="hover focus">
               <i class="fas fa-question-circle linkypop"></i></a>
           </span>
-        </p>
-        <p class=""><span>Group gallery? {{ form.gallery }}</span>
-          <span id="gallery_required" class="ms-3">required? {{ form.gallery_required }}</span></p>
-        <p class="">Collaboration allowed? {{ form.collaboration }}</p>
-        <p>Group code:
-          {% if not object.join_code %}
-            <button id="b_joincode" type="button">Create</button>
-            <span id="joincode_proposed"></span>
-            <span><button id="b_savejoincode" type="button">Save</button></span>
+            </p>
+            <p class=""><span>Group gallery? {{ form.gallery }}</span>
+              <span id="gallery_required" class="ms-3">required? {{ form.gallery_required }}</span></p>
+            <p class="">Collaboration allowed? {{ form.collaboration }}</p>
+<p>Group code:
+  {% if not object.join_code %}
+    <button id="b_joincode" type="button" class="btn btn-sm btn-primary">Create</button>
+    <span id="joincode_proposed"></span>
+    <span><button id="b_savejoincode" type="button" class="btn btn-sm btn-success">Save</button></span>
+  {% else %}
+    <span id="cg_joincode"><mark>{{ object.join_code }}</mark>
+  <i class="ms-1 fas fa-check"></i></span>
+  {% endif %}
+</p>
+            {#            <p>Group code:#}
+{#              {% if not object.join_code %}#}
+{#                <button id="b_joincode" type="button">Create</button>#}
+{#                <span id="joincode_proposed"></span>#}
+{#                <span><button id="b_savejoincode" type="button">Save</button></span>#}
+{#              {% else %}#}
+{#                <span id="cg_joincode"><mark>{{ object.join_code }}</mark>#}
+{#              <i class="ms-1 fas fa-check"></i></span>#}
+{#              {% endif %}#}
+{#            </p>#}
           {% else %}
-            <span id="cg_joincode"><mark>{{ object.join_code }}</mark>
-              <i class="ms-1 fas fa-check"></i></span>
+            <div class=""><p>Options are set following save.</p></div>
           {% endif %}
-        </p>
-      {% else %}
-        <div class="ps-1"><p>New group must be saved before members can be added.</p></div>
-      {% endif %}
-    </div>
-    <div>
-      <h5 class="sharing-header">Members</h5>
+        </div>
+        <h5 class="sharing-header">Members</h5>
+        <div class="ps-2">
+          {% if action == 'update' %}
+            <div id="results_text" class="my-2 small"></div>
+            <div id="members_content">
+              <ul class="small">
+                {% for m in members %}
+                  <li>{{ m.name }} ({{ m.id }}) ({{ m.email }})</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% else %}
+            <div><p>Create group access key created following save.</p></div>
+          {% endif %}
+        </div>
+      </div>
+
       {% if action == 'update' %}
-        <div id="results_text" class="my-2 small"></div>
-        <div id="members_content">
-            <ul class="small">
-            {% for m in members %}
-                <li>{{ m.name }} ({{ m.id }}) ({{ m.email }})</li>
+        <div id="collections" class="col-sm-4 mt-2">
+          <h5 class="sharing-header">Submitted Collections</h5>
+          {#      <div id="collections_content">#}
+          <table id="coll_list" class="small w-100">
+            <thead>
+            <th>Collection (member, submitted)</th>
+            <th><a class="pointer" tabindex="99" data-bs-toggle="popover"
+                   data-bs-content="Reviewed? When checked, collection will appear in group gallery"
+                   data-bs-trigger="hover focus"><i class="fas fa-check"></i></a></th>
+            <th id="nominated_heading"><a class="pointer" tabindex="98" data-bs-toggle="popover"
+                                          data-bs-content="Check to nominate for inclusion in public WHG gallery"
+                                          data-bs-trigger="hover focus"><i class="fas fa-star"
+                                                                           style="color:#ffcc00"></i></a></th>
+            </thead>
+            {% load dataset_extras %}
+            {% for item in collections.all %}
+              <tr data-id="{{ item.id }}" data-status="{{ item.status }}">
+                <td><a href="{% url 'collection:place-collection-browse' item.id %}">
+                  {{ item.title }}</a><br/>({{ item.owner.name }}; {{ item.submit_date|date:'j M y' }})
+                </td>
+                <td class="text-center">
+                  <input type="checkbox" class="reviewed" data-id="{{ item.id }}"
+                    {% if item.status == 'reviewed' %} checked='checked'{% endif %} />
+                </td>
+                <td class="text-center">
+                  <input type="checkbox" class="nominate" data-id="{{ item.id }}"
+                    {% if item.nominated %} checked='checked'{% endif %}
+                    {% if item.status != 'reviewed' %} style="display: none;"{% endif %} /></td>
+              </tr>
             {% endfor %}
-            </ul>
+          </table>
+          {#      </div>#}
         </div>
       {% else %}
-        <div class="ps-1"><p>New group must be saved before members can be added.</p></div>
+        <div id="intro" class="col-sm-4 mt-2">
+          <h5 class="profile-header">Building a Collection Group</h5>
+          <div id="collections_content">
+            <h5>Welcome</h5>
+            <p>WHG collection groups can be created for either classroom or workshop scenarios. See the
+              <a href="/documentation/#collgroups">Create and manage a Collection Group</a> guide
+              for details.</p>
+            <h6 class="oldlace d-block ps-1">Quick Start</h6>
+            <ol class="flush-left">
+              <li>Fill the required fields on the form, and click 'Save' (all values can be edited at any time).</li>
+              <li>Afterwards, all options will be available.</li>
+            </ol>
+          </div>
+        </div>
       {% endif %}
-    </div>
-  </div>
+    </div> <!-- .row .d-flex -->
+    </form>
+  </div> <!-- container -->
 
-  {% if action == 'update' %}
-  <div id="collections" class="col-sm-4 mt-2">
-    <h5 class="sharing-header">Submitted Collections</h5>
-{#      <div id="collections_content">#}
-      <table id="coll_list" class="small w-100">
-        <thead>
-          <th>Collection (member, submitted)</th>
-          <th><a class="pointer" tabindex="99" data-bs-toggle="popover"
-             data-bs-content="Reviewed? When checked, collection will appear in group gallery"
-                 data-bs-trigger="hover focus"><i class="fas fa-check"></i></a></th>
-          <th id="nominated_heading" ><a class="pointer" tabindex="98" data-bs-toggle="popover"
-             data-bs-content="Check to nominate for inclusion in public WHG gallery"
-                 data-bs-trigger="hover focus"><i class="fas fa-star" style="color:#ffcc00"></i></a></th>
-        </thead>
-        {% load dataset_extras %}
-        {% for item in collections.all %}
-          <tr data-id="{{ item.id }}" data-status="{{ item.status }}">
-            <td><a href="{% url 'collection:place-collection-browse' item.id %}">
-            {{ item.title }}</a><br/>({{ item.owner.name }}; {{ item.submit_date|date:'j M y' }})</td>
-            <td class="text-center">
-              <input type="checkbox" class="reviewed" data-id="{{ item.id }}"
-                {% if item.status == 'reviewed' %} checked = 'checked'{% endif %} />
-            </td>
-            <td class="text-center">
-             <input type="checkbox" class="nominate" data-id="{{ item.id }}"
-               {% if item.nominated %} checked = 'checked'{% endif %}
-               {% if item.status != 'reviewed' %} style="display: none;"{% endif %} /></td>
-          </tr>
-        {% endfor %}
-      </table>
-{#      </div>#}
-  </div>
-  {% else %}
-  <div id="intro" class="col-sm-4 mt-2">
-    <h5 class="profile-header">Building a Collection Group</h5>
-    <div id="collections_content">
-      <h5>Welcome</h5>
-      <p>WHG collection groups can be created for either classroom or workshop scenarios.</p>
-      <h5>Quick Start</h5>
-      <ol>
-        <li>Fill out the form on the left and click 'Save' (these values can be edited at any time in the future).</li>
-        <li></li>
-        <li></li>
-      </ol>
-    </div>
-  </div>
-  {% endif %}
-  </div> <!-- .row .d-flex -->
-  </form>
-</div> <!-- container -->
+  <script type="text/javascript">
+    $(document).ready(function() {
+      // Event listener for the "Create" button
+      var clickCount = 0;
+      $('#b_joincode').on('click', function() {
+        console.log('clicked create join code');
+        $.ajax({
+          url: '/collections/get_joincode/',
+          method: 'GET',
+          success: function(data) {
+            console.log('joincode data', data);
+            // Display the new join code
+            $('#joincode_proposed').text(data.join_code);
 
-<script type="text/javascript">
-$(document).ready(function() {
-    // Event listener for the "Create" button
-    $('#b_joincode').on('click', function() {
-      console.log('clicked create join code')
-      $.ajax({
-        url: '/collections/get_joincode/',
-        method: 'GET',
-        success: function(data) {
-          console.log('joincode data', data)
-          // Display the new join code
-          $('#joincode_proposed').text(data.join_code);
+            // Show the "Save" button
+            $('#b_savejoincode').show();
 
-          // Show the "Save" button
-          $('#b_savejoincode').show();
-        }
+            // Increment the click count
+            clickCount++;
+            console.log('click count', clickCount);
+            if (clickCount > 0) {
+              $('#b_joincode').text('another?');
+            }
+          },
+        });
       });
+      {#$('#b_joincode').on('click', function() {#}
+      {#  console.log('clicked create join code')#}
+      {#  $.ajax({#}
+      {#    url: '/collections/get_joincode/',#}
+      {#    method: 'GET',#}
+      {#    success: function(data) {#}
+      {#      console.log('joincode data', data)#}
+      {#      // Display the new join code#}
+      {#      $('#joincode_proposed').text(data.join_code);#}
+      {##}
+      {#      // Show the "Save" button#}
+      {#      $('#b_savejoincode').show();#}
+      {#    }#}
+      {#  });#}
+      {# });#}
+
+      // Event listener for the "Save" button
+      $('#b_savejoincode').on('click', function() {
+        // Hide the "Create" button
+        $('#b_joincode').hide();
+        var cgid = "{{ object.id }}";
+        // Lock the join code (you might want to send it to the server here)
+        var join_code = $('#joincode_proposed').text();
+        console.log('clicked save join code', cgid, join_code);
+        $.ajax({
+          url: '/collections/set_joincode/' + cgid + '/' + join_code + '/',
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+          },
+          success: function(data) {
+            // Display the new join code
+            $('#cg_joincode').html('<mark-b>' + data.join_code + '</mark-b><i class="ms-1 fas fa-check"></i>');
+            // Show the "Save" button
+            $('#b_savejoincode').hide();
+          },
+        });
+      });
+
+      // Initially hide the "Save" button
+      $('#b_savejoincode').hide();
     });
 
-    // Event listener for the "Save" button
-    $('#b_savejoincode').on('click', function() {
-      // Hide the "Create" button
-      $('#b_joincode').hide();
-      var cgid = "{{ object.id }}"
-      // Lock the join code (you might want to send it to the server here)
-      var join_code = $('#joincode_proposed').text();
-      console.log('clicked save join code', cgid, join_code)
+    // flag collection as submitted, shows up on leader's list
+    function group_connect(action) {
+      console.log('submitting collection {{ object.id }} to group ' + $('#id_group').val());
+      var formData = new FormData();
+      formData.append('action', action);
+      formData.append('coll', '{{ object.id }}');
+      formData.append('group', $('#id_group').val());
+      formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
       $.ajax({
-        url: '/collections/set_joincode/'+cgid+'/'+join_code+'/',
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': '{{ csrf_token }}'
+        type: 'POST',
+        enctype: 'multipart/form-data',
+        url: '{% url "collection:group-connect" %}',
+        processData: false,
+        contentType: false,
+        cache: false,
+        data: formData,
+        success: function(response) {
+          if (response.status == 'ok') {
+            console.log(response);
+          } else {
+            console.log(response);
+          }
         },
-        success: function(data) {
-          // Display the new join code
-          $('#cg_joincode').html('<mark-b>'+data.join_code+'</mark-b><i class="ms-1 fas fa-check"></i>');
-          // Show the "Save" button
-          $('#b_savejoincode').hide();
-        }
       });
-    });
+    }
 
-    // Initially hide the "Save" button
-    $('#b_savejoincode').hide();
-  });
-	// flag collection as submitted, shows up on leader's list
-	function group_connect(action){
-    console.log('submitting collection {{ object.id }} to group '+ $("#id_group").val())
-    var formData = new FormData()
-		formData.append('action', action)
-		formData.append('coll', '{{ object.id }}')
-		formData.append('group', $("#id_group").val())
-		formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-		$.ajax({
-	      type: 'POST',
-	      enctype: 'multipart/form-data',
-	      url: '{% url "collection:group-connect" %}',
-	      processData: false,
-	      contentType: false,
-	      cache: false,
-	      data: formData,
-	      success:function(response){
-		      if(response.status == 'ok'){
-            console.log(response)
-		      } else {
-						console.log(response)
-		      }
-	      }
-			})
-	}
+    function collection_status(cid, checked) {
+      console.log('toggle status "group" <> "reviewed"; cid, checked', cid, checked);
+      // TODO: if reviewed, appears in group gallery if there is one
+      coll_status = checked ? 'reviewed' : 'group';
+      console.log('change collection status for {{ object.id }}', coll_status);
+      {#return#}
+      var formData = new FormData();
+      formData.append('coll', cid);
+      {#formData.append('group', $("#id_group").val())#}
+      formData.append('status', coll_status);
+      formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+      $.ajax({
+        type: 'POST',
+        enctype: 'multipart/form-data',
+        url: '{% url "collection:status-update" %}',
+        processData: false,
+        contentType: false,
+        cache: false,
+        data: formData,
+        success: function(response) {
+          console.log(response);
+          msg = response.status == 'reviewed' ? 'flagged reviewed' : 'flagged not reviewed';
+          $('#reviewed_flash').html(msg).fadeIn().delay(2000).fadeOut();
+          {#$("#reviewed_flash").fadeIn().delay(2000).fadeOut()#}
+          {#checked_rows = []#}
+        },
+      });
+    }
 
-	function collection_status(cid, checked){
-    console.log('toggle status "group" <> "reviewed"; cid, checked', cid, checked)
-		// TODO: if reviewed, appears in group gallery if there is one
-		coll_status = checked ? 'reviewed' : 'group'
-    console.log('change collection status for {{ object.id }}', coll_status)
-		{#return#}
-    var formData = new FormData()
-		formData.append('coll', cid)
-		{#formData.append('group', $("#id_group").val())#}
-		formData.append('status', coll_status)
-		formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-		$.ajax({
-      type: 'POST',
-      enctype: 'multipart/form-data',
-      url: '{% url "collection:status-update" %}',
-      processData: false,
-      contentType: false,
-      cache: false,
-      data: formData,
-      success:function(response){
-        console.log(response)
-	      msg = response.status=='reviewed' ? 'flagged reviewed' : 'flagged not reviewed'
-	      $("#reviewed_flash").html(msg).fadeIn().delay(2000).fadeOut()
-	      {#$("#reviewed_flash").fadeIn().delay(2000).fadeOut()#}
-	      {#checked_rows = []#}
-      }
-		})
-  }
+    function nominate(cid, checked) {
+      console.log('toggle nominated status; cid, checked', cid, checked);
+      // TODO: if nominated, reviewed by WHG editors for student gallery
+      {#nominated = checked ? 'reviewed' : 'group'#}
+      {#return#}
+      var formData = new FormData();
+      formData.append('coll', cid);
+      formData.append('nominated', checked);
+      formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+      $.ajax({
+        type: 'POST',
+        enctype: 'multipart/form-data',
+        url: '{% url "collection:nominator" %}',
+        processData: false,
+        contentType: false,
+        cache: false,
+        data: formData,
+        success: function(response) {
+          console.log(response);
+          msg = response.status == 'nominated' ? 'nominated' : 'nomination withdrawn';
+          $('#nominated_flash').html(msg).fadeIn().delay(2000).fadeOut();
+        },
+      });
+    }
 
-	function nominate(cid, checked){
-    console.log('toggle nominated status; cid, checked', cid, checked)
-		// TODO: if nominated, reviewed by WHG editors for student gallery
-    {#nominated = checked ? 'reviewed' : 'group'#}
-		{#return#}
-    var formData = new FormData()
-		formData.append('coll', cid)
-		formData.append('nominated', checked)
-		formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-		$.ajax({
-      type: 'POST',
-      enctype: 'multipart/form-data',
-      url: '{% url "collection:nominator" %}',
-      processData: false,
-      contentType: false,
-      cache: false,
-      data: formData,
-      success:function(response){
-	      console.log(response)
-	      msg = response.status=='nominated' ? 'nominated' : 'nomination withdrawn'
-	      $("#nominated_flash").html(msg).fadeIn().delay(2000).fadeOut()
-      }
-		})
-	}
+    $(function() {
 
-  $(function() {
-
-    $("tr[data-status='nominated']").each(function() {
+      $('tr[data-status=\'nominated\']').each(function() {
         var reviewedCheckbox = $(this).find('.reviewed');
         var nominateCheckbox = $(this).find('.nominate');
         var nominateHeading = $('#nominated-heading');
@@ -401,237 +441,237 @@ $(document).ready(function() {
         nominateCheckbox.show().prop('checked', true);
         nominateHeading.show();
         reviewedCheckbox.prop('disabled', true);
-    });
+      });
 
-    $(".reviewed").change(function() {
-      var nominateCheckbox = $(this).closest('tr').find('.nominate');
-      var nominateHeading = $('#nominated-heading');
-      if ($(this).is(':checked') || $(this).closest('tr').data('status') === 'nominated') {
+      $('.reviewed').change(function() {
+        var nominateCheckbox = $(this).closest('tr').find('.nominate');
+        var nominateHeading = $('#nominated-heading');
+        if ($(this).is(':checked') || $(this).closest('tr').data('status') === 'nominated') {
           nominateCheckbox.show();
           nominateHeading.show();
           collection_status($(this).data('id'), true);
-      } else {
+        } else {
           nominateCheckbox.hide().prop('checked', false);
           nominateHeading.hide();
           collection_status($(this).data('id'), false);
-      }
+        }
 
-      // Disable the 'reviewed' checkbox if both 'reviewed' and 'nominated' checkboxes are checked
-      if ($(this).is(':checked') && nominateCheckbox.is(':checked')) {
+        // Disable the 'reviewed' checkbox if both 'reviewed' and 'nominated' checkboxes are checked
+        if ($(this).is(':checked') && nominateCheckbox.is(':checked')) {
           $(this).prop('disabled', true);
-      } else {
+        } else {
           $(this).prop('disabled', false);
-      }
-    });
+        }
+      });
 
-    $(".nominate").change(function() {
+      $('.nominate').change(function() {
         var reviewedCheckbox = $(this).closest('tr').find('.reviewed');
         if ($(this).is(':checked')) {
           reviewedCheckbox.prop('disabled', true);  // Disable the 'reviewed' checkbox
         } else {
           reviewedCheckbox.prop('disabled', false);  // Enable the 'reviewed' checkbox
         }
-        nominate($(this).data('id'), this.checked)
-    });
-
-
-		{#const popoverTriggerList = $('[data-bs-toggle="popover"]')#}
-		{#const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))#}
-
-    const popoverTriggerList = $('[data-bs-toggle="popover"]');
-    const popoverList = [...popoverTriggerList].map(popoverTriggerEl => {
-      return new bootstrap.Popover(popoverTriggerEl, {
-        html: true  // Enable HTML content
+        nominate($(this).data('id'), this.checked);
       });
-    });
 
-    // Initially hide the gallery_required checkbox
-    if (!$('#id_gallery').is(':checked')) {
-      $('#gallery_required').hide();
-    }
+      {#const popoverTriggerList = $('[data-bs-toggle="popover"]')#}
+      {#const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))#}
 
-    // Show or hide the gallery_required checkbox when the gallery checkbox is clicked
-    $('#id_gallery').click(function() {
-      if ($(this).is(':checked')) {
-        $('#gallery_required').show();
-      } else {
+      const popoverTriggerList = $('[data-bs-toggle="popover"]');
+      const popoverList = [...popoverTriggerList].map(popoverTriggerEl => {
+        return new bootstrap.Popover(popoverTriggerEl, {
+          html: true,  // Enable HTML content
+        });
+      });
+
+      // Initially hide the gallery_required checkbox
+      if (!$('#id_gallery').is(':checked')) {
         $('#gallery_required').hide();
       }
-    });
 
-    localStorage.removeItem("newusers")
-    {#console.log('ls new users', localStorage.getItem("newusers"))#}
-    $("#l_addusers").click(function(e){
-      $("#div_addusers").toggle()
-    })
+      // Show or hide the gallery_required checkbox when the gallery checkbox is clicked
+      $('#id_gallery').click(function() {
+        if ($(this).is(':checked')) {
+          $('#gallery_required').show();
+        } else {
+          $('#gallery_required').hide();
+        }
+      });
 
-    $("input:file").change(function (){
-       $("#form_button").show();
-     });
+      localStorage.removeItem('newusers');
+      {#console.log('ls new users', localStorage.getItem("newusers"))#}
+      $('#l_addusers').click(function(e) {
+        $('#div_addusers').toggle();
+      });
 
-		$('#f_addusers').submit(function() {
-	    if ($("#userfile").val() === "") {
-        alert('no file selected!');
-        return false;}
-		});
+      $('input:file').change(function() {
+        $('#form_button').show();
+      });
 
-    $("#create_cancel").click(function(){
-      $("b_create").toggle()
-      {#$("#div_addusers").removeClass('hidden')#}
-    })
+      $('#f_addusers').submit(function() {
+        if ($('#userfile').val() === '') {
+          alert('no file selected!');
+          return false;
+        }
+      });
 
-		function create_collection_link(){
-	      var formData = new FormData()
-				formData.append('model', 'CollectionGroup')
-				formData.append('objectid', '{{ object.id }}')
-				formData.append('uri', $("#l_uri").val())
-				formData.append('label',$("#l_label").val() )
-				formData.append('link_type',$("#select_linktype").val() )
-				formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+      $('#create_cancel').click(function() {
+        $('b_create').toggle();
+        {#$("#div_addusers").removeClass('hidden')#}
+      });
+
+      function create_collection_link() {
+        var formData = new FormData();
+        formData.append('model', 'CollectionGroup');
+        formData.append('objectid', '{{ object.id }}');
+        formData.append('uri', $('#l_uri').val());
+        formData.append('label', $('#l_label').val());
+        formData.append('link_type', $('#select_linktype').val());
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
         {#for (var pair of formData.entries()) {#}
         {#  console.log(pair[0]+ ', ' + pair[1]);}#}
-				$.ajax({
-			      type: 'POST',
-			      enctype: 'multipart/form-data',
-			      url: '{% url "create-link" %}',
-			      processData: false,
-			      contentType: false,
-			      cache: false,
-			      data: formData,
-			      success:function(response){
-              console.log('response', response)
-				      if(response == 'dupe'){
-	              alert('That url is already linked to this collection!')
-					      {#$("input.action").prop('checked',false)#}
-				      } else if (response.result == 'bad uri'){
-                alert('That url is not formed correctly!')
-				      } else {
-					      linky = response.result
-					      console.log(linky)
-				      $("#linklist").append(linky.link_icon+' <a href="'+linky.uri+
-					      '" target="_blank">'+linky.label+'</a>'+
-					      ' [ <a href="collection/remove_link/"+linky.id+" class="a_removelink"><i>remove</i></a> ]'
-				      )
-				      $("#added_flash").fadeIn().delay(2000).fadeOut()
-					      {#console.log('added! gimmee feedback', response.result)#}
-				      }
-			      }
-				})
-				{#$("#addtocoll").hide()#}
-				$("#linkform_popup input").val('')
-				$("#linkform_popup").hide()
-		}
-
-    $("#b_createlink").click(function(){
-      create_collection_link()
-		})
-		$("#a_linkpopup").click(function(){
-	    $("#linkform_popup").fadeIn()
-		})
-    $(".closer").click(function(){
-			$(".pop").fadeOut()
-		})
-  })
-  // submit file with new users
-  //
-  $(document).on('submit', '#f_addusers', function(e){
-    e.preventDefault()
-    var formData = new FormData();
-	  if($("#b_upload").text() === 'Upload file'){
-      // clear local storage values
-      formData.append('action', 'upload')
-		  localStorage.removeItem("create_add")
-		  localStorage.removeItem("just_add")
-	  } else {
-      // submitting now, add from local storage
-		  formData.append('action', 'addem')
-      formData.append('create_add', localStorage.getItem("create_add"));
-      formData.append('just_add', localStorage.getItem("just_add"));
-	  }
-    formData.append('file', $('#userfile')[0].files[0]);
-    formData.append('cgid', '{{ object.id }}');
-    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-    console.log('formData', formData)
-    {##}
-    $.ajax({
-      type: 'POST',
-      enctype: 'multipart/form-data',
-      url: '/accounts/addusers/',
-      processData: false,
-      contentType: false,
-      cache: false,
-      data: formData,
-      success: function (data) {
-        result = data
-        console.log('data returned', data)
-	      // after validation: status, errors[], already[], just_add[], create_add[]
-	      // after adding: status, errors[], msg
-				if (data['errors'].length > 0) {
-				    var err = data['errors'];
-				    var html = 'Problem(s) with file:<br/><ul class="ps-3">';
-				    for (var i = 0; i < err.length; ++i) {
-				        html += '<li>' + err[i] + '</li>';
-				    }
-				    html += '</ul>Please correct and try again';
-				    $("#userfile").val('');
-				    $("#results_text").html(html);
-				} else {
-          // reporting back validation
-					if(data['status'] == 'validated'){
-	          already = data['already']
-	          just_add = data['just_add']
-	          create_add = data['create_add']
-		        html = ''
-	          if (data['create_add'].length > 0) {
-	              localStorage.setItem("create_add", JSON.stringify(create_add));
-	              html += 'Create WHG user(s) & add to group:<br/><ul class="ps-3">'
-	              for (i = 0; i < create_add.length; ++i) {
-	                  html += '<li>' + create_add[i][1] + '; ' + create_add[i][0] + '</li>'
-	              }
-	              html += '</ul>'
-	          }
-	          if (data['just_add'].length > 0) {
-	              localStorage.setItem("just_add", JSON.stringify(just_add));
-	              html += 'Add existing user(s) to group:<br/><ul class="ps-3">'
-	              for (i = 0; i < just_add.length; ++i) {
-	                  html += '<li>' + just_add[i][1] + '; ' + just_add[i][0] + '</li>'
-	              }
-	              html += '</ul>'
-	          }
-	          if (data['already'].length > 0) {
-	              html += 'Already members:<br/><ul class="ps-3">'
-	              for (i = 0; i < already.length; ++i) {
-	                  html += '<li>' + already[i][1] + '</li>'
-	              }
-	              html += '</ul>'
-	          }
-
-	          $("#addusers_info").hide()
-	          $("#results_text").html(html)
-	          $("#b_upload").text('Submit')
-	          $("#s_cancel").fadeIn(800)
-	        } else if (data['status'] == 'added') {
-          // report add results
-						html = data['msg']
-						$("#div_addusers").hide()
-						added = data['newmembers']
-						for (i = 0; i < added.length; ++i) {
-              $("#members_content ul").append(
-                '<li>' + added[i][1] + ' (' + added[i][0] + ')</li>'
-              )
+        $.ajax({
+          type: 'POST',
+          enctype: 'multipart/form-data',
+          url: '{% url "create-link" %}',
+          processData: false,
+          contentType: false,
+          cache: false,
+          data: formData,
+          success: function(response) {
+            console.log('response', response);
+            if (response == 'dupe') {
+              alert('That url is already linked to this collection!');
+              {#$("input.action").prop('checked',false)#}
+            } else if (response.result == 'bad uri') {
+              alert('That url is not formed correctly!');
+            } else {
+              linky = response.result;
+              console.log(linky);
+              $('#linklist').append(linky.link_icon + ' <a href="' + linky.uri +
+                '" target="_blank">' + linky.label + '</a>' +
+                ' [ <a href="collection/remove_link/"+linky.id+" class="a_removelink"><i>remove</i></a> ]',
+              );
+              $('#added_flash').fadeIn().delay(2000).fadeOut();
+              {#console.log('added! gimmee feedback', response.result)#}
             }
+          },
+        });
+        {#$("#addtocoll").hide()#}
+        $('#linkform_popup input').val('');
+        $('#linkform_popup').hide();
+      }
 
-					}
-				}
-        // add new members immediately
-        $("#results_text").addClass('p-2')
-        $("#results_text").html(html)
-      } // success
-    }) // ajax
-	  {#$("#div_addusers").hide()#}
-  }) // on submit
+      $('#b_createlink').click(function() {
+        create_collection_link();
+      });
+      $('#a_linkpopup').click(function() {
+        $('#linkform_popup').fadeIn();
+      });
+      $('.closer').click(function() {
+        $('.pop').fadeOut();
+      });
+    });
+    // submit file with new users
+    //
+    $(document).on('submit', '#f_addusers', function(e) {
+      e.preventDefault();
+      var formData = new FormData();
+      if ($('#b_upload').text() === 'Upload file') {
+        // clear local storage values
+        formData.append('action', 'upload');
+        localStorage.removeItem('create_add');
+        localStorage.removeItem('just_add');
+      } else {
+        // submitting now, add from local storage
+        formData.append('action', 'addem');
+        formData.append('create_add', localStorage.getItem('create_add'));
+        formData.append('just_add', localStorage.getItem('just_add'));
+      }
+      formData.append('file', $('#userfile')[0].files[0]);
+      formData.append('cgid', '{{ object.id }}');
+      formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+      console.log('formData', formData);
+      {##}
+      $.ajax({
+        type: 'POST',
+        enctype: 'multipart/form-data',
+        url: '/accounts/addusers/',
+        processData: false,
+        contentType: false,
+        cache: false,
+        data: formData,
+        success: function(data) {
+          result = data;
+          console.log('data returned', data);
+          // after validation: status, errors[], already[], just_add[], create_add[]
+          // after adding: status, errors[], msg
+          if (data['errors'].length > 0) {
+            var err = data['errors'];
+            var html = 'Problem(s) with file:<br/><ul class="ps-3">';
+            for (var i = 0; i < err.length; ++i) {
+              html += '<li>' + err[i] + '</li>';
+            }
+            html += '</ul>Please correct and try again';
+            $('#userfile').val('');
+            $('#results_text').html(html);
+          } else {
+            // reporting back validation
+            if (data['status'] == 'validated') {
+              already = data['already'];
+              just_add = data['just_add'];
+              create_add = data['create_add'];
+              html = '';
+              if (data['create_add'].length > 0) {
+                localStorage.setItem('create_add', JSON.stringify(create_add));
+                html += 'Create WHG user(s) & add to group:<br/><ul class="ps-3">';
+                for (i = 0; i < create_add.length; ++i) {
+                  html += '<li>' + create_add[i][1] + '; ' + create_add[i][0] + '</li>';
+                }
+                html += '</ul>';
+              }
+              if (data['just_add'].length > 0) {
+                localStorage.setItem('just_add', JSON.stringify(just_add));
+                html += 'Add existing user(s) to group:<br/><ul class="ps-3">';
+                for (i = 0; i < just_add.length; ++i) {
+                  html += '<li>' + just_add[i][1] + '; ' + just_add[i][0] + '</li>';
+                }
+                html += '</ul>';
+              }
+              if (data['already'].length > 0) {
+                html += 'Already members:<br/><ul class="ps-3">';
+                for (i = 0; i < already.length; ++i) {
+                  html += '<li>' + already[i][1] + '</li>';
+                }
+                html += '</ul>';
+              }
 
-</script>
+              $('#addusers_info').hide();
+              $('#results_text').html(html);
+              $('#b_upload').text('Submit');
+              $('#s_cancel').fadeIn(800);
+            } else if (data['status'] == 'added') {
+              // report add results
+              html = data['msg'];
+              $('#div_addusers').hide();
+              added = data['newmembers'];
+              for (i = 0; i < added.length; ++i) {
+                $('#members_content ul').append(
+                  '<li>' + added[i][1] + ' (' + added[i][0] + ')</li>',
+                );
+              }
+
+            }
+          }
+          // add new members immediately
+          $('#results_text').addClass('p-2');
+          $('#results_text').html(html);
+        }, // success
+      }); // ajax
+      {#$("#div_addusers").hide()#}
+    }); // on submit
+
+  </script>
 
 {% endblock %}
 
