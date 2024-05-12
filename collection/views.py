@@ -1353,9 +1353,12 @@ class DatasetCollectionUpdateView(UpdateView):
 
     # populates dropdown
     assigned_datasets = coll.datasets.all()
-    # eligible: public, not dev stubs, not already added, and user is owner or collaborator
-    ds_select = [obj for obj in Dataset.objects.filter(public=True).exclude(id__in=assigned_datasets).exclude(title__startswith='(stub)')
-                 if user in obj.owners or user in obj.collaborators or user.is_superuser]
+    # eligible: indexed (need not be public), not dev stubs, not already added, and user is owner or collaborator
+    ds_select = [obj for obj in Dataset.objects.filter(ds_status='indexed')\
+      .exclude(id__in=assigned_datasets)\
+      .exclude(title__startswith='(stub)')\
+      .exclude(owner_id=119)  # TODO: remove this hard-coded user id (Ali) at deploy
+      if user in obj.owners or user in obj.collaborators or user.is_superuser]
 
     context['action'] = 'update'
     context['ds_select'] = ds_select
