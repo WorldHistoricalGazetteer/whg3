@@ -544,7 +544,8 @@
         Any registered user can request "group leader" permissions, which allow them to create and manage a WHG Collection Group. This is a private space where students or workshop participants can create and share collections of places (WHG Place Collections), annotated with custom keywords, notes, dates, and images. The group leader can review submitted collections, and can nominate exceptional collections for inclusion in the WHG Student Gallery. Students or workshop participants join the group by entering an access key created and distributed by the instructor or workshop leader.</p>
         <p>The workflow in both cases is very similar:
           <ul>
-            <li>Request group leader privileges using the site-wide <a href="{% url 'contact' %}" target="_blank"> contact form</a>.</li>
+            <li>Request group leader privileges using the site-wide
+            <a href="{% url 'contact' %}?subject=Requesting group leader role" target="_blank"> contact form</a>.</li>
             <li>On your "My Data" dashboard, a plus sign (<span class="fs-3 align-middle">+</span>) appears in the "Collection Groups" box.<br/>
             <img src="{% static 'images/docs/group_add.jpg' %}" height="80"/>
             </li>
