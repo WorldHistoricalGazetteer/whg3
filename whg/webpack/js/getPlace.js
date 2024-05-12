@@ -63,7 +63,25 @@ function parsePlace(data) {
 	    if (nameVariants !== '') descrip += `<p><b>Variant${data.names.length == 1 ? '' : 's'}</b>: <span class="toggle-truncate">${nameVariants}</span>.</p>`;
 	}
 
-	if (!!data.types && data.types.length > 0) { // may include sourceLabel:"" **OR** sourceLabels[{"label":"","lang":""},...]
+	if (!!data.types && data.types.length > 0) {
+			const types = data.types
+					.filter(type => !!type.label && type.label.trim() !== '')
+					.map(type => {
+							let sourceLabels = '';
+							if (type.sourceLabel) {
+									sourceLabels = type.sourceLabel;
+							} else if (type.sourceLabels) {
+									sourceLabels = type.sourceLabels.map(sourceLabel => sourceLabel.label).join(' | ');
+							}
+							return `<${!!type.url ? `a href="${type.url}" target="_blank"` : `span`} data-bs-toggle="tooltip" title="<b>${type.identifier}</b><p>${sourceLabels}</p>">${type.label}${!!type.url ? ` <i class="fas fa-external-link-alt linky"></i>` : ``}</${!!type.url ? `a` : `span`}>`;
+					})
+					.join('; ');
+			if (types !== '') descrip += `<p class="mb-0"><b>Type${data.types.length == 1 ? '' : 's'}</b>: ${types}.</p>`;
+	}
+	/* sometimes there is neither sourceLabel nor sourceLabels
+	if (!!data.types && data.types.length > 0) {
+			// may include sourceLabel:"" **OR** sourceLabels[{"label":"","lang":""},...]
+			// or neither
 	    const types = data.types
 		    .filter(type => !!type.label && type.label.trim() !== '')
 		    .map(type => {
@@ -73,7 +91,7 @@ function parsePlace(data) {
 		    .join('; ');
 	    if (types !== '') descrip += `<p class="mb-0"><b>Type${data.types.length == 1 ? '' : 's'}</b>: ${types}.</p>`;
 	}
-	
+	*/
 	function build_links(name, links_array, link_text=false) {
 		if (links_array.length == 0) return '';
 		const links = links_array
