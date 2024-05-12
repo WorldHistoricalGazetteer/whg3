@@ -1,6 +1,7 @@
 # main.views
 from django.apps import apps
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
 from django.core.mail import send_mail, BadHeaderError
@@ -741,20 +742,55 @@ def volunteer_view(request):
 def contact_view(request):
   sending_url = request.GET.get('from')
   initial_subject = request.GET.get('subject', None)
+  dataset_id = request.GET.get('dataset_id', None)
+  dataset = Dataset.objects.get(id=dataset_id) if dataset_id else None
   is_volunteer = False
   if sending_url == '/datasets/volunteer_requests/':
     is_volunteer = True
-    initial_subject = 'WHG Volunteer to Assist Review'
-  dataset_id = request.GET.get('dataset_id', None)
-  dataset = Dataset.objects.get(id=dataset_id) if dataset_id else None
   print('contact_view() sending_url:', sending_url)
   print('dataset:', dataset.title if dataset else None)
-  # if request.method == 'GET':
-  #   if initial_subject:
-  #     form = ContactForm(initial_subject=initial_subject)
-  #   else:
-  #     form = ContactForm()
   if request.method == 'GET':
+    if is_volunteer:
+      user_email = request.user.email
+      username = request.user.username
+      name = request.user.first_name  # or another field that stores the user's name
+      # Send the volunteer offer emails here
+      try:
+        # message to dataset owner, cc editors
+        new_emailer(
+          email_type='volunteer_offer_owner',
+          subject=f'WHG volunteer offer',
+          from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt to admins
+          to_email=[dataset.owner.email],  # to ds owner
+          reply_to=[user_email],  # owner replies to user
+          owner_name=dataset.owner.name,  # owner's name
+          name=name,  # user's name
+          greeting_name=name if name else username,
+          username=username,  # user's username
+          user_subject=initial_subject,  # user-submitted subject
+          user_email=user_email,  # user's email
+          dataset_title=dataset.title,
+          dataset_id=dataset.id,
+        )
+        # 'received' reply to sender
+        new_emailer(
+          email_type='volunteer_offer_user',
+          subject="WHG volunteering offer received",  # got it
+          from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt
+          to_email=[user_email],  # to sender
+          reply_to=[settings.DEFAULT_FROM_EDITORIAL],  # reply-to editorial
+          cc=[settings.DEFAULT_FROM_EDITORIAL],  # cc editorial
+          name=name,  # user's name
+          owner_greeting=dataset.owner.name if dataset.owner.name else dataset.owner.username,  # owner's name
+          greeting_name=name if name else username,
+          user_subject=initial_subject,  # user-submitted subject
+          dataset_title=dataset.title,
+        )
+        messages.success(request, "Thank you! Your volunteering offer was forwarded to the dataset owner.")
+      except BadHeaderError:
+        return HttpResponse('Invalid header found.')
+      return redirect('datasets:volunteer-requests')
+
     initial_data = {}
     if initial_subject:
       initial_data['subject'] = initial_subject
@@ -772,13 +808,13 @@ def contact_view(request):
       user_subject = form.cleaned_data['subject']
       user_email = form.cleaned_data['from_email']
       user_message = form.cleaned_data['message']
-      if not is_volunteer:
+      if not is_volunteer: # standard contact messages
         try:
-          # deliver form message to admins
+          # form message to admins
           print('EMAIL_TO_ADMINS', settings.EMAIL_TO_ADMINS)
           new_emailer(
             email_type='contact_form',
-            subject='Contact form submission',
+            subject=user_subject, # may be supplied in request.GET
             from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt to admins
             to_email=settings.EMAIL_TO_ADMINS,  # to editor
             reply_to=[user_email],  # reply-to sender
@@ -788,7 +824,7 @@ def contact_view(request):
             user_email=user_email,  # user's email
             user_message=user_message,  # user-submitted message
           )
-          # deliver 'received' reply to sender
+          # 'received' reply to sender
           new_emailer(
             email_type='contact_reply',
             subject="Message to WHG received",  # got it
@@ -801,42 +837,7 @@ def contact_view(request):
           )
         except BadHeaderError:
           return HttpResponse('Invalid header found.')
-      else:
-        try:
-          # deliver form message to dataset owner, cc editors
-          # print('EMAIL_TO_ADMINS', settings.EMAIL_TO_ADMINS)
-          new_emailer(
-            email_type='volunteer_offer_owner',
-            subject=user_subject, # may have overridden default
-            from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt to admins
-            to_email=[dataset.owner.email],  # to ds owner
-            reply_to=[user_email],  # owner replies to user
-            owner_name=dataset.owner.name,  # owner's name
-            name=name,  # user's name
-            greeting_name=name if name else username,
-            username=username,  # user's username
-            user_subject=user_subject,  # user-submitted subject
-            user_email=user_email,  # user's email
-            user_message=user_message,  # user-submitted message
-            dataset_title=dataset.title,
-            dataset_id=dataset.id,
-          )
-          # deliver 'received' reply to sender
-          new_emailer(
-            email_type='volunteer_offer_user',
-            subject="WHG volunteering offer recieved",  # got it
-            from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt
-            to_email=[user_email],  # to sender
-            reply_to=[settings.DEFAULT_FROM_EDITORIAL],  # reply-to editorial
-            cc=[settings.DEFAULT_FROM_EDITORIAL], # cc editorial
-            name=name,  # user's name
-            owner_greeting=dataset.owner.name if dataset.owner.name else dataset.owner.username,  # owner's name
-            greeting_name=name if name else username,
-            user_subject=user_subject,  # user-submitted subject
-            dataset_title=dataset.title,
-          )
-        except BadHeaderError:
-          return HttpResponse('Invalid header found.')
+
       return redirect('/success?return=' + sending_url if sending_url else '/')
     else:
       print('Form errors from contact_view():', form.errors)

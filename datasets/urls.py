@@ -91,7 +91,7 @@ urlpatterns = [
   # list dataset on Volunteer Opportunities page
   path('toggle_volunteers', toggle_volunteers, name="toggle-volunteers"),
   # list datasets requesting volunteers
-  path('volunteer_requests/', views.VolunteeringView.as_view(), name="volunteer_requests"),
+  path('volunteer_requests/', views.VolunteeringView.as_view(), name="volunteer-requests"),
   # offer to volunteer
   path('volunteer_offer/<int:pk>', views.volunteer_offer, name="volunteer-offer"),
 

@@ -10,7 +10,7 @@ $(function() {
 
 	// help modals
 	$(".help-matches").click(function() {
-		page = $(this).data('id')
+		let page = $(this).data('id')
 		console.log('help:', page)
 		$('.selector').dialog('open');
 	})
@@ -58,67 +58,61 @@ $(function() {
 		window.location.href = url
 		console.log('gwine to contact form, from clicked', url)
 	})
-	
-	// views_dl.downloader()
-	$(".a-dl-celery").click(function(e) {
-		e.preventDefault()
-		// startDownloadSpinner()
-		console.log('sending post')
-		console.time('dl')
-		format = $(this).attr('ref')
-		dsid = context_dsid
-		console.log('send to downloader()')
-		urly = '/dlcelery/'
+
+	// display time info y/n
+	$('#year_filter').change(function() {
+			var isChecked = $(this).prop('checked');
+			$.ajax({
+					url: '/datasets/update_vis_parameters/',
+					method: 'POST',
+		headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+					data: {
+							'checked': isChecked,
+							'ds_id': context_dsid
+					},
+					success: function(response) {
+			console.log(response.message);
+					},
+					error: function(xhr, status, error) {
+							// If the AJAX call fails, reset the checkbox state
+							$('#year_filter').prop('checked', !isChecked);
+							alert('Sorry, failed to update visualisation parameters.');
+					}
+			});
+	});
+
+	// wants volumnteers y/n
+	$('#volunteers').change(function() {
+		var isChecked = $(this).is(':checked');
+		console.log('volunteers?', isChecked)
 		$.ajax({
+			url: '/datasets/toggle_volunteers',
 			type: 'POST',
-			headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
-			url: urly,
-			data: {
-				"format": format,
-				"dsid": dsid,
+			headers: {
+				'X-CSRFToken': document.querySelector(
+						'[name=csrfmiddlewaretoken]').value
 			},
-			datatype: 'json',
+			data: {
+				'is_checked': isChecked,
+				'dataset_id': context_dsid,
+			},
 			success: function(response) {
-				startDownloadSpinner()
-				console.log('got task_id', response)
-				task_id = response.task_id
-				var progressUrl = "/celery-progress/" + task_id + "/";
-				CeleryProgressBar.initProgressBar(progressUrl, {
-					pollingInterval: 500,
-					onResult: customResult,
-				})
+				if (isChecked) {
+					alert('Dataset is now listed as a volunteer opportunity');
+				} else {
+					alert('Dataset is no longer listed as a volunteer opportunity');
+				}
 			}
-		})
-	})
-    
-    $('#year_filter').change(function() {
-        var isChecked = $(this).prop('checked');
-        $.ajax({
-            url: '/datasets/update_vis_parameters/',
-            method: 'POST',
-			headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
-            data: {
-                'checked': isChecked,
-                'ds_id': context_dsid
-            },
-            success: function(response) {
-				console.log(response.message);
-            },
-            error: function(xhr, status, error) {
-                // If the AJAX call fails, reset the checkbox state
-                $('#year_filter').prop('checked', !isChecked);
-                alert('Sorry, failed to update visualisation parameters.');
-            }
-        });
-    });	
-	
-	$("#a_update_modal").on('click', function(e) {
-		console.log('clicked update')
-		if (context_format != 'delimited') {
-			alert('Sorry, update is available only for delimited files right now. Soon...')
-		}
-	})
-	
+		});
+	});
+
+	// $("#a_update_modal").on('click', function(e) {
+	// 	console.log('clicked update')
+	// 	if (context_format != 'delimited') {
+	// 		alert('Sorry, update is available only for delimited files right now. Soon...')
+	// 	}
+	// })
+	//
 	// show upload button after file selected
 	$("#newfile").on("change", function() {
 		$("#btn_upload").removeClass('hidden')
@@ -206,45 +200,45 @@ $(function() {
 		$("#progress-bar").fadeOut()
 		el.html('')
 	}
-	
+
+})
+
 	// post-download actions
-	function customResult(resultElement, result) {
-		console.log('celery result', result)
-		console.log('celery resultElement', resultElement)
-		spinner_dl.stop()
-		fn = result.filename
-		link = '[ <span class="dl-save"><a href="/' + fn + '" title="downloaded: ' + dater() +
-			'" download>save</a></span> ]'
-		$(resultElement).append(
-			$('<p>').html(link)
-		);
-		$(".dl-save a")[0].click()
-		setTimeout(clearEl($("#celery-result")), 1000)
-	}
+	// function customResult(resultElement, result) {
+	// 	console.log('celery result', result)
+	// 	console.log('celery resultElement', resultElement)
+	// 	spinner_dl.stop()
+	// 	fn = result.filename
+	// 	link = '[ <span class="dl-save"><a href="/' + fn + '" title="downloaded: ' + dater() +
+	// 		'" download>save</a></span> ]'
+	// 	$(resultElement).append(
+	// 		$('<p>').html(link)
+	// 	);
+	// 	$(".dl-save a")[0].click()
+	// 	setTimeout(clearEl($("#celery-result")), 1000)
+	// }
 	
-	function startUpdateSpinner() {
-		window.spinner_update = new Spin.Spinner().spin();
-		$("#update_spinner").append(spinner_update.el);
-	}
-	
-	function startDownloadSpinner() {
-		window.spinner_dl = new Spin.Spinner().spin();
-		$("#ds_downloads").append(spinner_dl.el);
-	}
+	// function startUpdateSpinner() {
+	// 	window.spinner_update = new Spin.Spinner().spin();
+	// 	$("#update_spinner").append(spinner_update.el);
+	// }
+	//
+	// function startDownloadSpinner() {
+	// 	window.spinner_dl = new Spin.Spinner().spin();
+	// 	$("#ds_downloads").append(spinner_dl.el);
+	// }
 	
 	// parse & prettify ds_update() results
 	// [status,format,update_count,redo_count,new_count,deleted_count,newfile]
-	function updateText(data) {
-		html = 'Changes in database: <br/>' + '<ul>' +
-			'<li>Added ' + data["new_count"] + ' rows </li>' +
-			'<li>Deleted ' + data["deleted_count"] + ' rows </li>' +
-			'<li>Updated ' + data["update_count"] + ' rows </li>' + '</ul>'
-		html += 'A followup reconciliation to Wikidata task is required.'
-	
-		if (data['indexed'] == true) {
-			html += ', as well as a reindexing, in order to account for these changes.'
-		}
-		return html
-	}
-
-})
+	// function updateText(data) {
+	// 	html = 'Changes in database: <br/>' + '<ul>' +
+	// 		'<li>Added ' + data["new_count"] + ' rows </li>' +
+	// 		'<li>Deleted ' + data["deleted_count"] + ' rows </li>' +
+	// 		'<li>Updated ' + data["update_count"] + ' rows </li>' + '</ul>'
+	// 	html += 'A followup reconciliation to Wikidata task is required.'
+	//
+	// 	if (data['indexed'] == true) {
+	// 		html += ', as well as a reindexing, in order to account for these changes.'
+	// 	}
+	// 	return html
+	// }

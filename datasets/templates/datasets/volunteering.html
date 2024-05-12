@@ -1,4 +1,4 @@
-{% extends "main/base_webpack.html" %}
+{% extends "main/base.html" %}
 {% load static %}
 
 {% block title %}
@@ -9,6 +9,7 @@
 {% endblock %}
 
 {% block extra_head %}
+
 {% endblock %}
 
 {% block content %}
@@ -20,22 +21,38 @@
     <h3>Volunteer Review Opportunities</h3>
     <p>When reconciliation or accessioning tasks are run for a dataset, the dataset creator and designated
       collaborators must review the results and make match decisions. If you would like to volunteer to help
-      with this process, please click an "Offer to volunteer button below." The dataset creator will be notified,
+      with this process, please click an "Offer to volunteer" button below. The dataset creator will be notified,
       and will respond to you directly.</p>
     <p>Explanations of the review processes can be found in the
       <a href="/documentation/#reviewing" target="_blank">site documentation</a>.</p>
-    {% if dataset_list %}
-    {% for ds in dataset_list %}
-      <div class="card col-12 col-md-6 col-lg-4 col-xl-3">
-        <div class="card-body">
-          <h5 class="card-title">{{ ds.title }}</h5>
-          <p class="small">{{ ds.description }}</p>
-          <a href="{% url 'contact' %}?dataset_id={{ ds.id }}&from={{ request.path }}&subject=Volunteer to review dataset {{ ds.title }}"
-             class="btn btn-sm btn-primary">Offer to volunteer
-          </a>
-{#          <a href="{% url 'datasets:volunteer-offer' ds.id %}" class="btn btn-sm btn-primary">Offer to volunteer</a>#}
+    <div id="spinner" style="display: none;">
+        <div class="spinner-border" role="status">
+            <span class="sr-only">Working...</span>
         </div>
-    {% endfor %}
+    </div>
+    {% if messages %}
+        <div class="container bg-lightseagreen">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% if dataset_list %}
+      {% for ds in dataset_list %}
+        <div class="card col-12 col-md-6 col-lg-4 col-xl-3 me-2">
+          <div class="card-body me-2">
+            <h5 class="card-title">{{ ds.title }}</h5>
+            <p class="small">{{ ds.description }}</p>
+            <a href="{% url 'contact' %}?dataset_id={{ ds.id }}&from={{ request.path }}"
+               class="btn btn-sm btn-primary volunteer-btn">Offer to volunteer
+               <span class="spinner-border spinner-border-sm" role="status"
+                     aria-hidden="true" style="display:none;"></span>
+            </a>
+          </div>
+        </div>
+      {% endfor %}
     {% else %}
       <p>No datasets are currently available for volunteer review.</p>
     {% endif %}
@@ -44,11 +61,49 @@
     <div id="content_bottom" class="row gx-2 gy-2 mx-0 h-25">
     </div> <!-- content_bottom-->
 
+  <script type="application/javascript">
+    $(document).ready(function() {
+      console.log('page loaded');
+      var spinner = $('.spinner-border');
+      spinner.hide();
+      $('.volunteer-btn').click(function(e) {
+        e.preventDefault();
+        var spinner = $(this).find('.spinner-border');
+        var url = $(this).attr('href');
+
+        console.log("Button clicked, showing spinner.");
+        spinner.show();
+
+        // Debug: Check spinner visibility
+        console.log(spinner.css('display'));
+
+        // Simulate delay before redirection
+        setTimeout(function() {
+          window.location.href = url;  // Redirect after a delay
+        }, 2000);  // Delay in milliseconds
+      })
+    });
+  </script>
 {% endblock %}
+
 
 {% block deferredScripts %}
 
-  var scripts = [
-  ]
+  var scripts = []
 
 {% endblock %}
+{##}
+{#$(document).ready(function() {#}
+{#  var spinner = $('.spinner-border');  // find the spinner#}
+{#  spinner.hide();  // hide it initially#}
+{##}
+{#  $('.volunteer-btn').click(function(e) {#}
+{#    console.log('volunteer button clicked');#}
+{#    e.preventDefault();  // prevent the default action#}
+{#    var spinner = $(this).find('.spinner-border');  // find the spinner#}
+{#    var url = $(this).attr('href');  // get the URL from the href attribute#}
+{##}
+{#    // show the spinner#}
+{#    spinner.show();#}
+{#  })#}
+{# })#}

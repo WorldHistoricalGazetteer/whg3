@@ -112,7 +112,7 @@ EMAIL_MESSAGES = {
   ),
   "volunteer_offer_user": (
     'Hello {greeting_name},\n\n'
-    'Thank you for volunteering to help with reconciliation review for the datawet "{dataset_title}"'
+    'Thank you for volunteering to help with reconciliation review for the dataset "{dataset_title}"'
     ' on the World Historical Gazetteer platform.\n\n'
     'The dataset owner, {owner_greeting} has been notified and should be in touch soon to discuss how you can help.\n\n'
     "If you don't hear from them or have any questions, please contact us by replying to this email\n\n"
