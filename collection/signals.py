@@ -7,7 +7,7 @@ from .models import Collection
 # if public changes to True & size threshold met, create tileset
 @receiver(pre_save, sender=Collection)
 def handle_public_status_change(sender, instance, **kwargs):
-  from main.tasks import needs_tileset, request_tileset
+  from main.tasks import needs_tileset, process_tileset_request
   print('collection public signal', instance)
   threshold = 50
   if instance.id:  # Check if it's an existing instance, not new
@@ -20,7 +20,7 @@ def handle_public_status_change(sender, instance, **kwargs):
           
         if object_needs_tileset:
           # Changed from False to True, create the tileset
-          transaction.on_commit(lambda: request_tileset.delay(category='collections', id=instance.id))
+          transaction.on_commit(lambda: process_tileset_request.delay('collections', instance.id, 'generate'))
         else:
           print('handle_public_status_change: no tileset created')
       # else:

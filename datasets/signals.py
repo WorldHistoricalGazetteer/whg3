@@ -54,7 +54,7 @@ def test_complexity(dsid):
 @receiver(pre_save, sender=Dataset)
 def handle_public_flag(sender, instance, **kwargs):
   from .tasks import index_to_pub, unindex_from_pub
-  from main.tasks import request_tileset, needs_tileset
+  from main.tasks import process_tileset_request, needs_tileset
   
   task_timeout = 60 * 5  # 5 minutes
 
@@ -85,7 +85,7 @@ def handle_public_flag(sender, instance, **kwargs):
 
         # Changed from False to True, create a tileset if the geometry or coordinate counts exceeds the thresholds
         if object_needs_tileset:
-          transaction.on_commit(lambda: request_tileset.delay(category='datasets', id=instance.id))
+          transaction.on_commit(lambda: process_tileset_request.delay('datasets', instance.id, 'generate'))
       else:
         # Changed from True to False, remove the records from the index
         transaction.on_commit(lambda: unindex_from_pub.delay(instance.id))
