@@ -227,6 +227,7 @@ export function initialiseTable(
 					//return `<a href="${URL_FRONT}api/db/?id=${data}" target="_blank">${data}</a>`;
 					return `<a href="/places/${data}/detail" target="_blank">${data}</a>`
 				},
+				visible: false,
 			},
 			{
 				title: 'geo',

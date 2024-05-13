@@ -46,25 +46,24 @@
           </span>
         {% endif %}
       </div>
-      <div id="metadata" class="mt-2">
-        <div class="row pub-intro">
-          <div class="col-sm-9">
+      <div id="metadata" class="mt-2" style="position: relative; margin: 0 0 0.25rem 0.25rem;">
+          <div class="float-end" style="">
+            {% if ds.image_file %}
+                <img id="active_img"
+                     class="thumbnail"
+                     style="max-height: 120px; max-width: 160px;"
+                     src="/media/{{ ds.image_file.name }}"/>
+            {% else %}<span><i>image here</i></span>
+            {% endif %}
+          </div>
+        <div class="pub-intro">
             <p>{{ ds.description|safe }}
             {% if object.pdf %}<br/><b>Essay:</b>
               <a href="/media/{{ object.pdf }}" target="_blank">
                 {{ object.pdf.name|basename|cut:",pdf" }} <i class="fas fa-file-pdf linky"></i>
               </a>
             {% endif %}</p>
-          </div>
-          <div class="col-sm-3" style="position: relative;">
-            {% if ds.image_file %}
-                <img id="active_img"
-                     class="img-responsive thumbnail float-end"
-                     src="/media/{{ ds.image_file.name }}"/>
-            {% else %}<span><i>image here</i></span>
-            {% endif %}
-          </div>
-        </div><!-- .row -->
+        </div>
         <div id="ds_details">
           <table>
             {% if ds.webpage %}

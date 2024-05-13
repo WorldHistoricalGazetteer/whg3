@@ -65,7 +65,7 @@ Promise.all([
 		e.preventDefault();
 		clearTimeout(timer); // Stop the carousels
 		if (startCarousels) $('.carousel').first().carousel('pause');
-		$('#advanced_search').slideToggle(300); // This toggles the visibility of the advanced search div
+		// $('#advanced_search').slideToggle(300); // This toggles the visibility of the advanced search div
 	});
 
 	$.get('/api/area_list', function(data) {

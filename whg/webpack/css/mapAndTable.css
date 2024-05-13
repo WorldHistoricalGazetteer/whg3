@@ -181,8 +181,8 @@
   color: #555; /* Color of the arrow */
 }
 
-#placetable_wrapper {
-	overflow: hidden;
+#placetable_wrapper .row {
+	margin-right: auto!important;
 }
 
 #placetable tr.no-geometry {

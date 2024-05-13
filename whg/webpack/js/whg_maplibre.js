@@ -17,6 +17,7 @@ maplibregl.Map.prototype.nullCollection = function() {
 
 maplibregl.Map.prototype.clearSource = function(sourceId) {
     this.getSource(sourceId).setData(this.nullCollection());
+	return this;
 };
 
 maplibregl.Map.prototype.eraseSource = function(sourceId) {
@@ -769,7 +770,7 @@ class downloadMapControl {
         downloadButton.type = 'button';
         downloadButton.className = 'download-map-button';
         downloadButton.setAttribute('aria-label', 'Download map image');
-        downloadButton.setAttribute('data-bs-title', 'Download map image');
+        downloadButton.setAttribute('title', 'Download map image');
 
         const iconSpan = document.createElement('span');
         iconSpan.className = 'maplibregl-ctrl-icon';
@@ -1141,7 +1142,8 @@ maplibregl.Map = function (options = {}) {
 		$(mapInstance.getContainer().querySelector('.maplibregl-control-container'))
 		.tooltip({
 	    	selector: 'button, select, summary.maplibregl-ctrl-attrib-button',
-	    	trigger : 'hover'
+	    	trigger : 'hover',
+	    	container: '#map'
 		})
 		
     });
