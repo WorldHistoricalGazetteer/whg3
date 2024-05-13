@@ -127,7 +127,6 @@
             <p class="fs6 text-center">
               <a class="btn btn-sm btn-outline-primary" href="{% url 'datasets:ds_addtask' ds.id %}">
                 Start a reconciliation task</a>
-              <a class="btn btn-sm btn-outline-primary" href="{% url 'contact' %}">Request publication</a>
             </p>
           {% elif ds.ds_status == 'reconciling' %}
             <p>The reconciliation task below has been run against the 13 million + records in the WHG index of Wikidata
@@ -208,18 +207,18 @@
               <p>Test data; no tasks</p>
             </div>
             {% endif %}
-          {% elif ds.ds_status == 'wd-complete' %} <!-- only wd-complete, not yet public -->
+          {% elif ds.ds_status == 'wd-complete' %} {# only wd-complete, not yet public #}
             <div class="row">
               <div class="col-md-9">
                 <p>Review of results from the reconciliation task below is completed! If you would like
-                  to publish this
-                  dataset in the World Historical Gazetteer platform, please complete its metadata, then
-                  submit a request to WHG editors</a>. Once published, its presentation page will be
-                  publicly viewable
-                  and its data included in search results.</p>
+                  to publish this dataset in the World Historical Gazetteer platform, please complete its metadata,
+                  then submit a request to WHG editors</a>. Once published, its presentation page will be
+                  publicly viewable and its data included in search results.</p>
               </div>
               <div class="col-md-3">
-                <a class="btn btn-sm btn-outline-primary py-1" href="">Request publication</a>
+                <a class="btn btn-sm btn-outline-primary py-1"
+                   href="{% url 'contact' %}?subject=Request WHG publication (dataset id: {{ ds.id }})">
+                  Request publication</a>
               </div>
             </div>
             {% if task_wdgn %}
@@ -280,6 +279,13 @@
             <p>Congratulations! Your dataset is now fully accessioned in World Historical Gazetteer, <mark>{n}</mark>
             of its records were linked with records from other datasets, and <mark>{nn}</mark> are for places
             we did not yet have represented. Many thanks!</p>
+            {%  if not ds.public %}
+              <div class="col-md-3">
+                <a class="btn btn-sm btn-outline-primary py-1"
+                   href="{% url 'contact' %}?subject=Request WHG publication (id: {{ ds.id }})">
+                  Request publication</a>
+              </div>
+            {% endif %}
           {% endif %}
           </div> <!-- status_message -->
           <div id="ds_status_blurb" class="mt-3">
@@ -337,53 +343,14 @@
                 <label class="form-check-label" for="year_filter">Display temporal information</label>
                 <i class="fas fa-question-circle red-head" data-bs-toggle="tooltip" title="Switch this on if places in your dataset have meaningful temporal attributions. <i>Start</i> and <i>End</i> dates will be displayed on the publication page, together with a temporal filter control."></i>
               </div>
+              {% if ds.ds_status == 'reconciling' or ds.ds_status == 'accessioning' %}
               <div class="form-check form-switch">
                 <input id="volunteers" class="form-check-input" type="checkbox" {% if ds.volunteers %}checked{% endif %}>
                 <label class="form-check-label" for="review_help_requested">Volunteer help requested</label>
-                <a href="#"><i class="fas fa-question-circle red-head" data-toggle="popover"
-                               title="List on Volunteer Opportunities page"
-                               data-content="List this dataset on 'Volunteer Review Opportunities page"></i></a>
+                <i class="fas fa-question-circle red-head" data-bs-toggle="tooltip" title="List this dataset on 'Volunteer Review Opportunities' page"></i>
               </div>
+              {% endif %}
             </div>
-            {% comment %}
-            {% if user.is_superuser or user in owners %} <!-- must be or they wouldn't see this! -->
-              <div id="ds_downloads" class="pt-0 px-0 ds-card">
-                <p class="ds-card-header pt-1"> Downloads
-                  <span id='progress-bar' class='progress-bar' style="background-color: #68a9ef; width: 0%; line-height:.5rem;">&nbsp;</span>
-                </p>
-                {# TODO: review download size cases #}
-                <!-- if length <= 20k -->
-                {% if ds.places.count <= 25000 %}
-                  <!-- lptsv originally -->
-                  {% if current_file.format == 'delimited' %}
-                    <!-- offer lpf, augmented or not -->
-                    <p><a class="a-dl-celery" href="#" ref="lpf">
-                      Linked Places format <i class="fas fa-download linky"></i></a>
-                      <span id="file_lpf" class="ms-1"></span></p>
-                    {% if links_added > 0 or geoms_added > 0 %}
-                      <!-- augmented, offer tsv -->
-                      <p><a class="a-dl-celery" href="#" ref="tsv">LP-TSV (augmented)
-                        <i class="fas fa-download linky"></i></a>
-                        <span id="file_tsv" class="ms-1"></span></p>
-                    {% endif %}
-                  <!-- lpf originally -->
-                  {% elif links_added > 0 or geoms_added > 0 %}
-                    <!-- offer dl if augmented -->
-                    <p><a class="a-dl-celery" href="#" ref="lpf">Linked Places format <i class="fas fa-download linky"></i></a> (augmented) <span id="file_lpf" class="ms-1"></span></p>
-                    <p class="mt-2"><i>LP-TSV conversion is not possible for this LPF dataset. <a id="conversion_help" class="pointer" data-toggle="popover" title="LPF download options" data-content="<p>Data initially loaded in Linked Places format (LPF) has one&#8209;to&#8209;many relations that can't be converted to simple TSV files.</p>" tabindex="0" data-trigger="focus" data-original-title=""><i title="" class="fa fa-question-circle" style="color:#336699;"></i></a></i></p>
-                  {% else %}
-                    <!-- originally lpf, not yet augmented -->
-                    <p><i>Dataset is not yet augmented</i></p>
-                  {% endif %}
-                <!-- more than 20k rows -->
-                {% else %}
-                  <span class="red-head"><br/>Download of augmented datasets larger than 25,000 rows is not supported right now. <a href="{% url 'contact' %}">Contact WHG staff</a></span>
-                {% endif %}
-                <div id="progress-bar-message" class="hidden">Waiting for progress to start...</div>
-                <div id="celery-result"></div>
-              </div> <!-- ds_downloads_ajax -->
-            {% endif %} <!-- owner or superuser -->
-            {% endcomment %}
           </div> <!-- ds_info -->
         </div> <!-- ds_details -->
       </div> <!-- row -->
