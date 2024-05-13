@@ -1,6 +1,7 @@
 import { minmaxer } from './utilities';
 import debounce from 'lodash/debounce';
 import './toggle-truncate.js';
+import './enlarge.js';
 
 export function popupFeatureHTML(feature, clickable=true) { // TODO: Improve styling with css and content?
 	let HTML = '<b>' + feature.properties.title + '</b><br/>' +

@@ -19,7 +19,7 @@ function waitMapLoad() {
         mappy.on('load', () => {
             console.log('Map loaded.');	
 			
-			renderData(ds_id)
+			renderData(window.ds_list[0]['id'])
 			
 			mappy.getContainer().style.opacity = 1;
             
@@ -197,6 +197,13 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(datatables_CDN_fall
 				clearPopup();
 			}
 		});	
+
+		$('#detail')
+			.tooltip({
+				selector: '[data-bs-toggle="tooltip"]',
+				trigger: 'hover',
+				html: true
+			})
 		
     })
     .catch(error => console.error("An error occurred:", error));
