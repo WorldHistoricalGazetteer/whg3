@@ -495,6 +495,13 @@ class acmeStyleControl {
 	                    }
 	                }
 
+			        // Ensure that if present the layer with id="ecoregions" is invisible
+			        for (var layer of modifiedLayers) {
+			            if (layer.id === 'ecoregions') {
+			                layer.layout.visibility = 'none';
+			            }
+			        }
+
 	                this._map.baseStyle.sources = Object.keys(resultJSON.sources);
 	                this._map.baseStyle.layers = resultJSON.layers.map((layer) => layer.id);
 
@@ -1076,6 +1083,7 @@ maplibregl.Map = function (options = {}) {
         sequencerControl: false,
 	    temporalControl: false,
 	    terrainControl: false, // If true, will force display of full navigation controls too
+	    scaleControl: false,
     };
 
     // replace defaultOptions with any passed options
@@ -1114,6 +1122,8 @@ maplibregl.Map = function (options = {}) {
             mapInstance.getContainer().style.backgroundColor = backgroundColor;
         }
 
+		if (chosenOptions.scaleControl) mapInstance.addControl(new maplibregl.ScaleControl({maxWidth: 150, unit: 'metric'}), 'bottom-left');
+		
 		if (chosenOptions.fullscreenControl) mapInstance.addControl(new maplibregl.FullscreenControl(), 'top-left');
 		if (chosenOptions.downloadMapControl) mapInstance.addControl(new downloadMapControl(mapInstance), 'top-left');
 		if (chosenOptions.drawingControl) mapInstance.addControl(new CustomDrawingControl(mapInstance, chosenOptions.drawingControl), 'top-left');

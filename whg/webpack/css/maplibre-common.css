@@ -79,3 +79,7 @@
 	left: 0;
 	z-index: -1
 }
+
+.maplibregl-ctrl-scale { /* Reduce default opacity */
+    background-color: hsla(0, 0%, 100%, .50)!important;
+}
