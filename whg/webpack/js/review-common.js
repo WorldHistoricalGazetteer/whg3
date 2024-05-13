@@ -118,7 +118,7 @@ export function addReviewListeners() {
 	$("[rel='tooltip']").tooltip();
 	
 	// set pass dropdown as next set with any reviewed=False rows
-	$("#select_pass").val(passnum);
+	// $("#select_pass").val(passnum);
 	
 	// defaults to string 'None' - no idea why
 	$('.textarea').html('')

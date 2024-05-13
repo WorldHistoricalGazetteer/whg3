@@ -70,6 +70,7 @@ label {vertical-align:text-top;}
 .bg-lightseagreen { background-color: lightseagreen !important; color:white;}
 
 .border-red { border:2px dotted red;}
+.border-blue { border:2px dotted #336699;}
 .checkbox-inline {margin-right:.3rem;}
 .clippy {cursor:pointer;}
 .closer {cursor:pointer; color:#336699;}

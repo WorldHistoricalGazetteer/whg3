@@ -45,7 +45,7 @@ from utils.regions_countries import get_regions_countries
 from .exceptions import LPFValidationError, DelimValidationError, \
   DelimInsertError, DataAlreadyProcessedError
 from .forms import (HitModelForm, DatasetDetailModelForm,
-                    DatasetUploadForm, #DatasetCreateModelForm,
+                    DatasetUploadForm,  # DatasetCreateModelForm,
                     DatasetCreateEmptyModelForm)
 from .insert import (ds_insert_json, ds_insert_delim, failed_insert_notification)
 from .validation import validate_delim, validate_lpf, validate_tsv
@@ -61,6 +61,7 @@ from .utils import *
 es = settings.ES_CONN
 User = get_user_model()
 
+
 class VolunteeringView(ListView):
   template_name = 'datasets/volunteering.html'
   model = Dataset
@@ -75,9 +76,11 @@ class VolunteeringView(ListView):
 
     return context
 
+
 def volunteer_offer(request, pk):
   print('volunteer_offer()', pk)
   pass
+
 
 # TODO: in use?
 class DatasetGalleryView(ListView):
@@ -118,6 +121,8 @@ class DatasetGalleryView(ListView):
   email various, incl. Celery down notice
   to ['whgazetteer@gmail.com','karl@kgeographer.org'],
 """
+
+
 def emailer(subj, msg, from_addr, to_addr):
   print('subj, msg, from_addr, to_addr', subj, msg, from_addr, to_addr)
   send_mail(
@@ -125,10 +130,12 @@ def emailer(subj, msg, from_addr, to_addr):
     fail_silently=False,
   )
 
+
 # check Celery process is running before initiating reconciliation task
 def celeryUp():
   response = celapp.control.ping(timeout=1.0)
   return len(response) > 0
+
 
 # append src_id to base_uri
 def link_uri(auth, id):
@@ -142,6 +149,8 @@ def link_uri(auth, id):
   indexes a db record upon a single hit match in align_idx review
   new record becomes child in the matched hit group
 """
+
+
 def indexMatch(pid, hit_pid=None):
   print('indexMatch(): pid ' + str(pid) + ' w/hit_pid ' + str(hit_pid))
   es = settings.ES_CONN
@@ -245,6 +254,8 @@ def indexMatch(pid, hit_pid=None):
       - whg_id and children[] ids (if any) added to winner
       - name variants added to winner's searchy[] and suggest.item[] lists
 """
+
+
 def indexMultiMatch(pid, matchlist):
   print('indexMultiMatch(): pid ' + str(pid) + ' matches ' + str(matchlist))
   from elasticsearch8 import RequestError
@@ -355,6 +366,8 @@ def indexMultiMatch(pid, matchlist):
   GET   returns review.html for Wikidata, or accession.html for accessioning
   POST  for each record that got hits, process user matching decisions
 """
+
+
 def review(request, pk, tid, passnum):
   pid = None
   if "pid" in request.GET:
@@ -541,7 +554,7 @@ def review(request, pk, tid, passnum):
   )
   formset = HitFormset(request.POST or None, queryset=raw_hits)
   context["formset"] = formset
-
+  print('hit.json in review()', [h.json for h in raw_hits])
   # Create FeatureCollection for mapping
   index_offset = sum(1 for record in records for geom in record.geoms.all().values('jsonb'))
   feature_collection = {
@@ -571,7 +584,7 @@ def review(request, pk, tid, passnum):
                     "geometry": {"type": geom["type"], "coordinates": geom.get("coordinates")},
                     "id": idx + index_offset
                   }
-                  for idx, (hit, geom) in enumerate((hit, geom) for hit in raw_hits for geom in hit.json['geoms'])
+                  for idx, (hit, geom) in enumerate((hit, geom) for hit in raw_hits if 'geoms' in hit.json for geom in hit.json['geoms'])
                 ]
   }
   context["feature_collection"] = json.dumps(feature_collection)
@@ -835,6 +848,7 @@ def review(request, pk, tid, passnum):
   accepts all pass0 wikidata matches, writes geoms and links
 """
 
+
 def write_wd_pass0(request, tid):
   task = get_object_or_404(TaskResult, task_id=tid)
   kwargs = json.loads(task.task_kwargs.replace("'", '"'))
@@ -937,6 +951,7 @@ def write_wd_pass0(request, tid):
   each align_{auth} task runs matching es_lookup_{auth}() and writes Hit instances
 """
 
+
 def ds_recon(request, pk):
   ds = get_object_or_404(Dataset, id=pk)
   # TODO: handle multipolygons from "#area_load" and "#area_draw"
@@ -1029,7 +1044,7 @@ def ds_recon(request, pk):
         test=test,  # for idx only
       )
       messages.add_message(request, messages.INFO,
-        "<span class='text-danger'>Your reconciliation task is under way.</span><br/>When complete, you will receive an email and if successful, results will appear below (you may have to refresh screen). <br/>In the meantime, you can navigate elsewhere.")
+                           "<span class='text-danger'>Your reconciliation task is under way.</span><br/>When complete, you will receive an email and if successful, results will appear below (you may have to refresh screen). <br/>In the meantime, you can navigate elsewhere.")
       return redirect('/datasets/' + str(ds.id) + '/reconcile')
     except:
       print('failed: align_' + auth)
@@ -1038,7 +1053,8 @@ def ds_recon(request, pk):
                            "Sorry! Reconciliation services appear to be down. The system administrator has been notified.<br/>" + str(
                              sys.exc_info()))
       emailer('WHG recon task failed',
-              'a reconciliation task has failed for dataset #' + str(ds.id) + ', w/error: \n' + str(sys.exc_info()) + '\n\n',
+              'a reconciliation task has failed for dataset #' + str(ds.id) + ', w/error: \n' + str(
+                sys.exc_info()) + '\n\n',
               'whg@kgeographer.org',
               'karl@kgeographer.org')
 
@@ -1490,6 +1506,8 @@ def update_rels_tsv(pobj, row):
     filepath = 'media/'+filename_new
     copyfile(tempfn,filepath)
 """
+
+
 def ds_update(request):
   if request.method == 'POST':
     print('request.POST ds_update()', request.POST)
@@ -1941,6 +1959,8 @@ def ds_compare(request):
   PublicListView()
   list public datasets and collections
 """
+
+
 class PublicListsView(ListView):
   redirect_field_name = 'redirect_to'
 
@@ -1969,6 +1989,8 @@ class PublicListsView(ListView):
   DatasetCreateEmptyView()
   initial create, no file; for remote, typically
 """
+
+
 class DatasetCreateEmptyView(LoginRequiredMixin, CreateView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -2088,10 +2110,13 @@ class DatasetCreateEmptyView(LoginRequiredMixin, CreateView):
   DatasetCreate() helpers
   alternate bot-guided
 """
+
+
 def get_file_type(file):
   """Determine the file type based on its MIME type."""
   mimetype = file.content_type
   return mthash_plus.mimetypes.get(mimetype, None)
+
 
 def read_file_into_dataframe(file, ext):
   """
@@ -2118,6 +2143,7 @@ def read_file_into_dataframe(file, ext):
 
   return df
 
+
 """
   DatasetCreate()
   2023-08; replaces DatasetCreateView()
@@ -2127,6 +2153,8 @@ def read_file_into_dataframe(file, ext):
   - initiates database writes (insert.py)
   - raises errors from each stage to dataset_create.html form
 """
+
+
 class DatasetCreate(LoginRequiredMixin, CreateView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -2304,6 +2332,8 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
 """
   returns public dataset 'mets' (summary) page
 """
+
+
 class DatasetPublicView(DetailView):
   template_name = 'datasets/ds_meta.html'
 
@@ -2337,6 +2367,8 @@ class DatasetPublicView(DetailView):
     - also deletes from index if indexed (fails silently if not)
     - also removes dataset_file records
 """
+
+
 # TODO: delete other stuff: disk files; archive??
 class DatasetDeleteView(DeleteView):
   template_name = 'datasets/dataset_delete.html'
@@ -2368,6 +2400,8 @@ class DatasetDeleteView(DeleteView):
   fetch places in specified dataset
   utility used for place collections
 """
+
+
 def ds_list(request, label):
   print('in ds_list() for', label)
   qs = Place.objects.all().filter(dataset=label)
@@ -2385,6 +2419,8 @@ def ds_list(request, label):
   - delete any geoms or links created
   - reset flags for hit.reviewed and place.review_xxx
 """
+
+
 def match_undo(request, ds, tid, pid):
   print('in match_undo() ds, task, pid:', ds, tid, pid)
   from django_celery_results.models import TaskResult
@@ -2417,6 +2453,8 @@ def match_undo(request, ds, tid, pid):
 """
   returns dataset owner summary page
 """
+
+
 class DatasetStatusView(LoginRequiredMixin, UpdateView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -2453,8 +2491,9 @@ class DatasetStatusView(LoginRequiredMixin, UpdateView):
 
     context['wdgn_status'] = wdgn_status
     context['idx_status'] = idx_status
+
     def placecounter(th):
-      pcounts={}
+      pcounts = {}
       count0 = th.filter(query_pass='pass0').values('place_id').distinct().count()
       count1 = th.filter(query_pass='pass1').values('place_id').distinct().count()
       count2 = th.filter(query_pass='pass2').values('place_id').distinct().count()
@@ -2513,51 +2552,56 @@ class DatasetStatusView(LoginRequiredMixin, UpdateView):
       place_id__in=placeset, task_id__contains='-').count()
 
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
-    
+
     vis_parameters = ds.vis_parameters
     if vis_parameters is None:
-        vis_parameters = {
-            'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
-            'min': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
-            'max': {'tabulate': False, 'temporal_control': 'none', 'trail': False}
-        }
-    #context['visParameters'] = json.dumps(vis_parameters)
+      vis_parameters = {
+        'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
+        'min': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
+        'max': {'tabulate': False, 'temporal_control': 'none', 'trail': False}
+      }
+    # context['visParameters'] = json.dumps(vis_parameters)
     context['vis_parameters_dict'] = vis_parameters
 
     return context
 
+
 @require_POST
 def update_vis_parameters(request, *args, **kwargs):
-    try:
-        ds_id = request.POST.get('ds_id')
-        checked = bool(request.POST.get('checked') == 'true')
+  try:
+    ds_id = request.POST.get('ds_id')
+    checked = bool(request.POST.get('checked') == 'true')
 
-        if checked:
-            vis_parameters = {
-                'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
-                'min': {'tabulate': 'initial', 'temporal_control': 'filter', 'trail': False},
-                'max': {'tabulate': True, 'temporal_control': 'filter', 'trail': False}
-            }
-        else:
-            vis_parameters = {
-                'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
-                'min': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
-                'max': {'tabulate': False, 'temporal_control': 'none', 'trail': False}
-            }
+    if checked:
+      vis_parameters = {
+        'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
+        'min': {'tabulate': 'initial', 'temporal_control': 'filter', 'trail': False},
+        'max': {'tabulate': True, 'temporal_control': 'filter', 'trail': False}
+      }
+    else:
+      vis_parameters = {
+        'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
+        'min': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
+        'max': {'tabulate': False, 'temporal_control': 'none', 'trail': False}
+      }
 
-        # Update the vis_parameters field of the dataset
-        dataset = get_object_or_404(Dataset, pk=ds_id)
-        dataset.vis_parameters = vis_parameters
-        dataset.save()
+    # Update the vis_parameters field of the dataset
+    dataset = get_object_or_404(Dataset, pk=ds_id)
+    dataset.vis_parameters = vis_parameters
+    dataset.save()
 
-        return JsonResponse({'message': 'Visualisation parameters updated successfully', 'vis_parameters': json.dumps(vis_parameters)})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse(
+      {'message': 'Visualisation parameters updated successfully', 'vis_parameters': json.dumps(vis_parameters)})
+  except Exception as e:
+    return JsonResponse({'error': str(e)}, status=500)
+
 
 """
   returns dataset owner metadata page
   (formerly DatasetSummaryView)
 """
+
+
 class DatasetMetadataView(LoginRequiredMixin, UpdateView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -2668,6 +2712,8 @@ class DatasetMetadataView(LoginRequiredMixin, UpdateView):
 """
   returns dataset owner's browse table
 """
+
+
 class DatasetBrowseView(LoginRequiredMixin, DetailView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -2714,6 +2760,8 @@ class DatasetBrowseView(LoginRequiredMixin, DetailView):
 """
   returns public dataset browse table
 """
+
+
 class DatasetPlacesView(DetailView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -2753,11 +2801,11 @@ class DatasetPlacesView(DetailView):
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
 
     if not ds.vis_parameters:
-        # Populate with default values:
-        # tabulate: 'initial'|true|false - include sortable table column, 'initial' indicating the initial sort column
-        # temporal_control: 'player'|'filter'|null - control to be displayed when sorting on this column
-        # trail: true|false - whether to include ant-trail motion indicators on map
-        ds.vis_parameters = "{'seq': {'tabulate': false, 'temporal_control': null, 'trail': true},'min': {'tabulate': false, 'temporal_control': null, 'trail': true},'max': {'tabulate': false, 'temporal_control': null, 'trail': false}}"
+      # Populate with default values:
+      # tabulate: 'initial'|true|false - include sortable table column, 'initial' indicating the initial sort column
+      # temporal_control: 'player'|'filter'|null - control to be displayed when sorting on this column
+      # trail: true|false - whether to include ant-trail motion indicators on map
+      ds.vis_parameters = "{'seq': {'tabulate': false, 'temporal_control': null, 'trail': true},'min': {'tabulate': false, 'temporal_control': null, 'trail': true},'max': {'tabulate': false, 'temporal_control': null, 'trail': false}}"
     context['visParameters'] = ds.vis_parameters
 
     return context
@@ -2766,6 +2814,8 @@ class DatasetPlacesView(DetailView):
 """
   returns dataset owner "Linking" tab listing reconciliation tasks
 """
+
+
 class DatasetReconcileView(LoginRequiredMixin, DetailView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -2788,7 +2838,6 @@ class DatasetReconcileView(LoginRequiredMixin, DetailView):
 
     id_ = self.kwargs.get("id")
     ds = get_object_or_404(Dataset, id=id_)
-
 
     id_ = self.kwargs.get("id")
     ds = get_object_or_404(Dataset, id=id_)
@@ -2822,7 +2871,8 @@ class DatasetReconcileView(LoginRequiredMixin, DetailView):
     context['ds'] = ds
     context['tasks'] = ds_tasks
 
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
+    context['beta_or_better'] = True if self.request.user.groups.filter(
+      name__in=['beta', 'whg_admins']).exists() else False
 
     return context
 
@@ -2830,6 +2880,8 @@ class DatasetReconcileView(LoginRequiredMixin, DetailView):
 """
   returns dataset owner "Collaborators" tab
 """
+
+
 class DatasetCollabView(LoginRequiredMixin, DetailView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -2872,6 +2924,8 @@ class DatasetCollabView(LoginRequiredMixin, DetailView):
 """
   returns add (reconciliation) task page
 """
+
+
 class DatasetAddTaskView(LoginRequiredMixin, DetailView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -2977,6 +3031,8 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
 """
   returns dataset owner "Log & Comments" tab
 """
+
+
 class DatasetLogView(LoginRequiredMixin, DetailView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'

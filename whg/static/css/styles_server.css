@@ -49,6 +49,7 @@ label {vertical-align:top;}
 .alert {padding: 0 1.25rem !important;}
 .arial {font-family: arial, san-serif;}
 .bg-light { background-color: #fff !important; }
+.border-blue { border:2px dotted #336699;}
 .border-red { border:2px dotted red;}
 .checkbox-inline {margin-right:.3rem;}
 .dashedbox {border:1px dashed #ccc; border-radius:8px; }

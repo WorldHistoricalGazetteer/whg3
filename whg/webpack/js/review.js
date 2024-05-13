@@ -5,6 +5,7 @@ import './notes.js';
 
 import '../css/review.css';
 
+
 function waitMapLoad() {
     return new Promise((resolve) => {
         mappy.on('load', () => {
@@ -20,9 +21,43 @@ function waitDocumentReady() {
     });
 }
 
+function toggleGeonamesReview() {
+			$('#geonames_review').toggle();
+}
+
 Promise.all([waitMapLoad(), waitDocumentReady()])
     .then(() => {
-		
+
+    if ($('.wdlocal').length > 0) {
+				// hide geonames (gn) initially if any wdlocal records
+        $('.gn').hide();
+        // $('#toggle_geonames_review').show();
+        $('.show-link').show();
+    } else {
+				// show geonames (gn) initially if no wdlocal records
+        $('.gn').show();
+        // $('#toggle_geonames_review').hide();
+        $('.show-link').hide();
+    }
+
+    $('#toggle_geonames_review').on('click', function(e) {
+				console.log('toggle_geonames_review clicked')
+        e.preventDefault(); // prevent the default action
+
+        // toggle visibility of .auth-match and adjacent .matchbar elements associated with 'gn'
+        $('.auth-match').each(function() {
+            if ($(this).find('a[data-auth="gn"]').length > 0) {
+                $(this).prev('.matchbar').toggle();
+                $(this).toggle();
+            }
+        });
+
+        // change the text of the link
+        $(this).text(function(i, text){
+            return text === "Show GeoNames hits" ? "Hide GeoNames hits" : "Show GeoNames hits";
+        })
+    });
+
 		if (page_variant == 'reconciliation') {
 
 			console.log(`already: ${ already }`)

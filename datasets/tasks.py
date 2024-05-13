@@ -379,10 +379,13 @@ def normalize(h, auth, language=None):
       if 'location' in h.keys():
         # single MultiPoint geometry
         loc = h['location']
+        print('location IS in hit', loc)
         loc['id'] = h['id']
         loc['ds'] = dataset
         # single MultiPoint geom if exists
         rec.geoms = [loc]
+      else:
+        print('no location in hit', h)
 
       # if not is_wdgn: # it's wd
       if dataset != 'geonames':   # it's wd or wikidata
@@ -443,23 +446,52 @@ def normalize(h, auth, language=None):
 # called from: es_lookup_tgn(), es_lookup_idx(), es_lookup_wdlocal(), search.SearchView(), 
 # FUTURE: parse multiple areas
 # ***
+# def get_bounds_filter(bounds, idx):
+#   #print('bounds in get_bounds_filter()',bounds)
+#   id = bounds['id'][0]
+#   #areatype = bounds['type'][0]
+#   area = Area.objects.get(id = id)
+#   #
+#   # geofield = "geoms.location" if idx == 'whg' else "location"
+#   geofield = "geoms.location" if idx == 'whg' else "location"
+#   filter = { "geo_shape": {
+#     geofield: {
+#         "shape": {
+#           "type": area.geojson['type'],
+#           "coordinates": area.geojson['coordinates']
+#         },
+#         "relation": "intersects" if idx=='whg' else 'within' # within | intersects | contains
+#       }
+#   }}
+#   return filter
+
+# accounts for GeometryCollection case
 def get_bounds_filter(bounds, idx):
-  #print('bounds in get_bounds_filter()',bounds)
   id = bounds['id'][0]
-  #areatype = bounds['type'][0]
-  area = Area.objects.get(id = id)
-  # 
-  # geofield = "geoms.location" if idx == 'whg' else "location"
+  area = Area.objects.get(id=id)
+
+  # Check if the geometry is a GeometryCollection
+  if area.geojson['type'] == 'GeometryCollection':
+    # Assuming the first geometry in the collection can be used for filtering
+    first_geometry = area.geojson['geometries'][0]
+    geo_type = first_geometry['type']
+    coordinates = first_geometry['coordinates']
+  else:
+    geo_type = area.geojson['type']
+    coordinates = area.geojson['coordinates']
+
   geofield = "geoms.location" if idx == 'whg' else "location"
-  filter = { "geo_shape": {
-    geofield: {
+  filter = {
+    "geo_shape": {
+      geofield: {
         "shape": {
-          "type": area.geojson['type'],
-          "coordinates": area.geojson['coordinates']
+          "type": geo_type,
+          "coordinates": coordinates
         },
-        "relation": "intersects" if idx=='whg' else 'within' # within | intersects | contains
+        "relation": "intersects" if idx == 'whg' else 'within'  # within | intersects | contains
       }
-  }} 
+    }
+  }
   return filter
 
 

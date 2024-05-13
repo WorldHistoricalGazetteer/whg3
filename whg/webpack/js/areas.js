@@ -157,10 +157,7 @@ function featureGeometryCollection(geometryCollection) {
 
 function map_clear() {
 	draw.deleteAll();
-	mappy
-	.clearSource('places')
-	.clearSource('hulls')
-	.reset();
+	mappy.clearSource('places').clearSource('hulls').reset();
 	$("input#id_ccodes").val(null);
 	if (action == "create") {
 		$("textarea#geojson").val(null);

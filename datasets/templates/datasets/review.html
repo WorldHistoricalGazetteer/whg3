@@ -49,7 +49,12 @@
         {% endif %}
 			</span>
       <span class="help-matches" data-id="review"><i class="fas fa-question-circle linkypop"></i></span>
-      <span class="half float-end me-2"><i>task id</i>: {{ task_id|truncatechars:10 }}...</span>
+      <span class="half float-end me-2">
+        <span class="show-link hidden larger bg-lighterblue px-2 me-2 border-blue">
+          <a href="#" id="toggle_geonames_review">Show GeoNames hits</a>
+        </span>
+        <i>task id</i>: {{ task_id|truncatechars:10 }}...
+      </span>
     </div> <!-- col 8 -->
   </div> <!-- .row -->
   {% if nohits and passnum == 'def' %}
@@ -178,7 +183,9 @@
                 {% for hidden in form.hidden_fields %}
                   {{ hidden }}
                 {% endfor %}
-                <div class="ps-2 pe-2 mb-1 matchbar">
+                {# hide geonames if any wikidata #}
+                <div class="matchbar ps-2 pe-2 mb-1
+                  {% if form.json.value|get:'dataset' == 'geonames' %}gn{% else %}wdlocal{% endif %} ">
                   <div class="match_radio custom-control custom-radio hovermap"
                        data-id="{{ form.authrecord_id.value }}">
                     {% if form.json.value|get:"geoms"|length > 0 %}
@@ -207,8 +214,11 @@
                   </div>
                 </div>
                 {{ form.non_field_errors }}
-                <div class="auth-match ps-2 mt-0 mb-2">
+                <div class="auth-match ps-2 mt-0 mb-2
+                  {% if form.json.value|get:'dataset' == 'geonames' %}gn{% else %}wdlocal{% endif %}">
+{#                <div class="auth-match ps-2 mt-0 mb-2">#}
 {#                  {{ form.json.value }}#}
+
                   <p><strong>Title/Preferred</strong>:
                     <span class="text-danger h6">{{ form.json.value|get:"title" }}</span>
                   </p>
@@ -302,7 +312,7 @@
                   {% endif %}
                 </div>
               {% endfor %}
-            </div>
+            </div> <!-- review_list -->
           </div> <!-- .row -->
         </div> <!-- container flex -->
       {% endfor %} <!-- record in records -->
