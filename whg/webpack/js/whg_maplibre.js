@@ -495,9 +495,9 @@ class acmeStyleControl {
 	                    }
 	                }
 
-			        // Ensure that if present the layer with id="ecoregions" is invisible
+			        // Ensure that if present the ecolayers are invisible
 			        for (var layer of modifiedLayers) {
-			            if (layer.id === 'ecoregions') {
+			            if (layer.id === 'ecoregions' || layer.id === 'biomes') {
 			                layer.layout.visibility = 'none';
 			            }
 			        }

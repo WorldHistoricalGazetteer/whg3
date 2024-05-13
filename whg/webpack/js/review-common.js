@@ -2,7 +2,7 @@
 import { base_urls } from './aliases.js';
 
 export let mappy = new whg_maplibre.Map({
-	maxZoom: 10,
+	maxZoom: 14,
     style: [
 		'WHG',
 		'Satellite'
