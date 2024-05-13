@@ -420,13 +420,20 @@
       </section>
       <section id="reviewing">
         <h5>Reviewing reconciliation results</h5>
-        <!-- from review help -->
-        <p><img src="/static/images/annotated-review-screen.png" height=400></p>
+        <p>After a reconciliation task is run, the prospective matches to your records are presented for review. For each of
+        your records that had one or more "hits," those hit records from Wikidata and/or GeoNames are presented in a list on the
+        right of the screen, with your record on the left. The dataset owner and any designated collaborators decide, for each
+        of its records, whether one or more of the hits is a "close match." Clicking the save button records those
+        closeMatch/no match decisions and advances to the next record from the dataset. It is also possible to defer a
+        decision, and placed in a separate queue that can be revisited, possibly by someone with more relavant expertise. It is
+        also possible to add a note to the record for future reference.</p>
+        <p><img src="/static/images/annotated-review-screen.jpg" height=400></p>
         <p>The information displayed and options offered are explained below.</p>
         <div>
           <ol>
             <li>The user-designated label of the current dataset</li>
-            <li>Save / defer: After making match decisions (closeMatch or no match), click the Save button, If you want to defer a decision on this record, click 'defer' and it will go in a 'deferred' queue where it can be revisited.</li>
+            <li>Save / defer: After making match decisions (closeMatch or no match), click the Save button, If you want to defer a decision on this record, click 'defer' and it will go in a 'deferred' queue where it can be revisited. Optionally, add a note to help
+            with the decision.</li>
             <li>The current "PASS." If any automatic matches were made based on shared links, a PASS 0 is included, and these can be accepted <i>en masse</i> from the Linking screen. Otherwise, you  will be stepped through potential matches from PASS 1 and then PASS 2, and in the case of Getty TGN, possibly PASS 3.</li>
             <li>It is possible to undo the las Save action; sometimes we click, then think better of it.</li>
             <li>The record from your dataset, as sent for matching. If it had associate geometry it will appear as green markers.</li>
