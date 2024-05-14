@@ -4,14 +4,14 @@ from django.contrib.auth.models import Group
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import URLValidator
 from django.db import models
-from django.db.models import Q, JSONField
+from django.db.models import Q, JSONField, Func, CharField, Exists, OuterRef
 from django.urls import reverse
 from django.utils import timezone
 
 from datasets.models import Dataset
 from main.choices import COLLECTIONCLASSES, LINKTYPES, TEAMROLES, STATUS_COLL, \
   USER_ROLE, COLLECTIONTYPES, COLLECTIONGROUP_TYPES
-from places.models import Place
+from places.models import Place, PlaceGeom
 from traces.models import TraceAnnotation
 from utils.cluster_geometries import clustered_geometries
 from utils.heatmap_geometries import heatmapped_geometries
@@ -62,7 +62,7 @@ class CollDataset(models.Model):
   class Meta:
     ordering = ['id']
 
-class Collection(models.Model):
+class Collection(models.Model):  
   owner = models.ForeignKey(settings.AUTH_USER_MODEL,
       related_name='collections', on_delete=models.CASCADE)
   title = models.CharField(null=False, max_length=255)
@@ -135,6 +135,31 @@ class Collection(models.Model):
     team = CollectionUser.objects.filter(collection_id = self.id).values_list('user_id')
     teamusers = User.objects.filter(id__in=team)
     return teamusers
+
+  @property
+  def display_mode(self):
+    #determine heatmap suitability
+    
+    if self.places.count() < 500:
+        return None
+    
+    # Annotate each place with a flag indicating if any non-point geometries exist
+    class GeometryType(Func):
+        function = "GeometryType"
+        output_field = CharField()  
+    places_with_non_point_geoms = self.places.annotate(
+        has_non_point_geoms=Exists(
+            PlaceGeom.objects.filter(
+                place=OuterRef('pk')
+            ).annotate(
+                geom_type=GeometryType("geom")
+            ).exclude(geom_type__in=["POINT", "MULTIPOINT"])
+        )
+    )
+    if places_with_non_point_geoms.filter(has_non_point_geoms=True).exists():
+        return None
+    
+    return "heatmap"
 
   # download time estimate
   @property

@@ -16,7 +16,7 @@ from django.core import mail
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import EmailMultiAlternatives, EmailMessage
 from django.db import transaction, connection
-from django.db.models import Sum, Count # import Q, Count
+from django.db.models import Sum, Count, Subquery, OuterRef # import Q, Count
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
@@ -25,6 +25,7 @@ User = get_user_model()
 from collection.models import Collection
 from datasets.models import Dataset
 from main.models import Log, Tileset
+from places.models import PlaceGeom
 import json
 import requests
 import time
@@ -48,12 +49,21 @@ def needs_tileset(category=None, id=None, pointcount_threshold=5000, geometrycou
     except ObjectDoesNotExist:
         return -1, 0, 0, 0
 
-    total_coords = sum(place_geom.geom.num_coords for place in obj.places.all() for place_geom in place.geoms.all()) or 0
-    total_geometries = obj.places.aggregate(total=Count('geoms'))['total'] or 0
     total_places = obj.places.count()
 
-    print(f'total_coords: {total_coords}, total_geometries: {total_geometries}, total_places: {total_places}')
-    return total_coords > pointcount_threshold or total_geometries > geometrycount_threshold or total_places > places_threshold, total_coords, total_geometries, total_places
+    if total_places > places_threshold:
+        return True, -1, -1, total_places
+
+    # Check if the total geometries exceed the threshold, if so, exit early
+    annotated_places = obj.places.annotate(total_geometries=Count('geoms'))
+    total_geometries = annotated_places.aggregate(total_geometries_count=Sum('total_geometries'))['total_geometries_count'] or 0
+    if total_geometries > geometrycount_threshold:
+        return True, -1, total_geometries, total_places
+
+    # Calculate the total sum of coordinates
+    total_coords = sum(place_geom.geom.num_coords for place in obj.places.all() for place_geom in place.geoms.all()) or 0
+    
+    return total_coords > pointcount_threshold, total_coords, total_geometries, total_places
 
 def request_tileset(category, id, action):
     logger.info(f'request_tileset() task: {category}-{id}')

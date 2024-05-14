@@ -110,9 +110,17 @@
 </div>
 
 <script type="text/javascript">
-    const ds_id = "{{ ds.id }}";
     const dslabel = "{{ ds.label }}"
 	window.filter = "{{ filter }}"
+    window.ds_list = [
+        {
+          bounds: {{ ds.bounds | safe }},
+          id: {{ ds.id }},
+          label: "{{ ds.label }}",
+          modified: "{{ ds.last_modified_text }}",
+          title: "{{ ds.title }}",
+          ds_type: "datasets"
+        }];
     const wdtask = {% if wdtask %} true {% else %} false {% endif %};
     const tgntask = {% if tgntask %} true {% else %} false {% endif %};
     const whgtask = {% if whgtask %} true {% else %} false {% endif %};

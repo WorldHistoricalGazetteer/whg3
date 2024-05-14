@@ -1,4 +1,5 @@
 .maplibregl-map {
+    font: inherit!important;
     position: relative;
     background-color: lightblue;
     overflow: hidden;
@@ -16,6 +17,10 @@
     opacity: 1;
 }
 
+.tooltip {
+    z-index: 10000!important;
+}
+
 .download-map-button .maplibregl-ctrl-icon {
 	background: url(../images/camera.svg);
 	background-size: 26px;
@@ -23,6 +28,22 @@
 
 .maplibregl-map:not(:fullscreen) .maplibregl-ctrl-download {
 	display: none!important;
+}
+
+#map-download-dialog {
+    user-select: none;	
+}
+
+#map-download-dialog .modal-content {
+    height: auto;
+}
+
+#map-download-dialog .modal-footer {
+    display: flow;
+}
+
+#map-download-dialog .modal-footer .btn-secondary {
+    float: left;
 }
 
 /* Styling for the attribution text */
@@ -35,42 +56,11 @@
   font-size: 14px;
   max-height: 200px;
   overflow-y: auto;
+  user-select: all;
 }
 
 #injunctionText {
 	font-weight: bold;
-}
-
-#map-download-dialog button {
-  margin: 5px 0;
-  padding: 5px 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  float: right;
-  color: #fff;
-}
-
-/* Styling for the copy attribution button */
-#copy-attribution {
-  background-color: #007BFF;
-}
-
-/* Styling for the download button */
-#download {
-  background-color: #28A745;
-  margin-right: 5px!important;
-}
-
-/* Styling for the cancel button */
-#cancel {
-  background-color: #dc3545;
-  float: left!important;
-}
-
-/* Styling for the modal overlay */
-.ui-widget-overlay {
-  background: rgba(0, 0, 0, 0.5);
 }
 
 #map-render-container {
@@ -78,4 +68,8 @@
 	top: 0;
 	left: 0;
 	z-index: -1
+}
+
+.maplibregl-ctrl-scale { /* Reduce default opacity */
+    background-color: hsla(0, 0%, 100%, .50)!important;
 }

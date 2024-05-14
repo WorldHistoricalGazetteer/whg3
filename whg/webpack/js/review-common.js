@@ -2,7 +2,12 @@
 import { base_urls } from './aliases.js';
 
 export let mappy = new whg_maplibre.Map({
-	maxZoom: 10
+	maxZoom: 14,
+    style: [
+		'WHG',
+		'Satellite'
+	],
+    scaleControl: true,
 });
 
 let featureCollection;
@@ -18,7 +23,7 @@ export function initialiseMap() {
 	.newLayerset('places');
 	
 	if (featureCollection.features.length > 0) {
-		mappy.fitViewport( bbox( featureCollection ) );
+		mappy.fitViewport( bbox( featureCollection ), 8 );
 	}
 	else {
 		console.log('No features to map.')
