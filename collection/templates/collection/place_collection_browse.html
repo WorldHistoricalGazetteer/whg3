@@ -113,13 +113,15 @@
             {% endif %}
           </table>
           <div class=""><p>
-            <a href="#" id="a_download_modal"
-               class="me-2" data-collid="{{ object.id }}"
-               data-bs-toggle="modal"
-               data-bs-target="#downloadModal"
-               title="download options">
-              Download options</a>
-            <i class="fas fa-download linky"></i>
+ 			<span data-bs-toggle="tooltip"
+                  title="Show download options">
+	              <a href="#" id="a_download_modal"
+	                  class="me-2" data-collid="{{ object.id }}"
+	                  data-bs-toggle="modal"
+	                  data-bs-target="#downloadModal">Download options
+	              	<i class="fas fa-download linky"></i>
+	              </a>
+			</span>
             <span class="float-end">
 		                <label for="checkbox" class="small">
 			                Close intro by default</label>
