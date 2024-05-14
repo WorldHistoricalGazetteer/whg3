@@ -201,6 +201,7 @@
             {% endif %} <!-- featured rank -->
         </table>
         <input class="btn btn-primary btn-sm hidden btn-ds" type="submit" value="Save" />
+
         {% if current_file and current_file.df_status != 'dummy' %}
           <input type="hidden" name="datatype" value=
             {% if current_file %}{{ current_file.datatype }}{% else %}"place"{%endif%}>

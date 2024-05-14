@@ -2654,23 +2654,6 @@ class DatasetMetadataView(LoginRequiredMixin, UpdateView):
       using most recent dataset file
     """
     file = ds.file
-    # if file.df_status == 'format_ok':
-    #   print('format_ok , inserting dataset ' + str(id_))
-    #   if file.format == 'delimited':
-    #     result = ds_insert_tsv(self.request, id_)
-    #     print('tsv result', result)
-    #   else:
-    #     result = ds_insert_lpf(self.request, id_)
-    #     print('lpf result', result)
-    #   print('ds_insert_xxx() result', result)
-    #   ds.numrows = result['numrows']
-    #   ds.numlinked = result['numlinked']
-    #   ds.total_links = result['total_links']
-    #   ds.ds_status = 'uploaded'
-    #   file.df_status = 'uploaded'
-    #   file.numrows = result['numrows']
-    #   ds.save()
-    #   file.save()
 
     # build context for rendering ds_status.html
     me = self.request.user

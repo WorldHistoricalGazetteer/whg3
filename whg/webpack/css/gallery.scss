@@ -30,7 +30,8 @@
     padding-right: 6px;
 }
 .ds-card-gallery {
-    border: 1px gainsboro dashed;
+    //border: 1px gainsboro dashed;
+    border: 1px gainsboro solid;
     height: 260px;
     padding: 0.5rem;
     overflow-y: auto;
@@ -42,20 +43,28 @@
 }
 .ds-card-gallery:hover {
     cursor: pointer;
-    background-color: #F2DEDE !important;
+    border: 1px solid #e38c8c !important;
+    //background-color: #F2DEDE !important;
+}
+.ds-card-gallery.active {
+    border: 1px solid #e38c8c !important;
 }
 .ds-card-content {
     font-size: 0.9rem;
 }
 .ds-card-title {
-    font-size: 1rem;
+    font-size: 0.9rem;
+    margin-bottom: 0.2rem;
 }
-.ds-card-owner,
-.ds-card-creator {
+.ds-card-creator, .ds-card-owner {
     font-size: 0.85rem;
-    //font-variant: small-caps;
-    color: #993333;
     line-height: normal;
+}
+.ds-card-creator {
+    margin-bottom: 0.2rem;
+}
+.ds-card-owner {
+    margin-bottom: 0.7rem;
 }
 .ds-card-content > div {
 	clear: both;
@@ -73,12 +82,22 @@
     background-color: #99333330!important;
 }
 .custom-tooltip-red {
-  --bs-tooltip-bg: #993333!important;
-  --bs-tooltip-color: #fff!important;
+  //--bs-tooltip-bg: #993333!important;
+  //--bs-tooltip-color: #fff!important;
+  --bs-tooltip-color: #993333!important;
+  --bs-tooltip-bg: #f3f3f3 !important;
+    //border: 1px solid #993333;
+
+}
+.tooltip .tooltip-arrow {
+    border-top: 1px solid black !important;
 }
 .custom-tooltip-green {
-  --bs-tooltip-bg: #cad6ab!important;
-  --bs-tooltip-color: #000!important;
+  //--bs-tooltip-bg: #cad6ab!important;
+  //--bs-tooltip-color: #000!important;
+  --bs-tooltip-color: green !important;
+  --bs-tooltip-bg: #f3f3f3 !important;
+    //border: 1px solid green;`
 }
 select.form-select {
     width: 100%;

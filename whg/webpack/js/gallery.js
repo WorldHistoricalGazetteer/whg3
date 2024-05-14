@@ -78,7 +78,7 @@ function buildGallery(datacollections) {
       if (dc.hasOwnProperty('contributors')) {
         truncatedContributors = truncateAfterSpace(dc.contributors, 30);
       }
-
+      /*
       const dsCard = $(`
 						<div data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip-red" title="Click to view ${dc.type.toUpperCaseFirst()} ${dc.ds_or_c_id}" class="ds-card-container col-md-4 mt-1">
 								<div class="ds-card-gallery">
@@ -95,11 +95,34 @@ function buildGallery(datacollections) {
 															<img src="${dc.image_file}" width="60" class="float-end">
 															${truncatedDescription}
 													</p>
-													<p class="ds-card-owner">Contributed by: ${truncatedContributors}</p>
+													<p class="ds-card-owner">Contributor(s): ${truncatedContributors}</p>
 												<div>
 								</div>
 						</div>
 				`).data({
+       */
+        const dsCard = $(`
+          <div data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip-red" title="View publication page" class="ds-card-container col-md-4 mt-1">
+            <div class="ds-card-gallery">
+              <div class="ds-card-content">
+                  <span class="float-end">
+                    <button class="btn btn-light btn-sm previewButton" data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip-green" title="Preview on map">
+                        <i class="fas fa-globe-americas"></i> Preview
+                    </button>
+                  </span>
+                  <h6 class="ds-card-title strong-red">${dc.title}</h6>
+                  <div class="ds-card-inner">
+                    <p class="ds-card-creator"><i>Created by</i>: ${truncatedCreator}</p>
+                    <p class="ds-card-owner"><i>Contributor(s)</i>: ${truncatedContributors}</p>
+                    <p class="ds-card-blurb my-1">
+                        <img src="${dc.image_file}" width="60" class="float-end">
+                        ${truncatedDescription}
+                    </p>
+                  <div>
+                </div>
+              </div>
+            </div>
+        `).data({
         id: dc.ds_or_c_id,
         type: dc.type,
         contributors: dc.contributors,
@@ -305,7 +328,9 @@ Promise.all([
     countries = countries.join(',');
     const search = $('#searchInput').val() ?? '';
     const url = `/api/gallery/${datacollection}/?page=${page}&classes=${datacollection ==
-    'collections' ? classes : ''}&sort=${sort}&countries=${countries}&q=${search}`;
+    'collections' ?
+        classes :
+        ''}&sort=${sort}&countries=${countries}&q=${search}`;
     console.log(`Fetching from: ${url}`);
     stateStore();
     fetch(url).then(response => {
@@ -400,7 +425,7 @@ Promise.all([
     $('.select2-container').css('width', entries[0].target.offsetWidth);
   });
   resizeObserver.observe($('#searchInput')[0]);
-
+/*
   $('#dynamic-gallery').tooltip({
     selector: '[data-bs-toggle="tooltip"]',
     trigger: 'hover',
@@ -412,6 +437,27 @@ Promise.all([
     fetchDataForHorse($(e.target).closest('.ds-card-container'), mappy);
     $('#dynamic-gallery .previewButton').removeClass('active');
     $(e.target).addClass('active');
+  }).on('click', '.ds-card-container', function(event) {
+    // Check that the clicked element is not a link within the container
+    if ($(event.target).closest('a').length === 0) {
+      window.location.href = $(this).data('url');
+    }
+  }).on('click', '.modal-link', function() {
+    $('.selector').data('modalPageId', $(this).data('id')).dialog('open');
+  });
+*/
+  $('#dynamic-gallery').tooltip({
+    selector: '[data-bs-toggle="tooltip"]',
+    trigger: 'hover',
+  }).on('show.bs.tooltip', '.previewButton', (e) => { // Prevent overlapping tooltips
+    bootstrap.Tooltip.getInstance($(e.target).closest('.ds-card-container')).hide();
+  }).on('click', '.previewButton', (e) => {
+    e.stopPropagation();
+    fetchDataForHorse($(e.target).closest('.ds-card-container'), mappy);
+    $('#dynamic-gallery .previewButton').removeClass('active');
+    $('#dynamic-gallery .ds-card-gallery').removeClass('active'); // Remove the active class from all .ds-card-gallery elements
+    $(e.target).addClass('active');
+    $(e.target).closest('.ds-card-gallery').addClass('active'); // Add the active class to the parent .ds-card-gallery of the clicked .previewButton
   }).on('click', '.ds-card-container', function(event) {
     // Check that the clicked element is not a link within the container
     if ($(event.target).closest('a').length === 0) {
