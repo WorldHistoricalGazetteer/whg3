@@ -85,20 +85,25 @@
           </table>
           <div class="">
             <p>
-              <a href="#" id="a_download_modal"
-                  class="me-2" data-collid="{{ object.id }}"
-                  data-bs-toggle="modal"
-                  data-bs-target="#downloadModal"
-                  title="download options">Download options
-              </a>
-              <i class="fas fa-download linky"></i>
-              <span class="ms-3">
+              <span class="ms-3"
+                  data-bs-toggle="tooltip"
+                  title="Show download options">
+	              <a href="#" id="a_download_modal"
+	                  class="me-2" data-collid="{{ object.id }}"
+	                  data-bs-toggle="modal"
+	                  data-bs-target="#downloadModal">Download options
+	              	<i class="fas fa-download linky"></i>
+	              </a>
+              </span>
+              <span class="ms-3"
+                  data-bs-toggle="tooltip"
+                  title="Show dataset metadata">
                 <a href="#" id="a_metadata_modal"
                   class="me-2" data-collid="{{ object.id }}"
                   data-bs-toggle="modal"
-                  data-bs-target="#metadataModal"
-                  title="dataset metadata">Complete metadata
-                </a><i class="fas fa-eye ms-1"></i>
+                  data-bs-target="#metadataModal">Complete metadata
+                  <i class="fas fa-eye ms-1"></i>
+                </a>
               </span>
               <span class="float-end">
 	                <label for="checkbox" class="small">
