@@ -645,61 +645,32 @@ class CustomTerrainControl {
 }
 
 function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
-
-	// Create a modal dialog for copyright attribution and acknowledgment
-	const modal = $('<div id="map-download-dialog" data-bs-title="Map Attribution"></div>');
-	const injunctionText = $('<div id="injunction-text" class="injunction-text">The following attribution must be displayed together with any use of this map image:</div>');
-	const attributionText = $(`<div id="attribution-text" class="attribution-text">${$('.maplibregl-ctrl-attrib-inner').text()}</div>`);
-	const downloadButton = $('<button id="download" style="display: none;" disabled>...rendering...</button>');
-	const copyAttributionButton = $('<button id="copy-attribution">Acknowledge and Copy Attribution</button>');
-	const cancelButton = $('<button id="cancel">Cancel</button>');
-
-	modal.append(injunctionText);
-	modal.append(attributionText);
-	modal.append(copyAttributionButton);
-	modal.append(downloadButton);
-	modal.append(cancelButton);
-
-	modal.dialog({
-		autoOpen: false,
-		appendTo: '#map',
-		modal: true,
-		width: 'auto',
-		buttons: [],
-		closeOnEscape: false,
-		open: function() {
-			new ClipboardJS(copyAttributionButton[0], {
-			  text: function(trigger) {
-			    return attributionText.text();
-			  },
-    		  container: document.getElementById('map-download-dialog')
-			}).on('success', function(e) {
-			  console.log('Attribution text copied to clipboard.');
-			  downloadButton.show();
-			}).on('error', function(e) {
-			  console.error('Unable to copy attribution text: ', e);
-			});
-		},
-		beforeClose: function() {
-			renderMap.remove();
-			container.remove();
-		    Object.defineProperty(window, 'devicePixelRatio', {
-			    get: function () {
-			      return actualPixelRatio;
-			    },
-		    });
-			console.log('Removed container');
-		},
-		close: function() {
-			modal.remove();
-		}
-	});
+    // Create and open modal
+    const modal = $('<div id="map-download-dialog" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false"></div>');
+    const modalDialog = $('<div class="modal-dialog modal-dialog-centered"></div>');
+    const modalContent = $('<div class="modal-content"></div>');
+    const modalHeader = $('<div class="modal-header"></div>');
+    const modalTitle = $('<h5 class="modal-title" id="map-download-dialog-title">Download Map Image</h5>');
+    const modalCloseButton = $('<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>');
+    const modalBody = $('<div class="modal-body"></div>');
+    const injunctionText = $('<div id="injunction-text" class="injunction-text">The following attribution must be displayed together with any use of this map image:</div>');
+    const attributionText = $(`<div id="attribution-text" class="attribution-text">${$('.maplibregl-ctrl-attrib-inner').text()}</div>`);
+    const modalFooter = $('<div class="modal-footer"></div>');
+    const downloadButton = $('<button type="button" class="btn btn-success" id="download" style="display: none;" disabled>...rendering...</button>');
+    const cancelButton = $('<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>');
+	const copyAttributionButton = $('<button type="button" class="btn btn-primary" id="copy-attribution">Acknowledge and Copy Attribution</button>');
+    modalHeader.append(modalTitle, modalCloseButton);
+    modalBody.append(injunctionText, attributionText);
+    modalFooter.append(cancelButton, copyAttributionButton, downloadButton);
+    modalContent.append(modalHeader, modalBody, modalFooter);
+    modalDialog.append(modalContent);
+    modal.append(modalDialog);
+    $('#map').append(modal);
+    $('#map-download-dialog').modal('show');
 
 	const originalCanvas = map.getCanvas();
 	const width = originalCanvas.width;
 	const height = originalCanvas.height;
-
-	// Store the actual devicePixelRatio
 	const actualPixelRatio = window.devicePixelRatio;
 	// Set the devicePixelRatio for higher DPI rendering
 	Object.defineProperty(window, 'devicePixelRatio', {
@@ -708,15 +679,13 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 		},
 	});
 
-	// Create a hidden container for rendering the map
+	// Create a hidden container and map renderer
 	const originalMapContainer = originalCanvas.parentNode;
 	const container = document.createElement('div');
 	container.id = 'map-render-container';
 	container.style.width = width + 'px';
 	container.style.height = height + 'px';
 	originalMapContainer.appendChild(container);
-
-	// Create a map renderer
 	const renderMap = new maplibregl.Map({
 		container: container,
 		style: map.getStyle(),
@@ -730,30 +699,50 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 		attributionControl: false,
 		transformRequest: map._requestManager._transformRequestFn,
 	});
-
 	renderMap.once('idle', () => {
 		downloadButton.prop('disabled', false).text('Download');
 	});
 
-	downloadButton.on('click', () => {
+    $('#map-download-dialog').on('shown.bs.modal', function () {
+        new ClipboardJS(copyAttributionButton[0], {
+            text: function (trigger) {
+                return attributionText.text();
+            },
+            container: document.getElementById('map-download-dialog')
+        }).on('success', function (e) {
+            console.log('Attribution text copied to clipboard.');
+            downloadButton.show();
+        }).on('error', function (e) {
+            console.error('Unable to copy attribution text: ', e);
+        });
+    });
+
+    downloadButton.on('click', function () {
 		const canvas = renderMap.getCanvas();
 		const imageFileName = `${fileName}.png`;
-
-		// Create a download link for the image
 		const a = $('<a>');
 		a.prop('href', canvas.toDataURL());
 		a.prop('download', imageFileName);
 		a[0].click();
 		a.remove();
+        $('#map-download-dialog').modal('hide');
+    });
 
-		modal.dialog('close');
-	});
+    cancelButton.on('click', function () {
+        $('#map-download-dialog').modal('hide');
+    });
 
-	cancelButton.on('click', () => {
-		modal.dialog('close');
-	});
-
-	modal.dialog('open');
+    $('#map-download-dialog').on('hidden.bs.modal', function () {
+		// Reset the devicePixelRatio
+	    Object.defineProperty(window, 'devicePixelRatio', {
+		    get: function () {
+		      return actualPixelRatio;
+		    },
+	    });
+		renderMap.remove();
+		container.remove();
+        $(this).remove();
+    });
 }
 
 class downloadMapControl {
