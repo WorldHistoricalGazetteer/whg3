@@ -821,7 +821,7 @@ maplibregl.Map.prototype.fitViewport = function (bbox, maxZoom) {
 	const mapControlsRect = mapControls.getBoundingClientRect();
 	const mapControlsRectMargin = parseFloat(getComputedStyle(mapControls).marginTop);
 
-	const padding = 10; // Apply equal padding on all sides within viewport
+	const padding = 30; // Apply equal padding on all sides within viewport
 
 	const bounds = [[bbox[0], bbox[1]], [bbox[2], bbox[3]]];
 	const sw = this.project(bounds[0]);
@@ -834,7 +834,6 @@ maplibregl.Map.prototype.fitViewport = function (bbox, maxZoom) {
 	zoom = isNaN(zoom) ? this.getMaxZoom() : Math.min(zoom, this.getMaxZoom());
 	zoom = Math.max(zoom, this.getMinZoom());
 	if (!isNaN(maxZoom)) zoom = Math.min(zoom, maxZoom); // Limit zoom if maxZoom parameter is passed
-	console.log('fitViewport', maxZoom, zoom);
 
 	const viewportPadding = {
 		top: Math.round(mapControlsRect.top - mapContainerRect.top - mapControlsRectMargin),
@@ -842,6 +841,7 @@ maplibregl.Map.prototype.fitViewport = function (bbox, maxZoom) {
 		left: Math.round(mapControlsRect.left - mapContainerRect.left - mapControlsRectMargin),
 		right: Math.round(mapContainerRect.right - mapControlsRect.right - mapControlsRectMargin),
 	};
+	//console.log('fitViewport', maxZoom, zoom, viewportPadding);
 
 	this.flyTo({
 		center: [
