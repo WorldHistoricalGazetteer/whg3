@@ -25,9 +25,12 @@ const paintOptions = {
 			]
 		},
 		'Point': {
-	        'circle-color': [
+				'circle-color': [
 				'rgba(255,0,0)', // red
 				['all', ['has', 'green'], ['==', ['get', 'green'], true]], 'rgba(0, 128, 0)', // green
+						// kg play 15 May
+				// ['all', ['has', 'geonames'], ['==', ['get', 'geonames'], true]], 'rgba(0, 0, 128, 0.5)', // blue
+
 				'rgba(255,165,0)' // orange
 	        ],
 	        'circle-opacity': [
@@ -43,7 +46,9 @@ const paintOptions = {
 			],
 			'circle-stroke-color': [
 				'rgb(255,0,0)',	// red
-				['all', ['has', 'green'], ['==', ['get', 'green'], true]], 'rgba(0, 128, 0)', // green		
+				['all', ['has', 'green'], ['==', ['get', 'green'], true]], 'rgba(0, 128, 0)', // green
+						// kg play 15 May
+				// ['all', ['has', 'geonames'], ['==', ['get', 'geonames'], true]], 'rgba(0, 0, 255)', // blue
 				'rgb(255,165,0)' // orange
 	        ],
 			'circle-stroke-opacity': [

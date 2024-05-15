@@ -532,7 +532,6 @@ def review(request, pk, tid, passnum):
     "countries": countries,
     "passnum": passnum,
     "page": page if request.method == "GET" else str(int(page) - 1),
-    # TODO: which is it - aug_geom or aug_geoms
     "aug_geoms": kwargs["aug_geoms"],
     "mbtoken": settings.MAPBOX_TOKEN_WHG,
     "maptilerkey": settings.MAPTILER_KEY,
@@ -577,9 +576,9 @@ def review(request, pk, tid, passnum):
                     "type": "Feature",
                     "properties": {
                       **{key: value for key, value in geom.items() if key not in ["coordinates", "type"]},
-                      "green": False,  # Set to True for green markers - following 2 lines are redundant v2 code
-                      # (review_page=="accession.html" and geom["ds"]==ds.label) or
-                      # (review_page=="review.html" and not geom["ds"] in ['tgn', 'wd', 'whg'])
+                      "green": False,  # Set to True for green markers
+                      # kg play 15 May
+                      # "geonames": hit.json['dataset'] == 'geonames'  # Add "geonames": True if dataset is 'geonames'
                     },
                     "geometry": {"type": geom["type"], "coordinates": geom.get("coordinates")},
                     "id": idx + index_offset
