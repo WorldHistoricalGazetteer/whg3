@@ -1272,13 +1272,14 @@ class DatasetCollectionCreateView(LoginRequiredMixin, CreateView):
 
   def get_success_url(self):
     Log.objects.create(
-      # category, logtype, "timestamp", subtype, note, dataset_id, user_id
+      # category, logtype, "timestamp", subtype, note, dataset_id, collection_id, user_id
       category = 'collection',
+      collection_id=self.object.id,
       logtype = 'create',
       note = 'created collection id: '+str(self.object.id),
       user_id = self.request.user.id
     )
-    return reverse('dashboard')
+    return reverse('collection:ds-collection-update', kwargs = {'id':self.object.id})
   #
   def get_form_kwargs(self, **kwargs):
     kwargs = super(DatasetCollectionCreateView, self).get_form_kwargs()
@@ -1333,8 +1334,9 @@ class DatasetCollectionUpdateView(UpdateView):
       obj = form.save(commit=False)
       obj.save()
       Log.objects.create(
-        # category, logtype, "timestamp", subtype, note, dataset_id, user_id
+        # category, logtype, "timestamp", subtype, note, dataset_id, collection_id, user_id
         category = 'collection',
+        collection_id=obj.id,
         logtype = 'update',
         note = 'collection id: '+ str(obj.id) + ' by '+ self.request.user.name,
         user_id = self.request.user.id
@@ -1376,7 +1378,7 @@ class DatasetCollectionUpdateView(UpdateView):
     context['maptilerkey'] = settings.MAPTILER_KEY
     
     vis_parameters = coll.vis_parameters
-    if vis_parameters is None:
+    if not vis_parameters:
         vis_parameters = {
             'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
             'min': {'tabulate': False, 'temporal_control': 'none', 'trail': False},

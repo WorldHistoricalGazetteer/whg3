@@ -2553,7 +2553,8 @@ class DatasetStatusView(LoginRequiredMixin, UpdateView):
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
 
     vis_parameters = ds.vis_parameters
-    if vis_parameters is None:
+    # if vis_parameters is None:
+    if not vis_parameters:
       vis_parameters = {
         'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
         'min': {'tabulate': False, 'temporal_control': 'none', 'trail': False},

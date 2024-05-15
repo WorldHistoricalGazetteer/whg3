@@ -32,8 +32,9 @@
     </div>
 
     <div class="row mx-0 h-100">
-      <div id="home_left" class="col-12 col-lg-3 mx-0 p-0 full-height-lg">
-        <div class="border p-2 mb-2">
+{#      <div id="home_left" class="col-12 col-lg-3 mx-0 p-0 full-height-lg">#}
+      <div id="home_left" class="col-12 col-lg-3 mx-0 p-0" style="height:450px;">
+        <div class="p-2 mb-2">
           <p class="mb-2">The WHG project is empowering discovery by connecting place names across time and language. </p>
           <p class="mb-0">This is a collaborative open platform gathering information about
             historical place, and providing a collection of content and services that permit
@@ -42,7 +43,7 @@
 
           <span class="d-none d-lg-block">
 		            <p class="bg-light mb-0 mt-1"><b>What is a gazetteer?</b></p>
-		            <p>A gazetteer is a directory of named places. See:
+		            <p class="mb-1">A gazetteer is a directory of named places. See:
                   <a href="https://programminghistorian.org/en/lessons/space-place-gazetteers"
                      target="_blank">How and why to build a gazetteer
                   <i class="fas fa-external-link-alt small"></i></a>
@@ -54,7 +55,7 @@
         </div>
       </div>
 
-      <div id="home_center" class="col-12 col-lg-6 mx-0 p-0">
+      <div id="home_center" class="col-12 col-lg-6 mx-0 p-0 "  style="height:450px;">
         <div id="search_bar" class="mx-0 mx-lg-2 mb-2">
           <div id="input" class="input-group mx-auto">
             <!-- Label only for Large Screens -->
@@ -79,7 +80,8 @@
         </div>
       </div>
 
-      <div id="home_right" class="col-12 col-lg-3 p-0 mx-0 p-0 full-height-lg">
+{#      <div id="home_right" class="col-12 col-lg-3 p-0 mx-0 p-0 full-height-lg">#}
+      <div id="home_right" class="col-12 col-lg-3 p-0 mx-0 p-0 position-relative" style="height:450px;">
 
         <div class="border p-2 mb-2 mb-lg-2 small" style="height: 100px">
           <p class="mb-0 red-head">ANNOUNCEMENTS</p>
@@ -94,7 +96,7 @@
             {% endfor %}
           </div>
         </div>
-
+        <div id="home_buttons" class="position-absolute; bottom-0">
         <div class="border p-2 mb-2 ms-0 home-button">
           <div>
             <div class="home-icon-row">
@@ -134,6 +136,7 @@
           <a href="{% url 'teaching' %}">
             <span class="link-spanner"></span>
           </a>
+        </div>
         </div>
       </div>
     </div>

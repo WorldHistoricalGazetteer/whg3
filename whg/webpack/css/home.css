@@ -69,7 +69,8 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     min-height: 360px;
 }
 #home_left p {
-    font-size: 0.95rem !important;
+    font-size: 0.9rem !important;
+    line-height: 1.4rem;
 }
 .home-button {
     position: relative;

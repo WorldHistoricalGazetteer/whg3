@@ -339,7 +339,9 @@
             <div id="ds_options" class="pt-0 px-0 ds-card">
               <p class="ds-card-header">Options</p>
               <div class="form-check form-switch">
-                <input id="year_filter" class="form-check-input" type="checkbox"{% if vis_parameters_dict.min.temporal_control != 'none' %} checked{% endif %}>
+                <input id="year_filter"
+                       class="form-check-input"
+                       type="checkbox" {% if vis_parameters_dict.min.temporal_control != 'none' %}checked{% endif %} />
                 <label class="form-check-label" for="year_filter">Display temporal information</label>
                 <i class="fas fa-question-circle red-head" data-bs-toggle="tooltip" title="Switch this on if places in your dataset have meaningful temporal attributions. <i>Start</i> and <i>End</i> dates will be displayed on the publication page, together with a temporal filter control."></i>
               </div>
