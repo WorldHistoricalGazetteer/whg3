@@ -191,7 +191,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         	`  as having type${distinctTypesArray.length > 1 ? 's' : ''} ${distinctTypesArray.map((name, index) => index < distinctTypesArray.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${distinctTypesArray.length == 2 ? '' : ','} and$1`)}` 
         	: '';
 		
-		$('#gloss').append($('<p>').addClass('mb-1').html(`
+		$('#gloss').append($('<p>').addClass('mb-1 smallish').html(`
 			This place is attested (so far) in the <b>${payload.length}</b> source${payload.length > 1 ? 's' : ''} listed below${distinctTypesText}, 
 			with <b>${distinctNameVariants.size}</b> distinct name variant${distinctNameVariants.size > 1 ? 's' : ''}${temporalRange}.
 		`));

@@ -7,7 +7,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
       <div class="input-group" style="width: 300px; max-width: 100%; margin-left:47px;">
         <input type="text" id="title_search" class="filter-input form-control"
                name="title" value="{{ filters.title|default_if_none:'' }}"
-               placeholder="Search titles">
+               placeholder="Search titles & owners">
         <span class="input-group-text">
           <button class="btn btn-outline-secondary border-0 bg-transparent p-0"
                   type="button" id="clear_search">
@@ -74,7 +74,7 @@ id, title, label, created, format, #rows, ds_status (if)owner
 {#        <td>{{ d.numrows }}</td>#}
         <td>{{ d.ds_status }}</td>
         {% if is_admin %}
-          <td>{{ d.owner|truncatechars:20 }}</td>
+          <td>{{ d.owner.username|truncatechars:20 }}</td>
         {% endif %}
       </tr>
       {% endif %}

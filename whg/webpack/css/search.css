@@ -14,8 +14,9 @@
 }
 
 #search_left {
-  display: flex;
-  flex-direction: column;
+  /*display: flex;*/
+  /*flex-direction: column;*/
+  display: block;
   justify-content: space-between;
   margin:0; padding:5px;
   border: 1px solid #ddd;
@@ -92,9 +93,13 @@
     margin-bottom: 0.5rem;
     background-color: antiquewhite;
 }
-#search_content #search_results {
+
+/*#search_content #search_results {*/
+#search_content {
     /*border: 1px gainsboro solid;*/
-    height: fit-content;
+    /*height: fit-content;*/
+    max-height: 100% !important;
+    overflow: auto;
     /*overflow-y: scroll;*/
 }
 #search_content.no-filtered-results #search_results, 

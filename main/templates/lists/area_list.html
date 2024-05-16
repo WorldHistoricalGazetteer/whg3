@@ -39,7 +39,7 @@ id, owner, title, type, title, description, ccodes, geojson, created
   <div class="scrollable-table">
     <table id="table_ds" class="table table-striped">
     <thead class="small strong">
-      <th>id</th>
+      <th>id <i class="fa fa-sort ms-1" data-id="id" ref="asc"></i></th>
       <th>title <i class="fa fa-sort ms-1" data-id="title" ref="asc"></i></th>
       <th>created <i class="fa fa-sort ms-1" data-id="created" ref="asc" title="UTC"></i></th>
       <th>description <i class="fa fa-sort ms-1" data-id="description" ref="asc"></i></th>
@@ -54,7 +54,7 @@ id, owner, title, type, title, description, ccodes, geojson, created
             <a href="{% url 'areas:area-update' item.id %}" rel="tooltip">
             {{ item.title }}</a>
           </td>
-          <td class="small">{{ item.create_date }}</td>
+          <td class="small">{{ item.created }}</td>
           <td>{{ item.description|truncatechars:40 }}</td>
           <td>{{ item.type }}</td>
 	        {% if is_admin %}

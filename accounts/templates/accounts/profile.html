@@ -124,7 +124,7 @@
           <table class="table profile-table">
             {% for field in form %}
             <tr>
-              <td>{{ field.label }}</td>
+              <td>{% if field.label == 'Name' %}Display name{% else %}{{ field.label }}{% endif %}</td>
               <td>
                 <div id="static_{{ field.name }}" class="static-field">{{ field.value|default:"None" }}</div>
                 <div id="edit_{{ field.name }}" class="edit-field" style="display:none;">

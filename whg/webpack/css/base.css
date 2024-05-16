@@ -75,6 +75,11 @@ body {font-family: sans-serif;}
 
 .container a {text-decoration: none !important;}
 
+/*.bs-tooltip-top .tooltip-inner {*/
+/*    background-color: #ececec; !* Change the background color *!*/
+/*    color: grey; !* Change the text color *!*/
+/*    text-align: left; !* Change the text alignment *!*/
+/*}*/
 /*.carousel-item h6 {*/
 /*    font-family: 'Raleway Bold', sans-serif;*/
 /*    font-size: 1rem;*/

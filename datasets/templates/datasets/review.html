@@ -229,7 +229,7 @@
                   {% else %} {# wdlocal #}
                     {% if form.json.value|get:"dataset" == 'geonames' %}
                       <p>
-                        <strong class="text-bg-success">
+                        <strong class="text-bg-primary">
                           {{ form.json.value|get:"dataset"|initcap }} ID
                         </strong>:
                         <a href="#" data-auth="gn" class="me-2 ext-recon">{{ form.authrecord_id.value }}</a>
@@ -237,7 +237,7 @@
                       </p>
                     {% else %}
                       <p>
-                        <strong class="text-bg-primary">
+                        <strong class="text-bg-warning">
                           {{ form.json.value|get:"dataset"|initcap }} ID
                         </strong>:
                         <a href="" data-auth="{{ authority }}" class="me-2 ext-recon">

@@ -161,9 +161,12 @@ class PlacePortalView(TemplateView):
         print('names for a place:', names)
         types = attribListFromSet('types', place.types.all())
 
+        # Glasgow: [2487384, 5657791, 84374, 6369230]
         # get traces, collections for this attestation
-        attest_traces = list(place.traces.all())
-        
+        # NB. traces are never deleted, they are archived
+        # attest_traces = list(place.traces.all())
+        attest_traces = list(place.traces.filter(archived=False))
+
         #attest_collections = [t.collection for t in attest_traces if t.collection.status == "published"]
         # Filter collections based on status (published or unpublished) and ownership
         attest_collections = [
@@ -177,6 +180,7 @@ class PlacePortalView(TemplateView):
         # add to global list
         annotations = annotations + attest_traces
         collections = list(set(collections + attest_collections))
+        print('collections in portal', collections)
 
         # collections = Collection.objects.filter(collection_class="place", places__id__in = place_ids).distinct()
 
