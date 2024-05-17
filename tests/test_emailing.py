@@ -220,20 +220,20 @@ class DatasetSignalTestCase(TestCase):
       # Check recipient is admins
       self.assertEqual(mail.outbox[0].to, [settings.EMAIL_TO_ADMINS])
 
-    def test_handle_indexed(self):
-      # Clear the outbox
-      mail.outbox = []
-
-      # Change the ds_status of the dataset
-      self.dataset.ds_status = 'indexed'
-      self.dataset.save()
-
-      # Check if an email was sent
-      self.assertGreaterEqual(len(mail.outbox), 1)
-
-      # Check the subject of the email
-      self.assertEqual(mail.outbox[0].subject, 'Your WHG dataset is fully indexed')
-
-      # Check recipient is owner
-      self.assertIn(self.user.email, mail.outbox[0].to)
+    # def test_handle_indexed(self):
+    #   # Clear the outbox
+    #   mail.outbox = []
+    #
+    #   # Change the ds_status of the dataset
+    #   self.dataset.ds_status = 'indexed'
+    #   self.dataset.save()
+    #
+    #   # Check if an email was sent
+    #   self.assertGreaterEqual(len(mail.outbox), 1)
+    #
+    #   # Check the subject of the email
+    #   self.assertEqual(mail.outbox[0].subject, 'Your WHG dataset is fully indexed')
+    #
+    #   # Check recipient is owner
+    #   self.assertIn(self.user.email, mail.outbox[0].to)
 

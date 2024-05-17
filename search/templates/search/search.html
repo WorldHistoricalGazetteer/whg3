@@ -45,7 +45,9 @@
 </div>
 
 <div id="search_content" class="row pt-1 no-results initial">
-	<div id="search_left" class="col-12 col-lg-4 p-2 bg-white mb-3 mb-lg-0 full-height-lg">
+
+{#  <div id="search_left" class="col-12 col-lg-4 p-2 bg-white mb-3 mb-lg-0 full-height-lg">#}
+  <div id="search_left" class="col-12 col-lg-4 p-2 bg-white mb-3 mb-lg-0">
 		<div id="adv_options">
         	<h5>Advanced options</h5>
 	        <p class="mb-0"><span class="categories ms-1">place categories</span>
@@ -99,7 +101,6 @@
 			</div>	        
 	        
 		</div>
-      
 		<div id="result_facets" class="p-1 bg-light">
 			<h5>Filter Results</h5>
 			<!-- Place Types Accordion -->
@@ -138,16 +139,16 @@
 			    </div>
 			</div>
 	    </div>
-    </div>
+  </div>
     
-    <div id="search_right" class="col-12 col-lg-8 full-height-lg">
-		<div id="search_right_top" class="row px-1">
-        	<div id="map" class="bg-lighterblue"></div>
-      	</div>
-		<div id="result_container" class="row p-1">
-        	<div id="initial_results" class="bg-light p-2">
-				<h6 class="strong">Search in WHG</h6>
-				<p>Many places have the same name. If your search returns multiple results, browse them to
+  <div id="search_right" class="col-12 col-lg-8 full-height-lg">
+    <div id="search_right_top" class="row px-1">
+          <div id="map" class="bg-lighterblue"></div>
+        </div>
+    <div id="result_container" class="row p-1">
+          <div id="initial_results" class="bg-light p-2">
+        <h6 class="strong">Search in WHG</h6>
+        <p>Many places have the same name. If your search returns multiple results, browse them to
           discover what you are looking for. Places that have more linked records and name variants will
           appear at the top of the list. You can also then filter results by modern country or place type.</p>
         <p>Results appearing in green boxes are from published dataets, but not yet linked in our union index.</p>
@@ -155,8 +156,8 @@
         <div id="no_results" class="bg-light p-2">No results - please modify your search terms and options.</div>
         <div id="no_filtered_results" class="bg-light p-2">No filtered results - please adjust your filter selections.</div>
         <div id="search_results" class="col-12 p-1"></div>
-		</div>
     </div>
+  </div>
 </div>
 {% csrf_token %} <!-- Used for Django POST requests -->
 <script type="text/javascript">

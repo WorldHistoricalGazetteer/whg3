@@ -32,8 +32,9 @@
     </div>
 
     <div class="row mx-0 h-100">
-      <div id="home_left" class="col-12 col-lg-3 mx-0 p-0 full-height-lg">
-        <div class="border p-2 mb-2">
+{#      <div id="home_left" class="col-12 col-lg-3 mx-0 p-0 full-height-lg">#}
+      <div id="home_left" class="col-12 col-lg-3 mx-0 p-0">
+        <div class="p-2 mb-2">
           <p class="mb-2">The WHG project is empowering discovery by connecting place names across time and language. </p>
           <p class="mb-0">This is a collaborative open platform gathering information about
             historical place, and providing a collection of content and services that permit
@@ -42,7 +43,7 @@
 
           <span class="d-none d-lg-block">
 		            <p class="bg-light mb-0 mt-1"><b>What is a gazetteer?</b></p>
-		            <p>A gazetteer is a directory of named places. See:
+		            <p class="mb-1">A gazetteer is a directory of named places. See:
                   <a href="https://programminghistorian.org/en/lessons/space-place-gazetteers"
                      target="_blank">How and why to build a gazetteer
                   <i class="fas fa-external-link-alt small"></i></a>
@@ -54,7 +55,7 @@
         </div>
       </div>
 
-      <div id="home_center" class="col-12 col-lg-6 mx-0 p-0">
+      <div id="home_center" class="col-12 col-lg-6 mx-0 p-0 "  style="height:450px;">
         <div id="search_bar" class="mx-0 mx-lg-2 mb-2">
           <div id="input" class="input-group mx-auto">
             <!-- Label only for Large Screens -->
@@ -73,13 +74,14 @@
 
         <div class="mx-0 mx-lg-2 mb-2 mb-lg-0 map-container">
           <div id="map"></div>
-          <div id="carousel-outer-container" class="mx-0 h-40">
+          <div id="carousel-outer-container" class="mx-0">
             <!-- Populated dynamically in JavaScript -->
           </div>
         </div>
       </div>
 
-      <div id="home_right" class="col-12 col-lg-3 p-0 mx-0 p-0 full-height-lg">
+{#      <div id="home_right" class="col-12 col-lg-3 p-0 mx-0 p-0 full-height-lg">#}
+      <div id="home_right" class="col-12 col-lg-3 p-0 mx-0 p-0 position-relative" style="height:450px;">
 
         <div class="border p-2 mb-2 mb-lg-2 small" style="height: 100px">
           <p class="mb-0 red-head">ANNOUNCEMENTS</p>
@@ -94,17 +96,20 @@
             {% endfor %}
           </div>
         </div>
-
+        <div id="home_buttons" class="position-absolute; bottom-0">
         <div class="border p-2 mb-2 ms-0 home-button">
-          <div>
-            <div class="home-icon-row">
-              <img src="{% static 'images/001-binoculars.png' %}" class="" height=40 width=40 alt=""/>
+          <div class="row">
+            <div class="col-3 d-flex align-items-center">
+              <img src="{% static 'images/001-binoculars.png' %}" class="mx-auto" height=40 width=40 alt=""/>
             </div>
+            <div class="col-9">
             <h5>
               <span class="home-button-hilite">Search and browse</span>
               <span class="red-head">2,159,673
 			        {% comment %}{{ count }}{% endcomment %}
-              </span> places</h5>
+              </span> places
+            </h5>
+            </div>
           </div>
           <a href="{% url 'search-page' %}">
             <span class="link-spanner"></span>
@@ -112,28 +117,42 @@
         </div>
 
         <div class="border p-2 mb-2 ms-0 home-button">
-            <div class="home-icon-row">
+          <div class="row">
+            <div class="col-3 d-flex align-items-center">
               <img src="{% static 'images/noun-workbench-6022067.svg' %}"
-                   class="" height=42 width=42 alt=""/>
+                   class="mx-auto" height=42 width=42 alt=""/>
             </div>
+            <div class="col-9">
             <h5><span class="home-button-hilite">Build and publish </span>
               collections of places
             </h5>
-          <a href="{% url 'workbench' %}">
-            <span class="link-spanner"></span>
-          </a>
+            <a href="{% url 'workbench' %}">
+              <span class="link-spanner"></span>
+            </a>
+            </div>
+          </div>
         </div>
 
         <div class="border p-2 mb-0 ms-0 home-button">
-          <div>
-            <div class="home-icon-row">
-              <img src="{% static 'images/011-teaching.png' %}" class="" height=42 width=42 alt=""/>
+          <div class="row">
+            <div class="col-3 d-flex align-items-center">
+              <img src="{% static 'images/011-teaching.png' %}" class="mx-auto" height=42 width=42 alt=""/>
             </div>
-            <h5><span class="home-button-hilite">Teach</span> about places</h5>
+            <div class="col-9">
+              <h5><span class="home-button-hilite">Teach</span> about places</h5>
+              <a href="{% url 'teaching' %}">
+                <span class="link-spanner"></span>
+              </a>
+            </div>
           </div>
-          <a href="{% url 'teaching' %}">
-            <span class="link-spanner"></span>
-          </a>
+        </div>
+        </div>
+      </div>
+    </div> <!-- row -->
+    <div class="row mt-3">
+      <div class="col-12">
+        <div class="bg-light p-4">
+          <p>Some footer stuff is normal on web sites...what should go here?</p>
         </div>
       </div>
     </div>

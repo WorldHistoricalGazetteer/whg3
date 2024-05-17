@@ -65,7 +65,7 @@
     var currentState = {
       datasets: {sort: 'last_modified', order: 'desc', filters: {}},
       collections: {sort: 'last_modified', order: 'desc', filters: {}},
-      areas: {sort: 'title', order: 'asc', filters: {}},
+      areas: {sort: 'created', order: 'desc', filters: {}},
       groups: {sort: 'title', order: 'asc', filters: {}},
     };
 
@@ -80,8 +80,9 @@
         'owner': 'none',
       },
       areas: {
-        'title': 'asc',
-        'created': 'none',
+        'id': 'none',
+        'title': 'none',
+        'created': 'desc',
         'description': 'none',
         'owner': 'none',
       },

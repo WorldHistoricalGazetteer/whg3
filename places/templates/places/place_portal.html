@@ -5,9 +5,9 @@
 
 {% block maplibre %}
 
-{% if redirect_to %}
+  {% if redirect_to %}
     <script>window.location.href = "{{ redirect_to }}";</script>
-{% endif %}
+  {% endif %}
 
   <script type="text/javascript">
     const loadMaplibre = true;
@@ -26,102 +26,116 @@
 
 {% block content %}
 
-<div id="dataset_content" class="container-md">
+  <div id="dataset_content" class="container-md">
     <div class="row">
-        <!-- Left column with the main content -->
-        <div id="textContent" class="col-12 col-lg-6 mx-0 p-1 border">
-	        <button id="permalinkButton" class="btn btn-primary btn-sm" data-bs-toggle="tooltip" title="Copy permalink to clipboard"><i class="fas fa-share-nodes"></i> Permalink</button>
-	        
-			<h5>{{ portal_headword }}</h5>
-			<div id="gloss"><!-- Populated dynamically from context in JavaScript --></div>
-			
-			{% if user.is_authenticated %}
-				<p class="my-0"><span id="addtocoll" class="me-1">
-					<span id="added_flash" class="mr-2 hidden" style="background-color: yellow; position:absolute; top:10px; right:10px;"> added! </span>
-					<button id="addchecked" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#addtocoll_popup"><i class="fas fa-plus-circle"></i> Add to a Collection</button>
-		        </span></p>
-			{% endif %}
-	        
-	        <div id="sources" class="mt-2 bg-light info-box">
-	          <h6 class="mt-1 ms-1 strong-red">Sources</h6>
-	          <!-- Populated dynamically from context in JavaScript -->
-	        </div>
+      <!-- Left column with the main content -->
+      <div id="textContent" class="col-12 col-lg-6 mx-0 p-1 border">
+        <button id="permalinkButton" class="btn btn-primary btn-sm" data-bs-toggle="tooltip"
+                title="Copy permalink to clipboard"><i class="fas fa-share-nodes"></i> Permalink
+        </button>
 
-            <div id="source_detail" class="mt-2 bg-light info-box">
-		        <h6 class="mt-1 strong-red">In Collection(s)</h6>
-		        <div id="collection_list">
-		          <!-- Populated dynamically from context in JavaScript -->
-		        </div>
-            </div>
-            
+        <h5>{{ portal_headword }}</h5>
+        <div id="gloss"><!-- Populated dynamically from context in JavaScript --></div>
+
+        {% if user.is_authenticated %}
+          <p class="my-0">
+          <span id="addtocoll" class="me-1 small">
+					<span id="added_flash" class="mr-2 hidden"
+                style="background-color: yellow; position:absolute; top:10px; right:10px;"> added! </span>
+					<button id="addchecked" class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                  data-bs-target="#addtocoll_popup"><i class="fas fa-plus-circle"></i> Add to a Collection</button>
+          </span>
+          </p>
+        {% endif %}
+
+        <div id="sources" class="mt-2 bg-light info-box">
+          <h6 class="mt-1 ms-1 strong-red">Sources</h6>
+          <!-- Populated dynamically from context in JavaScript -->
         </div>
-        <!-- Right column with the map and historygram -->
-        <div class="col-12 col-lg-6 mx-0 px-0 ps-lg-2">
-            <div id="map" style="opacity: 0;"></div>
+
+        <div id="source_detail" class="mt-2 bg-light info-box">
+          <h6 class="mt-1 strong-red">In Collection(s)</h6>
+          <div id="collection_list">
+            <!-- Populated dynamically from context in JavaScript -->
+          </div>
         </div>
+
+      </div> <!-- textContent -->
+      <!-- Right column with the map and historygram -->
+      <div class="col-12 col-lg-6 mx-0 px-0 ps-lg-2">
+        <div id="map" style="opacity: 0;"></div>
+      </div>
     </div>
-</div>
+  </div>
 
-<div id="addtocoll_popup" class="modal fade">
+  <div id="addtocoll_popup" class="modal fade">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content">
-            <form id="collection_form" class="needs-validation" novalidate>
-                <div class="modal-header">
-                    <h5>Add <b>{{ portal_headword }}</b> to a Collection</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
+      <div class="modal-content">
+        <form id="collection_form" class="needs-validation" novalidate>
+          <div class="modal-header">
+            <h5>Add <b>{{ portal_headword }}</b> to a Collection</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
                 	<span class="form-inputs">
 	                    <p><em>Select from one of your Place Collections listed below, or create a new Collection:</em></p>
 	                    <ul id="my_collections" class="no-bullets">
 	                        {% for c in my_collections %}
-	                            <li>
-	                            	<input id="radio_{{ c.id }}" type="radio" class="form-check-input" name="collection" value="{{ c.id }}" required>
+                            <li>
+	                            	<input id="radio_{{ c.id }}" type="radio" class="form-check-input" name="collection"
+                                       value="{{ c.id }}" required>
 	                                <label class="form-check-label" for="radio_{{ c.id }}">{{ c.title }}</label>
 	                            </li>
-	                        {% endfor %}
-							<li>
+                          {% endfor %}
+                        <li>
 							    <div class="form-check form-check-inline">
 							        <input id="radio_new" type="radio" class="form-check-input" name="collection" value="-1" required>
 							        <label class="form-check-label" for="radio_new"><em>Create New:</em></label>
-								    <input id="title_input" type="text" class="form-control" name="title" placeholder="Collection title" width="20" required disabled>
-								    <div class="invalid-feedback">Please enter a new Collection title, or select an existing Collection.</div>
+								    <input id="title_input" type="text" class="form-control" name="title" placeholder="Collection title"
+                           width="20" required disabled>
+								    <div
+                      class="invalid-feedback">Please enter a new Collection title, or select an existing Collection.</div>
 							    </div>
 							</li>
 	                    </ul>
 	                    <div id="sourceOptions">
 							<p><em>Optional:</em></p>
-							<p><label for="primarySource">Primary Source:</label> <select id="primarySource" name="primarySource" {% if payload|length > 1 %}data-bs-toggle="tooltip" data-bs-title="Change this if you wish to link to a different source, which might have a different place name."{% else %}disabled{% endif %}></select></p>
-							<p><input type="checkbox" id="includeAll" name="includeAll" checked data-bs-toggle="tooltip" data-bs-title="If selected, this place in your Collection will be linked to all of the sources associated with it, including any which might become associated with it in future. <b>Leave this selected unless you want to use only the specific <i>Primary Source</i> selected above.<b>"> <label for="includeAll">include all sources</label></p>				
+							<p><label for="primarySource">Primary Source:</label> <select id="primarySource" name="primarySource"
+                                                                            {% if payload|length > 1 %}data-bs-toggle="tooltip"
+                                                                            data-bs-title="Change this if you wish to link to a different source, which might have a different place name."
+                                                                            {% else %}disabled{% endif %}></select></p>
+							<p><input type="checkbox" id="includeAll" name="includeAll" checked data-bs-toggle="tooltip"
+                        data-bs-title="If selected, this place in your Collection will be linked to all of the sources associated with it, including any which might become associated with it in future. <b>Leave this selected unless you want to use only the specific <i>Primary Source</i> selected above.<b>"> <label
+                for="includeAll">include all sources</label></p>
 						</div>
                 	</span>
-                    <div id="submission_alerts"></div>
-                </div>
-                <div class="modal-footer form-inputs">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Go Ahead</button>
-                </div>
-            </form>
-        </div>
+            <div id="submission_alerts"></div>
+          </div>
+          <div class="modal-footer form-inputs">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Go Ahead</button>
+          </div>
+        </form>
+      </div>
     </div>
-</div>
+  </div>
 
-{% csrf_token %} <!-- Used for Django POST requests -->
-<script type="text/javascript">
+  {% csrf_token %} <!-- Used for Django POST requests -->
+  <script type="text/javascript">
     let allts = {{ allts }};
     const extent = {{ extent }};
     const centroid = {{ centroid }};
     let geoData = {
-        elevation: null,
-        admin: [],
-        ecoregion: {name: null, url: null},
-        biome: {name: null, url: null}
+      elevation: null,
+      admin: [],
+      ecoregion: {name: null, url: null},
+      biome: {name: null, url: null},
     };
     const userId = {{ user.id|default_if_none:"false" }};
-</script>
+  </script>
 
-{{ payload|json_script:"payload_data" }}
-{{ core|json_script:"geo-layers" }}
+  {{ payload|json_script:"payload_data" }}
+  {{ core|json_script:"geo-layers" }}
 
 {% endblock %}
 

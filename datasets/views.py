@@ -532,7 +532,6 @@ def review(request, pk, tid, passnum):
     "countries": countries,
     "passnum": passnum,
     "page": page if request.method == "GET" else str(int(page) - 1),
-    # TODO: which is it - aug_geom or aug_geoms
     "aug_geoms": kwargs["aug_geoms"],
     "mbtoken": settings.MAPBOX_TOKEN_WHG,
     "maptilerkey": settings.MAPTILER_KEY,
@@ -2555,7 +2554,8 @@ class DatasetStatusView(LoginRequiredMixin, UpdateView):
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
 
     vis_parameters = ds.vis_parameters
-    if vis_parameters is None:
+    # if vis_parameters is None:
+    if not vis_parameters:
       vis_parameters = {
         'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
         'min': {'tabulate': False, 'temporal_control': 'none', 'trail': False},

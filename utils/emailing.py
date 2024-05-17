@@ -50,6 +50,7 @@ def new_emailer(email_type, subject, from_email, to_email, **kwargs):
     email.attach_alternative(html_message, "text/html")
     email.send()
   except Exception as e:
+    print('email:', email)
     print(f'new_emailer failed, error: {e}')
 
 
