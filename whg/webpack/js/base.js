@@ -73,6 +73,11 @@ var jquery_dependent_fallbacks = [
 		localUrl: 'typeahead.bundle.min.js',
 		position: 'head'
 	},
+	{
+		cdnUrl: 'https://cdnjs.cloudflare.com/ajax/libs/jquery-scrollintoview/1.8/jquery.scrollintoview.min.js',
+		localUrl: 'scrollintoview.min.js',
+		position: 'head'
+	},
 	
 ]
 

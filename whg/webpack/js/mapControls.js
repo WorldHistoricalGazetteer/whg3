@@ -65,7 +65,7 @@ class sequencerControl {
 					return;
 				}
 				else if (action == 'play' && !initialisingSlider) {
-					this.currentSeq -= 1; // Play will commence by re-adding 1
+					this.currentSeq = Math.max(this.minSeq, this.currentSeq) -1; // Play will commence by re-adding 1
 				}
 			}
 
@@ -184,7 +184,7 @@ class sequencerControl {
 		this.playing = false;
 		$('.sequencer').removeClass('playing');
         this.updateButtons();
-		console.log('... stopped sequence play.');
+		console.log('... stopped sequence play.', this);
     }
     
     toggle(show) {

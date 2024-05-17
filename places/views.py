@@ -208,8 +208,15 @@ class PlacePortalView(TemplateView):
 
         record = {
           # "whg_id": id_,
-          "dataset": {"id": ds.id, "label": ds.label,
-                      "name": ds.title, "webpage": ds.webpage},
+          "dataset": {
+              "id": ds.id, 
+              "label": ds.label,
+              "name": ds.title, 
+              "webpage": ds.webpage,
+              "description": ds.description,
+              "owner": ds.owner.name,
+              "creator": ds.creator,
+          },
           "place_id": place.id,
           "src_id": place.src_id,
           "purl": ds.uri_base + str(place.id) if 'whgaz' in ds.uri_base else ds.uri_base + place.src_id,

@@ -9,3 +9,33 @@
 .maplibregl-map {
     clear: both;	
 }
+
+.matchbar {
+    background-color: oldlace;	
+}
+
+.matchbar a.geolink {
+    display: inline-block;
+}
+
+.matchbar .feature-id {
+    color: white;
+    font-weight: bold;
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    position: relative;
+    top: 3px;
+}
+
+.matchbar.gn .feature-id  {
+    background-color: blue;	
+}
+
+.matchbar.wdlocal .feature-id {
+    background-color: orange;	
+}

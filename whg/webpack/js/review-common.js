@@ -12,15 +12,37 @@ export let mappy = new whg_maplibre.Map({
 
 let featureCollection;
 
+export let layersets = {};
+
 export function initialiseMap() {
 	console.log('Map loaded.');	
 	
 	featureCollection = JSON.parse(featureCollectionJSON);
 	console.log(featureCollection);
-	
-	mappy
-	.newSource('places', featureCollection)
-	.newLayerset('places');
+
+    // Group features by their 'ds' property
+    let groupedFeatures = {};
+    featureCollection.features.forEach(feature => {
+        const ds = feature.properties.ds;
+        if (!groupedFeatures[ds]) {
+            groupedFeatures[ds] = [];
+        }
+        groupedFeatures[ds].push(feature);
+    });
+
+    // Create a source and layerset for each group of features based on their 'ds' property
+    const markerColours = {
+		'dataset': 'green',
+		'wikidata': 'orange',
+		'geonames': 'blue',
+	} 
+    Object.entries(groupedFeatures).forEach(([ds, features]) => {
+        layersets[ds] = mappy.newSource(ds, { type: 'FeatureCollection', features })
+            .newLayerset(ds, null, null, markerColours[ds] || 'brown', ds == 'dataset' ? 'green' : null, ds !== 'dataset', ds == 'dataset' ? 1.3 : 1); // No numbering for `dataset` source marker
+        if (ds=='geonames' && !!groupedFeatures['wikidata']) layersets[ds].toggleVisibility(false);
+    });
+    
+    console.log(groupedFeatures, layersets);
 	
 	if (featureCollection.features.length > 0) {
 		mappy.fitViewport( bbox( featureCollection ), 8 );
@@ -46,23 +68,15 @@ export function addReviewListeners() {
 	$('#passnum_dynamic').html('<b>' + z.slice(-6) + '</b>');
 				
 	mappy.on('click', function(e) { // Find match for map marker
+		$('.highlight-row').removeClass('highlight-row');
 		const features = mappy.queryRenderedFeatures(e.point);
 		if (features.length > 0) {
-			let scrolled = false;
 			features.forEach(feature => {
 				const isAddedFeature = !mappy.baseStyle.layers.includes(feature.layer.id);
-				if (isAddedFeature && !!feature.properties.src_id) {
-					if (!scrolled) {
-						$('.match_radio').css('background', 'oldlace'); // first, background to #fff for all 
-					}
-					const divy = $('.match_radio[data-id=' + feature.properties.src_id + ']');
-					divy.css('background', 'yellow'); // .matchbar background change, scroll to it
-					console.log(`Clicked marker: ${ feature.properties.src_id }`);
-					if (!scrolled) {
-						console.log(`First matched div top: ${ divy.position().top }`);
-						$("#review_list").scrollTop(divy.position().top - 80);
-						scrolled = true;
-					}
+				if (isAddedFeature && !!feature.id) {
+					$('.hovermap').eq(feature.id - 1)
+					.addClass('highlight-row')
+					.closest('.review-item').scrollintoview();
 				}
 			});
 		}
@@ -79,7 +93,9 @@ export function addReviewListeners() {
 			const isAddedFeature = !mappy.baseStyle.layers.includes(topFeature.layer.id);
 			if (isAddedFeature && !!topFeature.properties.id) {
 				mappy.getCanvas().style.cursor = 'pointer';
-				$(`.hovermap[data-id='${ topFeature.properties.id }']`).addClass('highlight-row');
+				$('.hovermap').eq(topFeature.id - 1)
+				.addClass('highlight-row')
+				.closest('.review-item').scrollintoview();
 			}
 			else clearHighlight();
 		}
@@ -98,18 +114,16 @@ export function addReviewListeners() {
 	);
 	
 	function toggleHighlight(highlight, element) {
-	    let matchingFeature = featureCollection.features.find(feature => feature.properties.id === $(element).data('id'));
+	    let matchingFeature = featureCollection.features.find(feature => feature.properties.id === $(element).data('id').toString());
 	    if (matchingFeature) {
-	        mappy.setFeatureState({ source: 'places', id: matchingFeature.id }, { highlight });
+	        mappy.setFeatureState({ source: $(element).data('authority'), id: matchingFeature.id }, { highlight });
+	        mappy.setFeatureState({ source: 'dataset', id: 0 }, { highlight });
 	    }
 	}		
 	
 	$(".create-comment-review").each(function() {
-		var recpk = $(this).data('id');
-		let uribase = "/comment/" + recpk
-		let next = '?next=' + "{% url 'datasets:review' pk=ds_id tid=task_id passnum=passnum %}"
 		$(this).modalForm({
-			formURL: uribase + next
+			formURL: `/comment/${$(this).data('id')}${uribase}?next=${nextURL}`
 		});
 	});
 
