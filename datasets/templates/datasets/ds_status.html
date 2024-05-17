@@ -348,8 +348,15 @@
 {#              {% if ds.ds_status == 'reconciling' or ds.ds_status == 'accessioning' %}#}
               {# TODO: toggle appearance appropriately #}
               <div class="form-check form-switch">
-                <input id="volunteers" class="form-check-input" type="checkbox" {% if ds.volunteers %}checked{% endif %}>
-                <label class="form-check-label" for="review_help_requested">Volunteer help requested</label>
+                <input id="volunteers" class="form-check-input" type="checkbox" {% if ds.volunteers %}checked{% endif %}
+{% if ds.ds_status != 'reconciling' and ds.ds_status != 'accessioning' %}disabled{% endif %}/>
+                <label class="form-check-label" for="review_help_requested">
+                  {% if ds.volunteers %}
+                    Volunteer help requested
+                  {% else %}
+                    Request volunteer help
+                  {% endif %}
+                </label>
                 <i class="fas fa-question-circle red-head" data-bs-toggle="tooltip" title="List this dataset on 'Volunteer Review Opportunities' page"></i>
               </div>
 {#              {% endif %}#}

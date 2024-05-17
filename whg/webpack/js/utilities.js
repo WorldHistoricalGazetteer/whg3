@@ -306,14 +306,14 @@ export function initUtils(mappy) {
 
   // for collection description only
   $('.a_more_descrip').click(function() {
-    clicked = $(this);
+    let clicked = $(this);
     clicked.hide();
     clicked.parent().find('#dots_descrip').hide();
     clicked.next().show();
     $('.a_less_descrip').show();
   });
   $('.a_less_descrip').click(function() {
-    clicked = $(this);
+    let clicked = $(this);
     clicked.hide(); // hide 'less' link
     $('.more_descrip').hide(); // hide the extra text again
     $('#dots_descrip').show(); // show dots again
@@ -322,7 +322,7 @@ export function initUtils(mappy) {
 
   // Help popups and associated .selector used only in Collection Build pages
   $('.help-matches').click(function() {
-    page = $(this).data('id');
+    let page = $(this).data('id');
     console.log('help:', page);
     $('.selector').dialog('open');
   });

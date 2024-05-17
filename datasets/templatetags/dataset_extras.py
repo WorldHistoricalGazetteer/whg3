@@ -134,16 +134,6 @@ def parsetest(val, key):
         return obj[key]
     else:
         return 'off'
-# def parsetest(val,key):
-#     print('val', val)
-#     print('type(val)', type(val))
-#     print('key', key)
-#     obj = ast.literal_eval(val)
-#     print('type(obj)', type(obj))
-#     if 'test' in obj:
-#         return obj[key]
-#     else:
-#         return 'off'
 
 @register.filter
 def readmore(txt, numchars):

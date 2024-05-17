@@ -759,6 +759,7 @@ def contact_view(request):
       user_email = request.user.email
       username = request.user.username
       name = request.user.first_name  # or another field that stores the user's name
+      owner_greeting = dataset.owner.name if dataset.owner.name else dataset.owner.username
       # Send the volunteer offer emails here
       try:
         # message to dataset owner, cc editors
@@ -786,12 +787,12 @@ def contact_view(request):
           reply_to=[settings.DEFAULT_FROM_EDITORIAL],  # reply-to editorial
           cc=[settings.DEFAULT_FROM_EDITORIAL],  # cc editorial
           name=name,  # user's name
-          owner_greeting=dataset.owner.name if dataset.owner.name else dataset.owner.username,  # owner's name
+          owner_greeting=owner_greeting,
           greeting_name=name if name else username,
           user_subject=initial_subject,  # user-submitted subject
           dataset_title=dataset.title,
         )
-        messages.success(request, "Thank you! Your volunteering offer was forwarded to the dataset owner.")
+        messages.success(request, f"Thank you! Your volunteering offer was forwarded to the dataset owner, ({owner_greeting}).")
       except BadHeaderError:
         return HttpResponse('Invalid header found.')
       return redirect('datasets:volunteer-requests')

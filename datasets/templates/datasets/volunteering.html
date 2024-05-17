@@ -1,6 +1,6 @@
 {% extends "main/base.html" %}
 {% load static %}
-
+{% load dataset_extras %}
 {% block title %}
   <title>WHG v3.0a</title>
 {% endblock %}
@@ -9,7 +9,17 @@
 {% endblock %}
 
 {% block extra_head %}
-
+<style>
+.card-body {
+  max-height: 350px;
+  overflow: auto;
+}
+.card-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -31,20 +41,22 @@
         </div>
     </div>
     {% if messages %}
-        <div class="container bg-lightseagreen">
+        <div class="container bg-lightyellow">
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}">
+                <p class="alert alert-{{ message.tags }} mb-0">
                     {{ message }}
-                </div>
+                </p>
             {% endfor %}
         </div>
     {% endif %}
     {% if dataset_list %}
       {% for ds in dataset_list %}
-        <div class="card col-12 col-md-6 col-lg-4 col-xl-3 me-2">
+        <div class="card card-vol col-12 col-md-6 col-lg-4 col-xl-3 me-2 pb-2">
           <div class="card-body me-2">
             <h5 class="card-title">{{ ds.title }}</h5>
-            <p class="small">{{ ds.description }}</p>
+            <p class="small">{{ ds.description|readmore:300|safe }}</p>
+          </div>
+          <div class="card-button">
             <a href="{% url 'contact' %}?dataset_id={{ ds.id }}&from={{ request.path }}"
                class="btn btn-sm btn-primary volunteer-btn">Offer to volunteer
                <span class="spinner-border spinner-border-sm" role="status"
@@ -82,14 +94,35 @@
           window.location.href = url;  // Redirect after a delay
         }, 2000);  // Delay in milliseconds
       })
+
+      $('.a_more_descrip').click(function() {
+        console.log('more clicked')
+        let clicked = $(this);
+        clicked.hide();
+        clicked.parent().find('#dots_descrip').hide();
+        clicked.next().show();
+        $('.a_less_descrip').show();
+      });
+      $('.a_less_descrip').click(function() {
+        let clicked = $(this);
+        clicked.hide(); // hide 'less' link
+        $('.more_descrip').hide(); // hide the extra text again
+        $('#dots_descrip').show(); // show dots again
+        $('.a_more_descrip').show(); // show more link again
+      });
     });
   </script>
 {% endblock %}
 
 
 {% block deferredScripts %}
+   	var scripts = [
+      {
+        src: '{% static 'webpack/base.bundle.js' %}',
+        type: 'module',
+      },
+   	]
 
-  var scripts = []
 
 {% endblock %}
 {##}

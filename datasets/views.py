@@ -77,11 +77,6 @@ class VolunteeringView(ListView):
     return context
 
 
-def volunteer_offer(request, pk):
-  print('volunteer_offer()', pk)
-  pass
-
-
 # TODO: in use?
 class DatasetGalleryView(ListView):
   redirect_field_name = 'redirect_to'
