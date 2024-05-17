@@ -104,9 +104,9 @@ maplibregl.Map.prototype.newSource = function(ds, fc = null) {
 // };
 
 maplibregl.Map.prototype.layersets = [];
-maplibregl.Map.prototype.newLayerset = function (dc_id, source_id, paintOption) {
+maplibregl.Map.prototype.newLayerset = function (dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger) {
 	this.layersets.push(dc_id);
-    return new Layerset(this, dc_id, source_id, paintOption);
+    return new Layerset(this, dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger);
 };
 
 maplibregl.Map.prototype.highlights = [];

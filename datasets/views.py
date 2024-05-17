@@ -564,7 +564,8 @@ def review(request, pk, tid, passnum):
                     "type": "Feature",
                     "properties": {
                       "record_id": record.id,
-                      "green": True,
+                      "ds": "dataset",
+                      #"green": True,
                     },
                     "geometry": {"type": geom['jsonb']["type"], "coordinates": geom['jsonb'].get("coordinates")},
                     "id": idx
@@ -577,7 +578,7 @@ def review(request, pk, tid, passnum):
                     "type": "Feature",
                     "properties": {
                       **{key: value for key, value in geom.items() if key not in ["coordinates", "type"]},
-                      "green": False,  # Set to True for green markers - following 2 lines are redundant v2 code
+                      #"green": False,  # Set to True for green markers - following 2 lines are redundant v2 code
                       # (review_page=="accession.html" and geom["ds"]==ds.label) or
                       # (review_page=="review.html" and not geom["ds"] in ['tgn', 'wd', 'whg'])
                     },

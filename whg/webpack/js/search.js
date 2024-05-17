@@ -186,14 +186,8 @@ Promise.all([
 
 	// Delegated event listener for Result links
 	$(document).on('click', '.result', function(e) {
-	    const $container = $('#result_container');
-    	const $searchResults = $('#search_results');
-	    const $clickedResult = $(this);
-	    const scrollTop = -30 + $clickedResult.position().top - $container.position().top + $container.scrollTop();
-	    
+	    const $clickedResult = $(this);	    
 		const index = $clickedResult.index(); // Get index of clicked card
-		
-		console.log('data-map-clicked', $clickedResult.attr('data-map-clicked'), index, scrollTop);
 
 		mappy.removeFeatureState({
 			source: 'places',
@@ -209,7 +203,7 @@ Promise.all([
 
 		if ($clickedResult.attr('data-map-clicked') === 'true') { // Scroll table
 	        $clickedResult.removeAttr('data-map-clicked');
-	        $container.animate({ scrollTop: scrollTop }, 'slow');		
+	        $clickedResult.scrollintoview({duration: 'slow'});
 		} else if ($clickedResult.attr('data-map-initialising') === 'true') {
 			$clickedResult.removeAttr('data-map-initialising');
 			mappy.fitBounds(bbox(featureCollection), {
