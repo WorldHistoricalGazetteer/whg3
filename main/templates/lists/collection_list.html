@@ -4,7 +4,7 @@
       <div class="input-group" style="width: 300px; max-width: 100%; margin-left:47px;">
         <input type="text" id="title_search" class="filter-input form-control"
                name="title" value="{{ filters.title|default_if_none:'' }}"
-               placeholder="Search titles & owners">
+               placeholder="Search titles">
         <span class="input-group-text">
           <button class="btn btn-outline-secondary border-0 bg-transparent p-0"
                   type="button" id="clear_search">
@@ -98,7 +98,7 @@
           <td>{{ c.collection_class }}</td> <!-- type -->
 					<td class="small">{{ c.log.last.timestamp|date:"Y-m-d" }}</td> <!-- modified -->
           <td>{{ c.status }}</td> <!-- status -->
-          <td>{{ c.owner.username }}</td> <!-- owner -->
+          <td>{{ c.owner.name }}</td> <!-- owner -->
         </tr>
       {% endfor %}
     </tbody>

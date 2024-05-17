@@ -22,9 +22,6 @@
     position: relative;
 }
 
-#gloss p{
-    font-size: .9rem !important;
-}
 #sources {
     flex: 1;
     max-height: 80%;
@@ -65,26 +62,14 @@ div.overlay .left .item {
     padding: 2px !important;
 }
 
-#collectionInfo p {
-   margin-bottom: .1rem;
-}
-#addtocoll button {
-    font-size: small;
-}
-.btn-sm {
-    --bs-btn-padding-y : 0.1rem !important;
-}
 #histogram {
     top: 6px;
     width: 100%;
 }
-#historygram p {
-    font-size: 0.8rem;
-}
+
 .info-box {
     margin-bottom: 0.2rem;
     font-family: 'Raleway', sans-serif !important;
-    font-size: 0.9rem !important
 }
 
 .source-box {

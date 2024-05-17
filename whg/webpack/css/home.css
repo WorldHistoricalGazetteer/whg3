@@ -35,8 +35,7 @@
 #controlWrapper .home-carousel {
     z-index: 99;
     background-color: #ffffff;
-    /*margin: 0.25rem !important;*/
-    margin: 0 !important;
+    margin: 0.25rem !important;
     background-color: rgba(255, 255, 255, .8);
     border: 1px solid lightgrey;
     border-radius: 4px;
@@ -70,8 +69,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     min-height: 360px;
 }
 #home_left p {
-    font-size: 0.9rem !important;
-    line-height: 1.4rem;
+    font-size: 0.95rem !important;
 }
 .home-button {
     position: relative;
@@ -94,9 +92,8 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     font-size: 1.1rem !important;
 }
 .ds-header {
-    background-color: #ececec;
+    background-color: gainsboro;
     color: grey;
-    margin-bottom: .2rem !important;
 }
 .coll-header {
     background-color: #54a1da;

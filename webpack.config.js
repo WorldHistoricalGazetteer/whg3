@@ -39,8 +39,7 @@ module.exports = {
 	},
 	output: {
 		filename: '[name].bundle.js',
-		// path: '/app/whg/static/webpack',
-		path: '/app/static/webpack',
+		path: '/app/whg/static/webpack',
 	},
 	module: {
 		rules: [

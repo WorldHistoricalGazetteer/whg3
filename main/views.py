@@ -235,7 +235,7 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
     objects = owned_objects | collaborator_objects
 
   if model == Area:
-    objects = objects.filter(type__in=['ccodes', 'copied', 'drawn']).order_by('-created')
+    objects = objects.filter(type__in=['ccodes', 'copied', 'drawn'])
 
   if is_admin and model == Area and 'type' in filter_criteria:
     objects = objects.exclude(type__in=filter_criteria['type'])
@@ -353,10 +353,7 @@ def dataset_list(request, sort='', order=''):
         datasets = datasets.exclude(owner__groups__in=staff_groups)
 
     if 'title' in filters and filters['title']:
-      # datasets = datasets.filter(title__icontains=filters['title'])
-      search_term = filters['title']
-      datasets = datasets.filter(Q(title__icontains=search_term) | Q(owner__username__icontains=search_term))
-      print('title filter:', datasets)
+      datasets = datasets.filter(title__icontains=filters['title'])
 
     context = {
         'datasets': datasets,
@@ -439,9 +436,7 @@ def collection_list(request, sort='', order=''):
       print('owner filter:', collections)
 
     if 'title' in filters and filters['title']:
-      # collections = collections.filter(title__icontains=filters['title'])
-      search_term = filters['title']
-      collections = collections.filter(Q(title__icontains=search_term) | Q(owner__username__icontains=search_term))
+      collections = collections.filter(title__icontains=filters['title'])
       print('title filter:', collections)
 
     context = {

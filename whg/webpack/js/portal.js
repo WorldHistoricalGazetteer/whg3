@@ -163,36 +163,6 @@ function waitDocumentReady() {
             resolve();
         });
     });
-
-
-    var hideAllPopovers = function() {
-       $('.pop-dataset').each(function() {
-            $(this).popover('hide');
-        });
-    };
-
-    var dspop = $(".pop-dataset").popover({
-      trigger: 'focus',
-      placement: 'right',
-      html: true
-    }).on('show.bs.popover', function (e) {
-        $.ajax({
-          url: '/api/datasets/',
-          data: {id:$(this).data('id')},
-          dataType: "JSON",
-          async: false,
-          success: function (data) {
-						let html = ''
-            ds=data.results[0]
-            // console.log('ds',ds)
-            html='<p class="thin"><b>Title</b>: '+ds.title+'</p>'
-            html+='<p class="thin"><b>Description</b>: '+ds.description+'</p>'
-            html+='<p class="thin"><b>WHG Owner</b>: '+ds.owner+'</p>'
-            html+='<p class="thin"><b>Creator</b>: '+ds.creator+'</p>'
-            dspop.attr('data-content', html);
-          }
-      });
-    })
 }
 
 Promise.all([waitMapLoad(), waitDocumentReady()])
@@ -221,7 +191,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         	`  as having type${distinctTypesArray.length > 1 ? 's' : ''} ${distinctTypesArray.map((name, index) => index < distinctTypesArray.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${distinctTypesArray.length == 2 ? '' : ','} and$1`)}` 
         	: '';
 		
-		$('#gloss').append($('<p>').addClass('mb-1 smallish').html(`
+		$('#gloss').append($('<p>').addClass('mb-1').html(`
 			This place is attested (so far) in the <b>${payload.length}</b> source${payload.length > 1 ? 's' : ''} listed below${distinctTypesText}, 
 			with <b>${distinctNameVariants.size}</b> distinct name variant${distinctNameVariants.size > 1 ? 's' : ''}${temporalRange}.
 		`));
@@ -490,7 +460,7 @@ function updateCollections(addCollection = false) {
 	if (uniqueCollections.length > 0) {
 		const ul = $('<ul>').addClass('coll-list');
 		uniqueCollections.forEach(collection => {
-			// console.log('collection', collection);
+			console.log('collection', collection);
 			let listItem = '';
 			// TODO: places are only ever in place collections
 			if (collection.class === 'place') {
