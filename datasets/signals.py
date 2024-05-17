@@ -19,6 +19,7 @@ def send_new_dataset_email(sender, instance, **kwargs):
     old_instance = Dataset.objects.get(pk=instance.pk)
     # if old_instance.ds_status != instance.ds_status and instance.ds_status == 'uploaded':
     # Check if the old_instance.ds_status is None, indicating a new instance
+    owner_name = instance.owner.name if instance.owner.name else instance.owner.username
     if old_instance.ds_status is None and instance.ds_status == 'uploaded':
       try:
         if not instance.owner.groups.filter(name='whg_team').exists():

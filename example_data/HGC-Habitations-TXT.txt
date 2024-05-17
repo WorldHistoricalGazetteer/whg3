@@ -1,0 +1,137 @@
+ID,TOPONYM,PART_OF,CONTRIBUTO,SOURCE,PAGE,CONFIDENCE,LONGITUDE,LATITUDE
+https://www.geonames.org/693805,Aq Mečit,http://www.geonames.org/11494769,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"184","1",34.11079,44.95719
+https://www.geonames.org/7039161,Taqyl,http://www.geonames.org/11494769,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1026","1",33.92309,45.03824
+https://www.geonames.org/712755,Aɣyrmaq Eli,http://www.geonames.org/11494711,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"120","1",35.61583,45.19402
+https://www.geonames.org/10251758,Arabat,http://www.geonames.org/11494711,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"198","1",35.47877,45.29570
+https://www.geonames.org/701300,Juqary Baqsan,http://www.geonames.org/11494733,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"580","1",34.41018,44.97858
+https://www.geonames.org/687378,Ulu Sala,http://www.geonames.org/11494693,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1111","1",34.00877,44.67348
+https://www.geonames.org/712969,Baɣča Saraj,http://www.geonames.org/11494692,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"253","1",33.85782,44.75525
+https://www.geonames.org/708727,Ulaqly,http://www.geonames.org/11494692,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1106","1",33.91593,44.79147
+https://www.geonames.org/696233,Bölek Ağy,http://www.geonames.org/11494628,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"337","1",33.13868,45.30569
+https://www.geonames.org/697652,El Buzly,http://www.geonames.org/11494811,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"458","1",34.98281,44.97675
+https://www.geonames.org/696371,Dürmen,http://www.geonames.org/11494785,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"452","1",33.84649,45.77903
+https://www.geonames.org/697568,Ğurtču,http://www.geonames.org/11494785,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"533","1",33.85596,45.71744
+https://www.geonames.org/6983708,Čujunču,http://www.geonames.org/11494774,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"427","1",34.13511,45.04522
+https://www.geonames.org/6986268,Dajyr,http://www.geonames.org/11494775,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"435","1",34.27275,44.97927
+https://www.geonames.org/7021103,Avuz Qyrq,http://www.geonames.org/11494736,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"234","1",34.55562,45.88389
+https://www.geonames.org/712105,Najman,http://www.geonames.org/11494736,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"729","1",34.35570,46.01685
+https://www.geonames.org/708405,Aq Köz,http://www.geonames.org/11494710,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"180","1",36.18601,45.27819
+https://www.geonames.org/687517,Köp Taqyl,http://www.geonames.org/11494710,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"639","1",36.39965,45.12305
+https://www.geonames.org/692714,Eski Qyrym,http://www.geonames.org/11494709,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"468","1",35.09174,45.02887
+https://www.geonames.org/687656,Ajan,http://www.geonames.org/11494776,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"135","1",34.26426,44.85048
+https://www.geonames.org/700661,Büjük Jaŋköj,http://www.geonames.org/11494776,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"362","1",34.25958,44.82261
+https://www.geonames.org/702741,Eski Orda,http://www.geonames.org/11494776,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"467","1",34.16414,44.90600
+https://www.geonames.org/709161,Kefe,http://www.geonames.org/11494707,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"589","1",35.37789,45.03677
+https://www.geonames.org/687726,Ğaɣa Bojnaq,http://www.geonames.org/11494625,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"488","1",33.27866,45.15816
+https://www.geonames.org/688105,Kezlev,http://www.geonames.org/11494625,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"609","1",33.36342,45.19559
+https://www.geonames.org/688156,Ğaj TamƔaly,http://www.geonames.org/11494737,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"493","1",34.89624,45.53287
+https://www.geonames.org/713514,Alupka,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"165","1",34.04531,44.41808
+https://www.geonames.org/694423,Aqjar,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"193","1",33.52240,44.58883
+https://www.geonames.org/710878,Autka,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"231","1",34.13662,44.49138
+https://www.geonames.org/699659,Baɣa,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"248","1",33.84943,44.49992
+https://www.geonames.org/698391,Bajdar,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"269","1",33.77588,44.44685
+https://www.geonames.org/712930,Balyqlava,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"273","1",33.59942,44.51118
+https://www.geonames.org/701947,Büjük Lambat,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"365","1",34.36469,44.61356
+https://www.geonames.org/704116,Čerkez Kermen,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"401","1",33.73882,44.62131
+https://www.geonames.org/687670,Dermen Köj,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"443","1",34.31753,44.59232
+https://www.geonames.org/698800,Kamara,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"587","1",33.65390,44.51730
+https://www.geonames.org/709121,Karany,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"588","1",33.55374,44.50599
+https://www.geonames.org/8410751,Küčük Lambat,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"656","1",34.36652,44.59719
+https://www.geonames.org/709075,Partenit,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"780","1",34.34464,44.57800
+https://www.geonames.org/11153758,Qady Köj,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"788","1",33.59611,44.51879
+https://www.geonames.org/695409,Savatka,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"967","1",33.85314,44.48128
+https://www.geonames.org/695740,Aq Šejiχ,http://www.geonames.org/11494622,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"191","1",33.52446,45.77611
+https://www.geonames.org/689343,Kerlevüt,http://www.geonames.org/11494622,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"604","1",32.93618,45.59078
+https://www.geonames.org/7019389,Burnaš,http://www.geonames.org/11494738,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"345","1",34.78812,45.45108
+https://www.geonames.org/11468221,Dede,http://www.geonames.org/11494791,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"438","1",33.66351,46.00076
+https://www.geonames.org/713203,Ermeni Bazar,http://www.geonames.org/11494791,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"460","1",33.69095,46.10871
+https://www.geonames.org/706708,Ğanɣara,http://www.geonames.org/11494791,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"504","1",33.80602,46.06018
+https://www.geonames.org/697729,Or,http://www.geonames.org/11494791,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"748","1",33.69308,46.16151
+https://www.geonames.org/691777,Qart Qazaq,http://www.geonames.org/11494791,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"847","1",33.74892,45.97652
+https://www.geonames.org/7027004,Tuzla,http://www.geonames.org/11494791,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1099","1",33.76588,45.99495
+https://www.geonames.org/707544,Üjšün,http://www.geonames.org/11494791,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1126","1",33.82364,45.92403
+https://www.geonames.org/697079,Kök Tejin,http://www.geonames.org/11494739,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"626","1",34.39341,45.53885
+https://www.geonames.org/688711,Qodaɣaj,http://www.geonames.org/11494739,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"865","1",34.23750,45.61672
+https://www.geonames.org/7020275,Uzun Saqal,http://www.geonames.org/11494739,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1118","1",34.38327,45.65067
+https://www.geonames.org/709064,Aqtačy,http://www.geonames.org/11497032,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"195","1",33.74434,44.75825
+https://www.geonames.org/709268,Eski El,http://www.geonames.org/11497032,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"465","1",33.60499,44.73247
+https://www.geonames.org/11468273,Qačy,http://www.geonames.org/11497032,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"786","1",33.62662,44.73980
+https://www.geonames.org/713814,Abuzlar,http://www.geonames.org/11494689,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"106","1",33.81011,45.31656
+https://www.geonames.org/705484,Kökej,http://www.geonames.org/11494689,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"627","1",33.78154,45.37237
+https://www.geonames.org/692723,Qaraɣurt,http://www.geonames.org/11494689,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"827","1",33.66354,45.24241
+https://www.geonames.org/694910,Saq,http://www.geonames.org/11494689,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"954","1",33.59996,45.13424
+https://www.geonames.org/690668,Určuq,http://www.geonames.org/11494689,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1113","1",33.71490,45.38307
+https://www.geonames.org/713090,Ajlanma,http://www.geonames.org/11494740,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"138","1",34.72453,44.94883
+https://www.geonames.org/6998264,Ğemrik,http://www.geonames.org/11494740,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"521","1",34.67739,45.00165
+https://www.geonames.org/688903,Ajbar,http://www.geonames.org/11494790,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"136","1",33.87482,45.51222
+https://www.geonames.org/709869,Mamut Sultan,http://www.geonames.org/11494779,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"687","1",34.22661,44.86632
+https://www.geonames.org/697959,Orta Sobla,http://www.geonames.org/11494779,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"758","1",34.08465,44.83379
+https://www.geonames.org/703618,Kiš Qara,http://www.geonames.org/11494788,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"613","1",33.71709,45.85651
+https://www.geonames.org/691920,Sary Baš,http://www.geonames.org/11494788,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"959","1",33.78728,45.57142
+https://www.geonames.org/708061,Toqulčaq,http://www.geonames.org/11494788,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1085","1",33.83098,45.64219
+https://www.geonames.org/699493,Burlaq,http://www.geonames.org/11494786,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"342","1",34.15543,45.78007
+https://www.geonames.org/11468235,Qara Qytaj,http://www.geonames.org/11494786,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"818","1",34.27356,46.03476
+https://www.geonames.org/706837,Qarač,http://www.geonames.org/11494786,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"821","1",34.27723,45.89245
+https://www.geonames.org/686748,Manaj,http://www.geonames.org/11494620,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"690","1",33.52775,45.69028
+https://www.geonames.org/712313,Šejiχ Eli,http://www.geonames.org/11494620,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"999","1",33.34230,45.57470
+https://www.geonames.org/694378,Aq Köbek,http://www.geonames.org/11494705,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"179","1",35.02385,45.25330
+https://www.geonames.org/700602,Murza Köj,http://www.geonames.org/11494705,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"721","1",34.83586,45.05318
+https://www.geonames.org/695669,Qara Baj,http://www.geonames.org/11494705,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"810","1",35.03384,45.19918
+https://www.geonames.org/6999493,Töben Saraj,http://www.geonames.org/11494705,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1092","1",34.85738,45.07243
+https://www.geonames.org/688929,Üč Quju,http://www.geonames.org/11494705,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1123","1",35.02708,45.21908
+https://www.geonames.org/701311,Aj Serez,http://www.geonames.org/11494704,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"132","1",34.84808,44.87654
+https://www.geonames.org/713513,Alušta,http://www.geonames.org/11494704,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"166","1",34.40970,44.67728
+https://www.geonames.org/687388,Arpat,http://www.geonames.org/11494704,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"208","1",34.72149,44.86978
+https://www.geonames.org/693219,Qoz,http://www.geonames.org/11494704,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"884","1",35.10622,44.87185
+https://www.geonames.org/693218,Quru Özen,http://www.geonames.org/11494704,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"899","1",34.53158,44.74839
+https://www.geonames.org/692315,Sudaq,http://www.geonames.org/11494704,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"981","1",34.97471,44.84924
+https://www.geonames.org/703518,Šuma,http://www.geonames.org/11494704,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1012","1",34.36638,44.72123
+https://www.geonames.org/703169,Suvuk Suv,http://www.geonames.org/11494704,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"988","1",34.95318,44.94111
+https://www.geonames.org/708879,Ulu Özen,http://www.geonames.org/11494704,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1108","1",34.48219,44.80073
+https://www.geonames.org/689035,Voron,http://www.geonames.org/11494704,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1131","1",34.81894,44.88996
+https://www.geonames.org/702461,Qara Töbel,http://www.geonames.org/11494741,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"820","1",34.93115,45.63125
+https://www.geonames.org/7027852,Jaš Bek,http://www.geonames.org/11494617,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"574","1",32.97941,45.47849
+https://www.geonames.org/461727,Qarağy,http://www.geonames.org/11494617,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"828","1",32.53333,45.38333
+https://www.geonames.org/7027764,Tabuldy As,http://www.geonames.org/11494617,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1017","1",32.97945,45.36318
+https://www.geonames.org/698652,Büjük Onlar,http://www.geonames.org/11494782,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"369","1",34.13521,45.28866
+https://www.geonames.org/705258,Itaq,http://www.geonames.org/11494782,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"560","1",34.15802,45.35811
+https://www.geonames.org/702248,Tašly Dajyr,http://www.geonames.org/11494782,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1036","1",34.22134,45.43473
+https://www.geonames.org/702921,Qaja Asty,http://www.geonames.org/11494783,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"791","1",34.31107,45.08648
+(none),Kerlevüt,http://www.geonames.org/11494711,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,,"3",35.72350,45.11565
+(none),Čal Temir,http://www.geonames.org/11494706,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"389","3",35.91573,45.17089
+https://www.geonames.org/697484,Qyrq,http://www.geonames.org/11494706,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"932","2",35.92522,45.36030
+(none),Mysyr,http://www.geonames.org/11494710,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"728","2",36.27027,45.46259
+https://www.geonames.org/710687,Šejiχler,http://www.geonames.org/11494617,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1003","2",32.71131,45.51502
+https://www.geonames.org/700589,Üč Quju Qypčaq,http://www.geonames.org/11494617,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1125","2",32.88346,45.53967
+https://www.geonames.org/706680,Mor Qalpi,http://www.geonames.org/11494628,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"716","2",33.35839,45.44908
+(none),Apan,http://www.geonames.org/11494625,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"170","3",33.44175,45.37954
+https://www.geonames.org/710270,Qyr Aqtačy,http://www.geonames.org/11494620,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"920","2",33.42006,45.61266
+https://www.geonames.org/7026824,Ički,http://www.geonames.org/11494622,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"546","2",33.51572,45.73288
+(none),Tana Baj,http://www.geonames.org/11494622,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1025","3",33.02504,45.65274
+(none),Tulat,http://www.geonames.org/11494769,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1095","3",33.82074,45.07554
+https://www.geonames.org/688533,Jalta,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,,"1",34.16612,44.50217
+(none),Quvuš,http://www.geonames.org/11494693,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"904","3",34.10311,44.63938
+https://www.geonames.org/12508727,Mangup,http://www.geonames.org/11494691,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"691","1",33.80028,44.58343
+(none),Beš  Ev,http://www.geonames.org/11494693,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"301","3",34.14020,44.75623
+(none),Boz Göz,http://www.geonames.org/11494785,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,,"3",34.01631,45.65631
+(none),Elüv Qazan,http://www.geonames.org/11494734,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"459","3",34.10152,45.69232
+(none),Baj Börü,http://www.geonames.org/11494739,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"257","3",34.24379,45.49965
+http://www.geonames.org/710904,Tüp Tarqan,http://www.geonames.org/11494741,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1032","1",34.59533,45.81110
+https://www.geonames.org/697687,Qaraŋɣyt,http://www.geonames.org/11494741,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"830","2",34.56331,45.74290
+(none),Apas Baɣalaq,http://www.geonames.org/11494740,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"170","3",34.32080,45.84835
+(none),Saryq,http://www.geonames.org/11494741,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"965","3",34.87707,45.65988
+https://www.geonames.org/11152864,Širin,http://www.geonames.org/11494741,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,,"2",34.66025,45.63205
+https://www.geonames.org/707776,Ğijen Sofu,http://www.geonames.org/11494790,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"523","2",33.97684,45.58687
+(none),Aj Quɣul,http://www.geonames.org/11494790,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"131","3",33.71184,45.57926
+https://www.geonames.org/712587,Qarasuv Bazar,http://www.geonames.org/11494740,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"834","1",34.60164,45.05472
+https://www.geonames.org/686778,Arɣynčyq,http://www.geonames.org/11494740,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"207","1",34.64878,45.23630
+https://www.geonames.org/693165,Xan Eli,http://www.geonames.org/11494775,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"564","2",34.29663,44.95233
+https://www.geonames.org/708582,Tama,http://www.geonames.org/11494740,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"1021","2",34.63096,44.97516
+(none),Küleč,http://www.geonames.org/11494708,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"670","3",35.28944,45.17507
+https://www.geonames.org/693901,Köp Otuz,http://www.geonames.org/11494709,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"635","2",35.21201,45.27321
+https://www.geonames.org/7406932,Baqa Taš,http://www.geonames.org/11494811,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"276","2",35.22137,45.00039
+https://www.geonames.org/708003,Šah Murza,http://www.geonames.org/11494811,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"996","2",34.97302,45.02279
+https://www.geonames.org/6983972,Qyrmačy,http://www.geonames.org/11494772,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"931","2",34.18352,45.26341
+https://www.geonames.org/700407,"Boraɣan
+",http://www.geonames.org/11494735,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,"322","2",34.44898,45.27087
+https://www.geonames.org/12504068,Yeni Qale / Ganqai,http://www.geonames.org/11494710,https://orcid.org/0000-0001-5427-7601,ISBN 9789004154339,,"1",36.60481,45.34930

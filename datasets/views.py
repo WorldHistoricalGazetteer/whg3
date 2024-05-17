@@ -372,7 +372,7 @@ def review(request, pk, tid, passnum):
   auth = task.task_name[6:].replace("local", "")
   authname = "Wikidata" if auth == "wd" else "WHG"
   kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
-  print('kwargs', kwargs)
+  print('task_kwargs in review', kwargs)
   test = kwargs["test"] if "test" in kwargs else "off"
   beta = "beta" in list(request.user.groups.all().values_list("name", flat=True))
   # filter place records by passnum for those with unreviewed hits on this task
@@ -843,13 +843,53 @@ def review(request, pk, tid, passnum):
 """
 
 
+# kwargs = json.loads(task.task_kwargs.replace("'", '"'))
 def write_wd_pass0(request, tid):
+  print('task_id (tid) in write_wd_pass0()', tid)
   task = get_object_or_404(TaskResult, task_id=tid)
-  kwargs = json.loads(task.task_kwargs.replace("'", '"'))
+  print('task.task_kwargs', task.task_kwargs)
+  try:
+    kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
+    print('kwargs in write_wd_pass0()', kwargs, kwargs['ds'])
+  except (ValueError, SyntaxError) as e:
+    print(f"Error evaluating task_kwargs: {e}")
+    # return  # Handle the error appropriately
+
+  # kwargs_str = task.task_kwargs.replace("'", '"')
+  # kwargs = json.loads(kwargs_str)
+  # kwargs = ast.literal_eval(task.task_kwargs)
+  print('kwargs in write_wd_pass0()', kwargs, kwargs['ds'])
+  print('type kwargs', type(kwargs))
   referer = request.META.get('HTTP_REFERER') + '#reconciliation'
   auth = task.task_name[6:].replace('local', '')
-  ds = get_object_or_404(Dataset, pk=kwargs['ds'])
-  authname = 'Wikidata'
+  # ds = get_object_or_404(Dataset, pk=kwargs['ds'])
+  ds = Dataset.objects.get(id=kwargs['ds'])
+
+
+# def write_wd_pass0(request, tid):
+#   print('task_id (tid) in write_wd_pass0()', tid)
+#   task = get_object_or_404(TaskResult, task_id=tid)
+#   # kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
+#   task_kwargs_str = task.task_kwargs
+#   print('task.task_kwargs (raw):', task_kwargs_str)
+#
+#   # Use regex to extract the 'ds' value
+#   match = re.search(r"'ds':\s*(\d+)", task_kwargs_str)
+#   if match:
+#     ds_value = int(match.group(1))
+#     print('Extracted ds value:', ds_value)
+#   else:
+#     print("Error: 'ds' value not found in task_kwargs")
+#     return  # Handle the error appropriately
+#
+#   # Fetch the Dataset object using the extracted 'ds' value
+#   ds = get_object_or_404(Dataset, pk=ds_value)
+#
+
+  print('Dataset found:', ds)
+
+  referer = request.META.get('HTTP_REFERER') + '#reconciliation'
+  auth = task.task_name[6:].replace('local', '')
 
   # get unreviewed pass0 hits
   hits = Hit.objects.filter(
@@ -864,6 +904,7 @@ def write_wd_pass0(request, tid):
     place = h.place  # object
     # existing for the place
     authids = place.links.all().values_list('jsonb__identifier', flat=True)
+    authname = 'Wikidata' if h.authority == 'wd' else 'GeoNames'
     # GEOMS
     # confirm another user hasn't just done this...
     if hasGeom and kwargs['aug_geoms'] == 'on' \
@@ -874,6 +915,7 @@ def write_wd_pass0(request, tid):
           task_id=tid,
           src_id=place.src_id,
           geom=GEOSGeometry(json.dumps({"type": g['type'], "coordinates": g['coordinates']})),
+          reviewer=request.user,
           jsonb={
             "type": g['type'],
             "citation": {"id": auth + ':' + h.authrecord_id, "label": authname},
@@ -891,6 +933,7 @@ def write_wd_pass0(request, tid):
         place=place,
         task_id=tid,
         src_id=place.src_id,
+        reviewer=request.user,
         jsonb={
           "type": "closeMatch",
           "identifier": link_uri(task.task_name, h.authrecord_id)
@@ -913,6 +956,7 @@ def write_wd_pass0(request, tid):
             place=place,
             task_id=tid,
             src_id=place.src_id,
+            reviewer=request.user,
             jsonb={
               "type": "closeMatch",
               "identifier": authid
@@ -922,7 +966,10 @@ def write_wd_pass0(request, tid):
 
     # update dataset totals for metadata page
     ds.numlinked = len(set(PlaceLink.objects.filter(place_id__in=ds.placeids).values_list('place_id', flat=True)))
-    ds.total_links += link_counter
+    if ds.total_links is None:
+      ds.total_links = link_counter
+    else:
+      ds.total_links += link_counter
     ds.save()
 
     # flag hit as reviewed

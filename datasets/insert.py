@@ -133,7 +133,7 @@ def process_types(row, newpl):
       if type_:
         pt_data['jsonb']['sourceLabel'] = type_
       if aat_type:
-        pt_data['jsonb']['identifier'] = aat_type
+        pt_data['jsonb']['identifier'] = 'aat:'+str(aat_type)
         pt_data['jsonb']['label'] = aat_fclass.get(aat_type, {}).get('term')
 
       type_objects.append(PlaceType(**pt_data))
@@ -281,16 +281,16 @@ def process_links(row, newpl):
 
 # create PlaceRelated object from parent_name, parent_id
 def process_related(row, newpl):
-  # in LP-Delim, only parent relation (gvp:broaderPartitive)
+  # in LP-Delim, only parent relation is gvp:broaderPartitive
   related_object = PlaceRelated(
     place=newpl,
     src_id=newpl.src_id,
-    jsonb={"identifier": row["parent_name"],
+    jsonb={"label": row["parent_name"],
            "relationType": "gvp:broaderPartitive"},
   )
   parent_id = row.get('parent_id')
   if parent_id is not None:
-    related_object['jsonb']['relationTo'] = parent_id
+    related_object.jsonb['relationTo'] = parent_id
 
   return [related_object]
 
@@ -344,6 +344,7 @@ def ds_insert_delim(df, pk):
       """
         create new Place + a PlaceName record from its title
       """
+      print('row in insert', row)
       if not Place.objects.filter(src_id=row['id'], dataset=ds).exists():
         newpl = create_place(row, ds)
       else:
@@ -377,6 +378,7 @@ def ds_insert_delim(df, pk):
         objlists['PlaceLink'].extend(process_links(row, newpl))
 
       # PlaceRelated
+      # TODO: does not handle parent_id
       if ('parent_name' in row and row['parent_name']):
         objlists['PlaceRelated'].extend(process_related(row, newpl))
 

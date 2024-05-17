@@ -242,7 +242,7 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
   elif model == Dataset:  # reverse sort, and some dummy datasets need to be filtered
     objects = objects.exclude(
       Q(title__startswith='(stub)')|Q(numrows__lt=1)
-    ).order_by('create_date')
+    ).order_by('-create_date')
     objects = objects.annotate(recent_log_timestamp=Max('log__timestamp'))
     # objects = objects.order_by('-recent_log_timestamp')
     # objects = objects.order_by('label')

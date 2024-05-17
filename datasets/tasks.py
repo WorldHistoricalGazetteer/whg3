@@ -1089,6 +1089,7 @@ def es_lookup_idx(qobj, *args, **kwargs):
 @shared_task(name="align_idx")
 def align_idx(*args, **kwargs):
   task_id = align_idx.request.id
+  task_status = AsyncResult(task_id).status
   ds = get_object_or_404(Dataset, id=kwargs['ds'])
   print('kwargs in align_idx()',kwargs)
   test=kwargs['test']  # always 'on' for dev - no writing to the production index!
@@ -1300,7 +1301,7 @@ def align_idx(*args, **kwargs):
     counthit=count_hit,  # of records with any hit(s)
     totalhits=total_hits,  # of hits
     taskname='WHG index',
-    status=align_idx.request.status,
+    status=task_status,
     test=test
   )
 
