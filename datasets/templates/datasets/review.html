@@ -176,6 +176,7 @@
             <!--available: ['whg_id', 'place_id', 'src_id', 'title', 'dataset', 'variants', 'types', 'ccodes', 'parents', 'descriptions', 'geoms', 'timespans', 'links']-->
             <div id="review_list" class="col-sm-8 pe-0">
               {% for form in formset %}
+              <span class="review-item">
                 <input type="hidden" name="id" value='{{ form.id.value }}'></input>
                 <input type="hidden" name="authrecord_id" value='{{ form.authrecord_id.value }}'></input>
                 <input type="hidden" name="score" value='{{ form.score.value }}'></input>
@@ -187,9 +188,9 @@
                 <div class="matchbar ps-2 pe-2 mb-1
                   {% if form.json.value|get:'dataset' == 'geonames' %}gn{% else %}wdlocal{% endif %} ">
                   <div class="match_radio custom-control custom-radio hovermap"
-                       data-id="{{ form.authrecord_id.value }}">
+                       data-authority="{{ form.authority.value }}" data-id="{{ form.authrecord_id.value }}">
                     {% if form.json.value|get:"geoms"|length > 0 %}
-                      <span class="me-2 globeflash">
+                      <span class="me-2">
                         <a class="geolink" data-id="{{ form.authrecord_id.value }}" rel="tooltip"
                           {% if ds_label == 'tgn_filtered_01' or authority == 'whg' or authority == 'idx' %}
                                        id="{{ form.json.value|get:"place_id" }}"
@@ -197,7 +198,7 @@
                                        id="{{ form.authrecord_id.value }}"
                                       {% endif %}
                                        href='javascript:void(0)'>
-							                        <i class="fas fa-globe" style="color:#000;"></i>
+						  <span class="feature-id">{{ forloop.counter }}</span>
                         </a>
                       </span>
                     {% endif %}
@@ -311,6 +312,7 @@
                     </div>
                   {% endif %}
                 </div>
+              </span>
               {% endfor %}
             </div> <!-- review_list -->
           </div> <!-- .row -->
@@ -336,6 +338,7 @@
     let passnum = '{{ passnum }}';
     let mbtoken = '{{ mbtoken }}';
     let page_variant = 'accession';
+    let nextURL = "{% url 'datasets:review' pk=ds_id tid=task_id passnum=passnum %}";
   </script>
 {% endblock %}
 

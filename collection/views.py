@@ -1069,6 +1069,12 @@ class PlaceCollectionBrowseView(DetailView):
     id_ = self.kwargs.get("id")
     return get_object_or_404(Collection, id=id_)
 
+  def dispatch(self, request, *args, **kwargs):
+    self.object = self.get_object()
+    if self.object.collection_class != "place":
+        raise Http404("Collection does not match expected class 'place'")
+    return super().dispatch(request, *args, **kwargs)
+
   def get_context_data(self, *args, **kwargs):
     id_ = self.kwargs.get("id")
     coll = get_object_or_404(Collection, id=id_)
@@ -1431,6 +1437,12 @@ class DatasetCollectionBrowseView(DetailView):
   def get_object(self):
     id_ = self.kwargs.get("id")
     return get_object_or_404(Collection, id=id_)
+
+  def dispatch(self, request, *args, **kwargs):
+    self.object = self.get_object()
+    if self.object.collection_class != "dataset":
+        raise Http404("Collection does not match expected class 'dataset'")
+    return super().dispatch(request, *args, **kwargs)
 
   def get_context_data(self, *args, **kwargs):
     context = super(DatasetCollectionBrowseView, self).get_context_data(*args, **kwargs)
