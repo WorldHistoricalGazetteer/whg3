@@ -211,7 +211,7 @@ class PlacePortalView(TemplateView):
           "dataset": {
               "id": ds.id, 
               "label": ds.label,
-              "name": ds.title, 
+              "title": ds.title,
               "webpage": ds.webpage,
               "description": ds.description,
               "owner": ds.owner.name,

@@ -238,13 +238,13 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		                   data-bs-toggle="popover"
 		                   data-bs-title="Dataset Profile" 
 		                   data-bs-content="
-						        <p class='thin'><b>Title</b>: ${place.dataset.title}</p>
+						        <p class='thin'><b>Title</b>: ${place.dataset.title.replace('(stub) ', '').substring(0, 25)}</p>
 						        <p class='thin'><b>Description</b>: ${place.dataset.description}</p>
 						        <p class='thin'><b>WHG Owner</b>: ${place.dataset.owner}</p>
 						        <p class='thin'><b>Creator</b>: ${place.dataset.creator}</p>" 
 						   tabindex="0" 
 						   rel="clickover">
-		                ${place.dataset.name.replace('(stub) ', '').substring(0, 25)}
+		                ${place.dataset.title.replace('(stub) ', '').substring(0, 25)}
 		            </a>
 					<div class="name-variants toggle-truncate">
 					    <strong class="larger">${place.title}</strong> ${place.names.map(label => label.label.trim()).join('; ')}

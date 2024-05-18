@@ -364,6 +364,7 @@ def indexMultiMatch(pid, matchlist):
 
 
 def review(request, pk, tid, passnum):
+  print('passnum in review()', passnum)
   pid = None
   if "pid" in request.GET:
     pid = request.GET["pid"]
@@ -416,6 +417,7 @@ def review(request, pk, tid, passnum):
     )
   else:
     # all unreviewed
+    print ('all unreviewed in review(); passnum is', passnum)
     hitplaces = Hit.objects.values("place_id").filter(task_id=tid, reviewed=False)
   # print('review() hitplaces', [p['place_id'] for p in hitplaces])
 
@@ -474,17 +476,20 @@ def review(request, pk, tid, passnum):
   # get hits for this record
   placeid = records[0].id
   place = get_object_or_404(Place, id=placeid)
-  if passnum.startswith("pass") and auth not in ["whg", "idx"]:
-    # this is wikidata review, list only for this pass
+  print('passnum', passnum)
+  # if passnum.startswith("pass") and auth not in ["whg", "idx"]:
+  if auth not in ["whg", "idx"]:
+    # this is wdgn review, list only for this pass
+    print('wdgn review, list only for this pass', passnum)
     raw_hits = Hit.objects.filter(
-      place_id=placeid, task_id=tid, query_pass=passnum
-    ).order_by("-score")
+      place_id=placeid, task_id=tid, query_pass='pass'+str(passnum)
+    ).order_by("-authority", "-score")
+    print([rh.authority for rh in raw_hits])
   else:
-    # accessioning -> get all regardless of pass
-    # raw_hits = Hit.objects.filter(place_id=placeid, task_id=tid).order_by('-score')
+    # this is accessioning -> get all regardless of pass
     raw_hits = Hit.objects.filter(place_id=placeid, task_id=tid).order_by("-score")
 
-  # print('raw_hits in review()', [h.__dict__ for h in raw_hits])
+
   # ??why? get pass contents for all of a place's hits
   passes = (
     list(
@@ -548,7 +553,7 @@ def review(request, pk, tid, passnum):
   )
   formset = HitFormset(request.POST or None, queryset=raw_hits)
   context["formset"] = formset
-  print('hit.json in review()', [h.json for h in raw_hits])
+  # print('hit.json in review()', [h.json for h in raw_hits])
   # Create FeatureCollection for mapping
   index_offset = sum(1 for record in records for geom in record.geoms.all().values('jsonb'))
   feature_collection = {

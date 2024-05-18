@@ -546,25 +546,60 @@ def es_lookup_wdlocal(qobj, *args, **kwargs):
   if has_countries:
     countries_match = {"terms": {"claims.P17":countries}}
   
-  # prelim query: any authid matches?
-  # can be accepted without review
+  # initial paass0 query: any authid matches?
+  # can be auto accepted without review if desired
   # incoming qobj['authids'] might include
   # a wikidata identifier matching an index _id (Qnnnnnnn)
-  # OR an id match in wikidata authids[] e.g. gn:, tgn:, pl:, bnf:, viaf:
-  # 
-  q0 = {"query": { 
-    "bool": {
-      "must": [
-        {"bool": {
-          "should": [
-            {"terms": {"authids": qobj['authids']}},
-            # capture any wd: Q ids
-            {"terms": {"_id": [i[3:] for i in qobj['authids']] }}
-          ],
-          "minimum_should_match": 1
-        }}
-      ]
-  }}}
+  # 2024-05-18: OR a geonames id match in the index "id" field
+  # OR any id match in wikidata authids[] e.g. gn:, tgn:, pl:, bnf:, viaf:
+
+  # 18 May 24: OR a geonames id match in authids[] e.g. gn:1234567
+  q0 = {
+    "query": {
+      "bool": {
+        "must": [
+          {
+            "bool": {
+              "should": [
+                {"terms": {"authids": qobj['authids']}},  # Existing match on authids
+                {
+                  "bool": {
+                    "must": [
+                      {"terms": {"_id": [i[3:] for i in qobj['authids'] if i.startswith("wd:")]}},
+                      {"term": {"dataset": "wikidata"}}
+                    ]
+                  }
+                },  # Match on wikidata IDs
+                {
+                  "bool": {
+                    "must": [
+                      {"terms": {"id": [i[3:] for i in qobj['authids'] if i.startswith("gn:")]}},
+                      {"term": {"dataset": "geonames"}}
+                    ]
+                  }
+                }  # Match on geonames IDs
+              ],
+              "minimum_should_match": 1
+            }
+          }
+        ]
+      }
+    }
+  }
+
+  # q0 = {"query": {
+  #   "bool": {
+  #     "must": [
+  #       {"bool": {
+  #         "should": [
+  #           {"terms": {"authids": qobj['authids']}},
+  #           # capture any wd: Q ids
+  #           {"terms": {"_id": [i[3:] for i in qobj['authids']] }}
+  #         ],
+  #         "minimum_should_match": 1
+  #       }}
+  #     ]
+  # }}}
 
   # base query
   qbase = {"query": { 

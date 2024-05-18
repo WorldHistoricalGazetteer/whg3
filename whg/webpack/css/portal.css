@@ -91,6 +91,7 @@ div.overlay .left .item {
     display: flow-root;
     background-color: white;
     border: 1px gainsboro solid;
+    /*border: 3px red solid;*/
     border-radius: .3rem;
     margin: .1rem;
     padding: .4rem;
