@@ -99,10 +99,13 @@
                       please <a href="#" class="feedback">contact the editorial team</a>.</p>
                   {% endif %}
                   <p class="font-weight-bold mb-0">Target index</p>
+{#                  ds.recon_status.idx: {{ ds.recon_status }}#}
                   <div class="form-check">
                     <label class="form-check-label" for="r_wdlocal">
                       <input type="radio" class="form-check-input r_recon" id="r_wdlocal"
-                             name="recon" value="wdlocal" {% if not ds.recon_status.idx %}checked{% else %}disabled{% endif %}>
+                             name="recon" value="wdlocal"
+{#                             {% if not ds.recon_status.idx %} checked{% else %} disabled{% endif %}>#}
+                             {% if not ds.recon_status.idx %} disabled{% endif %}>
                       Wikidata + GeoNames
                       <span class="ms-2 font-italic small">(estimated time: {{ numrows|time_estimate }})</span>
                     </label>
@@ -121,9 +124,10 @@
                     {% endif %}
                   </div>
 
+                  <p>ds.recon_status: {{ ds.recon_status }}</p>
+                    {% if not ds.recon_status.idx and not ds.recon_status.idx == 0 %}
                   <div id="addtask_lower">
                     <hr/>
-                    {% if not ds.recon_status.idx %}
                       <div class="row">
                         <div class="col-md-6">
                           <div class="recon-options">
@@ -131,15 +135,6 @@
                               <span class="help-matches" data-id="task_options">
                                   <i class="fas fa-question-circle linkypop"></i></span>
                             </p>
-                            {% comment %}
-                            missing geoms? {{ ds.missing_geoms }}
-                            <div class="form-check small">
-                              <input class="form-check-input" type="radio"
-                                     name="scope_geom" id="geom_free" value="geom_free">
-                              <label class="form-check-label" for="geom_free">
-                                Send only those records missing geometry</label>
-                            </div>
-                            {% endcomment %}
                             <div class="form-check small">
                               <input class="form-check-input" type="radio" checked
                                      name="scope_geom" id="all" value="all">
@@ -147,11 +142,16 @@
                                 Send all records
                               </label><br/>
                             </div>
-                            <p class="small">
-                              <input id="" name="no_geonames" type="checkbox"/><span class="ms-2">exclude GeoNames from search</span></p>
+                        {% if ds.ds_status == 'uploaded' or ds.ds_status == 'reconciling' %}
+                          <p class="small">
+                            <input id="" name="no_geonames" type="checkbox"/>
+                            <span class="ms-2">exclude GeoNames from search</span>
+                          </p>
+                        {% endif %}
                           </div>
                         </div>
                         <div class="col-md-6">
+                          {% if ds.recon_status.idx > 0 %}
                           <div class="recon-options">
                             <p class="allcap-heading small mb-0">REVIEW OPTIONS
                                 <span class="help-matches" data-id="review_options">
@@ -166,42 +166,9 @@
                                   accept new name variants upon match
                             </p>
                           </div>
+                          {% endif %}
                         </div>
                       </div>
-                    {% endif %}
-
-                    {% comment %}
-                    <div id="geo_constraint" class="mt-2">
-                      <div class="mb-2">
-                        <p class="font-weight-bold">Geographic bounds <span class="help-matches" data-id="geo_bounds"><i
-                          class="fas fa-question-circle linkypop"></i></span>
-                        </p>
-                        <p>
-                          <select id="select_region" name="region" class="custom-select-sm" style="width:auto;">
-                            <option value="0">Select pre-defined region</option>
-                            <option disabled>___________</option>
-                            {% for r in region_list %}
-                              <option value="{{ r.id }}">{{ r.title }}</option>
-                            {% endfor %}
-                          </select>
-                          <span class="ms-2"><b>or...</b></span>
-                        </p>
-                        <p>
-                          <select id="select_userarea" name="userarea" class="custom-select-sm" style="width:auto;">
-                            <option value="0" selected="selected">Select user-defined study area</option>
-                            <option disabled>___________</option>
-                            {% for a in area_list %}
-                              <option value="{{ a.id }}">{{ a.title }}</option>
-                            {% endfor %}
-                            <option value="create">{ new }</option>
-                          </select>
-                          <span class="ms-2 small">
-                            <a href="{% url 'areas:area-create' %}?next=/datasets/{{ ds.id }}/addtask">create user area</a>
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                    {% endcomment %}
                   </div>
                   {# buttons #}
                   <div class="bottom">
@@ -210,6 +177,8 @@
                     <button type="submit" id="btn_startrecon" class="btn btn-primary">Start</button>
                     <span title="back"><a id="cancel_taskadd" href="#">Cancel</a></span>
                   </div>
+                  {% endif %}
+
                 {% endif %} <!-- ds.unindexed -->
               </div> <!-- recon_form -->
 

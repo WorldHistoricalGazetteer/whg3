@@ -810,10 +810,11 @@ def review(request, pk, tid, passnum):
 
       # if none are left for this task, change status & email staff
       if auth in ["wd"] and ds.recon_status["wdlocal"] == 0:
-        ds.ds_status = "wd-complete"
-        ds.save()
-        status_emailer(ds, "wd")
-        print("sent status email")
+        recon_complete(ds)
+        # ds.ds_status = "wd-complete"
+        # ds.save()
+        # status_emailer(ds, "wd")
+        # print("sent status email")
       # handled by signal now
       # elif auth == "idx" and ds.recon_status["idx"] == 0:
       #   ds.ds_status = "indexed"
@@ -841,14 +842,17 @@ def review(request, pk, tid, passnum):
   # print('context', context)
   return render(request, "datasets/" + review_page, context=context)
 
+def recon_complete(ds):
+  ds.ds_status = "wd-complete"
+  ds.save()
+  # status_emailer(ds, "wd")
+  # print("sent status email")
 
 """
   write_wd_pass0(taskid)
   called from dataset_detail>reconciliation tab
   accepts all pass0 wikidata matches, writes geoms and links
 """
-
-
 # kwargs = json.loads(task.task_kwargs.replace("'", '"'))
 def write_wd_pass0(request, tid):
   print('task_id (tid) in write_wd_pass0()', tid)
@@ -870,27 +874,6 @@ def write_wd_pass0(request, tid):
   auth = task.task_name[6:].replace('local', '')
   # ds = get_object_or_404(Dataset, pk=kwargs['ds'])
   ds = Dataset.objects.get(id=kwargs['ds'])
-
-
-# def write_wd_pass0(request, tid):
-#   print('task_id (tid) in write_wd_pass0()', tid)
-#   task = get_object_or_404(TaskResult, task_id=tid)
-#   # kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
-#   task_kwargs_str = task.task_kwargs
-#   print('task.task_kwargs (raw):', task_kwargs_str)
-#
-#   # Use regex to extract the 'ds' value
-#   match = re.search(r"'ds':\s*(\d+)", task_kwargs_str)
-#   if match:
-#     ds_value = int(match.group(1))
-#     print('Extracted ds value:', ds_value)
-#   else:
-#     print("Error: 'ds' value not found in task_kwargs")
-#     return  # Handle the error appropriately
-#
-#   # Fetch the Dataset object using the extracted 'ds' value
-#   ds = get_object_or_404(Dataset, pk=ds_value)
-#
 
   print('Dataset found:', ds)
 
@@ -969,6 +952,10 @@ def write_wd_pass0(request, tid):
             }
           )
       print('created ' + str(len(h.json['links'])) + ' place_link instances')
+
+    # only matters if autocomplete was the last review action
+    if auth in ["wd"] and ds.recon_status["wdlocal"] == 0:
+      recon_complete(ds)
 
     # update dataset totals for metadata page
     ds.numlinked = len(set(PlaceLink.objects.filter(place_id__in=ds.placeids).values_list('place_id', flat=True)))
