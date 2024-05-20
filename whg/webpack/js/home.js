@@ -182,7 +182,6 @@ Promise.all([
 		}
 	});
 
-	$('[rel=\'tooltip\']').tooltip();
 	// modal for images
 	$('.pop').on('click', function() {
 		let url = $(this).find('img').attr('src');
