@@ -8,6 +8,7 @@ from rest_framework import serializers
 from django.core import serializers as coreserializers
 from rest_framework_gis.serializers import GeoFeatureModelSerializer, GeometrySerializerMethodField
 from datasets.models import Dataset
+from collection.models import Collection
 from areas.models import Area
 from main.choices import DATATYPES
 from places.models import *
@@ -15,6 +16,7 @@ from traces.models import TraceAnnotation
 
 import json, geojson
 from shapely.geometry import shape
+from datetime import date
 
 # TODO: these are updated in both Dataset & DatasetFile  (??)
 datatype = models.CharField(max_length=12, null=False,choices=DATATYPES,
@@ -27,6 +29,89 @@ total_links = models.IntegerField(null=True, blank=True)
 
 class ErrorResponseSerializer(serializers.Serializer):
     error = serializers.CharField()
+    
+class CitationSerializer(serializers.ModelSerializer):
+    '''
+    Fetch metadata for either a Dataset or a Collection, and return in CSL-JSON (Citation Style Language) format
+    '''
+    
+    class Meta:
+        model = None
+        fields = ()
+
+    def __init__(self, *args, **kwargs):
+        print(kwargs)
+        self.resource_type = kwargs.pop('resource_type')
+        if self.resource_type == 'datasets':
+            self.Meta.model = Dataset
+            self.Meta.fields = ('title', 'description', 'creator', 'collaborators', 'numrows', 'contributors',)
+            # Map field names to CSL-JSON aliases for datasets
+            self.Meta.field_aliases = {
+                'numrows': 'dimensions',
+                'description': 'abstract',
+                'creator': 'author',
+            }
+        elif self.resource_type == 'collections':
+            self.Meta.model = Collection
+            self.Meta.fields = ('title', 'description', 'creator', 'collaborators', 'rowcount',)
+            # Map field names to CSL-JSON aliases for collections
+            self.Meta.field_aliases = {
+                'rowcount': 'dimensions',
+                'description': 'abstract',
+                'creator': 'author',
+            }
+        super().__init__(*args, **kwargs)
+
+    def format_name(self, name):
+        """
+        Format a name string into CSL-JSON format (with separate 'family' and 'given' names)
+        """
+        if name and ' ' in name:
+            # Split the name into family and given names
+            given_name, family_name = name.rsplit(' ', 1)
+            return {'family': family_name, 'given': given_name}
+        else:
+            # Handle cases where name format is not as expected
+            return {'family': name}
+
+    def to_representation(self, instance):
+        rep = super().to_representation(instance)
+        rep['id'] = f'{self.resource_type}-{instance.id}'
+        rep['key'] = rep['id']
+        rep['type'] = 'dataset'
+        field_aliases = getattr(self.Meta, 'field_aliases', {})
+        for field_name, alias in field_aliases.items():
+            if field_name in rep:
+                if rep[field_name] == None:
+                    rep.pop(field_name)
+                else:
+                    rep[alias] = rep.pop(field_name)
+        if 'author' in rep:
+            rep['author'] = [self.format_name(rep['author'])]
+        if rep.get('contributors') is not None:
+            rep['contributors'] = [self.format_name(contributor.strip()) for contributor in rep['contributors'].split(',')]
+        if rep.get('collaborators') is not None and rep['collaborators']:
+            rep['collaborators'] = [self.format_name(collaborator) for collaborator in rep['collaborators']]
+        else:
+            rep.pop('collaborators', None)
+        rep['publisher'] = "World Historical Gazetteer"
+        rep['publisher-place'] = "Pittsburgh, USA"
+        if 'original-date' in rep:
+            rep['original-date'] = {"date-parts": [[int(part) for part in rep['original-date'].split('-')]]}
+        rep['dimensions'] = f"{rep['dimensions']} features"
+        rep['accessed'] = {"date-parts": [[int(part) for part in date.today().strftime("%Y-%m-%d").split('-')]]}
+        
+        domain = 'https://whgazetteer.org'
+        if self.Meta.model == Dataset:
+            rep['URL'] = f"{domain}/dataset/{instance.id}/browse"
+        elif self.Meta.model == Collection:
+            if instance.collection_class == 'dataset':
+                rep['URL'] = f"{domain}/collection/{instance.id}/browse_ds"
+            elif instance.collection_class == 'place':
+                rep['URL'] = f"{domain}/collection/{instance.id}/browse_pl"
+                            
+        rep['@schema'] = 'https://resource.citationstyles.org/schema/v1.0/input/json/csl-data.json'
+        return rep
 
 # ***
 # IN USE Apr 2020

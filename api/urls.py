@@ -46,7 +46,10 @@ urlpatterns = [
     path('placetable_coll/', views.PlaceTableCollViewSet.as_view({'get':'list'}), name='place-table-coll'), 
 
     # TODO: place/<str:dslabel>/<str:src_id>
-    path('place/<str:dslabel>/<str:src_id>/', views.PlaceDetailSourceAPIView.as_view(),name='place-detail-src'), 
+    path('place/<str:dslabel>/<str:src_id>/', views.PlaceDetailSourceAPIView.as_view(),name='place-detail-src'),
+    
+    # API endpoint for fetching CSL (Citation Style Language) citations for datasets and collections
+    path('citation/<str:resource_type>/<int:resource_id>/', views.CitationAPIView.as_view(), name='citation'),
 
     # 
     # *** GEOMETRY ***

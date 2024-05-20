@@ -22,6 +22,11 @@ from django.utils.decorators import method_decorator
 
 from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiParameter, OpenApiResponse, OpenApiTypes, OpenApiExample
 
+from citeproc import CitationStylesStyle, CitationStylesBibliography
+from citeproc import Citation, CitationItem
+from citeproc import formatter
+from citeproc.source.json import CiteProcJSON
+
 from rest_framework import filters
 from rest_framework import generics
 from rest_framework import permissions
@@ -42,7 +47,7 @@ from accounts.permissions import IsOwnerOrReadOnly
 from api.serializers import (
   UserSerializer, DatasetSerializer, PlaceSerializer,
   PlaceTableSerializer, PlaceGeomSerializer, PlaceGeoFeatureSerializer, AreaSerializer,
-  FeatureSerializer, LPFSerializer, PlaceCompareSerializer, ErrorResponseSerializer)
+  FeatureSerializer, LPFSerializer, PlaceCompareSerializer, ErrorResponseSerializer, CitationSerializer)
 from areas.models import Area
 from collection.models import Collection, CollPlace
 from datasets.models import Dataset
@@ -54,6 +59,7 @@ import inspect
 import json
 import random
 import os, requests
+import logging
 
 class BadRequestException(APIException):
     serializer_class = ErrorResponseSerializer
@@ -64,6 +70,64 @@ class BadRequestException(APIException):
         if detail is None:
             detail = self.default_detail
         self.detail = {"error": detail}
+
+class CitationAPIView(APIView):
+    def get(self, request, resource_type, resource_id):
+        try:
+            if resource_type == 'datasets':
+                resource = Dataset.objects.get(id=resource_id)
+            elif resource_type == 'collections':
+                resource = Collection.objects.get(id=resource_id)
+            else:
+                return Response({"message": "Invalid resource type"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            serializer = CitationSerializer(resource, resource_type=resource_type)
+            citation_data = serializer.data
+            print('citation_data', citation_data)
+            
+            style = request.GET.get('style')
+            if style:
+                
+                csl_file_path = os.path.join(settings.BASE_DIR, 'static', 'csl-styles', f'{style}.csl')
+                if not os.path.exists(csl_file_path):
+                    return Response({"message": "Style not found"}, status=status.HTTP_404_NOT_FOUND)
+                else:
+                    print(f"Style '{style}' found")
+                
+                try:
+                    bib_source = CiteProcJSON([citation_data])
+                except Exception as e:
+                    logging.error(f"Error initializing CiteProcJSON: {e}")
+                    return Response({"message": "Error processing citation data"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+                print('bib_source', bib_source)
+                for key, entry in bib_source.items():
+                    print('key', key)
+                    for name, value in entry.items():
+                        print('   {}: {}'.format(name, value))
+                
+                # with open(csl_file_path, 'r', encoding='utf-8') as fh:
+                #     bib_style = CitationStylesStyle(fh.read(), validate=False)
+                
+                bib_style = CitationStylesStyle(csl_file_path, validate=False)
+                print(bib_style)
+                
+                bibliography = CitationStylesBibliography(bib_style, bib_source, formatter.html)
+                                
+                # Registering the citation
+                citation_item = CitationItem(citation_data['id'])
+                citation = Citation([citation_item])
+                bibliography.register(citation)
+
+                formatted_citation = bibliography.bibliography()
+
+                return Response({"citation": formatted_citation[0]}, status=status.HTTP_200_OK)
+
+            return Response(citation_data, status=status.HTTP_200_OK)
+        except Dataset.DoesNotExist:
+            return Response({"message": "Dataset not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Collection.DoesNotExist:
+            return Response({"message": "Collection not found"}, status=status.HTTP_404_NOT_FOUND)        
 
 class GalleryView(ListAPIView):
     pagination_class = PageNumberPagination

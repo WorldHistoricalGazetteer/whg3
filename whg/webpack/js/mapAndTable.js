@@ -9,7 +9,9 @@ import { toggleFilters } from './mapFilters';
 import { initUtils, initInfoOverlay, startSpinner, minmaxer, get_ds_list_stats, deepCopy } from './utilities';
 import { initialiseTable } from './tableFunctions';
 import { init_collection_listeners } from './collections';
-import SequenceArcs from './mapSequenceArcs';import './toggle-truncate.js';
+import Citation from './citation';
+import SequenceArcs from './mapSequenceArcs';
+import './toggle-truncate.js';
 import './enlarge.js';
 
 let ds_listJSON = document.getElementById('ds_list_data') || false;
@@ -210,6 +212,8 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	initUtils(mappy); // Tooltips, ClipboardJS, clearlines, help-matches
 	
 	init_collection_listeners(checked_rows);
+	
+	new Citation('citation');
 	
 	spinner_map.stop();
 });
