@@ -122,6 +122,7 @@ def suggestionItem(s):
     "variants": [n for n in h['searchy'] if n != h['title']],
     "ccodes": h['ccodes'],
     "fclasses": h['fclasses'],
+    # TODO: 'label' is an AAT value; sourceLabel is probably preferred if available
     "types": [t['label'] for t in h['types']],
     "geom": makeGeom(h['place_id'], h['geoms'])
   }

@@ -34,8 +34,9 @@
         </select>
         
         <!-- Search Input -->
-        <input title="Type a place name. You can also change the search mode using the dropdown to the left, and apply filters from the Advanced Options section." id="search_input" class="form-control typeahead" data-provide="typeahead" type="text" placeholder="Enter place name" aria-label="Search" aria-describedby="search-addon" autocomplete="off" spellcheck="false">
-          
+{#        <input title="Type a place name. You can also change the search mode using the dropdown to the left, and apply filters from the Advanced Options section." id="search_input" class="form-control typeahead" data-provide="typeahead" type="text" placeholder="Enter place name" aria-label="Search" aria-describedby="search-addon" autocomplete="off" spellcheck="false">#}
+        <input id="search_input" class="form-control" type="text" placeholder="Enter place name" aria-label="Search" aria-describedby="search-addon" autocomplete="off" spellcheck="false">
+
         <!-- Clear Search Button -->
         <button id="clear_search" data-title="Clear search input|Nothing to clear" class="btn btn-outline-secondary" type="button"><i class="fas fa-times"></i></button>
           
@@ -46,7 +47,6 @@
 
 <div id="search_content" class="row pt-1 no-results initial">
 
-{#  <div id="search_left" class="col-12 col-lg-4 p-2 bg-white mb-3 mb-lg-0 full-height-lg">#}
   <div id="search_left" class="col-12 col-lg-4 p-2 bg-white mb-3 mb-lg-0">
 		<div id="adv_options">
         	<h5>Advanced options</h5>

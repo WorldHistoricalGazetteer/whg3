@@ -17,8 +17,8 @@
     font-size: small;
     box-shadow: 2px 2px 2px #ccc;
     border-radius: 5px;
-    overflow-y: auto;
-    overflow-x: hidden;
+    {#overflow-y: auto;#}
+    {#overflow-x: hidden;#}
   }
 
   .box-header {
@@ -38,16 +38,27 @@
     margin-left: auto; /* Aligns the icon to the right */
   }
   .box-content {
-    {#overflow-y: auto;#}
     height: calc(100% - 30px); /* Adjusts height to account for header */
     padding: 10px;
+
+    max-height: 550px;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .box-content-center {
+    height: calc(100% - 30px); /* Adjusts height to account for header */
+    padding: 10px;
+
+    max-height: 250px;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
   .item-div {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 5px;
-    border-bottom: 1px solid #ddd;
+    {#border-bottom: 1px solid #ddd;#}
   }
   .item-div p {
     margin: 0;
@@ -84,8 +95,8 @@
 <div id="container" class="container mt-1">
   <div class="page-title-container mt-3">
     <h4 class="page-title">{{ user.name }}'s Dashboard</h4>
-    <a href="{% url 'profile-edit' %}" class="profile-link" title="{{ user.id }}">
-      Profile<i class="fas fa-user mx-2"></i> {{ user.id }}
+    <a href="{% url 'profile-edit' %}" class="profile-link" title="{{ user.username }}">
+      Profile<i class="fas fa-user mx-2"></i>
     </a>
   </div>
   <div class="row">
@@ -138,7 +149,8 @@
             <i class="fas fa-plus"></i>
           </a>
         </div>
-        <div class="box-content">
+{#        <div class="box-content">#}
+        <div class="box-content-center">
           {% if has_collections %}
           {% for item in collections %}
             {% if item.collection_class == 'place' %}
@@ -172,7 +184,8 @@
             <i class="fas fa-plus"></i>
           </a>
         </div>
-        <div class="box-content">
+{#        <div class="box-content">#}
+        <div class="box-content-center">
           {% if has_collections %}
           {% for item in collections %}
             {% if item.collection_class == 'dataset' %}
@@ -204,7 +217,8 @@
           <div class="box-header">
             <div class="box-header-title">Download files</div>
           </div>
-          <div class="box-content">
+{#          <div class="box-content">#}
+          <div class="box-content-center">
             {% for item in downloads %}
             <div class="item-div">
               <p class="fw-bold red-head">{{ item.title }}</p>

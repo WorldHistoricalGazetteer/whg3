@@ -23,7 +23,7 @@ const featuredDataLayers = { // IMPORTANT: Listed in order of addition to the ma
 		    filter: ['==', '$type', 'LineString'],
 		},
 		{
-	        id: 'points',
+				id: 'points',
 		    type: 'circle',
 		    source: 'featured-data-source',
 		    paint: {
@@ -34,7 +34,7 @@ const featuredDataLayers = { // IMPORTANT: Listed in order of addition to the ma
 		        'circle-stroke-width': 2,
 		    },
 	        'filter': ['==', '$type', 'Point'],
-	    }
+		}
 	],
 	heatmap: [
 	    {

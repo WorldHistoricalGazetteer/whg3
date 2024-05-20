@@ -1,9 +1,7 @@
 {% extends "main/base.html" %}
 {% load static %}
-
 {% load mathfilters %}
 {% load dataset_extras %}
-
 {% block extra_head %}
 	<script src="https://code.jquery.com/jquery-3.6.3.js"></script>
 
@@ -11,6 +9,9 @@
   <link rel="stylesheet" href="{% static 'jquery-ui-1.13.2/jquery-ui.min.css' %}"/>
 
 <style>
+  #container_docs {
+    max-height: calc(100vh - 130px) !important;
+  }
   .accordion-body {
     font-size: 0.9rem;
   }
@@ -26,7 +27,7 @@
   }
   #docs_content, #docs_sidebar {
       overflow-y: auto;
-      height: calc(100vh - 120px);
+      height: calc(100vh - 150px);
   }
   @media (max-width: 992px) { /* adjust this value as needed */
     .accordion-body {
@@ -57,8 +58,8 @@
 {% endblock %}
 
 {% block content %}
-<div id="docs_container" class="container mt-1 px-1">
-  <div class="mb-3">
+<div id="container_docs" class="container px-1">
+  <div class="mb-3 mt-2">
   <h4 class="ms-1">WHG v3 Documentation</h4>
   </div>
   <div class="row flex-nowrap">

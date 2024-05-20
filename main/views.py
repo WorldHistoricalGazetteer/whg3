@@ -346,7 +346,10 @@ def dataset_list(request, sort='', order=''):
   # ds_status, owner, title
   if filters:
     if 'ds_status' in filters and filters['ds_status'] != 'all':
-      datasets = datasets.filter(ds_status=filters['ds_status'])
+      if filters['ds_status'] == 'published':
+        datasets = datasets.filter(public=True)
+      else:
+        datasets = datasets.filter(ds_status=filters['ds_status'])
 
     if 'owner' in filters:
       staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])

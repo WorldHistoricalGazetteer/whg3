@@ -27,7 +27,7 @@ function fetchDataFromNetwork(url) {
 export async function fetchDataForHorse(thisHorse, mappy, repositionMap = true) {
     async function mapData(data) {
         return new Promise((resolve) => {
-			
+			// console.log('thisHorse in fetchDataForHorse()', thisHorse);
 			const hasTilesets = !!data.tilesets && data.tilesets.length > 0;
 			
 			var layersToRemove = mappy.getStyle().layers.filter(layer => !!layer.source && layer.source == 'featured-data-source');
@@ -39,6 +39,7 @@ export async function fetchDataForHorse(thisHorse, mappy, repositionMap = true) 
 			
 			mappy.once('sourcedata', () => {
 				featuredDataLayers[data.mode == 'heatmap' ? 'heatmap' : 'default'].forEach(layer => {
+					// data is a FeatureCollection here, no dataset or collection id
 				    mappy.addLayer({...layer, 'source-layer': hasTilesets ? 'features' : ''});
 				});				
 				if (hasTilesets) {

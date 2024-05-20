@@ -32,7 +32,7 @@ from places.models import PlaceGeom, Place, CloseMatch
 from main.models import Log, Link
 from traces.forms import TraceAnnotationModelForm
 from traces.models import TraceAnnotation
-from utils.emailing import new_emailer, construct_display_name
+from utils.emailing import new_emailer #, construct_display_name
 from array import array
 from itertools import chain
 import logging

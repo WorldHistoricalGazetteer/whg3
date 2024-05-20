@@ -26,9 +26,10 @@ id, title, label, created, format, #rows, ds_status (if)owner
         <option value="uploaded" {% if filters.ds_status == 'uploaded' %}selected{% endif %}>Uploaded</option>
         <option value="reconciling" {% if filters.ds_status == 'reconciling' %}selected{% endif %}>Reconciling</option>
         <option value="wd-complete" {% if filters.ds_status == 'wd-complete' %}selected{% endif %}>WD-Complete</option>
+        <!-- NB: 'published' reflects dataset.public == True, not a ds_status value -->
+        <option value="published" {% if filters.ds_status == 'published' %}selected{% endif %}>Published</option>
         <option value="accessioning" {% if filters.ds_status == 'accessioning' %}selected{% endif %}>Accessioning</option>
         <option value="indexed" {% if filters.ds_status == 'indexed' %}selected{% endif %}>Indexed</option>
-        <option value="builder" {% if filters.ds_status == 'builder' %}selected{% endif %}>Builder</option>
       </select>
     </div>
     <div style="display: flex; align-items: center;">

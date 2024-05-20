@@ -92,7 +92,7 @@
                    data-bs-toggle="dropdown" aria-expanded="false">Documentation</a>
               <ul class="dropdown-menu">
                 <li><a class="dropdown-item" href="{% url 'documentation' %}">User documentation</a></li>
-                <li><a class="dropdown-item" href="{% url 'guides:guides-all' %}">(old) guide and tutorials</a></li>
+{#                <li><a class="dropdown-item" href="{% url 'guides:guides-all' %}">(old) guide and tutorials</a></li>#}
                 <li><a class="dropdown-item" href="{% url 'usingapi' %}">API (developers)</a></li>
               </ul>
               </li>
@@ -134,8 +134,10 @@
                   gallery_type='datasets' %}">Published Datasets</a></li>
                   <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type'
                   gallery_type='collections' %}">Published Collections</a></li>
+                  {% comment  not yet%}
                   <li><hr class="dropdown-divider"></li>
                   <li><a class="dropdown-item" href="{% url 'downloads' %}">Downloads</a></li>
+                  {% endcomment %}
                 </ul>
 	            </li>
             <li class="nav-item dropdown">

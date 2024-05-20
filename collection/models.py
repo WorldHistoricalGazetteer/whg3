@@ -147,7 +147,7 @@ class Collection(models.Model):
   def display_mode(self):
     #determine heatmap suitability
     
-    if self.places.count() < 500:
+    if self.places_all.count() < 500:
         return None
     
     # Annotate each place with a flag indicating if any non-point geometries exist
