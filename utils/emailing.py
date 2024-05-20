@@ -53,6 +53,13 @@ def new_emailer(email_type, subject, from_email, to_email, **kwargs):
     print('email:', email)
     print(f'new_emailer failed, error: {e}')
 
+def construct_display_name(obj):
+  if obj.given_name and obj.surname:
+    return f"{obj.given_name} {obj.surname}"
+  elif obj.name:
+    return obj.name
+  else:
+    return obj.username
 
 def send_maintenance_email():
   # Fetch recent users.

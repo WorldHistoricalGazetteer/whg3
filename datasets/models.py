@@ -45,6 +45,14 @@ def ds_image_path(instance, filename):
   # upload to MEDIA_ROOT/datasets/<id>_<filename>
   return 'datasets/{0}_{1}'.format(instance.id, filename)
 
+# does nothing until options set in UI
+def default_vis_parameters():
+  return {
+    "max": {"trail": False, "tabulate": False, "temporal_control": "none"},
+    "min": {"trail": False, "tabulate": False, "temporal_control": "none"},
+    "seq": {"trail": False, "tabulate": False, "temporal_control": "none"}
+  }
+
 # owner = models.ForeignKey('auth.User', related_name='snippets', on_delete=models.CASCADE)
 class Dataset(models.Model):  
   owner = models.ForeignKey(settings.AUTH_USER_MODEL,
@@ -88,8 +96,7 @@ class Dataset(models.Model):
   numlinked = models.IntegerField(null=True, blank=True)
   total_links = models.IntegerField(null=True, blank=True)
 
-  # only filter display toggle valid for datasets
-  vis_parameters = JSONField(default=dict, null=True, blank=True)
+  vis_parameters = JSONField(default=default_vis_parameters, null=True, blank=True)
   # list dataset on volunteers requested page?
   volunteers = models.BooleanField(default=False, null=True)
 

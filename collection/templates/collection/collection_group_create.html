@@ -236,8 +236,8 @@
                    data-bs-trigger="hover focus"><i class="fas fa-check"></i></a></th>
             <th id="nominated_heading"><a class="pointer" tabindex="98" data-bs-toggle="popover"
                                           data-bs-content="Check to nominate for inclusion in public WHG gallery"
-                                          data-bs-trigger="hover focus"><i class="fas fa-star"
-                                                                           style="color:#ffcc00"></i></a></th>
+                                          data-bs-trigger="hover focus">
+              <i class="fas fa-star" style="color:#ffcc00"></i></a></th>
             </thead>
             {% load dataset_extras %}
             {% for item in collections.all %}
@@ -251,8 +251,9 @@
                 </td>
                 <td class="text-center">
                   <input type="checkbox" class="nominate" data-id="{{ item.id }}"
-                    {% if item.nominated %} checked='checked'{% endif %}
-                    {% if item.status != 'reviewed' %} style="display: none;"{% endif %} /></td>
+                    {% if item.nominated == True %} checked {% endif %}
+                    {% if item.status != 'reviewed' %} style="display: none;"{% endif %} />
+                </td>
               </tr>
             {% endfor %}
           </table>
@@ -304,21 +305,6 @@
           },
         });
       });
-      {#$('#b_joincode').on('click', function() {#}
-      {#  console.log('clicked create join code')#}
-      {#  $.ajax({#}
-      {#    url: '/collections/get_joincode/',#}
-      {#    method: 'GET',#}
-      {#    success: function(data) {#}
-      {#      console.log('joincode data', data)#}
-      {#      // Display the new join code#}
-      {#      $('#joincode_proposed').text(data.join_code);#}
-      {##}
-      {#      // Show the "Save" button#}
-      {#      $('#b_savejoincode').show();#}
-      {#    }#}
-      {#  });#}
-      {# });#}
 
       // Event listener for the "Save" button
       $('#b_savejoincode').on('click', function() {
@@ -403,7 +389,7 @@
     }
 
     function nominate(cid, checked) {
-      console.log('toggle nominated status; cid, checked', cid, checked);
+      console.log('set nominated status; cid, checked', cid, checked);
       // TODO: if nominated, reviewed by WHG editors for student gallery
       {#nominated = checked ? 'reviewed' : 'group'#}
       {#return#}
@@ -423,6 +409,7 @@
           console.log(response);
           msg = response.status == 'nominated' ? 'nominated' : 'nomination withdrawn';
           $('#nominated_flash').html(msg).fadeIn().delay(2000).fadeOut();
+          $('.nominate').prop('disabled', true);
         },
       });
     }

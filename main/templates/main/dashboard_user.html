@@ -252,12 +252,12 @@
 						{% endif %}
 					{% endif %}
           {% if groups_member|length > 0 %}
-            <p class="mb-0 mt-2">Member of:</p>
+            <p class="red-head mb-0 mt-2">Member of:</p>
           {% endif %}
           <div id="group_list">
             {% for item in groups_member %}
               <div class="item-div">
-                <span class="fw-bold red-head" >{{ item.title }}</span>
+                <span class="" >{{ item.title }}</span>
                 <div class="float-end">
                   <a href="{% url 'collection:collection-group-detail' item.id %}">
                     <i class="fas fa-eye linky"></i></a>

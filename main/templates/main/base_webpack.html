@@ -140,21 +140,23 @@
                 <li><a class="dropdown-item"
                        href="{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}">Published
                   Collections</a></li>
+                {% comment %}
                 <li>
                   <hr class="dropdown-divider">
                 </li>
                 <li><a class="dropdown-item" href="{% url 'downloads' %}">Downloads</a></li>
-{#                <li><a class="dropdown-item" href="{% url 'api' %}">API (developers)</a></li>#}
+                {% endcomment %}
               </ul>
             </li> <!-- data -->
 
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                   aria-expanded="false" title="{{ user.name }}" >
                     <i class="fas fa-user" style="color:#336699;"></i>
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li class="nav-item">
-                        <a class="nav-link" rel="tooltip" title="{{ user.name }}'s profile" href="{% url 'profile-edit' %}">
+                        <a class="nav-link" rel="tooltip" href="{% url 'profile-edit' %}">
                             Profile
                         </a>
                     </li>

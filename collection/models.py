@@ -53,6 +53,13 @@ def default_relations():
 def default_omitted():
   return '{}'
 
+# does nothing until options set in UI
+def default_vis_parameters():
+  return {
+    "max": {"trail": False, "tabulate": False, "temporal_control": "none"},
+    "min": {"trail": False, "tabulate": False, "temporal_control": "none"},
+    "seq": {"trail": False, "tabulate": False, "temporal_control": "none"}
+  }
 class CollDataset(models.Model):
   collection = models.ForeignKey('Collection', on_delete=models.CASCADE)
   dataset = models.ForeignKey('datasets.Dataset', on_delete=models.CASCADE)
@@ -115,7 +122,7 @@ class Collection(models.Model):
   places = models.ManyToManyField("places.Place", through='CollPlace', blank=True)
   
   # Visualisation parameters (used in place_collection_browse.html & place_collection_build.html)
-  vis_parameters = JSONField(default=dict, null=True, blank=True)
+  vis_parameters = JSONField(default=default_vis_parameters, null=True, blank=True)
 
   def get_absolute_url(self):
     #return reverse('datasets:dashboard', kwargs={'id': self.id})

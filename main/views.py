@@ -120,7 +120,7 @@ class TilesetListView(LoginRequiredMixin, TemplateView):
                 tileset_key = f"{category}-{id}"
                 has_tileset = tileset_key in tilesets
                 # Enqueue a Celery task for each category and id
-                task = needs_tileset.delay(category=category, id=id)
+                task = needs_tileset.delay(category=category, id=id, ignore_result=True)
                 # Add the task id to the context for each category
                 context['data'].append( {'category': category, 'id': id, 'title': title, 'has_tileset': has_tileset, 'task_id': task.id} )
 
@@ -129,7 +129,7 @@ class TilesetListView(LoginRequiredMixin, TemplateView):
 @login_required
 def tileset_generate_view(request, category, id):
     # Ensure that only the user with username "whgadmin" can access this view
-    if request.user.username == "whgadmin": ###################### PERHAPS THERE IS A CLASS OF USER RATHER THAN A SPECIFIC ONE?
+    if request.user.is_superuser:  # TODO: change to whg_admins group?
         if request.method == 'GET':
             action = 'generate'
         elif request.method == 'DELETE':
@@ -283,10 +283,13 @@ def area_list(request, sort='', order=''):
       print('type filter:', areas)
 
     if 'owner' in filters:
+      print('filtering owners')
       staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
       if filters['owner'] == 'staff':
+        print('staff only')
         areas = areas.filter(owner__groups__in=staff_groups)
-      elif filters['owner'] == 'users':
+      elif filters['owner'] == 'contributors':
+        print('exclude staff;')
         areas = areas.exclude(owner__groups__in=staff_groups)
       print('owner filter:', areas)
 
@@ -619,9 +622,61 @@ def home_modal(request):
   print('home_modal() url:', url)
   return render(request, url, context)
 
-def custom_error_view(request, exception=None):
-    print('error request', request.GET.__dict__)
-    return render(request, "main/500.html", {'error':'fubar'})
+from django.http import HttpResponseServerError
+
+# main/views.py
+from django.shortcuts import render
+
+def trigger_500_error(request):
+    # This will simulate a server error
+    raise Exception("Simulated server error")
+
+def server_error_view(request, exception=None):
+  import traceback
+  # Capture request details
+  url = request.build_absolute_uri()
+  method = request.method
+  headers = dict(request.headers)
+  body = request.body.decode('utf-8', errors='replace')
+
+  # Capture exception details
+  exc_type = type(exception).__name__ if exception else 'N/A'
+  exc_message = str(exception) if exception else 'N/A'
+  tb = traceback.format_exc()
+
+  # Send the email with details
+  new_emailer(
+    email_type='500_error',
+    subject='Server error',
+    from_email=settings.DEFAULT_FROM_EMAIL,
+    to_email=settings.EMAIL_TO_ADMINS,  # a list in settings
+    username=request.user.username if request.user.is_authenticated else 'Anonymous',
+    url=url,
+    method=method,
+    headers=headers,
+    body=body,
+    exc_type=exc_type,
+    exc_message=exc_message,
+    traceback=tb,
+  )
+
+  return render(request, "main/500.html", {'error': 'fubar'}, status=500)
+
+
+# def server_error_view(request, exception=None):
+#     print('500 error request', request.GET.__dict__)
+#     new_emailer(
+#       email_type='500_error',
+#       subject='Server error',
+#       from_email=settings.DEFAULT_FROM_EMAIL,
+#       to_email=settings.EMAIL_TO_ADMINS,
+#       username=request.user.username,
+#     )
+#     return render(request, "main/500.html", {'error':'fubar'})
+
+def custom_404(request, exception):
+  print('404 error request', request.GET.__dict__)
+  return render(request, 'main/404.html', {}, status=404)
 
 def is_url(url):
   try:

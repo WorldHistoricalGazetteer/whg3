@@ -3,7 +3,6 @@ from django.conf import settings
 from django.contrib import admin
 from django.urls import path, re_path, include, get_resolver
 from django.views.generic.base import TemplateView
-
 from accounts.views import profile_edit
 from datasets.views import PublicListsView #, DataListsView
 from main import views
@@ -16,6 +15,10 @@ from django.views.static import serve
 from django.http import HttpResponseForbidden
 from pathlib import Path
 
+from django.conf.urls import handler404, handler500
+handler404 = 'main.views.custom_404'
+handler500 = 'main.views.server_error_view'
+
 def serve_cdnfallbacks(request, path):
     host = request.headers.get('Host', '')
     print(host)
@@ -25,8 +28,6 @@ def serve_cdnfallbacks(request, path):
     else:
         return HttpResponseForbidden(f"Access forbidden: {referer}")
 
-#handler404 = 'datasets.views.handler404',
-handler500 = 'main.views.custom_error_view'
 
 urlpatterns = [
     # home page
@@ -114,6 +115,8 @@ urlpatterns = [
     # initiate downloads of augmented datasets via celery task (called from ajax)
     path('dlcelery/', downloader, name='dl_celery'),
     path('task_progress/<str:taskid>/', views.get_task_progress, name='task-progress'),
+
+    path('trigger500/', views.trigger_500_error, name='trigger-500-error'),
 
     # Serve the CDNfallbacks folder with host check
     re_path(r'^CDNfallbacks/(?P<path>.*)$', serve_cdnfallbacks),

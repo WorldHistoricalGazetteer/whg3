@@ -1,12 +1,12 @@
 {% extends "main/base.html" %}
-{% block title %}<title>WHG::Contributing</title>{% endblock %}
+{% block title %}<title>WHG::Server error</title>{% endblock %}
 {% load static %}
 
 {% block content %}
 <div class="container h-100">
-<h4>Server error</h4>
 
-  <div class="messages">
+  <div class="messages ms-5 mt-5">
+    <h4>Server error :-( </h4>
     {% if messages %}
       {% for message in messages %}
       <p {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|safe }}</p>

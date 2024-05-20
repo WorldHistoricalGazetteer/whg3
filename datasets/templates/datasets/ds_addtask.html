@@ -99,7 +99,6 @@
                       please <a href="#" class="feedback">contact the editorial team</a>.</p>
                   {% endif %}
                   <p class="font-weight-bold mb-0">Target index</p>
-{#                  ds.recon_status.idx: {{ ds.recon_status }}#}
                   <div class="form-check">
                     <label class="form-check-label" for="r_wdlocal">
                       <input type="radio" class="form-check-input r_recon" id="r_wdlocal"
@@ -123,8 +122,6 @@
                       </div>
                     {% endif %}
                   </div>
-
-                  <p>ds.recon_status: {{ ds.recon_status }}</p>
                     {% if not ds.recon_status.idx and not ds.recon_status.idx == 0 %}
                   <div id="addtask_lower">
                     <hr/>
