@@ -134,7 +134,7 @@ function parsePlace(data) {
 		descrip += `<p><b>When</b>: earliest: ${data.minmax[0] ? data.minmax[0] : '?'}; latest: ${data.minmax[1] ? data.minmax[1] : '?'}</p>`;
 	}
 	
-	$("#detail").html(`<div><p><b>Title</b>: <a href="/places/portal/${data.id}" target="_blank" data-bs-toggle="tooltip" title="View all WHG records for this place."><span id="row_title" class="larger text-danger">${data.title} <i class="fas fa-external-link-alt linky"></i></span></a></p>${descrip}</div>`);
+	$("#detail").html(`<div><p><b>Title</b>: <a href="/places/portal/${data.id}" target="_blank" data-bs-toggle="tooltip" title="View WHG record(s) for this place."><span id="row_title" class="larger text-danger">${data.title} <i class="fas fa-external-link-alt linky"></i></span></a></p>${descrip}</div>`);
 }
 
 // Traces (annotations)
@@ -148,7 +148,7 @@ function parseAnno(data) {
 			const t = trace.fields;
 			$descrip.append(`
 				<p><b>Title</b>: 
-					<a href="${t.include_matches ? `/places/portal/${t.place}` : `/places/${t.place}/detail`}" target="_blank" data-bs-toggle="tooltip" title="View ${t.include_matches ? "all WHG records" : "details"} for this place.">
+					<a href="${t.include_matches ? `/places/portal/${t.place}` : `/places/${t.place}/detail`}" target="_blank" data-bs-toggle="tooltip" title="View ${t.include_matches ? "WHG record(s)" : "details"} for this place.">
 						<span id="row_title" class="larger text-danger">${data.title} <i class="fas fa-external-link-alt linky"></i></span>
 					</a>
 				</p>`);
