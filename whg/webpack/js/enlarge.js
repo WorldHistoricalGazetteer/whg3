@@ -20,5 +20,5 @@ $.fn.enlarge = function() {
         imgClone.on('load', function() {
         	modal.modal('show');
         });
-    }).attr('data-bs-toggle', 'tooltip').attr('title', 'Click to enlarge').tooltip();;
+    }).attr('data-bs-toggle', 'tooltip').attr('data-bs-title', 'Click to enlarge');
 };

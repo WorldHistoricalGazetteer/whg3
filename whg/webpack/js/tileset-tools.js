@@ -19,7 +19,7 @@ $(document).ready(function() {
 			row.append($('<td>').text(item.id));
 			row.append($('<td>').text(item.title));
 			row.append($('<td>')
-			.html(`<i data-bs-title="Click to inspect tileset"${item.has_tileset ? '' : ' disabled'} class="has-tileset fas fa-${item.has_tileset ? 'check' : 'times'}" data-category="${item.category}" data-id="${item.id}"></i>`))
+			.html(`<i data-bs-toggle="tooltip" data-bs-title="Click to inspect tileset"${item.has_tileset ? '' : ' disabled'} class="has-tileset fas fa-${item.has_tileset ? 'check' : 'times'}" data-category="${item.category}" data-id="${item.id}"></i>`))
 			.find('i.fa-check').tooltip();
 			row.append($('<td>').html('<i class="fas fa-spinner fa-spin"></i>')); // Placeholder for pending status
 			row.append($('<td>').text('')); // Placeholder for actions
@@ -33,8 +33,8 @@ $(document).ready(function() {
 	    .text('Queue All')
 	    .addClass('queue-all btn btn-warning btn-sm')
 	    .prop('disabled', true)
-	    .prop('title', 'Queue the generation or deletion of all required or redundant tilesets')
-	    .tooltip();
+	    .attr('data-bs-toggle', 'tooltip')
+	    .attr('data-bs-title', 'Queue the generation or deletion of all required or redundant tilesets');
 	    $('#tileset-table th:last').append(queueAllButton);
 	}
 
@@ -67,8 +67,8 @@ $(document).ready(function() {
 					.find('td:eq(3) i')
 					.removeClass('fa-spinner fa-spin')
 					.addClass(item.needs_tileset ? 'fa-check' : 'fa-times')
-					.prop('title', detailHTML)
-					.tooltip({html: true});
+	    			.attr('data-bs-toggle', 'tooltip')
+					.attr('data-bs-title', detailHTML);
 					addButtons(item, row);
 				} else {
 					lowerPollcount();
@@ -89,19 +89,17 @@ $(document).ready(function() {
 		// Check if the item has a tileset and needs it
 		if (item.has_tileset && item.needs_tileset) {
 			// Item has tileset and needs it
-			row.find('td:eq(4)').append(`<button title="Click to queue removal of this tileset" class="btn btn-primary btn-sm tileset-available" data-category="${item.category}" data-id="${item.id}">Tileset Available</button>`);
+			row.find('td:eq(4)').append(`<button data-bs-toggle="tooltip" data-bs-title="Click to queue removal of this tileset" class="btn btn-primary btn-sm tileset-available" data-category="${item.category}" data-id="${item.id}">Tileset Available</button>`);
 		} else if (item.has_tileset) {
 			// Item has tileset but doesn't need it
-			row.find('td:eq(4)').append(`<button title="Click to queue removal of this tileset" class="btn btn-warning btn-sm remove-redundant" data-category="${item.category}" data-id="${item.id}">Remove Redundant</button>`);
+			row.find('td:eq(4)').append(`<button data-bs-toggle="tooltip" data-bs-title="Click to queue removal of this tileset" class="btn btn-warning btn-sm remove-redundant" data-category="${item.category}" data-id="${item.id}">Remove Redundant</button>`);
 		} else if (item.needs_tileset) {
 			// Item doesn't have tileset but needs it
-			row.find('td:eq(4)').append(`<button title="Click to queue generation of a tileset" class="btn btn-success btn-sm generate-tileset" data-category="${item.category}" data-id="${item.id}">Generate Tileset</button>`);
+			row.find('td:eq(4)').append(`<button data-bs-toggle="tooltip" data-bs-title="Click to queue generation of a tileset" class="btn btn-success btn-sm generate-tileset" data-category="${item.category}" data-id="${item.id}">Generate Tileset</button>`);
 		} else {
 			// Item doesn't have tileset and doesn't need it
-			row.find('td:eq(4)').append(`<button title="Click to queue generation of a tileset" class="btn btn-secondary btn-sm no-tileset" data-category="${item.category}" data-id="${item.id}">No Action</button>`);
+			row.find('td:eq(4)').append(`<button data-bs-toggle="tooltip" data-bs-title="Click to queue generation of a tileset" class="btn btn-secondary btn-sm no-tileset" data-category="${item.category}" data-id="${item.id}">No Action</button>`);
 		}
-		
-		row.find('button').tooltip();
 	}
 	
 	let polling = false;

@@ -134,8 +134,6 @@ export function addReviewListeners() {
 		$('.selector').dialog('open');
 	})
 	
-	$("[rel='tooltip']").tooltip();
-	
 	// set pass dropdown as next set with any reviewed=False rows
 	// $("#select_pass").val(passnum);
 	

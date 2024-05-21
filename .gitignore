@@ -84,3 +84,4 @@ whg/static/webpack/stats.json
 whg/static/webpack/webpackReport.html
 
 package-lock.json
+docker-compose-sg.yml
