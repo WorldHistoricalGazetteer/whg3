@@ -86,28 +86,19 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 				$("#defer_link").hide();
 			}
 		
-			var dspop = $(".pop-dataset").popover({
-				trigger: 'focus',
-				placement: 'right',
-				html: true
-			}).on('show.bs.popover', function() {
-				$.ajax({
-					url: '/api/datasets/',
-					data: {
-						label: $(this).data('label')
-					},
-					dataType: "JSON",
-					async: false,
-					success: function(data) {
-						let ds = data.results[0]
-						//console.log('ds',ds)
-						let html = '<p class="thin"><b>Title</b>: ' + ds.title + '</p>'
-						html += '<p class="thin"><b>Description</b>: ' + ds.description + '</p>'
-						html += '<p class="thin"><b>WHG Owner</b>: ' + ds.owner + '</p>'
-						html += '<p class="thin"><b>Creator</b>: ' + ds.creator + '</p>'
-						dspop.attr('data-content', html);
-					}
-				});
+			$(".pop-dataset").each(function() {
+			    var label = $(this).data('label');
+			    var details = datasetDetails[label];			    
+			    $(this).attr('data-bs-content', `
+			        <p class="thin"><b>Title</b>: ${details['title']}</p>
+			        <p class="thin"><b>Description</b>: ${details['description']}</p>
+			        <p class="thin"><b>WHG Owner</b>: ${details['owner']}</p>
+			        <p class="thin"><b>Creator</b>: ${details['creator']}</p>
+			    `);
+			}).popover({
+			    trigger: 'hover',
+			    placement: 'right',
+			    html: true
 			});
 			
 		}

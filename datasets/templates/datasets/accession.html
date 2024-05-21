@@ -27,7 +27,7 @@
 	  		<span class="help" data-id="accessioning"><i class="fas fa-question-circle linkypop"></i></span>
 	  	{% endcomment %}
 	  	<span class="small ms-3"> <i>dataset</i>:
-		  	<a href="{% url 'datasets:ds_reconcile' id=ds_id %}"> {{ ds_label }}</a>
+		  	<a data-bs-toggle="tooltip" data-bs-title="Go to Dataset status page" href="{% url 'datasets:ds_status' id=ds_id %}"> {{ ds_label }}</a>
 	  	</span>
 	  	<span class="half float-end me-2"><i>task id</i>: {{ task_id }}</span>
   	</h5>
@@ -82,6 +82,9 @@
 					            <div>
 					              	<input type="hidden" name="place_id" value="{{ record.id }}" />
 					              	<span>
+					                    <span class="notes" {% if user.is_authenticated %}data-user-id="{{ user.id }}" {% endif %}data-place-id="{{ record.id }}" data-force-tag="defer">
+										    {% for r in record.defer_comments %}<p title="{{ r.tag }}" data-bs-toggle="tooltip" data-creator="{{ r.user.id }}" data-note-id="{{ r.id }}">{{ r.note }}</p>{% endfor %}
+					                    </span>
 					                	<h4 class="text-danger">{{ record.title }}
 					                  		{% if record.geoms %}
 						                  		<span class="ms-2">
@@ -90,11 +93,6 @@
 	                  								</svg>
 	                  							</span>
                   							{% endif %}
-						                  	<span class="float-end">
-						                    	<button type="button" data-id="{{ record.id }}" class="create-comment btn"
-						                      		data-src='record'> <i class="fas fa-edit linky fa-xs"></i>
-						                      	</button>
-						                  	</span>
 						                </h4>
 						        	</span>
 								</div>
@@ -187,7 +185,10 @@
 						                     			href="javascript:void(0)">
 							                  			<i class="fas fa-globe" style="color:#ED7702;"></i>
 						                  			</a>
-							                		<a class="pop-link pop-dataset" data-label={{src.dslabel}} data-toggle="popover" title="Dataset Profile" data-content="" tabindex="0" rel="clickover">{{ src.dslabel }}</a> (<a href="/api/place/{{src.pid}}/" target="_blank">{{ src.pid }}</a>):
+							                		<a class="pop-link pop-dataset" 
+							                			data-label="{{src.dslabel}}"
+							                			data-bs-toggle="popover"
+														tabindex="0">{{ src.dslabel }}</a> (<a href="{% url 'places:place-detail' src.pid %}" target="_blank">{{ src.pid }}</a>):
 									                {% if src.variants|length > 0 %}<i>variants</i>: <b>{{ src.variants|join:", " }}</b>{% endif %}
 									                {% if src.types|length > 0 %}; <i>type(s)</i>: <b>{{ src.types|join:","}}</b>{% endif %}
 													{# index has some nulls in minmax #}
@@ -203,8 +204,7 @@
 						                <p>
 						                	<strong>All concordances</strong>:
 						                	{% for link in form.json.value|get:"links" %}
-						                  		<a href="" class="me-2 ext" data-toggle="modal" data-target="#ext_site">{{ link }}
-							                  	<i class="fas fa-external-link-alt linky"></i></a>
+					                			<a href="" class="me-2 ext" data-toggle="modal" data-target="#ext_site">{{ link }} <i class="fas fa-external-link-alt linky"></i></a>
 						                	{% endfor %}
 						              	</p>
 						            {% endif %}
@@ -231,7 +231,8 @@
 </div>
 
 <script type="text/javascript">
-    const featureCollectionJSON = '{{ feature_collection|safe }}';
+	const featureCollectionJSON = '{{ feature_collection|safe }}';
+	const datasetDetails = {{ dataset_details|safe }};
     let already = '{{ already }}';
     let ds_label = '{{ ds_label }}';
     let test = '{{ test }}';
