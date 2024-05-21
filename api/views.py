@@ -394,6 +394,8 @@ class SpatialAPIView(generics.ListAPIView):
     if not qtype:
         raise BadRequestException("Spatial query parameters must include either 'type=nearby' or 'type=bbox'.")
     elif qtype == 'nearby':
+      # http://localhost:8001/api/spatial/?type=nearby&lon=-103.71&lat=20.66&km=100&dataset=lugares20_redux
+      # 33.285556,26.809167
         if not all(v for v in [lon, lat, dist]):
             raise BadRequestException("A 'nearby' spatial query requires 'lon', 'lat', and 'km' parameters.")
         else:
@@ -762,36 +764,65 @@ class DownloadDatasetAPIView(generics.ListAPIView):
 """
   /api/datasets? > query public datasets by id, label, term
 """
+# class DatasetAPIView(LoginRequiredMixin, generics.ListAPIView):
+#   """    List public datasets    """
+#   serializer_class = DatasetSerializer
+#   renderer_classes = [JSONRenderer]
+#
+#   def get_queryset(self, format=None, *args, **kwargs):
+#     params=self.request.query_params
+#     print('api/datasets params',params)
+#     id_ = params.get('id', None)
+#     dslabel = params.get('label', None)
+#     query = params.get('q', None)
+#
+#     qs = Dataset.objects.filter(Q(public=True) | Q(core=True)).order_by('label')
+#
+#     if id_:
+#       qs = qs.filter(id = id_)
+#     elif dslabel:
+#       qs = qs.filter(label = dslabel)
+#     elif query:
+#       qs = qs.filter(Q(description__icontains=query) | Q(title__icontains=query))
+#
+#     print('qs',qs)
+#     result = {
+#               "count":qs.count(),
+#               "parameters": params,
+#               #"features":serialized_data
+#               "features":qs
+#               }
+#     print('ds result', result,type(result))
+#     return qs
+from rest_framework.response import Response
+
 class DatasetAPIView(LoginRequiredMixin, generics.ListAPIView):
-  """    List public datasets    """
-  serializer_class = DatasetSerializer
-  renderer_classes = [JSONRenderer]
+    """List public datasets"""
+    serializer_class = DatasetSerializer
+    renderer_classes = [JSONRenderer]
 
-  def get_queryset(self, format=None, *args, **kwargs):
-    params=self.request.query_params
-    print('api/datasets params',params)
-    id_ = params.get('id', None)
-    dslabel = params.get('label', None)
-    query = params.get('q', None)
-    
-    qs = Dataset.objects.filter(Q(public=True) | Q(core=True)).order_by('label')
-    
-    if id_:
-      qs = qs.filter(id = id_)
-    elif dslabel:
-      qs = qs.filter(label = dslabel)
-    elif query:
-      qs = qs.filter(Q(description__icontains=query) | Q(title__icontains=query))
+    def list(self, request, *args, **kwargs):
+        params = self.request.query_params
+        id_ = params.get('id', None)
+        dslabel = params.get('label', None)
+        query = params.get('q', None)
 
-    print('qs',qs)
-    result = {
-              "count":qs.count(),
-              "parameters": params,
-              #"features":serialized_data
-              "features":qs
-              }
-    print('ds result', result,type(result))
-    return qs
+        qs = Dataset.objects.filter(Q(public=True) | Q(core=True)).order_by('label')
+
+        if id_:
+            qs = qs.filter(id=id_)
+        elif dslabel:
+            qs = qs.filter(label=dslabel)
+        elif query:
+            qs = qs.filter(Q(description__icontains=query) | Q(title__icontains=query))
+
+        serializer = self.get_serializer(qs, many=True)
+        data = {
+            "count": qs.count(),
+            "parameters": params,
+            "features": serializer.data
+        }
+        return JsonResponse(data, safe=False, json_dumps_params={'indent': 2})
 
 """
   /api/area_features
@@ -829,8 +860,9 @@ class AreaFeaturesView(generics.ListAPIView):
         "geometry":a['geojson']
       }
       areas.append(feat)
-      
-    return JsonResponse(areas, safe=False)  
+
+    # return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
+    return JsonResponse(areas, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
 
 """
   /api/user_area_features

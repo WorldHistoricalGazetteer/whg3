@@ -428,6 +428,10 @@ class Dataset(models.Model):
     # unrev = Hit.objects.all().filter(dataset_id=self.id, reviewed=False, authority=source).count()
     return unrev
 
+  @property
+  def uri(self):
+    return settings.URL_FRONT + 'datasets/' + str(self.id) + '/places'
+
   # count of unindexed places
   class Meta:
     managed = True
@@ -435,6 +439,7 @@ class Dataset(models.Model):
     indexes = [
           models.Index(fields=['id', 'label']),
         ]
+
 
 # TODO: FK to dataset, not dataset_id
 # TODO: all new datasets need a file but some are new/empty & created remotely
