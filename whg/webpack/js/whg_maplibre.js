@@ -1130,12 +1130,7 @@ maplibregl.Map = function (options = {}) {
 		
 		$(mapInstance.getContainer().querySelector('.maplibregl-control-container'))
 		.tooltip({
-<<<<<<< Updated upstream
-	    	selector: 'button, select, summary.maplibregl-ctrl-attrib-button',
-	    	trigger : 'hover',
-=======
 	    	selector: 'button:not(.dateline-button), select, summary.maplibregl-ctrl-attrib-button, #dateline.expanded .dateline-button',
->>>>>>> Stashed changes
 	    	container: '#map'
 		})
 		
