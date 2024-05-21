@@ -28,7 +28,7 @@ def send_new_dataset_email(sender, instance, **kwargs):
             subject='New Dataset Created',
             from_email=settings.DEFAULT_FROM_EMAIL,
             to_email=settings.EMAIL_TO_ADMINS,
-            name=instance.owner.first_name + ' ' + instance.owner.last_name,
+            name=owner_name,
             username=instance.owner.username,
             dataset_title=instance.title,
             dataset_label=instance.label,

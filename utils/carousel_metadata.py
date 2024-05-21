@@ -8,9 +8,10 @@ def carousel_metadata(caller):
     # Detect the class of the caller
     caller_class = type(caller)
     caller_class = caller_class.__name__
-    
+    print('carousel_metadata caller:', caller)
+    print('carousel_metadata caller_class:', caller_class)
     display_mode = getattr(caller, 'display_mode') or ''
-    
+    print('carousel_metadata display_mode:', display_mode)
     if caller_class == 'Dataset':
         url = reverse('datasets:ds_places', args=[caller.id])
         id_name = 'id'

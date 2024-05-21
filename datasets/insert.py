@@ -128,13 +128,18 @@ def process_types(row, newpl):
         'place': newpl,
         'src_id': newpl.src_id,
         'aat_id': aat_type,
-        'jsonb': {}
+        # 'jsonb': {}
+        'jsonb': {
+          'sourceLabel': type_ if type_ else '',
+          'identifier': 'aat:' + str(aat_type) if aat_type else '',
+          'label': aat_fclass.get(aat_type, {}).get('term') if aat_type else ''
+        }
       }
-      if type_:
-        pt_data['jsonb']['sourceLabel'] = type_
-      if aat_type:
-        pt_data['jsonb']['identifier'] = 'aat:'+str(aat_type)
-        pt_data['jsonb']['label'] = aat_fclass.get(aat_type, {}).get('term')
+      # if type_:
+      #   pt_data['jsonb']['sourceLabel'] = type_
+      # if aat_type:
+      #   pt_data['jsonb']['identifier'] = 'aat:'+str(aat_type)
+      #   pt_data['jsonb']['label'] = aat_fclass.get(aat_type, {}).get('term')
 
       type_objects.append(PlaceType(**pt_data))
     except Exception as e:  # Catch all exceptions and store in variable e

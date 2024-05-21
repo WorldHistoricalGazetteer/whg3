@@ -591,16 +591,17 @@ def review(request, pk, tid, passnum):
 
   method = request.method
 
-  # GET -> just display
-  if method == "GET":
+  '''
+    POST processes closeMatch/no match/defer choices made by save in review or accession page
+    Two very different cases:
+     - For wikidata review, act on each hit considered (new place_geom and place_link records if matched)
+     - For accession, act on index 'clusters'  
+  '''
+  if method == "GET":  # just displays
     print("review() GET, just displaying next")
   elif method == "POST":
     print('request.POST in review()', request.POST)
-    # process match/no match choices made by save in review or accession page
-    # NB very different cases.
-    #   For wikidata review, act on each hit considered (new place_geom and place_link records if matched)
-    #   For accession, act on index 'clusters'
-    # place_post = get_object_or_404(Place, pk=request.POST["place_id"])
+
     place_post = get_object_or_404(Place, pk=placeid)
     review_status = getattr(place_post, review_field)
     # proceed with POST only if place is unreviewed or deferred; else return to a GET (and next place)

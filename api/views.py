@@ -461,12 +461,12 @@ def makeGeom(geom):
   TODO: rename
 """
 def collectionItem(i):
-  print('collectionItem i',i)
+  # print('collectionItem i',i)
   _id = i['_id']
   score = i['score']
   # serialize as geojson
   i = i['hit']
-  print("i['types']", i['types'])
+  # print("i['types']", i['types'])
   item = {
     "type":"Feature",
     "score": score,
@@ -565,7 +565,7 @@ class IndexAPIView(View):
     year = request.GET.get('year')
     pagesize = params.get('pagesize', None)
     area = request.GET.get('area')
-    idx = 'whg'
+    idx = ['whg', 'pub']
     
     if all(v is None for v in [name, name_startswith, whgid,pid]):
       # TODO: format better

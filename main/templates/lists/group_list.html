@@ -48,7 +48,8 @@
         <td>{{ group.id }}</td>
         <td>
           <a href="{% url 'collection:collection-group-detail' group.id %}">{{ group.title }}</a>
-          <span class="float-end me-2"><a href=""><i class="fa fa-edit"></i></a></span>
+          <span class="float-end me-2"><a href="{% url 'collection:collection-group-update' group.id%}">
+            <i class="fa fa-edit"></i></a></span>
         </td>
         <td class="text-center">{{ group.members.count }}</td>
         <td class="small">{{ group.created }}</td>

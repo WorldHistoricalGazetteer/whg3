@@ -2,7 +2,7 @@
 import os
 import requests
 
-from dateutil.parser import isoparse
+from dateutil.parser import isoparse, ParserError
 from datetime import date
 import json
 import random
@@ -14,6 +14,7 @@ from django.db.models import F, Min, Max
 from django.db.models.functions import Coalesce
 from django.forms.models import inlineformset_factory
 from django.http import JsonResponse, HttpResponseRedirect, Http404
+from django.conf import settings
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 from django.views.generic import (View, CreateView, UpdateView, DetailView, DeleteView, ListView )
@@ -31,9 +32,12 @@ from places.models import PlaceGeom, Place, CloseMatch
 from main.models import Log, Link
 from traces.forms import TraceAnnotationModelForm
 from traces.models import TraceAnnotation
+from utils.emailing import new_emailer #, construct_display_name
 from array import array
 from itertools import chain
+import logging
 
+logger = logging.getLogger(__name__)
 """ collection group joiner"; prevent duplicate """
 def join_group(request, *args, **kwargs):
   print('join_group() kwargs', kwargs)
@@ -144,19 +148,59 @@ def status_update(request, *args, **kwargs):
 
 """
   set/unset nominated flag by group leader: boolean
+  send email to DEFAULT_FROM_EDITORIAL, who can flag as public
 """
 def nominator(request, *args, **kwargs):
   print('in nominator()', request.POST)
+
   nominated = True if request.POST['nominated'] == 'true' else False
   coll = Collection.objects.get(id=request.POST['coll'])
   print('nominated?', nominated, 'coll', coll.title, 'id', coll.id)
   if nominated:
     coll.nominated = True
     coll.status = 'nominated'
-  else:
-    coll.nominated = False
-    coll.status = 'reviewed'
-  coll.save()
+    coll.save()
+    print('nominated!', nominated, 'coll', coll.title, 'id', coll.id)
+
+    editors = [settings.DEFAULT_FROM_EDITORIAL]
+    # leader_name, leader_email, nominated_title, nominated_id, nominated_url
+    # email to editorial
+    try:
+      new_emailer(
+        email_type='nomination',
+        subject='Student Place Collection nominated for publication',
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to_email=editors,
+        leader_name=construct_display_name(request.user),
+        leader_email=request.user.email,
+        owner_name=coll.owner,
+        nominated_title=coll.title,
+        nominated_id=coll.id,
+        nominated_url=settings.URL_FRONT + 'collections/' + str(coll.id),
+      )
+    except Exception as e:
+      print('Error occurred while sending nomination email', e)
+      logger.exception("Error occurred while sending nomination email")
+    # email to group leader
+    try:
+      new_emailer(
+        email_type='nomination_recd',
+        subject='WHG Student Place Collection nomination',
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        to_email=[request.user.email],
+        leader_name=construct_display_name(request.user),
+        owner_name=coll.owner,
+        nominated_title=coll.title,
+        nominated_id=coll.id,
+        nominated_url=settings.URL_FRONT + 'collections/' + str(coll.id),
+      )
+    except Exception as e:
+      print('Error occurred while sending nomination_rcd email', e)
+      logger.exception("Error occurred while sending nomination_recd email")
+  # else:
+  #   coll.nominated = False
+  #   coll.status = 'reviewed'
+  # coll.save()
 
   return JsonResponse({'status': coll.status, 'coll': coll.title}, safe=False,
                       json_dumps_params={'ensure_ascii': False, 'indent': 2})
@@ -420,9 +464,13 @@ def stringer(str):
     return None
 def when_format(ts):
   return [stringer(ts[0]), stringer(ts[1])]; print(result)
+
 def year_from_string(ts):
   if ts:
-    return int(isoparse(ts).strftime('%Y'))
+    try:
+      return int(isoparse(ts).strftime('%Y'))
+    except ValueError:
+      return int(ts)
   else:
     return "null" # String required by Maplibre filter test
 
@@ -500,7 +548,7 @@ def fetch_mapdata_coll(request, *args, **kwargs):
                 geometry_collection = json.loads(GeometryCollection(unioned_geometry).geojson)
             else:
                 geometry_collection = None
-        
+            print('trace start, end', t.start, t.end)
             feature = {
                 "type": "Feature",
                 "properties": {
@@ -509,8 +557,8 @@ def fetch_mapdata_coll(request, *args, **kwargs):
                     "title": t.place.title,
                     "ccodes": t.place.ccodes,
                     "relation": t.relation[0] if t.relation else None,
-                    "min": year_from_string(t.start),
-                    "max": year_from_string(t.end),
+                    "min": year_from_string(t.start) if t.start else None,
+                    "max": year_from_string(t.end) if t.end else None,
                     "note": t.note,
                     "seq": sequence_value,
                 },
@@ -901,7 +949,7 @@ class PlaceCollectionCreateView(LoginRequiredMixin, CreateView):
 
   def get_context_data(self, *args, **kwargs):
     user = self.request.user
-    print('PlaceCollectionCreateView() user', user)
+    print('PlaceCollectionCreateView() kwargs', kwargs)
     context = super(PlaceCollectionCreateView, self).get_context_data(**kwargs)
     context['mbtoken'] = settings.MAPBOX_TOKEN_MB
 
@@ -914,7 +962,7 @@ class PlaceCollectionCreateView(LoginRequiredMixin, CreateView):
       context["links_form"] = CollectionLinkFormset()
       # context["images_form"] = CollectionImageFormset()
 
-    # owners create collections from their datasets
+    # owners can include place from their datasets
     ds_select = [obj for obj in Dataset.objects.all().order_by('title') if user in obj.owners or user.is_superuser]
     if not user.is_superuser:
       ds_select.insert(len(ds_select)-1, Dataset.objects.get(label='owt10'))

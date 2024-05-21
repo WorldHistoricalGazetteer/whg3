@@ -299,7 +299,7 @@ i.fa-eye { margin-bottom: -5px; margin-left: -5px;}
 .title_responsive {
   font-family:  'Raleway', sans-serif;
   font-size: 3rem;
-  font-weight: 600;
+  /*font-weight: 600;*/
   color: #004080;
   line-height: 1;
 }
@@ -331,7 +331,8 @@ i.fa-eye { margin-bottom: -5px; margin-left: -5px;}
   font-weight: bold;
   font-size: 1.2rem;
   color: #999;
-  line-height: 1.1;
+  line-height: 1;
+  margin-top: -.5rem;
 }
 #tagline_mobile {
   width: 59%;

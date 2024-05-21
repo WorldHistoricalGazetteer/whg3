@@ -151,6 +151,40 @@ EMAIL_MESSAGES = {
     'The site might be temporarily unavailable during this period.\n\n'
     'Thank you for your understanding.'
   ),
+  '500_error': (
+    'Greetings WHG admin person(s),\n\n'
+    'The user {username} has received a 500 server error.\n\n'
+    'Request details:\n'
+    'URL: {url}\n'
+    'Method: {method}\n'
+    'Headers: {headers}\n'
+    'Body: {body}\n\n'
+    'Exception details:\n'
+    'Type: {exc_type}\n'
+    'Message: {exc_message}\n'
+    'Traceback:\n{traceback}\n\n'
+    'Best wishes and best of luck,\n'
+    'The WHG error bot'
+  ),
+  'nomination': (
+    'Greetings WHG editor(s),\n\n'
+    'The group leader {leader_name} ({leader_email}) has nominated the following Place Collection '
+    'for inclusion in the WHG Student Gallery:\n\n'
+    '{nominated_title} ({nominated_id})\n\n'
+    'Please review at {nominated_url}\n\n'
+    'Best regards\n'
+    'The WHG auto emailer bot'
+  ),
+  'nomination_recd': (
+    'Greetings {leader_name},\n\n'
+    'We received your nomination of the following Place Collection '
+    'for inclusion in the WHG Student Gallery:\n\n'
+    '{nominated_title} ({nominated_id}) at {nominated_url})\n\n'
+    'We will notify you soon as to whether it has been accepted for publication '
+    'on the Student Gallery page of the Teaching section.\n\n'
+    'Best regards\n'
+    'The WHG auto emailer bot'
+  ),
   # 'align_idx': (
   #   'Dear {greeting_name},\n\n'
   #   'Your WHG index alignment task for the {dstitle} dataset ({dslabel}) has completed. '
