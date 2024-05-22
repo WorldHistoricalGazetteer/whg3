@@ -439,7 +439,7 @@ class SpatialAPIView(generics.ListAPIView):
     return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
 
 """
-  makeGeom(); called by collectionItem()
+  makeGeom(); called by responseItem(), childItem
   format index locations as geojson
 """
 def makeGeom(geom):
@@ -449,25 +449,49 @@ def makeGeom(geom):
     geomobj = {"type":"GeometryCollection", "geometries": []}  
     for g in geom:
       geomobj['geometries'].append(g['location'])
-        #{"type":g['location']['type'],
-         #"coordinates":g['location']['coordinates']
   elif len(geom) == 1:
     geomobj=geom[0]['location']
   else:
     geomobj=None
   return geomobj
 
+
+def childItem(i):
+  _id = i['_id']
+  score = i.get('_score', None)
+  i = i['_source']
+  item = {
+    "type":"Feature",
+    "score": score,
+    "properties": {
+      "title":i['title'],
+      "index_id":_id,
+      # "index_role":i['relation']['name'],
+      "place_id":i['place_id'],
+      "source_id": i['src_id'],
+      "dataset":i['dataset'],
+    },
+    "fclasses": [fc for fc in i['fclasses']],
+    "types": [t.get('sourceLabel', t.get('source_label')) for t in i['types']],
+    "variants": [n['toponym'] for n in i['names'] if n['toponym'] != i['title']],
+    'links': i['links'],
+    "when": [{"start": {"in": ts["gte"]}, "end": {"in": ts["lte"]}} for ts in i['timespans']],
+    "minmax": [i['minmax']['gte'], i['minmax']['lte']] if 'minmax' in i.keys() else [],
+    "ccodes": i['ccodes'],
+    "geometry": makeGeom(i['geoms'])
+  }
+  return item
 """
   responseItem(); called by collector();
-  formats api search hits 
+  formats api search parent hits 
 """
 def responseItem(i):
-  # print('collectionItem i',i)
+  print('i in responseItem',i)
   _id = i['_id']
-  score = i['score']
+  score = i.get('score', None)
   # serialize as geojson
   i = i['hit']
-  # print("i['types']", i['types'])
+  print("i['names']", i['names'])
   item = {
     "type":"Feature",
     "score": score,
@@ -480,7 +504,8 @@ def responseItem(i):
       "dataset":i['dataset'],
       "fclasses": [c for c in i['fclasses']],
       "placetypes": [t.get('sourceLabel', t.get('source_label')) for t in i['types']],
-      "variants":[n for n in i['suggest']['input'] if n != i['title']],
+      # "variants":[n for n in i['suggest']['input'] if n != i['title']],
+      "variants":[n['toponym'] for n in i['names'] if n['toponym'] != i['title']],
       'links':i['links'],
       "timespans":i['timespans'],
       "minmax":i['minmax'] if 'minmax' in i.keys() else [],
@@ -502,6 +527,8 @@ def collector(q, idx):
   res = es.search(index=idx, body=q)
   # print('res', res)
   hits = res['hits']['hits']
+  # print('inner hits in collector()', json.dumps([h['inner_hits'] for h in hits], indent=2))
+  # [dict_keys(['_index', '_id', '_score', '_source', 'inner_hits'])]
   count = res['hits']['total']['value']
   if len(hits) > 0:
     for h in hits:
@@ -512,8 +539,12 @@ def collector(q, idx):
          "childcount": len(h['_source']['children']),
          "score": h['_score'],
          "hit": h['_source'],
+         "inner_hits": h['inner_hits'] if 'inner_hits' in h.keys() else "no inner hits"
          }
       )
+  # print('items', items) # 1 item
+  # print('item keys', items[0].keys())
+  # print('item inner_hits', items[0]['inner_hits'])
   result = {"count": count,
             "items": sorted(items, key=lambda x: x['score'], reverse=True)}
   return result
@@ -587,7 +618,7 @@ class IndexAPIView(View):
         bundle = bundler(q, whgid, idx)
         print('bundler q', q)
         result = {"index_id": whgid,
-                  "note": str(len(bundle)) + " records asserted as skos:closeMatch",
+                  "note": str(len(bundle)) + " records in WHGasserted as skos:closeMatch",
                   "type": "FeatureCollection",
                   "features": [b for b in bundle]}
       else:
@@ -599,22 +630,20 @@ class IndexAPIView(View):
                 {"exists": {"field": "whg_id"}},
                 {"multi_match": {
                   "query": name,
-                  "fields": ["title^3", "names.toponym", "searchy"],
+                  "fields": ["title^3", "names.toponym", "searchy"]
                 }}
-              ]
-            }
-          },
-          "aggs": {
-            "children": {
-              "terms": {"field": "relation.name"},
-              "aggs": {
-                "child_docs": {
-                  "top_hits": {
-                    "size": 100,
-                    "_source": ["title", "names", "searchy"]
+              ],
+              "should": [
+                {
+                  "has_child": {
+                    "type": "child",
+                    "query": {
+                      "match_all": {}
+                    },
+                    "inner_hits": {}
                   }
                 }
-              }
+              ]
             }
           }
         }
@@ -628,33 +657,148 @@ class IndexAPIView(View):
           q['query']['bool']['must'].append({"term": {"timespans.value": year}})
         if area:
           a = get_object_or_404(Area, pk=area)
-          bounds = {"id": [str(a.id)], "type": [a.type]}  # nec. b/c some are polygons, some are multipolygons
+          bounds = {"id": [str(a.id)], "type": [a.type]}  # necessary because some are polygons, some are multipolygons
           q['query']['bool']["filter"] = get_bounds_filter(bounds, 'whg')
 
-        print('the api query was:', json.dumps(q, indent=2))
-
+        # print('the api query was:', json.dumps(q, indent=2))
         # run query
         response = collector(q, 'whg')
-        print('response in IndexAPIView()', response)
-
+        # print('response in IndexAPIView()', response)
+        print('len(items)', len(response['items']))
+        # ex = response['items'][1]
         union_records = []
-        for parent in response['hits']['hits']:
-          union_record = responseItem(parent)
-          if 'inner_hits' in parent:
-            children = parent['inner_hits']['child']['hits']['hits']
+        for item in response['items']:
+          parent = responseItem(item)
+          print()
+          # print('formatted parent', parent)
+          union_records.append(parent)  # the parent
+          # all parents have inner_hits, not all have children
+          children = item['inner_hits']['child']['hits']['hits']
+          if len(children) > 0:
             for child in children:
-              union_record['features'].append(responseItem(child))
-          union_records.append(union_record)
-
-        # result object
-        result = {'type': 'FeatureCollection',
-                  'count': len(union_records),
-                  'pagesize': pagesize,
-                  'features': union_records[:int(pagesize)] if pagesize else union_records}
+              # needs formatting as a Feature
+              # print()
+              # print('child', childItem(child))
+              union_records.append(childItem(child)) # the children
+        print()
+        result = {
+          'note': str(len(union_records)) + " records in WHG asserted as skos:closeMatch",
+          'type': 'FeatureCollection',
+          'pagesize': pagesize,
+          'features': union_records[:int(pagesize)] if pagesize else union_records}
 
     # to client
     return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
 
+
+# class IndexAPIView(View):
+#   def get(self, request):
+#     params = request.GET
+#     print('IndexAPIView request.GET', params)
+#     idx = ['whg', 'pub']  # search both indexes
+#
+#     name = request.GET.get('name')
+#     whgid = request.GET.get('whgid')  # a parent record
+#     pid = request.GET.get('pid')  # place.id > place_id
+#     fc = params.get('fclass', None)  # feature class
+#     fclasses = [x.upper() for x in fc.split(',')] if fc else None
+#     dataset = request.GET.get('dataset')  # dataset label
+#     cc = request.GET.get('ccode')  # country code
+#     ccodes = [x.upper() for x in cc.split(',')] if cc else None
+#     year = request.GET.get('year')
+#     area = request.GET.get('area')
+#     pagesize = params.get('pagesize', None)
+#
+#     if all(v is None for v in [name, whgid, pid]):
+#       return JsonResponse({
+#         'error': 'Query requires either name, namestartswith, pid, or whgid',
+#         'instructions': 'API instructions can be found at https://whgazetteer/usingapi/'
+#       }, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2}, status=400)
+#
+#     else:
+#       if whgid and whgid != '':
+#         print('fetching whg_id', whgid)
+#         q = {
+#           "query": {
+#             "bool": {
+#               "should": [
+#                 {"parent_id": {"type": "child", "id": whgid}},
+#                 {"match": {"_id": whgid}}
+#               ]
+#             }
+#           }
+#         }
+#         bundle = bundler(q, whgid, idx)
+#         print('bundler q', q)
+#         result = {"index_id": whgid,
+#                   "note": str(len(bundle)) + " records asserted as skos:closeMatch",
+#                   "type": "FeatureCollection",
+#                   "features": [b for b in bundle]}
+#       else:
+#         q = {
+#           "size": 100,
+#           "query": {
+#             "bool": {
+#               "must": [
+#                 {"exists": {"field": "whg_id"}},
+#                 {"multi_match": {
+#                   "query": name,
+#                   "fields": ["title^3", "names.toponym", "searchy"],
+#                 }}
+#               ]
+#             }
+#           },
+#           "aggs": {
+#             "children": {
+#               "terms": {"field": "relation.name"},
+#               "aggs": {
+#                 "child_docs": {
+#                   "top_hits": {
+#                     "size": 100,
+#                     "_source": ["title", "names", "searchy"]
+#                   }
+#                 }
+#               }
+#             }
+#           }
+#         }
+#         if fc:
+#           q['query']['bool']['must'].append({"terms": {"fclasses": fclasses}})
+#         if dataset:
+#           q['query']['bool']['must'].append({"match": {"dataset": dataset}})
+#         if ccodes:
+#           q['query']['bool']['must'].append({"terms": {"ccodes": ccodes}})
+#         if year:
+#           q['query']['bool']['must'].append({"term": {"timespans.value": year}})
+#         if area:
+#           a = get_object_or_404(Area, pk=area)
+#           bounds = {"id": [str(a.id)], "type": [a.type]}  # nec. b/c some are polygons, some are multipolygons
+#           q['query']['bool']["filter"] = get_bounds_filter(bounds, 'whg')
+#
+#         print('the api query was:', json.dumps(q, indent=2))
+#
+#         # run query
+#         response = collector(q, 'whg')
+#         print('response in IndexAPIView()', response)
+#
+#         union_records = []
+#         for parent in response['hits']['hits']:
+#           union_record = responseItem(parent)
+#           if 'inner_hits' in parent:
+#             children = parent['inner_hits']['child']['hits']['hits']
+#             for child in children:
+#               union_record['features'].append(responseItem(child))
+#           union_records.append(union_record)
+#
+#         # result object
+#         result = {'type': 'FeatureCollection',
+#                   'count': len(union_records),
+#                   'pagesize': pagesize,
+#                   'features': union_records[:int(pagesize)] if pagesize else union_records}
+#
+#     # to client
+#     return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
+#
 
 """ 
   DEPRECATED May 2024

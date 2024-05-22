@@ -13,7 +13,6 @@ export function initialiseCarousels(galleries, carouselMetadata, startCarousels,
 	    const carouselContainer = $(
 	        `<div class="carousel-container ${v3 ? 'mx-0 mb-2 mb-lg-0 h-40' : 'p-1'} home-carousel"></div>`);
 	    const border = $('<div class="border p-1 h-100 d-flex flex-column"></div>'); // Added flex-column class
-	    // const heading = $(`<!--<p class="p-1 strong">${title}</p>-->`);
 	    const heading = $(`<p class="p-1">${title}</p>`);
 	    if (type == 'datasets') {
 	        heading.addClass('ds-header');
