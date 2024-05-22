@@ -545,62 +545,78 @@ def bundler(q, whgid, idx):
   /api/index?
   search whg & pub indexes
 """
+
+
 class IndexAPIView(View):
-  # @staticmethod
   def get(self, request):
-    params=request.GET
+    params = request.GET
     print('IndexAPIView request.GET', params)
     idx = ['whg', 'pub']  # search both indexes
-    """
-      args in params: whgid, pid, name, name_startswith, fclass, 
-      dataset, ccode, year, area
-    """
+
     name = request.GET.get('name')
-    # name_startswith = request.GET.get('namestartswith')
     whgid = request.GET.get('whgid')  # a parent record
     pid = request.GET.get('pid')  # place.id > place_id
-    fc = params.get('fclass',None)  # feature class
-    fclasses=[x.upper() for x in fc.split(',')] if fc else None
+    fc = params.get('fclass', None)  # feature class
+    fclasses = [x.upper() for x in fc.split(',')] if fc else None
     dataset = request.GET.get('dataset')  # dataset label
     cc = request.GET.get('ccode')  # country code
-    ccodes=[x.upper() for x in cc.split(',')] if cc else None
+    ccodes = [x.upper() for x in cc.split(',')] if cc else None
     year = request.GET.get('year')
     area = request.GET.get('area')
     pagesize = params.get('pagesize', None)
 
-    if all(v is None for v in [name, whgid, pid]):  # TODO: add name_startswith
+    if all(v is None for v in [name, whgid, pid]):
       return JsonResponse({
         'error': 'Query requires either name, namestartswith, pid, or whgid',
         'instructions': 'API instructions can be found at https://whgazetteer/usingapi/'
-      }, safe=False, json_dumps_params={'ensure_ascii':False, 'indent':2}, status=400)
+      }, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2}, status=400)
 
     else:
-      # parents + children with whgid as parent
       if whgid and whgid != '':
         print('fetching whg_id', whgid)
-        q = {"query": {"bool": {"should": [
-              {"parent_id": {"type": "child", "id": whgid}},
-              {"match":{"_id": whgid}}
-            ]
-        }}}
+        q = {
+          "query": {
+            "bool": {
+              "should": [
+                {"parent_id": {"type": "child", "id": whgid}},
+                {"match": {"_id": whgid}}
+              ]
+            }
+          }
+        }
         bundle = bundler(q, whgid, idx)
         print('bundler q', q)
-        result={"index_id":whgid,
-                "note":str(len(bundle)) + " records asserted as skos:closeMatch",
-                "type":"FeatureCollection",
-                "features":[b for b in bundle]}
+        result = {"index_id": whgid,
+                  "note": str(len(bundle)) + " records asserted as skos:closeMatch",
+                  "type": "FeatureCollection",
+                  "features": [b for b in bundle]}
       else:
         q = {
           "size": 100,
-          "query": { "bool": {
-            "must": [
-              {"exists": {"field": "whg_id"}},
-              {"multi_match": {
-                "query": name,
-                "fields": ["title^3", "names.toponym", "searchy"],
-              }}
-            ]
-          }}
+          "query": {
+            "bool": {
+              "must": [
+                {"exists": {"field": "whg_id"}},
+                {"multi_match": {
+                  "query": name,
+                  "fields": ["title^3", "names.toponym", "searchy"],
+                }}
+              ]
+            }
+          },
+          "aggs": {
+            "children": {
+              "terms": {"field": "relation.name"},
+              "aggs": {
+                "child_docs": {
+                  "top_hits": {
+                    "size": 100,
+                    "_source": ["title", "names", "searchy"]
+                  }
+                }
+              }
+            }
+          }
         }
         if fc:
           q['query']['bool']['must'].append({"terms": {"fclasses": fclasses}})
@@ -609,29 +625,36 @@ class IndexAPIView(View):
         if ccodes:
           q['query']['bool']['must'].append({"terms": {"ccodes": ccodes}})
         if year:
-          # TODO: how does this work?
-          q['query']['bool']['must'].append({"term":{"timespans":{"value": year}}})
+          q['query']['bool']['must'].append({"term": {"timespans.value": year}})
         if area:
-          a = get_object_or_404(Area,pk=area)
-          bounds={"id":[str(a.id)],"type":[a.type]} # nec. b/c some are polygons, some are multipolygons
-          q['query']['bool']["filter"]=get_bounds_filter(bounds,'whg')
+          a = get_object_or_404(Area, pk=area)
+          bounds = {"id": [str(a.id)], "type": [a.type]}  # nec. b/c some are polygons, some are multipolygons
+          q['query']['bool']["filter"] = get_bounds_filter(bounds, 'whg')
 
         print('the api query was:', json.dumps(q, indent=2))
-        
+
         # run query
         response = collector(q, 'whg')
-        # format hits
         print('response in IndexAPIView()', response)
-        response = [responseItem(i) for i in response['items']]
+
+        union_records = []
+        for parent in response['hits']['hits']:
+          union_record = responseItem(parent)
+          if 'inner_hits' in parent:
+            children = parent['inner_hits']['child']['hits']['hits']
+            for child in children:
+              union_record['features'].append(responseItem(child))
+          union_records.append(union_record)
 
         # result object
-        result = {'type':'FeatureCollection',
-                  'count': len(response),
+        result = {'type': 'FeatureCollection',
+                  'count': len(union_records),
                   'pagesize': pagesize,
-                  'features':response[:int(pagesize)] if pagesize else response}
+                  'features': union_records[:int(pagesize)] if pagesize else union_records}
 
     # to client
-    return JsonResponse(result, safe=False,json_dumps_params={'ensure_ascii':False,'indent':2})
+    return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
+
 
 """ 
   DEPRECATED May 2024
