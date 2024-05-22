@@ -115,8 +115,8 @@ export default class Dateline {
 				<input type="range" value="${this.toValue}" min="${this.minValue}" max="${this.maxValue}" class="slider to" id="toSlider">
 				<div class="tooltip">${formatTooltipContent(this.fromValue, this.toValue)}</div>
 				<div class="scale-container"></div>
-				<i class="fas fa-question-circle linky" title="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."></i>
-				<button class="dateline-button expanded" title="Toggle date filtering"><span></span></button>
+				<i class="fas fa-question-circle linky" data-bs-toggle="popover"></i>
+				<button class="dateline-button expanded" data-bs-title="Hide temporal controls"><span></span></button>
 			</div>
 		`;
 		const parser = new DOMParser();
@@ -130,6 +130,7 @@ export default class Dateline {
 		datelineButton.parentNode.insertBefore(document.querySelector('.fa-question-circle'), datelineButton);
 		datelineButton.addEventListener('click', () => {
 			this.open = !this.open;
+			$('.dateline-button').tooltip('hide');
 			if (this.rangeContainer.classList.contains('transitioned')) {
 				this.rangeContainer.classList.remove('transitioned');
 			}
@@ -227,6 +228,23 @@ export default class Dateline {
 			datelineButton.click();
 			this.rangeContainer.classList.add('transitioned');
 		}
+	
+		$("#dateline > i.fas.fa-question-circle").each(function() {	    
+		    $(this)
+		    .attr('data-bs-title', 'Temporal Filter')
+		    .attr('data-bs-content', `
+		        <p>Some of the places and place names in the World Historical Gazetteer have been scoped temporally, allowing
+		        users to see how attestations for places and their names vary over time.</p>
+		        <p>Click this button to reveal the controls for adjusting the date range of features filtered in the table and 
+		        on the map. You can click it again to hide the controls, and any filtering you have set will remain in operation.</p>
+		        <p>You can choose to either include or exclude places that have no temporal attestations.</p>
+		    `);
+		}).popover({
+		    container: this.container,
+		    trigger: 'hover',
+		    placement: 'right',
+		    html: true
+		});
 	}
 
 	observeResize() {

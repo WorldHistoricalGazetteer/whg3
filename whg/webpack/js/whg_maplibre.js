@@ -1130,7 +1130,7 @@ maplibregl.Map = function (options = {}) {
 		
 		$(mapInstance.getContainer().querySelector('.maplibregl-control-container'))
 		.tooltip({
-	    	selector: 'button, select, summary.maplibregl-ctrl-attrib-button',
+	    	selector: 'button:not(.dateline-button), select, summary.maplibregl-ctrl-attrib-button, #dateline.expanded .dateline-button',
 	    	container: '#map'
 		})
 		
