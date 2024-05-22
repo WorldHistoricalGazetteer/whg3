@@ -29,18 +29,36 @@ export function initialiseMap() {
         }
         groupedFeatures[ds].push(feature);
     });
+    
+    if (page_variant == 'reconciliation') {
 
-    // Create a source and layerset for each group of features based on their 'ds' property
-    const markerColours = {
-		'dataset': 'green',
-		'wikidata': 'orange',
-		'geonames': 'blue',
-	} 
-    Object.entries(groupedFeatures).forEach(([ds, features]) => {
-        layersets[ds] = mappy.newSource(ds, { type: 'FeatureCollection', features })
-            .newLayerset(ds, null, null, markerColours[ds] || 'brown', ds == 'dataset' ? 'green' : null, ds !== 'dataset', ds == 'dataset' ? 1.3 : 1); // No numbering for `dataset` source marker
-        if (ds=='geonames' && !!groupedFeatures['wikidata']) layersets[ds].toggleVisibility(false);
-    });
+	    // Create a source and layerset for each group of features based on their 'ds' property
+	    const markerColours = {
+			'dataset': 'green',
+			'wikidata': 'orange',
+			'geonames': 'blue',
+		} 
+	    Object.entries(groupedFeatures).forEach(([ds, features]) => {
+	        layersets[ds] = mappy
+	        	.newSource(ds, { type: 'FeatureCollection', features })
+	            .newLayerset(ds, null, null, markerColours[ds] || 'brown', ds == 'dataset' ? 'green' : null, ds !== 'dataset', ds == 'dataset' ? 1.3 : 1); // No numbering for `dataset` source marker
+	        if (ds=='geonames' && !!groupedFeatures['wikidata']) layersets[ds].toggleVisibility(false);
+	    });
+		
+	}
+	else { // page_variant == 'accession'
+
+	    // Create a source and layerset for each group of features based on their 'ds' property
+	    const markerColours = {
+			'dataset': 'green',
+		} 
+	    Object.entries(groupedFeatures).forEach(([ds, features]) => {
+	        layersets[ds] = mappy
+	        	.newSource(ds, { type: 'FeatureCollection', features })
+	            .newLayerset(ds, null, null, markerColours[ds] || 'orange', ds == 'dataset' ? 'green' : null, false, ds == 'dataset' ? 1.3 : 1);
+	    });
+		
+	}
     
     console.log(groupedFeatures, layersets);
 	
@@ -119,13 +137,7 @@ export function addReviewListeners() {
 	        mappy.setFeatureState({ source: $(element).data('authority'), id: matchingFeature.id }, { highlight });
 	        mappy.setFeatureState({ source: 'dataset', id: 0 }, { highlight });
 	    }
-	}		
-	
-	$(".create-comment-review").each(function() {
-		$(this).modalForm({
-			formURL: `/comment/${$(this).data('id')}${uribase}?next=${nextURL}`
-		});
-	});
+	}
 
 	var page
 	$(".help-matches, .help").click(function() {
@@ -133,8 +145,6 @@ export function addReviewListeners() {
 		page = $(this).data('id')
 		$('.selector').dialog('open');
 	})
-	
-	$("[rel='tooltip']").tooltip();
 	
 	// set pass dropdown as next set with any reviewed=False rows
 	// $("#select_pass").val(passnum);
@@ -169,7 +179,7 @@ export function addReviewListeners() {
 	
 	$('.ext').on('click', function(e) {
 		e.preventDefault();
-		let str = $(this).text()
+		let str = $(this).text().trim();
 		var re = /(http|bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wdlocal|whg|wp):(.*?)$/;
 		let url = str.match(re)[1] == 'http' ? str : base_urls[str.match(re)[1]] + str.match(re)[2]
 		console.log('str, url', str, url)

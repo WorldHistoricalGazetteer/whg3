@@ -1131,7 +1131,6 @@ maplibregl.Map = function (options = {}) {
 		$(mapInstance.getContainer().querySelector('.maplibregl-control-container'))
 		.tooltip({
 	    	selector: 'button, select, summary.maplibregl-ctrl-attrib-button',
-	    	trigger : 'hover',
 	    	container: '#map'
 		})
 		

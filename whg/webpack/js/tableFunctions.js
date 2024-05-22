@@ -173,13 +173,6 @@ export function initialiseTable(
 	    $('#ds_filter').html(select);
 	  }*/
 
-	$('#ds_table, #detail')
-		.tooltip({
-			selector: '[data-bs-toggle="tooltip"]',
-			trigger: 'hover',
-			html: true
-		})
-
 	// Define Datatable columns based on ds_type
 	let columns;
 	let columnDefs;
