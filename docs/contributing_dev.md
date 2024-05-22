@@ -16,7 +16,7 @@ WHG is a Django application, and its backend makes extensive use of PostgreSQL/P
 Experienced Django developers could help with refining existing features and building new ones, but there are several ways to help that don't involve Django per se, for the front end (mapping, styling, localization), and the backend Elasticsearch indexes.
 
 #### Creating a local instance
-This repository is now available as a Docker project. [Details for cloning it are here]() 
+This repository is now available as a Docker project. [Details for cloning it are here]() .
 
 #### Front end
 

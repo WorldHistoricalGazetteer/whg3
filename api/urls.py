@@ -10,8 +10,8 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 
 urlpatterns = [
 
-    # database places
-    path('db/',views.SearchAPIView.as_view(),name='api-search'),
+    # database places DEPRECATED
+    # path('db/',views.SearchAPIView.as_view(),name='api-search'),
     # index docs
     path('index/',views.IndexAPIView.as_view(),name='api-index-search'),
     # index docs for remote

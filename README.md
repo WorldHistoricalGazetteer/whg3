@@ -1,14 +1,14 @@
-## World Historical Gazetteer v3.0a
+## World Historical Gazetteer v3.0b
 
-This is the repository for the Version 3.0a (alpha) of the World Historical Gazetteer (WHG) web platform and API, in active development. A pre-release alpha is anticipated for December, 2023. Version 2.1 of WHG is live at https://whgazetteer.org, and its repository is [here]().
+This is the repository for Version 3.0b (beta) of the World Historical Gazetteer (WHG) web platform and API, in active development. Its release replacing Version 2.1 is planned for June, 2024. Until then Version 2.1 of WHG is live at https://whgazetteer.org, and that repository is [here](https://github.com/WorldHistoricalGazetteer/whgazetteer).
 
 ### Contributing to software and data development
 
-WHG is an open-source project. Please see [this document](docs/contributing_dev.md) for an overview of how to participate in the several aspects of WHG development. Specific tasks in our long TODO queue will be added as GitHub issues soon. This repository can be cloned as a Docker project with [the procedure outlined here](Installation.md).
+WHG is an open-source project and welcomes contributions of content and code. Please see [this document](docs/contributing_dev.md) for an overview of how to participate in the several aspects of WHG development. Specific tasks in our long TODO queue will be added as GitHub issues soon. This repository can be cloned as a Docker project with [the procedure outlined here](Installation.md).
 
 ### Change log
 
-#### v3.0
+#### v3.0b
 
 - Everything here is changing continually.
 
