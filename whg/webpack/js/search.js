@@ -9,9 +9,7 @@ import {
 import {
 	ccode_hash,
 } from '../../../static/js/parents';
-import {
-	CountryCacheFeatureCollection,
-} from './countryCache';
+import { CountryCacheFeatureCollection } from './countryCache';
 import '../css/typeahead.css';
 import '../css/dateline.css';
 import '../css/search.css';
@@ -293,7 +291,7 @@ Promise.all([
 	.parent().tooltip({
     	selector: '.select2-container',
     	title: function() {
-		    return $(this).prev().attr('title');
+		    return $(this).prev().attr('data-bs-title');
 		}
 	});
 
@@ -396,11 +394,26 @@ Promise.all([
 	}
 
 	initialiseSuggestions();
-	$('#search_mode').on('change', function() {
+	$('#search_mode')
+    .on('focus', function() {
+        $(this).tooltip('hide').tooltip('disable');
+    })
+	.on('change', function() {
 		initialiseSuggestions();
 	});
+	
+	// Initialise mechanism to prevent reappearance of tooltip on `#search_input`
+    const tooltipKey = 'searchTooltipHidden';
+    if (localStorage.getItem(tooltipKey)) {
+        $('#search_input').tooltip('disable');
+    }
 
-	$('#search_input').on('keyup', function(event) { // Allow [Enter] key to initiate search
+	$('#search_input')
+    .on('focus', function() {
+        $(this).tooltip('hide').tooltip('disable');
+		localStorage.setItem(tooltipKey, 'true');
+    })
+	.on('keyup', function(event) { // Allow [Enter] key to initiate search
 		if (event.which === 13) {
 			event.preventDefault();
 			$('#initiate_search').focus();
@@ -497,6 +510,12 @@ function flashSearchButton(toggle = true) {
 	$('#initiate_search').
 	toggleClass('flashing', toggle).
 	attr('title', toggle ? 'Update search results' : 'Initiate search');
+	$('#search_content')
+	.toggleClass('initial', true)
+	.toggleClass('no-results', true)
+	.toggleClass('no-filtered-results', false);
+	mappy.getSource('places').setData(mappy.nullCollection());
+	mappy.reset();
 }
 
 function clearResults() { // Reset all inputs to default values
@@ -513,8 +532,10 @@ function clearResults() { // Reset all inputs to default values
 	mappy.getSource('places').setData(mappy.nullCollection());
 	mappy.reset();
 	mappy.getSource('countries').setData(mappy.nullCollection());
-	$('#search_content').toggleClass('no-results', true);
-	$('#search_content').toggleClass('no-filtered-results', false);
+	$('#search_content')
+	.toggleClass('initial', true)
+	.toggleClass('no-results', true)
+	.toggleClass('no-filtered-results', false);
 	$('#search_results').empty();
 	localStorage.removeItem('last_search');
 	$('#entrySelector').val(null).trigger('change');

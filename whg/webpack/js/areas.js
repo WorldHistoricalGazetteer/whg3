@@ -1,5 +1,5 @@
 // /whg/webpack/areas.js
-
+import { CountryCacheFeatureCollection } from './countryCache';
 import '../css/areas.css';
 
 let mappy = new whg_maplibre.Map({
@@ -8,6 +8,7 @@ let mappy = new whg_maplibre.Map({
 });
 
 let featureCollection;
+let countryCache = new CountryCacheFeatureCollection();
 
 let countryGeoJSON;
 var draw;
@@ -23,8 +24,8 @@ function waitMapLoad() {
 			// TODO: Removed river and watershed sources and layers, which should be controlled by a style switcher and not added separately
 			  
 			mappy
-			.newSource('places') // Add empty source
-			.newLayerset('places');
+			.newSource('countries') // Add empty source
+			.newLayerset('countries', null, 'countries', 'countries');
 		
 		    mappy
 		    .newSource('hulls')
@@ -41,79 +42,76 @@ function waitDocumentReady() {
 	});
 }
 
-Promise.all([waitMapLoad(), waitDocumentReady()])
-	.then(() => {
+Promise.all([
+	waitMapLoad(),
+	waitDocumentReady(),
+	Promise.all(select2_CDN_fallbacks.map(loadResource))
+]).then(() => {
 
-		// area_type = 'ccodes' // default
-		$(".textarea").each(function(index) {
-			if (["None", "null"].includes($(this).val())) {
-				$(this).val('')
-			}
-		});
-			
-		if (action == 'update') {
-			// existing - assumes that formGeoJSON is a featureCollection
-			const areaFeatureCollection = featureGeometryCollection(JSON.parse(formGeoJSON));
-	
-			// if area was drawn
-			if (formType == 'drawn') {
-				console.log('was drawn',areaFeatureCollection)
-				draw.set(areaFeatureCollection)
-				$('a[href="#areas_draw"]').tab('show');
-				// disable ccodes tab
-				$('a[href="#areas_codes"]').addClass('disabled').css("cursor", "default")
-	
-			} else if (formType == 'ccodes') {
-				console.log('was ccodes-generated')
-				mappy.getSource('hulls').setData(areaFeatureCollection);
-				// disable draw tab
-				$('a[href="#areas_draw"]').addClass('disabled').css("cursor", "default")
-			}
-			mappy.fitBounds(turf.bbox(areaFeatureCollection), {
-		        padding: 30,
-		        duration: 1000,
-		    });
+    // Populate buffer dropdown options
+    const bufferDropdown = $('#buffer_km');
+    const bufferOptions = [0, 1, 5, 10, 50, 100, 500, 1000, 5000];
+    bufferOptions.forEach(value => {
+        bufferDropdown.append(new Option(`${value} km`, value, value === 0 ? true : false));
+    });
+	bufferDropdown.on('change', updateAreaMap);
+	$("textarea#geojson").val('');
+		
+	if (action == 'update') {
+		// existing - assumes that formGeoJSON is a featureCollection
+		const areaFeatureCollection = featureGeometryCollection(JSON.parse(formGeoJSON));
+
+		// if area was drawn
+		if (formType == 'drawn') {
+			console.log('was drawn',areaFeatureCollection)
+			draw.set(areaFeatureCollection)
+			$('a[href="#areas_draw"]').tab('show');
+			// disable ccodes tab
+			$('a[href="#areas_codes"]').addClass('disabled').css("cursor", "default")
+
+		} else if (formType == 'ccodes') {
+			console.log('was ccodes-generated')
+			mappy.getSource('hulls').setData(areaFeatureCollection);
+			// disable draw tab
+			$('a[href="#areas_draw"]').addClass('disabled').css("cursor", "default")
 		}
-		
-		let country_url = "/media/data/countries_simplified.json";
-		fetch(country_url)
-			.then(function(resp) { return resp.json(); })
-			.then(function(data) {
-				countryGeoJSON = data;
-			});
-		
-		$("#id_geojson")
-			.attr("placeholder", "generated from country codes")
-			.attr("disabled", true)
+		mappy.fitBounds(turf.bbox(areaFeatureCollection), {
+	        padding: 30,
+	        duration: 1000,
+	    });
+	}
+	
+	$('#entrySelector').select2({
+		data: dropdown_data[1].children,
+		width: 'element',
+		height: 'element',
+		placeholder: 'Choose Countries',
+		allowClear: false,
+	}).on('change', function(e) {
+		updateAreaMap();
+	});
+	
+	let country_url = "/media/data/countries_simplified.json";
+	fetch(country_url)
+		.then(function(resp) { return resp.json(); })
+		.then(function(data) {
+			countryGeoJSON = data;
+		});
 
-		$('#areas_codes .area-link-clear').click(() => {
-			map_clear();
-		});
-		$('#areas_codes .area-link-render').click(() => {
-			map_render();
-		});
-
-		$('a[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
-			
-			console.log('shown.bs.tab',e);
-			
-			const target = $(e.target).attr("href") // activated tab
-			const area_type = $(e.target).attr("ref") // activated tab
-			map_clear();
-			// feed area type to hidden input
-			$("input[name='type']").val(area_type)
-			console.log('tab id:', target);
-			// TODO: better refactor 
-			if (target == '#areas_codes') {
-				$drawControl.hide();
-				$("#id_geojson").attr("placeholder", "generated from country codes")
-			} else if (target == '#areas_draw') {
-				$drawControl.show();
-				$("#id_geojson").attr("placeholder", "generated from drawn shapes")
-			}
-		});
-	})
-	.catch(error => console.error("An error occurred:", error));
+	$('a[data-bs-toggle="tab"]').on('shown.bs.tab', function(e) {
+		
+		console.log('shown.bs.tab',e);
+		
+		const target = $(e.target).attr("href") // activated tab
+		const area_type = $(e.target).attr("ref") // activated tab
+		map_clear();
+		// feed area type to hidden input
+		$("input[name='type']").val(area_type)
+		console.log('tab id:', target);
+		$drawControl.toggle(target !== '#areas_codes');
+	});
+})
+.catch(error => console.error("An error occurred:", error));
 
 function addDrawingControl() {
 	
@@ -157,54 +155,55 @@ function featureGeometryCollection(geometryCollection) {
 
 function map_clear() {
 	draw.deleteAll();
-	mappy.clearSource('places').clearSource('hulls').reset();
-	$("input#id_ccodes").val(null);
+	mappy.clearSource('countries').clearSource('hulls').reset();
 	if (action == "create") {
-		$("textarea#geojson").val(null);
+		$("textarea#geojson").val('');
 	}
-	$("#buffer_km").val(null);
 }
 
-function map_render() {
+function updateAreaMap() {
+
 	mappy
-	.clearSource('places')
+	.clearSource('countries')
 	.clearSource('hulls');
-	let ccodes = $("input#id_ccodes").val().split(/[,\s|]+/).map(code => code.trim().toUpperCase()).filter(Boolean);
-	$("input#id_ccodes").val(ccodes.join(','));
-	let cbuffer = $("input#buffer_km").val();
-	featureCollection = mappy.nullCollection();
+	$("textarea#geojson").val('');
+
+	var data = $('#entrySelector').select2('data');
+	let cbuffer = $("select#buffer_km").val();
 	let hullCollection = mappy.nullCollection();
-	if (ccodes.length > 0) {
-		featureCollection.features = countryGeoJSON.features.filter(feature => ccodes.includes(feature.properties.iso));
-		if (featureCollection.features.length == 0) {
-			alert('No matches found for those country codes.');
-			return;
+
+	function fitMap(features) {
+		try {
+			mappy.fitBounds(bbox(features), {
+				padding: 30,
+				maxZoom: 7,
+				duration: 1000,
+			});
+		} catch {
+			mappy.reset();
 		}
-		featureCollection.features.forEach((feature, index) => { 
-			feature.id = index;
-			if (cbuffer > 0) {
-				const bufferedHull = convex(buffer(feature, cbuffer, { units: 'kilometers' }));
-        		hullCollection.features.push(bufferedHull);
-			} 
-		});
-		if (cbuffer > 0) {
-			hullCollection = combine(dissolve(flatten(hullCollection)));
-			mappy.getSource('hulls').setData(hullCollection);
-		}
-		mappy.getSource('places').setData(featureCollection);
-		featureCollection.features.forEach((feature, index) => {
-			mappy.setFeatureState({ source: 'places', id: index }, { highlight: true });
-        });
-	} else {
-		alert('Need one or more comma-delimited 2-letter country codes.');
-		return;
 	}
-    let primaryCollection = cbuffer > 0 ? hullCollection : featureCollection;
-    $("textarea#geojson").val(JSON.stringify( geometryFeatureCollection(primaryCollection) ));
-	mappy.fitBounds(bbox(primaryCollection), {
-        padding: 30,
-        duration: 1000,
-    });
+
+	if (data.length > 0) {
+		const selectedCountries = data.length < 1 || data.some(feature => feature.feature) ? [] : 
+			(data.some(region => region.ccodes) ? [].concat(...data.map(region => region.ccodes)) : data.map(country => country.id));
+		countryCache.filter(selectedCountries).then(filteredCountries => {
+			filteredCountries.features.forEach((feature, index) => { 
+				if (cbuffer > 0) {
+					const bufferedHull = convex(buffer(feature, cbuffer, { units: 'kilometers' }));
+	        		hullCollection.features.push(bufferedHull);
+				} 
+			});
+			if (cbuffer > 0) {
+				hullCollection = combine(dissolve(flatten(hullCollection)));
+				mappy.getSource('hulls').setData(hullCollection);
+			}
+			mappy.getSource('countries').setData(filteredCountries);
+			let primaryCollection = cbuffer > 0 ? hullCollection : filteredCountries;
+			$("textarea#geojson").val(JSON.stringify( geometryFeatureCollection(primaryCollection) ) || '');
+			fitMap(primaryCollection);
+		});
+	} else mappy.reset();
 }
 
 /*
