@@ -486,12 +486,12 @@ def childItem(i):
   formats api search parent hits 
 """
 def responseItem(i):
-  print('i in responseItem',i)
+  # print('i in responseItem',i)
   _id = i['_id']
   score = i.get('score', None)
   # serialize as geojson
   i = i['hit']
-  print("i['names']", i['names'])
+  # print("i['names']", i['names'])
   item = {
     "type":"Feature",
     "score": score,
@@ -680,7 +680,7 @@ class IndexAPIView(View):
               # print()
               # print('child', childItem(child))
               union_records.append(childItem(child)) # the children
-        print()
+        print(str(len(union_records)) + ' total records returned')
         result = {
           'note': str(len(union_records)) + " records in WHG asserted as skos:closeMatch",
           'type': 'FeatureCollection',
