@@ -133,8 +133,6 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			}
 		});
 		
-		$("[rel='tooltip']").tooltip();
-		
 		// Add event listener to each radio button
 		let radios = $('.r_recon');
 		let selectColls = $('#select_colls');

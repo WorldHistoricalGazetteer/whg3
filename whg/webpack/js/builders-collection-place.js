@@ -62,7 +62,6 @@ $(function() {
 	$("#coll_placelist").scrollTop(offset)
 
 	window.remove_these = []
-	$("[rel='tooltip']").tooltip();
 	$(".nav-link").click(function() {
 		var tab = $(this).data('id')
 		/*console.log(tab)*/
@@ -604,7 +603,6 @@ $(function() {
 			.then(function(data) {
 				const formContainer = document.querySelector("#annotator");
 				formContainer.innerHTML = data.form;
-				$("[rel='tooltip']").tooltip();
 				$("#keyword_color").html('#keyword_color')
 			})
 	}

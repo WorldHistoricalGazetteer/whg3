@@ -81,24 +81,7 @@
 .previewButton.active {
     background-color: #99333330!important;
 }
-.custom-tooltip-red {
-  //--bs-tooltip-bg: #993333!important;
-  //--bs-tooltip-color: #fff!important;
-  --bs-tooltip-color: #993333!important;
-  --bs-tooltip-bg: #f3f3f3 !important;
-    //border: 1px solid #993333;
 
-}
-.tooltip .tooltip-arrow {
-    border-top: 1px solid black !important;
-}
-.custom-tooltip-green {
-  //--bs-tooltip-bg: #cad6ab!important;
-  //--bs-tooltip-color: #000!important;
-  --bs-tooltip-color: green !important;
-  --bs-tooltip-bg: #f3f3f3 !important;
-    //border: 1px solid green;`
-}
 select.form-select {
     width: 100%;
 }

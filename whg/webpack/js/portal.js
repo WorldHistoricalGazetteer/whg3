@@ -264,13 +264,6 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		}).join('');
 		$('#collection_form #primarySource').html(sourceOptions);
 
-		$('#sources')
-			.tooltip({
-				selector: '[data-bs-toggle="tooltip"]:not([disabled])',
-				trigger: 'hover',
-				html: true,
-			})
-
 		updateCollections();
 
 		$('#sources').append(noSources);

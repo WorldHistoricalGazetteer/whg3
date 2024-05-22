@@ -164,7 +164,6 @@ Promise.all([
     }
   }).parent().tooltip({
     selector: '.select2-container',
-    trigger: 'hover',
     title: function() {
       return $(this).prev().attr('title');
     },
@@ -446,10 +445,8 @@ Promise.all([
     $('.selector').data('modalPageId', $(this).data('id')).dialog('open');
   });
 */
-  $('#dynamic-gallery').tooltip({
-    selector: '[data-bs-toggle="tooltip"]',
-    trigger: 'hover',
-  }).on('show.bs.tooltip', '.previewButton', (e) => { // Prevent overlapping tooltips
+  $('#dynamic-gallery')
+  .on('show.bs.tooltip', '.previewButton', (e) => { // Prevent overlapping tooltips
     bootstrap.Tooltip.getInstance($(e.target).closest('.ds-card-container')).hide();
   }).on('click', '.previewButton', (e) => {
     e.stopPropagation();

@@ -356,13 +356,10 @@ def indexMultiMatch(pid, matchlist):
           "query": {"match": {"place_id": kid}}}
         es.update_by_query(index=idx, body=q_adopt, conflicts='proceed')
 
-
 """
   GET   returns review.html for Wikidata, or accession.html for accessioning
   POST  for each record that got hits, process user matching decisions
 """
-
-
 def review(request, pk, tid, passnum):
   print('passnum in review()', passnum)
   pid = None
@@ -488,7 +485,40 @@ def review(request, pk, tid, passnum):
   else:
     # this is accessioning -> get all regardless of pass
     raw_hits = Hit.objects.filter(place_id=placeid, task_id=tid).order_by("-score")
-
+    
+  # Get details of datasets for popovers
+  # in dev, some datasets referenced in hits by index labels may not exist in database
+  # dataset_details = {}
+  # for hit in raw_hits:
+  #   for source in hit.json["sources"]:
+  #       print('source dslabel in hit.json', source["dslabel"])
+  #       dataset = Dataset.objects.get(label=source["dslabel"])
+  #       # dataset = Dataset.objects.get(label=)
+  #       dataset_details[dataset.label] = {
+  #           "title": dataset.title,
+  #           "description": dataset.description,
+  #           "owner": dataset.owner.name,
+  #           "creator": dataset.creator
+  #       }
+  dataset_details = {}
+  for hit in raw_hits:
+    for source in hit.json["sources"]:
+      try:
+        dataset = Dataset.objects.get(label=source["dslabel"])
+        dataset_details[dataset.label] = {
+          "title": dataset.title,
+          "description": dataset.description,
+          "owner": dataset.owner.name,
+          "creator": dataset.creator
+        }
+      except Dataset.DoesNotExist:
+        dataset_details[source["dslabel"]] = {
+          "title": "Dataset not found",
+          "description": "The dataset with label {} does not exist.".format(source["dslabel"]),
+          "owner": "N/A",
+          "creator": "N/A"
+        }
+  #print('dataset_details', dataset_details)
 
   # ??why? get pass contents for all of a place's hits
   passes = (
@@ -506,6 +536,7 @@ def review(request, pk, tid, passnum):
     if auth in ["whg", "idx"]
     else None
   )
+  print('passes', passes)
 
   # convert ccodes to names
   countries = []
@@ -526,6 +557,7 @@ def review(request, pk, tid, passnum):
     "ds_label": ds.label,
     "task_id": tid,
     "hit_list": raw_hits,
+    "dataset_details": dataset_details,
     "passes": passes,
     "authority": task.task_name[6:8] if auth == "wdlocal" else task.task_name[6:],
     "records": records,

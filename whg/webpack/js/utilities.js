@@ -219,8 +219,6 @@ export function startSpinner(spinnerId = 'dataset_content', scale = .5) {
 }
 
 export function initUtils(mappy) {
-	
-  $("[rel='tooltip']").tooltip();
 
   // generic clipboard for modal and non-modal containers
   document.querySelectorAll('.clippy').forEach(element => {

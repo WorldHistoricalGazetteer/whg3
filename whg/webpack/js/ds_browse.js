@@ -197,13 +197,6 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(datatables_CDN_fall
 				clearPopup();
 			}
 		});	
-
-		$('#detail')
-			.tooltip({
-				selector: '[data-bs-toggle="tooltip"]',
-				trigger: 'hover',
-				html: true
-			})
 		
     })
     .catch(error => console.error("An error occurred:", error));
@@ -351,9 +344,6 @@ function setRowEvents() {
 			duration: 400
 		}
 	});	
-	
-	// activate all tooltips
-	$("[rel='tooltip']").tooltip();
 	
 }    
     

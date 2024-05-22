@@ -200,8 +200,13 @@ Promise.all([
 		})
 	])
 	.then(function() {
-		
-		$("[data-bs-toggle='tooltip']").tooltip({html: true, trigger : 'hover'}); // Initialize Bootstrap tooltips
+		// Set Bootstrap tooltip defaults
+        $.extend(true, $.fn.tooltip.Constructor.Default, {
+			selector: '[data-bs-toggle="tooltip"]:not([disabled]), [rel="tooltip"]:not([disabled])',
+            html: true,
+            trigger: 'hover'
+        });
+		$('body').tooltip(); // Initialize Bootstrap tooltips with delegation to dynamic content
 		
 		document.querySelector('body').style.opacity = 1;
 		

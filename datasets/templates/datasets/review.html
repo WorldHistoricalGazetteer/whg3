@@ -205,13 +205,6 @@
                     {% for choice in form.match %}
                       {{ choice }}
                     {% endfor %} &nbsp;
-                    {% if authority == 'idx' %}
-                      <button type="button"
-                              data-id="{{ form.json.value|get:"place_id" }}"
-                              class="create-comment-review btn btn-sm" style="background-color:oldlace;">
-                        <i class="fas fa-edit linky fa-xs"></i>
-                      </button>
-                    {% endif %}
                   </div>
                 </div>
                 {{ form.non_field_errors }}
@@ -337,7 +330,7 @@
     let test = '{{ test }}';
     let passnum = '{{ passnum }}';
     let mbtoken = '{{ mbtoken }}';
-    let page_variant = 'accession';
+    let page_variant = 'reconciliation';
     let nextURL = "{% url 'datasets:review' pk=ds_id tid=task_id passnum=passnum %}";
   </script>
 {% endblock %}

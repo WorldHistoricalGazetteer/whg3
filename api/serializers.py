@@ -534,6 +534,8 @@ class LPFSerializer(serializers.Serializer):
     props = {
       "place_id":place.id,
       "dataset_label":place.dataset.label,
+      "dataset_title":place.dataset.title,
+      "dataset_uri":place.dataset.uri,
       "src_id":place.src_id,
       "title":place.title,
       "ccodes":place.ccodes,
@@ -546,6 +548,10 @@ class LPFSerializer(serializers.Serializer):
   geometry = serializers.SerializerMethodField('get_geometry')
   def get_geometry(self, place) -> dict:
         geometries_data = PlaceGeomSerializer(place.geoms.all(), many=True).data
+        print('geometries_data from PlaceGeomSerializer',geometries_data)
+        if len(geometries_data) == 1:
+          return geometries_data[0]
+
         return {
             "type": "GeometryCollection",
             "geometries": geometries_data
@@ -553,10 +559,6 @@ class LPFSerializer(serializers.Serializer):
 
   class Meta:
     model = Place
-    #depth = 1
-    # fields = ('type','properties','geometry','names', 'types','links'
-    #               ,'related','whens', 'descriptions', 'depictions', 'minmax'
-    #         )
     fields = ('uri','type','properties','geometry','names', 'types','links'
                   ,'related','whens', 'descriptions', 'depictions', 'minmax'
             )

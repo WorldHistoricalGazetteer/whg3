@@ -27,7 +27,7 @@ $.fn.notes = function() {
         `;
         
     const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-    const trashHTML = ' <i class="fas fa-trash linky fa-xs" data-bs-toggle="tooltip" title="Delete this note"></i>';
+    const trashHTML = ' <i class="fas fa-trash linky fa-xs" data-bs-toggle="tooltip" data-bs-title="Delete this note"></i>';
 	
 	$('body').on('submit', '#commentForm', function(event) {
 		event.preventDefault();
@@ -42,10 +42,9 @@ $.fn.notes = function() {
 				console.log('Comment submitted successfully.');
 				$(`.notes[data-place-id="${response.comment.place_id}"]`)
 				.find('.record-notes')
-				.append(`<p title="${response.comment.tag}" data-bs-toggle="tooltip" data-creator="${response.comment.user}">${response.comment.note}${trashHTML}</p>`)
+				.append(`<p data-bs-title="${response.comment.tag}" data-bs-toggle="tooltip" data-creator="${response.comment.user}">${response.comment.note}${trashHTML}</p>`)
 				.end()
-				.addClass('has-notes')
-				.find("[data-bs-toggle='tooltip']").last().tooltip({html: true, trigger : 'hover'});
+				.addClass('has-notes');
 			},
 			error: function(xhr, status, error) {
 				alert('Sorry, an error occurred while submitting the comment.');
@@ -257,9 +256,6 @@ $.fn.notes = function() {
 		})
 		.find(`.record-notes p[data-creator="${userId}"]`)
 		.append(trashHTML)
-		.find("[data-bs-toggle='tooltip']")
-		.tooltip({html: true, trigger : 'hover'})
-		.end()
 		.end()
 		.on('show.bs.tooltip', '.record-notes p', (e) => { // Prevent overlapping tooltips
 			bootstrap.Tooltip.getInstance($(e.target).closest('.source-box')).hide();

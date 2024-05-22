@@ -4,7 +4,7 @@
 #
 import codecs
 import datasets.utils
-from api.views import collector, collectionItem, BadRequestException
+from api.views import collector, responseItem, BadRequestException
 from api.serializers import (ErrorResponseSerializer)
 from areas.models import Area
 from collection.models import Collection

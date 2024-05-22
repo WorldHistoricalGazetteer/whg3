@@ -97,10 +97,12 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     background-color: #ececec;
     color: grey;
     margin-bottom: .2rem !important;
+    font-size: 0.9rem;
 }
 .coll-header {
     background-color: #54a1da;
     color: #fff;
+    font-size: 0.9rem;
 }
 .map-container {
 	position: relative;

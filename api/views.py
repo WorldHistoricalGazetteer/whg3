@@ -394,6 +394,8 @@ class SpatialAPIView(generics.ListAPIView):
     if not qtype:
         raise BadRequestException("Spatial query parameters must include either 'type=nearby' or 'type=bbox'.")
     elif qtype == 'nearby':
+      # http://localhost:8001/api/spatial/?type=nearby&lon=-103.71&lat=20.66&km=100&dataset=lugares20_redux
+      # 33.285556,26.809167
         if not all(v for v in [lon, lat, dist]):
             raise BadRequestException("A 'nearby' spatial query requires 'lon', 'lat', and 'km' parameters.")
         else:
@@ -456,11 +458,10 @@ def makeGeom(geom):
   return geomobj
 
 """
-  collectionItem(); called by collector();
+  responseItem(); called by collector();
   formats api search hits 
-  TODO: rename
 """
-def collectionItem(i):
+def responseItem(i):
   # print('collectionItem i',i)
   _id = i['_id']
   score = i['score']
@@ -522,8 +523,8 @@ def collector(q, idx):
   execute es.search, return post-processed results 
 """
 def bundler(q, whgid, idx):
+  # idx is ['whg', 'pub']
   es = settings.ES_CONN
-  print('bundler es connector', es)
   res = es.search(index=idx, body=q)
   hits = res['hits']['hits']
   bundle = []
@@ -537,46 +538,51 @@ def bundler(q, whgid, idx):
          "hit": h['_source'],
         }
       )
-  stuff = [ collectionItem(i) for i in bundle]
+  stuff = [responseItem(i) for i in bundle]
   return stuff
 
 """ 
   /api/index?
-  search place index (always whg) parent records
-  based on search.views.SearchView(View)
+  search whg & pub indexes
 """
 class IndexAPIView(View):
   # @staticmethod
   def get(self, request):
     params=request.GET
-    print('IndexAPIView request params',params)
+    print('IndexAPIView request.GET', params)
+    idx = ['whg', 'pub']  # search both indexes
     """
-      args in params: whgid, pid, name, name_startswith, fclass, dataset, ccode, year, area
+      args in params: whgid, pid, name, name_startswith, fclass, 
+      dataset, ccode, year, area
     """
-    whgid = request.GET.get('whgid')
-    pid = request.GET.get('pid')
     name = request.GET.get('name')
-    name_startswith = request.GET.get('name_startswith')
-    fc = params.get('fclass',None)
+    # name_startswith = request.GET.get('namestartswith')
+    whgid = request.GET.get('whgid')  # a parent record
+    pid = request.GET.get('pid')  # place.id > place_id
+    fc = params.get('fclass',None)  # feature class
     fclasses=[x.upper() for x in fc.split(',')] if fc else None
-    dataset = request.GET.get('dataset')
-    cc = request.GET.get('ccode')
+    dataset = request.GET.get('dataset')  # dataset label
+    cc = request.GET.get('ccode')  # country code
     ccodes=[x.upper() for x in cc.split(',')] if cc else None
     year = request.GET.get('year')
-    pagesize = params.get('pagesize', None)
     area = request.GET.get('area')
-    idx = ['whg', 'pub']
-    
-    if all(v is None for v in [name, name_startswith, whgid,pid]):
-      # TODO: format better
-      return HttpResponse(content='<h3>Query requires either name, pid, or whgid</h3>'+'<p><a href="/usingapi/">API instructions</a>')
+    pagesize = params.get('pagesize', None)
+
+    if all(v is None for v in [name, whgid, pid]):  # TODO: add name_startswith
+      return JsonResponse({
+        'error': 'Query requires either name, namestartswith, pid, or whgid',
+        'instructions': 'API instructions can be found at https://whgazetteer/usingapi/'
+      }, safe=False, json_dumps_params={'ensure_ascii':False, 'indent':2}, status=400)
+
     else:
-      if whgid and whgid !='':
+      # parents + children with whgid as parent
+      if whgid and whgid != '':
         print('fetching whg_id', whgid)
-        q = {"query":{"bool":{"should": [
-            {"parent_id": {"type": "child","id":whgid}},
-            {"match":{"_id":whgid}}
-        ]}}}
+        q = {"query": {"bool": {"should": [
+              {"parent_id": {"type": "child", "id": whgid}},
+              {"match":{"_id": whgid}}
+            ]
+        }}}
         bundle = bundler(q, whgid, idx)
         print('bundler q', q)
         result={"index_id":whgid,
@@ -584,14 +590,13 @@ class IndexAPIView(View):
                 "type":"FeatureCollection",
                 "features":[b for b in bundle]}
       else:
-        # if not name_startswith:
         q = {
           "size": 100,
           "query": { "bool": {
             "must": [
               {"exists": {"field": "whg_id"}},
               {"multi_match": {
-                "query": name if name else name_startswith,
+                "query": name,
                 "fields": ["title^3", "names.toponym", "searchy"],
               }}
             ]
@@ -604,102 +609,99 @@ class IndexAPIView(View):
         if ccodes:
           q['query']['bool']['must'].append({"terms": {"ccodes": ccodes}})
         if year:
+          # TODO: how does this work?
           q['query']['bool']['must'].append({"term":{"timespans":{"value": year}}})
-        #if area:
-          #TODO: 
         if area:
           a = get_object_or_404(Area,pk=area)
           bounds={"id":[str(a.id)],"type":[a.type]} # nec. b/c some are polygons, some are multipolygons
           q['query']['bool']["filter"]=get_bounds_filter(bounds,'whg')
 
-        print('the api query was:',q)
+        print('the api query was:', json.dumps(q, indent=2))
         
         # run query
-        # TODO; rename from collection to avoid confusing with Collection
-        collection = collector(q, 'whg')
-        # collection = collector(q,'place','whg')
+        response = collector(q, 'whg')
         # format hits
-        print('collection in IndexAPIView()', collection)
-        # print('collection["items"] in IndexAPIView()', collection['items'])
-        collection = [collectionItem(i) for i in collection['items']]
+        print('response in IndexAPIView()', response)
+        response = [responseItem(i) for i in response['items']]
 
         # result object
         result = {'type':'FeatureCollection',
-                  'count': len(collection),
+                  'count': len(response),
                   'pagesize': pagesize,
-                  'features':collection[:int(pagesize)] if pagesize else collection}
+                  'features':response[:int(pagesize)] if pagesize else response}
 
     # to client
     return JsonResponse(result, safe=False,json_dumps_params={'ensure_ascii':False,'indent':2})
 
 """ 
+  DEPRECATED May 2024
   /api/db?
   SearchAPIView()
   return lpf results from database search 
 """
-class SearchAPIView(generics.ListAPIView):
-  renderer_classes = [JSONRenderer]
-  filter_backends = [filters.SearchFilter]
-  search_fields = ['@title']
-
-  def get(self, format=None, *args, **kwargs):
-    params=self.request.query_params
-    print('SearchAPIView() params', params)
-
-    id_ = params.get('id',None)
-    name = params.get('name',None)
-    name_contains = params.get('name_contains',None)
-    cc = map(str.upper, params.get('ccode').split(',')) if params.get('ccode') else None
-    ds = params.get('dataset',None)
-    fc = params.get('fc',None)
-    fclasses=list(set([x.upper() for x in ','.join(fc)])) if fc else None
-    year = params.get('year',None)
-    pagesize = params.get('pagesize',None)
-    err_note = None
-    context = params.get('context',None)
-    # params
-    print({"id_":id_, "fclasses":fclasses})
-    
-    qs = Place.objects.filter(Q(dataset__public=True) | Q(dataset__core=True))
-
-    if all(v is None for v in [name,name_contains,id_]):
-      # TODO: return a template with API instructions
-      return HttpResponse(content=b'<h3>Needs either a "name", a "name_contains", or "id" parameter at \
-          minimum <br/>(e.g. ?name=myplacename or ?name_contains=astring or ?id=integer)</h3>')
-    else:
-      if id_:
-        qs=qs.filter(id=id_)
-        err_note = 'id given, other parameters ignored' if len(params.keys())>1 else None
-        print('qs', qs)
-      else:
-        qs = qs.filter(minmax__0__lte=year,minmax__1__gte=year) if year else qs
-        qs = qs.filter(fclasses__overlap=fclasses) if fc else qs
-        
-        if name_contains:
-          qs = qs.filter(title__icontains=name_contains)
-        elif name and name != '':
-          #qs = qs.filter(title__istartswith=name)
-          qs = qs.filter(names__jsonb__toponym__icontains=name)
-  
-        qs = qs.filter(dataset=ds) if ds else qs
-        qs = qs.filter(ccodes__overlap=cc) if cc else qs
-        
-      filtered = qs[:pagesize] if pagesize and pagesize < 200 else qs[:20]
-
-      #serial = LPFSerializer if context else SearchDatabaseSerializer
-      serial = LPFSerializer
-      serializer = serial(filtered, many=True, context={'request': self.request})
-      
-      serialized_data = serializer.data
-      result = {"count":qs.count(),
-                "pagesize": len(filtered),
-                "parameters": params,
-                "note": err_note,
-                "type": "FeatureCollection",
-                "features":serialized_data
-                }
-      #print('place result',result)
-      return JsonResponse(result, safe=False,json_dumps_params={'ensure_ascii':False,'indent':2})
+# class SearchAPIView(generics.ListAPIView):
+#   renderer_classes = [JSONRenderer]
+#   filter_backends = [filters.SearchFilter]
+#   search_fields = ['@title']
+#
+#   def get(self, format=None, *args, **kwargs):
+#     params=self.request.query_params
+#     print('SearchAPIView() params', params)
+#
+#     id_ = params.get('id',None)
+#     name = params.get('name',None)
+#     name_contains = params.get('name_contains',None)
+#     cc = map(str.upper, params.get('ccode').split(',')) if params.get('ccode') else None
+#     ds = params.get('dataset',None)
+#     fc = params.get('fc',None)
+#     fclasses=list(set([x.upper() for x in ','.join(fc)])) if fc else None
+#     year = params.get('year',None)
+#     pagesize = params.get('pagesize',None)
+#     err_note = None
+#     context = params.get('context',None)
+#     # params
+#     print({"id_":id_, "fclasses":fclasses})
+#
+#     qs = Place.objects.filter(Q(dataset__public=True) | Q(dataset__core=True))
+#
+#     if all(v is None for v in [name,name_contains,id_]):
+#       # TODO: return a template with API instructions
+#       return HttpResponse(content=b'<h3>Needs either a "name", a "name_contains", or "id" parameter at \
+#           minimum <br/>(e.g. ?name=myplacename or ?name_contains=astring or ?id=integer)</h3>')
+#     else:
+#       if id_:
+#         qs=qs.filter(id=id_)
+#         err_note = 'id given, other parameters ignored' if len(params.keys())>1 else None
+#         print('qs', qs)
+#       else:
+#         qs = qs.filter(minmax__0__lte=year,minmax__1__gte=year) if year else qs
+#         qs = qs.filter(fclasses__overlap=fclasses) if fc else qs
+#
+#         if name_contains:
+#           qs = qs.filter(title__icontains=name_contains)
+#         elif name and name != '':
+#           #qs = qs.filter(title__istartswith=name)
+#           qs = qs.filter(names__jsonb__toponym__icontains=name)
+#
+#         qs = qs.filter(dataset=ds) if ds else qs
+#         qs = qs.filter(ccodes__overlap=cc) if cc else qs
+#
+#       filtered = qs[:pagesize] if pagesize and pagesize < 200 else qs[:20]
+#
+#       #serial = LPFSerializer if context else SearchDatabaseSerializer
+#       serial = LPFSerializer
+#       serializer = serial(filtered, many=True, context={'request': self.request})
+#
+#       serialized_data = serializer.data
+#       result = {"count":qs.count(),
+#                 "pagesize": len(filtered),
+#                 "parameters": params,
+#                 "note": err_note,
+#                 "type": "FeatureCollection",
+#                 "features":serialized_data
+#                 }
+#       #print('place result',result)
+#       return JsonResponse(result, safe=False,json_dumps_params={'ensure_ascii':False,'indent':2})
 
 
 """ *** """
@@ -762,36 +764,65 @@ class DownloadDatasetAPIView(generics.ListAPIView):
 """
   /api/datasets? > query public datasets by id, label, term
 """
+# class DatasetAPIView(LoginRequiredMixin, generics.ListAPIView):
+#   """    List public datasets    """
+#   serializer_class = DatasetSerializer
+#   renderer_classes = [JSONRenderer]
+#
+#   def get_queryset(self, format=None, *args, **kwargs):
+#     params=self.request.query_params
+#     print('api/datasets params',params)
+#     id_ = params.get('id', None)
+#     dslabel = params.get('label', None)
+#     query = params.get('q', None)
+#
+#     qs = Dataset.objects.filter(Q(public=True) | Q(core=True)).order_by('label')
+#
+#     if id_:
+#       qs = qs.filter(id = id_)
+#     elif dslabel:
+#       qs = qs.filter(label = dslabel)
+#     elif query:
+#       qs = qs.filter(Q(description__icontains=query) | Q(title__icontains=query))
+#
+#     print('qs',qs)
+#     result = {
+#               "count":qs.count(),
+#               "parameters": params,
+#               #"features":serialized_data
+#               "features":qs
+#               }
+#     print('ds result', result,type(result))
+#     return qs
+from rest_framework.response import Response
+
 class DatasetAPIView(LoginRequiredMixin, generics.ListAPIView):
-  """    List public datasets    """
-  serializer_class = DatasetSerializer
-  renderer_classes = [JSONRenderer]
+    """List public datasets"""
+    serializer_class = DatasetSerializer
+    renderer_classes = [JSONRenderer]
 
-  def get_queryset(self, format=None, *args, **kwargs):
-    params=self.request.query_params
-    print('api/datasets params',params)
-    id_ = params.get('id', None)
-    dslabel = params.get('label', None)
-    query = params.get('q', None)
-    
-    qs = Dataset.objects.filter(Q(public=True) | Q(core=True)).order_by('label')
-    
-    if id_:
-      qs = qs.filter(id = id_)
-    elif dslabel:
-      qs = qs.filter(label = dslabel)
-    elif query:
-      qs = qs.filter(Q(description__icontains=query) | Q(title__icontains=query))
+    def list(self, request, *args, **kwargs):
+        params = self.request.query_params
+        id_ = params.get('id', None)
+        dslabel = params.get('label', None)
+        query = params.get('q', None)
 
-    print('qs',qs)
-    result = {
-              "count":qs.count(),
-              "parameters": params,
-              #"features":serialized_data
-              "features":qs
-              }
-    print('ds result', result,type(result))
-    return qs
+        qs = Dataset.objects.filter(Q(public=True) | Q(core=True)).order_by('label')
+
+        if id_:
+            qs = qs.filter(id=id_)
+        elif dslabel:
+            qs = qs.filter(label=dslabel)
+        elif query:
+            qs = qs.filter(Q(description__icontains=query) | Q(title__icontains=query))
+
+        serializer = self.get_serializer(qs, many=True)
+        data = {
+            "count": qs.count(),
+            "parameters": params,
+            "features": serializer.data
+        }
+        return JsonResponse(data, safe=False, json_dumps_params={'indent': 2})
 
 """
   /api/area_features
@@ -829,8 +860,9 @@ class AreaFeaturesView(generics.ListAPIView):
         "geometry":a['geojson']
       }
       areas.append(feat)
-      
-    return JsonResponse(areas, safe=False)  
+
+    # return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
+    return JsonResponse(areas, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
 
 """
   /api/user_area_features

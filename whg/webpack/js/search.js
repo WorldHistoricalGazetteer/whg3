@@ -292,7 +292,6 @@ Promise.all([
 	})
 	.parent().tooltip({
     	selector: '.select2-container',
-    	trigger : 'hover',
     	title: function() {
 		    return $(this).prev().attr('title');
 		}
@@ -452,9 +451,6 @@ Promise.all([
 	});
 
 	$('#search_input')
-	.tooltip({
-    	trigger : 'hover'
-	})
 	.on('input', function() {
 		flashSearchButton();
 		toggleButtonState();
@@ -462,7 +458,6 @@ Promise.all([
 	toggleButtonState();
 	$('#initiate_search, #clear_search').each(function() {
 		$(this).tooltip({
-    		trigger : 'hover',
 	    	title: function() {
 			    return $(this).data('title').split('|')[$(this).hasClass('disabledButton') ? 1 : 0 ];
 			}		

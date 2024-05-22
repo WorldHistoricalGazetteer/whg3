@@ -27,11 +27,12 @@ const featuredDataLayers = { // IMPORTANT: Listed in order of addition to the ma
 		    type: 'circle',
 		    source: 'featured-data-source',
 		    paint: {
-		        'circle-radius': 6,
+		        // 'circle-radius': 6,
+		        'circle-radius': 4,
 		        'circle-color': 'pink',
 		        'circle-opacity': 0.7,
 		        'circle-stroke-color': 'red',
-		        'circle-stroke-width': 2,
+		        'circle-stroke-width': 1,
 		    },
 	        'filter': ['==', '$type', 'Point'],
 		}
