@@ -69,8 +69,9 @@ class Dataset(models.Model):
   # essay pdf
   pdf = models.FileField(upload_to=dataset_pdf_path, blank=True, null=True)
   featured = models.IntegerField(null=True, blank=True)
-  # fubar = models.IntegerField(null=True, blank=True)
   bbox = geomodels.PolygonField(null=True, blank=True, srid=4326)
+
+  coordinate_density = models.FloatField(null=True, blank=True)  # for scaling map markers
 
   core = models.BooleanField(default=False) # e.g. tgn, geonames, physical geography
   public = models.BooleanField(default=False)

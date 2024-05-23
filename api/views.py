@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 User = get_user_model()
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.gis.geos import Polygon, Point
 # from django.contrib.postgres import search
 from django.contrib.gis.measure import D
@@ -1439,7 +1440,7 @@ class AreaListView(View):
     print('area_list() request.user',request.user, type(request.user))
     print('area_list() request.user',str(request.user))
     userstr = str(request.user)
-    if userstr == 'AnonymousUser':
+    if isinstance(request.user, AnonymousUser):
       qs = Area.objects.all().filter(Q(type__in=('predefined','country'))).values('id','title','type')
     else:
       user = request.user

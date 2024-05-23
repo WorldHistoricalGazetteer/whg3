@@ -124,6 +124,8 @@ class Collection(models.Model):
   # Visualisation parameters (used in place_collection_browse.html & place_collection_build.html)
   vis_parameters = JSONField(default=default_vis_parameters, null=True, blank=True)
 
+  coordinate_density = models.FloatField(null=True, blank=True)  # for scaling map markers
+
   def get_absolute_url(self):
     #return reverse('datasets:dashboard', kwargs={'id': self.id})
     return reverse('data-collections')
