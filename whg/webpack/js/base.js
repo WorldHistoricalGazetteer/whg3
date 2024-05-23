@@ -206,7 +206,7 @@ Promise.all([
             html: true,
             trigger: 'hover'
         });
-		$('body').tooltip(); // Initialize Bootstrap tooltips with delegation to dynamic content
+		$('body').tooltip(); // Initialize Bootstrap tooltips with delegation to any dynamic content
 		
 		document.querySelector('body').style.opacity = 1;
 		

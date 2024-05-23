@@ -6,6 +6,7 @@ from django.views.generic import (CreateView, UpdateView, DeleteView )
 
 from .forms import AreaModelForm
 from .models import Area
+from utils.regions_countries import get_regions_countries
 
 class AreaCreateView(CreateView):
     form_class = AreaModelForm
@@ -47,6 +48,7 @@ class AreaCreateView(CreateView):
         #print('args',args,kwargs)
         context['action'] = 'create'
         #context['referrer'] = self.request.POST.get('referrer')
+        context['dropdown_data'] = get_regions_countries()  # Used for spatial filter
         return context
 
 

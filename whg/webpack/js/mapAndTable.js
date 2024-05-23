@@ -69,7 +69,7 @@ else if (visParameters.max.tabulate !== false && visParameters.min.tabulate !== 
 	        toValue: 1720,
 	        minValue: -2000,
 	        maxValue: 2100,
-	        open: false,
+	        open: true,
 	        includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
 	        epochs: null,
 	        automate: null,

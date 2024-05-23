@@ -16,8 +16,12 @@ class AreaModelForm(forms.ModelForm):
         #exclude = tuple()
         fields = ('id','type','owner','title','description','ccodes','geojson','next')
         widgets = {
+            'title': forms.TextInput(attrs={
+                'placeholder': 'Enter a title'
+            }),
             'description': forms.Textarea(attrs={
-                'rows':2,'cols': 40,'class':'textarea'
+                'rows':2,'cols': 40,'class':'textarea',
+                'placeholder':'Enter a description for this Study Area'
             }),
             'ccodes': forms.TextInput(attrs={
                 'placeholder':'2-letter codes, e.g. BR,AR',
@@ -26,13 +30,16 @@ class AreaModelForm(forms.ModelForm):
             'geojson': forms.Textarea(attrs={
                 'id': 'geojson',
                 'rows':2,'cols': 40,'class':'textarea',
-                'placeholder':''
+                'placeholder':'(filled automatically)',
+                'disabled': 'True',
             }),
         }
 
 
     def __init__(self, *args, **kwargs):
         super(AreaModelForm, self).__init__(*args, **kwargs)
+        if 'geojson' not in self.initial:
+            self.initial['geojson'] = None
 
     def clean_geojson(self):
         geojson_data = self.cleaned_data['geojson']

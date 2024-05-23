@@ -302,3 +302,12 @@ input[type=range].slider.to::-moz-range-thumb {
 #dateline.expanded .fas.fa-question-circle.linky {
 	display: none;
 }
+
+.popover {
+	width: 600px;
+	max-width: 100%;
+}
+
+.popover p {
+	margin: .2rem 0;
+}
