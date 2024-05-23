@@ -2849,7 +2849,7 @@ class DatasetPlacesView(DetailView):
 
     context['updates'] = {}
     context['ds'] = ds
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
+    context['is_admin'] = True if me.groups.filter(name__in=['whg_admins']).exists() else False
 
     if not ds.vis_parameters:
       # Populate with default values:
