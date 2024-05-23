@@ -1,0 +1,158 @@
+# docker-compose-dev.yml
+
+version: '2.19'
+
+networks:
+  WHG3:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+services:
+  web:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile-django.dev
+    image: whg3_web
+    command: /start
+    container_name: web
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env/.dev-whg3
+    ports:
+      - 8001:8000
+    depends_on:
+      - redis
+      - db
+#       - livereload
+
+  webpack:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./compose/local/webpack/Dockerfile-webpack
+    image: whg3_webpack
+    container_name: webpack
+    logging:
+      driver: local
+    volumes:
+      - .:/app
+
+#   livereload: # https://github.com/tjwalch/django-livereload-server
+#     image: whg3_web
+#     networks:
+#       - WHG3
+#     platform: linux/amd64
+#     command: /start-livereload
+#     container_name: livereload
+#     volumes:
+#       - .:/app
+#     env_file:
+#       - ./.env/.dev-whg3
+#     ports:
+#       - 35729:35729
+
+  db:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    build:
+      context: ./compose/local/postgres
+      dockerfile: Dockerfile-postgres
+    container_name: postgres
+    volumes:
+      - dev-db-data:/var/lib/postgresql/data
+      - ./data:/app/data
+    env_file:
+      - ./.env/.dev-whg3
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust  # Allow all connections without password authentication
+    ports:
+      - 5432:5432
+
+  redis:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    image: redis:bullseye
+    container_name: redis
+    ports: [6380:6379]
+
+  celery_worker:
+    image: whg3_web
+    command: /start-celeryworker
+    container_name: celery_worker
+    networks:
+      - WHG3
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env/.dev-whg3
+    depends_on:
+      - redis
+      - db
+
+  celery_beat:
+    image: whg3_web
+    command: /start-celerybeat
+    container_name: celery_beat
+    networks:
+      - WHG3
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env/.dev-whg3
+    depends_on:
+      - redis
+      - db
+
+  flower:
+    image: whg3_web
+    command: /start-flower
+    container_name: flower
+    networks:
+      - WHG3
+    volumes:
+      - .:/app
+    env_file:
+      - ./.env/.dev-whg3
+    ports:
+      - 5557:5555
+    depends_on:
+      - redis
+      - db
+      
+#   selenium_chrome:
+#     image: selenium/standalone-chrome
+#     container_name: selenium_chrome
+#     networks:
+#       - WHG3
+#     ports:
+#       - "4444:4444"
+# 
+#   selenium_firefox:
+#     image: selenium/standalone-firefox
+#     container_name: selenium_firefox
+#     networks:
+#       - WHG3
+#     ports:
+#       - "4445:4444"
+#       
+#   selenium_edge:
+#     image: selenium/standalone-edge
+#     container_name: selenium_edge
+#     networks:
+#       - WHG3
+#     ports:
+#       - "4446:4444"
+
+volumes:
+  app:
+  dev-db-data:

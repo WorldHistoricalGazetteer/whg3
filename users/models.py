@@ -13,6 +13,15 @@ from django_resized import ResizedImageField
 def user_directory_path(instance, filename):
   return 'user_{0}/{1}'.format(instance.username, filename)
 
+class Person(models.Model):
+    given_name = models.CharField(max_length=255, null=True)
+    surname = models.CharField(max_length=255, null=True, blank=True)
+    affiliation = models.CharField(max_length=255, null=True, blank=True)
+    orcid = models.CharField(max_length=19, null=True, blank=True)  # Format: "0000-0003-3060-0181"
+
+    def __str__(self):
+        return f"{self.given_name} {self.surname}"
+
 class UserManager(BaseUserManager):
     """
     Custom user model manager
@@ -53,6 +62,7 @@ class User(AbstractUser, PermissionsMixin):
     surname = models.CharField(max_length=255, null=True)
     email = models.EmailField(_('email address'), unique=True)
     affiliation = models.CharField(max_length=255, null=True)
+    orcid = models.CharField(max_length=19, null=True, blank=True)
     web_page = models.URLField(max_length=255, null=True, blank=True)
     role = models.CharField(max_length=24, choices=USER_ROLE, default='normal')
     is_active = models.BooleanField(default=True)
@@ -61,6 +71,8 @@ class User(AbstractUser, PermissionsMixin):
 
     email_confirmed = models.BooleanField(default=False)
     must_reset_password = models.BooleanField(default=False)
+    
+    person = models.ForeignKey(Person, on_delete=models.CASCADE, null=True, blank=True)
 
     # drop these
     first_name = None
