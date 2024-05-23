@@ -35,7 +35,7 @@ let spinner_detail;
 let spinner_map = startSpinner("dataset_content", 3);
 
 let mapParameters = { 
-	maxZoom: 10,
+	maxZoom: 20,
 	downloadMapControl: true,
     fullscreenControl: true,
 }
@@ -123,7 +123,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	let allFeatures = [];
 	let allExtents = [];
 	
-	/* TODO: This loop is redundant since the aggregation of Dataset Collections */
+	/* TODO: This loop is redundant since the aggregation of Dataset Collections - there is only one dataset */
 	window.ds_list.forEach(function(ds) {
 		ds.features.forEach(feature => {
 		    feature.properties = feature.properties || {};
@@ -135,9 +135,11 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 		if ((!!ds.tilesets && ds.tilesets.length > 0) || !!ds.extent) {
 			allExtents.push(ds.extent);
 		}
+		let marker_reducer = !!ds.coordinate_density ? (ds.coordinate_density < 50 ? 1 : 50 / ds.coordinate_density) : 1
 		mappy
 		.newSource(ds) // Add source - includes detection of tileset availability
-		.newLayerset(ds.ds_id); // Add standard layerset (defined in `layerset.js` and prototyped in `whg_maplibre.js`)
+		.newLayerset(ds.ds_id, null, null, null, null, null, marker_reducer); // Add standard layerset (defined in `layerset.js` and prototyped in `whg_maplibre.js`)
+		
 	});
 	console.log('Added layerset(s).', mappy.getStyle().layers);
 	

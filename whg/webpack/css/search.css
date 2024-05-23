@@ -146,6 +146,15 @@
     color: cadetblue;
 }
 
+.accordion-collapse .float-end {
+    z-index: 99;
+    position: relative;
+}
+
+.accordion-collapse .me-1 {
+	font-size: 0.8rem;
+}
+
 #result_container {
     /*height: 200px;*/
     /* max-height: 300px; */

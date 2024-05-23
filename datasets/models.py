@@ -3,6 +3,7 @@ from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.gis.db import models as geomodels
 from django.contrib.gis.db.models import Collect, Extent, Aggregate
+from django.contrib.gis.db.models.functions import Area
 from django.contrib.gis.geos import GeometryCollection, Polygon, GEOSGeometry
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -27,6 +28,7 @@ from utils.heatmap_geometries import heatmapped_geometries
 from utils.hull_geometries import hull_geometries
 from utils.feature_collection import feature_collection
 from utils.carousel_metadata import carousel_metadata
+from geojson import loads, dumps
 
 User = get_user_model()
 
@@ -181,6 +183,32 @@ class Dataset(models.Model):
           for geom in place.geoms.all():
               total_coords += geom.geom.num_coords
       return total_coords
+  
+  @property
+  def coordinate_density_value(self):
+        # if self.coordinate_density is not None:
+        #     return self.coordinate_density
+        
+        clustered_geometries = self.clustered_geometries
+        
+        # Calculate the total area
+        total_area = 0
+        for hull in clustered_geometries['features']:
+            geometry = hull['geometry']
+            if isinstance(geometry, dict):
+                # Convert GeoJSON geometry to WKT
+                geojson_obj = loads(dumps(geometry))
+                geometry = GEOSGeometry(str(geojson_obj))
+
+            total_area += geometry.area        
+        
+        density = clustered_geometries['properties'].get('coordinate_count', 0) / total_area if total_area > 0 else 0
+        
+        # Store the calculated density
+        # self.coordinate_density = density
+        # self.save()
+        
+        return density
 
   @property
   def display_mode(self):

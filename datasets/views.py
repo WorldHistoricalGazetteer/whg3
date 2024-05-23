@@ -2858,6 +2858,8 @@ class DatasetPlacesView(DetailView):
       # trail: true|false - whether to include ant-trail motion indicators on map
       ds.vis_parameters = "{'seq': {'tabulate': false, 'temporal_control': null, 'trail': true},'min': {'tabulate': false, 'temporal_control': null, 'trail': true},'max': {'tabulate': false, 'temporal_control': null, 'trail': false}}"
     context['visParameters'] = ds.vis_parameters
+    
+    context['coordinate_density'] = ds.coordinate_density_value
 
     return context
 

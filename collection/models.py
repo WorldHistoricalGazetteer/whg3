@@ -19,9 +19,10 @@ from utils.hull_geometries import hull_geometries
 from utils.feature_collection import feature_collection
 from utils.carousel_metadata import carousel_metadata
 # from multiselectfield import MultiSelectField
-# from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.geos import GEOSGeometry
 # import simplejson as json
 # from geojson import Feature
+from geojson import loads, dumps
 """ for images """
 from io import BytesIO
 import sys
@@ -142,6 +143,32 @@ class Collection(models.Model):
     team = CollectionUser.objects.filter(collection_id = self.id).values_list('user_id')
     teamusers = User.objects.filter(id__in=team)
     return teamusers
+  
+  @property
+  def coordinate_density_value(self):
+        # if self.coordinate_density is not None:
+        #     return self.coordinate_density
+        
+        clustered_geometries = self.clustered_geometries
+        
+        # Calculate the total area
+        total_area = 0
+        for hull in clustered_geometries['features']:
+            geometry = hull['geometry']
+            if isinstance(geometry, dict):
+                # Convert GeoJSON geometry to WKT
+                geojson_obj = loads(dumps(geometry))
+                geometry = GEOSGeometry(str(geojson_obj))
+
+            total_area += geometry.area        
+        
+        density = clustered_geometries['properties'].get('coordinate_count', 0) / total_area if total_area > 0 else 0
+        
+        # Store the calculated density
+        # self.coordinate_density = density
+        # self.save()
+        
+        return density
 
   @property
   def display_mode(self):

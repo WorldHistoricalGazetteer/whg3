@@ -17,7 +17,8 @@ from utils.regions_countries import get_regions_countries
 from datetime import datetime
 
 def typeahead_suggester(qstr, mode="default"):
-    fields = ["title^3", "names.toponym", "searchy"]
+    #fields = ["title^3", "names.toponym", "searchy"]
+    fields = ["title"]
     indices = ['whg', 'pub']
 
     query_constructors = { # Ignore `exactly` mode and use default `starts` instead
@@ -37,9 +38,11 @@ def typeahead_suggester(qstr, mode="default"):
             }
         }
     }
-
+    
     response = suggester(query_body, indices)
     unique_titles = list({item['hit']['title'] for item in response if 'hit' in item and 'title' in item['hit']})
+
+    print(qstr, mode, query_body, response, unique_titles)
 
     return unique_titles
 
@@ -68,6 +71,16 @@ class SearchPageView(TemplateView):
     context['es_whg'] = settings.ES_WHG
     # context['bboxes'] = bboxes
     context['dropdown_data'] = get_regions_countries()  # Used for spatial filter
+    
+    context['adv_filters'] = [
+        ("A", "Administrative entities"),
+        ("P", "Cities, towns, hamlets"),
+        ("S", "Sites, buildings, complexes"),
+        ("R", "Roads, routes, rail..."),
+        ("L", "Regions, landscape areas"),
+        ("T", "Terrestrial landforms"),
+        ("H", "Water bodies"),
+    ]
     
     user_areas = []
     if self.request.user.is_authenticated:

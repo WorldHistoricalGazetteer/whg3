@@ -18,6 +18,7 @@ def clustered_geometries(caller):
         "type": "FeatureCollection",
         "mode": "clusterhull",
         "features": [],
+        "properties": {},
     }
 
     def flatten_coordinates(coord): # Required to cope with nested GeometryCollections and MultiGeometries
@@ -46,6 +47,9 @@ def clustered_geometries(caller):
             for geom in place.geoms.all():
                 coords = GEOSGeometry(geom.geom).tuple
                 coordinates.extend( flatten_coordinates(coords) )
+    
+    # Add the total coordinate count to properties
+    clustered_geometries["properties"]["coordinate_count"] = len(coordinates) // 2
             
     # Reshape the flat list into coordinate tuples
     coordinates = np.array([coordinates[i:i+2] for i in range(0, len(coordinates), 2)])
@@ -64,6 +68,10 @@ def clustered_geometries(caller):
     deltas = np.diff(calinski_scores)
     elbow_index = np.argmax(deltas < np.mean(deltas) / 2) + 1
     optimal_clusters = elbow_index + 1  # Add 1 because of 0-based indexing
+    
+    optimal_clusters = max(optimal_clusters, 7)
+    
+    print('optimal_clusters', optimal_clusters)
     
     # Perform clustering with the optimal number of clusters
     clusterer = AgglomerativeClustering(n_clusters=optimal_clusters)
