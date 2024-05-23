@@ -1,0 +1,22 @@
+from django.db import migrations
+
+class Migration(migrations.Migration):
+
+    dependencies = [
+        ('users', '0014_copy_user_to_person'),
+    ]
+
+    operations = [
+        migrations.RemoveField(
+            model_name='user',
+            name='given_name',
+        ),
+        migrations.RemoveField(
+            model_name='user',
+            name='surname',
+        ),
+        migrations.RemoveField(
+            model_name='user',
+            name='affiliation',
+        ),
+    ]

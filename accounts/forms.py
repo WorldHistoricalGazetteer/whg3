@@ -35,7 +35,7 @@ class LoginForm(forms.Form):
 class UserModelForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ('username', 'email', 'given_name', 'surname', 'name', 'affiliation',
+        fields = ('username', 'email', 'name',
                   'role', 'web_page', 'image_file')
         exclude = ('password',)
 
@@ -43,7 +43,6 @@ class UserModelForm(forms.ModelForm):
             'username': forms.TextInput(attrs={'size': 50}),
             'email': forms.TextInput(attrs={'size': 50}),
             'name': forms.TextInput(attrs={'size': 50}),
-            'affiliation': forms.TextInput(attrs={'size': 50}),
             'web_page': forms.TextInput(attrs={'size': 50}),
             'image_file': forms.FileInput(attrs={'class': 'fileinput'}),
         }
@@ -65,6 +64,5 @@ class UserModelForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(UserModelForm, self).__init__(*args, **kwargs)
-        self.fields['affiliation'].required = False
         self.fields['role'].required = False
         self.fields['image_file'].required = False
