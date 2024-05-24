@@ -53,11 +53,11 @@
           {% endif %}
         </div>
 
-        <div class="border p-2 mb-2 mb-lg-2 small">
+        <div class="border p-2 mb-2 mb-lg-2 small" style="border-style: dashed !important;; border-width: 0.2rem !important;">
           <p class="mb-0 red-head">ANNOUNCEMENTS</p>
-          <div id="announcement-container" class="mb-0" style="height: 40px;">
+          <div id="announcement-container" class="mb-0">
             {% for announcement in announcements|slice:":3" %}
-              <div class="announcement" {% if not forloop.first %}style="display: none;"{% endif %}>
+              <div class="announcement constrained" {% if not forloop.first %}style="display: none;"{% endif %}>
                 <a href="{{ announcement.link }}" target="_blank">
                   <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
                 </a>
@@ -104,7 +104,7 @@
 
       </div>
 
-      <div id="right_column" class="col-12 col-md-6 mx-0 p-0 d-flex flex-column">
+      <div id="right_column" class="col-12 col-md-6 mt-2 mx-0 p-0 d-flex flex-column">
         <div id="home_center" class="flex-grow-1 mb-2">
           <div id="search_bar" class="mx-0 mx-lg-2 mb-2">
             <div id="input" class="input-group mx-auto">

@@ -148,8 +148,8 @@ class Collection(models.Model):
   
   @property
   def coordinate_density_value(self):
-        # if self.coordinate_density is not None:
-        #     return self.coordinate_density
+        if self.coordinate_density is not None:
+            return self.coordinate_density
         
         clustered_geometries = calculate_clustered_geometries(self, min_clusters=7)
         
@@ -167,8 +167,8 @@ class Collection(models.Model):
         density = clustered_geometries['properties'].get('coordinate_count', 0) / total_area if total_area > 0 else 0
         
         # Store the calculated density
-        # self.coordinate_density = density
-        # self.save()
+        self.coordinate_density = density
+        self.save()
         
         return density
 
