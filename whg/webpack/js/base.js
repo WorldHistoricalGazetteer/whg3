@@ -255,9 +255,7 @@ Promise.all([
 
 		// Feedback click event
 		$(".feedback").click(function() {
-			console.log(clicked);
-			var url = "/contact?from=" + encodeURIComponent(clicked);
-			window.location.href = url;
+			window.location.href = `/contact?from=${encodeURIComponent(clicked)}`;
 		});
 	})
 	.catch(function(error) {

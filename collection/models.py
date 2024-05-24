@@ -13,7 +13,7 @@ from main.choices import COLLECTIONCLASSES, LINKTYPES, TEAMROLES, STATUS_COLL, \
   USER_ROLE, COLLECTIONTYPES, COLLECTIONGROUP_TYPES
 from places.models import Place, PlaceGeom
 from traces.models import TraceAnnotation
-from utils.cluster_geometries import clustered_geometries
+from utils.cluster_geometries import clustered_geometries as calculate_clustered_geometries
 from utils.heatmap_geometries import heatmapped_geometries
 from utils.hull_geometries import hull_geometries
 from utils.feature_collection import feature_collection
@@ -135,7 +135,7 @@ class Collection(models.Model):
 
   @property
   def clustered_geometries(self):
-    return clustered_geometries(self)
+    return calculate_clustered_geometries(self)
 
   @property
   def collaborators(self):
@@ -149,7 +149,7 @@ class Collection(models.Model):
         # if self.coordinate_density is not None:
         #     return self.coordinate_density
         
-        clustered_geometries = self.clustered_geometries
+        clustered_geometries = calculate_clustered_geometries(self, min_clusters=7)
         
         # Calculate the total area
         total_area = 0

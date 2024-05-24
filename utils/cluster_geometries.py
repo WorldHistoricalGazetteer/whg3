@@ -8,8 +8,7 @@ import simplejson as json
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import calinski_harabasz_score
 
-def clustered_geometries(caller):
-    
+def clustered_geometries(caller, min_clusters=7, max_clusters=10):    
     # Detect the class of the caller
     caller_class = type(caller)
     caller_class = caller_class.__name__   
@@ -55,7 +54,6 @@ def clustered_geometries(caller):
     coordinates = np.array([coordinates[i:i+2] for i in range(0, len(coordinates), 2)])
     
     # Perform Agglomerative Clustering
-    max_clusters = 10
     calinski_scores = []
     
     for n_clusters in range(2, max_clusters + 1):
@@ -69,7 +67,7 @@ def clustered_geometries(caller):
     elbow_index = np.argmax(deltas < np.mean(deltas) / 2) + 1
     optimal_clusters = elbow_index + 1  # Add 1 because of 0-based indexing
     
-    optimal_clusters = max(optimal_clusters, 7)
+    optimal_clusters = max(optimal_clusters, min_clusters)
     
     print('optimal_clusters', optimal_clusters)
     
