@@ -42,11 +42,10 @@ class Layerset {
 						.7
 			        ],
 					'circle-radius': [
-						'interpolate',
-						['linear'],
-						['zoom'],
+						'interpolate', ['linear'], ['zoom'],
 						0, .5 * this.enlarger, // zoom, radius
-						16, 20 * this.enlarger,
+						10, 10 * this.enlarger,
+						18, 20,
 					],
 					'circle-stroke-color': [
 						this.colour_highlight,
@@ -60,7 +59,7 @@ class Layerset {
 			        ],
 					'circle-stroke-width': [
 						7,
-						3
+						3 * this.enlarger
 					],
 				}
 			},

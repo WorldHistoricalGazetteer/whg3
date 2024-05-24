@@ -60,11 +60,10 @@ export function initialiseCarousels(galleries, carouselMetadata, startCarousels,
         const description = datacollection.description.length > 100 ?
             datacollection.description.substring(0, 100) + '...' :
             datacollection.description;
-        if (datacollection.image_file) {
-            const imageElement = $(
-                `<img src="${datacollection.image_file}" class="carousel-image">`);
-            carouselItem.append(imageElement);
-        }
+	    if (datacollection.image_file) {
+	        const carouselImage = $(`<img class="carousel-image" src="${datacollection.image_file}">`);
+	        carouselItem.append(carouselImage);
+	    }
         carouselItem.append(`
                     <h6>
                         <a href="${datacollection.url}">${datacollection.title}</a>

@@ -62,7 +62,7 @@
 <header>
   <nav class="navbar navbar-expand-lg bg-white">
     <div class="container">
-      <a href="/home/3">
+      <a href="/">
         <img src="{% static 'images/whg_logo.svg' %}" alt="WHG" width="50" height="38">
       </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
@@ -184,5 +184,12 @@
 {% block content %}
 {% endblock %}
 
+{% block footer %}
+<span id="pseudo-footer">
+	<p>&copy; 2024 World Historical Gazetteer. All rights reserved. | <a href="#" class="feedback text-decoration-none">Contact</a> | <a href="/home/30a4/" class="text-decoration-none">Home v30a4</a><!-- | Sponsors | Social Media | License | Disclaimer | Terms of Use | Privacy Policy--></p>
+</span>
+{% endblock %}
+    
 </body>
+
 </html>

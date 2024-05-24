@@ -114,24 +114,6 @@ Promise.all([
 	Promise.all(select2_CDN_fallbacks.map(loadResource))
 ]).then(() => {
 
-	const checkboxesContainer = $('#adv_checkboxes');
-	adv_filters.forEach(filter => { // Construct advanced search filters
-		const [value, label] = filter;
-		const checkboxContainer = $('<p>');
-		const checkboxInput = $('<input>', {
-			type: 'checkbox',
-			id: `cb_${value.toLowerCase()}`,
-			value: value,
-			checked: true,
-		});
-		const checkboxLabel = $('<label>', {
-			for: `cb_${value.toLowerCase()}`,
-		}).text(` ${label} (${value})`);
-		checkboxContainer.append(checkboxInput, checkboxLabel);
-		checkboxesContainer.append(checkboxContainer);
-	});
-	$('#adv_filters script').remove(); // Remove `adv_filters` from the DOM
-
 	draw = mappy._draw;
 	$drawControl = $(mappy._drawControl);
 
@@ -438,6 +420,13 @@ Promise.all([
 		$('#adv_checkboxes input').prop('checked', false);
 		flashSearchButton();
 	});
+	
+	$(document).on('click', '.check_clear, .check_select', (e) => {
+	    $(e.target).closest('.accordion-collapse')
+	    .find('.accordion-body input.filter-checkbox')
+	    .prop('checked', $(e.target).hasClass('check_select'))
+	    .trigger('change');
+	});	
 
 	// START Ids to session (kg 2023-10-31)
 	function getCookie(name) {
@@ -660,9 +649,6 @@ function renderResults(data, fromStorage = false) {
 			'';
 		html += (result.fclasses && result.fclasses.length > 0) ?
 			`<p>Feature Classes: ${result.fclasses.join(', ')}</p>` :
-			'';
-		html += (result.types && result.types.length > 0) ?
-			`<p>Types: ${result.types.join(', ')}</p>` :
 			'';
 
 		html += `</div>`;
