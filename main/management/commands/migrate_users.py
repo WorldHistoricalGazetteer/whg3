@@ -52,12 +52,12 @@ class Command(BaseCommand):
                 db_name = cursor.fetchone()[0]
                 self.stdout.write(self.style.SUCCESS(f'Connected to v2 database: {db_name}'))
 
-                # Fetch users from the auth_user table
+                # Fetch a user from the auth_user table to test
                 cursor.execute("SELECT * FROM auth_user LIMIT 1;")
                 result = cursor.fetchone()
                 self.stdout.write(self.style.SUCCESS(f'Fetched user: {result}'))
 
-                # Fetch all users from the v2 database
+                # Fetch selected users from the v2 database
                 cursor.execute("""
                     SELECT id, username, email, first_name, last_name, date_joined, last_login, is_active, is_staff, is_superuser, password
                     FROM auth_user
