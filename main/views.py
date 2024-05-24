@@ -213,6 +213,8 @@ class Home30a(TemplateView):
 # TODO: what rules? this or the *_list() functions?
 # used for dashboard_user() and dataset_list()
 def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
+  print('get_objects_for_user',
+        dict(model=model, filter_criteria=filter_criteria, is_admin=is_admin, extra_filters=extra_filters))
   from django.db.models import Q
   collaborator_objects = model.objects.none()
 
@@ -240,8 +242,11 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
   if is_admin and model == Area and 'type' in filter_criteria:
     objects = objects.exclude(type__in=filter_criteria['type'])
   elif model == Dataset:  # reverse sort, and some dummy datasets need to be filtered
+    print('model == Dataset')
     objects = objects.exclude(Q(title__startswith='(stub)')|Q(numrows__lt=1)).order_by('-create_date')
-    objects = objects.annotate(recent_log_timestamp=Max('log__timestamp'))
+    print('Dataset objects count', objects.count())
+    print('Datasets:', objects)
+    # objects = objects.annotate(recent_log_timestamp=Max('log__timestamp'))
 
   return objects
 
@@ -533,6 +538,7 @@ def dashboard_admin_view(request):
   print('dashboard_admin() request.GET', request.GET)
   user = request.user
   is_admin = user.groups.filter(name='whg_admins').exists()
+  print(f'Is Admin: {is_admin}')
   is_leader = user.groups.filter(name='group_leaders').exists()
   django_groups = [group.name for group in user.groups.all()]
 
