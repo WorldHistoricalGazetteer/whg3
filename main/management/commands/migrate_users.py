@@ -15,6 +15,18 @@ class Command(BaseCommand):
         # Save the current database settings
         original_db_settings = settings.DATABASES['default'].copy()
 
+        db_name_v2 = os.environ.get('DB_NAME_V2')
+        db_user_v2 = os.environ.get('DB_USER_V2')
+        db_password_v2 = os.environ.get('DB_PASSWORD_V2')
+        db_host_v2 = os.environ.get('DB_HOST_V2')
+        db_port_v2 = os.environ.get('DB_PORT_V2')
+
+        self.stdout.write(self.style.WARNING(f'DB_NAME_V2: {db_name_v2}'))
+        self.stdout.write(self.style.WARNING(f'DB_USER_V2: {db_user_v2}'))
+        self.stdout.write(self.style.WARNING(f'DB_PASSWORD_V2: {db_password_v2}'))
+        self.stdout.write(self.style.WARNING(f'DB_HOST_V2: {db_host_v2}'))
+        self.stdout.write(self.style.WARNING(f'DB_PORT_V2: {db_port_v2}'))
+
         # Temporary database settings for v2
         v2_db_settings = {
             'ENGINE': 'django.contrib.gis.db.backends.postgis',

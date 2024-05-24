@@ -14,7 +14,8 @@ create_database() {
   local db_password=$3
 
   # Ensure the role exists
-  psql -U "$POSTGRES_USER" -c "DO \$\$ BEGIN CREATE ROLE $db_user WITH LOGIN PASSWORD '$db_password' SUPERUSER CREATEDB; EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'Role $db_user already exists'; END \$\$;"
+  psql -U "$POSTGRES_USER" -c "DO \$\$
+  BEGIN CREATE ROLE $db_user WITH LOGIN PASSWORD '$db_password' SUPERUSER CREATEDB; EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'Role $db_user already exists'; END \$\$;"
   echo "Default superuser $db_user ensured."
 
   # Check if the database exists
@@ -42,8 +43,10 @@ create_database() {
   echo "Data loaded successfully."
 }
 
+
 if [ "$USE_BETA_DB" = "True" ]; then
   create_database "$DB_NAME_BETA" "$DB_USER_BETA" "$DB_PASSWORD_BETA"
+#  create_database "$DB_NAME_BETA" "$DB_USER" "$DB_PASSWORD"
 else
   create_database "$DB_NAME" "$DB_USER" "$DB_PASSWORD"
 fi

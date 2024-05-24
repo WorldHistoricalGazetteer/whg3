@@ -66,22 +66,21 @@ class Dataset(models.Model):
   create_date = models.DateTimeField(null=True, auto_now_add=True)
   uri_base = models.URLField(null=True, blank=True)
   image_file = ResizedImageField(size=[800, 600], upload_to=ds_image_path, blank=True, null=True)
-  # essay pdf
-  pdf = models.FileField(upload_to=dataset_pdf_path, blank=True, null=True)
-  featured = models.IntegerField(null=True, blank=True)
   bbox = geomodels.PolygonField(null=True, blank=True, srid=4326)
 
-  coordinate_density = models.FloatField(null=True, blank=True)  # for scaling map markers
-
+  ds_status = models.CharField(max_length=12, null=True, blank=True, choices=STATUS_DS)
+  featured = models.IntegerField(null=True, blank=True)  #
   core = models.BooleanField(default=False) # e.g. tgn, geonames, physical geography
   public = models.BooleanField(default=False)
 
-  ds_status = models.CharField(max_length=12, null=True, blank=True, choices=STATUS_DS)
+  # START added for v3
+  coordinate_density = models.FloatField(null=True, blank=True)  # for scaling map markers
+  pdf = models.FileField(upload_to=dataset_pdf_path, blank=True, null=True)  # essay pdf
+  vis_parameters = JSONField(default=default_vis_parameters, null=True, blank=True)
+  volunteers = models.BooleanField(default=False, null=True) # volunteers requested
+  idx_builder = models.BooleanField(default=False)  # TODO: delete this
+  # END added for v3
 
-  # added 20231128
-  idx_builder = models.BooleanField(default=False)
-
-  # 4 added 20210619
   creator = models.CharField(max_length=500, null=True, blank=True)
   source = models.CharField(max_length=500, null=True, blank=True)
   contributors = models.CharField(max_length=500, null=True, blank=True)
@@ -96,10 +95,6 @@ class Dataset(models.Model):
   # these are back-filled
   numlinked = models.IntegerField(null=True, blank=True)
   total_links = models.IntegerField(null=True, blank=True)
-
-  vis_parameters = JSONField(default=default_vis_parameters, null=True, blank=True)
-  # list dataset on volunteers requested page?
-  volunteers = models.BooleanField(default=False, null=True)
 
   def __str__(self):
     return self.label
