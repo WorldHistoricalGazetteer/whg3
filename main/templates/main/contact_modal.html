@@ -41,7 +41,11 @@
 	        <div class="captcha-container">
 	            <p>Please type the characters in this image:</p>
 	            <span class="ms-2">{{ form.captcha }}
-            	<div class="invalid-feedback">Please enter exactly 6 characters.</div>
+		        <div class="invalid-feedback">
+		        	<p>Please enter exactly 6 characters.</p>
+		            {% for error in form.captcha.errors %}
+		                {{ error }}
+		            {% endfor %}
 	            <a class="captcha smaller" href="#">refresh</a></span>
 	        </div>
 	        {% if user.is_authenticated %}

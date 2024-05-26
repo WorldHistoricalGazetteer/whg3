@@ -63,10 +63,20 @@ function initWHGModal() {
                                 'X-CSRFToken': csrfToken
                             },
                             data: formData,
-                            success: function(response) {
-                                // Handle successful form submission
-                                $('#whgModal').modal('hide');
-                            },
+				            success: function(response) {
+							    try {
+							        // Try to parse the response as JSON
+							        var responseData = JSON.parse(response);							
+							        if (responseData.success) {
+							            $('#whgModal').modal('hide');
+							        } else {
+						                alert('An error occurred while submitting the form.');
+							        }
+							    } catch (error) {
+							        // If parsing as JSON fails, treat the response as HTML
+							        $('#whgModal .modal-content').html(response);
+							    }
+				            },
                             error: function(xhr, status, error) {
                                 alert('Sorry, there was an error submitting the form.');
                             }

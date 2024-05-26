@@ -954,11 +954,13 @@ def contact_modal_view(request):
                     user_subject=user_subject,
                 )
                 messages.success(request, "Your message has been sent successfully.")
-                return redirect(request.META.get('HTTP_REFERER'))
+                return JsonResponse({'success': True})
             except BadHeaderError:
                 return HttpResponse('Invalid header found.')
         else:
             print('Form errors:', form.errors)
+            # Form is not valid, render the form again with errors
+            return render(request, 'main/contact_modal.html', {'form': form})
 
     context = {'form': form}
     return render(request, 'main/contact_modal.html', context)
