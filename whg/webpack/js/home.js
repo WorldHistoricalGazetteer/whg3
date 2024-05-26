@@ -151,8 +151,7 @@ Promise.all([
 			data: JSON.stringify(filters),
 			contentType: 'application/json',
 			headers: {
-				'X-CSRFToken': document.querySelector(
-					'[name=csrfmiddlewaretoken]').value,
+				'X-CSRFToken': csrfToken,
 			}, // Include CSRF token in headers for Django POST requests
 			success: function(data) {
 				console.log('...search completed.', data);

@@ -911,6 +911,58 @@ def contact_view(request):
                                                'is_volunteer': is_volunteer or False,
                                                'dataset': dataset})
 
+def contact_modal_view(request):
+    
+    if request.method == 'GET':
+        initial_data = {}
+        if request.user.is_authenticated:
+            initial_data['from_email'] = request.user.email
+            initial_data['name'] = request.user.username
+        form = ContactForm(initial=initial_data)
+    else:
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            name = form.cleaned_data['name']
+            username = form.cleaned_data.get('username', None)
+            user_subject = form.cleaned_data['subject']
+            user_email = form.cleaned_data['from_email']
+            user_message = form.cleaned_data['message']
+            
+            try:
+                # send email to admins
+                new_emailer(
+                    email_type='contact_form',
+                    subject=user_subject,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to_email=settings.EMAIL_TO_ADMINS,
+                    reply_to=[user_email],
+                    name=name,
+                    username=username,
+                    user_subject=user_subject,
+                    user_email=user_email,
+                    user_message=user_message,
+                )
+                # reply to user
+                new_emailer(
+                    email_type='contact_reply',
+                    subject="Message to WHG received",
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to_email=[user_email],
+                    reply_to=[settings.DEFAULT_FROM_EDITORIAL],
+                    name=name,
+                    greeting_name=name if name else username,
+                    user_subject=user_subject,
+                )
+                messages.success(request, "Your message has been sent successfully.")
+                return redirect(request.META.get('HTTP_REFERER'))
+            except BadHeaderError:
+                return HttpResponse('Invalid header found.')
+        else:
+            print('Form errors:', form.errors)
+
+    context = {'form': form}
+    return render(request, 'main/contact_modal.html', context)
+
 def contactSuccessView(request, *args, **kwargs):
     returnurl = request.GET.get('return')
     print('return, request', returnurl, str(request.GET))

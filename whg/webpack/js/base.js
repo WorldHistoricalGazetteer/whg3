@@ -1,11 +1,14 @@
 // base.js
 
 import { Spinner } from 'spin.js';
+import { initWHGModal } from './whg-modal.js';
 // import '../../../static/js/aliases.js'; // /static/js/aliases.js
 import { base_urls } from './aliases.js';
 import '../css/base.css';
 import '../../static/css/styles.css'; // /whg/static/css/styles.css
 import 'spin.js/spin.css';
+
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 	
 if ('fonts' in document) {
 	const fontFamilies = ['Raleway', 'Archivo Black'];
@@ -207,6 +210,7 @@ Promise.all([
             trigger: 'hover'
         });
 		$('body').tooltip(); // Initialize Bootstrap tooltips with delegation to any dynamic content
+		initWHGModal();
 		
 		document.querySelector('body').style.opacity = 1;
 		

@@ -66,6 +66,7 @@ body {
     text-align: center;
     position: relative;
     bottom: 0;
+    user-select: none;
 }
 
 .fonts-loaded body {

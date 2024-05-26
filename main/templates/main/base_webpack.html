@@ -8,6 +8,7 @@
   {% block title %}<title>WHG</title>{% endblock %}
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
   <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.ico' %}"/>
 
   <script defer src="{% static 'webpack/base.bundle.js' %}"></script>
@@ -75,12 +76,12 @@
           <div id="links_home">
             <span id="version_badge" class="badge text-bg-success">v3.0 beta</span>
             <span id="beta_links"></span>
-            <a href="#" class="feedback text-decoration-none">contact</a>
+            <a data-whg-modal="/contact_modal/">contact</a>
           </div>
           <div id="links_other" class="d-none">
             <a class="navbar-brand me-0" href="{% url 'home' %}">&nbsp;
               World Historical Gazetteer</a>
-            <a href="#" class="feedback text-decoration-none hide-on-narrow">contact</a>
+            <a data-whg-modal="/contact_modal/" class="hide-on-narrow">contact</a>
           </div>
         </ul>
         <ul class="navbar-nav">
@@ -186,7 +187,7 @@
 
 {% block footer %}
 <span id="pseudo-footer">
-	<p>&copy; {% now "Y" %} World Historical Gazetteer. All rights reserved. | <a href="#" class="feedback text-decoration-none">Contact</a> | <a href="/home/30a4/" class="text-decoration-none">Home v30a4</a><!-- | Sponsors | Social Media | License | Disclaimer | Terms of Use | Privacy Policy--></p>
+	<p>&copy; {% now "Y" %} World Historical Gazetteer. All rights reserved. | <a data-whg-modal="/contact_modal/">Contact</a> | <a href="/home/30a4/" class="text-decoration-none">Home v30a4</a><!-- | Sponsors | Social Media | License | Disclaimer | Terms of Use | Privacy Policy--></p>
 </span>
 {% endblock %}
     

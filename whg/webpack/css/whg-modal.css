@@ -1,0 +1,117 @@
+#whgModal {
+    z-index: 9999999; /* Above any spinners */
+    user-select: none;
+}
+
+/* Style for modal header */
+.modal-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1rem;
+}
+
+/* Style for modal title */
+.modal-title {
+    color: #343a40;
+}
+
+.modal-title img {
+    vertical-align: bottom;
+}
+
+/* Style for modal body */
+.modal-body {
+    padding: 1rem;
+}
+
+/* Style for form input fields */
+#contact_form {
+    width: 100%;
+}
+
+#contact_form td {
+    padding: 0.5rem;
+}
+
+#contact_form input[type="text"],
+#contact_form input[type="email"],
+#contact_form textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+
+#contact_form input[type="text"]:focus,
+#contact_form input[type="email"]:focus,
+#contact_form textarea:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Style for captcha container */
+.captcha-container {
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    margin-bottom: 1rem;
+    margin-right: 0.5rem;
+    position: relative;
+    background-color: #f8f9fa;
+}
+
+.captcha-container p {
+    margin-bottom: 0; 
+}
+
+.captcha-container a.captcha.smaller {
+    float: right;
+    position: absolute;
+    right: 0.5rem;
+    bottom: 0.5rem;
+}
+
+.captcha-container #id_captcha_1 {
+    width: 138px;	
+}
+
+/* Style for captcha */
+.captcha:not(.smaller) {
+    display: block;
+    margin: -1rem 0 1rem;
+    border: solid darkgrey 1px;
+    padding: 0.25rem;
+}
+
+/* Style for modal footer */
+.modal-footer {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    padding: 1rem;
+}
+
+/* Style for buttons */
+.btn {
+    cursor: pointer;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0069d9;
+    border-color: #0062cc;
+}
