@@ -89,18 +89,6 @@ class PlacePortalView(TemplateView):
 
     context['core'] = ['ne_countries','ne_rivers982','ne_mountains','wri_lakes']
     
-    """
-    TODO:
-    
-    The following code is inefficient because the Place `matches` @property returns Place objects
-    already sorted. The test data in the database is currently inadequate to allow refactoring of the code to make
-    use of this, and so the Places are unnecessarily fetched and ordered a second time.
-    
-    pid-based portal_data currently uses Elastic index in order to get useful results: this should be replaced
-    with the commented-out code-block to use the Place `matches` @property
-    
-    """
-    
     # Extract any pid from a permalink URL
     pid = kwargs.get('pid', '')    
     # Extract any whg_id from a permalink URL
@@ -108,18 +96,26 @@ class PlacePortalView(TemplateView):
     # Extract any encoded IDs from a permalink URL
     encoded_ids = kwargs.get('encoded_ids', '')
     if pid:
-        # TODO: Currently required for test dataset - REPLACE WITH CODE WHICH FOLLOWS IT
-        portal_data = findPortalPIDs(pid)
-        print('portal_data:', portal_data)
-        if not portal_data:
-            return {'redirect_to': f'/places/{pid}/detail'} # Show Place Detail page if pid is from an unindexed dataset
-        place_ids = portal_data or [pid]
-        # # TODO: Replace the above with the following:
-        # portal_data = Place.objects.get(id=pid).matches
-        # print('portal_data:', portal_data)
-        # if len(portal_data) == 1:
-        #     return {'redirect_to': f'/places/{pid}/detail'} # Show Place Detail page if pid is from an unindexed dataset
-        # place_ids = [place.id for place in portal_data]
+        v3 = True # TODO: If all works correctly after migration, remove this line, the test below, and the `else` block ###############################
+        if v3:
+            portal_data = Place.objects.get(id=pid).matches
+            print('portal_data:', portal_data)
+            if len(portal_data) == 1:
+                return {'redirect_to': f'/places/{pid}/detail'} # Show Place Detail page if pid is from an unindexed dataset
+            place_ids = [place.id for place in portal_data]            
+        else: # use inefficient v2 legacy code
+            """
+            The following code is inefficient because the Place `matches` @property returns Place objects
+            already sorted. The test data in the offline database is currently inadequate to allow refactoring of the code to make
+            use of this, and so the Places are unnecessarily fetched and ordered a second time.
+            
+            pid-based portal_data currently uses Elastic index in order to get useful results.            
+            """
+            portal_data = findPortalPIDs(pid)
+            print('portal_data:', portal_data)
+            if not portal_data:
+                return {'redirect_to': f'/places/{pid}/detail'} # Show Place Detail page if pid is from an unindexed dataset
+            place_ids = portal_data or [pid]
     elif whg_id:
         portal_data = findPortalPlaces(whg_id)
         print('portal_data:', portal_data)
