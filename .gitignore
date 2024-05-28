@@ -18,6 +18,8 @@ media/downloads/*
 #media/collections/
 #media/datasets/
 
+main/management/**
+
 # Mac OS files
 **/.DS_Store
 
