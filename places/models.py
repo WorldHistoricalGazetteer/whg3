@@ -187,7 +187,7 @@ class PlaceName(models.Model):
   class Meta:
     managed = True
     db_table = 'place_name'
-    unique_together = ('place', 'src_id', 'jsonb',)
+    # unique_together = ('place', 'src_id', 'jsonb',)
 
 
 class PlaceType(models.Model):
@@ -206,7 +206,7 @@ class PlaceType(models.Model):
   class Meta:
     managed = True
     db_table = 'place_type'
-    unique_together = ('place', 'src_id', 'jsonb',)
+    # unique_together = ('place', 'src_id', 'jsonb',)
 
 
 class PlaceGeom(models.Model):
@@ -294,7 +294,7 @@ class PlaceLink(models.Model):
   class Meta:
     managed = True
     db_table = 'place_link'
-    unique_together = ('place', 'src_id', 'jsonb',)
+    # unique_together = ('place', 'src_id', 'jsonb',)
 
 
 class PlaceWhen(models.Model):
@@ -307,7 +307,7 @@ class PlaceWhen(models.Model):
   class Meta:
     managed = True
     db_table = 'place_when'
-    unique_together = ('place', 'src_id', 'jsonb', )
+    # unique_together = ('place', 'src_id', 'jsonb', )
 
 
 class PlaceRelated(models.Model):
@@ -319,7 +319,7 @@ class PlaceRelated(models.Model):
   class Meta:
     managed = True
     db_table = 'place_related'
-    unique_together = ('place', 'src_id', 'jsonb',)
+    # unique_together = ('place', 'src_id', 'jsonb',)
 
 
 class PlaceDescription(models.Model):
