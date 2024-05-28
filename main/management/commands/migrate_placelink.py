@@ -2,10 +2,10 @@ import json
 import itertools
 from django.core.management.base import BaseCommand
 from django.db import transaction, IntegrityError, connection
-from places.models import Place, PlaceName
+from places.models import Place, PlaceLink
 
 class Command(BaseCommand):
-    help = 'Migrate placename from JSONL file'
+    help = 'Migrate place_link from JSONL file'
 
     def add_arguments(self, parser):
         parser.add_argument('jsonl_file', type=str, help='The path to the JSONL file to import')
@@ -31,16 +31,16 @@ class Command(BaseCommand):
         def adjust_sequence():
             """Adjust the sequence to be in sync with the maximum ID in the table."""
             with connection.cursor() as cursor:
-                cursor.execute("SELECT MAX(id) FROM place_name;")
+                cursor.execute("SELECT MAX(id) FROM place_link;")
                 max_id = cursor.fetchone()[0]
-                cursor.execute("SELECT last_value FROM place_name_id_seq;")
+                cursor.execute("SELECT last_value FROM place_link_id_seq;")
                 last_value = cursor.fetchone()[0]
-                self.stdout.write(self.style.WARNING(f'Current max(id) in place_name: {max_id}'))
-                self.stdout.write(self.style.WARNING(f'Current last_value in place_name_id_seq: {last_value}'))
+                self.stdout.write(self.style.WARNING(f'Current max(id) in place_link: {max_id}'))
+                self.stdout.write(self.style.WARNING(f'Current last_value in place_link_id_seq: {last_value}'))
                 if max_id:
                     new_start_value = max_id + 1
-                    cursor.execute(f"SELECT setval('place_name_id_seq', {new_start_value}, false);")
-                    self.stdout.write(self.style.WARNING(f'Set place_name_id_seq to start from {new_start_value}'))
+                    cursor.execute(f"SELECT setval('place_link_id_seq', {new_start_value}, false);")
+                    self.stdout.write(self.style.WARNING(f'Set place_link_id_seq to start from {new_start_value}'))
 
         with open(jsonl_file, 'r') as file:
             reader = (json.loads(line) for line in file)
@@ -55,7 +55,7 @@ class Command(BaseCommand):
                     break
 
                 self.stdout.write(self.style.WARNING(f'Processing batch {batch_index}...'))
-                placenames = []
+                placelinks = []
                 for row_index, row in enumerate(batch, start=1):
                     if limit is not None and count >= limit:
                         break
@@ -64,19 +64,26 @@ class Command(BaseCommand):
                     try:
                         place = Place.objects.get(id=row['place_id'])  # Check if Place exists
                         self.stdout.write(self.style.WARNING(f'Found place with id {row["place_id"]}'))
-                        placename = PlaceName(
+# black_parent, create_date, id, jsonb, place_id, review_note, reviewer_id, src_id, task_id
+                        # Use get_or_create to avoid creating duplicates
+                        placelink, created = PlaceLink.objects.get_or_create(
                             place=place,
-                            toponym=row['toponym'],
-                            jsonb=row['jsonb'],  # Correct field name for JSONB
-                            name_src_id=row['name_src_id'],
-                            task_id=row['task_id'],
                             src_id=row['src_id'],
-                            create_date=row.get('create_date', None),  # Handle new field with default None
-                            reviewer_id=row.get('reviewer_id', None)  # Handle new field with default None
+                            jsonb=row['jsonb'],
+                            task_id=row['task_id'],
+                            reviewer_id=row.get('reviewer_id', None),
+                            black_parent=row['black_parent'],
+                            review_note=row['review_note'],
+                            create_date=row.get('created', None),
                         )
-                        self.stdout.write(self.style.WARNING(f'Created PlaceName instance for row {row_index}'))
-                        placenames.append(placename)
-                        count += 1
+
+                        if created:
+                            self.stdout.write(self.style.WARNING(f'Created PlaceLink instance for row {row_index}'))
+                            placelinks.append(placelink)  # Append the new PlaceLink to the list
+                            count += 1
+                        else:
+                            self.stdout.write(self.style.WARNING(f'Skipped duplicate PlaceLink for row {row_index}'))
+
                         if row_index % 100 == 0:
                             self.stdout.write(self.style.WARNING(f'Processed {row_index} rows in current batch...'))
 
@@ -99,21 +106,20 @@ class Command(BaseCommand):
                         })
                         continue
 
-                self.stdout.write(self.style.WARNING(f'Placenames to create in batch {batch_index}: {len(placenames)}'))
+                self.stdout.write(self.style.WARNING(f'PlaceLinks to create in batch {batch_index}: {len(placelinks)}'))
 
-                if placenames:
-                    # Adjust the sequence before bulk create
+                if placelinks:
                     adjust_sequence()
-
-                    # Bulk create placenames
+                    # Bulk create placelinks
                     try:
-                        self.stdout.write(self.style.WARNING(f'Attempting to bulk create {len(placenames)} placenames.'))
                         with transaction.atomic():
-                            PlaceName.objects.bulk_create(placenames, batch_size=1000)
-                        self.stdout.write(self.style.SUCCESS(f'Successfully imported {len(placenames)} placenames'))
-                        total_processed += len(placenames)
-                        adjust_sequence()
-                        placenames.clear()
+                            adjust_sequence()
+
+                            self.stdout.write(self.style.WARNING(f'Attempting to bulk create {len(placelinks)} placelinks.'))
+                            PlaceLink.objects.bulk_create(placelinks, batch_size=1000)
+                        self.stdout.write(self.style.SUCCESS(f'Successfully imported {len(placelinks)} placelinks'))
+                        total_processed += len(placelinks)
+                        placelinks.clear()
                     except IntegrityError as e:
                         self.stdout.write(self.style.ERROR(f'IntegrityError: {str(e)}'))
                         problematic_rows.extend([{'row': r, 'error': str(e)} for r in batch])
@@ -126,18 +132,16 @@ class Command(BaseCommand):
                     break
 
             # Final bulk create if the loop is broken due to limit
-            if placenames:
-                # Adjust the sequence before bulk create
-                adjust_sequence()
-
+            if placelinks:
                 try:
-                    self.stdout.write(self.style.WARNING(f'Final bulk create {len(placenames)} placenames.'))
                     with transaction.atomic():
-                        PlaceName.objects.bulk_create(placenames, batch_size=1000)
-                    self.stdout.write(self.style.SUCCESS(f'Successfully imported {len(placenames)} placenames'))
-                    total_processed += len(placenames)
-                    adjust_sequence()
-                    placenames.clear()
+                        adjust_sequence()
+
+                        self.stdout.write(self.style.WARNING(f'Final bulk create {len(placelinks)} placelinks.'))
+                        PlaceLink.objects.bulk_create(placelinks, batch_size=1000)
+                    self.stdout.write(self.style.SUCCESS(f'Successfully imported {len(placelinks)} placelinks'))
+                    total_processed += len(placelinks)
+                    placelinks.clear()
                 except IntegrityError as e:
                     self.stdout.write(self.style.ERROR(f'IntegrityError: {str(e)}'))
                     problematic_rows.extend([{'row': r, 'error': str(e)} for r in batch])
@@ -145,7 +149,7 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.ERROR(f'Exception: {str(e)}'))
                     problematic_rows.extend([{'row': r, 'error': str(e)} for r in batch])
 
-            self.stdout.write(self.style.SUCCESS(f'Total processed: {total_processed} placenames'))
+            self.stdout.write(self.style.SUCCESS(f'Total processed: {total_processed} placelinks'))
 
             # Save problematic rows to a file
             if problematic_rows:

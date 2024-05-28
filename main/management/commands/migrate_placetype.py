@@ -2,7 +2,7 @@ import json
 import itertools
 from django.core.management.base import BaseCommand
 from django.db import transaction, IntegrityError, connection
-from places.models import Place, PlaceLink
+from places.models import Place, PlaceType
 
 class Command(BaseCommand):
     help = 'Migrate place_link from JSONL file'
@@ -55,7 +55,7 @@ class Command(BaseCommand):
                     break
 
                 self.stdout.write(self.style.WARNING(f'Processing batch {batch_index}...'))
-                placelinks = []
+                PlaceTypes = []
                 for row_index, row in enumerate(batch, start=1):
                     if limit is not None and count >= limit:
                         break
@@ -66,7 +66,7 @@ class Command(BaseCommand):
                         self.stdout.write(self.style.WARNING(f'Found place with id {row["place_id"]}'))
 # black_parent, create_date, id, jsonb, place_id, review_note, reviewer_id, src_id, task_id
                         # Use get_or_create to avoid creating duplicates
-                        placelink, created = PlaceLink.objects.get_or_create(
+                        PlaceType, created = PlaceType.objects.get_or_create(
                             place=place,
                             src_id=row['src_id'],
                             jsonb=row['jsonb'],
@@ -78,11 +78,11 @@ class Command(BaseCommand):
                         )
 
                         if created:
-                            self.stdout.write(self.style.WARNING(f'Created PlaceLink instance for row {row_index}'))
-                            placelinks.append(placelink)  # Append the new PlaceLink to the list
+                            self.stdout.write(self.style.WARNING(f'Created PlaceType instance for row {row_index}'))
+                            placetypes.append(placetype)  # Append the new PlaceType to the list
                             count += 1
                         else:
-                            self.stdout.write(self.style.WARNING(f'Skipped duplicate PlaceLink for row {row_index}'))
+                            self.stdout.write(self.style.WARNING(f'Skipped duplicate PlaceType for row {row_index}'))
 
                         if row_index % 100 == 0:
                             self.stdout.write(self.style.WARNING(f'Processed {row_index} rows in current batch...'))
@@ -106,20 +106,20 @@ class Command(BaseCommand):
                         })
                         continue
 
-                self.stdout.write(self.style.WARNING(f'PlaceLinks to create in batch {batch_index}: {len(placelinks)}'))
+                self.stdout.write(self.style.WARNING(f'PlaceTypes to create in batch {batch_index}: {len(placetypes)}'))
 
-                if placelinks:
+                if placetypes:
                     adjust_sequence()
-                    # Bulk create placelinks
+                    # Bulk create placetypes
                     try:
                         with transaction.atomic():
                             adjust_sequence()
 
-                            self.stdout.write(self.style.WARNING(f'Attempting to bulk create {len(placelinks)} placelinks.'))
-                            PlaceLink.objects.bulk_create(placelinks, batch_size=1000)
-                        self.stdout.write(self.style.SUCCESS(f'Successfully imported {len(placelinks)} placelinks'))
-                        total_processed += len(placelinks)
-                        placelinks.clear()
+                            self.stdout.write(self.style.WARNING(f'Attempting to bulk create {len(placetypes)} placetypes.'))
+                            PlaceType.objects.bulk_create(placetypes, batch_size=1000)
+                        self.stdout.write(self.style.SUCCESS(f'Successfully imported {len(placetypes)} placetypes'))
+                        total_processed += len(placetypes)
+                        placetypes.clear()
                     except IntegrityError as e:
                         self.stdout.write(self.style.ERROR(f'IntegrityError: {str(e)}'))
                         problematic_rows.extend([{'row': r, 'error': str(e)} for r in batch])
@@ -132,16 +132,16 @@ class Command(BaseCommand):
                     break
 
             # Final bulk create if the loop is broken due to limit
-            if placelinks:
+            if placetypes:
                 try:
                     with transaction.atomic():
                         adjust_sequence()
 
-                        self.stdout.write(self.style.WARNING(f'Final bulk create {len(placelinks)} placelinks.'))
-                        PlaceLink.objects.bulk_create(placelinks, batch_size=1000)
-                    self.stdout.write(self.style.SUCCESS(f'Successfully imported {len(placelinks)} placelinks'))
-                    total_processed += len(placelinks)
-                    placelinks.clear()
+                        self.stdout.write(self.style.WARNING(f'Final bulk create {len(placetypes)} placetypes.'))
+                        PlaceType.objects.bulk_create(placetypes, batch_size=1000)
+                    self.stdout.write(self.style.SUCCESS(f'Successfully imported {len(placetypes)} placetypes'))
+                    total_processed += len(placetypes)
+                    placetypes.clear()
                 except IntegrityError as e:
                     self.stdout.write(self.style.ERROR(f'IntegrityError: {str(e)}'))
                     problematic_rows.extend([{'row': r, 'error': str(e)} for r in batch])
@@ -149,7 +149,7 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.ERROR(f'Exception: {str(e)}'))
                     problematic_rows.extend([{'row': r, 'error': str(e)} for r in batch])
 
-            self.stdout.write(self.style.SUCCESS(f'Total processed: {total_processed} placelinks'))
+            self.stdout.write(self.style.SUCCESS(f'Total processed: {total_processed} placetypes'))
 
             # Save problematic rows to a file
             if problematic_rows:
