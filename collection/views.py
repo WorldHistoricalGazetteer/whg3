@@ -1521,6 +1521,8 @@ class DatasetCollectionBrowseView(DetailView):
     context['is_admin'] = True if self.request.user.groups.filter(name__in=['whg_admins']).exists() else False
     context['visParameters'] = coll.vis_parameters or "{'seq': {'tabulate': false, 'temporal_control': 'none', 'trail': false},'min': {'tabulate': false, 'temporal_control': 'none', 'trail': false},'max': {'tabulate': false, 'temporal_control': 'none', 'trail': false}}"
     context['datasets'] = [{"id":ds["id"], "label":ds["label"], "title":ds["title"], "extent":ds["extent"]} for ds in coll.ds_list]
+    
+    context['coordinate_density'] = coll.coordinate_density_value
 
     return context
 

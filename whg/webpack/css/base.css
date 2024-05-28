@@ -47,7 +47,28 @@
 
 .raleway {font-family: 'Raleway', sans-serif;}
 
-body {font-family: sans-serif;}
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+	font-family: sans-serif;
+    display: flex;
+    flex-direction: column;
+}
+
+#pseudo-footer {
+    font-size: .8rem;
+    opacity: .6;
+    width: 100%;
+    padding-top: 10px;
+    text-align: center;
+    position: relative;
+    bottom: 0;
+    user-select: none;
+}
+
 .fonts-loaded body {
   font-family: 'Raleway', sans-serif;
 }

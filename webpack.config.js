@@ -26,7 +26,6 @@ module.exports = {
 		gallery: '/app/whg/webpack/js/gallery.js',
 		home: '/app/whg/webpack/js/home.js',
 		mapAndTable: '/app/whg/webpack/js/mapAndTable.js',
-		//maptiler_sdk: '/app/whg/webpack/js/maptiler-sdk.js',
 		places: '/app/whg/webpack/js/places.js',
 		portal: '/app/whg/webpack/js/portal.js',
 		review: '/app/whg/webpack/js/review.js',

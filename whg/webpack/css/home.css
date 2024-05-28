@@ -35,8 +35,7 @@
 #controlWrapper .home-carousel {
     z-index: 99;
     background-color: #ffffff;
-    /*margin: 0.25rem !important;*/
-    margin: 0 !important;
+    margin: 0.25rem !important;
     background-color: rgba(255, 255, 255, .8);
     border: 1px solid lightgrey;
     border-radius: 4px;
@@ -84,6 +83,12 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
 .home-button:hover {
     box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1); /* Increase box shadow on hover */
     transform: scale(1.01); /* Slightly increase size on hover */
+}
+
+.announcement.constrained {
+    overflow-y: auto;
+    min-height: 50px;
+    max-height: 50px;
 }
 
 /*.home-button {*/
@@ -172,9 +177,11 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
 .carousel-inner, .carousel-item {
     height: 100%;
 }
+
 .carousel-item {
-    position: relative;
+    overflow: hidden;
 }
+
 .carousel-image {
     position: absolute;
     top: 0;
@@ -182,9 +189,10 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     object-fit: cover;
     width: 100%;
     height: 100%;
-    opacity: 0.2;
-    z-index: -1;
+    opacity: 0.1;
+    padding-bottom: 14px;
 }
+
 .highlight-carousel {
 	border-color: red!important;
 }

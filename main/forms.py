@@ -17,10 +17,10 @@ class AnnouncementForm(forms.ModelForm):
         model = Announcement
         fields = ['headline', 'content', 'link', 'active']
         widgets = {
-                    'headline': forms.TextInput(attrs={'size': '50'}),
-                    'content': forms.TextInput(attrs={'size': '50'}),
-                    'link': forms.TextInput(attrs={'size': '50'}),
-                }
+            'headline': forms.TextInput(attrs={'size': '50'}),
+            'content': forms.TextInput(attrs={'size': '50'}),
+            'link': forms.TextInput(attrs={'size': '50'}),
+            }
 
 class ContactForm(forms.Form):
     name = forms.CharField(

@@ -101,6 +101,7 @@ urlpatterns = [
 
     path('comment/', views.handle_comment, name='comment-handle'),
     path('contact/', views.contact_view, name='contact'),
+    path('contact_modal/', views.contact_modal_view, name='contact-modal'),
     path('success/', views.contactSuccessView, name='success'),
     path('status/', views.statusView, name='status'),
     path('create_link/', views.create_link, name="create-link"),

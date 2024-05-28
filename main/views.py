@@ -173,8 +173,8 @@ class Home30a(TemplateView):
   template_name = 'main/home_v30a3.html'
 
   def get_template_names(self):
-    version = self.kwargs.get('version', '')
-    return [self.template_name.format(version=version)]
+    version = self.kwargs.get('version', '30a3')
+    return [f'main/home_v{version}.html']
 
   def get_context_data(self, *args, **kwargs):
     context = super(Home30a, self).get_context_data(*args, **kwargs)
@@ -912,6 +912,60 @@ def contact_view(request):
                                                'user': request.user,
                                                'is_volunteer': is_volunteer or False,
                                                'dataset': dataset})
+
+def contact_modal_view(request):
+    
+    if request.method == 'GET':
+        initial_data = {}
+        if request.user.is_authenticated:
+            initial_data['from_email'] = request.user.email
+            initial_data['name'] = request.user.username
+        form = ContactForm(initial=initial_data)
+    else:
+        form = ContactForm(request.POST)
+        if form.is_valid():
+            name = form.cleaned_data['name']
+            username = form.cleaned_data.get('username', None)
+            user_subject = form.cleaned_data['subject']
+            user_email = form.cleaned_data['from_email']
+            user_message = form.cleaned_data['message']
+            
+            try:
+                # send email to admins
+                new_emailer(
+                    email_type='contact_form',
+                    subject=user_subject,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to_email=settings.EMAIL_TO_ADMINS,
+                    reply_to=[user_email],
+                    name=name,
+                    username=username,
+                    user_subject=user_subject,
+                    user_email=user_email,
+                    user_message=user_message,
+                )
+                # reply to user
+                new_emailer(
+                    email_type='contact_reply',
+                    subject="Message to WHG received",
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to_email=[user_email],
+                    reply_to=[settings.DEFAULT_FROM_EDITORIAL],
+                    name=name,
+                    greeting_name=name if name else username,
+                    user_subject=user_subject,
+                )
+                messages.success(request, "Your message has been sent successfully.")
+                return JsonResponse({'success': True})
+            except BadHeaderError:
+                return HttpResponse('Invalid header found.')
+        else:
+            print('Form errors:', form.errors)
+            # Form is not valid, render the form again with errors
+            return render(request, 'main/contact_modal.html', {'form': form})
+
+    context = {'form': form}
+    return render(request, 'main/contact_modal.html', context)
 
 def contactSuccessView(request, *args, **kwargs):
     returnurl = request.GET.get('return')

@@ -55,7 +55,13 @@ Promise.all([
         bufferDropdown.append(new Option(`${value} km`, value, value === 0 ? true : false));
     });
 	bufferDropdown.on('change', updateAreaMap);
+	
 	$("textarea#geojson").val('');
+    $("#area_form").submit(function(event) {
+        if (event.target === $("#area_form")[0]) {
+            $("textarea#geojson").removeAttr("disabled");
+        }
+    });
 		
 	if (action == 'update') {
 		// existing - assumes that formGeoJSON is a featureCollection

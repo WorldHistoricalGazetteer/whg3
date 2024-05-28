@@ -125,8 +125,9 @@ CELERY_RESULT_EXPIRES = None
 #     }}
 
 CAPTCHA_NOISE_FUNCTIONS = (
-  #'captcha.helpers.noise_arcs',
+    'captcha.helpers.noise_arcs',
     'captcha.helpers.noise_dots',)
+CAPTCHA_LENGTH = 6
 
 DJANGORESIZED_DEFAULT_SIZE = [1000, 800]
 DJANGORESIZED_DEFAULT_QUALITY = 75
