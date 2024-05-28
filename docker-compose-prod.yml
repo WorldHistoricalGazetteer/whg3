@@ -38,17 +38,17 @@ services:
       - db
       # - livereload
 
-#  webpack:
-#    networks:
-#      - WHG3
-#    platform: linux/amd64
-#    build:
-#      context: .
-#      dockerfile: ./compose/local/webpack/Dockerfile-webpack
-#    image: whg3_webpack
-#    container_name: webpack
-#    volumes:
-#      - .:/app
+  webpack:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./compose/local/webpack/Dockerfile-webpack
+    image: whg3_webpack
+    container_name: webpack
+    volumes:
+      - .:/app
 
   db:
     networks:
