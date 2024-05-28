@@ -1,6 +1,4 @@
-import csv
-import os
-import json
+import csv, os, json
 from django.core.management.base import BaseCommand
 from django.db import transaction, IntegrityError
 from places.models import Place
