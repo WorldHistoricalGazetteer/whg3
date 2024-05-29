@@ -1,7 +1,6 @@
 #whgModal {
     z-index: 9999999; /* Above any spinners */
     user-select: none;
-    display: block;
     height: fit-content;
     max-height: 100%;
 }

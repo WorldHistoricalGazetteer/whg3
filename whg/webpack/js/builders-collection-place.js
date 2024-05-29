@@ -40,10 +40,10 @@ $(function() {
 			let formData = new FormData()
 			formData.append('coll_id', object_id)
 			formData.append('seq', JSON.stringify(new_sequence))
-			formData.append('csrfmiddlewaretoken', csrf_token);
 			$.ajax({
 				type: 'POST',
 				url: '/collections/update_sequence/',
+				headers: { 'X-CSRFToken': csrfToken },
 				processData: false,
 				contentType: false,
 				cache: false,
@@ -136,7 +136,7 @@ $(function() {
 			data: formData,
 			processData: false,
 			contentType: false,
-			csrfmiddlewaretoken: csrf_token,
+			csrfmiddlewaretoken: csrfToken,
 			success: function(response) {
 				console.log('response', response)
 				if (response.status == 'ok') {
@@ -168,9 +168,7 @@ $(function() {
 		$.ajax({
 			url: '/collections/collab-remove/' + uid + '/' + cid + '/',
 			type: 'POST',
-			data: {
-				'csrfmiddlewaretoken': csrf_token
-			},
+			headers: { 'X-CSRFToken': csrfToken },
 			success: function(response) {
 				console.log('response', response)
 				$('#remove_collab[data-uid="' + response.uid + '"]').parent().parent().remove();
@@ -328,11 +326,11 @@ $(function() {
 		formData.append('action', action)
 		formData.append('coll', '{{ object.id }}')
 		formData.append('group', $("#id_group").val())
-		formData.append('csrfmiddlewaretoken', csrf_token);
 		$.ajax({
 			type: 'POST',
 			enctype: 'multipart/form-data',
 			url: '{% url "collection:group-connect" %}',
+			headers: { 'X-CSRFToken': csrfToken },
 			processData: false,
 			contentType: false,
 			cache: false,
@@ -365,12 +363,12 @@ $(function() {
 		formData.append('label', $("#l_label").val())
 		formData.append('link_type', $("#select_linktype").val())
 		formData.append('license', '')
-		formData.append('csrfmiddlewaretoken', csrf_token);
 		$.ajax({
 			type: 'POST',
 			enctype: 'multipart/form-data',
 			// url: '{% url "create-link" %}',
 			url: create_link_url,
+			headers: { 'X-CSRFToken': csrfToken },
 			processData: false,
 			contentType: false,
 			cache: false,
@@ -641,11 +639,11 @@ $(function() {
 		var formData = new FormData()
 		formData.append('collection', coll)
 		formData.append('place_list', pids)
-		formData.append('csrfmiddlewaretoken', csrf_token);
 		$.ajax({
 			type: 'POST',
 			enctype: 'multipart/form-data',
 			url: '/collections/archive_traces/',
+			headers: { 'X-CSRFToken': csrfToken },
 			processData: false,
 			contentType: false,
 			cache: false,

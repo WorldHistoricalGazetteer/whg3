@@ -2,7 +2,6 @@
 //
 // Top of JavaScript: import './notes.js';
 // Initialise with: $('.notes').notes();
-// Ensure that {% csrf_token %} appears somewhere in the HTML template
 
 $.fn.notes = function() {
 	
@@ -26,7 +25,6 @@ $.fn.notes = function() {
           </ul>
         `;
         
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     const trashHTML = ' <i class="fas fa-trash linky fa-xs" data-bs-toggle="tooltip" data-bs-title="Delete this note"></i>';
 	
 	$('body').on('submit', '#commentForm', function(event) {

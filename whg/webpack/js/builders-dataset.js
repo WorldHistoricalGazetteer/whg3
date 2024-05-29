@@ -59,10 +59,7 @@ $(function() {
 		$.ajax({
 			url: '/datasets/toggle_volunteers',
 			type: 'POST',
-			headers: {
-				'X-CSRFToken': document.querySelector(
-						'[name=csrfmiddlewaretoken]').value
-			},
+			headers: { 'X-CSRFToken': csrfToken },
 			data: {
 				'is_checked': isChecked,
 				'dataset_id': context_datasetId,
@@ -97,10 +94,7 @@ $(function() {
 		let urly = '/dlcelery/'
 		$.ajax({
 			type: 'POST',
-			headers: {
-				'X-CSRFToken': document.querySelector(
-						'[name=csrfmiddlewaretoken]').value
-			},
+			headers: { 'X-CSRFToken': csrfToken },
 			url: urly,
 			data: {
 				"format": format,

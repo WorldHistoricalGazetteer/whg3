@@ -118,7 +118,6 @@ export function initOverlays(whgMap) {
     let format = $('input[name="format"]:checked').val() || 'lpf';
     let urly = '/dlcelery/';
     console.log('dsid:', dsid, 'collid:', collid, 'format:', format);
-    let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     $.ajax({
       type: 'POST',
       url: urly,

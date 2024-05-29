@@ -65,7 +65,7 @@ $(function() {
 			$.ajax({
 					url: '/datasets/update_vis_parameters/',
 					method: 'POST',
-		headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+					headers: { 'X-CSRFToken': csrfToken },
 					data: {
 							'checked': isChecked,
 							'ds_id': context_dsid
@@ -88,10 +88,7 @@ $(function() {
 		$.ajax({
 			url: '/datasets/toggle_volunteers',
 			type: 'POST',
-			headers: {
-				'X-CSRFToken': document.querySelector(
-						'[name=csrfmiddlewaretoken]').value
-			},
+			headers: { 'X-CSRFToken': csrfToken },
 			data: {
 				'is_checked': isChecked,
 				'dataset_id': context_dsid,

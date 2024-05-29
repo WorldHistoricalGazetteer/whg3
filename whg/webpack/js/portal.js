@@ -167,6 +167,10 @@ function waitDocumentReady() {
 
 Promise.all([waitMapLoad(), waitDocumentReady()])
 	.then(() => {
+		
+		payload.forEach(place => { // Ensure that years are all base-10 integers
+		    place.timespans = place.timespans.map(timespan => timespan.map(year => parseInt(year, 10)));
+		});
 
 		const allTimespans = payload.flatMap(place => place.timespans);
 		const {
@@ -416,10 +420,7 @@ function initCollectionForm() {
 			$.ajax({
 				url: '/collections/add_collection_places/',
 				method: 'POST',
-				headers: {
-					'X-CSRFToken': document.querySelector(
-						'[name=csrfmiddlewaretoken]').value,
-				}, // Include CSRF token in headers for Django POST requests
+				headers: { 'X-CSRFToken': csrfToken }, // Include CSRF token in headers for Django POST requests
 				data: formData,
 				processData: false,
 				contentType: false,

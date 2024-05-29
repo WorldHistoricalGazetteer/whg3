@@ -150,9 +150,7 @@ Promise.all([
 			url: '/search/index/',
 			data: JSON.stringify(filters),
 			contentType: 'application/json',
-			headers: {
-				'X-CSRFToken': csrfToken,
-			}, // Include CSRF token in headers for Django POST requests
+			headers: { 'X-CSRFToken': csrfToken }, // Include CSRF token in headers for Django POST requests
 			success: function(data) {
 				console.log('...search completed.', data);
 				localStorage.setItem('last_search', JSON.stringify(data)); // Includes both `.parameters` and `.suggestions` objects

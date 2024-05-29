@@ -55,13 +55,10 @@ function initWHGModal() {
 
                         // Proceed with AJAX form submission
                         var formData = $(this).serialize();
-                        var csrfToken = $('input[name="csrfmiddlewaretoken"]').val();
                         $.ajax({
                             url: url,
                             method: 'POST',
-                            headers: {
-                                'X-CSRFToken': csrfToken
-                            },
+                            headers: { 'X-CSRFToken': csrfToken },
                             data: formData,
 				            success: function(response) {
 							    try {
