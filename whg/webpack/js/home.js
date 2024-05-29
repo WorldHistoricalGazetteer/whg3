@@ -1,6 +1,7 @@
 // /whg/webpack/home.js
 
 import '../css/home.css';
+import { errorModal } from './error-modal.js';
 import { initialiseCarousels } from './carousels';
 
 let mappy = new whg_maplibre.Map({
@@ -157,11 +158,12 @@ Promise.all([
 				if (data.suggestions.length > 0) { // if results, load and render on Search page
 					window.location.href = '/search';
 				} else {
-					alert('no results for "' + filters.qstr + '", sorry');
+					errorModal(`Sorry, your search for "<i>${filters.qstr}</i>" returned no results.`, 'No Results', null, 5);
 				}
 			},
 			error: function(error) {
 				console.error('Error:', error);
+				errorModal('Sorry, something went wrong with that search.', null, error);
 			},
 		});
 	}

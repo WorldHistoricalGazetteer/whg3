@@ -16,8 +16,8 @@ function errorModal(message, title, error, timeout) {
                     </div>
                     <div class="modal-body">
                         <p>${message}</p>
-                        ${ !!error.status ? `<p class="error">Status: ${error.status}</p>` : '' }
-                        ${ !!error.statusText ? `<p class="error">Status Text: "${error.statusText}"</p>` : '' }
+                        ${ error && !!error.status ? `<p class="error">Status: ${error.status}</p>` : '' }
+                        ${ error && !!error.statusText ? `<p class="error">Status Text: "${error.statusText}"</p>` : '' }
                         ${ error ? `<p class="error">See console log for more details.</p>` : '' }
                     </div>
                     <div class="modal-footer">
