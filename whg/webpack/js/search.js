@@ -1,5 +1,6 @@
 // /whg/webpack/search.js
 
+import { errorModal } from './error-modal.js';
 import Dateline from './dateline';
 import throttle from 'lodash/throttle';
 import debounce from 'lodash/debounce';
@@ -821,7 +822,7 @@ function initiateSearch() {
 		url: '/search/index/',
 		data: JSON.stringify(options),
 		contentType: 'application/json',
-		headers: { 'X-CSRFToken': csrfToken }, // Include CSRF token in headers for Django POST requests
+		//headers: { 'X-CSRFToken': csrfToken }, // Include CSRF token in headers for Django POST requests
 		success: function(data) {
 			console.log('...search completed.', data);
 			localStorage.setItem('last_search', JSON.stringify(data)); // Includes both `.parameters` and `.suggestions` objects
@@ -829,6 +830,7 @@ function initiateSearch() {
 		},
 		error: function(error) {
 			console.error('Error:', error);
+			errorModal('Sorry, something went wrong with that search.', null, error);
 		},
 	});
 }

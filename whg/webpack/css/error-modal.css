@@ -1,0 +1,33 @@
+#errorModal { 
+    height: fit-content;
+}
+
+#errorModal .modal-header {
+	background-color: red;
+    border-bottom: none;
+}
+
+#errorModal .modal-title {
+    color: white;
+    margin: 0;
+    font-weight: bold!important;
+}
+
+#errorModal .modal-header button.close{
+    color: white;
+    background: none;
+    border: none;
+    font-size: 2em;
+    margin: 0;
+    padding: 0;
+}
+
+#errorModal .modal-header button.close:hover{
+    color: #dddddd;
+}
+
+#errorModal .modal-body p.error {
+    font-size: 0.8rem;
+    font-style: italic;
+    margin: 0;
+}
