@@ -119,9 +119,7 @@ $(document).ready(function() {
 		    $.ajax({
 		        url: '/tileset_task_progress/',
 		        type: 'POST',
-		        headers: {
-		            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-		        },
+		        headers: { 'X-CSRFToken': csrfToken },
 		        contentType: 'application/json',
 		        data: JSON.stringify(tasks),
 		        success: function(response) {

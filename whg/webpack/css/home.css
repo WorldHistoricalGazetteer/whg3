@@ -191,6 +191,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     height: 100%;
     opacity: 0.1;
     padding-bottom: 14px;
+    pointer-events: none;
 }
 
 .highlight-carousel {

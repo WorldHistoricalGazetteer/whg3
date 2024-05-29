@@ -1,6 +1,7 @@
 // /whg/webpack/home.js
 
 import '../css/home.css';
+import { errorModal } from './error-modal.js';
 import { initialiseCarousels } from './carousels';
 
 let mappy = new whg_maplibre.Map({
@@ -150,20 +151,19 @@ Promise.all([
 			url: '/search/index/',
 			data: JSON.stringify(filters),
 			contentType: 'application/json',
-			headers: {
-				'X-CSRFToken': csrfToken,
-			}, // Include CSRF token in headers for Django POST requests
+			headers: { 'X-CSRFToken': csrfToken }, // Include CSRF token in headers for Django POST requests
 			success: function(data) {
 				console.log('...search completed.', data);
 				localStorage.setItem('last_search', JSON.stringify(data)); // Includes both `.parameters` and `.suggestions` objects
 				if (data.suggestions.length > 0) { // if results, load and render on Search page
 					window.location.href = '/search';
 				} else {
-					alert('no results for "' + filters.qstr + '", sorry');
+					errorModal(`Sorry, your search for "<i>${filters.qstr}</i>" returned no results.`, 'No Results', null, 5);
 				}
 			},
 			error: function(error) {
 				console.error('Error:', error);
+				errorModal('Sorry, something went wrong with that search.', null, error);
 			},
 		});
 	}

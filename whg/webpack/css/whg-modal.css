@@ -1,7 +1,6 @@
 #whgModal {
     z-index: 9999999; /* Above any spinners */
     user-select: none;
-    /*display: block;*/
     height: fit-content;
     max-height: 100%;
 }
@@ -65,7 +64,7 @@
 }
 
 .captcha-container p {
-    margin-bottom: 0; 
+    margin-bottom: 0;
 }
 
 .captcha-container a.captcha.smaller {
@@ -76,7 +75,7 @@
 }
 
 .captcha-container #id_captcha_1 {
-    width: 138px;	
+    width: 138px;
 }
 
 /* Style for captcha */

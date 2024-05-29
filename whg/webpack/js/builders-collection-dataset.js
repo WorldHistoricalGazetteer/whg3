@@ -71,7 +71,7 @@ $(function() {
 		$.ajax({
 			url: '/collections/collab-remove/' + uid + '/' + cid + '/',
 			type: 'POST',
-			headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+			headers: { 'X-CSRFToken': csrfToken },
 			success: function(response) {
 				console.log('response', response)
 				$('#remove_collab[data-uid="' + response.uid + '"]').parent().parent().remove();
@@ -100,7 +100,7 @@ $(function() {
 			data: formData,
 			processData: false,
 			contentType: false,
-			csrfmiddlewaretoken: document.querySelector('[name=csrfmiddlewaretoken]').value,
+			csrfmiddlewaretoken: csrfToken,
 			success: function(response) {
 				console.log('response', response)
 				if (response.status == 'ok') {
@@ -155,8 +155,8 @@ $(function() {
         var isChecked = $(this).prop('checked');
         $.ajax({
             url: '/collections/update_vis_parameters/',
+			headers: { 'X-CSRFToken': csrfToken },
             method: 'POST',
-			headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
             data: {
                 'checked': isChecked,
                 'coll_id': context_objectId
@@ -189,9 +189,9 @@ $(function() {
 		formData.append('license', '')
 		$.ajax({
 			type: 'POST',
-			headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
 			enctype: 'multipart/form-data',
 			url: '{% url "create-link" %}',
+			headers: { 'X-CSRFToken': csrfToken },
 			processData: false,
 			contentType: false,
 			cache: false,

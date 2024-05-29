@@ -5,9 +5,8 @@ from geojson import Feature, Point
 from places.models import PlaceGeom
 import numpy as np
 import simplejson as json
-# from sklearn.cluster import AgglomerativeClustering
-# from sklearn.metrics import calinski_harabasz_score
-from sklearn.cluster import KMeans
+from sklearn.cluster import AgglomerativeClustering
+from sklearn.metrics import calinski_harabasz_score
 
 def clustered_geometries(caller, min_clusters=7, max_clusters=10):    
     # Detect the class of the caller
@@ -54,31 +53,27 @@ def clustered_geometries(caller, min_clusters=7, max_clusters=10):
     # Reshape the flat list into coordinate tuples
     coordinates = np.array([coordinates[i:i+2] for i in range(0, len(coordinates), 2)])
     
-    # # Perform Agglomerative Clustering
-    # calinski_scores = []
-    #
-    # for n_clusters in range(2, max_clusters + 1):
-    #     clusterer = AgglomerativeClustering(n_clusters=n_clusters)
-    #     labels = clusterer.fit_predict(coordinates)
-    #     calinski_score = calinski_harabasz_score(coordinates, labels)
-    #     calinski_scores.append(calinski_score)
-    #
-    # # Find the "elbow" point using the first derivative
-    # deltas = np.diff(calinski_scores)
-    # elbow_index = np.argmax(deltas < np.mean(deltas) / 2) + 1
-    # optimal_clusters = elbow_index + 1  # Add 1 because of 0-based indexing
-    #
-    # optimal_clusters = max(optimal_clusters, min_clusters)
-    #
-    # print('optimal_clusters', optimal_clusters)
-    #
-    # # Perform clustering with the optimal number of clusters
-    # clusterer = AgglomerativeClustering(n_clusters=optimal_clusters)
-    # labels = clusterer.fit_predict(coordinates)
+    # Perform Agglomerative Clustering
+    calinski_scores = []
     
-    # Perform KMeans clustering with a fixed number of clusters
-    kmeans = KMeans(n_clusters=max_clusters)
-    labels = kmeans.fit_predict(coordinates)
+    for n_clusters in range(2, max_clusters + 1):
+        clusterer = AgglomerativeClustering(n_clusters=n_clusters)
+        labels = clusterer.fit_predict(coordinates)
+        calinski_score = calinski_harabasz_score(coordinates, labels)
+        calinski_scores.append(calinski_score)
+    
+    # Find the "elbow" point using the first derivative
+    deltas = np.diff(calinski_scores)
+    elbow_index = np.argmax(deltas < np.mean(deltas) / 2) + 1
+    optimal_clusters = elbow_index + 1  # Add 1 because of 0-based indexing
+    
+    optimal_clusters = max(optimal_clusters, min_clusters)
+    
+    print('optimal_clusters', optimal_clusters)
+    
+    # Perform clustering with the optimal number of clusters
+    clusterer = AgglomerativeClustering(n_clusters=optimal_clusters)
+    labels = clusterer.fit_predict(coordinates)
     
     # Keep track of which labels have been processed
     processed_labels = set()
@@ -105,5 +100,4 @@ def clustered_geometries(caller, min_clusters=7, max_clusters=10):
     
             processed_labels.add(current_label)
 
-    print('clustered_geometries', clustered_geometries)
     return clustered_geometries

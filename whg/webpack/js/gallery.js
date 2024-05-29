@@ -115,7 +115,7 @@ function buildGallery(datacollections) {
                     <p class="ds-card-creator"><i>Created by</i>: ${truncatedCreator}</p>
                     <p class="ds-card-owner"><i>Contributor(s)</i>: ${truncatedContributors}</p>
                     <p class="ds-card-blurb my-1">
-                        <img src="${dc.image_file}" width="60" class="float-end">
+                    	${ dc.image_file == null ? '' : `<img src="${dc.image_file}" width="60" class="float-end">` }
                         ${truncatedDescription}
                     </p>
                   <div>

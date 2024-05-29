@@ -23,14 +23,12 @@ export function add_to_collection(coll, checked_rows) {
 	formData.append('collection', coll)
 	formData.append('place_list', checked_rows)
 
-	var csrftoken = getCookie('csrftoken');
-  	formData.append('csrfmiddlewaretoken', csrftoken);
-
 	/* collection.views.add_places() */
 	$.ajax({
 		type: 'POST',
 		enctype: 'multipart/form-data',
 		url: '/collections/add_places/',
+		headers: { 'X-CSRFToken': csrfToken },
 		processData: false,
 		contentType: false,
 		cache: false,
@@ -68,11 +66,11 @@ function create_collection() {
 		// create new place collection, return id
 		var formData = new FormData()
 		formData.append('title', title)
-		formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
 		$.ajax({
 			type: 'POST',
 			enctype: 'multipart/form-data',
 			url: '/collections/flash_create/',
+			headers: { 'X-CSRFToken': csrfToken },
 			processData: false,
 			contentType: false,
 			cache: false,
