@@ -4,7 +4,7 @@
 
 @media (min-width: 992px) {
     #dataset_content > div.row > div {
-        height: calc(100vh - 90px);
+        height: calc(100vh - 108px);
     }
 }
 
@@ -68,9 +68,15 @@ div.overlay .left .item {
 #collectionInfo p {
    margin-bottom: .1rem;
 }
+
 #addtocoll button {
     font-size: small;
 }
+
+#collection_form { 
+    display: contents;
+}
+
 .btn-sm {
     --bs-btn-padding-y : 0.1rem !important;
 }

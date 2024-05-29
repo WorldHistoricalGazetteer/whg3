@@ -852,6 +852,8 @@ maplibregl.Map.prototype.fitViewport = function (bbox, maxZoom) {
 		padding: viewportPadding,
 		duration: 1000,
 	});
+	
+	return this;
 };
 
 class CustomDrawingControl {
@@ -1056,7 +1058,7 @@ maplibregl.Map = function (options = {}) {
 
     const defaultOptions = {
         container: 'map',
-        style: ['whg-basic-light'/*, 'whg-basic-dark'*/],
+        style: ['WHG'/*, whg-basic-light'*//*, 'whg-basic-dark'*/],
         basemap: [/*'natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade'*/],
         zoom: 0.2,
         center: [9.2, 33],

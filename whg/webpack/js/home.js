@@ -5,6 +5,7 @@ import { errorModal } from './error-modal.js';
 import { initialiseCarousels } from './carousels';
 
 let mappy = new whg_maplibre.Map({
+    style: ['whg-basic-light'],
 	navigationControl: false,
 	maxZoom: 10,
 });
