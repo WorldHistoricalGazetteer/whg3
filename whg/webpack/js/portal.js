@@ -27,7 +27,7 @@ let mapParameters = {
 	terrainControl: true,
 	temporalControl: true
 }
-const defaultZoom = 8;
+
 let mappy = new whg_maplibre.Map(mapParameters);
 
 const noSources = $('<div>').html('<i>None - please adjust time slider.</i>').hide();
@@ -133,7 +133,7 @@ function waitMapLoad() {
 			mappy.on('click', function() {
 				if (!showingRelated && mappy.highlights.length > 0) {
 					console.log(mappy.highlights);
-					mappy.fitViewport(bbox(geomsGeoJSON(mappy.highlights)));
+					mappy.fitViewport(bbox(geomsGeoJSON(mappy.highlights)), defaultZoom);
 				}
 			});	
 			
@@ -313,7 +313,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			.on('click', '#sources:not([disabled]) .source-box', function() {
 				$(this)
 				const index = $(this).index() - 1;
-				mappy.fitViewport(bbox(featureCollection.features[index].geometry));
+				mappy.fitViewport(bbox(featureCollection.features[index].geometry), defaultZoom);
 			})
 
 		// Show/Hide related Collection (propagate event delegation to dynamically added elements)

@@ -118,7 +118,7 @@ export function highlightFeature(ds_pid, features, mappy, extent = false) {
 			// zoom to feature
 			if (geom.type.toLowerCase() == 'geometrycollection') extent = false; /* Force use of feature geometry for aggregated places */
 			mappy
-			.fitViewport(extent || bbox(geom), 14)
+			.fitViewport(extent || bbox(geom), defaultZoom)
 			.setFeatureState(window.highlightedFeatureIndex, {
 				highlight: true,
 			});

@@ -219,23 +219,11 @@ function highlightFeature(ds_pid, features, mappy, extent=false) { //TODO: This 
 				sourceLayer: mappy.getSource(ds_pid.ds_id).type == 'vector' ? 'features' : '',
 				id: featureIndex
 			};
-			mappy.setFeatureState(window.highlightedFeatureIndex, {
+			mappy
+			.fitViewport(extent || bbox(geom), defaultZoom)
+			.setFeatureState(window.highlightedFeatureIndex, {
 				highlight: true
 			});
-			// zoom to feature
-			if (extent) {
-				mappy.fitViewport(extent);
-			}
-			else if (geom.type.toLowerCase() == 'point') {
-				const flycoords = typeof(coords[0]) == 'number' ? coords : coords[0];
-				mappy.flyTo({
-					'center': flycoords,
-					'zoom': 7,
-					'duration': duration
-				})
-			} else {
-				mappy.fitViewport(bbox(geom));
-			}
 		} else {
 			console.log('Feature in clicked row has no geometry.');
 		}
@@ -366,9 +354,7 @@ function renderData(dsid) {
 			.newSource(data)
 			.newLayerset(data.ds_id);
 			
-			mappy.fitViewport( data.extent || bbox( data ), {
-				padding: 30
-			})
+			mappy.fitViewport( data.extent || bbox( data ), defaultZoom)
 			
             featureCollection = data; // Set the global variable
         })

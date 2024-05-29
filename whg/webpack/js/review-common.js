@@ -63,7 +63,7 @@ export function initialiseMap() {
     console.log(groupedFeatures, layersets);
 	
 	if (featureCollection.features.length > 0) {
-		mappy.fitViewport( bbox( featureCollection ), 8 );
+		mappy.fitViewport( bbox( featureCollection ), defaultZoom );
 	}
 	else {
 		console.log('No features to map.')
@@ -123,7 +123,7 @@ export function addReviewListeners() {
 	$(".geolink")
 		.attr('title', 'Click to zoom to this location.')
 		.on('click', function(){
-			mappy.fitViewport( bbox(featureCollection.features.find(feature => feature.properties.id === $(this).data('id'))) );
+			mappy.fitViewport( bbox(featureCollection.features.find(feature => feature.properties.id === $(this).data('id'))), defaultZoom );
 		});
 	
 	$(".hovermap").hover(
