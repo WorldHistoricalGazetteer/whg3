@@ -132,7 +132,7 @@ export function highlightFeature(ds_pid, features, mappy, extent = false) {
 }
 
 export function initialiseTable(
-	features, checked_rows, spinner_table, spinner_detail, mappy) {
+	features, checked_rows, mappy) {
 
 	// TODO: remove these artifacts of table used for review
 	localStorage.setItem('filter', '99');
@@ -401,14 +401,6 @@ export function initialiseTable(
 		localStorage.setItem('filter', val);
 		
 		$('#dataset_content').spin();
-		/*    if (val == -1) {
-		      // clear search
-		      window.spinner_filter = startSpinner('status_filter');
-		      clearFilters();
-		    } else {
-		      clearFilters();
-		      filterColumn(3, val);
-		    }*/
 
 		// filter map
 		let ds_id = $(this).find(':selected').attr('data');

@@ -30,8 +30,6 @@ let sequenceArcs;
 let table;
 let checked_rows;
 
-let spinner_table;
-let spinner_detail;
 $('#dataset_content').spin();
 
 let mapParameters = { 
@@ -148,7 +146,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	console.log('window.ds_list_stats', window.ds_list_stats);
 		
 	// Initialise Data Table
-	const tableInit = initialiseTable(allFeatures, checked_rows, spinner_table, spinner_detail, mappy);
+	const tableInit = initialiseTable(allFeatures, checked_rows, mappy);
 	table = tableInit.table;
 	checked_rows = tableInit.checked_rows;
 
@@ -226,11 +224,9 @@ mappy.on('sourcedata', function (e) {
     if (source_list.includes('territorios892')) {
         // big polygons
         if (e.sourceId == 'territorios892' && e.isSourceLoaded) {
-            spinner_map.stop()
             $(".toomany").html('').hide()
         }
     } else {
-        spinner_map.stop()
         $(".toomany").html('').hide()
     }
 });
