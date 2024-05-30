@@ -8,6 +8,7 @@ import '../css/base.css';
 import '../../static/css/styles.css'; // /whg/static/css/styles.css
 import 'spin.js/spin.css';
 
+window.defaultZoom = 8;
 window.csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 	
 if ('fonts' in document) {

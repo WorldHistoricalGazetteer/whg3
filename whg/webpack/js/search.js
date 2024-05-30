@@ -186,17 +186,9 @@ Promise.all([
 	        $clickedResult.scrollintoview({duration: 'slow'});
 		} else if ($clickedResult.attr('data-map-initialising') === 'true') {
 			$clickedResult.removeAttr('data-map-initialising');
-			mappy.fitBounds(bbox(featureCollection), {
-				padding: 30,
-				// maxZoom: 5,
-				duration: 1000,
-			});
+			mappy.fitViewport(bbox(featureCollection));
 		} else {
-			mappy.flyTo({ // Adjust map
-				center: centroid(
-					featureCollection.features[index]).geometry.coordinates,
-				duration: 1000,
-			});
+			mappy.fitViewport(bbox(featureCollection.features[index]), defaultZoom);
 		}
 
 		$('.result').removeClass('selected');

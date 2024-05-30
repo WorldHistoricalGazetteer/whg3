@@ -120,7 +120,7 @@ class TilesetListView(LoginRequiredMixin, TemplateView):
                 tileset_key = f"{category}-{id}"
                 has_tileset = tileset_key in tilesets
                 # Enqueue a Celery task for each category and id
-                task = needs_tileset.delay(category=category, id=id, ignore_result=True)
+                task = needs_tileset.delay(category=category, id=id)
                 # Add the task id to the context for each category
                 context['data'].append( {'category': category, 'id': id, 'title': title, 'has_tileset': has_tileset, 'task_id': task.id} )
 

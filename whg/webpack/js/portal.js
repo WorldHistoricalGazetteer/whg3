@@ -19,7 +19,7 @@ let mapParameters = {
 	center: centroid,
 	maxZoom: 17,
 	style: [
-		'WHG',
+		'whg-portal',
 		'Satellite'
 	],
 	/*    basemap: ['natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade'],
@@ -27,7 +27,7 @@ let mapParameters = {
 	terrainControl: true,
 	temporalControl: true
 }
-const defaultZoom = 8;
+
 let mappy = new whg_maplibre.Map(mapParameters);
 
 const noSources = $('<div>').html('<i>None - please adjust time slider.</i>').hide();
@@ -45,7 +45,7 @@ $(nearPlacePopup.getElement()).hide();
 
 function waitMapLoad() {
 	return new Promise((resolve) => {
-		mappy.on('load', () => {
+		mappy.on('load', () => {		
 			console.log('Map loaded.');
 
 			mappy
@@ -64,6 +64,31 @@ function waitMapLoad() {
 			if (!!mapParameters.temporalControl) {
 				new Historygram(mappy, allts, dateRangeChanged);
 			};
+			
+			const ecoAdminFeatures = mappy.queryRenderedFeatures(mappy.project(centroid)).filter(feature => {
+				return feature.source === 'ecoregions' || feature.source === 'natural_earth';
+			});
+			ecoAdminFeatures.forEach(feature => {
+				if (feature.layer['source-layer'] === 'biomes') {
+					geoData.biome.name = feature.properties.label;
+					geoData.biome.url = `https://en.wikipedia.org/wiki/${feature.properties.label.charAt(0) + feature.properties.label.slice(1).toLowerCase().replace('&','and').replace(' ','_')}`;
+				} else if (feature.layer['source-layer'] === 'ecoregions') {
+					geoData.ecoregion.name = feature.properties.label;
+					geoData.ecoregion.url = `https://en.wikipedia.org/wiki/${feature.properties.label.charAt(0) + feature.properties.label.slice(1).toLowerCase().replace('&','and').replace(' ','_')}`;
+				} else if (feature.layer['source-layer'] === 'countries' || feature.layer['source-layer'] === 'states') {
+					geoData.admin.push(feature.properties['NAME'] || feature.properties['name']);
+				}
+			});
+			
+			mappy
+			.setZoom(mapParameters.maxZoom) // Maximum resolution for terrain elevation query
+			.once('idle', function() {
+				const elevation = - mappy.queryTerrainElevation([4.892321, 52.372748], { exaggerated: false }); // Using datum coordinates of European Vertical Reference System
+				console.log('raw elevation', elevation);
+				geoData.elevation = Math.max(0, Math.floor(elevation));
+		        mappy.getContainer().style.opacity = 1;
+		        resolve();
+			});	
 
 			mappy.on('mousemove', function(e) {
 				const features = mappy.queryRenderedFeatures(e.point);
@@ -108,30 +133,10 @@ function waitMapLoad() {
 			mappy.on('click', function() {
 				if (!showingRelated && mappy.highlights.length > 0) {
 					console.log(mappy.highlights);
-					mappy.fitViewport(bbox(geomsGeoJSON(mappy.highlights)));
+					mappy.fitViewport(bbox(geomsGeoJSON(mappy.highlights)), defaultZoom);
 				}
-			});
-
-			const ecoAdminFeatures = mappy.queryRenderedFeatures(mappy.project(centroid)).filter(feature => {
-				return feature.source === 'ecoregions' || feature.source === 'natural_earth';
-			});
-			console.log(ecoAdminFeatures);
-			ecoAdminFeatures.forEach(feature => {
-				if (feature.layer['source-layer'] === 'biomes') {
-					geoData.biome.name = feature.properties.label;
-					geoData.biome.url = `https://en.wikipedia.org/wiki/${feature.properties.label.charAt(0) + feature.properties.label.slice(1).toLowerCase().replace('&','and').replace(' ','_')}`;
-				} else if (feature.layer['source-layer'] === 'ecoregions') {
-					geoData.ecoregion.name = feature.properties.label;
-					geoData.ecoregion.url = `https://en.wikipedia.org/wiki/${feature.properties.label.charAt(0) + feature.properties.label.slice(1).toLowerCase().replace('&','and').replace(' ','_')}`;
-				} else if (feature.layer['source-layer'] === 'countries' || feature.layer['source-layer'] === 'states') {
-					geoData.admin.push(feature.properties['NAME'] || feature.properties['name']);
-				}
-			});
-			geoData.elevation = Math.floor(mappy.queryTerrainElevation(centroid, { exaggerated: false }));
-
-			mappy.getContainer().style.opacity = 1;
-
-			resolve();
+			});	
+			
 		});
 	});
 }
@@ -194,7 +199,10 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		const allNameVariants = payload.flatMap(place => place.names.map(label => label.label));
 		const distinctNameVariants = new Set(allNameVariants);
 
-		const allTypes = payload.flatMap(place => place.types.map(type => type.label));
+		const allTypes = payload
+		    .flatMap(place => place.types)
+		    .filter(type => type.label !== null)
+		    .map(type => type.label);
 		const distinctTypes = new Set(allTypes);
 		const distinctTypesArray = [...distinctTypes].sort();
 		const distinctTypesText = distinctTypesArray.length > 0 ?
@@ -207,7 +215,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		`));
 
 		const elevationString = geoData.elevation !== null ?
-			` at an elevation of <b>${geoData.elevation} metres</b>` :
+			` at an elevation of about <b>${geoData.elevation} metres</b>` :
 			'';
 		const adminString = geoData.admin.length > 0 ?
 			` within the modern political boundaries of ${geoData.admin.map((name, index) => index < geoData.admin.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${geoData.admin.length == 2 ? '' : ','} and$1`)}, and` :
@@ -305,7 +313,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			.on('click', '#sources:not([disabled]) .source-box', function() {
 				$(this)
 				const index = $(this).index() - 1;
-				mappy.fitViewport(bbox(featureCollection.features[index].geometry));
+				mappy.fitViewport(bbox(featureCollection.features[index].geometry), defaultZoom);
 			})
 
 		// Show/Hide related Collection (propagate event delegation to dynamically added elements)

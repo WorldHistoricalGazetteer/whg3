@@ -109,34 +109,20 @@ export function highlightFeature(ds_pid, features, mappy, extent = false) {
 		var feature = features[featureIndex];
 		const geom = feature.geometry;
 		if (geom) {
-			const coords = geom.coordinates;
 			window.highlightedFeatureIndex = {
 				source: ds_pid.ds_id,
 				sourceLayer: mappy.getSource(ds_pid.ds_id).type == 'vector' ?
 					'features' : '',
 				id: featureIndex,
 			};
-			mappy.setFeatureState(window.highlightedFeatureIndex, {
-				highlight: true,
-			});
-			updatePadding();
 			// zoom to feature
 			if (geom.type.toLowerCase() == 'geometrycollection') extent = false; /* Force use of feature geometry for aggregated places */
-			if (extent) {
-				window.mapBounds = extent;
-				recenterMap('lazy');
-			} else if (geom.type.toLowerCase() == 'point') {
-				const flycoords = typeof(coords[0]) == 'number' ? coords : coords[0];
-				window.mapBounds = {
-					'center': flycoords,
-					'zoom': 7,
-				};
-				recenterMap('lazy');
-			} else {
-				window.mapBounds = bbox(geom);
-				recenterMap('lazy');
-			}
-			//console.log(`Highlight now on ${window.highlightedFeatureIndex}.`);
+			mappy
+			.fitViewport(extent || bbox(geom), defaultZoom)
+			.setFeatureState(window.highlightedFeatureIndex, {
+				highlight: true,
+			});
+
 		} else {
 			console.log('Feature in clicked row has no geometry.');
 		}

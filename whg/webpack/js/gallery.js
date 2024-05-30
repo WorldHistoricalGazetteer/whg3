@@ -11,8 +11,9 @@ import {
 import '../css/gallery.scss';
 
 let mappy = new whg_maplibre.Map({
-  maxZoom: 13,
-  navigationControl: false,
+    style: ['whg-basic-light'],
+	maxZoom: 13,
+	navigationControl: false,
 });
 
 let countryCache = new CountryCacheFeatureCollection();
