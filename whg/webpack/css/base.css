@@ -1,5 +1,8 @@
 
 @media (min-width: 992px) { /* Large screens and up */
+	#tagline_responsive {
+        margin-top: -1.2rem!important;
+	}
     .full-height-lg {
         height: 100%;
     }
@@ -88,6 +91,15 @@ body {
 }
 #input #initiate_search:hover {
 	background-color: #c3f3c8;
+}
+
+.blue-box {
+    background-color: aliceblue;
+    padding: 0.5rem;
+    border: 1px solid #00408021;	
+}
+.blue-box p {
+	margin: 0;
 }
 
 .pointer {
