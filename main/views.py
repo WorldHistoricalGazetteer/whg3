@@ -180,10 +180,13 @@ class Home30a(TemplateView):
     context = super(Home30a, self).get_context_data(*args, **kwargs)
 
     carousel_metadata = []
+    # rulling out Olaudah; owtrad dataset also an issue
     for dataset_types in [Collection, Dataset]:
       featured = dataset_types.objects.exclude(featured__isnull=True)
       for dataset in featured:
-        carousel_metadata.append(dataset.carousel_metadata)
+        print('dataset in views:186', dataset, dataset.id)
+        if dataset.id != 50:
+          carousel_metadata.append(dataset.carousel_metadata)
     random.shuffle(carousel_metadata)
     context['carousel_metadata'] = json.dumps(carousel_metadata)
 

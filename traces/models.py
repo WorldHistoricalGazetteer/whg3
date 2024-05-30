@@ -72,7 +72,7 @@ class TraceAnnotation(models.Model):
         ]
 
 """ lookup for relations, which are collection-specific """
-# TODO: not in use; deprecate?
+# TODO: not in use; deprecate after migration
 class TraceRelation(models.Model):
     relation = models.CharField(max_length=255)
     collection = models.ForeignKey('collection.Collection', db_column='collection',
