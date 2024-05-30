@@ -2,12 +2,6 @@
   position: relative;
 }
 
-@media (min-width: 992px) {
-    #dataset_content > div.row > div {
-        height: calc(100vh - 108px);
-    }
-}
-
 #sources,
 #source_detail,
 #graph_viz {
@@ -88,7 +82,6 @@ div.overlay .left .item {
     font-size: 0.8rem;
 }
 .info-box {
-    margin-bottom: 0.2rem;
     font-family: 'Raleway', sans-serif !important;
     font-size: 0.9rem !important
 }
