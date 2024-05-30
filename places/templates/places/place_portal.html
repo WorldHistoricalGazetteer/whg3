@@ -30,11 +30,11 @@
     <div class="row">
       <!-- Left column with the main content -->
       <div id="textContent" class="col-md-6 mb-3 mb-md-0 ps-md-0 pe-md-1">
-        <button id="permalinkButton" class="btn btn-primary btn-sm" data-bs-toggle="tooltip"
+        <button id="permalinkButton" class="btn btn-primary btn-sm float-end" data-bs-toggle="tooltip"
                 title="Copy permalink to clipboard"><i class="fas fa-share-nodes"></i> Permalink
         </button>
-
         <h5>{{ portal_headword }}</h5>
+
         <div id="gloss"><!-- Populated dynamically from context in JavaScript --></div>
 
         {% if user.is_authenticated %}

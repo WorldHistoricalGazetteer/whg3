@@ -77,20 +77,21 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			$("#btn_save").hide();
 			$("#defer_link").hide();
 		}
-	
-		$(".pop-dataset").each(function() {
-		    var label = $(this).data('label');
-		    var details = datasetDetails[label];			    
-		    $(this).attr('data-bs-content', `
-		        <p class="thin"><b>Title</b>: ${details['title']}</p>
-		        <p class="thin"><b>Description</b>: ${details['description']}</p>
-		        <p class="thin"><b>WHG Owner</b>: ${details['owner']}</p>
-		        <p class="thin"><b>Creator</b>: ${details['creator']}</p>
-		    `);
-		}).popover({
+
+		$(".pop-dataset").popover({
 		    trigger: 'hover',
 		    placement: 'right',
-		    html: true
+		    html: true,
+		    content: function () {
+		        var label = $(this).data('label');
+		        var details = datasetDetails[label];
+		        return `
+		            <p class="thin"><b>Title</b>: ${details['title']}</p>
+		            <p class="thin"><b>Description</b>: ${details['description']}</p>
+		            <p class="thin"><b>WHG Owner</b>: ${details['owner']}</p>
+		            <p class="thin"><b>Creator</b>: ${details['creator']}</p>
+		        `;
+		    }
 		});
 		
 	}
