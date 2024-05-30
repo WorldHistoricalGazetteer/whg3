@@ -18,166 +18,154 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-md">
-  
-<div id="search_bar" class="row py-2 position-relative">
-    <div id="input" class="input-group mx-auto">
-        <!-- Label only for Large Screens -->
-        <label class="input-group-text d-none d-lg-block" for="search_mode">Search</label>
-          
-        <!-- Search Mode Select -->
-        <select id="search_mode" 
-        		class="form-select"
-                data-bs-toggle="tooltip" 
-        		data-bs-title="Select mode for text search"
-                aria-label="Select mode for text search" 
-                >
-            <option value="exactly" selected>Exactly</option>
-            <option value="starts">Starts with</option>
-            <option value="in">Contains</option>
-            <option value="fuzzy">Similar to</option>
-        </select>
-        
-        <!-- Search Input -->
-        <input id="search_input" 
-        		class="form-control typeahead" 
-        		data-bs-toggle="tooltip" 
-        		data-bs-title="Type a place name. You can also change the search mode using the dropdown to the left, and apply filters from the Advanced Options section." 
-        		data-provide="typeahead" 
-        		type="text" 
-        		placeholder="Enter place name" 
-        		aria-label="Search" 
-        		aria-describedby="search-addon" 
-        		autocomplete="off" 
-        		spellcheck="false"
-        		>
 
-        <!-- Clear Search Button -->
-        <button id="clear_search" data-bs-toggle="tooltip" data-title="Clear search input|Nothing to clear" class="btn btn-outline-secondary" type="button"><i class="fas fa-times"></i></button>
-          
-        <!-- Search Button -->
-        <button id="initiate_search" data-bs-toggle="tooltip" data-title="Initiate search|Cannot search without a place name" class="btn btn-outline-secondary btn-success" type="button"><i class="fas fa-search"></i></button>
-    </div>
-</div>
-
-<div id="search_content" class="row pt-1 no-results initial">
-
-  <div id="search_left" class="col-12 col-lg-4 p-2 bg-white mb-3 mb-lg-0">
-		<div id="adv_options">
-        	<h5>Advanced options</h5>
-	        <p class="mb-0"><span class="categories ms-1">place categories</span>
-	          <span class="ms-1 categories">
-	              <span class="me-1"><a id="check_select" href="#">select all</a></span>
-	              <span class="me-1"><a id="check_clear" href="#">clear all</a></span>
-	              <a id="filter_help" class="pointer" data-toggle="popover" title="Place categories"
-	                 data-content="" tabindex="0" data-trigger="focus"><i class="fas fa-question-circle linky"></i></a>
-	            </span>
-	        </p>
-	        <div class="ps-1 border-secondary small fw-lighter fst-italic">
-            <p class="mb-0">Select or clear place type categories to filter initial results</p>
-          </div>
-			<div id="adv_checkboxes" class="small mt-1 ps-1">
-			    {% for filter in adv_filters %}
-			    <p>
-			        <input type="checkbox" id="cb_{{ filter.0|lower }}" value="{{ filter.0 }}" checked>
-			        <label for="cb_{{ filter.0|lower }}"> {{ filter.1 }} ({{ filter.0 }})</label>
-			    </p>
-			    {% endfor %}
-			</div>
-	        
-{#	        <div class="mt-2 ps-1 border-secondary small fst-italic">#}
-{#            <p>Select or de-select place type categories to filter initial results</p>#}
-{#          </div>#}
-			<div class="mt-3 mx-0">
-			  <p class="mb-0"><span class="categories ms-1">spatial filter</span>
-			  <div id="spatial_selector" class="input-group">
-			    <!-- Dropdown selector for Region, Country, or User Area -->
-			    <select data-bs-toggle="tooltip" title="Filter by Regions or Countries" class="form-select" id="categorySelector">
-			      <option value="none" selected>None</option>
-			      <option value="regions">Region</option>
-			      <option value="countries">Country</option>
-			      {% if has_areas %}
-			      <option value="userareas">Custom</option>
-			      {% endif %}
-			    </select>
-			
-			    <!-- Select2 input -->
-			    <select data-bs-toggle="tooltip" data-bs-title="Filter by Regions or Countries (select dropdown to the left first)" class="form-select" id="entrySelector" multiple>
-			      <option>(choose type)</option>
-			    </select>
-			
-			    <!-- Clear button -->
-			    <button data-bs-toggle="tooltip" title="Clear this filter" class="btn btn-outline-secondary clearButton" type="button" id="clearButton"><i class="fas fa-times"></i></button>
-			  </div>
-			</div>	        
-	        
-		</div>
-		<div id="result_facets" class="p-1 bg-light">
-			<h5>Filter Results</h5>
-			<!-- Place Types Accordion -->
-			<div class="accordion-item">
-			    <h4 class="accordion-header" id="headingTypes">
-			      <button class="accordion-button" type="button" data-bs-toggle="collapse"
-			              data-bs-target="#collapseTypes" aria-expanded="true" aria-controls="collapseTypes">
-			        Place Types <span id="typesCount">(0)</span>
-			        <span class="accordion-toggle-indicator float-end me-2">
-			          <i class="info-collapse fas fa-chevron-up"></i>
-			        </span>
-			      </button>
-			    </h4>
-			    <div id="collapseTypes" class="accordion-collapse collapse show" aria-labelledby="headingTypes">
-				  <div class="float-end">
-					  <span class="me-1"><a class="check_select" href="#">select all</a></span>
-		              <span class="me-1"><a class="check_clear" href="#">clear all</a></span>
-				  </div>
-			      <div class="accordion-body">
-			        <div id="type_checkboxes"></div>
-			      </div>
-			    </div>
-			</div>
-			
-			<!-- Countries Accordion -->
-			<div class="accordion-item mt-2">
-			    <h4 class="accordion-header" id="headingCountries">
-			      <button class="accordion-button" type="button" data-bs-toggle="collapse"
-			              data-bs-target="#collapseCountries" aria-expanded="true" aria-controls="collapseCountries">
-			        Countries <span id="countriesCount">(0)</span>
-			        <span class="accordion-toggle-indicator float-end me-2">
-			          <i class="info-collapse fas fa-chevron-up"></i>
-			        </span>
-			      </button>
-			    </h4>
-			    <div id="collapseCountries" class="accordion-collapse collapse show" aria-labelledby="headingCountries">
-				  <div class="float-end">
-					  <span class="me-1"><a class="check_select" href="#">select all</a></span>
-		              <span class="me-1"><a class="check_clear" href="#">clear all</a></span>
-				  </div>
-			      <div class="accordion-body">
-			        <div id="country_checkboxes"></div>
-			      </div>
-			    </div>
-			</div>
+<main class="container container-md mt-1 mx-auto">
+    <div id="search_content" class="row no-results initial">
+	    <!-- Full-width row at the top -->
+	    <div id="search_bar" class="my-2 position-relative">
+	        <div id="input" class="input-group mx-auto">
+	            <!-- Label only for Large Screens -->
+	            <label class="input-group-text d-none d-lg-block" for="search_mode">Search</label>
+	            <!-- Search Mode Select -->
+	            <select id="search_mode" class="form-select" data-bs-toggle="tooltip" data-bs-title="Select mode for text search" aria-label="Select mode for text search">
+	                <option value="exactly" selected>Exactly</option>
+	                <option value="starts">Starts with</option>
+	                <option value="in">Contains</option>
+	                <option value="fuzzy">Similar to</option>
+	            </select>
+	            <!-- Search Input -->
+	            <input id="search_input" class="form-control typeahead" data-bs-toggle="tooltip" data-bs-title="Type a place name. You can also change the search mode using the dropdown to the left, and apply filters from the Advanced Options section." data-provide="typeahead" type="text" placeholder="Enter place name" aria-label="Search" aria-describedby="search-addon" autocomplete="off" spellcheck="false">
+	            <!-- Clear Search Button -->
+	            <button id="clear_search" data-bs-toggle="tooltip" data-title="Clear search input|Nothing to clear" class="btn btn-outline-secondary" type="button">
+	                <i class="fas fa-times"></i>
+	            </button>
+	            <!-- Search Button -->
+	            <button id="initiate_search" data-bs-toggle="tooltip" data-title="Initiate search|Cannot search without a place name" class="btn btn-outline-secondary btn-success" type="button">
+	                <i class="fas fa-search"></i>
+	            </button>
+	        </div>
 	    </div>
-  </div>
-    
-  <div id="search_right" class="col-12 col-lg-8 full-height-lg">
-    <div id="search_right_top" class="row px-1">
-          <div id="map" class="bg-lighterblue"></div>
+        <!-- Left Column -->
+        <div class="col-lg-4 col-md-6 mb-2 mb-md-0 ps-md-0 pe-md-1 d-flex flex-column">
+            <div id="adv_options">
+                <h5>Advanced options</h5>
+                <p class="mb-0">
+                    <span class="categories ms-1">place categories</span>
+                    <span class="ms-1 categories">
+                        <span class="me-1">
+                            <a id="check_select" href="#">select all</a>
+                        </span>
+                        <span class="me-1">
+                            <a id="check_clear" href="#">clear all</a>
+                        </span>
+                        <a id="filter_help" class="pointer" data-toggle="popover" title="Place categories" data-content="" tabindex="0" data-trigger="focus">
+                            <i class="fas fa-question-circle linky"></i>
+                        </a>
+                    </span>
+                </p>
+                <div class="ps-1 border-secondary small fw-lighter fst-italic">
+                    <p class="mb-0">Select or clear place type categories to filter initial results</p>
+                </div>
+                <div id="adv_checkboxes" class="small mt-1 ps-1">
+					{% for filter in adv_filters %}
+					<p>
+                        <input type="checkbox" id="cb_{{ filter.0|lower }}" value="{{ filter.0 }}" checked>
+                        <label for="cb_{{ filter.0|lower }}"> {{ filter.1 }} ({{ filter.0 }})</label>
+                    </p>
+					{% endfor %}
+				</div>
+                <!-- 	        <div class="mt-2 ps-1 border-secondary small fst-italic"><p>Select or de-select place type categories to filter initial results</p></div> -->
+                <div class="mt-3 mx-0">
+                    <p class="mb-0">
+                        <span class="categories ms-1">spatial filter</span>
+                    <div id="spatial_selector" class="input-group">
+                        <!-- Dropdown selector for Region, Country, or User Area -->
+                        <select data-bs-toggle="tooltip" title="Filter by Regions or Countries" class="form-select" id="categorySelector">
+                            <option value="none" selected>None</option>
+                            <option value="regions">Region</option>
+                            <option value="countries">Country</option>
+							{% if has_areas %}
+							<option value="userareas">Custom</option>
+							{% endif %}
+                        </select>
+                        <!-- Select2 input -->
+                        <select data-bs-toggle="tooltip" data-bs-title="Filter by Regions or Countries (select dropdown to the left first)" class="form-select" id="entrySelector" multiple>
+                            <option>(choose type)</option>
+                        </select>
+                        <!-- Clear button -->
+                        <button data-bs-toggle="tooltip" title="Clear this filter" class="btn btn-outline-secondary clearButton" type="button" id="clearButton">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div id="result_facets" class="p-1 bg-light">
+                <h5>Filter Results</h5>
+                <!-- Place Types Accordion -->
+                <div class="accordion-item">
+                    <h4 class="accordion-header" id="headingTypes">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTypes" aria-expanded="true" aria-controls="collapseTypes"> Place Types <span id="typesCount">(0)</span>
+                            <span class="accordion-toggle-indicator float-end me-2">
+                                <i class="info-collapse fas fa-chevron-up"></i>
+                            </span>
+                        </button>
+                    </h4>
+                    <div id="collapseTypes" class="accordion-collapse collapse show" aria-labelledby="headingTypes">
+                        <div class="float-end">
+                            <span class="me-1">
+                                <a class="check_select" href="#">select all</a>
+                            </span>
+                            <span class="me-1">
+                                <a class="check_clear" href="#">clear all</a>
+                            </span>
+                        </div>
+                        <div class="accordion-body">
+                            <div id="type_checkboxes"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Countries Accordion -->
+                <div class="accordion-item mt-2">
+                    <h4 class="accordion-header" id="headingCountries">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCountries" aria-expanded="true" aria-controls="collapseCountries"> Countries <span id="countriesCount">(0)</span>
+                            <span class="accordion-toggle-indicator float-end me-2">
+                                <i class="info-collapse fas fa-chevron-up"></i>
+                            </span>
+                        </button>
+                    </h4>
+                    <div id="collapseCountries" class="accordion-collapse collapse show" aria-labelledby="headingCountries">
+                        <div class="float-end">
+                            <span class="me-1">
+                                <a class="check_select" href="#">select all</a>
+                            </span>
+                            <span class="me-1">
+                                <a class="check_clear" href="#">clear all</a>
+                            </span>
+                        </div>
+                        <div class="accordion-body">
+                            <div id="country_checkboxes"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    <div id="result_container" class="row p-1">
-          <div id="initial_results" class="bg-light p-2">
-        <h6 class="strong">Search in WHG</h6>
-        <p>Many places have the same name. If your search returns multiple results, browse them to
-          discover what you are looking for. Places that have more linked records and name variants will
-          appear at the top of the list. You can also then filter results by modern country or place type.</p>
-        <p>Results appearing in green boxes are from published dataets, but not yet linked in our union index.</p>
+        <!-- Right Column -->
+        <div class="col-lg-8 col-md-6 mb-0 mb-md-0 ps-md-1 pe-md-0 d-flex flex-column">
+            <div id="map" class="bg-lighterblue"></div>
+            <div id="result_container" class="mt-2 flex-grow-1">
+                <div id="initial_results" class="bg-light p-2">
+                    <h6 class="strong">Search in WHG</h6>
+                    <p>Many places have the same name. If your search returns multiple results, browse them to discover what you are looking for. Places that have more linked records and name variants will appear at the top of the list. You can also then filter results by modern country or place type.</p>
+                    <p>Results appearing in green boxes are from published dataets, but not yet linked in our union index.</p>
+                </div>
+                <div id="no_results" class="bg-light p-2">No results - please modify your search terms and options.</div>
+                <div id="no_filtered_results" class="bg-light p-2">No filtered results - please adjust your filter selections.</div>
+                <div id="search_results"></div>
+            </div>
         </div>
-        <div id="no_results" class="bg-light p-2">No results - please modify your search terms and options.</div>
-        <div id="no_filtered_results" class="bg-light p-2">No filtered results - please adjust your filter selections.</div>
-        <div id="search_results" class="col-12 p-1"></div>
     </div>
-  </div>
-</div>
+</main>
+
 {% csrf_token %} <!-- Used for Django POST requests -->
 <script type="text/javascript">
     const dropdown_data = {{ dropdown_data|safe }};  // Used for spatial filter
