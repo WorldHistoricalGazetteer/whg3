@@ -41,7 +41,7 @@ $(document).ready(function() {
 	populateTable();
 
 	// Define a function to poll task status for needs tileset recursively
-	function pollTaskStatus(taskId, row, item) {
+	function pollTaskStatus(taskId, row, item, attempt = 0) {
 		function lowerPollcount() {
 			pollCount--;
 			$('.queue-all').prop('disabled', pollCount > 0);
@@ -50,9 +50,9 @@ $(document).ready(function() {
 		fetch(`/task_progress/${taskId}`)
 			.then(response => response.json())
 			.then(result => {
-				if (result.state === 'PENDING') {
+				if (result.state === 'PENDING' && attempt < 60) { // Stop after 60 attempts
 					// Continue polling
-					setTimeout(() => pollTaskStatus(taskId, row, item), 1000); // Poll every second
+					setTimeout(() => pollTaskStatus(taskId, row, item, attempt + 1), 5000); // Poll every 5 seconds
 				} else if (result.state === 'SUCCESS') {
 					lowerPollcount();
 					item.needs_tileset = result.progress[0];
