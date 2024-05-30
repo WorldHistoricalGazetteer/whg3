@@ -1,5 +1,4 @@
 import {getPlace} from './getPlace';
-import {startSpinner} from './utilities';
 import {updatePadding, recenterMap} from './mapFunctions';
 import {mapSequencer} from './mapControls';
 import {mappy} from './mapAndTable';
@@ -141,8 +140,7 @@ export function initialiseTable(
 	var tgntask = false;
 	var whgtask = false;
 
-	spinner_table = startSpinner('drftable_list');
-	spinner_detail = startSpinner('row_detail');
+	$('#drftable_list, #detail').spin();
 
 	const isCollection = window.ds_list[0].ds_type == 'collections'; // i.e. *place* collection (not *dataset* collection or dataset)
 
@@ -371,7 +369,7 @@ export function initialiseTable(
 		},
 		drawCallback: function(settings) {
 			//console.log('table drawn')
-			spinner_table.stop();
+			$('#drftable_list').stopSpin();
 			// recheck inputs in checked_rows
 			if (checked_rows.length > 0) {
 				for (i in checked_rows) {
@@ -401,7 +399,8 @@ export function initialiseTable(
 		// filter table
 		let val = $(this).val();
 		localStorage.setItem('filter', val);
-		window.spinner_map = startSpinner('dataset_content', 3);
+		
+		$('#dataset_content').spin();
 		/*    if (val == -1) {
 		      // clear search
 		      window.spinner_filter = startSpinner('status_filter');
@@ -422,7 +421,7 @@ export function initialiseTable(
 		//toggleMapLayers(mappy, ds_id); // Also recenters map on selected layer
 		recenterMap('lazy');
 
-		window.spinner_map.stop();
+		$('#dataset_content').stopSpin();
 	});
 
 	$('body').on('click', '.table-chk', function(e) {
@@ -469,16 +468,20 @@ export function initialiseTable(
 		if (!selected)
 			$(this).removeClass('rowhover');
 		$(this).addClass('highlight-row');
+		
+		$('#detail').empty().spin();
+		$('.maplibregl-control-container').spin();
 
 		// fetch its detail
 		getPlace(
 			ds_pid.pid,
 			$(this).data('cid'),
-			spinner_detail,
 			function(placedata) {
 				highlightFeature(ds_pid, features, mappy, placedata.extent);
 			}
 		);
+		
+		$('#detail, .maplibregl-control-container').stopSpin();
 
 		if (!!mapSequencer) {
 			mapSequencer.updateButtons();

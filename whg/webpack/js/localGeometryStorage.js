@@ -1,6 +1,5 @@
 // /whg/webpack/js/localGeometryStorage.js
 
-import { startSpinner } from './utilities';
 import featuredDataLayers from './featuredDataLayerStyles';
 
 function fetchDataFromLocalStorage(type, id, mode) {
@@ -73,7 +72,7 @@ export async function fetchDataForHorse(thisHorse, mappy, repositionMap = true) 
         });
     }
 
-    const spinner_map = startSpinner("map", 1.5);
+    $('#map').spin();
     thisHorse.closest('.border').addClass('highlight-carousel');
 
     try {
@@ -100,6 +99,6 @@ export async function fetchDataForHorse(thisHorse, mappy, repositionMap = true) 
         }
     } 
     finally {
-        spinner_map.stop();
+    	$('#map').stopSpin();
     }
 }

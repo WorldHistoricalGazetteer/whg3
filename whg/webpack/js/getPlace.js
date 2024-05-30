@@ -11,7 +11,7 @@ export function popupFeatureHTML(feature, clickable=true) { // TODO: Improve sty
 }
 
 export const getPlace = debounce(getPlaceBouncing, 300);
-export function getPlaceBouncing(pid, cid, spinner_detail, callback) {
+export function getPlaceBouncing(pid, cid, callback) {
     const cidQueryParam = Number.isInteger(cid) ? `?cid=${cid}` : '';
     $.ajax({
         url: `/api/place/${pid}${cidQueryParam}`,
@@ -24,7 +24,6 @@ export function getPlaceBouncing(pid, cid, spinner_detail, callback) {
         }
         $('#detail .toggle-truncate').toggleTruncate();
         $('#detail img').enlarge();
-        if (spinner_detail) spinner_detail.stop();
         if (typeof callback === 'function') {
             callback(data);
         }

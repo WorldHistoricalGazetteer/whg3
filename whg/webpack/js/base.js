@@ -1,6 +1,6 @@
 // base.js
 
-import { Spinner } from 'spin.js';
+import { Spinner } from './spin.js';
 import { initWHGModal } from './whg-modal.js';
 // import '../../../static/js/aliases.js'; // /static/js/aliases.js
 import { base_urls } from './aliases.js';
@@ -212,6 +212,45 @@ Promise.all([
         });
 		$('body').tooltip(); // Initialize Bootstrap tooltips with delegation to any dynamic content
 		initWHGModal();
+		
+		// Extend Spinner module to operate with JQuery initialisation
+		(function($) {
+		    $.fn.spin = function(options) {
+		        return this.each(function() {
+		            const $this = $(this);
+		            let spinner = $this.data('spinner');
+		
+		            if (!spinner) {
+		                spinner = new Spinner(options);
+		                $this.data('spinner', spinner);
+		            }
+
+		            // Calculate the scale based on the minimum dimension of the target element
+		            const minDimension = Math.min($this.width(), $this.height());
+		            const scaleFactor = minDimension / 300; // 300px corresponds to a scale of 1
+		
+		            if (!options) {
+		                options = {};
+		            }
+		            
+		            options.scale = (options.scale || 1) * scaleFactor;
+		
+		            spinner.opts = Object.assign(spinner.opts, options);
+		            spinner.spin(this);
+		        });
+		    };
+		
+		    $.fn.stopSpin = function() {
+		        return this.each(function() {
+		            const $this = $(this);
+		            const spinner = $this.data('spinner');
+		            if (spinner) {
+		                spinner.stop();
+		                $this.removeData('spinner');
+		            }
+		        });
+		    };
+		})(jQuery);
 		
 		document.querySelector('body').style.opacity = 1;
 		

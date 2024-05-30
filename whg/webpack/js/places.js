@@ -138,12 +138,12 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			//e.preventDefault()
 			urly = '/datasets/' + $(this).data('id') + '/augmented/' + $(this).attr('ref')
 			console.log('urly', urly)
-			startDownloadSpinner()
+			$("#ds_cards").spin();
 			$.ajax({
 				type: 'GET',
 				url: urly
 			}).done(function() {
-				spinner_dl.stop();
+				$("#ds_cards").stopSpin();
 			})
 		})
 
@@ -275,9 +275,4 @@ function histogram(data, labels) {
 		.attr("id", "xaxis")
 		.attr("transform", "translate(0," + height + ")")
 		.call(axisB)
-}
-
-function startDownloadSpinner() {
-	window.spinner_dl = new Spinner().spin();
-	$("#ds_cards").append(spinner_dl.el);
 }

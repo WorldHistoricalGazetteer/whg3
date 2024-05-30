@@ -1,4 +1,4 @@
-import {arrayColors, colorTable, startSpinner} from './utilities';
+import {arrayColors, colorTable} from './utilities';
 import {scrollToRowByProperty} from './tableFunctions-extended';
 import {clearFilters} from './tableFunctions';
 

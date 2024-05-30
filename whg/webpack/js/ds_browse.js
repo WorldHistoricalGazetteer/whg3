@@ -1,6 +1,5 @@
 // /whg/webpack/js/ds_browse.js
 
-import { startSpinner } from './utilities';
 import { getPlace } from './getPlace';
 
 import '../css/ds_browse.css';
@@ -44,7 +43,7 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(datatables_CDN_fall
 		const filter_col = anytask ? "<'#status_filter.col-sm-12 col-md-5'>" : "<'#nostatus.col-sm-12 col-md-5'>";
 		
 		buildSelect();
-		const spinner_table = startSpinner("drftable_list");
+		$('#drftable_list').spin();
 		
 		table = $('#placetable').DataTable({
 			dom: "<'row'<'col-sm-12 col-md-3'l>+" +
@@ -122,7 +121,7 @@ Promise.all([waitMapLoad(), waitDocumentReady(), Promise.all(datatables_CDN_fall
 			drawCallback: function(settings) {
 				$("#status_filter").html(buildSelect());
 				$("#status_select").val(localStorage.getItem('filter'))
-				spinner_table.stop()
+				$('#drftable_list').stopSpin();
 				setRowEvents();
 			}
 			
@@ -246,7 +245,7 @@ function setRowEvents() {
 		const val = $(this).val();
 		localStorage.setItem('filter', val);
 		console.log(val);
-		const spinner_filter = startSpinner("status_filter");
+		$('#status_filter').spin();
 		if (val == '99') {
 			// clear search
 			clearFilters();
@@ -254,7 +253,7 @@ function setRowEvents() {
 			clearFilters();
 			filterColumn(val[0], val[1]);
 		}
-		spinner_filter.stop();
+		$('#status_filter').stopSpin();
 	})
 
 	$("#placetable tbody tr").click(function() {
@@ -275,7 +274,7 @@ function setRowEvents() {
 		$(this).addClass("highlight-row");
 
 		// fetch its detail
-		getPlace(pid, false, false, function(placedata) {
+		getPlace(pid, false, function(placedata) {
 		    console.log('placedata', placedata);
 	
 			const ds_pid = {
@@ -296,9 +295,9 @@ function setRowEvents() {
 	$("#placetable tbody").find('tr').eq(0).addClass('highlight-row');
 
 	if (pid) {
-		const spinner_detail = startSpinner("row_detail");
+		$('#row_detail').spin();
 		getPlace(pid);
-		spinner_detail.stop();
+		$('#row_detail').stopSpin();
 	}
 	
 	// help popups
