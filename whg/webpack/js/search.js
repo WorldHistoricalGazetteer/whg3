@@ -28,7 +28,11 @@ let dateRangeChanged = throttle(() => { // Uses imported lodash function
 }, 300);
 
 let mapParameters = {
-	maxZoom: 8,
+	maxZoom: 14,
+	style: [
+		'WHG',
+		'Satellite'
+	],
 	fullscreenControl: true,
 	downloadMapControl: true,
 	drawingControl: {
@@ -53,12 +57,14 @@ function waitMapLoad() {
 	return new Promise((resolve) => {
 		mappy.on('load', () => {
 			console.log('Map loaded.');
+			
+			/* This codeblock commented-out because labels can now be switched off using the style-switcher
 			const style = mappy.getStyle();
 			style.layers.forEach(layer => {
 				if (layer.id.includes('label')) {
 					mappy.setLayoutProperty(layer.id, 'visibility', 'none');
 				}
-			});
+			});*/
 
 			if (has_areas) {
 				mappy.newSource('userareas') // Add empty source
@@ -467,6 +473,8 @@ Promise.all([
 			accordion.collapse('toggle');
 		});
 	});
+	
+	console.log(mappy.getStyle());
 
 }).catch(error => console.error('An error occurred:', error));
 
