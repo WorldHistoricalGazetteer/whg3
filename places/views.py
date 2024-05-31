@@ -299,6 +299,7 @@ class PlaceDetailView(DetailView):
     print('PlaceDetailView get_context_data() kwargs:',self.kwargs)
     print('PlaceDetailView get_context_data() request.user',self.request.user)
     place = get_object_or_404(Place, pk= self.kwargs.get("id"))
+    print('got place:',place)
     ds = place.dataset
     me = self.request.user
     #placeset = Place.objects.filter(dataset=ds.label

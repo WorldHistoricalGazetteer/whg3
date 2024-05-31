@@ -91,7 +91,7 @@
 </div>
 
 <script type="text/javascript">
-    let action = '{{ action }}';
+    window.action = '{{ action }}';
     let formType = '{{ form.type.value }}';
     let formGeoJSON = '{{ form.geojson.value|safe }}';
     const dropdown_data = {{ dropdown_data|safe }};  // Used for spatial filter

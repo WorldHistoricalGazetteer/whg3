@@ -169,7 +169,7 @@ $(document).ready(function() {
 				    });
 					
 		            // Start polling task status
-		            setTimeout(pollTilerStatus, 3000);
+		            // setTimeout(pollTilerStatus, 3000);
 		        },
 		        error: function(xhr, status, error) {
 		            console.error(xhr.responseText);

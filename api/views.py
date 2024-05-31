@@ -802,74 +802,74 @@ class IndexAPIView(View):
 #
 
 """ 
-  DEPRECATED May 2024
+
   /api/db?
   SearchAPIView()
   return lpf results from database search 
 """
-# class SearchAPIView(generics.ListAPIView):
-#   renderer_classes = [JSONRenderer]
-#   filter_backends = [filters.SearchFilter]
-#   search_fields = ['@title']
-#
-#   def get(self, format=None, *args, **kwargs):
-#     params=self.request.query_params
-#     print('SearchAPIView() params', params)
-#
-#     id_ = params.get('id',None)
-#     name = params.get('name',None)
-#     name_contains = params.get('name_contains',None)
-#     cc = map(str.upper, params.get('ccode').split(',')) if params.get('ccode') else None
-#     ds = params.get('dataset',None)
-#     fc = params.get('fc',None)
-#     fclasses=list(set([x.upper() for x in ','.join(fc)])) if fc else None
-#     year = params.get('year',None)
-#     pagesize = params.get('pagesize',None)
-#     err_note = None
-#     context = params.get('context',None)
-#     # params
-#     print({"id_":id_, "fclasses":fclasses})
-#
-#     qs = Place.objects.filter(Q(dataset__public=True) | Q(dataset__core=True))
-#
-#     if all(v is None for v in [name,name_contains,id_]):
-#       # TODO: return a template with API instructions
-#       return HttpResponse(content=b'<h3>Needs either a "name", a "name_contains", or "id" parameter at \
-#           minimum <br/>(e.g. ?name=myplacename or ?name_contains=astring or ?id=integer)</h3>')
-#     else:
-#       if id_:
-#         qs=qs.filter(id=id_)
-#         err_note = 'id given, other parameters ignored' if len(params.keys())>1 else None
-#         print('qs', qs)
-#       else:
-#         qs = qs.filter(minmax__0__lte=year,minmax__1__gte=year) if year else qs
-#         qs = qs.filter(fclasses__overlap=fclasses) if fc else qs
-#
-#         if name_contains:
-#           qs = qs.filter(title__icontains=name_contains)
-#         elif name and name != '':
-#           #qs = qs.filter(title__istartswith=name)
-#           qs = qs.filter(names__jsonb__toponym__icontains=name)
-#
-#         qs = qs.filter(dataset=ds) if ds else qs
-#         qs = qs.filter(ccodes__overlap=cc) if cc else qs
-#
-#       filtered = qs[:pagesize] if pagesize and pagesize < 200 else qs[:20]
-#
-#       #serial = LPFSerializer if context else SearchDatabaseSerializer
-#       serial = LPFSerializer
-#       serializer = serial(filtered, many=True, context={'request': self.request})
-#
-#       serialized_data = serializer.data
-#       result = {"count":qs.count(),
-#                 "pagesize": len(filtered),
-#                 "parameters": params,
-#                 "note": err_note,
-#                 "type": "FeatureCollection",
-#                 "features":serialized_data
-#                 }
-#       #print('place result',result)
-#       return JsonResponse(result, safe=False,json_dumps_params={'ensure_ascii':False,'indent':2})
+class SearchAPIView(generics.ListAPIView):
+  renderer_classes = [JSONRenderer]
+  filter_backends = [filters.SearchFilter]
+  search_fields = ['@title']
+
+  def get(self, format=None, *args, **kwargs):
+    params=self.request.query_params
+    print('SearchAPIView() params', params)
+
+    id_ = params.get('id',None)
+    name = params.get('name',None)
+    name_contains = params.get('name_contains',None)
+    cc = map(str.upper, params.get('ccode').split(',')) if params.get('ccode') else None
+    ds = params.get('dataset',None)
+    fc = params.get('fc',None)
+    fclasses=list(set([x.upper() for x in ','.join(fc)])) if fc else None
+    year = params.get('year',None)
+    pagesize = params.get('pagesize',None)
+    err_note = None
+    context = params.get('context',None)
+    # params
+    print({"id_":id_, "fclasses":fclasses})
+
+    qs = Place.objects.filter(Q(dataset__public=True) | Q(dataset__core=True))
+
+    if all(v is None for v in [name,name_contains,id_]):
+      # TODO: return a template with API instructions
+      return HttpResponse(content=b'<h3>Needs either a "name", a "name_contains", or "id" parameter at \
+          minimum <br/>(e.g. ?name=myplacename or ?name_contains=astring or ?id=integer)</h3>')
+    else:
+      if id_:
+        qs=qs.filter(id=id_)
+        err_note = 'id given, other parameters ignored' if len(params.keys())>1 else None
+        print('qs', qs)
+      else:
+        qs = qs.filter(minmax__0__lte=year,minmax__1__gte=year) if year else qs
+        qs = qs.filter(fclasses__overlap=fclasses) if fc else qs
+
+        if name_contains:
+          qs = qs.filter(title__icontains=name_contains)
+        elif name and name != '':
+          #qs = qs.filter(title__istartswith=name)
+          qs = qs.filter(names__jsonb__toponym__icontains=name)
+
+        qs = qs.filter(dataset=ds) if ds else qs
+        qs = qs.filter(ccodes__overlap=cc) if cc else qs
+
+      filtered = qs[:pagesize] if pagesize and pagesize < 200 else qs[:20]
+
+      #serial = LPFSerializer if context else SearchDatabaseSerializer
+      serial = LPFSerializer
+      serializer = serial(filtered, many=True, context={'request': self.request})
+
+      serialized_data = serializer.data
+      result = {"count":qs.count(),
+                "pagesize": len(filtered),
+                "parameters": params,
+                "note": err_note,
+                "type": "FeatureCollection",
+                "features":serialized_data
+                }
+      #print('place result',result)
+      return JsonResponse(result, safe=False,json_dumps_params={'ensure_ascii':False,'indent':2})
 
 
 """ *** """

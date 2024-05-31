@@ -19,6 +19,7 @@ media/downloads/*
 #media/datasets/
 
 main/management/**
+elastic/fetch_close_matches.py
 
 # Mac OS files
 **/.DS_Store
