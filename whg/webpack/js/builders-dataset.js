@@ -102,7 +102,7 @@ $(function() {
 			},
 			datatype: 'json',
 			success: function(response) {
-				startDownloadSpinner()
+				$("#ds_downloads").spin();
 				console.log('got task_id', response)
 				let task_id = response.task_id
 				var progressUrl = "/celery-progress/" + task_id + "/";
@@ -214,11 +214,6 @@ $(function() {
 		el.html('')
 	}
 
-	function startDownloadSpinner() {
-		window.spinner_dl = new Spin.Spinner().spin();
-		$("#ds_downloads").append(spinner_dl.el);
-	}
-
 	function customResult(resultElement, result) {
 		pass
 	}
@@ -227,7 +222,7 @@ $(function() {
 	function customResult(resultElement, result) {
 		console.log('celery result', result)
 		console.log('celery resultElement', resultElement)
-		spinner_dl.stop()
+		$("#ds_downloads").stopSpin();
 		let fn = result.filename
 		let link = '[ <span class="dl-save"><a href="/' + fn +
 				'" title="downloaded: ' + dater() + '" download>save</a></span> ]'

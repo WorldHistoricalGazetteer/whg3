@@ -2,12 +2,6 @@
   position: relative;
 }
 
-@media (min-width: 992px) {
-    #dataset_content > div.row > div {
-        height: calc(100vh - 108px);
-    }
-}
-
 #sources,
 #source_detail,
 #graph_viz {
@@ -15,9 +9,20 @@
     border: 1px solid #aaa;
 }
 
+#gloss .map-data {
+    display: inline;
+    position: relative;
+    cursor: pointer;
+}
+#gloss .map-data .asterisk {
+    font-size: 2rem;
+    position: absolute;
+    vertical-align: text-bottom;
+    right: -0.5rem;
+    bottom: -1.2rem;
+}
+
 #textContent {
-    display: flex;
-    flex-direction: column;
     overflow: hidden;	
     position: relative;
 }
@@ -49,12 +54,8 @@
 }
 
 #permalinkButton {
-	float: right;
     font-size: .9em;
     width: fit-content;
-    position: absolute;
-    top: 0.3rem;
-    right: 0.3rem;
 }
 
 .name-variants > *:not(.hidden) {
@@ -88,7 +89,6 @@ div.overlay .left .item {
     font-size: 0.8rem;
 }
 .info-box {
-    margin-bottom: 0.2rem;
     font-family: 'Raleway', sans-serif !important;
     font-size: 0.9rem !important
 }

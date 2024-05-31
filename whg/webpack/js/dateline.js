@@ -229,22 +229,21 @@ export default class Dateline {
 			this.rangeContainer.classList.add('transitioned');
 		}
 	
-		$("#dateline > i.fas.fa-question-circle").each(function() {	    
-		    $(this)
-		    .attr('data-bs-title', 'Temporal Filter')
-		    .attr('data-bs-content', `
-		        <p>Some of the places and place names in the World Historical Gazetteer have been scoped temporally, allowing
-		        users to see how attestations for places and their names vary over time.</p>
-		        <p>Click this button to reveal the controls for adjusting the date range of features filtered in the table and 
-		        on the map. You can click it again to hide the controls, and any filtering you have set will remain in operation.</p>
-		        <p>You can choose to either include or exclude places that have no temporal attestations.</p>
-		    `);
-		}).popover({
+		$("#dateline > i.fas.fa-question-circle").popover({
 		    container: this.container,
 		    trigger: 'hover',
 		    placement: 'right',
-		    html: true
+		    html: true,
+		    title: 'Temporal Filter',
+		    content: function () {
+		        return `
+		            <p>Some of the places and place names in the World Historical Gazetteer have been scoped temporally, allowing users to see how attestations for places and their names vary over time.</p>
+		            <p>Click this button to reveal the controls for adjusting the date range of features filtered in the table and on the map. You can click it again to hide the controls, and any filtering you have set will remain in operation.</p>
+		            <p>You can choose to either include or exclude places that have no temporal attestations.</p>
+		        `;
+		    }
 		});
+
 	}
 
 	observeResize() {
@@ -349,11 +348,11 @@ export default class Dateline {
 	}
 	
 	reset(newFromValue=false, newToValue=false, newOpen=false) {
+		if (newOpen !== this.open) this.button.click();
 		this.fromValue = newFromValue || this.fromValue;
 		this.toValue = newToValue || this.toValue;
 		this.open = newOpen || this.open;
 		this.updateFormInputs();
-		this.toggle(this.open);
 	}
 	
 	reconfigure(newMinValue, newMaxValue, newFromValue=false, newToValue=false) {

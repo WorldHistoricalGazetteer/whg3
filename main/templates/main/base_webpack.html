@@ -3,194 +3,188 @@
 {% load dataset_extras %}
 {% load livereload_tags %}
 <!DOCTYPE html>
+
 <html lang="en">
-<head>
-  {% block title %}<title>WHG</title>{% endblock %}
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="csrf-token" content="{{ csrf_token }}">
-  <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.ico' %}"/>
+    <head> {% block title %} <title>WHG</title>{% endblock %}
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token }}">
+        <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.ico' %}" />
+        <script defer src="{% static 'webpack/base.bundle.js' %}"></script>
+        <!-- 'defer' allows rendering of HTML to continue while scripts load -->
+        <link href="{% static 'webpack/base.bundle.css' %}" rel="stylesheet" />
+        <style>
+            body {
+                /* Hide until CDN css files are fully loaded */
+                opacity: 0;
+                transition: opacity 1s ease;
+            }
+        </style>
 
-  <script defer src="{% static 'webpack/base.bundle.js' %}"></script>
-  <!-- 'defer' allows rendering of HTML to continue while scripts load -->
-  <link href="{% static 'webpack/base.bundle.css' %}" rel="stylesheet"/>
-  <style>
-    body { /* Hide until CDN css files are fully loaded */
-      opacity: 0;
-      transition: opacity 1s ease;
-    }
-  </style>
+		{% block maplibre %}{% endblock %}
+		{% block extra_head %}{% endblock %}
+		<script type="text/javascript">
+			{% block deferredScripts %}
+			{% endblock %}
 
-  {% block maplibre %}{% endblock %}
-  {% block extra_head %}{% endblock %}
-  <script type="text/javascript">
-    {% block deferredScripts %}
-    {% endblock %}
-    function executeDeferredScripts() {
-      const loadNextScript = function(index) {
-        if (index < scripts.length) {
-          const script = scripts[index];
-          const scriptElement = document.createElement('script');
-          scriptElement.src = script.src;
-          scriptElement.defer = true; // Prevent loading before base.bundle.js
-          if (script.type) {
-            scriptElement.type = script.type;
-          }
-          scriptElement.onload = function() {
-            console.log(`Loaded ${script.src}`);
-            loadNextScript(index + 1); // Load the next script
-          };
-          document.body.appendChild(scriptElement);
+            function executeDeferredScripts() {
+                const loadNextScript = function(index) {
+                    if (index < scripts.length) {
+                        const script = scripts[index];
+                        const scriptElement = document.createElement('script');
+                        scriptElement.src = script.src;
+                        scriptElement.defer = true; // Prevent loading before base.bundle.js
+                        if (script.type) {
+                            scriptElement.type = script.type;
+                        }
+                        scriptElement.onload = function() {
+                            console.log(`Loaded ${script.src}`);
+                            loadNextScript(index + 1); // Load the next script
+                        };
+                        document.body.appendChild(scriptElement);
+                    }
+                };
+                loadNextScript(0);
+            }
+        </script>
+    </head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZB73342G3Y"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+
+        function gtag() {
+            dataLayer.push(arguments);
         }
-      };
-      loadNextScript(0);
-    }
-  </script>
-</head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZB73342G3Y"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-
-  function gtag() {
-    dataLayer.push(arguments);
-  }
-
-  gtag('js', new Date());
-  gtag('config', 'G-ZB73342G3Y');
-</script>
-<body>
-<header>
-  <nav class="navbar navbar-expand-lg bg-white">
-    <div class="container">
-      <a href="/">
-        <img src="{% static 'images/whg_logo.svg' %}" alt="WHG" width="50" height="38">
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-              data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
-              aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse smallish pt-2" id="navbarSupportedContent">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <div id="links_home">
-            <span id="version_badge" class="badge text-bg-success">v3.0 beta</span>
-            <span id="beta_links"></span>
-            <a data-whg-modal="/contact_modal/">contact</a>
-          </div>
-          <div id="links_other" class="d-none">
-            <a class="navbar-brand me-0" href="{% url 'home' %}">&nbsp;
-              World Historical Gazetteer</a>
-            <a data-whg-modal="/contact_modal/" class="hide-on-narrow">contact</a>
-          </div>
-        </ul>
-        <ul class="navbar-nav">
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'search-page' %}">Search</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'workbench' %}">Workbench</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'teaching' %}">Teaching</a>
-          </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button"
-               data-bs-toggle="dropdown" aria-expanded="false">Documentation</a>
-            <ul class="dropdown-menu">
-              <li><a class="dropdown-item" href="{% url 'documentation' %}">User documentation</a></li>
-              <li><a class="dropdown-item" href="{% url 'usingapi' %}">API (developers)</a></li>
-              <li><a class="dropdown-item" href="https://github.com/WorldHistoricalGazetteer/whg3/">GitHub repository</a></li>
-{#<li><a class="dropdown-item" href="{% url 'guides:guides-all' %}">(old) guide and tutorials</a></li>#}
-            </ul>
-          </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button"
-               data-bs-toggle="dropdown" aria-expanded="false">
-              About
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" href="{% url 'about' %}">Vision & mission</a></li>
-              <li><a class="dropdown-item" href="{% url 'credits' %}">Project overview & people</a></li>
-              <li><a class="dropdown-item" href="{% url 'publications' %}">Publications</a></li>
-              <li>
-                <hr class="dropdown-divider">
-              </li>
-              <li><a class="dropdown-item" href="http://blog.whgazetteer.org" target="_blank">News</a></li>
-            </ul>
-          </li> <!-- about -->
-          {% if user.is_authenticated %}
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                 aria-expanded="false">Data</a>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                  {% is_whg_admin as user_is_whg_admin %}
-                  {% if user_is_whg_admin %}
-                    <a class="dropdown-item" href="{% url 'dashboard-admin' %}">Admin Dashboard</a>
-                    <a class="dropdown-item" href="{% url 'dashboard-user' %}">My Data</a>
-                  {% else %}
-                    <a class="dropdown-item" href="{% url 'dashboard-user' %}">My Data</a>
-                  {% endif %}
-                </li>
-                {# <li><a class="dropdown-item" href="{% url 'dashboard' %}">My Data</a></li>#}
-                <li>
-                  <hr class="dropdown-divider">
-                </li>
-                <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}">
-                  Published Datasets</a></li>
-                <li><a class="dropdown-item"
-                       href="{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}">Published
-                  Collections</a></li>
-                {% comment %}
-                <li>
-                  <hr class="dropdown-divider">
-                </li>
-                <li><a class="dropdown-item" href="{% url 'downloads' %}">Downloads</a></li>
-                {% endcomment %}
-              </ul>
-            </li> <!-- data -->
-
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
-                   aria-expanded="false" title="{{ user.name }}" >
-                    <i class="fas fa-user" style="color:#336699;"></i>
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li class="nav-item">
-                        <a class="nav-link" rel="tooltip" href="{% url 'profile-edit' %}">
-                            Profile
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="javascript:{document.getElementById('logout').submit()}">Logout</a>
-                        <form id="logout" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}</form>
-                    </li>
-                </ul>
-            </li> <!-- user -->
-          {% else %}
-            <li class="nav-item">
-              <a class="nav-link ms-5" href="{% url 'accounts:register' %}">Register</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'accounts:login' %}">Login</a>
-            </li>
-          {% endif %}
-        </ul>
-      </div>
-    </div>
-  </nav>
-</header>
-
-{% block content %}
-{% endblock %}
-
-{% block footer %}
-<span id="pseudo-footer">
-	<p>&copy; {% now "Y" %} World Historical Gazetteer. All rights reserved. | <a data-whg-modal="/contact_modal/">Contact</a><!-- | <a href="/home/30a4/" class="text-decoration-none">Home v30a4</a>--><!-- | Sponsors | Social Media | License | Disclaimer | Terms of Use | Privacy Policy--></p>
-</span>
-{% endblock %}
-    
-</body>
-
+        gtag('js', new Date());
+        gtag('config', 'G-ZB73342G3Y');
+    </script>
+    <body>
+        <header>
+            <nav class="navbar navbar-expand-lg bg-white">
+                <div class="container">
+                    <a href="/">
+                        <img src="{% static 'images/whg_logo.svg' %}" alt="WHG" width="50" height="38">
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse smallish pt-2" id="navbarSupportedContent">
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <div id="links_home">
+                                <span id="version_badge" class="badge text-bg-success">v3.0 beta</span>
+                                <span id="beta_links"></span>
+                                <a data-whg-modal="/contact_modal/">contact</a>
+                            </div>
+                            <div id="links_other" class="d-none">
+                                <a class="navbar-brand me-0" href="{% url 'home' %}">&nbsp; World Historical Gazetteer</a>
+                                <!--<a data-whg-modal="/contact_modal/" class="hide-on-narrow">contact</a>-->
+                            </div>
+                        </ul>
+                        <ul class="navbar-nav">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'search-page' %}">Search</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'workbench' %}">Workbench</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'teaching' %}">Teaching</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Documentation</a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'documentation' %}">User documentation</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'usingapi' %}">API (developers)</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="https://github.com/WorldHistoricalGazetteer/whg3/">GitHub repository</a>
+                                    </li>
+                                    <!--<li><a class="dropdown-item" href="{% url 'guides:guides-all' %}">(old) guide and tutorials</a></li>-->
+                                </ul>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"> About </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'about' %}">Vision & mission</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'credits' %}">Project overview & people</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'publications' %}">Publications</a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="http://blog.whgazetteer.org" target="_blank">News</a>
+                                    </li>
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" data-whg-modal="/contact_modal/">Contact Us</a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <!-- about --> {% if user.is_authenticated %} <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Data</a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li> {% is_whg_admin as user_is_whg_admin %} {% if user_is_whg_admin %} <a class="dropdown-item" href="{% url 'dashboard-admin' %}">Admin Dashboard</a>
+                                        <a class="dropdown-item" href="{% url 'dashboard-user' %}">My Data</a> {% else %} <a class="dropdown-item" href="{% url 'dashboard-user' %}">My Data</a> {% endif %}
+                                    </li>
+                                    <!--<li><a class="dropdown-item" href="{% url 'dashboard' %}">My Data</a></li>-->
+                                    <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"> Published Datasets</a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}">Published Collections</a>
+                                    </li> {% comment %} <li>
+                                        <hr class="dropdown-divider">
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'downloads' %}">Downloads</a>
+                                    </li> {% endcomment %}
+                                </ul>
+                            </li>
+                            <!-- data -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="{{ user.name }}">
+                                    <i class="fas fa-user" style="color:#336699;"></i>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li class="nav-item">
+                                        <a class="nav-link" rel="tooltip" href="{% url 'profile-edit' %}"> Profile </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="javascript:{document.getElementById('logout').submit()}">Logout</a>
+                                        <form id="logout" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}</form>
+                                    </li>
+                                </ul>
+                            </li>
+                            <!-- user --> {% else %} <li class="nav-item">
+                                <a class="nav-link ms-5" href="{% url 'accounts:register' %}">Register</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'accounts:login' %}">Login</a>
+                            </li> {% endif %}
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </header> {% block content %} {% endblock %} <footer>
+            <div id="pseudo-footer" class="container mt-2"> &copy; {% now "Y" %} World Historical Gazetteer. All rights reserved. | <a data-whg-modal="/contact_modal/">Contact</a>
+                <!-- | <a href="/home/30a4/" class="text-decoration-none">Home v30a4</a>-->
+                <!-- | Sponsors | Social Media | License | Disclaimer | Terms of Use | Privacy Policy-->
+            </div>
+        </footer>
+    </body>
 </html>

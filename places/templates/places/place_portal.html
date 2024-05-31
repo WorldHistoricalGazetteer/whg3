@@ -26,15 +26,15 @@
 
 {% block content %}
 
-  <div id="dataset_content" class="container-md">
+  <main id="dataset_content" class="container-md">
     <div class="row">
       <!-- Left column with the main content -->
-      <div id="textContent" class="col-12 col-lg-6 mx-0 p-1 border">
-        <button id="permalinkButton" class="btn btn-primary btn-sm" data-bs-toggle="tooltip"
+      <div id="textContent" class="col-md-6 mb-3 mb-md-0 ps-md-0 pe-md-1">
+        <button id="permalinkButton" class="btn btn-primary btn-sm float-end" data-bs-toggle="tooltip"
                 title="Copy permalink to clipboard"><i class="fas fa-share-nodes"></i> Permalink
         </button>
-
         <h5>{{ portal_headword }}</h5>
+
         <div id="gloss"><!-- Populated dynamically from context in JavaScript --></div>
 
         {% if user.is_authenticated %}
@@ -60,13 +60,13 @@
           </div>
         </div>
 
-      </div> <!-- textContent -->
+      </div>
       <!-- Right column with the map and historygram -->
-      <div class="col-12 col-lg-6 mx-0 px-0 ps-lg-2">
+      <div class="col-md-6 mb-0 mb-md-0 ps-md-1 pe-md-0">
         <div id="map" style="opacity: 0;"></div>
       </div>
     </div>
-  </div>
+  </main>
 
   <div id="addtocoll_popup" class="modal fade">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">

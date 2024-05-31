@@ -18,150 +18,128 @@
 
 {% block content %}
 
-  <div class="container mt-1">
-
-    <div class="w-100 text-center">
-      <div class="row mx-auto mb-2">
-        <div class="d-flex mb-2 mb-lg-0 align-items-center justify-content-center">
-          <img src="{% static 'images/whg_logo.svg' %}"
-               class="logo_responsive d-none d-lg-inline-block align-bottom me-2" width="80" alt=""/>
-          <h1 class="title_responsive d-lg-inline-block mb-0">World Historical Gazetteer</h1>
-        </div>
-        <p id="tagline_responsive" class="mb-0 mb-lg-2">linking knowledge about the past via place</p>
-      </div>
-    </div>
-
-    <div class="row mx-0">
-      <div id="left_column" class="col-12 col-md-6 mx-0 p-0 d-flex flex-column">
-        <div class="p-2 mb-2">
-          <p class="mb-2">The WHG project empowers discovery by connecting place names across time and language. </p>
-          {% comment %}
-          <p class="mb-0">This is a collaborative open platform gathering information about
-            historical place, and providing a collection of content and services that permit
-            world historians, their students, and the general public to
-            do spatial and temporal reasoning and visualization at global and trans-regional scales.</p>
-          {% endcomment %}
-          <span class="d-none d-lg-block">
-            <p class="bg-light mb-0 mt-1"><b>What is a gazetteer?</b></p>
-            <p class="mb-1">A gazetteer is a directory of named places. See:
-              <a href="https://programminghistorian.org/en/lessons/space-place-gazetteers"
-                 target="_blank">How and why to build a gazetteer
-              <i class="fas fa-external-link-alt small"></i></a>
-            </p>
-          </span>
-          {% if not user.is_authenticated %}
-            <p my-0><a href="{% url 'accounts:register' %}">Register to get started</a></p>
-          {% endif %}
-        </div>
-
-        <div class="border p-2 mb-2 mb-lg-2 small" style="border-style: dashed !important;; border-width: 0.2rem !important;">
-          <p class="mb-0 red-head">ANNOUNCEMENTS</p>
-          <div id="announcement-container" class="mb-0">
-            {% for announcement in announcements|slice:":3" %}
-              <div class="announcement constrained" {% if not forloop.first %}style="display: none;"{% endif %}>
-                <a href="{{ announcement.link }}" target="_blank">
-                  <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
-                </a>
-                <span class="ms-2">{{ announcement.content }}</span>
-              </div>
-            {% endfor %}
-          </div>
-        </div>
-
-		<div id="home_buttons">
-		  <div class="border p-2 mb-2 ms-0 home-button d-inline-block w-100">
-		    <img src="{% static 'images/001-binoculars.png' %}" class="mx-2" height="60" width="60" alt=""/>
-		    <div class="d-inline-block align-middle">
-		      <h5>
-		        <span class="home-button-hilite">Search and browse</span>
-		        <span class="red-head">2,159,673</span> places
-		      </h5>
-		      <a href="{% url 'search-page' %}">
-		        <span class="link-spanner"></span>
-		      </a>
+<main class="container mt-1">
+    <div class="row">
+	    <!-- Full-width row at the top -->
+		<div class="row mb-2">
+		    <div class="col text-center">
+		        <div class="d-flex justify-content-center align-items-center mb-2">
+		            <img src="{% static 'images/whg_logo.svg' %}" class="logo_responsive d-none d-lg-inline-block align-bottom me-2" width="80" alt="" />
+		            <h1 class="title_responsive d-lg-inline-block mb-0">World Historical Gazetteer</h1>
+		        </div>
+		        <p id="tagline_responsive" class="mb-0 mb-lg-2">linking knowledge about the past via place</p>
 		    </div>
-		  </div>
-		
-		  <div class="border p-2 mb-2 ms-0 home-button d-inline-block w-100">
-		    <img src="{% static 'images/noun-workbench-6022067.svg' %}" class="mx-2" height="60" width="60" alt=""/>
-		    <div class="d-inline-block align-middle">
-		      <h5><span class="home-button-hilite">Build and publish </span> collections of places</h5>
-		      <a href="{% url 'workbench' %}">
-		        <span class="link-spanner"></span>
-		      </a>
-		    </div>
-		  </div>
-		
-		  <div class="border p-2 mb-0 ms-0 home-button d-inline-block w-100">
-		    <img src="{% static 'images/011-teaching.png' %}" class="mx-2" height="60" width="60" alt=""/>
-		    <div class="d-inline-block align-middle">
-		      <h5><span class="home-button-hilite">Teach</span> about places</h5>
-		      <a href="{% url 'teaching' %}">
-		        <span class="link-spanner"></span>
-		      </a>
-		    </div>
-		  </div>
 		</div>
-
-      </div>
-
-      <div id="right_column" class="col-12 col-md-6 mt-2 mx-0 p-0 d-flex flex-column">
-        <div id="home_center" class="flex-grow-1 mb-2">
-          <div id="search_bar" class="mx-0 mx-lg-2 mb-2">
-            <div id="input" class="input-group mx-auto">
-              <!-- Label only for Large Screens -->
-              <label class="input-group-text" for="search_mode">Search</label>
-
-              <!-- Search Input -->
-              <input id="search_input" class="form-control typeahead" data-provide="typeahead" type="text"
-                     placeholder="Enter place name" aria-label="Search" aria-describedby="search-addon" autocomplete="off"
-                     spellcheck="false">
-
-              <!-- Search Button -->
-              <button id="initiate_search" data-title="Initiate search|Cannot search without a place name"
-                      class="btn btn-outline-secondary btn-success" type="button"><i class="fas fa-search"></i></button>
+        <!-- Left Column -->
+        <div id="left_column" class="col-md-6 mb-2 mb-md-0 ps-md-0 pe-md-1">
+	        <p class="mb-2">The WHG project is empowering discovery by connecting place names across time and language. </p>
+	        <p class="mb-2">This is a collaborative open platform gathering information about historical place, and providing a collection of content and services that permit world historians, their students, and the general public to do spatial and temporal reasoning and visualization at global and trans-regional scales.</p>
+	        <div class="mb-2 blue-box">
+	            <p><b>What is a gazetteer?</b></p>
+	            <p>A gazetteer is a directory of named places. See: <a href="https://programminghistorian.org/en/lessons/space-place-gazetteers" target="_blank">How and why to build a gazetteer <i class="fas fa-external-link-alt small"></i></a></p>
+	        </div>
+			{% if not user.is_authenticated %}
+			<p class="mb-2 text-center">
+	            <a href="{% url 'accounts:register' %}">Register to get started</a>
+	        </p>
+			{% endif %}
+            <div class="border p-2 mb-2 mb-lg-2 small" style="border-style: dashed !important;; border-width: 0.2rem !important;">
+                <p class="mb-0 red-head">ANNOUNCEMENTS</p>
+                <div id="announcement-container" class="mb-0"> {% for announcement in announcements|slice:":3" %} <div class="announcement constrained" {% if not forloop.first %}style="display: none;" {% endif %}>
+                        <a href="{{ announcement.link }}" target="_blank">
+                            <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
+                        </a>
+                        <span class="ms-2">{{ announcement.content }}</span>
+                    </div> {% endfor %} </div>
             </div>
-          </div>
-
-          <div class="mx-0 mx-lg-2 mb-2 mb-lg-0 map-container" style="height: calc(100% - 35px);">
-            <div id="map"></div>
-            <div id="carousel-outer-container" class="mx-0">
-              <!-- Populated dynamically in JavaScript -->
+            <div id="home_buttons">
+                <div class="border p-2 mb-2 ms-0 home-button d-inline-block w-100">
+                    <img src="{% static 'images/001-binoculars.png' %}" class="mx-2" height="60" width="60" alt="" />
+                    <div class="d-inline-block align-middle">
+                        <h5>
+                            <span class="home-button-hilite">Search and browse</span>
+                            <span class="red-head">2,159,673</span> places
+                        </h5>
+                        <a href="{% url 'search-page' %}">
+                            <span class="link-spanner"></span>
+                        </a>
+                    </div>
+                </div>
+                <div class="border p-2 mb-2 ms-0 home-button d-inline-block w-100">
+                    <img src="{% static 'images/noun-workbench-6022067.svg' %}" class="mx-2" height="60" width="60" alt="" />
+                    <div class="d-inline-block align-middle">
+                        <h5>
+                            <span class="home-button-hilite">Build and publish </span> collections of places
+                        </h5>
+                        <a href="{% url 'workbench' %}">
+                            <span class="link-spanner"></span>
+                        </a>
+                    </div>
+                </div>
+                <div class="border p-2 mb-0 ms-0 home-button d-inline-block w-100">
+                    <img src="{% static 'images/011-teaching.png' %}" class="mx-2" height="60" width="60" alt="" />
+                    <div class="d-inline-block align-middle">
+                        <h5>
+                            <span class="home-button-hilite">Teach</span> about places
+                        </h5>
+                        <a href="{% url 'teaching' %}">
+                            <span class="link-spanner"></span>
+                        </a>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
-    </div> <!-- row -->
-
-    <!-- Modal -->
-    <div class="modal fade" id="homeModal" tabindex="-1"
-         aria-labelledby="homeModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="homeModalLabel">{ per-button title }</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body" style="overflow-y: scroll;"></div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          </div>
+        <!-- Right Column -->
+        <div id="right_column" class="col-md-6 mb-0 mb-md-0 ps-md-1 pe-md-0">
+            <div id="home_center" class="d-flex flex-column h-100">
+                <div id="search_bar" class="mb-2">
+                    <div id="input" class="input-group mx-auto">
+                        <!-- Label only for Large Screens -->
+                        <label class="input-group-text" for="search_mode">Search</label>
+                        <!-- Search Input -->
+                        <input id="search_input" class="form-control typeahead" data-provide="typeahead" type="text" placeholder="Enter place name" aria-label="Search" aria-describedby="search-addon" autocomplete="off" spellcheck="false">
+                        <!-- Search Button -->
+                        <button id="initiate_search" data-title="Initiate search|Cannot search without a place name" class="btn btn-outline-secondary btn-success" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="map_container" class="flex-grow-1">
+                    <div id="map"></div>
+                    <div id="carousel-outer-container" class="mx-0">
+                        <!-- Populated dynamically in JavaScript -->
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-  </div>
+    <!-- Modal -->
+    <div class="modal fade" id="homeModal" tabindex="-1" aria-labelledby="homeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="homeModalLabel">{ per-button title }</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="overflow-y: scroll;"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
 
-  <script type="text/javascript">
+<script type="text/javascript">
     var eswhg = "{{ es_whg|escapejs }}";
     let galleries = [
-      {#['Contributed Data', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"]#}
-      ['Selected Data Publications', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"],
+        ['Selected Data Publications', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"],
     ];
-    let carouselMetadata = {{ carousel_metadata|safe }};
+    let carouselMetadata = {{ carousel_metadata | safe }};
     let startCarousels = true; // Determines whether galleries are to be auto-cycled
     let repositionMap = true; // Determines whether map should fly to loaded datacollection
     let homeModalURL = "{% url 'modal-home' %}";
-  </script>
+</script>
 
 {% endblock %}
 

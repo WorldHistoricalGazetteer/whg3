@@ -208,16 +208,6 @@ export function attributionString(data) {
   return attributionStringParts.join(' | ');
 }
 
-export function startSpinner(spinnerId = 'dataset_content', scale = .5) {
-  // TODO: scale could be set automatically based on size of the container element
-  const newSpinner = new Spinner({
-    scale: scale,
-    color: '#004080',
-  }).spin();
-  $((spinnerId.startsWith('.') ? '' : '#') + spinnerId).append(newSpinner.el);
-  return newSpinner;
-}
-
 export function initUtils(mappy) {
 
   // generic clipboard for modal and non-modal containers

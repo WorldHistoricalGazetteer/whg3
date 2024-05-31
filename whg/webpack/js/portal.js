@@ -220,8 +220,8 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		const adminString = geoData.admin.length > 0 ?
 			` within the modern political boundaries of ${geoData.admin.map((name, index) => index < geoData.admin.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${geoData.admin.length == 2 ? '' : ','} and$1`)}, and` :
 			'';
-		$('<p>').addClass('mb-1').html(`
-		    It lies${elevationString}${adminString} within the <a href="${geoData.ecoregion.url}" target="_blank">${geoData.ecoregion.name}</a> ecoregion and <a href="${geoData.biome.url}" target="_blank">${geoData.biome.name}</a> biome.
+		$('<p class="map-data">').addClass('mb-1').html(`
+		    It lies${elevationString}${adminString} within the <a href="${geoData.ecoregion.url}" target="_blank">${geoData.ecoregion.name}</a> ecoregion and <a href="${geoData.biome.url}" target="_blank">${geoData.biome.name}</a> biome.<span class="asterisk" data-bs-toggle="tooltip" data-bs-title="Information in this paragraph is based on a point at the centroid of the associated source geometries.">*</span>
 		`).insertAfter($('#gloss').find('p:first'));
 
 		$('#gloss').append($('<span id="collectionInfo">'));
@@ -248,12 +248,6 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		            in: <a class="pop-link pop-dataset"
 		                   data-id="${place.dataset.id}" 
 		                   data-bs-toggle="popover"
-		                   data-bs-title="Dataset Profile" 
-		                   data-bs-content="
-						        <p class='thin'><b>Title</b>: ${place.dataset.title.replace('(stub) ', '').substring(0, 25)}</p>
-						        <p class='thin'><b>Description</b>: ${place.dataset.description}</p>
-						        <p class='thin'><b>WHG Owner</b>: ${place.dataset.owner}</p>
-						        <p class='thin'><b>Creator</b>: ${place.dataset.creator}</p>" 
 						   tabindex="0" 
 						   rel="clickover">
 		                ${place.dataset.title.replace('(stub) ', '').substring(0, 25)}
@@ -366,7 +360,23 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		$(".pop-dataset").popover({
 		    trigger: 'hover',
 		    placement: 'right',
-		    html: true
+		    html: true,
+    		title: 'Dataset Profile',
+		    content: function () {
+		        var placeId = $(this).data('id');
+		        var place = payload.find(p => p.dataset.id == placeId);
+		        if (place) {
+		            var content = `
+		                <p class='thin'><b>Title</b>: ${place.dataset.title.replace('(stub) ', '').substring(0, 25)}</p>
+		                <p class='thin'><b>Description</b>: ${place.dataset.description}</p>
+		                <p class='thin'><b>WHG Owner</b>: ${place.dataset.owner}</p>
+		                <p class='thin'><b>Creator</b>: ${place.dataset.creator}</p>
+		            `;
+		            return content;
+		        } else {
+		            return ''; // Return empty content if place data is not found
+		        }
+		    }
 		}).on('show.bs.popover', function() { // Close the tooltip on the parent div
 		    $(this).closest('.source-box').tooltip('hide');
 		});
