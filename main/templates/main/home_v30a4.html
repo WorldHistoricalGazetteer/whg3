@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block title %}
-  <title>WHG v3.0beta</title>
+  <title>WHG v3.0 beta</title>
 {% endblock %}
 
 {% block maplibre %}
@@ -22,7 +22,7 @@
     <div class="row">
 	    <!-- Full-width row at the top -->
 		<div class="row mb-2">
-		    <div class="col text-center">
+		    <div class="col text-center mb-2">
 		        <div class="d-flex justify-content-center align-items-center mb-2">
 		            <img src="{% static 'images/whg_logo.svg' %}" class="logo_responsive d-none d-lg-inline-block align-bottom me-2" width="80" alt="" />
 		            <h1 class="title_responsive d-lg-inline-block mb-0">World Historical Gazetteer</h1>
@@ -32,8 +32,8 @@
 		</div>
         <!-- Left Column -->
         <div id="left_column" class="col-md-6 mb-2 mb-md-0 ps-md-0 pe-md-1">
-	        <p class="mb-2">The WHG project is empowering discovery by connecting place names across time and language. </p>
-	        <p class="mb-2">This is a collaborative open platform gathering information about historical place, and providing a collection of content and services that permit world historians, their students, and the general public to do spatial and temporal reasoning and visualization at global and trans-regional scales.</p>
+	        <p class="mb-2">The WHG project empowers discovery by connecting place names across time and language. </p>
+	        <!-- <p class="mb-2"></p>-->
 	        <div class="mb-2 blue-box">
 	            <p><b>What is a gazetteer?</b></p>
 	            <p>A gazetteer is a directory of named places. See: <a href="https://programminghistorian.org/en/lessons/space-place-gazetteers" target="_blank">How and why to build a gazetteer <i class="fas fa-external-link-alt small"></i></a></p>
@@ -43,7 +43,7 @@
 	            <a href="{% url 'accounts:register' %}">Register to get started</a>
 	        </p>
 			{% endif %}
-            <div class="border p-2 mb-2 mb-lg-2 small" style="border-style: dashed !important;; border-width: 0.2rem !important;">
+            <div class="border p-2 mb-2 mb-lg-2 small" style="border-style: dashed !important;; border-width: 0.1rem !important;">
                 <p class="mb-0 red-head">ANNOUNCEMENTS</p>
                 <div id="announcement-container" class="mb-0"> {% for announcement in announcements|slice:":3" %} <div class="announcement constrained" {% if not forloop.first %}style="display: none;" {% endif %}>
                         <a href="{{ announcement.link }}" target="_blank">

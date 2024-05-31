@@ -96,7 +96,7 @@ body {
 .blue-box {
     background-color: aliceblue;
     padding: 0.5rem;
-    border: 1px solid #00408021;	
+    /*border: 1px solid #00408021;	*/
 }
 .blue-box p {
 	margin: 0;
