@@ -348,11 +348,11 @@ export default class Dateline {
 	}
 	
 	reset(newFromValue=false, newToValue=false, newOpen=false) {
+		if (newOpen !== this.open) this.button.click();
 		this.fromValue = newFromValue || this.fromValue;
 		this.toValue = newToValue || this.toValue;
 		this.open = newOpen || this.open;
 		this.updateFormInputs();
-		this.toggle(this.open);
 	}
 	
 	reconfigure(newMinValue, newMaxValue, newFromValue=false, newToValue=false) {

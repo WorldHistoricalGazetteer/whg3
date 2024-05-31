@@ -30,6 +30,10 @@
 	display: none!important;
 }
 
+.maplibregl-ctrl-attrib-inner {
+    font-size: 0.8rem;
+}
+
 #map-download-dialog {
     user-select: none;	
 }
@@ -46,7 +50,7 @@
     float: left;
 }
 
-/* Styling for the attribution text */
+/* Styling for the download attribution text */
 .attribution-text {
   margin: 10px 0;
   padding: 5px 10px;

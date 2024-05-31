@@ -65,13 +65,16 @@
 /*#search_content #search_results {*/
 #search_content {
 }
+
 #search_content.no-filtered-results #search_results, 
 #search_content.no-results #search_results, 
 #search_content.no-results #result_facets {
 	display: none;
 }
 
-#search_content #no_results, #search_content #initial_results, #search_content #no_filtered_results {
+#search_content #no_results, 
+#search_content #initial_results, 
+#search_content #no_filtered_results {
 	display: none;
 	height: fit-content;
 }

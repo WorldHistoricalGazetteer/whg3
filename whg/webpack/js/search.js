@@ -33,10 +33,10 @@ let mapParameters = {
 		'WHG',
 		'Satellite'
 	],
-	fullscreenControl: true,
+	fullscreenControl: false,
 	downloadMapControl: true,
 	drawingControl: {
-		hide: true,
+		hide: false,
 	},
 	temporalControl: {
 		fromValue: 800,
@@ -192,7 +192,7 @@ Promise.all([
 	        $clickedResult.scrollintoview({duration: 'slow'});
 		} else if ($clickedResult.attr('data-map-initialising') === 'true') {
 			$clickedResult.removeAttr('data-map-initialising');
-			mappy.fitViewport(bbox(featureCollection));
+			mappy.fitViewport(bbox(featureCollection), defaultZoom);
 		} else {
 			mappy.fitViewport(bbox(featureCollection.features[index]), defaultZoom);
 		}
@@ -219,13 +219,9 @@ Promise.all([
 		var data = $('#entrySelector').select2('data');
 
 		function fitMap(features) {
-			if(searchDisabled) return;
+			if(!$('#search_content').hasClass('no-results')) return;
 			try {
-				mappy.fitBounds(bbox(features), {
-					padding: 30,
-					maxZoom: 7,
-					duration: 1000,
-				});
+				mappy.fitViewport(bbox(features), defaultZoom);
 			} catch {
 				mappy.reset();
 			}
@@ -247,7 +243,7 @@ Promise.all([
 					fitMap(filteredCountries);
 				});
 			}
-		} else mappy.reset();
+		} else if($('#search_content').hasClass('no-results')) mappy.reset();
 	}
 
 	const debouncedUpdates = debounce(() => { // Uses imported lodash function
@@ -263,8 +259,8 @@ Promise.all([
 		allowClear: false,
 	}).on('change', function(e) {
 		if (!searchDisabled) {
-			flashSearchButton();
 			debouncedUpdates();
+			initiateSearch();
 		}
 		else updateAreaMap();
 	})
@@ -276,7 +272,7 @@ Promise.all([
 	});
 
 	$('#categorySelector').on('change', function() {
-		$('#entrySelector').val(null).empty().trigger('change');
+		$('#clearButton').click();
 		switch ($(this).val()) {
 			case 'regions':
 				$('#entrySelector').prop('disabled', false).select2({
@@ -310,7 +306,7 @@ Promise.all([
 	});
 
 	$('#clearButton').on('click', function() {
-		$('#entrySelector').val(null).trigger('change');
+		if ($('#entrySelector').val() !== null) $('#entrySelector').val(null).trigger('change');
 	});
 
 
@@ -367,7 +363,7 @@ Promise.all([
 			source: suggestions.ttAdapter(),
 		}).on('typeahead:select', function(e, item) {
 			$(this).val(item);
-			toggleButtonState();
+			$(this).trigger($.Event('keyup', { key: 'Enter', which: 13, keyCode: 13 }));
 		});
 
 		return suggestions;
@@ -393,13 +389,15 @@ Promise.all([
         $(this).tooltip('hide').tooltip('disable');
 		localStorage.setItem(tooltipKey, 'true');
     })
-	.on('keyup', function(event) { // Allow [Enter] key to initiate search
-		if (event.which === 13) {
-			event.preventDefault();
+	.on('keyup', function(e) {
+		if (e.key ==='Enter' || e.which === 13) { // e.which for older browser compatibility
+			e.preventDefault();
 			$('#initiate_search').focus();
 			initiateSearch();
+			toggleButtonState();
 		}
 	});
+	toggleButtonState();
 
 	$('#clear_search').on('click', function() { // Clear the input, results, and map
 		if (!$(this).hasClass('disabledButton')) clearResults();
@@ -409,17 +407,21 @@ Promise.all([
 		if (!$(this).hasClass('disabledButton')) initiateSearch();
 	});
 
-	$('#check_select').on('click', () => {
+	$('#check_select').on('click', () => { // Advanced Options Place Categories
 		$('#adv_checkboxes input').prop('checked', true);
-		flashSearchButton();
+		initiateSearch();
 	});
 
-	$('#check_clear').on('click', () => {
+	$('#check_clear').on('click', () => { // Advanced Options Place Categories
 		$('#adv_checkboxes input').prop('checked', false);
-		flashSearchButton();
+		initiateSearch();
 	});
 	
-	$(document).on('click', '.check_clear, .check_select', (e) => {
+	$('#adv_checkboxes input').on('click', () => { // Advanced Options Place Categories
+		initiateSearch();
+	});
+	
+	$(document).on('click', '.check_clear, .check_select', (e) => { // Result Filters
 	    $(e.target).closest('.accordion-collapse')
 	    .find('.accordion-body input.filter-checkbox')
 	    .prop('checked', $(e.target).hasClass('check_select'))
@@ -446,16 +448,10 @@ Promise.all([
 	mappy.on('draw.delete', initiateSearch);
 	mappy.on('draw.update', initiateSearch);
 
-	$('#adv_checkboxes input, #search_mode, #countryDropdown').change(function() {
-		flashSearchButton();
+	$('#search_mode').change(function() {
+		initiateSearch();
 	});
-
-	$('#search_input')
-	.on('input', function() {
-		flashSearchButton();
-		toggleButtonState();
-	});
-	toggleButtonState();
+	
 	$('#initiate_search, #clear_search').each(function() {
 		$(this).tooltip({
 	    	title: function() {
@@ -495,18 +491,6 @@ function toggleButtonState() {
 	});
 }
 
-function flashSearchButton(toggle = true) {
-	$('#initiate_search').
-	toggleClass('flashing', toggle).
-	attr('title', toggle ? 'Update search results' : 'Initiate search');
-	$('#search_content')
-	.toggleClass('initial', true)
-	.toggleClass('no-results', true)
-	.toggleClass('no-filtered-results', false);
-	mappy.getSource('places').setData(mappy.nullCollection());
-	mappy.reset();
-}
-
 function clearResults() { // Reset all inputs to default values
 	searchDisabled = true;
 	$('#search_mode').val('exactly');
@@ -527,9 +511,8 @@ function clearResults() { // Reset all inputs to default values
 	.toggleClass('no-filtered-results', false);
 	$('#search_results').empty();
 	localStorage.removeItem('last_search');
-	$('#entrySelector').val(null).trigger('change');
+	$('#clearButton').click();
 	searchDisabled = false;
-	flashSearchButton(false);
 	toggleButtonState();
 
 }
@@ -650,6 +633,11 @@ function renderResults(data, fromStorage = false) {
 		html += (result.fclasses && result.fclasses.length > 0) ?
 			`<p>Feature Classes: ${result.fclasses.join(', ')}</p>` :
 			'';
+			
+		if (result.timespans && result.timespans.length > 0) {
+		    result.timespans.sort((a, b) => a[0] - b[0]);
+		    html += `<p>Timespans: ${result.timespans.map(span => `${span[0]}-${span[1]}`).join(', ')}</p>`;
+		}
 
 		html += `</div>`;
 		$resultsDiv.append(html);
@@ -806,7 +794,6 @@ function initiateSearch() {
 
 	if (searchDisabled) return;
 
-	flashSearchButton(false);
 	const options = gatherOptions();
 
 	if (options.qstr == '') {
@@ -815,6 +802,7 @@ function initiateSearch() {
 	}
 
 	console.log('Initiating search...', options);
+	$('#search_content').spin();
 
 	// AJAX POST request to SearchView() with the options (includes qstr)
 	$.ajax({
@@ -832,6 +820,8 @@ function initiateSearch() {
 			console.error('Error:', error);
 			errorModal('Sorry, something went wrong with that search.', null, error);
 		},
+	}).always(function() {
+	    $('#search_content').stopSpin();
 	});
 }
 

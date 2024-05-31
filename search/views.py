@@ -123,8 +123,13 @@ def makeGeom(pid, geom):
 
 def suggestionItem(s):
   h = s['hit']
-  print('a search hit', h)
   unique_children = list(set(h['children']))
+  timespans = []
+  for span in h.get('timespans', []):
+    if 'gte' in span and 'lte' in span:
+        timespans.append([span['gte'], span['lte']])
+    else:
+        timespans.append(span)
   item = {
     "whg_id": h['whg_id'] if 'whg_id' in h else '',
     "pid": h['place_id'],
@@ -137,7 +142,8 @@ def suggestionItem(s):
     "fclasses": h['fclasses'],
     # TODO: 'label' is an AAT value; sourceLabel is probably preferred if available
     "types": [t['label'] for t in h['types']],
-    "geom": makeGeom(h['place_id'], h['geoms'])
+    "geom": makeGeom(h['place_id'], h['geoms']),
+    "timespans": timespans
   }
   return item
 
@@ -158,6 +164,7 @@ def suggester(q, indices):
   # Search across multiple indices
   res = es.search(index=','.join(indices), body=q)
   hits = res['hits']['hits']
+  print('hits', hits)
   if len(hits) > 0:
     for h in hits:
       suggestions.append(
@@ -165,6 +172,7 @@ def suggester(q, indices):
          "_index": h['_index'],
          "linkcount": len(set(h['_source']['children'])),
          "hit": h['_source'],
+         "timespans": h['_source'].get('timespans', [])
          }
       )
 
@@ -324,11 +332,14 @@ class SearchViewV3(View):
             "mode": mode
         }
         request.session["search_params"] = params
-
-        q = SearchViewV3.build_search_query(params)
-        suggestions = suggester(q, [idx, 'pub'])
-        suggestions = [suggestionItem(s) for s in suggestions]
-        result = {'parameters': params, 'suggestions': suggestions}
+        
+        if params.get("fclasses"):
+            q = SearchViewV3.build_search_query(params)
+            suggestions = suggester(q, [idx, 'pub'])
+            suggestions = [suggestionItem(s) for s in suggestions]
+            result = {'parameters': params, 'suggestions': suggestions}
+        else: # Return empty result if no feature classes are given
+            result = {'parameters': params, 'suggestions': []}
 
         return JsonResponse(result, safe=False)
 
