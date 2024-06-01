@@ -333,6 +333,7 @@ Promise.all([
         ''}&sort=${sort}&countries=${countries}&q=${search}`;
     console.log(`Fetching from: ${url}`);
     stateStore();
+    $('#publications_gallery').spin();
     fetch(url).then(response => {
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
@@ -358,7 +359,10 @@ Promise.all([
       });
     }).catch(error => {
       console.error('Fetch error:', error);
-    });
+    })
+    .finally(function(){
+      	$('#publications_gallery').stopSpin();		
+	});
   }
 
   stateStore(true); // Fetch and build initial gallery; set map filter
