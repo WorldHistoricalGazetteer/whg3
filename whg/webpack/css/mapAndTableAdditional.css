@@ -85,16 +85,9 @@
 }
 
 #dataset_content {
-  position: relative;
-  height: calc(98vh - 60px);
-  overflow-y: auto;
-}
-
-
-#pcoll_content {
-	position: relative;
-	height: calc(98vh - 60px);
-	overflow-y: auto;
+  position: relative; 
+  display: flex;
+  flex: auto;
 }
 
 #detail {

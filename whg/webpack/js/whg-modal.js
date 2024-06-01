@@ -39,10 +39,12 @@ function initWHGModal() {
 							.prev('img.captcha').attr('src', result.image_url);
 					});
 				});
+				
 
                 // Enable Bootstrap form validation using jQuery
                 $('#whgModal form').on('submit', function (event) {
-                    if (!this.checkValidity() || !validateCaptcha()) {
+                    const captchaValid = validateCaptcha();
+                    if (!this.checkValidity() || !captchaValid) {
                         event.preventDefault();
                         event.stopPropagation();
                     } else {
@@ -58,14 +60,13 @@ function initWHGModal() {
                         $.ajax({
                             url: url,
                             method: 'POST',
-                            headers: { 'X-CSRFToken': csrfToken },
                             data: formData,
 				            success: function(response) {
 							    try {
 							        // Try to parse the response as JSON
 							        var responseData = JSON.parse(response);							
 							        if (responseData.success) {
-							            $('#whgModal').modal('hide');
+                                        $('#whgModal .modal-body > div, #whgModal .modal-footer button').toggleClass('d-none');
 							        } else {
 						                alert('An error occurred while submitting the form.');
 							        }
@@ -84,12 +85,17 @@ function initWHGModal() {
 
                 // Custom validation function for captcha
                 function validateCaptcha() {
-                    var captchaInput = $('#captchaInput');
+                    var captchaInput = $('#whgModal .captcha-container input[type="text"]');
+                    var captchaFeedback = $('#whgModal .captcha-container .invalid-feedback');
                     if (captchaInput.val().length !== 6) {
+                        captchaInput.addClass('is-invalid');
+                        captchaFeedback.show();
                         captchaInput[0].setCustomValidity('Invalid length');
                         captchaInput[0].reportValidity();
                         return false;
                     } else {
+                        captchaInput.removeClass('is-invalid');
+                        captchaFeedback.hide();
                         captchaInput[0].setCustomValidity('');
                         return true;
                     }

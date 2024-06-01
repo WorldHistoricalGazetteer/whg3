@@ -7,7 +7,8 @@
 	    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
 	</div>
 	<div class="modal-body">
-	    <h5 class="mb-3">Questions, bug reports, feature requests, support requests and comments all welcome!</h5>
+        <div id="contactFormContent">
+		    <h5 class="mb-3">Questions, bug reports, feature requests, support requests and comments all welcome!</h5>
 	        <table id="contact_form">
 	            <tr>
 	                <td>Name</td>
@@ -41,19 +42,27 @@
 	        <div class="captcha-container">
 	            <p>Please type the characters in this image:</p>
 	            <span class="ms-2">{{ form.captcha }}
+	            <a class="captcha smaller" href="#">refresh</a></span>
 		        <div class="invalid-feedback">
 		        	<p>Please enter exactly 6 characters.</p>
 		            {% for error in form.captcha.errors %}
 		                {{ error }}
 		            {% endfor %}
-	            <a class="captcha smaller" href="#">refresh</a></span>
+		        </div>
 	        </div>
 	        {% if user.is_authenticated %}
 	            <input type="hidden" name="username" value="{{ user.username }}">
 	        {% endif %}
+		</div>
+        <div id="confirmationMessage" class="d-none">
+            <h5>Thank you!</h5>
+            <p>Your message has been sent.</p>
+        </div>
 	</div>
 	<div class="modal-footer">
 	    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
 	    <button type="submit" class="submit-btn btn btn-primary">Send</button>
+	    <button type="button" class="btn btn-primary d-none" id="closeButton" data-bs-dismiss="modal">Close</button>
 	</div>
+	{% csrf_token %}
 </form>

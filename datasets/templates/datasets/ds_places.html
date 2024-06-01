@@ -23,7 +23,7 @@
 {% endblock %}
 
 {% block content %}
-  <div id="dataset_content" class="container mt-1 px-1">
+  <main id="dataset_content" class="container px-md-0">
     <div id="map" style="opacity: 0; height:100%;"></div>
     <div id="ds_info" class="overlay left">
       <div id="ds_header" class="raleway">
@@ -385,7 +385,7 @@
       </div>
     </div>
 
-  </div>
+  </main>
 
   {{ object.vis_parameters|json_script:"vis_parameters_data" }}
   <script type="text/javascript">

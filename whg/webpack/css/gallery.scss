@@ -1,5 +1,7 @@
-#map_column {
-    border-left: #dee2e6 1px solid;
+@media (min-width: 769px) {
+	#map_column { /* Border when cards are not stacked vertically */
+	    border-left: #dee2e6 1px solid;
+	}
 }
 #essay_modal {
     font-family: "Gill Sans", "Gill Sans MT", Calibri, "Trebuchet MS",
@@ -29,10 +31,15 @@
 .ds-gallery {
     padding-right: 6px;
 }
+
+@media (min-width: 768px) {
+    .ds-card-gallery {
+        height: 260px; /* Height when not stacked vertically */
+    }
+}
 .ds-card-gallery {
-    //border: 1px gainsboro dashed;
+    /* border: 1px gainsboro dashed; */
     border: 1px gainsboro solid;
-    height: 260px;
     padding: 0.5rem;
     overflow-y: auto;
     box-shadow: 2px 2px 4px rgba(200, 200, 200, 0.5);
@@ -44,7 +51,7 @@
 .ds-card-gallery:hover {
     cursor: pointer;
     border: 1px solid #e38c8c !important;
-    //background-color: #F2DEDE !important;
+    background-color: rgb(153 51 51 / 5%) !important; /* Without this there is nothing to distinguish `.active` from `:hover` */
 }
 .ds-card-gallery.active {
     border: 1px solid #e38c8c !important;
