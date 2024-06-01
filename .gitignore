@@ -14,9 +14,9 @@ media/user*
 media/downloads/*
 
 # in production these will be ignored
-#media/resources/
-#media/collections/
-#media/datasets/
+media/resources/
+media/collections/
+media/datasets/
 
 main/management/**
 elastic/fetch_close_matches.py
