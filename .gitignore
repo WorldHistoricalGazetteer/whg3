@@ -17,6 +17,7 @@ media/downloads/*
 media/resources/
 media/collections/
 media/datasets/
+data/migration/
 
 main/management/**
 elastic/fetch_close_matches.py
