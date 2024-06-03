@@ -276,6 +276,9 @@ class PlaceDetailView(DetailView):
   model = Place
   template_name = 'places/place_detail.html'
   
+  def get_object(self):
+        return get_object_or_404(Place.objects.select_related('dataset'), pk=self.kwargs.get('id'))
+
   def get_success_url(self):
     pid = self.kwargs.get("id")
     return '/places/{}/detail'.format(pid)
