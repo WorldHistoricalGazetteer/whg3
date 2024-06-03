@@ -284,6 +284,7 @@ class PlaceDetailView(DetailView):
     pid = self.kwargs.get("id")
     #user = self.request.user
     #print('messages:', messages.get_messages(self.kwargs))
+    print('Got success_url')
     return '/places/'+str(pid)+'/detail'
 
   def get_object(self):
