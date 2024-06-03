@@ -275,7 +275,6 @@ class PlacePortalView(TemplateView):
 class PlaceDetailView(DetailView):
   model = Place
   template_name = 'places/place_detail.html'
-
   
   def get_success_url(self):
     pid = self.kwargs.get("id")
