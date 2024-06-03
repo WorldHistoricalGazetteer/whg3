@@ -66,17 +66,22 @@
 	            <td>{% if object.links|length > 0 %}{% for l in object.links.all %}{{l}}; {%endfor%}{%else%}<i>none yet{%endif%}
 	            </td></tr>
 	            
-
-	          
-	          {% if object.related %}
-	            <tr><td>Related:</td>
-	              <td>
-	                {% for r in object.related.all %}
-	                  <i>part of</i>: {{ r.jsonb.label }} {% if r.jsonb.when %} {{r.jsonb.when.timespans }} {% endif %}
-	                {%endfor%}
-	              </td>
-	            </tr>
+	          {% if object.geoms %}
+	          <tr>
+	            <td><b>Locations ({{object.geoms.all|length}}):</b>
+	              <span id="pgeom" style="opacity:0;position:absolute;z-index:-1">
+	              {% for g in object.geoms.all %}
+	                {{ g.jsonb.coordinates }}
+	                {{ g.jsonb|json_script:object.id }}
+	              {%endfor%}
+	              </span>
+	            </td>
+	            <td>
+	            <a id="a_clipgeom" class="clippy" data-clipboard-target="#pgeom" data-bs-toggle="tooltip" title="copy to clipboard">copy coordinates to clipboard <i class="fas fa-clipboard linky"></i></a></td>
+	          </tr>
 	          {% endif %}
+	          
+
 	          
 	        </table>
 	        <div id="place_temporal" class="col-content small">
