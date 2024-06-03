@@ -298,8 +298,11 @@ class PlaceDetailView(DetailView):
     context['minmax'] = {'mm': place.minmax or None}
     context['dataset'] = dataset
     context['dataset_minmax'] = dataset.minmax if dataset.minmax else None
+    print('got place.dataset.minmax')
     context['dataset_creator'] = dataset.creator
+    print('got place.dataset.creator')
     context['dataset_last_modified_text'] = dataset.last_modified_text
+    print('got place.dataset.last_modified_text')
     context['beta_or_better'] = self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists()
 
     return context
