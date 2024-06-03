@@ -107,13 +107,23 @@ def download_file(request, *args, **kwargs):
 # GeoJSON for all places in a dataset INCLUDING those without geometry
 def fetch_mapdata_ds(request, *args, **kwargs):
     print('fetch_mapdata_ds kwargs', kwargs)
+        
     dsid = kwargs['dsid']
-    ds = get_object_or_404(Dataset, pk=dsid)
-
     reduce_geometry = request.GET.get('reduce_geometry', 'true').lower() == 'true' # Default to 'true' and return reduced geometry
-
     tileset = request.GET.get('variant', '') == 'tileset'
     ignore_tilesets = request.GET.get('variant', '') == 'ignore_tilesets'
+    
+    # Check if the 'refresh_cache' query parameter is present in the request
+    refresh_cache = request.GET.get('refresh_cache', False)
+    cache_key = f"fetch_mapdata_ds_data_{dsid}_{reduce_geometry}_{tileset}_{ignore_tilesets}"
+
+    # Check if the data is already cached and the 'refresh_cache' parameter is not present
+    if not refresh_cache:
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return JsonResponse(cached_data, safe=False, json_dumps_params={'ensure_ascii': False})
+        
+    ds = get_object_or_404(Dataset, pk=dsid)
     reduce_geometry = False if tileset else reduce_geometry
 
     available_tilesets = None
@@ -188,9 +198,11 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     end_time = time.time()  # Record the end time
     response_time = end_time - start_time  # Calculate the response time
     print(f"Loop time: {response_time:.2f} seconds")
+    
+    # Cache the data
+    cache.set(cache_key, feature_collection)
 
     return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii': False})
-
 
 #
 # called by process_when()
