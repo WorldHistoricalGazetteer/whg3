@@ -385,7 +385,6 @@ export default class Historygram {
 			#historygram .undated_container > label {
 			    color: #636a64;
 			    position: relative;
-			    top: -4px;
 			    font-size: 12px;
 			}
 			
