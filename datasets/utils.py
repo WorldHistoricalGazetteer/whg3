@@ -192,10 +192,10 @@ def fetch_mapdata_ds(request, *args, **kwargs):
         if null_geometry: # Minimise data sent to browser when using a vector tileset
             if geometry:
                 feature["geometry"] = {"type": feature["geometry"]["type"]}
-        elif tileset: # Minimise data to be included in a vector tileset
-            # Drop all properties except any listed here
-            properties_to_keep = ["pid", "min", "max"] # ["min", "max"] are required for layer styling and filtering
-            feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}
+        # elif tileset: # Minimise data to be included in a vector tileset
+        #     # Drop all properties except any listed here
+        #     properties_to_keep = ["pid", "min", "max"] # ["min", "max"] are required for layer styling and filtering
+        #     feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}
 
         feature_collection["features"].append(feature)
 
