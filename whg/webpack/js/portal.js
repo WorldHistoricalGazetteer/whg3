@@ -144,6 +144,8 @@ function waitMapLoad() {
 function waitDocumentReady() {
 	return new Promise((resolve) => {
 		$(document).ready(() => {
+			
+			$('#dataset_content').spin();
 
 			let checked_cards = []
 
@@ -408,7 +410,10 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			});
 
 	})
-	.catch(error => console.error("An error occurred:", error));
+	.catch(error => console.error("An error occurred:", error))
+	.finally(function() {
+		$('#dataset_content').stopSpin();
+	});
 
 function initCollectionForm() {
 
