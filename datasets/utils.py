@@ -127,15 +127,10 @@ def fetch_mapdata_ds(request, *args, **kwargs):
             available_tilesets = response.json().get('tilesets', [])
             null_geometry = len(available_tilesets) > 0
     
-    start_time = time.time()  # Record the start time
-    # places = ds.places.prefetch_related('geoms').order_by('id') # Ensure the same order each time the function is called
-    # place_geometries = {place.id: list(place.geoms.all()) for place in places}  # Dictionary to store geometries for each place
-    
-    
+    start_time = time.time()  # Record the start time    
     places = ds.places.prefetch_related(
         Prefetch('geoms', queryset=PlaceGeom.objects.only('jsonb'))
-    ).order_by('id')
-    
+    ).order_by('id')    
     end_time = time.time()  # Record the end time
     response_time = end_time - start_time  # Calculate the response time
     print(f"DB query time: {response_time:.2f} seconds")
@@ -167,17 +162,11 @@ def fetch_mapdata_ds(request, *args, **kwargs):
         geometry = None
 
         if geometries:
-            if reduce_geometry:
-                # Reduce geometry to a point (default behavior)
-                geometry = geometries[0].jsonb
-            else:
-                if len(geometries) == 1:
-                    geometry = geometries[0].jsonb
-                else:
-                    geometry = {
-                        "type": "GeometryCollection",
-                        "geometries": [geo.jsonb for geo in geometries]
-                    }
+            # Default behavior: Reduce to single geometry
+            geometry = geometries[0].jsonb if reduce_geometry or len(geometries) == 1 else {
+                "type": "GeometryCollection",
+                "geometries": [geo.jsonb for geo in geometries]
+            }
 
         feature = {
             "type": "Feature",
