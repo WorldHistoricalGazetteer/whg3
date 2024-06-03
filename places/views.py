@@ -273,44 +273,27 @@ class PlacePortalView(TemplateView):
     return context
 
 class PlaceDetailView(DetailView):
-    model = Place
+  model = Place
+  template_name = 'places/place_detail.html'
+  
+  def get_success_url(self):
+    pid = self.kwargs.get("id")
+    return '/places/{}/detail'.format(pid)
+  
+  def get_context_data(self, *args, **kwargs):
+    context = super().get_context_data(**kwargs)
+    context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
+    context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    context['maptilerkey'] = settings.MAPTILER_KEY
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        place = self.object
+    place = self.object
 
-        context['timespans'] = {'ts': place.timespans or None}
-        context['minmax'] = {'mm': place.minmax or None}
-        context['dataset'] = place.dataset
-        context['beta_or_better'] = self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists()
+    context['timespans'] = {'ts': place.timespans or None}
+    context['minmax'] = {'mm': place.minmax or None}
+    context['dataset'] = place.dataset
+    context['beta_or_better'] = self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists()
 
-        return context
-
-    def render_to_response(self, context, **response_kwargs):
-        return JsonResponse(context)
-
-# class PlaceDetailView(DetailView):
-#   model = Place
-#   template_name = 'places/place_detail.html'
-#
-#   def get_success_url(self):
-#     pid = self.kwargs.get("id")
-#     return '/places/{}/detail'.format(pid)
-#
-#   def get_context_data(self, *args, **kwargs):
-#     context = super().get_context_data(**kwargs)
-#     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-#     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-#     context['maptilerkey'] = settings.MAPTILER_KEY
-#
-#     place = self.object
-#
-#     context['timespans'] = {'ts': place.timespans or None}
-#     context['minmax'] = {'mm': place.minmax or None}
-#     context['dataset'] = place.dataset
-#     context['beta_or_better'] = self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists()
-#
-#     return context
+    return context
 
 # TODO:  tgn query very slow
 class PlaceModalView(DetailView):
