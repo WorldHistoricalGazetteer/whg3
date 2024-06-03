@@ -61,7 +61,7 @@ function waitMapLoad() {
 				filterSources(fromValue, toValue, includeUndated);
 			}, 300);
 
-			if (!!mapParameters.temporalControl && allts.length > 1) {
+			if (!!mapParameters.temporalControl) {
 				new Historygram(mappy, allts, dateRangeChanged);
 			};
 			
