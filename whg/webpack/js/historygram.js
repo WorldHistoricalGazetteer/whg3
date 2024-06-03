@@ -11,6 +11,12 @@
 
 export default class Historygram {
     constructor(map, intervals, onChange = null, drawHistogram=true, addControls=true, maxBins=100, includeUndated=true, containerId='historygram') {
+		
+        if (!intervals || intervals.length <= 1) {
+            console.log("Cannot construct Histogram without at least two time-intervals.");
+            return;
+        }		
+		
         this.map = map;
         this.intervals = intervals;
         this.fromValue = null;
