@@ -133,14 +133,18 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     
     
     places = ds.places.prefetch_related(
-        Prefetch('geoms', queryset=PlaceGeom.objects.only('geom'))
+        Prefetch('geoms', queryset=PlaceGeom.objects.only('geom_jsonb'))
     ).order_by('id')
     
-    
-    extent = list(ds.places.aggregate(Extent('geoms__geom')).values())[0]
     end_time = time.time()  # Record the end time
     response_time = end_time - start_time  # Calculate the response time
     print(f"DB query time: {response_time:.2f} seconds")
+    
+    start_time = time.time()  # Record the start time
+    extent = list(ds.places.aggregate(Extent('geoms__geom')).values())[0]
+    end_time = time.time()  # Record the end time
+    response_time = end_time - start_time  # Calculate the response time
+    print(f"Extent calculation time: {response_time:.2f} seconds")
 
     feature_collection = {
         "title": ds.title,
@@ -162,18 +166,18 @@ def fetch_mapdata_ds(request, *args, **kwargs):
         geometries = place.geoms.all()
         geometry = None
 
-        # if geometries:
-        #     if reduce_geometry:
-        #         # Reduce geometry to a point (default behavior)
-        #         geometry = json.loads(geometries[0].geom.json)
-        #     else:
-        #         if len(geometries) == 1:
-        #             geometry = json.loads(geometries[0].geom.json)
-        #         else:
-        #             geometry = {
-        #                 "type": "GeometryCollection",
-        #                 "geometries": [json.loads(geo.geom.json) for geo in geometries]
-        #             }
+        if geometries:
+            if reduce_geometry:
+                # Reduce geometry to a point (default behavior)
+                geometry = geometries[0].geom_jsonb
+            else:
+                if len(geometries) == 1:
+                    geometry = geometries[0].geom_jsonb
+                else:
+                    geometry = {
+                        "type": "GeometryCollection",
+                        "geometries": [geo.geom_jsonb for geo in geometries]
+                    }
 
         feature = {
             "type": "Feature",
@@ -183,20 +187,20 @@ def fetch_mapdata_ds(request, *args, **kwargs):
                 "review_wd": place.review_wd,
                 "review_tgn": place.review_tgn,
                 "review_whg": place.review_whg,
-                # "min": "null" if place.minmax is None or place.minmax[0] is None else place.minmax[0], # String required by Maplibre filter test
-                # "max": "null" if place.minmax is None or place.minmax[1] is None else place.minmax[1], # String required by Maplibre filter test
+                "min": "null" if place.minmax is None or place.minmax[0] is None else place.minmax[0], # String required by Maplibre filter test
+                "max": "null" if place.minmax is None or place.minmax[1] is None else place.minmax[1], # String required by Maplibre filter test
             },
             "geometry": geometry,
             "id": index # Required for MapLibre conditional styling
         }
 
-        # if null_geometry: # Minimise data sent to browser when using a vector tileset
-        #     if geometry:
-        #         feature["geometry"] = {"type": feature["geometry"]["type"]}
-        # elif tileset: # Minimise data to be included in a vector tileset
-        #     # Drop all properties except any listed here
-        #     properties_to_keep = ["pid", "min", "max"] # ["min", "max"] are required for layer styling and filtering
-        #     feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}
+        if null_geometry: # Minimise data sent to browser when using a vector tileset
+            if geometry:
+                feature["geometry"] = {"type": feature["geometry"]["type"]}
+        elif tileset: # Minimise data to be included in a vector tileset
+            # Drop all properties except any listed here
+            properties_to_keep = ["pid", "min", "max"] # ["min", "max"] are required for layer styling and filtering
+            feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}
 
         feature_collection["features"].append(feature)
         
