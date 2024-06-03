@@ -275,10 +275,18 @@ class PlacePortalView(TemplateView):
 class PlaceDetailView(DetailView):
   model = Place
   template_name = 'places/place_detail.html'
-  
-  def get_object(self):
-        return get_object_or_404(Place.objects.select_related('dataset'), pk=self.kwargs.get('id'))
 
+  def get_object(self):
+    pk = self.kwargs.get('id')
+    print(f"Attempting to retrieve Place with pk={pk}")
+    try:
+        place = Place.objects.select_related('dataset').get(pk=pk)
+        print(f"Place found: {place}")
+        return place
+    except Place.DoesNotExist:
+        print(f"No Place found with pk={pk}")
+        raise Http404("No Place matches the given query.")
+    
   def get_success_url(self):
     pid = self.kwargs.get("id")
     return '/places/{}/detail'.format(pid)
