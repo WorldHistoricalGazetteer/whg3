@@ -273,46 +273,26 @@ class PlacePortalView(TemplateView):
     return context
 
 class PlaceDetailView(DetailView):
-  #login_url = '/accounts/login/'
-  redirect_field_name = 'redirect_to'
-  
   model = Place
   template_name = 'places/place_detail.html'
 
   
   def get_success_url(self):
     pid = self.kwargs.get("id")
-    #user = self.request.user
-    #print('messages:', messages.get_messages(self.kwargs))
-    print('Got success_url')
-    return '/places/'+str(pid)+'/detail'
-
-  def get_object(self):
-    pid = self.kwargs.get("id")
-    return get_object_or_404(Place, id=pid)
+    return '/places/{}/detail'.format(pid)
   
   def get_context_data(self, *args, **kwargs):
-    context = super(PlaceDetailView, self).get_context_data(*args, **kwargs)
+    context = super().get_context_data(**kwargs)
     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
 
-    print('PlaceDetailView get_context_data() kwargs:',self.kwargs)
-    print('PlaceDetailView get_context_data() request.user',self.request.user)
-    place = get_object_or_404(Place, pk= self.kwargs.get("id"))
-    print('got place:',place)
-    ds = place.dataset
-    print('Got place.dataset')
-    me = self.request.user
-    #placeset = Place.objects.filter(dataset=ds.label
-    
-    context['timespans'] = {'ts':place.timespans or None}
-    print('Got place.timespans')
-    context['minmax'] = {'mm':place.minmax or None}
-    print('Got place.minmax')
-    context['dataset'] = ds
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
-    print('Got self.request.user.groups.filter; returning')
+    place = self.object
+
+    context['timespans'] = {'ts': place.timespans or None}
+    context['minmax'] = {'mm': place.minmax or None}
+    context['dataset'] = place.dataset
+    context['beta_or_better'] = self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists()
 
     return context
 
