@@ -162,18 +162,18 @@ def fetch_mapdata_ds(request, *args, **kwargs):
         geometries = place.geoms.all()
         geometry = None
 
-        if geometries:
-            if reduce_geometry:
-                # Reduce geometry to a point (default behavior)
-                geometry = json.loads(geometries[0].geom.json)
-            else:
-                if len(geometries) == 1:
-                    geometry = json.loads(geometries[0].geom.json)
-                else:
-                    geometry = {
-                        "type": "GeometryCollection",
-                        "geometries": [json.loads(geo.geom.json) for geo in geometries]
-                    }
+        # if geometries:
+        #     if reduce_geometry:
+        #         # Reduce geometry to a point (default behavior)
+        #         geometry = json.loads(geometries[0].geom.json)
+        #     else:
+        #         if len(geometries) == 1:
+        #             geometry = json.loads(geometries[0].geom.json)
+        #         else:
+        #             geometry = {
+        #                 "type": "GeometryCollection",
+        #                 "geometries": [json.loads(geo.geom.json) for geo in geometries]
+        #             }
 
         feature = {
             "type": "Feature",
