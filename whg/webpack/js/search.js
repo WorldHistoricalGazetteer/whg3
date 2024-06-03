@@ -519,12 +519,17 @@ function renderResults(data, fromStorage = false) {
 		$('#search_input').val(data.parameters.qstr);
 		$('#result_facets input[type="checkbox"]').prop('checked', false);
 
-		const checkedOptions = data.parameters.fclasses.toLowerCase().split(',');
-		$('#adv_checkboxes input').each(function(index, checkbox) {
-			$(checkbox).
-			prop('checked',
-				checkedOptions.includes($(checkbox).attr('id').split('_')[1]));
-		});
+		if (data.parameters.fclasses) {
+			const checkedOptions = data.parameters.fclasses.toLowerCase().split(',');
+			$('#adv_checkboxes input').each(function(index, checkbox) {
+				$(checkbox).
+				prop('checked',
+					checkedOptions.includes($(checkbox).attr('id').split('_')[1]));
+			});
+		}
+		else {
+			$('#adv_checkboxes input').prop('checked', true);
+		}
 
 		// Initialise temporal control
 		let datelineContainer = document.createElement('div');
