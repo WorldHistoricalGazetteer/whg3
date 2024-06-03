@@ -8,7 +8,7 @@ from django.contrib.gis.geos import GeometryCollection, Polygon, GEOSGeometry
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.db import models
-from django.db.models import JSONField, Exists, OuterRef, Q, Func, CharField
+from django.db.models import JSONField, Exists, OuterRef, Q, Func, CharField, Min, Max
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from django.urls import reverse
