@@ -1,12 +1,15 @@
 # /datasets/utils.py
 import requests
+import time
 
 from django.conf import settings
 from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.db.models import Extent
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives
+from django.db.models import Prefetch
 from django.http import FileResponse, JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, render #, redirect
 from django.views.generic import View
@@ -106,13 +109,23 @@ def download_file(request, *args, **kwargs):
 # GeoJSON for all places in a dataset INCLUDING those without geometry
 def fetch_mapdata_ds(request, *args, **kwargs):
     print('fetch_mapdata_ds kwargs', kwargs)
+        
     dsid = kwargs['dsid']
-    ds = get_object_or_404(Dataset, pk=dsid)
-
     reduce_geometry = request.GET.get('reduce_geometry', 'true').lower() == 'true' # Default to 'true' and return reduced geometry
-
     tileset = request.GET.get('variant', '') == 'tileset'
     ignore_tilesets = request.GET.get('variant', '') == 'ignore_tilesets'
+    
+    # Check if the 'refresh_cache' query parameter is present in the request
+    refresh_cache = request.GET.get('refresh_cache', False)
+    cache_key = f"fetch_mapdata_ds_data_{dsid}_{reduce_geometry}_{tileset}_{ignore_tilesets}"
+
+    # Check if the data is already cached and the 'refresh_cache' parameter is not present
+    if not refresh_cache:
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return JsonResponse(cached_data, safe=False, json_dumps_params={'ensure_ascii': False})
+        
+    ds = get_object_or_404(Dataset, pk=dsid)
     reduce_geometry = False if tileset else reduce_geometry
 
     available_tilesets = None
@@ -125,8 +138,11 @@ def fetch_mapdata_ds(request, *args, **kwargs):
         if response.status_code == 200:
             available_tilesets = response.json().get('tilesets', [])
             null_geometry = len(available_tilesets) > 0
-
-    places = ds.places.prefetch_related('geoms').order_by('id') # Ensure the same order each time the function is called
+    
+    places = ds.places.prefetch_related(
+        Prefetch('geoms', queryset=PlaceGeom.objects.only('jsonb'))
+    ).order_by('id')    
+    
     extent = list(ds.places.aggregate(Extent('geoms__geom')).values())[0]
 
     feature_collection = {
@@ -143,27 +159,18 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     if null_geometry:
         feature_collection["tilesets"] = available_tilesets
 
+    start_time = time.time()  # Record the start time
     for index, place in enumerate(places):
+        
         geometries = place.geoms.all()
         geometry = None
 
         if geometries:
-            if reduce_geometry:
-                # Reduce geometry to a point (default behavior)
-                geojson_geometry = GEOSGeometry(geometries[0].geom)
-                geometry = json.loads(geojson_geometry.json)
-            else:
-                if len(geometries) == 1:
-                    geojson_geometry = GEOSGeometry(geometries[0].geom)
-                    geometry = json.loads(geojson_geometry.json)
-                else:
-                    geometry = {
-                        "type": "GeometryCollection",
-                        "geometries": []
-                    }
-                    for geo in geometries:
-                        geojson_geometry = GEOSGeometry(geo.geom)
-                        geometry["geometries"].append(json.loads(geojson_geometry.json))
+            # Default behavior: Reduce to single geometry
+            geometry = geometries[0].jsonb if reduce_geometry or len(geometries) == 1 else {
+                "type": "GeometryCollection",
+                "geometries": [geo.jsonb for geo in geometries]
+            }
 
         feature = {
             "type": "Feature",
@@ -182,15 +189,20 @@ def fetch_mapdata_ds(request, *args, **kwargs):
 
         if null_geometry: # Minimise data sent to browser when using a vector tileset
             if geometry:
-                del feature["geometry"]["coordinates"]
-                if "geowkt" in feature["geometry"]:
-                    del feature["geometry"]["geowkt"]
+                feature["geometry"] = {"type": feature["geometry"]["type"]}
         elif tileset: # Minimise data to be included in a vector tileset
             # Drop all properties except any listed here
             properties_to_keep = ["pid", "min", "max"] # ["min", "max"] are required for layer styling and filtering
             feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}
 
         feature_collection["features"].append(feature)
+        
+    end_time = time.time()  # Record the end time
+    response_time = end_time - start_time  # Calculate the response time
+    print(f"Loop time: {response_time:.2f} seconds")
+    
+    # Cache the data
+    cache.set(cache_key, feature_collection)
 
     return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii': False})
 
