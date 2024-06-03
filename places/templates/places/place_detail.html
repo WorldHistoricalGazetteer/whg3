@@ -107,6 +107,9 @@
           <table class="w-75">
           <colgroup><col style="width:150px;"></col><col></col></colgroup>
           <tr><td>Title:</td><td></td> <td><a href="{% url 'datasets:ds_meta' dataset.id %}">{{ dataset.title }}</a></td></tr>
+          {% if dataset_minmax %}
+          <tr><td>Earliest/Latest:</td><td> </td><td>{{dataset_minmax.0}} / {{dataset_minmax.1}} </td></tr>
+          {% endif %}
           <tr><td>Creator(s):</td><td> </td><td>{{dataset_creator}}</td></tr>
           <tr><td>Last modified:</td><td> </td><td>{{dataset_last_modified_text}}</td></tr>
           </table>
