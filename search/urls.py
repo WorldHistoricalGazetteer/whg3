@@ -25,4 +25,3 @@ urlpatterns = [
 
   path('db/', SearchDatabaseView.as_view(), name='search-db'), # executes database search
 ]
-
