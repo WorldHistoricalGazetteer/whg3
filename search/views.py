@@ -333,13 +333,13 @@ class SearchViewV3(View):
         }
         request.session["search_params"] = params
         
-        if params.get("fclasses"):
+        if params.get("fclasses") == "": # Return empty result if no feature classes are given
+            result = {'parameters': params, 'suggestions': []}
+        else:
             q = SearchViewV3.build_search_query(params)
             suggestions = suggester(q, [idx, 'pub'])
             suggestions = [suggestionItem(s) for s in suggestions]
             result = {'parameters': params, 'suggestions': suggestions}
-        else: # Return empty result if no feature classes are given
-            result = {'parameters': params, 'suggestions': []}
 
         return JsonResponse(result, safe=False)
 

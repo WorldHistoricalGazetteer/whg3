@@ -309,18 +309,8 @@ Promise.all([
 		if ($('#entrySelector').val() !== null) $('#entrySelector').val(null).trigger('change');
 	});
 
-
-	var referringPage = document.referrer;
-	console.log('Referring page:', referringPage);
-	if (referringPage) { // If arriving from `portal` or `home` pages, load and render any saved search+results
-		if (referringPage.includes('/') || referringPage.includes('portal')) {
-			const storedResults = localStorage.getItem('last_search'); // Includes both `.parameters` and `.suggestions` objects
-			results = storedResults ? JSON.parse(storedResults) : results;
-		} else { // otherwise clear any previous search+results from LocalStorage
-			console.log('Clearing last search from localStorage');
-			localStorage.removeItem('last_search');
-		}
-	}
+	const storedResults = localStorage.getItem('last_search'); // Includes both `.parameters` and `.suggestions` objects
+	results = storedResults ? JSON.parse(storedResults) : results;
 	$(window).on('beforeunload', function(event) { // Clear any search+results if not navigating away to a portal page
 		if (!enteringPortal) {
 			localStorage.removeItem('last_search');
@@ -529,12 +519,17 @@ function renderResults(data, fromStorage = false) {
 		$('#search_input').val(data.parameters.qstr);
 		$('#result_facets input[type="checkbox"]').prop('checked', false);
 
-		const checkedOptions = data.parameters.fclasses.toLowerCase().split(',');
-		$('#adv_checkboxes input').each(function(index, checkbox) {
-			$(checkbox).
-			prop('checked',
-				checkedOptions.includes($(checkbox).attr('id').split('_')[1]));
-		});
+		if (data.parameters.fclasses) {
+			const checkedOptions = data.parameters.fclasses.toLowerCase().split(',');
+			$('#adv_checkboxes input').each(function(index, checkbox) {
+				$(checkbox).
+				prop('checked',
+					checkedOptions.includes($(checkbox).attr('id').split('_')[1]));
+			});
+		}
+		else {
+			$('#adv_checkboxes input').prop('checked', true);
+		}
 
 		// Initialise temporal control
 		let datelineContainer = document.createElement('div');
