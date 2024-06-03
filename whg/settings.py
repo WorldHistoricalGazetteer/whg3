@@ -4,6 +4,7 @@
 import os, sys
 from celery.schedules import crontab
 from django.contrib.messages import constants as messages
+from django.core.cache.backends.filebased import FileBasedCache
 
 if 'test' in sys.argv:
     CELERY_ALWAYS_EAGER = True
@@ -301,6 +302,15 @@ STATICFILES_DIRS = [
   os.path.join(BASE_DIR, 'main/static/'),
   os.path.join(BASE_DIR, 'whg/static/'),
 ]
+
+# Use a file-based cache backend.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.path.join(BASE_DIR, 'cache'),
+        'TIMEOUT': None,  # Cache data indefinitely until manually updated
+    }
+}
 
 ## GIS Libraries
 GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
