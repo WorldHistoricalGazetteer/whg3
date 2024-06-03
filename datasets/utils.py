@@ -148,6 +148,7 @@ def fetch_mapdata_ds(request, *args, **kwargs):
         feature_collection["tilesets"] = available_tilesets
 
     for index, place in enumerate(places):
+        
         geometries = place.geoms.all()
         geometry = None
 
@@ -161,13 +162,17 @@ def fetch_mapdata_ds(request, *args, **kwargs):
                     geojson_geometry = GEOSGeometry(geometries[0].geom)
                     geometry = json.loads(geojson_geometry.json)
                 else:
+                    # geometry = {
+                    #     "type": "GeometryCollection",
+                    #     "geometries": []
+                    # }
+                    # for geo in geometries:
+                    #     geojson_geometry = GEOSGeometry(geo.geom)
+                    #     geometry["geometries"].append(json.loads(geojson_geometry.json))
                     geometry = {
                         "type": "GeometryCollection",
-                        "geometries": []
+                        "geometries": [json.loads(geo.geom.json) for geo in geometries]
                     }
-                    for geo in geometries:
-                        geojson_geometry = GEOSGeometry(geo.geom)
-                        geometry["geometries"].append(json.loads(geojson_geometry.json))
 
         feature = {
             "type": "Feature",
