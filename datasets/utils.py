@@ -128,6 +128,7 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     
     start_time = time.time()  # Record the start time
     places = ds.places.prefetch_related('geoms').order_by('id') # Ensure the same order each time the function is called
+    place_geometries = {place.id: list(place.geoms.all()) for place in places}  # Dictionary to store geometries for each place
     extent = list(ds.places.aggregate(Extent('geoms__geom')).values())[0]
     end_time = time.time()  # Record the end time
     response_time = end_time - start_time  # Calculate the response time
@@ -149,7 +150,7 @@ def fetch_mapdata_ds(request, *args, **kwargs):
 
     for index, place in enumerate(places):
         
-        geometries = place.geoms.all()
+        geometries = place_geometries[place.id]
         geometry = None
 
         if geometries:
@@ -182,9 +183,6 @@ def fetch_mapdata_ds(request, *args, **kwargs):
 
         if null_geometry: # Minimise data sent to browser when using a vector tileset
             if geometry:
-                # del feature["geometry"]["coordinates"]
-                # if "geowkt" in feature["geometry"]:
-                #     del feature["geometry"]["geowkt"]
                 feature["geometry"] = {"type": feature["geometry"]["type"]}
         elif tileset: # Minimise data to be included in a vector tileset
             # Drop all properties except any listed here
