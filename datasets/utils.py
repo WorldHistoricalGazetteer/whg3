@@ -200,7 +200,7 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     response_time = end_time - start_time  # Calculate the response time
     print(f"Loop time: {response_time:.2f} seconds")
     
-    # Cache the data
+    # Cache the data with the generated cache key
     cache.set(cache_key, feature_collection)
 
     return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii': False})
