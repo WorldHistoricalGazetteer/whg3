@@ -290,10 +290,11 @@ class PlaceDetailView(DetailView):
     context['maptilerkey'] = settings.MAPTILER_KEY
 
     place = self.object
+    dataset = place.dataset
 
     context['timespans'] = {'ts': place.timespans or None}
     context['minmax'] = {'mm': place.minmax or None}
-    context['dataset'] = place.dataset
+    context['dataset'] = dataset
     context['dataset_minmax'] = dataset.minmax if dataset.minmax else None
     context['dataset_creator'] = dataset.creator
     context['dataset_last_modified_text'] = dataset.last_modified_text
