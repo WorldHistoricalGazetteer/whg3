@@ -101,6 +101,19 @@
 	      </div>
       </div>
       <hr/>
+      <div id="coll_dslist">
+        <p class="larger strong mb-0">Dataset details</p>
+        <div id="ds_cards">
+          <table class="w-75">
+          <colgroup><col style="width:150px;"></col><col></col></colgroup>
+          <tr><td>Title:</td><td></td> <td><a href="{% url 'datasets:ds_meta' dataset.id %}">{{ dataset.title }}</a></td></tr>
+          {% if dataset.minmax %}
+          <tr><td>Earliest/Latest:</td><td> </td><td>{{dataset.minmax.0}} / {{dataset.minmax.1}} </td></tr>{% endif %}
+          <tr><td>Creator(s):</td><td> </td><td>{{dataset.creator}}</td></tr>
+          <tr><td>Last modified:</td><td> </td><td>{{dataset.last_modified_text}}</td></tr>
+          </table>
+        </div> <!-- #ds_cards -->        
+      </div> <!-- #coll_dslist -->
     </div>
     <div class="col-12 mt-2 mb-2 order-0 full-height-lg col-lg-5 mb-lg-0 p-lg-0 order-lg-1">
     	<div id="map" style="padding: 8px; height: 400px; max-height:400px"></div>
