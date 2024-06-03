@@ -125,9 +125,13 @@ def fetch_mapdata_ds(request, *args, **kwargs):
         if response.status_code == 200:
             available_tilesets = response.json().get('tilesets', [])
             null_geometry = len(available_tilesets) > 0
-
+    
+    start_time = time.time()  # Record the start time
     places = ds.places.prefetch_related('geoms').order_by('id') # Ensure the same order each time the function is called
     extent = list(ds.places.aggregate(Extent('geoms__geom')).values())[0]
+    end_time = time.time()  # Record the end time
+    response_time = end_time - start_time  # Calculate the response time
+    print(f"DB query time: {response_time:.2f} seconds")
 
     feature_collection = {
         "title": ds.title,
