@@ -311,6 +311,7 @@ class PlaceDetailView(DetailView):
     print('Got place.minmax')
     context['dataset'] = ds
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
+    print('Got self.request.user.groups.filter; returning')
 
     return context
 
