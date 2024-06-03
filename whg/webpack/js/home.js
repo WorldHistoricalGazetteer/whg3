@@ -140,10 +140,10 @@ Promise.all([
 			'qstr': $('#search_input').val(),
 			'mode': 'exactly',
 			'idx': eswhg, // hard-coded in html template
-			'fclasses': '',
-			'start': null,
-			'end': null,
-			'bounds': null,
+			//'fclasses': '',
+			//'start': null,
+			//'end': null,
+			//'bounds': null,
 		};
 
 		// AJAX POST request to SearchView() with the options (includes qstr)
