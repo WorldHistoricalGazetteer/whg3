@@ -72,7 +72,7 @@ export default class Historygram {
 
         const range = max - min;
         const exponent = Math.floor(Math.log10(range / this.maxBins));
-        const base = [1, 2, 5].find(base => (range / (base * 10 ** exponent)) <= this.maxBins);
+        const base = [1, 2, 5, 10, 20, 50].find(base => (range / (base * 10 ** exponent)) <= this.maxBins);
         const binInterval = base * 10 ** exponent;
         const adjustedMin = Math.floor(min / binInterval) * binInterval;
         const adjustedMax = Math.ceil(max / binInterval) * binInterval;
