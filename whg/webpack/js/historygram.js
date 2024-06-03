@@ -35,7 +35,9 @@ export default class Historygram {
         this.initialise();
         this.draw();
         this.appendUndatedCheckbox();
+    console.log('initialise');
         this.initialise = this.initialise.bind(this);
+    console.log('drawing');
         this.draw = this.draw.bind(this);
         window.addEventListener('resize', this.draw);
     }
@@ -59,6 +61,7 @@ export default class Historygram {
     }
     
     draw() {	
+    console.log('drawing');
         d3.select(this.container).selectAll("svg").remove();
         const [binInterval, binBounds, binCounts] = this.calculateBins();
         this.histogram(binInterval, binBounds, binCounts);		
@@ -69,16 +72,27 @@ export default class Historygram {
             Math.min(min, ...row),
             Math.max(max, ...row)
         ], [Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]);
+    console.log('Min:', min, 'Max:', max);
 
         const range = max - min;
+    if (range <= 0) {
+        console.error('Invalid range: ', range);
+        return [0, [], []];
+    }
         const exponent = Math.floor(Math.log10(range / this.maxBins));
-        const base = [1, 2, 5].find(base => (range / (base * 10 ** exponent)) <= this.maxBins);
+        const base = [1, 2, 5, 10, 20, 50].find(base => (range / (base * 10 ** exponent)) <= this.maxBins);
+ 	if (!base) {
+        console.error('No valid base found for the range: ', range);
+        return [0, [], []];
+    }        
         const binInterval = base * 10 ** exponent;
         const adjustedMin = Math.floor(min / binInterval) * binInterval;
         const adjustedMax = Math.ceil(max / binInterval) * binInterval;
         const adjustedRange = adjustedMax - adjustedMin;
         const adjustedBinCount = Math.ceil(adjustedRange / binInterval);
         const binBounds = Array.from({ length: adjustedBinCount + 1 }, (_, i) => adjustedMin + i * binInterval);
+    console.log('Bin Interval:', binInterval, 'Adjusted Min:', adjustedMin, 'Adjusted Max:', adjustedMax, 'Adjusted Range:', adjustedRange, 'Adjusted Bin Count:', adjustedBinCount);
+
     
         const binCounts = Array(adjustedBinCount).fill(0);
 	    for (const interval of this.intervals) {
@@ -90,6 +104,8 @@ export default class Historygram {
 	            }
 	        }
 	    }
+
+    console.log('Bin Bounds:', binBounds, 'Bin Counts:', binCounts);
 	
 	    return [binInterval, binBounds, binCounts];
     }
@@ -385,7 +401,6 @@ export default class Historygram {
 			#historygram .undated_container > label {
 			    color: #636a64;
 			    position: relative;
-			    top: -4px;
 			    font-size: 12px;
 			}
 			

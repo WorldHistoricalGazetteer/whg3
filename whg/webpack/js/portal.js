@@ -144,6 +144,8 @@ function waitMapLoad() {
 function waitDocumentReady() {
 	return new Promise((resolve) => {
 		$(document).ready(() => {
+			
+			$('#dataset_content').spin();
 
 			let checked_cards = []
 
@@ -220,8 +222,11 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		const adminString = geoData.admin.length > 0 ?
 			` within the modern political boundaries of ${geoData.admin.map((name, index) => index < geoData.admin.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${geoData.admin.length == 2 ? '' : ','} and$1`)}, and` :
 			'';
+		const ecoString = geoData.ecoregion.name ?
+			` within the <a href="${geoData.ecoregion.url}" target="_blank">${geoData.ecoregion.name}</a> ecoregion and <a href="${geoData.biome.url}" target="_blank">${geoData.biome.name}</a> biome` :
+			'';
 		$('<p class="map-data">').addClass('mb-1').html(`
-		    It lies${elevationString}${adminString} within the <a href="${geoData.ecoregion.url}" target="_blank">${geoData.ecoregion.name}</a> ecoregion and <a href="${geoData.biome.url}" target="_blank">${geoData.biome.name}</a> biome.<span class="asterisk" data-bs-toggle="tooltip" data-bs-title="Information in this paragraph is based on a point at the centroid of the associated source geometries.">*</span>
+		    It lies${elevationString}${adminString}${ecoString}.<span class="asterisk" data-bs-toggle="tooltip" data-bs-title="Information in this paragraph is based on a point at the centroid of the associated source geometries.">*</span>
 		`).insertAfter($('#gloss').find('p:first'));
 
 		$('#gloss').append($('<span id="collectionInfo">'));
@@ -405,7 +410,10 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			});
 
 	})
-	.catch(error => console.error("An error occurred:", error));
+	.catch(error => console.error("An error occurred:", error))
+	.finally(function() {
+		$('#dataset_content').stopSpin();
+	});
 
 function initCollectionForm() {
 
