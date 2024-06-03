@@ -155,12 +155,14 @@ def fetch_mapdata_ds(request, *args, **kwargs):
         if geometries:
             if reduce_geometry:
                 # Reduce geometry to a point (default behavior)
-                geojson_geometry = GEOSGeometry(geometries[0].geom)
-                geometry = json.loads(geojson_geometry.json)
+                # geojson_geometry = GEOSGeometry(geometries[0].geom)
+                # geometry = json.loads(geojson_geometry.json)
+                geometry = json.loads(geometries[0].geom.json)
             else:
                 if len(geometries) == 1:
-                    geojson_geometry = GEOSGeometry(geometries[0].geom)
-                    geometry = json.loads(geojson_geometry.json)
+                    # geojson_geometry = GEOSGeometry(geometries[0].geom)
+                    # geometry = json.loads(geojson_geometry.json)
+                    geometry = json.loads(geometries[0].geom.json)
                 else:
                     # geometry = {
                     #     "type": "GeometryCollection",
