@@ -127,19 +127,11 @@ def fetch_mapdata_ds(request, *args, **kwargs):
             available_tilesets = response.json().get('tilesets', [])
             null_geometry = len(available_tilesets) > 0
     
-    start_time = time.time()  # Record the start time    
     places = ds.places.prefetch_related(
         Prefetch('geoms', queryset=PlaceGeom.objects.only('jsonb'))
     ).order_by('id')    
-    end_time = time.time()  # Record the end time
-    response_time = end_time - start_time  # Calculate the response time
-    print(f"DB query time: {response_time:.2f} seconds")
     
-    start_time = time.time()  # Record the start time
     extent = list(ds.places.aggregate(Extent('geoms__geom')).values())[0]
-    end_time = time.time()  # Record the end time
-    response_time = end_time - start_time  # Calculate the response time
-    print(f"Extent calculation time: {response_time:.2f} seconds")
 
     feature_collection = {
         "title": ds.title,
