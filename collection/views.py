@@ -486,13 +486,15 @@ def fetch_mapdata_coll(request, *args, **kwargs):
     tileset = request.GET.get('variant', '') == 'tileset'
     ignore_tilesets = request.GET.get('variant', '') == 'ignore_tilesets'
 
-    # Generate cache key based on parameters
+    # Check if the 'refresh_cache' query parameter is present in the request
+    refresh_cache = request.GET.get('refresh_cache', False)
     cache_key = f"fetch_mapdata_coll_data_{id_}_{tileset}_{ignore_tilesets}"
 
-    # Check if the data is already cached
-    cached_data = cache.get(cache_key)
-    if cached_data is not None:
-        return JsonResponse(cached_data, safe=False, json_dumps_params={'ensure_ascii': False})
+    # Check if the data is already cached and the 'refresh_cache' parameter is not present
+    if not refresh_cache:
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return JsonResponse(cached_data, safe=False, json_dumps_params={'ensure_ascii': False})
     
     ############################################################################################################
     # TODO: Force `ignore_tilesets` if any `visParameters` object has 'trail: true'                            #
