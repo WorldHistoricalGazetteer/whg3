@@ -323,14 +323,14 @@ class Dataset(models.Model):
 
   @property
   def minmax(self):
-    # TODO: temporal is sparse, sometimes [None, None]
-    timespans = [p.minmax for p in self.places.all() \
-                 if p.minmax and len(p.minmax) == 2 and p.minmax[0]]
-    # print('ds; timespans as model property', self.label, timespans)
-    earliest = min([t[0] for t in timespans]) if len(timespans) > 0 else None
-    latest = max([t[1] for t in timespans]) if len(timespans) > 0 else None
-    minmax = [earliest, latest] if earliest and latest else None
-    return minmax
+    minmax_values = Place.objects.filter(dataset=self).aggregate(
+        # This ignores `None` values, effectively handling temporal sparsity [None, None]
+        earliest=Min('minmax__0'),
+        latest=Max('minmax__1')
+    )
+    earliest = minmax_values['earliest']
+    latest = minmax_values['latest']
+    return [earliest, latest] if earliest and latest else None
 
   @property
   def missing_geoms(self):
