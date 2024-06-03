@@ -275,18 +275,10 @@ class PlacePortalView(TemplateView):
 class PlaceDetailView(DetailView):
   model = Place
   template_name = 'places/place_detail.html'
-
+  
   def get_object(self):
-    pk = self.kwargs.get('pk')
-    print(f"Attempting to retrieve Place with pk={pk}")
-    try:
-        place = Place.objects.select_related('dataset').get(pk=pk)
-        print(f"Place found: {place}")
-        return place
-    except Place.DoesNotExist:
-        print(f"No Place found with pk={pk}")
-        raise Http404("No Place matches the given query.")
-    
+        return get_object_or_404(Place.objects.select_related('dataset'), pk=self.kwargs.get('pk'))
+
   def get_success_url(self):
     pid = self.kwargs.get("id")
     return '/places/{}/detail'.format(pid)
@@ -302,6 +294,9 @@ class PlaceDetailView(DetailView):
     context['timespans'] = {'ts': place.timespans or None}
     context['minmax'] = {'mm': place.minmax or None}
     context['dataset'] = place.dataset
+    context['dataset_minmax'] = dataset.minmax if dataset.minmax else None
+    context['dataset_creator'] = dataset.creator
+    context['dataset_last_modified_text'] = dataset.last_modified_text
     context['beta_or_better'] = self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists()
 
     return context
