@@ -156,6 +156,7 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     if null_geometry:
         feature_collection["tilesets"] = available_tilesets
 
+    start_time = time.time()  # Record the start time
     for index, place in enumerate(places):
         
         geometries = place.geoms.all()
@@ -198,6 +199,10 @@ def fetch_mapdata_ds(request, *args, **kwargs):
         #     feature["properties"] = {k: v for k, v in feature["properties"].items() if k in properties_to_keep}
 
         feature_collection["features"].append(feature)
+        
+    end_time = time.time()  # Record the end time
+    response_time = end_time - start_time  # Calculate the response time
+    print(f"Loop time: {response_time:.2f} seconds")
 
     return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii': False})
 
