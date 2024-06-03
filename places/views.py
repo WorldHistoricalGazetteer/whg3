@@ -273,41 +273,32 @@ class PlacePortalView(TemplateView):
     return context
 
 class PlaceDetailView(DetailView):
-  #login_url = '/accounts/login/'
-  redirect_field_name = 'redirect_to'
-  
   model = Place
   template_name = 'places/place_detail.html'
-
   
+  def get_object(self):
+        return get_object_or_404(Place.objects.select_related('dataset'), pk=self.kwargs.get('pk'))
+
   def get_success_url(self):
     pid = self.kwargs.get("id")
-    #user = self.request.user
-    #print('messages:', messages.get_messages(self.kwargs))
-    return '/places/'+str(pid)+'/detail'
-
-  def get_object(self):
-    pid = self.kwargs.get("id")
-    return get_object_or_404(Place, id=pid)
+    return '/places/{}/detail'.format(pid)
   
   def get_context_data(self, *args, **kwargs):
-    context = super(PlaceDetailView, self).get_context_data(*args, **kwargs)
+    context = super().get_context_data(**kwargs)
     context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
 
-    print('PlaceDetailView get_context_data() kwargs:',self.kwargs)
-    print('PlaceDetailView get_context_data() request.user',self.request.user)
-    place = get_object_or_404(Place, pk= self.kwargs.get("id"))
-    print('got place:',place)
-    ds = place.dataset
-    me = self.request.user
-    #placeset = Place.objects.filter(dataset=ds.label
-    
-    context['timespans'] = {'ts':place.timespans or None}
-    context['minmax'] = {'mm':place.minmax or None}
-    context['dataset'] = ds
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
+    place = self.object
+    dataset = place.dataset
+
+    context['timespans'] = {'ts': place.timespans or None}
+    context['minmax'] = {'mm': place.minmax or None}
+    context['dataset'] = dataset
+    context['dataset_minmax'] = dataset.minmax if dataset.minmax else None
+    context['dataset_creator'] = dataset.creator
+    context['dataset_last_modified_text'] = dataset.last_modified_text
+    context['beta_or_better'] = self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists()
 
     return context
 
@@ -336,7 +327,9 @@ class PlaceModalView(DetailView):
     print('PlaceModalView get_context_data() kwargs:',self.kwargs)
     print('PlaceModalView get_context_data() request.user',self.request.user)
     place = get_object_or_404(Place, pk=self.kwargs.get("id"))
+    print('Got place')
     ds = place.dataset
+    print('Got dataset')
     dsobj = {"id":ds.id, "label":ds.label, "uri_base":ds.uri_base,
              "title":ds.title, "webpage":ds.webpage, 
              "minmax":None if ds.core else ds.minmax, 
