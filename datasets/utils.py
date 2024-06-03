@@ -133,7 +133,7 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     
     
     places = ds.places.prefetch_related(
-        Prefetch('geoms', queryset=PlaceGeom.objects.only('geom_jsonb'))
+        Prefetch('geoms', queryset=PlaceGeom.objects.only('jsonb'))
     ).order_by('id')
     
     end_time = time.time()  # Record the end time
@@ -169,14 +169,14 @@ def fetch_mapdata_ds(request, *args, **kwargs):
         if geometries:
             if reduce_geometry:
                 # Reduce geometry to a point (default behavior)
-                geometry = geometries[0].geom_jsonb
+                geometry = geometries[0].jsonb
             else:
                 if len(geometries) == 1:
-                    geometry = geometries[0].geom_jsonb
+                    geometry = geometries[0].jsonb
                 else:
                     geometry = {
                         "type": "GeometryCollection",
-                        "geometries": [geo.geom_jsonb for geo in geometries]
+                        "geometries": [geo.jsonb for geo in geometries]
                     }
 
         feature = {
