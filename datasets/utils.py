@@ -7,6 +7,7 @@ from django.contrib.gis.db.models import Extent
 from django.core.exceptions import ValidationError
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives
+from django.db.models import Prefetch
 from django.http import FileResponse, JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, render #, redirect
 from django.views.generic import View
@@ -127,8 +128,15 @@ def fetch_mapdata_ds(request, *args, **kwargs):
             null_geometry = len(available_tilesets) > 0
     
     start_time = time.time()  # Record the start time
-    places = ds.places.prefetch_related('geoms').order_by('id') # Ensure the same order each time the function is called
-    place_geometries = {place.id: list(place.geoms.all()) for place in places}  # Dictionary to store geometries for each place
+    # places = ds.places.prefetch_related('geoms').order_by('id') # Ensure the same order each time the function is called
+    # place_geometries = {place.id: list(place.geoms.all()) for place in places}  # Dictionary to store geometries for each place
+    
+    
+    places = ds.places.prefetch_related(
+        Prefetch('geoms', queryset=PlaceGeom.objects.only('geom'))
+    ).order_by('id')
+    
+    
     extent = list(ds.places.aggregate(Extent('geoms__geom')).values())[0]
     end_time = time.time()  # Record the end time
     response_time = end_time - start_time  # Calculate the response time
@@ -150,7 +158,7 @@ def fetch_mapdata_ds(request, *args, **kwargs):
 
     for index, place in enumerate(places):
         
-        geometries = place_geometries[place.id]
+        geometries = place.geoms.all()
         geometry = None
 
         if geometries:
