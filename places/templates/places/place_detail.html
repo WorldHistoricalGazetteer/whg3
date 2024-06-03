@@ -106,9 +106,9 @@
         <div id="ds_cards">
           <table class="w-75">
           <colgroup><col style="width:150px;"></col><col></col></colgroup>
-          <tr><td>Title:</td><td></td> <td><a href="{% url 'datasets:ds_meta' dataset.id %}">{{ dataset.title }}</a></td></tr>
           {% if dataset.minmax %}
-          <tr><td>Earliest/Latest:</td><td> </td><td>{{dataset.minmax.0}} / {{dataset.minmax.1}} </td></tr>{% endif %}
+          <tr><td>Earliest/Latest:</td><td> </td><td>{{dataset.minmax.0}} / {{dataset.minmax.1}} </td></tr>
+          {% endif %}
           <tr><td>Creator(s):</td><td> </td><td>{{dataset.creator}}</td></tr>
           <tr><td>Last modified:</td><td> </td><td>{{dataset.last_modified_text}}</td></tr>
           </table>
