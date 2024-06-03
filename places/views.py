@@ -277,7 +277,7 @@ class PlaceDetailView(DetailView):
   template_name = 'places/place_detail.html'
 
   def get_object(self):
-    pk = self.kwargs.get('id')
+    pk = self.kwargs.get('pk')
     print(f"Attempting to retrieve Place with pk={pk}")
     try:
         place = Place.objects.select_related('dataset').get(pk=pk)
