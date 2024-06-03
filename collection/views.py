@@ -10,6 +10,7 @@ import random
 from django import forms
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
 from django.db.models import F, Min, Max
 from django.db.models.functions import Coalesce
 from django.forms.models import inlineformset_factory
@@ -482,16 +483,23 @@ def fetch_mapdata_coll(request, *args, **kwargs):
     import networkx as nx
     print('fetch_geojson_coll kwargs', kwargs)
     id_ = kwargs['id']
-    coll = get_object_or_404(Collection, id=id_)
-
     tileset = request.GET.get('variant', '') == 'tileset'
     ignore_tilesets = request.GET.get('variant', '') == 'ignore_tilesets'
+
+    # Generate cache key based on parameters
+    cache_key = f"fetch_mapdata_coll_data_{id_}_{tileset}_{ignore_tilesets}"
+
+    # Check if the data is already cached
+    cached_data = cache.get(cache_key)
+    if cached_data is not None:
+        return JsonResponse(cached_data, safe=False, json_dumps_params={'ensure_ascii': False})
     
     ############################################################################################################
     # TODO: Force `ignore_tilesets` if any `visParameters` object has 'trail: true'                            #
     # (representative points have to be generated in the browser)                                              #
     ############################################################################################################
 
+    coll = get_object_or_404(Collection, id=id_)
     available_tilesets = None
     null_geometry = False
     if not tileset and not ignore_tilesets:
@@ -676,6 +684,9 @@ def fetch_mapdata_coll(request, *args, **kwargs):
             feature_collection["features"].append(feature)  
 
         feature_collection["minmax"] = [featurecollection_min, featurecollection_max]
+        
+    # Cache the data with the generated cache key
+    cache.set(cache_key, feature_collection, None)
 
     return JsonResponse(feature_collection, safe=False, json_dumps_params={'ensure_ascii': False})
 
