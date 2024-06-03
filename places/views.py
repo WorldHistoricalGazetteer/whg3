@@ -301,11 +301,14 @@ class PlaceDetailView(DetailView):
     place = get_object_or_404(Place, pk= self.kwargs.get("id"))
     print('got place:',place)
     ds = place.dataset
+    print('Got place.dataset')
     me = self.request.user
     #placeset = Place.objects.filter(dataset=ds.label
     
     context['timespans'] = {'ts':place.timespans or None}
+    print('Got place.timespans')
     context['minmax'] = {'mm':place.minmax or None}
+    print('Got place.minmax')
     context['dataset'] = ds
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
 
