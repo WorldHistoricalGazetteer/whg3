@@ -118,8 +118,12 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     refresh_cache = request.GET.get('refresh_cache', False)
     cache_key = f"fetch_mapdata_ds_data_{dsid}_{reduce_geometry}_{tileset}_{ignore_tilesets}"
 
+    # Remove any cache if tileset is requested
+    if tileset:
+        cache.delete(cache_key)  # Remove cache specifically for tileset variant
+
     # Check if the data is already cached and the 'refresh_cache' parameter is not present
-    if not refresh_cache:
+    elif not refresh_cache:
         cached_data = cache.get(cache_key)
         if cached_data is not None:
             return JsonResponse(cached_data, safe=False, json_dumps_params={'ensure_ascii': False})
