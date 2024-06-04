@@ -11,6 +11,7 @@ from celery.result import AsyncResult
 #from celery_progress.backend import ProgressRecorder
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.views.decorators.http import require_POST
 from django.core import mail
 from django.core.exceptions import ObjectDoesNotExist
@@ -23,7 +24,9 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 User = get_user_model()
 from collection.models import Collection
+from collection.views import delete_cachefiles_coll
 from datasets.models import Dataset
+from datasets.utils import delete_cachefiles
 from main.models import Log, Tileset
 from places.models import PlaceGeom
 import json
