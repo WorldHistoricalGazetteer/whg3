@@ -86,7 +86,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     transform: scale(1.01); /* Slightly increase size on hover */
 }
 
-.announcement.constrained {
+#announcement-container, .announcement.constrained {
     overflow-y: auto;
     min-height: 50px;
     max-height: 50px;
