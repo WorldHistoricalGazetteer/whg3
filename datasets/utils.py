@@ -140,6 +140,7 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     elif not refresh_cache:
         cached_data = cache.get(cache_key)
         if cached_data is not None:
+            print("Found cached mapdata")
             return JsonResponse(cached_data, safe=False, json_dumps_params={'ensure_ascii': False})
         
     ds = get_object_or_404(Dataset, pk=dsid)
