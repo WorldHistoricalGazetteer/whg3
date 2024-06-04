@@ -475,6 +475,20 @@ def year_from_string(ts):
   else:
     return "null" # String required by Maplibre filter test
 
+def delete_cachefiles_coll(id_):
+    """
+        Deletes all cache entries for a given collection ID.
+        Args: id_ (str): The collection ID.
+    """
+    cache_keys = [
+        f"fetch_mapdata_coll_data_{id_}_{tileset}_{ignore_tilesets}"
+        for tileset in [True, False]
+        for ignore_tilesets in [True, False]
+    ]
+    print('Deleting cache files', cache_keys)
+    for key in cache_keys:
+        cache.delete(key)
+
 # GeoJSON for all places in a collection INCLUDING those without geometry
 def fetch_mapdata_coll(request, *args, **kwargs):
     
@@ -490,8 +504,12 @@ def fetch_mapdata_coll(request, *args, **kwargs):
     refresh_cache = request.GET.get('refresh_cache', False)
     cache_key = f"fetch_mapdata_coll_data_{id_}_{tileset}_{ignore_tilesets}"
 
+    # Remove any cache if tileset is requested
+    if tileset:
+        delete_cachefiles_coll(id_)
+
     # Check if the data is already cached and the 'refresh_cache' parameter is not present
-    if not refresh_cache:
+    elif not refresh_cache:
         cached_data = cache.get(cache_key)
         if cached_data is not None:
             return JsonResponse(cached_data, safe=False, json_dumps_params={'ensure_ascii': False})
