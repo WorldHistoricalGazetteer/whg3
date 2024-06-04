@@ -116,8 +116,7 @@ def delete_cachefiles(dsid):
         for ignore_tilesets in [True, False]
     ]
     print('Deleting cache files', cache_keys)
-    for key in cache_keys:
-        cache.delete(key)
+    cache.delete_many([*cache_keys])
 
 # GeoJSON for all places in a dataset INCLUDING those without geometry
 def fetch_mapdata_ds(request, *args, **kwargs):
