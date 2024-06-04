@@ -839,7 +839,6 @@ maplibregl.Map.prototype.fitViewport = function (bbox, maxZoom) {
 		) + this.getZoom();
 	zoom = isNaN(zoom) ? this.getMaxZoom() : Math.min(zoom, this.getMaxZoom());
 	zoom = Math.max(zoom, this.getMinZoom());
-	console.log('fitViewport TEST', zoom, this.getMinZoom(), this.getMaxZoom(), sw, ne);
 	if (!isNaN(maxZoom)) zoom = Math.min(zoom, maxZoom); // Limit zoom if maxZoom parameter is passed
 
 	const viewportPadding = {
@@ -848,7 +847,7 @@ maplibregl.Map.prototype.fitViewport = function (bbox, maxZoom) {
 		left: Math.round(mapControlsRect.left - mapContainerRect.left - mapControlsRectMargin),
 		right: Math.round(mapContainerRect.right - mapControlsRect.right - mapControlsRectMargin),
 	};
-	console.log('fitViewport', mapControlsRect, bbox, maxZoom, zoom, viewportPadding);
+	//console.log('fitViewport', mapControlsRect, bbox, maxZoom, zoom, viewportPadding);
 
 	this.flyTo({
 		center: [

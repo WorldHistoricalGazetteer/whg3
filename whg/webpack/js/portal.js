@@ -280,8 +280,9 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		$('#sources').append(noSources);
 
 		featureCollection = geomsGeoJSON(payload);
-		console.log(featureCollection);
-		mappy.getSource('places').setData(featureCollection);
+		mappy
+		.getSource('places')
+		.setData(featureCollection);
 		mappy
 		.reset(false)
 		.once('idle', function() {
