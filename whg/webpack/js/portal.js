@@ -283,7 +283,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		console.log(featureCollection);
 		mappy.getSource('places').setData(featureCollection);
 		mappy
-		.reset()
+		.reset(false)
 		.once('idle', function() {
 			// Do not use fitBounds or flyTo due to padding bug in MapLibre/Maptiler
 			mappy.fitViewport(bbox(featureCollection), defaultZoom);

@@ -803,13 +803,19 @@ class CustomAttributionControl extends maplibregl.AttributionControl {
     }
 }
 
-maplibregl.Map.prototype.reset = function () {
-	this.flyTo({
-		center: this.initOptions.center,
-		zoom: this.initOptions.zoom,
-        speed: .5,
-    });
-}
+maplibregl.Map.prototype.reset = function (fly = true) {
+	if (fly) {
+    	this.flyTo({
+      		center: this.initOptions.center,
+      		zoom: this.initOptions.zoom,
+      		speed: 0.5,
+    	});
+  	} else {
+    	this.setCenter(this.initOptions.center);
+    	this.setZoom(this.initOptions.zoom);
+  	}
+  	return this;
+};
 
 maplibregl.Map.prototype.fitViewport = function (bbox, maxZoom) {
 	// This function addresses an apparent bug with flyTo and fitBounds in MapLibre/Maptiler,
