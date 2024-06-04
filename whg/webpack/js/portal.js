@@ -282,8 +282,10 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		featureCollection = geomsGeoJSON(payload);
 		console.log(featureCollection);
 		mappy.getSource('places').setData(featureCollection);
-		// Do not use fitBounds or flyTo due to padding bug in MapLibre/Maptiler
-		mappy.once('idle', function() {
+		mappy
+		.reset()
+		.once('idle', function() {
+			// Do not use fitBounds or flyTo due to padding bug in MapLibre/Maptiler
 			mappy.fitViewport(bbox(featureCollection), defaultZoom);
 		});	
 
