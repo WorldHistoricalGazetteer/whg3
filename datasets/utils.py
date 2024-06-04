@@ -111,7 +111,7 @@ def delete_cachefiles(dsid):
     """
     cache_keys = [
         f"fetch_mapdata_ds_data_{dsid}_{reduce_geometry}_{tileset}_{ignore_tilesets}"
-        for reduce_geometry in ['true', 'false']
+        for reduce_geometry in [True, False]
         for tileset in [True, False]
         for ignore_tilesets in [True, False]
     ]
