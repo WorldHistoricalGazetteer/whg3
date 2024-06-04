@@ -71,6 +71,12 @@ function buildGallery(datacollections) {
         'Try adjusting the filters.'}</p>
         `);
     dynamicGallery.append(noResultsMessage);
+	var layersToRemove = mappy.getStyle().layers.filter(layer => !!layer.source && layer.source == 'featured-data-source');
+	layersToRemove.forEach(layer => {
+	    mappy.removeLayer(layer.id);
+	});
+	if (mappy.getSource('featured-data-source')) mappy.removeSource('featured-data-source');
+	mappy.reset();
   } else {
     datacollections.forEach(dc => {
       const truncatedCreator = truncateAfterSpace(dc.creator, 30);
