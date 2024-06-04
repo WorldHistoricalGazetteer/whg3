@@ -841,7 +841,7 @@ maplibregl.Map.prototype.fitViewport = function (bbox, maxZoom) {
 		left: Math.round(mapControlsRect.left - mapContainerRect.left - mapControlsRectMargin),
 		right: Math.round(mapContainerRect.right - mapControlsRect.right - mapControlsRectMargin),
 	};
-	console.log('fitViewport', bbox, maxZoom, zoom, viewportPadding);
+	console.log('fitViewport', mapControlsRect, bbox, maxZoom, zoom, viewportPadding);
 
 	this.flyTo({
 		center: [
