@@ -21,7 +21,7 @@ $(document).ready(function() {
 			row.append($('<td>')
 			.html(`<i data-bs-toggle="tooltip" data-bs-title="Click to inspect tileset"${item.has_tileset ? '' : ' disabled'} class="has-tileset fas fa-${item.has_tileset ? 'check' : 'times'}" data-category="${item.category}" data-id="${item.id}"></i>`))
 			.find('i.fa-check').tooltip();
-			row.append($('<td>').html('<i class="fas fa-spinner fa-spin"></i>')); // Placeholder for pending status
+			row.append($('<td>').html(`<i class="fas ${item.task_id ? 'fa-spinner fa-spin' : 'fa-times'}"></i>`)); // Placeholder for pending status
 			row.append($('<td>').text('')); // Placeholder for actions
 			tableBody.append(row);
 
@@ -45,6 +45,10 @@ $(document).ready(function() {
 		function lowerPollcount() {
 			pollCount--;
 			$('.queue-all').prop('disabled', pollCount > 0);
+		}
+		if (!taskId) {
+			lowerPollcount();
+			return;
 		}
 		// Fetch task status
 		fetch(`/task_progress/${taskId}`)
@@ -70,8 +74,8 @@ $(document).ready(function() {
 					setTimeout(() => pollTaskStatus(taskId, row, item, attempt + 1), 5000); // Poll every 5 seconds
 				} else if (result.state === 'SUCCESS') {
 					lowerPollcount();
-					console.log('result.progress', result.progress)
-					item.needs_tileset = result.progress[0];
+					//console.log('result.progress', result.progress)
+					item.needs_tileset = result.progress[0] == true;
 	                let detailHTML = `
 	                    <div>
 	                        <strong>Total Coordinates:</strong> ${result.progress[1]}<br>
@@ -184,7 +188,7 @@ $(document).ready(function() {
 				        }
 				    });
 					
-		            // Start polling task status
+		            //Start polling task status
 		            setTimeout(pollTilerStatus, 3000);
 		        },
 		        error: function(xhr, status, error) {
