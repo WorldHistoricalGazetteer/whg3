@@ -42,3 +42,8 @@
 #tileset-table i.has-tileset.fa-check {
 	cursor: pointer;
 }
+
+.unpublished {
+    opacity: .4;
+    background-color: #f0ef864f;
+}

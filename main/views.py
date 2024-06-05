@@ -87,7 +87,7 @@ class TilesetListView(LoginRequiredMixin, TemplateView):
     login_url = '/accounts/login/'
 
     def dispatch(self, request, *args, **kwargs):
-        if request.user.username != "whgadmin": ###################### PERHAPS THERE IS A CLASS OF USER RATHER THAN A SPECIFIC ONE?
+        if request.user.username != "whgadmin":
             return HttpResponseForbidden("You are not authorized to access this page.")
         return super().dispatch(request, *args, **kwargs)
 
@@ -96,52 +96,50 @@ class TilesetListView(LoginRequiredMixin, TemplateView):
 
         # Fetch tilesets
         tilesets_url = settings.TILER_URL
-        tilesets_data = { "getTilesetsAll": {} }
+        tilesets_data = {"getTilesetsAll": {}}
         tilesets_response = requests.post(tilesets_url, headers={"Content-Type": "application/json"}, data=json.dumps(tilesets_data))
         tilesets = sorted(list(tilesets_response.json()))
 
+        # Fetch datasets and collections
+        datasets = Dataset.objects.all()
         collections = Collection.objects.filter(collection_class='place')
 
-        # Fetch dataset and collection titles
-        dataset_titles = {dataset.id: dataset.title for dataset in Dataset.objects.all()}
-        collection_titles = {collection.id: collection.title for collection in collections}
+        # Create dictionaries to store dataset and collection titles and public statuses
+        dataset_titles = {dataset.id: (dataset.title, dataset.public) for dataset in datasets}
+        collection_titles = {collection.id: (collection.title, collection.public) for collection in collections}
 
         # Pass both sets of data to the template
         context['data'] = {
             'datasets': [],
             'collections': []
         }
-        data = {
-            'datasets': [(dataset.id, dataset_titles.get(dataset.id, "")) for dataset in Dataset.objects.all()],
-            'collections': [(collection.id, collection_titles.get(collection.id, "")) for collection in collections],
-        }
 
         # Track the tilesets that have matching datasets or collections
         matched_tilesets = set()
 
         # Enqueue a Celery task for each category and id
-        for category, items in data.items():
-            for id, title in sorted(items, key=itemgetter(0)):
+        for category, items in {'datasets': datasets, 'collections': collections}.items():
+            for item in items:
                 # Check if the tileset exists for the current category and id
-                tileset_key = f"{category}-{id}"
+                tileset_key = f"{category}-{item.id}"
                 has_tileset = tileset_key in tilesets
                 if has_tileset:
                     matched_tilesets.add(tileset_key)
                 # Enqueue a Celery task for each category and id
-                task = needs_tileset.delay(category=category, id=id)
+                task = needs_tileset.delay(category=category, id=item.id)
                 # Add the task id to the context for each category
                 context['data'][category].append({
                     'category': category,
-                    'id': id,
-                    'title': title,
+                    'id': item.id,
+                    'title': item.title,
+                    'public': item.public,
                     'has_tileset': has_tileset,
                     'task_id': task.id
                 })
 
         # Identify orphaned tilesets
-        print('Identify orphaned tilesets', set(tilesets), matched_tilesets)
         orphaned_tilesets = set(tilesets) - matched_tilesets
-        
+
         # Add orphaned tilesets to the context
         for orphan in orphaned_tilesets:
             category, id = orphan.split('-')
@@ -150,6 +148,7 @@ class TilesetListView(LoginRequiredMixin, TemplateView):
                     'category': category,
                     'id': id,
                     'title': 'Orphaned Tileset',
+                    'public': None,  # Orphaned tilesets have no corresponding dataset or collection
                     'has_tileset': True,
                     'task_id': None
                 })
