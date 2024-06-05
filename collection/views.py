@@ -467,13 +467,23 @@ def when_format(ts):
   return [stringer(ts[0]), stringer(ts[1])]; print(result)
 
 def year_from_string(ts):
-  if ts:
-    try:
-      return int(isoparse(ts).strftime('%Y'))
-    except ValueError:
-      return int(ts)
-  else:
-    return "null" # String required by Maplibre filter test
+    if ts:
+        try:
+            return int(isoparse(ts).strftime('%Y'))
+        except (ValueError, ParserError) as e:
+            if 'day is out of range for month' in str(e):
+                # Attempt to handle the invalid day part, e.g., '00' day
+                parts = ts.split('-')
+                if len(parts) == 3 and parts[2] == '00':
+                    # Replace '00' with '01' for parsing
+                    ts = f"{parts[0]}-{parts[1]}-01"
+                    try:
+                        return int(isoparse(ts).strftime('%Y'))
+                    except (ValueError, ParserError):
+                        return int(parts[0])  # Fallback to just the year part
+            return int(ts)
+    else:
+        return "null"  # String required by Maplibre filter test
 
 def delete_cachefiles_coll(id_):
     """

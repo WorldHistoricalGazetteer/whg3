@@ -77,14 +77,14 @@ def needs_tileset(category=None, id=None, pointcount_threshold=5000, geometrycou
     return total_coords > pointcount_threshold, total_coords, total_geometries, total_places
 
 def request_tileset(category, id, action):
-    logger.info(f'request_tileset() task: {category}-{id}')
+    print(f'request_tileset() task: {category}-{id}')
 
     # Acquire distributed lock
     acquired_lock = redis_client.set(f'request_tileset_lock', 'locked', nx=True, ex=300)
     print(f'acquired_lock: {category}-{id}-{action}', acquired_lock)
 
     if not acquired_lock:
-        logger.info('Another instance of request_tileset() is already running. Queueing request.')
+        print('Another instance of request_tileset() is already running. Queueing request.')
         redis_client.set(f'{category}-{id}-{action}', 'queued', ex=3600)
         # Enqueue the request if the lock is already acquired
         with redis_client.pipeline() as pipe:
@@ -112,7 +112,7 @@ def request_tileset(category, id, action):
             if not queued_request:
                 break
             queued_category, queued_id, queued_action = queued_request.decode('utf-8').split('-')
-            logger.info(f'Dequeuing and processing queued request: {queued_category}-{queued_id}')
+            print(f'Dequeuing and processing queued request: {queued_category}-{queued_id}')
             task = process_tileset_request.delay(queued_category, queued_id, queued_action)
             AsyncResult(task.id).get() # Wait for the task to complete
     finally:
@@ -164,12 +164,12 @@ def process_tileset_request(category, id, action):
                 note=f'Tileset {"created" if action == "generate" else "deleted"}'
                 )
             msg = f'Tileset {"created" if action == "generate" else "deleted"} successfully for {category}-{id}.'
-            logger.info(msg)
+            print(msg)
             return {'success': True, 'message': msg}
         else:
             redis_client.set(f'{category}-{id}-{action}', 'failed', ex=3600)
             msg = f'Tileset {"creation" if action == "generate" else "deletion"} failed for {category}-{id}.'
-            logger.error(msg)
+            print(msg)
             return {'success': False, 'message': msg}
     
 def send_tileset_request(category=None, id=None, action='generate'):
