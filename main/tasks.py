@@ -69,7 +69,10 @@ def needs_tileset(category=None, id=None, pointcount_threshold=5000, geometrycou
         return True, -1, total_geometries, total_places
 
     # Calculate the total sum of coordinates
-    total_coords = sum(place_geom.geom.num_coords for place in obj.places.all() for place_geom in place.geoms.all()) or 0
+    total_coords = sum(
+        place_geom.geom.num_coords for place in obj.places.all() 
+        for place_geom in place.geoms.all() if place_geom.geom is not None
+    ) or 0
     
     return total_coords > pointcount_threshold, total_coords, total_geometries, total_places
 

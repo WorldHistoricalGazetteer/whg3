@@ -48,7 +48,22 @@ $(document).ready(function() {
 		}
 		// Fetch task status
 		fetch(`/task_progress/${taskId}`)
-			.then(response => response.json())
+			.then(response => {
+				if (response.ok) {
+					return response.json().catch(() => {
+						// If parsing fails, it's not JSON
+						return response.text().then(text => {
+							console.error('Non-JSON response:', text);
+							throw new Error('Received non-JSON response');
+						});
+					});
+				} else {
+					return response.text().then(text => {
+						console.error('Fetch error:', text);
+						throw new Error('Fetch error');
+					});
+				}
+			})
 			.then(result => {
 				if (result.state === 'PENDING' && attempt < 60) { // Stop after 60 attempts
 					// Continue polling
