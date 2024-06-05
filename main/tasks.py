@@ -114,7 +114,7 @@ def request_tileset(category, id, action):
 @shared_task()
 def process_tileset_request(category, id, action):
     redis_client.set(f'{category}-{id}-{action}', 'pending', ex=3600)
-    print("Processing tileset request:", category, id, action)
+    print(f"Processing tileset request: {category}-{id}-{action}")
     if not category or not id:
         redis_client.set(f'{category}-{id}-{action}', 'failed', ex=3600)
         raise ValueError("A category and id must both be provided.")
