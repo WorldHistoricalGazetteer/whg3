@@ -167,7 +167,7 @@ def send_tileset_request(category=None, id=None, action='generate'):
             'error': 'Both category and id must be provided.'
         }
         
-    print(f"Sending a <{action}> POST request to TILER_URL for {category}-{id}.")
+    print(f"Sending a <{action}> POST request to {settings.TILER_URL} for {category}-{id}.")
         
     if action == 'delete':
         data = {
@@ -184,16 +184,17 @@ def send_tileset_request(category=None, id=None, action='generate'):
     response = requests.post(settings.TILER_URL, headers={"Content-Type": "application/json"}, data=json.dumps(data))
 
     # Check the response status code
-    print("TILER_URL Response status:", response.status_code)
+    print(f"TILER_URL Response status: {response.status_code}")
     if response.status_code == 200:
         response_data = response.json()
         if response_data.get("status") == "success":
             print(f"Tileset <{action}> successful.")
             return response_data
         else:
-            print(f"Tileset <{action}> failed:", response_data.get("message"))
+            message = response_data.get("message")
+            print(f"Tileset <{action}> failed: {message}")
     else:
-        print(f"Tileset <{action}> failed with status code:", response.status_code)
+        print(f"Tileset <{action}> failed with status code: {response.status_code}")
 
     return {
         'status': 'failure',
