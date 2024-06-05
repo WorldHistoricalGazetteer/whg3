@@ -101,8 +101,8 @@ class TilesetListView(LoginRequiredMixin, TemplateView):
         tilesets = sorted(list(tilesets_response.json()))
 
         # Fetch datasets and collections
-        datasets = Dataset.objects.all()
-        collections = Collection.objects.filter(collection_class='place')
+        datasets = Dataset.objects.all().order_by('id')
+        collections = Collection.objects.filter(collection_class='place').order_by('id')
 
         # Create dictionaries to store dataset and collection titles and public statuses
         dataset_titles = {dataset.id: (dataset.title, dataset.public) for dataset in datasets}
