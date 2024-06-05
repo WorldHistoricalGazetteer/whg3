@@ -55,7 +55,7 @@ $(document).ready(function() {
 					setTimeout(() => pollTaskStatus(taskId, row, item, attempt + 1), 5000); // Poll every 5 seconds
 				} else if (result.state === 'SUCCESS') {
 					lowerPollcount();
-					console.log('result.progress', result.progress)
+					//console.log('result.progress', result.progress)
 					item.needs_tileset = result.progress[0] == true;
 	                let detailHTML = `
 	                    <div>
