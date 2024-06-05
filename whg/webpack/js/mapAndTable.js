@@ -150,7 +150,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	table = tableInit.table;
 	checked_rows = tableInit.checked_rows;
 
-	window.mapBounds = window.ds_list_stats.extent;
+	window.mapBounds = window.ds_list[0].extent || [-180, -90, 180, 90];
 	
 	// Initialise Map Popups
 	initPopups(table);

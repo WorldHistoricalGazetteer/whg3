@@ -105,6 +105,19 @@ def download_file(request, *args, **kwargs):
 
   return response
 
+def delete_cachefiles(dsid):
+    """
+        Deletes all cache entries for a given dataset ID.
+        Args: dsid (str): The dataset ID.
+    """
+    cache_keys = [
+        f"fetch_mapdata_ds_data_{dsid}_{reduce_geometry}_{tileset}_{ignore_tilesets}"
+        for reduce_geometry in [True, False]
+        for tileset in [True, False]
+        for ignore_tilesets in [True, False]
+    ]
+    print('Deleting cache files', cache_keys)
+    cache.delete_many([*cache_keys])
 
 # GeoJSON for all places in a dataset INCLUDING those without geometry
 def fetch_mapdata_ds(request, *args, **kwargs):
@@ -119,10 +132,15 @@ def fetch_mapdata_ds(request, *args, **kwargs):
     refresh_cache = request.GET.get('refresh_cache', False)
     cache_key = f"fetch_mapdata_ds_data_{dsid}_{reduce_geometry}_{tileset}_{ignore_tilesets}"
 
+    # Remove any cache if tileset is requested
+    if tileset:
+        delete_cachefiles(dsid)
+
     # Check if the data is already cached and the 'refresh_cache' parameter is not present
-    if not refresh_cache:
+    elif not refresh_cache:
         cached_data = cache.get(cache_key)
         if cached_data is not None:
+            print("Found cached mapdata", cache_key)
             return JsonResponse(cached_data, safe=False, json_dumps_params={'ensure_ascii': False})
         
     ds = get_object_or_404(Dataset, pk=dsid)

@@ -382,8 +382,11 @@ export function get_ds_list_stats(allFeatures, allExtents = []) {
   }
   if (!isFinite(min)) min = -3000;
   if (!isFinite(max)) max = 2000;
+    
+  // Check if all extents are null
+  const allExtentsAreNull = allExtents.length === 0 || allExtents.every(extent => extent === null);
 
-  const geojson = {
+  const extent = allExtentsAreNull ? [-180, -90, 180, 90] : bbox({
     'type': 'FeatureCollection',
     'features': [
       ...allFeatures.filter(
@@ -404,7 +407,7 @@ export function get_ds_list_stats(allFeatures, allExtents = []) {
         },
       })),
     ],
-  };
+  });
 
   return {
     min: min,
@@ -412,6 +415,6 @@ export function get_ds_list_stats(allFeatures, allExtents = []) {
     seqmin: seqMin,
     seqmax: seqMax,
     count: allFeatures.length,
-    extent: bbox(geojson),
+    extent: extent,
   };
 }

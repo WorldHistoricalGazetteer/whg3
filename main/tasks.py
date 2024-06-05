@@ -11,6 +11,7 @@ from celery.result import AsyncResult
 #from celery_progress.backend import ProgressRecorder
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.views.decorators.http import require_POST
 from django.core import mail
 from django.core.exceptions import ObjectDoesNotExist
@@ -23,12 +24,15 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 User = get_user_model()
 from collection.models import Collection
+from collection.views import delete_cachefiles_coll
 from datasets.models import Dataset
+from datasets.utils import delete_cachefiles
 from main.models import Log, Tileset
 from places.models import PlaceGeom
 import json
 import requests
 import time
+from urllib.parse import urlparse
 
 @shared_task()
 def calculate_geometry_complexity(dataset_id):
@@ -48,6 +52,10 @@ def needs_tileset(category=None, id=None, pointcount_threshold=5000, geometrycou
             obj = Collection.objects.get(id=id)
     except ObjectDoesNotExist:
         return -1, 0, 0, 0
+    
+    # Check if all geometries are null
+    if not obj.places.filter(geoms__isnull=False).exists():
+        return -2, 0, 0, 0
 
     total_places = obj.places.count()
 
@@ -110,11 +118,17 @@ def request_tileset(category, id, action):
 @shared_task()
 def process_tileset_request(category, id, action):
     redis_client.set(f'{category}-{id}-{action}', 'pending', ex=3600)
-    print("Processing tileset request:", category, id, action)
+    print(f"Processing tileset request: {category}-{id}-{action}")
     if not category or not id:
         redis_client.set(f'{category}-{id}-{action}', 'failed', ex=3600)
         raise ValueError("A category and id must both be provided.")
     else:
+        
+        # if category == "datasets":
+        #     delete_cachefiles(id)
+        # else:
+        #     delete_cachefiles_coll(id)
+        
         response_data = send_tileset_request(category, id, action)
         
         if response_data and response_data.get("status") == "success":
@@ -163,39 +177,41 @@ def send_tileset_request(category=None, id=None, action='generate'):
             'error': 'Both category and id must be provided.'
         }
         
-    print(f"Sending a <{action}> POST request to TILER_URL for {category}-{id}.")
+    print(f"Sending a <{action}> POST request to {settings.TILER_URL} for {category}-{id}.")
         
     if action == 'delete':
         data = {
             "deleteTileset": f"{category}-{id}",
         }
     else:
+        url_base = urlparse(settings.URL_FRONT).netloc # URL_FRONT might be http://dev.whgazetteer.org/ or http://whgazetteer.org/
+        url_base = 'dev.whgazetteer.org' if 'whgazetteer.org' not in url_base else url_base
+        geoJSONUrl = f"https://{url_base}/{category}/{id}/mapdata/?variant=tileset"
+        print(f"geoJSONUrl: {geoJSONUrl}")
         data = {
-            "geoJSONUrl": f"https://dev.whgazetteer.org/{category}/{id}/mapdata/?variant=tileset",
+            "geoJSONUrl": geoJSONUrl,
         }
     response = requests.post(settings.TILER_URL, headers={"Content-Type": "application/json"}, data=json.dumps(data))
 
     # Check the response status code
-    print("TILER_URL Response status:", response.status_code)
+    print(f"TILER_URL Response status: {response.status_code}")
     if response.status_code == 200:
         response_data = response.json()
         if response_data.get("status") == "success":
             print(f"Tileset <{action}> successful.")
             return response_data
         else:
-            print(f"Tileset <{action}> failed:", response_data.get("message"))
+            message = response_data.get("message")
+            print(f"Tileset <{action}> failed: {message}")
     else:
-        print(f"Tileset <{action}> failed with status code:", response.status_code)
+        response_data = response.json()
+        error = response_data.get("error")
+        print(f"Tileset <{action}> failed with status {response.status_code}: {error}")
 
     return {
         'status': 'failure',
         'error': f'Error processing tileset <{action}> request.'
     }
-
-# {    "status":"success",
-#     "message":"Tileset created.",
-#     "command":"tippecanoe -o /srv/tileserver/tiles/datasets/40.mbtiles -f -n \"datasets-40\" -A \"Atlas of Mutual Heritage: Rombert Stapel\" -l \"features\" -B 4 -rg 10 -al -ap -zg -ac --no-tile-size-limit /srv/tiler/temp/18e6bb6e-635d-45e3-9833-10fe00f686f1.geojson"
-# }
 
 @login_required
 @require_POST

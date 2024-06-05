@@ -77,7 +77,7 @@ def clustered_geometries(caller, min_clusters=7, max_clusters=10):
     # labels = clusterer.fit_predict(coordinates)
     
     # Perform KMeans clustering with a fixed number of clusters
-    kmeans = KMeans(n_clusters=max_clusters)
+    kmeans = KMeans(n_clusters=min(len(coordinates), max_clusters))
     labels = kmeans.fit_predict(coordinates)
     
     # Keep track of which labels have been processed
