@@ -585,7 +585,6 @@ def fetch_mapdata_coll(request, *args, **kwargs):
                 geometry_collection = json.loads(GeometryCollection(unioned_geometry).geojson)
             else:
                 geometry_collection = None
-            print('trace start, end', t.start, t.end)
             feature = {
                 "type": "Feature",
                 "properties": {
