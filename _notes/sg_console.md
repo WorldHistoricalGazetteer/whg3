@@ -3,6 +3,11 @@
 whgv3
 ```
 
+**Restart Web and Celery containers (needed when changes made to tasks code)**
+```sh
+docker restart web celery_worker celery_beat
+```
+
 **Monitor Web Log with formatted timestamps**
 ```sh
 docker logs --tail 100 -f -t web | awk '{ split($1, a, "T"); split(a[2], b, "."); printf "%s %s ", a[1], b[1]; for (i=2; i<=NF; i++) printf "%s ", $i; print "" }'
