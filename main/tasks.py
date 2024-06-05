@@ -52,6 +52,10 @@ def needs_tileset(category=None, id=None, pointcount_threshold=5000, geometrycou
             obj = Collection.objects.get(id=id)
     except ObjectDoesNotExist:
         return -1, 0, 0, 0
+    
+    # Check if all geometries are null
+    if not obj.places.filter(geoms__isnull=False).exists():
+        return -2, 0, 0, 0
 
     total_places = obj.places.count()
 
@@ -119,6 +123,12 @@ def process_tileset_request(category, id, action):
         redis_client.set(f'{category}-{id}-{action}', 'failed', ex=3600)
         raise ValueError("A category and id must both be provided.")
     else:
+        
+        # if category == "datasets":
+        #     delete_cachefiles(id)
+        # else:
+        #     delete_cachefiles_coll(id)
+        
         response_data = send_tileset_request(category, id, action)
         
         if response_data and response_data.get("status") == "success":
@@ -194,17 +204,14 @@ def send_tileset_request(category=None, id=None, action='generate'):
             message = response_data.get("message")
             print(f"Tileset <{action}> failed: {message}")
     else:
-        print(f"Tileset <{action}> failed with status code: {response.status_code}")
+        response_data = response.json()
+        error = response_data.get("error")
+        print(f"Tileset <{action}> failed with status {response.status_code}: {error}")
 
     return {
         'status': 'failure',
         'error': f'Error processing tileset <{action}> request.'
     }
-
-# {    "status":"success",
-#     "message":"Tileset created.",
-#     "command":"tippecanoe -o /srv/tileserver/tiles/datasets/40.mbtiles -f -n \"datasets-40\" -A \"Atlas of Mutual Heritage: Rombert Stapel\" -l \"features\" -B 4 -rg 10 -al -ap -zg -ac --no-tile-size-limit /srv/tiler/temp/18e6bb6e-635d-45e3-9833-10fe00f686f1.geojson"
-# }
 
 @login_required
 @require_POST
