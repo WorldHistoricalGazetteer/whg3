@@ -120,7 +120,7 @@ def delete_cachefiles(dsid):
 
 # GeoJSON for all places in a dataset INCLUDING those without geometry
 def fetch_mapdata_ds(request, *args, **kwargs):
-    print('fetch_mapdata_ds kwargs', kwargs)
+    print('fetch_mapdata_ds kwargs', kwargs, settings.URL_FRONT)
         
     dsid = kwargs['dsid']
     reduce_geometry = request.GET.get('reduce_geometry', 'true').lower() == 'true' # Default to 'true' and return reduced geometry
