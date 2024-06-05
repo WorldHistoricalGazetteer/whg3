@@ -16,6 +16,7 @@ $(document).ready(function() {
 			}
 			let row = $('<tr>');
 			row.addClass(item.category === 'datasets' ? 'dataset-row' : 'collection-row');
+			if (!item.public) row.addClass('unpublished');
 			row.append($('<td>').text(item.id));
 			row.append($('<td>').text(item.title));
 			row.append($('<td>')
