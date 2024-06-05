@@ -112,7 +112,7 @@ def request_tileset(category, id, action):
             if not queued_request:
                 break
             queued_category, queued_id, queued_action = queued_request.decode('utf-8').split('-')
-            print(f'Dequeuing and processing queued request: {queued_category}-{queued_id}')
+            print(f'Dequeuing and processing queued request: {queued_category}-{queued_id}-{queued_action}')
             task = process_tileset_request.delay(queued_category, queued_id, queued_action)
             AsyncResult(task.id).get() # Wait for the task to complete
     finally:
