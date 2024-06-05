@@ -32,6 +32,7 @@ from places.models import PlaceGeom
 import json
 import requests
 import time
+from urllib.parse import urlparse
 
 @shared_task()
 def calculate_geometry_complexity(dataset_id):
@@ -173,8 +174,12 @@ def send_tileset_request(category=None, id=None, action='generate'):
             "deleteTileset": f"{category}-{id}",
         }
     else:
+        url_base = urlparse(settings.URL_FRONT).netloc # URL_FRONT might be http://dev.whgazetteer.org/ or http://whgazetteer.org/
+        url_base = 'dev.whgazetteer.org' if 'whgazetteer.org' not in url_base else url_base
+        geoJSONUrl = f"https://{url_base}/{category}/{id}/mapdata/?variant=tileset"
+        print(f"geoJSONUrl: {geoJSONUrl}")
         data = {
-            "geoJSONUrl": f"https://dev.whgazetteer.org/{category}/{id}/mapdata/?variant=tileset",
+            "geoJSONUrl": geoJSONUrl,
         }
     response = requests.post(settings.TILER_URL, headers={"Content-Type": "application/json"}, data=json.dumps(data))
 
