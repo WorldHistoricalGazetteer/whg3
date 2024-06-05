@@ -107,7 +107,10 @@ class TilesetListView(LoginRequiredMixin, TemplateView):
         collection_titles = {collection.id: collection.title for collection in collections}
 
         # Pass both sets of data to the template
-        context['data'] = []
+        context['data'] = {
+            'datasets': [],
+            'collections': []
+        }
         data = {
             'datasets': [(dataset.id, dataset_titles.get(dataset.id, "")) for dataset in Dataset.objects.all()],
             'collections': [(collection.id, collection_titles.get(collection.id, "")) for collection in collections],
@@ -127,7 +130,13 @@ class TilesetListView(LoginRequiredMixin, TemplateView):
                 # Enqueue a Celery task for each category and id
                 task = needs_tileset.delay(category=category, id=id)
                 # Add the task id to the context for each category
-                context['data'].append( {'category': category, 'id': id, 'title': title, 'has_tileset': has_tileset, 'task_id': task.id} )
+                context['data'][category].append({
+                    'category': category,
+                    'id': id,
+                    'title': title,
+                    'has_tileset': has_tileset,
+                    'task_id': task.id
+                })
 
         # Identify orphaned tilesets
         print('Identify orphaned tilesets', set(tilesets), matched_tilesets)
@@ -136,7 +145,17 @@ class TilesetListView(LoginRequiredMixin, TemplateView):
         # Add orphaned tilesets to the context
         for orphan in orphaned_tilesets:
             category, id = orphan.split('-')
-            context['data'].append({'category': category, 'id': id, 'title': 'Orphaned Tileset', 'has_tileset': True, 'task_id': None})
+            if category in context['data']:
+                context['data'][category].append({
+                    'category': category,
+                    'id': id,
+                    'title': 'Orphaned Tileset',
+                    'has_tileset': True,
+                    'task_id': None
+                })
+
+        # Flatten the context data lists for rendering in the template
+        context['data'] = context['data']['datasets'] + context['data']['collections']
 
         return context
 

@@ -21,7 +21,7 @@ $(document).ready(function() {
 			row.append($('<td>')
 			.html(`<i data-bs-toggle="tooltip" data-bs-title="Click to inspect tileset"${item.has_tileset ? '' : ' disabled'} class="has-tileset fas fa-${item.has_tileset ? 'check' : 'times'}" data-category="${item.category}" data-id="${item.id}"></i>`))
 			.find('i.fa-check').tooltip();
-			row.append($('<td>').html('<i class="fas fa-spinner fa-spin"></i>')); // Placeholder for pending status
+			row.append($('<td>').html(`<i class="fas ${item.task_id ? 'fa-spinner fa-spin' : 'fa-times'}"></i>`)); // Placeholder for pending status
 			row.append($('<td>').text('')); // Placeholder for actions
 			tableBody.append(row);
 
@@ -45,6 +45,10 @@ $(document).ready(function() {
 		function lowerPollcount() {
 			pollCount--;
 			$('.queue-all').prop('disabled', pollCount > 0);
+		}
+		if (!taskId) {
+			lowerPollcount();
+			return;
 		}
 		// Fetch task status
 		fetch(`/task_progress/${taskId}`)
@@ -232,6 +236,7 @@ $(document).ready(function() {
         let action = button.hasClass('generate-tileset') ? 'generate' : 'delete'; // Determine the action based on the button class
 	            
         button
+        .tooltip('dispose')
         .removeClass('btn-success')
         .addClass('btn-info processing')
         .prop('disabled', true)
