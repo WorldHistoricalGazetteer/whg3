@@ -16,6 +16,7 @@ $(document).ready(function() {
 			}
 			let row = $('<tr>');
 			row.addClass(item.category === 'datasets' ? 'dataset-row' : 'collection-row');
+			if (!item.public) row.addClass('unpublished');
 			row.append($('<td>').text(item.id));
 			row.append($('<td>').text(item.title));
 			row.append($('<td>')
@@ -163,7 +164,7 @@ $(document).ready(function() {
 				                    .addClass(`${task.action == 'generate' ? 'tileset-available' : 'no-tileset'}`)
 				                    .html(`${task.action == 'generate' ? 'Generation' : 'Removal'} OK`)
 				                    .tooltip('dispose')
-				                    .prop('title', `${task.action == 'generate' ? 'Click to queue removal of this tileset' : 'Click to queue generation of a tileset'}`)
+				                    .attr('data-bs-title', `${task.action == 'generate' ? 'Click to queue removal of this tileset' : 'Click to queue generation of a tileset'}`)
 				                    .tooltip()
 				                    .prop('disabled', false)
 				                    .closest('tr')
@@ -180,6 +181,7 @@ $(document).ready(function() {
 				                    .removeClass('processing btn-info')
 				                    .addClass('btn-danger')
 				                    .prop('disabled', false)
+				                    .tooltip()
 				                    .html(`${task.action == 'generate' ? 'Generation' : 'Removal'} Failed`);
 				                    break;
 				                default:
@@ -236,6 +238,7 @@ $(document).ready(function() {
         let action = button.hasClass('generate-tileset') ? 'generate' : 'delete'; // Determine the action based on the button class
 	            
         button
+        .tooltip('dispose')
         .removeClass('btn-success')
         .addClass('btn-info processing')
         .prop('disabled', true)
