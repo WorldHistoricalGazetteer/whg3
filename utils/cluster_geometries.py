@@ -37,16 +37,18 @@ def clustered_geometries(caller, min_clusters=7, max_clusters=10):
         if not dsgeoms:
             return clustered_geometries
         for geom in dsgeoms:
-            coords = GEOSGeometry(geom.geom).tuple
-            coordinates.extend( flatten_coordinates(coords) )
+            if geom.geom:  # Check if geom.geom is not None
+                coords = GEOSGeometry(geom.geom).tuple
+                coordinates.extend(flatten_coordinates(coords))
     else: # caller_class == 'Collection'
         places = caller.places_all
         if not places:
             return clustered_geometries
         for place in places:
             for geom in place.geoms.all():
-                coords = GEOSGeometry(geom.geom).tuple
-                coordinates.extend( flatten_coordinates(coords) )
+                if geom.geom:  # Check if geom.geom is not None
+                    coords = GEOSGeometry(geom.geom).tuple
+                    coordinates.extend(flatten_coordinates(coords))
     
     # Add the total coordinate count to properties
     clustered_geometries["properties"]["coordinate_count"] = len(coordinates) // 2
