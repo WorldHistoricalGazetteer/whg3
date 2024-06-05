@@ -486,8 +486,7 @@ def delete_cachefiles_coll(id_):
         for ignore_tilesets in [True, False]
     ]
     print('Deleting cache files', cache_keys)
-    for key in cache_keys:
-        cache.delete(key)
+    cache.delete_many([*cache_keys])
 
 # GeoJSON for all places in a collection INCLUDING those without geometry
 def fetch_mapdata_coll(request, *args, **kwargs):
