@@ -112,7 +112,7 @@ class Dataset(models.Model):
     extent = dsgeoms.aggregate(Extent('geom'))['geom__extent'] if dsgeoms.exists() and dsgeoms.count() > 0 else (0,0,1,1)
     b = box(extent[0],extent[1],extent[2],extent[3])
     feat = Feature(geometry=mapping(b),properties={"id": self.id, "label": self.label, "title":self.title})
-    # print(feat)
+    print('@property bounds Feature:', feat)
     return feat
     # return feat if dsgeoms.count() > 0 else None
 
