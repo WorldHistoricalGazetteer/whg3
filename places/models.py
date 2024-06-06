@@ -26,8 +26,11 @@ class Place(models.Model):
   title = models.CharField(max_length=255)
   src_id = models.CharField(max_length=2044, blank=True)
   # note FK is label, not id
-  dataset = models.ForeignKey('datasets.Dataset', db_column='dataset',
-                              to_field='label', related_name='places', on_delete=models.CASCADE)
+  dataset = models.ForeignKey('datasets.Dataset',
+                              db_column='dataset',
+                              to_field='label',
+                              related_name='places',
+                              on_delete=models.CASCADE)
   ccodes = ArrayField(models.CharField(max_length=2, null=True), blank=True)
   create_date = models.DateTimeField(null=True, blank=True)
   minmax = ArrayField(models.IntegerField(blank=True, null=True), null=True, blank=True)

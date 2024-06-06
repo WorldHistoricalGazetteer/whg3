@@ -64,7 +64,6 @@ def default_vis_parameters():
 class CollDataset(models.Model):
   collection = models.ForeignKey('Collection', on_delete=models.CASCADE)
   dataset = models.ForeignKey('datasets.Dataset', on_delete=models.CASCADE)
-  # date_added = models.DateTimeField(auto_now_add=True, null=True)
   date_added = models.DateTimeField(default=timezone.now, null=True)
 
   class Meta:
@@ -116,8 +115,11 @@ class Collection(models.Model):
   submit_date = models.DateTimeField(null=True, blank=True)
 
   # writes CollDataset record to collection_colldataset
-  datasets = models.ManyToManyField('datasets.Dataset', through='collection.CollDataset',
-                                        related_name='new_datasets', blank=True)
+  datasets = models.ManyToManyField(
+    'datasets.Dataset',
+    through='collection.CollDataset',
+    related_name='new_datasets',
+    blank=True)
 
   # writes CollPlace record to collection_collplace
   places = models.ManyToManyField("places.Place", through='CollPlace', blank=True)
