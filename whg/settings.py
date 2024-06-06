@@ -15,8 +15,6 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE_ID = 1
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -27,11 +25,6 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     'livereload', # https://github.com/tjwalch/django-livereload-server
     'django.contrib.staticfiles',
-
-    # django-allauth 17 Feb 2021
-    # 'allauth',
-    # 'allauth.account',
-    # 'allauth.socialaccount',
 
     # 3rd party
     'bootstrap_modal_forms',

@@ -60,7 +60,7 @@ local_settings.py
 __pycache__/
 whg/__pycache__/
 db.sqlite3
-
+/cache
 
 ### Private Environment Variables (dev and prod) ###
 .env/
