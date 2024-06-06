@@ -38,6 +38,17 @@ export function recenterMap(duration) {
   window.blockBoundsUpdate = true;
   // mappy.showPadding = true; // Used for debugging - draws coloured lines to indicate padding
   if (window.mapBounds) {
+	  
+	// If mapbounds extent is actually a point, convert it
+	if (
+	  Array.isArray(window.mapBounds) &&
+	  window.mapBounds.length === 4 &&
+	  window.mapBounds[0] === window.mapBounds[2] &&
+	  window.mapBounds[1] === window.mapBounds[3]
+	) {
+	  window.mapBounds = { center: window.mapBounds.slice(0, 2) };
+	}
+	  
     if (Array.isArray(window.mapBounds) ||
         !window.mapBounds.hasOwnProperty('center')) { // mapBounds might be a coordinate pair object returned by mappy.getBounds();
       mappy.fitBounds(window.mapBounds, {
