@@ -107,19 +107,16 @@ class Dataset(models.Model):
 
   @property
   def bounds(self):
-    dsgeoms = PlaceGeom.objects.filter(place__dataset=self.label)
-    # dsgeoms = self.geometries
-    extent = dsgeoms.aggregate(Extent('geom'))['geom__extent'] if dsgeoms.count() > 0 else (0,0,1,1)
-    b = box(extent[0],extent[1],extent[2],extent[3])
-    feat = Feature(geometry=mapping(b),properties={"id": self.id, "label": self.label, "title":self.title})
-    # print(feat)
+    extent = self.extent
+    b = box(extent[0], extent[1], extent[2], extent[3])
+    feat = Feature(geometry=mapping(b), properties={"id": self.id, "label": self.label, "title": self.title})
     return feat
-    # return feat if dsgeoms.count() > 0 else None
 
   @property
   def extent(self):
     dsgeoms = PlaceGeom.objects.filter(place__dataset=self.label)
-    return list(dsgeoms.aggregate(Extent('geom'))['geom__extent'])
+    extent = dsgeoms.aggregate(Extent('geom'))['geom__extent']
+    return list(extent) if extent else (0,0,1,1)
 
   @property
   def carousel_metadata(self):

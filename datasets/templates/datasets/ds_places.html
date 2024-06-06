@@ -397,8 +397,8 @@
     window.filter = "{{ filter }}";
     window.ds_list = [
       {
+        bounds: {{ ds.bounds | safe }},
         id: {{ ds.id }},
-        bounds: {{ ds.extent | safe }},
         label: "{{ ds.label }}",
         modified: "{{ ds.last_modified_text }}",
         title: "{{ ds.title }}",
