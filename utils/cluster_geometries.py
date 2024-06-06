@@ -49,9 +49,13 @@ def clustered_geometries(caller, min_clusters=7, max_clusters=10):
                 if geom.geom:  # Check if geom.geom is not None
                     coords = GEOSGeometry(geom.geom).tuple
                     coordinates.extend(flatten_coordinates(coords))
+                    
+    if len(coordinates) == 0:
+        return clustered_geometries
     
     # Add the total coordinate count to properties
     clustered_geometries["properties"]["coordinate_count"] = len(coordinates) // 2
+    
             
     # Reshape the flat list into coordinate tuples
     coordinates = np.array([coordinates[i:i+2] for i in range(0, len(coordinates), 2)])
