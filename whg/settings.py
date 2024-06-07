@@ -302,6 +302,7 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
         'LOCATION': os.path.join(BASE_DIR, 'cache'),
         'TIMEOUT': None,  # Cache data indefinitely until manually updated
+        "OPTIONS": {"MAX_ENTRIES": 1000}, # Increase from default of 300
     }
 }
 
