@@ -2,6 +2,7 @@
 _local/
 
 node_modules/
+cache/
 
 CDNfallbacks/
 
@@ -89,4 +90,3 @@ whg/static/webpack/webpackReport.html
 
 package-lock.json
 docker-compose-sg.yml
-*.djcache
