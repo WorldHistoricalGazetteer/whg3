@@ -24,9 +24,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 User = get_user_model()
 from collection.models import Collection
-from collection.views import delete_cachefiles_coll
 from datasets.models import Dataset
-from datasets.utils import delete_cachefiles
 from main.models import Log, Tileset
 from places.models import PlaceGeom
 import json
@@ -127,11 +125,6 @@ def process_tileset_request(category, id, action):
         raise ValueError("A category and id must both be provided.")
     else:
         
-        # if category == "datasets":
-        #     delete_cachefiles(id)
-        # else:
-        #     delete_cachefiles_coll(id)
-        
         response_data = send_tileset_request(category, id, action)
         
         if response_data and response_data.get("status") == "success":
@@ -189,7 +182,7 @@ def send_tileset_request(category=None, id=None, action='generate'):
     else:
         url_base = urlparse(settings.URL_FRONT).netloc # URL_FRONT might be http://dev.whgazetteer.org/ or http://whgazetteer.org/
         url_base = 'dev.whgazetteer.org' if 'whgazetteer.org' not in url_base else url_base
-        geoJSONUrl = f"https://{url_base}/{category}/{id}/mapdata/?variant=tileset"
+        geoJSONUrl = f"https://{url_base}/mapdata/{category}/{id}/tileset/"
         print(f"geoJSONUrl: {geoJSONUrl}")
         data = {
             "geoJSONUrl": geoJSONUrl,

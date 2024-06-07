@@ -89,7 +89,7 @@ window.ds_list.forEach(function (ds) { // fetch data
     const promise = new Promise(function (resolve, reject) {
 		
 		ds.ds_id = `${ds.ds_type || 'datasets'}_${ds.id}`;
-		$.get(`/${ ds.ds_id.replace('_','/') }/mapdata`, function (data) { // ds_type may alternatively be 'collections'			
+		$.get(`/mapdata/${ ds.ds_id.replace('_','/') }/`, function (data) { // ds_type may alternatively be 'collections'			
 		
 		    // Merge additional properties from data to ds
 		    for (const prop in data) {

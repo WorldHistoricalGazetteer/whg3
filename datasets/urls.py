@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 from django.conf import settings
 
 from . import views
-from datasets.utils import download_file, UpdateCountsView, fetch_mapdata_ds, toggle_volunteers
+from datasets.utils import download_file, UpdateCountsView, toggle_volunteers
   # fetch_geojson_flat, fetch_geojson_ds, download_augmented, downloadLP7,
 
 # dataset actions
@@ -100,7 +100,6 @@ urlpatterns = [
   path('collab-delete/<int:uid>/<int:dsid>/<str:v>', views.collab_delete, name="collab-delete"),
 
   ## GEOMETRY
-  path('<int:dsid>/mapdata/', fetch_mapdata_ds, name="mapdata"),
   # path('<int:dsid>/geojson/', fetch_geojson_ds, name="geojson"),
   # path('<int:dsid>/geojson_flat/', fetch_geojson_flat, name="geojson-flat"),
 
