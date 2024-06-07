@@ -5,7 +5,7 @@ from django.contrib.gis.db.models.aggregates import Union
 from django.contrib.gis.geos import GeometryCollection
 from django.core.cache import cache
 from django.core.cache.backends.filebased import FileBasedCache
-from django.db.models import Min, Max, Prefetch, Q
+from django.db.models import Min, Max, Prefetch, F, Q
 from django.http import JsonResponse, HttpRequest
 from django.shortcuts import get_object_or_404
 from collection.models import Collection
@@ -69,7 +69,7 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
             for feature in mapdata["features"]
         ]
         mapdata["tilesets"] = available_tilesets
-        return mapdata        
+        return mapdata
     
     if variant == "tileset":
         print(f"Splitting and caching mapdata.")
@@ -137,11 +137,6 @@ def mapdata_dataset(id):
 def mapdata_collection(id):
     collection = get_object_or_404(Collection, id=id)
     
-    ############################################################################################################
-    # TODO: Force `ignore_tilesets` if any `visParameters` object has 'trail: true'                            #
-    # (representative points have to be generated in the browser)                                              #
-    ############################################################################################################
-    
     if collection.collection_class == 'place':
         traces_with_place_ids = collection.traces.filter(archived=False).annotate(annotated_place_id=F('place__id'))
         unique_place_ids = traces_with_place_ids.values_list('annotated_place_id', flat=True).distinct()
@@ -166,21 +161,28 @@ def mapdata_collection(id):
         return mapdata_collection_dataset(collection, collection_places_all, feature_collection)
 
 def mapdata_collection_place(collection, feature_collection):
-    traces = collection.traces.filter(archived=False).select_related('place__annos__sequence')
+    traces = collection.traces.filter(archived=False).select_related('place')
+    reduce_geometry = any(facet.get("trail") for facet in collection.vis_parameters.values())
     
     for index, trace in enumerate(traces):
-        first_anno_sequence = trace.place.annos.first().sequence if trace.place.annos.exists() else None
-        reference_place = trace.place.matches.first() if trace.include_matches else trace.place 
-        unioned_geometry = reference_place.geoms.aggregate(union=Union('geom'))['union']
-        geometry_collection = json.loads(GeometryCollection(unioned_geometry).geojson) if unioned_geometry else None
+        place = trace.place
+        first_anno_sequence = place.annos.first().sequence if place.annos.exists() else None
+        reference_place = place.matches[0] if trace.include_matches and place.matches else place
+
+        if reference_place.geoms.exists():
+            unioned_geometry = reference_place.geoms.aggregate(union=Union('geom'))['union']
+            centroid = unioned_geometry.centroid if unioned_geometry else None
+            geometry_collection = json.loads(GeometryCollection(centroid if centroid else unioned_geometry).geojson) if unioned_geometry else None
+        else:
+            geometry_collection = None
 
         feature = {
             "type": "Feature",
             "properties": {
-                "pid": trace.place.id,
+                "pid": place.id,
                 "cid": collection.id,
-                "title": trace.place.title,
-                "ccodes": trace.place.ccodes,
+                "title": place.title,
+                "ccodes": place.ccodes,
                 "relation": trace.relation[0] if trace.relation else None,
                 "min": year_from_string(trace.start) if trace.start else None,
                 "max": year_from_string(trace.end) if trace.end else None,
@@ -191,7 +193,7 @@ def mapdata_collection_place(collection, feature_collection):
             "id": index,
         }
 
-        if trace.include_matches and trace.place != reference_place:
+        if trace.include_matches and place != reference_place:
             feature["properties"]["geometry_pid"] = reference_place.id
 
         feature_collection["features"].append(feature)
