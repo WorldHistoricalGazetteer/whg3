@@ -485,58 +485,58 @@ def review(request, pk, tid, passnum):
   else:
     # this is accessioning -> get all regardless of pass
     raw_hits = Hit.objects.filter(place_id=placeid, task_id=tid).order_by("-score")
-    
-  # Get details of datasets for popovers
-  # in dev, some datasets referenced in hits by index labels may not exist in database
-  # dataset_details = {}
-  # for hit in raw_hits:
-  #   for source in hit.json["sources"]:
-  #       print('source dslabel in hit.json', source["dslabel"])
-  #       dataset = Dataset.objects.get(label=source["dslabel"])
-  #       # dataset = Dataset.objects.get(label=)
-  #       dataset_details[dataset.label] = {
-  #           "title": dataset.title,
-  #           "description": dataset.description,
-  #           "owner": dataset.owner.name,
-  #           "creator": dataset.creator
-  #       }
-  dataset_details = {}
-  for hit in raw_hits:
-    for source in hit.json["sources"]:
-      try:
-        dataset = Dataset.objects.get(label=source["dslabel"])
-        dataset_details[dataset.label] = {
-          "title": dataset.title,
-          "description": dataset.description,
-          "owner": dataset.owner.name,
-          "creator": dataset.creator
-        }
-      except Dataset.DoesNotExist:
-        dataset_details[source["dslabel"]] = {
-          "title": "Dataset not found",
-          "description": "The dataset with label {} does not exist.".format(source["dslabel"]),
-          "owner": "N/A",
-          "creator": "N/A"
-        }
-  #print('dataset_details', dataset_details)
 
-  # ??why? get pass contents for all of a place's hits
-  passes = (
-    list(
-      set(
-        [
-          item
-          for sublist in [
-          [s["pass"] for s in h.json["sources"]] for h in raw_hits
-        ]
-          for item in sublist
-        ]
+    # Get details of datasets for popovers
+    # in dev, some datasets referenced in hits by index labels may not exist in database
+    # dataset_details = {}
+    # for hit in raw_hits:
+    #   for source in hit.json["sources"]:
+    #       print('source dslabel in hit.json', source["dslabel"])
+    #       dataset = Dataset.objects.get(label=source["dslabel"])
+    #       # dataset = Dataset.objects.get(label=)
+    #       dataset_details[dataset.label] = {
+    #           "title": dataset.title,
+    #           "description": dataset.description,
+    #           "owner": dataset.owner.name,
+    #           "creator": dataset.creator
+    #       }
+    dataset_details = {}
+    for hit in raw_hits:
+      for source in hit.json["sources"]:
+        try:
+          dataset = Dataset.objects.get(label=source["dslabel"])
+          dataset_details[dataset.label] = {
+            "title": dataset.title,
+            "description": dataset.description,
+            "owner": dataset.owner.name,
+            "creator": dataset.creator
+          }
+        except Dataset.DoesNotExist:
+          dataset_details[source["dslabel"]] = {
+            "title": "Dataset not found",
+            "description": "The dataset with label {} does not exist.".format(source["dslabel"]),
+            "owner": "N/A",
+            "creator": "N/A"
+          }
+    #print('dataset_details', dataset_details)
+
+    # ??why? get pass contents for all of a place's hits
+    passes = (
+      list(
+        set(
+          [
+            item
+            for sublist in [
+            [s["pass"] for s in h.json["sources"]] for h in raw_hits
+          ]
+            for item in sublist
+          ]
+        )
       )
+      if auth in ["whg", "idx"]
+      else None
     )
-    if auth in ["whg", "idx"]
-    else None
-  )
-  print('passes', passes)
+    print('passes', passes)
 
   # convert ccodes to names
   countries = []
