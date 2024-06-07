@@ -266,11 +266,13 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
 
     # Sort places by ID (ensure all IDs are strings)
     places_info.sort(key=lambda x: x['id'])
+    places_info = [{'pid': place_info.pop('id'), **place_info} for place_info in places_info]
 
     # Add places to the feature collection
     for index, place_info in enumerate(places_info):
         feature = {
             "type": "Feature",
+            "geometry": place_info.pop('geometry'),
             "properties": place_info,
             "id": index  # Required for MapLibre conditional styling
         }

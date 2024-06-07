@@ -27,6 +27,7 @@ from collection.models import Collection
 from datasets.models import Dataset
 from main.models import Log, Tileset
 from places.models import PlaceGeom
+from utils.mapdata import mapdata, mapdata_task
 import json
 import requests
 import time
@@ -174,19 +175,32 @@ def send_tileset_request(category=None, id=None, action='generate'):
         }
         
     print(f"Sending a <{action}> POST request to {settings.TILER_URL} for {category}-{id}.")
+    
+    def reset_standard_mapdata():
+        # This will generate standard mapdata and also delete any existing standard or tileset mapdata cache
+        mapdata_task.delay(category, id, 'standard', 'refresh')
         
     if action == 'delete':
         data = {
             "deleteTileset": f"{category}-{id}",
         }
     else:
-        url_base = urlparse(settings.URL_FRONT).netloc # URL_FRONT might be http://dev.whgazetteer.org/ or http://whgazetteer.org/
-        url_base = 'dev.whgazetteer.org' if 'whgazetteer.org' not in url_base else url_base
-        geoJSONUrl = f"https://{url_base}/mapdata/{category}/{id}/tileset/"
-        print(f"geoJSONUrl: {geoJSONUrl}")
-        data = {
-            "geoJSONUrl": geoJSONUrl,
-        }
+        # Trigger the mapdata_task to generate the tileset data
+        task = mapdata_task.delay(category, id, 'tileset', 'refresh')
+        task_result = task.get()  # Wait for the task to complete
+        
+        if task_result.get('status') == 'success':
+            url_base = urlparse(settings.URL_FRONT).netloc
+            url_base = 'dev.whgazetteer.org' if 'whgazetteer.org' not in url_base else url_base
+            geoJSONUrl = f"https://{url_base}/mapdata/{category}/{id}/tileset/"
+            print(f"geoJSONUrl: {geoJSONUrl}")
+            data = {
+                "geoJSONUrl": geoJSONUrl,
+            }
+        else:
+            reset_standard_mapdata()
+            return task_result
+
     response = requests.post(settings.TILER_URL, headers={"Content-Type": "application/json"}, data=json.dumps(data))
 
     # Check the response status code
@@ -194,6 +208,10 @@ def send_tileset_request(category=None, id=None, action='generate'):
     if response.status_code == 200:
         response_data = response.json()
         if response_data.get("status") == "success":
+            if action == 'generate':
+                cache.delete(f"{category}-{id}-tileset")
+            else: # action == 'delete'
+                reset_standard_mapdata()
             print(f"Tileset <{action}> successful.")
             return response_data
         else:
@@ -204,6 +222,8 @@ def send_tileset_request(category=None, id=None, action='generate'):
         error = response_data.get("error")
         print(f"Tileset <{action}> failed with status {response.status_code}: {error}")
 
+    if action == 'generate':
+        reset_standard_mapdata()
     return {
         'status': 'failure',
         'error': f'Error processing tileset <{action}> request.'
