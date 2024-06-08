@@ -381,6 +381,12 @@ def review(request, dsid, tid, passnum):
   def get_pass_count(task_id, reviewed, query_pass):
     return Hit.objects.values("place_id").filter(task_id=task_id, reviewed=reviewed, query_pass=query_pass).count()
 
+  # task_id='6e81ccdc-5bcc-403e-bda1-afac433d558c'
+  # reviewed = False
+  # query_pass = 'def'
+  # foo=get_pass_count(task_id, reviewed, query_pass)
+
+
   # filter place records by passnum for those with unreviewed hits on this task
   # if request passnum is complete, increment
   # hit count for this pass
@@ -402,11 +408,11 @@ def review(request, dsid, tid, passnum):
     hitplaces = Hit.objects.values("place_id").filter(
       task_id=tid, reviewed=False, query_pass=passnum
     )
+    print(f'{len(hitplaces)} hitplaces for {passnum}: {hitplaces}')
   else:
     # all unreviewed
-    print ('all unreviewed in review(); passnum is', passnum)
     hitplaces = Hit.objects.values("place_id").filter(task_id=tid, reviewed=False)
-  # print('review() hitplaces', [p['place_id'] for p in hitplaces])
+    print(f'{len(hitplaces)} hitplaces for {passnum}: {hitplaces}')
 
   # set review page returned
   if auth in ["whg", "idx"]:
@@ -432,12 +438,12 @@ def review(request, dsid, tid, passnum):
 
   # unreviewed place objects from place_ids (a single pass or all)
   record_list = ds.places.order_by("id").filter(**{lookup: status}, pk__in=hitplaces)
+  if len(record_list) == 0:
 
   # no records left for pass (or in deferred queue)
-  if len(record_list) == 0:
     context = {
       "nohits": True,
-      "ds_id": pk,
+      "ds_id": dsid,
       "task_id": tid,
       "passnum": passnum,
     }
@@ -465,15 +471,17 @@ def review(request, dsid, tid, passnum):
   place = get_object_or_404(Place, id=placeid)
   print('passnum', passnum)
   dataset_details = {}  # needed for context in either case
-  # if passnum.startswith("pass") and auth not in ["whg", "idx"]:
-  if auth not in ["whg", "idx"]:
-    # str_passnum = 'pass'+str(passnum)
-    # ***this is wdgn review*** raw_hits are only for this pass
-    print('wdgn case in review(), list only for this pass', passnum)
+  # if auth not in ["whg", "idx"]:
+  if passnum.startswith("pass") and auth not in ["whg", "idx"]:
+    # ***this is wdgn review*** raw_hits are only numered pass
+    print('wdgn case in review(), raw_hits only for this pass', passnum)
     raw_hits = Hit.objects.filter(
       place_id=placeid, task_id=tid, query_pass=passnum).order_by("-authority", "-score")
     print(f'place_id:{placeid}; task_id:{tid}; query_pass: {passnum}')
     print('authorities:', [rh.authority for rh in raw_hits])
+  elif passnum == "def":
+    raw_hits = Hit.objects.filter(
+      place_id=placeid, task_id=tid).order_by("-authority", "-score")
   else:
     # ***this is accessioning*** -> get all regardless of pass
     raw_hits = Hit.objects.filter(place_id=placeid, task_id=tid).order_by("-score")
