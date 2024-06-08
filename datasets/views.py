@@ -361,18 +361,25 @@ def indexMultiMatch(pid, matchlist):
   POST  for each record that got hits, process user matching decisions
 """
 def review(request, pk, tid, passnum):
-  print('passnum in review()', passnum)
+  print('request.GET entering review()', request.GET)
+  print(f'entering review(): pk:{pk}, passnum:{passnum}, tid:{tid}')
   pid = None
   if "pid" in request.GET:
     pid = request.GET["pid"]
   ds = get_object_or_404(Dataset, id=pk)
+
+  # get the task & its kwargs
   task = get_object_or_404(TaskResult, task_id=tid)
   auth = task.task_name[6:].replace("local", "")
   authname = "Wikidata" if auth == "wd" else "WHG"
   kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
-  print('task_kwargs in review', kwargs)
+  print('task_kwargs in review()', kwargs)
   test = kwargs["test"] if "test" in kwargs else "off"
-  beta = "beta" in list(request.user.groups.all().values_list("name", flat=True))
+
+  # beta = "beta" in list(request.user.groups.all().values_list("name", flat=True))
+  def get_pass_count(task_id, reviewed, query_pass):
+    return Hit.objects.values("place_id").filter(task_id=task_id, reviewed=reviewed, query_pass=query_pass).count()
+
   # filter place records by passnum for those with unreviewed hits on this task
   # if request passnum is complete, increment
   cnt_pass = (
@@ -380,7 +387,6 @@ def review(request, pk, tid, passnum):
     .filter(task_id=tid, reviewed=False, query_pass=passnum)
     .count()
   )
-  print("in review()", {"auth": auth, "ds": ds, "task": task})
   # TODO: refactor this awful mess; controls whether PASS appears in review dropdown
   cnt_pass0 = (
     Hit.objects.values("place_id")
@@ -474,17 +480,18 @@ def review(request, pk, tid, passnum):
   placeid = records[0].id
   place = get_object_or_404(Place, id=placeid)
   print('passnum', passnum)
-  dataset_details = {}  # only for wng accessioning
+  dataset_details = {}  # needed for context in either case
   # if passnum.startswith("pass") and auth not in ["whg", "idx"]:
   if auth not in ["whg", "idx"]:
-    # this is wdgn review, list only for this pass
-    print('wdgn review, list only for this pass', passnum)
+    str_passnum = 'pass'+str(passnum)
+    # ***this is wdgn review*** raw_hits are only for this pass
+    print('wdgn case in review(), list only for this pass', passnum)
     raw_hits = Hit.objects.filter(
-      place_id=placeid, task_id=tid, query_pass='pass'+str(passnum)
-    ).order_by("-authority", "-score")
-    print([rh.authority for rh in raw_hits])
+      place_id=placeid, task_id=tid, query_pass=str_passnum).order_by("-authority", "-score")
+    print(f'place_id:{placeid}; task_id:{tid}; query_pass: {str_passnum}')
+    print('authorities:', [rh.authority for rh in raw_hits])
   else:
-    # this is accessioning -> get all regardless of pass
+    # ***this is accessioning*** -> get all regardless of pass
     raw_hits = Hit.objects.filter(place_id=placeid, task_id=tid).order_by("-score")
 
     # Get details of datasets for popovers

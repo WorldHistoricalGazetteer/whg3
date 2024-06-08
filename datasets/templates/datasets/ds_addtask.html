@@ -103,8 +103,8 @@
                     <label class="form-check-label" for="r_wdlocal">
                       <input type="radio" class="form-check-input r_recon" id="r_wdlocal"
                              name="recon" value="wdlocal"
-{#                             {% if not ds.recon_status.idx %} checked{% else %} disabled{% endif %}>#}
-                             {% if not ds.recon_status.idx %} disabled{% endif %}>
+                             {% if not ds.recon_status.idx %} checked{% else %} disabled{% endif %}>
+{#                             {% if not ds.recon_status.idx %} disabled{% endif %}>#}
                       Wikidata + GeoNames
                       <span class="ms-2 font-italic small">(estimated time: {{ numrows|time_estimate }})</span>
                     </label>
