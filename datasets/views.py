@@ -474,6 +474,7 @@ def review(request, pk, tid, passnum):
   placeid = records[0].id
   place = get_object_or_404(Place, id=placeid)
   print('passnum', passnum)
+  dataset_details = {}  # only for wng accessioning
   # if passnum.startswith("pass") and auth not in ["whg", "idx"]:
   if auth not in ["whg", "idx"]:
     # this is wdgn review, list only for this pass
@@ -488,19 +489,6 @@ def review(request, pk, tid, passnum):
 
     # Get details of datasets for popovers
     # in dev, some datasets referenced in hits by index labels may not exist in database
-    # dataset_details = {}
-    # for hit in raw_hits:
-    #   for source in hit.json["sources"]:
-    #       print('source dslabel in hit.json', source["dslabel"])
-    #       dataset = Dataset.objects.get(label=source["dslabel"])
-    #       # dataset = Dataset.objects.get(label=)
-    #       dataset_details[dataset.label] = {
-    #           "title": dataset.title,
-    #           "description": dataset.description,
-    #           "owner": dataset.owner.name,
-    #           "creator": dataset.creator
-    #       }
-    dataset_details = {}
     for hit in raw_hits:
       for source in hit.json["sources"]:
         try:
@@ -520,23 +508,23 @@ def review(request, pk, tid, passnum):
           }
     #print('dataset_details', dataset_details)
 
-    # ??why? get pass contents for all of a place's hits
-    passes = (
-      list(
-        set(
-          [
-            item
-            for sublist in [
-            [s["pass"] for s in h.json["sources"]] for h in raw_hits
-          ]
-            for item in sublist
-          ]
-        )
+  # ??why? get pass contents for all of a place's hits
+  passes = (
+    list(
+      set(
+        [
+          item
+          for sublist in [
+          [s["pass"] for s in h.json["sources"]] for h in raw_hits
+        ]
+          for item in sublist
+        ]
       )
-      if auth in ["whg", "idx"]
-      else None
     )
-    print('passes', passes)
+    if auth in ["whg", "idx"]
+    else None
+  )
+  print('passes', passes)
 
   # convert ccodes to names
   countries = []

@@ -135,7 +135,7 @@
               <br/><!--{'p0': 2, 'p1': 1, 'p2': 0, 'p0and1': 0}-->
             </p>
             {% if task_wdgn %}
-              wdgn_passes: {{ wdgn_passes }}
+              {% comment %}wdgn_passes: {{ wdgn_passes }}{% endcomment %}
             <div class="task-box p-1">
               <p class="d-block bg-lightblue ps-1"><b>Reconciliation Task</b> ({{ task_wdgn.task_id|truncatechars:8 }});
                 initiated: {{ task_wdgn.date_created|date:"d M Y" }}</p>
@@ -144,25 +144,26 @@
                 Of those, <b>{{ wdgn_status.got_hits }}</b> got 1 or more hits, and <b>{{ wdgn_status.remain }}</b>
                 remain to be reviewed.
               </p>
-              <p>
+              <p>Pass 0: <b class="mx-1">{{ wdgn_passes.p0 }}</b>
                 {% if wdgn_passes.p0 > 0 %}
-                  Pass 0: <b class="mx-1">{{ wdgn_passes.p0 }}</b>
-                  <a href="{% url 'datasets:review' pk=ds.id tid=task_wdgn.task_id passnum='0' %}">review</a>
-                  <span class="pass0auto">
-                    | <a href="{% url 'datasets:wd_pass0' tid=task_wdgn.task_id %}">auto-accept</a>
-                  </span>
-                  <span class="help-matches" data-id="auto-match"><i class="fas fa-question-circle linkypop"></i></span>
-                  <br/>
+                <a href="{% url 'datasets:review' pk=ds.id tid=task_wdgn.task_id passnum='0' %}">review</a>
+                <span class="pass0auto">
+                  | <a href="{% url 'datasets:wd_pass0' tid=task_wdgn.task_id %}">auto-accept</a>
+                </span>
+                <span class="help-matches" data-id="auto-match"><i class="fas fa-question-circle linkypop"></i></span>
                 {% endif %}
-                Pass 1: <b class="mx-1">{{ wdgn_passes.p1 }}</b>
-                <a href="{% url 'datasets:review' pk=ds.id tid=task_wdgn.task_id passnum='1' %}">review</a>
                 <br/>
-                {% if wdgn_passes.p2 > 0 %}
-                  Pass 2: <b class="mx-1">{{ wdgn_passes.p2 }}</b>
-                  <a href="{% url 'datasets:review' pk=ds.id tid=task_wdgn.task_id passnum='2' %}">review</a>
-                  <br/>
+              Pass 1: <b class="mx-1">{{ wdgn_passes.p1 }}</b>
+                {% if wdgn_passes.p1 > 0 %}
+                <a href="{% url 'datasets:review' pk=ds.id tid=task_wdgn.task_id passnum='1' %}">review</a>
                 {% endif %}
-                Deferred: {{ wdgn_status.deferred }}
+                <br/>
+              Pass 2: <b class="mx-1">{{ wdgn_passes.p2 }}</b>
+                {% if wdgn_passes.p2 > 0 %}
+                <a href="{% url 'datasets:review' pk=ds.id tid=task_wdgn.task_id passnum='2' %}">review</a>
+                {% endif %}
+                <br/>
+              Deferred: {{ wdgn_status.deferred }}
                 {% if idx_status.deferred != 'none' %};
                   <a href="{% url 'datasets:review' pk=ds.id tid=task_wdgn.task_id passnum='def' %}">review</a>
                 {% endif %}
