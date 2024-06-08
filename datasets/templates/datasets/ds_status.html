@@ -263,11 +263,11 @@
               </p>
               <p>
                 Passes 0,1: <b class="mx-1">{{ idx_status.remain }}</b>
-                <a href="{% url 'datasets:review' pk=ds.id tid=task_idx.task_id passnum='0and1' %}">review</a>
+                <a href="{% url 'datasets:review' dsid=ds.id tid=task_idx.task_id passnum='0and1' %}">review</a>
                 <br/>
                 Deferred: {{ idx_status.deferred }}
                 {% if idx_status.deferred != 'none' %};
-                  <a href="{% url 'datasets:review' pk=ds.id tid=task_idx.task_id passnum='def' %}">review</a>
+                  <a href="{% url 'datasets:review' dsid=ds.id tid=task_idx.task_id passnum='def' %}">review</a>
                 {% endif %}
               </p>
             </div>
