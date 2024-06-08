@@ -41,6 +41,7 @@ from main.choices import AUTHORITY_BASEURI
 from main.models import Log, Comment
 from places.models import *
 from utils.regions_countries import get_regions_countries
+from utils.mapdata import mapdata_task
 
 from .exceptions import LPFValidationError, DelimValidationError, \
   DelimInsertError, DataAlreadyProcessedError
@@ -2695,6 +2696,12 @@ class DatasetMetadataView(LoginRequiredMixin, UpdateView):
       ds.description = data['description']
       ds.uri_base = data['uri_base']
       ds.save()
+      
+    # # TODO: Should test `needs_tileset` first - see Issue #227
+    # if ds.public:
+    #     print(f"Updating mapdata cache (if required).")
+    #     task = mapdata_task.delay('datasets', ds.id, 'standard', 'refresh')
+      
     return super().form_valid(form)
 
   def form_invalid(self, form):
