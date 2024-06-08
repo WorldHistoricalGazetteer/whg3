@@ -359,14 +359,15 @@ def indexMultiMatch(pid, matchlist):
 """
   GET   returns review.html for Wikidata, or accession.html for accessioning
   POST  for each record that got hits, process user matching decisions
+  NB.   'passnum' is always a string: ['pass*' | 'def' | '0and1' (for idx)]
 """
-def review(request, pk, tid, passnum):
+def review(request, dsid, tid, passnum):
   print('request.GET entering review()', request.GET)
-  print(f'entering review(): pk:{pk}, passnum:{passnum}, tid:{tid}')
+  print(f'entering review(): dsid:{dsid}, tid:{tid}, passnum:{passnum}')
   pid = None
   if "pid" in request.GET:
     pid = request.GET["pid"]
-  ds = get_object_or_404(Dataset, id=pk)
+  ds = get_object_or_404(Dataset, id=dsid)
 
   # get the task & its kwargs
   task = get_object_or_404(TaskResult, task_id=tid)
@@ -382,35 +383,18 @@ def review(request, pk, tid, passnum):
 
   # filter place records by passnum for those with unreviewed hits on this task
   # if request passnum is complete, increment
-  cnt_pass = (
-    Hit.objects.values("place_id")
-    .filter(task_id=tid, reviewed=False, query_pass=passnum)
-    .count()
-  )
-  # TODO: refactor this awful mess; controls whether PASS appears in review dropdown
-  cnt_pass0 = (
-    Hit.objects.values("place_id")
-    .filter(task_id=tid, reviewed=False, query_pass="pass0")
-    .count()
-  )
-  cnt_pass1 = (
-    Hit.objects.values("place_id")
-    .filter(task_id=tid, reviewed=False, query_pass="pass1")
-    .count()
-  )
-  cnt_pass2 = (
-    Hit.objects.values("place_id")
-    .filter(task_id=tid, reviewed=False, query_pass="pass2")
-    .count()
-  )
-  cnt_pass3 = (
-    Hit.objects.values("place_id")
-    .filter(task_id=tid, reviewed=False, query_pass="pass3")
-    .count()
-  )
+  # hit count for this pass
+  cnt_pass = get_pass_count(tid, False, passnum)
+  print(f'cnt_pass for {passnum}: {cnt_pass}')
+  # hit counts for all numbered passes
+  cnt_pass0 = get_pass_count(tid, False, "pass0")
+  cnt_pass1 = get_pass_count(tid, False, "pass1")
+  cnt_pass2 = get_pass_count(tid, False, "pass2")
+  cnt_pass3 = get_pass_count(tid, False, "pass3")
+
 
   # calling link passnum may be 'pass*', 'def', or '0and1' (for idx)
-  # if 'pass*', just get place_ids for that pass
+  # if 'pass*', get place_ids for just that pass
   if passnum.startswith("pass"):
     pass_int = int(passnum[4])
     # if no unreviewed left, go to next pass
@@ -483,12 +467,12 @@ def review(request, pk, tid, passnum):
   dataset_details = {}  # needed for context in either case
   # if passnum.startswith("pass") and auth not in ["whg", "idx"]:
   if auth not in ["whg", "idx"]:
-    str_passnum = 'pass'+str(passnum)
+    # str_passnum = 'pass'+str(passnum)
     # ***this is wdgn review*** raw_hits are only for this pass
     print('wdgn case in review(), list only for this pass', passnum)
     raw_hits = Hit.objects.filter(
-      place_id=placeid, task_id=tid, query_pass=str_passnum).order_by("-authority", "-score")
-    print(f'place_id:{placeid}; task_id:{tid}; query_pass: {str_passnum}')
+      place_id=placeid, task_id=tid, query_pass=passnum).order_by("-authority", "-score")
+    print(f'place_id:{placeid}; task_id:{tid}; query_pass: {passnum}')
     print('authorities:', [rh.authority for rh in raw_hits])
   else:
     # ***this is accessioning*** -> get all regardless of pass
@@ -548,7 +532,7 @@ def review(request, pk, tid, passnum):
 
   # prep some context
   context = {
-    "ds_id": pk,
+    "ds_id": dsid,
     "ds_label": ds.label,
     "task_id": tid,
     "hit_list": raw_hits,
@@ -639,7 +623,7 @@ def review(request, pk, tid, passnum):
         request, ("Last record (" + place_post.title + ") reviewed by another")
       )
       return redirect(
-        "/datasets/" + str(pk) + "/review/" + task.task_id + "/" + passnum
+        "/datasets/" + str(dsid) + "/review/" + task.task_id + "/" + passnum
       )
     elif formset.is_valid():
       hits = formset.cleaned_data
@@ -856,7 +840,7 @@ def review(request, pk, tid, passnum):
 
       return redirect(
         "/datasets/"
-        + str(pk)
+        + str(dsid)
         + "/review/"
         + tid
         + "/"

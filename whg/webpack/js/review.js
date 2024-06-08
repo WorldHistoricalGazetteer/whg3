@@ -28,16 +28,26 @@ function toggleGeonamesReview() {
 Promise.all([waitMapLoad(), waitDocumentReady()])
     .then(() => {
 
+		// pass number dropdown set on load and listener
+		$( "#select_pass" ).val(passnum)
+		// pass number listener
+		$( "#select_pass" ).change(function() {
+			let z=window.location.href
+			let baseurl=z.substring(0,z.lastIndexOf('/')+1)
+			window.location.href = baseurl + $(this).val()
+		});
+
     if ($('.wdlocal').length > 0) {
-		// hide geonames (gn) initially if any wdlocal records
-        $('.gn').hide();
-        // $('#toggle_geonames_review').show();
-        $('.show-link').show();
+			// hide geonmaes hits (if any) and show toggle link
+			if($('.gn').length > 0) {
+				$('.gn').hide();
+				$('.show-link').show();
+			}
     } else {
-		// show geonames (gn) initially if no wdlocal records
-        $('.gn').show();
-        // $('#toggle_geonames_review').hide();
-        $('.show-link').hide();
+			// geonames (.gn) only
+			$('.gn').show();
+			// hide geonames toggle link
+			$('.show-link').hide();
     }
 
     $('#toggle_geonames_review').on('click', function(e) {

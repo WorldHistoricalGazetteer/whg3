@@ -210,9 +210,6 @@
                 {{ form.non_field_errors }}
                 <div class="auth-match ps-2 mt-0 mb-2
                   {% if form.json.value|get:'dataset' == 'geonames' %}gn{% else %}wdlocal{% endif %}">
-{#                <div class="auth-match ps-2 mt-0 mb-2">#}
-{#                  {{ form.json.value }}#}
-
                   <p><strong>Title/Preferred</strong>:
                     <span class="text-danger h6">{{ form.json.value|get:"title" }}</span>
                   </p>
@@ -331,7 +328,7 @@
     let passnum = '{{ passnum }}';
     let mbtoken = '{{ mbtoken }}';
     let page_variant = 'reconciliation';
-    let nextURL = "{% url 'datasets:review' pk=ds_id tid=task_id passnum=passnum %}";
+    let nextURL = "{% url 'datasets:review' dsid=ds_id tid=task_id passnum=passnum %}";
   </script>
 {% endblock %}
 
