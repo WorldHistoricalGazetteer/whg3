@@ -209,7 +209,6 @@ class PlaceType(models.Model):
   class Meta:
     managed = True
     db_table = 'place_type'
-    # unique_together = ('place', 'src_id', 'jsonb',)
 
 
 class PlaceGeom(models.Model):
@@ -271,7 +270,6 @@ class PlaceGeom(models.Model):
   class Meta:
     managed = True
     db_table = 'place_geom'
-    # unique_together = ('place', 'src_id', 'jsonb',)
 
 
 class PlaceLink(models.Model):
@@ -297,7 +295,6 @@ class PlaceLink(models.Model):
   class Meta:
     managed = True
     db_table = 'place_link'
-    # unique_together = ('place', 'src_id', 'jsonb',)
 
 
 class PlaceWhen(models.Model):
@@ -310,7 +307,6 @@ class PlaceWhen(models.Model):
   class Meta:
     managed = True
     db_table = 'place_when'
-    # unique_together = ('place', 'src_id', 'jsonb', )
 
 
 class PlaceRelated(models.Model):
@@ -322,7 +318,6 @@ class PlaceRelated(models.Model):
   class Meta:
     managed = True
     db_table = 'place_related'
-    # unique_together = ('place', 'src_id', 'jsonb',)
 
 
 class PlaceDescription(models.Model):
@@ -335,8 +330,9 @@ class PlaceDescription(models.Model):
   class Meta:
     managed = True
     db_table = 'place_description'
-    # unique_together = ('place', 'src_id',)
-    # TOO BIG? unique_together = ('place', 'src_id', 'jsonb')
+    indexes = [
+      models.Index(fields=['place']),
+    ]
 
 
 class PlaceDepiction(models.Model):
@@ -348,7 +344,6 @@ class PlaceDepiction(models.Model):
   class Meta:
     managed = True
     db_table = 'place_depiction'
-    # unique_together = ('place', 'src_id', 'jsonb',)
 
 
 class CloseMatch(models.Model):
