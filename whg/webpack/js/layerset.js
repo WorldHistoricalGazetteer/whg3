@@ -12,24 +12,21 @@ class Layerset {
 				// A `feature-state`-based `highlighter` condition is applied dynamically to each of the expressions given below
 				'Polygon': {
 					'fill-color': [
-						'rgba(0,128,0,.4)', // green
-						'rgba(221,221,221,.3)' // pale-gray
+						'rgba(255,0,0,0.5)', // red
+						'rgba(255,165,0,0.2)' // orange
 					],
-					'fill-outline-color': [
-						'red', 
-						['any', ['==', ['get', 'min'], 'null'], ['==', ['get', 'max'], 'null']], 'rgba(102,102,102,.5)', // dark-gray
-						'rgba(102,102,102,.8)' // dark-gray
-					],
+					'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
 				},
 				'LineString': {
 					'line-color': [
-						'rgba(0,128,0,.4)', // green
-						'rgba(144,238,144,.8)' // lightgreen
+						'rgba(255,0,0,0.5)', // red
+						'rgba(255,165,0,0.2)' // orange
 					],
 					'line-width': [
-						2,
-						1
-					]
+			            'interpolate', ['exponential', 2], ['zoom'],
+			            0, 2, // zoom level, line width
+			            10, 5, // zoom level, line width
+			        ]
 				},
 				'Point': {
 			        'circle-color': [
@@ -42,10 +39,10 @@ class Layerset {
 						.7
 			        ],
 					'circle-radius': [
-						'interpolate', ['linear'], ['zoom'],
-						0, .5 * this.enlarger, // zoom, radius
-						10, 10 * this.enlarger,
-						18, 20,
+			            'interpolate', ['exponential', 2], ['zoom'],
+			            0, Math.max(1, .5 * this.enlarger), // zoom level, radius
+			            10, 10 * this.enlarger, // zoom level, radius
+			            18, 20 // zoom level, radius
 					],
 					'circle-stroke-color': [
 						this.colour_highlight,
@@ -123,7 +120,7 @@ class Layerset {
 			const layerID = `${this._source}_${geometryType.toLowerCase()}`;
 			
 			Object.keys(paintGeometryStyle).forEach((attribute) => {
-				if ((!paintOption || paintOption == 'standard') && attribute !== 'circle-radius') {
+				if ((!paintOption || paintOption == 'standard') && !['circle-radius','fill-antialias','line-width'].includes(attribute)) {
 					paintGeometryStyle[attribute] = [...this._highlighter, ...paintGeometryStyle[attribute]];
 				}
 			});
