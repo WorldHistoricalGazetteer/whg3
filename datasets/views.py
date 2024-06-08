@@ -41,7 +41,7 @@ from main.choices import AUTHORITY_BASEURI
 from main.models import Log, Comment
 from places.models import *
 from utils.regions_countries import get_regions_countries
-from utils.mapdata import mapdata_task
+#from utils.mapdata import mapdata_task ## Results in circular import error
 
 from .exceptions import LPFValidationError, DelimValidationError, \
   DelimInsertError, DataAlreadyProcessedError
