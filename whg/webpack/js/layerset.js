@@ -2,25 +2,36 @@
 
 class Layerset {
     constructor(mapInstance, dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger) {
-		this.colour = (typeof colour !== 'string') ? 'orange' : colour;
-		this.colour_highlight = (typeof colour_highlight !== 'string') ? 'red' : colour_highlight;
+		this.colour = (typeof colour !== 'string') ? 'rgba(255,165,0,1)' : colour; // orange
+		this.colour_highlight = (typeof colour_highlight !== 'string') ? 'rgba(255,0,0,1)' : colour_highlight; // red
 		this.number = (number === undefined) ? false : number;
 		this.enlarger = (enlarger === undefined) ? 1 : enlarger;
+		
+		String.prototype.rgbaOpacity = function(opacityMultiplier) {
+		    if (this.startsWith('rgba')) {
+		        const rgbaArray = this.match(/[\d.]+/g);
+		        const alpha = parseFloat(rgbaArray[3]);
+		        const newAlpha = Math.min(1, Math.max(0, alpha * opacityMultiplier));
+		        return `rgba(${rgbaArray[0]}, ${rgbaArray[1]}, ${rgbaArray[2]}, ${newAlpha})`;
+		    } else {
+		        return this; // Return original string if it doesn't start with 'rgba'
+		    }
+		};
 
 		const paintOptions = {
 			'standard': {
 				// A `feature-state`-based `highlighter` condition is applied dynamically to each of the expressions given below
 				'Polygon': {
 					'fill-color': [
-						'rgba(255,0,0,0.5)', // red
-						'rgba(255,165,0,0.2)' // orange
+						this.colour_highlight.rgbaOpacity(0.5), // red
+						this.colour.rgbaOpacity(0.2), // orange
 					],
 					'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
 				},
 				'LineString': {
 					'line-color': [
-						'rgba(255,0,0,0.5)', // red
-						'rgba(255,165,0,0.2)' // orange
+						this.colour_highlight.rgbaOpacity(0.5), // red
+						this.colour.rgbaOpacity(0.2), // orange
 					],
 					'line-width': [
 			            'interpolate', ['exponential', 2], ['zoom'],

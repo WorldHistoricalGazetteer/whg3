@@ -1,0 +1,14 @@
+<svg width="12px" height="12px" viewBox="0 0 1200 1200" xmlns="http://www.w3.org/2000/svg">
+  <g>
+   <g>
+    <path d="m41.98075,473.38664l545.19174,-403.26696l545.19302,403.26696l-208.24426,652.5024l-673.89562,0l-208.24488,-652.5024z" fill="#000" stroke-width="20" stroke="#fff" transform="rotate(-11.5317 587.173 598.004)"/>
+   </g>
+   <g>
+    <path d="m772,960c-283,-367 -336,-405 -336,-540c0,-185 168,-335 374,-335s374,150 374,335c0,135 -53,173 -336,540c-19,24 -58,24 -77,0l1,0zm38,-400c86,0 156,-62 156,-139s-70,-139 -156,-139s-156,62 -156,139s70,139 156,139z" fill="#FFF" stroke-width="20" stroke="#000"/>
+   </g>
+   <g>
+    <polyline points="73,210 351,712 499,439 1100,1100" stroke-linecap="round" stroke-width="70" stroke="#fff" fill="none"/>
+    <polyline points="73,210 351,712 499,439 1100,1100" stroke-linecap="round" stroke-width="30" stroke="#000" fill="none"/>
+   </g>
+  </g>
+</svg>
