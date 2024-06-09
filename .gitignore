@@ -2,6 +2,7 @@
 _local/
 
 node_modules/
+cache/
 
 CDNfallbacks/
 

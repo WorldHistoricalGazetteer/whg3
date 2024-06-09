@@ -337,7 +337,7 @@ function setRowEvents() {
 // fetch and render
 function renderData(dsid) {
         		
-    fetch(`/datasets/${ dsid }/mapdata/`)
+    fetch(`/mapdata/datasets/${ dsid }/`)
         .then((response) => {
             if (!response.ok) {
                 throw new Error('Failed to fetch dataset GeoJSON.');

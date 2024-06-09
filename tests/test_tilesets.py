@@ -81,7 +81,7 @@ class TestSendTilesetRequest(TestCase):
         result = send_tileset_request(category=category, id=dataset_id)
 
         # Construct the expected URL
-        expected_url = f"https://dev.whgazetteer.org/{category}/{dataset_id}/mapdata/?variant=tileset"
+        expected_url = f"https://dev.whgazetteer.org/mapdata/{category}/{dataset_id}/?variant=tileset"
 
         # Assert the function returned the expected result
         self.assertEqual(result, response_data)
@@ -115,7 +115,7 @@ class TestSendTilesetRequest(TestCase):
 #             settings.TILER_URL,
 #             headers={"Content-Type": "application/json"},
 #             data=json.dumps({
-#                 "geoJSONUrl": "https://dev.whgazetteer.org/datasets/9/mapdata/?variant=tileset",
+#                 "geoJSONUrl": "https://dev.whgazetteer.org/mapdata/datasets/9/?variant=tileset",
 #                 "tilesetType": "normal",
 #             })
 #         )
