@@ -16,7 +16,6 @@ for type_obj in Type.objects.all():
     "term": type_obj.term
   }
 
-
 def parse_validation_error(error):
   # Extract key parts of the error message
   # print('parse_validation_error()', error)

@@ -1,4 +1,5 @@
 """
+2024-06-09
 """
 
 import os, sys
@@ -217,47 +218,9 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL='/accounts/login/'
 LOGOUT_REDIRECT_URL='/'
 
-
-# /././././././.
-# start django-allauth
-# /././././././.
-#
-# ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS =1
-# ACCOUNT_EMAIL_REQUIRED = True
-# ACCOUNT_EMAIL_VERIFICATION = "mandatory"
-# ACCOUNT_LOGIN_ATTEMPTS_LIMIT = 5
-# ACCOUNT_LOGIN_ATTEMPTS_TIMEOUT = 86400 # 1 day in seconds
-#
-# ACCOUNT_LOGOUT_REDIRECT_URL ='/'
-# LOGIN_REDIRECT_URL = '/accounts/email/' # default to /accounts/profile
-
-# ACCOUNT_FORMS = {'signup': 'allauth.account.forms.WHGRegisterForm',}
-
-#SOCIALACCOUNT_PROVIDERS = {
-  ## For each OAuth based provider, either add a ``SocialApp``
-  ## (``socialaccount`` app) containing the required client
-  ## credentials, or list them here:
-  #'github': {
-    #'APP': {
-      #'client_id': '123',
-      #'secret': '456',
-      #'key': ''
-    #}
-  #},
-  #'orcid': {
-      ## Base domain of the API. Default value: 'orcid.org', for the production API
-      #'BASE_DOMAIN':'sandbox.orcid.org',  # for the sandbox API
-      ## Member API or Public API? Default: False (for the public API)
-      #'MEMBER_API': True,  # for the member API
-  #}}
-# /././././././.
-# end django-allauth
-# /././././././.
-
 AUTHENTICATION_BACKENDS = (
   'django.contrib.auth.backends.ModelBackend', # default
   'guardian.backends.ObjectPermissionBackend',
-  # 'allauth.account.auth_backends.AuthenticationBackend',
 )
 
 # Password validation
@@ -280,14 +243,12 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 
-# disabled for new psycopg2 config
-# USE_TZ = True
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 MEDIA_URL = '/media/'
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/2.0/howto/static-files/
+# https://docs.djangoproject.com/en/4.2/howto/static-files/deployment/
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = [
