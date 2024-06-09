@@ -41,13 +41,12 @@ id, title, label, created, format, #rows, ds_status (if)owner
       </div>
   </div>
   <div class="scrollable-table">
-    count: {{ datasets.count}}
     <table id="table_ds" class="table table-striped">
     <thead class="small strong">
     <th>id<i class="fa fa-sort ms-1" data-id='id'></i></th>
     <th>title <i class="fa fa-sort ms-1" data-id='title'></i></th>
     <th>label <i class="fa fa-sort ms-1" data-id='label'></i></th>
-    <th>modified <i class="fa fa-sort ms-1" data-id='last_modified' title="UTC"></i></th>
+    <th>created <i class="fa fa-sort ms-1" data-id='create_date' title="UTC"></i></th>
     <th># rows<i class="fa fa-sort ms-1" data-id='numrows'></i></th>
     <th>status <i class="fa fa-sort ms-1" data-id='ds_status'></i></th>
     <th>owner <i class="fa fa-sort ms-1" data-id='owner'></i></th>
@@ -70,10 +69,8 @@ id, title, label, created, format, #rows, ds_status (if)owner
           {{ d.label }} <span class="corerow"> (core)</span>
         {% else %}{{ d.label }}{% endif %}
         </td>
-        <td class="small">{{ d.log.last.timestamp|date:"Y-m-d" }}</td>
-        {#          <td class="small">{{ d.create_date|date:"Y-m-d, H:i" }}</td>#}
+        <td class="small">{{ d.create_date|date:"Y-m-d" }}</td>
         <td>{{ d.places.count }}</td>
-{#        <td>{{ d.numrows }}</td>#}
         <td>{{ d.ds_status }}</td>
         {% if is_admin %}
           <td>{{ d.owner.username|truncatechars:20 }}</td>

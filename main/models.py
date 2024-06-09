@@ -1,3 +1,4 @@
+from django.apps import apps
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -12,7 +13,6 @@ from traces.models import TraceAnnotation
 
 from main.choices import (COMMENT_TAGS, COMMENT_TAGS_REVIEW, LOG_CATEGORIES, LOG_TYPES,
                           LINKTYPES, TILESET_TYPES)
-
 # cross-app models
 class DownloadFile(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)

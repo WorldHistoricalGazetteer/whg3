@@ -64,7 +64,7 @@
   <script type="application/javascript">
     var currentState = {
       datasets: {sort: 'last_modified', order: 'desc', filters: {}},
-      collections: {sort: 'last_modified', order: 'desc', filters: {}},
+      collections: {sort: 'create_date', order: 'desc', filters: {}},
       areas: {sort: 'created', order: 'desc', filters: {}},
       groups: {sort: 'title', order: 'asc', filters: {}},
     };
@@ -72,9 +72,9 @@
     var initialSortOrders = {
       datasets: {
         'id': 'none',
-        'title': 'desc',
+        'title': 'none',
         'label': 'none',
-        'last_modified': 'none',
+        'last_modified': 'desc',
         'numrows': 'none',
         'ds_status': 'none',
         'owner': 'none',
@@ -87,10 +87,10 @@
         'owner': 'none',
       },
       collections: {
-        'title': 'asc',
+        'title': 'none',
         'count': 'none',
         'type': 'none',
-        'modified': 'none',
+        'create_date': 'desc',
         'status': 'none',
         'owner': 'none',
       },

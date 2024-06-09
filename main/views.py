@@ -359,9 +359,9 @@ def dataset_list(request, sort='', order=''):
   # Sort based on the parameters
   if sort == 'last_modified':
     if order == 'desc':
-      datasets = datasets.annotate(last_log_timestamp=Max('log__timestamp')).order_by('-last_log_timestamp')
+      datasets = datasets.order_by('-create_date')
     else:
-      datasets = datasets.annotate(last_log_timestamp=Max('log__timestamp')).order_by('last_log_timestamp')
+      datasets = datasets.order_by('create_date')
   elif sort and order:
     if sort == 'owner':
       sort = 'owner__username'
@@ -423,23 +423,22 @@ def collection_list(request, sort='', order=''):
   text_fields = ['title', 'type', 'status', 'owner']
 
   collections = Collection.objects.all()
-
-  collections = collections.annotate(recent_log_timestamp=Max('log__timestamp')).order_by('recent_log_timestamp')
-
-  collections = collections.annotate(
-    count=Case(
-      When(collection_class='place', then=Count('annos')),
-      # When(collection_class='dataset', then=Count('datasets__places')),
-      default=0
-    )
-  )
+  # collections = collections.annotate(recent_log_timestamp=Max('log__timestamp')).order_by('recent_log_timestamp')
+  #
+  # collections = collections.annotate(
+  #   count=Case(
+  #     When(collection_class='place', then=Count('annos')),
+  #     # When(collection_class='dataset', then=Count('datasets__places')),
+  #     default=0
+  #   )
+  # )
 
   # Sort based on the parameters
-  if sort == 'last_modified':
+  if sort == 'create_date':
     if order == 'desc':
-      collections = collections.annotate(last_log_timestamp=Max('log__timestamp')).order_by('-last_log_timestamp')
+      collections = collections.order_by('-create_date')
     else:
-      collections = collections.annotate(last_log_timestamp=Max('log__timestamp')).order_by('last_log_timestamp')
+      collections = collections.order_by('create_date')
   elif sort == 'count':
     if order == 'desc':
       collections = collections.order_by('-count')

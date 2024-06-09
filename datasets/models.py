@@ -56,7 +56,7 @@ def default_vis_parameters():
   }
 
 # owner = models.ForeignKey('auth.User', related_name='snippets', on_delete=models.CASCADE)
-class Dataset(models.Model):  
+class Dataset(models.Model):
   owner = models.ForeignKey(settings.AUTH_USER_MODEL,
                             related_name='datasets', on_delete=models.CASCADE)
   label = models.CharField(max_length=20, null=False, unique="True", blank=True,
@@ -298,10 +298,15 @@ class Dataset(models.Model):
 
   @property
   def last_modified_iso(self):
-    if self.log.count() > 0:
-      last = self.log.all().order_by('-timestamp')[0].timestamp
+    logtypes_to_include = ['ds_create', 'ds_recon', 'ds_update']
+    filtered_logs = self.log.filter(logtype__in=logtypes_to_include)
+
+    if filtered_logs.count() > 0:
+      # Get the log with the latest timestamp
+      last = filtered_logs.order_by('-timestamp').first().timestamp
     else:
       last = self.create_date
+
     return last.strftime("%Y-%m-%d")
 
   @property

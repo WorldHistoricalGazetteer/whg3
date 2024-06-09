@@ -54,7 +54,7 @@ id, owner, title, type, title, description, ccodes, geojson, created
             <a href="{% url 'areas:area-update' item.id %}" rel="tooltip">
             {{ item.title }}</a>
           </td>
-          <td class="small">{{ item.created }}</td>
+          <td class="small">{{ item.created|date:"Y-m-d" }}</td>
           <td>{{ item.description|truncatechars:40 }}</td>
           <td>{{ item.type }}</td>
 	        {% if is_admin %}

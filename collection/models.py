@@ -4,7 +4,8 @@ from django.contrib.auth.models import Group
 from django.contrib.postgres.fields import ArrayField
 from django.core.validators import URLValidator
 from django.db import models
-from django.db.models import Q, JSONField, Func, CharField, Exists, OuterRef
+from django.db.models import Q, JSONField, Func, CharField, Exists, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils import timezone
 
@@ -272,10 +273,22 @@ class Collection(models.Model):
       'red', 'green', 'blue', 'purple']
     return dict(zip(self.rel_keywords, colors))
 
+  # @property
+  # def last_modified_iso(self):
+  #   # TODO: log entries for collections
+  #   return self.create_date.strftime("%Y-%m-%d")
   @property
   def last_modified_iso(self):
-    # TODO: log entries for collections
-    return self.create_date.strftime("%Y-%m-%d")
+    logtypes_to_include = ['create', 'update']
+    filtered_logs = self.log.filter(logtype__in=logtypes_to_include)
+
+    if filtered_logs.count() > 0:
+      # Get the log with the latest timestamp
+      last = filtered_logs.order_by('-timestamp').first().timestamp
+    else:
+      last = self.create_date
+
+    return last.strftime("%Y-%m-%d")
 
   @property
   def owners(self):

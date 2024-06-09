@@ -52,7 +52,7 @@
             <i class="fa fa-edit"></i></a></span>
         </td>
         <td class="text-center">{{ group.members.count }}</td>
-        <td class="small">{{ group.created }}</td>
+        <td class="small">{{ group.created|date:"Y-m-d" }}</td>
         <td>{{ group.type }}</td>
         <td>{{ group.owner }}</td>
       </tr>
