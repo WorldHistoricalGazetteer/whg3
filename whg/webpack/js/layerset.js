@@ -23,11 +23,11 @@ class Layerset {
 				// A `feature-state`-based `highlighter` condition is applied dynamically to each of the expressions given below
 				'Polygon': {
 					'fill-color': [
-						this.colour_highlight.rgbaOpacity(0.5), // red
-						this.colour.rgbaOpacity(0.2), // orange
+						this.colour_highlight.rgbaOpacity(0), // red
+						this.colour.rgbaOpacity(0), // orange
 					],
 					//'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
-					'fill-outline-color': this.colour_highlight,
+					'fill-outline-color': 'red',
 				},
 				'LineString': {
 					'line-color': [
