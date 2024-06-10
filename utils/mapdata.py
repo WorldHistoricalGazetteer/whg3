@@ -175,7 +175,7 @@ def mapdata_collection_place(collection, feature_collection):
 
         if reference_place.geoms.exists():
             unioned_geometry = reference_place.geoms.aggregate(union=Union('geom'))['union']
-            centroid = unioned_geometry.centroid if unioned_geometry else None
+            centroid = unioned_geometry.centroid if unioned_geometry and reduce_geometry else None
             geometry_collection = json.loads(GeometryCollection(centroid if centroid else unioned_geometry).geojson) if unioned_geometry else None
         else:
             geometry_collection = None
