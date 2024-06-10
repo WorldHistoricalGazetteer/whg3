@@ -38,10 +38,7 @@ class Layerset {
 			            0, 2, // zoom level, line width
 			            10, 5, // zoom level, line width
 			        ],
-			        "line-dasharray": [
-			            ["literal", [1, 0]],
-			            ["literal", [4, 2]] // Dashed pattern for non-highlighted polygons
-			        ]
+			        'line-dasharray': ["literal", [4, 2]]
 				},
 				'LineString': {
 					'line-color': [
@@ -146,7 +143,7 @@ class Layerset {
 			const layerID = `${this._source}_${geometryType.toLowerCase()}`;
 			
 			Object.keys(paintGeometryStyle).forEach((attribute) => {
-				if ((!paintOption || paintOption == 'standard') && !['circle-radius','fill-antialias','line-width'].includes(attribute)) {
+				if ((!paintOption || paintOption == 'standard') && !['circle-radius','fill-antialias','line-width','line-dasharray'].includes(attribute)) {
 					paintGeometryStyle[attribute] = [...this._highlighter, ...paintGeometryStyle[attribute]];
 				}
 			});
