@@ -22,7 +22,10 @@ class Layerset {
 			'standard': {
 				// A `feature-state`-based `highlighter` condition is applied dynamically to each of the expressions given below
 				'Polygon': {
-					'line-dummy': null,
+					'fill-color': 'rgba(255,0,0,.1)', // red
+					'fill-outline-color': 'rgba(255,0,0,.7)' // red
+				},
+				'Polygon-line': {
 					'fill-color': 'rgba(255,0,0,.1)', // red
 					'fill-outline-color': 'rgba(255,0,0,.7)' // red
 				},
@@ -140,7 +143,7 @@ class Layerset {
 			    'source': this._source,
 			    'source-layer': this._sourceLayer,
 			    'paint': paintGeometryStyle,
-			    'filter': ['==', '$type', geometryType],
+			    'filter': ['==', '$type', geometryType.split('-')[0]],
 			};
 			console.log(layer);
 			mapInstance.addLayer(layer);
