@@ -1,6 +1,6 @@
 # Working on a Development Branch
 
-1. **Initialise Branches**  
+1. **Initialise and Switch Branches**  
 
     ```sh
     # Switch to Project Directory
@@ -10,20 +10,23 @@
     original_branch=$(git rev-parse --abbrev-ref HEAD) # Usually "staging"
 
     # Specify the target branch name
-    target_branch="sg/2024-06-09"
+    target_branch="origin/sg/2024-06-09"
 
     
     # Print the branch names for verification
     echo "Original branch: $original_branch"
     echo "Target branch: $target_branch"
+    
+    # Update local GitHub `origin`
+    git fetch origin
+    
+    # Switch to the target branch
+    git checkout $target_branch
     ```
     
 2. **Refresh from Target Branch**
 
     ```sh
-    # Switch to the target branch
-    git checkout $target_branch
-    
     # Pull the latest updates from the target branch
     git pull origin $target_branch
     
