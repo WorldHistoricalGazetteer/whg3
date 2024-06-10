@@ -58,7 +58,7 @@ docker logs --tail 100 -f -t web | awk '{ split($1, a, "T"); split(a[2], b, ".")
 docker logs --tail 100 -f celery_worker | awk '{print $1, $2, strftime("%Y-%m-%d %H:%M:%S", substr($4, 0, length($4)-1)), $5, $6, $7, $8, $9, $10, $11, $12}'
 ```
 
-### Run Management Command Example
+### Run Management Command (example)
 
 Enter Docker container:
 
@@ -70,6 +70,7 @@ Execute command within Docker container:
 
 ```sh
 python manage.py clear_mapdata_cache
+exit
 ```
 
 
