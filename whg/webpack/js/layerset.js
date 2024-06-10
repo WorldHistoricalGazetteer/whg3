@@ -22,7 +22,7 @@ class Layerset {
 			'standard': {
 				// A `feature-state`-based `highlighter` condition is applied dynamically to each of the expressions given below
 				'Polygon': {
-					'fill-color': this.colour.rgbaOpacity(0.5),
+					'fill-color': 'white',
 					//'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
 					'fill-outline-color': 'red',
 				},
