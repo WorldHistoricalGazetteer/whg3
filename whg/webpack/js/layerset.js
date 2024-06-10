@@ -26,8 +26,15 @@ class Layerset {
 					'fill-outline-color': 'rgba(255,0,0,.7)' // red
 				},
 				'Polygon-line': {
-					'fill-color': 'rgba(255,0,0,.1)', // red
-					'fill-outline-color': 'rgba(255,0,0,.7)' // red
+					'line-color': [
+						this.colour_highlight.rgbaOpacity(0.5), // red
+						this.colour.rgbaOpacity(0.2), // orange
+					],
+					'line-width': [
+			            'interpolate', ['exponential', 2], ['zoom'],
+			            0, 2, // zoom level, line width
+			            10, 5, // zoom level, line width
+			        ]
 				},
 				'LineString': {
 					'line-color': [
