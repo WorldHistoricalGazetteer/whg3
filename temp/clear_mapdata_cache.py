@@ -7,7 +7,7 @@ class Command(BaseCommand):
     help = 'Clears the cache folder'
 
     def handle(self, *args, **options):
-        cache_folder = settings.CACHES['LOCATION']
+        cache_folder = settings.CACHES['default']['LOCATION']
         try:
             for filename in os.listdir(cache_folder):
                 file_path = os.path.join(cache_folder, filename)
