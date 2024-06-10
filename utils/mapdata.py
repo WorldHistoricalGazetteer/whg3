@@ -105,11 +105,6 @@ def mapdata_dataset(id):
     ).order_by('id')    
     
     extent = buffer_extent( ds.places.aggregate(Extent('geoms__geom')).get('geoms__geom__extent') )
-        
-    if extent:
-        xmin, ymin, xmax, ymax = extent
-        extent_polygon = Polygon.from_bbox((xmin, ymin, xmax, ymax))
-        buffered_polygon = extent_polygon.buffer(buffer_distance)    
 
     return {
         "title": ds.title,
@@ -157,9 +152,6 @@ def mapdata_collection(id):
         collection_places_all = collection.places_all
 
     extent = buffer_extent( list(collection_places_all.aggregate(Extent('geoms__geom')).values())[0] )
-    
-    buffer_distance = 0.1
-    extent = Polygon.from_bbox(extent).buffer(buffer_distance).extent if extent else None
 
     feature_collection = {
         "title": collection.title,
