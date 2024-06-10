@@ -10,9 +10,8 @@
     original_branch=$(git rev-parse --abbrev-ref HEAD) # Usually "staging"
 
     # Specify the target branch name
-    target_branch="origin/sg/2024-06-09"
+    target_branch="sg/2024-06-09"
 
-    
     # Print the branch names for verification
     echo "Original branch: $original_branch"
     echo "Target branch: $target_branch"
