@@ -43,7 +43,7 @@ class Layerset {
 				'LineString': {
 					'line-color': [
 						this.colour_highlight.rgbaOpacity(0.5), // red
-						this.colour.rgbaOpacity(0.2), // orange
+						this.colour.rgbaOpacity(0.4), // orange
 					],
 					'line-width': [
 			            'interpolate', ['exponential', 2], ['zoom'],
