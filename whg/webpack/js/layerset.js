@@ -26,7 +26,11 @@ class Layerset {
 						this.colour_highlight.rgbaOpacity(0.5), // red
 						this.colour.rgbaOpacity(0.2), // orange
 					],
-					'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
+					//'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
+					'fill-outline-color': [
+						this.colour_highlight.rgbaOpacity(0.5), // red
+						this.colour_highlight.rgbaOpacity(1),
+					],
 				},
 				'LineString': {
 					'line-color': [
