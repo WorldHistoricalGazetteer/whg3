@@ -47,8 +47,8 @@ class Layerset {
 					],
 					'line-width': [
 			            'interpolate', ['exponential', 2], ['zoom'],
-			            0, 2, // zoom level, line width
-			            10, 5, // zoom level, line width
+			            0, 4, // zoom level, line width
+			            10, 10, // zoom level, line width
 			        ]
 				},
 				'Point': {
