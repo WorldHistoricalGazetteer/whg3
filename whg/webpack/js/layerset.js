@@ -63,8 +63,8 @@ class Layerset {
 			        ],
 					'circle-radius': [
 			            'interpolate', ['exponential', 2], ['zoom'],
-			            0, Math.max(2, .5 * this.enlarger), // zoom level, radius
-			            10, Math.max(10, .5 * this.enlarger), // zoom level, radius
+			            0, Math.max(3, .5 * this.enlarger), // zoom level, radius
+			            10, Math.max(13, .5 * this.enlarger), // zoom level, radius
 			            18, 20 // zoom level, radius
 					],
 					'circle-stroke-color': [
