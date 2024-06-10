@@ -22,10 +22,7 @@ class Layerset {
 			'standard': {
 				// A `feature-state`-based `highlighter` condition is applied dynamically to each of the expressions given below
 				'Polygon': {
-					'fill-color': [
-						this.colour_highlight.rgbaOpacity(0), // red
-						this.colour.rgbaOpacity(0), // orange
-					],
+					'fill-color': this.colour.rgbaOpacity(0.5),
 					//'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
 					'fill-outline-color': 'red',
 				},
@@ -132,7 +129,7 @@ class Layerset {
 			const layerID = `${this._source}_${geometryType.toLowerCase()}`;
 			
 			Object.keys(paintGeometryStyle).forEach((attribute) => {
-				if ((!paintOption || paintOption == 'standard') && !['circle-radius','fill-outline-color','fill-antialias','line-width'].includes(attribute)) {
+				if ((!paintOption || paintOption == 'standard') && !['circle-radius','fill-color','fill-outline-color','fill-antialias','line-width'].includes(attribute)) {
 					paintGeometryStyle[attribute] = [...this._highlighter, ...paintGeometryStyle[attribute]];
 				}
 			});
