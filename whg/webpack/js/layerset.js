@@ -22,18 +22,25 @@ class Layerset {
 			'standard': {
 				// A `feature-state`-based `highlighter` condition is applied dynamically to each of the expressions given below
 				'Polygon': {
-					'fill-color': 'rgba(255,0,0,.1)', // red
-					'fill-outline-color': 'rgba(255,0,0,.7)' // red
+					'fill-color': [
+						this.colour_highlight.rgbaOpacity(0.5),
+						this.colour_highlight.rgbaOpacity(0.2),
+					],
+					'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
 				},
 				'Polygon-line': {
 					'line-color': [
-						this.colour_highlight.rgbaOpacity(0.5), // red
-						this.colour.rgbaOpacity(0.2), // orange
+						this.colour_highlight.rgbaOpacity(0.5),
+						this.colour_highlight.rgbaOpacity(0.2),
 					],
 					'line-width': [
 			            'interpolate', ['exponential', 2], ['zoom'],
 			            0, 2, // zoom level, line width
 			            10, 5, // zoom level, line width
+			        ],
+			        "line-dasharray": [
+			            ["literal", [1, 0]],
+			            ["literal", [4, 2]] // Dashed pattern for non-highlighted polygons
 			        ]
 				},
 				'LineString': {
@@ -139,7 +146,7 @@ class Layerset {
 			const layerID = `${this._source}_${geometryType.toLowerCase()}`;
 			
 			Object.keys(paintGeometryStyle).forEach((attribute) => {
-				if ((!paintOption || paintOption == 'standard') && !['circle-radius','fill-color','fill-opacity','fill-outline-color','fill-antialias','line-width'].includes(attribute)) {
+				if ((!paintOption || paintOption == 'standard') && !['circle-radius','fill-antialias','line-width'].includes(attribute)) {
 					paintGeometryStyle[attribute] = [...this._highlighter, ...paintGeometryStyle[attribute]];
 				}
 			});
