@@ -27,10 +27,7 @@ class Layerset {
 						this.colour.rgbaOpacity(0.2), // orange
 					],
 					//'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
-					'fill-outline-color': [
-						this.colour_highlight.rgbaOpacity(0.5), // red
-						this.colour_highlight.rgbaOpacity(1),
-					],
+					'fill-outline-color': this.colour_highlight,
 				},
 				'LineString': {
 					'line-color': [
@@ -135,7 +132,7 @@ class Layerset {
 			const layerID = `${this._source}_${geometryType.toLowerCase()}`;
 			
 			Object.keys(paintGeometryStyle).forEach((attribute) => {
-				if ((!paintOption || paintOption == 'standard') && !['circle-radius','fill-antialias','line-width'].includes(attribute)) {
+				if ((!paintOption || paintOption == 'standard') && !['circle-radius','fill-outline-color','fill-antialias','line-width'].includes(attribute)) {
 					paintGeometryStyle[attribute] = [...this._highlighter, ...paintGeometryStyle[attribute]];
 				}
 			});
