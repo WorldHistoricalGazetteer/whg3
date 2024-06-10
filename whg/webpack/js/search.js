@@ -807,9 +807,35 @@ function initiateSearch() {
 		contentType: 'application/json',
 		headers: { 'X-CSRFToken': csrfToken }, // Include CSRF token in headers for Django POST requests
 		success: function(data) {
-			console.log('...search completed.', data);
-			localStorage.setItem('last_search', JSON.stringify(data)); // Includes both `.parameters` and `.suggestions` objects
-			renderResults(data);
+			let localStorageJSON;
+		    try {
+		        console.log('...search completed.', data);
+		        renderResults(data);
+		        localStorageJSON = JSON.stringify(data);
+		    	localStorage.setItem('last_search', localStorageJSON); // Includes both `.parameters` and `.suggestions` objects
+		    } catch (error) {
+		        if (error.code === DOMException.QUOTA_EXCEEDED_ERR) {
+		            console.error('LocalStorage quota exceeded. Clearing space.');
+		            try {
+						deletionPrefixes = ['dataset', 'collection'];
+		                for (let prefix of deletionPrefixes) {
+		                    for (let i = localStorage.length - 1; i >= 0; i--) {
+		                        let key = localStorage.key(i);
+		                        if (key.startsWith(prefix)) {
+		                            localStorage.removeItem(key);
+		                        }
+		                    }
+		                }
+						localStorage.setItem('last_search', localStorageJSON);
+					}
+					catch {
+						console.error('Failed to clear sufficient space in LocalStorage. Error:', error.message);
+					}
+		        } else {
+		            // Handle other errors
+		            console.error('Error:', error.message);
+		        }
+		    }
 		},
 		error: function(error) {
 			console.error('Error:', error);
