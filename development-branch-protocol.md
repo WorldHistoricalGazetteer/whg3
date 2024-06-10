@@ -70,7 +70,6 @@ Execute command within Docker container:
 
 ```sh
 python manage.py clear_mapdata_cache
-exit
 ```
 
 
