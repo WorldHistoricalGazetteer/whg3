@@ -229,13 +229,13 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
         geometries = place.geoms.all() or None
         geometry_collection = None
         if geometries:
-            unioned_geometry = list(geometries.aggregate(union=Union('geom'))['union'])
+            unioned_geometry = geometries.aggregate(union=Union('geom'))['union']
             if unioned_geometry:
                 try:
                     geometry_collection = json.loads(GeometryCollection(unioned_geometry).geojson)
                 except (TypeError, ValueError) as e:
                     print(f"Error creating geometry collection: {e}", unioned_geometry)
-                    print(GeometryCollection(unioned_geometry).geojson)
+                    print(GeometryCollection(list(unioned_geometry)).geojson)
         place_min, place_max = place.minmax or (None, None)
         return {
             "id": str(place.id),  # Ensure ID is a string
