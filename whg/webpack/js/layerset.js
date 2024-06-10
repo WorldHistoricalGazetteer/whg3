@@ -24,7 +24,7 @@ class Layerset {
 				'Polygon': {
 					'fill-color': [
 						this.colour_highlight.rgbaOpacity(0.5),
-						this.colour_highlight.rgbaOpacity(0.2),
+						this.colour.rgbaOpacity(0.2),
 					],
 					'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
 				},
