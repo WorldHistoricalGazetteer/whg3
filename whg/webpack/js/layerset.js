@@ -28,10 +28,10 @@ class Layerset {
 					],
 					'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
 				},
-				'Polygon-line': {
+				'Polygon-line': { // Add extra layer to enable polygon outline styling
 					'line-color': [
 						this.colour_highlight.rgbaOpacity(0.5),
-						this.colour_highlight.rgbaOpacity(0.2),
+						this.colour.rgbaOpacity(0.7),
 					],
 					'line-width': [
 			            'interpolate', ['exponential', 2], ['zoom'],
