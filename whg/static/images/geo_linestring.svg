@@ -1,8 +1,5 @@
 <svg width="12px" height="12px" viewBox="0 0 1200 1200" xmlns="http://www.w3.org/2000/svg">
-  <g transform="rotate(95.7263 598.342 599.737)" stroke="null">
    <g stroke="null">
-    <polyline stroke="#fff" fill="none" stroke-width="70" stroke-linecap="round" points="70.58507919311523,103.03725814819336 356.303524017334,663.3594245910645 508.41262435913086,358.6423530578613 1126.098964691162,1096.4370613098145 " id="svg_7"/>
-    <polyline stroke="#000" fill="none" stroke-width="30" stroke-linecap="round" points="70.58507919311523,103.03725814819336 356.303524017334,663.3594245910645 508.41262435913086,358.6423530578613 1126.098964691162,1096.4370613098145 " id="svg_8"/>
+    <polyline stroke="#000" points="56.36435,85.4818 451.36436,1120.48182 736.36436,325.48181 2016.36438,95.4818" stroke-linecap="round" stroke-width="140" fill="none"/>
    </g>
-  </g>
 </svg>
