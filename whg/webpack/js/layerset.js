@@ -22,6 +22,7 @@ class Layerset {
 			'standard': {
 				// A `feature-state`-based `highlighter` condition is applied dynamically to each of the expressions given below
 				'Polygon': {
+					'line-dummy': null,
 					'fill-color': 'rgba(255,0,0,.1)', // red
 					'fill-outline-color': 'rgba(255,0,0,.7)' // red
 				},
