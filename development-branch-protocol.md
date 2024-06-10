@@ -45,4 +45,20 @@
     # Restart the Docker container
     docker restart web
     ```
+
+### Run Management Command Example
+
+Enter Docker container:
+
+```sh
+docker exec -it web /bin/bash
+```
+
+Execute command within Docker container:    
+
+```sh
+python manage.py clear_mapdata_cache
+```
+
+
     
