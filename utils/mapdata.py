@@ -123,10 +123,14 @@ def mapdata_dataset(id):
                     "min": "null" if place.minmax is None or place.minmax[0] is None else str(place.minmax[0]),  # String required by Maplibre filter test
                     "max": "null" if place.minmax is None or place.minmax[1] is None else str(place.minmax[1]),  # String required by Maplibre filter test
                 },
-                "geometry": geometries[0].jsonb if len(geometries) == 1 else {
-                    "type": "GeometryCollection",
-                    "geometries": [geo.jsonb for geo in geometries]
-                },
+                "geometry": geometries[0].jsonb if len(geometries) == 1 
+                    else (
+                        None if len(geometries) == 0 
+                        else {
+                            "type": "GeometryCollection",
+                            "geometries": [geo.jsonb for geo in geometries]
+                        }
+                    ),
                 "id": index  # Required for MapLibre conditional styling
             }
             for index, place in enumerate(places)
