@@ -2,7 +2,7 @@
 from celery import shared_task
 from django.contrib.gis.db.models import Extent
 from django.contrib.gis.db.models.aggregates import Union
-from django.contrib.gis.geos import GeometryCollection
+from django.contrib.gis.geos import GeometryCollection, Polygon
 from django.core.cache import cache
 from django.core.cache.backends.filebased import FileBasedCache
 from django.db.models import Min, Max, Prefetch, F, Q
