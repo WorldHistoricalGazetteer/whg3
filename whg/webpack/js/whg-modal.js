@@ -43,6 +43,7 @@ function initWHGModal() {
 
                 // Enable Bootstrap form validation using jQuery
                 $('body').on('submit', '#whgModal form', function (event) { // Must delegate from body to account for form refresh on fail
+                    const $form = $(this);
                     const captchaValid = validateCaptcha();
                     if (!this.checkValidity() || !captchaValid) {
                         event.preventDefault();
@@ -54,13 +55,11 @@ function initWHGModal() {
                         $('#id_message').val(function(_, val) {
                             return val + ' [Sent from: ' + window.location.pathname + ']';
                         });
-                        
-                        console.log("$(this).data('url')", $(this).data('url'))
 
                         // Proceed with AJAX form submission
-                        var formData = $(this).serialize();
+                        var formData = $form.serialize();
                         $.ajax({
-                            url: $(this).data('url'),
+                            url: $form.data('url'),
                             method: 'POST',
                             data: formData,
 				            success: function(response, status, xhr) {
@@ -74,6 +73,7 @@ function initWHGModal() {
 				                    }
 				                } else {
 				                    // If the response is HTML, update the modal content
+				                    $form.remove();
 				                    $('#whgModal .modal-content').html(response);
 				                }
 				            },
