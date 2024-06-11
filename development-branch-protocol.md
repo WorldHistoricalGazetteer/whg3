@@ -1,6 +1,6 @@
 # Working on a Development Branch
 
-1. **Initialise and Switch Branches**  
+1. **Initialise Branches**  
 
     ```sh
     # Switch to Project Directory
@@ -15,7 +15,11 @@
     # Print the branch names for verification
     echo "Original branch: $original_branch"
     echo "Target branch: $target_branch"
+    ```
     
+2. **Switch Branches**
+
+    ```sh
     # Update local GitHub `origin`
     git fetch origin
     
@@ -23,7 +27,7 @@
     git checkout $target_branch
     ```
     
-2. **Refresh from Target Branch**
+3. **Refresh from Target Branch**
 
     ```sh
     # Pull the latest updates from the target branch
@@ -33,7 +37,7 @@
     docker restart web
     ```
     
-3. **Revert to Original Branch**
+4. **Revert to Original Branch**
 
     ```sh
     # Switch back to the original branch
