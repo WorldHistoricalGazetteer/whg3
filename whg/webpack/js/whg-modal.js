@@ -66,6 +66,7 @@ function initWHGModal() {
 							        // Try to parse the response as JSON
 							        var responseData = JSON.parse(response);							
 							        if (responseData.success) {
+										// Hide inputs and show #confirmationMessage
                                         $('#whgModal .modal-body > div, #whgModal .modal-footer button').toggleClass('d-none');
 							        } else {
 						                alert('An error occurred while submitting the form.');
