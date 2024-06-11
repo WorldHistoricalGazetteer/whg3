@@ -23,8 +23,9 @@
 }
 
 #textContent {
-    overflow: hidden;	
+    overflow: auto;
     position: relative;
+    max-height: 90vh;
 }
 
 #gloss p{
