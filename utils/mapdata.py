@@ -178,8 +178,13 @@ def mapdata_collection_place(collection, feature_collection):
 
         if reference_place.geoms.exists():
             unioned_geometry = reference_place.geoms.aggregate(union=Union('geom'))['union']
-            centroid = unioned_geometry.centroid if unioned_geometry and reduce_geometry else None
-            geometry_collection = json.loads(GeometryCollection(centroid if centroid else unioned_geometry).geojson) if unioned_geometry else None
+            if unioned_geometry:
+                try:
+                    centroid = unioned_geometry.centroid if reduce_geometry else None
+                    geometry_collection = json.loads(GeometryCollection(centroid if centroid else unioned_geometry).geojson)
+                except (TypeError, ValueError) as e:
+                    print(f"Trying alternative geometry collection tranformation for place {place.id}: {e}", unioned_geometry)
+                    geometry_collection = json.loads(GeometryCollection(centroid if centroid else list(unioned_geometry)).geojson)
         else:
             geometry_collection = None
 
