@@ -45,7 +45,7 @@ class ContactForm(forms.Form):
             self.fields['subject'].initial = initial_subject
 
     def clean_captcha(self):
-        print('in clean_captcha')
+        print('in clean_captcha', settings.TESTING)
         if settings.TESTING:
             # Bypass CAPTCHA validation
             return self.cleaned_data.get('captcha')
