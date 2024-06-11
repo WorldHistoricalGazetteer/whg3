@@ -58,7 +58,7 @@ function initWHGModal() {
                         // Proceed with AJAX form submission
                         var formData = $(this).serialize();
                         $.ajax({
-                            url: url,
+                            url: $(this).attr('action'),
                             method: 'POST',
                             data: formData,
 				            success: function(response) {
