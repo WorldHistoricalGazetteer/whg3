@@ -32,7 +32,7 @@ function initWHGModal() {
 				$('#whgModal .modal-content').html(data);
 
 				// Initialize any CAPTCHA refresh functionality within the modal
-				$('#whgModal').find('.captcha').click(function(e) {
+                $('body').on('click', '#whgModal form .captcha', function (e) { // Must delegate from body to account for form refresh on fail
 					e.preventDefault();
 					$.getJSON("/captcha/refresh/", function(result) {
 						$('#id_captcha_0').val(result.key)
