@@ -49,6 +49,8 @@ class ContactForm(forms.Form):
         if settings.TESTING:
             # Bypass CAPTCHA validation
             return self.cleaned_data.get('captcha')
+        else:
+            print('clean_captcha completed without bypass')
 
 class VolunteerForm(ContactForm):
     subject = forms.CharField(initial='WHG Volunteer for Review')
