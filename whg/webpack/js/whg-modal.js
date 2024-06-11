@@ -42,7 +42,7 @@ function initWHGModal() {
 				
 
                 // Enable Bootstrap form validation using jQuery
-                $('#whgModal form').on('submit', function (event) {
+                $('body').on('submit', '#whgModal form', function (event) { // Must delegate from body to account for form refresh on fail
                     const captchaValid = validateCaptcha();
                     if (!this.checkValidity() || !captchaValid) {
                         event.preventDefault();
@@ -54,6 +54,8 @@ function initWHGModal() {
                         $('#id_message').val(function(_, val) {
                             return val + ' [Sent from: ' + window.location.pathname + ']';
                         });
+                        
+                        console.log("$(this).data('url')", $(this).data('url'))
 
                         // Proceed with AJAX form submission
                         var formData = $(this).serialize();
@@ -61,20 +63,19 @@ function initWHGModal() {
                             url: $(this).data('url'),
                             method: 'POST',
                             data: formData,
-				            success: function(response) {
-							    try {
-							        // Try to parse the response as JSON
-							        var responseData = JSON.parse(response);							
-							        if (responseData.success) {
-										// Hide inputs and show #confirmationMessage
-                                        $('#whgModal .modal-body > div, #whgModal .modal-footer button').toggleClass('d-none');
-							        } else {
-						                alert('An error occurred while submitting the form.');
-							        }
-							    } catch (error) {
-							        // If parsing as JSON fails, treat the response as HTML
-							        $('#whgModal .modal-content').html(response);
-							    }
+				            success: function(response, status, xhr) {
+								var contentType = xhr.getResponseHeader("content-type") || "";
+				                if (contentType.includes("application/json")) {
+				                    if (response.success) {
+				                        // Hide inputs and show #confirmationMessage
+				                        $('#whgModal .modal-body > div, #whgModal .modal-footer button').toggleClass('d-none');
+				                    } else {
+				                        alert('An error occurred while submitting the form.');
+				                    }
+				                } else {
+				                    // If the response is HTML, update the modal content
+				                    $('#whgModal .modal-content').html(response);
+				                }
 				            },
                             error: function(xhr, status, error) {
                                 alert('Sorry, there was an error submitting the form.');
