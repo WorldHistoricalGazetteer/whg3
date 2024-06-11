@@ -2,8 +2,10 @@
 
 class Layerset {
     constructor(mapInstance, dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger) {
+		// The following default colours must be expressed in rgba format
 		this.colour = (typeof colour !== 'string') ? 'rgba(255,165,0,1)' : colour; // orange
 		this.colour_highlight = (typeof colour_highlight !== 'string') ? 'rgba(255,0,0,1)' : colour_highlight; // red
+		
 		this.number = (number === undefined) ? false : number;
 		this.enlarger = (enlarger === undefined) ? 1 : enlarger;
 		
