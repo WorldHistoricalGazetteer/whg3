@@ -73,7 +73,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			resizable: false,
 			autoOpen: false,
 			height: 500,
-			width: 700,
+			width: 500,
 			title: "WHG Help",
 			modal: true,
 			buttons: {

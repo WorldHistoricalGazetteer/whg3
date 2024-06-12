@@ -51,7 +51,7 @@ for type_obj in Type.objects.all():
     # aat_fclass["aat:" + str(type_obj.aat_id)] = {
     aat_fclass[type_obj.aat_id] = {
         "fclass": type_obj.fclass,
-        "term": type_obj.term
+        "term_full": type_obj.term_full
     }
 
 # create Place and a PlaceName for its 'title'
@@ -132,15 +132,9 @@ def process_types(row, newpl):
         'jsonb': {
           'sourceLabel': type_ if type_ else '',
           'identifier': 'aat:' + str(aat_type) if aat_type else '',
-          'label': aat_fclass.get(aat_type, {}).get('term') if aat_type else ''
+          'label': aat_fclass.get(aat_type, {}).get('term_full') if aat_type else ''
         }
       }
-      # if type_:
-      #   pt_data['jsonb']['sourceLabel'] = type_
-      # if aat_type:
-      #   pt_data['jsonb']['identifier'] = 'aat:'+str(aat_type)
-      #   pt_data['jsonb']['label'] = aat_fclass.get(aat_type, {}).get('term')
-
       type_objects.append(PlaceType(**pt_data))
     except Exception as e:  # Catch all exceptions and store in variable e
       error_msgs.append(f"Error writing type '{type_}' for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")

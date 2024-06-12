@@ -322,7 +322,11 @@
               <table style="width:100%">
                 <tr><th></th><th class="pb-1 text-secondary">count</th><th class="pb-1 text-secondary">added</th></tr>
                 <tr><td><b>Records</b></td><td>{{ ds.places.count }}</td><td class="text-secondary">n/a</td></tr>
-                <tr><td><b>Name variants</b></td><td>{{ num_names }}</td><td class="text-secondary">n/a</td></tr>
+{#                <tr><td><b>Name variants</b></td><td>{{ num_names }}</td><td class="text-secondary">n/a</td></tr>#}
+                <tr>
+                  <td><b>Name variants</b></td><td>{{ num_names }}</td>
+                  <td><span class="text-white bg-success">&nbsp;{{ names_added }}&nbsp;</span></td></tr>
+                <tr>
                 <tr>
                   <td><b>Geometries</b></td><td>{{ num_geoms }}</td>
                   <td><span class="text-white bg-success">&nbsp;{{ geoms_added }}&nbsp;</span></td></tr>

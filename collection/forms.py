@@ -65,7 +65,7 @@ class CollectionModelForm(forms.ModelForm):
             'creator': forms.TextInput(attrs={'size': 45}),
             'contact': forms.TextInput(attrs={'size': 45}),
             'webpage': forms.TextInput(attrs={'size': 45}),
-            'description': forms.Textarea(attrs={'rows': 5, 'class': 'textarea',
+            'description': forms.Textarea(attrs={'rows': 2, 'class': 'textarea',
                 'placeholder': 'A single paragraph. Note that a PDF file of any length can be uploaded later as well.'}),
             'image_file': forms.FileInput(attrs={'class': 'fileinput'}),
             'file': forms.FileInput(attrs={'class': 'fileinput'}),

@@ -93,7 +93,7 @@ EMAIL_MESSAGES = {
   'recon_task_success': (
     'Dear {greeting_name},\n\n'
     'Your {taskname} reconciliation task for the "{dstitle}" dataset ({dslabel}) has completed.\n'
-    '{counthit} records got a total of {totalhits} hits.\n'
+    '{counthit} records got a total of {totalhits} hits.\n\n'
     'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
     'regards,\nThe WHG project team'
   ),

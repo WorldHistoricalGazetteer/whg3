@@ -93,6 +93,14 @@
                 <div class="form-group">
                   <label for="Annotation keywords">Annotation keywords</label><br/>{{ form.rel_keywords }}
                 </div>
+                <div class="form-group">
+                  <label for="Web page">
+                    Web page</label><br/>{{ form.webpage }}
+                </div>
+                <div class="form-group">
+                  <label for="Contact email">
+                    Contact email</label><br/>{{ form.contact }}
+                </div>
                 <p><span class="strong mt-2">Status</span>: &nbsp;{{ form.status.value }}</p>
                 {% if action == "update" and not object.group and not whgteam %}
                   <p>
@@ -104,7 +112,6 @@
                   <p>
                     <span class="strong mt-2">Public?</span>: {{ form.public.value }} &nbsp;{{ form.public }}</p>
                 {% endif %}
-               <p>&#x02733;<i><b> required</b></i></p>
                 <div id="d_buttons" class=""
                      style="display: flex; align-items: center; justify-content: space-between;">
                   <span class="">
@@ -118,6 +125,7 @@
                     <input id="btn_coll_update" name="update" class="btn btn-sm btn-primary mt-2 ms-2"
                            type="submit" value="Save"/>
                   {% endif %}
+                    <span class="ms-5">&#x02733;<i><b> required</b></i></span>
                   </span>
                 </div>
                 <div id="collection_options"></div>
@@ -194,7 +202,7 @@
                       {% endif %}
                     </span>
                   </div>
-                  <div id="vis_options" class="mt-5">
+                  <div id="vis_options" class="mt-2">
                     <h5 class="bg-beige ps-1">Visualization options
                       <span class="float-end me-2">
                         <small><i class="fas fa-question-circle linkypop"></i></small></span>

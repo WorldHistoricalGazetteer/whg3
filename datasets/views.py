@@ -27,7 +27,7 @@ from django.db.models import CharField, JSONField
 # external
 from celery import current_app as celapp
 from copy import deepcopy
-import ast, shutil, tempfile  # , codecs, math, mimetypes, os, re, sys
+import ast, chardet, shutil, tempfile  # , codecs, math, mimetypes, os, re, sys
 from deepdiff import DeepDiff as diff
 from elastic.es_utils import makeDoc, removePlacesFromIndex, replaceInIndex, removeDatasetFromIndex
 import numpy as np
@@ -2221,7 +2221,7 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
   def form_invalid(self, form):
     print('form invalid...', form.errors.as_data())
     context = {'form': form}
-    return self.render_to_response(context=context)
+    return self.render_to_response(self.get_context_data(form=form))
 
   def form_valid(self, form):
     print('form valid...')
@@ -2231,6 +2231,18 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
     user = self.request.user
     filename = file.name
     tempfn = form.cleaned_data['temp_file_path']
+
+    # Open the file in binary mode
+    with open(tempfn, 'rb') as f:
+      print('testing encoding...')
+      result = chardet.detect(f.read())
+
+    # Check if the encoding is UTF-8
+    if result['encoding'] != 'utf-8':
+        print('not utf-8')
+        # If the encoding is not UTF-8, add an error to the form and return the form
+        form.add_error(None, "File is not UTF-8 encoded.")
+        return self.form_invalid(form)
 
     # Get the mimetype and extension
     mimetype = file.content_type
@@ -2385,9 +2397,8 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
 
 
 """
-  returns public dataset 'mets' (summary) page
+  returns public dataset 'meta' (summary) page
 """
-
 
 class DatasetPublicView(DetailView):
   template_name = 'datasets/ds_meta.html'
@@ -2604,6 +2615,8 @@ class DatasetStatusView(LoginRequiredMixin, UpdateView):
     context['links_added'] = PlaceLink.objects.filter(
       place_id__in=placeset, task_id__contains='-').count()
     context['geoms_added'] = PlaceGeom.objects.filter(
+      place_id__in=placeset, task_id__contains='-').count()
+    context['names_added'] = PlaceName.objects.filter(
       place_id__in=placeset, task_id__contains='-').count()
 
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False

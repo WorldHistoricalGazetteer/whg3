@@ -148,7 +148,10 @@
                           </div>
                         </div>
                         <div class="col-md-6">
+                          {% comment %}
+                          ds.recon_status: {{ ds.recon_status }}
                           {% if ds.recon_status.idx > 0 %}
+                          {% endcomment %}
                           <div class="recon-options">
                             <p class="allcap-heading small mb-0">REVIEW OPTIONS
                                 <span class="help-matches" data-id="review_options">
@@ -159,11 +162,12 @@
                                   accept new geometry upon match
                             </p>
                             <p class="small">
-                                <input id="aug_names" name="accept_names" type="checkbox" checked/>
+                                <input id="aug_names" name="accept_names" type="checkbox"/>
                                   accept new name variants upon match
                             </p>
                           </div>
-                          {% endif %}
+{#                          {% endif %}#}
+
                         </div>
                       </div>
                   </div>
@@ -222,19 +226,6 @@
 
                   </div>
                 {% endif %}
-                {% comment %}
-                {% if not ds.recon_status.idx %}
-                  <div>
-                    <p class="allcap-heading small mb-0">OPTIONS</p>
-                    <p><span id="q_accept" class="small">
-                      <input id="accept_geom" name="geom" type="checkbox" checked="checked"/> accept geometries in matches
-                      <span class="help-matches" data-id="accept-geometry"><i class="fas fa-question-circle linkypop"></i></span>
-                    </span>
-                    </p>
-                  </div>
-                {% endif %}
-                {% endcomment %}
-
               </div> <!-- recon_result -->
             </div> <!-- row -->
           {% else %}
