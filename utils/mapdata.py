@@ -65,7 +65,7 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
     
     def reduced_geometry(mapdata):
         mapdata["features"] = [
-            {**feature, "geometry": {"type": feature["geometry"]["type"]}}
+            {**feature, "geometry": {"type": feature["geometry"]["type"]} if feature.get("geometry") else None}
             for feature in mapdata["features"]
         ]
         mapdata["tilesets"] = available_tilesets
