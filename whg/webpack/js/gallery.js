@@ -59,89 +59,67 @@ function truncateAfterSpace(str, length) {
 }
 
 function buildGallery(datacollections) {
-  const dynamicGallery = $('#dynamic-gallery');
-  dynamicGallery.empty();
+	const dynamicGallery = $('#dynamic-gallery');
+	dynamicGallery.empty();
 
-  if (datacollections.length === 0) {
-    const noResultsMessage = $(`
+	if (datacollections.length === 0) {
+		const noResultsMessage = $(`
             <h3>No matching ${datacollection} found</h3>
             <p>${$('.nav-link.active').
         find('input[type="checkbox"]:not(:checked)').length == 3 ?
         'You have not selected any Collection classes.' :
         'Try adjusting the filters.'}</p>
         `);
-    dynamicGallery.append(noResultsMessage);
-	var layersToRemove = mappy.getStyle().layers.filter(layer => !!layer.source && layer.source == 'featured-data-source');
-	layersToRemove.forEach(layer => {
-	    mappy.removeLayer(layer.id);
-	});
-	if (mappy.getSource('featured-data-source')) mappy.removeSource('featured-data-source');
-	mappy.reset();
-  } else {
-    datacollections.forEach(dc => {
-      const truncatedCreator = truncateAfterSpace(dc.creator, 30);
-      const truncatedDescription = truncateAfterSpace(dc.description, 250);
-      let truncatedContributors = '';
-      if (dc.hasOwnProperty('contributors')) {
-        truncatedContributors = truncateAfterSpace(dc.contributors, 30);
-      }
-      /*
-      const dsCard = $(`
-						<div data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip-red" title="Click to view ${dc.type.toUpperCaseFirst()} ${dc.ds_or_c_id}" class="ds-card-container col-md-4 mt-1">
-								<div class="ds-card-gallery">
-										<div class="ds-card-content">
-												<span class="float-end">
-														<button class="btn btn-light btn-sm previewButton" data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip-green" title="Click to preview ${dc.type.toUpperCaseFirst()} ${dc.ds_or_c_id} on map">
-																<i class="fas fa-globe-americas"></i> Preview
-														</button>
-												</span>
-												<h6 class="ds-card-title strong-red">${dc.title}</h6>
-												<div>
-													<p class="ds-card-creator">Created by: ${truncatedCreator}</p>
-													<p class="ds-card-blurb my-1">
-															<img src="${dc.image_file}" width="60" class="float-end">
-															${truncatedDescription}
-													</p>
-													<p class="ds-card-owner">Contributor(s): ${truncatedContributors}</p>
-												<div>
-								</div>
-						</div>
-				`).data({
-       */
-        const dsCard = $(`
-          <div data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip-red" title="View publication page" class="ds-card-container col-md-4 mt-1">
-            <div class="ds-card-gallery">
-              <div class="ds-card-content">
-                  <span class="float-end">
-                    <button class="btn btn-light btn-sm previewButton" data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip-green" title="Preview on map">
-                        <i class="fas fa-globe-americas"></i> Preview
-                    </button>
-                  </span>
-                  <h6 class="ds-card-title strong-red">${dc.title}</h6>
-                  <div class="ds-card-inner">
-                  	${truncatedCreator=='not available' ? '' : `<p class="ds-card-creator"><i>Created by</i>: ${truncatedCreator}</p>`}
-                  	${truncatedContributors=='' ? '' : `<p class="ds-card-owner"><i>Contributor(s)</i>: ${truncatedContributors}</p>`}
-                    <p class="ds-card-blurb my-1">
-                    	${ dc.image_file == null ? '' : `<img src="${dc.image_file}" width="60" class="float-end">` }
-                        ${truncatedDescription}
-                    </p>
-                  <div>
-                </div>
-              </div>
-            </div>
-        `).data({
-        id: dc.ds_or_c_id,
-        type: dc.type,
-        contributors: dc.contributors,
-        mode: dc.display_mode,
-        geometry_url: dc.geometry_url,
-        url: dc.url,
-      });
-      dynamicGallery.append(dsCard);
+		dynamicGallery.append(noResultsMessage);
+		var layersToRemove = mappy.getStyle().layers.filter(layer => !!layer.source && layer.source == 'featured-data-source');
+		layersToRemove.forEach(layer => {
+			mappy.removeLayer(layer.id);
+		});
+		if (mappy.getSource('featured-data-source')) mappy.removeSource('featured-data-source');
+		mappy.reset();
+	} else {
+		datacollections.forEach(dc => {
+			const truncatedCreator = truncateAfterSpace(dc.creator, 30);
+			const truncatedDescription = truncateAfterSpace(dc.description, 250);
+			let truncatedContributors = '';
+			if (dc.hasOwnProperty('contributors')) {
+				truncatedContributors = truncateAfterSpace(dc.contributors, 30);
+			}
+			const dsCard = $(`
+	            <div data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip-red" title="View publication page" class="ds-card-container col-md-4 mt-1">
+	              <div class="ds-card-gallery">
+	                <div class="ds-card-content">
+	                  <span class="float-end">
+	                    <button class="btn btn-light btn-sm previewButton" data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip-green" title="Preview on map">
+	                        <i class="fas fa-globe-americas"></i> Preview
+	                    </button>
+	                  </span>
+	                  <h6 class="ds-card-title strong-red">${dc.title}</h6>
+	                  <div class="ds-card-inner">
+	                  	${truncatedCreator=='not available' ? '' : `<p class="ds-card-creator"><i>Created by</i>: ${truncatedCreator}</p>`}
+	                  	${truncatedContributors=='' ? '' : `<p class="ds-card-owner"><i>Contributor(s)</i>: ${truncatedContributors}</p>`}
+	                    <p class="ds-card-blurb my-1">
+	                    	${ dc.image_file == null ? '' : `<img src="${dc.image_file}" width="60" class="float-end">` }
+	                        ${truncatedDescription}
+	                    </p>
+	                  <div>
+	                </div>
+	              </div>
+	            </div>
+	        `)
+	        .data({
+				id: dc.ds_or_c_id,
+				type: dc.type,
+				contributors: dc.contributors,
+				mode: dc.display_mode,
+				geometry_url: dc.geometry_url,
+				url: dc.url,
+			});
+			dynamicGallery.append(dsCard);
 
-    });
-  }
-  $('#dynamic-gallery .previewButton:first').trigger('click');
+		});
+	}
+	$('#dynamic-gallery .previewButton:first').trigger('click');
 }
 
 Promise.all([
@@ -459,19 +437,25 @@ Promise.all([
   $('#dynamic-gallery')
   .on('show.bs.tooltip', '.previewButton', (e) => { // Prevent overlapping tooltips
     bootstrap.Tooltip.getInstance($(e.target).closest('.ds-card-container')).hide();
-  }).on('click', '.previewButton', (e) => {
+  })
+  .on('click', '.previewButton', (e) => {
     e.stopPropagation();
     fetchDataForHorse($(e.target).closest('.ds-card-container'), mappy);
     $('#dynamic-gallery .previewButton').removeClass('active');
     $('#dynamic-gallery .ds-card-gallery').removeClass('active'); // Remove the active class from all .ds-card-gallery elements
-    $(e.target).addClass('active');
-    $(e.target).closest('.ds-card-gallery').addClass('active'); // Add the active class to the parent .ds-card-gallery of the clicked .previewButton
-  }).on('click', '.ds-card-container', function(event) {
+    $(e.target)
+    .tooltip('hide')
+    .addClass('active')
+    .closest('.ds-card-gallery').addClass('active'); // Add the active class to the parent .ds-card-gallery of the clicked .previewButton
+  })
+  .on('click', '.ds-card-container', function(event) {
+	$(event.target).tooltip('hide');
     // Check that the clicked element is not a link within the container
     if ($(event.target).closest('a').length === 0) {
       window.location.href = $(this).data('url');
     }
-  }).on('click', '.modal-link', function() {
+  })
+  .on('click', '.modal-link', function() {
     $('.selector').data('modalPageId', $(this).data('id')).dialog('open');
   });
 
