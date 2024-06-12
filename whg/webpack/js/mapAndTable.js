@@ -6,7 +6,7 @@ import '../css/mapAndTableAdditional.css';
 import { init_mapControls } from './mapControls';
 import { recenterMap, initObservers, initOverlays, initPopups } from './mapFunctions';
 import { toggleFilters } from './mapFilters';
-import { initUtils, initInfoOverlay, minmaxer, get_ds_list_stats, deepCopy } from './utilities';
+import { initUtils, initInfoOverlay, minmaxer, get_ds_list_stats, deepCopy, arrayColors, colorTable } from './utilities';
 import { initialiseTable } from './tableFunctions';
 import { init_collection_listeners } from './collections';
 import SequenceArcs from './mapSequenceArcs';import './toggle-truncate.js';
@@ -130,13 +130,20 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 		    feature.properties.ds_id = ds.ds_id; // Required for table->map linkage
 		});
 		allFeatures.push(...ds.features);
+		
+		let circleColors;
+		if (!!ds.relations) {
+			circleColors = arrayColors(ds.relations);
+			colorTable(circleColors, '#mapControls');
+		}
+		
 		if ((!!ds.tilesets && ds.tilesets.length > 0) || !!ds.extent) {
 			allExtents.push(ds.extent);
 		}
 		let marker_reducer = !!ds.coordinate_density ? (ds.coordinate_density < 50 ? 1 : 50 / ds.coordinate_density) : 1
 		mappy
 		.newSource(ds) // Add source - includes detection of tileset availability
-		.newLayerset(ds.ds_id, null, null, null, null, null, marker_reducer); // Add standard layerset (defined in `layerset.js` and prototyped in `whg_maplibre.js`)
+		.newLayerset(ds.ds_id, null, null, null, null, null, marker_reducer, circleColors); // Add standard layerset (defined in `layerset.js` and prototyped in `whg_maplibre.js`)
 		
 	});
 	console.log('Added layerset(s).', mappy.getStyle().layers);

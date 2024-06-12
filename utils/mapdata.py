@@ -77,7 +77,7 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
         # Reduce feature properties in mapdata to be fetched by tiler
         mapdata_tileset = mapdata.copy()
         mapdata_tileset["features"] = [
-            {**feature, "properties": {k: v for k, v in feature["properties"].items() if k in ["fclasses", "pid", "min", "max"]}}
+            {**feature, "properties": {k: v for k, v in feature["properties"].items() if k in ["fclasses", "relation", "pid", "min", "max"]}}
             for feature in mapdata_tileset["features"]
         ]
         cache.set(f"{category}-{id}-tileset", mapdata_tileset)
