@@ -365,6 +365,8 @@ export function initialiseTable(
 		},
 		initComplete: function(settings, json) {
 			adjustPageLength();
+            var tableColumn = $('#placetable').closest('.column'); // Get the closest DataTables wrapper
+            tableColumn.css('flex', `1 0 ${(tableColumn.width() * 1.1 / tableColumn.parent().width()) * 100}%`);
 		},
 		drawCallback: function(settings) {
 			//console.log('table drawn')
@@ -383,6 +385,13 @@ export function initialiseTable(
 			}
 		},
 	});
+
+    $('#placetable_filter input')
+    .attr('placeholder', 'Filter places...')
+    .removeAttr('aria-controls');
+    $('#placetable_filter label').contents().filter(function() {
+        return this.nodeType === 3; // Remove text nodes (i.e., "Search:")
+    }).remove();
 
 	$('#addchecked').click(function() {
 		console.log('clicked #addchecked');
