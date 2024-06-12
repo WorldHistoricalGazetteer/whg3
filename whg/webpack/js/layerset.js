@@ -9,18 +9,20 @@ class Layerset {
 		
 		this.number = (number === undefined) ? false : number;
 		this.enlarger = (enlarger === undefined) ? 1 : enlarger;
+		
+		this.colour_options = [
+		    this.colour_highlight,
+			['all', !relation_colors, ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_water, // blue
+			relation_colors 
+			? ['match', ['get', 'relation'], ...relation_colors, this.colour]
+			: this.colour
+		]
 
 		const paintOptions = {
 			'standard': {
 				// A `feature-state`-based `highlighter` condition is applied dynamically to each of the expressions given below
 				'Polygon': {
-					'fill-color': [
-						this.colour_highlight,
-						['all', ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_water, // blue
-						relation_colors 
-						? ['match', ['get', 'relation'], ...relation_colors, this.colour]
-						: this.colour
-					],
+					'fill-color': this.colour_options,
 			        'fill-opacity': [
 						0.5,
 						.2
@@ -28,13 +30,7 @@ class Layerset {
 					'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
 				},
 				'Polygon-line': { // Add extra layer to enable polygon outline styling
-					'line-color': [
-						this.colour_highlight,
-						['all', ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_water, // blue
-						relation_colors 
-						? ['match', ['get', 'relation'], ...relation_colors, this.colour]
-						: this.colour
-					],
+					'line-color': this.colour_options,
 					'line-width': [
 			            'interpolate', ['exponential', 2], ['zoom'],
 			            0, 2, // zoom level, line width
@@ -47,13 +43,7 @@ class Layerset {
 			        'line-dasharray': ["literal", [4, 2]]
 				},
 				'LineString': {
-					'line-color': [
-						this.colour_highlight, // red
-						['all', ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_water, // blue
-						relation_colors 
-						? ['match', ['get', 'relation'], ...relation_colors, this.colour]
-						: this.colour
-					],
+					'line-color': this.colour_options,
 					'line-width': [
 			            'interpolate', ['exponential', 2], ['zoom'],
 			            0, 4, // zoom level, line width
@@ -65,13 +55,7 @@ class Layerset {
 			        ]
 				},
 				'Point': {
-			        'circle-color': [
-						this.colour_highlight,
-						['all', ['has', 'green'], ['==', ['get', 'green'], true]], 'rgba(0, 128, 0)', // green
-						relation_colors 
-						? ['match', ['get', 'relation'], ...relation_colors, this.colour]
-						: this.colour
-			        ],
+			        'circle-color': this.colour_options,
 			        'circle-opacity': [
 						0.2,
 						.7
@@ -82,13 +66,7 @@ class Layerset {
 			            10, Math.max(13, .5 * this.enlarger), // zoom level, radius
 			            18, 20 // zoom level, radius
 					],
-					'circle-stroke-color': [
-						this.colour_highlight,
-						['all', ['has', 'green'], ['==', ['get', 'green'], true]], 'rgba(0, 128, 0)', // green	
-						relation_colors 
-						? ['match', ['get', 'relation'], ...relation_colors, this.colour]
-						: this.colour
-			        ],
+					'circle-stroke-color': this.colour_options,
 					'circle-stroke-opacity': [
 						.9,
 						['any', ['==', ['get', 'min'], 'null'], ['==', ['get', 'max'], 'null']], .3,
