@@ -80,7 +80,7 @@ function buildGallery(datacollections) {
   } else {
     datacollections.forEach(dc => {
       const truncatedCreator = truncateAfterSpace(dc.creator, 30);
-      const truncatedDescription = truncateAfterSpace(dc.description, 150);
+      const truncatedDescription = truncateAfterSpace(dc.description, 250);
       let truncatedContributors = '';
       if (dc.hasOwnProperty('contributors')) {
         truncatedContributors = truncateAfterSpace(dc.contributors, 30);
