@@ -4,6 +4,7 @@ class Layerset {
     constructor(mapInstance, dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger) {
 		// The following default colours must be expressed in rgba format
 		this.colour = (typeof colour !== 'string') ? 'rgba(255,165,0,1)' : colour; // orange
+		this.colour_river = 'rgba(0,0,255,1)'; // blue
 		this.colour_highlight = (typeof colour_highlight !== 'string') ? 'rgba(255,0,0,1)' : colour_highlight; // red
 		
 		this.number = (number === undefined) ? false : number;
@@ -45,7 +46,8 @@ class Layerset {
 				'LineString': {
 					'line-color': [
 						this.colour_highlight.rgbaOpacity(0.5), // red
-						this.colour.rgbaOpacity(0.4), // orange
+						['all', ['has', 'fclasses'], ['match', ['get', 'fclasses'], "H", false, true]], this.colour_river.rgbaOpacity(0.4), // blue
+						this.colour_river.rgbaOpacity(0.4),
 					],
 					'line-width': [
 			            'interpolate', ['exponential', 2], ['zoom'],

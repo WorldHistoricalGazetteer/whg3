@@ -120,6 +120,7 @@ def mapdata_dataset(id):
                 "properties": {
                     "pid": place.id,
                     "title": place.title,
+                    "fclasses": place.fclasses,
                     "review_wd": place.review_wd,
                     "review_tgn": place.review_tgn,
                     "review_whg": place.review_whg,
@@ -194,6 +195,7 @@ def mapdata_collection_place(collection, feature_collection):
                 "pid": place.id,
                 "cid": collection.id,
                 "title": place.title,
+                "fclasses": place.fclasses,
                 "ccodes": place.ccodes,
                 "relation": trace.relation[0] if trace.relation else None,
                 "min": year_from_string(trace.start) if trace.start else None,
@@ -249,6 +251,7 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
             "id": str(place.id),  # Ensure ID is a string
             "src_id": [place.src_id] if isinstance(place.src_id, int) else place.src_id,
             "title": place.title,
+            "fclasses": place.fclasses,
             "ccodes": place.ccodes,
             "min": "null" if place_min is None else str(place_min),  # String required by Maplibre filter test
             "max": "null" if place_max is None else str(place_max),  # String required by Maplibre filter test
