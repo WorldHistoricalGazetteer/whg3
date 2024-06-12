@@ -210,6 +210,9 @@ class Dataset(models.Model):
     if self.places.count() < 500:
         return None
     
+    if self.coordinate_density_value > 250:
+        return None 
+    
     # Annotate each place with a flag indicating if any non-point geometries exist
     class GeometryType(Func):
         function = "GeometryType"
