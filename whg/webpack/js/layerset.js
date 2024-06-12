@@ -46,25 +46,8 @@ class Layerset {
 				'LineString': {
 					'line-color': [
 						this.colour_highlight.rgbaOpacity(0.5), // red
-						['in', 'H', ['get', 'fclasses']], this.colour_river.rgbaOpacity(0.4),
-						//['has', 'fclasses'], 'rgba(0, 255, 0, 0.4)',
-/*					    [
-					        "all",
-					        [
-					            "has",
-					            "fclasses"
-					        ],
-					        [
-					            "any",
-					            [
-					                "==",
-					                ["index-of", "H", ["get", "fclasses"]],
-					                -1
-					            ],
-					            false
-					        ]
-					    ], this.colour_river.rgbaOpacity(0.4), // blue*/
-						this.colour_river.rgbaOpacity(0.4),
+						['all', ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_river.rgbaOpacity(0.4), // blue
+						this.colour.rgbaOpacity(0.4),
 					],
 					'line-width': [
 			            'interpolate', ['exponential', 2], ['zoom'],
