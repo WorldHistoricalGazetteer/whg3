@@ -1,7 +1,7 @@
 // layerset.js
 
 class Layerset {
-    constructor(mapInstance, dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger) {
+    constructor(mapInstance, dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger, relation_colors) {
 		// The following default colours must be expressed in rgba format
 		this.colour = (typeof colour !== 'string') ? 'rgba(255,165,0,1)' : colour; // orange
 		this.colour_water = 'rgba(0,0,255,1)'; // blue
@@ -9,59 +9,68 @@ class Layerset {
 		
 		this.number = (number === undefined) ? false : number;
 		this.enlarger = (enlarger === undefined) ? 1 : enlarger;
-		
-		String.prototype.rgbaOpacity = function(opacityMultiplier) {
-		    if (this.startsWith('rgba')) {
-		        const rgbaArray = this.match(/[\d.]+/g);
-		        const alpha = parseFloat(rgbaArray[3]);
-		        const newAlpha = Math.min(1, Math.max(0, alpha * opacityMultiplier));
-		        return `rgba(${rgbaArray[0]}, ${rgbaArray[1]}, ${rgbaArray[2]}, ${newAlpha})`;
-		    } else {
-		        return this; // Return original string if it doesn't start with 'rgba'
-		    }
-		};
 
 		const paintOptions = {
 			'standard': {
 				// A `feature-state`-based `highlighter` condition is applied dynamically to each of the expressions given below
 				'Polygon': {
 					'fill-color': [
-						this.colour_highlight.rgbaOpacity(0.5),
-						['all', ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_water.rgbaOpacity(0.2), // blue
-						this.colour.rgbaOpacity(0.2),
+						this.colour_highlight,
+						['all', ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_water, // blue
+						relation_colors 
+						? ['match', ['get', 'relation'], ...relation_colors, this.colour]
+						: this.colour
 					],
+			        'fill-opacity': [
+						0.5,
+						.2
+			        ],
 					'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
 				},
 				'Polygon-line': { // Add extra layer to enable polygon outline styling
 					'line-color': [
-						this.colour_highlight.rgbaOpacity(0.5),
-						['all', ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_water.rgbaOpacity(0.7), // blue
-						this.colour.rgbaOpacity(0.7),
+						this.colour_highlight,
+						['all', ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_water, // blue
+						relation_colors 
+						? ['match', ['get', 'relation'], ...relation_colors, this.colour]
+						: this.colour
 					],
 					'line-width': [
 			            'interpolate', ['exponential', 2], ['zoom'],
 			            0, 2, // zoom level, line width
 			            10, 5, // zoom level, line width
 			        ],
+			        'line-opacity': [
+						0.5,
+						.7
+			        ],
 			        'line-dasharray': ["literal", [4, 2]]
 				},
 				'LineString': {
 					'line-color': [
-						this.colour_highlight.rgbaOpacity(0.5), // red
-						['all', ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_water.rgbaOpacity(0.4), // blue
-						this.colour.rgbaOpacity(0.4),
+						this.colour_highlight, // red
+						['all', ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_water, // blue
+						relation_colors 
+						? ['match', ['get', 'relation'], ...relation_colors, this.colour]
+						: this.colour
 					],
 					'line-width': [
 			            'interpolate', ['exponential', 2], ['zoom'],
 			            0, 4, // zoom level, line width
 			            10, 10, // zoom level, line width
+			        ],
+			        'line-opacity': [
+						0.5,
+						.4
 			        ]
 				},
 				'Point': {
 			        'circle-color': [
 						this.colour_highlight,
 						['all', ['has', 'green'], ['==', ['get', 'green'], true]], 'rgba(0, 128, 0)', // green
-						this.colour
+						relation_colors 
+						? ['match', ['get', 'relation'], ...relation_colors, this.colour]
+						: this.colour
 			        ],
 			        'circle-opacity': [
 						0.2,
@@ -75,8 +84,10 @@ class Layerset {
 					],
 					'circle-stroke-color': [
 						this.colour_highlight,
-						['all', ['has', 'green'], ['==', ['get', 'green'], true]], 'rgba(0, 128, 0)', // green		
-						this.colour
+						['all', ['has', 'green'], ['==', ['get', 'green'], true]], 'rgba(0, 128, 0)', // green	
+						relation_colors 
+						? ['match', ['get', 'relation'], ...relation_colors, this.colour]
+						: this.colour
 			        ],
 					'circle-stroke-opacity': [
 						.9,
