@@ -39,7 +39,17 @@
   display: flex;
   flex-direction: column;
 }
+
+#placetable_wrapper .row:nth-child(2) > div {
+    padding-right: 1px;	
+}
+
+#placetable_filter input {
+    margin: 3px !important;
+}
+
 #ds_table {
+	padding: 0;
     flex-grow: 2;
     flex-shrink: 0;
     flex-basis: 0;
@@ -127,10 +137,11 @@
 
 .dataTables_filter {
   float: left !important;
+  text-align: left !important;
 }
 
 .dataTables_filter input {
-  padding: 2px;
+  margin: 0 2px;
 }
 
 .addtocoll {
