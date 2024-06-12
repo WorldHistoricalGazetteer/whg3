@@ -1,0 +1,37 @@
+map pages and workflows 10 June 2024
+====================================
+
+- upload a dataset
+	- most are small(ish); some not
+	- in ds_browse, view and monitor progress of reconciliation review
+		- new map markers, links, variants; filters on table
+	- preview at any time in ds_places pub page
+	- implications for cached pages, tilesets if large
+
+- publish a dataset
+	- WHG editor flips 'public' switch
+	- all place records indexed to 'pub' index; now discoverable in search
+	- ds_places pub page now visible
+	- appears in dataset gallery
+	- can be 'featured' for home page carousel
+	- now static
+
+- create a place collection
+	- virtually all are small (who would annotate over 500 place records?)
+	- but possible to add all places from an eligible dataset
+	- preview at any time in place_collection_browse pub page
+	- on submit to class/workshop, group leader views pub page
+	- (rarely) made public by WHG editor, on request
+	- (rarely) nominated and accepted for student gallery on teaching page
+	- contents grow continually during authorship, and potentially afterwards
+	- can be 'featured' for home page carousel
+
+- create a dataset collection
+	- no stated limit to number or size of member datasets
+		- some envisioned to be several 10s of 1000s <= feasible?
+	- during assembly, constantly changing, even after publication ('editions'?)
+	- made public by WHG editor, on request => appears in gallery
+	- implications for cached pages, tilesets if large
+	- can be 'featured' for home page carousel
+
+
