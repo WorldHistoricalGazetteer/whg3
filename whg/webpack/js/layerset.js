@@ -4,7 +4,7 @@ class Layerset {
     constructor(mapInstance, dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger) {
 		// The following default colours must be expressed in rgba format
 		this.colour = (typeof colour !== 'string') ? 'rgba(255,165,0,1)' : colour; // orange
-		this.colour_river = 'rgba(0,0,255,1)'; // blue
+		this.colour_water = 'rgba(0,0,255,1)'; // blue
 		this.colour_highlight = (typeof colour_highlight !== 'string') ? 'rgba(255,0,0,1)' : colour_highlight; // red
 		
 		this.number = (number === undefined) ? false : number;
@@ -27,6 +27,7 @@ class Layerset {
 				'Polygon': {
 					'fill-color': [
 						this.colour_highlight.rgbaOpacity(0.5),
+						['all', ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_water.rgbaOpacity(0.2), // blue
 						this.colour.rgbaOpacity(0.2),
 					],
 					'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
@@ -34,6 +35,7 @@ class Layerset {
 				'Polygon-line': { // Add extra layer to enable polygon outline styling
 					'line-color': [
 						this.colour_highlight.rgbaOpacity(0.5),
+						['all', ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_water.rgbaOpacity(0.7), // blue
 						this.colour.rgbaOpacity(0.7),
 					],
 					'line-width': [
@@ -46,7 +48,7 @@ class Layerset {
 				'LineString': {
 					'line-color': [
 						this.colour_highlight.rgbaOpacity(0.5), // red
-						['all', ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_river.rgbaOpacity(0.4), // blue
+						['all', ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_water.rgbaOpacity(0.4), // blue
 						this.colour.rgbaOpacity(0.4),
 					],
 					'line-width': [
