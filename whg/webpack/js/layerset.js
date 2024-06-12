@@ -46,7 +46,8 @@ class Layerset {
 				'LineString': {
 					'line-color': [
 						this.colour_highlight.rgbaOpacity(0.5), // red
-						['has', 'fclasses'], 'rgba(0, 255, 0, 0.4)',
+						['in', 'H', ['get', 'fclasses']], this.colour_river.rgbaOpacity(0.4),
+						//['has', 'fclasses'], 'rgba(0, 255, 0, 0.4)',
 /*					    [
 					        "all",
 					        [
