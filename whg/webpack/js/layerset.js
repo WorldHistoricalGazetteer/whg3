@@ -46,7 +46,7 @@ class Layerset {
 				'LineString': {
 					'line-color': [
 						this.colour_highlight.rgbaOpacity(0.5), // red
-						['all', ['has', 'fclasses'], ['match', ['get', 'fclasses'], "H", false, true]], this.colour_river.rgbaOpacity(0.4), // blue
+						['all', ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_river.rgbaOpacity(0.4), // blue
 						this.colour_river.rgbaOpacity(0.4),
 					],
 					'line-width': [
