@@ -126,18 +126,24 @@ Promise.all([
 
 	// Delegated event listener for Portal links
 	$(document).on('click', '.portal-link', function(e) {
-		e.preventDefault();
+		enteringPortal = true;
 		e.stopPropagation();
+		
+/*		e.preventDefault();
 
 		const pid = $(this).data('pid');
 		const whg_id = $(this).data('whg-id');
-		const children = $(this).data('children') ?
-			decodeURIComponent($(this).data('children')).
-		split(',').
-		map(id => parseInt(id, 10)): [];
-		const placeIds = [pid, ...children].filter(
-			id => !isNaN(id) && id !== null && id !== undefined);
+		const children = $(this).data('children') 
+			? decodeURIComponent($(this).data('children')).split(',').map(id => parseInt(id, 10))
+			: [];
+			
+		window.location.href = children.length > 0
+			? `/places/${whg_id}/portal/`
+			: `/places/${pid}/detail`*/
 
+/*		const placeIds = [pid, ...children].filter(
+			id => !isNaN(id) && id !== null && id !== undefined);
+			
 		console.log('pid', pid);
 		console.log('children', $(this).attr('data-children'));
 		console.log('placeIds', placeIds);
@@ -165,7 +171,7 @@ Promise.all([
 			error: function(xhr, status, error) {
 				console.error('AJAX POST error:', error);
 			},
-		});
+		});*/
 
 	});
 	// END Ids to session
@@ -585,8 +591,8 @@ function renderResults(data, fromStorage = false) {
 	      <span class="red-head">${result.title}</span>
 	      <span class="float-end small">${resultIdx === 'pub' ? '' : (count > 1 ?
             `${count} linked records <i class="fas fa-link"></i>` : '')}
-	          <a href="#" class="ms-2 portal-link" data-whg-id="${whg_id}" data-pid="${pid}" data-children="${encodedChildren}">
-						${resultIdx === 'whg' ? 'place portal' : 'place detail'}</a>
+	          <a href="${children.length > 0 ? `/places/${whg_id}/portal/` : `/places/${pid}/detail`}" class="ms-2 portal-link" data-whg-id="${whg_id}" data-pid="${pid}" data-children="${encodedChildren}">
+						${children.length > 0 ? 'place portal' : 'place detail'}</a>
 	      </span>
 	    </span>`;
 
@@ -807,9 +813,35 @@ function initiateSearch() {
 		contentType: 'application/json',
 		headers: { 'X-CSRFToken': csrfToken }, // Include CSRF token in headers for Django POST requests
 		success: function(data) {
-			console.log('...search completed.', data);
-			localStorage.setItem('last_search', JSON.stringify(data)); // Includes both `.parameters` and `.suggestions` objects
-			renderResults(data);
+			let localStorageJSON;
+		    try {
+		        console.log('...search completed.', data);
+		        renderResults(data);
+		        localStorageJSON = JSON.stringify(data);
+		    	localStorage.setItem('last_search', localStorageJSON); // Includes both `.parameters` and `.suggestions` objects
+		    } catch (error) {
+		        if (error.code === DOMException.QUOTA_EXCEEDED_ERR) {
+		            console.error('LocalStorage quota exceeded. Clearing space.');
+		            try {
+						deletionPrefixes = ['dataset', 'collection'];
+		                for (let prefix of deletionPrefixes) {
+		                    for (let i = localStorage.length - 1; i >= 0; i--) {
+		                        let key = localStorage.key(i);
+		                        if (key.startsWith(prefix)) {
+		                            localStorage.removeItem(key);
+		                        }
+		                    }
+		                }
+						localStorage.setItem('last_search', localStorageJSON);
+					}
+					catch {
+						console.error('Failed to clear sufficient space in LocalStorage. Error:', error.message);
+					}
+		        } else {
+		            // Handle other errors
+		            console.error('Error:', error.message);
+		        }
+		    }
 		},
 		error: function(error) {
 			console.error('Error:', error);

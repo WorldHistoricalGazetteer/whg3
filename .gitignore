@@ -20,7 +20,11 @@ media/collections/
 media/datasets/
 data/migration/
 
+# Ignore all files and directories within main/management/
 main/management/**
+# Except for main/management/commands/clear_mapdata_cache.py
+!main/management/commands/clear_mapdata_cache.py
+
 elastic/fetch_close_matches.py
 
 # Mac OS files

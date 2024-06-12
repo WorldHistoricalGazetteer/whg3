@@ -2,7 +2,7 @@
 from celery import shared_task
 from django.contrib.gis.db.models import Extent
 from django.contrib.gis.db.models.aggregates import Union
-from django.contrib.gis.geos import GeometryCollection
+from django.contrib.gis.geos import GeometryCollection, Polygon
 from django.core.cache import cache
 from django.core.cache.backends.filebased import FileBasedCache
 from django.db.models import Min, Max, Prefetch, F, Q
@@ -93,6 +93,9 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
         
     return JsonResponse(mapdata, safe=False, json_dumps_params={'ensure_ascii': False})
 
+def buffer_extent(extent, buffer_distance=0.1):
+    return Polygon.from_bbox(extent).buffer(buffer_distance).extent if extent else None
+
 def mapdata_dataset(id):
         
     ds = get_object_or_404(Dataset, pk=id)
@@ -101,7 +104,7 @@ def mapdata_dataset(id):
         Prefetch('geoms', queryset=PlaceGeom.objects.only('jsonb'))
     ).order_by('id')    
     
-    extent = ds.places.aggregate(Extent('geoms__geom')).get('geoms__geom__extent')
+    extent = buffer_extent( ds.places.aggregate(Extent('geoms__geom')).get('geoms__geom__extent') )
 
     return {
         "title": ds.title,
@@ -123,10 +126,14 @@ def mapdata_dataset(id):
                     "min": "null" if place.minmax is None or place.minmax[0] is None else str(place.minmax[0]),  # String required by Maplibre filter test
                     "max": "null" if place.minmax is None or place.minmax[1] is None else str(place.minmax[1]),  # String required by Maplibre filter test
                 },
-                "geometry": geometries[0].jsonb if len(geometries) == 1 else {
-                    "type": "GeometryCollection",
-                    "geometries": [geo.jsonb for geo in geometries]
-                },
+                "geometry": geometries[0].jsonb if len(geometries) == 1 
+                    else (
+                        None if len(geometries) == 0 
+                        else {
+                            "type": "GeometryCollection",
+                            "geometries": [geo.jsonb for geo in geometries]
+                        }
+                    ),
                 "id": index  # Required for MapLibre conditional styling
             }
             for index, place in enumerate(places)
@@ -144,7 +151,7 @@ def mapdata_collection(id):
     else: # collection.collection_class == 'dataset'
         collection_places_all = collection.places_all
 
-    extent = list(collection_places_all.aggregate(Extent('geoms__geom')).values())[0]
+    extent = buffer_extent( list(collection_places_all.aggregate(Extent('geoms__geom')).values())[0] )
 
     feature_collection = {
         "title": collection.title,
@@ -171,8 +178,13 @@ def mapdata_collection_place(collection, feature_collection):
 
         if reference_place.geoms.exists():
             unioned_geometry = reference_place.geoms.aggregate(union=Union('geom'))['union']
-            centroid = unioned_geometry.centroid if unioned_geometry else None
-            geometry_collection = json.loads(GeometryCollection(centroid if centroid else unioned_geometry).geojson) if unioned_geometry else None
+            if unioned_geometry:
+                try:
+                    centroid = unioned_geometry.centroid if reduce_geometry else None
+                    geometry_collection = json.loads(GeometryCollection(centroid if centroid else unioned_geometry).geojson)
+                except (TypeError, ValueError) as e:
+                    print(f"Trying alternative geometry collection tranformation for place {place.id}: {e}", unioned_geometry)
+                    geometry_collection = json.loads(GeometryCollection(centroid if centroid else list(unioned_geometry)).geojson)
         else:
             geometry_collection = None
 
@@ -226,7 +238,12 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
         geometry_collection = None
         if geometries:
             unioned_geometry = geometries.aggregate(union=Union('geom'))['union']
-            geometry_collection = json.loads(GeometryCollection(unioned_geometry).geojson)
+            if unioned_geometry:
+                try:
+                    geometry_collection = json.loads(GeometryCollection(unioned_geometry).geojson)
+                except (TypeError, ValueError) as e:
+                    print(f"Trying alternative geometry collection tranformation for place {place.id}: {e}", unioned_geometry)
+                    geometry_collection = json.loads(GeometryCollection(list(unioned_geometry)).geojson)
         place_min, place_max = place.minmax or (None, None)
         return {
             "id": str(place.id),  # Ensure ID is a string

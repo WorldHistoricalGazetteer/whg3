@@ -956,8 +956,10 @@ def contact_modal_view(request):
             initial_data['name'] = request.user.username
         form = ContactForm(initial=initial_data)
     else:
+        print("Contact form received.")
         form = ContactForm(request.POST)
         if form.is_valid():
+            print("Contact form validated.")
             name = form.cleaned_data['name']
             username = form.cleaned_data.get('username', None)
             user_subject = form.cleaned_data['subject']
@@ -990,9 +992,16 @@ def contact_modal_view(request):
                     user_subject=user_subject,
                 )
                 messages.success(request, "Your message has been sent successfully.")
+                print("Contact form processed.")
                 return JsonResponse({'success': True})
+            
             except BadHeaderError:
                 return HttpResponse('Invalid header found.')
+
+            except Exception as e:
+                logger.error("An error occurred while processing the contact form: %s", e)
+                messages.error(request, "There was an error sending your message. Please try again later.")
+                return JsonResponse({'success': False, 'error': str(e)})
         else:
             print('Form errors:', form.errors)
             # Form is not valid, render the form again with errors

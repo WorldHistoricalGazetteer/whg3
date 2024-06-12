@@ -32,7 +32,7 @@ function initWHGModal() {
 				$('#whgModal .modal-content').html(data);
 
 				// Initialize any CAPTCHA refresh functionality within the modal
-				$('#whgModal').find('.captcha').click(function(e) {
+                $('body').on('click', '#whgModal form .captcha', function (e) { // Must delegate from body to account for form refresh on fail
 					e.preventDefault();
 					$.getJSON("/captcha/refresh/", function(result) {
 						$('#id_captcha_0').val(result.key)
@@ -42,7 +42,8 @@ function initWHGModal() {
 				
 
                 // Enable Bootstrap form validation using jQuery
-                $('#whgModal form').on('submit', function (event) {
+                $('body').on('submit', '#whgModal form', function (event) { // Must delegate from body to account for form refresh on fail
+                    const $form = $(this);
                     const captchaValid = validateCaptcha();
                     if (!this.checkValidity() || !captchaValid) {
                         event.preventDefault();
@@ -56,24 +57,25 @@ function initWHGModal() {
                         });
 
                         // Proceed with AJAX form submission
-                        var formData = $(this).serialize();
+                        var formData = $form.serialize();
                         $.ajax({
-                            url: url,
+                            url: $form.data('url'),
                             method: 'POST',
                             data: formData,
-				            success: function(response) {
-							    try {
-							        // Try to parse the response as JSON
-							        var responseData = JSON.parse(response);							
-							        if (responseData.success) {
-                                        $('#whgModal .modal-body > div, #whgModal .modal-footer button').toggleClass('d-none');
-							        } else {
-						                alert('An error occurred while submitting the form.');
-							        }
-							    } catch (error) {
-							        // If parsing as JSON fails, treat the response as HTML
-							        $('#whgModal .modal-content').html(response);
-							    }
+				            success: function(response, status, xhr) {
+								var contentType = xhr.getResponseHeader("content-type") || "";
+				                if (contentType.includes("application/json")) {
+				                    if (response.success) {
+				                        // Hide inputs and show #confirmationMessage
+				                        $('#whgModal .modal-body > div, #whgModal .modal-footer button').toggleClass('d-none');
+				                    } else {
+				                        alert('An error occurred while submitting the form.');
+				                    }
+				                } else {
+				                    // If the response is HTML, update the modal content
+				                    $form.remove();
+				                    $('#whgModal .modal-content').html(response);
+				                }
 				            },
                             error: function(xhr, status, error) {
                                 alert('Sorry, there was an error submitting the form.');

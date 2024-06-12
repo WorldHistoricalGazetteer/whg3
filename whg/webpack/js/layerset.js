@@ -2,30 +2,55 @@
 
 class Layerset {
     constructor(mapInstance, dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger) {
-		this.colour = (typeof colour !== 'string') ? 'orange' : colour;
-		this.colour_highlight = (typeof colour_highlight !== 'string') ? 'red' : colour_highlight;
+		// The following default colours must be expressed in rgba format
+		this.colour = (typeof colour !== 'string') ? 'rgba(255,165,0,1)' : colour; // orange
+		this.colour_highlight = (typeof colour_highlight !== 'string') ? 'rgba(255,0,0,1)' : colour_highlight; // red
+		
 		this.number = (number === undefined) ? false : number;
 		this.enlarger = (enlarger === undefined) ? 1 : enlarger;
+		
+		String.prototype.rgbaOpacity = function(opacityMultiplier) {
+		    if (this.startsWith('rgba')) {
+		        const rgbaArray = this.match(/[\d.]+/g);
+		        const alpha = parseFloat(rgbaArray[3]);
+		        const newAlpha = Math.min(1, Math.max(0, alpha * opacityMultiplier));
+		        return `rgba(${rgbaArray[0]}, ${rgbaArray[1]}, ${rgbaArray[2]}, ${newAlpha})`;
+		    } else {
+		        return this; // Return original string if it doesn't start with 'rgba'
+		    }
+		};
 
 		const paintOptions = {
 			'standard': {
 				// A `feature-state`-based `highlighter` condition is applied dynamically to each of the expressions given below
 				'Polygon': {
 					'fill-color': [
-						'rgba(255,0,0,0.5)', // red
-						'rgba(255,165,0,0.2)' // orange
+						this.colour_highlight.rgbaOpacity(0.5),
+						this.colour.rgbaOpacity(0.2),
 					],
 					'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
 				},
-				'LineString': {
+				'Polygon-line': { // Add extra layer to enable polygon outline styling
 					'line-color': [
-						'rgba(255,0,0,0.5)', // red
-						'rgba(255,165,0,0.2)' // orange
+						this.colour_highlight.rgbaOpacity(0.5),
+						this.colour.rgbaOpacity(0.7),
 					],
 					'line-width': [
 			            'interpolate', ['exponential', 2], ['zoom'],
 			            0, 2, // zoom level, line width
 			            10, 5, // zoom level, line width
+			        ],
+			        'line-dasharray': ["literal", [4, 2]]
+				},
+				'LineString': {
+					'line-color': [
+						this.colour_highlight.rgbaOpacity(0.5), // red
+						this.colour.rgbaOpacity(0.4), // orange
+					],
+					'line-width': [
+			            'interpolate', ['exponential', 2], ['zoom'],
+			            0, 4, // zoom level, line width
+			            10, 10, // zoom level, line width
 			        ]
 				},
 				'Point': {
@@ -40,8 +65,8 @@ class Layerset {
 			        ],
 					'circle-radius': [
 			            'interpolate', ['exponential', 2], ['zoom'],
-			            0, Math.max(2, .5 * this.enlarger), // zoom level, radius
-			            10, Math.max(10, .5 * this.enlarger), // zoom level, radius
+			            0, Math.max(3, .5 * this.enlarger), // zoom level, radius
+			            10, Math.max(13, .5 * this.enlarger), // zoom level, radius
 			            18, 20 // zoom level, radius
 					],
 					'circle-stroke-color': [
@@ -120,7 +145,7 @@ class Layerset {
 			const layerID = `${this._source}_${geometryType.toLowerCase()}`;
 			
 			Object.keys(paintGeometryStyle).forEach((attribute) => {
-				if ((!paintOption || paintOption == 'standard') && !['circle-radius','fill-antialias','line-width'].includes(attribute)) {
+				if ((!paintOption || paintOption == 'standard') && !['circle-radius','fill-antialias','line-width','line-dasharray'].includes(attribute)) {
 					paintGeometryStyle[attribute] = [...this._highlighter, ...paintGeometryStyle[attribute]];
 				}
 			});
@@ -131,7 +156,7 @@ class Layerset {
 			    'source': this._source,
 			    'source-layer': this._sourceLayer,
 			    'paint': paintGeometryStyle,
-			    'filter': ['==', '$type', geometryType],
+			    'filter': ['==', '$type', geometryType.split('-')[0]],
 			};
 			console.log(layer);
 			mapInstance.addLayer(layer);

@@ -75,6 +75,8 @@ class GalleryView(ListAPIView):
         model = Collection if gallery_type == 'collections' else Dataset
         
         filter = Q(public=True)
+        if hasattr(model, 'core'): # Omit "core" Datasets
+            filter &= Q(core=False)
         
         # ADD COLLECTION CLASS FILTERS
         classes = self.request.query_params.get('classes', '')
