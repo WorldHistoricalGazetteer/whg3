@@ -728,6 +728,8 @@ function buildResultFilters() {
 	});
 
 	const allCountries = Array.from(countriesSet).sort();
+	
+	$('#headingCountries').parent().toggle(allCountries.length > 0);
 
 	var countriesShowing = $('#headingCountries').
 	find('.accordion-toggle-indicator i').
