@@ -14,7 +14,7 @@ from django.core.cache import cache
 from django.db.models import F, Min, Max
 from django.db.models.functions import Coalesce
 from django.forms.models import inlineformset_factory
-from django.http import JsonResponse, HttpResponseRedirect, Http404
+from django.http import JsonResponse, HttpResponseRedirect, Http404, HttpResponseServerError
 from django.conf import settings
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
@@ -817,6 +817,7 @@ class PlaceCollectionCreateView(LoginRequiredMixin, CreateView):
 
 """ update place collection; uses place_collection_build.html """
 class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
+  print('PlaceCollectionUpdateView()')
   form_class = CollectionModelForm
   template_name = 'collection/place_collection_build.html'
   queryset = Collection.objects.all()
@@ -836,23 +837,31 @@ class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
     return self.render_to_response(context=context)
 
   def form_valid(self, form):
+    print('POST', self.request.POST)
     context = self.get_context_data()
-    if not context['is_owner'] and not context['is_member']:
+    if not context['is_owner'] and not context['is_member'] and not context['whgteam']:
       # messages.error(self.request, 'You do not have permission to save the form.')
       return redirect('/collections/'+str(self.object.id)+'/update_pl')
     data = form.cleaned_data
     print('cleaned_data', data)
     print('referrer', self.request.META.get('HTTP_REFERER'))
     id_ = self.kwargs.get("id")
-    obj = form.save(commit=False)
-    if obj.group:
-      obj.status = 'group'
-      obj.submit_date = date.today()
-    else:
-      obj.status = 'sandbox'
-      obj.nominated = False
-      obj.submit_date = None
-    obj.save()
+
+    try:
+        obj = form.save(commit=False)
+        print("Before saving the object")
+        if obj.group:
+          obj.status = 'group'
+          obj.submit_date = date.today()
+        else:
+          obj.status = 'sandbox'
+          obj.nominated = False
+          obj.submit_date = None
+        obj.save()
+        print("After saving the object")
+    except Exception as e:
+        print("Exception occurred while saving the form: ", e)
+        return HttpResponseServerError(e)
 
     Log.objects.create(
       # category, logtype, "timestamp", subtype, note, dataset_id, user_id
