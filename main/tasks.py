@@ -200,13 +200,13 @@ def send_tileset_request(category=None, id=None, action='generate'):
 
     # Check the response status code
     print(f"TILER_URL Response status: {response.status_code}")
+
+    cache.delete(f"{category}-{id}-tileset")
+    reset_standard_mapdata(category, id)
+    
     if response.status_code == 200:
         response_data = response.json()
         if response_data.get("status") == "success":
-            if action == 'generate':
-                cache.delete(f"{category}-{id}-tileset")
-            else: # action == 'delete'
-                reset_standard_mapdata(category, id)
             print(f"Tileset <{action}> successful.")
             return response_data
         else:
@@ -216,9 +216,7 @@ def send_tileset_request(category=None, id=None, action='generate'):
         response_data = response.json()
         error = response_data.get("error")
         print(f"Tileset <{action}> failed with status {response.status_code}: {error}")
-
-    if action == 'generate':
-        reset_standard_mapdata(category, id)
+    
     return {
         'status': 'failure',
         'error': f'Error processing tileset <{action}> request.'
