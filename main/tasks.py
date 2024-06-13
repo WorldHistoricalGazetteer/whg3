@@ -186,6 +186,7 @@ def send_tileset_request(category=None, id=None, action='generate'):
         
         dummy_request = HttpRequest()
         mapdata(dummy_request, category, id, 'tileset', 'refresh')
+        print(f"Mapdata regenerated.")        
         
         url_base = urlparse(settings.URL_FRONT).netloc
         url_base = 'dev.whgazetteer.org' if 'whgazetteer.org' not in url_base else url_base
