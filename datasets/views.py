@@ -2403,7 +2403,7 @@ class DatasetPublicView(DetailView):
 
     placeset = ds.places.all()
 
-    if file.file:
+    if file:
       context['current_file'] = file
       context['format'] = file.format
       context['numrows'] = file.numrows
@@ -2413,6 +2413,7 @@ class DatasetPublicView(DetailView):
         place_id__in=placeset, task_id__contains='-').count()
       context['geoms_added'] = PlaceGeom.objects.filter(
         place_id__in=placeset, task_id__contains='-').count()
+        
     return context
 
 

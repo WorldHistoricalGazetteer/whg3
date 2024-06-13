@@ -278,7 +278,7 @@ class Dataset(models.Model):
   @property
   def file(self):
     # returns model instance for latest file
-    file = self.files.all().order_by('-id')[0]
+    file = self.files.all().order_by('-id').first()
     return file
 
   @property
