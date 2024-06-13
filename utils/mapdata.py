@@ -22,7 +22,7 @@ def mapdata_task(category, id, variant=None, refresh=False):
     dummy_request = HttpRequest()
     dummy_request.GET = {'category': category, 'id': id, 'variant': variant, 'refresh': str(refresh)}
     response = mapdata(dummy_request, category, id, variant=variant, refresh=str(refresh))
-    return response.content
+    return response
 
 def reset_standard_mapdata(category, id):
     # This will generate standard mapdata and also delete any existing standard or tileset mapdata cache
@@ -95,7 +95,7 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
     else:
         print(f"No need to cache mapdata.")
         
-    return JsonResponse(mapdata, safe=False, json_dumps_params={'ensure_ascii': False})
+    return mapdata
 
 def buffer_extent(extent, buffer_distance=0.1):
     return Polygon.from_bbox(extent).buffer(buffer_distance).extent if extent else None
