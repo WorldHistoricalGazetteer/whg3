@@ -61,25 +61,25 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
             print("available_tilesets", available_tilesets)
     
     # Determine feature collection generation based on category    
-    mapdata = mapdata_dataset(id) if category == "datasets" else mapdata_collection(id)
+    mapdata_result = mapdata_dataset(id) if category == "datasets" else mapdata_collection(id)
         
     end_time = time.time()  # Record the end time
     response_time = end_time - start_time  # Calculate the response time
     print(f"Mapdata generation time: {response_time:.2f} seconds")
     
-    def reduced_geometry(mapdata):
-        mapdata["features"] = [
+    def reduced_geometry(mapdata_result):
+        mapdata_result["features"] = [
             {**feature, "geometry": {"type": feature["geometry"]["type"]} if feature.get("geometry") else None}
-            for feature in mapdata["features"]
+            for feature in mapdata_result["features"]
         ]
-        mapdata["tilesets"] = available_tilesets
-        return mapdata
+        mapdata_result["tilesets"] = available_tilesets
+        return mapdata_result
     
     if variant == "tileset":
         print(f"Splitting and caching mapdata.")
         
         # Reduce feature properties in mapdata to be fetched by tiler
-        mapdata_tileset = mapdata.copy()
+        mapdata_tileset = mapdata_result.copy()
         mapdata_tileset["features"] = [
             {**feature, "properties": {k: v for k, v in feature["properties"].items() if k in ["fclasses", "relation", "pid", "min", "max"]}}
             for feature in mapdata_tileset["features"]
@@ -87,15 +87,15 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
         cache.set(f"{category}-{id}-tileset", mapdata_tileset)
     
         # Reduce feature geometry in mapdata sent to browser
-        cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata))
+        cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata_result))
             
     elif response_time > 1: # Cache if generation time exceeds 1 second
         print(f"Caching standard mapdata.")
-        cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata) if available_tilesets else mapdata)
+        cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata_result) if available_tilesets else mapdata_result)
     else:
         print(f"No need to cache mapdata.")
         
-    return mapdata
+    return mapdata_result
 
 def buffer_extent(extent, buffer_distance=0.1):
     return Polygon.from_bbox(extent).buffer(buffer_distance).extent if extent else None
