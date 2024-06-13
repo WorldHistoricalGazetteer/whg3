@@ -331,8 +331,8 @@ i.fa-eye { margin-bottom: -5px; margin-left: -5px;}
   font-weight: bold;
   font-size: 1.2rem;
   color: #999;
-  line-height: 1;
-  margin-top: -.5rem;
+  /*line-height: 1;*/
+  /*margin-top: -.5rem;*/
 }
 #tagline_mobile {
   width: 59%;

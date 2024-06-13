@@ -133,10 +133,10 @@
                   gallery_type='datasets' %}">Published Datasets</a></li>
                   <li><a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type'
                   gallery_type='collections' %}">Published Collections</a></li>
-                  {% comment  not yet%}
-                  <li><hr class="dropdown-divider"></li>
-                  <li><a class="dropdown-item" href="{% url 'downloads' %}">Downloads</a></li>
-                  {% endcomment %}
+                  <hr class="dropdown-divider">
+                  <li>
+                    <a class="dropdown-item" href="{% url 'datasets:volunteer-requests' %}">Volunteering</a>
+                  </li>
                 </ul>
 	            </li>
             <li class="nav-item dropdown">
