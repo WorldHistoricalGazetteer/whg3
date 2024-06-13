@@ -182,23 +182,18 @@ def send_tileset_request(category=None, id=None, action='generate'):
             "deleteTileset": f"{category}-{id}",
         }
     else:
-        # Trigger the mapdata_task to generate the tileset data
-        #task_result = mapdata_task(category, id, 'tileset', 'refresh')
+        # Trigger the mapdata function to generate the tileset data
         
         dummy_request = HttpRequest()
-        task_result = mapdata(dummy_request, category, id, 'tileset', 'refresh')
+        mapdata(dummy_request, category, id, 'tileset', 'refresh')
         
-        if task_result.get('status') == 'success':
-            url_base = urlparse(settings.URL_FRONT).netloc
-            url_base = 'dev.whgazetteer.org' if 'whgazetteer.org' not in url_base else url_base
-            geoJSONUrl = f"https://{url_base}/mapdata/{category}/{id}/tileset/"
-            print(f"geoJSONUrl: {geoJSONUrl}")
-            data = {
-                "geoJSONUrl": geoJSONUrl,
-            }
-        else:
-            reset_standard_mapdata(category, id)
-            return task_result
+        url_base = urlparse(settings.URL_FRONT).netloc
+        url_base = 'dev.whgazetteer.org' if 'whgazetteer.org' not in url_base else url_base
+        geoJSONUrl = f"https://{url_base}/mapdata/{category}/{id}/tileset/"
+        print(f"geoJSONUrl: {geoJSONUrl}")
+        data = {
+            "geoJSONUrl": geoJSONUrl,
+        }
 
     response = requests.post(settings.TILER_URL, headers={"Content-Type": "application/json"}, data=json.dumps(data))
 
