@@ -24,6 +24,10 @@ def mapdata_task(category, id, variant=None, refresh=False):
     response = mapdata(dummy_request, category, id, variant=variant, refresh=str(refresh))
     return response.content
 
+def reset_standard_mapdata(category, id):
+    # This will generate standard mapdata and also delete any existing standard or tileset mapdata cache
+    mapdata_task.delay(category, id, 'standard', 'refresh')
+
 def mapdata(request, category, id, variant='standard', refresh='false'): # variant options are "standard" | "tileset"
     refresh = variant == 'refresh' or refresh.lower() in ['refresh', 'true', '1', 'yes']
     if variant != 'tileset':
