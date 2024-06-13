@@ -703,7 +703,7 @@ function buildResultFilters() {
 	      class="filter-checkbox type-checkbox"
 	      checked="${checkboxStates[type] || false}"
 	    />
-	    <label for="type_${type}">${type} (${count})</label></p>`;
+	    <label for="type_${type}">${type=='' ? 'unspecified' : type} (${count})</label></p>`;
 	}).join(''));
 
 	const {
@@ -769,7 +769,7 @@ function buildResultFilters() {
 		const filteredResults = results.filter(feature => {
 			const hasCommonType = feature.properties.types.some(
 				type => checkedTypes.includes(type));
-			const hasCommonCountry = feature.properties.ccodes.some(
+			const hasCommonCountry = allCountries.length == 0 || feature.properties.ccodes.some(
 				country => checkedCountries.includes(country));
 			return hasCommonType && hasCommonCountry;
 		});
