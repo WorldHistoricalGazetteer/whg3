@@ -20,12 +20,12 @@ import os, requests, time, json
 @shared_task
 def mapdata_task(category, id, variant=None, refresh=False):
     dummy_request = HttpRequest()
-    dummy_request.GET = {'category': category, 'id': id, 'variant': variant, 'refresh': str(refresh)}
     response = mapdata(dummy_request, category, id, variant=variant, refresh=str(refresh))
     return response
 
 def reset_standard_mapdata(category, id):
     # This will generate standard mapdata and also delete any existing standard or tileset mapdata cache
+    print(f"Resetting standard mapdata for {category}-{id}.")
     mapdata_task.delay(category, id, 'standard', 'refresh')
 
 def mapdata(request, category, id, variant='standard', refresh='false'): # variant options are "standard" | "tileset"
