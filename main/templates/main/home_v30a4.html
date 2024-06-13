@@ -90,7 +90,7 @@
         </div>
         <div class="border p-2 mt-2 mb-0 small" style="border-style:
             dashed !important;; border-width: 0.1rem !important;">
-          <p class="mb-0 red-head">ANNOUNCEMENTS</p>
+          <p class="mb-0 red-head">NEWS & ANNOUNCEMENTS <span class="ms-2">[<a href="{%  url 'announcements-list' %}">View All</a>]</span</p>
           <div id="announcement-container" class="mb-0">
             {% for announcement in announcements|slice:":3" %}
               <div class="announcement constrained"

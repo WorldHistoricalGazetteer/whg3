@@ -177,19 +177,25 @@
           </div>
           <div id="gallery" class="tab-pane">
             <div class="row pt-2">
-              {% for coll in nominated %}
-              <div class="col-sm-6">
-                <div class="gallery-card">
-                  <div class="card-header bg-text-primary px-2">
-                    <a href="{% url 'collection:place-collection-browse' coll.id %}">{{ coll.title }}</a>
-                  </div>
-                  <div class="card-body p-2">
-                    <p class="my-0">{{ coll.owner.name }}</p>
-                    <p class="card-text small">{{ coll.description|truncatechars:300 }}</p>
+              {% if nominated.count > 0 %}
+                {% for coll in nominated %}
+                <div class="col-sm-6">
+                  <div class="gallery-card">
+                    <div class="card-header bg-text-primary px-2">
+                      <a href="{% url 'collection:place-collection-browse' coll.id %}">{{ coll.title }}</a>
+                    </div>
+                    <div class="card-body p-2">
+                      <p class="my-0">{{ coll.owner.name }}</p>
+                      <p class="card-text small">{{ coll.description|truncatechars:300 }}</p>
+                    </div>
                   </div>
                 </div>
+                {% endfor %}
+              {% else %}
+              <div class="col-sm-12">
+                <p>No student collections yet - coming soon!</p>
               </div>
-              {% endfor %}
+              {% endif %}
               <!-- Repeat the above div for each card you want to display -->
             </div>
           </div>
