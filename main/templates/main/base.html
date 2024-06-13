@@ -110,7 +110,7 @@
                   <li>
                     <hr class="dropdown-divider">
                   </li>
-                  <li><a class="dropdown-item" href="http://blog.whgazetteer.org" target="_blank">News</a></li>
+                  <li><a class="dropdown-item" href="{% url 'announcements-list' %}">News & announcements</a>
                 </ul>
               </li>
 		        {% if user.is_authenticated %}

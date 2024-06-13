@@ -3,13 +3,20 @@
 </style>
 {% block content %}
   <div id="container" class="container mt-2">
-    <h2>Announcements</h2>
+    <h2>News and Announcements</h2>
+    {% if is_whgadmin %}
     <p><a href="{% url 'announcement-create' %}">Create one</a></p>
+    {% endif %}
     {% for announcement in announcements %}
       <div>
         <p>{{ announcement.created_at|date:"j F Y"}}<br/>
-          <b class="text-decoration-underline p-1">{{ announcement.headline }}</b>: {{ announcement.content }}
-          <span class="ms-3"><a href="{% url 'announcement-update' announcement.id %}">edit</a></span>
+          <a href="{{ announcement.link }}" target="_blank">{{ announcement.headline }}</a>
+          {{ announcement.content }}
+          {% if is_whgadmin %}
+          <span class="ms-3">
+            <a href="{% url 'announcement-update' announcement.id %}">edit</a>
+          </span>
+          {% endif %}
         </p>
       </div>
     {% endfor %}

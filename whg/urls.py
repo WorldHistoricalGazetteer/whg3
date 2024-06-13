@@ -52,7 +52,7 @@ urlpatterns = [
 
     path('public_data/', PublicListsView.as_view(), name='public-lists'),
 
-    # profile and settings
+                  # profile and settings
     path('profile/', profile_edit, name="profile-edit"),
 
     path('dashboard/', views.dashboard_redirect, name="dashboard"),  # redirect to user or admin
@@ -95,7 +95,8 @@ urlpatterns = [
     path('announcement_delete/<int:pk>/', views.AnnouncementDeleteView.as_view(), name='announcement-delete'),
     path('announcement/update/<int:pk>/', views.AnnouncementUpdateView.as_view(), name='announcement-update'),
     path('announcements/', views.AnnouncementListView.as_view(), name='announcements-list'),
-    
+    # path('announcements/', views.AnnouncementsView.as_view(), name="announcements"),
+
     path('tileset_management/', views.TilesetListView.as_view(), name='tools-tilesets'),
     path('tileset_generate/<str:category>/<int:id>/', views.tileset_generate_view, name='tileset_generate'),
     path('tileset_task_progress/', get_tileset_task_progress, name='tileset_task_progress'),

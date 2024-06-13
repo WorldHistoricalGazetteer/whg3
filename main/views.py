@@ -62,6 +62,11 @@ class AnnouncementListView(ListView):
     template_name = 'announcements/announcement_list.html'
     queryset = Announcement.objects.filter(active=True).order_by('-created_at')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_whgadmin'] = self.request.user.groups.filter(name='whg_admins').exists()
+        return context
+
 class AnnouncementCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Announcement
     form_class = AnnouncementForm

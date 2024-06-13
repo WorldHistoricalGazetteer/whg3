@@ -20,7 +20,9 @@ export function initialiseCarousels(galleries, carouselMetadata, startCarousels,
 	        heading.addClass('coll-header');
 	    }
       const galleryLink = url == null ?
-          '' : `<button class="btn btn-primary float-end small" style="height: 22px; font-size: 0.8rem; padding: 0 0.5rem;" onclick="location.href='${url}'">BROWSE ALL</button>`;
+          '' : `<button class="btn btn-primary float-end small" 
+          style="height: 22px; font-size: 0.8rem; padding: 0 0.5rem; background-color: cornflowerblue;" 
+          onclick="location.href='${url}'">BROWSE ALL</button>`;
 	    // const galleryLink = url == null ?
 	    //     '' :
 	    //     `<span class="float-end small"><a class="linky" href="${url}">view all</a></span>`;
