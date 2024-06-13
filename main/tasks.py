@@ -18,7 +18,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import EmailMultiAlternatives, EmailMessage
 from django.db import transaction, connection
 from django.db.models import Sum, Count, Subquery, OuterRef # import Q, Count
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -183,7 +183,10 @@ def send_tileset_request(category=None, id=None, action='generate'):
         }
     else:
         # Trigger the mapdata_task to generate the tileset data
-        task_result = mapdata_task(category, id, 'tileset', 'refresh')
+        #task_result = mapdata_task(category, id, 'tileset', 'refresh')
+        
+        dummy_request = HttpRequest()
+        task_result = mapdata(dummy_request, category, id, 'tileset', 'refresh')
         
         if task_result.get('status') == 'success':
             url_base = urlparse(settings.URL_FRONT).netloc
