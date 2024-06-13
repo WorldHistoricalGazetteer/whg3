@@ -101,7 +101,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
 }
 .ds-header {
     background-color: #ececec;
-    color: grey;
+    /*color: grey;*/
     margin-bottom: .2rem !important;
     font-size: 0.9rem;
 }

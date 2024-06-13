@@ -19,9 +19,11 @@ export function initialiseCarousels(galleries, carouselMetadata, startCarousels,
 	    } else {
 	        heading.addClass('coll-header');
 	    }
-	    const galleryLink = url == null ?
-	        '' :
-	        `<span class="float-end small"><a class="linky" href="${url}">view all</a></span>`;
+      const galleryLink = url == null ?
+          '' : `<button class="btn btn-primary float-end small" style="height: 22px; font-size: 0.8rem; padding: 0 0.5rem;" onclick="location.href='${url}'">BROWSE ALL</button>`;
+	    // const galleryLink = url == null ?
+	    //     '' :
+	    //     `<span class="float-end small"><a class="linky" href="${url}">view all</a></span>`;
 	    const carousel = $(
 	        `<div id="${type.toLowerCase()}Carousel" class="carousel slide carousel-fade flex-grow-1"></div>`); // Added flex-grow-1 class
 	    const carouselInner = $('<div class="carousel-inner"></div>');
