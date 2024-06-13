@@ -1,64 +1,61 @@
 // layerset.js
 
 class Layerset {
-    constructor(mapInstance, dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger) {
+    constructor(mapInstance, dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger, relation_colors) {
 		// The following default colours must be expressed in rgba format
 		this.colour = (typeof colour !== 'string') ? 'rgba(255,165,0,1)' : colour; // orange
+		this.colour_water = 'rgba(0,0,255,1)'; // blue
 		this.colour_highlight = (typeof colour_highlight !== 'string') ? 'rgba(255,0,0,1)' : colour_highlight; // red
 		
 		this.number = (number === undefined) ? false : number;
 		this.enlarger = (enlarger === undefined) ? 1 : enlarger;
 		
-		String.prototype.rgbaOpacity = function(opacityMultiplier) {
-		    if (this.startsWith('rgba')) {
-		        const rgbaArray = this.match(/[\d.]+/g);
-		        const alpha = parseFloat(rgbaArray[3]);
-		        const newAlpha = Math.min(1, Math.max(0, alpha * opacityMultiplier));
-		        return `rgba(${rgbaArray[0]}, ${rgbaArray[1]}, ${rgbaArray[2]}, ${newAlpha})`;
-		    } else {
-		        return this; // Return original string if it doesn't start with 'rgba'
-		    }
-		};
+		this.colour_options = [
+		    this.colour_highlight,
+			['all', !relation_colors, ['has', 'fclasses'], ['in', 'H', ['get', 'fclasses']]], this.colour_water, // blue
+			relation_colors 
+			? ['match', ['get', 'relation'], ...relation_colors, this.colour]
+			: this.colour
+		]
 
 		const paintOptions = {
 			'standard': {
 				// A `feature-state`-based `highlighter` condition is applied dynamically to each of the expressions given below
 				'Polygon': {
-					'fill-color': [
-						this.colour_highlight.rgbaOpacity(0.5),
-						this.colour.rgbaOpacity(0.2),
-					],
+					'fill-color': this.colour_options,
+			        'fill-opacity': [
+						0.5,
+						.2
+			        ],
 					'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
 				},
 				'Polygon-line': { // Add extra layer to enable polygon outline styling
-					'line-color': [
-						this.colour_highlight.rgbaOpacity(0.5),
-						this.colour.rgbaOpacity(0.7),
-					],
+					'line-color': this.colour_options,
 					'line-width': [
 			            'interpolate', ['exponential', 2], ['zoom'],
 			            0, 2, // zoom level, line width
 			            10, 5, // zoom level, line width
 			        ],
+			        'line-opacity': [
+						0.5,
+						.7
+			        ],
 			        'line-dasharray': ["literal", [4, 2]]
 				},
 				'LineString': {
-					'line-color': [
-						this.colour_highlight.rgbaOpacity(0.5), // red
-						this.colour.rgbaOpacity(0.4), // orange
-					],
+					'line-color': this.colour_options,
 					'line-width': [
 			            'interpolate', ['exponential', 2], ['zoom'],
 			            0, 4, // zoom level, line width
 			            10, 10, // zoom level, line width
+			        ],
+			        'line-opacity': [
+						0.5,
+						.4
 			        ]
 				},
 				'Point': {
-			        'circle-color': [
-						this.colour_highlight,
-						['all', ['has', 'green'], ['==', ['get', 'green'], true]], 'rgba(0, 128, 0)', // green
-						this.colour
-			        ],
+			        'circle-color': this.colour_options,
 			        'circle-opacity': [
 						0.2,
 						.7
@@ -69,11 +66,7 @@ class Layerset {
 			            10, Math.max(13, .5 * this.enlarger), // zoom level, radius
 			            18, 20 // zoom level, radius
 					],
-					'circle-stroke-color': [
-						this.colour_highlight,
-						['all', ['has', 'green'], ['==', ['get', 'green'], true]], 'rgba(0, 128, 0)', // green		
-						this.colour
-			        ],
+					'circle-stroke-color': this.colour_options,
 					'circle-stroke-opacity': [
 						.9,
 						['any', ['==', ['get', 'min'], 'null'], ['==', ['get', 'max'], 'null']], .3,

@@ -210,6 +210,9 @@ class Dataset(models.Model):
     if self.places.count() < 500:
         return None
     
+    if self.coordinate_density_value > 250:
+        return None 
+    
     # Annotate each place with a flag indicating if any non-point geometries exist
     class GeometryType(Func):
         function = "GeometryType"
@@ -275,7 +278,7 @@ class Dataset(models.Model):
   @property
   def file(self):
     # returns model instance for latest file
-    file = self.files.all().order_by('-id')[0]
+    file = self.files.all().order_by('-id').first()
     return file
 
   @property

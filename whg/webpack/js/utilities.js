@@ -126,8 +126,9 @@ export function equidistantLCHColors(numColors) {
     const hueValue_adjusted = hueValue_adjust ?
         hueValue_raw + hue_avoid_tolerance * 2 :
         hueValue_raw;
-    const color = lch(50, 70, hueValue_adjusted % 360).formatHex();
-    colors.push(color);
+    const color = lch(50, 70, hueValue_adjusted % 360).rgb();
+    const rgbaColor = `rgba(${color.r}, ${color.g}, ${color.b}, ${color.opacity})`;
+    colors.push(rgbaColor);
   }
   return colors;
 }

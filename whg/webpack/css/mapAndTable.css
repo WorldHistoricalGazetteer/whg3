@@ -36,12 +36,14 @@
 }
 
 #mapOverlays .column.left {
-  min-width: 50%; /* Do not allow map to be over-squeezed by .column.right flex width */
+  min-width: 25%; /* Do not allow map to be over-squeezed by .column.right flex width */
   width: 100%;
 }
 
 #mapOverlays .column.right {
-  flex: 1 0 32%; /* Default width for right-hand column */
+  width: min-content;
+  min-width: 34%;
+  flex: 1 0 auto;
   overflow-x: auto; /* Engages if .column.left is squeezed to its min-width */
 }
 

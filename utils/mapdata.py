@@ -65,7 +65,7 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
     
     def reduced_geometry(mapdata):
         mapdata["features"] = [
-            {**feature, "geometry": {"type": feature["geometry"]["type"]}}
+            {**feature, "geometry": {"type": feature["geometry"]["type"]} if feature.get("geometry") else None}
             for feature in mapdata["features"]
         ]
         mapdata["tilesets"] = available_tilesets
@@ -77,7 +77,7 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
         # Reduce feature properties in mapdata to be fetched by tiler
         mapdata_tileset = mapdata.copy()
         mapdata_tileset["features"] = [
-            {**feature, "properties": {k: v for k, v in feature["properties"].items() if k in ["pid", "min", "max"]}}
+            {**feature, "properties": {k: v for k, v in feature["properties"].items() if k in ["fclasses", "relation", "pid", "min", "max"]}}
             for feature in mapdata_tileset["features"]
         ]
         cache.set(f"{category}-{id}-tileset", mapdata_tileset)
@@ -120,6 +120,7 @@ def mapdata_dataset(id):
                 "properties": {
                     "pid": place.id,
                     "title": place.title,
+                    "fclasses": place.fclasses,
                     "review_wd": place.review_wd,
                     "review_tgn": place.review_tgn,
                     "review_whg": place.review_whg,
@@ -194,6 +195,7 @@ def mapdata_collection_place(collection, feature_collection):
                 "pid": place.id,
                 "cid": collection.id,
                 "title": place.title,
+                "fclasses": place.fclasses,
                 "ccodes": place.ccodes,
                 "relation": trace.relation[0] if trace.relation else None,
                 "min": year_from_string(trace.start) if trace.start else None,
@@ -249,6 +251,7 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
             "id": str(place.id),  # Ensure ID is a string
             "src_id": [place.src_id] if isinstance(place.src_id, int) else place.src_id,
             "title": place.title,
+            "fclasses": place.fclasses,
             "ccodes": place.ccodes,
             "min": "null" if place_min is None else str(place_min),  # String required by Maplibre filter test
             "max": "null" if place_max is None else str(place_max),  # String required by Maplibre filter test

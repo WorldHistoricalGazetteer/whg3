@@ -133,7 +133,7 @@ def get_form(request):
         "form": form,
         "place": place,
         "collection": coll,
-        "colors": coll.kw_colors,
+        "rel_keywords": coll.rel_keywords,
         "existing": existing[0].id if existing else None
         # "existing": existing[0].id or None
     }
