@@ -175,7 +175,7 @@ def send_tileset_request(category=None, id=None, action='generate'):
             'error': 'Both category and id must be provided.'
         }
         
-    print(f"Sending a <{action}> POST request to {settings.TILER_URL} for {category}-{id}.")
+    print(f"Preparing a <{action}> POST request to {settings.TILER_URL} for {category}-{id}.")
         
     if action == 'delete':
         data = {
