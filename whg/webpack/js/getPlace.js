@@ -49,7 +49,7 @@ function parsePlace(data) {
 	            const citation = name.citations[0]; // Assuming only one citation is considered
 	            const label = Array.isArray(citation.label || '') ? citation.label[0] || '' : citation.label || ''; // Filter in case of array
 	            const id = Array.isArray(citation.id || '') ? citation.id[0] || '' : citation.id || ''; // Filter in case of array
-					if (id && (() => { try { new URL(id); return true; } catch { return false; } })() && label !== '') { // Check validity of id as a URL
+					if (id && (id.startsWith("http://") || id.startsWith("https://")) && (() => { try { new URL(id); return true; } catch { return false; } })() && label !== '') { // Check validity of id as a URL
 							// If both id and label exist, wrap the name in a link with tooltip
 							nameHtml = `<a href="${id}" target="_blank" data-bs-toggle="tooltip" title="${label}">${nameHtml} <i class="fas fa-external-link-alt linky"></i></a>`;
 					} else {
