@@ -83,11 +83,12 @@ $(function() {
 
 	// display form and value if there is one
 	var volunteersText = context_volunteers_text;
-	if(volunteersText && volunteersText !== "None") {
-			$('#volunteerForm').show();
-			$('#volunteerText').val(volunteersText);
-	}
+	var ds_status = context_status;
 
+	if(volunteersText && volunteersText !== "None" && (ds_status === 'reconciling' || ds_status === 'accessioning')) {
+		$('#volunteerForm').show();
+		$('#volunteerText').val(volunteersText);
+	}
 	$('#volunteers').change(function() {
 		var isChecked = $(this).is(':checked');
 		if (isChecked) {

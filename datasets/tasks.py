@@ -817,6 +817,8 @@ def align_wdlocal(*args, **kwargs):
 
       count_hit +=1
       total_hits += len(result_obj['hits'])
+
+
       for hit in result_obj['hits']:
         hit_id = hit['_source']['id']
         print("pre-write hit['_source']", hit['_source'])
