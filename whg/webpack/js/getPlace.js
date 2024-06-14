@@ -45,7 +45,6 @@ function parsePlace(data) {
 	    	.map(name => {
 	        let nameHtml = name.toponym;
 	        if (name.citations && name.citations.length > 0) {
-				console.log('Name Variant:', name);
 	            const citation = name.citations[0]; // Assuming only one citation is considered
 	            const label = Array.isArray(citation.label || '') ? citation.label[0] || '' : citation.label || ''; // Filter in case of array
 	            const id = Array.isArray(citation.id || '') ? citation.id[0] || '' : citation.id || ''; // Filter in case of array
