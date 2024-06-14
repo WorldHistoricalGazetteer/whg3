@@ -40,13 +40,13 @@ $(function() {
 		}
 	});
 
-	if (context_status == 'updating') {
-		console.log(context_status, context_context)
-		$("#ds_info").addClass('hidden')
-		$("#ds_updating").removeClass('hidden')
-		$("#div_file").toggleClass('border-red')
-		$(".update-msg").removeClass('hidden')
-	}
+	// if (context_status == 'updating') {
+	// 	console.log(context_status, context_context)
+	// 	$("#ds_info").addClass('hidden')
+	// 	$("#ds_updating").removeClass('hidden')
+	// 	$("#div_file").toggleClass('border-red')
+	// 	$(".update-msg").removeClass('hidden')
+	// }
 
 	window.dslabel = context_dsLabel
 	
@@ -82,11 +82,12 @@ $(function() {
 	});
 
 	// display form and value if there is one
-	var volunteersText = context_volunteers_text;
+	window.volunteersText = context_volunteers_text;
 	console.log('volunteersText', volunteersText);
-	var ds_status = context_status;
+	window.ds_status = context_status;
 
 	if(volunteersText && volunteersText !== "None" && (ds_status === 'reconciling' || ds_status === 'accessioning')) {
+		console.log('supposed to fucking show')
 		$('#volunteerForm').show();
 		$('#volunteerText').val(volunteersText);
 	}
