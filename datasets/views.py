@@ -2542,7 +2542,7 @@ class DatasetStatusView(LoginRequiredMixin, UpdateView):
       "rows": place_count,
       "got_hits": ds.places.exclude(review_wd=None).count(),
       "reviewed": ds.places.filter(review_wd=1).count(),
-      "remain": ds.places.filter(review_wd=0).count(),
+      "remain": ds.places.filter(review_wd=0).count() + ds.places.filter(review_wd=2).count(),
       "deferred": ds.places.filter(review_wd=2).count(),
     }
 
@@ -2923,9 +2923,10 @@ class DatasetReconcileView(LoginRequiredMixin, DetailView):
       "rows": place_count,
       "got_hits": ds.places.exclude(review_wd=None).count(),
       "reviewed": ds.places.filter(review_wd=1).count(),
-      "remain": ds.places.filter(review_wd=0).count(),
       "deferred": ds.places.filter(review_wd=2).count(),
+      "remain": ds.places.filter(review_wd=0).count() + ds.places.filter(review_wd=2).count(),
     }
+    print('wdgn_status', wdgn_status)
 
     idx_status = {
       "rows": place_count,

@@ -135,7 +135,7 @@
               <br/><!--{'p0': 2, 'p1': 1, 'p2': 0, 'p0and1': 0}-->
             </p>
             {% if task_wdgn %}
-              {% comment %}wdgn_passes: {{ wdgn_passes }}{% endcomment %}
+              wdgn_status: {{ wdgn_status }}
             <div class="task-box p-1">
               <p class="d-block bg-lightblue ps-1"><b>Reconciliation Task</b> ({{ task_wdgn.task_id|truncatechars:8 }});
                 initiated: {{ task_wdgn.date_created|date:"d M Y" }}</p>
