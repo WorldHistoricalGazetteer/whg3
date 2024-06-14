@@ -103,13 +103,6 @@ $(function() {
 		});
 	});
 
-	// $("#a_update_modal").on('click', function(e) {
-	// 	console.log('clicked update')
-	// 	if (context_format != 'delimited') {
-	// 		alert('Sorry, update is available only for delimited files right now. Soon...')
-	// 	}
-	// })
-	//
 	// show upload button after file selected
 	$("#newfile").on("change", function() {
 		$("#btn_upload").removeClass('hidden')

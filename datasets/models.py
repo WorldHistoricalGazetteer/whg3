@@ -80,7 +80,7 @@ class Dataset(models.Model):
   pdf = models.FileField(upload_to=dataset_pdf_path, blank=True, null=True)  # essay pdf
   vis_parameters = JSONField(default=default_vis_parameters, null=True, blank=True)
   volunteers = models.BooleanField(default=False, null=True) # volunteers requested
-  idx_builder = models.BooleanField(default=False)  # TODO: delete this
+  volunteers_text = models.CharField(max_length=2044, null=True, blank=True)
   # END added for v3
 
   creator = models.CharField(max_length=500, null=True, blank=True)

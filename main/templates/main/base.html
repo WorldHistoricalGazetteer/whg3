@@ -135,6 +135,13 @@
                   gallery_type='collections' %}">Published Collections</a></li>
                   <hr class="dropdown-divider">
                   <li>
+                    <a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}">
+                      Published Datasets</a></li>
+                  <li>
+                    <a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}">
+                    Published Collections</a></li>
+                  <li><hr class="dropdown-divider"></li>
+									<li>
                     <a class="dropdown-item" href="{% url 'datasets:volunteer-requests' %}">Volunteering</a>
                   </li>
                 </ul>
