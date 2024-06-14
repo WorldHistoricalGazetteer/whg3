@@ -1,4 +1,5 @@
-{% extends "main/base_webpack.html" %}
+{#{% extends "main/base_webpack.html" %}#}
+{% extends "main/base.html" %}
 {% load static %}
 
 {% block title %}
@@ -9,20 +10,62 @@
 {% endblock %}
 
 {% block extra_head %}
+  <style>
+   h5 {
+     padding-top: .8rem;
+     font-weight: bold;
+   }
+   #content_top {
+     overflow-y: auto;
+   }
+   #content_top p {
+    text-indent: -.4em;
+    padding-left: 1.2em;
+     margin-bottom: .2rem;
+   }
+  </style>
 {% endblock %}
 
 {% block content %}
+<div class="container mt-1" style="height: calc(100vh - 210px);">
+  <div id="banner" class="w-100 my-1 p-2">
+    <h1>Publications and press</h1>
+  </div>
+  <div id="content_top" class="row mx-0 h-100">
+    <h4>On World Historical Gazetteer</h4>
+    <h5>2024</h5>
+    <p><a href="https://doi.org/10.46430/phen0117" target="_blank">Working with Named Places: How and Why to Build a Gazetteer</a>, Susan Grunewald and Ruth Mostern. In <i>Programming Historian</i>.</p>
+    <p><a href="https://reviewsindh.pubpub.org/pub/world-historical-gazetteer/release/1" target="_blank">Review: The World Historical Gazetteer</a>, Diane Jakacki. In <i>Reviews in Digital Humanities, V(5)</i>.</p>
+    <h5>2023</h5>
+    <p><a href="https://www.pitt.edu/pittwire/features-articles/world-history-center-digital-humanities-advancement-grant" target="_blank">The World History Center Won a Digital Humanities Advancement Grant</a> In PittWire, January 19 </p>
+    <h5>2022</h5>
+    <p><a href="https://infoeco.hcommons.org/infoecocookbook/cookbook-modules/spatial-linked-data-world-historical-gazetteer/" target="_blank">GIS Data: Using Linked Open Data and the World Historical Gazetteer to Map Spatial Data</a>, Ruth Mostern, Susan Grunewald, and Karl Grossner. In <i>Information Ecosystems Cookbook</i>, edited by Alison Langmead, Jane Thaler and Elise Silva.</p>
+    <p><a href=" https://doi.org/10.1007/s00799-022-00341-2" target="_blank">Bringing Places from the Distant Past to the Present: A Report on the World Historical Gazetteer</a>, Ruth Mostern, Karl Grossner, and Susan Grunewald. In <i>International Journal of Digital Libraries special issue on Digital Libraries, Epigraphy, and Paleography</i>.</p>
+    <p><a href="https://pittnews.com/article/172402/arts-and-entertainment/complicated-series-discusses-meaning-behind-place-names/" target="_blank">’Complicated’: Series Discusses Meaning Behind Place Names</a> Renee Dubaich, The Pitt News, March 24 </p>
+    <h5>2021</h5>
+    <p><a href="https://doi.org/10.1145/3486187.3490203 " target="_blank">Linked Places in the World Historical Gazetteer</a>, Karl Grossner and Ruth Mostern.  In <i>GeoHumanities'21: Proceedings of the 5th ACM SIGSPATIAL International Workshop on Geospatial Humanities, November 2021 Pages 40–43</i> </p>
+    <h5>2021</h5>
+    <p><a href="https://crc.pitt.edu/content/world-historical-gazetteer-creates-new-historical-knowledge" target="_blank">World Historical Gazetteer Creates New Historical Knowledge</a>, <i>University of Pittsburgh Center for Research Computing</i> </p>
+    <h5>2017</h5>
+    <p><a href="https://doi.org/10.5195/jwhi.2017.43" target="_blank">World-Historical Gazetteer Research Report</a>, Ruth Mostern. In <i>Journal of World-Historical Information 3 4.1</i>.</p>
 
-  <div class="container mt-1" style="min-height: calc(100vh - 210px);">
-    <div id="banner" class="banner-bare w-100 my-1 p-2">
-    <h1>Publications</h1>
-    </div>
-    <div id="content_top" class="row gx-2 gy-2 mx-0 h-75">
-    </div> <!-- content_top -->
+    <h4 class="mt-4">On Historical Gazetteers</h4>
+    <h5>2019</h5>
+    <p><a href="https://cmu-lib.github.io/dhlg/project-videos/mostern/" target="_blank">Historical Gazetteers (video lecture)</a>, Ruth Mostern. <i>The Digital Humanities Literacy Guidebook (Carnegie Mellon University)</i>.</p>
+    <h5>2016</h5>
+    <p><a href="https://iupress.org/9780253022448/placing-names/" target="_blank">Placing Names: Enriching and Integrating Gazetteers</a>, edited by Merrick Lex Berman, Ruth Mostern, and Humphrey Southall. Indiana University Press.</p>
+    <p><a href="https://iupress.org/9780253022448/placing-names/" target="_blank">Gazetteers Past</a>, Ruth Mostern and Humphrey Southall. In Merrick Lex Berman, Ruth Mostern and Humphrey Southall, eds., <i>Placing Names:  Enriching and Integrating Gazetteers</i></p>
+    <p><a href="http://kgeographer.org/pubs/Place_Period_Setting.pdf" target="_blank">Place, Period, and Setting for Linked Data Gazetteers</a>, Karl Grossner, Carsten Keßler, and Krzysztof Janowicz. In Merrick Lex Berman, Ruth Mostern and Humphrey Southall, eds., <i>Placing Names:  Enriching and Integrating Gazetteers</i></p>
+    <h5>2011</h5>
+    <p><a href="https://www.euppublishing.com/doi/abs/10.3366/ijhac.2011.0028" target="_blank">On Historical Gazetteers</a>, Humphrey Southall, Ruth Mostern, and Merrick Lex Berman, <i>IJHAC: A Journal of the Digital Humanities 5.2, 127-145</i>.</p>
+    <h5>2008</h5>
+    <p><a href="https://doi.org/10.3200/HMTS.41.1.39-64" target="_blank">Historical Gazetteers:  An Experiential Perspective, With Examples from Chinese History</a>, Ruth Mostern. In Historical Methods 41.1, 39-46.</p>
+    <h5>2007</h5>
+    <p><a href="https://doi.org/10.5860/crl.68.5.376" target="_blank">Geographic Search: Catalogs, Gazetteers, and Maps</a>, Michael Buckland, Aitao Chen, Frederic C. Gey, Ray R. Larson, Ruth Mostern, and Vivien Petras, <i>College and Research Libraries 68.5.</i></p>
 
-    <div id="content_bottom" class="row gx-2 gy-2 mx-0 h-25">
-    </div> <!-- content_bottom-->
+  </div> <!-- content_top -->
 
+</div>
 {% endblock %}
 
 {% block deferredScripts %}
