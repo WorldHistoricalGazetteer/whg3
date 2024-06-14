@@ -33,23 +33,12 @@
       </div>
       <!-- Left Column -->
       <div id="left_column" class="col-md-6 mb-2 mb-md-0 ps-md-0 pe-md-1">
-        <p class="mb-2">The WHG project empowers discovery by connecting place names across time and language.
-        We do this by publishing contributed gazetteer datasets and linking records for the same place among them.<br/>See
-        <a href="https://programminghistorian.org/en/lessons/space-place-gazetteers" target="_blank">
-          Working with Named Places: How and Why to Build a Gazetteer <i class="fas fa-external-link-alt small"></i>
-        </a></p>
-        <!-- <p class="mb-2"></p>-->
-        {% comment %}
-        <div class="mb-2 blue-box">
-          <p><b>What is a gazetteer?</b></p>
-          <p>A gazetteer is a directory of named places. See: <a
-            href="https://programminghistorian.org/en/lessons/space-place-gazetteers" target="_blank">How and why to
-            build a gazetteer <i class="fas fa-external-link-alt small"></i></a></p>
-        </div>
-        {% endcomment %}
+        <p class="mb-2">The World Historical Gazetteer is a platform for linking records about historical places, allowing people to make spatial connections across time and language. You can learn more about gazetteers, which are directories of named places, <a href="https://programminghistorian.org/en/lessons/space-place-gazetteers" target="_blank">
+          here <i class="fas fa-external-link-alt small"></i></a></p>
         {% if not user.is_authenticated %}
           <p class="mb-2 text-center">
-            <a href="{% url 'accounts:register' %}">Register to get started</a>
+            <a href="{% url 'accounts:register' %}">Register</a> or <a href="{% url 'accounts:login' %}">
+            login</a> to get started.
           </p>
         {% endif %}
         <div id="home_buttons">
@@ -90,7 +79,7 @@
         </div>
         <div class="border p-2 mt-2 mb-0 small" style="border-style:
             dashed !important;; border-width: 0.1rem !important;">
-          <p class="mb-0 red-head">NEWS & ANNOUNCEMENTS <span class="ms-2">[<a href="{%  url 'announcements-list' %}">View All</a>]</span</p>
+          <p class="mb-0 red-head">NEWS & ANNOUNCEMENTS <span class="ms-3"><a href="{%  url 'announcements-list' %}">view all</a></span</p>
           <div id="announcement-container" class="mb-0">
             {% for announcement in announcements|slice:":3" %}
               <div class="announcement constrained"

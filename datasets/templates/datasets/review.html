@@ -50,11 +50,13 @@
 			</span>
       <span class="help-matches" data-id="review"><i class="fas fa-question-circle linkypop"></i></span>
       <span class="float-end half"><i>task id</i>: {{ task_id|truncatechars:10 }}...</span>
+      {% comment %}
       <span class="half float-end me-2">
         <span class="show-link hidden larger bg-lighterblue px-2 me-2 border-blue">
           <a href="#" id="toggle_geonames_review">Show GeoNames hits</a>
         </span>
       </span>
+      {% endcomment %}
     </div> <!-- col 8 -->
   </div> <!-- .row -->
   {% if nohits and passnum == 'def' %}

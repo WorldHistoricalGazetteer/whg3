@@ -817,10 +817,27 @@ def align_wdlocal(*args, **kwargs):
 
       count_hit +=1
       total_hits += len(result_obj['hits'])
+
+      # Collect geonames IDs from wikidata hits
+      geonames_ids_from_wikidata = set()
+
+      for hit in result_obj['hits']:
+        if hit['_source']['dataset'] == 'wikidata':
+          authids = hit['_source'].get('authids', [])
+          for authid in authids:
+            if authid.startswith('gn:'):
+              geonames_id = authid.split(':')[1]
+              geonames_ids_from_wikidata.add(geonames_id)
+
       for hit in result_obj['hits']:
         hit_id = hit['_source']['id']
         print("pre-write hit['_source']", hit['_source'])
-        if hit['pass'] == 'pass0': 
+
+        # Avoid writing geonames hit if its ID matches any geonames ID from wikidata
+        if hit['_source']['dataset'] == 'geonames' and hit_id in geonames_ids_from_wikidata:
+          continue
+
+        if hit['pass'] == 'pass0':
           count_p0+=1 
         if hit['pass'] == 'pass1': 
           count_p1+=1 

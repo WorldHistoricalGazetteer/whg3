@@ -16,6 +16,7 @@ from django.http import HttpResponseServerError, HttpResponseRedirect, JsonRespo
 from django.shortcuts import redirect, get_object_or_404, render
 from django.test import Client
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import (CreateView, ListView, UpdateView, DeleteView, DetailView)
 from django_celery_results.models import TaskResult
@@ -69,7 +70,7 @@ class VolunteeringView(ListView):
 
   def get_queryset(self):
     qs = super().get_queryset()
-    return qs.filter(volunteers=True).order_by('-create_date')
+    return qs.filter(volunteers_text__isnull=False).order_by('-create_date')
 
   def get_context_data(self, *args, **kwargs):
     context = super(VolunteeringView, self).get_context_data(*args, **kwargs)
@@ -2468,7 +2469,6 @@ class DatasetDeleteView(DeleteView):
   utility used for place collections
 """
 
-
 def ds_list(request, label):
   print('in ds_list() for', label)
   qs = Place.objects.all().filter(dataset=label)
@@ -2486,7 +2486,6 @@ def ds_list(request, label):
   - delete any geoms or links created
   - reset flags for hit.reviewed and place.review_xxx
 """
-
 
 def match_undo(request, ds, tid, pid):
   print('in match_undo() ds, task, pid:', ds, tid, pid)
@@ -2521,7 +2520,6 @@ def match_undo(request, ds, tid, pid):
   returns dataset owner summary page
 """
 
-
 class DatasetStatusView(LoginRequiredMixin, UpdateView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -2544,7 +2542,7 @@ class DatasetStatusView(LoginRequiredMixin, UpdateView):
       "rows": place_count,
       "got_hits": ds.places.exclude(review_wd=None).count(),
       "reviewed": ds.places.filter(review_wd=1).count(),
-      "remain": ds.places.filter(review_wd=0).count(),
+      "remain": ds.places.filter(review_wd=0).count() + ds.places.filter(review_wd=2).count(),
       "deferred": ds.places.filter(review_wd=2).count(),
     }
 
@@ -2635,7 +2633,9 @@ class DatasetStatusView(LoginRequiredMixin, UpdateView):
 
     return context
 
-
+"""
+  vis_parameters on ds_status page
+"""
 @require_POST
 def update_vis_parameters(request, *args, **kwargs):
   try:
@@ -2665,12 +2665,31 @@ def update_vis_parameters(request, *args, **kwargs):
   except Exception as e:
     return JsonResponse({'error': str(e)}, status=500)
 
+"""
+  volunteers request on ds_status page
+"""
+
+@csrf_exempt
+def update_volunteers_text(request):
+  if request.method == 'POST':
+    dataset_id = request.POST.get('dataset_id')
+    volunteers_text = request.POST.get('volunteers_text')
+    reset = request.POST.get('reset', 'false') == 'true'
+
+    dataset = Dataset.objects.get(id=dataset_id)
+
+    if reset:
+      dataset.volunteers_text = None
+    else:
+      dataset.volunteers_text = volunteers_text
+
+    dataset.save()
+    return JsonResponse({'status': 'success'})
 
 """
   returns dataset owner metadata page
   (formerly DatasetSummaryView)
 """
-
 
 class DatasetMetadataView(LoginRequiredMixin, UpdateView):
   login_url = '/accounts/login/'
@@ -2772,7 +2791,6 @@ class DatasetMetadataView(LoginRequiredMixin, UpdateView):
   returns dataset owner's browse table
 """
 
-
 class DatasetBrowseView(LoginRequiredMixin, DetailView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -2819,7 +2837,6 @@ class DatasetBrowseView(LoginRequiredMixin, DetailView):
 """
   returns public dataset browse table
 """
-
 
 class DatasetPlacesView(DetailView):
   login_url = '/accounts/login/'
@@ -2876,7 +2893,6 @@ class DatasetPlacesView(DetailView):
   returns dataset owner "Linking" tab listing reconciliation tasks
 """
 
-
 class DatasetReconcileView(LoginRequiredMixin, DetailView):
   login_url = '/accounts/login/'
   redirect_field_name = 'redirect_to'
@@ -2907,9 +2923,10 @@ class DatasetReconcileView(LoginRequiredMixin, DetailView):
       "rows": place_count,
       "got_hits": ds.places.exclude(review_wd=None).count(),
       "reviewed": ds.places.filter(review_wd=1).count(),
-      "remain": ds.places.filter(review_wd=0).count(),
       "deferred": ds.places.filter(review_wd=2).count(),
+      "remain": ds.places.filter(review_wd=0).count() + ds.places.filter(review_wd=2).count(),
     }
+    print('wdgn_status', wdgn_status)
 
     idx_status = {
       "rows": place_count,
@@ -2941,7 +2958,6 @@ class DatasetReconcileView(LoginRequiredMixin, DetailView):
 """
   returns dataset owner "Collaborators" tab
 """
-
 
 class DatasetCollabView(LoginRequiredMixin, DetailView):
   login_url = '/accounts/login/'
@@ -2985,7 +3001,6 @@ class DatasetCollabView(LoginRequiredMixin, DetailView):
 """
   returns add (reconciliation) task page
 """
-
 
 class DatasetAddTaskView(LoginRequiredMixin, DetailView):
   login_url = '/accounts/login/'
@@ -3092,7 +3107,6 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
 """
   returns dataset owner "Log & Comments" tab
 """
-
 
 class DatasetLogView(LoginRequiredMixin, DetailView):
   login_url = '/accounts/login/'

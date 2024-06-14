@@ -138,12 +138,12 @@
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Data</a>
             <ul class="dropdown-menu dropdown-menu-end">
-              <li> {% is_whg_admin as user_is_whg_admin %} {% if user_is_whg_admin %}
+              <li> {% is_whg_admin as user_is_whg_admin %}
+                {% if user_is_whg_admin %}
                 <a class="dropdown-item" href="{% url 'dashboard-admin' %}">Admin Dashboard</a>
-                <a class="dropdown-item" href="{% url 'dashboard-user' %}">My Data</a> {% else %}
-                <a class="dropdown-item" href="{% url 'dashboard-user' %}">My Data</a> {% endif %}
+                {% endif %}
+                <a class="dropdown-item" href="{% url 'dashboard-user' %}">My Data</a>
               </li>
-              <!--<li><a class="dropdown-item" href="{% url 'dashboard' %}">My Data</a></li>-->
               <li>
                 <hr class="dropdown-divider">
               </li>
@@ -155,13 +155,10 @@
                 <a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}">
                   Published Collections</a>
               </li>
-              {% comment %} <li>
-                  <hr class="dropdown-divider">
-              </li>
+              <li><hr class="dropdown-divider"></li>
               <li>
-                  <a class="dropdown-item" href="{% url 'downloads' %}">Downloads</a>
+                <a class="dropdown-item" href="{% url 'datasets:volunteer-requests' %}">Volunteering</a>
               </li>
-              {% endcomment %}
             </ul>
           </li>
           <!-- data -->
