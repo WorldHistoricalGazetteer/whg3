@@ -77,6 +77,10 @@ def needs_tileset(category=None, id=None, pointcount_threshold=5000, geometrycou
 
 @shared_task()
 def process_tileset_request(category, id, action):
+    '''
+    This function handles the tileset request queue 
+    '''
+    
     redis_client.set(f'{category}-{id}-{action}', 'pending', ex=3600)
     print(f"Processing tileset request: {category}-{id}-{action}")
     if not category or not id:
@@ -119,7 +123,11 @@ def process_tileset_request(category, id, action):
             print(msg)
             
             # After completing the current request, recursively call process_tileset_request to handle any further queued requests
-            process_next_tileset_request()
+            queued_request = redis_client.lpop('tileset_queue')
+            if queued_request:
+                queued_category, queued_id, queued_action = queued_request.decode('utf-8').split('-')
+                print(f'Dequeuing and processing queued request: {queued_category}-{queued_id}-{queued_action}')
+                process_tileset_request.delay(queued_category, queued_id, queued_action)
             
             return {'success': True, 'message': msg}
         else:
@@ -128,16 +136,12 @@ def process_tileset_request(category, id, action):
             print(msg)
             return {'success': False, 'message': msg}
 
-def process_next_tileset_request():
-    # Dequeue the next tileset request from tileset_queue and process it
-    queued_request = redis_client.lpop('tileset_queue')
-    if queued_request:
-        queued_category, queued_id, queued_action = queued_request.decode('utf-8').split('-')
-        print(f'Dequeuing and processing queued request: {queued_category}-{queued_id}-{queued_action}')
-        process_tileset_request.delay(queued_category, queued_id, queued_action)
-
 @shared_task()
 def request_tileset(category, id, action):
+    '''
+    This function receives and enqueues requests for tilesets
+    '''
+    
     print(f'request_tileset() task: {category}-{id}')
 
     # Acquire distributed lock
@@ -168,6 +172,9 @@ def request_tileset(category, id, action):
         redis_client.delete(f'request_tileset_lock')
     
 def send_tileset_request(category=None, id=None, action='generate'):
+    '''
+    This function sends requests to the tileserver
+    '''
     
     if not category or not id:
         return {
@@ -198,15 +205,16 @@ def send_tileset_request(category=None, id=None, action='generate'):
 
     response = requests.post(settings.TILER_URL, headers={"Content-Type": "application/json"}, data=json.dumps(data))
 
+    if action == 'generate':
+        cache.delete(f"{category}-{id}-tileset")
+        
     # Check the response status code
     print(f"TILER_URL Response status: {response.status_code}")
-
-    cache.delete(f"{category}-{id}-tileset")
-    reset_standard_mapdata(category, id)
-    
     if response.status_code == 200:
         response_data = response.json()
         if response_data.get("status") == "success":
+            if action == 'delete':
+                reset_standard_mapdata(category, id)
             print(f"Tileset <{action}> successful.")
             return response_data
         else:
@@ -216,7 +224,10 @@ def send_tileset_request(category=None, id=None, action='generate'):
         response_data = response.json()
         error = response_data.get("error")
         print(f"Tileset <{action}> failed with status {response.status_code}: {error}")
-    
+
+    # Tileset generation has failed so reset standard mapdata filecache
+    if action == 'generate':
+        reset_standard_mapdata(category, id)
     return {
         'status': 'failure',
         'error': f'Error processing tileset <{action}> request.'

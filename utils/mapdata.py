@@ -87,6 +87,9 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
         cache.set(f"{category}-{id}-tileset", mapdata_tileset)
     
         # Reduce feature geometry in mapdata sent to browser
+        new_tileset = f"{category}-{id}"
+        if new_tileset not in available_tilesets:
+            available_tilesets.append(new_tileset)
         cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata_result))
             
     elif response_time > 1: # Cache if generation time exceeds 1 second
@@ -95,7 +98,7 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
     else:
         print(f"No need to cache mapdata.")
         
-    return mapdata_result
+    return JsonResponse(mapdata_result, safe=False, json_dumps_params={'ensure_ascii': False})
 
 def buffer_extent(extent, buffer_distance=0.1):
     return Polygon.from_bbox(extent).buffer(buffer_distance).extent if extent else None
