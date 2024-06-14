@@ -191,7 +191,7 @@ $(document).ready(function() {
 				    });
 					
 		            //Start polling task status
-		            setTimeout(pollTilerStatus, 3000);
+		            setTimeout(pollTilerStatus, 5000);
 		        },
 		        error: function(xhr, status, error) {
 		            console.error(xhr.responseText);
@@ -259,7 +259,7 @@ $(document).ready(function() {
             }
         });
         
-		setTimeout(function(){if (!polling) pollTilerStatus();}, 3000);
+		setTimeout(function(){if (!polling) pollTilerStatus();}, 5000);
     });	
 
     $('.queue-all').click(function() {
