@@ -81,27 +81,86 @@ $(function() {
 			});
 	});
 
-	// wants volumnteers y/n
+	// display form and value if there is one
+	var volunteersText = context_volunteers_text;
+	if(volunteersText && volunteersText !== "None") {
+			$('#volunteerForm').show();
+			$('#volunteerText').val(volunteersText);
+	}
+
 	$('#volunteers').change(function() {
 		var isChecked = $(this).is(':checked');
-		console.log('volunteers?', isChecked)
-		$.ajax({
-			url: '/datasets/toggle_volunteers',
-			type: 'POST',
-			headers: { 'X-CSRFToken': csrfToken },
-			data: {
-				'is_checked': isChecked,
-				'dataset_id': context_dsid,
-			},
-			success: function(response) {
-				if (isChecked) {
-					alert('Dataset is now listed as a volunteer opportunity');
-				} else {
-					alert('Dataset is no longer listed as a volunteer opportunity');
+		if (isChecked) {
+			$('#volunteerForm').fadeIn();
+				$("label[for='volunteers']").text("Volunteer request listed");
+				$('#volunteerText').show();
+		} else {
+			// Checkbox is unchecked
+			$("label[for='volunteers']").text("Removed from volunteering list");
+			$('#volunteerText').val(''); // Reset textarea
+			$('#volunteerForm').fadeOut();
+			setTimeout(function() {
+					$("label[for='volunteers']").text("Request volunteer help");
+			}, 2000); // Change label text back after 2 seconds
+
+			$.ajax({
+				url: '/datasets/update_volunteers_text/', // URL of the Django view
+				type: 'POST',
+				headers: { 'X-CSRFToken': csrfToken },
+				data: {
+					'reset': 'true',
+					'dataset_id': context_dsid,
+				},
+				success: function(response) {
+					$("label[for='volunteers']").text("Removed from volunteering list");
+					console.log('removed from volunteering list');
+				},
+				error: function(xhr, status, error) {
+					console.error('Failed to reset volunteer text');
 				}
-			}
-		});
+			});
+		}
+
+
 	});
+
+	$('#volunteerTextForm').submit(function(e) {
+			e.preventDefault();
+			var volunteerText = $('#volunteerText').val();
+			$.ajax({
+					url: '/datasets/update_volunteers_text/',
+					type: 'POST',
+					headers: { 'X-CSRFToken': csrfToken },
+					data: {
+							'volunteers_text': volunteerText,
+							'dataset_id': context_dsid,
+					},
+					success: function(response) {
+							alert('Volunteer text saved successfully');
+					}
+			});
+	});
+	// wants volumnteers y/n
+	// $('#volunteers').change(function() {
+	// 	var isChecked = $(this).is(':checked');
+	// 	console.log('volunteers?', isChecked)
+	// 	$.ajax({
+	// 		url: '/datasets/toggle_volunteers',
+	// 		type: 'POST',
+	// 		headers: { 'X-CSRFToken': csrfToken },
+	// 		data: {
+	// 			'is_checked': isChecked,
+	// 			'dataset_id': context_dsid,
+	// 		},
+	// 		success: function(response) {
+	// 			if (isChecked) {
+	// 				alert('Dataset is now listed as a volunteer opportunity');
+	// 			} else {
+	// 				alert('Dataset is no longer listed as a volunteer opportunity');
+	// 			}
+	// 		}
+	// 	});
+	// });
 
 	// show upload button after file selected
 	$("#newfile").on("change", function() {

@@ -842,6 +842,7 @@ def volunteer_view(request):
     form = VolunteerForm()
 
   return render(request, 'volunteer.html', {'form': form})
+
 # contact form used throughout
 def contact_view(request):
   sending_url = request.GET.get('from')
@@ -849,7 +850,7 @@ def contact_view(request):
   dataset_id = request.GET.get('dataset_id', None)
   dataset = Dataset.objects.get(id=dataset_id) if dataset_id else None
   is_volunteer = False
-  if sending_url == '/datasets/volunteer_requests/':
+  if sending_url == '/datasets/volunteer_requests/' and dataset:
     is_volunteer = True
   print('contact_view() sending_url:', sending_url)
   print('dataset:', dataset.title if dataset else None)
@@ -891,7 +892,7 @@ def contact_view(request):
           user_subject=initial_subject,  # user-submitted subject
           dataset_title=dataset.title,
         )
-        messages.success(request, f"Thank you! Your volunteering offer was forwarded to the dataset owner, ({owner_greeting}).")
+        messages.success(request, f"Thank you! Your offer to volunteering was forwarded to the dataset owner, ({owner_greeting}).")
       except BadHeaderError:
         return HttpResponse('Invalid header found.')
       return redirect('datasets:volunteer-requests')
@@ -959,6 +960,7 @@ def contact_modal_view(request):
         if request.user.is_authenticated:
             initial_data['from_email'] = request.user.email
             initial_data['name'] = request.user.username
+            initial_data['subject'] = request.GET['subject'] if 'subject' in request.GET else None
         form = ContactForm(initial=initial_data)
     else:
         print("Contact form received.")

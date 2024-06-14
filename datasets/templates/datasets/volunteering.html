@@ -19,6 +19,10 @@
   justify-content: center;
   align-items: center;
 }
+.card-subhead {
+  font-weight: bold;
+  margin-bottom: 0;
+}
 </style>
 {% endblock %}
 
@@ -51,18 +55,28 @@
     {% endif %}
     {% if dataset_list %}
       {% for ds in dataset_list %}
-        <div class="card card-vol col-12 col-md-6 col-lg-4 col-xl-3 me-2 pb-2">
+        <div class="card card-vol col-12 col-md-6 col-lg-4 col-xl-4 me-2 pb-2">
           <div class="card-body me-2">
             <h5 class="card-title">{{ ds.title }}</h5>
-            <p class="small">{{ ds.description|readmore:300|safe }}</p>
+            <p class="card-subhead">Request by owner:</p>
+            <p class="small">{{ ds.volunteers_text|safe }}</p>
+            <p class="card-subhead">Dataset description:</p>
+            <p class="small">{{ ds.description|safe }}</p>
           </div>
           <div class="card-button">
-            <a href="{% url 'contact' %}?dataset_id={{ ds.id }}&from={{ request.path }}"
+            <a href="{% url 'contact' %}?dataset_id={{ ds.id }}&from={{ request.path }}&subject=Volunteer%20Review%20Offer"
                class="btn btn-sm btn-primary volunteer-btn">Offer to volunteer
                <span class="spinner-border spinner-border-sm" role="status"
                      aria-hidden="true" style="display:none;"></span>
             </a>
           </div>
+{#          <div class="card-button">#}
+{#            <a href="{% url 'contact' %}?dataset_id={{ ds.id }}&from={{ request.path }}"#}
+{#               class="btn btn-sm btn-primary volunteer-btn">Offer to volunteer#}
+{#               <span class="spinner-border spinner-border-sm" role="status"#}
+{#                     aria-hidden="true" style="display:none;"></span>#}
+{#            </a>#}
+{#          </div>#}
         </div>
       {% endfor %}
     {% else %}
@@ -83,17 +97,37 @@
         var spinner = $(this).find('.spinner-border');
         var url = $(this).attr('href');
 
-        console.log("Button clicked, showing spinner.");
-        spinner.show();
+        // Add confirmation dialog
+        var confirmation = confirm("Sending your offer to volunteer for this dataset -- are you sure?");
+        if (confirmation) {
+          console.log("Button clicked, showing spinner.");
+          spinner.show();
 
-        // Debug: Check spinner visibility
-        console.log(spinner.css('display'));
+          // Debug: Check spinner visibility
+          console.log(spinner.css('display'));
 
-        // Simulate delay before redirection
-        setTimeout(function() {
-          window.location.href = url;  // Redirect after a delay
-        }, 2000);  // Delay in milliseconds
+          // Simulate delay before redirection
+          setTimeout(function() {
+            window.location.href = url;  // Redirect after a delay
+          }, 2000);  // Delay in milliseconds
+        }
       })
+      {#$('.volunteer-btn').click(function(e) {#}
+      {#  e.preventDefault();#}
+      {#  var spinner = $(this).find('.spinner-border');#}
+      {#  var url = $(this).attr('href');#}
+      {##}
+      {#  console.log("Button clicked, showing spinner.");#}
+      {#  spinner.show();#}
+      {##}
+      {#  // Debug: Check spinner visibility#}
+      {#  console.log(spinner.css('display'));#}
+      {##}
+      {#  // Simulate delay before redirection#}
+      {#  setTimeout(function() {#}
+      {#    window.location.href = url;  // Redirect after a delay#}
+      {#  }, 2000);  // Delay in milliseconds#}
+      {# })#}
 
       $('.a_more_descrip').click(function() {
         console.log('more clicked')
@@ -125,18 +159,3 @@
 
 
 {% endblock %}
-{##}
-{#$(document).ready(function() {#}
-{#  var spinner = $('.spinner-border');  // find the spinner#}
-{#  spinner.hide();  // hide it initially#}
-{##}
-{#  $('.volunteer-btn').click(function(e) {#}
-{#    console.log('volunteer button clicked');#}
-{#    e.preventDefault();  // prevent the default action#}
-{#    var spinner = $(this).find('.spinner-border');  // find the spinner#}
-{#    var url = $(this).attr('href');  // get the URL from the href attribute#}
-{##}
-{#    // show the spinner#}
-{#    spinner.show();#}
-{#  })#}
-{# })#}
