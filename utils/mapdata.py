@@ -49,7 +49,7 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
     start_time = time.time()  # Record the start time
     
     # If variant is not 'tileset', fetch available tilesets
-    available_tilesets = None
+    available_tilesets = []
     if variant == "standard":
         # Clean up any existing tileset cache
         cache.delete(f"{category}-{id}-tileset")
