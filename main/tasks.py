@@ -81,6 +81,15 @@ def process_tileset_request(category, id, action):
     This function handles the tileset request queue 
     '''
     
+    def recurse():
+        queued_request = redis_client.lpop('tileset_queue')
+        if queued_request:
+            queued_category, queued_id, queued_action = queued_request.decode('utf-8').split('-')
+            print(f'Dequeuing and processing queued request: {queued_category}-{queued_id}-{queued_action}')
+            process_tileset_request.delay(queued_category, queued_id, queued_action)
+        else:
+            redis_client.delete(f'request_tileset_lock')        
+    
     redis_client.set(f'{category}-{id}-{action}', 'pending', ex=3600)
     print(f"Processing tileset request: {category}-{id}-{action}")
     if not category or not id:
@@ -123,17 +132,14 @@ def process_tileset_request(category, id, action):
             print(msg)
             
             # After completing the current request, recursively call process_tileset_request to handle any further queued requests
-            queued_request = redis_client.lpop('tileset_queue')
-            if queued_request:
-                queued_category, queued_id, queued_action = queued_request.decode('utf-8').split('-')
-                print(f'Dequeuing and processing queued request: {queued_category}-{queued_id}-{queued_action}')
-                process_tileset_request.delay(queued_category, queued_id, queued_action)
+            recurse()
             
             return {'success': True, 'message': msg}
         else:
             redis_client.set(f'{category}-{id}-{action}', 'failed', ex=3600)
             msg = f'Tileset {"creation" if action == "generate" else "deletion"} failed for {category}-{id}.'
             print(msg)
+            recurse() # Continue with any remaining queued requests
             return {'success': False, 'message': msg}
 
 @shared_task()
@@ -163,13 +169,8 @@ def request_tileset(category, id, action):
                 except redis.WatchError:
                     continue
         return {'success': False, 'message': 'Request queued due to lock.'}
-
-    try:
-        # Process the current request
-        process_tileset_request.delay(category, id, action)
-        
-    finally:
-        redis_client.delete(f'request_tileset_lock')
+    
+    process_tileset_request.delay(category, id, action)
     
 def send_tileset_request(category=None, id=None, action='generate'):
     '''
