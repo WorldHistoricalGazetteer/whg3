@@ -21,7 +21,7 @@ import os, requests, time, json
 def mapdata_task(category, id, variant=None, refresh=False):
     dummy_request = HttpRequest()
     response = mapdata(dummy_request, category, id, variant=variant, refresh=str(refresh))
-    return response
+    return response.json() if response.status_code == 200 else {'status': 'failure', 'error': 'Failed to generate mapdata'}
 
 def reset_standard_mapdata(category, id):
     # This will generate standard mapdata and also delete any existing standard or tileset mapdata cache
