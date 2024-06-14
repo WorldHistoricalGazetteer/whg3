@@ -20,9 +20,14 @@ import os, requests, time, json
 @shared_task
 def mapdata_task(category, id, variant=None, refresh=False):
     dummy_request = HttpRequest()
-    dummy_request.GET = {'category': category, 'id': id, 'variant': variant, 'refresh': str(refresh)}
     response = mapdata(dummy_request, category, id, variant=variant, refresh=str(refresh))
-    return response.content
+    
+    return json.loads(response.content) if isinstance(response, JsonResponse) else {'status': 'failure', 'error': 'Failed to generate mapdata'}
+
+def reset_standard_mapdata(category, id):
+    # This will generate standard mapdata and also delete any existing standard or tileset mapdata cache
+    print(f"Resetting standard mapdata for {category}-{id}.")
+    mapdata_task.delay(category, id, 'standard', 'refresh')
 
 def mapdata(request, category, id, variant='standard', refresh='false'): # variant options are "standard" | "tileset"
     refresh = variant == 'refresh' or refresh.lower() in ['refresh', 'true', '1', 'yes']
@@ -45,7 +50,7 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
     start_time = time.time()  # Record the start time
     
     # If variant is not 'tileset', fetch available tilesets
-    available_tilesets = None
+    available_tilesets = []
     if variant == "standard":
         # Clean up any existing tileset cache
         cache.delete(f"{category}-{id}-tileset")
@@ -57,25 +62,25 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
             print("available_tilesets", available_tilesets)
     
     # Determine feature collection generation based on category    
-    mapdata = mapdata_dataset(id) if category == "datasets" else mapdata_collection(id)
+    mapdata_result = mapdata_dataset(id) if category == "datasets" else mapdata_collection(id)
         
     end_time = time.time()  # Record the end time
     response_time = end_time - start_time  # Calculate the response time
     print(f"Mapdata generation time: {response_time:.2f} seconds")
     
-    def reduced_geometry(mapdata):
-        mapdata["features"] = [
+    def reduced_geometry(mapdata_result):
+        mapdata_result["features"] = [
             {**feature, "geometry": {"type": feature["geometry"]["type"]} if feature.get("geometry") else None}
-            for feature in mapdata["features"]
+            for feature in mapdata_result["features"]
         ]
-        mapdata["tilesets"] = available_tilesets
-        return mapdata
+        mapdata_result["tilesets"] = available_tilesets
+        return mapdata_result
     
     if variant == "tileset":
         print(f"Splitting and caching mapdata.")
         
         # Reduce feature properties in mapdata to be fetched by tiler
-        mapdata_tileset = mapdata.copy()
+        mapdata_tileset = mapdata_result.copy()
         mapdata_tileset["features"] = [
             {**feature, "properties": {k: v for k, v in feature["properties"].items() if k in ["fclasses", "relation", "pid", "min", "max"]}}
             for feature in mapdata_tileset["features"]
@@ -83,15 +88,18 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
         cache.set(f"{category}-{id}-tileset", mapdata_tileset)
     
         # Reduce feature geometry in mapdata sent to browser
-        cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata))
+        new_tileset = f"{category}-{id}"
+        if new_tileset not in available_tilesets:
+            available_tilesets.append(new_tileset)
+        cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata_result))
             
     elif response_time > 1: # Cache if generation time exceeds 1 second
         print(f"Caching standard mapdata.")
-        cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata) if available_tilesets else mapdata)
+        cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata_result) if available_tilesets else mapdata_result)
     else:
         print(f"No need to cache mapdata.")
         
-    return JsonResponse(mapdata, safe=False, json_dumps_params={'ensure_ascii': False})
+    return JsonResponse(mapdata_result, safe=False, json_dumps_params={'ensure_ascii': False})
 
 def buffer_extent(extent, buffer_distance=0.1):
     return Polygon.from_bbox(extent).buffer(buffer_distance).extent if extent else None
@@ -124,8 +132,8 @@ def mapdata_dataset(id):
                     "review_wd": place.review_wd,
                     "review_tgn": place.review_tgn,
                     "review_whg": place.review_whg,
-                    "min": "null" if place.minmax is None or place.minmax[0] is None else str(place.minmax[0]),  # String required by Maplibre filter test
-                    "max": "null" if place.minmax is None or place.minmax[1] is None else str(place.minmax[1]),  # String required by Maplibre filter test
+                    "min": "null" if place.minmax is None or place.minmax[0] is None else place.minmax[0],
+                    "max": "null" if place.minmax is None or place.minmax[1] is None else place.minmax[1],
                 },
                 "geometry": geometries[0].jsonb if len(geometries) == 1 
                     else (
@@ -253,8 +261,8 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
             "title": place.title,
             "fclasses": place.fclasses,
             "ccodes": place.ccodes,
-            "min": "null" if place_min is None else str(place_min),  # String required by Maplibre filter test
-            "max": "null" if place_max is None else str(place_max),  # String required by Maplibre filter test
+            "min": "null" if place_min is None else place_min,
+            "max": "null" if place_max is None else place_max,
             "seq": None,
             "geometry": geometry_collection
         }

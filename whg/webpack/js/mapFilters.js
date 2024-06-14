@@ -42,7 +42,7 @@ export function toggleFilters(on, mappy, table){
 		if (mappy.layersets.includes(layer.source)) {
 			let filter = mappy.getFilter(layer.id); // Base filter is ['==', '$type', geometryType]
 			let baseFilter = filter[0] == 'all' ? filter[1] : filter;
-			console.log('Filters', filter, baseFilter);
+			//console.log('Filter switch:', filter, on ? temporalFilter(baseFilter) : baseFilter);
 			mappy.setFilter(layer.id, on ? temporalFilter(baseFilter) : baseFilter);
 		}
 	});
