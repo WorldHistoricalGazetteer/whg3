@@ -132,8 +132,8 @@ def mapdata_dataset(id):
                     "review_wd": place.review_wd,
                     "review_tgn": place.review_tgn,
                     "review_whg": place.review_whg,
-                    "min": "null" if place.minmax is None or place.minmax[0] is None else str(place.minmax[0]),  # String required by Maplibre filter test
-                    "max": "null" if place.minmax is None or place.minmax[1] is None else str(place.minmax[1]),  # String required by Maplibre filter test
+                    "min": "null" if place.minmax is None or place.minmax[0] is None else place.minmax[0],
+                    "max": "null" if place.minmax is None or place.minmax[1] is None else place.minmax[1],
                 },
                 "geometry": geometries[0].jsonb if len(geometries) == 1 
                     else (
@@ -261,8 +261,8 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
             "title": place.title,
             "fclasses": place.fclasses,
             "ccodes": place.ccodes,
-            "min": "null" if place_min is None else str(place_min),  # String required by Maplibre filter test
-            "max": "null" if place_max is None else str(place_max),  # String required by Maplibre filter test
+            "min": "null" if place_min is None else place_min,
+            "max": "null" if place_max is None else place_max,
             "seq": None,
             "geometry": geometry_collection
         }
