@@ -4,6 +4,7 @@ class Layerset {
     constructor(mapInstance, dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger, relation_colors) {
 		// The following default colours must be expressed in rgba format
 		this.colour = (typeof colour !== 'string') ? 'rgba(255,165,0,1)' : colour; // orange
+		this.colour_outline = 'rgba(0,0,0,1)'; // black
 		this.colour_water = 'rgba(0,0,255,1)'; // blue
 		this.colour_highlight = (typeof colour_highlight !== 'string') ? 'rgba(255,0,0,1)' : colour_highlight; // red
 		
@@ -30,10 +31,13 @@ class Layerset {
 					'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
 				},
 				'Polygon-line': { // Add extra layer to enable polygon outline styling
-					'line-color': this.colour_options,
+					'line-color': [
+					    this.colour_highlight,
+					    this.colour_outline
+					],
 					'line-width': [
 			            'interpolate', ['exponential', 2], ['zoom'],
-			            0, 2, // zoom level, line width
+			            0, 1, // zoom level, line width
 			            10, 5, // zoom level, line width
 			        ],
 			        'line-opacity': [
@@ -66,7 +70,10 @@ class Layerset {
 			            10, Math.max(13, .5 * this.enlarger), // zoom level, radius
 			            18, 20 // zoom level, radius
 					],
-					'circle-stroke-color': this.colour_options,
+					'circle-stroke-color': [
+					    this.colour_highlight,
+					    this.colour_outline
+					],
 					'circle-stroke-opacity': [
 						.9,
 						['any', ['==', ['get', 'min'], 'null'], ['==', ['get', 'max'], 'null']], .3,
@@ -74,7 +81,7 @@ class Layerset {
 			        ],
 					'circle-stroke-width': [
 						7,
-						3 * this.enlarger
+						1
 					],
 				}
 			},
