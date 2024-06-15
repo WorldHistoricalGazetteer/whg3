@@ -1,3 +1,21 @@
+
+/* Styles for side-by-side (on medium and larger screens) */
+@media (min-width: 768px) {
+	#textContent {
+	    overflow: auto;
+	    position: relative;
+	    max-height: 90vh;
+	}
+}
+
+/* Styles for stacked (on small screens) */
+@media (max-width: 767.98px) {
+	#sources {
+	    max-height: 600px;
+	    overflow-y: auto;
+	}
+}
+
 #dataset_content {
   position: relative;
 }
@@ -22,25 +40,18 @@
     bottom: -1.2rem;
 }
 
-#textContent {
-    overflow: auto;
-    position: relative;
-    max-height: 90vh;
-}
-
 #gloss p{
     font-size: .9rem !important;
 }
-#sources {
-    flex: 1;
-    max-height: 80%;
-    overflow-y: auto;
+
+#sources #filterCount {
+    font-size: .8rem;	
 }
 
 #source_detail {
     max-height: 30%;
     overflow-y: auto;
-    padding: .5rem;	
+    padding: 0.2rem 0.5rem 0;
 }
 
 #info {
@@ -65,6 +76,22 @@
 
 div.overlay .left .item {
     padding: 2px !important;
+}
+
+#collection_list {
+    transition: height 0.3s ease, opacity 0.3s ease;
+    overflow: hidden;
+    height: 0;
+    opacity: 0;
+}
+
+#collection_list.show {
+    height: auto;
+    opacity: 1;
+}
+
+#source_detail h6 i.fas {
+    cursor: pointer;
 }
 
 #collectionInfo p {

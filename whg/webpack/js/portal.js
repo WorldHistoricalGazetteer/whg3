@@ -24,6 +24,7 @@ let mapParameters = {
 	],
 	/*    basemap: ['natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade'],
 	    basemap: 'natural-earth-2-landcover',*/
+	fullscreenControl: true,
 	terrainControl: true,
 	temporalControl: true
 }
@@ -231,7 +232,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 
 		$('#gloss').append($('<span id="collectionInfo">'));
 
-		$('#sources').find('h6').text(`${payload.length} Source${payload.length > 1 ? 's' : ''}`);
+		$('#sources').find('h6').html(`${payload.length} Source${payload.length > 1 ? 's' : ''} <span id="filterCount"></span>`);
 
 		payload[0]['primary'] = true; // Payload arrives with Places in descending link-count order
 		payload.forEach(place => { // Reverse-sort each set of timespans by end year
@@ -268,6 +269,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			$('#sources').append(sourceHTML);
 		});
 		$('.toggle-truncate').toggleTruncate();
+		$('#sources').height($('#sources').height()); // Fix height to prevent change when content is hidden
 		$('.notes').notes();
 
 		var sourceOptions = payload.map(function(item) {
@@ -276,6 +278,14 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		$('#collection_form #primarySource').html(sourceOptions);
 
 		updateCollections();
+	    var chevron = $('#source_detail h6 i.fas');
+	    var collectionList = $('#collection_list');
+	    collectionList.on('show.bs.collapse hide.bs.collapse', function () {
+	        chevron.toggleClass('fa-chevron-down fa-chevron-up');
+	    });
+	    $('#source_detail h6').click(function() {
+	        collectionList.collapse('toggle');
+	    });
 
 		$('#sources').append(noSources);
 
@@ -554,19 +564,12 @@ function updateCollections(addCollection = false) {
 			.remove()
 			.end()
 			.append(ul)
-			.prev('h6')
-			.text(`In ${uniqueCollections.length} Collection${uniqueCollections.length > 1 ? 's' : ''}`);
+			.prev('span')
+			.find('h6')
+			.html(`In ${uniqueCollections.length} Collection${uniqueCollections.length > 1 ? 's' : ''} <i class="fas fa-chevron-${ $('#collection_list').hasClass('show') ? 'up' : 'down' }"></i>`);
 
-		switch (uniqueCollections.length) {
-			case 0:
-				$('#collectionInfo').html(`<p>It does not yet appear in any WHG collections.</p>`);
-				break;
-			case 1:
-				$('#collectionInfo').html(`<p>It appears in the WHG collection shown below.</p>`);
-				break;
-			default:
-				$('#collectionInfo').html(`<p>It appears in the ${uniqueCollections.length} WHG collections listed below.</p>`);
-		}
+		$('#collectionInfo').html(uniqueCollections.length == 0 ? '<p>It does not yet appear in any WHG collections.</p>' : '');
+
 		$('#source_detail').show();
 	} else {
 		$('#source_detail').hide();
@@ -593,6 +596,8 @@ function filterSources(fromValue, toValue, includeUndated) {
 		$('.source-box').eq(index).toggle(!outOfDateRange);
 	});
 	mappy.getSource('places').setData(featureCollection);
+	let hiddenCount = $('.source-box:not(:visible)').length;
+	$('#filterCount').text(hiddenCount == 0 ? '' : `(${hiddenCount} hidden by temporal filter)`);
 	noSources.toggle($('.source-box:visible').length == 0);
 }
 

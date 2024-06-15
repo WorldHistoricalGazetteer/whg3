@@ -30,7 +30,7 @@ let sequenceArcs;
 let table;
 let checked_rows;
 
-$('#dataset_content').spin();
+$('#dataset_content').spin({ label: `Loading ${window.ds_list[0].num_places.toLocaleString('en-US')} places...` });
 
 let mapParameters = { 
 	maxZoom: 20,
