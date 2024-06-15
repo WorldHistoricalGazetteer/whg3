@@ -571,7 +571,8 @@ function updateCollections(addCollection = false) {
 				$('#collectionInfo').html(`<p>It does not yet appear in any WHG collections.</p>`);
 				break;
 			case 1:
-				$('#collectionInfo').html(`<p>It appears in the WHG collection shown below.</p>`);
+				// $('#collectionInfo').html(`<p>It appears in the WHG collection shown below.</p>`);
+				$('#collectionInfo').html('');
 				break;
 			default:
 				$('#collectionInfo').html(`<p>It appears in the ${uniqueCollections.length} WHG collections listed below.</p>`);

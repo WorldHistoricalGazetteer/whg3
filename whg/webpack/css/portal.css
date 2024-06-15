@@ -47,7 +47,7 @@
 #source_detail {
     max-height: 30%;
     overflow-y: auto;
-    padding: .5rem;	
+    padding: 0.2rem 0.5rem 0;
 }
 
 #info {
@@ -77,13 +77,13 @@ div.overlay .left .item {
 #collection_list {
     transition: height 0.3s ease, opacity 0.3s ease;
     overflow: hidden;
-    height: auto;
-    opacity: 1;
-}
-
-#collection_list.collapse {
     height: 0;
     opacity: 0;
+}
+
+#collection_list.show {
+    height: auto;
+    opacity: 1;
 }
 
 #collectionInfo p {
