@@ -269,6 +269,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			$('#sources').append(sourceHTML);
 		});
 		$('.toggle-truncate').toggleTruncate();
+		$('#sources').height($('#sources').height()); // Fix height to prevent change when content is hidden
 		$('.notes').notes();
 
 		var sourceOptions = payload.map(function(item) {
@@ -567,17 +568,8 @@ function updateCollections(addCollection = false) {
 			.find('h6')
 			.html(`In ${uniqueCollections.length} Collection${uniqueCollections.length > 1 ? 's' : ''} <i class="fas fa-chevron-${ $('#collection_list').hasClass('show') ? 'up' : 'down' }"></i>`);
 
-		switch (uniqueCollections.length) {
-			case 0:
-				$('#collectionInfo').html(`<p>It does not yet appear in any WHG collections.</p>`);
-				break;
-			case 1:
-				// $('#collectionInfo').html(`<p>It appears in the WHG collection shown below.</p>`);
-				$('#collectionInfo').html('');
-				break;
-			default:
-				$('#collectionInfo').html(`<p>It appears in the ${uniqueCollections.length} WHG collections listed below.</p>`);
-		}
+		$('#collectionInfo').html(uniqueCollections.length == 0 ? '<p>It does not yet appear in any WHG collections.</p>' : '');
+
 		$('#source_detail').show();
 	} else {
 		$('#source_detail').hide();
