@@ -563,7 +563,8 @@ function updateCollections(addCollection = false) {
 			.remove()
 			.end()
 			.append(ul)
-			.prev('h6')
+			.prev('span')
+			.find('h6')
 			.html(`In ${uniqueCollections.length} Collection${uniqueCollections.length > 1 ? 's' : ''} <i class="fas fa-chevron-${ $('#collection_list').hasClass('show') ? 'up' : 'down' }"></i>`);
 
 		switch (uniqueCollections.length) {
