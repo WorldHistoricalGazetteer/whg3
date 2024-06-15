@@ -44,6 +44,10 @@
     font-size: .9rem !important;
 }
 
+#sources #filterCount {
+    font-size: .8rem;	
+}
+
 #source_detail {
     max-height: 30%;
     overflow-y: auto;

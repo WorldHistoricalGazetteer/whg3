@@ -232,7 +232,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 
 		$('#gloss').append($('<span id="collectionInfo">'));
 
-		$('#sources').find('h6').text(`${payload.length} Source${payload.length > 1 ? 's' : ''}`);
+		$('#sources').find('h6').html(`${payload.length} Source${payload.length > 1 ? 's' : ''} <span id="filterCount"></span>`);
 
 		payload[0]['primary'] = true; // Payload arrives with Places in descending link-count order
 		payload.forEach(place => { // Reverse-sort each set of timespans by end year
@@ -596,6 +596,8 @@ function filterSources(fromValue, toValue, includeUndated) {
 		$('.source-box').eq(index).toggle(!outOfDateRange);
 	});
 	mappy.getSource('places').setData(featureCollection);
+	let hiddenCount = $('.source-box:not(:visible)').length;
+	$('#filterCount').text(hiddenCount == 0 ? '' : `(${hiddenCount} hidden by temporal filter)`);
 	noSources.toggle($('.source-box:visible').length == 0);
 }
 
