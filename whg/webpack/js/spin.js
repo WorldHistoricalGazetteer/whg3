@@ -1,3 +1,5 @@
+// spin.js
+
 var __assign = (this && this.__assign) || function () {
     __assign = Object.assign || function(t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
@@ -28,6 +30,7 @@ var defaults = {
     left: '50%',
     shadow: '0 0 1px transparent',
     position: 'absolute',
+    label: '',
 };
 var Spinner = /** @class */ (function () {
     function Spinner(opts) {
@@ -56,6 +59,27 @@ var Spinner = /** @class */ (function () {
             target.insertBefore(this.el, target.firstChild || null);
         }
         drawLines(this.el, this.opts);
+
+        if (this.opts.label) {
+            var labelEl = document.createElement('div');
+            labelEl.className = this.opts.className + '-label';
+            labelEl.textContent = this.opts.label;
+            css(labelEl, {
+                position: 'absolute',
+                top: '100%',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                marginTop: (8 * this.opts.scale) + 'px',
+                fontSize: (2 * this.opts.scale) + 'px',
+                color: this.opts.color,
+                textAlign: 'center',
+                whiteSpace: 'nowrap',
+                textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)',
+                textShadow: `${0.125 * this.opts.scale}px ${0.125 * this.opts.scale}px ${0.25 * this.opts.scale}px rgba(0, 0, 0, 0.5)`,
+            });
+            this.el.appendChild(labelEl);
+        }
+        
         return this;
     };
     /**
