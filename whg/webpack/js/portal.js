@@ -564,7 +564,7 @@ function updateCollections(addCollection = false) {
 			.end()
 			.append(ul)
 			.prev('h6')
-			.html(`In ${uniqueCollections.length} Collection${uniqueCollections.length > 1 ? 's' : ''} <i class="fas fa-chevron-${ collectionList.hasClass('show') ? 'up' : 'down' }"></i>`);
+			.html(`In ${uniqueCollections.length} Collection${uniqueCollections.length > 1 ? 's' : ''} <i class="fas fa-chevron-${ $('#collection_list').hasClass('show') ? 'up' : 'down' }"></i>`);
 
 		switch (uniqueCollections.length) {
 			case 0:
