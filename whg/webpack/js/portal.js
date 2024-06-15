@@ -24,6 +24,7 @@ let mapParameters = {
 	],
 	/*    basemap: ['natural-earth-1-landcover', 'natural-earth-2-landcover', 'natural-earth-hypsometric-noshade'],
 	    basemap: 'natural-earth-2-landcover',*/
+	fullscreenControl: true,
 	terrainControl: true,
 	temporalControl: true
 }

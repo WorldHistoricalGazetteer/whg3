@@ -781,6 +781,27 @@ class CustomAttributionControl extends maplibregl.AttributionControl {
         super(options);
         this.autoClose = options.autoClose !== false;
     }
+
+    setLinksTargetBlank(container) {
+        const links = container.querySelectorAll('a');
+        links.forEach(link => {
+            link.setAttribute('target', '_blank');
+        });
+    }
+
+    // Use MutationObserver to watch for changes and update link targets
+    observeContainer(container) {
+        const observer = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                if (mutation.type === 'childList') {
+                    this.setLinksTargetBlank(container);
+                }
+            });
+        });
+
+        observer.observe(container, { childList: true, subtree: true });
+    }
+    
     onAdd(map) {
         const container = super.onAdd(map);
         // Automatically close the AttributionControl if autoClose is enabled
@@ -799,6 +820,8 @@ class CustomAttributionControl extends maplibregl.AttributionControl {
                 }, delay);
             }
         }
+        this.setLinksTargetBlank(container);
+        this.observeContainer(container);
         return container;
     }
 }
