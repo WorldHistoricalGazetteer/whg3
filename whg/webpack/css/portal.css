@@ -74,6 +74,18 @@ div.overlay .left .item {
     padding: 2px !important;
 }
 
+#collection_list {
+    transition: height 0.3s ease, opacity 0.3s ease;
+    overflow: hidden;
+    height: auto;
+    opacity: 1;
+}
+
+#collection_list.collapse {
+    height: 0;
+    opacity: 0;
+}
+
 #collectionInfo p {
    margin-bottom: .1rem;
 }

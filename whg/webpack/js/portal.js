@@ -277,6 +277,14 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		$('#collection_form #primarySource').html(sourceOptions);
 
 		updateCollections();
+	    var chevron = $('#source_detail h6 i.fas');
+	    var collectionList = $('#collection_list');
+	    collectionList.on('show.bs.collapse hide.bs.collapse', function () {
+	        chevron.toggleClass('fa-chevron-down fa-chevron-up');
+	    });
+	    $('#source_detail h6').click(function() {
+	        collectionList.collapse('toggle');
+	    });
 
 		$('#sources').append(noSources);
 
@@ -556,7 +564,7 @@ function updateCollections(addCollection = false) {
 			.end()
 			.append(ul)
 			.prev('h6')
-			.text(`In ${uniqueCollections.length} Collection${uniqueCollections.length > 1 ? 's' : ''}`);
+			.html(`In ${uniqueCollections.length} Collection${uniqueCollections.length > 1 ? 's' : ''} <i class="fas fa-chevron-${ collectionList.hasClass('show') ? 'up' : 'down' }"></i>`);
 
 		switch (uniqueCollections.length) {
 			case 0:
