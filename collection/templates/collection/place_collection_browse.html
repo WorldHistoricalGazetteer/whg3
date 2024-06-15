@@ -166,7 +166,7 @@
               <div class="row">
                 <div class="col-sm-8 pe-0 scroll-div">
                   <p class="modal-col-head p-1 mb-2">
-                    Collection <small>({{ object.places_all.count }} total rows)</small>
+                    Collection <small>({{ num_places }} total rows)</small>
                   </p>
                   <p>
                     <a href="#" class="a-dl" data-collid={{ object.id }}>
@@ -242,6 +242,7 @@
         ds_type: "collections",
         id: {{ object.id }},
         title: "{{ object.title }}",
+        num_places: {{ num_places }}
       }];
   </script>
 

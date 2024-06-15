@@ -289,6 +289,13 @@ class Collection(models.Model):
       last = self.create_date
 
     return last.strftime("%Y-%m-%d")
+  
+  @property
+  def num_places(self):
+    if self.collection_class == "dataset":
+        return Place.objects.filter(dataset__in=self.datasets.all()).count()
+    else:
+        return self.places.all().count()
 
   @property
   def owners(self):

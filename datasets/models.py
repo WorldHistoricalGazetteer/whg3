@@ -349,6 +349,11 @@ class Dataset(models.Model):
 
       # If we've gone through all Place instances and none are missing a PlaceGeom, return False
       return False
+  
+  @property
+  def num_places(self):
+    return Place.objects.filter(dataset=self.label).count()  
+  
   @property
   def owners(self):
     du_owner_ids = list(self.collabs.filter(role = 'owner').values_list('user_id_id',flat=True))

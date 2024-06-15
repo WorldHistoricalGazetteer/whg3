@@ -119,7 +119,8 @@
           label: "{{ ds.label }}",
           modified: "{{ ds.last_modified_text }}",
           title: "{{ ds.title }}",
-          ds_type: "datasets"
+          ds_type: "datasets",
+          num_places: {{ num_places }}
         }];
     const wdtask = {% if wdtask %} true {% else %} false {% endif %};
     const tgntask = {% if tgntask %} true {% else %} false {% endif %};

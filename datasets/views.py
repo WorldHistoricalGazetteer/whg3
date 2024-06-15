@@ -2827,6 +2827,7 @@ class DatasetBrowseView(LoginRequiredMixin, DetailView):
     context['is_admin'] = True if me.groups.filter(name__in=['whg_admins']).exists() else False
     context['updates'] = {}
     context['ds'] = ds
+    context['num_places'] = ds.num_places
     context['tgntask'] = 'tgn' in ds_tasks
     context['whgtask'] = len(set(['whg', 'idx']) & set(ds_tasks)) > 0
     context['wdtask'] = len(set(['wd', 'wdlocal']) & set(ds_tasks)) > 0
@@ -2874,6 +2875,7 @@ class DatasetPlacesView(DetailView):
 
     context['updates'] = {}
     context['ds'] = ds
+    context['num_places'] = ds.num_places
     context['is_admin'] = True if me.groups.filter(name__in=['whg_admins']).exists() else False
 
     if not ds.vis_parameters:
