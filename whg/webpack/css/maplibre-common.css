@@ -30,6 +30,14 @@
 	display: none!important;
 }
 
+.maplibregl-map:fullscreen #historygram {
+	display: none!important;
+}
+
+.maplibregl-map:fullscreen .maplibregl-ctrl-bottom-right {
+	bottom: 0;
+}
+
 .maplibregl-ctrl-attrib-inner {
     font-size: 0.8rem;
 }
