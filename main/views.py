@@ -87,6 +87,13 @@ class AnnouncementUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
     success_url = reverse_lazy('announcements-list')
     permission_required = 'main.change_announcement' # Adjust based on your app's name and permissions
 
+    def form_valid(self, form):
+      if form.is_valid():
+        return super().form_valid(form)
+      else:
+        print(form.errors)
+        return self.form_invalid(form)
+
 class TilesetListView(LoginRequiredMixin, TemplateView):
     template_name = 'main/tools_tilesets.html'
     login_url = '/accounts/login/'
