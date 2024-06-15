@@ -1,3 +1,21 @@
+
+/* Styles for side-by-side (on medium and larger screens) */
+@media (min-width: 768px) {
+	#textContent {
+	    overflow: auto;
+	    position: relative;
+	    max-height: 90vh;
+	}
+}
+
+/* Styles for stacked (on small screens) */
+@media (max-width: 767.98px) {
+	#sources {
+	    max-height: 600px;
+	    overflow-y: auto;
+	}
+}
+
 #dataset_content {
   position: relative;
 }
@@ -22,19 +40,8 @@
     bottom: -1.2rem;
 }
 
-#textContent {
-    overflow: auto;
-    position: relative;
-    max-height: 90vh;
-}
-
 #gloss p{
     font-size: .9rem !important;
-}
-#sources {
-    flex: 1;
-    max-height: 80%;
-    overflow-y: auto;
 }
 
 #source_detail {
