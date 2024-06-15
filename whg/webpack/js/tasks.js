@@ -62,6 +62,15 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			window.location.href = "{% url 'datasets:ds_reconcile' ds.id %}"
 		})
 
+	  // hide REVIEW OPTIONS div if "WHG accession" is selected
+		$("input[name='recon']").change(function() {
+			if (this.value === 'idx') {
+				$("#review_options").hide();
+			} else if (this.value === 'wdlocal') {
+				$("#review_options").show();
+			}
+		});
+
 		let page;
 		// help modals
 		$(".help-matches").click(function() {

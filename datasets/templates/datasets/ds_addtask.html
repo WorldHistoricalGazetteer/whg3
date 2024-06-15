@@ -138,23 +138,16 @@
                               <label class="form-check-label" for="all">
                                 Send all records
                               </label><br/>
+                              <input class="form-check-input" type="radio"
+                                     name="scope_geom" id="all" value="geom_free">
+                              <label class="form-check-label" for="all">
+                                Send only records with no geometry
+                              </label><br/>
                             </div>
-                          {% comment %}
-                        {% if ds.ds_status == 'uploaded' or ds.ds_status == 'reconciling' %}
-                          <p class="small">
-                            <input id="" name="no_geonames" type="checkbox"/>
-                            <span class="ms-2">exclude GeoNames from search</span>
-                          </p>
-                        {% endif %}
-                        {% endcomment %}
                           </div>
                         </div>
                         <div class="col-md-6">
-                          {% comment %}
-                          ds.recon_status: {{ ds.recon_status }}
-                          {% if ds.recon_status.idx > 0 %}
-                          {% endcomment %}
-                          <div class="recon-options">
+                          <div id="review_options" class="recon-options">
                             <p class="allcap-heading small mb-0">REVIEW OPTIONS
                                 <span class="help-matches" data-id="review_options">
                                     <i class="fas fa-question-circle linkypop"></i></span>
@@ -168,8 +161,6 @@
                                   accept new name variants upon match
                             </p>
                           </div>
-{#                          {% endif %}#}
-
                         </div>
                       </div>
                   </div>

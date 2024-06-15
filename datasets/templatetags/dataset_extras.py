@@ -68,6 +68,11 @@ def haskey(objlist, arg):
 def initcap(value):
     return capfirst(value)
 
+@register.filter
+def in_list(value, arg):
+    """Returns a boolean of whether the value is in a list"""
+    return value in arg.split(',')
+
 @register.simple_tag(takes_context=True)
 def is_whg_admin(context):
     request = context['request']
