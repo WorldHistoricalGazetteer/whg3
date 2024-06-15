@@ -86,6 +86,10 @@ div.overlay .left .item {
     opacity: 1;
 }
 
+#source_detail h6 i.fas {
+    cursor: pointer;
+}
+
 #collectionInfo p {
    margin-bottom: .1rem;
 }
