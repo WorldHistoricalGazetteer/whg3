@@ -6,12 +6,12 @@ These instructions will guide you through setting up the **World Historical Gaze
 
 ## Prerequisites
 - GitHub Account
-- _For Windows users: [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/)_
 
 ## Software Requirements
 Ensure that the following software is installed on your machine:
 - [Github Desktop](https://docs.github.com/en/desktop/installing-and-configuring-github-desktop/installing-and-authenticating-to-github-desktop/installing-github-desktop)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
+- _For Windows users: [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/)_
 
 You will also need (from WHG administrators) copies of the following files, which are excluded from the GitHub repository:
 - `.dev-whg3`
