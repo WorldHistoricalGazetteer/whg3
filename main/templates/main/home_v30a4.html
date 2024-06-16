@@ -14,6 +14,17 @@
 
 {% block extra_head %}
   <link href="{% static 'webpack/home.bundle.css' %}" rel="stylesheet"/>
+  <style>
+    .modal-dialog {
+      display: flex;
+      align-items: center;
+      min-height: calc(100% - 1rem);
+    }
+    .modal-content {
+      height: fit-content;
+      margin: auto;
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -133,8 +144,34 @@
         </div>
       </div>
     </div>
-  </main>
+    <div class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="welcomeModalLabel">
+              <span><img src="{% static 'images/whg_logo.svg' %}" height="35"/></span> Welcome to WHG v3!
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+{#            <p>Welcome to World Historical Gazetteer, Version 3!</p>#}
+            <p>This beta release of Version 3 includes many enhancements and new features!</p>
+            <p><a href="{% url 'v3-new' %}" class="btn btn-link ps-0">See what's new</a></p>
+            <p>Registered users will be prompted to reset their password when logging in. All existing data and
+              user accounts have been migrated, but normal security practice prevented transfer of passwords.</p>
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" value="" id="dontShowAgain">
+              <label class="form-check-label small" for="dontShowAgain">Don't show this again</label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
+  </main>
   <script type="text/javascript">
     var eswhg = "{{ es_whg|escapejs }}";
     let galleries = [

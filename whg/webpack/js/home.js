@@ -45,8 +45,23 @@ Promise.all([
 	waitMapLoad(),
 	waitDocumentReady()
 ]).then(() => {
-	
+
 	initialiseCarousels(galleries, carouselMetadata, startCarousels, mappy);
+
+	// v3 welcome modal
+	if (!localStorage.getItem('dontShowSplash')) {
+		$('#welcomeModal').modal('show');
+	}
+
+	// Handle the "Don't show again" checkbox
+	$('#dontShowAgain').on('change', function() {
+		if ($(this).is(':checked')) {
+		localStorage.setItem('dontShowSplash', 'true');
+	} else {
+		localStorage.removeItem('dontShowSplash');
+	}
+	});
+
 
 	// always clear last_search (if set)
 	localStorage.removeItem('last_search');
@@ -132,7 +147,7 @@ Promise.all([
 			    {#mappy.fitBounds(arealayer.getBounds())#}*/
 		});
 	};
-	
+
 	// call views.search_new() with parameters
 	// search_new() will pass these to search_new.html
 	function initiateSearchHome() {
@@ -148,19 +163,22 @@ Promise.all([
 			url: '/search/index/',
 			data: JSON.stringify(filters),
 			contentType: 'application/json',
-			headers: { 'X-CSRFToken': csrfToken }, // Include CSRF token in headers for Django POST requests
+			headers: {'X-CSRFToken': csrfToken}, // Include CSRF token in headers for Django POST requests
 			success: function(data) {
 				console.log('...search completed.', data);
 				localStorage.setItem('last_search', JSON.stringify(data)); // Includes both `.parameters` and `.suggestions` objects
 				if (data.suggestions.length > 0) { // if results, load and render on Search page
 					window.location.href = '/search';
 				} else {
-					errorModal(`Sorry, your search for "<i>${filters.qstr}</i>" returned no results.`, 'No Results', null, 5);
+					errorModal(
+							`Sorry, your search for "<i>${filters.qstr}</i>" returned no results.`,
+							'No Results', null, 5);
 				}
 			},
 			error: function(error) {
 				console.error('Error:', error);
-				errorModal('Sorry, something went wrong with that search.', null, error);
+				errorModal('Sorry, something went wrong with that search.', null,
+						error);
 			},
 		});
 	}
@@ -211,7 +229,6 @@ Promise.all([
 	// Start rotating announcements every 3 seconds, plus the fade time to ensure one fades out before the next fades in
 	setInterval(rotateAnnouncements, 5000); // Adjust time as needed
 
-
 	// let currentIndex = 0;
 	// const announcements = document.querySelectorAll(
 	//     '#announcement-container .announcement');
@@ -232,7 +249,6 @@ Promise.all([
 	// // Start rotating announcements every 5 seconds
 	// setInterval(rotateAnnouncements, 5000);	//
 	// console.log("DOMContentLoaded event listener has been added");
-
 
 	let homeModal = document.getElementById('homeModal');
 	homeModal.addEventListener('show.bs.modal', function(event) {
