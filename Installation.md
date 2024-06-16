@@ -50,6 +50,6 @@ You will also need (from WHG administrators) copies of the following files, whic
 7. #### Access the Application:
    - Open your browser and navigate to http://localhost:8001/. You should see **World Historical Gazetteer** running.
   
----
+________________________
 
 _See [WHG documentation](https://whgazetteer.org/documentation/) for an overview of the software._
