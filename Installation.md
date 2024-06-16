@@ -1,5 +1,9 @@
 # Install WHG3 from Docker Files
 
+## Introduction
+
+These instructions will guide you through setting up the **World Historical Gazetteer** (WHG3) on your local machine using Docker. This setup provides a consistent environment for anyone wishing to contribute to the development of WHG3 by testing new features, fixing bugs, or making other improvements.
+
 ## Prerequisites
 - GitHub Account
 - _For Windows users: [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/en-us/windows/wsl/)_
@@ -44,4 +48,8 @@ You will also need (from WHG administrators) copies of the following files, whic
    - Use "View details" of the  the `web` service to check its initialisation progress. When complete you should see the messages "Starting development server at ht<span>tp://</span>0.0.0.0:xxxx/" and "Quit the server with CONTROL-C.".
 
 7. #### Access the Application:
-   - Open your browser and navigate to http://localhost:8001/. You should see WHG3 running.
+   - Open your browser and navigate to http://localhost:8001/. You should see **World Historical Gazetteer** running.
+  
+---
+
+_See [WHG documentation](https://whgazetteer.org/documentation/) for an overview of the software._
