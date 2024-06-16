@@ -28,5 +28,5 @@ You will also need (from WHG administrators) copies of the following files, whic
 9. Open Docker Desktop, You should see:
    1. Included on the `Volumes` tab a `<your-fork-name>_dev-db-data` volume.
    2. On the `Containers` tab, all of the services specified in the `docker-compose-dev-minimal.yml` file in the cloned root directory. If any has an "exited" status, click on the service name to view its log.
-   3. "View details" of the  the `web` service to check its initialisation progress. When complete you should see the messages "Starting development server at http://0.0.0.0:8000/" and "Quit the server with CONTROL-C.".
+   3. "View details" of the  the `web` service to check its initialisation progress. When complete you should see the messages "Starting development server at ht<span>tp://</span>0.0.0.0:xxxx/" and "Quit the server with CONTROL-C.".
    4. You should now see WHG3 running in your browser at http://localhost:8001/.
