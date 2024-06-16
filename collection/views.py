@@ -1032,7 +1032,7 @@ class CollectionGroupDetailView(DetailView):
 
   def get_context_data(self, *args, **kwargs):
     context = super(CollectionGroupDetailView, self).get_context_data(*args, **kwargs)
-    context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
+    # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
 
@@ -1313,7 +1313,7 @@ class DatasetCollectionBrowseView(DetailView):
     print('DatasetCollectionBrowseView get_context_data() kwargs:',self.kwargs)
     print('DatasetCollectionBrowseView get_context_data() request.user',self.request.user)
 
-    context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
+    # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
     context['media_url'] = settings.MEDIA_URL

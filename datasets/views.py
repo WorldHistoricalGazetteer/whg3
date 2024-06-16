@@ -2810,7 +2810,7 @@ class DatasetBrowseView(LoginRequiredMixin, DetailView):
 
   def get_context_data(self, *args, **kwargs):
     context = super(DatasetBrowseView, self).get_context_data(*args, **kwargs)
-    context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
+    # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
 
@@ -2852,7 +2852,7 @@ class DatasetPlacesView(DetailView):
 
   def get_context_data(self, *args, **kwargs):
     context = super(DatasetPlacesView, self).get_context_data(*args, **kwargs)
-    context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
+    # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
     context['URL_FRONT'] = settings.URL_FRONT
@@ -3024,7 +3024,7 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
   def get_context_data(self, *args, **kwargs):
     context = super(DatasetAddTaskView, self).get_context_data(*args, **kwargs)
     """ maps need these """
-    context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
+    # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
 

@@ -61,7 +61,7 @@ class SearchPageView(TemplateView):
     dslist = Dataset.objects.filter(public=True)
 
     context = super(SearchPageView, self).get_context_data(*args, **kwargs)
-    context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
+    # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
     context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
     context['maptilerkey'] = settings.MAPTILER_KEY
