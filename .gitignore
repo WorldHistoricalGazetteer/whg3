@@ -58,6 +58,9 @@ init_shell.py
 
 ### Django ###
 local_settings.py
+local_settings_public.py
+ca-cert.pem
+
 /static
 *.log
 *.pot

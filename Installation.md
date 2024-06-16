@@ -2,7 +2,7 @@
 
 ## Introduction
 
-These instructions will guide you through setting up the **World Historical Gazetteer** (WHG3) on your local machine using Docker. This setup provides a consistent environment for anyone wishing to contribute to the development of WHG3 by testing new features, fixing bugs, or making other improvements.
+These instructions will guide you through setting up the **World Historical Gazetteer** (WHG3) on your local machine using Docker. This setup provides a consistent environment for anyone wishing to contribute to the development of WHG3 by testing new features, fixing bugs, or making other improvements. Ideas for contributions should ideally begin with an issue, which can then be discussed with the WHG team. Proposed code changes are submitted as pull requests, which are reviewed by the development team before being merged into the main repository.
 
 ## Prerequisites
 - GitHub Account
@@ -27,7 +27,7 @@ You will also need (from WHG administrators) copies of the following files, whic
    Move the separately-supplied files to the following locations within your local clone:
    
    -  `.dev-whg3` ➡️ a new `.env` folder in the root directory
-   -  `local_settings.py` ➡️ directly in the root directory
+   -  `local_settings.py` ➡️ directly in the project root directory
    -  media directories ➡️ as subdirectories within `/media/`
   
 4. #### Prepare Docker:
@@ -41,7 +41,7 @@ You will also need (from WHG administrators) copies of the following files, whic
        - _Alternatively, you can use `docker-compose-dev.yml`, which includes additional Docker services that are not required in most instances._
 
 6. #### Verify Docker Setup:
-    In Docker Desktop and check the following:
+    In Docker Desktop, check the following:
    
    - On the `Volumes` tab you should see a `<your-fork-name>_dev-db-data` volume.
    - On the `Containers` tab, ensure all services specified in the `docker-compose-dev-minimal.yml` file are running. If any has an "exited" status, click on the service name to view its log.
