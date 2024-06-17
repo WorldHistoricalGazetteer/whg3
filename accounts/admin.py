@@ -19,6 +19,7 @@ class UserAdmin(admin.ModelAdmin):
     list_filter = ('role',)
 
     filter_horizontal = ('groups',)
+    search_fields = ('username', 'name')
     # fieldsets = (
     #   (None, {
     #     'fields': ('id', 'email', 'name', 'affiliation', 'role', 'date_joined',

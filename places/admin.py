@@ -7,6 +7,7 @@ from .models import *
 class PlaceAdmin(admin.ModelAdmin):
     list_display = ('id', 'dataset','title', 'ccodes', 'src_id')
     list_filter = ('dataset',)
+    search_fields = ('title',)
 admin.site.register(Place,PlaceAdmin)
 
 class SourceAdmin(admin.ModelAdmin):

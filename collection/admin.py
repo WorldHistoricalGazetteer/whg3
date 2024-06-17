@@ -8,6 +8,8 @@ class CollectionAdmin(admin.ModelAdmin):
               'description','image_file','keywords','rel_keywords','file','creator')
     readonly_fields = ('id', 'datasets', 'places', 'collection_class')
     list_filter = ('status','collection_class')
+    search_fields = ('username', 'name')
+
 admin.site.register(Collection, CollectionAdmin)
 
 class CollectionGroupAdmin(admin.ModelAdmin):
