@@ -193,6 +193,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
 }
 .carousel-item p {
     font-size: 0.8rem;
+    padding-right: 0.5rem;
 }
 .carousel-item h6 {
     margin-bottom: 0;

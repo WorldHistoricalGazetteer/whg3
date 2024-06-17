@@ -61,8 +61,8 @@ export function initialiseCarousels(galleries, carouselMetadata, startCarousels,
         const target = $(`#${v3 ? 'dataset' : datacollection.type}sCarousel .carousel-inner`);
         const carouselItem = $(`<div class="carousel-item${target.children(
             '.carousel-item').length == 0 ? ' active' : ''} p-2"></div>`);
-        const description = datacollection.description.length > 100 ?
-            datacollection.description.substring(0, 100) + '...' :
+        const description = datacollection.description.length > 130 ?
+            datacollection.description.substring(0, 130) + '...' :
             datacollection.description;
 	    if (datacollection.image_file) {
 	        const carouselImage = $(`<img class="carousel-image" src="${datacollection.image_file}">`);

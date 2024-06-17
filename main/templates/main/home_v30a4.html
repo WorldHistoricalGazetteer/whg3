@@ -44,8 +44,10 @@
       </div>
       <!-- Left Column -->
       <div id="left_column" class="col-md-6 mb-2 mb-md-0 ps-md-0 pe-md-1">
+{% comment %}
         <p class="mb-2">The World Historical Gazetteer is a platform for linking records about historical places, allowing people to make spatial connections across time and language. You can learn more about gazetteers, which are directories of named places, <a href="https://programminghistorian.org/en/lessons/space-place-gazetteers" target="_blank">
-          here <i class="fas fa-external-link-alt small"></i></a></p>
+{% endcomment %}
+        <p class="mb-2">The vision of the WHG project is to empower discovery by connecting place names across time and language. A gazetteer is a directory of named places. Learn more <a href="https://programminghistorian.org/en/lessons/space-place-gazetteers" target="_blank">here <i class="fas fa-external-link-alt small"></i></a></p>
         {% if not user.is_authenticated %}
           <p class="mb-2 text-center">
             <a href="{% url 'accounts:register' %}">Register</a> or <a href="{% url 'accounts:login' %}">
