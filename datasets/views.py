@@ -326,7 +326,7 @@ def indexMultiMatch(pid, matchlist):
     # update the 'winner' parent
     q = q_updatewinner(list(set(addkids)), list(set(addnames)))  # ensure only unique
     try:
-      es.update(idx, winner['whg_id'], body=q)
+      es.update(index=idx, id=winner['whg_id'], body=q)
     except RequestError as rq:
       print('q_updatewinner failed (whg_id)', winner['whg_id'])
       print('Error: ', rq.error, rq.info)
@@ -341,7 +341,7 @@ def indexMultiMatch(pid, matchlist):
 
     # zap the demoted, reindex with same _id and modified doc (newsrcd)
     try:
-      es.delete('whg', _id)
+      es.delete(index='whg', id=_id)
       es.index(index='whg', id=_id, body=newsrcd, routing=1)
     except RequestError as rq:
       print('reindex failed (demoted)', _id)
@@ -645,7 +645,7 @@ def review(request, dsid, tid, passnum):
         hit = hits[x]["id"]
         print("hit # " + str(hits[x]) + " reviewed")
         print("hit['json']", hits[x]["json"])
-        print("dataset", hits[x]["json"]["dataset"])
+        # print("dataset", hits[x]["json"]["dataset"])
         # is this hit a match?
         if hits[x]["match"] not in ["none"]:
           # print('json of matched hit/cluster (in review())', hits[x]['json'])

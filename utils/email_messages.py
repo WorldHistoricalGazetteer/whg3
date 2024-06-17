@@ -94,7 +94,7 @@ EMAIL_MESSAGES = {
     'Dear {greeting_name},\n\n'
     'Your {taskname} reconciliation task for the "{dstitle}" dataset ({dslabel}) has completed.\n'
     '{counthit} records got a total of {totalhits} hits.\n\n'
-    'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
+    'View results on the "Status" tab of your dataset page (you may have to refresh it).\n\n'
     'regards,\nThe WHG project team'
   ),
   'recon_task_failed': (
@@ -107,7 +107,7 @@ EMAIL_MESSAGES = {
     'Greetings {greeting_name}! Your TEST index alignment task for the {dstitle} dataset ({dslabel}) has completed.'
     '{counthit} records got a total of {totalhits} hits.\n'
     'This only previews potential results; no records were written to the index.\n'
-    'View results on the "Linking" tab of your dataset page (you may have to refresh it).\n\n'
+    'View results on the "Status" tab of your dataset page (you may have to refresh it).\n\n'
     'regards,\nThe WHG project team'
   ),
   "volunteer_offer_user": (
