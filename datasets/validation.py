@@ -36,7 +36,7 @@ def validate_delim(df):
   # TODO: get valid ccodes from db
   # Define required fields and patterns
   aliases = ["bnf", "cerl", "dbp", "gn", "gnd", "gov", "loc", "pl", "tgn", "viaf", "wd", "wp", "whg"]
-  pattern = r"https?:\/\/.*\..*|(" + "|".join(aliases) + r"):\d+"
+  pattern = r"https?:\/\/.*\..*|(" + "|".join(aliases) + r"):\w+"
   valid_ccodes = [ccode.upper() for c in Area.objects.filter(type='country') for ccode in c.ccodes]
   # fclass_list = Type.objects.annotate(lower_fclass=Lower('fclass')).values_list('lower_fclass', flat=True).distinct()
   fclass_list = ['a', 'p', 'h', 's', 'r', 't', 'l']
@@ -118,6 +118,7 @@ def validate_delim(df):
       if field in row:
         value = str(row[field])
         # If the field's value is an empty string or "nan" or it matches the pattern, continue to the next iteration
+        value in ('', 'nan') or bool(re.search(pattern, value))
         if value in ('', 'nan') or bool(re.search(pattern, value)):
           continue
         if field == 'matches':

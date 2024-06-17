@@ -187,9 +187,9 @@
                   closely matched places from other indexed datasets.</p>
               </div>
               <div class="col-md-3">
-                <a class="btn btn-sm btn-outline-primary py-1" href="{% url 'contact' %}?dataset_id={{ ds.id }}"
-                 target="_blank">
-                  Request accessioning</a>
+                {% comment %}
+                <a class="btn btn-sm btn-outline-primary py-1" href="{% url 'contact' %}?dataset_id={{ ds.id }}" target="_blank">Request accessioning</a>{% endcomment %}
+                <a class="btn btn-sm btn-outline-primary py-1" href="{% url 'contact' %}?subject=Request WHG accessioning (dataset id: {{ ds.id }})" target="_blank">Request accessioning</a>
               </div>
             </div>
             {% if task_wdgn %}
@@ -307,7 +307,7 @@
                     <i class="fas fa-trash linkyred"></i></a>
                   {% if user in collaborators or is_admin %}
                       publication {% if not ds.public %}pre{% endif %}view
-                      <a href="{% url 'datasets:ds_places' id=ds.id %}" title="View publication page" data-bs-toggle="tooltip">
+                      <a href="{% url 'datasets:ds_places' id=ds.id %}" title="View publication page" data-bs-toggle="tooltip">&nbsp;
                       <i class="fas fa-eye"></i></a>
                   {% endif %}
                 </span>

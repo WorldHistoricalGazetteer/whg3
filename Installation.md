@@ -37,7 +37,7 @@ You will also need (from WHG administrators) copies of the following files, whic
 5. #### Build Docker Images:
    - Open your terminal (Linux/macOS) or Command Prompt / PowerShell (Windows) to interact with Docker.
    - Use the `cd` command to navigate to the cloned repository. _On a Windows system this might take the form `cd /d I:/workspace/whg3`._
-   - Run `docker-compose -f docker-compose-dev-minimal.yml up webpack --build -d`. This process may take some time. If it times out, rerun the command (subsequent runs will be quicker).
+   - Run `docker-compose -f docker-compose-dev-minimal.yml up --build -d`. This process may take some time. If it times out, rerun the command (subsequent runs will be quicker).
        - _Alternatively, you can use `docker-compose-dev.yml`, which includes additional Docker services that are not required in most instances._
 
 6. #### Verify Docker Setup:

@@ -37,13 +37,24 @@ logger = get_task_logger(__name__)
 es = settings.ES_CONN
 User = get_user_model()
 
+import logging
+import ssl
+from elasticsearch8 import Elasticsearch, exceptions
+from django.conf import settings
+
+logger = logging.getLogger(__name__)
+
+
+
 """
   adds newly public dataset to 'pub' index
   making it accessible to search (and API eventually)
 """
 @shared_task()
-def index_to_pub(dataset_id, idx='pub'):
+def index_to_pub(dataset_id):
+    # appropriate connection and index, dev vs. prod
     es = settings.ES_CONN
+    idx = settings.ES_PUB
     # Fetch dataset by ID
     try:
         dataset = Dataset.objects.get(pk=dataset_id, ds_status__in=['wd-complete', 'accessioning'])
@@ -92,8 +103,10 @@ def index_to_pub(dataset_id, idx='pub'):
   unindex from 'pub': an entire dataset or a single record
 """
 @shared_task()
-def unindex_from_pub(dataset_id=None, place_id=None, idx='pub'):
+def unindex_from_pub(dataset_id=None, place_id=None):
+  # appropriate connection and index, dev vs. prod
   es = settings.ES_CONN
+  idx = settings.ES_PUB
   if place_id:
     try:
       # Check if the place exists and is indexed in 'pub'
@@ -587,20 +600,6 @@ def es_lookup_wdlocal(qobj, *args, **kwargs):
     }
   }
 
-  # q0 = {"query": {
-  #   "bool": {
-  #     "must": [
-  #       {"bool": {
-  #         "should": [
-  #           {"terms": {"authids": qobj['authids']}},
-  #           # capture any wd: Q ids
-  #           {"terms": {"_id": [i[3:] for i in qobj['authids']] }}
-  #         ],
-  #         "minimum_should_match": 1
-  #       }}
-  #     ]
-  # }}}
-
   # base query
   qbase = {"query": { 
     "bool": {
@@ -658,19 +657,38 @@ def es_lookup_wdlocal(qobj, *args, **kwargs):
   # /\/\/\/\/\/
   print("Attempting Elasticsearch query for q0")
   try:
-    res0 = es.search(index=idx, body = q0)
+    res0 = es.search(index=idx, body=q0)
     hits0 = res0['hits']['hits']
     print("Query result for q0:", hits0)
+    # return hits0
+  except exceptions.SSLError as e:
+    logger.error("SSL error during q0 search: %s", str(e))
+    print("SSL error during q0 search:", str(e))
+    raise e
+  except exceptions.AuthenticationException as e:
+    logger.error("Authentication error during q0 search: %s", str(e))
+    print("Authentication error during q0 search:", str(e))
+    raise e
   except Exception as e:
-    print("Error during q0 search:", str(e), qobj)
+    logger.error("Error during q0 search: %s", str(e))
+    print("Error during q0 search:", str(e))
+    raise e
+
+  # try:
+  #   res0 = es.search(index=idx, body = q0)
+  #   hits0 = res0['hits']['hits']
+  #   print("Query result for q0:", hits0)
+  # except Exception as e:
+  #   print("Error during q0 search:", str(e), qobj)
 
   if len(hits0) > 0:
+    print(f'q0, len(hits0) {len(hits0)}')
     for hit in hits0:
       hit_count +=1
       hit['pass'] = 'pass0'
       result_obj['hits'].append(hit)
   elif len(hits0) == 0:
-    #print('q0 (no hits)', qobj)
+    print(f'q0 (no hits) on {qobj}')
     # /\/\/\/\/\/
     # pass1 (q1): 
     # must[name, placetype]; spatial filter
@@ -806,7 +824,7 @@ def align_wdlocal(*args, **kwargs):
     # run pass0-pass2 ES queries
     # in progress: lookup on wdgn index instead of wd
     result_obj = es_lookup_wdlocal(qobj, bounds=bounds, geonames=geonames)
-      
+    print('result_obj from es_lookup_wdlocal()', result_obj)
     if result_obj['hit_count'] == 0:
       count_nohit +=1
       nohits.append(result_obj['missed'])

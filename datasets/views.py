@@ -2233,17 +2233,26 @@ class DatasetCreate(LoginRequiredMixin, CreateView):
     filename = file.name
     tempfn = form.cleaned_data['temp_file_path']
 
-    # Open the file in binary mode
-    with open(tempfn, 'rb') as f:
-      print('testing encoding...')
-      result = chardet.detect(f.read())
+    # open as utf-8 and report back failure
+    try:
+      with open(tempfn, 'r', encoding='utf-8') as f:
+        f.read()
+    except UnicodeDecodeError as e:
+      # If the file is not UTF-8 encoded, add an error to the form and return the form
+      form.add_error(None, "File is not UTF-8 encoded. Error: {}".format(str(e)))
+      return self.form_invalid(form)
 
-    # Check if the encoding is UTF-8
-    if result['encoding'] != 'utf-8':
-        print('not utf-8')
-        # If the encoding is not UTF-8, add an error to the form and return the form
-        form.add_error(None, "File is not UTF-8 encoded.")
-        return self.form_invalid(form)
+    # Open the file in binary mode
+    # with open(tempfn, 'rb') as f:
+    #   print('testing encoding...')
+    #   result = chardet.detect(f.read())
+    #
+    # # Check if the encoding is UTF-8
+    # if result['encoding'] != 'utf-8':
+    #     print('not utf-8')
+    #     # If the encoding is not UTF-8, add an error to the form and return the form
+    #     form.add_error(None, "File is not UTF-8 encoded.")
+    #     return self.form_invalid(form)
 
     # Get the mimetype and extension
     mimetype = file.content_type
