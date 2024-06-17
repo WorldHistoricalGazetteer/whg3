@@ -147,11 +147,9 @@ def link_uri(auth, id):
   new record becomes child in the matched hit group
 """
 
-
 def indexMatch(pid, hit_pid=None):
   print('indexMatch(): pid ' + str(pid) + ' w/hit_pid ' + str(hit_pid))
   es = settings.ES_CONN
-  # idx='whg'
   idx = settings.ES_WHG
   place = get_object_or_404(Place, id=pid)
 
@@ -169,6 +167,7 @@ def indexMatch(pid, hit_pid=None):
 
   if hit_pid == None and not p_hits:
     # there was no match and place is not already indexed
+    # so, make a new parent
     print('making ' + str(pid) + ' a parent')
     new_obj['relation'] = {"name": "parent"}
 
@@ -197,7 +196,10 @@ def indexMatch(pid, hit_pid=None):
       pass
     print('created parent:', pid, place.title)
   else:
+    # there was a match, or place is already indexed
     # get hit record in index
+    # initialize list for pairs of place_ids
+    close_matches = []
     q_hit = {"query": {"bool": {"must": [{"match": {"place_id": hit_pid}}]}}}
     res = es.search(index=idx, body=q_hit)
     hit = res['hits']['hits'][0]
@@ -210,11 +212,15 @@ def indexMatch(pid, hit_pid=None):
       place_hit = res['hits']['hits'][0]
 
     # if hit is a child, get _id of its parent; this will be a sibling
-    # if hit is a parent, get its _id, this will be a child
+    # if hit is a parent, get its _id, this will be its child
+    # TODO: clean this up...the hit MUST be a parent - the query is only on parents
     if hit['_source']['relation']['name'] == 'child':
+      # hit is a child, get parent's _id
       parent_whgid = hit['_source']['relation']['parent']
     else:
+      # hit is a parent, get its _id
       parent_whgid = hit['_id']
+
 
     # mine new place for its names, make an index doc
     match_names = [p.toponym for p in place.names.all()]
@@ -374,6 +380,7 @@ def review(request, dsid, tid, passnum):
   # get the task & its kwargs
   task = get_object_or_404(TaskResult, task_id=tid)
   auth = task.task_name[6:].replace("local", "")
+  # TODO: task is still 'align_wdlocal' but it is against the 'wdgn' index (wikidata * geonames)
   authname = "Wikidata" if auth == "wd" else "WHG"
   kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
   print('task_kwargs in review()', kwargs)
@@ -833,16 +840,6 @@ def review(request, dsid, tid, passnum):
       # if none are left for this task, change status & email staff
       if auth in ["wd"] and ds.recon_status["wdlocal"] == 0:
         recon_complete(ds)
-        # ds.ds_status = "wd-complete"
-        # ds.save()
-        # status_emailer(ds, "wd")
-        # print("sent status email")
-      # handled by signal now
-      # elif auth == "idx" and ds.recon_status["idx"] == 0:
-      #   ds.ds_status = "indexed"
-      #   ds.save()
-      #   status_emailer(ds, "idx")
-      #   print("sent status email")
 
       print("review_field", review_field)
       setattr(place_post, review_field, 1)

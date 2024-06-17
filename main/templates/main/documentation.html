@@ -1,4 +1,5 @@
-{% extends "main/base.html" %}
+{#{% extends "main/base.html" %}#}
+{% extends "main/base_webpack.html" %}
 {% load static %}
 {% load mathfilters %}
 {% load dataset_extras %}
@@ -8,53 +9,53 @@
 	<script src="{% static 'jquery-ui-1.13.2/jquery-ui.min.js' %}"></script>
   <link rel="stylesheet" href="{% static 'jquery-ui-1.13.2/jquery-ui.min.css' %}"/>
 
-<style>
-  #container_docs {
-    max-height: calc(100vh - 130px) !important;
-  }
-  .accordion-body {
-    font-size: 0.9rem;
-  }
-  .nav-link {
-    color: #007bff;
-    transition: color 0.3s;
-  }
-  .nav-link {
-    padding: .2rem !important;
-  }
-  .nav-link:hover {
-    color: #0056b3;
-  }
-  #docs_content, #docs_sidebar {
-      overflow-y: auto;
-      height: calc(100vh - 150px);
-  }
-  @media (max-width: 992px) { /* adjust this value as needed */
-    .accordion-body {
-      padding: unset !important;
+  <style>
+    #container_docs {
+      max-height: calc(100vh - 140px) !important;
     }
-  }
-  section {
-    {#margin-top: 2rem;#}
-    margin-bottom: 1rem;
-  }
-  section h5 {
-    color: #993333;
-    {#font-weight: bold;#}
-  }
-  section h6 {
-    {#font-weight: bold;#}
-    {#font-style: italic;#}
-    {#color: #993333;#}
-    font-size: 1.1rem;
-    margin-bottom: 0;
-  }
-  ol ol {
-    list-style-type: lower-alpha;
-  }
-  .row img {border: #e0e0e0 1px solid;}
-  .row ol {font-size: 0.9rem;}
-</style>
+    .accordion-body {
+      font-size: 0.9rem;
+    }
+    .nav-link {
+      color: #007bff;
+      transition: color 0.3s;
+    }
+    .nav-link {
+      padding: .2rem !important;
+    }
+    .nav-link:hover {
+      color: #0056b3;
+    }
+    #docs_content, #docs_sidebar {
+        overflow-y: auto;
+        height: calc(100vh - 150px);
+    }
+    @media (max-width: 992px) { /* adjust this value as needed */
+      .accordion-body {
+        padding: unset !important;
+      }
+    }
+    section {
+      {#margin-top: 2rem;#}
+      margin-bottom: 1rem;
+    }
+    section h5 {
+      color: #993333;
+      {#font-weight: bold;#}
+    }
+    section h6 {
+      {#font-weight: bold;#}
+      {#font-style: italic;#}
+      {#color: #993333;#}
+      font-size: 1.1rem;
+      margin-bottom: 0;
+    }
+    ol ol {
+      list-style-type: lower-alpha;
+    }
+    .row img {border: #e0e0e0 1px solid;}
+    .row ol {font-size: 0.9rem;}
+  </style>
 {% endblock %}
 
 {% block content %}
