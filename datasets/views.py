@@ -146,9 +146,10 @@ def link_uri(auth, id):
   indexes a db record upon a single hit match in align_idx review
   new record becomes child in the matched hit group
 """
-
+# hotfix try 17 June 2024
 def indexMatch(pid, hit_pid=None, user=None, task=None):
-  print('indexMatch(): pid ' + str(pid) + ' w/hit_pid ' + str(hit_pid))
+  print(f'indexMatch(): pid {str(pid)}; hit_pid: {str(hit_pid)}')
+  print(f'indexMatch(): user: {user}; task: {str(hit_pid)}')
   es = settings.ES_CONN
   idx = settings.ES_WHG
   place = get_object_or_404(Place, id=pid)
@@ -170,23 +171,19 @@ def indexMatch(pid, hit_pid=None, user=None, task=None):
     print('making ' + str(pid) + ' a parent')
     new_obj['relation'] = {"name": "parent"}
 
-    # Increment whg_id
+    # Increment a whg_id for it
     whg_id = maxID(es, idx) + 1
     new_obj['whg_id'] = whg_id
-
-    # Add other necessary fields
-    if place.title not in new_obj['input']:
-      new_obj['input'].append(place.title)
 
     # Index the new parent
     try:
       res = es.index(index=idx, id=str(whg_id), body=json.dumps(new_obj))
       place.indexed = True
       place.save()
+      print('created parent:', pid, place.title)
     except Exception as e:
       print(f'failed indexing (as parent) {pid}: {e}')
       pass
-    print('created parent:', pid, place.title)
   else:
     # There was a match or place is already indexed
     # Get hit record in index
@@ -208,8 +205,6 @@ def indexMatch(pid, hit_pid=None, user=None, task=None):
     # Index the new child and update the parent
     try:
       res = es.index(index=idx, id=place.id, routing=1, body=json.dumps(new_obj))
-      print(f'added {place.id} as child of {hit_pid}')
-
       # Update parent's fields with child's name variants
       q_update = {"script": {
         "source": "ctx._source.children.add(params.id); ctx._source.searchy.addAll(params.names)",
@@ -219,13 +214,34 @@ def indexMatch(pid, hit_pid=None, user=None, task=None):
         "query": {"match": {"_id": parent_whgid}}}
       es.update_by_query(index=idx, body=q_update, conflicts='proceed')
       print('indexed? ', place.indexed)
+      print(f'added {place.id} as child of {hit_pid}')
 
       # Update close_matches table in Django
-      update_close_matches(pid, hit['_source']['place_id'], user, task)
+      update_close_matches(pid, hit_pid, user, task)
 
     except Exception as e:
       print(f'failed indexing {pid} as child of {parent_whgid}: {e}', new_obj)
       pass
+
+
+@transaction.atomic
+def update_close_matches(new_child_id, parent_place_id, user, task):
+  # Record the new match in CloseMatch table
+  print('Updating CloseMatch table')
+  print(f'new_child_id: {new_child_id}, parent_place_id: {parent_place_id}')
+
+  try:
+    print(f'User: {user}, Task: {task}')
+    CloseMatch.objects.create(
+      place_a_id=parent_place_id,
+      place_b_id=new_child_id,
+      created_by=user,
+      task=task,
+      basis='reviewed'
+    )
+    print('CloseMatch record created successfully')
+  except Exception as e:
+    print(f'Error creating CloseMatch record: {e}')
 
 
 # def indexMatch(pid, hit_pid=None, user=None, task=None):
@@ -331,16 +347,6 @@ def indexMatch(pid, hit_pid=None, user=None, task=None):
 #       print('failed indexing ' + str(pid) + ' as child of ' + str(parent_whgid), new_obj)
 #       pass
 
-@transaction.atomic
-def update_close_matches(new_child_id, parent_place_id, user, task):
-    # Record the new match in CloseMatch table
-    CloseMatch.objects.create(
-        place_a_id=parent_place_id,
-        place_b_id=new_child_id,
-        created_by=user,
-        task=task,
-        basis='reviewed'
-    )
 
 """
   from datasets.views.review()
@@ -474,7 +480,6 @@ def review(request, dsid, tid, passnum):
   # get the task & its kwargs
   task = get_object_or_404(TaskResult, task_id=tid)
   auth = task.task_name[6:].replace("local", "")
-  # TODO: task is still 'align_wdlocal' but it is against the 'wdgn' index (wikidata * geonames)
   authname = "Wikidata" if auth == "wd" else "WHG"
   kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
   print('task_kwargs in review()', kwargs)
@@ -902,30 +907,23 @@ def review(request, dsid, tid, passnum):
 
       # handle accessioning match results
       if len(matched_for_idx) == 0 and task.task_name == "align_idx":
-        # no matches during accession, index as seed (parent
-        print(
-          "no accession matches, index "
-          + str(place_post.id)
-          + " as seed (parent)"
-        )
-        print("maxID() in review()", maxID(es, "whg"))
+        # 0 matches during accession, indexMatch() makes it s seed (parent)
+        print("no accession matches, index place_id " + str(pid) + " as seed (parent)")
+        print("maxID() for seed in review()", maxID(es, "whg"))
 
-        # indexMatch(str(place_post.id))
         # mod 18 Jun 2024
+        print(f'review()->parent. user: {request.user}, place_post: {place_post.id}, task: {task}')
         indexMatch(str(pid), user=request.user, task=task)
 
         place_post.indexed = True
         place_post.save()
       elif len(matched_for_idx) == 1:
-        print(
-          "one accession match, make record "
-          + str(place_post.id)
-          + " child of hit "
-          + str(matched_for_idx[0])
-        )
-        # indexMatch(str(place_post.id), matched_for_idx[0]["pid"])
+        # 1 match - indexMatch() makes it a child of the match
         # mod 18 Jun 2024
-        indexMatch(str(pid), hit_pid=matched_for_idx[0]["pid"], user=request.user, task=task)
+        parent_id = matched_for_idx[0]["pid"]
+        print(f'review()->child: {place_post.id}, parent: {parent_id}')
+        print(f'user in review()->: {request.user}, task in review(): {task}')
+        indexMatch(str(place_post.id), hit_pid=parent_id, user=request.user, task=task)
 
         place_post.indexed = True
         place_post.save()
@@ -941,6 +939,16 @@ def review(request, dsid, tid, passnum):
       # if none are left for this task, change status & email staff
       if auth in ["wd"] and ds.recon_status["wdlocal"] == 0:
         recon_complete(ds)
+        # ds.ds_status = "wd-complete"
+        # ds.save()
+        # status_emailer(ds, "wd")
+        # print("sent status email")
+      # handled by signal now
+      # elif auth == "idx" and ds.recon_status["idx"] == 0:
+      #   ds.ds_status = "indexed"
+      #   ds.save()
+      #   status_emailer(ds, "idx")
+      #   print("sent status email")
 
       print("review_field", review_field)
       setattr(place_post, review_field, 1)
