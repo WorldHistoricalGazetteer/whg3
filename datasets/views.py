@@ -147,93 +147,175 @@ def link_uri(auth, id):
   new record becomes child in the matched hit group
 """
 
-def indexMatch(pid, hit_pid=None):
+# def indexMatch(pid, hit_pid=None, user=None, task=None):
+#   print('indexMatch(): pid ' + str(pid) + ' w/hit_pid ' + str(hit_pid))
+#   es = settings.ES_CONN
+#   idx = settings.ES_WHG
+#   place = get_object_or_404(Place, id=pid)
+#
+#   # is this place already indexed (e.g. by pass0 automatch)?
+#   q_place = {"query": {"bool": {"must": [{"match": {"place_id": pid}}]}}}
+#   res = es.search(index=idx, body=q_place)
+#   if res['hits']['total']['value'] == 0:
+#     # not indexed, make a new doc
+#     new_obj = makeDoc(place)
+#     p_hits = None
+#   else:
+#     # it's indexed, get parent
+#     p_hits = res['hits']['hits']
+#     place_parent = p_hits[0]['_source']['relation']['parent']
+#
+#   if hit_pid == None and not p_hits:
+#     # there was no match and place is not already indexed
+#     # so, make a new parent
+#     print('making ' + str(pid) + ' a parent')
+#     new_obj['relation'] = {"name": "parent"}
+#
+#     # increment whg_id
+#     print('maxID at :109', maxID(es, idx))
+#     whg_id = maxID(es, idx) + 1
+#     print('whg_id at :111', whg_id)
+#     # parents get an incremented _id & whg_id
+#     new_obj['whg_id'] = whg_id
+#     print('new_obj', new_obj)
+#     # sys.exit()
+#
+#     # add its own names to the suggest field
+#     for n in new_obj['names']:
+#       new_obj['suggest']['input'].append(n['toponym'])
+#     # add its title
+#     if place.title not in new_obj['suggest']['input']:
+#       new_obj['suggest']['input'].append(place.title)
+#     # index it
+#     try:
+#       res = es.index(index=idx, id=str(whg_id), body=json.dumps(new_obj))
+#       place.indexed = True
+#       place.save()
+#     except:
+#       print('failed indexing (as parent)' + str(pid))
+#       pass
+#     print('created parent:', pid, place.title)
+#   else:
+#     # there was a match, or place is already indexed
+#     # get hit record in index
+#     # initialize list for pairs of place_ids
+#     close_matches = []
+#     q_hit = {"query": {"bool": {"must": [{"match": {"place_id": hit_pid}}]}}}
+#     res = es.search(index=idx, body=q_hit)
+#     hit = res['hits']['hits'][0]
+#
+#     # see if new place (pid) is already indexed (i.e. due to prior automatch)
+#     q_place = {"query": {"bool": {"must": [{"match": {"place_id": pid}}]}}}
+#     res = es.search(index=idx, body=q_place)
+#     if len(res['hits']['hits']) > 0:
+#       # it's already in, (almost) certainly a child...of what?
+#       place_hit = res['hits']['hits'][0]
+#
+#     # if hit is a child, get _id of its parent; this will be a sibling
+#     # NB a pass0 hit may be to a child
+#     # if hit is a parent, get its _id, this will be its child
+#     # TODO: clean this up...the hit MUST be a parent - the query is only on parents
+#     if hit['_source']['relation']['name'] == 'child':
+#       # hit is a child, get parent's _id
+#       parent_whgid = hit['_source']['relation']['parent']
+#     else:
+#       # hit is a parent, get its _id
+#       parent_whgid = hit['_id']
+#
+#     # mine new place for its names, make an index doc
+#     match_names = [p.toponym for p in place.names.all()]
+#     new_obj['relation'] = {"name": "child", "parent": parent_whgid}
+#
+#     # all or nothing; pass if error
+#     try:
+#       # index child
+#       es.index(index=idx, id=place.id, routing=1, body=json.dumps(new_obj))
+#       # count_kids +=1
+#       print('added ' + str(place.id) + ' as child of ' + str(hit_pid))
+#
+#       # add child's names to parent's searchy & suggest.input[] fields
+#       q_update = {"script": {
+#         "source": "ctx._source.suggest.input.addAll(params.names); ctx._source.children.add(params.id); ctx._source.searchy.addAll(params.names)",
+#         "lang": "painless",
+#         "params": {"names": match_names, "id": str(place.id)}
+#       },
+#         "query": {"match": {"_id": parent_whgid}}}
+#       es.update_by_query(index=idx, body=q_update, conflicts='proceed')
+#       print('indexed? ', place.indexed)
+#
+#       # Update close_matches table in Django
+#       update_close_matches(pid, hit['_source']['place_id'], user, task)
+#
+#     except:
+#       print('failed indexing ' + str(pid) + ' as child of ' + str(parent_whgid), new_obj)
+#       pass
+
+def indexMatch(pid, hit_pid=None, user=None, task=None):
   print('indexMatch(): pid ' + str(pid) + ' w/hit_pid ' + str(hit_pid))
   es = settings.ES_CONN
   idx = settings.ES_WHG
   place = get_object_or_404(Place, id=pid)
 
-  # is this place already indexed (e.g. by pass0 automatch)?
+  # Check if this place is already indexed
   q_place = {"query": {"bool": {"must": [{"match": {"place_id": pid}}]}}}
   res = es.search(index=idx, body=q_place)
   if res['hits']['total']['value'] == 0:
-    # not indexed, make a new doc
+    # Not indexed, create a new doc
     new_obj = makeDoc(place)
     p_hits = None
   else:
-    # it's indexed, get parent
+    # It's indexed, get parent
     p_hits = res['hits']['hits']
     place_parent = p_hits[0]['_source']['relation']['parent']
 
-  if hit_pid == None and not p_hits:
-    # there was no match and place is not already indexed
-    # so, make a new parent
+  if hit_pid is None and not p_hits:
+    # No match and place is not already indexed, create new parent
     print('making ' + str(pid) + ' a parent')
     new_obj['relation'] = {"name": "parent"}
 
-    # increment whg_id
-    print('maxID at :109', maxID(es, idx))
+    # Increment whg_id
     whg_id = maxID(es, idx) + 1
-    print('whg_id at :111', whg_id)
-    # parents get an incremented _id & whg_id
     new_obj['whg_id'] = whg_id
-    print('new_obj', new_obj)
-    # sys.exit()
 
-    # add its own names to the suggest field
+    # Add its own names to the suggest field
     for n in new_obj['names']:
       new_obj['suggest']['input'].append(n['toponym'])
-    # add its title
     if place.title not in new_obj['suggest']['input']:
       new_obj['suggest']['input'].append(place.title)
-    # index it
+
+    # Index the new parent
     try:
       res = es.index(index=idx, id=str(whg_id), body=json.dumps(new_obj))
       place.indexed = True
       place.save()
-    except:
-      print('failed indexing (as parent)' + str(pid))
+    except Exception as e:
+      print(f'failed indexing (as parent) {pid}: {e}')
       pass
     print('created parent:', pid, place.title)
   else:
-    # there was a match, or place is already indexed
-    # get hit record in index
-    # initialize list for pairs of place_ids
-    close_matches = []
+    # There was a match or place is already indexed
+    # Get hit record in index
     q_hit = {"query": {"bool": {"must": [{"match": {"place_id": hit_pid}}]}}}
     res = es.search(index=idx, body=q_hit)
     hit = res['hits']['hits'][0]
 
-    # see if new place (pid) is already indexed (i.e. due to prior automatch)
-    q_place = {"query": {"bool": {"must": [{"match": {"place_id": pid}}]}}}
-    res = es.search(index=idx, body=q_place)
-    if len(res['hits']['hits']) > 0:
-      # it's already in, (almost) certainly a child...of what?
-      place_hit = res['hits']['hits'][0]
-
-    # if hit is a child, get _id of its parent; this will be a sibling
-    # if hit is a parent, get its _id, this will be its child
-    # TODO: clean this up...the hit MUST be a parent - the query is only on parents
+    # Determine if the hit is a parent or child
     if hit['_source']['relation']['name'] == 'child':
-      # hit is a child, get parent's _id
       parent_whgid = hit['_source']['relation']['parent']
     else:
-      # hit is a parent, get its _id
       parent_whgid = hit['_id']
 
-
-    # mine new place for its names, make an index doc
+    # Mine new place for its names and create an index doc
     match_names = [p.toponym for p in place.names.all()]
+    new_obj = makeDoc(place)  # Ensure new_obj is created here
     new_obj['relation'] = {"name": "child", "parent": parent_whgid}
 
-    # all or nothing; pass if error
+    # Index the new child and update the parent
     try:
-      # index child
       es.index(index=idx, id=place.id, routing=1, body=json.dumps(new_obj))
-      # count_kids +=1
-      print('added ' + str(place.id) + ' as child of ' + str(hit_pid))
+      print(f'added {place.id} as child of {hit_pid}')
 
-      # add child's names to parent's searchy & suggest.input[] fields
+      # Update parent's fields with child's name variants
       q_update = {"script": {
         "source": "ctx._source.suggest.input.addAll(params.names); ctx._source.children.add(params.id); ctx._source.searchy.addAll(params.names)",
         "lang": "painless",
@@ -242,10 +324,23 @@ def indexMatch(pid, hit_pid=None):
         "query": {"match": {"_id": parent_whgid}}}
       es.update_by_query(index=idx, body=q_update, conflicts='proceed')
       print('indexed? ', place.indexed)
-    except:
-      print('failed indexing ' + str(pid) + ' as child of ' + str(parent_whgid), new_obj)
-      pass
 
+      # Update close_matches table in Django
+      update_close_matches(pid, hit['_source']['place_id'], user, task)
+
+    except Exception as e:
+      print(f'failed indexing {pid} as child of {parent_whgid}: {e}', new_obj)
+      pass
+@transaction.atomic
+def update_close_matches(new_child_id, parent_place_id, user, task):
+    # Record the new match in CloseMatch table
+    CloseMatch.objects.create(
+        place_a_id=parent_place_id,
+        place_b_id=new_child_id,
+        created_by=user,
+        task=task,
+        basis='reviewed'
+    )
 
 """
   from datasets.views.review()
@@ -257,7 +352,6 @@ def indexMatch(pid, hit_pid=None):
       - whg_id and children[] ids (if any) added to winner
       - name variants added to winner's searchy[] and suggest.item[] lists
 """
-
 
 def indexMultiMatch(pid, matchlist):
   print('indexMultiMatch(): pid ' + str(pid) + ' matches ' + str(matchlist))
@@ -815,7 +909,11 @@ def review(request, dsid, tid, passnum):
           + " as seed (parent)"
         )
         print("maxID() in review()", maxID(es, "whg"))
-        indexMatch(str(place_post.id))
+
+        # indexMatch(str(place_post.id))
+        # mod 18 Jun 2024
+        indexMatch(str(pid), user=request.user, task=task)
+
         place_post.indexed = True
         place_post.save()
       elif len(matched_for_idx) == 1:
@@ -825,7 +923,10 @@ def review(request, dsid, tid, passnum):
           + " child of hit "
           + str(matched_for_idx[0])
         )
-        indexMatch(str(place_post.id), matched_for_idx[0]["pid"])
+        # indexMatch(str(place_post.id), matched_for_idx[0]["pid"])
+        # mod 18 Jun 2024
+        indexMatch(str(pid), hit_pid=matched_for_idx[0]["pid"], user=request.user, task=task)
+
         place_post.indexed = True
         place_post.save()
       elif len(matched_for_idx) > 1:
@@ -869,7 +970,7 @@ def recon_complete(ds):
 
 """
   write_wd_pass0(taskid)
-  called from dataset_detail>reconciliation tab
+  called from dataset_detail>status tab
   accepts all pass0 wikidata matches, writes geoms and links
 """
 # kwargs = json.loads(task.task_kwargs.replace("'", '"'))

@@ -265,7 +265,7 @@ def findPortalPlaces(whg_id):
     idx = 'whg'
     
     # Construct Elasticsearch query to find the document by whg_id
-    res = es.search(index=idx, body=esq_id(whg_id))
+    res = es.search(index=idx, query=esq_id(whg_id))
     hits = res['hits']['hits']
 
     # Check if the document exists in the index
@@ -288,7 +288,7 @@ def findPortalPIDs(pid):
     idx = 'whg'
 
     try:
-        es_result = es.search(index=idx, body=esq_pid(pid))
+        es_result = es.search(index=idx, query=esq_pid(pid))
 
         hits = es_result.get('hits', {}).get('hits', [])
         if hits:
@@ -539,7 +539,7 @@ def removeDatasetFromIndex(request, *args, **kwargs):
   es = settings.ES_CONN
   idx = settings.ES_WHG
   q_pids = {"match": {"dataset": ds.label}}
-  res = es.search(index=idx, body=q_pids, _source=["title", "place_id"], size=ds.places.count())
+  res = es.search(index=idx, query=q_pids, _source=["title", "place_id"], size=ds.places.count())
   pids = [h['_source']['place_id'] for h in res['hits']['hits']]
   print('pids in remove...()', pids)
   removePlacesFromIndex(es, idx, pids)
@@ -566,7 +566,7 @@ def removePlacesFromIndex(es, idx, pids):
   print('pids in removePlacesFromIndex()', pids)
   for pid in pids:
     # get index document
-    res = es.search(index=idx, body=esq_pid(pid))
+    res = es.search(index=idx, query=esq_pid(pid))
     hits=res['hits']['hits']
     print('hits, place', hits)
     # confirm it's in the index
@@ -627,7 +627,7 @@ def removePlacesFromIndex(es, idx, pids):
         # parent's searchy can't be reliably edited
         parent = src['relation']['parent']
         qget = {"bool": {"must": [{"match":{"_id": parent }}]}}
-        res = es.search(index=idx, body=qget)
+        res = es.search(index=idx, query=qget)
         # parent _source, suggest, searchy
         psrc = res['hits']['hits'][0]['_source']
         print('a child; parent src:', pid, psrc)
