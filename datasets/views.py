@@ -146,7 +146,7 @@ def link_uri(auth, id):
   indexes a db record upon a single hit match in align_idx review
   new record becomes child in the matched hit group
 """
-# hotfix try 17 June 2024
+# hotfix 17 June 2024
 def indexMatch(pid, hit_pid=None, user=None, task=None):
   print(f'indexMatch(): pid {str(pid)}; hit_pid: {str(hit_pid)}')
   print(f'indexMatch(): user: {user}; task: {str(hit_pid)}')
@@ -223,129 +223,42 @@ def indexMatch(pid, hit_pid=None, user=None, task=None):
       print(f'failed indexing {pid} as child of {parent_whgid}: {e}', new_obj)
       pass
 
-
 @transaction.atomic
+# ensuring unique CloseMatch records
 def update_close_matches(new_child_id, parent_place_id, user, task):
+  # Normalize the tuple
+  place_a_id, place_b_id = sorted([new_child_id, parent_place_id])
+
   # Record the new match in CloseMatch table
   print('Updating CloseMatch table')
   print(f'new_child_id: {new_child_id}, parent_place_id: {parent_place_id}')
 
   try:
-    print(f'User: {user}, Task: {task}')
-    CloseMatch.objects.create(
-      place_a_id=parent_place_id,
-      place_b_id=new_child_id,
-      created_by=user,
-      task=task,
-      basis='reviewed'
-    )
-    print('CloseMatch record created successfully')
+    # Ensure that the user and task are valid instances
+    assert isinstance(user, User), f'user is not a User instance: {type(user)}'
+    assert isinstance(task, TaskResult), f'task is not a TaskResult instance: {type(task)}'
+
+    # Check if a CloseMatch record already exists
+    if not CloseMatch.objects.filter(
+      Q(place_a_id=place_a_id) & Q(place_b_id=place_b_id)
+    ).exists():
+      # Print debug information
+      print(f'User: {user} (ID: {user.id}), Task: {task} (ID: {task.id})')
+
+      # Create the CloseMatch record
+      CloseMatch.objects.create(
+        place_a_id=place_a_id,
+        place_b_id=place_b_id,
+        created_by=user,
+        task=task,
+        basis='reviewed'
+      )
+      print('CloseMatch record created successfully')
+    else:
+      print(f'CloseMatch record already exists for {parent_place_id} and {new_child_id}')
   except Exception as e:
     print(f'Error creating CloseMatch record: {e}')
-
-
-# def indexMatch(pid, hit_pid=None, user=None, task=None):
-#   print('indexMatch(): pid ' + str(pid) + ' w/hit_pid ' + str(hit_pid))
-#   es = settings.ES_CONN
-#   idx = settings.ES_WHG
-#   place = get_object_or_404(Place, id=pid)
-#
-#   # is this place already indexed (e.g. by pass0 automatch)?
-#   q_place = {"query": {"bool": {"must": [{"match": {"place_id": pid}}]}}}
-#   res = es.search(index=idx, body=q_place)
-#   if res['hits']['total']['value'] == 0:
-#     # not indexed, make a new doc
-#     new_obj = makeDoc(place)
-#     p_hits = None
-#   else:
-#     # it's indexed, get parent
-#     p_hits = res['hits']['hits']
-#     place_parent = p_hits[0]['_source']['relation']['parent']
-#
-#   if hit_pid == None and not p_hits:
-#     # there was no match and place is not already indexed
-#     # so, make a new parent
-#     print('making ' + str(pid) + ' a parent')
-#     new_obj['relation'] = {"name": "parent"}
-#
-#     # increment whg_id
-#     print('maxID at :109', maxID(es, idx))
-#     whg_id = maxID(es, idx) + 1
-#     print('whg_id at :111', whg_id)
-#     # parents get an incremented _id & whg_id
-#     new_obj['whg_id'] = whg_id
-#     print('new_obj', new_obj)
-#     # sys.exit()
-#
-#     # add its own names to the suggest field
-#     for n in new_obj['names']:
-#       new_obj['suggest']['input'].append(n['toponym'])
-#     # add its title
-#     if place.title not in new_obj['suggest']['input']:
-#       new_obj['suggest']['input'].append(place.title)
-#     # index it
-#     try:
-#       res = es.index(index=idx, id=str(whg_id), body=json.dumps(new_obj))
-#       place.indexed = True
-#       place.save()
-#     except:
-#       print('failed indexing (as parent)' + str(pid))
-#       pass
-#     print('created parent:', pid, place.title)
-#   else:
-#     # there was a match, or place is already indexed
-#     # get hit record in index
-#     # initialize list for pairs of place_ids
-#     close_matches = []
-#     q_hit = {"query": {"bool": {"must": [{"match": {"place_id": hit_pid}}]}}}
-#     res = es.search(index=idx, body=q_hit)
-#     hit = res['hits']['hits'][0]
-#
-#     # see if new place (pid) is already indexed (i.e. due to prior automatch)
-#     q_place = {"query": {"bool": {"must": [{"match": {"place_id": pid}}]}}}
-#     res = es.search(index=idx, body=q_place)
-#     if len(res['hits']['hits']) > 0:
-#       # it's already in, (almost) certainly a child...of what?
-#       place_hit = res['hits']['hits'][0]
-#
-#     # if hit is a child, get _id of its parent; this will be a sibling
-#     # NB a pass0 hit may be to a child
-#     # if hit is a parent, get its _id, this will be its child
-#     # TODO: clean this up...the hit MUST be a parent - the query is only on parents
-#     if hit['_source']['relation']['name'] == 'child':
-#       # hit is a child, get parent's _id
-#       parent_whgid = hit['_source']['relation']['parent']
-#     else:
-#       # hit is a parent, get its _id
-#       parent_whgid = hit['_id']
-#
-#     # mine new place for its names, make an index doc
-#     match_names = [p.toponym for p in place.names.all()]
-#     new_obj['relation'] = {"name": "child", "parent": parent_whgid}
-#
-#     # all or nothing; pass if error
-#     try:
-#       # index child
-#       es.index(index=idx, id=place.id, routing=1, body=json.dumps(new_obj))
-#       # count_kids +=1
-#       print('added ' + str(place.id) + ' as child of ' + str(hit_pid))
-#
-#       # add child's names to parent's searchy & suggest.input[] fields
-#       q_update = {"script": {
-#         "source": "ctx._source.suggest.input.addAll(params.names); ctx._source.children.add(params.id); ctx._source.searchy.addAll(params.names)",
-#         "lang": "painless",
-#         "params": {"names": match_names, "id": str(place.id)}
-#       },
-#         "query": {"match": {"_id": parent_whgid}}}
-#       es.update_by_query(index=idx, body=q_update, conflicts='proceed')
-#       print('indexed? ', place.indexed)
-#
-#       # Update close_matches table in Django
-#       update_close_matches(pid, hit['_source']['place_id'], user, task)
-#
-#     except:
-#       print('failed indexing ' + str(pid) + ' as child of ' + str(parent_whgid), new_obj)
-#       pass
+    print(f'Debug info: new_child_id={new_child_id}, parent_place_id={parent_place_id}, user={user}, task={task}')
 
 
 """
@@ -358,12 +271,12 @@ def update_close_matches(new_child_id, parent_place_id, user, task):
       - whg_id and children[] ids (if any) added to winner
       - name variants added to winner's searchy[] and suggest.item[] lists
 """
-
-def indexMultiMatch(pid, matchlist):
+# hotfix 17 June 2024
+def indexMultiMatch(pid, matchlist, user, task):
   print('indexMultiMatch(): pid ' + str(pid) + ' matches ' + str(matchlist))
   from elasticsearch8 import RequestError
   es = settings.ES_CONN
-  idx = 'whg'
+  idx = settings.ES_WHG
   place = Place.objects.get(id=pid)
   from elastic.es_utils import makeDoc
   new_obj = makeDoc(place)
@@ -374,8 +287,11 @@ def indexMultiMatch(pid, matchlist):
 
   # max score is winner
   winner = max(matchlist, key=lambda x: x['score'])  # 14158663
+  winner_place_id = winner['pid']  # This is the place_id of the winner
+  print(f'winner_place_id: {winner_place_id}, incoming pid: {pid}')
   # this is multimatch so there is at least one demoted (list of whg_ids)
   demoted = [str(i['whg_id']) for i in matchlist if not (i['whg_id'] == winner['whg_id'])]  # ['14090523']
+  print('demoted', demoted)
 
   # complete doc for new record
   new_obj['relation'] = {"name": "child", "parent": winner['whg_id']}
@@ -385,14 +301,17 @@ def indexMultiMatch(pid, matchlist):
   if place.title not in addnames:
     addnames.append(place.title)
 
+  # New relationships for CloseMatch records
+  new_relationships = [(pid, winner_place_id)]  # Add the initial relationship
+  print('initial new_relationships', new_relationships)
+
   # generate script used to update winner w/kids and names
   # from new record and any kids of 'other' matched parents
   def q_updatewinner(addkids, addnames):
     return {"script": {
       "source": """ctx._source.children.addAll(params.newkids);
-      ctx._source.suggest.input.addAll(params.names);
-      ctx._source.searchy.addAll(params.names);
-      """,
+          ctx._source.searchy.addAll(params.names);
+          """,
       "lang": "painless",
       "params": {
         "newkids": addkids,
@@ -412,14 +331,15 @@ def indexMultiMatch(pid, matchlist):
     # ES won't allow altering parent/child relations directly
     q_demote = {"query": {"bool": {"must": [{"match": {"whg_id": _id}}]}}}
     res = es.search(body=q_demote, index=idx)
+    print('res for demoted - hits hits ', res)
     srcd = res['hits']['hits'][0]['_source']
     # add names in suggest to names[]
-    sugs = srcd['suggest']['input']
+    sugs = srcd['searchy']
     for sug in sugs:
       addnames.append(sug)
     addnames = list(set(addnames))
     # _id of demoted (a whg_id) belongs in winner's children[]
-    addkids.append(str(srcd['whg_id']))
+    addkids.append(str(srcd['place_id']))
 
     haskids = len(srcd['children']) > 0
     # if demoted record has kids, add to addkids[] list
@@ -447,13 +367,14 @@ def indexMultiMatch(pid, matchlist):
 
     # zap the demoted, reindex with same _id and modified doc (newsrcd)
     try:
-      es.delete(index='whg', id=_id)
-      es.index(index='whg', id=_id, body=newsrcd, routing=1)
+      es.delete(index=idx, id=_id)
+      es.index(index=idx, id=_id, body=newsrcd, routing=1)
     except RequestError as rq:
       print('reindex failed (demoted)', _id)
       print('Error: ', rq.error, rq.info)
 
     # re-assign parent for kids of all/any demoted parents
+    print('addkids', addkids)
     if len(addkids) > 0:
       for kid in addkids:
         q_adopt = {"script": {
@@ -463,6 +384,16 @@ def indexMultiMatch(pid, matchlist):
         },
           "query": {"match": {"place_id": kid}}}
         es.update_by_query(index=idx, body=q_adopt, conflicts='proceed')
+
+        # Add new relationships for CloseMatch
+        kid_place_id = kid  # Since addkids contains place_id values
+        new_relationships.append((int(kid_place_id), int(winner_place_id)))
+
+  # Create new CloseMatch records
+  print('new_relationships', new_relationships)
+  for place_a, place_b in new_relationships:
+    update_close_matches(place_a, place_b, user, task)
+
 
 """
   GET   returns review.html for Wikidata, or accession.html for accessioning
