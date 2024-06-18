@@ -798,7 +798,7 @@ def makeDoc(place):
   es_doc = {
     "relation": {},
     "children": [],
-    "suggest": {"input":[]},
+    # "suggest": {"input":[]},
     "place_id": place.id,
     "dataset": place.dataset.label,
     "src_id": place.src_id,
