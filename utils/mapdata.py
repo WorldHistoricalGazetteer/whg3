@@ -260,7 +260,7 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
             "id": str(place.id),  # Ensure ID is a string
             "src_id": [place.src_id] if isinstance(place.src_id, int) else place.src_id,
             "title": place.title,
-            "fclasses": place.fclasses,
+            "fclasses": sorted(set(fc for fc in place.fclasses if fc)) if place.fclasses else [],
             "ccodes": place.ccodes,
             "min": "null" if place_min is None else place_min,
             "max": "null" if place_max is None else place_max,
