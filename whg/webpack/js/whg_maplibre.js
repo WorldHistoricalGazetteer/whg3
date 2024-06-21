@@ -672,31 +672,34 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 	const width = originalCanvas.width;
 	const height = originalCanvas.height;
 	const actualPixelRatio = window.devicePixelRatio;
-	// Set the devicePixelRatio for higher DPI rendering
-	Object.defineProperty(window, 'devicePixelRatio', {
-		get: function() {
-			return dpi / 96;
-		},
-	});
+    const newPixelRatio = dpi / 96;
+	
+    // TODO: Need to increase zoom as pitch increases - but the following is inadequate
+    const pitch = map.getPitch();
+    const originalZoom = map.getZoom();
+    const pitchFactor = 1 / Math.cos(pitch * Math.PI / 180);
+    const adjustedZoom = originalZoom + Math.log2(pitchFactor);
 
 	// Create a hidden container and map renderer
 	const originalMapContainer = originalCanvas.parentNode;
 	const container = document.createElement('div');
 	container.id = 'map-render-container';
-	container.style.width = width + 'px';
-	container.style.height = height + 'px';
+	container.style.width = width / actualPixelRatio + 'px';
+	container.style.height = height / actualPixelRatio + 'px';
 	originalMapContainer.appendChild(container);
+    
 	const renderMap = new maplibregl.Map({
 		container: container,
 		style: map.getStyle(),
 		center: map.getCenter(),
-		zoom: map.getZoom(),
+		zoom: adjustedZoom,
 		bearing: map.getBearing(),
-		pitch: map.getPitch(),
+		pitch: pitch,
 		interactive: false,
 		preserveDrawingBuffer: true,
 		fadeDuration: 0,
 		attributionControl: false,
+		pixelRatio: newPixelRatio, // Set for higher DPI rendering
 		transformRequest: map._requestManager._transformRequestFn,
 	});
 	renderMap.once('idle', () => {
@@ -733,12 +736,6 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
     });
 
     $('#map-download-dialog').on('hidden.bs.modal', function () {
-		// Reset the devicePixelRatio
-	    Object.defineProperty(window, 'devicePixelRatio', {
-		    get: function () {
-		      return actualPixelRatio;
-		    },
-	    });
 		renderMap.remove();
 		container.remove();
         $(this).remove();
