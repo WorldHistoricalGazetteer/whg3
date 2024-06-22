@@ -453,31 +453,6 @@ def normalize(h, auth, language=None):
   print('normalized hit record', rec.toJSON())
   return rec.toJSON()
 
-# ***
-# elasticsearch filter from Area (types: predefined, ccodes, drawn)
-# e.g. {'type': ['drawn'], 'id': ['128']}
-# called from: es_lookup_tgn(), es_lookup_idx(), es_lookup_wdlocal(), search.SearchView(), 
-# FUTURE: parse multiple areas
-# ***
-# def get_bounds_filter(bounds, idx):
-#   #print('bounds in get_bounds_filter()',bounds)
-#   id = bounds['id'][0]
-#   #areatype = bounds['type'][0]
-#   area = Area.objects.get(id = id)
-#   #
-#   # geofield = "geoms.location" if idx == 'whg' else "location"
-#   geofield = "geoms.location" if idx == 'whg' else "location"
-#   filter = { "geo_shape": {
-#     geofield: {
-#         "shape": {
-#           "type": area.geojson['type'],
-#           "coordinates": area.geojson['coordinates']
-#         },
-#         "relation": "intersects" if idx=='whg' else 'within' # within | intersects | contains
-#       }
-#   }}
-#   return filter
-
 # accounts for GeometryCollection case
 def get_bounds_filter(bounds, idx):
   id = bounds['id'][0]
@@ -493,7 +468,8 @@ def get_bounds_filter(bounds, idx):
     geo_type = area.geojson['type']
     coordinates = area.geojson['coordinates']
 
-  geofield = "geoms.location" if idx == 'whg' else "location"
+  # geofield = "geoms.location" if idx == 'whg' else "location"
+  geofield = "geoms.location" if idx.startswith('whg') else "location"
   filter = {
     "geo_shape": {
       geofield: {
@@ -501,7 +477,8 @@ def get_bounds_filter(bounds, idx):
           "type": geo_type,
           "coordinates": coordinates
         },
-        "relation": "intersects" if idx == 'whg' else 'within'  # within | intersects | contains
+        # "relation": "intersects" if idx == 'whg' else 'within'  # within | intersects | contains
+        "relation": "intersects" if idx.startswith('whg') else 'within'  # within | intersects | contains
       }
     }
   }
@@ -927,7 +904,8 @@ def align_wdlocal(*args, **kwargs):
 def es_lookup_idx(qobj, *args, **kwargs):
   #print('kwargs from es_lookup_idx',kwargs)
   global whg_id
-  idx = 'whg'
+  # idx = 'whg'
+  idx = settings.ES_WHG
   bounds = kwargs['bounds']  # e.g. {'type': ['userarea'], 'id': ['0']}
   [hitobjlist, _ids] = [[],[]]
 

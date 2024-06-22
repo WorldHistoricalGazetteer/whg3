@@ -146,7 +146,8 @@ def demoteParents(demoted, winner_id):
     qget = """{"query": {"bool": {"must": [{"match":{"_id": "%s" }}]}}}"""    
     try:      
       qget = qget % (d)
-      doc = es.search(index='whg', body=qget)['hits']['hits'][0]
+      # doc = es.search(index='whg', body=qget)['hits']['hits'][0]
+      doc = es.search(index=settings.ES_WHG, body=qget)['hits']['hits'][0]
     except RequestError as rq:
       print('failed getting winner; winner_id, pid',winner_id)
       print('Error: ', rq.error, rq.info)
@@ -175,8 +176,10 @@ def demoteParents(demoted, winner_id):
       newsrcd.pop('whg_id')
     # zap the old demoted, index the modified
     try:      
-      es.delete(index='whg', id=d)
-      es.index(index='whg', id=d, body=newsrcd, routing=1)
+      # es.delete(index='whg', id=d)
+      # es.index(index='whg', id=d, body=newsrcd, routing=1)
+      es.delete(index=settings.ES_WHG, id=d)
+      es.index(index=settings.ES_WHG, id=d, body=newsrcd, routing=1)
     except RequestError as rq:
       print('reindex failed (demoted)',d)
       print('Error: ', rq.error, rq.info)

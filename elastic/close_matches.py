@@ -4,7 +4,7 @@ from elasticsearch8 import Elasticsearch, helpers
 from django.conf import settings
 
 es = settings.ES_CONN
-index_name = 'whg'
+index_name = settings.ES_WHG
 
 # Initialize an empty set to store unique close match pairs
 close_match_pairs = set()

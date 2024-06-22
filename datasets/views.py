@@ -1901,7 +1901,7 @@ def ds_update(request):
         print('idx_delete', idx_delete)
         if len(idx_delete) > 0:
           es = settings.ES_CONN
-          idx = 'whg'
+          idx = settings.ES_WHG
           print('pids to delete from index:', idx_delete)
           removePlacesFromIndex(es, idx, idx_delete)
       else:

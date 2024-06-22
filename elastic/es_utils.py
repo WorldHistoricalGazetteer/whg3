@@ -20,7 +20,7 @@ import sys
 def fetch(request):
   from places.models import Place
   user = User.objects.get(pk=1)
-  idx='whg'
+  idx=settings.ES_WHG
   if request.method == 'POST':
     print('fetch() request.POST',request.POST)
     pid=request.POST['pid']
@@ -123,7 +123,8 @@ def alt_parents(place, parent_pid):
   q1 = qbase
 
   try:
-    result1 = es.search(index='whg', body=q1)
+    # result1 = es.search(index='whg', body=q1)
+    result1 = es.search(index=settings.ES_WHG, body=q1)
     hits1 = result1["hits"]["hits"]
   except:
     print("q1, ES error:", q1, sys.exc_info())
@@ -262,8 +263,9 @@ Fetch place ids for a given whg_id
 """
 def findPortalPlaces(whg_id):
     es = settings.ES_CONN
-    idx = 'whg'
-    
+    # idx = 'whg'
+    idx = settings.ES_WHG
+
     # Construct Elasticsearch query to find the document by whg_id
     res = es.search(index=idx, query=esq_id(whg_id))
     hits = res['hits']['hits']
@@ -285,7 +287,8 @@ Fetch place ids sharing a whg_id for a given place id
 """
 def findPortalPIDs(pid):
     es = settings.ES_CONN
-    idx = 'whg'
+    # idx = 'whg'
+    idx = settings.ES_WHG
 
     try:
         es_result = es.search(index=idx, query=esq_pid(pid))
@@ -684,7 +687,8 @@ def removePlacesFromIndex(es, idx, pids):
 def fetch_pids(dslabel):
   pids=[]
   esq_ds = {"size":10000, "query":{"match":{"dataset": dslabel}}}
-  res = es.search(index='whg', body=esq_ds)
+  # res = es.search(index='whg', body=esq_ds)
+  res = es.search(index=settings.ES_WHG, body=esq_ds)
   docs = res['hits']['hits']
   for d in docs:
     pids.append(d['_source']['place_id'])

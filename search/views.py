@@ -19,7 +19,7 @@ from datetime import datetime
 def typeahead_suggester(qstr, mode="default"):
     #fields = ["title^3", "names.toponym", "searchy"]
     fields = ["title"]
-    indices = ['whg', 'pub']
+    indices = [settings.ES_WHG, settings.ES_PUB]
 
     query_constructors = { # Ignore `exactly` mode and use default `starts` instead
         "default": {"bool": {"should": [{"prefix": {field: qstr}} for field in fields]}},
@@ -441,7 +441,8 @@ class SearchView(View):
     if bounds:
       if request.method == 'GET':
         bounds = json.loads(bounds)
-        q['query']['bool']["filter"] = get_bounds_filter(bounds, 'whg')
+        # q['query']['bool']["filter"] = get_bounds_filter(bounds, 'whg')
+        q['query']['bool']["filter"] = get_bounds_filter(bounds, settings.ES_WHG)
       elif request.method == 'POST' and len(bounds['geometries']) > 0:
         filters = []
         for geometry in bounds['geometries']:
@@ -546,7 +547,8 @@ class SearchViewNew(View):
     if params.get('bounds'):
       if params.request.method == 'GET':
         bounds = json.loads(params.bounds)
-        q['query']['bool']["filter"] = get_bounds_filter(bounds, 'whg')
+        # q['query']['bool']["filter"] = get_bounds_filter(bounds, 'whg')
+        q['query']['bool']["filter"] = get_bounds_filter(bounds, settings.ES_WHG)
       elif params.request.method == 'POST' and len(params.bounds['geometries']) > 0:
         filters = []
         for geometry in params.bounds['geometries']:
@@ -811,7 +813,8 @@ def getGeomCollection(idx, doctype, q):
   # q includes list of place_ids from a trace record
   es = settings.ES_CONN
   # try:
-  res = es.search(index='whg', body=q, size=300)
+  # res = es.search(index='whg', body=q, size=300)
+  res = es.search(index=settings.ES_WHG, body=q, size=300)
   # res = es.search(index='whg', body=q, size=300)
   # except:
   # print(sys.exc_info()[0])

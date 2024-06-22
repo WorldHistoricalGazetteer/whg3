@@ -10,7 +10,7 @@ from datasets.utils import validate_lpf, validate_tsv
 from elasticsearch8 import Elasticsearch
 from elastic.es_utils import makeDoc, fetch_pids
 es = settings.ES_CONN
-idx='whg'
+idx=settings.ES_WHG
 
 dsid=586 # 'diamonds' current file: user_whgadmin/diamonds135_rev3_g6cvm1l.tsv
 # start: diamonds135_rev3; proposed update: diamonds135_rev21-125

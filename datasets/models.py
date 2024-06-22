@@ -403,7 +403,8 @@ class Dataset(models.Model):
   # used in ds_compare()
   @property
   def status_idx(self):
-    idx='whg'
+    # idx='whg'
+    idx=settings.ES_WHG
     submissions = [
           {"task_id":t.task_id, "date":t.date_done.strftime("%Y-%m-%d %H:%M"),
              "hits_tbr":Hit.objects.filter(task_id=t.task_id, reviewed=False).count() }

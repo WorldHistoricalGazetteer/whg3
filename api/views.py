@@ -175,7 +175,8 @@ class RemoteIndexAPIView(View):
   permission_classes = [IsAuthenticated]
 
   def get(self, request):
-    idx = 'whg'
+    # idx = 'whg'
+    idx = settings.ES_WHG
     params = request.GET
     # print('RemoteSearchIndexView request params', params)
 
@@ -221,21 +222,22 @@ class RemoteIndexAPIView(View):
         a = get_object_or_404(Area, pk=area)
         bounds = {"id": [str(a.id)], "type": [a.type]}  # nec. b/c some are polygons, some are multipolygons
         # q['query']['bool']["filter"] = get_bounds_filter(bounds, 'whg')
-        q['query']['bool']["filter"].append(get_bounds_filter(bounds, 'whg'))
+        q['query']['bool']["filter"].append(get_bounds_filter(bounds, settings.ES_WHG))
       if collection:
         c = get_object_or_404(Collection, pk=collection)
         ds_list = [d.label for d in c.datasets.all()]
         q['query']['bool']["filter"].append({"terms": {"dataset": ds_list}})
       if fuzzy and fuzzy.lower() == 'true':
         q['query']['bool']['must'][1]['multi_match']['fuzziness'] = 'AUTO'
-        # up the count of results for fuzze search
+        # up the count of results for fuzzy search
         q['size'] = 20 if not pagesize else pagesize
         q['from'] = 20 if not offset else offset
 
       print('q', q)
 
       # run query
-      index_set = collector(q, 'whg')
+      # index_set = collector(q, 'whg')
+      index_set = collector(q, settings.ES_WHG)
       print('index_set (collector() result)', index_set)
 
       # format hit items
@@ -585,7 +587,8 @@ class IndexAPIView(View):
   def get(self, request):
     params = request.GET
     print('IndexAPIView request.GET', params)
-    idx = ['whg', 'pub']  # search both indexes
+    # idx = ['whg', 'pub']  # search both indexes
+    idx = [settings.ES_WHG, settings.ES_PUB]  # search both indexes
 
     name = request.GET.get('name')
     whgid = request.GET.get('whgid')  # a parent record
@@ -661,11 +664,13 @@ class IndexAPIView(View):
         if area:
           a = get_object_or_404(Area, pk=area)
           bounds = {"id": [str(a.id)], "type": [a.type]}  # necessary because some are polygons, some are multipolygons
-          q['query']['bool']["filter"] = get_bounds_filter(bounds, 'whg')
+          # q['query']['bool']["filter"] = get_bounds_filter(bounds, 'whg')
+          q['query']['bool']["filter"] = get_bounds_filter(bounds, settings.ES_WHG)
 
         # print('the api query was:', json.dumps(q, indent=2))
         # run query
-        response = collector(q, 'whg')
+        # response = collector(q, 'whg')
+        response = collector(q, settings.ES_WHG)
         # print('response in IndexAPIView()', response)
         print('len(items)', len(response['items']))
         # ex = response['items'][1]
