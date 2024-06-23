@@ -1240,6 +1240,7 @@ class DatasetCollectionUpdateView(UpdateView):
     context['owner'] = True if user == coll.owner else False # actual owner
     context['is_owner'] = True if user in self.object.owners else False # owner or co-owner
     context['is_member'] = True if user in coll.owners or user in coll.collaborators else False
+    context['is_admin'] = True if user.groups.filter(name__in=['whg_admins']).exists() else False
     context['whgteam'] = True if user.groups.filter(name__in=['whg_team','editorial']).exists() else False
     context['collabs'] = CollectionUser.objects.filter(collection=coll.id)
 
