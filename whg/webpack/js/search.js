@@ -7,9 +7,9 @@ import debounce from 'lodash/debounce';
 import {
 	geomsGeoJSON,
 } from './utilities';
-import {
-	ccode_hash,
-} from '../../../static/js/parents';
+// import {
+// 	ccode_hash,
+// } from '../../../static/js/parents';
 import { CountryCacheFeatureCollection } from './countryCache';
 import '../css/typeahead.css';
 import '../css/dateline.css';
@@ -22,6 +22,7 @@ let $drawControl;
 let countryCache = new CountryCacheFeatureCollection();
 let searchDisabled = false;
 let enteringPortal = false;
+let ccode_hash = window.ccode_hash;
 
 let dateRangeChanged = throttle(() => { // Uses imported lodash function
 	initiateSearch();
