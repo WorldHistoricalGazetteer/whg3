@@ -7,8 +7,10 @@ set -o pipefail
 # exits if any of your variables is not set
 set -o nounset
 
-postgres_ready() {
-python << END
+if [ "$DB_HOST" != "host.docker.internal" ]; then # Ignore following codeblock if using remote Postgres Database through SSH Tunnel
+
+	postgres_ready() {
+	python << END
 import sys
 import os
 import psycopg2
@@ -22,13 +24,14 @@ try:
 except psycopg2.OperationalError:
     sys.exit(-1)
 sys.exit(0)
-
 END
-}
-until postgres_ready; do
-  >&2 echo 'Waiting for PostgreSQL to become available...'
-  sleep 1
-done
->&2 echo 'PostgreSQL is available'
+	}
+	until postgres_ready; do
+	  >&2 echo 'Waiting for PostgreSQL to become available...'
+	  sleep 1
+	done
+	>&2 echo 'PostgreSQL is available'
+	
+fi
 
 exec "$@"
