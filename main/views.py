@@ -4,14 +4,14 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
-from django.core.mail import send_mail, BadHeaderError
-from django.db.models import Max, Count, Case, When, Q
+from django.core.mail import BadHeaderError
+from django.db.models import Q
 from django.db.models.functions import Lower
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponseForbidden
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.html import escape
-from django.views import View
+from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
@@ -20,12 +20,12 @@ from django.views.generic.base import TemplateView
 from .forms import CommentModalForm, ContactForm, AnnouncementForm, VolunteerForm
 from areas.models import Area
 from celery.result import AsyncResult
-from collection.models import Collection, CollectionGroup, CollectionGroupUser
+from collection.models import Collection, CollectionGroup
 from datasets.models import Dataset
 from datasets.tasks import testAdd
+from main.decorators import uber_user_required
 from main.tasks import needs_tileset, request_tileset
 from .models import Announcement, Link, DownloadFile, Comment
-from operator import itemgetter
 from places.models import Place
 from resources.models import Resource
 from utils.emailing import new_emailer
@@ -94,6 +94,7 @@ class AnnouncementUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
         print(form.errors)
         return self.form_invalid(form)
 
+@method_decorator(uber_user_required, name='dispatch')
 class TilesetListView(LoginRequiredMixin, TemplateView):
     template_name = 'main/tools_tilesets.html'
     login_url = '/accounts/login/'
@@ -237,7 +238,7 @@ class Home30a(TemplateView):
     # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
     # context['mbtokenmb'] = settings.MAPBOX_TOKEN_MB
     # context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
-    context['maptilerkey'] = settings.MAPTILER_KEY
+    #context['maptilerkey'] = settings.MAPTILER_KEY
     context['media_url'] = settings.MEDIA_URL
     context['base_dir'] = settings.BASE_DIR
     context['es_whg'] = settings.ES_WHG
@@ -673,7 +674,6 @@ def home_modal(request):
   print('home_modal() url:', url)
   return render(request, url, context)
 
-from django.http import HttpResponseServerError
 
 # main/views.py
 from django.shortcuts import render

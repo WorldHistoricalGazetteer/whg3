@@ -591,7 +591,7 @@ def review(request, dsid, tid, passnum):
     "passnum": passnum,
     "page": page if request.method == "GET" else str(int(page) - 1),
     "aug_geoms": kwargs["aug_geoms"],
-    "mbtoken": settings.MAPBOX_TOKEN_WHG,
+    #"mbtoken": settings.MAPBOX_TOKEN_WHG,
     "maptilerkey": settings.MAPTILER_KEY,
     "count_pass0": cnt_pass0,
     "count_pass1": cnt_pass1,
@@ -2857,8 +2857,8 @@ class DatasetBrowseView(LoginRequiredMixin, DetailView):
   def get_context_data(self, *args, **kwargs):
     context = super(DatasetBrowseView, self).get_context_data(*args, **kwargs)
     # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-    context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-    context['maptilerkey'] = settings.MAPTILER_KEY
+    #context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    #context['maptilerkey'] = settings.MAPTILER_KEY
 
     print('DatasetBrowseView get_context_data() kwargs:', self.kwargs)
     print('DatasetBrowseView get_context_data() request.user', self.request.user)
@@ -2899,8 +2899,8 @@ class DatasetPlacesView(DetailView):
   def get_context_data(self, *args, **kwargs):
     context = super(DatasetPlacesView, self).get_context_data(*args, **kwargs)
     # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-    context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-    context['maptilerkey'] = settings.MAPTILER_KEY
+    #context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    #context['maptilerkey'] = settings.MAPTILER_KEY
     context['URL_FRONT'] = settings.URL_FRONT
 
     print('DatasetPlacesView get_context_data() kwargs:', self.kwargs)
@@ -3071,8 +3071,8 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
     context = super(DatasetAddTaskView, self).get_context_data(*args, **kwargs)
     """ maps need these """
     # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-    context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-    context['maptilerkey'] = settings.MAPTILER_KEY
+    #context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    #context['maptilerkey'] = settings.MAPTILER_KEY
 
     id_ = self.kwargs.get("id")
     ds = get_object_or_404(Dataset, id=id_)

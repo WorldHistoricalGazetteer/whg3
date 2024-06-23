@@ -70,7 +70,7 @@
               index. Fully accessioning data to WHG involves the further step of reconciling against our "union index."
             </p>
           {% endif %}
-          {% if user in ds.owners or user in ds.collaborators or user.is_superuser %}
+          {% if user in ds.owners or user in ds.collaborators or is_admin %}
             {% if ds.ds_status == 'indexed' %}
               <div id="ready" class="hidden ps-2">
                 <p class="my-0">This dataset has been fully indexed</p>
@@ -111,7 +111,7 @@
                       ({{ t.date_done|date:"d-M-Y, H:i (e)" }}; elapsed: {{ t.result|get:"elapsed"|safe }})</span>
                         </p>
                         <p><b>ID</b>: {{ t.task_id }}</p>
-                        {% if t.task_name != 'align_idx' and user in ds.owners or user.is_superuser or test == 'on' %}
+                        {% if t.task_name != 'align_idx' and user in ds.owners or is_admin or test == 'on' %}
                           {% comment %}{% if t.task_name != 'align_idx' and user in ds.owners %}{% endcomment %}
                           <p id="{{ t.task_name }}">
                             <a class="confirm-del-all"
