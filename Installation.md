@@ -20,14 +20,17 @@ You will also need (from WHG administrators) copies of the following files, whic
 
 ## Procedure
 1. #### Fork the Repository:
+
    - Sign in to your GitHub account, navigate to the [WHG3 respository](https://github.com/WorldHistoricalGazetteer/whg3) and [fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo) your own copy of the repository.
+
 2. #### Clone the Repository:
    - Open GitHub Desktop and clone your forked repository to your local machine.
-3. #### Add Excluded Files:
+
+3. #### Add excluded files:
    Move the separately-supplied files to the following locations within your local clone:
    
-   -  `.dev-whg3` ➡️ a new `.env` folder in the root directory
-   -  `local_settings.py` ➡️ directly in the project root directory
+   -  `.dev-whg3` ➡️ a new `.env` folder in the project root directory
+   -  `local_settings.py` ➡️ in the /whg directory
    -  media directories ➡️ as subdirectories within `/media/`
   
 4. #### Prepare Docker:

@@ -231,6 +231,7 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
     close_matches = list( CloseMatch.objects.filter(
         Q(place_a__in=collection_places_all) & Q(place_b__in=collection_places_all)
     ).values_list('place_a_id', 'place_b_id') )
+    # close_matches = list( CloseMatch.objects.filter(Q(place_a__in=cpa) & Q(place_b__in=cpa)).values_list('place_a_id', 'place_b_id') )
     print(close_matches)
 
     # Create a graph if there are close matches, otherwise, an empty graph
@@ -240,8 +241,10 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
 
     # Start places list with places that have no family connections
     unmatched_places = collection_places_all.exclude(id__in=G.nodes).prefetch_related('geoms').order_by('id')
+    # unmatched_places = cpa.exclude(id__in=G.nodes).prefetch_related('geoms').order_by('id')
 
     print(f"Collection {collection.id}: {collection_places_all.count()} places sorted into {len(families)} families and {len(unmatched_places)} unmatched.")
+    # print(f"Collection {collection.id}: {cpa.count()} places sorted into {len(families)} families and {len(unmatched_places)} unmatched.")
 
     # Helper function to aggregate place information
     def aggregate_place_info(place):
@@ -283,6 +286,7 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
         family_place.title = "|".join(set(family_members.values_list('title', flat=True)))
         family_place.ccodes = sorted(list(set(chain.from_iterable(family_members.values_list('ccodes', flat=True)))))
         family_place.fclasses = sorted(list(set(chain.from_iterable(family_members.values_list('fclasses', flat=True)))))
+        # family_place.fclasses = sorted(set(filter(None, family_members.values_list('fclasses', flat=True))))
         family_place.minmax = [
             min(filter(None, family_members.values_list('minmax__0', flat=True)), default=None),
             max(filter(None, family_members.values_list('minmax__1', flat=True)), default=None)

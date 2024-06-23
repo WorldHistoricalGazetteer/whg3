@@ -201,19 +201,6 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
 GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
 
-LEAFLET_CONFIG = {
-  'TILES':[],
-    'DEFAULT_CENTER': (35.0, 13.0),
-    'DEFAULT_ZOOM': 1,
-    'MIN_ZOOM': 1,
-    'MAX_ZOOM': 14,
-    'RESET_VIEW': False,
-    #'MAX_BOUNDS_VISCOSITY': 0,
-    'ATTRIBUTION_PREFIX':
-    "Tiles &copy; <a href='http://mapbox.com/' target='_blank'>MapBox</a> | "+
-    "<a href='http://creativecommons.org/licenses/by-nc/3.0/deed.en_US' target='_blank'> CC-BY-NC 3.0</a>"
-}
-
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL='/accounts/login/'
 LOGOUT_REDIRECT_URL='/'
@@ -224,7 +211,6 @@ AUTHENTICATION_BACKENDS = (
 )
 
 # Password validation
-# https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
   {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
   {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},

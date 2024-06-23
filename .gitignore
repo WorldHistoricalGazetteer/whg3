@@ -59,8 +59,9 @@ init_shell.py
 ### Django ###
 local_settings.py
 local_settings_public.py
-
-data/ca-cert.pem
+docker-compose-altnet.yml
+### Private Environment Variables ###
+.env/
 
 /static
 *.log
@@ -70,9 +71,6 @@ __pycache__/
 whg/__pycache__/
 db.sqlite3
 /cache
-
-### Private Environment Variables (dev and prod) ###
-.env/
 
 ### Eclipse Project ###
 .settings/org.eclipse.wst.jsdt.ui.superType.name
