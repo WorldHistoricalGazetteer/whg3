@@ -1,6 +1,6 @@
 BSD 3-Clause License
 
-Copyright (c) 2022, World History Center, University of Pittsburgh
+Copyright (c) 2019-2024, World History Center, University of Pittsburgh
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

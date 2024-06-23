@@ -1,4 +1,4 @@
-# Install WHG3 from Docker Files
+# Install WHG3 from Docker Files (draft in progress 23 June 2024)
 
 ## Introduction
 

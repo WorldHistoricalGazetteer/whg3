@@ -1,5 +1,5 @@
 ## WHG v3 Tests 
-_as of 10 Jan 2024_
+_as of 23 June 2024_; more to come
 
 ### tests/test_place_collections.py
 #### 1. [CollectionTestCase(PlaceCollection)](tests/test_place_collections.py)
