@@ -62,13 +62,20 @@ local_settings_public.py
 docker-compose-altnet.yml
 
 ### Private Environment Variables ###
+#.env/*
+
+# Ignore all files in the .env directory
 .env/*
-!.env/
+# Except this .gitignore file
+!.env/.gitignore
+# Except the .gitkeep placeholder file
+!.env/.gitkeep
+
 
 /static
 whg/logs/debug.log
-*.log
-!whg/logs/*
+whg/debug.log
+!whg/logs/
 
 *.pot
 *.pyc
