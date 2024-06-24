@@ -60,11 +60,16 @@ init_shell.py
 local_settings.py
 local_settings_public.py
 docker-compose-altnet.yml
+
 ### Private Environment Variables ###
-.env/
+.env/*
+!.env/
 
 /static
+whg/logs/debug.log
 *.log
+!whg/logs/*
+
 *.pot
 *.pyc
 __pycache__/
