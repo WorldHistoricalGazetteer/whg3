@@ -5,7 +5,9 @@ The following outlines the software components, architecture, and functionality 
 WHG is a Django 4 application, and its backend makes extensive use of PostgreSQL/PostGIS 15-3.4, Elasticsearch 8, and Celery+Redis. The main front end JavaScript libraries in use include Bootstrap, JQuery, and MapLibre/MapBox. There's a bit of D3 and Turf.js. 
 
 #### Webpack
-Javascript is managed with webpack. Source files are under `/whg/webpack`. When `npm run build` is run -- automatically on install or manually -- the bundled output is placed in `/whg/static/webpack`. From there Django's collectstatic command copies bundles into the `/static` directory off the root, where they are served by the app. 
+Javascript is managed with webpack. Source files are under `/whg/webpack`. When `npm run build` is run -- automatically on install or manually -- the bundled output is placed in `/whg/static/webpack`. From there Django's collectstatic command copies bundles into the `/static` directory off the root, where they are read by the app. 
+
+A very typical pattern is for a page to have a corresponding `.js` file (and possibly `.css` file), which may themselves reference/import content  from more generic modules used by more than one page.
 
 #### Docker
 WHG v3 is a Docker project, configured with Dockerfiles, docker-compose files and several scripts they reference, most held in the `/compose` directory.
