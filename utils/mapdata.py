@@ -285,8 +285,10 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
         family_place.src_id = sorted(list(family_members.values_list('src_id', flat=True)))
         family_place.title = "|".join(set(family_members.values_list('title', flat=True)))
         family_place.ccodes = sorted(list(set(chain.from_iterable(family_members.values_list('ccodes', flat=True)))))
-        family_place.fclasses = sorted(list(set(chain.from_iterable(family_members.values_list('fclasses', flat=True)))))
+        # family_place.fclasses = sorted(list(set(chain.from_iterable(family_members.values_list('fclasses', flat=True)))))
         # family_place.fclasses = sorted(set(filter(None, family_members.values_list('fclasses', flat=True))))
+        family_place.fclasses = sorted(
+            set(chain.from_iterable(filter(None, family_members.values_list('fclasses', flat=True)))))
         family_place.minmax = [
             min(filter(None, family_members.values_list('minmax__0', flat=True)), default=None),
             max(filter(None, family_members.values_list('minmax__1', flat=True)), default=None)

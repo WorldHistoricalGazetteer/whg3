@@ -7,7 +7,7 @@ from django.urls import reverse
 from chardet import detect
 from datasets.static.hashes import mimetypes as mthash
 from datasets.static.hashes import mimetypes_plus as mthash_plus
-from datasets.utils import validate_tsv
+from datasets.validation import validate_delim
 import os, codecs, json, mimetypes, re, sys
 from datasets.models import Dataset
 from django.contrib.auth import get_user_model

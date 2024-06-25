@@ -6,7 +6,7 @@ import codecs, tempfile, os, re, sys, math
 import pandas as pd
 from places.models import *
 from datasets.models import Dataset, Hit, DatasetFile
-from datasets.utils import validate_lpf, validate_tsv
+from datasets.validation import validate_lpf, validate_delim
 from elasticsearch8 import Elasticsearch
 from elastic.es_utils import makeDoc, fetch_pids
 es = settings.ES_CONN
