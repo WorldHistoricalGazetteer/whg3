@@ -731,7 +731,7 @@ def review(request, dsid, tid, passnum):
               )
             # NAMES
             print('hasNames', hasNames, hits[x]["json"]["variants"])
-            if (kwargs['aug_names'] == 'on'
+            if ('aug_names' in kwargs and kwargs['aug_names'] == 'on'
               and hasNames
               and tid not in place_post.names.all().values_list('task_id', flat=True)
             ):
