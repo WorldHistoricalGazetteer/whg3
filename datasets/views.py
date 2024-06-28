@@ -2781,10 +2781,10 @@ class DatasetStatusView(LoginRequiredMixin, UpdateView):
 
     context['updates'] = {}
     context['ds'] = ds
-    context['collaborators'] = ds.collaborators.all()
-    context['owners'] = ds.owners
-    context['is_admin'] = True if me.groups.filter(name__in=['whg_admins']).exists() else False
-    context['editorial'] = True if me.groups.filter(name__in=['editorial']).exists() else False
+    context['is_collaborator'] = ds.collaborators.filter(id=me.id).exists()
+    context['is_owner'] = ds.owners.filter(id=me.id).exists()
+    context['is_admin'] = me.groups.filter(name='whg_admins').exists()
+    context['is_editorial'] = me.groups.filter(name='editorial').exists()
 
     # initial (non-task)
     context['num_names'] = PlaceName.objects.filter(place_id__in=placeset).count()
@@ -3069,8 +3069,10 @@ class DatasetPlacesView(DetailView):
       # trail: true|false - whether to include ant-trail motion indicators on map
       ds.vis_parameters = "{'seq': {'tabulate': false, 'temporal_control': null, 'trail': true},'min': {'tabulate': false, 'temporal_control': null, 'trail': true},'max': {'tabulate': false, 'temporal_control': null, 'trail': false}}"
     context['visParameters'] = ds.vis_parameters
-    
-    context['coordinate_density'] = ds.coordinate_density_value
+
+    # context['coordinate_density'] = ds.coordinate_density_value
+    # force decimal
+    context['coordinate_density'] = "{:.15f}".format(ds.coordinate_density_value)
 
     return context
 

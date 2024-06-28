@@ -74,7 +74,7 @@ var Spinner = /** @class */ (function () {
                 color: this.opts.color,
                 textAlign: 'center',
                 whiteSpace: 'nowrap',
-                textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)',
+                // textShadow: '2px 2px 4px rgba(0, 0, 0, 0.5)',
                 textShadow: `${0.125 * this.opts.scale}px ${0.125 * this.opts.scale}px ${0.25 * this.opts.scale}px rgba(0, 0, 0, 0.5)`,
             });
             this.el.appendChild(labelEl);

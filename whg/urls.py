@@ -34,7 +34,7 @@ urlpatterns = [
     # home page
     # path('', views.splash, name='splash'),
     path('', views.Home30a.as_view(), name="home"),
-    path('home/<str:version>/', views.Home30a.as_view(), name='home-version'),
+    # path('home/<str:version>/', views.Home30a.as_view(), name='home-version'),
 
 
     # apps

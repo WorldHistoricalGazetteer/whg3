@@ -305,9 +305,10 @@
                 <span class="">Delete dataset
                   <a href="{% url 'datasets:dataset-delete' ds.id %}" class="" data-bs-toggle="tooltip">
                     <i class="fas fa-trash linkyred"></i></a>
-                  {% if user in collaborators or is_admin %}
-                      publication {% if not ds.public %}pre{% endif %}view
-                      <a href="{% url 'datasets:ds_places' id=ds.id %}" title="View publication page" data-bs-toggle="tooltip">&nbsp;
+                  {% if is_owner or is_collaborator or is_admin %}
+                      <a href="{% url 'datasets:ds_places' id=ds.id %}"
+                         title="View publication page" data-bs-toggle="tooltip">
+                        publication {% if not ds.public %}pre{% endif %}view&nbsp;
                       <i class="fas fa-eye"></i></a>
                   {% endif %}
                 </span>

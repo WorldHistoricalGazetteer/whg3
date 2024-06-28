@@ -1444,8 +1444,8 @@ class PlaceTableCollViewSet(viewsets.ModelViewSet):
 class AreaListView(View):
   @staticmethod
   def get(request):
-    print('area_list() request.user',request.user, type(request.user))
-    print('area_list() request.user',str(request.user))
+    # print('area_list() request.user',request.user, type(request.user))
+    # print('area_list() request.user',str(request.user))
     userstr = str(request.user)
     if isinstance(request.user, AnonymousUser):
       qs = Area.objects.all().filter(Q(type__in=('predefined','country'))).values('id','title','type')

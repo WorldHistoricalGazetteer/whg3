@@ -817,7 +817,7 @@ class PlaceCollectionCreateView(LoginRequiredMixin, CreateView):
 
 """ update place collection; uses place_collection_build.html """
 class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
-  print('PlaceCollectionUpdateView()')
+  # print('PlaceCollectionUpdateView()')
   form_class = CollectionModelForm
   template_name = 'collection/place_collection_build.html'
   queryset = Collection.objects.all()

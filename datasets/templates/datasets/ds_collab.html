@@ -95,36 +95,36 @@
   </div>
 
   <script type="text/javascript">
-    $(function() {
-      $('#collabs_list a').click(function() {
-      });
-      $('.help-matches').click(function() {
-        page = $(this).data('id');
-        console.log('help:', page);
-        $('.selector').dialog('open');
-      });
-      $('.selector').dialog({
-        resizable: false,
-        autoOpen: false,
-        height: 500,
-        width: 700,
-        title: 'WHG Help',
-        modal: true,
-        buttons: {
-          'Close': function() {
-            console.log('close dialog');
-            $(this).dialog('close');
-          },
-        },
-        open: function(event, ui) {
-          $('#helpme').load('/media/help/' + page + '.html');
-        },
-        show: {effect: 'fade', duration: 400},
-        hide: {effect: 'fade', duration: 400},
-      });
-    });
-    // activate all tooltips
-    $('[data-bs-toggle=\'tooltip\']').tooltip();
+    {#$(function() {#}
+    {#  $('#collabs_list a').click(function() {#}
+    {#  });#}
+    {#  $('.help-matches').click(function() {#}
+    {#    page = $(this).data('id');#}
+    {#    console.log('help:', page);#}
+    {#    $('.selector').dialog('open');#}
+    {#  });#}
+    {#  $('.selector').dialog({#}
+    {#    resizable: false,#}
+    {#    autoOpen: false,#}
+    {#    height: 500,#}
+    {#    width: 700,#}
+    {#    title: 'WHG Help',#}
+    {#    modal: true,#}
+    {#    buttons: {#}
+    {#      'Close': function() {#}
+    {#        console.log('close dialog');#}
+    {#        $(this).dialog('close');#}
+    {#      },#}
+    {#    },#}
+    {#    open: function(event, ui) {#}
+    {#      $('#helpme').load('/media/help/' + page + '.html');#}
+    {#    },#}
+    {#    show: {effect: 'fade', duration: 400},#}
+    {#    hide: {effect: 'fade', duration: 400},#}
+    {#  });#}
+    {# });#}
+    {#// activate all tooltips#}
+    {#$('[data-bs-toggle=\'tooltip\']').tooltip();#}
 
   </script>
 {% endblock %}

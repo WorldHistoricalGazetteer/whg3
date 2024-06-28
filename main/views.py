@@ -20,6 +20,8 @@ from django.views.generic.base import TemplateView
 from .forms import CommentModalForm, ContactForm, AnnouncementForm, VolunteerForm
 from areas.models import Area
 from celery.result import AsyncResult
+from celery.utils.log import get_task_logger
+logger = get_task_logger(__name__)
 from collection.models import Collection, CollectionGroup
 from datasets.models import Dataset
 from datasets.tasks import testAdd
@@ -217,9 +219,10 @@ class SplashCheckMixin:
 class Home30a(TemplateView):
   template_name = 'main/home_v30a4.html'
 
-  def get_template_names(self):
-    version = self.kwargs.get('version', '30a4')
-    return [f'main/home_v{version}.html']
+  # def get_template_names(self):
+  #   version = self.kwargs.get('version', '30a4')
+  #   print(f"get_template_names accessed with version: {version}")
+  #   return [f'main/home_v{version}.html']
 
   def get_context_data(self, *args, **kwargs):
     context = super(Home30a, self).get_context_data(*args, **kwargs)

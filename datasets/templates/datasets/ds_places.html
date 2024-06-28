@@ -404,7 +404,8 @@
         title: "{{ ds.title }}",
         ds_type: "datasets",
         num_places: {{ num_places }},
-        coordinate_density: {{ coordinate_density }}
+        coordinate_density: parseFloat({{ coordinate_density }})
+        {#coordinate_density: {{ coordinate_density }}#}
       }];
   </script>
 
