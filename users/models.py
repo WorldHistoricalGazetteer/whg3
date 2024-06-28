@@ -17,7 +17,7 @@ class UserManager(BaseUserManager):
     """
     Custom user model manager
     """
-    def create_user(self, username, email, password, **extra_fields):
+    def create_user(self, username, email, password, given_name, surname, **extra_fields):
         """
         Create and save a User with the given username, email and password.
         """
@@ -26,6 +26,10 @@ class UserManager(BaseUserManager):
             raise ValueError(_('The username must be set'))
         if not email:
             raise ValueError(_('The Email must be set'))
+        if not given_name:
+            raise ValueError(_('The given name must be set'))
+        if not surname:
+            raise ValueError(_('The surname must be set'))
         email = self.normalize_email(email)
         user = self.model(username=username, email=email, **extra_fields)
         user.set_password(password)
@@ -73,6 +77,10 @@ class User(AbstractUser, PermissionsMixin):
 
     class Meta:
         db_table = 'auth_users'
+
+    def save(self, *args, **kwargs):
+        self.name = f"{self.given_name} {self.surname}"
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.username

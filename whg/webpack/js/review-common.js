@@ -197,6 +197,7 @@ export function addReviewListeners() {
 	
 	$("#btn_save").click(function() {
 		let current_place = $('input[name=place_id]').val()
+		console.log('current place:', current_place)
 		sessionStorage.setItem('reviewBegun', true)
 		// update lastPlace pid in sessionStorage on every save
 		sessionStorage.setItem('lastPlace', current_place)

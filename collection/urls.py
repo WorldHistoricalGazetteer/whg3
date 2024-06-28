@@ -20,7 +20,7 @@ urlpatterns = [
     # DATASET collections (datasets only)
     path('create_ds/', views.DatasetCollectionCreateView.as_view(), name='ds-collection-create'),
     path('<int:id>/update_ds', views.DatasetCollectionUpdateView.as_view(), name='ds-collection-update'),
-    path('<int:pk>/summary_ds', views.DatasetCollectionSummaryView.as_view(), name='ds-collection-summary'),
+    # path('<int:pk>/summary_ds', views.DatasetCollectionSummaryView.as_view(), name='ds-collection-summary'),
     path('<int:id>/browse_ds', views.DatasetCollectionBrowseView.as_view(), name='ds-collection-browse'),
 
     # PLACE collections (datasets, indiv places, annotations, 'authored')

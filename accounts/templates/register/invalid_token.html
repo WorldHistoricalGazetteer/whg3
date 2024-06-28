@@ -5,9 +5,11 @@
 <div class="container">
   <div class="d-flex justify-content-center mt-3">
   <div>
-  <h2>Expired email token, sorry</h2>
-    <p>The confirmation link sent has expired. Please complete the registration form again.
-      <a href="{% url 'accounts:register' %}">contact us</a>.</p>
+  <h2>A problem, sorry</h2>
+    <p><a href="{% url 'accounts:register' %}">Please complete the registration form again.</a>.</p>
+    {% if error %}
+      <p>{{ error }}</p>
+    {% endif %}
   </div>
   </div>
 </div>

@@ -2,12 +2,6 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.contrib.auth import views as auth_views
 
-# from django.urls import reverse
-# from django.contrib.auth.models import Group
-# from django.contrib.auth.views import PasswordResetView, PasswordResetConfirmView
-# from django.core.validators import validate_email
-# from django.core.exceptions import ValidationError
-
 User = get_user_model()
 from django.conf import settings
 from django.contrib import auth, messages
@@ -19,8 +13,10 @@ from django.shortcuts import render, redirect, reverse, get_object_or_404
 from accounts.forms import UserModelForm
 from collection.models import Collection, CollectionGroupUser, CollectionUser  # CollectionGroup,
 from datasets.models import Dataset, DatasetUser
+import logging
+logger = logging.getLogger(__name__)
 import traceback
-
+from urllib.parse import urljoin
 
 def register(request):
   if request.method == 'POST':
@@ -36,7 +32,12 @@ def register(request):
       signer = Signer()
       token = signer.sign(user.pk)
       print('token in register()', token)
-      confirm_url = request.build_absolute_uri(reverse('accounts:confirm-email', args=[token]))
+      # confirm_url = request.build_absolute_uri(reverse('accounts:confirm-email', args=[token]))
+
+      # Get the relative URL
+      relative_url = reverse('accounts:confirm-email', args=[token])
+      # Join the base URL with the relative URL
+      confirm_url = urljoin(settings.URL_FRONT, relative_url)
 
       subject = 'Confirm your registration at World Historical Gazetteer'
       text_content = (f'World Historical Gazetteer\n\n'
@@ -98,8 +99,8 @@ def logout(request):
     auth.logout(request)
     return redirect('home')
 
-
 def confirm_email(request, token):
+  print('token in confirm_email()', token)
   signer = Signer()
   try:
     user_id = signer.unsign(token)
@@ -111,16 +112,41 @@ def confirm_email(request, token):
     return redirect('accounts:confirmation-success')
   except BadSignature:
     # Handle invalid token
+    logger.error(f"Invalid token: {token}")
     traceback.print_exc()
     return render(request, 'register/invalid_token.html', {'error': 'Invalid token.'})
   except User.DoesNotExist:
     # Handle non-existent user
+    logger.error(f"User does not exist for token: {token}")
     traceback.print_exc()
     return render(request, 'register/invalid_token.html', {'error': 'User does not exist.'})
   except Exception as e:
     # Handle any other exceptions
+    logger.error(f"Exception while confirming email for token {token}: {str(e)}")
     traceback.print_exc()
     return render(request, 'register/invalid_token.html', {'error': str(e)})
+# def confirm_email(request, token):
+#   signer = Signer()
+#   try:
+#     user_id = signer.unsign(token)
+#     user = User.objects.get(pk=user_id)
+#     user.email_confirmed = True
+#     user.save()
+#
+#     # Redirect to a success page
+#     return redirect('accounts:confirmation-success')
+#   except BadSignature:
+#     # Handle invalid token
+#     traceback.print_exc()
+#     return render(request, 'register/invalid_token.html', {'error': 'Invalid token.'})
+#   except User.DoesNotExist:
+#     # Handle non-existent user
+#     traceback.print_exc()
+#     return render(request, 'register/invalid_token.html', {'error': 'User does not exist.'})
+#   except Exception as e:
+#     # Handle any other exceptions
+#     traceback.print_exc()
+#     return render(request, 'register/invalid_token.html', {'error': str(e)})
 
 
 def confirmation_sent(request):

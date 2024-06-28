@@ -229,7 +229,7 @@ class Home30a(TemplateView):
     for dataset_types in [Collection, Dataset]:
       featured = dataset_types.objects.exclude(featured__isnull=True)
       for dataset in featured:
-        print('dataset in views:186', dataset, dataset.id)
+        # print('dataset in views:186', dataset, dataset.id)
         if dataset.id != 50:
           carousel_metadata.append(dataset.carousel_metadata)
     random.shuffle(carousel_metadata)

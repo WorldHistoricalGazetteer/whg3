@@ -442,6 +442,7 @@ def review(request, dsid, tid, passnum):
   # calling link passnum may be 'pass*', 'def', or '0and1' (for idx)
   # if 'pass*', get place_ids for just that pass
   if passnum.startswith("pass"):
+    print('passnum starts with "pass":', passnum)
     pass_int = int(passnum[4])
     # if no unreviewed left, go to next pass
     passnum = passnum if cnt_pass > 0 else "pass" + str(pass_int + 1)
@@ -450,6 +451,7 @@ def review(request, dsid, tid, passnum):
     )
     print(f'{len(hitplaces)} hitplaces for {passnum}: {hitplaces}')
   else:
+    print('passnum does not start with "pass":', passnum)
     # all unreviewed
     hitplaces = Hit.objects.values("place_id").filter(task_id=tid, reviewed=False)
     print(f'{len(hitplaces)} hitplaces for {passnum}: {hitplaces}')
@@ -593,7 +595,7 @@ def review(request, dsid, tid, passnum):
     "page": page if request.method == "GET" else str(int(page) - 1),
     "aug_geoms": kwargs["aug_geoms"],
     #"mbtoken": settings.MAPBOX_TOKEN_WHG,
-    "maptilerkey": settings.MAPTILER_KEY,
+    # "maptilerkey": settings.MAPTILER_KEY,
     "count_pass0": cnt_pass0,
     "count_pass1": cnt_pass1,
     "count_pass2": cnt_pass2,
@@ -2072,7 +2074,7 @@ class PublicListsView(ListView):
 
     # public datasets available as dataset_list
     # public collections
-    context['coll_list'] = Collection.objects.filter(status='published').order_by('created')
+    context['coll_list'] = Collection.objects.filter(status='published').order_by('create_date')
     context['viewable'] = ['uploaded', 'inserted', 'reconciling', 'review_hits', 'reviewed', 'review_whg', 'indexed']
 
     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False

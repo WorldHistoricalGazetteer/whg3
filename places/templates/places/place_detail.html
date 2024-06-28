@@ -106,7 +106,13 @@
         <div id="ds_cards">
           <table class="w-75">
           <colgroup><col style="width:150px;"></col><col></col></colgroup>
-          <tr><td>Title:</td><td></td> <td><a href="{% url 'datasets:ds_meta' dataset.id %}">{{ dataset.title }}</a></td></tr>
+          <tr>
+            <td>Title:</td><td></td>
+            <td> {% if dataset.label != 'tgn_filtered_01' %}
+              <a href="{% url 'datasets:ds_places' dataset.id %}">{{ dataset.title }}</a>
+            {% else %}{{ dataset.title }}{% endif %}
+            </td>
+          </tr>
           {% if dataset_minmax %}
           <tr><td>Earliest/Latest:</td><td> </td><td>{{dataset_minmax.0}} / {{dataset_minmax.1}} </td></tr>
           {% endif %}

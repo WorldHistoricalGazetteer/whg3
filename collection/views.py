@@ -1261,29 +1261,29 @@ class DatasetCollectionUpdateView(UpdateView):
     return context
 
 """ public collection view, datasets, bboxes on a map """
-class DatasetCollectionSummaryView(DetailView):
-  template_name = 'collection/ds_collection_summary.html'
-
-  model = Collection
-
-  def get_context_data(self, **kwargs):
-    context = super(DatasetCollectionSummaryView, self).get_context_data(**kwargs)
-    id_ = self.kwargs.get("pk")
-    print('CollectionDetailView(), kwargs',self, self.kwargs)
-
-    datasets = self.object.datasets.all()
-
-    # gather bounding boxes
-    bboxes = [ds.bounds for ds in datasets]
-
-    #context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-    #context['maptilerkey'] = settings.MAPTILER_KEY
-    context['whgteam'] = User.objects.filter(groups__name='whg_team')
-
-    context['ds_list'] = datasets
-    context['links'] = Link.objects.filter(collection=id_)
-    context['bboxes'] = bboxes
-    return context
+# class DatasetCollectionSummaryView(DetailView):
+#   template_name = 'collection/ds_collection_summary.html'
+#
+#   model = Collection
+#
+#   def get_context_data(self, **kwargs):
+#     context = super(DatasetCollectionSummaryView, self).get_context_data(**kwargs)
+#     id_ = self.kwargs.get("pk")
+#     print('CollectionDetailView(), kwargs',self, self.kwargs)
+#
+#     datasets = self.object.datasets.all()
+#
+#     # gather bounding boxes
+#     bboxes = [ds.bounds for ds in datasets]
+#
+#     #context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+#     #context['maptilerkey'] = settings.MAPTILER_KEY
+#     context['whgteam'] = User.objects.filter(groups__name='whg_team')
+#
+#     context['ds_list'] = datasets
+#     context['links'] = Link.objects.filter(collection=id_)
+#     context['bboxes'] = bboxes
+#     return context
 
 """ browse collection dataset places
     same for owner(s) and public

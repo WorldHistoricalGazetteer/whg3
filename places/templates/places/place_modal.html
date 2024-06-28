@@ -94,7 +94,7 @@
           <colgroup><col style="width:150px;"></col><col></col></colgroup>
           <tr><td>Title:</td><td></td> <td>
               {% if dataset.label != 'tgn_filtered_01' %}
-              <a href="{% url 'datasets:ds_meta' dataset.id %}">{{ dataset.title }}</a>
+              <a href="{% url 'datasets:ds_places' dataset.id %}">{{ dataset.title }}</a>
               {% else %}<a href="https://www.getty.edu/research/tools/vocabularies/tgn/" target="_blank">{{ dataset.title }}</a>{% endif %}
           </td></tr>
           {% if dataset.minmax %}
