@@ -15,7 +15,7 @@
 
 {% block content %}
 <div id="dataset_content" class="container mt-1 px-1">
-  {% if not user in owners and not user in collaborators and not is_admin %}
+  {% if not is_owner and not is_collaborator and not is_admin %}
     <p>Access to this page is limited to the dataset owner and designated collaborators</p>
   {% else %}
     <div>

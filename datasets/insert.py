@@ -1,6 +1,7 @@
 # functions for inserting file data into database
 
 import csv, json, os, re, sys
+from datetime import datetime
 import pandas as pd
 import numpy as np
 import traceback
@@ -157,44 +158,154 @@ def process_types(row, newpl):
 
   return type_objects
 
+
 # create PlaceWhen object; update Place with minmax, timespans
+from dateutil.parser import isoparse, ParserError
+
+from dateutil.parser import isoparse, ParserError
+
+class CustomDate:
+    def __init__(self, year, month=1, day=1):
+        self.year = year
+        self.month = month
+        self.day = day
+
+    def __repr__(self):
+        return f"CustomDate(year={self.year}, month={self.month}, day={self.day})"
+
+    def isoformat(self):
+        year_str = f"{abs(self.year):04d}"
+        if self.year < 0:
+            year_str = f"-{year_str}"
+        return f"{year_str}-{self.month:02d}-{self.day:02d}"
+
 def process_when(row, newpl):
-  error_msgs = []
-  try:
-      # Check for existence of the columns and not empty
-      start = parse(str(row['start'])) if 'start' in row and row.get('start', '') else None
-      end = parse(str(row['end'])) if 'end' in row and row.get('end', '') else None
-      attestation_year = str(row['attestation_year']) if \
-          'attestation_year' in row and row.get('attestation_year', '') else None
+    error_msgs = []
 
-      # Check if start is less than end
-      if start and end and start > end:
-          raise ValueError("Start date ("+str(start)+") is greater than end date ("+str(end)+")")
+    def pad_and_format_date(date_str):
+        print(f"Pad and format date input: {date_str}")
+        if date_str.startswith('-'):
+            parts = date_str[1:].split('-')
+            parts[0] = parts[0].zfill(4)
+            print(f"Negative year part: -{parts[0]}, Remaining parts: {parts[1:]}")
+            formatted_date = '-' + '-'.join(parts)
+        else:
+            parts = date_str.split('-')
+            parts[0] = parts[0].zfill(4)
+            print(f"Positive year part: {parts[0]}, Remaining parts: {parts[1:]}")
+            formatted_date = '-'.join(parts)
 
-      # Either start or attestation_year is assured by validation
-      dates = (start, end, attestation_year)
-      datesobj = parsedates_tsv(dates)
+        return formatted_date
 
-      # Update the newpl object with the computed values
-      newpl.minmax = datesobj['minmax']
-      newpl.attestation_year = attestation_year
-      newpl.timespans = [datesobj['minmax']]
-      newpl.save()
+    def parse_iso_date(date_str):
+        try:
+            print(f"Original date string: {date_str}")
+            padded_date_str = pad_and_format_date(date_str)
+            print(f"Padded date string: {padded_date_str}")
+            parts = padded_date_str.split('-')
+            print(f"Parts after padding: {parts}")
 
-      # Create the PlaceWhen object
-      when_object = PlaceWhen(
-          place=newpl,
-          src_id=newpl.src_id,
-          jsonb=datesobj
-      )
+            if padded_date_str.startswith('-'):
+                year = -int(parts[1][1:])
+                remaining_parts = parts[1:]
+            else:
+                year = int(parts[0])
+                remaining_parts = parts[1:]
 
-  except ValueError as e:
-      error_msgs.append(f"Error processing dates for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
+            print(f"Year: {year}, Remaining parts: {remaining_parts}")
 
-  if error_msgs:
-    raise DelimInsertError("; ".join(error_msgs))
+            if year < 0:
+                if len(remaining_parts) == 0:
+                    date = CustomDate(year)
+                elif len(remaining_parts) == 1:
+                    date = CustomDate(year, int(remaining_parts[0]))
+                elif len(remaining_parts) == 2:
+                    date = CustomDate(year, int(remaining_parts[0]), int(remaining_parts[1]))
+                print(f"Parsed negative year date: {date}")
+                return date
+            else:
+                date = isoparse(padded_date_str)
+                print(f"Parsed positive year date: {date}")
+                return date
+        except (ValueError, ParserError) as e:
+            print(f"Error parsing date: {e}")
+            raise ValueError(f"Invalid ISO-8601 date: {date_str}. Error: {e}")
 
-  return [when_object]
+    try:
+        start = parse_iso_date(row['start']) if 'start' in row and row.get('start', '') else None
+        end = parse_iso_date(row['end']) if 'end' in row and row.get('end', '') else None
+        attestation_year = str(row['attestation_year']) if 'attestation_year' in row and row.get('attestation_year', '') else None
+
+        print(f"Start: {start}, End: {end}, Attestation Year: {attestation_year}")
+
+        if start and end and isinstance(start, CustomDate) and isinstance(end, CustomDate) and start.year > end.year:
+            raise ValueError("Start date (" + str(start) + ") is greater than end date (" + str(end) + ")")
+
+        dates = (start, end, attestation_year)
+
+        print("Calling parsedates_tsv...")
+        datesobj = parsedates_tsv(dates)
+        print("Dates object returned from parsedates_tsv:", datesobj)
+
+        newpl.minmax = datesobj['minmax']
+        newpl.attestation_year = attestation_year
+        newpl.timespans = [datesobj['minmax']]
+        newpl.save()
+
+        when_object = PlaceWhen(
+            place=newpl,
+            src_id=newpl.src_id,
+            jsonb=datesobj
+        )
+
+        print(f"PlaceWhen object created: {when_object}")
+
+    except ValueError as e:
+        error_msgs.append(f"Error processing dates for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
+
+    if error_msgs:
+        raise DelimInsertError("; ".join(error_msgs))
+
+    return [when_object]
+
+# create PlaceWhen object; update Place with minmax, timespans
+# def process_when(row, newpl):
+#   error_msgs = []
+#   try:
+#       # Check for existence of the columns and not empty
+#       start = parse(str(row['start'])) if 'start' in row and row.get('start', '') else None
+#       end = parse(str(row['end'])) if 'end' in row and row.get('end', '') else None
+#       attestation_year = str(row['attestation_year']) if \
+#           'attestation_year' in row and row.get('attestation_year', '') else None
+#
+#       # Check if start is less than end
+#       if start and end and start > end:
+#           raise ValueError("Start date ("+str(start)+") is greater than end date ("+str(end)+")")
+#
+#       # Either start or attestation_year is assured by validation
+#       dates = (start, end, attestation_year)
+#       datesobj = parsedates_tsv(dates)
+#
+#       # Update the newpl object with the computed values
+#       newpl.minmax = datesobj['minmax']
+#       newpl.attestation_year = attestation_year
+#       newpl.timespans = [datesobj['minmax']]
+#       newpl.save()
+#
+#       # Create the PlaceWhen object
+#       when_object = PlaceWhen(
+#           place=newpl,
+#           src_id=newpl.src_id,
+#           jsonb=datesobj
+#       )
+#
+#   except ValueError as e:
+#       error_msgs.append(f"Error processing dates for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
+#
+#   if error_msgs:
+#     raise DelimInsertError("; ".join(error_msgs))
+#
+#   return [when_object]
 
 # create PlaceGeom object and/or generate ccodes
 def process_geom(row, newpl):
