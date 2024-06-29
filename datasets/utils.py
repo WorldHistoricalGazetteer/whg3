@@ -506,17 +506,27 @@ def makeCoords(lonstr,latstr):
 # use: insert.ds_insert_json(); insert.process_geom(); remote
 #
 def ccodesFromGeom(geom):
+  # print(f"Input geom: {geom}")  # Print the input geom
+
   if geom['type'] == 'Point' and geom['coordinates'] ==[]:
     ccodes = []
+    # print("Empty coordinates, returning empty list")  # Debug message
     return ccodes
   else:
     g = GEOSGeometry(str(geom))
+    # print(f"GEOSGeometry: {g}")  # Print the GEOSGeometry object
+
     if g.geom_type == 'GeometryCollection':
       # just hull them all
       qs = Country.objects.filter(mpoly__intersects=g.convex_hull)
+      # print(f"GeometryCollection, intersecting countries: {qs}")  # Print the queryset
     else:
       qs = Country.objects.filter(mpoly__intersects=g)
+      # print(f"Intersecting countries: {qs}")  # Print the queryset
+
     ccodes = [c.iso for c in qs]
+    # print(f"Country codes: {ccodes}")  # Print the country codes
+
     return ccodes
 
 # use: tasks

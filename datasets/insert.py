@@ -358,6 +358,7 @@ def process_geom(row, newpl):
       if ccode not in valid_ccodes:
         error_msgs.append(f"At least one invalid ccode: {ccode} for place <b>{newpl} ({newpl.src_id})</b>")
   elif geojson:
+    print('no ccodes, but geojson', geojson)
     try:
       ccodes = ccodesFromGeom(geojson) # might be if not terrestrial []
     except Exception as e:
