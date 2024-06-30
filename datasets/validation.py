@@ -40,7 +40,7 @@ def validate_delim(df):
   aliases = ["bnf", "cerl", "dbp", "gn", "gnd", "gov", "loc", "pl", "tgn", "viaf", "wd", "wp", "whg"]
   pattern = r"https?:\/\/.*\..*|(" + "|".join(aliases) + r"):\w+"
   valid_ccodes = [ccode.upper() for c in Area.objects.filter(type='country') for ccode in c.ccodes]
-  fclass_list = ['a', 'p', 'h', 's', 'r', 't', 'l']
+  fclass_list = ['a', 'p', 'h', 's', 'r', 't', 'l', 'x']
   supported_aat_types = {aat_id for aat_id in aat_fclass}
   pattern_constraints = {
     'ccodes': "([a-zA-Z]{2};?)+",
@@ -77,7 +77,7 @@ def validate_delim(df):
       if not fclass_entries or any(not fc.strip() or fc.strip().lower() not in fclass_list for fc in fclass_entries):
         errors.append({
           "row": index + 1,
-          "error": "Each 'fclasses' entry must be one or more of A, P, H, S, R, T, L - separated by ';' if multiple."
+          "error": "Each 'fclasses' entry must be one or more of A, P, H, S, R, T, L, X - separated by ';' if multiple."
         })
       else:
         has_valid_fclass = True

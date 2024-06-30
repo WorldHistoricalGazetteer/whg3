@@ -206,9 +206,11 @@ def process_when(row, newpl):
             print(f"Parts after padding: {parts}")
 
             if padded_date_str.startswith('-'):
-                year = -int(parts[1][1:])
+                print(f"Negative year date: {padded_date_str}")
+                year = -int(parts[1])
                 remaining_parts = parts[1:]
             else:
+                print(f"Positive year date: {padded_date_str}")
                 year = int(parts[0])
                 remaining_parts = parts[1:]
 
