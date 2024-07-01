@@ -21,7 +21,7 @@ import os, requests, time, json
 def mapdata_task(category, id, variant=None, refresh=False):
     dummy_request = HttpRequest()
     response = mapdata(dummy_request, category, id, variant=variant, refresh=str(refresh))
-    
+
     return json.loads(response.content) if isinstance(response, JsonResponse) else {'status': 'failure', 'error': 'Failed to generate mapdata'}
 
 def reset_standard_mapdata(category, id):
@@ -36,19 +36,19 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
     # Generate cache key
     cache_key = f"{category}-{id}-{variant}"
     print(f"Mapdata requested for {cache_key} (refresh={refresh}).")
-    
+
     # Check if cached data exists and return it if found
     if refresh == False:
         cached_data = cache.get(cache_key)
         if cached_data is not None:
             print("Found cached mapdata.")
             return JsonResponse(cached_data, safe=False, json_dumps_params={'ensure_ascii': False})
-        
+
     # Ensure that cache will be refreshed
     cache.delete(f"{category}-{id}-standard")
-        
+
     start_time = time.time()  # Record the start time
-    
+
     # If variant is not 'tileset', fetch available tilesets
     available_tilesets = []
     if variant == "standard":
@@ -60,14 +60,14 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
         if response.status_code == 200:
             available_tilesets = response.json().get('tilesets', [])
             print("available_tilesets", available_tilesets)
-    
-    # Determine feature collection generation based on category    
+
+    # Determine feature collection generation based on category
     mapdata_result = mapdata_dataset(id) if category == "datasets" else mapdata_collection(id)
-        
+
     end_time = time.time()  # Record the end time
     response_time = end_time - start_time  # Calculate the response time
     print(f"Mapdata generation time: {response_time:.2f} seconds")
-    
+
     def reduced_geometry(mapdata_result):
         mapdata_result["features"] = [
             {**feature, "geometry": {"type": feature["geometry"]["type"]} if feature.get("geometry") else None}
@@ -75,10 +75,10 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
         ]
         mapdata_result["tilesets"] = available_tilesets
         return mapdata_result
-    
+
     if variant == "tileset":
         print(f"Splitting and caching mapdata.")
-        
+
         # Reduce feature properties in mapdata to be fetched by tiler
         mapdata_tileset = mapdata_result.copy()
         mapdata_tileset["features"] = [
@@ -86,32 +86,32 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
             for feature in mapdata_tileset["features"]
         ]
         cache.set(f"{category}-{id}-tileset", mapdata_tileset)
-    
+
         # Reduce feature geometry in mapdata sent to browser
         new_tileset = f"{category}-{id}"
         if new_tileset not in available_tilesets:
             available_tilesets.append(new_tileset)
         cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata_result))
-            
+
     elif response_time > 1: # Cache if generation time exceeds 1 second
         print(f"Caching standard mapdata.")
         cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata_result) if available_tilesets else mapdata_result)
     else:
         print(f"No need to cache mapdata.")
-        
+
     return JsonResponse(mapdata_result, safe=False, json_dumps_params={'ensure_ascii': False})
 
 def buffer_extent(extent, buffer_distance=0.1):
     return Polygon.from_bbox(extent).buffer(buffer_distance).extent if extent else None
 
 def mapdata_dataset(id):
-        
+
     ds = get_object_or_404(Dataset, pk=id)
-    
+
     places = ds.places.prefetch_related(
         Prefetch('geoms', queryset=PlaceGeom.objects.only('jsonb'))
-    ).order_by('id')    
-    
+    ).order_by('id')
+
     extent = buffer_extent( ds.places.aggregate(Extent('geoms__geom')).get('geoms__geom__extent') )
 
     return {
@@ -135,9 +135,9 @@ def mapdata_dataset(id):
                     "min": "null" if place.minmax is None or place.minmax[0] is None else place.minmax[0],
                     "max": "null" if place.minmax is None or place.minmax[1] is None else place.minmax[1],
                 },
-                "geometry": geometries[0].jsonb if len(geometries) == 1 
+                "geometry": geometries[0].jsonb if len(geometries) == 1
                     else (
-                        None if len(geometries) == 0 
+                        None if len(geometries) == 0
                         else {
                             "type": "GeometryCollection",
                             "geometries": [geo.jsonb for geo in geometries]
@@ -152,7 +152,7 @@ def mapdata_dataset(id):
 
 def mapdata_collection(id):
     collection = get_object_or_404(Collection, id=id)
-    
+
     if collection.collection_class == 'place':
         traces_with_place_ids = collection.traces.filter(archived=False).annotate(annotated_place_id=F('place__id'))
         unique_place_ids = traces_with_place_ids.values_list('annotated_place_id', flat=True).distinct()
@@ -169,18 +169,18 @@ def mapdata_collection(id):
         "features": [],
         "extent": extent,
     }
-    
+
     if collection.collection_class == 'place':
-        return mapdata_collection_place(collection, feature_collection) 
+        return mapdata_collection_place(collection, feature_collection)
     else: # collection.collection_class == 'dataset'
         return mapdata_collection_dataset(collection, collection_places_all, feature_collection)
 
 def mapdata_collection_place(collection, feature_collection):
     traces = collection.traces.filter(archived=False).select_related('place')
     reduce_geometry = any(facet.get("trail") for facet in collection.vis_parameters.values())
-    
+
     feature_collection["relations"] = collection.rel_keywords
-    
+
     for index, trace in enumerate(traces):
         place = trace.place
         first_anno_sequence = place.annos.first().sequence if place.annos.exists() else None
@@ -221,13 +221,13 @@ def mapdata_collection_place(collection, feature_collection):
 
         feature_collection["features"].append(feature)
 
-    return feature_collection    
+    return feature_collection
 
 def mapdata_collection_dataset(collection, collection_places_all, feature_collection):
     '''
     Construct families of matched places within collection
     '''
-        
+
     close_matches = list( CloseMatch.objects.filter(
         Q(place_a__in=collection_places_all) & Q(place_b__in=collection_places_all)
     ).values_list('place_a_id', 'place_b_id') )
@@ -236,7 +236,7 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
 
     # Create a graph if there are close matches, otherwise, an empty graph
     G = nx.Graph(close_matches) if close_matches else nx.Graph()
-        
+
     families = list(nx.connected_components(G))
 
     # Start places list with places that have no family connections
@@ -278,7 +278,7 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
     for family in families:
         family_members = Place.objects.filter(id__in=family)
         family_place_geoms = PlaceGeom.objects.filter(place_id__in=family).select_related('place')
-        
+
         # Create a family place as a pseudo-place object
         family_place = type('FamilyPlace', (object,), {})()
         family_place.id = "-".join(str(place_id) for place_id in sorted(family))
