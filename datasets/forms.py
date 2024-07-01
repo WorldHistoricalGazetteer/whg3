@@ -67,10 +67,10 @@ class DatasetUploadForm(forms.ModelForm):
         if mimetype not in mthash_plus.mimetypes:
             raise forms.ValidationError("Not a valid file type; must be one of [.csv, .tsv, .xlsx, .ods, .json]")
 
-        encoding = self.determine_file_encoding(mimetype, tempfn)
-        if encoding and encoding.lower() not in ['utf-8', 'ascii']:
-            raise forms.ValidationError(
-                f"The encoding of uploaded files must be unicode (utf-8). This file seems to be {encoding}")
+        # encoding = self.determine_file_encoding(mimetype, tempfn)
+        # if encoding and encoding.lower() not in ['utf-8', 'ascii']:
+        #     raise forms.ValidationError(
+        #         f"The encoding of uploaded files must be unicode (utf-8). This file seems to be {encoding}")
 
         self.cleaned_data['temp_file_path'] = tempfn
 
