@@ -135,7 +135,9 @@ export function addReviewListeners() {
 	    let matchingFeature = featureCollection.features.find(feature => feature.properties.id === $(element).data('id').toString());
 	    if (matchingFeature) {
 	        mappy.setFeatureState({ source: $(element).data('authority'), id: matchingFeature.id }, { highlight });
-	        mappy.setFeatureState({ source: 'dataset', id: 0 }, { highlight });
+	        if (mappy.getSource('dataset')) {
+	            mappy.setFeatureState({ source: 'dataset', id: 0 }, { highlight });
+	        }
 	    }
 	}
 
