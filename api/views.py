@@ -4,8 +4,8 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 User = get_user_model()
+from django.contrib.auth.models import Group
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.gis.geos import Polygon, Point
 # from django.contrib.postgres import search

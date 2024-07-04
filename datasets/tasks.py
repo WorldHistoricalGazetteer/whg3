@@ -623,6 +623,7 @@ def es_lookup_wdlocal(qobj, *args, **kwargs):
     {"terms": {"types.id":qtypes}})
 
   # add fclasses if any, drop types; geom if any remains
+  # NB Jul 2024: fclasses now required but not present in legacy data
   q2 = deepcopy(qbase)
   if len(qobj['fclasses']) > 0:
     q2['query']['bool']['must'].append(
