@@ -2237,6 +2237,13 @@ def read_file_into_dataframe(file, ext):
   if 'lat' in df.columns:
     df['lat'] = pd.to_numeric(df['lat'], errors='coerce')
 
+
+  # Additional step to coerce 'attestation_year' to integers, with error handling
+  if 'attestation_year' in df.columns:
+      # df['attestation_year'] = pd.to_numeric(df['attestation_year'], errors='coerce', downcast='integer')
+      df['attestation_year'] = pd.to_numeric(df['attestation_year'], errors='coerce').astype('Int64')
+  print(df.dtypes)
+
   return df
 
 # known MIME types for supported file formats
@@ -3036,9 +3043,6 @@ class DatasetPlacesView(DetailView):
 
   def get_context_data(self, *args, **kwargs):
     context = super(DatasetPlacesView, self).get_context_data(*args, **kwargs)
-    # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-    #context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-    #context['maptilerkey'] = settings.MAPTILER_KEY
     context['URL_FRONT'] = settings.URL_FRONT
 
     print('DatasetPlacesView get_context_data() kwargs:', self.kwargs)

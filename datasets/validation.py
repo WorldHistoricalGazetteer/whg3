@@ -107,13 +107,31 @@ def validate_delim(df):
         "error": "Row must contain valid 'fclasses' or 'aat_types'"
       })
 
-    # Validate 'start' or 'attestation_year'
-    if ('start' not in row or pd.isna(row['start'])) and (
-      'attestation_year' not in row or pd.isna(row['attestation_year'])):
+    # utter nonsense to correct what pandas does to NaNs
+    # Inside the loop in validate_delim, before checking 'start' or 'attestation_year'
+    if 'attestation_year' in row:
+      # Check if 'attestation_year' is NaN
+      if pd.isna(row['attestation_year']):
+        attestation_year = pd.NA  # Use pandas' NA for missing values
+      else:
+        # Safely convert to integer, assuming 'attestation_year' is already coerced to numeric outside this function
+        attestation_year = int(row['attestation_year'])
+    else:
+      attestation_year = pd.NA
+
+    # Now use this attestation_year variable for validation
+    if pd.isna(row['start']) and pd.isna(attestation_year):
       errors.append({
         "row": index + 1,
         "error": "Row must contain either 'start' or 'attestation_year'"
       })
+    # Validate 'start' or 'attestation_year'
+    # if ('start' not in row or pd.isna(row['start'])) and (
+    #   'attestation_year' not in row or pd.isna(row['attestation_year'])):
+    #   errors.append({
+    #     "row": index + 1,
+    #     "error": "Row must contain either 'start' or 'attestation_year'"
+    #   })
 
     # Check pattern constraints for other fields
     for field, pattern in pattern_constraints.items():

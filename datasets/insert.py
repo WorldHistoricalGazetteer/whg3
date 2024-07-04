@@ -236,7 +236,9 @@ def process_when(row, newpl):
     try:
         start = parse_iso_date(row['start']) if 'start' in row and row.get('start', '') else None
         end = parse_iso_date(row['end']) if 'end' in row and row.get('end', '') else None
-        attestation_year = str(row['attestation_year']) if 'attestation_year' in row and row.get('attestation_year', '') else None
+        attestation_year = str(row['attestation_year']) if 'attestation_year' in row and not pd.isna(
+          row['attestation_year']) else None
+        # attestation_year = str(row['attestation_year']) if 'attestation_year' in row and row.get('attestation_year', '') else None
 
         print(f"Start: {start}, End: {end}, Attestation Year: {attestation_year}")
 
