@@ -105,7 +105,7 @@ class Command(BaseCommand):
                     place_when.save()
                 
                 place.minmax = [place_start, place_end]
-                place.timespans = [[place.minmax]]
+                place.timespans = [place.minmax]
                 place.save()
 
         self.stdout.write(self.style.SUCCESS('Successfully updated places and place_when for dataset: %s' % dataset_label))
