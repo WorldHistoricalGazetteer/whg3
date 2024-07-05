@@ -251,6 +251,7 @@ class Home30a(TemplateView):
       name__in=['teacher']).exists() else False
     context['count'] = Place.objects.filter(dataset__public=True, dataset__core=True).count()
     context['announcements'] = Announcement.objects.filter(active=True).order_by('-created_at')[:3]
+    context['count_places'] = Place.objects.filter(Q(dataset__public=True) | Q(dataset__core=True)).count()
 
     # TODO: REMOVE THE FOLLOWING? ****************************************************
     # Serialize the querysets to JSON
