@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import Group
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import BadHeaderError
 from django.db.models import Q
 from django.db.models.functions import Lower
@@ -47,16 +48,30 @@ def OpenAPIView(request):
     return render(request, 'main/openapi.html', {'schema_url': '/api/schema/'})
 
 def get_task_progress(request, taskid):
-  print(f"Requested URL: {request.path}")
-  print('get_task_progress() taskid', taskid)
-  task = AsyncResult(taskid)
-  print('task', task)
-  response_data = {
-    'state': task.state,
-    'progress': task.result  # dict with 'current' and 'total' keys
-  }
-  print('response_data', response_data)
-  return JsonResponse(response_data)
+    print(f"Requested URL: {request.path}, taskid: {taskid}")
+    
+    task = AsyncResult(taskid)
+    print(f"Task state: {task.state}, task result: {task.result}")
+    response_data = {
+        'state': task.state,
+        'progress': {}
+    }
+    
+    try:
+        if task.result:
+            response_data['progress'] = {
+                'current': task.result.get('current', 0),
+                'total': task.result.get('total', 0)
+            }
+    except ObjectDoesNotExist: # Handle the case where task.result raises DoesNotExist exception
+        response_data['progress'] = {
+            'current': 0,
+            'total': 0
+        }
+    
+    print('Response data:', response_data)
+    
+    return JsonResponse(response_data)
 
 class AnnouncementListView(ListView):
     model = Announcement
