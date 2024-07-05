@@ -15,12 +15,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         dataset_label = "viabundus_10393"
-        default_start = 1350
-        default_end = 1650
-        default_start_attestation = False
-        default_end_attestation = False
-        default_start_mode = 5
-        default_end_mode = 5
+        default_start_global = 1350
+        default_end_global = 1650
+        default_start_attestation = False # Override default_start_global value for places which have an attestation_year
+        default_end_attestation = False # Override default_end_global value for places which have an attestation_year
+        default_start_mode = 5 # modes are explained in code below
+        default_end_mode = 5 # modes are explained in code below
 
         # Fetch the dataset creation date
         try:
@@ -39,8 +39,8 @@ class Command(BaseCommand):
                 place_start_set = place.minmax and len(place.minmax) == 2 and place.minmax[0] and place.minmax[0] != -99999
                 place_end_set = place.minmax and len(place.minmax) == 2 and place.minmax[1] and place.minmax[1] != 9999
                     
-                place_default_start = place.attestation_year if (default_start_attestation and place.attestation_year) else default_start
-                place_default_end = place.attestation_year if (default_end_attestation and place.attestation_year) else default_end
+                place_default_start = place.attestation_year if (default_start_attestation and place.attestation_year) else default_start_global
+                place_default_end = place.attestation_year if (default_end_attestation and place.attestation_year) else default_end_global
                 
                 place_start = place.minmax[0] if place_start_set else place_default_start
                 place_end = place.minmax[1] if place_end_set else place_default_end
