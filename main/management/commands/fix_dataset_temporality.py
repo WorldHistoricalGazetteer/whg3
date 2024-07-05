@@ -33,6 +33,13 @@ class Command(BaseCommand):
         with transaction.atomic():
             # Fetch the places with the given dataset_label
             places_to_update = Place.objects.filter(dataset=dataset_label)
+            
+            # Check if any of the places_to_update have more than one timespan
+            for place in places_to_update:
+                num_timespans = place.placewhen_set.count()
+                if num_timespans > 1:
+                    self.stdout.write(self.style.ERROR(f'Place {place.id} has more than one timespan. Exiting early.'))
+                    return
 
             for place in places_to_update:
                 
