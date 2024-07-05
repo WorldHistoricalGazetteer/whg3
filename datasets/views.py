@@ -616,7 +616,7 @@ def review(request, dsid, tid, passnum):
   context["formset"] = formset
   # print('hit.json in review()', [h.json for h in raw_hits])
   # Create FeatureCollection for mapping
-  index_offset = sum(1 for record in records for geom in record.geoms.all().values('jsonb'))
+  index_offset = sum(1 for record in records for geom in record.geoms.all().values('jsonb')) or 1 # Handle case where no geometries yet exist
   feature_collection = {
     "type": "FeatureCollection",
     "features": [
