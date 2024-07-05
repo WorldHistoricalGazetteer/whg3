@@ -36,8 +36,8 @@ class Command(BaseCommand):
 
             for place in places_to_update:
                 
-                place_start_set = place.minmax[0] and place.minmax[0] != -99999
-                place_end_set = place.minmax[1] and place.minmax[1] != 9999
+                place_start_set = place.minmax and len(place.minmax) == 2 and place.minmax[0] and place.minmax[0] != -99999
+                place_end_set = place.minmax and len(place.minmax) == 2 and place.minmax[1] and place.minmax[1] != 9999
                     
                 place_default_start = place.attestation_year if (default_start_attestation and place.attestation_year) else default_start
                 place_default_end = place.attestation_year if (default_end_attestation and place.attestation_year) else default_end
@@ -101,6 +101,7 @@ class Command(BaseCommand):
                     }
 
                     place_when.jsonb = jsonb_data
+                    print(place.title, jsonb_data)
                     place_when.save()
                 
                 place.minmax = [place_start, place_end]
