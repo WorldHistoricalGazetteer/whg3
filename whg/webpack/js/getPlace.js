@@ -132,6 +132,10 @@ function parsePlace(data) {
 	if (!!data.minmax && data.minmax.length == 2 && (data.minmax[0] || data.minmax[1]) ) {
 		descrip += `<p><b>When</b>: earliest: ${data.minmax[0] ? data.minmax[0] : '?'}; latest: ${data.minmax[1] ? data.minmax[1] : '?'}</p>`;
 	}
+
+	if (!!data.attestation_years && data.attestation_years.length > 0) {
+	    descrip += `<p><b>Source year${data.attestation_years.length == 1 ? '' : 's'}</b>: ` + data.attestation_years.join(', ') + '</p>';
+	}
 	
 	$("#detail").html(`<div><p><b>Title</b>: <a href="/places/portal/${data.id}" target="_blank" data-bs-toggle="tooltip" title="View WHG record(s) for this place."><span id="row_title" class="larger text-danger">${data.title} <i class="fas fa-external-link-alt linky"></i></span></a></p>${descrip}</div>`);
 }

@@ -1161,10 +1161,13 @@ class PlacesDetailAPIView(View):
         
         # Serialize the Place records
         serialized_places = []
+        attestation_years = set()
         for place in places:
             # Pass the request in the serializer context
             serializer = PlaceSerializer(place, context={'cid': cid, 'request': request})
             serialized_places.append(serializer.data)
+            if place.attestation_year:
+                attestation_years.add(place.attestation_year)
             
         # Calculate the overall extent
         aggregated_extent = None
@@ -1210,6 +1213,7 @@ class PlacesDetailAPIView(View):
             "depictions": sort_unique([depiction for place in serialized_places for depiction in place["depictions"]]),
             "minmax": [min_value, max_value],
             "countries": sorted(countries_with_labels, key=lambda x: x['ccode']),
+            "attestation_years": sorted(attestation_years),
             # "whens": {
             #     "timespans": sort_unique([timespan for place in serialized_places for when in place.get("whens", []) for timespan in when.get("timespans", [])]),
             #     "periods": sort_unique([period for place in serialized_places for when in place.get("whens", []) for period in when.get("periods", [])]),

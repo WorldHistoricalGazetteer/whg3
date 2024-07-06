@@ -21,9 +21,11 @@ media/datasets/
 data/migration/
 
 # Ignore all files and directories within main/management/
-main/management/**
+#main/management/**
+# Except for main/management/commands/fix_dataset_temporality.py
+#!main/management/commands/fix_dataset_temporality.py
 # Except for main/management/commands/clear_mapdata_cache.py
-!main/management/commands/clear_mapdata_cache.py
+#!main/management/commands/clear_mapdata_cache.py
 
 elastic/fetch_close_matches.py
 
