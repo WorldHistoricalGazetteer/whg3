@@ -36,8 +36,7 @@ class Command(BaseCommand):
             
             # Check if any of the places_to_update have more than one timespan
             for place in places_to_update:
-                num_timespans = place.placewhen_set.count()
-                if num_timespans > 1:
+                if len(place.timespans) > 1:
                     self.stdout.write(self.style.ERROR(f'Place {place.id} has more than one timespan. Exiting early.'))
                     return
 

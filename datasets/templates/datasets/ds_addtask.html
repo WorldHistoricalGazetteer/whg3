@@ -202,16 +202,18 @@
                           <span class="ms-2"><b>or...</b></span>
                         </p>
                         <p>
-                          <select id="select_userarea" name="userarea" class="custom-select-sm" style="width:auto;">
-                            <option value="0" selected="selected">Select user-defined study area</option>
+                          <select id="select_userarea" name="userarea" data-initial-select="{{ userarea|default:'0' }}" class="custom-select-sm" style="width:auto;">
+                            <option value="0">Select user-defined study area</option>
                             <option disabled>___________</option>
                             {% for a in area_list %}
                               <option value="{{ a.id }}">{{ a.title }}</option>
                             {% endfor %}
-                            <option value="create">{ new }</option>
                           </select>
+                          <span class="ms-2 small hidden">
+                            <a href="{% url 'areas:area-update' 0 %}?next=/datasets/{{ ds.id }}/addtask">edit area</a>
+                          </span>
                           <span class="ms-2 small">
-                            <a href="{% url 'areas:area-create' %}?next=/datasets/{{ ds.id }}/addtask">create user area</a>
+                            <a href="{% url 'areas:area-create' %}?next=/datasets/{{ ds.id }}/addtask">create new</a>
                           </span>
                         </p>
                       </div>

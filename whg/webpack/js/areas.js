@@ -55,13 +55,6 @@ Promise.all([
         bufferDropdown.append(new Option(`${value} km`, value, value === 0 ? true : false));
     });
 	bufferDropdown.on('change', updateAreaMap);
-	
-	$("textarea#geojson").val('');
-    $("#area_form").submit(function(event) {
-        if (event.target === $("#area_form")[0]) {
-            $("textarea#geojson").removeAttr("disabled");
-        }
-    });
 		
 	if (action == 'update') {
 		// existing - assumes that formGeoJSON is a featureCollection
@@ -73,8 +66,8 @@ Promise.all([
 			draw.set(areaFeatureCollection)
 			$('a[href="#areas_draw"]').tab('show');
 			// disable ccodes tab
-			$('a[href="#areas_codes"]').addClass('disabled').css("cursor", "default")
-
+			$('a[href="#areas_codes"]').addClass('disabled').css("cursor", "default");
+			$drawControl.show();
 		} else if (formType == 'ccodes') {
 			console.log('was ccodes-generated')
 			mappy.getSource('hulls').setData(areaFeatureCollection);
@@ -86,6 +79,15 @@ Promise.all([
 	        duration: 1000,
 	    });
 	}
+	else {
+	  $("textarea#geojson").val('');		
+	}
+	
+    $("#area_form").submit(function(event) {
+        if (event.target === $("#area_form")[0]) {
+            $("textarea#geojson").removeAttr("disabled");
+        }
+    });
 	
 	$('#entrySelector').select2({
 		data: dropdown_data[1].children,

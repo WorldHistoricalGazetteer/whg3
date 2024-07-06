@@ -130,17 +130,26 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			}
 		});
 		
-		$("#select_userarea").change(function() {
+    	var selectUserArea = $("#select_userarea");
+		selectUserArea
+		.change(function() {
 			$("#select_region option[value=0]").prop('selected', true)
-			if ($(this).val() == 0) {
-				reset_map()
+	        const selectedValue = $(this).val();
+	        const noneSelected = selectedValue == 0;
+			if (noneSelected) {
+				reset_map();
 			} else {
-				render_area($(this).val(), 'area')
+				render_area(selectedValue, 'area');				
 			}
-			if ($("#select_userarea option[value='create']").prop('selected') == true) {
-				location.href = "{% url 'areas:area-create' %}?next={% url 'datasets:ds_recon' ds.id %}"
-			}
-		});
+			$(this).next('span')
+			.toggleClass('hidden', noneSelected)
+			.find('a')
+            .attr('href', function(_, currentUrl) {
+                return currentUrl.replace(/\/areas\/\d+\/update/, `/areas/${selectedValue}/update`);
+            });
+		})
+		.val(selectUserArea.data('initial-select'))
+		.trigger('change');
 		
 		// Add event listener to each radio button
 		let radios = $('.r_recon');

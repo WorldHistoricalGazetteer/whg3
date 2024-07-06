@@ -2,55 +2,53 @@
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
-from django.views.generic import (CreateView, UpdateView, DeleteView )
+from django.views.generic import (CreateView, UpdateView, DeleteView)
 
 from .forms import AreaModelForm
 from .models import Area
 from utils.regions_countries import get_regions_countries
 
-class AreaCreateView(CreateView):
+class AreaFormMixin:
     form_class = AreaModelForm
     template_name = 'areas/area_create.html'
-    queryset = Area.objects.all()
 
-    # if called from reconciliation addtask, return there
-    def get_form_kwargs(self, **kwargs):
-        kwargs = super(AreaCreateView, self).get_form_kwargs()
-        print('kwargs', kwargs)
-        redirect = self.request.GET.get('next')+'#addtask' if 'next' in self.request.GET else ''
-        print('GET in AreaCreate()',self.request.GET)
-        #print('redirect',redirect)
-        if redirect != '':
-            self.success_url = redirect
+    def get_object(self):
+        id_ = self.kwargs.get("id")
+        return get_object_or_404(Area, id=id_)
+
+    def get_success_url(self):
+        next_url = self.request.GET.get('next')
+        if next_url:
+            success_url = f"{next_url}?userarea={self.object.id}"
         else:
-            # self.success_url = '/mystudyareas'
-            self.success_url = '/dashboard'
-        return kwargs
+            success_url = reverse('dashboard')
+        print('Redirecting to:', success_url)
+        return success_url
 
-    def form_invalid(self,form):
-        print('form invalid...',form.errors.as_data())
-        context = {'form': form}
-        return self.render_to_response(context=context)
+    def form_invalid(self, form):
+        print('Form is invalid:', form.errors.as_data())
+        return super().form_invalid(form)
 
     def form_valid(self, form):
-        context={}
-        if form.is_valid():
-            print('form is valid, cleaned_data', form.cleaned_data)
-        else:
-            print('form not valid', form.errors)
-            context['errors'] = form.errors
+        print('Form is valid, cleaned_data:', form.cleaned_data)
         return super().form_valid(form)
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(AreaCreateView, self).get_context_data(*args, **kwargs)
-        #context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-        #context['maptilerkey'] = settings.MAPTILER_KEY
-        #print('args',args,kwargs)
-        context['action'] = 'create'
-        #context['referrer'] = self.request.POST.get('referrer')
-        context['dropdown_data'] = get_regions_countries()  # Used for spatial filter
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['dropdown_data'] = get_regions_countries()
         return context
 
+class AreaCreateView(AreaFormMixin, CreateView):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['action'] = 'create'
+        return context
+
+class AreaUpdateView(AreaFormMixin, UpdateView):
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['action'] = 'update'
+        return context
 
 class AreaDeleteView(DeleteView):
     template_name = 'areas/area_delete.html'
@@ -59,35 +57,17 @@ class AreaDeleteView(DeleteView):
         id_ = self.kwargs.get("id")
         return get_object_or_404(Area, id=id_)
 
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        # Perform deletion without calling form_valid
+        self.object.delete()
+        return self.get_success_url()
+
     def get_success_url(self):
-        # return reverse('data-areas')
-        return reverse('dashboard')
-
-#
-# update (edit); uses same template as create
-# context['action'] governs template display
-#
-class AreaUpdateView(UpdateView):
-    form_class = AreaModelForm
-    template_name = 'areas/area_create.html'
-    # success_url = '/mystudyareas'
-
-    def get_object(self):
-        id_ = self.kwargs.get("id")
-        return get_object_or_404(Area, id=id_)
-
-    def form_valid(self, form):
-        if form.is_valid():
-            print(form.cleaned_data)
-            obj = form.save(commit=False)
-            obj.save()
+        next_url = self.request.GET.get('next')
+        if next_url:
+            success_url = f"{next_url}"
         else:
-            print('form not valid', form.errors)
-        return super().form_valid(form)
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(AreaUpdateView, self).get_context_data(*args, **kwargs)
-        context['action'] = 'update'
-        #context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-        #context['maptilerkey'] = settings.MAPTILER_KEY
-        return context
+            success_url = reverse('dashboard')
+        print('Redirecting to:', success_url)
+        return success_url

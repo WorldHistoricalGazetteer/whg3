@@ -3224,9 +3224,14 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
     # build context for rendering ds_addtask.html
     me = self.request.user
     area_types = ['ccodes', 'copied', 'drawn']
+    
+    is_admin = self.request.user.groups.filter(name__in=['whg_admins']).exists()
 
     # user study areas
-    userareas = Area.objects.filter(type__in=area_types).values('id', 'title').order_by('-created')
+    userareas = Area.objects.filter(
+        type__in=area_types,
+        **({} if is_admin else {'owner_id': me.id})
+    ).values('id', 'title').order_by('-created')
 
     # pre-defined UN regions
     predefined = Area.objects.all().filter(type='predefined').values('id', 'title')
@@ -3283,14 +3288,20 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
       remaining[t[0][6:]] = t[1][0]['total']
 
     context['region_list'] = predefined
-    context['area_list'] = userareas if me.id == 2 else userareas.filter(owner=me)
+    context['area_list'] = userareas
+
+    # Retrieve any userarea from query parameters
+    userarea = self.request.GET.get('userarea')
+    if userarea:
+        context['userarea'] = userarea
+            
     context['ds'] = ds
     context['numrows'] = ds.places.count()
     context['collaborators'] = ds.collabs.all()
     context['owners'] = ds.owners
     context['remain_to_review'] = remaining
     context['missing_geoms'] = ds.missing_geoms
-    context['is_admin'] = True if self.request.user.groups.filter(name__in=['whg_admins']).exists() else False
+    context['is_admin'] = is_admin
     # context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'admins']).exists() else False
 
     return context
