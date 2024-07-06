@@ -152,7 +152,7 @@ export function colorTable(arrayColors, target) {
 
   for (let i = 0; i < arrayColors.length; i += 2) {
     const label = i == arrayColors.length - 2 ?
-        '<i>no relation</i>' :
+        '<i>other</i>' :
         arrayColors[i];
     const color = arrayColors[i + 1];
     const row = $('<tr>');
