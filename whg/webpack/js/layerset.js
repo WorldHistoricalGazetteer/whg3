@@ -123,8 +123,8 @@ class Layerset {
 			},
 			'hulls': {
 				'Polygon': {
-					'fill-color': 'rgba(221,221,221,.3)', // pale-gray,
-					'fill-outline-color': 'rgba(0,128,0,.8)', // green,
+					'fill-color': 'rgba(255,0,0,.1)', // red
+					'fill-outline-color': 'rgba(0,128,0,.8)', // green
 				}
 			}
 		}	

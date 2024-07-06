@@ -7,13 +7,10 @@ from .models import Area
 import json
 
 class AreaModelForm(forms.ModelForm):
-    # ** trying to return to referrer
     next = forms.CharField(required=False)
-    # **
     
     class Meta:
         model = Area
-        #exclude = tuple()
         fields = ('id','type','owner','title','description','ccodes','geojson','next')
         widgets = {
             'title': forms.TextInput(attrs={

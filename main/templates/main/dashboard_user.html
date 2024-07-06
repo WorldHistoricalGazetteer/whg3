@@ -288,7 +288,7 @@
       <div class="dashboard-box mt-3">
         <div class="box-header">
           <div class="box-header-title">Study Areas</div>
-          <a href="{% url 'areas:area-create' %}">
+          <a href="{% url 'areas:area-create' %}?next={% url 'dashboard-user' %}">
             <i class="fas fa-plus"></i>
           </a>
         </div>
@@ -298,7 +298,7 @@
 	          <div class="item-div">
 	            <p class="fw-bold red-head">{{ item.title }}</p>
 		          <div class="float-end">
-								<a href="{% url 'areas:area-update' item.id %}"><i class="fas fa-edit linky"></i></a>
+								<a href="{% url 'areas:area-update' item.id %}?next={% url 'dashboard-user' %}"><i class="fas fa-edit linky"></i></a>
 	            </div>
 	          </div>
 	          {% endfor %}

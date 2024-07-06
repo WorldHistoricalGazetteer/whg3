@@ -1006,38 +1006,51 @@ class CustomDrawingControl {
 
 		this._map.addControl(this._map._draw, 'top-left');
 		this._map.on('draw.modechange', this._modechange.bind(this));
+		this._map.on('draw.selectionchange', this._selectionchange.bind(this));
 		this._map.on('draw.delete', this._delete.bind(this));
-		this._map.on('draw.create', this._create.bind(this));
 	}
 	
-	_modechange() {
-		console.log('MapboxDraw control:', this._map._draw, this._map._draw.getMode());
-		switch(this._map._draw.getMode()) {
-			case 'draw_polygon':
-	            this._map.getCanvas().style.cursor = 'crosshair';
-	            this._map._drawControl.trashButton.setAttribute('disabled', true);
-				this._map._drawControl.trashButton.classList.add('disabled');
-	            break;
-	        default:
-	            this._map.getCanvas().style.cursor = 'default';
-				this._map._drawControl.trashButton.removeAttribute('disabled');
-				this._map._drawControl.trashButton.classList.remove('disabled');
+	_setTrash() {
+		var trashable = (
+			(
+				(this._map._draw.getMode() == 'simple_select' && this._map._draw.getSelected().features.length > 0) ||
+				(this._map._draw.getMode() == 'direct_select' && this._map._draw.getSelectedPoints().features.length > 0)
+			) &&
+			this._map._draw.getMode() !== 'draw_polygon'
+		);
+		if (trashable) {
+			this._map._drawControl.trashButton.removeAttribute('disabled');
+			this._map._drawControl.trashButton.classList.remove('disabled');
 		}
-	}
-	
-	_delete() {
-		if (this._map._draw.getAll().features.length < 1) {
+		else {
             this._map._drawControl.trashButton.setAttribute('disabled', true);
 			this._map._drawControl.trashButton.classList.add('disabled');
 		}
 	}
 	
-	_create() { // This appears to be the simplest(!) way to deselect a polygon on completion
-		const allFeatures = this._map._draw.getAll();
-		this._map._draw.deleteAll();
-		allFeatures.features.forEach(feature => {feature.id = '';}); // Control stores ids of selected polygons
-		this._map._draw.add(allFeatures);
-		console.log('MapboxDrawn:', this._map.getStyle());
+	_modechange() {
+	    this._setTrash();
+		switch(this._map._draw.getMode()) {
+			case 'draw_polygon':
+	            this._map.getCanvas().style.cursor = 'crosshair';
+	            break;
+			case 'simple_select':
+	            this._map.getCanvas().style.cursor = 'grab';
+	            break;
+			case 'direct_select':
+	            this._map.getCanvas().style.cursor = 'pointer';
+	            break;
+	        default:
+	            this._map.getCanvas().style.cursor = 'grab';
+		}
+	}
+	
+	_selectionchange() {
+	    this._setTrash();
+	}
+	
+	_delete() {
+	    this._setTrash();
 	}
 
 	onAdd() {		
@@ -1051,8 +1064,7 @@ class CustomDrawingControl {
         
         this._map._drawControl.trashButton = this._map._drawControl.querySelector('.mapbox-gl-draw_trash');
         this._map._drawControl.trashButton.setAttribute('data-bs-title', 'Delete selected polygon (select first by clicking it)');
-        this._map._drawControl.trashButton.setAttribute('disabled', true);
-		this._map._drawControl.trashButton.classList.add('disabled');
+	    this._setTrash();
 		
 		if (this._options.hide) this._map._drawControl.style.display = 'none';
 		

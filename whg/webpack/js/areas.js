@@ -85,7 +85,30 @@ Promise.all([
 	
     $("#area_form").submit(function(event) {
         if (event.target === $("#area_form")[0]) {
-            $("textarea#geojson").removeAttr("disabled");
+			
+			function abort() {
+				event.preventDefault();
+				alert('Area cannot be saved without any geometries.');				
+			}			
+
+		    try {
+		        const geojson = JSON.parse($("textarea#geojson").val());
+		        // Check for valid GeometryCollection
+		        if (
+						geojson && 
+						typeof geojson === 'object' && 
+						geojson.type && 
+						geojson.type == 'GeometryCollection' && 
+						geojson.geometries && 
+						geojson.geometries.length > 0
+					) {
+		            $("textarea#geojson").removeAttr("disabled");
+		        } else {
+		        	abort();
+		        }
+		    } catch (error) {
+		        abort();
+		    }	
         }
     });
 	
@@ -131,7 +154,7 @@ function addDrawingControl() {
 	mappy.on('draw.update', updateDraw);
 	function updateDraw() {
 		const featureCollection = draw.getAll();
-		$("textarea#geojson").val(featureCollection.features.length > 0 ? JSON.stringify( geometryFeatureCollection(featureCollection) ) : '');		
+		$("textarea#geojson").val(featureCollection.features.length > 0 ? JSON.stringify( geometryFeatureCollection(featureCollection) ) : '');
 	}
 }
 

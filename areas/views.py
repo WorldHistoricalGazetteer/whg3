@@ -58,9 +58,7 @@ class AreaDeleteView(DeleteView):
         return get_object_or_404(Area, id=id_)
 
     def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        # Perform deletion without calling form_valid
-        self.object.delete()
+        self.get_object().delete()
         return self.get_success_url()
 
     def get_success_url(self):
