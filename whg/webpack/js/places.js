@@ -13,9 +13,12 @@ function waitMapLoad() {
         mappy.on('load', () => {
             console.log('Map loaded.');
             
-            const pgeom = JSON.parse($('#pgeom script').text());
-            const featureCollection = geomsGeoJSON([{geom: pgeom}]);
-            console.log(featureCollection);
+            const pgeoms = $('#pgeom script').map(function() {
+		        const jsonContent = $(this).text();
+		        return {geom: JSON.parse(jsonContent)};
+		    }).get();
+
+            const featureCollection = geomsGeoJSON(pgeoms);
             
 			mappy
 			.newSource('places', featureCollection)
