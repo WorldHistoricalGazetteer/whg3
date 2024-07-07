@@ -62,7 +62,7 @@ class Layerset {
 			        'circle-color': this.colour_options,
 			        'circle-opacity': [
 						0.2,
-						.7
+						.85
 			        ],
 					'circle-radius': [
 			            'interpolate', ['exponential', 2], ['zoom'],

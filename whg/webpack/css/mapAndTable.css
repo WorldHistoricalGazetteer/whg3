@@ -287,7 +287,7 @@
     position: absolute;
     left:0px;
     top: 40px;
-    background-color: white;
+    background-color: rgb(255 255 255 / 75%);
 }
 
 .color-key-table td {
