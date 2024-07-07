@@ -67,7 +67,7 @@ export function initObservers() {
 
   mapParams = {
     mappy: mappy,
-    ControlsRectEl: document.getElementById('mapControls'),
+    ControlsRectEl: $('.maplibregl-control-container').first()[0],
     MapRectEl: document.querySelector('div.maplibregl-map'),
     ControlsRectMargin: 4,
     MapRectBorder: 1,
@@ -99,6 +99,11 @@ export function initObservers() {
 }
 
 export function initOverlays(whgMap) {
+	
+  if (window.innerWidth < 768) { // Do not use map overlays on narrow screens
+    return;
+  }
+	
   const controlContainer = document.querySelector(
       '.maplibregl-control-container');
   controlContainer.setAttribute('id', 'mapControls');
@@ -119,7 +124,9 @@ export function initOverlays(whgMap) {
     });
     if (side == 'left') column.appendChild(controlContainer);
   });
+}
 
+export function initDownloadLinks() {
   // Initialise Download link listener
   $('.a-dl, .a-dl-celery').click(function(e) {
     e.preventDefault();

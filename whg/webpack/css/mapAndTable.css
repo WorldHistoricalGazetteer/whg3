@@ -32,7 +32,7 @@
 #mapOverlays .column {
   display: flex;
   flex-direction: column;
-  height: calc(100% - 4px);
+  margin-right: 0.5rem;
 }
 
 #mapOverlays .column.left {
@@ -44,7 +44,6 @@
   width: min-content;
   min-width: 34%;
   flex: 1 0 auto;
-  overflow-x: auto; /* Engages if .column.left is squeezed to its min-width */
 }
 
 #mapOverlays .item {

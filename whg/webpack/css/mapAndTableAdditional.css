@@ -58,7 +58,34 @@
     flex-grow: 1;
     flex-shrink: 0;
     flex-basis: 0;
+  	font-size: 0.8rem;
+  	z-index: 10;
 }
+
+/* CSS for narrow screens (up to 767px) */
+@media (max-width: 767px) {
+	#map {
+		height: 400px;
+	}
+	#detail {
+		flex-basis: unset;
+	  	height: auto;
+	}
+	.overlay {
+		display: block!important;
+	}
+}
+
+/* CSS for wider screens (768px and above) */
+@media (min-width: 768px) {
+	#map {
+		height: 100%;
+	}
+	#detail {
+  		height: 30% !important;
+	}
+}
+
 .pub-anno-title {
   font-size: large;
 }
@@ -98,12 +125,6 @@
   position: relative; 
   display: flex;
   flex: auto;
-}
-
-#detail {
-  font-size: 0.8rem;
-  z-index: 10;
-  height: 30% !important;
 }
 
 #detail p {

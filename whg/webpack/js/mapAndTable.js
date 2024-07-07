@@ -4,7 +4,7 @@ import '../css/mapAndTable.css';
 import '../css/mapAndTableAdditional.css';
 
 import { init_mapControls } from './mapControls';
-import { recenterMap, initObservers, initOverlays, initPopups } from './mapFunctions';
+import { recenterMap, initObservers, initOverlays, initDownloadLinks, initPopups } from './mapFunctions';
 import { toggleFilters } from './mapFilters';
 import { initUtils, initInfoOverlay, minmaxer, get_ds_list_stats, deepCopy, arrayColors, colorTable } from './utilities';
 import { initialiseTable } from './tableFunctions';
@@ -115,6 +115,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 .then(function () {
 	
 	initOverlays(mappy.getContainer());
+	initDownloadLinks();
 	
     $('.thumbnail').enlarge();
 	

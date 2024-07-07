@@ -23,9 +23,10 @@
 {% endblock %}
 
 {% block content %}
-  <main id="dataset_content" class="container px-md-0">
-    <div id="map" style="opacity: 0; height:100%;"></div>
-    <div id="ds_info" class="overlay left">
+  <main id="dataset_content" class="container px-0">
+    <div class="row col-12 mx-0 px-0">
+    
+    <div id="ds_info" class="col-12 my-1 overlay left">
       <div id="ds_header" class="raleway">
             <span class="fs-5 title">
                 <img src="{% static 'images/spreadsheet.png' %}" height=28 alt=""/>
@@ -115,7 +116,7 @@
       </div> <!-- #metadata -->
     </div> <!-- ds_info -->
 
-    <div id="ds_table" class="overlay right">
+    <div id="ds_table" class="col-12 my-1 overlay right">
       <span id="added_flash" class="mr-2 hidden" style="background-color: yellow; position:absolute; top:10px; right:10px;"> added! </span>
       <div id="selection_status">
         <span id="actions">
@@ -148,7 +149,9 @@
         </p>
       </div>
     </div> <!-- ds_table -->
-    <div id="detail" class="overlay right"></div>
+    <div id="detail" class="col-12 my-1 overlay right"></div>
+    
+    <div id="map" class="col-12 my-1" style="opacity: 0;"></div>
 
     <div id="downloadModal" class="modal fade" tabindex="-1"
            aria-labelledby="downloadModalLabel" aria-hidden="true">
@@ -384,7 +387,8 @@
         </div>
       </div>
     </div>
-
+    
+  </div>
   </main>
 
   {{ object.vis_parameters|json_script:"vis_parameters_data" }}
