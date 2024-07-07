@@ -99,11 +99,11 @@ export function initObservers() {
 }
 
 export function initOverlays(whgMap) {
-	
+
   if (window.innerWidth < 768) { // Do not use map overlays on narrow screens
     return;
   }
-	
+  
   const controlContainer = document.querySelector(
       '.maplibregl-control-container');
   controlContainer.setAttribute('id', 'mapControls');

@@ -66,43 +66,6 @@ maplibregl.Map.prototype.newSource = function(ds, fc = null) {
 	return map;
 };
 
-// replaced 23 Feb 2024 per SG
-// maplibregl.Map.prototype.newSource = function (ds, fc=null) {
-//     if (!!ds.tilesets && ds.tilesets.length > 0) {
-//         const tilejsonUrl = `${process.env.TILEBOSS}/data/${ds.tilesets[0]}.json`;
-//         var map = this;
-//         return new Promise((resolve, reject) => {
-//             $.ajax({
-//                 url: tilejsonUrl,
-//                 dataType: 'json',
-//                 success: function(tilejson) {
-//                     console.log('tilejson', tilejson);
-//                     const sourceOptions = { ...tilejson, type: 'vector' };
-//                     var source = map.addSource(ds.ds_id, sourceOptions);
-//                     map.tileBounds = tilejson.bounds;
-//                     resolve(source);
-//                 },
-//                 error: function(xhr, status, error) {
-//                     console.error('Error prefetching TileJSON:', error);
-//                     reject(error);
-//                 }
-//             });
-//         });
-//     } else {
-//         if (!!ds.ds_id) { // Standard dataset or collection
-//             return this.addSource(ds.ds_id, {
-//                 'type': 'geojson',
-//                 'data': ds,
-//                 'attribution': attributionString(ds),
-//             });
-//         } else if (fc) { // Name and FeatureCollection provided
-//             return this.addSource(ds, { 'type': 'geojson', 'data': fc });
-//         } else { // Only name given, add an empty FeatureCollection
-//             return this.addSource(ds, { 'type': 'geojson', 'data': this.nullCollection() });
-//         }
-//     }
-// };
-
 maplibregl.Map.prototype.layersets = [];
 maplibregl.Map.prototype.newLayerset = function (dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger, relation_colors) {
 	this.layersets.push(dc_id);

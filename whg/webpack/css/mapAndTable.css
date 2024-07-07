@@ -38,6 +38,7 @@
 #mapOverlays .column.left {
   min-width: 25%; /* Do not allow map to be over-squeezed by .column.right flex width */
   width: 100%;
+  height: calc(100% - 4px);
 }
 
 #mapOverlays .column.right {

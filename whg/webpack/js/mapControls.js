@@ -252,10 +252,10 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 			const parentNodeClassList = event.target.parentNode.classList;
 
 			if (parentNodeClassList.contains('maplibregl-ctrl-fullscreen')) {
-				document.getElementById('mapOverlays').classList.add('fullscreen');
+				$('#mapOverlays').addClass('fullscreen');
 			}
 			else if (parentNodeClassList.contains('maplibregl-ctrl-shrink')) {
-				document.getElementById('mapOverlays').classList.remove('fullscreen');
+				$('#mapOverlays').removeClass('fullscreen');
 			}
 			else if (parentNodeClassList.contains('dateline-button')) {
 	            toggleFilters($('.range_container.expanded').length > 0, mappy, table);
