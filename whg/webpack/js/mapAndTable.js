@@ -4,7 +4,7 @@ import '../css/mapAndTable.css';
 import '../css/mapAndTableAdditional.css';
 
 import { init_mapControls } from './mapControls';
-import { recenterMap, initObservers, initOverlays, initDownloadLinks, initPopups } from './mapFunctions';
+import { recenterMap, initObservers, initOverlays, removeOverlays, initDownloadLinks, initPopups } from './mapFunctions';
 import { toggleFilters } from './mapFilters';
 import { initUtils, initInfoOverlay, minmaxer, get_ds_list_stats, deepCopy, arrayColors, colorTable } from './utilities';
 import { initialiseTable } from './tableFunctions';
@@ -114,7 +114,7 @@ window.ds_list.forEach(function (ds) { // fetch data
 Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fallbacks.map(loadResource))])
 .then(function () {
 	
-	initOverlays(mappy.getContainer());
+	const clickFirstRow = initOverlays(mappy.getContainer());
 	initDownloadLinks();
 	
     $('.thumbnail').enlarge();
@@ -158,7 +158,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	table = tableInit.table;
 	checked_rows = tableInit.checked_rows;
 
-	window.mapBounds = window.ds_list[0].extent || [-180, -90, 180, 90];
+	window.mapBounds = window.ds_list_stats.extent || [-180, -90, 180, 90];
 	
 	// Initialise Map Popups
 	initPopups(table);
@@ -212,7 +212,10 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	// Initialise resize observers
 	initObservers();
 	
-	recenterMap();
+	mappy.fitViewport(window.ds_list_stats.extent, 15);
+	if (clickFirstRow) {
+		$('#placetable tbody tr').first().click();
+	}
 	mappy.getContainer().style.opacity = 1;
 	
 	initUtils(mappy); // Tooltips, ClipboardJS, clearlines, help-matches
@@ -220,6 +223,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	init_collection_listeners(checked_rows);
 	
 	$('#dataset_content').stopSpin();
+		
 });
 
 export { mappy };

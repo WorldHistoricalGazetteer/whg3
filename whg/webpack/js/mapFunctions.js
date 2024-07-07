@@ -100,8 +100,8 @@ export function initObservers() {
 
 export function initOverlays(whgMap) {
 
-  if (window.innerWidth < 576) { // Do not use map overlays on narrow screens
-    return;
+  if (window.innerWidth < 576) { // Do not use map overlays on very narrow screens
+    return true; // Click first row of table (otherwise map features fail to render - seems to be a bug)
   }
   
   const controlContainer = document.querySelector(
@@ -124,6 +124,35 @@ export function initOverlays(whgMap) {
     });
     if (side == 'left') column.appendChild(controlContainer);
   });
+}
+
+export function removeOverlays(whgMap) {
+
+	const mainElement = document.querySelector('main div.row');
+	
+	const mapOverlays = document.getElementById('mapOverlays');
+	const overlaysLeft = mapOverlays.querySelectorAll('.overlay.left');
+	const overlaysRight = mapOverlays.querySelectorAll('.overlay.right');
+	
+	overlaysLeft.forEach(function(overlay) {
+	  mainElement.appendChild(overlay);
+	  overlay.classList.remove('item');
+	});
+	
+	overlaysRight.forEach(function(overlay) {
+	  mainElement.appendChild(overlay);
+	  overlay.classList.remove('item');
+	});
+	
+	mainElement.appendChild(whgMap);
+
+	const controlContainer = document.querySelector(
+      '.maplibregl-control-container');
+    controlContainer.removeAttribute('id');
+    controlContainer.classList.remove('item');
+    whgMap.appendChild(controlContainer);
+	
+	whgMap.removeChild(mapOverlays);
 }
 
 export function initDownloadLinks() {
