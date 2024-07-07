@@ -154,6 +154,8 @@ Promise.all([
 		const filters = {
 			'qstr': $('#search_input').val(),
 			'mode': 'exactly',
+			'temporal': false,
+			'undated': true,
 			'idx': eswhg, // hard-coded in html template
 		};
 
@@ -167,13 +169,7 @@ Promise.all([
 			success: function(data) {
 				console.log('...search completed.', data);
 				localStorage.setItem('last_search', JSON.stringify(data)); // Includes both `.parameters` and `.suggestions` objects
-				if (data.suggestions.length > 0) { // if results, load and render on Search page
-					window.location.href = '/search';
-				} else {
-					errorModal(
-							`Sorry, your search for "<i>${filters.qstr}</i>" returned no results.`,
-							'No Results', null, 5);
-				}
+				window.location.href = '/search';				
 			},
 			error: function(error) {
 				console.error('Error:', error);
