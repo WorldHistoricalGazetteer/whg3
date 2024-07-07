@@ -7,9 +7,7 @@ import debounce from 'lodash/debounce';
 import {
 	geomsGeoJSON,
 } from './utilities';
-// import {
-// 	ccode_hash,
-// } from '../../../static/js/parents';
+import CountryParents from './countryParents';
 import { CountryCacheFeatureCollection } from './countryCache';
 import '../css/typeahead.css';
 import '../css/dateline.css';
@@ -22,7 +20,10 @@ let $drawControl;
 let countryCache = new CountryCacheFeatureCollection();
 let searchDisabled = false;
 let enteringPortal = false;
-let ccode_hash = window.ccode_hash;
+
+// Load window.ccode_hash and window.regions
+const countryParents = new CountryParents();
+await countryParents.dataLoaded;
 
 let dateRangeChanged = throttle(() => { // Uses imported lodash function
 	initiateSearch();
@@ -740,6 +741,7 @@ function buildResultFilters() {
 		$('#headingCountries button').click();
 	}
 
+		console.log('allCountries', allCountries, ccode_hash)
 	$('#country_checkboxes').html(allCountries.map(country => {
 		const cName = ccode_hash[country]['gnlabel'];
 		const count = countryCounts[country] || 0;
