@@ -229,7 +229,7 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 	if (!!mapParameters.temporalControl && mapParameters.temporalControl) {
 		datelineContainer = document.createElement('div');
 		datelineContainer.id = 'dateline';
-		document.getElementById('mapControls').appendChild(datelineContainer);
+		$('.maplibregl-control-container').first()[0].appendChild(datelineContainer);
 
 		const range = window.ds_list_stats.max - window.ds_list_stats.min;
 		const buffer = range * 0.1; // 10% buffer

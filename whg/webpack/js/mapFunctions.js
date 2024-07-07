@@ -100,7 +100,7 @@ export function initObservers() {
 
 export function initOverlays(whgMap) {
 
-  if (window.innerWidth < 768) { // Do not use map overlays on narrow screens
+  if (window.innerWidth < 576) { // Do not use map overlays on narrow screens
     return;
   }
   

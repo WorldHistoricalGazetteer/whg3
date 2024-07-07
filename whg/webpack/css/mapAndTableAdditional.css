@@ -35,10 +35,6 @@
   font-size: 1.2rem;
   font-family: Raleway, san-serif;
 }
-.pub-right {
-  display: flex;
-  flex-direction: column;
-}
 
 #placetable_wrapper .row:nth-child(2) > div {
     padding-right: 1px;	
@@ -62,8 +58,8 @@
   	z-index: 10;
 }
 
-/* CSS for narrow screens (up to 767px) */
-@media (max-width: 767px) {
+/* CSS for very narrow screens (up to 575px) */
+@media (max-width: 575px) {
 	#map {
 		height: 400px;
 	}
@@ -76,8 +72,8 @@
 	}
 }
 
-/* CSS for wider screens (768px and above) */
-@media (min-width: 768px) {
+/* CSS for wider screens (576px and above) */
+@media (min-width: 576px) {
 	#map {
 		height: 100%;
 	}
