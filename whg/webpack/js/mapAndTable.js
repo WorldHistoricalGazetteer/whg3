@@ -114,7 +114,7 @@ window.ds_list.forEach(function (ds) { // fetch data
 Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fallbacks.map(loadResource))])
 .then(function () {
 	
-	const hasOverlays = initOverlays(mappy.getContainer());
+	initOverlays(mappy.getContainer());
 	initDownloadLinks();
 	
     $('.thumbnail').enlarge();
@@ -163,6 +163,9 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	// Initialise Map Popups
 	initPopups(table);
 	
+	// Initialise resize observers
+	initObservers();
+	
 	// Initialise Map Controls
 	const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table);
 	datelineContainer = mapControlsInit.datelineContainer;
@@ -209,16 +212,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 		allFeatures = null; // release memory
 	}
 	
-	// Initialise resize observers
-	initObservers();
-	
-	if (!hasOverlays) { // There seems to be a bug in MapLibre preventing proper map rendering without the following map interaction
-		mappy.fitViewport(window.ds_list_stats.extent, 15);
-		$('#placetable tbody tr').first().click();
-	}
-	else {
-		recenterMap();		
-	}
+	recenterMap();	
 	mappy.getContainer().style.opacity = 1;
 	
 	initUtils(mappy); // Tooltips, ClipboardJS, clearlines, help-matches

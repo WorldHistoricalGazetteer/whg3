@@ -10,12 +10,22 @@ let mapParams;
 export function updatePadding() {
   const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
   const MapRect = mapParams.MapRectEl.getBoundingClientRect();
-  mappy.setPadding({
-    top: ControlsRect.top - MapRect.top - mapParams.ControlsRectMargin,
-    bottom: MapRect.bottom - ControlsRect.bottom - mapParams.ControlsRectMargin,
-    left: ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin,
-    right: MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin,
-  });
+  if ($('#mapOverlays').length > 0) {
+	  mappy.setPadding({
+	    top: ControlsRect.top - MapRect.top - mapParams.ControlsRectMargin,
+	    bottom: MapRect.bottom - ControlsRect.bottom - mapParams.ControlsRectMargin,
+	    left: ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin,
+	    right: MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin,
+	  });
+  }
+  else {
+	  mappy.setPadding({
+	    top: 0,
+	    bottom: 0,
+	    left: 0,
+	    right: 0,
+	  });	  
+  }
 }
 
 function updateBounds() {
@@ -109,9 +119,7 @@ export function initObservers() {
 
 export function initOverlays(whgMap) {
 
-  if (window.innerWidth < 576) { // Do not use map overlays on very narrow screens
-    return false;
-  }
+  if (window.innerWidth < 576) return // Do not use map overlays on very narrow screens
   
   const controlContainer = document.querySelector(
       '.maplibregl-control-container');
@@ -133,8 +141,6 @@ export function initOverlays(whgMap) {
     });
     if (side == 'left') column.appendChild(controlContainer);
   });
-  
-  return true;
 }
 
 export function removeOverlays(whgMap) {
