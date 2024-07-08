@@ -114,7 +114,7 @@ window.ds_list.forEach(function (ds) { // fetch data
 Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fallbacks.map(loadResource))])
 .then(function () {
 	
-	const clickFirstRow = initOverlays(mappy.getContainer());
+	const hasOverlays = initOverlays(mappy.getContainer());
 	initDownloadLinks();
 	
     $('.thumbnail').enlarge();
@@ -135,7 +135,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 		let circleColors;
 		if (!!ds.relations) {
 			circleColors = arrayColors(ds.relations);
-			colorTable(circleColors, '#mapControls');
+			colorTable(circleColors, '.maplibregl-control-container');
 		}
 		
 		if ((!!ds.tilesets && ds.tilesets.length > 0) || !!ds.extent) {
@@ -212,9 +212,12 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	// Initialise resize observers
 	initObservers();
 	
-	mappy.fitViewport(window.ds_list_stats.extent, 15);
-	if (clickFirstRow) {
+	if (!hasOverlays) { // There seems to be a bug in MapLibre preventing proper map rendering without the following map interaction
+		mappy.fitViewport(window.ds_list_stats.extent, 15);
 		$('#placetable tbody tr').first().click();
+	}
+	else {
+		recenterMap();		
 	}
 	mappy.getContainer().style.opacity = 1;
 	

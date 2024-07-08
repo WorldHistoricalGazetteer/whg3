@@ -250,17 +250,17 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 
         if (event.target && event.target.parentNode) {
 			const parentNodeClassList = event.target.parentNode.classList;
-
-			if (parentNodeClassList.contains('maplibregl-ctrl-fullscreen')) {
-				$('#mapOverlays').addClass('fullscreen');
+			if (parentNodeClassList) {
+				if (parentNodeClassList.contains('maplibregl-ctrl-fullscreen')) {
+					$('#mapOverlays').addClass('fullscreen');
+				}
+				else if (parentNodeClassList.contains('maplibregl-ctrl-shrink')) {
+					$('#mapOverlays').removeClass('fullscreen');
+				}
+				else if (parentNodeClassList.contains('dateline-button')) {
+		            toggleFilters($('.range_container.expanded').length > 0, mappy, table);
+		        }
 			}
-			else if (parentNodeClassList.contains('maplibregl-ctrl-shrink')) {
-				$('#mapOverlays').removeClass('fullscreen');
-			}
-			else if (parentNodeClassList.contains('dateline-button')) {
-	            toggleFilters($('.range_container.expanded').length > 0, mappy, table);
-	        }
-
 		}
 
 	});

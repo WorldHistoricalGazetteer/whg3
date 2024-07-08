@@ -70,12 +70,19 @@
 	.overlay {
 		display: block!important;
 	}
+	.color-key-table {
+	    left: 0.5rem;
+    	top: 50px;
+	}
 }
 
 /* CSS for wider screens (576px and above) */
 @media (min-width: 576px) {
 	#map {
 		height: 100%;
+	}
+	#mapControls.item {
+	    margin-right: -2px;
 	}
 	#detail {
   		height: 30% !important;

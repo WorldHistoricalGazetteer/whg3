@@ -28,6 +28,7 @@ function updateBounds() {
   const pseudoCenter = mapParams.mappy.unproject([centerX, centerY]);
   window.mapBounds = {
     'center': pseudoCenter,
+    'zoom': mapParams.mappy.getZoom()
   };
   //console.log('window.mapBounds updated:', window.mapBounds);
 }
@@ -61,6 +62,7 @@ export function recenterMap(duration) {
       });
     }
   }
+  //console.log('Map recentred', window.mapBounds);
 }
 
 export function initObservers() {
@@ -75,6 +77,13 @@ export function initObservers() {
 
   window.blockBoundsUpdate = false;
   const resizeObserver = new ResizeObserver(function() {
+	const mapOverlays = $('#mapOverlays').length > 0;
+	if (mapOverlays && window.innerWidth < 576) {
+		removeOverlays(mappy.getContainer());
+	}
+	else if (!mapOverlays && window.innerWidth > 575) {
+		initOverlays(mappy.getContainer());
+	}
     updatePadding();
     recenterMap(false);
   });
@@ -101,7 +110,7 @@ export function initObservers() {
 export function initOverlays(whgMap) {
 
   if (window.innerWidth < 576) { // Do not use map overlays on very narrow screens
-    return true; // Click first row of table (otherwise map features fail to render - seems to be a bug)
+    return false;
   }
   
   const controlContainer = document.querySelector(
@@ -124,6 +133,8 @@ export function initOverlays(whgMap) {
     });
     if (side == 'left') column.appendChild(controlContainer);
   });
+  
+  return true;
 }
 
 export function removeOverlays(whgMap) {
