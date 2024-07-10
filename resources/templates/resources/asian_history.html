@@ -1,4 +1,4 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% block title %}<title>WHG::Asian History Curriculum</title>{% endblock %}
 
 {% block content %}
@@ -25,6 +25,9 @@
       </div>
     </div>
   </div> 
+{% endblock %}
+
+{% block inlineScripts %}
   <script type="text/javascript">
     $(".popimg").on("click", function() {
       imagelink = $(".popimg img").attr('src')

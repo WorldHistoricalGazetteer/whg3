@@ -1,4 +1,4 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% block title %}<title>WHG::v2 Guide</title>{% endblock %}
 
 {% block content %}
@@ -287,6 +287,9 @@
       </div>
     </div>
   </div>
+{% endblock %}
+
+{% block inlineScripts %}
   <script type="text/javascript">
     $(function(){
       $('.nav-pills a[href="#pills-why"]').tab('show')
@@ -297,6 +300,5 @@
       $('#imagepreview').attr('src', imagelink); 
       $('#imagemodal').modal('show');
     });
-    $("[data-bs-toggle='tooltip']").tooltip();
   </script>
 {% endblock %}

@@ -1,4 +1,4 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 
 {% block extra_head %}
 <style>
@@ -62,7 +62,9 @@
       </div>
     </div>
   </div> <!-- .container -->
+{% endblock %}
 
+{% block inlineScripts %}
   <script type="application/javascript">
     var currentState = {
       datasets: {sort: 'last_modified', order: 'desc', filters: {}},
@@ -237,4 +239,4 @@
     }
 
   </script>
-{% endblock %} <!-- content -->
+{% endblock %}

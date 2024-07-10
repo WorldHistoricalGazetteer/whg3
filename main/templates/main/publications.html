@@ -1,12 +1,8 @@
-{#{% extends "main/base_webpack.html" %}#}
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% load static %}
 
 {% block title %}
   <title>WHG v3.0a</title>
-{% endblock %}
-
-{% block maplibre %}
 {% endblock %}
 
 {% block extra_head %}
@@ -27,7 +23,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mt-1" style="height: calc(100vh - 210px);">
+<div class="container mt-1">
   <div id="banner" class="w-100 my-1 p-2">
     <h3>Publications and press</h3>
   </div>
@@ -66,11 +62,4 @@
   </div> <!-- content_top -->
 
 </div>
-{% endblock %}
-
-{% block deferredScripts %}
-
-  var scripts = [
-  ]
-
 {% endblock %}

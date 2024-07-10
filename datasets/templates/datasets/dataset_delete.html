@@ -1,4 +1,4 @@
-{% extends 'main/base.html' %}
+{% extends 'main/base_webpack.html' %}
 {% load static %}
 {% block extra_head %}
   
@@ -36,8 +36,9 @@
   </div>
   {% endif %}
 </div>
+{% endblock %}
 
-</div>
+{% block inlineScripts %}
 <script type="text/javascript">
   function startDeleteSpinner() {
     window.spinner_delete = new Spin.Spinner().spin();

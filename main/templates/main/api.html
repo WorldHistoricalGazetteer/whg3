@@ -1,4 +1,4 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% block title %}<title>WHG::API</title>{% endblock %}
 {% block extra_head %}
   <style>
@@ -15,6 +15,9 @@
     </div>
     <div><h5>some swagger presentation of a selection of public endpoints</h5></div>
   </div>
+{% endblock %}
+
+{% block inlineScripts %}
   <script type="text/javascript">
 	$(function(){
 	  $("[data-bs-toggle='tooltip']").tooltip();

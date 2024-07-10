@@ -1,4 +1,4 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% block title %}<title>WHG::v2 Guide</title>{% endblock %}
 
 {% block content %}
@@ -27,6 +27,9 @@
       
     </div>
 </div>
+{% endblock %}
+
+{% block inlineScripts %}
 <script>
 $(document).ready(function(){
     $('.openPopup').on('click',function(){

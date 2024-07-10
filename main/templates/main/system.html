@@ -1,4 +1,4 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% block title %}<title>WHG::Architecture</title>{% endblock %}
 {% block extra_head %}
 <style>
@@ -90,6 +90,9 @@
       </div>
     </div>
   </div>  
+{% endblock %}
+
+{% block inlineScripts %}
   <script type="text/javascript">
     $(".popimg").on("click", function() {
       imagelink = $(".popimg img").attr('src')

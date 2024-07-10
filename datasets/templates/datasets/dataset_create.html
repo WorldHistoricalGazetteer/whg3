@@ -1,5 +1,5 @@
 <!-- datasets/dataset_create.html -->
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% block title %}<title>WHG::Create/Update</title>{% endblock %}
 
 {% block content %}
@@ -156,6 +156,9 @@
   <div class="selector py-3"><div id="helpme"></div></div>
 </div>
 
+{% endblock %}
+
+{% block inlineScripts %}
 <script type="text/javascript">
 
 
@@ -185,7 +188,6 @@
       }
     }
   })
-  $("[data-bs-toggle='tooltip']").tooltip();
   function startUploadSpinner() {
     window.spinner_upload = new Spin.Spinner().spin();
     $("#upload_spinner").append(spinner_upload.el);   

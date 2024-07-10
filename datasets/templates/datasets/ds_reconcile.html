@@ -1,4 +1,4 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% load static %}
 
 {% load mathfilters %}
@@ -178,6 +178,9 @@
   </div> <!-- .tab-content -->
   </div> <!-- #dataset_content -->
 
+{% endblock %}
+
+{% block inlineScripts %}
   <script type="text/javascript">
     // activate all
     // tooltips

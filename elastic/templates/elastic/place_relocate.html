@@ -1,5 +1,5 @@
 <!-- place/place_relocate.html -->
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 
 {% load static %}
 {% load dataset_extras %}
@@ -41,6 +41,9 @@
   {% endif %}
 </div> <!-- container -->
 
+{% endblock %}
+
+{% block inlineScripts %}
 <script type="text/javascript">
   $(function(){
     $(".help-matches").click(function(){

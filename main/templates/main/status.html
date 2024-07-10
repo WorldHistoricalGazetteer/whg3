@@ -1,4 +1,4 @@
-<!--{ extends "main/base.html" %}-->
+{ extends "main/base_webpack.html" %}
 <html>
 <head>
   <meta charset="utf-8">
@@ -34,6 +34,9 @@
     <p id="status_all" style="display:none"></p>
     <!--<p id="status_all"></p>-->
   </div>
+{% endblock %}
+
+{% block inlineScripts %}
   <script type="text/javascript">
     $(function() {
       vals = []
