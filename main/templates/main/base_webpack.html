@@ -25,10 +25,11 @@
   {% block extra_head %}{% endblock %}
   <script type="text/javascript">
     {% block deferredScripts %}
+    var scripts = [];  // Initialize scripts array if not present in template
     {% endblock %}
     function executeDeferredScripts() {
       const loadNextScript = function(index) {
-        if (index < scripts.length) {
+        if (index !== -1 && index < scripts.length) {
           const script = scripts[index];
           const scriptElement = document.createElement('script');
           scriptElement.src = script.src;
@@ -42,11 +43,26 @@
           };
           document.body.appendChild(scriptElement);
         }
+        else {
+            // Execute inline scripts after all external scripts are loaded
+            const inlineScriptContent = document.getElementById('inline-scripts').innerHTML;
+            const cleanInlineScriptContent = inlineScriptContent.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, function(match, p1) {
+                return p1;
+            });
+            const scriptElement = document.createElement('script');
+            scriptElement.type = 'text/javascript';
+            scriptElement.text = cleanInlineScriptContent;
+            document.body.appendChild(scriptElement);
+        }
       };
-      loadNextScript(0);
+      loadNextScript(scripts.length == 0 ? -1 : 0);
     }
   </script>
 </head>
+
+<div id="inline-scripts" style="display: none;">
+  <!-- Enclose within HTML Comment to prevent premature execution {% block inlineScripts %}{% endblock inlineScripts %}-->
+</div>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZB73342G3Y"></script>
 <script>

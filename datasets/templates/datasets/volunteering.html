@@ -1,11 +1,8 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% load static %}
 {% load dataset_extras %}
 {% block title %}
   <title>WHG v3.0a</title>
-{% endblock %}
-
-{% block maplibre %}
 {% endblock %}
 
 {% block extra_head %}
@@ -28,7 +25,7 @@
 
 {% block content %}
 
-  <div class="container mt-1" style="min-height: calc(100vh - 210px);">
+  <div class="container mt-1">
     <div id="banner" class="banner-bare w-100 my-1 p-2">
     </div>
     <div id="content_top" class="row gx-2 gy-2 mx-0 h-75">
@@ -88,7 +85,13 @@
     </div> <!-- content_bottom-->
 
   <script type="application/javascript">
-    $(document).ready(function() {
+
+  </script>
+{% endblock %}
+
+{% block inlineScripts %}
+<script>
+	$( document ).ready(function() {
       console.log('page loaded');
       var spinner = $('.spinner-border');
       spinner.hide();
@@ -144,18 +147,6 @@
         $('#dots_descrip').show(); // show dots again
         $('.a_more_descrip').show(); // show more link again
       });
-    });
-  </script>
-{% endblock %}
-
-
-{% block deferredScripts %}
-   	var scripts = [
-      {
-        src: '{% static 'webpack/base.bundle.js' %}',
-        type: 'module',
-      },
-   	]
-
-
+	});
+</script>      
 {% endblock %}
