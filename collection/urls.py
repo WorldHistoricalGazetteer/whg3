@@ -15,7 +15,7 @@ urlpatterns = [
 
     # GALLERIES
     path('group/<int:id>/gallery', views.CollectionGroupGalleryView.as_view(), name='collection-group-gallery'),
-    path('gallery', views.CollectionGalleryView.as_view(), name='collection-gallery'), # Superseded by /datasets/gallery/collections
+    # path('gallery', views.CollectionGalleryView.as_view(), name='collection-gallery'), # Superseded by /datasets/gallery/collections
 
     # DATASET collections (datasets only)
     path('create_ds/', views.DatasetCollectionCreateView.as_view(), name='ds-collection-create'),
@@ -38,7 +38,6 @@ urlpatterns = [
     path('collab-remove/<int:uid>/<int:cid>/', views.collab_remove, name="collab-remove"),
 
     # COLLECTION GROUPS (for classes, workshops)
-    # path('create_collection_group/', views.create_collection_group, name='create-collection-group'),
     path('create_collection_group/', views.CollectionGroupCreateView.as_view(), name='collection-group-create'),
     path('group/<int:id>/update', views.CollectionGroupUpdateView.as_view(), name='collection-group-update'),
     path('group/<int:id>/delete', views.CollectionGroupDeleteView.as_view(), name='collection-group-delete'),

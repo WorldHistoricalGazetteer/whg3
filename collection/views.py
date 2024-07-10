@@ -1260,30 +1260,6 @@ class DatasetCollectionUpdateView(UpdateView):
 
     return context
 
-""" public collection view, datasets, bboxes on a map """
-# class DatasetCollectionSummaryView(DetailView):
-#   template_name = 'collection/ds_collection_summary.html'
-#
-#   model = Collection
-#
-#   def get_context_data(self, **kwargs):
-#     context = super(DatasetCollectionSummaryView, self).get_context_data(**kwargs)
-#     id_ = self.kwargs.get("pk")
-#     print('CollectionDetailView(), kwargs',self, self.kwargs)
-#
-#     datasets = self.object.datasets.all()
-#
-#     # gather bounding boxes
-#     bboxes = [ds.bounds for ds in datasets]
-#
-#     #context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-#     #context['maptilerkey'] = settings.MAPTILER_KEY
-#     context['whgteam'] = User.objects.filter(groups__name='whg_team')
-#
-#     context['ds_list'] = datasets
-#     context['links'] = Link.objects.filter(collection=id_)
-#     context['bboxes'] = bboxes
-#     return context
 
 """ browse collection dataset places
     same for owner(s) and public
@@ -1314,19 +1290,12 @@ class DatasetCollectionBrowseView(DetailView):
     print('DatasetCollectionBrowseView get_context_data() kwargs:',self.kwargs)
     print('DatasetCollectionBrowseView get_context_data() request.user',self.request.user)
 
-    # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-    #context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-    #context['maptilerkey'] = settings.MAPTILER_KEY
     context['media_url'] = settings.MEDIA_URL
 
     id_ = self.kwargs.get("id")
     # compute bounding boxes
 
     coll = get_object_or_404(Collection, id=id_)
-    # "geotypes":ds.geotypes,
-    # datasets = [{"id":ds.id,"label":ds.label,"title":ds.title} for ds in coll.ds_list]
-                 # "bbox": ds.bounds } for ds in coll.datasets.all()]
-    #bboxes = [{"id":ds['id'], "geometry":ds['bounds']} for ds in datasets]
 
     # sg 21-Dec-2023: These 2 lines appear to be redundant:
     placeset = coll.places.all()
@@ -1347,27 +1316,27 @@ class DatasetCollectionBrowseView(DetailView):
 """ browse collection collections
     w/student section?
 """
-class CollectionGalleryView(ListView):
-  redirect_field_name = 'redirect_to'
-
-  context_object_name = 'collections'
-  template_name = 'collection/collection_gallery.html'
-  model = Collection
-
-  def get_queryset(self):
-    qs = super().get_queryset()
-    return qs.filter(public = True).order_by('title')
-
-  def get_context_data(self, *args, **kwargs):
-    context = super(CollectionGalleryView, self).get_context_data(*args, **kwargs)
-    # public collections
-    # context['group'] = self.get_object()
-    context['place_collections'] = Collection.objects.filter(collection_class='place', public=True)
-    context['dataset_collections'] = Collection.objects.filter(collection_class='dataset', public=True)
-    context['student_collections'] = Collection.objects.filter(nominated=True)
-
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
-    return context
+# class CollectionGalleryView(ListView):
+#   redirect_field_name = 'redirect_to'
+#
+#   context_object_name = 'collections'
+#   template_name = 'collection/collection_gallery.html'
+#   model = Collection
+#
+#   def get_queryset(self):
+#     qs = super().get_queryset()
+#     return qs.filter(public = True).order_by('title')
+#
+#   def get_context_data(self, *args, **kwargs):
+#     context = super(CollectionGalleryView, self).get_context_data(*args, **kwargs)
+#     # public collections
+#     # context['group'] = self.get_object()
+#     context['place_collections'] = Collection.objects.filter(collection_class='place', public=True)
+#     context['dataset_collections'] = Collection.objects.filter(collection_class='dataset', public=True)
+#     context['student_collections'] = Collection.objects.filter(nominated=True)
+#
+#     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
+#     return context
 
 class CollectionDeleteView(DeleteView):
   template_name = 'collection/collection_delete.html'
