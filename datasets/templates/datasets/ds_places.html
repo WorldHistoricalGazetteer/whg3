@@ -23,9 +23,10 @@
 {% endblock %}
 
 {% block content %}
-  <main id="dataset_content" class="container px-md-0">
-    <div id="map" style="opacity: 0; height:100%;"></div>
-    <div id="ds_info" class="overlay left">
+  <main id="dataset_content" class="container px-0">
+    <div class="row col-12 mx-0 px-0">
+    
+    <div id="ds_info" class="col-12 my-1 overlay left">
       <div id="ds_header" class="raleway">
             <span class="fs-5 title">
                 <img src="{% static 'images/spreadsheet.png' %}" height=28 alt=""/>
@@ -115,7 +116,7 @@
       </div> <!-- #metadata -->
     </div> <!-- ds_info -->
 
-    <div id="ds_table" class="overlay right">
+    <div id="ds_table" class="col-12 my-1 overlay right">
       <span id="added_flash" class="mr-2 hidden" style="background-color: yellow; position:absolute; top:10px; right:10px;"> added! </span>
       <div id="selection_status">
         <span id="actions">
@@ -148,244 +149,247 @@
         </p>
       </div>
     </div> <!-- ds_table -->
-    <div id="detail" class="overlay right"></div>
-
-    <div id="downloadModal" class="modal fade" tabindex="-1"
-           aria-labelledby="downloadModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg" style="height: fit-content;">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="downloadModalLabel">
-                <i class="fas fa-download linky"></i>
-                Download options for the <span class="text-danger">{{ object.title }}</span> dataset
-              </h5>
-            </div>
-            <div class="modal-body container">
-              <div class="dl-blurb">
-                <p class="mb-1">Data uploaded as Linked Places format (LPF) are available only in that format. Data
-                  uploaded as LP-TSV (delimited text files or spreadsheets) can be downloaded as either
-                  <sr>LPF</sr>
-                  or
-                  <sr>LP-TSV</sr>
-                  .
-                  <!--Downloads totaling more than {n} records will be queued, and a notification email sent when completed.-->
-                </p>
-                <div id="dl_licensing">
-                  <p>
-                    <sr>IMPORTANT LICENSING INFORMATION</sr>
-                    : Data made public in WHG by its creators are available under the Creative Commons Attribution 4.0
-                    International (CC BY 4.0) License. They can be freely shared, re-used, and adapted, but "you
-                    <b>must</b> give appropriate credit, provide a link to the license, and indicate if changes were
-                    made." Please see <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC-BY-4.0
-                    details</a>; and <a href="{% url 'licensing' %}" target="_blank">WHG policy.</a> Citations are
-                    provided below. <b>By clicking download on this form, you are agreeing to those terms</b>.
-                  </p>
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-sm-8 pr-0 scroll-div">
-                  <p class="modal-col-head p-1 mb-2">Dataset
-                    <span class="float-end me-2">
-                      <span id="progress-bar" style="display: block;
-                      height:8px;background-color: #0d6efd; width:0;"></span>
-                      <span id="progress-message" class="ms-3 small"></span>
-                    </span>
-                  </p>
-                  <table class="dl-table small">
-                    <thead>
-                    <tr>
-                      <th>Title</th>
-                      <th>Rows</th>
-                      <th>Formats</th>
-                      <th></th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                      <tr class="align-top">
-                        <td>{{ object.title }}&nbsp;
-                          <a id="cite_{{ object.id }}" class="clippy" aria-label="
-                            {% if object.citation %}{{ object.citation }}{% else %}{{ object.title }}. [Data file, last modified {{ object.last_modified_text }}]. Retrieved from http://whgazetteer.org/datasets/{{ object.id }}/places/, {% now 'd M Y' %}{% endif %}"
-                             rel="tooltip" title="copy to clipboard">
-                            <i class="fas fa-clipboard linky"></i></a><br/>
-                          <span class="ml-2 small" style="disply:block">
-                            <i>est. download time: {{ object.dl_est }}</i></span>
-                        </td>
-                        <td>{{ object.numrows }}</td>
-                        <td> <!-- always offer lpf -->
-                          <div class="form-check form-check-inline">
-                            <input class="form-check-input hover" type="radio" name="format" value="lpf">
-                            <label class="form-check-label" for="r_lpf">LPF</label>
-                          </div>
-                          {% if object.format == 'delimited' %}
-                            <div class="form-check form-check-inline ml-1">
-                              <input class="form-check-input hover" type="radio" name="format" value="tsv" checked="checked">
-                              <label class="form-check-label" for="r_LP-TSV">LP-TSV</label>
-                            </div>
-                          {% endif %}
-                        </td>
-                        <td class="px-1">
-                          <a class="a-dl" data-id={{ object.id }} data-user={{ user }}>
-                            <i class="fa fa-download" title="Download"></i>
-                          </a>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                  <p class="small mt-2">The download task will be queued and when ready, you will receive an email notification.
-                    It will also be listed on <a href="{% url 'dashboard' %}">your 'My Data' dashboard</a> </p>
-                </div>
-                <div class="col-sm-4">
-                  <p class="modal-col-head p-1 mb-2">File Formats</p>
-                  <div class="p-1 small">
-                    <p class="my-1">
-                      <sr>Linked Places format (LPF)</sr>
-                      is JSON-based, valid GeoJSON and valid JSON-LD (rdf) with temporal extensions
-                    </p>
-                    <p class="my-1">
-                      <sr>LP-TSV downloads</sr>
-                      are tab-separated text files.
-                    </p>
-                  </div>
-                  <div id="progress-bar-message" class="hidden">Waiting for progress to start...</div>
-                  <span id='progress-bar' class='progress-bar'
-                        style="background-color: #68a9ef; width: 0%; line-height:.5rem;">&nbsp;</span>
-                </div>
-              </div>
-            </div> <!-- .modal-body -->
-            <!-- .modal-body -->
-            <div class="modal-footer">
-              <button type="button" class="btn btn-sm btn-secondary btn-cancel" data-bs-dismiss="modal">Close</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    <div id="metadataModal" class="modal fade" tabindex="-1"
-           aria-labelledby="metadataModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-lg" style="height: fit-content;">
-        <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="metadataModalLabel">
-{#                <i class="fas fa-download linky"></i>#}
-                Metadata for the <span class="text-danger">{{ object.title }}</span> dataset
-              </h5>
-            </div>
-            <div class="modal-body container">
-              <div class="dl-blurb mt-1">
-                <p class="mb-1"></p>
-                <div id="dl_licensing"><p><sr>IMPORTANT LICENSING INFORMATION</sr>: Data made public in WHG by its creators are available under the Creative Commons Attribution 4.0 International (CC BY 4.0) License. They can be freely shared, re-used, and adapted, but "you <b>must</b> give appropriate credit, provide a link to the license, and indicate if changes were made." Please see <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC-BY-4.0 details</a>; and <a href="{% url 'licensing' %}" target="_blank">WHG policy.</a> Citations are provided below.</p></div>
-              </div>
-              <div class="row">
-                <div class="col-12 pr-0 scroll-div">
-                  <p class="modal-col-head p-1 mb-2">
-                    {{ object.title }}
-                    <span class="small float-end">
-<a id="a_permalink" class="clippy" aria-label="https://whgazetteer.org/datasets/{{object.id}}/places" rel="tooltip" data-bs-container="#metadataModal" title="copy to clipboard">permalink <i class="fas fa-clipboard linky"></i></a>
-                    </span>
-                  </p>
-                  <table class="dl-table small">
-                    <tbody>
-                      <tr class="align-top">
-                        <td style="width:200px;"># Records)</td>
-                        <td>{{ object.numrows }}</td>
-                      </tr>
-                      <tr class="align-top">
-                        <td>WHG id</td>
-                        <td>{{ object.label }} ({{ object.id }})</td>
-                      </tr>
-                      <tr class="align-top">
-                        <td>Description</td>
-                        <td>{{ object.description }}</td>
-                      </tr>
-                      <tr class="align-top">
-                        <td>Creator</td>
-                        <td>{{ object.creator }}</td>
-                      </tr>
-                      <tr class="align-top">
-                        <td>Uploaded/last modified</td>
-                        <td>{{ object.create_date|date:"d M Y" }} / {{ object.last_modified_text }}</td>
-                      </tr>
-                      <tr class="align-top">
-                        <td>Source(s)</td>
-                        <td>{{ object.source }}</td>
-                      </tr>
-                      <tr class="align-top">
-                        <td>Contibutor(s)</td>
-                        <td>{{ object.contributors }}</td>
-                      </tr>
-                      <tr class="align-top">
-                        <td>Citation</td>
-                        <td>{{ object.citation }}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-{#                      <tr> #}
-{#                        <td>Formats</td>#}
-{#                        #}
-{#                          <div class="form-check form-check-inline">#}
-{#                            <input class="form-check-input hover" type="radio" name="format" value="lpf">#}
-{#                            <label class="form-check-label" for="r_lpf">LPF</label>#}
-{#                          </div>#}
-{#                          {% if object.format == 'delimited' %}#}
-{#                            <div class="form-check form-check-inline ml-1">#}
-{#                              <input class="form-check-input hover" type="radio" name="format" value="tsv" checked="checked">#}
-{#                              <label class="form-check-label" for="r_LP-TSV">LP-TSV</label>#}
-{#                            </div>#}
-{#                          {% endif %}#}
-{#                        </tr>#}
-{#                        <td class="px-1">#}
-{#                          <a class="a-dl" data-id={{ object.id }} data-user={{ user }}>#}
-{#                            <i class="fa fa-download" title="Download"></i>#}
-{#                          </a>#}
-{#                        </td>#}
-{#                      </tr>#}
-                </div>
-{#                <div class="col-sm-4">#}
-{#                  <p class="modal-col-head p-1 mb-2">head col-4</p>#}
-{#                  <div class="p-1 small">#}
-{#                    <p class="my-1">foo</p>#}
-{#                    <p class="my-1">bar</p>#}
-{#                  </div>#}
-{#                </div>#}
-              </div>
-            </div> <!-- .modal-body -->
-            <!-- .modal-body -->
-            <div class="modal-footer">
-              <button type="button" class="btn btn-sm btn-secondary btn-cancel"
-                      data-bs-dismiss="modal">Close</button>
-            </div>
-          </div>
-      </div>
-    </div>
-
-    <div class="modal fade" id="" tabindex="-1" role="dialog"
-         aria-labelledby="updateModalLabel" aria-hidden="true">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="updateModalLabel"></h5>
-          </div>
-          <div class="modal-body"></div>
-          <!-- .modal-body -->
-          <div class="modal-footer">
-            <div id="buttons_pre">
-              <button id="btn_cancel" type="button"
-                      class="btn btn-secondary btn-sm" data-dismiss="modal">
-                Cancel
-              </button>
-              <button id="btn_update" type="button" data-dsid="{{ ds.id }}" class="btn btn-primary btn-sm
-                      hidden
-              "> Proceed</button>
-            </div>
-            <button id="btn_done" type="button" class="btn btn-secondary btn-sm hidden"
-                    data-dismiss="modal">Done
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
+    <div id="detail" class="col-12 my-1 overlay right"></div>
+    
+    <div id="map" class="col-12 my-1" style="opacity: 0;"></div>
+    
+  </div>
   </main>
+
+	<div id="downloadModal" class="modal fade" tabindex="-1"
+	       aria-labelledby="downloadModalLabel" aria-hidden="true">
+	    <div class="modal-dialog modal-lg" style="height: fit-content;">
+	      <div class="modal-content">
+	        <div class="modal-header">
+	          <h5 class="modal-title" id="downloadModalLabel">
+	            <i class="fas fa-download linky"></i>
+	            Download options for the <span class="text-danger">{{ object.title }}</span> dataset
+	          </h5>
+	        </div>
+	        <div class="modal-body container">
+	          <div class="dl-blurb">
+	            <p class="mb-1">Data uploaded as Linked Places format (LPF) are available only in that format. Data
+	              uploaded as LP-TSV (delimited text files or spreadsheets) can be downloaded as either
+	              <sr>LPF</sr>
+	              or
+	              <sr>LP-TSV</sr>
+	              .
+	              <!--Downloads totaling more than {n} records will be queued, and a notification email sent when completed.-->
+	            </p>
+	            <div id="dl_licensing">
+	              <p>
+	                <sr>IMPORTANT LICENSING INFORMATION</sr>
+	                : Data made public in WHG by its creators are available under the Creative Commons Attribution 4.0
+	                International (CC BY 4.0) License. They can be freely shared, re-used, and adapted, but "you
+	                <b>must</b> give appropriate credit, provide a link to the license, and indicate if changes were
+	                made." Please see <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC-BY-4.0
+	                details</a>; and <a href="{% url 'licensing' %}" target="_blank">WHG policy.</a> Citations are
+	                provided below. <b>By clicking download on this form, you are agreeing to those terms</b>.
+	              </p>
+	            </div>
+	          </div>
+	          <div class="row">
+	            <div class="col-sm-8 pr-0 scroll-div">
+	              <p class="modal-col-head p-1 mb-2">Dataset
+	                <span class="float-end me-2">
+	                  <span id="progress-bar" style="display: block;
+	                  height:8px;background-color: #0d6efd; width:0;"></span>
+	                  <span id="progress-message" class="ms-3 small"></span>
+	                </span>
+	              </p>
+	              <table class="dl-table small">
+	                <thead>
+	                <tr>
+	                  <th>Title</th>
+	                  <th>Rows</th>
+	                  <th>Formats</th>
+	                  <th></th>
+	                </tr>
+	                </thead>
+	                <tbody>
+	                  <tr class="align-top">
+	                    <td>{{ object.title }}&nbsp;
+	                      <a id="cite_{{ object.id }}" class="clippy" aria-label="
+	                        {% if object.citation %}{{ object.citation }}{% else %}{{ object.title }}. [Data file, last modified {{ object.last_modified_text }}]. Retrieved from http://whgazetteer.org/datasets/{{ object.id }}/places/, {% now 'd M Y' %}{% endif %}"
+	                         rel="tooltip" title="copy to clipboard">
+	                        <i class="fas fa-clipboard linky"></i></a><br/>
+	                      <span class="ml-2 small" style="disply:block">
+	                        <i>est. download time: {{ object.dl_est }}</i></span>
+	                    </td>
+	                    <td>{{ object.numrows }}</td>
+	                    <td> <!-- always offer lpf -->
+	                      <div class="form-check form-check-inline">
+	                        <input class="form-check-input hover" type="radio" name="format" value="lpf">
+	                        <label class="form-check-label" for="r_lpf">LPF</label>
+	                      </div>
+	                      {% if object.format == 'delimited' %}
+	                        <div class="form-check form-check-inline ml-1">
+	                          <input class="form-check-input hover" type="radio" name="format" value="tsv" checked="checked">
+	                          <label class="form-check-label" for="r_LP-TSV">LP-TSV</label>
+	                        </div>
+	                      {% endif %}
+	                    </td>
+	                    <td class="px-1">
+	                      <a class="a-dl" data-id={{ object.id }} data-user={{ user }}>
+	                        <i class="fa fa-download" title="Download"></i>
+	                      </a>
+	                    </td>
+	                  </tr>
+	                </tbody>
+	              </table>
+	              <p class="small mt-2">The download task will be queued and when ready, you will receive an email notification.
+	                It will also be listed on <a href="{% url 'dashboard' %}">your 'My Data' dashboard</a> </p>
+	            </div>
+	            <div class="col-sm-4">
+	              <p class="modal-col-head p-1 mb-2">File Formats</p>
+	              <div class="p-1 small">
+	                <p class="my-1">
+	                  <sr>Linked Places format (LPF)</sr>
+	                  is JSON-based, valid GeoJSON and valid JSON-LD (rdf) with temporal extensions
+	                </p>
+	                <p class="my-1">
+	                  <sr>LP-TSV downloads</sr>
+	                  are tab-separated text files.
+	                </p>
+	              </div>
+	              <div id="progress-bar-message" class="hidden">Waiting for progress to start...</div>
+	              <span id='progress-bar' class='progress-bar'
+	                    style="background-color: #68a9ef; width: 0%; line-height:.5rem;">&nbsp;</span>
+	            </div>
+	          </div>
+	        </div> <!-- .modal-body -->
+	        <!-- .modal-body -->
+	        <div class="modal-footer">
+	          <button type="button" class="btn btn-sm btn-secondary btn-cancel" data-bs-dismiss="modal">Close</button>
+	        </div>
+	      </div>
+	    </div>
+	  </div>
+	
+	<div id="metadataModal" class="modal fade" tabindex="-1"
+	       aria-labelledby="metadataModalLabel" aria-hidden="true">
+	  <div class="modal-dialog modal-lg" style="height: fit-content;">
+	    <div class="modal-content">
+	        <div class="modal-header">
+	          <h5 class="modal-title" id="metadataModalLabel">
+	{#                <i class="fas fa-download linky"></i>#}
+	            Metadata for the <span class="text-danger">{{ object.title }}</span> dataset
+	          </h5>
+	        </div>
+	        <div class="modal-body container">
+	          <div class="dl-blurb mt-1">
+	            <p class="mb-1"></p>
+	            <div id="dl_licensing"><p><sr>IMPORTANT LICENSING INFORMATION</sr>: Data made public in WHG by its creators are available under the Creative Commons Attribution 4.0 International (CC BY 4.0) License. They can be freely shared, re-used, and adapted, but "you <b>must</b> give appropriate credit, provide a link to the license, and indicate if changes were made." Please see <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC-BY-4.0 details</a>; and <a href="{% url 'licensing' %}" target="_blank">WHG policy.</a> Citations are provided below.</p></div>
+	          </div>
+	          <div class="row">
+	            <div class="col-12 pr-0 scroll-div">
+	              <p class="modal-col-head p-1 mb-2">
+	                {{ object.title }}
+	                <span class="small float-end">
+	<a id="a_permalink" class="clippy" aria-label="https://whgazetteer.org/datasets/{{object.id}}/places" rel="tooltip" data-bs-container="#metadataModal" title="copy to clipboard">permalink <i class="fas fa-clipboard linky"></i></a>
+	                </span>
+	              </p>
+	              <table class="dl-table small">
+	                <tbody>
+	                  <tr class="align-top">
+	                    <td style="width:200px;"># Records)</td>
+	                    <td>{{ object.numrows }}</td>
+	                  </tr>
+	                  <tr class="align-top">
+	                    <td>WHG id</td>
+	                    <td>{{ object.label }} ({{ object.id }})</td>
+	                  </tr>
+	                  <tr class="align-top">
+	                    <td>Description</td>
+	                    <td>{{ object.description }}</td>
+	                  </tr>
+	                  <tr class="align-top">
+	                    <td>Creator</td>
+	                    <td>{{ object.creator }}</td>
+	                  </tr>
+	                  <tr class="align-top">
+	                    <td>Uploaded/last modified</td>
+	                    <td>{{ object.create_date|date:"d M Y" }} / {{ object.last_modified_text }}</td>
+	                  </tr>
+	                  <tr class="align-top">
+	                    <td>Source(s)</td>
+	                    <td>{{ object.source }}</td>
+	                  </tr>
+	                  <tr class="align-top">
+	                    <td>Contibutor(s)</td>
+	                    <td>{{ object.contributors }}</td>
+	                  </tr>
+	                  <tr class="align-top">
+	                    <td>Citation</td>
+	                    <td>{{ object.citation }}</td>
+	                  </tr>
+	                </tbody>
+	              </table>
+	{#                      <tr> #}
+	{#                        <td>Formats</td>#}
+	{#                        #}
+	{#                          <div class="form-check form-check-inline">#}
+	{#                            <input class="form-check-input hover" type="radio" name="format" value="lpf">#}
+	{#                            <label class="form-check-label" for="r_lpf">LPF</label>#}
+	{#                          </div>#}
+	{#                          {% if object.format == 'delimited' %}#}
+	{#                            <div class="form-check form-check-inline ml-1">#}
+	{#                              <input class="form-check-input hover" type="radio" name="format" value="tsv" checked="checked">#}
+	{#                              <label class="form-check-label" for="r_LP-TSV">LP-TSV</label>#}
+	{#                            </div>#}
+	{#                          {% endif %}#}
+	{#                        </tr>#}
+	{#                        <td class="px-1">#}
+	{#                          <a class="a-dl" data-id={{ object.id }} data-user={{ user }}>#}
+	{#                            <i class="fa fa-download" title="Download"></i>#}
+	{#                          </a>#}
+	{#                        </td>#}
+	{#                      </tr>#}
+	            </div>
+	{#                <div class="col-sm-4">#}
+	{#                  <p class="modal-col-head p-1 mb-2">head col-4</p>#}
+	{#                  <div class="p-1 small">#}
+	{#                    <p class="my-1">foo</p>#}
+	{#                    <p class="my-1">bar</p>#}
+	{#                  </div>#}
+	{#                </div>#}
+	          </div>
+	        </div> <!-- .modal-body -->
+	        <!-- .modal-body -->
+	        <div class="modal-footer">
+	          <button type="button" class="btn btn-sm btn-secondary btn-cancel"
+	                  data-bs-dismiss="modal">Close</button>
+	        </div>
+	      </div>
+	  </div>
+	</div>
+	
+	<div class="modal fade" id="" tabindex="-1" role="dialog"
+	     aria-labelledby="updateModalLabel" aria-hidden="true">
+	  <div class="modal-dialog" role="document">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <h5 class="modal-title" id="updateModalLabel"></h5>
+	      </div>
+	      <div class="modal-body"></div>
+	      <!-- .modal-body -->
+	      <div class="modal-footer">
+	        <div id="buttons_pre">
+	          <button id="btn_cancel" type="button"
+	                  class="btn btn-secondary btn-sm" data-dismiss="modal">
+	            Cancel
+	          </button>
+	          <button id="btn_update" type="button" data-dsid="{{ ds.id }}" class="btn btn-primary btn-sm
+	                  hidden
+	          "> Proceed</button>
+	        </div>
+	        <button id="btn_done" type="button" class="btn btn-secondary btn-sm hidden"
+	                data-dismiss="modal">Done
+	        </button>
+	      </div>
+	    </div>
+	  </div>
+	</div>
 
   {{ object.vis_parameters|json_script:"vis_parameters_data" }}
   <script type="text/javascript">

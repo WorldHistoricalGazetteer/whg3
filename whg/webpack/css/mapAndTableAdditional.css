@@ -35,10 +35,6 @@
   font-size: 1.2rem;
   font-family: Raleway, san-serif;
 }
-.pub-right {
-  display: flex;
-  flex-direction: column;
-}
 
 #placetable_wrapper .row:nth-child(2) > div {
     padding-right: 1px;	
@@ -58,7 +54,41 @@
     flex-grow: 1;
     flex-shrink: 0;
     flex-basis: 0;
+  	font-size: 0.8rem;
+  	z-index: 10;
 }
+
+/* CSS for very narrow screens (up to 575px) */
+@media (max-width: 575px) {
+	#map {
+		height: 400px;
+	}
+	#detail {
+		flex-basis: unset;
+	  	height: auto;
+	}
+	.overlay {
+		display: block!important;
+	}
+	.color-key-table {
+	    left: 0.5rem;
+    	top: 50px;
+	}
+}
+
+/* CSS for wider screens (576px and above) */
+@media (min-width: 576px) {
+	#map {
+		height: 100%;
+	}
+	#mapControls.item {
+	    margin-right: -2px;
+	}
+	#detail {
+  		height: 30% !important;
+	}
+}
+
 .pub-anno-title {
   font-size: large;
 }
@@ -98,12 +128,6 @@
   position: relative; 
   display: flex;
   flex: auto;
-}
-
-#detail {
-  font-size: 0.8rem;
-  z-index: 10;
-  height: 30% !important;
 }
 
 #detail p {

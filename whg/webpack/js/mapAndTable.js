@@ -4,7 +4,7 @@ import '../css/mapAndTable.css';
 import '../css/mapAndTableAdditional.css';
 
 import { init_mapControls } from './mapControls';
-import { recenterMap, initObservers, initOverlays, initPopups } from './mapFunctions';
+import { recenterMap, initObservers, initOverlays, removeOverlays, initDownloadLinks, initPopups } from './mapFunctions';
 import { toggleFilters } from './mapFilters';
 import { initUtils, initInfoOverlay, minmaxer, get_ds_list_stats, deepCopy, arrayColors, colorTable } from './utilities';
 import { initialiseTable } from './tableFunctions';
@@ -115,6 +115,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 .then(function () {
 	
 	initOverlays(mappy.getContainer());
+	initDownloadLinks();
 	
     $('.thumbnail').enlarge();
 	
@@ -134,7 +135,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 		let circleColors;
 		if (!!ds.relations) {
 			circleColors = arrayColors(ds.relations);
-			colorTable(circleColors, '#mapControls');
+			colorTable(circleColors, '.maplibregl-control-container');
 		}
 		
 		if ((!!ds.tilesets && ds.tilesets.length > 0) || !!ds.extent) {
@@ -157,10 +158,13 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	table = tableInit.table;
 	checked_rows = tableInit.checked_rows;
 
-	window.mapBounds = window.ds_list[0].extent || [-180, -90, 180, 90];
+	window.mapBounds = window.ds_list_stats.extent || [-180, -90, 180, 90];
 	
 	// Initialise Map Popups
 	initPopups(table);
+	
+	// Initialise resize observers
+	initObservers();
 	
 	// Initialise Map Controls
 	const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table);
@@ -208,10 +212,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 		allFeatures = null; // release memory
 	}
 	
-	// Initialise resize observers
-	initObservers();
-	
-	recenterMap();
+	recenterMap();	
 	mappy.getContainer().style.opacity = 1;
 	
 	initUtils(mappy); // Tooltips, ClipboardJS, clearlines, help-matches
@@ -219,6 +220,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	init_collection_listeners(checked_rows);
 	
 	$('#dataset_content').stopSpin();
+		
 });
 
 export { mappy };

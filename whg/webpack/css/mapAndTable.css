@@ -32,19 +32,19 @@
 #mapOverlays .column {
   display: flex;
   flex-direction: column;
-  height: calc(100% - 4px);
+  margin-right: 0.5rem;
 }
 
 #mapOverlays .column.left {
   min-width: 25%; /* Do not allow map to be over-squeezed by .column.right flex width */
   width: 100%;
+  height: calc(100% - 4px);
 }
 
 #mapOverlays .column.right {
   width: min-content;
   min-width: 34%;
   flex: 1 0 auto;
-  overflow-x: auto; /* Engages if .column.left is squeezed to its min-width */
 }
 
 #mapOverlays .item {
@@ -285,7 +285,7 @@
 	width: fit-content;
 	border: 1px solid #ccc;
     position: absolute;
-    left:0px;
+    left: 0px;
     top: 40px;
     background-color: rgb(255 255 255 / 75%);
 }

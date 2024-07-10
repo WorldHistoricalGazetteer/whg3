@@ -10,12 +10,22 @@ let mapParams;
 export function updatePadding() {
   const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
   const MapRect = mapParams.MapRectEl.getBoundingClientRect();
-  mappy.setPadding({
-    top: ControlsRect.top - MapRect.top - mapParams.ControlsRectMargin,
-    bottom: MapRect.bottom - ControlsRect.bottom - mapParams.ControlsRectMargin,
-    left: ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin,
-    right: MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin,
-  });
+  if ($('#mapOverlays').length > 0) {
+	  mappy.setPadding({
+	    top: ControlsRect.top - MapRect.top - mapParams.ControlsRectMargin,
+	    bottom: MapRect.bottom - ControlsRect.bottom - mapParams.ControlsRectMargin,
+	    left: ControlsRect.left - MapRect.left - mapParams.ControlsRectMargin,
+	    right: MapRect.right - ControlsRect.right - mapParams.ControlsRectMargin,
+	  });
+  }
+  else {
+	  mappy.setPadding({
+	    top: 0,
+	    bottom: 0,
+	    left: 0,
+	    right: 0,
+	  });	  
+  }
 }
 
 function updateBounds() {
@@ -28,6 +38,7 @@ function updateBounds() {
   const pseudoCenter = mapParams.mappy.unproject([centerX, centerY]);
   window.mapBounds = {
     'center': pseudoCenter,
+    'zoom': mapParams.mappy.getZoom()
   };
   //console.log('window.mapBounds updated:', window.mapBounds);
 }
@@ -61,13 +72,14 @@ export function recenterMap(duration) {
       });
     }
   }
+  //console.log('Map recentred', window.mapBounds);
 }
 
 export function initObservers() {
 
   mapParams = {
     mappy: mappy,
-    ControlsRectEl: document.getElementById('mapControls'),
+    ControlsRectEl: $('.maplibregl-control-container').first()[0],
     MapRectEl: document.querySelector('div.maplibregl-map'),
     ControlsRectMargin: 4,
     MapRectBorder: 1,
@@ -75,6 +87,13 @@ export function initObservers() {
 
   window.blockBoundsUpdate = false;
   const resizeObserver = new ResizeObserver(function() {
+	const mapOverlays = $('#mapOverlays').length > 0;
+	if (mapOverlays && window.innerWidth < 576) {
+		removeOverlays(mappy.getContainer());
+	}
+	else if (!mapOverlays && window.innerWidth > 575) {
+		initOverlays(mappy.getContainer());
+	}
     updatePadding();
     recenterMap(false);
   });
@@ -99,6 +118,9 @@ export function initObservers() {
 }
 
 export function initOverlays(whgMap) {
+
+  if (window.innerWidth < 576) return // Do not use map overlays on very narrow screens
+  
   const controlContainer = document.querySelector(
       '.maplibregl-control-container');
   controlContainer.setAttribute('id', 'mapControls');
@@ -119,7 +141,38 @@ export function initOverlays(whgMap) {
     });
     if (side == 'left') column.appendChild(controlContainer);
   });
+}
 
+export function removeOverlays(whgMap) {
+
+	const mainElement = document.querySelector('main div.row');
+	
+	const mapOverlays = document.getElementById('mapOverlays');
+	const overlaysLeft = mapOverlays.querySelectorAll('.overlay.left');
+	const overlaysRight = mapOverlays.querySelectorAll('.overlay.right');
+	
+	overlaysLeft.forEach(function(overlay) {
+	  mainElement.appendChild(overlay);
+	  overlay.classList.remove('item');
+	});
+	
+	overlaysRight.forEach(function(overlay) {
+	  mainElement.appendChild(overlay);
+	  overlay.classList.remove('item');
+	});
+	
+	mainElement.appendChild(whgMap);
+
+	const controlContainer = document.querySelector(
+      '.maplibregl-control-container');
+    controlContainer.removeAttribute('id');
+    controlContainer.classList.remove('item');
+    whgMap.appendChild(controlContainer);
+	
+	whgMap.removeChild(mapOverlays);
+}
+
+export function initDownloadLinks() {
   // Initialise Download link listener
   $('.a-dl, .a-dl-celery').click(function(e) {
     e.preventDefault();

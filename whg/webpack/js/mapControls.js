@@ -229,7 +229,7 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 	if (!!mapParameters.temporalControl && mapParameters.temporalControl) {
 		datelineContainer = document.createElement('div');
 		datelineContainer.id = 'dateline';
-		document.getElementById('mapControls').appendChild(datelineContainer);
+		$('.maplibregl-control-container').first()[0].appendChild(datelineContainer);
 
 		const range = window.ds_list_stats.max - window.ds_list_stats.min;
 		const buffer = range * 0.1; // 10% buffer
@@ -250,17 +250,17 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 
         if (event.target && event.target.parentNode) {
 			const parentNodeClassList = event.target.parentNode.classList;
-
-			if (parentNodeClassList.contains('maplibregl-ctrl-fullscreen')) {
-				document.getElementById('mapOverlays').classList.add('fullscreen');
+			if (parentNodeClassList) {
+				if (parentNodeClassList.contains('maplibregl-ctrl-fullscreen')) {
+					$('#mapOverlays').addClass('fullscreen');
+				}
+				else if (parentNodeClassList.contains('maplibregl-ctrl-shrink')) {
+					$('#mapOverlays').removeClass('fullscreen');
+				}
+				else if (parentNodeClassList.contains('dateline-button')) {
+		            toggleFilters($('.range_container.expanded').length > 0, mappy, table);
+		        }
 			}
-			else if (parentNodeClassList.contains('maplibregl-ctrl-shrink')) {
-				document.getElementById('mapOverlays').classList.remove('fullscreen');
-			}
-			else if (parentNodeClassList.contains('dateline-button')) {
-	            toggleFilters($('.range_container.expanded').length > 0, mappy, table);
-	        }
-
 		}
 
 	});
