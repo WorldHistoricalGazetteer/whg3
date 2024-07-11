@@ -11,7 +11,6 @@
   <meta name="csrf-token" content="{{ csrf_token }}">
   <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.ico' %}"/>
   <script defer src="{% static 'webpack/base.bundle.js' %}"></script>
-  <!-- 'defer' allows rendering of HTML to continue while scripts load -->
   <link href="{% static 'webpack/base.bundle.css' %}" rel="stylesheet"/>
   <style>
     body {
@@ -192,7 +191,7 @@
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
               <li class="nav-item">
-                <a class="nav-link" rel="tooltip" href="{% url 'profile-edit' %}"> Profile </a>
+                <a class="nav-link" href="{% url 'profile-edit' %}"> Profile </a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="javascript:{document.getElementById('logout').submit()}">Logout</a>

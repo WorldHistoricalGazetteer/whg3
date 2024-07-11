@@ -4,10 +4,6 @@ import '../css/builders-dataset.css';
 
 $(function() {
 
-	$("[data-toggle=popover]").popover({
-		html: true
-	})
-
 	$(".selector").dialog({
 		resizable: false,
 		autoOpen: false,

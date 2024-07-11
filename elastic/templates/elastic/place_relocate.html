@@ -4,8 +4,6 @@
 {% load static %}
 {% load dataset_extras %}
 {% block title %}<title>WHG::Relocate place</title>{% endblock %}
-{% block extra_head %}
-{% endblock %}
 
 {% block content %}
 <div class="container">
@@ -83,43 +81,43 @@
       data: formData,
       success:function(data){
         console.log('data returned',data)
-        <!--if('failed' in data){-->
-          <!--errors = data['failed']['errors']-->
-          <!--html = '<b class="text-danger">Data validation issue(s):</b> <ul class="ul-flush">'-->
-          <!--<!--html+=JSON.stringify(data['failed']['errors'])-->-->
-          <!--var i = 0; i < 9; i++-->
-          <!--for(var i=0; i<errors.length; i++){-->
-            <!--<!--html += '<p>'+errors[i]['message']+'</p>'-->-->
-            <!--html += '<li class="li-flush">'+errors[i]+'</li>'-->
-          <!--}-->
-          <!--html+='</ul><p>Please correct and try again</p>'-->
-        <!--} else {-->
-          <!--html = '<b>Current file</b>: <br/><i>'+data['filename_cur']+'</i><br/>'-->
-          <!--html += '<b>New file</b>: <br/><i>'+data['filename_new']+'</i><br/>'-->
-          <!--html += '<b>New temp file</b>: <br/><i>'+data['tempfn']+'</i><br/>'-->
-          <!--html += '<b>Validation result</b>: <br/><i>' +-->
-            <!--(data['validation_result']['errors'].length <1?'format valid':data['validation_result']['errors'])+'</i><hr/>'-->
-          <!--html += comparisonText(data)-->
-          <!--$("#btn_update").removeClass('hidden')-->
-        <!--}-->
-        <!--$("#loadfile").addClass('hidden')-->
-        <!--$("#db_place").html(JSON.stringify(data))-->
+        //if('failed' in data){
+          //errors = data['failed']['errors']
+          //html = '<b class="text-danger">Data validation issue(s):</b> <ul class="ul-flush">'
+          //html+=JSON.stringify(data['failed']['errors'])
+          //var i = 0; i < 9; i++
+          //for(var i=0; i<errors.length; i++){
+            //html += '<p>'+errors[i]['message']+'</p>'
+            //html += '<li class="li-flush">'+errors[i]+'</li>'
+          //}
+          //html+='</ul><p>Please correct and try again</p>'
+        //} else {
+          //html = '<b>Current file</b>: <br/><i>'+data['filename_cur']+'</i><br/>'
+          //html += '<b>New file</b>: <br/><i>'+data['filename_new']+'</i><br/>'
+          //html += '<b>New temp file</b>: <br/><i>'+data['tempfn']+'</i><br/>'
+          //html += '<b>Validation result</b>: <br/><i>' +
+            //(data['validation_result']['errors'].length <1?'format valid':data['validation_result']['errors'])+'</i><hr/>'
+          //html += comparisonText(data)
+          //$("#btn_update").removeClass('hidden')
+        //}
+        //$("#loadfile").addClass('hidden')
+        //$("#db_place").html(JSON.stringify(data))
         $("#db_place").html('<pre>'+JSON.stringify(data.dbplace, null, 1)+'</pre>')
         $("#relocate_center h5").append(" (a "+data.idxplace.role+")")
         $("#idx_place").html('<pre>'+JSON.stringify(data.idxplace, null, 1)+'</pre>')
         $("#idx_place").append('<pre>'+JSON.stringify(data.all, null, 1)+'</pre>')
-        <!--compare_data=data-->
+        //compare_data=data
       }
     })
   })
   
-  <!--$("#btn_submit").click(function(e){-->
-    <!--// at least two datasets selected?-->
-    <!--if('{{action}}' == 'create' && dslist.length < 2) {-->
-      <!--e.preventDefault()-->
-      <!--$("#msg").html('<h6>Collections must contain at least 2 datasets!</h6>').addClass('strong-red').show()-->
-    <!--}-->
-  <!--})-->
+  //$("#btn_submit").click(function(e){
+    //// at least two datasets selected?
+    //if('{{action}}' == 'create' && dslist.length < 2) {
+      //e.preventDefault()
+      //$("#msg").html('<h6>Collections must contain at least 2 datasets!</h6>').addClass('strong-red').show()
+    //}
+  //})
 </script>
 
 {% endblock %}

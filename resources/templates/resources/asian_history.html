@@ -26,14 +26,3 @@
     </div>
   </div> 
 {% endblock %}
-
-{% block inlineScripts %}
-  <script type="text/javascript">
-    $(".popimg").on("click", function() {
-      imagelink = $(".popimg img").attr('src')
-      console.log('imagelink',imagelink)
-      $('#imagepreview').attr('src', imagelink); 
-      $('#imagemodal').modal('show');
-    });
-  </script>    
-{% endblock %}

@@ -413,30 +413,11 @@ Promise.all([
     $('.select2-container').css('width', entries[0].target.offsetWidth);
   });
   resizeObserver.observe($('#searchInput')[0]);
-/*
-  $('#dynamic-gallery').tooltip({
-    selector: '[data-bs-toggle="tooltip"]',
-    trigger: 'hover',
-  }).on('show.bs.tooltip', '.previewButton', (e) => { // Prevent overlapping tooltips
-    bootstrap.Tooltip.getInstance($(e.target).closest('.ds-card-container')).
-        hide();
-  }).on('click', '.previewButton', (e) => {
-    e.stopPropagation();
-    fetchDataForHorse($(e.target).closest('.ds-card-container'), mappy);
-    $('#dynamic-gallery .previewButton').removeClass('active');
-    $(e.target).addClass('active');
-  }).on('click', '.ds-card-container', function(event) {
-    // Check that the clicked element is not a link within the container
-    if ($(event.target).closest('a').length === 0) {
-      window.location.href = $(this).data('url');
-    }
-  }).on('click', '.modal-link', function() {
-    $('.selector').data('modalPageId', $(this).data('id')).dialog('open');
-  });
-*/
+
   $('#dynamic-gallery')
   .on('show.bs.tooltip', '.previewButton', (e) => { // Prevent overlapping tooltips
-    bootstrap.Tooltip.getInstance($(e.target).closest('.ds-card-container')).hide();
+    const instance = bootstrap.Tooltip.getInstance($(e.target).closest('.ds-card-container'));
+    if (instance) instance.hide();
   })
   .on('click', '.previewButton', (e) => {
     e.stopPropagation();

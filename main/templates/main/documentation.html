@@ -3,10 +3,6 @@
 {% load mathfilters %}
 {% load dataset_extras %}
 {% block extra_head %}
-	<script src="https://code.jquery.com/jquery-3.6.3.js"></script>
-
-	<script src="{% static 'jquery-ui-1.13.2/jquery-ui.min.js' %}"></script>
-  <link rel="stylesheet" href="{% static 'jquery-ui-1.13.2/jquery-ui.min.css' %}"/>
 
   <style>
     .accordion-body {
@@ -527,7 +523,7 @@
             <img src="{% static 'images/docs/submit-to-group.jpg' %}" height="60" class="ms-3"/>
         </p>
         <p>If your collection is <bold><i>not</i></bold> associated with a class or workshop, you can request it be published
-        in the <a href="{% url 'datasets:dataset-gallery' %}" target="_blank">site-wide WHG gallery</a> using <a href="{%  url 'contact' %}" target="_blank">the site contact form</a>.</p>
+        in the <a href="{% url 'datasets:dataset-gallery' %}" target="_blank">site-wide WHG gallery</a> using <a data-whg-modal="/contact_modal/">the site contact form</a>.</p>
       </section>
       <section id="dscolls">
         <h5>Create and publish a Dataset Collection</h5>
@@ -555,8 +551,8 @@
         Any registered user can request "group leader" permissions, which allow them to create and manage a WHG Collection Group. This is a private space where students or workshop participants can create and share collections of places (WHG Place Collections), annotated with custom keywords, notes, dates, and images. The group leader can review submitted collections, and can nominate exceptional collections for inclusion in the WHG Student Gallery. Students or workshop participants join the group by entering an access key created and distributed by the instructor or workshop leader.</p>
         <p>The workflow in both cases is very similar:
           <ul>
-            <li>Request group leader privileges using the site-wide
-            <a href="{% url 'contact' %}?subject=Requesting group leader role" target="_blank"> contact form</a>.</li>
+            <li>Request group leader privileges using the site-wide 
+            <a data-whg-modal="/contact_modal/" data-subject="Requesting group leader role">contact form</a>.</li>
             <li>On your "My Data" dashboard, a plus sign (<span class="fs-3 align-middle">+</span>) appears in the "Collection Groups" box.<br/>
             <img src="{% static 'images/docs/group_add.jpg' %}" height="80"/>
             </li>

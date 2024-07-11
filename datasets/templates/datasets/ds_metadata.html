@@ -5,9 +5,6 @@
 {% load dataset_extras %}
 
 {% block extra_head %}
-  <script src="{% static 'js/aliases.js' %}"></script>
-  <script src="{% static 'js/spin.umd.js' %}"></script>
-  <link rel="stylesheet" href="{% static 'css/spin.css' %}"/>
   <script src="{% static 'celery_progress/celery_progress.js' %}"></script>
   <link href="{% static 'webpack/builders-dataset.bundle.css' %}" rel="stylesheet" />
 {% endblock %}
@@ -316,14 +313,14 @@
                 {% elif links_added > 0 or geoms_added > 0 %} 
                   <!-- offer dl if augmented -->
                   <p><a class="a-dl-celery" href="#" ref="lpf">Linked Places format <i class="fas fa-download linky"></i></a> (augmented) <span id="file_lpf" class="ms-1"></span></p>
-                  <p class="mt-2"><i>LP-TSV conversion is not possible for this LPF dataset. <a id="conversion_help" class="pointer" data-toggle="popover" title="LPF download options" data-content="<p>Data initially loaded in Linked Places format (LPF) has one&#8209;to&#8209;many relations that can't be converted to simple TSV files.</p>" tabindex="0" data-trigger="focus" data-original-title=""><i title="" class="fa fa-question-circle" style="color:#336699;"></i></a></i></p>
+                  <p class="mt-2"><i>LP-TSV conversion is not possible for this LPF dataset. <a id="conversion_help" class="pointer" data-bs-toggle="popover" title="LPF download options" data-content="<p>Data initially loaded in Linked Places format (LPF) has one&#8209;to&#8209;many relations that can't be converted to simple TSV files.</p>" tabindex="0" data-trigger="focus" data-original-title=""><i title="" class="fa fa-question-circle" style="color:#336699;"></i></a></i></p>
                 {% else %}
                   <!-- originally lpf, not yet augmented -->
                   <p><i>Dataset is not yet augmented</i></p>
                 {% endif %}
               <!-- more than 20k rows -->
               {% else %} 
-                <span class="red-head"><br/>Download of augmented datasets larger than 25,000 rows is not supported right now. <a href="{% url 'contact' %}">Contact WHG staff</a></span>
+                <span class="red-head"><br/>Download of augmented datasets larger than 25,000 rows is not supported right now. <a data-whg-modal="/contact_modal/">Contact WHG staff</a></span>
               {% endif %}  
               <div id="progress-bar-message" class="hidden">Waiting for progress to start...</div>
               <div id="celery-result"></div>

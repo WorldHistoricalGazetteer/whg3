@@ -33,9 +33,9 @@
 <script>
 $(document).ready(function(){
     $('.openPopup').on('click',function(){
-        <!--var dataURL = $(this).attr('data-href');-->
+        // var dataURL = $(this).attr('data-href');
         console.log('clicked link')
-        var dataURL = '/places/12345979/modal';  <!-- 12608007-->
+        var dataURL = '/places/12345979/modal';  // 12608007
         $('.modal-body').load(dataURL,function(){
             $('#myModal').modal({show:true});
         });

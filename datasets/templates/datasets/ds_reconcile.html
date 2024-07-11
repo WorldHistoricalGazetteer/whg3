@@ -4,11 +4,6 @@
 {% load mathfilters %}
 {% load dataset_extras %}
 
-{% block extra_head %}
-  <script src="{% static 'js/aliases.js' %}"></script>
-  {#  <script src="{% static 'css/spin.css' %}"></script>#}
-{% endblock %}
-
 {% block title %}<title>Dataset::{{ ds.label }}</title>{% endblock %}
 
 {% block content %}
@@ -87,7 +82,7 @@
                 <p class="my-0">All potential matches to <span id="authtag"></span> have been reviewed,
                   so the dataset may be ready for accessioning to the WHG index.</p>
                 <p class="my-0">If you would like to proceed, please
-                  <a class="btn btn-success btn-sm text-light py-0" href="{% url 'contact' %}">contact our editorial
+                  <a data-whg-modal="/contact_modal/">contact our editorial
                   team.</a></p>
               </div>
             {% endif %}
@@ -182,20 +177,9 @@
 
 {% block inlineScripts %}
   <script type="text/javascript">
-    // activate all
-    // tooltips
-    $('[data-bs-toggle=\'tooltip\']').tooltip();
-
-    spin_opts = {scale: .5, top: '50%'};
-
-    function startCountsSpinner() {
-      window.spinner_counts = new Spin.Spinner(spin_opts).spin();
-      $('#spinner').append(spinner_counts.el);
-    }
 
     // on page load
     $(function() {
-      {#startCountsSpinner();#}
       {#updateTotals('{{ ds.id }}');#}
 
       if ('{{ status }}' == 'updating') {
@@ -295,7 +279,6 @@
           }
         },
       ).done(function() {
-        spinner_counts.stop();
       });
     }
 

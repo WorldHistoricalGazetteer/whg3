@@ -372,16 +372,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			nearbyPlaces();
 		});
 
-		var hideAllPopovers = function() { // TODO: This seems currently to be redundant
-			$('.pop-dataset').each(function() {
-				$(this).popover('hide');
-			});
-		};
-
 		$(".pop-dataset").popover({
-		    trigger: 'hover',
-		    placement: 'right',
-		    html: true,
     		title: 'Dataset Profile',
 		    content: function () {
 		        var placeId = $(this).data('id');

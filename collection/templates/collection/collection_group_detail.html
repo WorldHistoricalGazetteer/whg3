@@ -1,37 +1,15 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% load static %}
-{% load leaflet_tags %}
 
 {% load mathfilters %}
 {% load dataset_extras %}
 
 {% block extra_head %}
-  {% leaflet_js %}
-  {% leaflet_css %}
-	<script src="{% static 'js/clipboard.min.js' %}"></script>
-  <script src="{% static 'js/aliases.js' %}"></script>
-  <!--<script src="{ static 'js/leaflet-heat.js' %}"></script>-->
-  <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
-  <link rel="stylesheet" href="{% static 'css/spin.css' %}"/>
-  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/dt-1.10.24/b-1.7.0/b-colvis-1.7.0/b-html5-1.7.0/cr-1.5.3/fh-3.1.8/sc-2.0.3/sp-1.2.2/sl-1.3.3/datatables.min.css"/>
-
-  <script type="text/javascript" src="https://cdn.datatables.net/v/dt/dt-1.10.24/b-1.7.0/b-colvis-1.7.0/b-html5-1.7.0/cr-1.5.3/fh-3.1.8/sc-2.0.3/sp-1.2.2/sl-1.3.3/datatables.min.js"></script>
-
-  <script src="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.js"></script>
-	<script src="{% static 'celery_progress/celery_progress.js' %}"></script>
-
-  <link href="https://unpkg.com/maplibre-gl@1.15.2/dist/maplibre-gl.css" rel="stylesheet" />
-
-  <script src="{% static 'js/leaflet-mapbox-gl.js' %}"></script>
+  <script src="{% static 'celery_progress/celery_progress.js' %}"></script>
 
   <style>
-    .cg-header {}
-		.red-head-anno {font-size: smaller; color: #993333;}
-		.modal-custom {max-width: inherit;}
-		{##left {background-color: cornsilk;}#}
-		#right {background-color: cornsilk;}
-		#right p {font-size: .9rem;}
-		#right h6 {font-weight: bold; margin-bottom: 0;}
+	.red-head-anno {font-size: smaller; color: #993333;}
+	.modal-custom {max-width: inherit;}
   </style>
 {% endblock %}
 
@@ -188,468 +166,410 @@
     </div>
   </div>
 </div>
-
-<script type="text/javascript">
-	// image modal
-  $('.pop').on('click', function() {
-    url = $(this).find('img').attr('src')
-    txt = $(this).find('img').attr('alt')
-    re=/(.png|.jpg|.jpeg|.gif|.tif)/g
-    {#ext=url.match(re)[0]#}
-    {#url = url.replace(ext,'_full'+ext)#}
-	  console.log('url', url)
-    $("#header_text").html(txt)
-    $('.imagepreview').attr('src', url);
-    $('#imageModal').modal('show');
-  });
-
-  function showMore(){
-    clicked = $(this)
-	  $(".more").show()
-    console.log('clicked $this',clicked)
-    {#clicked.hide()#}
-    $(".a_more").hide()
-    {#clicked.parent().find("#dots").hide()#}
-    $("#dots").hide()
-    clicked.next().show()
-    $(".a_less").show()
-  }
-  function showLess(){
-    clicked = $(this)
-    console.log('clicked less',clicked)
-    clicked.hide() // hide 'less' link
-    $(".more").hide() // hide the extra text again
-    $("#dots").show() // show dots again
-    $(".a_more").show() // show more link again
-  }
-
-	// TODO: this is a mess, refactor or add 1-to-many annotation link field
-  // truncate anno note, looking for embedded links
-	function readMore(text, numchars, innerlink='') {
-    dots = '<span id="dots">...</span>'
-		link = '<a href="#" class="a_more" onclick="showMore()">more</a><span class="more hidden">'
-    if(text.length < numchars){
-      {#return text + innerlink != ''?innerlink:''#}
-      return innerlink != '' ? text + innerlink : text
-    } else {
-      return text.slice(0,numchars) + dots + link + text.slice(numchars,) + innerlink+
-		      ' <a href="#" class="ms-2 a_less hidden" onclick="showLess()">less</a></span>'
-    }
-	}
-
-  var clip_cite = new ClipboardJS('.clippy', {
-    text: function(trigger) {
-      return trigger.getAttribute('aria-label');
-    },
-    container: document.getElementById('downloadModal')
-  });
-
-  clip_cite.on('success', function(e) {
-    eobj=e
-    el=$("#"+e.trigger.getAttribute("id"))
-    {#console.log('el',el)#}
-    e.clearSelection();
-    el.tooltip('hide')
-      .attr('data-original-title', 'copied!')
-      .tooltip('show');
-  });
-
-  // table events
-  // TODO: use datatables methods?
-  function setRowEvents(){
-    $("#placetable tbody tr").click(function() {
-      thisy=$(this)
-      // get id
-      pid=$(this)[0].cells[0].textContent
-      ds_src=table.row(thisy.index()).data().dataset.label
-      {#console.log('clicked row pid', pid, ds_src)#}
-      
-      geom = all_feats.find(function(f){return f.properties.pid==pid}).geometry
-      coords = geom.coordinates
-      {#console.log('pid, geom, coords', pid, geom, coords)#}
-
-      // fetch its detail
-      getPlace(pid, 'clicked')
-
-      // highlight this row, clear others
-      var selected = $(this).hasClass("highlight-row");
-      $("#placetable tr").removeClass("highlight-row");
-      
-      if(!selected)
-        $(this).removeClass( "rowhover" );
-        $(this).addClass("highlight-row");
-
-	    // only one source for this map: all collection features
-      highlightFeatureGL(pid, geom, coords, 'all')
-
-    }) 
-        
-    row = $("#drftable_list table tbody")[0].rows[0]
-    pid = parseInt(row.cells[0].textContent)
-    // highlight first row, fetch detail, but don't zoomTo() it
-    $("#placetable tbody").find('tr').eq(0).addClass('highlight-row')
-    // fetch place details for 1st row
-    getPlace(pid, 'row0')
-  }
-
-  function startDownloadSpinner(){
-    window.spinner_dl = new Spin.Spinner().spin();
-    <!--$("#coll_dslist").append(spinner_dl.el);   -->
-    $(".dl-table").append(spinner_dl.el);
-  }
-
-  $(function(){
-    $(".btn-cancel").click(function(){$("#downloadModal").modal('hide') })
-
-    clearEl = function(el){
-      $("#progress-bar").fadeOut()
-      el.html('')
-    }
-
-    dater = function(){
-      const date = new Date(Date.now());
-      return date.toISOString().substring(0,10)
-    }
-
-		// called from a-dl click()
-    function customResult(resultElement, result) {
-      {#console.log('celery result',result)#}
-      {#console.log('celery resultElement',resultElement)#}
-      spinner_dl.stop()
-      fn = result.filename
-      link = '[ <span class="dl-save"><a href="/'+fn+'" title="downloaded: '+dater()+
-                '" download>save</a></span> ]'
-      $( resultElement ).append(
-        $('<p>').html(link)
-      );
-      $(".dl-save a")[0].click()
-      setTimeout(clearEl($("#celery-result")), 1000)
-    }
-
-    // celery task for downloads; helper functions above
-	  // TODO: tune this for place collections
-	  function toggleNames(){
-      $("#more_names").toggle()
-	  }
-
-    $(".a-dl").click(function(e){
-          e.preventDefault()
-          // startDownloadSpinner()
-          dsid = $(this).data('id')
-          collid = $(this).data('collid')
-          {#console.log('collid, dsid', collid, dsid)#}
-          urly='/dlcelery/'
-          $.ajax({
-              type: 'POST',
-              url: urly,
-              data: {
-                  "format":'lpf',
-                  "dsid":dsid,
-                  "collid":collid,
-                  "csrfmiddlewaretoken":"{{ csrf_token }}"},
-              datatype:'json',
-              success:function(response){
-                  startDownloadSpinner()
-                  task_id = response.task_id
-                  var progressUrl = "/celery-progress/"+task_id+"/";
-                  CeleryProgressBar.initProgressBar(progressUrl,
-                      { pollingInterval: 500,
-                          onResult: customResult,
-                      }
-                  )
-              }
-          })
-      })
-
-    var token_whg = '{{ mbtoken }}', token_mb = '{{ mbtoken }}';
-    {#window.ds_list = JSON.parse(document.getElementById('ds_list').textContent);#}
-    {#source_list = ds_list.map(function(d){ return d.label})#}
-    {#window.layer_list = getLoadedLayers()#}
-
-    // start spinners, some collections take time
-    {#startMapSpinner()#}
-    {#startTableSpinner()#}
-    {#startDetailSpinner()#}
-
-    var hideAllPopovers = function() {
-       $('.pop-dataset').each(function() {
-            $(this).popover('hide');
-        });
-    };
-
-    var dspop = $(".pop-dataset").popover({
-      trigger: 'focus',
-      placement: 'right',
-      html: true
-    }).on('show.bs.popover', function () {
-        $.ajax({
-          url: '/api/datasets/',
-          data: {id:$(this).data('id')},
-          dataType: "JSON",
-          async: false,
-          success: function (data) {
-            ds=data.results[0]
-            {#console.log('ds',ds)#}
-            html='<p class="thin"><b>Title</b>: '+ds.title+'</p>'
-            html+='<p class="thin"><b>Description</b>: '+ds.description+'</p>'
-            html+='<p class="thin"><b>WHG Owner</b>: '+ds.owner+'</p>'
-            html+='<p class="thin"><b>Creator</b>: '+ds.creator+'</p>'
-            dspop.attr('data-content', html);
-          }
-      });
-    })
-
-    // window.filter = "{{ filter }}"
-    // initialize table
-    // task columns are inoperable in this public view
-    table = $('#placetable').DataTable({
-      dom: "<'row'<'ps-3'f>>" +
-      "<'row'<'col-sm-12'tr>>" +
-      "<'row mt-1'<'col-sm-12 col-md-5'l><'col-sm-12 col-md-7'p>>"
-      ,serverSide: true
-      ,ajax: {
-        url: "/api/placetable_coll/?format=datatables&id={{ object.id }}"
-      }
-      ,scrollY: 430
-      ,select: true
-      ,order: [[1, 'asc']]
-      ,LengthMenu: [10, 25, 50, 100]
-      ,columns: 
-      [
-          {"data": "id"},
-          {"data": "title"},
-          {"data": "ccodes"},
-          {"data": "dataset.title"},
-          {#{"data": "dataset.label", "name":"dataset.label"},#}
-      ]
-      ,columnDefs:[
-        {#{ orderable: false, "targets": [4,5,6,7]},#}
-        {#,{ visible: false, "targets": [1,4,5,6,7,11]}#}
-        { searchable: false, "targets": [2,3]}
-      ]
-    })
-
-    table.on( 'draw', function () {
-      spinner_table.stop()
-      setRowEvents();
-      {#$("#drftable_list table tbody")[0].rows[0].click()#}
-    })
-    
-    // help popups
-    $(".help-matches").click(function(){
-      page=$(this).data('id')
-      {#console.log('help:', page)#}
-      $('.selector').dialog('open');
-    })
-
-    $(".selector").dialog({
-      resizable: false,
-      autoOpen: false,
-      height: 500,
-      width: 700,
-      title: "WHG Help",
-      modal: true,
-      buttons: { 'Close': function() {console.log('close dialog'); $(this).dialog('close');} },
-      open: function(event, ui) {
-        $('#helpme').load('/media/help/'+page+'.html')
-      },
-      show: {effect: "fade",duration: 400 },
-      hide: {effect: "fade",duration: 400 }
-    });
-
-    // for collection description only
-    $(".a_more_descrip").click(function(){
-      clicked = $(this)
-      clicked.hide()
-      clicked.parent().find("#dots_descrip").hide()
-      clicked.next().show()
-      $(".a_less_descrip").show()
-    })
-    $(".a_less_descrip").click(function(){
-      clicked = $(this)
-      clicked.hide() // hide 'less' link
-      $(".more_descrip").hide() // hide the extra text again
-      $("#dots_descrip").show() // show dots again
-      $(".a_more_descrip").show() // show more link again
-    })
-
-  })  // jquery onload()
-
-  // gl map
-  {#mappy = new maplibregl.Map({#}
-  {#  container: 'map', // container id#}
-	{#  style:'mapbox://styles/mapbox/light-v10',#}
-	{#  accessToken: '{{ mbtoken }}',#}
-  {#  center: [9.2, 33],#}
-  {#  zoom: 0.2, // starting zoom#}
-  {#  minZoom: 0.1,#}
-  {#  maxZoom: 11,#}
-  {# });#}
-	{##}
-  {#//#}
-  {#mappy.on('load', function(){#}
-  {#  hilited = null#}
-	{#  // initiate layers for z-index#}
-  {#  mappy.addSource('empty', {#}
-  {#    type: 'geojson',#}
-  {#    data: { type: 'FeatureCollection', features: [] }#}
-  {#  });#}
-	{##}
-	{#	const zIndex4 = mappy.addLayer({#}
-  {#    id: 'z-index-4',#}
-  {#    type: 'symbol',#}
-  {#    source: 'empty'#}
-  {#  }); //top#}
-	{##}
-  {#  const zIndex3 = mappy.addLayer({#}
-  {#    id: 'z-index-3',#}
-  {#    type: 'symbol',#}
-  {#    source: 'empty'#}
-  {#  }, 'z-index-4'); // below zIndex4#}
-	{##}
-  {#  const zIndex2 = mappy.addLayer({#}
-  {#    id: 'z-index-2',#}
-  {#    type: 'symbol',#}
-  {#    source: 'empty'#}
-  {#  }, 'z-index-3');#}
-  {#  #}
-  {#  const zIndex1 = mappy.addLayer({#}
-  {#    id: 'z-index-1',#}
-  {#    type: 'symbol',#}
-  {#    source: 'empty'#}
-  {#  }, 'z-index-2'); // place this layer below zIndex2#}
-	{##}
-	{#  // fetch geodata#}
-	  {#renderData("{{ coll.id }}")#}
-  {#  addPlaces()#}
-    {#addSources(ds_list)#}
-	{##}
-    {#layer_list = getLoadedLayers(ds_list)#}
-	{#  layer_list=['outline','gl_active_point','gl_active_line','gl_active_poly']#}
-  {#  // popup generating events per layer#}
-  {#  for (l in layer_list){#}
-    {#  // TODO: allow clicking on polygons, denied here#}
-	  {#  if(layer_list[l].indexOf('point') != -1){#}
-  {#      mappy.on('mouseenter', layer_list[l], function () {#}
-  {#        mappy.getCanvas().style.cursor = 'pointer';#}
-  {#      });#}
-	{##}
-  {#      // Change it back to a pointer when it leaves.#}
-  {#      mappy.on('mouseleave', layer_list[l], function () {#}
-  {#        mappy.getCanvas().style.cursor = '';#}
-  {#      });#}
-	{##}
-  {#      mappy.on('click', layer_list[l], function (e) {#}
-  {#        clicked=e.features#}
-	{#        console.log('e features', clicked)#}
-	{#				ftype = e.features[0].layer.type#}
-	{#        gtype = e.features[0].geometry.type#}
-  {#        geom = e.features[0].geometry#}
-  {#        coords = e.features[0].geometry.coordinates#}
-  {#        place=e.features[0]#}
-	        {#console.log('geom, coords', geom, coords)#}
-	{#        if(ftype == 'point'){#}
-  {#          var coordinates = geom.coordinates.slice();#}
-	{#         } else if (ftype == 'line'){#}
-  {#          // could be simple linestring#}
-	{#	        if(gtype=='LineString'){#}
-  {#            len = Math.round(geom.coordinates.length/2)#}
-	{#		        var coordinates = geom.coordinates[len]#}
-	{#	        } else {#}
-  {#            // MultiLineString#}
-	{#            segment=turf.lineString(coords[Math.round(coords.length/2)])#}
-	{#            len = turf.length(segment)#}
-	{#						var coordinates = turf.along(segment, len/2).geometry.coordinates#}
-	{#	        }#}
-	{#         } else {#}
-  {#          var coordinates = turf.centroid(geom).geometry.coordinates#}
-	{#        }#}
-  {#        var pid = e.features[0].properties.pid;#}
-  {#        var title = e.features[0].properties.title;#}
-  {#        var src_id = e.features[0].properties.src_id;#}
-  {#        var minmax = e.features[0].properties.minmax;#}
-  {#        var fc = e.features[0].properties.fclasses;#}
-	{##}
-  {#        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {#}
-  {#          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;#}
-  {#        }#}
-	{#				// highlight#}
-	{#        highlightFeatureGL(pid, geom, coords, 'places')#}
-	{##}
-  {#        // popup#}
-  {#        new maplibregl.Popup()#}
-  {#          .setLngLat(coordinates)#}
-  {#          .setHTML('<b>'+title+'</b><br/>'+#}
-  {#            '<a href="javascript:getPlace('+pid+',\'popup\')">fetch info</a><br/>'+#}
-  {#            'start, end: '+minmax)#}
-	{#          .on('close', function(){#}
-  {#            $("#placetable_filter input").val('').keyup()#}
-	{#	          mappy.fitBounds(turf.bbox(fcoll), { padding: 20 });#}
-	{#          })#}
-  {#          .addTo(mappy);#}
-	{##}
-	{#				// TODO: fit bounds if not point#}
-	        {#bbox=turf.envelope(geom).bbox#}
-	        {#mappy.fitBounds(bbox, { padding: 30})#}
-  {#        mappy.setCenter(coordinates)#}
-  {#      })#}
-  {#    }#}
-	{##}
-  {#});#}
-
-  // activate all tooltips
-  $("[data-bs-toggle='tooltip']").tooltip();
-
-  // builds link for external place record
-  function url_extplace(identifier) {
-    // abbreviate links not in aliases.base_urls
-    if(identifier.startsWith('http')) {
-      let tag = identifier.replace(/.+\/\/|www.|\..+/g, '')
-      link = '<a href="'+identifier+'" target="_blank">'+tag+'<i class="fas fa-external-link-alt linky"></i>,  </a>'
-    } else {
-    link = '<a href="" class="ext" data-target="#ext_site">'+identifier+'&nbsp;<i class="fas fa-external-link-alt linky"></i></a>, '
-    }
-    return link
-  }
+{% endblock %}
   
-  // builds link for external placetype record
-  function url_exttype(type) {
-    link = ' <a href="#" class="exttab" data-id='+type.identifier+
-      '>('+type.label+' <i class="fas fa-external-link-alt linky"></i>)</a>'
-    return link
-  }
-  function minmaxer(timespans){
-    <!--console.log('got to minmax()',JSON.stringify(timespans))-->
-    starts=[]; ends=[]
-    for (t in timespans){
-      // gets 'in', 'earliest' or 'latest'
-      starts.push(Object.values(timespans[t].start)[0])
-      ends.push(!!timespans[t].end ? Object.values(timespans[t].end)[0] : -1)
-    } 
-    <!--console.log('starts',starts,'ends',ends)-->
-    minmax=[Math.max.apply(null, starts),Math.max.apply(null, ends)]
-    return minmax
-  }
+{% block inlineScripts %}
+<script type="text/javascript">
 
-  // spinners
-  {#spin_opts = { scale: .5, top: '60%'}#}
-  {#function startTableSpinner(){#}
-  {#  window.spinner_table = new Spin.Spinner(spin_opts).spin();#}
-  {#  $("#drftable_list").append(spinner_table.el);   #}
-  {#}#}
-  {#function startFilterSpinner(){#}
-  {#  window.spinner_filter = new Spin.Spinner(spin_opts).spin();#}
-  {#  $("#status_filter").append(spinner_filter.el);   #}
-  {#}#}
-  {#function startDetailSpinner(){#}
-  {#  window.spinner_detail = new Spin.Spinner(spin_opts).spin();#}
-  {#  $("#row_detail").append(spinner_detail.el);   #}
-  {#}#}
-  {#function startMapSpinner(){#}
-  {#  <!--console.log('startMapSpinner()')-->#}
-  {#  window.spinner_map = new Spin.Spinner(spin_opts).spin();#}
-  {#  <!--$("#map").append(spinner_map.el);   -->#}
-  {#  $(".toomany").append(spinner_map.el);   #}
-  {#}#}
+
+Promise.all([Promise.all(datatables_CDN_fallbacks.map(loadResource))])
+    .then(() => {
+
+    	// image modal
+      $('.pop').on('click', function() {
+        url = $(this).find('img').attr('src')
+        txt = $(this).find('img').attr('alt')
+        re=/(.png|.jpg|.jpeg|.gif|.tif)/g
+        {#ext=url.match(re)[0]#}
+        {#url = url.replace(ext,'_full'+ext)#}
+    	  console.log('url', url)
+        $("#header_text").html(txt)
+        $('.imagepreview').attr('src', url);
+        $('#imageModal').modal('show');
+      });
+
+      function showMore(){
+        clicked = $(this)
+    	  $(".more").show()
+        console.log('clicked $this',clicked)
+        {#clicked.hide()#}
+        $(".a_more").hide()
+        {#clicked.parent().find("#dots").hide()#}
+        $("#dots").hide()
+        clicked.next().show()
+        $(".a_less").show()
+      }
+      function showLess(){
+        clicked = $(this)
+        console.log('clicked less',clicked)
+        clicked.hide() // hide 'less' link
+        $(".more").hide() // hide the extra text again
+        $("#dots").show() // show dots again
+        $(".a_more").show() // show more link again
+      }
+
+    	// TODO: this is a mess, refactor or add 1-to-many annotation link field
+      // truncate anno note, looking for embedded links
+    	function readMore(text, numchars, innerlink='') {
+        dots = '<span id="dots">...</span>'
+    		link = '<a href="#" class="a_more" onclick="showMore()">more</a><span class="more hidden">'
+        if(text.length < numchars){
+          {#return text + innerlink != ''?innerlink:''#}
+          return innerlink != '' ? text + innerlink : text
+        } else {
+          return text.slice(0,numchars) + dots + link + text.slice(numchars,) + innerlink+
+    		      ' <a href="#" class="ms-2 a_less hidden" onclick="showLess()">less</a></span>'
+        }
+    	}
+
+      var clip_cite = new ClipboardJS('.clippy', {
+        text: function(trigger) {
+          return trigger.getAttribute('aria-label');
+        },
+        container: document.getElementById('downloadModal')
+      });
+
+      clip_cite.on('success', function(e) {
+        eobj=e
+        el=$("#"+e.trigger.getAttribute("id"))
+        {#console.log('el',el)#}
+        e.clearSelection();
+        el.tooltip('hide')
+          .attr('data-original-title', 'copied!')
+          .tooltip('show');
+      });
+
+      // table events
+      // TODO: use datatables methods?
+      function setRowEvents(){
+        $("#placetable tbody tr").click(function() {
+          thisy=$(this)
+          // get id
+          pid=$(this)[0].cells[0].textContent
+          ds_src=table.row(thisy.index()).data().dataset.label
+          {#console.log('clicked row pid', pid, ds_src)#}
+          
+          geom = all_feats.find(function(f){return f.properties.pid==pid}).geometry
+          coords = geom.coordinates
+          {#console.log('pid, geom, coords', pid, geom, coords)#}
+
+          // fetch its detail
+          getPlace(pid, 'clicked')
+
+          // highlight this row, clear others
+          var selected = $(this).hasClass("highlight-row");
+          $("#placetable tr").removeClass("highlight-row");
+          
+          if(!selected)
+            $(this).removeClass( "rowhover" );
+            $(this).addClass("highlight-row");
+
+    	    // only one source for this map: all collection features
+          highlightFeatureGL(pid, geom, coords, 'all')
+
+        }) 
+            
+        row = $("#drftable_list table tbody")[0].rows[0]
+        pid = parseInt(row.cells[0].textContent)
+        // highlight first row, fetch detail, but don't zoomTo() it
+        $("#placetable tbody").find('tr').eq(0).addClass('highlight-row')
+        // fetch place details for 1st row
+        getPlace(pid, 'row0')
+      }
+
+      $(function(){
+        $(".btn-cancel").click(function(){$("#downloadModal").modal('hide') })
+
+        clearEl = function(el){
+          $("#progress-bar").fadeOut()
+          el.html('')
+        }
+
+        dater = function(){
+          const date = new Date(Date.now());
+          return date.toISOString().substring(0,10)
+        }
+
+    		// called from a-dl click()
+        function customResult(resultElement, result) {
+          {#console.log('celery result',result)#}
+          {#console.log('celery resultElement',resultElement)#}
+          $(".dl-table").stopSpin();
+          fn = result.filename
+          link = '[ <span class="dl-save"><a href="/'+fn+'" title="downloaded: '+dater()+
+                    '" download>save</a></span> ]'
+          $( resultElement ).append(
+            $('<p>').html(link)
+          );
+          $(".dl-save a")[0].click()
+          setTimeout(clearEl($("#celery-result")), 1000)
+        }
+
+        // celery task for downloads; helper functions above
+    	  // TODO: tune this for place collections
+    	  function toggleNames(){
+          $("#more_names").toggle()
+    	  }
+
+        $(".a-dl").click(function(e){
+              e.preventDefault()
+              dsid = $(this).data('id')
+              collid = $(this).data('collid')
+              {#console.log('collid, dsid', collid, dsid)#}
+              urly='/dlcelery/'
+              $.ajax({
+                  type: 'POST',
+                  url: urly,
+                  data: {
+                      "format":'lpf',
+                      "dsid":dsid,
+                      "collid":collid,
+                      "csrfmiddlewaretoken":"{{ csrf_token }}"},
+                  datatype:'json',
+                  success:function(response){
+                      $(".dl-table").spin();
+                      task_id = response.task_id
+                      var progressUrl = "/celery-progress/"+task_id+"/";
+                      CeleryProgressBar.initProgressBar(progressUrl,
+                          { pollingInterval: 500,
+                              onResult: customResult,
+                          }
+                      )
+                  }
+              })
+          })
+
+        var token_whg = '{{ mbtoken }}', token_mb = '{{ mbtoken }}';
+        {#window.ds_list = JSON.parse(document.getElementById('ds_list').textContent);#}
+        {#source_list = ds_list.map(function(d){ return d.label})#}
+        {#window.layer_list = getLoadedLayers()#}
+
+        // window.filter = "{{ filter }}"
+        // initialize table
+        // task columns are inoperable in this public view
+        table = $('#placetable').DataTable({
+          dom: "<'row'<'ps-3'f>>" +
+          "<'row'<'col-sm-12'tr>>" +
+          "<'row mt-1'<'col-sm-12 col-md-5'l><'col-sm-12 col-md-7'p>>"
+          ,serverSide: true
+          ,ajax: {
+            url: "/api/placetable_coll/?format=datatables&id={{ object.id }}"
+          }
+          ,scrollY: 430
+          ,select: true
+          ,order: [[1, 'asc']]
+          ,LengthMenu: [10, 25, 50, 100]
+          ,columns: 
+          [
+              {"data": "id"},
+              {"data": "title"},
+              {"data": "ccodes"},
+              {"data": "dataset.title"},
+              {#{"data": "dataset.label", "name":"dataset.label"},#}
+          ]
+          ,columnDefs:[
+            {#{ orderable: false, "targets": [4,5,6,7]},#}
+            {#,{ visible: false, "targets": [1,4,5,6,7,11]}#}
+            { searchable: false, "targets": [2,3]}
+          ]
+        })
+
+        table.on( 'draw', function () {
+          setRowEvents();
+          {#$("#drftable_list table tbody")[0].rows[0].click()#}
+        })
+        
+        // help popups
+        $(".help-matches").click(function(){
+          page=$(this).data('id')
+          {#console.log('help:', page)#}
+          $('.selector').dialog('open');
+        })
+
+        $(".selector").dialog({
+          resizable: false,
+          autoOpen: false,
+          height: 500,
+          width: 700,
+          title: "WHG Help",
+          modal: true,
+          buttons: { 'Close': function() {console.log('close dialog'); $(this).dialog('close');} },
+          open: function(event, ui) {
+            $('#helpme').load('/media/help/'+page+'.html')
+          },
+          show: {effect: "fade",duration: 400 },
+          hide: {effect: "fade",duration: 400 }
+        });
+
+        // for collection description only
+        $(".a_more_descrip").click(function(){
+          clicked = $(this)
+          clicked.hide()
+          clicked.parent().find("#dots_descrip").hide()
+          clicked.next().show()
+          $(".a_less_descrip").show()
+        })
+        $(".a_less_descrip").click(function(){
+          clicked = $(this)
+          clicked.hide() // hide 'less' link
+          $(".more_descrip").hide() // hide the extra text again
+          $("#dots_descrip").show() // show dots again
+          $(".a_more_descrip").show() // show more link again
+        })
+
+      })  // jquery onload()
+
+      // gl map
+      {#mappy = new maplibregl.Map({#}
+      {#  container: 'map', // container id#}
+    	{#  style:'mapbox://styles/mapbox/light-v10',#}
+    	{#  accessToken: '{{ mbtoken }}',#}
+      {#  center: [9.2, 33],#}
+      {#  zoom: 0.2, // starting zoom#}
+      {#  minZoom: 0.1,#}
+      {#  maxZoom: 11,#}
+      {# });#}
+    	{##}
+      {#//#}
+      {#mappy.on('load', function(){#}
+      {#  hilited = null#}
+    	{#  // initiate layers for z-index#}
+      {#  mappy.addSource('empty', {#}
+      {#    type: 'geojson',#}
+      {#    data: { type: 'FeatureCollection', features: [] }#}
+      {#  });#}
+    	{##}
+    	{#	const zIndex4 = mappy.addLayer({#}
+      {#    id: 'z-index-4',#}
+      {#    type: 'symbol',#}
+      {#    source: 'empty'#}
+      {#  }); //top#}
+    	{##}
+      {#  const zIndex3 = mappy.addLayer({#}
+      {#    id: 'z-index-3',#}
+      {#    type: 'symbol',#}
+      {#    source: 'empty'#}
+      {#  }, 'z-index-4'); // below zIndex4#}
+    	{##}
+      {#  const zIndex2 = mappy.addLayer({#}
+      {#    id: 'z-index-2',#}
+      {#    type: 'symbol',#}
+      {#    source: 'empty'#}
+      {#  }, 'z-index-3');#}
+      {#  #}
+      {#  const zIndex1 = mappy.addLayer({#}
+      {#    id: 'z-index-1',#}
+      {#    type: 'symbol',#}
+      {#    source: 'empty'#}
+      {#  }, 'z-index-2'); // place this layer below zIndex2#}
+    	{##}
+    	{#  // fetch geodata#}
+    	  {#renderData("{{ coll.id }}")#}
+      {#  addPlaces()#}
+        {#addSources(ds_list)#}
+    	{##}
+        {#layer_list = getLoadedLayers(ds_list)#}
+    	{#  layer_list=['outline','gl_active_point','gl_active_line','gl_active_poly']#}
+      {#  // popup generating events per layer#}
+      {#  for (l in layer_list){#}
+        {#  // TODO: allow clicking on polygons, denied here#}
+    	  {#  if(layer_list[l].indexOf('point') != -1){#}
+      {#      mappy.on('mouseenter', layer_list[l], function () {#}
+      {#        mappy.getCanvas().style.cursor = 'pointer';#}
+      {#      });#}
+    	{##}
+      {#      // Change it back to a pointer when it leaves.#}
+      {#      mappy.on('mouseleave', layer_list[l], function () {#}
+      {#        mappy.getCanvas().style.cursor = '';#}
+      {#      });#}
+    	{##}
+      {#      mappy.on('click', layer_list[l], function (e) {#}
+      {#        clicked=e.features#}
+    	{#        console.log('e features', clicked)#}
+    	{#				ftype = e.features[0].layer.type#}
+    	{#        gtype = e.features[0].geometry.type#}
+      {#        geom = e.features[0].geometry#}
+      {#        coords = e.features[0].geometry.coordinates#}
+      {#        place=e.features[0]#}
+    	        {#console.log('geom, coords', geom, coords)#}
+    	{#        if(ftype == 'point'){#}
+      {#          var coordinates = geom.coordinates.slice();#}
+    	{#         } else if (ftype == 'line'){#}
+      {#          // could be simple linestring#}
+    	{#	        if(gtype=='LineString'){#}
+      {#            len = Math.round(geom.coordinates.length/2)#}
+    	{#		        var coordinates = geom.coordinates[len]#}
+    	{#	        } else {#}
+      {#            // MultiLineString#}
+    	{#            segment=turf.lineString(coords[Math.round(coords.length/2)])#}
+    	{#            len = turf.length(segment)#}
+    	{#						var coordinates = turf.along(segment, len/2).geometry.coordinates#}
+    	{#	        }#}
+    	{#         } else {#}
+      {#          var coordinates = turf.centroid(geom).geometry.coordinates#}
+    	{#        }#}
+      {#        var pid = e.features[0].properties.pid;#}
+      {#        var title = e.features[0].properties.title;#}
+      {#        var src_id = e.features[0].properties.src_id;#}
+      {#        var minmax = e.features[0].properties.minmax;#}
+      {#        var fc = e.features[0].properties.fclasses;#}
+    	{##}
+      {#        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {#}
+      {#          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;#}
+      {#        }#}
+    	{#				// highlight#}
+    	{#        highlightFeatureGL(pid, geom, coords, 'places')#}
+    	{##}
+      {#        // popup#}
+      {#        new maplibregl.Popup()#}
+      {#          .setLngLat(coordinates)#}
+      {#          .setHTML('<b>'+title+'</b><br/>'+#}
+      {#            '<a href="javascript:getPlace('+pid+',\'popup\')">fetch info</a><br/>'+#}
+      {#            'start, end: '+minmax)#}
+    	{#          .on('close', function(){#}
+      {#            $("#placetable_filter input").val('').keyup()#}
+    	{#	          mappy.fitBounds(turf.bbox(fcoll), { padding: 20 });#}
+    	{#          })#}
+      {#          .addTo(mappy);#}
+    	{##}
+    	{#				// TODO: fit bounds if not point#}
+    	        {#bbox=turf.envelope(geom).bbox#}
+    	        {#mappy.fitBounds(bbox, { padding: 30})#}
+      {#        mappy.setCenter(coordinates)#}
+      {#      })#}
+      {#    }#}
+    	{##}
+      {#});#}
+
+      // builds link for external place record
+      function url_extplace(identifier) {
+        // abbreviate links not in aliases.base_urls (loaded in `base.js`)
+        if(identifier.startsWith('http')) {
+          let tag = identifier.replace(/.+\/\/|www.|\..+/g, '')
+          link = '<a href="'+identifier+'" target="_blank">'+tag+'<i class="fas fa-external-link-alt linky"></i>,  </a>'
+        } else {
+        link = '<a href="" class="ext" data-target="#ext_site">'+identifier+'&nbsp;<i class="fas fa-external-link-alt linky"></i></a>, '
+        }
+        return link
+      }
+      
+      // builds link for external placetype record
+      function url_exttype(type) {
+        link = ' <a href="#" class="exttab" data-id='+type.identifier+
+          '>('+type.label+' <i class="fas fa-external-link-alt linky"></i>)</a>'
+        return link
+      }
+      function minmaxer(timespans){
+        starts=[]; ends=[]
+        for (t in timespans){
+          // gets 'in', 'earliest' or 'latest'
+          starts.push(Object.values(timespans[t].start)[0])
+          ends.push(!!timespans[t].end ? Object.values(timespans[t].end)[0] : -1)
+        } 
+        minmax=[Math.max.apply(null, starts),Math.max.apply(null, ends)]
+        return minmax
+      }
+    	
+    });
  </script>
 {% endblock %}

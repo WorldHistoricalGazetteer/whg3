@@ -36,11 +36,6 @@
       and will respond to you directly.</p>
     <p>Explanations of the review processes can be found in the
       <a href="/documentation/#reviewing" target="_blank">site documentation</a>.</p>
-    <div id="spinner" style="display: none;">
-        <div class="spinner-border" role="status">
-            <span class="sr-only">Working...</span>
-        </div>
-    </div>
     {% if messages %}
         <div class="container bg-lightyellow">
             {% for message in messages %}
@@ -63,15 +58,11 @@
           <div class="card-button">
             <a href="{% url 'contact' %}?dataset_id={{ ds.id }}&from={{ request.path }}&subject=Volunteer%20Review%20Offer"
                class="btn btn-sm btn-primary volunteer-btn">Offer to volunteer
-               <span class="spinner-border spinner-border-sm" role="status"
-                     aria-hidden="true" style="display:none;"></span>
             </a>
           </div>
 {#          <div class="card-button">#}
 {#            <a href="{% url 'contact' %}?dataset_id={{ ds.id }}&from={{ request.path }}"#}
 {#               class="btn btn-sm btn-primary volunteer-btn">Offer to volunteer#}
-{#               <span class="spinner-border spinner-border-sm" role="status"#}
-{#                     aria-hidden="true" style="display:none;"></span>#}
 {#            </a>#}
 {#          </div>#}
         </div>
@@ -89,21 +80,15 @@
 <script>
 	$( document ).ready(function() {
       console.log('page loaded');
-      var spinner = $('.spinner-border');
-      spinner.hide();
       $('.volunteer-btn').click(function(e) {
         e.preventDefault();
-        var spinner = $(this).find('.spinner-border');
         var url = $(this).attr('href');
 
         // Add confirmation dialog
         var confirmation = confirm("Sending your offer to volunteer for this dataset -- are you sure?");
         if (confirmation) {
-          console.log("Button clicked, showing spinner.");
-          spinner.show();
-
-          // Debug: Check spinner visibility
-          console.log(spinner.css('display'));
+          
+          $('.container').first().spin({ label: 'Working...' });
 
           // Simulate delay before redirection
           setTimeout(function() {
