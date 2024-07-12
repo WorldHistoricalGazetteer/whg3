@@ -91,6 +91,7 @@
 
 .pub-result {
   background-color: #ebf8eb;
+  border: 1px dashed #ccc!important;
 }
 
 .result-type {

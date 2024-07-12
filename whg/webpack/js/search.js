@@ -9,6 +9,7 @@ import {
 } from './utilities';
 import CountryParents from './countryParents';
 import { CountryCacheFeatureCollection } from './countryCache';
+import './toggle-truncate.js';
 import '../css/typeahead.css';
 import '../css/dateline.css';
 import '../css/search.css';
@@ -130,53 +131,8 @@ Promise.all([
 	$(document).on('click', '.portal-link', function(e) {
 		enteringPortal = true;
 		e.stopPropagation();
-		
-/*		e.preventDefault();
-
-		const pid = $(this).data('pid');
-		const whg_id = $(this).data('whg-id');
-		const children = $(this).data('children') 
-			? decodeURIComponent($(this).data('children')).split(',').map(id => parseInt(id, 10))
-			: [];
-			
-		window.location.href = children.length > 0
-			? `/places/${whg_id}/portal/`
-			: `/places/${pid}/detail`*/
-
-/*		const placeIds = [pid, ...children].filter(
-			id => !isNaN(id) && id !== null && id !== undefined);
-			
-		console.log('pid', pid);
-		console.log('children', $(this).attr('data-children'));
-		console.log('placeIds', placeIds);
-		console.log('csrfToken', csrfToken);
-
-		$.ajax({
-			url: '/places/set-current-result/',
-			type: 'POST',
-			data: {
-				'place_ids': placeIds,
-				'csrfmiddlewaretoken': csrfToken,
-			},
-			traditional: true,
-			success: function(response) {
-				if (children.length > 0) {
-					console.log('Entering portal with children', children);
-					enteringPortal = true;
-					window.location.href = `/places/${whg_id}/portal/`;
-				} else {
-					console.log('no children, going to detail page');
-					enteringPortal = true; // not really; setting flag to prevent clearing of last search
-					window.location.href = `/places/${pid}/detail`;
-				}
-			},
-			error: function(xhr, status, error) {
-				console.error('AJAX POST error:', error);
-			},
-		});*/
 
 	});
-	// END Ids to session
 
 	// Delegated event listener for Result links
 	$(document).on('click', '.result', function(e) {
@@ -208,15 +164,6 @@ Promise.all([
 		$('.result').removeClass('selected');
 		$clickedResult.addClass('selected');
 
-	});
-
-	// Delegated event listener for togglable links
-	$(document).on('click', '.toggleControl', function(e) {
-		e.stopPropagation(); // Prevent click from acting on parent elements
-		e.preventDefault();
-		const $toggleTarget = $(e.target).siblings('.toggleTarget');
-		$toggleTarget.toggle();
-		$(e.target).text($toggleTarget.is(':visible') ? 'view fewer' : 'view all');
 	});
 
 	function updateAreaMap() {
@@ -426,22 +373,6 @@ Promise.all([
 	    .trigger('change');
 	});	
 
-	// START Ids to session (kg 2023-10-31)
-	function getCookie(name) {
-		let cookieValue = null;
-		if (document.cookie && document.cookie !== '') {
-			const cookies = document.cookie.split(';');
-			for (let i = 0; i < cookies.length; i++) {
-				const cookie = cookies[i].trim();
-				if (cookie.substring(0, name.length + 1) === (name + '=')) {
-					cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-					break;
-				}
-			}
-		}
-		return cookieValue;
-	}
-
 	mappy.on('draw.create', initiateSearch); // draw events fail to register if not done individually
 	mappy.on('draw.delete', initiateSearch);
 	mappy.on('draw.update', initiateSearch);
@@ -471,14 +402,6 @@ Promise.all([
 	console.log(mappy.getStyle());
 
 }).catch(error => console.error('An error occurred:', error));
-
-// $(window).resize(function() {
-//   if ($('#result_facets').height() > someValue) { // Replace someValue with the maximum height you want for #result_facets
-//     $('#detail').collapse('hide');
-//   } else {
-//     $('#detail').collapse('show');
-//   }
-// }).resize(); // Trigger the resize event initially
 
 function toggleButtonState() {
 	const disable = $('#search_input').val().trim() == '';
@@ -578,17 +501,28 @@ function renderResults(data, fromStorage = false) {
 	// Update Results
 	$('#search_content').toggleClass('no-results', results.length == 0); // CSS hides #search_results, #result_facets
 
-	results.forEach(feature => {
+	let hideUnindexed = null;
+	results.forEach((feature, index) => {
 		let result = feature.properties;
 		const count = parseInt(result.linkcount) + 1;
 		const pid = result.pid;
 		const whg_id = result.whg_id;
 		const children = result.children;
 		const encodedChildren = encodeURIComponent(children.join(','));
+		
+		if (index == 0 && count == 1) {
+		    hideUnindexed = false;
+		    $resultsDiv.append('<div class="btn-group d-grid mb-1"><button class="no-linked btn btn-warning text-dark disabled py-0">No linked results</button></div>');
+		}
+		
+		if (index > 0 && count == 1 && hideUnindexed === null) {
+		    hideUnindexed = true;
+		    $resultsDiv.append('<div class="btn-group d-grid mb-1"><button class="unlinked reveal btn btn-primary py-0">Show unlinked results</button></div>');
+		}
 
-		let resultIdx = result.index.startsWith('whg') ? 'whg' : 'pub';
+		let resultIdx = count > 1 ? 'whg' : 'pub';
 		// Aberaeron (in 'pub' and 'whg') will have two cards, one for each index
-		let html = `<div class="result ${resultIdx}-result">
+		let html = `<div data-bs-toggle="tooltip" title="Click to zoom on map" class="result ${resultIdx}-result${hideUnindexed ? ' hidden' : ''}">
 	    <span>
 	      <span class="red-head">${result.title}</span>
 	      <span class="float-end small">${resultIdx === 'pub' ? '' : (count > 1 ?
@@ -607,22 +541,7 @@ function renderResults(data, fromStorage = false) {
 					else if (aAscii && !bAscii) return -1;
 					else return 1;
 			});
-
-			const threshold = 12;
-			const limitedVariants = result.variants.slice(0, threshold).join(', ');
-			const allVariants = result.variants.join(', ');
-
-			html += `
-		        <p>Variants (${result.variants.length}):
-		            ${result.variants.length > threshold ?
-          `<a href="#" class="toggleControl ms-2 italic">view all</a><br/>` :
-          ''}
-		            <span>${limitedVariants}</span>
-		            ${result.variants.length > threshold ?
-          `<span class="toggleTarget" style="display:none">${allVariants}</span>` :
-          ''}
-		        </p>
-		    `;
+			html += `<p class="more-or-less">Variants (${result.variants.length}): ${result.variants.join(', ')}</p>`;
 		} else {
 			html += `<p>Variants: none provided</p>`;
 		}
@@ -639,12 +558,23 @@ function renderResults(data, fromStorage = false) {
 			
 		if (result.timespans && result.timespans.length > 0) {
 		    result.timespans.sort((a, b) => a[0] - b[0]);
-		    html += `<p>Timespans: ${result.timespans.map(span => `${span[0]}-${span[1]}`).join(', ')}</p>`;
+		    html += `<p>Chronology: ${result.timespans.map(span => `${span[0]}-${span[1]}`).join(', ')}</p>`;
 		}
 
 		html += `</div>`;
 		$resultsDiv.append(html);
 	});
+	
+	$resultsDiv
+	.on('click', '.unlinked', function() {
+	    $(this)
+	    .text($(this).hasClass('reveal') ? 'Hide unlinked results' : 'Show unlinked results')
+		.toggleClass('reveal');
+	    let $resultsToToggle = $(this).parent('div').nextAll('.result');
+	    $resultsToToggle.toggle();
+	})
+	.find('.more-or-less')
+	.toggleTruncate();
 
 	// Update Map & Detail with first result (if any)
 	mappy.getSource('places').setData(featureCollection);

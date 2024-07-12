@@ -73,7 +73,7 @@ $.fn.toggleTruncate = function(arg1, arg2 = {}) {
 	
     return this.each(function() {
         const el = $(this);
-        if (el.text().length <= maxChars) return;
+        if (el.text().trim().length <= maxChars) return;
         const tagRegex = /(<\/?(?:a|b|br|div|em|h[1-6]|i|p|span|strong|u)[^>]*>)/;
         let charCount = 0;
 

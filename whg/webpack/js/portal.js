@@ -70,10 +70,10 @@ function waitMapLoad() {
 				return feature.source === 'ecoregions' || feature.source === 'natural_earth';
 			});
 			ecoAdminFeatures.forEach(feature => {
-				if (feature.layer['source-layer'] === 'biomes') {
+				if (feature.layer['source-layer'] === 'biomes' && !!feature.properties.label) {
 					geoData.biome.name = feature.properties.label;
 					geoData.biome.url = `https://en.wikipedia.org/wiki/${feature.properties.label.charAt(0) + feature.properties.label.slice(1).toLowerCase().replace('&','and').replace(' ','_')}`;
-				} else if (feature.layer['source-layer'] === 'ecoregions') {
+				} else if (feature.layer['source-layer'] === 'ecoregions' && !!feature.properties.label) {
 					geoData.ecoregion.name = feature.properties.label;
 					geoData.ecoregion.url = `https://en.wikipedia.org/wiki/${feature.properties.label.charAt(0) + feature.properties.label.slice(1).toLowerCase().replace('&','and').replace(' ','_')}`;
 				} else if (feature.layer['source-layer'] === 'countries' || feature.layer['source-layer'] === 'states') {
@@ -224,7 +224,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			` within the modern boundaries of ${geoData.admin.map((name, index) => index < geoData.admin.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${geoData.admin.length == 2 ? '' : ','} and$1`)}, and` :
 			'';
 		const ecoString = geoData.ecoregion.name ?
-			` within the <a href="${geoData.ecoregion.url}" target="_blank">${geoData.ecoregion.name}</a> ecoregion and <a href="${geoData.biome.url}" target="_blank">${geoData.biome.name}</a> biome` :
+			` within the <a href="${geoData.ecoregion.url}" target="_blank">${geoData.ecoregion.name}</a> ecoregion${geoData.biome.name ? ` and <a href="${geoData.biome.url}" target="_blank">${geoData.biome.name}</a> biome` : ''}` :
 			'';
 		$('<p class="map-data">').addClass('mb-1').html(`
 		    It lies${elevationString}${adminString}${ecoString}.
