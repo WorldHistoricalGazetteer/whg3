@@ -302,46 +302,85 @@ class PlaceDetailView(DetailView):
 
     return context
 
-# TODO:  tgn query very slow
-class PlaceModalView(DetailView):
-  model = Place
-
-  template_name = 'places/place_modal.html'
-  redirect_field_name = 'redirect_to'
-    
-  def get_success_url(self):
-    pid = self.kwargs.get("id")
-    #user = self.request.user
-    return '/places/'+str(pid)+'/modal'
-
-  def get_object(self):
-    pid = self.kwargs.get("id")
-    return get_object_or_404(Place, id=pid)
-  
-  def get_context_data(self, *args, **kwargs):
-    context = super(PlaceModalView, self).get_context_data(*args, **kwargs)
-    # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-    #context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
-    #context['maptilerkey'] = settings.MAPTILER_KEY
-
-    print('PlaceModalView get_context_data() kwargs:',self.kwargs)
-    print('PlaceModalView get_context_data() request.user',self.request.user)
-    place = get_object_or_404(Place, pk=self.kwargs.get("id"))
-    ds = place.dataset
-    dsobj = {"id":ds.id, "label":ds.label, "uri_base":ds.uri_base,
-             "title":ds.title, "webpage":ds.webpage, 
-             "minmax":None if ds.core else ds.minmax, 
-             "creator":ds.creator, "last_modified":ds.last_modified_text} 
-    #geomids = [geom.jsonb['properties']['id'] for geom in place.geoms.all()]
-    #context['geoms'] = geoms
-    context['dataset'] = dsobj
-    context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
-
-    return context
-
-  # //
-  # given place_id (pid), return abbreviated place_detail
-  # //
+# DEPRECATED
+# class PlaceModalView(DetailView):
+#   model = Place
+#
+#   template_name = 'places/place_modal.html'
+#   redirect_field_name = 'redirect_to'
+#
+#   def get_success_url(self):
+#     pid = self.kwargs.get("id")
+#     #user = self.request.user
+#     return '/places/'+str(pid)+'/modal'
+#
+#   def get_object(self):
+#     pid = self.kwargs.get("id")
+#     return get_object_or_404(Place, id=pid)
+#
+#   def get_context_data(self, *args, **kwargs):
+#     context = super(PlaceModalView, self).get_context_data(*args, **kwargs)
+#     # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
+#     #context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+#     #context['maptilerkey'] = settings.MAPTILER_KEY
+#
+#     print('PlaceModalView get_context_data() kwargs:',self.kwargs)
+#     print('PlaceModalView get_context_data() request.user',self.request.user)
+#     place = get_object_or_404(Place, pk=self.kwargs.get("id"))
+#     ds = place.dataset
+#     dsobj = {"id":ds.id, "label":ds.label, "uri_base":ds.uri_base,
+#              "title":ds.title, "webpage":ds.webpage,
+#              "minmax":None if ds.core else ds.minmax,
+#              "creator":ds.creator, "last_modified":ds.last_modified_text}
+#     #geomids = [geom.jsonb['properties']['id'] for geom in place.geoms.all()]
+#     #context['geoms'] = geoms
+#     context['dataset'] = dsobj
+#     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
+#
+#     return context
+#
+#   # //
+#   # given place_id (pid), return abbreviated place_detail
+#   # //
+# class PlaceModalView(DetailView):
+#   model = Place
+#
+#   template_name = 'places/place_modal.html'
+#   redirect_field_name = 'redirect_to'
+#
+#   def get_success_url(self):
+#     pid = self.kwargs.get("id")
+#     #user = self.request.user
+#     return '/places/'+str(pid)+'/modal'
+#
+#   def get_object(self):
+#     pid = self.kwargs.get("id")
+#     return get_object_or_404(Place, id=pid)
+#
+#   def get_context_data(self, *args, **kwargs):
+#     context = super(PlaceModalView, self).get_context_data(*args, **kwargs)
+#     # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
+#     #context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+#     #context['maptilerkey'] = settings.MAPTILER_KEY
+#
+#     print('PlaceModalView get_context_data() kwargs:',self.kwargs)
+#     print('PlaceModalView get_context_data() request.user',self.request.user)
+#     place = get_object_or_404(Place, pk=self.kwargs.get("id"))
+#     ds = place.dataset
+#     dsobj = {"id":ds.id, "label":ds.label, "uri_base":ds.uri_base,
+#              "title":ds.title, "webpage":ds.webpage,
+#              "minmax":None if ds.core else ds.minmax,
+#              "creator":ds.creator, "last_modified":ds.last_modified_text}
+#     #geomids = [geom.jsonb['properties']['id'] for geom in place.geoms.all()]
+#     #context['geoms'] = geoms
+#     context['dataset'] = dsobj
+#     context['beta_or_better'] = True if self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists() else False
+#
+#     return context
+#
+#   # //
+#   # given place_id (pid), return abbreviated place_detail
+#   # //
 
 class PlaceFullView(PlacePortalView):
   def render_to_response(self, context, **response_kwargs):

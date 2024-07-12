@@ -481,7 +481,8 @@ def childItem(i):
     "variants": [n['toponym'] for n in i['names'] if n['toponym'] != i['title']],
     'links': i['links'],
     "when": [{"start": {"in": ts["gte"]}, "end": {"in": ts["lte"]}} for ts in i['timespans']],
-    "minmax": [i['minmax']['gte'], i['minmax']['lte']] if 'minmax' in i.keys() else [],
+    # "minmax": [i['minmax']['gte'], i['minmax']['lte']] if 'minmax' in i.keys() else [],
+    "minmax": [i['minmax']['gte'], i['minmax']['lte']] if 'minmax' in i.keys() and 'gte' in i['minmax'] and 'lte' in i['minmax'] else [],
     "ccodes": i['ccodes'],
     "geometry": makeGeom(i['geoms'])
   }
