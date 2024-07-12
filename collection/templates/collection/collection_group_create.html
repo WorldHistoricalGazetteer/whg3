@@ -1,17 +1,10 @@
 <!-- areas/area_create.html -->
-{% extends "main/base.html" %}
-{% load leaflet_tags %}
+{% extends "main/base_webpack.html" %}
 
 {% load static %}
 {% load dataset_extras %}
 {% block title %}<title>WHG::Create/Update Collection Group</title>{% endblock %}
 {% block extra_head %}
-  {% leaflet_js %}
-  {% leaflet_css %}
-  <script src="{% static 'js/tags/bootstrap-tagsinput.js' %}"></script>
-  <script src="{% static 'js/tags/bloodhound.js' %}"></script>
-  <link rel="stylesheet" href="{% static 'js/tags/bootstrap-tagsinput.css' %}"/>
-  <link rel="stylesheet" href="{% static 'js/tags/bootstrap-tagsinput-typeahead.css' %}"/>
   <style>
     textarea {
       width: 100%;
@@ -278,7 +271,9 @@
     </div> <!-- .row .d-flex -->
     </form>
   </div> <!-- container -->
-
+{% endblock %}
+  
+{% block inlineScripts %}
   <script type="text/javascript">
     $(document).ready(function() {
       // Event listener for the "Create" button
@@ -459,16 +454,6 @@
           reviewedCheckbox.prop('disabled', false);  // Enable the 'reviewed' checkbox
         }
         nominate($(this).data('id'), this.checked);
-      });
-
-      {#const popoverTriggerList = $('[data-bs-toggle="popover"]')#}
-      {#const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))#}
-
-      const popoverTriggerList = $('[data-bs-toggle="popover"]');
-      const popoverList = [...popoverTriggerList].map(popoverTriggerEl => {
-        return new bootstrap.Popover(popoverTriggerEl, {
-          html: true,  // Enable HTML content
-        });
       });
 
       // Initially hide the gallery_required checkbox

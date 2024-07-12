@@ -89,9 +89,6 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		}
 
 		$(".pop-dataset").popover({
-		    trigger: 'hover',
-		    placement: 'right',
-		    html: true,
 		    content: function () {
 		        var label = $(this).data('label');
 		        var details = datasetDetails[label];

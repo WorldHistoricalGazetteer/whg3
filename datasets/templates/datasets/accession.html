@@ -229,7 +229,9 @@
  		<div></div>
 	</div>
 </div>
-
+{% endblock %}
+  
+{% block inlineScripts %}
 <script type="text/javascript">
 	const featureCollectionJSON = '{{ feature_collection|safe }}';
 	const datasetDetails = {{ dataset_details|safe }};
@@ -239,6 +241,25 @@
     let passnum = '{{ passnum }}';
     let mbtoken = '{{ mbtoken }}';
     let page_variant = 'accession';
+
+	$(".pop-dataset").popover({
+		title: 'Dataset Profile',
+	    content: function () {
+	        var placeId = $(this).data('id');
+	        var place = payload.find(p => p.dataset.id == placeId);
+	        if (place) {
+	            var content = `
+	                <p class='thin'><b>Title</b>: ${place.dataset.title.replace('(stub) ', '').substring(0, 25)}</p>
+	                <p class='thin'><b>Description</b>: ${place.dataset.description}</p>
+	                <p class='thin'><b>WHG Owner</b>: ${place.dataset.owner}</p>
+	                <p class='thin'><b>Creator</b>: ${place.dataset.creator}</p>
+	            `;
+	            return content;
+	        } else {
+	            return ''; // Return empty content if place data is not found
+	        }
+	    }
+	});
 </script>
 
 {% endblock %}

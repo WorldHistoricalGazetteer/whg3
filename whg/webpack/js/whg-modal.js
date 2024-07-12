@@ -22,6 +22,7 @@ function initWHGModal() {
 	$('#whgModal').on('show.bs.modal', function(e) {
 		
 		const url = $(e.relatedTarget).data('whg-modal');
+		const modalSubject = $(e.relatedTarget).data('subject');
 
 		// Fetch HTML for modal
 		$.ajax({
@@ -30,6 +31,9 @@ function initWHGModal() {
 			success: function(data) {
 				// Load the fetched HTML content into the modal
 				$('#whgModal .modal-content').html(data);
+                if (modalSubject) {
+                    $('#whgModal').find('input[name="subject"]').val(modalSubject);
+                }
 
 				// Initialize any CAPTCHA refresh functionality within the modal
                 $('body').on('click', '#whgModal form .captcha', function (e) { // Must delegate from body to account for form refresh on fail

@@ -1,4 +1,4 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% block title %}<title>WHG::Licensing</title>{% endblock %}
 
 {% block content %}
@@ -22,7 +22,7 @@
       <h4>Privacy</h4>
       <p>Upon registering, we require a name and valid email address, which we will never share without your explicit permission. We may <b><i>on occasion</i></b> notify registered users of changes to the system or pending downtime that could affect their use of it.</p>
       
-      <p><mark>If you have any questions or concerns, please let us know via our <a href="{% url 'contact' %}">Contact Form.</mark></p>
+      <p><mark>If you have any questions or concerns, please let us know via our <a data-whg-modal="/contact_modal/">Contact Form</a>.</mark></p>
       
       <p style="min-height:30px;">&nbsp;</p>
   </div>

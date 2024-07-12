@@ -211,6 +211,15 @@ Promise.all([
             trigger: 'hover'
         });
 		$('body').tooltip(); // Initialize Bootstrap tooltips with delegation to any dynamic content
+		
+		// Extend popover defaults
+		$.extend(true, $.fn.popover.Constructor.Default, {
+		    html: true,
+		    placement: 'right',
+		    trigger: 'hover'
+		});
+		$('[data-bs-toggle="popover"]').popover();
+		
 		initWHGModal();
 		
 		// Extend Spinner module to operate with JQuery initialisation
@@ -255,7 +264,7 @@ Promise.all([
 		document.querySelector('body').style.opacity = 1;
 		
 		if (typeof scripts !== 'undefined') {
-			console.log('Executing deferred scripts.');
+			//console.log('Executing deferred scripts.');
 			executeDeferredScripts();
 		}		
 		

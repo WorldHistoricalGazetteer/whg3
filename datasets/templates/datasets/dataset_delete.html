@@ -1,9 +1,5 @@
-{% extends 'main/base.html' %}
+{% extends 'main/base_webpack.html' %}
 {% load static %}
-{% block extra_head %}
-  
-  <link rel="stylesheet" href="{% static 'css/spin.css' %}" />
-{% endblock %}
 
 {% block content %}
 
@@ -25,7 +21,7 @@
             {% endif %}
           </ul>
           {% if object.format == 'delimited' %}
-            <p>You might want to perform an update to the dataset instead. <a href="{% url 'contact' %}">Contact us</a> if you would like help with that.</p>
+            <p>You might want to perform an update to the dataset instead. <a data-whg-modal="/contact_modal/">Contact us</a> if you would like help with that.</p>
           {% endif %}
           <p class="mt-4">
             <input id="b_delete_ds" type='submit' value='Destroy' />
@@ -36,16 +32,4 @@
   </div>
   {% endif %}
 </div>
-
-</div>
-<script type="text/javascript">
-  function startDeleteSpinner() {
-    window.spinner_delete = new Spin.Spinner().spin();
-    $("#delete_warning").append(spinner_delete.el);
-  }
-
-  $("#b_delete_ds").on('click', function () {
-    startDeleteSpinner()
-  })
-</script>
 {% endblock %}

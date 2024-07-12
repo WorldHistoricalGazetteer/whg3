@@ -1,4 +1,4 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% block title %}<title>WHG::Asian History Curriculum</title>{% endblock %}
 
 {% block content %}
@@ -25,12 +25,4 @@
       </div>
     </div>
   </div> 
-  <script type="text/javascript">
-    $(".popimg").on("click", function() {
-      imagelink = $(".popimg img").attr('src')
-      console.log('imagelink',imagelink)
-      $('#imagepreview').attr('src', imagelink); 
-      $('#imagemodal').modal('show');
-    });
-  </script>    
 {% endblock %}

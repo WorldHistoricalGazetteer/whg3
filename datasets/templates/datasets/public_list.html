@@ -1,5 +1,5 @@
 <!-- datasets/public_list.html -->
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% block title %}<title>WHG::Datasets</title>{% endblock %}
 {% block extra_head %}
 {% block morecss %}
@@ -118,8 +118,10 @@
       </div>
     </div>    
   </div>
+{% endblock %}
+
+{% block inlineScripts %}
   <script>
-    $("[data-bs-toggle='tooltip']").tooltip();
     $(function(){
 
     })
@@ -131,7 +133,7 @@
     
     sortTable = function(col_idx, order, table_id) {
       var table, rows, switching, i, x, y, shouldSwitch;
-      <!--table = document.getElementById("table_ds");-->
+      // table = document.getElementById("table_ds");
       table = document.getElementById(table_id);
       switching = true;
       /* Make a loop that will continue until

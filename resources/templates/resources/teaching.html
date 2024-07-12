@@ -1,32 +1,30 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
+{% load static %}
+{% load dataset_extras %}
+
 {% block title %}<title>WHG::Teaching</title>{% endblock %}
 
-{% block content %}
+{% block maplibre %}
+	<script type="text/javascript">
+		const loadMaplibre = true;
+	</script>
+	<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet" /> 
+{% endblock %}
 
-	{% load geojson_tags %}
-	{% load leaflet_tags %}
-	{% load static %}
-	{% load dataset_extras %}
-	{% block extra_head %}
-{#    <link href="{% static 'webpack/gallery.bundle.css' %}" rel="stylesheet" />#}
+{% block extra_head %}
     <style>
-      body {font-family: 'Raleway', sans-serif !important;}
       p {color: black;}
       #teaching_content {
         height: 100%;
-        {#border: 1px gainsboro solid;#}
         margin: 0;
-        max-height: calc(100vh - 125px);
       }
       .row .col-sm-4, .row .col-sm-8 {
         max-height: 100%;
-        {#max-width: 100%;#}
       }
       #teaching_essay {height: 85%; overflow: auto; }
       #essay_modal {font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
         font-size: 1.2rem;}
       #collections {
-        {#margin: 0.3rem;#}
         font-size: 0.9rem;
         color: #000;
       }
@@ -60,11 +58,39 @@
       .fill-grey {background-color:gainsboro; }
       .fill-blue {background-color:rgb(60, 136, 148); }
       #region_label {font-family: 'Raleway', sans-serif !important; font-size:1rem; color: tomato;}
+      
+      #map {
+      	height: 300px;
+      }
+      .scrolling-div {
+      	max-height: 400px;
+      }
+	  select.form-select {
+	    width: 100%;
+	  }
+	  .select2 {
+		width: calc(100% - 36px)!important;
+	  }
+	   span.select2-selection {
+	    border: 1px solid #ced4da !important;
+	    border-radius: 0.375rem !important;
+	    border-top-right-radius: 0 !important;
+	    border-bottom-right-radius: 0 !important;
+	  }
+	  .select2-container--default .select2-search--inline .select2-search__field{
+		width:initial!important;
+	  }
+	  #clearButton {
+	    border: 1px solid #ced4da !important;
+	  }      
+      #spatial_selector > * {
+      	margin-top: 0.5rem;
+      }
 
     </style>
-    {% leaflet_js %}
-    {% leaflet_css %}
-	{% endblock %}
+{% endblock %}
+
+{% block content %}
 
 	<div class="container">
     <div class="row">
@@ -141,10 +167,17 @@
               <a href="{% url 'contact' %}">let us know</a>.</p>
           </div>
           <div id="lessonplans" class="tab-pane">
-            <div class="map">{% leaflet_map "main" %}</div>
+            <div id="map"></div>
+			<div id="spatial_selector" class="input-group mb-3">			
+			    <!-- Select2 input -->
+			    <select data-placeholder="Select Region(s)" class="form-select" id="entrySelector" multiple></select>
+			
+			    <!-- Clear button -->
+			    <button data-bs-toggle="tooltip" title="Clear this filter" class="btn btn-outline-secondary clearButton" type="button" id="clearButton"><i class="fas fa-times"></i></button>
+			</div>
             <div class="resource-gallery">
               <div class="gallery-banner ps-2 small w-100";>
-                TEACHING RESOURCES ({{ resource_list|length }})
+                TEACHING RESOURCES (showing <span id="resourceCount">{{ resource_list|length }}</span> of {{ resource_list|length }})
                 <span id="regions_reset" class="reset-link me-2" style="cursor:pointer;">reset filter</span>
               </div>
 {#              <div class="header bg-warning">Header</div>#}
@@ -206,174 +239,214 @@
          tyle="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;">
     </div>
   </div>
+{% endblock %}
+
+{% block inlineScripts %}
 	<script type="text/javascript">
-    $(function () {
-      let hash = window.location.hash;
-      window.location.hash = ""; // Clear the hash to prevent automatic scrolling
+	
+	const regions = {{ regions|safe }}
+	
+	function fetchRegionFeatures() {
+	    return $.ajax({
+	        url: `/api/area_features/?filter=un&regions=${regions.join(',')}`,
+	        method: 'GET',
+	        dataType: 'json'
+	    });
+	}
+	
+	let mappy = new whg_maplibre.Map({
+	    style: ['whg-basic-light'],
+		maxZoom: 13,
+		navigationControl: false,
+	});
 
-      if (hash) {
-        let tabTriggerEl = document.querySelector('button[data-bs-target="' + hash + '"]');
-        if (tabTriggerEl) {
-          console.log('Tab trigger element found:', tabTriggerEl);
-          tabTriggerEl.click();
-        } else {
-          console.log('No tab trigger found for hash:', hash);
-        }
-      }
+	function waitMapLoad() {
+	  return new Promise((resolve) => {
+	    mappy.on('load', () => {
+	      mappy.newSource('un_regions') // Add empty source
+	          .newLayerset('un_regions', 'un_regions');
+	      console.log('Map loaded.');
+	      resolve();
+	    });
+	  });
+	}
 
-			$('[data-bs-toggle="tooltip"]').tooltip()
-			$("#regions_reset").click(function(){
-				resetRegions()
-			})
-      {#$("#b_createcoll").click(function(){#}
-      {#  window.location.href = "{% url 'collections:create' %}";#}
-      {# }#}
-      document.querySelector('#lessonplans-tab').addEventListener('click', function() {
-          setTimeout(function() {
-              map.invalidateSize();
-          }, 400); // Adjust timeout as needed to ensure map container is visible and has dimensions
-      });
-		})
+	function waitDocumentReady() {
+	  return new Promise((resolve) => {
+	    $(document).ready(() => {
+	      console.log('Document ready.');
+	      resolve();
+	    });
+	  });
+	}
 
-		function resetRegions(){
-			regions.setStyle({ fillColor: "#ff9999", color: "black" })
-			$('.resource-card').css('display', 'block')
-			$("#regions_reset").hide();
-		}
-		function filterResources(region){
-      console.log('filtering on region:', region)
-			var $el = $('.resource-card').filter(function () {
-        var cardRegions = $(this).data("regions");
-        console.log('cardRegions type:', typeof cardRegions);
-        console.log('cardRegions value:', cardRegions);
+	Promise.all([
+	  waitMapLoad(),
+	  waitDocumentReady(),
+	  Promise.all(select2_CDN_fallbacks.map(loadResource)),
+	]).then(() => {		
 
-        // Convert regionsData to an array
-        var regionsArray = typeof cardRegions === 'string' ? cardRegions.split(',') : [cardRegions];
-        var regionsArrayStr = regionsArray.map(String);
-        console.log('regionsArrayStr:', regionsArrayStr);
-        return (!regionsArrayStr.includes(region.toString()))
-			}).css('display','none')
-			shown = $('.resource-card').filter(function(){
-				return $(this).is(":visible");
-			}) 
-			regiones = []
-			shown.each(function(){
-				regarr = $(this).attr('data-regions').split(', ')
-				console.log('regset',regarr, typeof(regarr))
-				regiones.push(regarr)
-			})
-			merged = [].concat.apply([], regiones);
-			unique = [...new Set(merged.map(item => item))];
-			$("#regions_reset").show();
-		}
+		let regionsCollection;
+		fetchRegionFeatures().done(function(regionFeatures) {
+			// TODO: Add features to map with highlighting - transform to FeatureCollection, with moved ids
+			// Update resource count in header
+			// Add map click events
+			
+			regionsCollection = {
+	            type: "FeatureCollection",
+	            features: regionFeatures.map(function(feature) {
+	                return {
+	                    type: "Feature",
+	                    id: feature.properties.id,
+	                    properties: {
+	                        title: feature.properties.title,
+	                        type: feature.properties.type,
+	                        description: feature.properties.description
+	                    },
+	                    geometry: feature.geometry
+	                };
+	            })
+	        }
+			mappy
+			.getSource('un_regions')
+			.setData(regionsCollection);
+	        mappy.fitBounds(bbox(regionsCollection));
+	        
+		    $('#entrySelector')
+		    .select2({
+		        data: regionFeatures.map(function(feature) {
+		            return {
+		                id: feature.properties.id,
+		                text: feature.properties.title
+		            };
+		        }),
+		        width: 'element',
+		        allowClear: false,
+		    })
+		    .on('change', function() {
+		        toggleHighlightsCards($(this).val());
+		    })
+		    .val(regions).trigger('change');
+		    
 
-		// var dataurl = '{ url "area-features" %}';
-		var dataurl = 'https://whgazetteer.org/api/area_features?filter=un';
+		    $('.select2-selection').on('click', '.select2-selection__choice__remove', function(evt) {
+		        evt.stopPropagation();
+		    })
 
-		styles = {
-				"MultiPolygon": {
-					"default": { fillOpacity: 0.3, opacity: 1, color: "#000", weight: 1, fillColor: "#ff9999" },
-					"focus": { fillOpacity: 0.3, opacity: 1, color: "red", weight: 2, fillColor: "#ff9999" }
-				},
-				"Polygon": {
-					"default": { fillOpacity: 0.3, opacity: .5, color: "#666", weight: 1, fillColor: "#ff9999" },
-					"focus": { fillOpacity: 0.3, opacity: .5, color: "red", weight: 2, fillColor: "#ff9999" }
-				}
+			mappy.on('mousemove', function(e) {			    
+			    const anyUnRegions = mappy.queryRenderedFeatures(e.point).some(feature => {
+			        return feature.layer.id === 'un_regions_polygon';
+			    });
+			    mappy.getCanvas().style.cursor = anyUnRegions ? 'pointer' : 'default';
+			});
+			
+			mappy.on('click', function(e) {
+			    const features = mappy.queryRenderedFeatures(e.point);
+			    
+			    const unRegionIds = features.reduce((ids, feature) => {
+			        if (feature.layer.id === 'un_regions_polygon') {
+			            ids.push(feature.id);
+			        }
+			        return ids;
+			    }, []);
+			    
+			    let currentValues = $('#entrySelector').val() || [];
+			    unRegionIds.forEach(regionId => {
+			        const index = currentValues.indexOf(regionId.toString());
+			        if (index === -1) {
+			            currentValues.push(regionId.toString());
+			        } else {
+			            currentValues.splice(index, 1);
+			        }
+			    });
+			    $('#entrySelector').val(currentValues).trigger('change');
+			});
+
+		
+		}).fail(function(error) {
+		    console.error('Failed to fetch area features:', error);
+		});
+
+	    $('#clearButton')
+	    .on('click', function() {
+	    	$('#entrySelector').val(null).trigger('change');
+	    });
+
+	    function toggleHighlightsCards(selectedRegions) {
+	        $('.resource-card').each(function() {
+	            const card = $(this);
+	            const cardRegions = String(card.data('regions')).split(',').map(String);
+	            card.toggle(cardRegions.some(region => selectedRegions.includes(region)));
+	        });
+            if ($('#resourceCount:visible').length > 0) $('#resourceCount').text($('.resource-card:visible').length);
+	        regionsCollection.features.forEach(function(feature) {
+	        	mappy.setFeatureState({ source: 'un_regions', id: feature.id }, { highlight: selectedRegions.includes(String(feature.id)) });
+	        });
+	    }
+	    
+		let hash = window.location.hash;
+		window.location.hash = ""; // Clear the hash to prevent automatic scrolling
+
+		if (hash) {
+			let tabTriggerEl = document.querySelector('button[data-bs-target="' + hash + '"]');
+			if (tabTriggerEl) {
+				console.log('Tab trigger element found:', tabTriggerEl);
+				tabTriggerEl.click();
+			} else {
+				console.log('No tab trigger found for hash:', hash);
 			}
-
-		window.addEventListener("map:init", async function (event) {
-			map = event.detail.map;
-			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-			}).addTo(map);
-
-      let response = await fetch(dataurl);
-      let data = await response.json();
-      window.regions;
-      {#console.log('data', data);#}
-      idToFeature = {};
-      let regionsList = JSON.parse("{{ regions|safe }}".replace(/'/g, '"'));
-      regions = L.geoJson(data, {
-        filter: function (feature, layer) {
-          return "{{ regions }}".includes(feature.properties.id);
-        },
-        onEachFeature: function onEachFeature(feature, layer) {
-          identifier = feature.properties.id;
-          layer.setStyle({ fillOpacity: .1, opacity: .5, color: "#000", weight: 1, fillColor: "#ff9999" })
-          var props = feature.properties;
-          var content = `<b>${props.title}</b>`;
-          idToFeature[identifier] = layer
-          layer.on('mouseover', function (e) {
-            $("#region_label").html(content);
-          });
-          layer.on('mouseout', function (e) {
-            $("#region_label").html("select region to filter")
-          });
-        }
-      }).addTo(map);
-
-      L.Control.textbox = L.Control.extend({
-        onAdd: function (map) {
-
-          var textdiv = L.DomUtil.create('div');
-          textdiv.id = "region_label";
-          textdiv.innerHTML = "select region to filter"
-          return textdiv;
-        },
-
-        onRemove: function (map) {
-          // Nothing to do here
-        }
-      });
-      L.control.textbox = function (opts) { return new L.Control.textbox(opts); }
-      L.control.textbox({ position: 'topright' }).addTo(map);
-
-      regions.on('click', function(e){
-        // show title in upper right
-        $("#region_label").html(e.layer.feature.properties.title)
-        // display all cards
-        $('.resource-card').css('display', 'block')
-        // default fill and outline for all regions
-        regions.setStyle({fillColor:"#ff9999", color:"black"})
-        // set fill for this to yellow
-        e.layer.setStyle({fillColor:'yellow', color:"red"})
-        // filter cards on region
-        // console.log('clicked region:',e.layer.feature.properties)
-        filterResources(e.layer.feature.properties.id)
-        title=e.layer.feature.properties.title
-        // console.log('clicked region:',title)
-      })
-    });
-		{# });#}
-		$(function () {})
+		}
+		
 		// resources
-		$(".resource-card-content").click(function(){
+		$(".resource-card-content").click(function() {
 			rid = $(this).data('id');
-			window.location.href = "/resources/"+rid+"/detail";
+			window.location.href = "/resources/" + rid + "/detail";
 		})
-		$(".modal-link").click(function () {
+		
+		$(".modal-link").click(function() {
 			page = $(this).data('id')
 			$('.selector').dialog('open');
 		})
+		
 		$(".selector").dialog({
-				resizable: true,
-				autoOpen: false,
-				width: $(window).width() * 0.5,
-				height: $(window).height() * 0.9,
-				title: "Teaching with World Historical Gazetteer",
-				modal: true,
-				buttons: {
-					'Close': function () {
-						$(this).dialog('close');
-					}
-				},
-				open: function (event, ui) {
-					$('.selector').load('/media/resources/'+page+'.html');
-				},
-				show: { effect: "fade", duration: 400 },
-				hide: { effect: "fade", duration: 400 }
-			});
+			resizable: true,
+			autoOpen: false,
+			width: $(window).width() * 0.5,
+			height: $(window).height() * 0.9,
+			title: "Teaching with World Historical Gazetteer",
+			modal: true,
+			buttons: {
+				'Close': function() {
+					$(this).dialog('close');
+				}
+			},
+			open: function(event, ui) {
+				$('.selector').load('/media/resources/' + page + '.html');
+			},
+			show: {
+				effect: "fade",
+				duration: 400
+			},
+			hide: {
+				effect: "fade",
+				duration: 400
+			}
+		});		
+		
+		
+	});
 
 	</script>
+{% endblock %}
+
+{% block deferredScripts %}
+   	
+   	var scripts = [
+		{
+			src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
+			type: 'text/javascript',
+		},
+   	]
+
 {% endblock %}
 

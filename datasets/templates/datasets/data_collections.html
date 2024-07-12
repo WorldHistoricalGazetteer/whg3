@@ -1,6 +1,6 @@
 {#  datasets/data_collections.html #}
 
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% block title %}<title>WHG::My collections</title>{% endblock %}
 {% block extra_head %}
 {% block mycss %}
@@ -150,6 +150,9 @@
     </div>
   </div>
 
+{% endblock %}
+
+{% block inlineScripts %}
   <script>
 
     $("#status_select").change(function() {
@@ -207,8 +210,6 @@
       // set all active check boxes to active (because they are
 	    {#$("input[type='checkbox']").prop("checked", true);#}
 
-      $("[data-bs-toggle='tooltip']").tooltip();
-
       // manage url
       var url = document.location.toString();
       if (url.match('#')) {
@@ -227,7 +228,7 @@
 
     sortTable = function(col_idx, order, table_id) {
       var table, rows, switching, i, x, y, shouldSwitch;
-      <!--table = document.getElementById("table_ds");-->
+      // table = document.getElementById("table_ds");
       table = document.getElementById(table_id);
       switching = true;
       /* Make a loop that will continue until

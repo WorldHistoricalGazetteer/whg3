@@ -66,7 +66,7 @@
     <div class="mt-3">
       <p>All records in this dataset for this task have been reviewed, so the dataset is eligible for accessioning to
         the WHG index.</p>
-      <p>If you would like to begin that process, please <a href="{% url 'contact' %}">contact the editorial team</a>.
+      <p>If you would like to begin that process, please <a data-whg-modal="/contact_modal/">contact the editorial team</a>.
       </p>
       <p><a class="btn btn-sm btn-secondary" href="{% url 'datasets:ds_status' id=ds_id %}">Return to dataset status page</a>
       </p>
@@ -346,10 +346,6 @@
   },
   {
   src: '{% static 'webpack/review.bundle.js' %}',
-  type: 'module',
-  },
-  {
-  src: '{% static 'webpack/aliases.js' %}',
   type: 'module',
   },
   ]

@@ -1,12 +1,9 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% load static %}
 {% block title %}<title>WHG::APIs</title>{% endblock %}
 {% block extra_head %}
   <style>
-  body {
-    font-family: 'Raleway', sans-serif;
-  }
-  img {
+  #api_content img {
     border: 1px solid #E0EDFFFF;
     box-shadow: gainsboro 2px 2px 2px;
   }
@@ -203,10 +200,4 @@
     </div> <!-- row -->
   </div> <!-- api_content -->
 </div> <!-- container -->
-<script type="text/javascript">
-  $(function(){
-    $("[data-bs-toggle='tooltip']").tooltip();
-  })
-</script>
 {% endblock %}
-

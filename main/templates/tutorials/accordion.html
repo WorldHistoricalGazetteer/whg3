@@ -1,4 +1,4 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% block title %}<title>WHG::Architecture</title>{% endblock %}
 
 {% block content %}
@@ -65,6 +65,9 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block inlineScripts %}
 
 <script type="text/javascript">
   $(".accopen").click(function(e){

@@ -11,7 +11,6 @@
   <meta name="csrf-token" content="{{ csrf_token }}">
   <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.ico' %}"/>
   <script defer src="{% static 'webpack/base.bundle.js' %}"></script>
-  <!-- 'defer' allows rendering of HTML to continue while scripts load -->
   <link href="{% static 'webpack/base.bundle.css' %}" rel="stylesheet"/>
   <style>
     body {
@@ -25,10 +24,11 @@
   {% block extra_head %}{% endblock %}
   <script type="text/javascript">
     {% block deferredScripts %}
+    var scripts = [];  // Initialize scripts array if not present in template
     {% endblock %}
     function executeDeferredScripts() {
       const loadNextScript = function(index) {
-        if (index < scripts.length) {
+        if (index !== -1 && index < scripts.length) {
           const script = scripts[index];
           const scriptElement = document.createElement('script');
           scriptElement.src = script.src;
@@ -42,11 +42,26 @@
           };
           document.body.appendChild(scriptElement);
         }
+        else {
+            // Execute inline scripts after all external scripts are loaded
+            const inlineScriptContent = document.getElementById('inline-scripts').innerHTML;
+            const cleanInlineScriptContent = inlineScriptContent.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, function(match, p1) {
+                return p1;
+            });
+            const scriptElement = document.createElement('script');
+            scriptElement.type = 'text/javascript';
+            scriptElement.text = cleanInlineScriptContent;
+            document.body.appendChild(scriptElement);
+        }
       };
-      loadNextScript(0);
+      loadNextScript(scripts.length == 0 ? -1 : 0);
     }
   </script>
 </head>
+
+<div id="inline-scripts" style="display: none;">
+  <!-- Enclose within HTML Comment to prevent premature execution {% block inlineScripts %}{% endblock inlineScripts %}-->
+</div>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZB73342G3Y"></script>
 <script>
@@ -176,7 +191,7 @@
             </a>
             <ul class="dropdown-menu dropdown-menu-end">
               <li class="nav-item">
-                <a class="nav-link" rel="tooltip" href="{% url 'profile-edit' %}"> Profile </a>
+                <a class="nav-link" href="{% url 'profile-edit' %}"> Profile </a>
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="javascript:{document.getElementById('logout').submit()}">Logout</a>

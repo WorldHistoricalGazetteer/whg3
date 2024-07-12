@@ -6,7 +6,6 @@
 {% load dataset_extras %}
 
 {% block extra_head %}
-  <script src="{% static 'js/aliases.js' %}"></script>
   <script src="{% static 'celery_progress/celery_progress.js' %}"></script>
   <link href="{% static 'webpack/builders-dataset-status.bundle.css' %}" rel="stylesheet" />
 {% endblock %}
@@ -187,9 +186,7 @@
                   closely matched places from other indexed datasets.</p>
               </div>
               <div class="col-md-3">
-                {% comment %}
-                <a class="btn btn-sm btn-outline-primary py-1" href="{% url 'contact' %}?dataset_id={{ ds.id }}" target="_blank">Request accessioning</a>{% endcomment %}
-                <a class="btn btn-sm btn-outline-primary py-1" href="{% url 'contact' %}?subject=Request WHG accessioning (dataset id: {{ ds.id }})" target="_blank">Request accessioning</a>
+              	<a class="btn btn-sm btn-outline-primary py-1" data-whg-modal="/contact_modal/" data-subject="Request WHG accessioning (dataset id: {{ ds.id }})">Request accessioning</a>
               </div>
             </div>
             {% if task_wdgn %}
@@ -219,9 +216,7 @@
                   publicly viewable and its data included in search results.</p>
               </div>
               <div class="col-md-3">
-                <a class="btn btn-sm btn-outline-primary py-1"
-                   href="{% url 'contact' %}?subject=Request WHG publication (dataset id: {{ ds.id }})">
-                  Request publication</a>
+                <a class="btn btn-sm btn-outline-primary py-1" data-whg-modal="/contact_modal/" data-subject="Request WHG publication (dataset id: {{ ds.id }})">Request publication</a>
               </div>
             </div>
             {% if task_wdgn %}
@@ -284,9 +279,7 @@
             we did not yet have represented. Many thanks!</p>
             {%  if not ds.public %}
               <div class="col-md-3">
-                <a class="btn btn-sm btn-outline-primary py-1"
-                   href="{% url 'contact' %}?subject=Request WHG publication (id: {{ ds.id }})">
-                  Request publication</a>
+                <a class="btn btn-sm btn-outline-primary py-1" data-whg-modal="/contact_modal/" data-subject="Request WHG publication (dataset id: {{ ds.id }})">Request publication</a>
               </div>
             {% endif %}
           {% endif %}

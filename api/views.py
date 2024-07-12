@@ -1016,6 +1016,7 @@ class AreaFeaturesView(generics.ListAPIView):
     id_ = params.get('id', None)
     query = params.get('q', None)
     filter = params.get('filter', None)
+    regions = params.get('regions', None)
     
     areas = []
     qs = Area.objects.all().filter((Q(type='predefined'))).values('id','title','type','description','geojson')
@@ -1027,7 +1028,8 @@ class AreaFeaturesView(generics.ListAPIView):
       qs = qs.filter(title__icontains=query)
     if filter and filter == 'un':
       qs = qs.filter(description="UN Statistical Division Sub-Region")
-
+    if regions is not None:
+        qs = qs.filter(id__in=[int(region_id) for region_id in regions.split(',')])
       
     for a in qs:
       feat = {

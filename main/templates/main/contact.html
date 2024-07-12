@@ -1,4 +1,4 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% block title %}<title>WHG::UsingAPI</title>{% endblock %}
 
 {% block content %}
@@ -37,6 +37,9 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block inlineScripts %}
 <script type="text/javascript">
   $('.captcha').click(function () {
     $.getJSON("/captcha/refresh/", function (result) {

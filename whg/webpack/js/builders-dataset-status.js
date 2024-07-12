@@ -3,10 +3,6 @@
 import '../css/builders-dataset-status.css';
 
 $(function() {
-	
-	$("[data-toggle=popover]").popover({
-		html: true
-	})
 
 	// help modals
 	$(".help-matches").click(function() {

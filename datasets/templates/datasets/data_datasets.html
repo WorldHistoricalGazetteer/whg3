@@ -1,6 +1,6 @@
 {#  datasets/data_datasets.html #}
 
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 {% block title %}<title>WHG::My datasets</title>{% endblock %}
 {% block extra_head %}
 {% block mycss %}
@@ -163,10 +163,11 @@
     </div>
   </div>
 
+{% endblock %}
+
+{% block inlineScripts %}
   <script>
     $(function(){
-      $("[data-bs-toggle='tooltip']").tooltip();
-
       // manage url
       var url = document.location.toString();
       if (url.match('#')) {
