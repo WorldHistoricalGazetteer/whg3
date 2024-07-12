@@ -73,13 +73,13 @@ class SearchPageView(TemplateView):
     context['dropdown_data'] = get_regions_countries()  # Used for spatial filter
     
     context['adv_filters'] = [
-        ("A", "Administrative entities"),
-        ("P", "Cities, towns, hamlets"),
-        ("S", "Sites, buildings, complexes"),
-        ("R", "Roads, routes, rail..."),
-        ("L", "Regions, landscape areas"),
-        ("T", "Terrestrial landforms"),
-        ("H", "Water bodies"),
+        ["A", "Administrative entities"],
+        ["P", "Cities, towns, hamlets"],
+        ["S", "Sites, buildings, complexes"],
+        ["R", "Roads, routes, rail..."],
+        ["L", "Regions, landscape areas"],
+        ["T", "Terrestrial landforms"],
+        ["H", "Water bodies"],
     ]
     
     user_areas = []

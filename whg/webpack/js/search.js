@@ -527,8 +527,9 @@ function renderResults(data, fromStorage = false) {
 	      <span class="red-head">${result.title}</span>
 	      <span class="float-end small">${resultIdx === 'pub' ? '' : (count > 1 ?
             `${count} linked records <i class="fas fa-link"></i>` : '')}
-	          <a href="${children.length > 0 ? `/places/${whg_id}/portal/` : `/places/${pid}/detail`}" class="ms-2 portal-link" data-whg-id="${whg_id}" data-pid="${pid}" data-children="${encodedChildren}">
-						${children.length > 0 ? 'place portal' : 'place detail'}</a>
+	        <button data-bs-toggle="tooltip" title="Click to view all details for this ${count > 1 ? 'set of linked places' : 'unlinked place'}" class="btn btn-primary btn-sm m-1 portal-link" data-whg-id="${whg_id}" data-pid="${pid}" data-children="${encodedChildren}">
+                Place Details
+            </button>
 	      </span>
 	    </span>`;
 
@@ -549,11 +550,19 @@ function renderResults(data, fromStorage = false) {
 		html += (result.types && result.types.length > 0) ?
 			`<p>Type(s): ${result.types.join(', ')}</p>` :
 			'';
-		html += (result.ccodes && result.ccodes.length > 0) ?
-			`<p>Country Codes: ${result.ccodes.join(', ')}</p>` :
+		html += (result.ccodes && result.ccodes.length > 0 && !(result.ccodes.length == 1 && result.ccodes[0] == '')) ?
+			`<p>Country Codes: ${result.ccodes.map(ccode => {
+			    const country = dropdown_data[1].children.find(child => child.id === ccode);
+			    const countryName = country ? country.text : '';
+			    return `<span class="pointer" data-bs-toggle="tooltip" title="${countryName}">${ccode}</span>`;
+			}).join(', ')}</p>` :
 			'';
 		html += (result.fclasses && result.fclasses.length > 0) ?
-			`<p>Feature Classes: ${result.fclasses.join(', ')}</p>` :
+			`<p>Feature Classes: ${result.fclasses.map(fclass => {
+			    const facet = adv_filters.find(child => child[0] === fclass);
+			    const facetName = facet ? facet[1] : '';
+			    return `<span class="pointer" data-bs-toggle="tooltip" title="${facetName}">${fclass}</span>`;
+			}).join(', ')}</p>` :
 			'';
 			
 		if (result.timespans && result.timespans.length > 0) {
@@ -566,6 +575,13 @@ function renderResults(data, fromStorage = false) {
 	});
 	
 	$resultsDiv
+	.on('mouseenter', '.portal-link', function(event) {
+        $(this).parents('.result').tooltip('hide');
+    })
+	.on('click', '.portal-link', function(event) {
+        event.preventDefault();
+        window.location.href = `/places/${$(this).data('whg-id')}/portal/`;
+    })
 	.on('click', '.unlinked', function() {
 	    $(this)
 	    .text($(this).hasClass('reveal') ? 'Hide unlinked results' : 'Show unlinked results')

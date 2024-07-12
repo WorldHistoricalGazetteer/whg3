@@ -27,8 +27,8 @@ $.fn.toggleTruncate = function(arg1, arg2 = {}) {
 		moreText: 'More', 
 		lessText: 'Less', 
 		colour: '#fff', 
-		backgroundColour: '#004080',
-		backgroundColourHover: '#004080a3',
+		backgroundColour: '#0d6efd',
+		backgroundColourHover: '#0d6efda3',
 		toggleTruncate: 'toggle-truncate' // basename for inserted classes: change needed only to resolve any conflict with existing code
 	}
 	

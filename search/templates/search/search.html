@@ -156,7 +156,7 @@
                 <div id="initial_results" class="bg-light p-2">
                     <h6 class="strong">Search in WHG</h6>
                     <p>Many places have the same name. If your search returns multiple results, browse them to discover what you are looking for. Places that have more linked records and name variants will appear at the top of the list. You can also then filter results by modern country or place type.</p>
-                    <p>Results appearing in green boxes are from published dataets, but not yet linked in our union index.</p>
+                    <p>Results appearing in green boxes are from published datasets, but not yet linked in our union index.</p>
                 </div>
                 <div id="no_results" class="bg-light p-2">No results - please modify your search terms and options.</div>
                 <div id="no_filtered_results" class="bg-light p-2">No filtered results - please adjust your filter selections.</div>
@@ -172,6 +172,7 @@
 	var eswhg = "{{ es_whg|escapejs }}";
 	const has_areas = {{ has_areas|yesno:"true,false" }};
 	const user_areas = {{ user_areas|safe }}
+	const adv_filters = {{ adv_filters| safe }}
 </script>
 
 {% endblock %}
