@@ -137,7 +137,7 @@ Promise.all([
 	// Delegated event listener for Result links
 	$(document).on('click', '.result', function(e) {
 	    const $clickedResult = $(this);	    
-		const index = $clickedResult.index(); // Get index of clicked card
+		const index = $clickedResult.index('.result'); // Get index of clicked card
 
 		mappy.removeFeatureState({
 			source: 'places',
@@ -158,6 +158,12 @@ Promise.all([
 			$clickedResult.removeAttr('data-map-initialising');
 			mappy.fitViewport(bbox(featureCollection), defaultZoom);
 		} else {
+			
+			
+			console.log(featureCollection, index)
+			console.log(featureCollection.features[index])
+			console.log('bbox(featureCollection.features[index])', bbox(featureCollection.features[index]))
+			
 			mappy.fitViewport(bbox(featureCollection.features[index]), defaultZoom);
 		}
 
