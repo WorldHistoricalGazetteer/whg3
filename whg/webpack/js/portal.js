@@ -215,7 +215,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			'';
 
 		$('#gloss').append($('<p>').addClass('mb-1 smallish').html(`
-			This place is attested (so far) in the <b>${payload.length}</b> source${payload.length > 1 ? 's' : ''} listed below${distinctTypesText}, 
+			This place is attested (so far) in the ${payload.length == 1 ? 'unlinked source' : `<b>${payload.length}</b> source${payload.length > 1 ? 's' : ''}`} listed below${distinctTypesText}, 
 			with <b>${distinctNameVariants.size}</b> distinct name variant${distinctNameVariants.size > 1 ? 's' : ''}${temporalRange}.
 		`));
 
@@ -235,7 +235,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 
 		$('#gloss').append($('<span id="collectionInfo">'));
 
-		$('#sources').find('h6').html(`${payload.length} Source${payload.length > 1 ? 's' : ''} <span id="filterCount"></span>`);
+		$('#sources').find('h6').html(`${payload.length == 1 ? 'Unlinked Source' : `${payload.length} Source${payload.length > 1 ? 's' : ''}`} <span id="filterCount"></span>`);
 
 		payload[0]['primary'] = true; // Payload arrives with Places in descending link-count order
 		payload.forEach(place => { // Reverse-sort each set of timespans by end year
@@ -250,7 +250,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 
 		payload.forEach(place => {
 			const sourceHTML = `
-				<div class="source-box${ !!place.primary? ' primary-place' : ''}" data-bs-toggle="tooltip" data-bs-title="${ !!place.primary? 'This is considered to be the <i>Primary Source</i>. ' : ''}Click to zoom map to features associated with this source.">
+				<div class="source-box${ !!place.primary? ' primary-place' : ''}"${payload.length == 1 ? '' : ` data-bs-toggle="tooltip" data-bs-title="${ !!place.primary? 'This is considered to be the <i>Primary Source</i>. ' : ''}Click to zoom map to features associated with this source."`}>
 		            <span class="notes" ${ userId == false ? '' : `data-user-id="${userId}" `}data-place-id="${place.place_id}">
 		            	${ place.notes.map(note => `<p title="${note.tag}" data-bs-toggle="tooltip" data-creator="${note.user}" data-note-id="${note.id}">${note.note}</p>`).join('') }
 		            </span>
@@ -600,7 +600,7 @@ function filterSources(fromValue, toValue, includeUndated) {
 	});
 	mappy.getSource('places').setData(featureCollection);
 	let hiddenCount = $('.source-box:not(:visible)').length;
-	$('#filterCount').text(hiddenCount == 0 ? '' : `(${hiddenCount} hidden by temporal filter)`);
+	$('#filterCount').text(hiddenCount == 0 ? '' : `(${payload.length < 2 ? '' : `${hiddenCount} `}hidden by temporal filter)`);
 	noSources.toggle($('.source-box:visible').length == 0);
 }
 
