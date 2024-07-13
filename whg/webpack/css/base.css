@@ -69,6 +69,18 @@ footer {
     user-select: none;
 }
 
+.btn-primary {
+    background-color: #daebf1 !important;
+    border-color: #ced4da !important;
+    color: black !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: #aad2df !important;
+}
+
 .fonts-loaded body {
   font-family: 'Raleway', sans-serif;
 }
@@ -81,7 +93,7 @@ footer {
 }
 #input label {
 	font-weight: bold;
-	background-color: #c4ddec5c;
+	background-color: #daebf1;
 }
 #input #initiate_search {
 	background-color: #c3f3c89e;

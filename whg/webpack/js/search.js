@@ -590,6 +590,7 @@ function renderResults(data, fromStorage = false) {
     })
 	.on('click', '.unlinked', function() {
 	    $(this)
+	    .blur()
 	    .text($(this).hasClass('reveal') ? 'Hide unlinked results' : 'Show unlinked results')
 		.toggleClass('reveal');
 	    let $resultsToToggle = $(this).parent('div').nextAll('.result');
