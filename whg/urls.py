@@ -64,18 +64,18 @@ urlpatterns = [
     # path('builder/', TemplateView.as_view(template_name="main/builder_start.html"), name="gazetteer-builder"),
     # path('builder_single/', TemplateView.as_view(template_name="main/builder_single.html"), name="builder-single"),
     # path('builder_multiple/', TemplateView.as_view(template_name="main/builder_multiple.html"), name="builder-multiple"),
-    path('contributing/', TemplateView.as_view(template_name="main/contributing.html"), name="contributing"),
+    path('contributing/', TemplateView.as_view(template_name="main/../_local/_older/contributing.html"), name="contributing"),
 
     path('people_overview/', TemplateView.as_view(template_name="main/people_overview.html"), name="credits"),
     path('licensing/', TemplateView.as_view(template_name="main/licensing.html"), name="licensing"),
-    path('system/', TemplateView.as_view(template_name="main/system.html"), name="system"),
+    path('system/', TemplateView.as_view(template_name="main/../_local/_older/system.html"), name="system"),
 
     # path('people/', TemplateView.as_view(template_name="main/people.html"), name="people"),
     # path('partners/', TemplateView.as_view(template_name="main/partners.html"), name="partners"),
     path('publications/', TemplateView.as_view(template_name="main/publications.html"), name="publications"),
 
     path('usingapi/', TemplateView.as_view(template_name="main/usingapi.html"), name="usingapi"),
-    path('api/', TemplateView.as_view(template_name="main/api.html"), name="api"),
+    path('api/', TemplateView.as_view(template_name="main/../_local/_older/api.html"), name="api"),
     path('downloads/', TemplateView.as_view(template_name="main/downloads.html"), name="downloads"),
     path('documentation/', TemplateView.as_view(template_name="main/documentation.html"), name="documentation"),
 
@@ -83,7 +83,7 @@ urlpatterns = [
     # path('build/', TemplateView.as_view(template_name="home/build_new.html"), name="build"),
     # path('builder/', TemplateView.as_view(template_name="home/builder.html"), name="builder"),
     path('workbench/', TemplateView.as_view(template_name="main/workbench_3col.html"), name="workbench"),
-    path('pipeline/', TemplateView.as_view(template_name="home/pipeline.html"), name="pipeline"),
+    # path('pipeline/', TemplateView.as_view(template_name="home/pipeline.html"), name="pipeline"),
     
     # yet more static content - 2024-02
     path('main_regions/', TemplateView.as_view(template_name="main/regions.html"), name="main-regions"),

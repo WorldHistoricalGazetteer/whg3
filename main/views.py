@@ -974,7 +974,7 @@ def contact_view(request):
     else:
       print('Form errors from contact_view():', form.errors)
 
-  return render(request, "main/contact.html", {'form': form,
+  return render(request, "main/../_local/_older/contact.html", {'form': form,
                                                'user': request.user,
                                                'is_volunteer': is_volunteer or False,
                                                'dataset': dataset})
