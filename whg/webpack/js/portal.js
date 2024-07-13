@@ -147,6 +147,8 @@ function waitDocumentReady() {
 		$(document).ready(() => {
 			
 			$('#dataset_content').spin();
+			let truncation = $('h5.more-or-less').text().split(';').slice(0, 4).join(';').length;
+			$('h5.more-or-less').toggleTruncate(truncation, {'ellipsis': '', 'moreText': '. . .'});
 
 			let checked_cards = []
 
@@ -269,7 +271,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 
 			$('#sources').append(sourceHTML);
 		});
-		$('.toggle-truncate').toggleTruncate();
+		$('#sources .toggle-truncate').toggleTruncate();
 		$('#sources').height($('#sources').height()); // Fix height to prevent change when content is hidden
 		$('.notes').notes();
 

@@ -257,16 +257,18 @@ class PlacePortalView(TemplateView):
         context['extent'] = list(wkt.loads(unioned_geometry.envelope.wkt).bounds)
         context['centroid'] = list(unioned_geometry.centroid.tuple)
 
-    title_counts = Counter(alltitles)
-    variant_counts = Counter(allvariants)
-
-    # Find the two most common titles and variants
-    common_titles = [title for title, _ in title_counts.most_common(2)]
-    common_variants = [variant for variant, _ in variant_counts.most_common(2)]
-
-    # Construct the portal headword
-    portal_headword = common_titles + common_variants
-    context['portal_headword'] = "; ".join(portal_headword)+"; ..."
+    # title_counts = Counter(alltitles)
+    # variant_counts = Counter(allvariants)
+    #
+    # # Find the two most common titles and variants
+    # common_titles = [title for title, _ in title_counts.most_common(2)]
+    # common_variants = [variant for variant, _ in variant_counts.most_common(2)]
+    #
+    # # Construct the portal headword
+    # portal_headword = common_titles + common_variants
+    # context['portal_headword'] = "; ".join(portal_headword)+"; ..."
+    
+    context['portal_headword'] = "; ".join([name for name, _ in Counter(list(alltitles) + allvariants).most_common()])
     context['annotations'] = annotations
     context['collections'] = collections
 

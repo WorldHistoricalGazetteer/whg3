@@ -466,24 +466,24 @@ def childItem(i):
   score = i.get('_score', None)
   i = i['_source']
   item = {
-    "type":"Feature",
+    "type": "Feature",
     "score": score,
     "properties": {
-      "title":i['title'],
-      "index_id":_id,
-      # "index_role":i['relation']['name'],
-      "place_id":i['place_id'],
-      "source_id": i['src_id'],
-      "dataset":i['dataset'],
+        "title": i.get('title', ''),
+        "index_id": _id,
+        "index_role": i.get('relation', {}).get('name', ''),
+        "place_id": i.get('place_id', ''),
+        "source_id": i.get('src_id', ''),
+        "dataset": i.get('dataset', ''),
     },
-    "fclasses": [fc for fc in i['fclasses']],
-    "types": [t.get('sourceLabel', t.get('source_label')) for t in i['types']],
-    "variants": [n['toponym'] for n in i['names'] if n['toponym'] != i['title']],
-    'links': i['links'],
-    "when": [{"start": {"in": ts["gte"]}, "end": {"in": ts["lte"]}} for ts in i['timespans']],
-    "minmax": [i['minmax']['gte'], i['minmax']['lte']] if 'minmax' in i.keys() else [],
-    "ccodes": i['ccodes'],
-    "geometry": makeGeom(i['geoms'])
+    "fclasses": [fc for fc in (i.get('fclasses') or []) if fc is not None],
+    "types": [t.get('sourceLabel', t.get('source_label')) for t in (i.get('types') or []) if t is not None],
+    "variants": [n['toponym'] for n in (i.get('names') or []) if n.get('toponym') != i.get('title')],
+    'links': i.get('links', []),
+    "when": [{"start": {"in": ts.get("gte")}, "end": {"in": ts.get("lte")}} for ts in (i.get('timespans') or []) if ts is not None],
+    "minmax": [i['minmax'].get('gte'), i['minmax'].get('lte')] if isinstance(i.get('minmax'), dict) else [],
+    "ccodes": i.get('ccodes', []),
+    "geometry": makeGeom(i.get('geoms', []))
   }
   return item
 """
