@@ -101,8 +101,7 @@
 }
 
 .accordion-header {
-    /*background-color: lightgreen;*/
-    background-color: aliceblue;
+    background-color: #daebf1;
 }
 
 .accordion-button {
