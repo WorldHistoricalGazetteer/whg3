@@ -148,7 +148,7 @@ function waitDocumentReady() {
 			
 			$('#dataset_content').spin();
 			let truncation = $('h5.more-or-less').text().split(';').slice(0, 4).join(';').length;
-			$('h5.more-or-less').toggleTruncate(truncation, {'ellipsis': '', 'moreText': '. . .'});
+			$('h5.more-or-less, b.more-or-less').toggleTruncate(truncation, {'ellipsis': '', 'moreText': '. . .'});
 
 			let checked_cards = []
 
@@ -276,7 +276,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		$('.notes').notes();
 
 		var sourceOptions = payload.map(function(item) {
-			return `<option value="${item.place_id}"${!!item.primary ? ' selected' : ''}>${item.dataset.name}: ${item.title}</option>`;
+			return `<option value="${item.place_id}"${!!item.primary ? ' selected' : ''}>${item.dataset.title}: ${item.title}</option>`;
 		}).join('');
 		$('#collection_form #primarySource').html(sourceOptions);
 
