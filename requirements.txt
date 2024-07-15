@@ -82,6 +82,7 @@ linear-tsv==1.1.0
 networkx==3.2.1
 numpy==1.24.1
 oauthlib==3.2.2
+odfpy==1.4.1
 openpyxl==3.0.9
 ordered-set==4.1.0
 pandas==1.4.1

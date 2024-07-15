@@ -127,6 +127,7 @@ def parsedates_tsv(dates):
       return None  # Or handle this case differently if needed
     return {"timespans": [timespans], "minmax": minmax}
 
+'''
 # extract integers for new Place from lpf
 def timespansReduce(tsl):
   result = []
@@ -163,7 +164,7 @@ def parsedates_lpf(feat):
   # which feat keys might have a when?
   possible_keys = list(set(feat.keys() & \
                     set(['names','types','relations','geometry'])))
-  print('possible_keys in parsedates_lpf()',possible_keys)
+  print('possible_keys in parsedates_lpf()', feat, possible_keys)
 
   # first, geometry
   # collections...
@@ -196,7 +197,74 @@ def parsedates_lpf(feat):
   ]
   # de-duplicate
   unique=list(set(tuple(sorted(sub)) for sub in intervals))
+  print('returning from parsedates_lpf', unique, minmax)
   return {"intervals": unique, "minmax": minmax}
+'''
+
+def timespansReduce(tsl):
+    def extract_year(time_dict):
+        if not time_dict:
+            return None
+        year_string = next(iter(time_dict.values()), '')
+        year_match = re.search(r'(-?\d+)', year_string)
+        return int(year_match.group(1)) if year_match else None
+    
+    return [
+        [
+            extract_year(ts.get('start', {})),
+            extract_year(ts.get('end', {}))
+        ]
+        for ts in tsl
+    ]
+
+def parsedates_lpf(feat):
+    '''
+    TODO:
+    This method ignores the `earliest`, `in`, and `latest` attributes of `start` and `end`, which
+    can lead to misrepresentation of attestations.
+    
+    '''
+    allowed_keys = ['names', 'types', 'relations', 'geometry', 'geometries']
+
+    def find_timespans(obj, allowed_keys):
+        return [
+            (start, end)
+            for key, value in obj.items() if key == 'when' and 'timespans' in value
+            for interval in timespansReduce(value['timespans'])
+            for start, end in [interval]
+        ] + [
+            interval
+            for key, value in obj.items() if key in allowed_keys
+            for interval in find_timespans(value, allowed_keys)
+        ] if isinstance(obj, dict) else [
+            interval
+            for item in obj
+            for interval in find_timespans(item, allowed_keys)
+        ] if isinstance(obj, list) else []
+
+    intervals = find_timespans(feat, allowed_keys)
+    
+    all_starts = [start for start, end in intervals if start is not None]
+    all_ends = [end for start, end in intervals if end is not None]
+
+    min_start = min(all_starts, default=None)
+    max_end = max(all_ends, default=None)
+    
+    minmax = (
+        [min_start, max_end] if min_start is not None and max_end is not None else
+        None if min_start is None and max_end is None else
+        [max_end, max_end] if min_start is None else
+        [min_start, min_start] if max_end is None else
+        [min_start, max_end]
+    )
+    
+    # Filter out intervals with None start or end values
+    filtered_intervals = [(start, end) for start, end in intervals if start is not None and end is not None]
+    unique_intervals = list(set(filtered_intervals))
+    unique_intervals.sort()
+    
+    print('returning from parsedates_lpf', unique_intervals, minmax)
+    return {"intervals": unique_intervals, "minmax": minmax}
 
 class HitRecord(object):
   def __init__(self, place_id, dataset, auth_id, title):

@@ -44,6 +44,20 @@ var Spinner = /** @class */ (function () {
      */
     Spinner.prototype.spin = function (target) {
         this.stop();
+        
+        this.overlay = document.createElement('div');
+        this.overlay.className = 'spinner-overlay';
+        css(this.overlay, {
+            position: 'absolute',
+            top: '0',
+            left: '0',
+            width: '100%',
+            height: '100%',
+            zIndex: this.opts.zIndex - 1,
+            backgroundColor: 'rgba(0, 0, 0, 0.2)',
+        });
+        target.appendChild(this.overlay);
+        
         this.el = document.createElement('div');
         this.el.className = this.opts.className;
         this.el.setAttribute('role', 'progressbar');
@@ -95,6 +109,9 @@ var Spinner = /** @class */ (function () {
                 clearTimeout(this.animateId);
             }
             if (this.el.parentNode) {
+	            if (this.overlay) {
+	                this.overlay.parentNode.removeChild(this.overlay);
+	            }
                 this.el.parentNode.removeChild(this.el);
             }
             this.el = undefined;

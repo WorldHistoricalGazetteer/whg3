@@ -20,90 +20,102 @@ MATCHTYPES = [
   replacing DatasetCreateModelForm(); bot-guided
 """
 class DatasetUploadForm(forms.ModelForm):
+    title = forms.CharField(label='Title', widget=forms.TextInput(attrs={
+        'placeholder': '5-100 characters (required)',
+        'size': 45,
+        'minlength': 5,
+        'maxlength': 100,
+        'class': 'form-control',
+    }))
+
+    label = forms.CharField(label='Label', widget=forms.TextInput(attrs={
+        'placeholder': '3-20 characters, no spaces (required)',
+        'size': 45,
+        'minlength': 3,
+        'maxlength': 20,
+        'class': 'form-control',
+    }))
+
+    description = forms.CharField(label='Description', widget=forms.Textarea(attrs={
+        'rows': 2,
+        'cols': 45,
+        'minlength': 10,
+        'class': 'form-control',
+        'placeholder': 'At least 10 characters (required)',
+    }))
+
+    creator = forms.CharField(label='Creator(s)', required=False, widget=forms.TextInput(attrs={
+        'placeholder': 'Name(s) of dataset creator',
+        'size': 45,
+        'class': 'form-control',
+    }))
+
+    source = forms.CharField(label='Source(s)', required=False, widget=forms.TextInput(attrs={
+        'placeholder': 'Name(s) of sources used',
+        'size': 45,
+        'class': 'form-control',
+    }))
+
+    contributors = forms.CharField(label='Contributors', required=False, widget=forms.TextInput(attrs={
+        'placeholder': 'Name(s) of any contributor(s)',
+        'size': 45,
+        'class': 'form-control',
+    }))
+
+    uri_base = forms.URLField(label='URI base', required=False, widget=forms.URLInput(attrs={
+        'placeholder': 'Use only if record IDs are URIs',
+        'size': 45,
+        'class': 'form-control',
+    }))
+
+    webpage = forms.URLField(label='Web page', required=False, widget=forms.URLInput(attrs={
+        'size': 45,
+        'placeholder': 'Project home page',
+        'class': 'form-control',
+    }))
+
+    pdf = forms.FileField(label='Essay file', required=False, widget=forms.FileInput(attrs={
+        'class': 'form-control',
+        'accept': '.pdf',
+    }))
+
+    valid_extensions = ['.csv', '.tsv', '.xlsx', '.ods', '.jsonld', '.geojson', '.json']
+    file = forms.FileField(label='Data file', widget=forms.FileInput(attrs={
+        'class': 'form-control',
+        'required': 'required',
+        'accept': ','.join(valid_extensions),
+    }))
+
+    license_acceptance = forms.CharField(label='Licence Acceptance', widget=forms.CheckboxInput(attrs={
+        'class': 'form-check-input',
+        'required': 'required',
+    }))
 
     class Meta:
         model = Dataset
-        # file fields = ('file','rev','uri_base','format','dataset_id','delimiter',
-        #   'status','accepted_date','header','numrows')
+        fields = ('title', 'label', 'description', 'creator', 'source', 'contributors', 'uri_base', 'webpage', 'pdf', 'file')
+        
+class DEPRECATED_DatasetUploadForm(forms.ModelForm):
+
+    class Meta:
+        model = Dataset
         fields = ('owner', 'id', 'title', 'label', 'datatype', 'description', 'uri_base', 'public',
                   'creator', 'contributors', 'source', 'webpage', 'image_file', 'featured', 'pdf')
         widgets = {
-            'description': forms.Textarea(attrs={
-                'rows': 2, 'cols': 45, 'class': 'textarea', 'placeholder': 'Brief description'}),
-            'uri_base': forms.URLInput(attrs={
-                    'placeholder': 'Leave blank unless record IDs are URIs', 'size': 45}),
-            'title': forms.TextInput(attrs={'size': 45}),
-            'label': forms.TextInput(attrs={'placeholder': '20 char max; no spaces', 'size': 22}),
+            'title': forms.TextInput(attrs={'placeholder': '5-100 characters', 'size': 45, 'minlength': 5, 'maxlength': 100}),
+            'label': forms.TextInput(attrs={'placeholder': '3-20 characters, no spaces', 'size': 45, 'minlength': 3, 'maxlength': 20}),
+            'description': forms.Textarea(attrs={'rows': 2, 'cols': 45, 'minlength': 10, 'class': 'textarea', 'placeholder': 'At least 10 characters'}),
             'creator': forms.TextInput(attrs={'size': 45}),
             'source': forms.TextInput(attrs={'size': 45}),
-            'featured': forms.TextInput(attrs={'size': 4}),
+            'contributors': forms.TextInput(attrs={'size': 45}),
+            'uri_base': forms.URLInput(attrs={'placeholder': 'Leave blank unless record IDs are URIs', 'size': 45}),
             'webpage': forms.URLInput(attrs={'size': 45, 'placeholder': 'Project home page, if any'}),
             'pdf': forms.FileInput(attrs={'class': 'fileinput'}),
+            'featured': forms.TextInput(attrs={'size': 4}),
         }
 
-    def clean_label(self):
-        label = self.cleaned_data['label']
-        if ' ' in label:
-            raise forms.ValidationError('Label cannot contain any spaces; replace with underscores (_)')
-        return label
-
-    def clean_file(self):
-        # print('clean_file in DatasetUploadForm')
-        uploaded_file = self.cleaned_data['file']
-
-        # Save the uploaded file to a temporary location
-        tempf, tempfn = tempfile.mkstemp()
-        try:
-            for chunk in uploaded_file.chunks():
-                os.write(tempf, chunk)
-        except:
-            raise forms.ValidationError("Problem with the input file.")
-        finally:
-            os.close(tempf)
-
-        # You can get the file's content type (MIME type) from the uploaded_file object
-        mimetype = uploaded_file.content_type
-
-        if mimetype not in mthash_plus.mimetypes:
-            raise forms.ValidationError("Not a valid file type; must be one of [.csv, .tsv, .xlsx, .ods, .json]")
-
-        # encoding = self.determine_file_encoding(mimetype, tempfn)
-        # if encoding and encoding.lower() not in ['utf-8', 'ascii']:
-        #     raise forms.ValidationError(
-        #         f"The encoding of uploaded files must be unicode (utf-8). This file seems to be {encoding}")
-
-        self.cleaned_data['temp_file_path'] = tempfn
-
-        return uploaded_file
-
-    def determine_file_encoding(self, mimetype, filepath):
-        """Determine the encoding of a given file based on its MIME type."""
-        if mimetype.startswith('text/'):
-            return self.get_encoding_delim(filepath)
-        elif 'spreadsheet' in mimetype:
-            return self.get_encoding_excel(filepath)
-        elif mimetype.startswith('application/'):
-            with codecs.open(filepath, 'r') as fin:
-                return fin.encoding
-        else:
-            return None
-
-    def get_encoding_excel(self, tempfn):
-        with codecs.open(tempfn, 'r') as fin:
-            return fin.encoding
-
-    def get_encoding_delim(self, tempfn):
-        with open(tempfn, 'rb') as f:
-            rawdata = f.read()
-        return detect(rawdata)['encoding']
-
-    # fields used to create new DatasetFile record from form
-    # uri_base = forms.URLField(widget=forms.URLInput(
-        # attrs={'placeholder':'Leave blank unless record IDs are URIs','size':35}))
     file = forms.FileField()
     rev = forms.IntegerField()
-    format = forms.ChoiceField(
-        choices=FORMATS, widget=forms.RadioSelect, initial='delimited')
     delimiter = forms.CharField()
     header = forms.CharField()
     df_status = forms.ChoiceField(choices=STATUS_FILE)
@@ -112,9 +124,37 @@ class DatasetUploadForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(DatasetUploadForm, self).__init__(*args, **kwargs)
+        self.fields['title'].required = True
+        self.fields['label'].required = True
+        self.fields['description'].required = True
         for field in self.fields.values():
-            field.error_messages = {'required': 'The field {fieldname} is required'.format(
-                fieldname=field.label)}
+            field.error_messages = {'required': 'The field {fieldname} is required'.format(fieldname=field.label)}
+
+    def clean_label(self):
+        label = self.cleaned_data['label']
+        if ' ' in label:
+            raise forms.ValidationError('Label cannot contain any spaces; replace with underscores (_)')
+        return label
+
+    def clean_file(self):
+        uploaded_file = self.cleaned_data.get('file')
+        if uploaded_file:
+            tempf, tempfn = tempfile.mkstemp()
+            try:
+                for chunk in uploaded_file.chunks():
+                    os.write(tempf, chunk)
+            except:
+                raise forms.ValidationError("Problem with the input file.")
+            finally:
+                os.close(tempf)
+
+            mimetype = uploaded_file.content_type
+            if mimetype not in mthash_plus.mimetypes:
+                raise forms.ValidationError("Not a valid file type; must be one of [.csv, .tsv, .xlsx, .ods, .json]")
+    
+            self.cleaned_data['temp_file_path'] = tempfn
+
+        return uploaded_file
 
 class HitModelForm(forms.ModelForm):
     match = forms.CharField(
