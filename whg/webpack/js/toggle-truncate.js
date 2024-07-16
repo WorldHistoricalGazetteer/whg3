@@ -26,9 +26,10 @@ $.fn.toggleTruncate = function(arg1, arg2 = {}) {
 		ellipsis: '...', 
 		moreText: 'More', 
 		lessText: 'Less', 
-		colour: '#fff', 
-		backgroundColour: '#004080',
-		backgroundColourHover: '#004080a3',
+		colour: '#000', 
+		backgroundColour: '#daebf1',
+		borderColour: '#ced4da',
+		backgroundColourHover: '#aad2df',
 		toggleTruncate: 'toggle-truncate' // basename for inserted classes: change needed only to resolve any conflict with existing code
 	}
 	
@@ -51,6 +52,7 @@ $.fn.toggleTruncate = function(arg1, arg2 = {}) {
 			    display: inline-block;
 			    padding: 0.2rem 0.4rem;
 			    background-color: ${options.backgroundColour};
+			    border: 1px solid ${options.borderColour};
 			    color: ${options.colour};
 			    border-radius: 0.2rem;
 			    margin-left: 0.4rem;
@@ -73,7 +75,7 @@ $.fn.toggleTruncate = function(arg1, arg2 = {}) {
 	
     return this.each(function() {
         const el = $(this);
-        if (el.text().length <= maxChars) return;
+        if (el.text().trim().length <= maxChars) return;
         const tagRegex = /(<\/?(?:a|b|br|div|em|h[1-6]|i|p|span|strong|u)[^>]*>)/;
         let charCount = 0;
 

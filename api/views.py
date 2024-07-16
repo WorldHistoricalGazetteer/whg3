@@ -73,11 +73,11 @@ class GalleryView(ListAPIView):
     def get_queryset(self):
         gallery_type = self.kwargs.get('type')
         model = Collection if gallery_type == 'collections' else Dataset
-        
+
         filter = Q(public=True)
         if hasattr(model, 'core'): # Omit "core" Datasets
             filter &= Q(core=False)
-        
+
         # ADD COLLECTION CLASS FILTERS
         classes = self.request.query_params.get('classes', '')
         if classes:
@@ -88,7 +88,7 @@ class GalleryView(ListAPIView):
             filter &= classfilters
         elif gallery_type == 'collections':
             return model.objects.none()
-        
+
         # ADD TEXT FILTERS
         search_text = self.request.query_params.get('q', '') # Default to empty string
         if search_text:
@@ -146,7 +146,7 @@ class GalleryView(ListAPIView):
 
         qs_list = [instance.carousel_metadata for instance in page]
         qs_json = json.dumps(qs_list, default=str)
-        
+
         response_data = {
             'items': json.loads(qs_json),
             'total_items': queryset.count(),
@@ -163,9 +163,9 @@ class StandardResultsSetPagination(PageNumberPagination):
 
 #
 # External API
-# 
 #
-""" 
+#
+"""
   /remote/
   search place index (always whg) parent records
   params: name, name_startswith, fclass, ccode, area, dataset, collection, pagesize, fuzzy
@@ -259,13 +259,13 @@ class SpatialAPIView(generics.ListAPIView):
   """
   This endpoint will return a Feature Collection (in Linked Places Format) containing places either within a given bounding
   box or within a given radial distance from a given point.
-  
-  A search `type` of either `bbox` or `nearby` is required. A `bbox` requires south-west (`sw`) and north-east (`ne`) coordinates, while 
-  a `nearby` search requires `lon` and `lat` of the search centre together with a `km` radius (in kilometres). 
+
+  A search `type` of either `bbox` or `nearby` is required. A `bbox` requires south-west (`sw`) and north-east (`ne`) coordinates, while
+  a `nearby` search requires `lon` and `lat` of the search centre together with a `km` radius (in kilometres).
   """
   renderer_classes = [JSONRenderer]
   serializer_class = LPFSerializer
-  
+
   # TODO: Add text filtering?
   # filter_backends = [filters.SearchFilter]
   # search_fields = ['@title']
@@ -406,9 +406,9 @@ class SpatialAPIView(generics.ListAPIView):
         else:
             pnt = Point(float(lon), float(lat), srid=4326)
             qs = Place.objects.filter(dataset__public=True, geoms__jsonb__type='Point')
-            placeids = PlaceGeom.objects.filter(geom__distance_lte=(pnt, D(km=float(dist)))).values_list('place_id')  
+            placeids = PlaceGeom.objects.filter(geom__distance_lte=(pnt, D(km=float(dist)))).values_list('place_id')
             msg = "nearby query (lon, lat): " + str(pnt.coords) + ' w/' + str(dist) + 'km buffer'
-            print(msg)             
+            print(msg)
     elif qtype == 'bbox':
         if not all(v for v in [sw, ne]):
             raise BadRequestException("A 'bbox' spatial query requires both 'sw' and 'ne' parameters.")
@@ -419,7 +419,7 @@ class SpatialAPIView(generics.ListAPIView):
             placeids = PlaceGeom.objects.filter(geom__within=bbox).values_list('place_id')
             msg="bbox query (sw, ne): "+str(bbox)
             print(msg)
-            
+
     qs = qs.filter(id__in=placeids)
     # filter on params
     if coll:
@@ -451,7 +451,7 @@ def makeGeom(geom):
   #print('geom',geom)
   # TODO: account for non-point
   if len(geom) > 1:
-    geomobj = {"type":"GeometryCollection", "geometries": []}  
+    geomobj = {"type":"GeometryCollection", "geometries": []}
     for g in geom:
       geomobj['geometries'].append(g['location'])
   elif len(geom) == 1:
@@ -466,30 +466,29 @@ def childItem(i):
   score = i.get('_score', None)
   i = i['_source']
   item = {
-    "type":"Feature",
+    "type": "Feature",
     "score": score,
     "properties": {
-      "title":i['title'],
-      "index_id":_id,
-      # "index_role":i['relation']['name'],
-      "place_id":i['place_id'],
-      "source_id": i['src_id'],
-      "dataset":i['dataset'],
+        "title": i.get('title', ''),
+        "index_id": _id,
+        "index_role": i.get('relation', {}).get('name', ''),
+        "place_id": i.get('place_id', ''),
+        "source_id": i.get('src_id', ''),
+        "dataset": i.get('dataset', ''),
     },
-    "fclasses": [fc for fc in i['fclasses']],
-    "types": [t.get('sourceLabel', t.get('source_label')) for t in i['types']],
-    "variants": [n['toponym'] for n in i['names'] if n['toponym'] != i['title']],
-    'links': i['links'],
-    "when": [{"start": {"in": ts["gte"]}, "end": {"in": ts["lte"]}} for ts in i['timespans']],
-    # "minmax": [i['minmax']['gte'], i['minmax']['lte']] if 'minmax' in i.keys() else [],
-    "minmax": [i['minmax']['gte'], i['minmax']['lte']] if 'minmax' in i.keys() and 'gte' in i['minmax'] and 'lte' in i['minmax'] else [],
-    "ccodes": i['ccodes'],
-    "geometry": makeGeom(i['geoms'])
+    "fclasses": [fc for fc in (i.get('fclasses') or []) if fc is not None],
+    "types": [t.get('sourceLabel', t.get('source_label')) for t in (i.get('types') or []) if t is not None],
+    "variants": [n['toponym'] for n in (i.get('names') or []) if n.get('toponym') != i.get('title')],
+    'links': i.get('links', []),
+    "when": [{"start": {"in": ts.get("gte")}, "end": {"in": ts.get("lte")}} for ts in (i.get('timespans') or []) if ts is not None],
+    "minmax": [i['minmax'].get('gte'), i['minmax'].get('lte')] if isinstance(i.get('minmax'), dict) else [],
+    "ccodes": i.get('ccodes', []),
+    "geometry": makeGeom(i.get('geoms', []))
   }
   return item
 """
   responseItem(); called by collector();
-  formats api search parent hits 
+  formats api search parent hits
 """
 def responseItem(i):
   # print('i in responseItem',i)
@@ -557,7 +556,7 @@ def collector(q, idx):
 
 """
   bundler();  called by IndexAPIView, case api/index?whgid=
-  execute es.search, return post-processed results 
+  execute es.search, return post-processed results
 """
 def bundler(q, whgid, idx):
   # idx is ['whg', 'pub']
@@ -578,7 +577,7 @@ def bundler(q, whgid, idx):
   stuff = [responseItem(i) for i in bundle]
   return stuff
 
-""" 
+"""
   /api/index?
   search whg & pub indexes
 """
@@ -809,11 +808,11 @@ class IndexAPIView(View):
 #     return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
 #
 
-""" 
+"""
 
   /api/db?
   SearchAPIView()
-  return lpf results from database search 
+  return lpf results from database search
 """
 class SearchAPIView(generics.ListAPIView):
   renderer_classes = [JSONRenderer]
@@ -882,9 +881,9 @@ class SearchAPIView(generics.ListAPIView):
 
 """ *** """
 """ TODO: the next two attempt the same and are WAY TOO SLOW """
-""" 
+"""
     api/places/<str:dslabel>/[?q={string}]
-    Paged list of places in dataset. 
+    Paged list of places in dataset.
 """
 class PlaceAPIView(generics.ListAPIView):
   serializer_class = PlaceSerializer
@@ -902,8 +901,8 @@ class PlaceAPIView(generics.ListAPIView):
 
   permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
 
-  
-""" 
+
+"""
     api/dataset/<str:dslabel>/lpf/
     all places in a dataset, for download
 """
@@ -930,13 +929,13 @@ class DownloadDatasetAPIView(generics.ListAPIView):
       }
       #print('rec',rec)
       features.append(rec)
-    
+
     result={"type":"FeatureCollection", "features": features}
     print('result',result)
     return JsonResponse(result, safe=False,json_dumps_params={'ensure_ascii':False,'indent':2})
 
   #permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
- 
+
 """
   /api/datasets? > query public datasets by id, label, term
 """
@@ -1006,21 +1005,21 @@ class DatasetAPIView(LoginRequiredMixin, generics.ListAPIView):
 # geojson feature for api
 class AreaFeaturesView(generics.ListAPIView):
   #@staticmethod
-  
+
   def get(self, format=None, *args, **kwargs):
-    params=self.request.query_params  
+    params=self.request.query_params
     user = self.request.user
     print('params', params)
     print('api/areas request',self.request)
-    
+
     id_ = params.get('id', None)
     query = params.get('q', None)
     filter = params.get('filter', None)
     regions = params.get('regions', None)
-    
+
     areas = []
     qs = Area.objects.all().filter((Q(type='predefined'))).values('id','title','type','description','geojson')
-    
+
     # filter for parameters
     if id_:
       qs=qs.filter(id=id_)
@@ -1030,7 +1029,7 @@ class AreaFeaturesView(generics.ListAPIView):
       qs = qs.filter(description="UN Statistical Division Sub-Region")
     if regions is not None:
         qs = qs.filter(id__in=[int(region_id) for region_id in regions.split(',')])
-      
+
     for a in qs:
       feat = {
         "type":"Feature",
@@ -1064,8 +1063,8 @@ class UserAreaFeaturesView(APIView):
             }
             areas.append(feat)
 
-        return Response(areas, status=status.HTTP_200_OK) 
-  
+        return Response(areas, status=status.HTTP_200_OK)
+
 class UserList(generics.ListAPIView):
   queryset = User.objects.all()
   serializer_class = UserSerializer
@@ -1085,10 +1084,10 @@ def api_root(request, format=None):
   })
 
 
-class PrettyJsonRenderer(JSONRenderer):    
+class PrettyJsonRenderer(JSONRenderer):
   def get_indent(self, accepted_media_type, renderer_context):
     return 2
-  
+
 #
 
 # IN USE May 2020
@@ -1117,11 +1116,11 @@ class PrettyJsonRenderer(JSONRenderer):
 
 class PlacesDetailAPIView(View):
     """  returns serialized multiple database place records by id  """
-    
+
     def get(self, request, pk_list=None, pk=None):
-        
+
         cid = request.GET.get('cid')
-        
+
         if pk_list is not None:
             # Split the string of IDs using the delimiter "-"
             ids = pk_list.split("-")
@@ -1129,39 +1128,39 @@ class PlacesDetailAPIView(View):
             ids = [str(pk)]
         else:
             pass
-       
+
         places = Place.objects.filter(id__in=ids)
-    
+
         def sort_unique(arr, key=None, sort_key=None):
             unique_items = []
             seen_items = set()
-        
+
             for item in arr:
                 item_unique = item[key] if key else json.dumps(item)
                 if item_unique not in seen_items:
                     unique_items.append(item)
                     seen_items.add(item_unique)
-        
+
             sort_key = sort_key or key
             if sort_key:
                 unique_items.sort(key=lambda x: x[sort_key])
-        
+
             return unique_items
-        
+
         with open(os.path.join(settings.STATIC_ROOT, 'aliases.json')) as json_file:
             json_data = json_file.read()
-        base_urls = json.loads('{'+json_data+'}')['base_urls'] # Wrap the contents in {} to create a valid JSON object                
-        
+        base_urls = json.loads('{'+json_data+'}')['base_urls'] # Wrap the contents in {} to create a valid JSON object
+
         def add_urls(data):
             return [
-                {**item, 'url': identifier.join(':') if identifier[0].startswith("http") else base_urls.get(identifier[0], '') + identifier[1]} 
-                if identifier and (base_url := base_urls.get(identifier[0])) is not None 
+                {**item, 'url': identifier.join(':') if identifier[0].startswith("http") else base_urls.get(identifier[0], '') + identifier[1]}
+                if identifier and (base_url := base_urls.get(identifier[0])) is not None
                 else item
                 for item in data
                 for identifier in [item.get('identifier', '').split(':')]
                 if len(identifier) == 2 or not item.get('identifier')
-            ]  
-        
+            ]
+
         # Serialize the Place records
         serialized_places = []
         attestation_years = set()
@@ -1171,7 +1170,7 @@ class PlacesDetailAPIView(View):
             serialized_places.append(serializer.data)
             if place.attestation_year:
                 attestation_years.add(place.attestation_year)
-            
+
         # Calculate the overall extent
         aggregated_extent = None
         for place in serialized_places:
@@ -1179,12 +1178,12 @@ class PlacesDetailAPIView(View):
             if extent:
                 polygon = Polygon.from_bbox(extent)
                 aggregated_extent = aggregated_extent.union(polygon) if aggregated_extent else polygon
-        
+
         # Convert the overall extent to the format expected in the JSON response
         aggregated_extent = aggregated_extent.extent if aggregated_extent else None
-        
+
         dataset_ids = set([place["dataset_id"] for place in serialized_places])
-        
+
         # Extract the minmax values and filter out empty lists
         #minmax_values = [(place.get("minmax", [None, None])[0], place.get("minmax", [None, None])[1]) for place in serialized_places]
         minmax_values = [(place.get("minmax", [None, None])[0], place.get("minmax", [None, None])[1]) if place.get("minmax") is not None else (None, None) for place in serialized_places]
@@ -1195,11 +1194,11 @@ class PlacesDetailAPIView(View):
         # Calculate the min and max values, handling the case of empty sequences
         min_value = min(min_values, default=None)
         max_value = max(max_values, default=None)
-        
+
         country_codes_mapping = {country['id']: country['text'] for item in json.load(open('media/data/regions_countries.json')) if item.get('text') == 'Countries' for country in item.get('children', [])}
         unique_country_codes = {ccode for place in serialized_places for ccode in place.get("ccodes", [])}
         countries_with_labels = [{ 'ccode': ccode, 'label': country_codes_mapping.get(ccode, '') } for ccode in unique_country_codes]
-            
+
         # Aggregate places into a single object
         aggregated_place = {
             "id": "-".join(ids),  # Concatenate the IDs,
@@ -1223,8 +1222,8 @@ class PlacesDetailAPIView(View):
             #     "label": "|".join(set(when.get("label", "") for place in serialized_places for when in place.get("whens", []) if when.get("label", ""))),
             #     "duration": "|".join(set(when.get("duration", "") for place in serialized_places for when in place.get("whens", []) if when.get("duration", ""))),
             # },
-        }        
-        
+        }
+
         return JsonResponse(aggregated_place, safe=False)
 
 """
@@ -1255,9 +1254,9 @@ class PlaceDetailSourceAPIView(generics.RetrieveAPIView):
   permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
   authentication_classes = [SessionAuthentication]
 
-""" 
-    /api/geoms?ds={{ ds.label }}} 
-    /api/geoms?coll={{ coll.id }}} 
+"""
+    /api/geoms?ds={{ ds.label }}}
+    /api/geoms?coll={{ coll.id }}}
     in ds_browse and ds_places for all geoms if < 15k
     TODO: this needs refactor (make collection.geometries @property?)
 """
@@ -1283,7 +1282,7 @@ class GeomViewSet(viewsets.ModelViewSet):
         jsonb__type__icontains='Point')
     return qs
 
-""" 
+"""
     /api/geojson/{{ ds.id }}
 """
 #class GeoJSONViewSet(viewsets.ModelViewSet):
@@ -1293,7 +1292,7 @@ class GeoJSONAPIView(generics.ListAPIView):
   #serializer_class = GeoJsonSerializer
   serializer_class = FeatureSerializer
   permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-  
+
   def get_queryset(self, format=None, *args, **kwargs):
     print('GeoJSONViewSet request.GET',self.request.GET)
     print('GeoJSONViewSet args, kwargs',args, kwargs)
@@ -1306,16 +1305,16 @@ class GeoJSONAPIView(generics.ListAPIView):
       cid = self.request.GET.get('coll')
       coll = Collection.objects.get(id=cid)
       collPlaceIds = [p.id for p in coll.places.all()]
-      qs = PlaceGeom.objects.filter(place_id__in=collPlaceIds,jsonb__type='Point')    
+      qs = PlaceGeom.objects.filter(place_id__in=collPlaceIds,jsonb__type='Point')
     #print('qs',qs)
     return qs
 
-""" 
+"""
     /api/featureCollection/{{ ds.id  or coll.cid}}
 """
 class featureCollectionAPIView(generics.ListAPIView):
   permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-  
+
   @extend_schema( # Not intended as a public API
         exclude=True,
   )
@@ -1323,7 +1322,7 @@ class featureCollectionAPIView(generics.ListAPIView):
 
     mode = self.request.GET.get('mode', 'default') or 'default'
     featureCollection = None
-    
+
     if 'id' in self.request.GET:
         dsid = self.request.GET.get('id')
         datacollection = get_object_or_404(Dataset, pk=dsid)
@@ -1336,7 +1335,7 @@ class featureCollectionAPIView(generics.ListAPIView):
         pass
     else:
         return Response({"error": "QueryString must include either an id or coll identifier"}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     # Test for existence of a corresponding tileset
     tiler_url = os.environ.get('TILER_URL') # Must be set in /.env/.dev-whg3
     response = requests.post(tiler_url, json={"getTilesets": tilesetquery})
@@ -1365,8 +1364,8 @@ class featureCollectionAPIView(generics.ListAPIView):
         pass
     else:
         return Response({"error": "Invalid QueryString"}, status=status.HTTP_400_BAD_REQUEST)
-     
-    return JsonResponse(featureCollection, content_type="application/json") 
+
+    return JsonResponse(featureCollection, content_type="application/json")
 
 """
     populates drf table in ds_browse.html, ds_places.html
@@ -1463,7 +1462,7 @@ class AreaListView(View):
     for a in qs:
       area = {"id":a['id'],"title":a['title'],"type":a['type']}
       area_list.append(area)
-      
+
     return JsonResponse(area_list, safe=False)
 
 # simple objects for dropdown
@@ -1478,10 +1477,10 @@ class AreaListAllView(View):
     for a in qs:
       area = {"id":a['id'],"title":a['title'],"type":a['type']}
       area_list.append(area)
-      
+
     return JsonResponse(area_list, safe=False)
 
-  
+
 """
     area/<int:pk>/
     in dataset.html#addtask
@@ -1525,7 +1524,7 @@ class CountryFeaturesAPIView(View):
             country_feature_collection['features'].append(feature)
 
         return JsonResponse(country_feature_collection, safe=False)
-    
+
 # Fetch Watershed GeoJSON from remote URL
 class WatershedAPIView(APIView):
     @extend_schema( # Not intended as a public API

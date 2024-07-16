@@ -70,10 +70,10 @@ function waitMapLoad() {
 				return feature.source === 'ecoregions' || feature.source === 'natural_earth';
 			});
 			ecoAdminFeatures.forEach(feature => {
-				if (feature.layer['source-layer'] === 'biomes') {
+				if (feature.layer['source-layer'] === 'biomes' && !!feature.properties.label) {
 					geoData.biome.name = feature.properties.label;
 					geoData.biome.url = `https://en.wikipedia.org/wiki/${feature.properties.label.charAt(0) + feature.properties.label.slice(1).toLowerCase().replace('&','and').replace(' ','_')}`;
-				} else if (feature.layer['source-layer'] === 'ecoregions') {
+				} else if (feature.layer['source-layer'] === 'ecoregions' && !!feature.properties.label) {
 					geoData.ecoregion.name = feature.properties.label;
 					geoData.ecoregion.url = `https://en.wikipedia.org/wiki/${feature.properties.label.charAt(0) + feature.properties.label.slice(1).toLowerCase().replace('&','and').replace(' ','_')}`;
 				} else if (feature.layer['source-layer'] === 'countries' || feature.layer['source-layer'] === 'states') {
@@ -147,6 +147,8 @@ function waitDocumentReady() {
 		$(document).ready(() => {
 			
 			$('#dataset_content').spin();
+			let truncation = $('h5.more-or-less').text().split(';').slice(0, 4).join(';').length;
+			$('h5.more-or-less, b.more-or-less').toggleTruncate(truncation, {'ellipsis': '', 'moreText': '. . .'});
 
 			let checked_cards = []
 
@@ -213,7 +215,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			'';
 
 		$('#gloss').append($('<p>').addClass('mb-1 smallish').html(`
-			This place is attested (so far) in the <b>${payload.length}</b> source${payload.length > 1 ? 's' : ''} listed below${distinctTypesText}, 
+			This place is attested (so far) in the ${payload.length == 1 ? 'unlinked source' : `<b>${payload.length}</b> source${payload.length > 1 ? 's' : ''}`} listed below${distinctTypesText}, 
 			with <b>${distinctNameVariants.size}</b> distinct name variant${distinctNameVariants.size > 1 ? 's' : ''}${temporalRange}.
 		`));
 
@@ -224,7 +226,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			` within the modern boundaries of ${geoData.admin.map((name, index) => index < geoData.admin.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${geoData.admin.length == 2 ? '' : ','} and$1`)}, and` :
 			'';
 		const ecoString = geoData.ecoregion.name ?
-			` within the <a href="${geoData.ecoregion.url}" target="_blank">${geoData.ecoregion.name}</a> ecoregion and <a href="${geoData.biome.url}" target="_blank">${geoData.biome.name}</a> biome` :
+			` within the <a href="${geoData.ecoregion.url}" target="_blank">${geoData.ecoregion.name}</a> ecoregion${geoData.biome.name ? ` and <a href="${geoData.biome.url}" target="_blank">${geoData.biome.name}</a> biome` : ''}` :
 			'';
 		$('<p class="map-data">').addClass('mb-1').html(`
 		    It lies${elevationString}${adminString}${ecoString}.
@@ -233,7 +235,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 
 		$('#gloss').append($('<span id="collectionInfo">'));
 
-		$('#sources').find('h6').html(`${payload.length} Source${payload.length > 1 ? 's' : ''} <span id="filterCount"></span>`);
+		$('#sources').find('h6').html(`${payload.length == 1 ? 'Unlinked Source' : `${payload.length} Source${payload.length > 1 ? 's' : ''}`} <span id="filterCount"></span>`);
 
 		payload[0]['primary'] = true; // Payload arrives with Places in descending link-count order
 		payload.forEach(place => { // Reverse-sort each set of timespans by end year
@@ -248,7 +250,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 
 		payload.forEach(place => {
 			const sourceHTML = `
-				<div class="source-box${ !!place.primary? ' primary-place' : ''}" data-bs-toggle="tooltip" data-bs-title="${ !!place.primary? 'This is considered to be the <i>Primary Source</i>. ' : ''}Click to zoom map to features associated with this source.">
+				<div class="source-box${ !!place.primary? ' primary-place' : ''}"${payload.length == 1 ? '' : ` data-bs-toggle="tooltip" data-bs-title="${ !!place.primary? 'This is considered to be the <i>Primary Source</i>. ' : ''}Click to zoom map to features associated with this source."`}>
 		            <span class="notes" ${ userId == false ? '' : `data-user-id="${userId}" `}data-place-id="${place.place_id}">
 		            	${ place.notes.map(note => `<p title="${note.tag}" data-bs-toggle="tooltip" data-creator="${note.user}" data-note-id="${note.id}">${note.note}</p>`).join('') }
 		            </span>
@@ -269,12 +271,12 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 
 			$('#sources').append(sourceHTML);
 		});
-		$('.toggle-truncate').toggleTruncate();
+		$('#sources .toggle-truncate').toggleTruncate();
 		$('#sources').height($('#sources').height()); // Fix height to prevent change when content is hidden
 		$('.notes').notes();
 
 		var sourceOptions = payload.map(function(item) {
-			return `<option value="${item.place_id}"${!!item.primary ? ' selected' : ''}>${item.dataset.name}: ${item.title}</option>`;
+			return `<option value="${item.place_id}"${!!item.primary ? ' selected' : ''}>${item.dataset.title}: ${item.title}</option>`;
 		}).join('');
 		$('#collection_form #primarySource').html(sourceOptions);
 
@@ -589,7 +591,7 @@ function filterSources(fromValue, toValue, includeUndated) {
 	});
 	mappy.getSource('places').setData(featureCollection);
 	let hiddenCount = $('.source-box:not(:visible)').length;
-	$('#filterCount').text(hiddenCount == 0 ? '' : `(${hiddenCount} hidden by temporal filter)`);
+	$('#filterCount').text(hiddenCount == 0 ? '' : `(${payload.length < 2 ? '' : `${hiddenCount} `}hidden by temporal filter)`);
 	noSources.toggle($('.source-box:visible').length == 0);
 }
 

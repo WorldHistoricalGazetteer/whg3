@@ -96,26 +96,11 @@ class PlacePortalView(TemplateView):
     # Extract any encoded IDs from a permalink URL
     encoded_ids = kwargs.get('encoded_ids', '')
     if pid:
-        v3 = True # TODO: If all works correctly after migration, remove this line, the test below, and the `else` block ###############################
-        if v3:
-            portal_data = Place.objects.get(id=pid).matches
-            print('portal_data:', portal_data)
-            if len(portal_data) == 1:
-                return {'redirect_to': f'/places/{pid}/detail'} # Show Place Detail page if pid is from an unindexed dataset
-            place_ids = [place.id for place in portal_data]            
-        else: # use inefficient v2 legacy code
-            """
-            The following code is inefficient because the Place `matches` @property returns Place objects
-            already sorted. The test data in the offline database is currently inadequate to allow refactoring of the code to make
-            use of this, and so the Places are unnecessarily fetched and ordered a second time.
-            
-            pid-based portal_data currently uses Elastic index in order to get useful results.            
-            """
-            portal_data = findPortalPIDs(pid)
-            print('portal_data:', portal_data)
-            if not portal_data:
-                return {'redirect_to': f'/places/{pid}/detail'} # Show Place Detail page if pid is from an unindexed dataset
-            place_ids = portal_data or [pid]
+        portal_data = Place.objects.get(id=pid).matches
+        print('portal_data:', portal_data)
+        if len(portal_data) == 1:
+            return {'redirect_to': f'/places/{pid}/detail'} # Show Place Detail page if pid is from an unindexed dataset
+        place_ids = [place.id for place in portal_data]
     elif whg_id:
         portal_data = findPortalPlaces(whg_id)
         print('portal_data:', portal_data)
@@ -139,6 +124,8 @@ class PlacePortalView(TemplateView):
       place_ids = [int(pid) for pid in place_ids]
       # qs = Place.objects.filter(id__in=place_ids).order_by('-whens__minmax')      
       qs = Place.objects.filter(id__in=place_ids)
+      if not qs.exists():
+        raise Http404("No such place found.")
       # Sort the queryset by the number of links and then by id in descending order
       qs = sorted(qs, key=lambda place: (place.links.count(), place.id), reverse=True)
       #context['title'] = qs.first().title
@@ -257,16 +244,18 @@ class PlacePortalView(TemplateView):
         context['extent'] = list(wkt.loads(unioned_geometry.envelope.wkt).bounds)
         context['centroid'] = list(unioned_geometry.centroid.tuple)
 
-    title_counts = Counter(alltitles)
-    variant_counts = Counter(allvariants)
-
-    # Find the two most common titles and variants
-    common_titles = [title for title, _ in title_counts.most_common(2)]
-    common_variants = [variant for variant, _ in variant_counts.most_common(2)]
-
-    # Construct the portal headword
-    portal_headword = common_titles + common_variants
-    context['portal_headword'] = "; ".join(portal_headword)+"; ..."
+    # title_counts = Counter(alltitles)
+    # variant_counts = Counter(allvariants)
+    #
+    # # Find the two most common titles and variants
+    # common_titles = [title for title, _ in title_counts.most_common(2)]
+    # common_variants = [variant for variant, _ in variant_counts.most_common(2)]
+    #
+    # # Construct the portal headword
+    # portal_headword = common_titles + common_variants
+    # context['portal_headword'] = "; ".join(portal_headword)+"; ..."
+    
+    context['portal_headword'] = "; ".join([name for name, _ in Counter(list(alltitles) + allvariants).most_common()])
     context['annotations'] = annotations
     context['collections'] = collections
 

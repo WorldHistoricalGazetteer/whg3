@@ -1,4 +1,4 @@
-{% extends "main/base.html" %}
+{% extends "main/base_webpack.html" %}
 
 {% block extra_head %}
 <style>
@@ -13,10 +13,6 @@
 {% block content %}
 
   <div id="container" class="container mt-2">
-    <div id="loading_spinner" class="text-center"
-         style="position: absolute; top: 180px; left:200px; display:none;">
-      <i class="fa fa-spinner fa-spin fa-2x"></i>
-    </div>
     <div class="ps-2"><h5>Admin Dashboard</h5></div>
     <ul class="nav nav-tabs" id="adminTabs" role="tablist">
       <li class="nav-item" role="presentation">
@@ -62,7 +58,9 @@
       </div>
     </div>
   </div> <!-- .container -->
+{% endblock %}
 
+{% block inlineScripts %}
   <script type="application/javascript">
     var currentState = {
       datasets: {sort: 'last_modified', order: 'desc', filters: {}},
@@ -157,15 +155,14 @@
         localStorage.setItem('sortOrders-' + tabId, JSON.stringify(sortOrders));
 
         var url = '/main/' + tabId + '_list/' + columnId + '/' + newSortOrder + '/';
-        $('#loading_spinner').show();
-        console.log('AJAX request, where is my spinner?:', url);
+        $('#adminTabsContent').spin();
         $.get(url, function(data) {
           $('#' + tabId).empty().html(data);
           initializeSorting(tabId);  // Reinitialize sorting
         }).fail(function() {
           console.log('AJAX request failed');
         }).always(function() {
-          $('#loading_spinner').hide();
+          $('#adminTabsContent').stopSpin();
         });
       });
     }
@@ -212,7 +209,6 @@
         if (appliedStatus) {
           $('#ds_status').val(appliedStatus);
         }
-        FontAwesome.dom.i2svg();
         initializeSorting(tabId);
         initializeFilters(tabId);
         // Add event listener for clear search button
@@ -232,9 +228,9 @@
       }).fail(function(jqXHR, textStatus, errorThrown) {
         console.error('Error loading tab content:', textStatus, errorThrown);
       }).always(function() {
-        $('#loading_spinner').hide();
+        $('#adminTabsContent').stopSpin();
       });
     }
 
   </script>
-{% endblock %} <!-- content -->
+{% endblock %}

@@ -165,7 +165,7 @@ export function initialiseTable(
 
 	if (!isCollection) { // Datasets
 
-		const check_column = window.loggedin ? {
+		const check_column = window.loggedin == 'true' ? {
 			title: '<a href=\'#\' rel=\'tooltip\' title=\'add one or more rows to a collection\'><i class=\'fas fa-question-circle linkypop\'></i></a>',
 			data: 'properties.pid',
 			render: function(data, type, row) {
