@@ -4,7 +4,7 @@ from django import forms
 # from django.core.exceptions import ValidationError
 from datasets.models import Dataset, Hit, DatasetFile
 # from datasets.utils import insert_delim, insert_lpf, validator_delim, validate_lpf, sniff_file_type
-from main.choices import FORMATS, STATUS_FILE
+from main.choices import FORMATS, STATUS_FILE, FEATURE_CLASSES
 
 import codecs, os, tempfile, logging, json
 from chardet import detect
@@ -90,6 +90,27 @@ class DatasetUploadForm(forms.ModelForm):
         'class': 'form-check-input',
         'required': 'required',
     }))
+
+    fclasses = forms.MultipleChoiceField(
+        choices=FEATURE_CLASSES,
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
+
+    apply_fclasses = forms.ChoiceField(
+        choices=[('none', 'None'), ('augment', 'Augment'), ('replace', 'Replace'), ('where_missing', 'Where Missing')],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    timespan_start = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={'placeholder': 'Start Year', 'class': 'form-control'}))
+    timespan_end = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={'placeholder': 'End Year', 'class': 'form-control'}))
+
+    apply_timespans = forms.ChoiceField(
+        choices=[('none', 'None'), ('augment', 'Augment'), ('replace', 'Replace'), ('where_missing', 'Where Missing')],
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
 
     class Meta:
         model = Dataset

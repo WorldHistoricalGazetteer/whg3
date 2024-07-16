@@ -146,6 +146,41 @@
 	          <div class="input-group-prepend input-group-text">Contributors</div>
 	          {{ form.contributors }}
 	        </div>
+	  
+	        <div class="mb-3 input-group">
+	            <div class="input-group-prepend input-group-text">Default Feature Classes
+		        	<a class="pointer" data-bs-toggle="popover" title="Add default feature classes" 
+		        	  data-bs-content="">
+		        	  <i class="fas fa-question-circle linky"></i>
+		        	</a>
+		        </div>
+	            {{ form.apply_fclasses }}
+	        </div>
+  
+	        <div class="mb-3 input-group">
+	            {% for value, name in form.fclasses.field.choices %}
+	              <div class="form-check form-check-inline">
+	                <input class="form-check-input" type="checkbox" name="fclasses" value="{{ value }}" id="fclass-{{ value }}">
+	                <label class="form-check-label" for="fclass-{{ value }}">{{ name }}</label>
+	              </div>
+	            {% endfor %}
+	        </div>
+	  
+	        <div class="mb-3 input-group">
+	            <div class="input-group-prepend input-group-text">Default Timespans
+		        	<a class="pointer" data-bs-toggle="popover" title="Add default timespans" 
+		        	  data-bs-content="">
+		        	  <i class="fas fa-question-circle linky"></i>
+		        	</a>
+		        </div>
+	            {{ form.apply_timespans }}
+	        </div>
+	  
+	        <div class="mb-3 input-group">
+	            {{ form.timespan_start }}
+	            <div class="input-group-prepend input-group-text"> - </div>
+	            {{ form.timespan_end }}
+	        </div>
 	
 	        <div class="mb-3 input-group">
 	          <div class="input-group-prepend input-group-text">URI base
@@ -218,6 +253,12 @@
     $('input[type="file"]').on('change', function() {
       var fileName = $(this).val().split('\\').pop();
       $(this).prev('.dummy-file-input').val(fileName);
+    });
+    
+    ['fclasses', 'timespans'].forEach(selector => {
+        $(`#id_apply_${selector}`).change(function() {
+        	$(this).parents('.input-group').next('.input-group').toggle($(this).val() !== 'none');
+        }).change();
     });
 	  
     $('#ds_form').submit(function(event) {

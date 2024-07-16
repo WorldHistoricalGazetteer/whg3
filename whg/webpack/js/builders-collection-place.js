@@ -1,5 +1,6 @@
 import VisualisationControl from './visualisationControl.js';
 import './enlarge.js';
+import { minmaxer } from './utilities';
 
 import '../css/builders-collection-place.css';
 
@@ -415,21 +416,6 @@ $(function() {
 		var link = ' <a href="#" class="exttab" data-id=' + type.identifier +
 			'>(' + type.label.label + ' <i class="fas fa-external-link-alt linky"></i>)</a>'
 		return link
-	}
-	
-	// extent of timespan list
-	function minmaxer(timespans) {
-		//console.log('got to minmax()',JSON.stringify(timespans))
-		var starts = [];
-		var ends = []
-		for (let t in timespans) {
-			// gets 'in', 'earliest' or 'latest'
-			starts.push(Object.values(timespans[t].start)[0])
-			ends.push(!!timespans[t].end ? Object.values(timespans[t].end)[0] : -1)
-		}
-		//console.log('starts',starts,'ends',ends)
-		var minmax = [Math.max.apply(null, starts), Math.max.apply(null, ends)]
-		return minmax
 	}
 	
 	// return html for display

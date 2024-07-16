@@ -201,22 +201,6 @@ def parsedates_lpf(feat):
   return {"intervals": unique, "minmax": minmax}
 '''
 
-def timespansReduce(tsl):
-    def extract_year(time_dict):
-        if not time_dict:
-            return None
-        year_string = next(iter(time_dict.values()), '')
-        year_match = re.search(r'(-?\d+)', year_string)
-        return int(year_match.group(1)) if year_match else None
-    
-    return [
-        [
-            extract_year(ts.get('start', {})),
-            extract_year(ts.get('end', {}))
-        ]
-        for ts in tsl
-    ]
-
 def parsedates_lpf(feat):
     '''
     TODO:
@@ -226,45 +210,50 @@ def parsedates_lpf(feat):
     '''
     allowed_keys = ['names', 'types', 'relations', 'geometry', 'geometries']
 
-    def find_timespans(obj, allowed_keys):
+    def timespansReduce(tsl):
+        def extract_year(time_dict):
+            if not time_dict:
+                return None
+            year_string = next(iter(time_dict.values()), '')
+            year_match = re.search(r'(-?\d+)', year_string)
+            return int(year_match.group(1)) if year_match else None
+        
         return [
-            (start, end)
+            [
+                extract_year(ts.get('start', {})),
+                extract_year(ts.get('end', {}))
+            ]
+            for ts in tsl
+        ]
+
+    def find_intervalspans(obj, allowed_keys):
+        return [
+            [start, end, value['timespans']]
             for key, value in obj.items() if key == 'when' and 'timespans' in value
             for interval in timespansReduce(value['timespans'])
             for start, end in [interval]
         ] + [
             interval
             for key, value in obj.items() if key in allowed_keys
-            for interval in find_timespans(value, allowed_keys)
+            for interval in find_intervalspans(value, allowed_keys)
         ] if isinstance(obj, dict) else [
             interval
             for item in obj
-            for interval in find_timespans(item, allowed_keys)
+            for interval in find_intervalspans(item, allowed_keys)
         ] if isinstance(obj, list) else []
 
-    intervals = find_timespans(feat, allowed_keys)
+    intervalspans = find_intervalspans(feat, allowed_keys)
     
-    all_starts = [start for start, end in intervals if start is not None]
-    all_ends = [end for start, end in intervals if end is not None]
-
-    min_start = min(all_starts, default=None)
-    max_end = max(all_ends, default=None)
+    minmax = [val for val in (
+        min([start for start, _, _ in intervalspans if start is not None], default=None),
+        max([end for _, end, _ in intervalspans if end is not None], default=None)
+    ) if val is not None]
     
-    minmax = (
-        [min_start, max_end] if min_start is not None and max_end is not None else
-        None if min_start is None and max_end is None else
-        [max_end, max_end] if min_start is None else
-        [min_start, min_start] if max_end is None else
-        [min_start, max_end]
-    )
+    # Ensure unique timespans by converting from JSON and back
+    unique_timespans = [json.loads(timespanjson) for timespanjson in {json.dumps(timespan) for _, _, timespan in intervalspans}]
     
-    # Filter out intervals with None start or end values
-    filtered_intervals = [(start, end) for start, end in intervals if start is not None and end is not None]
-    unique_intervals = list(set(filtered_intervals))
-    unique_intervals.sort()
-    
-    print('returning from parsedates_lpf', unique_intervals, minmax)
-    return {"intervals": unique_intervals, "minmax": minmax}
+    #print('returning from parsedates_lpf', unique_timespans, minmax)
+    return {"intervals": unique_timespans, "minmax": minmax}
 
 class HitRecord(object):
   def __init__(self, place_id, dataset, auth_id, title):
