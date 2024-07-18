@@ -12,7 +12,7 @@ from places.models import Place
 # from datasets.models import Dataset
 from datasets.static.hashes.parents import ccodes as cchash
 from copy import deepcopy
-import sys
+import sys, logging
 
 # given pid, gets db and index records
 # called by: elastic/index_admin.html
@@ -260,6 +260,7 @@ def build_qobj(place):
 
 """
 Fetch place ids for a given whg_id
+HOTFIX: 2024-07-17 kg; added 'else:'; sometimes there are no hits
 """
 def findPortalPlaces(whg_id):
     es = settings.ES_CONN
@@ -276,8 +277,14 @@ def findPortalPlaces(whg_id):
         place_id = int(doc.get('place_id'))
         children = [int(child) for child in doc.get('children', [])]
         
-    # Concatenate place_id and children into a single array
-    ids = [place_id] + children
+        # Concatenate place_id and children into a single array
+        ids = [place_id] + children
+
+    else:
+      # Log a warning or error
+      logging.warning(f"No hits found for whg_id: {whg_id}")
+      # Return an empty list if no hits
+      ids = []
 
     # Return the array of IDs
     return ids

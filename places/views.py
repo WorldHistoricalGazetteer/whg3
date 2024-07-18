@@ -66,6 +66,36 @@ class SetCurrentResultView(View):
     # messages.success(request, 'Place details loaded successfully!')
     return JsonResponse({'status': 'ok'})
 
+class PlaceDetailView(DetailView):
+  model = Place
+  template_name = 'places/place_detail.html'
+
+  def get_object(self):
+        return get_object_or_404(Place.objects.select_related('dataset'), pk=self.kwargs.get('pk'))
+
+  def get_success_url(self):
+    pid = self.kwargs.get("id")
+    return '/places/{}/detail'.format(pid)
+
+  def get_context_data(self, *args, **kwargs):
+    context = super().get_context_data(**kwargs)
+    # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
+    #context['mbtoken'] = settings.MAPBOX_TOKEN_WHG
+    #context['maptilerkey'] = settings.MAPTILER_KEY
+
+    place = self.object
+    dataset = place.dataset
+
+    context['timespans'] = {'ts': place.timespans or None}
+    context['minmax'] = {'mm': place.minmax or None}
+    context['dataset'] = dataset
+    context['dataset_minmax'] = dataset.minmax if dataset.minmax else None
+    context['dataset_creator'] = dataset.creator
+    context['dataset_last_modified_text'] = dataset.last_modified_text
+    context['beta_or_better'] = self.request.user.groups.filter(name__in=['beta', 'whg_admins']).exists()
+
+    return context
+
 class PlacePortalView(TemplateView):
   template_name = 'places/place_portal.html'
 

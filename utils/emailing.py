@@ -9,7 +9,7 @@ from datasets.views import emailer
 from datetime import timedelta
 
 def new_emailer(email_type, subject, from_email, to_email, **kwargs):
-  print('new_emailer() for:', email_type)
+  print(f'new_emailer(), email_type: {email_type}, subjecy: {subject}, from_email: {from_email}, to_email: {to_email}, kwargs: {kwargs}')
   reply_to = kwargs.get('reply_to', None)
   cc = kwargs.get('cc', None)
   bcc = kwargs.get('bcc', None)
