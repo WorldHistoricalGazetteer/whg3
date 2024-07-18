@@ -7,6 +7,7 @@ import pandas as pd
 from .exceptions import LPFValidationError, DelimValidationError
 from django.db.models.functions import Lower
 from areas.models import Area
+from main.choices import FEATURE_CLASSES
 from places.models import Type
 
 aat_fclass = {}
@@ -40,7 +41,7 @@ def validate_delim(df):
   aliases = ["bnf", "cerl", "dbp", "gn", "gnd", "gov", "loc", "pl", "tgn", "viaf", "wd", "wp", "whg"]
   pattern = r"https?:\/\/.*\..*|(" + "|".join(aliases) + r"):\w+"
   valid_ccodes = [ccode.upper() for c in Area.objects.filter(type='country') for ccode in c.ccodes]
-  fclass_list = ['a', 'p', 'h', 's', 'r', 't', 'l', 'x']
+  fclass_list = [key.lower() for key, _ in FEATURE_CLASSES] + ['x']
   supported_aat_types = {aat_id for aat_id in aat_fclass}
   pattern_constraints = {
     'ccodes': "([a-zA-Z]{2};?)+",
@@ -77,7 +78,7 @@ def validate_delim(df):
       if not fclass_entries or any(not fc.strip() or fc.strip().lower() not in fclass_list for fc in fclass_entries):
         errors.append({
           "row": index + 1,
-          "error": "Each 'fclasses' entry must be one or more of A, P, H, S, R, T, L, X - separated by ';' if multiple."
+          "error": f"Each 'fclasses' entry must be one or more of {[key for key, _ in FEATURE_CLASSES] + ['X']} - separated by ';' if multiple. 'fclasses': {row['fclasses']}"
         })
       else:
         has_valid_fclass = True

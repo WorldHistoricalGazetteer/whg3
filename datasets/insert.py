@@ -119,10 +119,33 @@ def process_types(row, newpl):
   type_objects = []
   error_msgs = []
 
-  # Extract types, aat_types from the row; fclasses (future)
-  types = [t.strip() for t in str(row.get('types', '')).split(';') if t]
-  aat_types = [int(a.strip()) for a in str(row.get('aat_types', '')).split(';') if a]
-  fclasses_from_row = [f.strip() for f in str(row.get('fclasses', '')).split(';') if f]
+  try:
+    types = [t.strip() for t in str(row.get('types', '') or '').split(';') if t]
+  except Exception as e:
+    print(f"Error processing 'types': {e}")
+    types = []
+
+
+
+  try:
+    aat_types = [int(a.strip()) for a in str(row.get('aat_types', '')).split(';') if a]
+    #aat_types = [int(a.strip()) for a in str(row.get('aat_types', '') or '').split(';') if a]
+  except ValueError as ve:
+    print(f"Error converting 'aat_types' to int: {ve}")
+    aat_types = []
+  except Exception as e:
+    print(f"Error processing 'aat_types': {e}")
+    aat_types = []
+
+  try:
+    fclasses_from_row = [f.strip() for f in str(row.get('fclasses', '') or '').split(';') if f]
+  except Exception as e:
+    print(f"Error processing 'fclasses': {e}")
+    fclasses_from_row = []
+
+  print("Extracted types:", types)
+  print("Extracted aat_types:", aat_types)
+  print("Extracted fclasses:", fclasses_from_row)
 
   # Build the PlaceType objects for each type and aat_type
   for type_, aat_type in zip_longest(types, aat_types, fillvalue=None):
@@ -236,8 +259,8 @@ def process_when(row, newpl):
             raise ValueError(f"Invalid ISO-8601 date: {date_str}. Error: {e}")
 
     try:
-        start = parse_iso_date(row['start']) if 'start' in row and row.get('start', '') else None
-        end = parse_iso_date(row['end']) if 'end' in row and row.get('end', '') else None
+        start = parse_iso_date(str(row['start'])) if 'start' in row and row.get('start', '') else None
+        end = parse_iso_date(str(row['end'])) if 'end' in row and row.get('end', '') else None
         attestation_year = str(row['attestation_year']) if 'attestation_year' in row and not pd.isna(
           row['attestation_year']) else None
         # attestation_year = str(row['attestation_year']) if 'attestation_year' in row and row.get('attestation_year', '') else None
@@ -479,8 +502,7 @@ def ds_insert_delim(df, pk):
       # PlaceType
       relevant_columns = ['types', 'aat_types', 'fclasses']
 
-      if any(col in df.columns for col in relevant_columns) and \
-        any(row.get(col, None) not in ['', None] for col in relevant_columns):
+      if any(col in df.columns for col in relevant_columns) and any(row.get(col, None) not in ['', None] for col in relevant_columns):
         objlists['PlaceType'].extend(process_types(row, newpl))
 
       # PlaceWhen (always at least a start or attestation_year)

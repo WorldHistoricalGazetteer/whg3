@@ -44,20 +44,6 @@ var Spinner = /** @class */ (function () {
      */
     Spinner.prototype.spin = function (target) {
         this.stop();
-        
-        this.overlay = document.createElement('div');
-        this.overlay.className = 'spinner-overlay';
-        css(this.overlay, {
-            position: 'absolute',
-            top: '0',
-            left: '0',
-            width: '100%',
-            height: '100%',
-            zIndex: this.opts.zIndex - 1,
-            backgroundColor: 'rgba(0, 0, 0, 0.2)',
-        });
-        target.appendChild(this.overlay);
-        
         this.el = document.createElement('div');
         this.el.className = this.opts.className;
         this.el.setAttribute('role', 'progressbar');
@@ -71,6 +57,13 @@ var Spinner = /** @class */ (function () {
         });
         if (target) {
             target.insertBefore(this.el, target.firstChild || null);
+	        this.originalPointerEvents = target.style.pointerEvents || 'auto';
+	        this.originalUserSelect = target.style.userSelect || 'auto';
+	        this.storedParentNode = this.el.parentNode;
+	        css(target, {
+	            'pointer-events': 'none',
+	            'user-select': 'none'
+	        });
         }
         drawLines(this.el, this.opts);
 
@@ -93,6 +86,28 @@ var Spinner = /** @class */ (function () {
             });
             this.el.appendChild(labelEl);
         }
+
+	    // Set up MutationObserver to detect removal of the spinner element (restores pointer events if Spinner is removed without first stopping)
+	    this.observer = new MutationObserver((mutations) => {
+	        mutations.forEach((mutation) => {
+	            if (mutation.removedNodes && mutation.removedNodes.length > 0) {
+	                for (let i = 0; i < mutation.removedNodes.length; i++) {
+	                    const removedNode = mutation.removedNodes[i];
+	                    if (removedNode === this.el) {
+                            css(this.storedParentNode, {
+                                'pointer-events': this.originalPointerEvents,
+                                'user-select': this.originalUserSelect
+                            });
+	                        this.observer.disconnect(); // Stop observing mutations once handled
+	                        return;
+	                    }
+	                }
+	            }
+	        });
+	    });
+	    if (this.el.parentNode) {
+	        this.observer.observe(this.el.parentNode, { childList: true });
+	    }
         
         return this;
     };
@@ -109,9 +124,6 @@ var Spinner = /** @class */ (function () {
                 clearTimeout(this.animateId);
             }
             if (this.el.parentNode) {
-	            if (this.overlay) {
-	                this.overlay.parentNode.removeChild(this.overlay);
-	            }
                 this.el.parentNode.removeChild(this.el);
             }
             this.el = undefined;

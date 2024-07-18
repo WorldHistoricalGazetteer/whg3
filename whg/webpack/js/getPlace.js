@@ -92,6 +92,14 @@ function parsePlace(data) {
 	    if (types !== '') descrip += `<p class="mb-0"><b>Type${data.types.length == 1 ? '' : 's'}</b>: ${types}.</p>`;
 	}
 	*/
+
+    if (!!data.fclasses && data.fclasses.length > 0) {
+        const fclassCodes = data.fclasses.map(fclass => {
+            return `<span class="pointer" data-bs-toggle="tooltip" title="${fclass.description}">${fclass.code}</span>`;
+        }).join(', ');
+        if (fclassCodes !== '') descrip += `<p class="mb-0"><b>Feature Class${data.fclasses.length == 1 ? '' : 'es'}</b>: ${fclassCodes}.</p>`;
+    }
+	
 	function build_links(name, links_array, link_text=false) {
 		if (links_array.length == 0) return '';
 		const links = links_array

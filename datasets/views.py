@@ -2293,8 +2293,12 @@ class DatasetCreate(CreateView):
         
         user = self.request.user
         uploaded_file = form.cleaned_data['file']
+        apply_fclasses_action = form.cleaned_data['apply_fclasses']
+        fclasses = form.cleaned_data['fclasses']
+        apply_timespans_action = form.cleaned_data['apply_timespans']
+        timespan_start = form.cleaned_data['timespan_start']
+        timespan_end = form.cleaned_data['timespan_end']
         
-
         temp_file, temp_filepath = None, None
         try:        
 
@@ -2330,6 +2334,39 @@ class DatasetCreate(CreateView):
                 try:
                     with open(temp_filepath, 'r', encoding='utf-8') as jsonfile:
                         jdata = json.load(jsonfile)
+                        
+                    apply_fclasses_action = form.cleaned_data.get('apply_fclasses', 'none')
+                    fclasses = form.cleaned_data.get('fclasses', [])
+                    apply_timespans_action = form.cleaned_data.get('apply_timespans', 'none')
+                    timespan_start = form.cleaned_data.get('timespan_start')
+                    timespan_end = form.cleaned_data.get('timespan_end')
+    
+                    # Add default values to each feature in jdata
+                    for feature in jdata.get('features', []):
+                        
+                        if not feature.get('properties'):
+                            messages.error(self.request, 'Feature has no properties.')
+                            return self.form_invalid(form)
+                        
+                        if apply_fclasses_action != 'none' and fclasses and not feature['properties'].get('types', []):
+                            current_fclasses = feature['properties'].get('feature_classes', [])
+                            if apply_fclasses_action == 'replace':
+                                feature['properties']['feature_classes'] = fclasses
+                            elif apply_fclasses_action == 'augment':
+                                feature['properties']['feature_classes'] = list(set(current_fclasses + fclasses))
+                            elif apply_fclasses_action == 'where_missing' and not current_fclasses:
+                                feature['properties']['feature_classes'] = fclasses
+    
+                        if apply_timespans_action != 'none' and timespan_start is not None and timespan_end is not None:
+                            current_timespans = feature['properties'].get('timespans', {})
+                            new_timespans = {"start": {"in":timespan_start},"end": {"in":timespan_end}}
+                            if apply_timespans_action == 'replace':
+                                feature['properties']['timespans'] = new_timespans
+                            elif apply_timespans_action == 'augment':
+                                feature['properties']['timespans'] = {**current_timespans, **new_timespans}
+                            elif apply_timespans_action == 'where_missing' and not current_timespans:
+                                feature['properties']['timespans'] = new_timespans                     
+                        
                     result = validate_lpf(jdata, 'coll')
                 except LPFValidationError as e:
                     error_list = e.args[0]
@@ -2361,7 +2398,58 @@ class DatasetCreate(CreateView):
                 except Exception as e:
                     print("Sorry, the uploaded file could not be processed. Error: {}".format(str(e)))
                     messages.error(self.request, f"Sorry, the uploaded file cannot be processed as a table.")
-                    return self.form_invalid(form)      
+                    return self.form_invalid(form)
+                  
+                # Add default values to each row in df
+                try:
+                    if apply_fclasses_action != 'none' and fclasses:
+                        
+                        if 'fclasses' not in df.columns:
+                            df['fclasses'] = pd.NA
+                            
+                        for index, row in df.iterrows():
+                            if 'aat_types' not in row or row['aat_types'] == '' or pd.isna(row['aat_types']):
+                                
+                                current_fclasses = row['fclasses'].split(';') if pd.notna(row['fclasses']) and row.get('fclasses', '') else []
+                                    
+                                if apply_fclasses_action == 'replace':
+                                    df.at[index, 'fclasses'] = ';'.join(fclasses)
+                                elif apply_fclasses_action == 'augment':
+                                    df.at[index, 'fclasses'] = ';'.join(set(current_fclasses + fclasses))
+                                elif apply_fclasses_action == 'where_missing' and not current_fclasses:
+                                    df.at[index, 'fclasses'] = ';'.join(fclasses)
+
+                    if apply_timespans_action != 'none' and timespan_start is not None and timespan_end is not None:
+                        
+                        for col in ['start', 'end']:
+                            if col not in df.columns:
+                                df[col] = pd.NA
+                        
+                        for index, row in df.iterrows():
+                                
+                            current_start = row.get('start', None)
+                            current_start = int(current_start) if pd.notna(current_start) and current_start != '' else None
+                            current_end = row.get('end', None)
+                            current_end = int(current_end) if pd.notna(current_end) and current_end != '' else None
+                            
+                            if apply_timespans_action == 'replace':
+                                df.at[index, 'start'] = timespan_start
+                                df.at[index, 'end'] = timespan_end
+                            elif apply_timespans_action == 'augment':
+                                df.at[index, 'start'] = timespan_start if current_start is None else min(current_start, timespan_start)
+                                df.at[index, 'end'] = timespan_end if current_end is None else max(current_end, timespan_end)
+                            elif apply_timespans_action == 'where_missing':
+                                if current_start is None:
+                                    df.at[index, 'start'] = timespan_start
+                                if current_end is None:
+                                    df.at[index, 'end'] = timespan_end
+                        
+                except Exception as e:
+                    messages.error(self.request, f"Error adding default values to the DataFrame: {str(e)}")
+                    return self.form_invalid(form)
+                
+                print('Default augmentation successful.')
+                print(df.to_string())
                 
                 try:
                     validate_delim(df)
@@ -2369,6 +2457,11 @@ class DatasetCreate(CreateView):
                     print("Sorry, the uploaded file could not be processed. Error: {}".format(str(e)))
                     messages.error(self.request, self.construct_error_message(e.args[0], "in your file"))
                     return self.form_invalid(form)
+                except Exception as e:
+                    messages.error(self.request, f"Error validating data: {str(e)}")
+                    return self.form_invalid(form)
+                
+                print('Validation successful.')
             
                 dataset = form.save(commit=False)
                 dataset.owner_id = user.id
@@ -2379,6 +2472,7 @@ class DatasetCreate(CreateView):
                     with transaction.atomic():
                         skipped_rows = ds_insert_delim(df, dataset.pk)
                 except DataAlreadyProcessedError:
+                    dataset.delete()
                     messages.info(self.request, "The data appears already to have been processed.")
                     return self.form_invalid(form)
                 except DelimInsertError as e:
@@ -2390,6 +2484,7 @@ class DatasetCreate(CreateView):
                     return self.form_invalid(form)
 
         except Exception as e:
+            dataset.delete()
             messages.error(self.request, f"Sorry, there was an error while processing the uploaded file: {str(e)}")
             return self.form_invalid(form)
         

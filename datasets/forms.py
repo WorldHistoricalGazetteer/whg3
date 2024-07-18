@@ -45,7 +45,7 @@ class DatasetUploadForm(forms.ModelForm):
     }))
 
     creator = forms.CharField(label='Creator(s)', required=False, widget=forms.TextInput(attrs={
-        'placeholder': 'Name(s) of dataset creator',
+        'placeholder': 'Name(s) of dataset creator(s)',
         'size': 45,
         'class': 'form-control',
     }))
@@ -92,7 +92,7 @@ class DatasetUploadForm(forms.ModelForm):
     }))
 
     fclasses = forms.MultipleChoiceField(
-        choices=FEATURE_CLASSES,
+        choices=[(key, f"{label} ({key})") for key, label in FEATURE_CLASSES],
         widget=forms.CheckboxSelectMultiple,
         required=False
     )
