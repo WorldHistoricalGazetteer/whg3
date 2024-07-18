@@ -47,6 +47,7 @@ urlpatterns = [
     path('resources/', include('resources.urls')),
     path('search/', include('search.urls')),
 
+    # TODO: remove guides entirely (main.urls_guides; main/templates/tutorials/*; all references to them)
     path('guides/', include('main.urls_guides')),
     path('teaching/', TeachingPortalView.as_view(), name="teaching"),
 
