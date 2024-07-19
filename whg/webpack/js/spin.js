@@ -57,8 +57,8 @@ var Spinner = /** @class */ (function () {
         });
         if (target) {
             target.insertBefore(this.el, target.firstChild || null);
-	        this.originalPointerEvents = target.style.pointerEvents || 'auto';
-	        this.originalUserSelect = target.style.userSelect || 'auto';
+	        target.dataset.originalPointerEvents = getComputedStyle(target).pointerEvents;
+	        target.dataset.originalUserSelect = getComputedStyle(target).userSelect; 
 	        this.storedParentNode = this.el.parentNode;
 	        css(target, {
 	            'pointer-events': 'none',
@@ -95,8 +95,8 @@ var Spinner = /** @class */ (function () {
 	                    const removedNode = mutation.removedNodes[i];
 	                    if (removedNode === this.el) {
                             css(this.storedParentNode, {
-                                'pointer-events': this.originalPointerEvents,
-                                'user-select': this.originalUserSelect
+                                'pointer-events': this.storedParentNode.dataset.originalPointerEvents,
+                                'user-select': this.storedParentNode.dataset.originalUserSelect
                             });
 	                        this.observer.disconnect(); // Stop observing mutations once handled
 	                        return;
@@ -124,6 +124,10 @@ var Spinner = /** @class */ (function () {
                 clearTimeout(this.animateId);
             }
             if (this.el.parentNode) {
+                css(this.el.parentNode, {
+                    'pointer-events': this.el.parentNode.dataset.originalPointerEvents,
+                    'user-select': this.el.parentNode.dataset.originalUserSelect
+                });
                 this.el.parentNode.removeChild(this.el);
             }
             this.el = undefined;

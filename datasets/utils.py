@@ -248,11 +248,13 @@ def parsedates_lpf(feat):
         min([start for start, _, _ in intervalspans if start is not None], default=None),
         max([end for _, end, _ in intervalspans if end is not None], default=None)
     ) if val is not None]
+    if len(minmax) == 1:
+        minmax.append(minmax[0]) 
     
     # Ensure unique timespans by converting from JSON and back
     unique_timespans = [json.loads(timespanjson) for timespanjson in {json.dumps(timespan) for _, _, timespan in intervalspans}]
     
-    #print('returning from parsedates_lpf', unique_timespans, minmax)
+    print('returning from parsedates_lpf', unique_timespans, minmax)
     return {"intervals": unique_timespans, "minmax": minmax}
 
 class HitRecord(object):

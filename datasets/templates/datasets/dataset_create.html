@@ -172,42 +172,7 @@
 	          <div class="input-group-prepend input-group-text">Contributors</div>
 	          {{ form.contributors }}
 	        </div>
-	  
-	        <div class="mb-3 input-group input-group-drop-selector">
-	            <div class="input-group-prepend input-group-text">Feature Classes
-		        	<a class="pointer" data-bs-toggle="popover" title="Add default feature classes" 
-		        	  data-bs-content="<p>May be useful if some (or all) of your places belong to the same feature class, but lack the required data attributes.</p><br/><p><i><b>Note: this will have no effect on any places which already have 'types' (LPF) or 'aat_types' (LP-TSV).</b></i></p><br/><ul><li><b>Augment</b>: Add to existing feature classes for all places.</li><li><b>Replace</b>: </li>Replace existing feature classes for all places.<li><b>Where Missing</b>: Insert only into places which have no existing feature classes.</li></ul><p><i>Select as many or as few as are appropriate.</i></p>">
-		        	  <i class="fas fa-question-circle linky"></i>
-		        	</a>
-		        </div>
-	            {{ form.apply_fclasses }}
-	        </div>
-  
-	        <div class="mb-3 input-group input-group-dropper" id="fclass-choices">
-	            {% for value, name in form.fclasses.field.choices %}
-	              <div class="form-check form-check-inline">
-	                <input class="form-check-input" type="checkbox" name="fclasses" value="{{ value }}" id="fclass-{{ value }}">
-	                <label class="form-check-label" for="fclass-{{ value }}">{{ name }}</label>
-	              </div>
-	            {% endfor %}
-	        </div>
-	  
-	        <div class="mb-3 input-group input-group-drop-selector">
-	            <div class="input-group-prepend input-group-text">Timespans
-		        	<a class="pointer" data-bs-toggle="popover" title="Add default timespans" 
-		        	  data-bs-content="<p>May be useful if some (or all) of your places should have the same temporal scope, but lack the required data attributes.</p><br/><ul><li><b>Augment</b>: Add to existing timespan(s) for all places (or extend existing timespan in the case of LP-TSV uploads).</li><li><b>Replace</b>: </li>Replace existing timespan(s) for all places.<li><b>Where Missing</b>: Insert only into places which have no existing timespan.</li></ul><p><i><u>Technical</u>: A single timespan will be inserted into the base record of the feature, structured as {'start': {'in':start_year},'end': {'in':end_year}}.</i></p>">
-		        	  <i class="fas fa-question-circle linky"></i>
-		        	</a>
-		        </div>
-	            {{ form.apply_timespans }}
-	        </div>
-	  
-	        <div class="mb-3 input-group input-group-dropper" id="timespan-values">
-	            {{ form.timespan_start }}
-	            <div class="input-group-prepend input-group-text"> - </div>
-	            {{ form.timespan_end }}
-	        </div>
-	
+	        
 	        <div class="mb-3 input-group">
 	          <div class="input-group-prepend input-group-text">URI base
 	        	<a class="pointer" data-bs-toggle="popover" title="Prefix for source place page url" 
@@ -281,57 +246,12 @@ $(document).ready(function() {
 		$(this).prev('.dummy-file-input').val(fileName);
 	});
 
-	['fclasses', 'timespans'].forEach(selector => {
-		$(`#id_apply_${selector}`).change(function() {
-			const visible = $(this).val() !== 'none';
-			$(this)
-				.blur()
-				.parents('.input-group').next('.input-group-dropper')
-				.toggleClass('visible', visible)
-				.find('input[type="number"]')
-				.each(function() {
-					$(this).prop('required', visible);
-					if (!visible) $(this).val('');
-				})
-				.end()
-				.find('input[type="checkbox"]')
-				.each(function() {
-					$(this).prop('required', visible);
-					if (!visible) {
-						$(this).prop('checked', false);
-					}
-				});
-		}).change();
-	});
-	
- 	$('#timespan-values input').change(function() {
-        const thisStart = $(this).attr('id') == 'id_timespan_start';
-        const currentValue = parseInt($(this).val(), 10);
-        const $otherInput = $('#timespan-values input').not($(this)).first();
-        const otherValue = parseInt($otherInput.val(), 10);
-        if ((thisStart && otherValue < currentValue) || (!thisStart && otherValue > currentValue) || isNaN(otherValue)) {
-            $otherInput.val(currentValue);
-        }
-	}).change();
-
-	$('#fclass-choices input')
-		.each(function() {
-			$(this)
-			.change(function() {
-				const fclassesNeeded = $('#fclass-choices').hasClass('visible') && $('#fclass-choices input:checked').length == 0;
-				$('#fclass-choices input')
-					.each(function() {
-						$(this).prop('required', fclassesNeeded);
-					});
-			}).change();
-		});
-
 	$('#ds_form').submit(function(event) {
 		if (this.checkValidity() === false) {
 			event.preventDefault();
 			event.stopPropagation();
 		} else {
-			$('#ds_form').spin();
+			$('body').spin();
 		}
 		$(this).addClass('was-validated');
 	});

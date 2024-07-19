@@ -91,27 +91,6 @@ class DatasetUploadForm(forms.ModelForm):
         'required': 'required',
     }))
 
-    fclasses = forms.MultipleChoiceField(
-        choices=[(key, f"{label} ({key})") for key, label in FEATURE_CLASSES],
-        widget=forms.CheckboxSelectMultiple,
-        required=False
-    )
-
-    apply_fclasses = forms.ChoiceField(
-        choices=[('none', 'None'), ('augment', 'Augment'), ('replace', 'Replace'), ('where_missing', 'Where Missing')],
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-
-    timespan_start = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={'placeholder': 'Start Year', 'class': 'form-control'}))
-    timespan_end = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={'placeholder': 'End Year', 'class': 'form-control'}))
-
-    apply_timespans = forms.ChoiceField(
-        choices=[('none', 'None'), ('augment', 'Augment'), ('replace', 'Replace'), ('where_missing', 'Where Missing')],
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-select'})
-    )
-
     class Meta:
         model = Dataset
         fields = ('title', 'label', 'description', 'creator', 'source', 'contributors', 'uri_base', 'webpage', 'pdf', 'file')
