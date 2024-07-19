@@ -106,8 +106,10 @@
                 {% if action == "update" and not object.group and not whgteam %}
                   <p>
                     <span class="strong mt-2">Public?</span>: &nbsp;{{ form.public.value }}
-                    <span class="ms-2 help-matches" data-id="going_public_coll"><a href="#">making a collection public
-                      <i class="fas fa-question-circle linkypop"></i></a></span>
+                    <span class="ms-2 help-matches" data-id="going_public_coll">
+                      <a href="#">making a collection public
+                      <i class="fas fa-question-circle linkypop"></i>
+                      </a></span>
                   </p>
                 {% elif whg_admins %}
                   <p>

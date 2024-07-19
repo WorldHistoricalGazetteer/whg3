@@ -119,7 +119,7 @@ $(function() {
 	// help modals
 	$(".help-matches").click(function() {
 		let page = $(this).data('id')
-		/*console.log('help:', page)*/
+		console.log('help:', page)
 		$('.selector').dialog('open');
 	})
 
