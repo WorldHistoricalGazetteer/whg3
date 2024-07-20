@@ -57,6 +57,13 @@ var Spinner = /** @class */ (function () {
         });
         if (target) {
             target.insertBefore(this.el, target.firstChild || null);
+	        target.dataset.originalPointerEvents = getComputedStyle(target).pointerEvents;
+	        target.dataset.originalUserSelect = getComputedStyle(target).userSelect; 
+	        this.storedParentNode = this.el.parentNode;
+	        css(target, {
+	            'pointer-events': 'none',
+	            'user-select': 'none'
+	        });
         }
         drawLines(this.el, this.opts);
 
@@ -79,6 +86,28 @@ var Spinner = /** @class */ (function () {
             });
             this.el.appendChild(labelEl);
         }
+
+	    // Set up MutationObserver to detect removal of the spinner element (restores pointer events if Spinner is removed without first stopping)
+	    this.observer = new MutationObserver((mutations) => {
+	        mutations.forEach((mutation) => {
+	            if (mutation.removedNodes && mutation.removedNodes.length > 0) {
+	                for (let i = 0; i < mutation.removedNodes.length; i++) {
+	                    const removedNode = mutation.removedNodes[i];
+	                    if (removedNode === this.el) {
+                            css(this.storedParentNode, {
+                                'pointer-events': this.storedParentNode.dataset.originalPointerEvents,
+                                'user-select': this.storedParentNode.dataset.originalUserSelect
+                            });
+	                        this.observer.disconnect(); // Stop observing mutations once handled
+	                        return;
+	                    }
+	                }
+	            }
+	        });
+	    });
+	    if (this.el.parentNode) {
+	        this.observer.observe(this.el.parentNode, { childList: true });
+	    }
         
         return this;
     };
@@ -95,6 +124,10 @@ var Spinner = /** @class */ (function () {
                 clearTimeout(this.animateId);
             }
             if (this.el.parentNode) {
+                css(this.el.parentNode, {
+                    'pointer-events': this.el.parentNode.dataset.originalPointerEvents,
+                    'user-select': this.el.parentNode.dataset.originalUserSelect
+                });
                 this.el.parentNode.removeChild(this.el);
             }
             this.el = undefined;

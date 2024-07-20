@@ -6,7 +6,7 @@ import '../css/mapAndTableAdditional.css';
 import { init_mapControls } from './mapControls';
 import { recenterMap, initObservers, initOverlays, removeOverlays, initDownloadLinks, initPopups } from './mapFunctions';
 import { toggleFilters } from './mapFilters';
-import { initUtils, initInfoOverlay, minmaxer, get_ds_list_stats, deepCopy, arrayColors, colorTable } from './utilities';
+import { initUtils, initInfoOverlay, get_ds_list_stats, deepCopy, arrayColors, colorTable } from './utilities';
 import { initialiseTable } from './tableFunctions';
 import { init_collection_listeners } from './collections';
 import SequenceArcs from './mapSequenceArcs';import './toggle-truncate.js';
