@@ -3181,6 +3181,8 @@ class DatasetCollabView(LoginRequiredMixin, DetailView):
 
     context['ds'] = ds
 
+    context['is_admin'] = True if me.groups.filter(name__in=['whg_admins']).exists() else False
+    context['editorial'] = True if me.groups.filter(name__in=['editorial']).exists() else False
     context['collabs'] = ds.collabs.all()
     context['collaborators'] = ds.collaborators.all()
     context['owners'] = ds.owners
