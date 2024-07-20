@@ -345,15 +345,20 @@ export function initUtils(mappy) {
 }
 
 export function minmaxer(timespans) {
-  let starts = [];
-  let ends = [];
+  let starts = [], ends = [];
+
   for (var t in timespans) {
-    // gets 'in', 'earliest' or 'latest'
-    starts.push(Object.values(timespans[t].start)[0]);
-    ends.push(!!timespans[t].end ? Object.values(timespans[t].end)[0] : -1);
+    let start = timespans[t].start ? Object.values(timespans[t].start)[0] : null;
+    let end = timespans[t].end ? Object.values(timespans[t].end)[0] : start;
+    starts.push(start ?? end);
+    ends.push(end ?? start);
   }
-  return [Math.max.apply(null, starts), Math.max.apply(null, ends)];
+
+  let maxStart = Math.max(...starts);
+  let maxEnd = Math.max(...ends);
+  return maxStart === maxEnd ? [maxStart] : [maxStart, maxEnd];
 }
+
 
 export function get_ds_list_stats(allFeatures, allExtents = []) {
 

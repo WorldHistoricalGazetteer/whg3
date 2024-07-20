@@ -47,6 +47,7 @@ from api.serializers import (
 from areas.models import Area
 from collection.models import Collection, CollPlace
 from datasets.models import Dataset
+from main.choices import FEATURE_CLASSES
 from main.models import Log
 from datasets.tasks import get_bounds_filter
 from places.models import Place, PlaceGeom
@@ -1207,6 +1208,7 @@ class PlacesDetailAPIView(View):
             "title": "|".join(set(place["title"] for place in serialized_places)),
             "names": sort_unique([name for place in serialized_places for name in place["names"]], 'toponym'),
             "types": add_urls(sort_unique([type for place in serialized_places for type in place["types"]], 'label')),
+            "fclasses": [{"code": fclass, "description": next(description for code, description in FEATURE_CLASSES if code == fclass)} for place in serialized_places for fclass in place["fclasses"]],
             "geoms": [geom for place in serialized_places for geom in place["geoms"]],
             "extent": aggregated_extent,
             "links": add_urls(sort_unique([link for place in serialized_places for link in place["links"]], sort_key='identifier')),
