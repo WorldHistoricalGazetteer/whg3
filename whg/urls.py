@@ -32,9 +32,7 @@ def serve_cdnfallbacks(request, path):
 
 urlpatterns = [
     # home page
-    # path('', views.splash, name='splash'),
     path('', views.Home30a.as_view(), name="home"),
-    # path('home/<str:version>/', views.Home30a.as_view(), name='home-version'),
 
 
     # apps
@@ -63,17 +61,12 @@ urlpatterns = [
 
     # static content
     path('about/', TemplateView.as_view(template_name="main/about.html"), name="about"),
-    # path('builder/', TemplateView.as_view(template_name="main/builder_start.html"), name="gazetteer-builder"),
-    # path('builder_single/', TemplateView.as_view(template_name="main/builder_single.html"), name="builder-single"),
-    # path('builder_multiple/', TemplateView.as_view(template_name="main/builder_multiple.html"), name="builder-multiple"),
     path('contributing/', TemplateView.as_view(template_name="main/../_local/_older/contributing.html"), name="contributing"),
 
     path('people_overview/', TemplateView.as_view(template_name="main/people_overview.html"), name="credits"),
     path('licensing/', TemplateView.as_view(template_name="main/licensing.html"), name="licensing"),
     path('system/', TemplateView.as_view(template_name="main/../_local/_older/system.html"), name="system"),
 
-    # path('people/', TemplateView.as_view(template_name="main/people.html"), name="people"),
-    # path('partners/', TemplateView.as_view(template_name="main/partners.html"), name="partners"),
     path('publications/', TemplateView.as_view(template_name="main/publications.html"), name="publications"),
 
     path('usingapi/', TemplateView.as_view(template_name="main/usingapi.html"), name="usingapi"),
@@ -82,11 +75,8 @@ urlpatterns = [
     path('documentation/', TemplateView.as_view(template_name="main/documentation.html"), name="documentation"),
 
     # more static content - 2024-01
-    # path('build/', TemplateView.as_view(template_name="home/build_new.html"), name="build"),
-    # path('builder/', TemplateView.as_view(template_name="home/builder.html"), name="builder"),
     path('workbench/', TemplateView.as_view(template_name="main/workbench_3col.html"), name="workbench"),
-    # path('pipeline/', TemplateView.as_view(template_name="home/pipeline.html"), name="pipeline"),
-    
+
     # yet more static content - 2024-02
     path('main_regions/', TemplateView.as_view(template_name="main/regions.html"), name="main-regions"),
     path('journeys_routes/', TemplateView.as_view(template_name="main/journeys_routes.html"), name="journeys-routes"),
@@ -99,7 +89,6 @@ urlpatterns = [
     path('announcement_delete/<int:pk>/', views.AnnouncementDeleteView.as_view(), name='announcement-delete'),
     path('announcement/update/<int:pk>/', views.AnnouncementUpdateView.as_view(), name='announcement-update'),
     path('announcements/', views.AnnouncementListView.as_view(), name='announcements-list'),
-    # path('announcements/', views.AnnouncementsView.as_view(), name="announcements"),
 
     path('tileset_management/', views.TilesetListView.as_view(), name='tools-tilesets'),
     path('tileset_generate/<str:category>/<int:id>/', views.tileset_generate_view, name='tileset_generate'),
