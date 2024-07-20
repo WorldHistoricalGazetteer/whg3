@@ -2316,8 +2316,10 @@ class DatasetCreate(CreateView):
                 try:
                     uploaded_file.seek(0)
                     detected_encoding = cn.detect(uploaded_file.read())
-                    if detected_encoding['encoding'] != 'utf-8':
-                        messages.error(self.request, f"Sorry, the file does not appear to be UTF-8 encoded, and so cannot be processed. Detected encoding: <b>{detected_encoding['encoding']}</b>")
+                    print(f"Detected encoding: {detected_encoding['encoding']}, Confidence: {detected_encoding['confidence']}")
+                    allowed_encodings = ['ascii', 'utf-8', 'utf-16', 'utf-32'] # NOT ANSI
+                    if detected_encoding['encoding'].lower() not in allowed_encodings:
+                        messages.error(self.request, f"Sorry, the file does not appear to be UTF or ASCII encoded, and so cannot be processed. Detected encoding: <b>{detected_encoding['encoding']}</b>")
                         return self.form_invalid(form)
                 except Exception as e:
                     print(f"Error detecting file encoding: {e}")
