@@ -34,7 +34,6 @@ urlpatterns = [
     # home page
     path('', views.Home30a.as_view(), name="home"),
 
-
     # apps
     path('areas/', include('areas.urls')),
     path('collections/', include('collection.urls')),

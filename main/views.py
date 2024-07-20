@@ -311,8 +311,8 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
   elif model == Dataset:  # reverse sort, and some dummy datasets need to be filtered
     print('model == Dataset')
     objects = objects.exclude(Q(title__startswith='(stub)')|Q(numrows__lt=1)).order_by('-create_date')
-    print('Dataset objects count', objects.count())
-    print('Datasets:', objects)
+    # print('Dataset objects count', objects.count())
+    # print('Datasets:', objects)
     # objects = objects.annotate(recent_log_timestamp=Max('log__timestamp'))
 
   return objects
