@@ -27,6 +27,10 @@ git checkout -b staging_backup_YYYYMMDD && git checkout staging
 ```
 
 #### Docker Deployment
+- First monitor how many users are interacting with the site (including self?):
+```bash
+watch -n 1 'netstat -tn | grep ":443" | grep ESTABLISHED'
+```
 - Stop existing containers:
 ```bash
 dcprod down
