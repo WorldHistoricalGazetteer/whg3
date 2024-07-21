@@ -60,16 +60,16 @@ urlpatterns = [
 
     # static content
     path('about/', TemplateView.as_view(template_name="main/about.html"), name="about"),
-    path('contributing/', TemplateView.as_view(template_name="main/../_local/_older/contributing.html"), name="contributing"),
+    # path('contributing/', TemplateView.as_view(template_name="main/../_local/_older/contributing.html"), name="contributing"),
 
     path('people_overview/', TemplateView.as_view(template_name="main/people_overview.html"), name="credits"),
     path('licensing/', TemplateView.as_view(template_name="main/licensing.html"), name="licensing"),
-    path('system/', TemplateView.as_view(template_name="main/../_local/_older/system.html"), name="system"),
+    # path('system/', TemplateView.as_view(template_name="main/../_local/_older/system.html"), name="system"),
 
     path('publications/', TemplateView.as_view(template_name="main/publications.html"), name="publications"),
 
     path('usingapi/', TemplateView.as_view(template_name="main/usingapi.html"), name="usingapi"),
-    path('api/', TemplateView.as_view(template_name="main/../_local/_older/api.html"), name="api"),
+    # path('api/', TemplateView.as_view(template_name="main/../_local/_older/api.html"), name="api"),
     path('downloads/', TemplateView.as_view(template_name="main/downloads.html"), name="downloads"),
     path('documentation/', TemplateView.as_view(template_name="main/documentation.html"), name="documentation"),
 
