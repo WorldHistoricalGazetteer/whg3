@@ -4,7 +4,7 @@ This is the repository for Version 3.0b (beta) of the World Historical Gazetteer
 
 ### Contributing to software and data development
 
-WHG is an open-source project and welcomes contributions of content and code. Please see [this document](_local/_older/docs/contributing_dev.md) for an overview of how to participate in the several aspects of WHG development. Specific tasks in our long TODO queue will be added as GitHub issues soon. This repository can be forked and cloned as a Docker project with [the procedure outlined here](Installation.md). <-- in draft 23 June 2024
+WHG is an open-source project and welcomes contributions of content and code. Please see [this document](docs/developer_docs.md) for an overview of how to participate in the several aspects of WHG development. Specific tasks in our long TODO queue will be added as GitHub issues soon. This repository can be forked and cloned as a Docker project with [the procedure outlined here](Installation.md). <-- in draft 23 June 2024
 
 ### Change log
 
