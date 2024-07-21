@@ -1,3 +1,8 @@
+### Files required after cloning
+- `/.env/.dev-whg3`
+- `/data/ca-cert.pem`
+- `/whg/local_settings.py`
+
 ### Find all files containing given text
 
 #### HTML
