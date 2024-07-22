@@ -6,13 +6,13 @@
 <div class="container h-100">
 
   <div class="messages ms-5 mt-5">
-    <h4>Server error :-( </h4>
+    <h4>Sorry, something has gone wrong.</h4>
     {% if messages %}
       {% for message in messages %}
       <p {% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message|safe }}</p>
       {% endfor %}
     {% else %}
-      <p>This error has been logged and sent to WHG admin staff. We will look into it and get back to you within a day. Apologies!</p>
+      <p>This error has been logged and sent to WHG staff.</p>
     {% endif %}
     <p class="mt-2"><a href="{{ request.META.HTTP_REFERER }}">Back</a></p>
   </div>
