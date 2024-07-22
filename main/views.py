@@ -729,12 +729,11 @@ def server_error_view(request, exception=None):
     )
 
     payload = {
-        "subject": "Server Error",
-        "message": message
+        "text": message
     }
 
     # Send the message to Slack
-    slack_webhook_url = 'https://hooks.slack.com/triggers/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'
+    slack_webhook_url = 'https://hooks.slack.com/services/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'
     response = requests.post(slack_webhook_url, json=payload)
 
     if response.status_code == 200:
