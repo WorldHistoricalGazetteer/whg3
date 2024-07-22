@@ -9,7 +9,7 @@ from django.core.mail import BadHeaderError
 from django.db.models import Q
 from django.db.models.functions import Lower
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponseForbidden
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils.html import escape
 from django.utils.decorators import method_decorator
@@ -37,7 +37,6 @@ from bootstrap_modal_forms.generic import BSModalCreateView
 import json
 import random
 import requests
-import traceback
 import sys
 from urllib.parse import urlparse
 
@@ -703,51 +702,47 @@ def trigger_500_error(request):
     raise Exception("Simulated server error")
 
 def server_error_view(request, exception=None):
-    
-    print('Formatting message for Slack...')
-    
-    # Capture request details
-    url = request.build_absolute_uri()
-    method = request.method
-    headers = dict(request.headers)
-    body = request.body.decode('utf-8', errors='replace')
+  import traceback
+  # Capture request details
+  url = request.build_absolute_uri()
+  method = request.method
+  headers = dict(request.headers)
+  body = request.body.decode('utf-8', errors='replace')
 
-    # Capture exception details
-    exc_type = type(exception).__name__ if exception else 'N/A'
-    exc_message = str(exception) if exception else 'N/A'
-    tb = traceback.format_exc()
+  # Capture exception details
+  exc_type = type(exception).__name__ if exception else 'N/A'
+  exc_message = str(exception) if exception else 'N/A'
+  tb = traceback.format_exc()
 
-    # Prepare the Slack message
-    message = (
-        f"*URL:* {url}\n"
-        f"*Method:* {method}\n"
-        f"*Headers:* {headers}\n"
-        f"*Body:* {body}\n\n"
-        f"*Exception Type:* {exc_type}\n"
-        f"*Exception Message:* {exc_message}\n"
-        f"*Traceback:* ```{tb}```"
-    )
+  # Send the email with details
+  new_emailer(
+    email_type='500_error',
+    subject='Server error',
+    from_email=settings.DEFAULT_FROM_EMAIL,
+    to_email=settings.EMAIL_TO_ADMINS,  # a list in settings
+    username=request.user.username if request.user.is_authenticated else 'Anonymous',
+    url=url,
+    method=method,
+    headers=headers,
+    body=body,
+    exc_type=exc_type,
+    exc_message=exc_message,
+    traceback=tb,
+  )
 
-    payload = {
-        "text": message
-    }
+  return render(request, "main/500.html", {'error': 'fubar'}, status=500)
 
-    # Send the message to Slack
-    slack_webhook_url = 'https://hooks.slack.com/services/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'
-    response = requests.post(slack_webhook_url, json=payload)
 
-    if response.status_code == 200:
-        # Log the error or handle it accordingly
-        print(f"Message sent to Slack.")
-    else:
-        print(f"Failed to send message to Slack: {response.status_code}, {response.text}")
-        
-
-    # Return a user-friendly error page
-    context = { # Rendering of this message is not currently implemented
-        'error_message': 'An unexpected error occurred. Our team has been notified and is looking into the issue. Please try again later.'
-    }
-    return render(request, "main/500.html", context, status=500)
+# def server_error_view(request, exception=None):
+#     print('500 error request', request.GET.__dict__)
+#     new_emailer(
+#       email_type='500_error',
+#       subject='Server error',
+#       from_email=settings.DEFAULT_FROM_EMAIL,
+#       to_email=settings.EMAIL_TO_ADMINS,
+#       username=request.user.username,
+#     )
+#     return render(request, "main/500.html", {'error':'fubar'})
 
 def custom_404(request, exception):
   print('404 error request', request.GET.__dict__)
