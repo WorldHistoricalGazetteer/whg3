@@ -54,15 +54,8 @@
             <p class="small">{{ ds.description|safe }}</p>
           </div>
           <div class="card-button">
-            <a href="{% url 'contact' %}?dataset_id={{ ds.id }}&from={{ request.path }}&subject=Volunteer%20Review%20Offer"
-               class="btn btn-sm btn-primary volunteer-btn">Offer to volunteer
-            </a>
+            <a class="btn btn-sm btn-primary volunteer-btn" data-whg-modal="/contact_modal/" data-subject="Volunteer%20Review%20Offer%20(#{{ ds.id }})">Offer to volunteer</a>
           </div>
-{#          <div class="card-button">#}
-{#            <a href="{% url 'contact' %}?dataset_id={{ ds.id }}&from={{ request.path }}"#}
-{#               class="btn btn-sm btn-primary volunteer-btn">Offer to volunteer#}
-{#            </a>#}
-{#          </div>#}
         </div>
       {% endfor %}
     {% else %}
@@ -77,40 +70,6 @@
 {% block inlineScripts %}
 <script>
 	$( document ).ready(function() {
-      console.log('page loaded');
-      $('.volunteer-btn').click(function(e) {
-        e.preventDefault();
-        var url = $(this).attr('href');
-
-        // Add confirmation dialog
-        var confirmation = confirm("Sending your offer to volunteer for this dataset -- are you sure?");
-        if (confirmation) {
-          
-          $('.container').first().spin({ label: 'Working...' });
-
-          // Simulate delay before redirection
-          setTimeout(function() {
-            window.location.href = url;  // Redirect after a delay
-          }, 2000);  // Delay in milliseconds
-        }
-      })
-      {#$('.volunteer-btn').click(function(e) {#}
-      {#  e.preventDefault();#}
-      {#  var spinner = $(this).find('.spinner-border');#}
-      {#  var url = $(this).attr('href');#}
-      {##}
-      {#  console.log("Button clicked, showing spinner.");#}
-      {#  spinner.show();#}
-      {##}
-      {#  // Debug: Check spinner visibility#}
-      {#  console.log(spinner.css('display'));#}
-      {##}
-      {#  // Simulate delay before redirection#}
-      {#  setTimeout(function() {#}
-      {#    window.location.href = url;  // Redirect after a delay#}
-      {#  }, 2000);  // Delay in milliseconds#}
-      {# })#}
-
       $('.a_more_descrip').click(function() {
         console.log('more clicked')
         let clicked = $(this);

@@ -70,13 +70,6 @@ $(function() {
 		});
 	});
 
-	$(".feedback").click(function() {
-		console.log(clicked)
-		url = window.location.href = "/contact?from=" + clicked
-		window.location.href = url
-		console.log('gwine to contact form, from clicked', url)
-	})
-
 	// views_dl.downloader()
 	$(".a-dl-celery").click(function(e) {
 		e.preventDefault()

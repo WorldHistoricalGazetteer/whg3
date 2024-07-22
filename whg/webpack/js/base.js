@@ -305,11 +305,6 @@ Promise.all([
 		} else {
 			$("[href='" + clicked + "']").addClass('navactive');
 		}
-
-		// Feedback click event
-		$(".feedback").click(function() {
-			window.location.href = `/contact?from=${encodeURIComponent(clicked)}`;
-		});
 	})
 	.catch(function(error) {
 		console.error('Error loading resources:', error);

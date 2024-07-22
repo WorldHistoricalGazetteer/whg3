@@ -48,13 +48,6 @@ $(function() {
 	
 	// ******************* LISTENERS *******************   
 
-	$(".feedback").click(function() {
-		console.log(clicked)
-		url = window.location.href = "/contact?from=" + clicked
-		window.location.href = url
-		console.log('gwine to contact form, from clicked', url)
-	})
-
 	// display time info y/n
 	$('#year_filter').change(function() {
 			var isChecked = $(this).prop('checked');
