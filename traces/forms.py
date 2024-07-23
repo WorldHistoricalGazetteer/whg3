@@ -1,20 +1,22 @@
 # traces.forms
 from django import forms
 from django.db import models
+from django.core.exceptions import ValidationError
 from .models import TraceAnnotation
+import re
 
-# date validator
-def iso8601_dates(value):
-	print('date value', value)
-	if value and len(value) < 3:
-		raise forms.ValidationError("We're ISO8601 here!")
+def valid_dates(value):
+    # Regular expression to match dates in formats: YYYY, YYYY-MM, YYYY-MM-DD
+    # Allows years up to 6 digits, optional negative sign for BCE years
+    if not re.match(r'^-?\d{1,6}(-\d{2})?(-\d{2})?$', value):
+        raise ValidationError(
+            f'Enter a valid date in one of the formats: YYYY, YYYY-MM, YYYY-MM-DD, with optional negative year ({value} is invalid).'
+        )
 
 class TraceAnnotationModelForm(forms.ModelForm):
-	# start = forms.CharField(widget=forms.TextInput(attrs={'size': 11}))
-	# end = forms.CharField(widget=forms.TextInput(attrs={'size': 11}))
-	# start = forms.CharField(validators=[iso8601_dates], widget=forms.TextInput(attrs={'size': 11}))
-	# end = forms.CharField(validators=[iso8601_dates], widget=forms.TextInput(attrs={'size': 11}))
-
+	start = forms.CharField(validators=[valid_dates], widget=forms.TextInput(attrs={'size': 11, 'placeholder': 'yyyy-mm-dd'}))
+	end = forms.CharField(validators=[valid_dates], widget=forms.TextInput(attrs={'size': 11, 'placeholder': 'yyyy-mm-dd'}))
+	
 	class Meta:
 		model = TraceAnnotation
 		fields = ('id', 'note', 'relation', 'start', 'end', 'sequence', 'anno_type', 'motivation',
@@ -30,7 +32,6 @@ class TraceAnnotationModelForm(forms.ModelForm):
 			# 'image_file': forms.ImageField()
 			'image_file': forms.FileInput()
 		}
-
 
 	def __init__(self, *args, **kwargs):
 		super(TraceAnnotationModelForm, self).__init__(*args, **kwargs)

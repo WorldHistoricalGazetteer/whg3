@@ -11,6 +11,7 @@ from django.db.models.functions import Lower
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.utils.html import escape
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -39,6 +40,7 @@ import random
 import requests
 import sys
 from urllib.parse import urlparse
+import urllib.parse
 
 es = settings.ES_CONN
 
@@ -715,6 +717,12 @@ def server_error_view(request):
         headers_pretty = json.dumps(headers, indent=2)
         body = request.body.decode('utf-8', errors='replace')
         body_formatted = f"```{body}```" if body else 'None'
+        
+        # Capture authenticated user details
+        if request.user and request.user.is_authenticated:
+            authenticated_user = f'{request.user.username} ({request.user.email})'
+        else:
+            authenticated_user = 'None'
 
         # Capture exception details
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -727,6 +735,7 @@ def server_error_view(request):
             f"*{exc_type.upper()}: {exc_message.upper()}*\n"
             f"*URL:* {url}\n"
             f"*Method:* {method}\n"
+            f"*Authenticated User:* {authenticated_user}\n"
             f"*Headers:* ```{headers_pretty}```\n"
             f"*Body:* {body_formatted}\n"
             f"*Traceback:* ```{tb}```"
@@ -1059,12 +1068,19 @@ def contact_modal_view(request):
             user_message = form.cleaned_data['message']
             page_url = request.POST.get('page_url', 'No page URL provided')
             
+            # URL-encode the subject and body for the mailto link
+            encoded_subject = urllib.parse.quote(user_subject)
+            encoded_body = urllib.parse.quote(
+                f"\n\n\nOriginal message:\nSent on: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n{user_message}"
+            )
+            mailto_link = f"mailto:{user_email}?subject={encoded_subject}&body={encoded_body}"
+            
             try:
                 
                 slack_message = (
                     f"*Subject:* {user_subject}\n"
                     f"*From:* {name} (username: {username or '(none)'})\n"
-                    f"*Email Address:* {user_email}\n"
+                    f"*Email Address:* <{mailto_link}|{user_email}>\n"
                     f"*Message:* ```{user_message}```\n"
                     f"*Page URL:* {'Home Page' if page_url == '/' else page_url}\n"
                     f"----------------------------------------"
@@ -1074,18 +1090,19 @@ def contact_modal_view(request):
                     print(f"Message sent to Slack.")
                 else:
                     print(f"Failed to send message to Slack: {response.status_code}, {response.text}")
-                    
-                # reply to user
-                new_emailer(
-                    email_type='contact_reply',
-                    subject="Message to WHG received",
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    to_email=[user_email],
-                    reply_to=[settings.DEFAULT_FROM_EDITORIAL],
-                    name=name,
-                    greeting_name=name if name else username,
-                    user_subject=user_subject,
-                )
+                
+                # # reply to user
+                # new_emailer(
+                #     email_type='contact_reply',
+                #     subject="Message to WHG received",
+                #     from_email=settings.DEFAULT_FROM_EMAIL,
+                #     to_email=[user_email],
+                #     reply_to=[settings.DEFAULT_FROM_EDITORIAL],
+                #     name=name,
+                #     greeting_name=name if name else username,
+                #     user_subject=user_subject,
+                # )
+                
                 messages.success(request, "Your message has been sent successfully.")
                 print("Contact form processed.")
                 return JsonResponse({'success': True})
