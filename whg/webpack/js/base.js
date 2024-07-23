@@ -2,7 +2,6 @@
 
 import { Spinner } from './spin.js';
 import { initWHGModal } from './whg-modal.js';
-// import '../../../static/js/aliases.js'; // /static/js/aliases.js
 import { base_urls } from './aliases.js';
 import '../css/base.css';
 import '../../static/css/styles.css'; // /whg/static/css/styles.css

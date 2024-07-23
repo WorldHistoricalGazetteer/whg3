@@ -701,36 +701,95 @@ def trigger_500_error(request):
     # This will simulate a server error
     raise Exception("Simulated server error")
 
-def server_error_view(request, exception=None):
-  import traceback
-  # Capture request details
-  url = request.build_absolute_uri()
-  method = request.method
-  headers = dict(request.headers)
-  body = request.body.decode('utf-8', errors='replace')
+def server_error_view(request):
+    import traceback
 
-  # Capture exception details
-  exc_type = type(exception).__name__ if exception else 'N/A'
-  exc_message = str(exception) if exception else 'N/A'
-  tb = traceback.format_exc()
+    try:    
+        print('Formatting message for Slack...')
 
-  # Send the email with details
-  new_emailer(
-    email_type='500_error',
-    subject='Server error',
-    from_email=settings.DEFAULT_FROM_EMAIL,
-    to_email=settings.EMAIL_TO_ADMINS,  # a list in settings
-    username=request.user.username if request.user.is_authenticated else 'Anonymous',
-    url=url,
-    method=method,
-    headers=headers,
-    body=body,
-    exc_type=exc_type,
-    exc_message=exc_message,
-    traceback=tb,
-  )
+        # Capture request details
+        path = request.get_full_path().lstrip('/')
+        url = f"{settings.URL_FRONT}{path}"
+        method = request.method
+        headers = dict(request.headers)
+        headers_pretty = json.dumps(headers, indent=2)
+        body = request.body.decode('utf-8', errors='replace')
+        body_formatted = f"```{body}```" if body else 'None'
 
-  return render(request, "main/500.html", {'error': 'fubar'}, status=500)
+        # Capture exception details
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        exc_type = exc_type.__name__ if exc_type else 'N/A'
+        exc_message = str(exc_value) if exc_value else 'N/A'
+        tb = ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback)) if exc_traceback else 'N/A'
+
+        # Prepare the Slack message
+        message = (
+            f"*{exc_type.upper()}: {exc_message.upper()}*\n"
+            f"*URL:* {url}\n"
+            f"*Method:* {method}\n"
+            f"*Headers:* ```{headers_pretty}```\n"
+            f"*Body:* {body_formatted}\n"
+            f"*Traceback:* ```{tb}```"
+            f"----------------------------------------"
+        )
+
+        payload = {
+            "text": message
+        }
+
+        # Send the message to Slack
+        response = requests.post(settings.SLACK_ERROR_WEBHOOK, json=payload)
+
+        if response.status_code == 200:
+            # Log the error or handle it accordingly
+            print(f"Message sent to Slack.")
+        else:
+            print(f"Failed to send message to Slack: {response.status_code}, {response.text}")
+
+    except Exception as e:
+        # Handle exceptions that occur while sending the message to Slack (avoid infinite loop!)
+        print(f"Error sending message to Slack: {e}")       
+
+    # Return a user-friendly error page
+    context = { # Rendering of this message is not currently implemented
+        'error_message': 'An unexpected error occurred. Our team has been notified and is looking into the issue. Please try again later.'
+    }
+    try:
+        return render(request, "main/500.html", context, status=500)
+    except Exception as e:
+        # In case rendering the error page fails, return a plain HTTP response
+        return HttpResponseServerError('An unexpected error occurred and we were unable to handle it properly.')
+
+# def server_error_view(request, exception=None):
+#   import traceback
+#   # Capture request details
+#   url = request.build_absolute_uri()
+#   method = request.method
+#   headers = dict(request.headers)
+#   body = request.body.decode('utf-8', errors='replace')
+#
+#   # Capture exception details
+#   exc_type = type(exception).__name__ if exception else 'N/A'
+#   exc_message = str(exception) if exception else 'N/A'
+#   tb = traceback.format_exc()
+#
+#   # Send the email with details
+#   # new_emailer(
+#   #   email_type='500_error',
+#   #   subject='Server error',
+#   #   from_email=settings.DEFAULT_FROM_EMAIL,
+#   #   to_email=settings.EMAIL_TO_ADMINS,  # a list in settings
+#   #   username=request.user.username if request.user.is_authenticated else 'Anonymous',
+#   #   url=url,
+#   #   method=method,
+#   #   headers=headers,
+#   #   body=body,
+#   #   exc_type=exc_type,
+#   #   exc_message=exc_message,
+#   #   traceback=tb,
+#   # )
+#
+#   return render(request, "main/500.html", {'error': 'fubar'}, status=500)
 
 
 # def server_error_view(request, exception=None):
