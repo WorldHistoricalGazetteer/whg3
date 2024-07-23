@@ -115,7 +115,7 @@ urlpatterns = [
     path('dlcelery/', downloader, name='dl_celery'),
     path('task_progress/<str:taskid>/', views.get_task_progress, name='task-progress'),
 
-    path('trigger500/', views.trigger_500_error, name='trigger-500-error'),
+    #path('trigger500/', views.trigger_500_error, name='trigger-500-error'),
 
     # Serve the CDNfallbacks folder with host check
     re_path(r'^CDNfallbacks/(?P<path>.*)$', serve_cdnfallbacks),
