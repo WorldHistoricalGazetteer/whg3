@@ -1057,21 +1057,24 @@ def contact_modal_view(request):
             user_subject = form.cleaned_data['subject']
             user_email = form.cleaned_data['from_email']
             user_message = form.cleaned_data['message']
+            page_url = request.POST.get('page_url', 'No page URL provided')
             
             try:
-                # send email to admins
-                new_emailer(
-                    email_type='contact_form',
-                    subject=user_subject,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    to_email=settings.EMAIL_TO_ADMINS,
-                    reply_to=[user_email],
-                    name=name,
-                    username=username,
-                    user_subject=user_subject,
-                    user_email=user_email,
-                    user_message=user_message,
+                
+                slack_message = (
+                    f"*Subject:* {user_subject}\n"
+                    f"*From:* {name} (username: {username or '(none)'})\n"
+                    f"*Email Address:* {user_email}\n"
+                    f"*Message:* ```{user_message}```\n"
+                    f"*Page URL:* {'Home Page' if page_url == '/' else page_url}\n"
+                    f"----------------------------------------"
                 )
+                response = requests.post(settings.SLACK_CONTACT_WEBHOOK, json={"text": slack_message})
+                if response.status_code == 200:
+                    print(f"Message sent to Slack.")
+                else:
+                    print(f"Failed to send message to Slack: {response.status_code}, {response.text}")
+                    
                 # reply to user
                 new_emailer(
                     email_type='contact_reply',

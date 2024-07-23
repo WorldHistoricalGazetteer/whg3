@@ -54,18 +54,19 @@ function initWHGModal() {
                         event.stopPropagation();
                     } else {
                         event.preventDefault(); // Prevent default form submission
+                        event.preventDefault(); // Prevent default form submission
+                        
+				        var formData = $form.serializeArray();
+				        formData.push({ name: 'page_url', value: window.location.pathname });
+				        var formDataObject = {};
+				        formData.forEach(function(item) {
+				            formDataObject[item.name] = item.value;
+				        });
 
-                        // Append the current URL to the message text
-                        $('#id_message').val(function(_, val) {
-                            return val + ' [Sent from: ' + window.location.pathname + ']';
-                        });
-
-                        // Proceed with AJAX form submission
-                        var formData = $form.serialize();
                         $.ajax({
                             url: $form.data('url'),
                             method: 'POST',
-                            data: formData,
+                            data: formDataObject,
 				            success: function(response, status, xhr) {
 								var contentType = xhr.getResponseHeader("content-type") || "";
 				                if (contentType.includes("application/json")) {
