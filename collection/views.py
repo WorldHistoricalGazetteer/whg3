@@ -165,23 +165,26 @@ def nominator(request, *args, **kwargs):
 
     editors = [settings.DEFAULT_FROM_EDITORIAL]
     # leader_name, leader_email, nominated_title, nominated_id, nominated_url
-    # email to editorial
+    # Slack message to editorial
     try:
-      new_emailer(
-        email_type='nomination',
-        subject='Student Place Collection nominated for publication',
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to_email=editors,
-        leader_name=construct_display_name(request.user),
-        leader_email=request.user.email,
-        owner_name=coll.owner,
-        nominated_title=coll.title,
-        nominated_id=coll.id,
-        nominated_url=settings.URL_FRONT + 'collections/' + str(coll.id),
-      )
+        slack_message = (
+            f"*Subject:* Student Place Collection nominated for publication\n"
+            f"*From:* {construct_display_name(request.user)} (email: {request.user.email})\n"
+            f"*Collection Owner:* {coll.owner}\n"
+            f"*Collection Title:* {coll.title}\n"
+            f"*Collection ID:* {coll.id}\n"
+            f"*Collection URL:* {settings.URL_FRONT}collections/{coll.id}\n"
+            f"----------------------------------------"
+        )
+        response = requests.post(settings.SLACK_NOTIFICATION_WEBHOOK, json={"text": slack_message})
+        if response.status_code == 200:
+            print(f"Message sent to Slack.")
+        else:
+            print(f"Failed to send message to Slack: {response.status_code}, {response.text}")
     except Exception as e:
-      print('Error occurred while sending nomination email', e)
-      logger.exception("Error occurred while sending nomination email")
+      print('Error occurred while sending nomination notification to Slack', e)
+      logger.exception("Error occurred while sending nomination notification to Slack")
+      
     # email to group leader
     try:
       new_emailer(
