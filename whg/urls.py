@@ -44,9 +44,6 @@ urlpatterns = [
     path('resources/', include('resources.urls')),
     path('search/', include('search.urls')),
 
-    # guides have been replaced by documentation.html
-    # all references to guides: and /tutorials should be removed
-    # path('guides/', include('main.urls_guides')),
     path('teaching/', TeachingPortalView.as_view(), name="teaching"),
 
     path('public_data/', PublicListsView.as_view(), name='public-lists'),
@@ -82,7 +79,7 @@ urlpatterns = [
 
     path('v3_new/', TemplateView.as_view(template_name="main/v3_new.html"), name="v3-new"),
 
-    path('modal_home/', views.home_modal, name="modal-home"),
+    #path('modal_home/', views.home_modal, name="modal-home"),
 
     path('announcement/create/', views.AnnouncementCreateView.as_view(), name='announcement-create'),
     path('announcement_delete/<int:pk>/', views.AnnouncementDeleteView.as_view(), name='announcement-delete'),

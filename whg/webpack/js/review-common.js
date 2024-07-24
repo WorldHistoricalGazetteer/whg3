@@ -140,44 +140,12 @@ export function addReviewListeners() {
 	        }
 	    }
 	}
-
-	var page
-	$(".help-matches, .help").click(function() {
-		// let page = $(this).data('id')
-		page = $(this).data('id')
-		$('.selector').dialog('open');
-	})
 	
 	// set pass dropdown as next set with any reviewed=False rows
 	// $("#select_pass").val(passnum);
 	
 	// defaults to string 'None' - no idea why
 	$('.textarea').html('')
-	
-	$(".selector").dialog({
-		resizable: true,
-		autoOpen: false,
-		width: $(window).width() * 0.8,
-		height: $(window).height() * 0.9,
-		title: "WHG Help",
-		modal: true,
-		buttons: {
-			'Close': function() {
-				$(this).dialog('close');
-			}
-		},
-		open: function(event, ui) {
-			$('.selector').load('/media/help/' + page + '.html');
-		},
-		show: {
-			effect: "fade",
-			duration: 400
-		},
-		hide: {
-			effect: "fade",
-			duration: 400
-		}
-	});
 	
 	$('.ext').on('click', function(e) {
 		e.preventDefault();

@@ -71,39 +71,6 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			}
 		});
 
-		let page;
-		// help modals
-		$(".help-matches").click(function() {
-			page = $(this).data('id')
-			console.log('help:', page)
-			$('.selector').dialog('open');
-		})
-		$(".selector").dialog({
-			resizable: false,
-			autoOpen: false,
-			height: 500,
-			width: 500,
-			title: "WHG Help",
-			modal: true,
-			buttons: {
-				'Close': function() {
-					console.log('close dialog');
-					$(this).dialog('close');
-				}
-			},
-			open: function(event, ui) {
-				$('#helpme').load('/media/help/' + page + '.html')
-			},
-			show: {
-				effect: "fade",
-				duration: 400
-			},
-			hide: {
-				effect: "fade",
-				duration: 400
-			}
-		});
-
 		// modal buttons
 		$("#btn_done").on('click', function() {
 			location.reload();

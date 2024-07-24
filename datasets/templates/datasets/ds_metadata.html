@@ -148,7 +148,7 @@
                 <span class="hidden editing-public">{{ form.public }}</span>
 
                 {% if not editorial and ds.public == False %}
-                    <a href="#"><span class="help-matches" data-id="going_public_ds">
+                    <a href="#"><span data-whg-modal="/media/help/going_public_ds.html">
                       Details on making a dataset public. <i class="fas fa-question-circle linky"></i>
                     </span></a>
                 {% endif %}
@@ -370,8 +370,6 @@
       </div>
     </div>
   </div>
-  <!-- .selector is div for modal help, can be placed anywhere-->
-  <div class="selector py-3"><div id="helpme"></div></div>
   {% endif %}
 </div>
 

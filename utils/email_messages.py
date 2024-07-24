@@ -18,7 +18,7 @@ EMAIL_MESSAGES = {
   'welcome': (
     'Greetings {greeting_name}! \n\n'
     'Thank you for registering for the World Historical Gazetteer (WHG). You can visit '
-    '<a href="https://whgazetteer.org/tutorials/guide/">the WHG site guide</a> '
+    '<a href="https://whgazetteer.org/documentation/">the WHG site guide</a> '
     'to learn more about services and features the platform provides.\n\n'
     'WHG is gathering contributions of place data—large and small, and for all regions and historical periods.'
     'WHG provides services for geocoding place names, linking records for "closely matched" places, '

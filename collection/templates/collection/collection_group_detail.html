@@ -378,28 +378,6 @@ Promise.all([Promise.all(datatables_CDN_fallbacks.map(loadResource))])
           setRowEvents();
           {#$("#drftable_list table tbody")[0].rows[0].click()#}
         })
-        
-        // help popups
-        $(".help-matches").click(function(){
-          page=$(this).data('id')
-          {#console.log('help:', page)#}
-          $('.selector').dialog('open');
-        })
-
-        $(".selector").dialog({
-          resizable: false,
-          autoOpen: false,
-          height: 500,
-          width: 700,
-          title: "WHG Help",
-          modal: true,
-          buttons: { 'Close': function() {console.log('close dialog'); $(this).dialog('close');} },
-          open: function(event, ui) {
-            $('#helpme').load('/media/help/'+page+'.html')
-          },
-          show: {effect: "fade",duration: 400 },
-          hide: {effect: "fade",duration: 400 }
-        });
 
         // for collection description only
         $(".a_more_descrip").click(function(){

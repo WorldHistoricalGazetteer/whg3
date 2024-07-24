@@ -308,40 +308,6 @@ export function initUtils(mappy) {
     $('#dots_descrip').show(); // show dots again
     $('.a_more_descrip').show(); // show more link again
   });
-
-  // Help popups and associated .selector used only in Collection Build pages
-  $('.help-matches').click(function() {
-    let page = $(this).data('id');
-    console.log('help:', page);
-    $('.selector').dialog('open');
-  });
-
-  $('.selector').dialog({
-    resizable: false,
-    autoOpen: false,
-    height: 500,
-    width: 700,
-    title: 'WHG Help',
-    modal: true,
-    buttons: {
-      'Close': function() {
-        console.log('close dialog');
-        $(this).dialog('close');
-      },
-    },
-    open: function(event, ui) {
-      $('#helpme').load('/media/help/' + page + '.html');
-    },
-    show: {
-      effect: 'fade',
-      duration: 400,
-    },
-    hide: {
-      effect: 'fade',
-      duration: 400,
-    },
-  });
-
 }
 
 export function minmaxer(timespans) {

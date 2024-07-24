@@ -85,44 +85,11 @@ $(function() {
 		}
 	});
 
-	$("#id_geojson").attr("placeholder", "generated from country codes")
-
-	$(".selector").dialog({
-		resizable: false,
-		autoOpen: false,
-		height: $(window).height() * 0.9,
-		width: $(window).width() * 0.8,
-		title: "WHG Help",
-		modal: true,
-		buttons: {
-			'Close': function() {
-				console.log('close dialog');
-				$(this).dialog('close');
-			}
-		},
-		open: function(event, ui) {
-			$('#helpme').load('/media/help/' + page + '.html')
-		},
-		show: {
-			effect: "fade",
-			duration: 400
-		},
-		hide: {
-			effect: "fade",
-			duration: 400
-		}
-	});
+	$("#id_geojson").attr("placeholder", "generated from country codes");
 	
 	$('#image_selector .thumbnail').enlarge();
 	
 	// ******************* LISTENERS *******************
-
-	// help modals
-	$(".help-matches").click(function() {
-		let page = $(this).data('id')
-		console.log('help:', page)
-		$('.selector').dialog('open');
-	})
 
 	$('#sharing_form').submit(function(event) {
 		// Stop form from submitting normally

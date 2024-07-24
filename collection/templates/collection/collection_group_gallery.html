@@ -81,7 +81,6 @@
 				</div>
 			</div>
 		</div>
-		<div id="essay_modal" class="selector py-3" style="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;"></div>
 	</div>
 {% endblock %}
   
@@ -98,6 +97,7 @@
 			$('.coll-card').css('display', 'block')
 			$("#regions_reset").hide();
 		}
+		
 		function filterResources(region){
 			var $el = $('.coll-card').filter(function () {
 				// console.log('this', $(this).data("regions"))
@@ -116,38 +116,6 @@
 			unique = [...new Set(merged.map(item => item))];
 			$("#regions_reset").show();
 		}
-
-		// var dataurl = '{% url "area-features" %}';
-		var dataurl = 'https://whgazetteer.org/api/area_features?filter=un';
-		$(function () {})
-		// resources
-		$(".resource-card-content").click(function(){
-			rid = $(this).data('id');
-			window.location.href = "/resources/"+rid+"/detail";
-		})
-		$(".modal-link").click(function () {
-			page = $(this).data('id')
-			$('.selector').dialog('open');
-		})
-		$(".selector").dialog({
-				resizable: true,
-				autoOpen: false,
-				width: $(window).width() * 0.5,
-				height: $(window).height() * 0.9,
-				title: "Teaching with World Historical Gazetteer",
-				modal: true,
-				buttons: {
-					'Close': function () {
-						$(this).dialog('close');
-					}
-				},
-				open: function (event, ui) {
-					$('.selector').load('/media/resources/'+page+'.html');
-				},
-				show: { effect: "fade", duration: 400 },
-				hide: { effect: "fade", duration: 400 }
-			});
-
 	</script>
 {% endblock %}
 

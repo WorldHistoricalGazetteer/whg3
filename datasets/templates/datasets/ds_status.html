@@ -148,7 +148,7 @@
                 <span class="pass0auto">
                   | <a href="{% url 'datasets:wd_pass0' tid=task_wdgn.task_id %}">auto-accept</a>
                 </span>
-                <span class="help-matches" data-id="auto-match"><i class="fas fa-question-circle linkypop"></i></span>
+                <span data-whg-modal="/media/help/auto-match.html"><i class="fas fa-question-circle linkypop"></i></span>
                 {% endif %}
                 <br/>
               Pass 1: <b class="mx-1">{{ wdgn_passes.p1 }}</b>
@@ -372,8 +372,6 @@
       </div> <!-- row -->
     </div> <!-- summary -->
   </div> <!-- .tab-content -->
-  <!-- .selector is div for modal help, can be placed anywhere-->
-  <div class="selector py-3"><div id="helpme"></div></div>
 
   {% endif %}
 </div>

@@ -4,32 +4,6 @@ import '../css/builders-dataset.css';
 
 $(function() {
 
-	$(".selector").dialog({
-		resizable: false,
-		autoOpen: false,
-		height: $(window).height() * 0.9,
-		width: $(window).width() * 0.8,
-		title: "WHG Help",
-		modal: true,
-		buttons: {
-			'Close': function() {
-				console.log('close dialog');
-				$(this).dialog('close');
-			}
-		},
-		open: function(event, ui) {
-			$('#helpme').load('/media/help/' + page + '.html')
-		},
-		show: {
-			effect: "fade",
-			duration: 400
-		},
-		hide: {
-			effect: "fade",
-			duration: 400
-		}
-	});
-
 	if (context_status == 'updating') {
 		console.log(context_status, context_context)
 		$("#ds_info").addClass('hidden')
@@ -41,13 +15,6 @@ $(function() {
 	window.dslabel = context_datasetLabel
 
 	// ******************* LISTENERS *******************
-
-	// help modals
-	$(".help-matches").click(function() {
-		let page = $(this).data('id')
-		console.log('help:', page)
-		$('.selector').dialog('open');
-	})
 
 	$('#volunteers').change(function() {
 		var isChecked = $(this).is(':checked');

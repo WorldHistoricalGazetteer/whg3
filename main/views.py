@@ -687,14 +687,13 @@ def dashboard_user_view(request):
   }
   return render(request, 'main/dashboard_user.html', context)
 
-@csrf_exempt
-def home_modal(request):
-  page = request.POST['page']
-  context = {'v1': 'hello there'}
-  url = 'home/' + page + '.html'
-  print('home_modal() url:', url)
-  return render(request, url, context)
-
+# @csrf_exempt
+# def home_modal(request):
+#   page = request.POST['page']
+#   context = {'v1': 'hello there'}
+#   url = 'home/' + page + '.html'
+#   print('home_modal() url:', url)
+#   return render(request, url, context)
 
 # main/views.py
 from django.shortcuts import render

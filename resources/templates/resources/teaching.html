@@ -119,7 +119,7 @@
             a <u>locale</u>. A place is a location that is a setting for social relations. Third, we are referring to
             a <u>sense of place</u>, which means that some  people have had experiences that they associate with
             that location.  In other words, a place is a location in which memorable events have transpired.
-            <span class="modal-link float-end me-1" data-id="essay_rm"><a href="#" >more...</a></span></p>
+            <span class="float-end me-1" data-whg-modal="/media/resources/essay_rm.html"><a href="#" >more...</a></span></p>
           </div>
         </div>
       </div>
@@ -234,10 +234,6 @@
           </div>
         </div>
       </div>
-    </div>
-		<div id="essay_modal" class="selector py-3" s
-         tyle="font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;">
-    </div>
   </div>
 {% endblock %}
 
@@ -401,38 +397,7 @@
 		$(".resource-card-content").click(function() {
 			rid = $(this).data('id');
 			window.location.href = "/resources/" + rid + "/detail";
-		})
-		
-		$(".modal-link").click(function() {
-			page = $(this).data('id')
-			$('.selector').dialog('open');
-		})
-		
-		$(".selector").dialog({
-			resizable: true,
-			autoOpen: false,
-			width: $(window).width() * 0.5,
-			height: $(window).height() * 0.9,
-			title: "Teaching with World Historical Gazetteer",
-			modal: true,
-			buttons: {
-				'Close': function() {
-					$(this).dialog('close');
-				}
-			},
-			open: function(event, ui) {
-				$('.selector').load('/media/resources/' + page + '.html');
-			},
-			show: {
-				effect: "fade",
-				duration: 400
-			},
-			hide: {
-				effect: "fade",
-				duration: 400
-			}
 		});		
-		
 		
 	});
 
