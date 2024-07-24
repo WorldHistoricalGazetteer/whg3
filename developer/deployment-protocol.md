@@ -57,3 +57,11 @@ dcprod run --rm web bash
 ./manage.py showmigrations
 ./manage.py migrate {app}
 ```
+
+### Shortcut
+
+```
+git pull origin staging
+docker restart web
+dcprod run --rm web python manage.py collectstatic --noinput
+```
