@@ -108,14 +108,7 @@ Promise.all([
 			render_area(areaid);
 		},
 	});
-	/*  {#$("#input_area").on('keyup', function(e){#}
-	  {#  // resets stuff#}
-	  {#  if($('#input_area').val().length < 3) {#}
-	  {#    $("#boundsobj").val('')#}
-	  {#    if(typeof arealayer !== 'undefined'){arealayer.removeFrom(mappy)}#}
-	  {#    mappy.setView([38, 10], 2.4)#}
-	  {#  }#}
-	  {# })#}*/
+	
 	let render_area = function(areaid) {
 		$.ajax({
 			url: '/api/area/' + areaid,
@@ -132,19 +125,6 @@ Promise.all([
 			if (typeof arealayer !== 'undefined') {
 				arealayer.removeFrom(mappy);
 			}
-
-			// TODO: NOT YET render new
-			/*    {#arealayer = L.geoJSON(geom, {#}
-			    {#  onEachFeature: function(feature,layer) {#}
-			    {#  f=feature; l=layer;#}
-			    {#  console.log('render_area() f,l',f,l)#}
-			    {#  l.setStyle({"color":"orange","weight":2,"fillOpacity":0})#}
-			    {#  idToArea[areaid] = l#}
-			    {#  popupOptions = {maxWidth: 200};#}
-			    {#  l.bindPopup(data.title, popupOptions);#}
-			    {#  }#}
-			    {# }).addTo(mappy)#}
-			    {#mappy.fitBounds(arealayer.getBounds())#}*/
 		});
 	};
 
@@ -224,55 +204,5 @@ Promise.all([
 
 	// Start rotating announcements every 3 seconds, plus the fade time to ensure one fades out before the next fades in
 	setInterval(rotateAnnouncements, 5000); // Adjust time as needed
-
-	// let currentIndex = 0;
-	// const announcements = document.querySelectorAll(
-	//     '#announcement-container .announcement');
-	// const totalAnnouncements = announcements.length;
-	//
-	// function rotateAnnouncements() {
-	// 	console.log('rotateAnnouncements()');
-	//   // Hide the current announcement
-	//   announcements[currentIndex].style.display = 'none';
-	//
-	//   // Calculate the index of the next announcement to show
-	//   currentIndex = (currentIndex + 1) % totalAnnouncements;
-	//
-	//   // Show the next announcement
-	//   announcements[currentIndex].style.display = 'block';
-	// }
-	//
-	// // Start rotating announcements every 5 seconds
-	// setInterval(rotateAnnouncements, 5000);	//
-	// console.log("DOMContentLoaded event listener has been added");
-
-	let homeModal = document.getElementById('homeModal');
-	homeModal.addEventListener('show.bs.modal', function(event) {
-		// Button that triggered the modal
-		var button = event.relatedTarget;
-		// Extract info from data-bs-* attributes
-		var title = button.getAttribute('data-bs-title');
-		var page = button.getAttribute('data-bs-page');
-		console.log('button_id', page);
-
-		// update the modal title
-		var modalTitle = homeModal.querySelector('.modal-title');
-		modalTitle.textContent = title;
-
-		// get modal body as django template
-		$.ajax({
-			url: homeModalURL, // Passed as a variable in Django template
-			data: {
-				'page': page,
-			},
-			type: 'POST',
-			success: function(response) {
-				$('.modal-body').html(response);
-			},
-			error: function(xhr, status, error) {
-				console.log('status, error', status, error);
-			},
-		});
-	});
 
 });

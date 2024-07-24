@@ -4,38 +4,6 @@ import '../css/builders-dataset-status.css';
 
 $(function() {
 
-	// help modals
-	$(".help-matches").click(function() {
-		let page = $(this).data('id')
-		console.log('help:', page)
-		$('.selector').dialog('open');
-	})
-	$(".selector").dialog({
-		resizable: false,
-		autoOpen: false,
-		height: $(window).height() * 0.6,
-		width: $(window).width() * 0.5,
-		title: "WHG Help",
-		modal: true,
-		buttons: {
-			'Close': function() {
-				console.log('close dialog');
-				$(this).dialog('close');
-			}
-		},
-		open: function(event, ui) {
-			$('#helpme').load('/media/help/' + page + '.html')
-		},
-		show: {
-			effect: "fade",
-			duration: 400
-		},
-		hide: {
-			effect: "fade",
-			duration: 400
-		}
-	});
-
 	// if (context_status == 'updating') {
 	// 	console.log(context_status, context_context)
 	// 	$("#ds_info").addClass('hidden')

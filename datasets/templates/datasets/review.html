@@ -48,7 +48,7 @@
           {% for m in messages %}{{ m }}{% endfor %}
         {% endif %}
 			</span>
-      <span class="help-matches" data-id="review"><i class="fas fa-question-circle linkypop"></i></span>
+      <span data-whg-modal="/media/help/review.html"><i class="fas fa-question-circle linkypop"></i></span>
       <span class="float-end half"><i>task id</i>: {{ task_id|truncatechars:10 }}...</span>
       {% comment %}
       <span class="half float-end me-2">
@@ -318,8 +318,6 @@
       <div class="modal-content"></div>
     </div>
   </div>
-  <div class="selector py-3">
-  <div id="helpme" class="my-3"><div></div>
   </div>
   <script type="text/javascript">
     const featureCollectionJSON = '{{ feature_collection|safe }}';

@@ -44,9 +44,6 @@ urlpatterns = [
     path('resources/', include('resources.urls')),
     path('search/', include('search.urls')),
 
-    # guides have been replaced by documentation.html
-    # all references to guides: and /tutorials should be removed
-    # path('guides/', include('main.urls_guides')),
     path('teaching/', TeachingPortalView.as_view(), name="teaching"),
 
     path('public_data/', PublicListsView.as_view(), name='public-lists'),
