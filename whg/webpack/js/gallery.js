@@ -435,35 +435,6 @@ Promise.all([
     if ($(event.target).closest('a').length === 0) {
       window.location.href = $(this).data('url');
     }
-  })
-  .on('click', '.modal-link', function() {
-    $('.selector').data('modalPageId', $(this).data('id')).dialog('open');
-  });
-
-  $('.selector').dialog({
-    resizable: true,
-    autoOpen: false,
-    width: $(window).width() * 0.5,
-    height: $(window).height() * 0.9,
-    title: 'Teaching with World Historical Gazetteer',
-    modal: true,
-    buttons: {
-      'Close': function() {
-        $(this).dialog('close');
-      },
-    },
-    open: function(event, ui) {
-      $('.selector').
-          load(`/media/resources/${$(this).data('modalPageId')}.html`);
-    },
-    show: {
-      effect: 'fade',
-      duration: 400,
-    },
-    hide: {
-      effect: 'fade',
-      duration: 400,
-    },
   });
 
 });

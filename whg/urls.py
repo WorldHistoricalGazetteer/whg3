@@ -82,7 +82,7 @@ urlpatterns = [
 
     path('v3_new/', TemplateView.as_view(template_name="main/v3_new.html"), name="v3-new"),
 
-    path('modal_home/', views.home_modal, name="modal-home"),
+    #path('modal_home/', views.home_modal, name="modal-home"),
 
     path('announcement/create/', views.AnnouncementCreateView.as_view(), name='announcement-create'),
     path('announcement_delete/<int:pk>/', views.AnnouncementDeleteView.as_view(), name='announcement-delete'),
