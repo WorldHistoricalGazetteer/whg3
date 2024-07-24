@@ -5,12 +5,12 @@
 
 ### Find all files containing given text
 
-#### HTML
+#### Case-sensitive
 ```bash
-find ./ -type f -name "*.html" -exec grep -lz -P "text-to-be-found" {} + | xargs -0 -I {} echo {} | sort -u | sed "s|^./||"
+find ./ -type f \( -name "*.html" -o -name "*.py" -o -name "*.js" \) ! -path "./whg/static/*" ! -path "./static/*" -exec grep -lz -P "Grossner" {} + | xargs -0 -I {} echo {} | sort -u | sed "s|^./||"
 ```
 
-#### Python
+#### Non-case-sensitive
 ```bash
-find ./ -type f -name "*.py" -exec grep -lz -P "text-to-be-found" {} + | xargs -0 -I {} echo {} | sort -u | sed "s|^./||"
+find ./ -type f \( -name "*.html" -o -name "*.py" -o -name "*.js" \) ! -path "./whg/static/*" ! -path "./static/*" -exec grep -lzi -P "grossner" {} + | xargs -0 -I {} echo {} | sort -u | sed "s|^./||"
 ```
