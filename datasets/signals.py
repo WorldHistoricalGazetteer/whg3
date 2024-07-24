@@ -20,22 +20,25 @@ def send_new_dataset_email(sender, instance, **kwargs):
     # if old_instance.ds_status != instance.ds_status and instance.ds_status == 'uploaded':
     # Check if the old_instance.ds_status is None, indicating a new instance
     owner_name = instance.owner.name if instance.owner.name else instance.owner.username
-    if old_instance.ds_status is None and instance.ds_status == 'uploaded':
-      try:
-        if not instance.owner.groups.filter(name='whg_team').exists():
-          new_emailer(
-            email_type='new_dataset',
-            subject='New Dataset Created',
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to_email=settings.EMAIL_TO_ADMINS,
-            name=owner_name,
-            username=instance.owner.username,
-            dataset_title=instance.title,
-            dataset_label=instance.label,
-            dataset_id=instance.id
-          )
-      except Exception as e:
-        logger.exception("Error occurred while sending new dataset email")
+    if old_instance.ds_status is None and instance.ds_status == 'uploaded' and not instance.owner.groups.filter(name='whg_team').exists():
+        try:
+            slack_message = (
+                f"*Subject:* New Dataset Created\n"
+                f"*Owner Name:* {owner_name}\n"
+                f"*Username:* {instance.owner.username}\n"
+                f"*Dataset Title:* {instance.title}\n"
+                f"*Dataset Label:* {instance.label}\n"
+                f"*Dataset ID:* {instance.id}\n"
+                f"----------------------------------------"
+            )
+            response = requests.post(settings.SLACK_NOTIFICATION_WEBHOOK, json={"text": slack_message})
+            if response.status_code == 200:
+                print("Message sent to Slack.")
+            else:
+                print(f"Failed to send message to Slack: {response.status_code}, {response.text}")
+        except Exception as e:
+            print('Error occurred while sending Slack notification for new dataset', e)
+            logger.exception("Error occurred while sending Slack notification for new dataset")
 
 def format_time(seconds):
   minutes, seconds = divmod(seconds, 60)

@@ -910,27 +910,49 @@ def volunteer_view(request):
   if request.method == 'POST':
     form = VolunteerForm(request.POST)
     if form.is_valid():
-      # Extract the data from the form
-      name = form.cleaned_data['name']
-      email = form.cleaned_data['from_email']
-      message = form.cleaned_data['message']
-      dataset_id = form.cleaned_data.get('dataset_id')
-      dataset = Dataset.objects.get(id=dataset_id)
+        # Extract the data from the form
+        name = form.cleaned_data['name']
+        email = form.cleaned_data['from_email']
+        message = form.cleaned_data['message']
+        dataset_id = form.cleaned_data.get('dataset_id')
+        dataset = Dataset.objects.get(id=dataset_id)
+        
+        # Send the email
+        try:
+            new_emailer(
+                email_type='volunteer_offer_owner',
+                subject='WHG Volunteer to Review',
+                from_email=email,
+                to_email=[dataset_owner_email],  # Replace with the dataset owner's email
+                # cc=['admin1@example.com', 'admin2@example.com'],  # Uncomment and replace with the site admins' emails if needed
+                name=name,
+                message=message,
+                dataset_title=dataset.title,
+                dataset_id=dataset.id
+            )
+        except Exception as e:
+            print('Error occurred while sending volunteer offer email to owner', e)
+            logger.exception("Error occurred while sending volunteer offer email to owner")
+        
+        try:
+            slack_message = (
+                f"*Subject:* WHG Volunteer to Review\n"
+                f"*From:* {name} (email: {email})\n"
+                f"*Message:* {message}\n"
+                f"*Dataset Title:* {dataset.title}\n"
+                f"*Dataset ID:* {dataset.id}\n"
+                f"----------------------------------------"
+            )
+            response = requests.post(settings.SLACK_NOTIFICATION_WEBHOOK, json={"text": slack_message})
+            if response.status_code == 200:
+                print("Message sent to Slack.")
+            else:
+                print(f"Failed to send message to Slack: {response.status_code}, {response.text}")
+        except Exception as e:
+            print('Error occurred while sending Slack notification for volunteer offer', e)
+            logger.exception("Error occurred while sending Slack notification for volunteer offer")
 
-      # Send the email
-      new_emailer(
-        email_type='volunteer_offer_owner',
-        subject='WHG Volunteer to Review',
-        from_email=email,
-        to_email=['dataset_owner_email'],  # Replace with the dataset owner's email
-        cc=['admin1@example.com', 'admin2@example.com'],  # Replace with the site admins' emails
-        name=name,
-        message=message,
-        dataset_title = dataset.title,
-        dataset_id = dataset.id
-      )
-
-      return redirect('/success?return=' + request.GET.get('from', '/'))
+        return redirect('/success?return=' + request.GET.get('from', '/'))
   else:
     form = VolunteerForm()
 

@@ -662,25 +662,52 @@ def ds_insert_json(data, pk, user):
     return ({"numrows": len(jdata['features'])})
 
 def failed_insert_notification(user, fn, ds=None):
-  """ send email to user, cc admins when insert fails """
-  from utils.emailing import new_emailer
-  subj = 'World Historical Gazetteer error followup '
-  subj += 'on dataset (' + ds + ')' if ds else ''
-  # kitchen sink
-  new_emailer(
-    email_type='failed_insert',
-    subject=subj,
-    from_email=settings.DEFAULT_FROM_EMAIL,
-    to_email=user.email,
-    cc=settings.EMAIL_TO_ADMINS,
-    reply_to=[settings.EMAIL_TO_ADMINS],
-    greeting_name=user.name if user.name else user.username,
-    filename=fn,
-    dataset_title=ds.title,
-    dataset_label=ds.label,
-    dataset_id=ds.id
-
-  )
+    """Send email to user, cc admins when insert fails"""
+    from utils.emailing import new_emailer
+    
+    # Construct email subject
+    subj = 'World Historical Gazetteer error followup'
+    if ds:
+        subj += f' on dataset ({ds})'
+    
+    # Send email notification
+    try:
+        new_emailer(
+            email_type='failed_insert',
+            subject=subj,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to_email=user.email,
+            # cc=settings.EMAIL_TO_ADMINS,  # Uncomment if needed
+            # reply_to=[settings.EMAIL_TO_ADMINS],  # Uncomment if needed
+            greeting_name=user.name if user.name else user.username,
+            filename=fn,
+            dataset_title=ds.title if ds else 'N/A',
+            dataset_label=ds.label if ds else 'N/A',
+            dataset_id=ds.id if ds else 'N/A'
+        )
+    except Exception as e:
+        print('Error occurred while sending email notification', e)
+        logger.exception("Error occurred while sending email notification")
+    
+    # Send Slack notification
+    try:
+        slack_message = (
+            f"*Subject:* Failed Insertion\n"
+            f"*User:* {user.name if user.name else user.username}\n"
+            f"*Filename:* {fn}\n"
+            f"*Dataset Title:* {ds.title if ds else 'N/A'}\n"
+            f"*Dataset Label:* {ds.label if ds else 'N/A'}\n"
+            f"*Dataset ID:* {ds.id if ds else 'N/A'}\n"
+            f"----------------------------------------"
+        )
+        response = requests.post(settings.SLACK_NOTIFICATION_WEBHOOK, json={"text": slack_message})
+        if response.status_code == 200:
+            print("Message sent to Slack.")
+        else:
+            print(f"Failed to send message to Slack: {response.status_code}, {response.text}")
+    except Exception as e:
+        print('Error occurred while sending Slack notification', e)
+        logger.exception("Error occurred while sending Slack notification")
 
 """ 
 	DEPRECATED 2023-08
