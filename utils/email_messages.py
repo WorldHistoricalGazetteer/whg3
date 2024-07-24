@@ -32,7 +32,7 @@ EMAIL_MESSAGES = {
     'Furthermore, by bringing together all the known references for a place without privileging '
     'any particular one, it decenters colonial name making.\n\n'
     'We are accepting dataset and place collection contributions, which can be published on the site. '
-    'If you would like to set up a consultation to discuss these in more detail, just reply to this message\n\n'
+    'If you would like to set up a consultation to discuss these in more detail, please drop us a line using the Contact Form on the web site.\n\n'
     'regards,\nThe WHG project team'
   ),
   'new_user': (

@@ -45,7 +45,7 @@ def register(request):
                       f'Greetings!\n\n'
                       f'We received a registration request from {email}. Please click the link to confirm your WHG registration:\n\n'
                       f'{confirm_url}')
-      html_content = (f'<p><img src={logo_url} alt="WHG logo"/></p>'
+      html_content = (#f'<p><img src={logo_url} alt="WHG logo"/></p>' ## Image does not properly display in email
                       f'Greetings,<br/>'
                       f'<p>We received a registration request from {email}.</p> '
                       f'<p>Please click this link to <a href="{confirm_url}">confirm your WHG registration</a></p>.')
