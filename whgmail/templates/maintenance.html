@@ -1,0 +1,15 @@
+{% extends "base_email.html" %}
+
+{% block content %}
+    <p>Because you have logged in to WHG within the last month or so, we are letting you know that the World Historical Gazetteer site will be undergoing scheduled maintenance on {{ downdate }}, during the following time window:</p>
+    <p>
+        CEST: 15:00-19:00 <br>
+        London: 14:00-19:00 <br>
+        UTC: 07:00-10:00 <br>
+        EDT (US): 09:00-13:00 <br>
+        Tokyo: 22:00-02:00 Mon <br>
+        Beijing: 21:00-01:00 Mon
+    </p>
+    <p>The site might be temporarily unavailable during this period.</p>
+    <p>Thank you for your understanding.</p>
+{% endblock %}

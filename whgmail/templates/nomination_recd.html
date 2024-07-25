@@ -1,0 +1,7 @@
+{% extends "base_email.html" %}
+
+{% block content %}
+    <p>We received your nomination of the following Place Collection for inclusion in the WHG Student Gallery:</p>
+    <p>{{ nominated_title }} ({{ nominated_id }}) at {{ nominated_url }}</p>
+    <p>We will notify you soon as to whether it has been accepted for publication on the Student Gallery page of the Teaching section.</p>
+{% endblock %}

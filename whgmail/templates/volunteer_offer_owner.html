@@ -1,0 +1,7 @@
+{% extends "base_email.html" %}
+
+{% block content %}
+    <p>The World Historical Gazetteer user {{ greeting_name }} (username: {{ username }}) has offered to help with reconciliation and/or accessioning review on your dataset, "{{ dataset_title }}" ({{ dataset_id }}).</p>
+    <p>You can respond to them at {{ user_email }} (or by replying to this email). When mutually agreed, simply add {{ username }} as a collaborator and they will have the necessary access.</p>
+    <p>We recommend volunteers be made aware of your approach to match decisions before proceeding.</p>
+{% endblock %}

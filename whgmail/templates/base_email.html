@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>{{ subject }}</title>
+    <style>
+        .footer-container {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+        }
+        .footer-container img {
+            height: 5.6rem;
+            margin-right: 1rem;
+        }
+        .footer-content {
+            flex: 1;
+            padding-top: 0.4rem;
+        }
+        .footer-content p {
+            margin: 0;
+            text-align: left;
+            font-size: .7rem;
+            line-height: .7rem;
+            color: #004080;
+        }
+        .footer-content p.title {
+            font-size: 1.2rem;
+            line-height: 1.5rem;
+        }
+        .footer-content a {
+            color: #007bff;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div>
+    	<p><b>Greetings,{{ greeting_name }}</b></p>
+        {% block content %}
+        {% endblock %}
+        <p>Regards,</p>
+        <p>{{ from_name }}</p>
+    </div>
+
+    <div class="footer-container">
+        <img src="https://whgazetteer.org/static/images/whg_logo_135x103.png" 
+             title="WHG Logo" 
+             alt="WHG Logo">
+        <div class="footer-content">
+            <p class="title">World Historical Gazetteer</p>
+            <p>University of Pittsburgh World History Center</p>
+            <p>3900 Wesley W. Posvar Hall</p>
+            <p>230 S. Bouquet Street</p>
+            <p>Pittsburgh, PA 15260</p>
+            <p>USA</p>
+        </div>
+    </div>
+</body>
+</html>

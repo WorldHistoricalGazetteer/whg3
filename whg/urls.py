@@ -43,6 +43,7 @@ urlpatterns = [
     path('places/', include('places.urls')),
     path('resources/', include('resources.urls')),
     path('search/', include('search.urls')),
+    path('whgmail/', include('whgmail.urls')),
 
     path('teaching/', TeachingPortalView.as_view(), name="teaching"),
 

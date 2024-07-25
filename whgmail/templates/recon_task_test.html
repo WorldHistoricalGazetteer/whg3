@@ -1,0 +1,6 @@
+{% extends "base_email.html" %}
+
+{% block content %}
+    <p>Your TEST index alignment task for the {{ dstitle }} dataset ({{ dslabel }}) has completed. {{ counthit }} records got a total of {{ totalhits }} hits.</p>
+    <p>This only previews potential results; no records were written to the index. View results on the "Status" tab of your dataset page (you may have to refresh it).</p>
+{% endblock %}

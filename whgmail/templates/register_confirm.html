@@ -1,0 +1,7 @@
+{% extends "base_email.html" %}
+
+{% block content %}
+	<p>Thank you for registering with the World Historical Gazetteer (WHG). To complete your registration, please click the following link:</p>
+    <p><a href="{{ confirm_url }}">Confirm your registration</a></p>
+    <p><i>If you did not create this account, please ignore this email.</i></p>
+{% endblock %}

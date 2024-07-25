@@ -151,27 +151,28 @@ REST_FRAMEWORK = {
 }
 
 TEMPLATES = [
-  {
-      'BACKEND': 'django.template.backends.django.DjangoTemplates',
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-          os.path.join(BASE_DIR, 'main/templates'),
-            os.path.join(BASE_DIR, 'templates')
-            ],
+            os.path.join(BASE_DIR, 'main/templates'),
+            os.path.join(BASE_DIR, 'whgmail/templates'),
+            os.path.join(BASE_DIR, 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
-          'debug': True,
+            'debug': True,
             'context_processors': [
-              'django.contrib.auth.context_processors.auth',
+                'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.debug',
                 'django.template.context_processors.media',
                 'django.template.context_processors.request',
-                ],
+            ],
             'builtins': [
-              'whg.builtins',
+                'whg.builtins',
             ]
-            },
         },
+    },
 ]
 
 WSGI_APPLICATION = 'whg.wsgi.application'

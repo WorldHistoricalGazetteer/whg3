@@ -1,0 +1,7 @@
+{% extends "base_email.html" %}
+
+{% block content %}
+    <p>The group leader {{ leader_name }} ({{ leader_email }}) has nominated the following Place Collection for inclusion in the WHG Student Gallery:</p>
+    <p>{{ nominated_title }} ({{ nominated_id }})</p>
+    <p>Please review at {{ nominated_url }}</p>
+{% endblock %}

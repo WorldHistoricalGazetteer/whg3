@@ -1,0 +1,26 @@
+{% extends "base_email.html" %}
+
+{% block content %}
+    <p>Thank you for reconciling your data to the WHG’s Wikidata index. We hope it was useful for you! 
+    	A member of the WHG team will review your data and follow up with you about making your dataset public.
+    </p>
+    
+    <p>Once you have completed the reconciliation step and your data is public, you can take the extra important 
+    	step of accessioning it as a contribution to the WHG union index. By taking this step of indexing your record, 
+    	you are creating a fully published scholarly interactive work. Some reasons to do this are:
+    </p>
+    
+    <ul>
+        <li>Your place attestations now appear in index search results, in many cases linked with other attestations for the same place.</li>
+        <li>Because of this, researchers concerned with a particular place or set of places can learn about other people also interested in the same place(s).</li>
+        <li>If any of your records refer to places that were not previously in the WHG index, they will become new "seed" records. In time, people will spend far less effort geocoding their own place records.</li>
+        <li>The WHG API allows the index to be connected to tools such as Pelagios' Recogito. When it is, you and others will have a far easier time annotating historical texts with authority records (and coordinates) for place references.</li>
+    </ul>
+    
+    <p>While simply flagging an uploaded dataset as "public" effectively publishes it, the extra step of accessioning 
+    	to the index makes it that much more useful in the growing ecosystem of linked historical geodata.
+    </p>
+    
+    <p>If you would like to accession your data to the WHG index, a WHG team member can initiate this task for you.
+    </p>
+{% endblock %}

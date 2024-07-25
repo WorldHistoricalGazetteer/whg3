@@ -1,0 +1,19 @@
+{% extends "base_email.html" %}
+
+{% block content %}
+    <p>Thank you for uploading your dataset <strong>{{ dataset_name }}</strong> to the World Historical Gazetteer (WHG). 
+    	Now that you have uploaded your dataset, the next step is to reconcile your data against <b>Wikidata + GeoNames</b>. 
+    	Reconciling your data to Wikidata is a great way to augment your records with geographic coordinates and 
+    	concordance identifiers from multiple authorities.
+    </p>
+    
+    <p>You can initiate the reconciliation task under the "Reconciliation" tab in your workspace. 
+    	For your reference, the WHG has a guide to reconciliation located <a href="https://whgazetteer.org/documentation/#reviewing">here</a>. 
+    	As you work through linking your places, please let us know if there is anything we can do to assist you, 
+    	or any questions we can answer about the process.
+    </p>
+    
+    <p>The WHG team is very excited about adding your records to our database, making your records searchable and 
+    	public if you choose. Please do not hesitate to reach out.
+    </p>
+{% endblock %}
