@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'celery_progress',
     # uncomment for debug toolbar
     # 'debug_toolbar',
+    'django_celery_beat',
     'django_celery_results',
     'django_extensions',
     'django_filters',
@@ -99,8 +100,6 @@ MESSAGE_TAGS = {
         messages.ERROR: 'alert-danger',
  }
 
-# CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", "redis://127.0.0.1:6379/0")
-# CELERY_BROKER_URL = 'redis://localhost:6379'
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://127.0.0.1:6379/0")
 CELERY_ACCEPT_CONTENT = ['application/json']
@@ -112,12 +111,7 @@ CELERY_TASK_EAGER_PROPAGATES = True
 # required per https://github.com/celery/django-celery-results/issues/334
 CELERY_RESULT_EXTENDED = True
 CELERY_RESULT_EXPIRES = None
-
-
-# CELERY_BEAT_SCHEDULE = {
-#   'task01': {
-#       'task': 'datasets.tasks.testy','schedule': crontab(minute='*/2')
-#     }}
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 CAPTCHA_NOISE_FUNCTIONS = (
     'captcha.helpers.noise_arcs',
