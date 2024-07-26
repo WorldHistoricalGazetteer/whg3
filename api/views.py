@@ -1209,7 +1209,7 @@ class PlacesDetailAPIView(View):
             "names": sort_unique([name for place in serialized_places for name in place["names"]], 'toponym'),
             "types": add_urls(sort_unique([type for place in serialized_places for type in place["types"]], 'label')),
             "fclasses": [
-                {"code": fclass, "description": next(description for code, description in FEATURE_CLASSES if code == fclass, "Unknown")}
+                {"code": fclass, "description": next((description for code, description in FEATURE_CLASSES if code == fclass), "Unknown")}
                 for place in serialized_places
                 if place.get("fclasses")  # Ensure fclasses is not None or empty
                 for fclass in place["fclasses"]
@@ -1268,26 +1268,41 @@ class PlaceDetailSourceAPIView(generics.RetrieveAPIView):
     TODO: this needs refactor (make collection.geometries @property?)
 """
 class GeomViewSet(viewsets.ModelViewSet):
-  queryset = PlaceGeom.objects.all()
-  serializer_class = PlaceGeomSerializer
-  #pagination_class = None
-  permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    queryset = PlaceGeom.objects.all()
+    serializer_class = PlaceGeomSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
-  def get_queryset(self):
-    # PlaceGeom objects do not have dataset id or label :^(
-    if 'ds' in self.request.GET:
-      dslabel = self.request.GET.get('ds')
-      dsPlaceIds = Place.objects.values('id').filter(dataset = dslabel)
-      qs = PlaceGeom.objects.filter(place_id__in=dsPlaceIds)
-    elif 'coll' in self.request.GET:
-      cid = self.request.GET.get('coll')
-      coll = Collection.objects.get(id=cid)
-      collPlaceIds = [p.id for p in coll.places.all()]
-      # leaves out polygons and linestrings
-      qs = PlaceGeom.objects.filter(
-        place_id__in=collPlaceIds,
-        jsonb__type__icontains='Point')
-    return qs
+    def get_queryset(self):
+        qs = PlaceGeom.objects.none()  # Initialize with an empty queryset
+
+        if 'ds' in self.request.GET:
+            dslabel = self.request.GET.get('ds')
+            try:
+                # Ensure the dataset exists
+                ds = Dataset.objects.get(label=dslabel)
+                # Directly get the place IDs for the given dataset
+                dsPlaceIds = Place.objects.filter(dataset=ds).values_list('id', flat=True)
+                if not dsPlaceIds:
+                    return qs  # Return an empty queryset if no place IDs are found
+                qs = PlaceGeom.objects.filter(place_id__in=dsPlaceIds)
+            except Dataset.DoesNotExist:
+                return qs  # Return an empty queryset if the dataset does not exist
+
+        elif 'coll' in self.request.GET:
+            cid = self.request.GET.get('coll')
+            try:
+                coll = Collection.objects.get(id=cid)
+                collPlaceIds = [p.id for p in coll.places.all()]
+                if not collPlaceIds:
+                    return qs  # Return an empty queryset if no place IDs are found
+                qs = PlaceGeom.objects.filter(
+                    place_id__in=collPlaceIds,
+                    jsonb__type__icontains='Point'
+                )
+            except Collection.DoesNotExist:
+                return qs  # Return an empty queryset if the collection does not exist
+
+        return qs
 
 """
     /api/geojson/{{ ds.id }}
