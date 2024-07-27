@@ -31,10 +31,8 @@ git checkout -b staging_backup_YYYYMMDD && git checkout staging
 ```bash
 watch -n 1 'netstat -tn | grep ":443" | grep ESTABLISHED'
 ```
-- Stop existing containers:
-```bash
-dcprod down
-```
+
+##### Rebuild Docker Images:
 - Rebuild web container image if `requirements.py` includes new packages:
 ```bash
 dcprod build --no-cache web
@@ -43,10 +41,18 @@ dcprod build --no-cache web
 ```bash
 dcprod build --no-cache webpack
 ```
-- Start the containers:
+
+##### Apply Zero-Downtime Deployment:
+- Rebuild and Restart Containers (without stopping the entire stack):
 ```bash
-dcprod up -d --build
+docker-compose -f docker-compose-prod.yml up -d --no-deps --build web
 ```
+- OR restart the Entire Stack (with minimal downtime):
+```bash
+docker-compose -f docker-compose-prod.yml up -d --build
+```
+
+#### Static Files & Migrations
 - Collect static files:
 ```bash
 dcprod run --rm web python manage.py collectstatic --noinput
