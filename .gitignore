@@ -114,3 +114,4 @@ docker-compose-sg.yml
 data/ca-cert.pem
 /whg/authorisation
 /whg/certs
+/compose/local/postgres/credentials
