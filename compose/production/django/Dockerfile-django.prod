@@ -6,27 +6,36 @@ ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV MAX_MAP_COUNT 262144
 
-RUN groupadd whgadmin
-# 1000 matches whgadmin in ubuntu
+# Create user and group (1000 matches whgadmin in ubuntu)
 ARG WHGADMIN_PASSWORD
-RUN useradd -rm -d /home/whgadmin -g whgadmin -s /bin/bash \
+RUN groupadd whgadmin && \
+    useradd -rm -d /home/whgadmin -g whgadmin -s /bin/bash \
     -G sudo -u 1000 whgadmin -p "$(openssl passwd -1 $WHGADMIN_PASSWORD)"
 
 EXPOSE 8003
 
+# Install necessary packages
 RUN apt-get update && \
-	apt-get install -y lsb-release curl gnupg2 && \
-	# Update to ensure inclusion of the PostgreSQL 15 repository
-	echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list && \
+    apt-get install -y lsb-release curl gnupg2 && \
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
     curl -sSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
     apt-get update && \
-    apt-get install -y build-essential python3-gdal libpq-dev sudo nano locate curl redis-server postgresql-15 postgis \
-    # clean up unused files
-    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
-    && rm -rf /var/lib/apt/lists/*
+    apt-get install -y build-essential python3-gdal libpq-dev sudo nano locate curl redis-server postgresql-15 postgis wget && \
+    wget https://github.com/wal-g/wal-g/releases/download/v3.0.2/wal-g-pg-ubuntu-20.04-amd64.tar.gz && \
+    tar -zxvf wal-g-pg-ubuntu-20.04-amd64.tar.gz && \
+    mv wal-g-pg-ubuntu-20.04-amd64 /usr/local/bin/wal-g && \
+    rm wal-g-pg-ubuntu-20.04-amd64.tar.gz && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /app/static && chown -R whgadmin:whgadmin /app/static
+# Create necessary directories and set permissions
+RUN mkdir -p /app/static /etc/wal-g && \
+    chown -R whgadmin:whgadmin /app/static
 
+# Copy Google Cloud Services authentication file to container
+COPY ./credentials/whg-backup-430708-e33f94999eab.json /etc/wal-g/gcs-credentials.json
+RUN chown whgadmin:root /etc/wal-g/gcs-credentials.json
+
+# Set up Python environment
 COPY ./requirements.txt /tmp/requirements.txt
 RUN python -m venv /py && \
     /py/bin/pip install --upgrade pip && \
@@ -34,41 +43,23 @@ RUN python -m venv /py && \
     rm -rf /tmp
 
 # Set correct ownership and permissions for the migrations directories
-RUN chown -R whgadmin:root /py/lib/python3.10/site-packages/captcha/migrations/
-RUN chown -R whgadmin:root /py/lib/python3.10/site-packages/guardian/migrations/
+RUN chown -R whgadmin:root /py/lib/python3.10/site-packages/captcha/migrations/ /py/lib/python3.10/site-packages/guardian/migrations/
 
+# Copy and set up scripts
 COPY ./compose/local/django/entrypoint.sh /entrypoint
-# convert Windows line endings to UNIX line endings.
-RUN sed -i 's/\r$//g' /entrypoint
-RUN chmod +x /entrypoint
-
 COPY ./compose/production/django/start-prod.sh /start
-RUN sed -i 's/\r$//g' /start
-RUN chmod +x /start
-
 COPY ./compose/local/django/start-livereload.sh /start-livereload
-RUN sed -i 's/\r$//g' /start-livereload
-RUN chmod +x /start-livereload
-
 COPY ./compose/local/django/celery/worker/start.sh /start-celeryworker
-RUN sed -i 's/\r$//g' /start-celeryworker
-RUN chmod +x /start-celeryworker
-
 COPY ./compose/local/django/celery/beat/start.sh /start-celerybeat
-RUN sed -i 's/\r$//g' /start-celerybeat
-RUN chmod +x /start-celerybeat
-
 COPY ./compose/local/django/celery/flower/start.sh /start-flower
-RUN sed -i 's/\r$//g' /start-flower
-RUN chmod +x /start-flower
 
-## Create debug log file
-#RUN mkdir -p /whg/logs
-#RUN touch /whg/logs/debug.log
-#RUN chmod 777 /whg/logs/debug.log
+# Convert Windows line endings to UNIX line endings and enable execution.
+RUN sed -i 's/\r$//g' /entrypoint /start /start-livereload /start-celeryworker /start-celerybeat /start-flower && \
+    chmod +x /entrypoint /start /start-livereload /start-celeryworker /start-celerybeat /start-flower
 
 WORKDIR /app
 
+## Create debug log file
 RUN mkdir -p /app/whg/logs && \
     touch /app/whg/logs/debug.log && \
     chmod 777 /app/whg/logs/debug.log
