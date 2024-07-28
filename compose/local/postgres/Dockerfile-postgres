@@ -25,3 +25,6 @@ RUN chmod +x /docker-entrypoint-initdb.d/10_postgis.sh
 
 # Copy the custom configuration file for Write Ahead Logging and Archiving
 COPY ./postgresql.wal-settings.conf /etc/postgresql/postgresql.wal-settings.conf
+
+# Copy Google Cloud Services authentication file to container
+COPY ./whg/authorisation/whg-backup-430708-e33f94999eab.json /etc/wal-g/gcs-credentials.json
