@@ -19,12 +19,12 @@ RUN wget https://github.com/wal-g/wal-g/releases/download/v3.0.2/wal-g-pg-ubuntu
 RUN mkdir -p /docker-entrypoint-initdb.d
 
 # Copy the startup script
-COPY ./start-postgres.sh /docker-entrypoint-initdb.d/10_postgis.sh
+COPY ./compose/local/postgres/start-postgres.sh /docker-entrypoint-initdb.d/10_postgis.sh
 RUN sed -i 's/\r$//g' /docker-entrypoint-initdb.d/10_postgis.sh
 RUN chmod +x /docker-entrypoint-initdb.d/10_postgis.sh
 
 # Copy the custom configuration file for Write Ahead Logging and Archiving
-COPY ./postgresql.wal-settings.conf /etc/postgresql/postgresql.wal-settings.conf
+COPY ./compose/local/postgres/postgresql.wal-settings.conf /etc/postgresql/postgresql.wal-settings.conf
 
 # Copy Google Cloud Services authentication file to container
-COPY ../../../whg/authorisation/whg-backup-430708-e33f94999eab.json /etc/wal-g/gcs-credentials.json
+COPY ./whg/authorisation/whg-backup-430708-e33f94999eab.json /etc/wal-g/gcs-credentials.json

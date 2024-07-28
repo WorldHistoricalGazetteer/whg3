@@ -56,8 +56,8 @@ services:
       - WHG3
     platform: linux/amd64
     build:
-      context: ./compose/local/postgres
-      dockerfile: Dockerfile-postgres
+      context: .
+      dockerfile: ./compose/local/postgres/Dockerfile-postgres
     container_name: postgres
     volumes:
       - dev-db-data:/var/lib/postgresql/data
@@ -75,8 +75,8 @@ services:
       - WHG3
     platform: linux/amd64
     build:
-      context: ./compose/local/postgres
-      dockerfile: Dockerfile-postgres
+      context: .
+      dockerfile: ./compose/local/postgres/Dockerfile-postgres
     container_name: postgres_beta
     volumes:
       - beta-db-data:/var/lib/postgresql/data
