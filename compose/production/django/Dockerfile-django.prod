@@ -32,7 +32,7 @@ RUN mkdir -p /app/static /etc/wal-g && \
     chown -R whgadmin:whgadmin /app/static
 
 # Copy Google Cloud Services authentication file to container
-COPY ./credentials/whg-backup-430708-e33f94999eab.json /etc/wal-g/gcs-credentials.json
+COPY ./whg/authorisation/whg-backup-430708-e33f94999eab.json /etc/wal-g/gcs-credentials.json
 RUN chown whgadmin:root /etc/wal-g/gcs-credentials.json
 
 # Set up Python environment
