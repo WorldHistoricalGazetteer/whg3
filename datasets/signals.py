@@ -9,6 +9,7 @@ from django.dispatch import receiver
 from .models import Dataset, DatasetFile
 from utils.emailing import new_emailer
 
+import requests
 import logging
 
 logger = logging.getLogger(__name__)
