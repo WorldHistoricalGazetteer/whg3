@@ -29,7 +29,7 @@ RUN mkdir -p /app/static && chown -R whgadmin:whgadmin /app/static
 
 COPY ./requirements.txt /tmp/requirements.txt
 RUN python -m venv /py && \
-    /py/bin/pip install --upgrade pip && \
+    /py/bin/pip install --upgrade pip setuptools wheel && \
     /py/bin/pip install -r /tmp/requirements.txt && \
     rm -rf /tmp
 
