@@ -10,7 +10,7 @@ RUN apt-get update && \
     apt-get install -y postgresql-client-15
 
 # Install WAL-G
-RUN wget https://github.com/wal-g/wal-g/releases/download/v3.0.2/wal-g-pg-ubuntu-20.04-amd64.tar.gz && \
-    tar -zxvf wal-g-pg-ubuntu-20.04-amd64.tar.gz && \
-    mv wal-g-pg-ubuntu-20.04-amd64 /usr/local/bin/wal-g && \
-    rm wal-g-pg-ubuntu-20.04-amd64.tar.gz
+#RUN wget https://github.com/wal-g/wal-g/releases/download/v3.0.2/wal-g-pg-ubuntu-20.04-amd64.tar.gz && \
+#    tar -zxvf wal-g-pg-ubuntu-20.04-amd64.tar.gz && \
+#    mv wal-g-pg-ubuntu-20.04-amd64 /usr/local/bin/wal-g && \
+#    rm wal-g-pg-ubuntu-20.04-amd64.tar.gz

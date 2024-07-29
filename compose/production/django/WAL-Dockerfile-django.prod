@@ -21,11 +21,19 @@ RUN apt-get update && \
     curl -sSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
     apt-get update && \
     apt-get install -y build-essential python3-gdal libpq-dev sudo nano locate curl redis-server postgresql-15 postgis wget && \
+    #wget https://github.com/wal-g/wal-g/releases/download/v3.0.2/wal-g-pg-ubuntu-20.04-amd64.tar.gz && \
+    #tar -zxvf wal-g-pg-ubuntu-20.04-amd64.tar.gz && \
+    #mv wal-g-pg-ubuntu-20.04-amd64 /usr/local/bin/wal-g && \
+    #rm wal-g-pg-ubuntu-20.04-amd64.tar.gz && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Create necessary directories and set permissions
-RUN mkdir -p /app/static && \
+RUN mkdir -p /app/static /etc/wal-g && \
     chown -R whgadmin:whgadmin /app/static
+
+# Copy Google Cloud Services authentication file to container
+#COPY ./whg/authorisation/whg-backup-430708-e33f94999eab.json /etc/wal-g/gcs-credentials.json
+#RUN chown whgadmin:root /etc/wal-g/gcs-credentials.json
 
 # Set up Python environment
 COPY ./requirements.txt /tmp/requirements.txt
