@@ -64,16 +64,16 @@ services:
       - WHG3
     platform: linux/amd64
     build:
-      context: ./compose/local/postgres
-      dockerfile: Dockerfile-postgres
+      context: .
+      dockerfile: ./compose/local/postgres/Dockerfile-postgres
     container_name: postgres
+    command: -c hba_file=/etc/pg_hba.conf 
     volumes:
       - dev-db-data:/var/lib/postgresql/data
-      - ./data:/app/data
+      - ./compose/local/postgres/pg_hba.conf:/etc/pg_hba.conf
+      - ./compose/local/postgres/data:/app/data
     env_file:
       - ./.env/.dev-whg3
-    environment:
-      POSTGRES_HOST_AUTH_METHOD: trust  # Allow all connections without password authentication
     ports:
       - 5432:5432
 
