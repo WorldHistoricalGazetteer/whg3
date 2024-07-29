@@ -88,7 +88,7 @@ services:
     env_file:
       - ./.env/.prod-whg3
     environment:
-      # POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_HOST_AUTH_METHOD: trust
       DB_NAME: whgv3beta
     ports:
       - 127.0.0.1:5434:5432
