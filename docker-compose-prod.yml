@@ -57,7 +57,8 @@ services:
     platform: linux/amd64
     build:
       context: .
-      dockerfile: ./compose/production/postgres/Dockerfile-postgres.prod
+      #dockerfile: ./compose/production/postgres/Dockerfile-postgres.prod
+      dockerfile: ./compose/local/postgres/Dockerfile-postgres
     container_name: postgres
     volumes:
       - dev-db-data:/var/lib/postgresql/data
@@ -76,7 +77,8 @@ services:
     platform: linux/amd64
     build:
       context: .
-      dockerfile: ./compose/production/postgres/Dockerfile-postgres.prod
+      #dockerfile: ./compose/production/postgres/Dockerfile-postgres.prod
+      dockerfile: ./compose/local/postgres/Dockerfile-postgres
     container_name: postgres_beta
     #command: -c config_file=/etc/postgresql.conf -c hba_file=/etc/pg_hba.conf
     volumes:
