@@ -25,7 +25,6 @@ from django.contrib.auth.models import Group
 User = get_user_model()
 from collection.models import Collection
 from datasets.models import Dataset
-from elasticsearch8 import Elasticsearch
 from main.models import Log, Tileset
 from places.models import PlaceGeom
 from utils.mapdata import mapdata, mapdata_task, reset_standard_mapdata
@@ -34,7 +33,6 @@ import requests
 import subprocess
 import time
 from urllib.parse import urlparse
-from datetime import datetime
 
 @shared_task()
 def calculate_geometry_complexity(dataset_id):
@@ -306,10 +304,3 @@ def check_elasticsearch(command):
             return False
     except subprocess.CalledProcessError as e:
         return False
-
-@shared_task
-def backup_data():
-    
-    es = settings.ES_CONN
-    snapshot_name = f'Elastic_{datetime.now().strftime("%Y%m%d%H%M%S")}'
-    es.snapshot.create(repository='GCS-WHG-Backups', snapshot=snapshot_name, wait_for_completion=True)

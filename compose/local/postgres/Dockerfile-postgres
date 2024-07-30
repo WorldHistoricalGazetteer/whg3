@@ -1,21 +1,5 @@
-# Use the PostGIS Docker image
+# Replace default postgres startup script
 FROM postgis/postgis:15-3.4
-
-# Install pgBackRest and ssh
-RUN apt-get update && \
-    apt-get install -y \
-    pgbackrest \
-    openssh-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create directories for pgBackRest and logs
-RUN mkdir -p /etc/pgbackrest \
-    /var/log/pgbackrest
-
-# Add pgBackRest configuration files and credentials
-COPY ./credentials/pgbackrest.conf /etc/pgbackrest/pgbackrest.conf
-COPY ./credentials/whg-backup-430708-e33f94999eab.json /etc/pgbackrest/gcs-credentials.json
-
 RUN mkdir -p /docker-entrypoint-initdb.d
 COPY ./start-postgres.sh /docker-entrypoint-initdb.d/10_postgis.sh
 RUN sed -i 's/\r$//g' /docker-entrypoint-initdb.d/10_postgis.sh
