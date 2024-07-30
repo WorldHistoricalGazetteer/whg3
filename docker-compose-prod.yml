@@ -20,7 +20,6 @@ services:
         - WHGADMIN_PASSWORD
     image: whg3_web:latest
     container_name: web
-    command: gunicorn whg.wsgi:application --bind 0.0.0.0:8003 --timeout 1200 -w 4
     volumes:
       - .:/app
       - /home/whgadmin/sites/whgv3/media:/app/media
@@ -38,8 +37,7 @@ services:
       - "host.docker.internal:host-gateway"
     depends_on:
       - redis
-      - db_beta:
-            condition: service_healthy
+      - db_beta
     restart: unless-stopped
     ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
 #     deploy:
@@ -92,11 +90,6 @@ services:
     ports:
       - 127.0.0.1:5434:5432
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
     ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
 #     deploy:
 #       replicas: 2
