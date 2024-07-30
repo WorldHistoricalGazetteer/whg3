@@ -57,7 +57,7 @@ services:
     platform: linux/amd64
     build:
       context: .
-      dockerfile: ./compose/production/postgres/Dockerfile-postgres.prod
+      dockerfile: ./compose/local/postgres/Dockerfile-postgres
     container_name: postgres
     volumes:
       - dev-db-data:/var/lib/postgresql/data
@@ -76,7 +76,7 @@ services:
     platform: linux/amd64
     build:
       context: .
-      dockerfile: ./compose/production/postgres/Dockerfile-postgres.prod
+      dockerfile: ./compose/local/postgres/Dockerfile-postgres
     container_name: postgres_beta
     volumes:
       - beta-db-data:/var/lib/postgresql/data
@@ -86,7 +86,6 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
       DB_NAME: whgv3beta
-      USE_WAL_SETTINGS: "True"
     ports:
       - 127.0.0.1:5434:5432
 
