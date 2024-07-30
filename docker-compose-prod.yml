@@ -38,7 +38,8 @@ services:
       - "host.docker.internal:host-gateway"
     depends_on:
       - redis
-      - db_beta
+      - db_beta:
+            condition: service_healthy
     restart: unless-stopped
     ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
 #     deploy:
@@ -91,6 +92,11 @@ services:
     ports:
       - 127.0.0.1:5434:5432
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
 #     deploy:
 #       replicas: 2
