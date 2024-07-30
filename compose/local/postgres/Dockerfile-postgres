@@ -1,27 +1,21 @@
 # Use the PostGIS Docker image
 FROM postgis/postgis:15-3.4
 
-# Install necessary packages
-RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    lsb-release
+# Install pgBackRest and ssh
+RUN apt-get update && \
+    apt-get install -y \
+    pgbackrest \
+    openssh-client \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install WAL-G (Used in docker-compose-prod.yml only)
-RUN wget https://github.com/wal-g/wal-g/releases/download/v3.0.2/wal-g-pg-ubuntu-20.04-amd64.tar.gz \
-    && tar -zxvf wal-g-pg-ubuntu-20.04-amd64.tar.gz \
-    && mv wal-g-pg-ubuntu-20.04-amd64 /usr/local/bin/wal-g \
-    && rm wal-g-pg-ubuntu-20.04-amd64.tar.gz
+# Create directories for pgBackRest and logs
+RUN mkdir -p /etc/pgbackrest \
+    /var/log/pgbackrest
 
-# Clean up
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# Add pgBackRest configuration files and credentials
+COPY ./credentials/pgbackrest.conf /etc/pgbackrest/pgbackrest.conf
+COPY ./credentials/whg-backup-430708-e33f94999eab.json /etc/pgbackrest/gcs-credentials.json
 
-# Copy Google Cloud Services authentication file to container
-RUN mkdir -p /etc/wal-g
-COPY ./credentials/whg-backup-430708-e33f94999eab.json /etc/wal-g/gcs-credentials.json
-RUN chown postgres:postgres /etc/wal-g/gcs-credentials.json
-
-# Set up the entrypoint script
 RUN mkdir -p /docker-entrypoint-initdb.d
 COPY ./start-postgres.sh /docker-entrypoint-initdb.d/10_postgis.sh
 RUN sed -i 's/\r$//g' /docker-entrypoint-initdb.d/10_postgis.sh
