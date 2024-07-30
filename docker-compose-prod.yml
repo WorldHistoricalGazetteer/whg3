@@ -51,36 +51,33 @@ services:
     volumes:
       - .:/app
 
-  db:
-    networks:
-      - WHG3
-    platform: linux/amd64
-    build:
-      context: ./compose/local/postgres
-      dockerfile: Dockerfile-postgres
-    container_name: postgres
-    volumes:
-      - dev-db-data:/var/lib/postgresql/data
-      - ./data:/app/data
-    env_file:
-      - ./.env/.prod-whg3
-    environment:
-      POSTGRES_HOST_AUTH_METHOD: trust  # Allow all connections without password authentication
-      DB_NAME: whgv3
-    ports:
-      - 127.0.0.1:5433:5432
+#   db:
+#     networks:
+#       - WHG3
+#     platform: linux/amd64
+#     build:
+#       context: ./compose/local/postgres
+#       dockerfile: Dockerfile-postgres
+#     container_name: postgres
+#     volumes:
+#       - dev-db-data:/var/lib/postgresql/data
+#       - ./data:/app/data
+#     env_file:
+#       - ./.env/.prod-whg3
+#     environment:
+#       POSTGRES_HOST_AUTH_METHOD: trust  # Allow all connections without password authentication
+#       DB_NAME: whgv3
+#     ports:
+#       - 127.0.0.1:5433:5432
 
   db_beta:
     networks:
       - WHG3
     platform: linux/amd64
-    build:
-      context: ./compose/local/postgres
-      dockerfile: Dockerfile-postgres
+    image: postgis/postgis:15-3.4
     container_name: postgres_beta
     volumes:
-      - beta-db-data:/var/lib/postgresql/data
-      - ./data:/app/data
+      - /home/whgadmin/databases:/var/lib/postgresql/data
     env_file:
       - ./.env/.prod-whg3
     environment:
