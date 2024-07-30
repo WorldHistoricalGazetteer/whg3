@@ -81,7 +81,7 @@ services:
     command: -c config_file=/etc/postgresql.conf
     volumes:
       - ./compose/production/postgres/postgresql-wal.conf:/etc/postgresql.conf
-      - ./compose/production/postgres/pg_hba.conf:/var/lib/postgresql/data/pg_hba.conf
+      - ./compose/production/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf
       - ./whg/authorisation/whg-backup-430708-e33f94999eab.json:/etc/wal-g/gcs-credentials.json
       - beta-db-data:/var/lib/postgresql/data
       - ./data:/app/data
