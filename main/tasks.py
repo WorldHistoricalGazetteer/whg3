@@ -271,7 +271,7 @@ def check_services():
     """
     # Define the URLs and commands for checking services
     services = {
-        'web': 'http://web:8003/',  # URL to check if web service is up (use port :8000 for dev Docker network)
+        'web': 'http://web:8003/',  # URL to check if web service is up
         'redis': 'redis-cli -h redis ping',  # Redis CLI command to check if Redis is up
         'postgres': 'pg_isready -h postgres -p 5432'  # PostgreSQL CLI command to check if Postgres is up
     }

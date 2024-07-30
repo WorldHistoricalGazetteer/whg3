@@ -50,20 +50,28 @@ def OpenAPIView(request):
     return render(request, 'main/openapi.html', {'schema_url': '/api/schema/'})
 
 def get_task_progress(request, taskid):
-    task = AsyncResult(taskid)    
+    print(f"Requested URL: {request.path}, taskid: {taskid}")
+    
+    task = AsyncResult(taskid)
+    print(f"Task state: {task.state}, task result: {task.result}")
     response_data = {
         'state': task.state,
-        'progress': {
+        'progress': {}
+    }
+    
+    try:
+        if task.result:
+            response_data['progress'] = {
+                'current': task.result.get('current', 0),
+                'total': task.result.get('total', 0)
+            }
+    except ObjectDoesNotExist: # Handle the case where task.result raises DoesNotExist exception
+        response_data['progress'] = {
             'current': 0,
             'total': 0
         }
-    }
     
-    if isinstance(task.result, dict):
-        response_data['progress'] = {
-            'current': task.result.get('current', 0),
-            'total': task.result.get('total', 0)
-        }
+    print('Response data:', response_data)
     
     return JsonResponse(response_data)
 
