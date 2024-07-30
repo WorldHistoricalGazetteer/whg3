@@ -17,7 +17,7 @@ RUN wget https://github.com/wal-g/wal-g/releases/download/v3.0.2/wal-g-pg-ubuntu
 
 # Append settings from the custom configuration file for Write Ahead Logging and Archiving
 COPY ./compose/production/postgres/postgresql.wal-settings.conf /etc/postgresql/postgresql.wal-settings.conf
-RUN cat /etc/postgresql/postgresql.wal-settings.conf >> /usr/share/postgresql/15/postgresql.conf.sample
+RUN cat /etc/postgresql/postgresql.wal-settings.conf >> /usr/share/postgresql/postgresql.conf.sample
 
 # Copy Google Cloud Services authentication file to container
 COPY ./whg/authorisation/whg-backup-430708-e33f94999eab.json /etc/wal-g/gcs-credentials.json
