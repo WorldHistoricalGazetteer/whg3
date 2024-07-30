@@ -78,10 +78,7 @@ services:
       context: .
       dockerfile: ./compose/production/postgres/Dockerfile-postgres.prod
     container_name: postgres_beta
-    command: -c config_file=/etc/postgresql.conf
     volumes:
-      - ./compose/production/postgres/postgresql-wal.conf:/etc/postgresql.conf
-      - ./whg/authorisation/whg-backup-430708-e33f94999eab.json:/etc/wal-g/gcs-credentials.json
       - beta-db-data:/var/lib/postgresql/data
       - ./data:/app/data
     env_file:
