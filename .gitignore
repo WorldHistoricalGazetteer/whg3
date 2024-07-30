@@ -112,3 +112,4 @@ package-lock.json
 docker-compose-sg.yml
 /.ssh
 data/ca-cert.pem
+/whg/authorisation
