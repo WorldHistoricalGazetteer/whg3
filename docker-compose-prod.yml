@@ -38,36 +38,21 @@ services:
       - redis
       - db
 
-#   webpack:
-#     networks:
-#       - WHG3
-#     platform: linux/amd64
-#     build:
-#       context: .
-#       dockerfile: ./compose/local/webpack/Dockerfile-webpack
-#     image: whg3_webpack
-#     container_name: webpack
-#     volumes:
-#       - .:/app
-
-#   db:
-#     networks:
-#       - WHG3
-#     platform: linux/amd64
-#     build:
-#       context: ./compose/local/postgres
-#       dockerfile: Dockerfile-postgres
-#     container_name: postgres
-#     volumes:
-#       - dev-db-data:/var/lib/postgresql/data
-#       - ./data:/app/data
-#     env_file:
-#       - ./.env/.prod-whg3
-#     environment:
-#       POSTGRES_HOST_AUTH_METHOD: trust  # Allow all connections without password authentication
-#       DB_NAME: whgv3
-#     ports:
-#       - 127.0.0.1:5433:5432
+  db:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    image: postgis/postgis:15-3.4
+    container_name: postgres
+    volumes:
+      - /home/whgadmin/databases/v2:/var/lib/postgresql/data
+    env_file:
+      - ./.env/.prod-whg3
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      DB_NAME: whgv3
+    ports:
+      - 127.0.0.1:5433:5432
 
   db_beta:
     networks:
@@ -76,7 +61,7 @@ services:
     image: postgis/postgis:15-3.4
     container_name: postgres_beta
     volumes:
-      - /home/whgadmin/databases:/var/lib/postgresql/data
+      - /home/whgadmin/databases/v3:/var/lib/postgresql/data
     env_file:
       - ./.env/.prod-whg3
     environment:
@@ -136,9 +121,3 @@ services:
     depends_on:
       - redis
       - db
-
-volumes:
-  app:
-  dev-db-data:
-  beta-db-data:
-  data_dumps_volume:
