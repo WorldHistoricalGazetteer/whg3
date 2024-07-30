@@ -33,16 +33,14 @@ RUN useradd -rm -d /home/whgadmin -g whgadmin -s /bin/bash \
 EXPOSE 8003
 
 # Update package lists, install necessary packages, and clean up afterwards
-RUN apt-get update && \                            # Update the list of available packages and their versions
-    apt-get install -y lsb-release curl gnupg2 && \ # Install packages for handling system information, downloading files, and managing GPG keys
-    # Update to ensure inclusion of the PostgreSQL 15 repository
-    echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list && \ # Add PostgreSQL repository to the sources list
-    curl -sSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \ # Download and add the GPG key for PostgreSQL repository
-    apt-get update && \                         # Update package lists again to include packages from the new PostgreSQL repository
-    apt-get install -y build-essential python3-gdal libpq-dev sudo nano locate curl redis-server postgresql-15 postgis \ # Install essential build tools, Python GDAL bindings, PostgreSQL development libraries, and other utilities including PostgreSQL and PostGIS
-    # clean up unused files
-    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \ # Remove unnecessary packages and dependencies
-    && rm -rf /var/lib/apt/lists/*              # Remove cached package lists to reduce image size
+RUN apt-get update && \
+    apt-get install -y lsb-release curl gnupg2 && \
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list && \
+    curl -sSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
+    apt-get update && \
+    apt-get install -y build-essential python3-gdal libpq-dev sudo nano locate curl redis-server postgresql-15 postgis \
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create the /app/static directory and set ownership to the 'whgadmin' user
 RUN mkdir -p /app/static && chown -R whgadmin:whgadmin /app/static
