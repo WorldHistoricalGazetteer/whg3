@@ -30,7 +30,6 @@ from places.models import PlaceGeom
 from utils.mapdata import mapdata, mapdata_task, reset_standard_mapdata
 import json
 import requests
-import subprocess
 import time
 from urllib.parse import urlparse
 
@@ -247,78 +246,4 @@ def get_tileset_task_progress(request):
         progress_data.append({'category': category, 'id': id, 'action': action, 'progress': task_progress.decode('utf-8') if task_progress else None})
 
     return JsonResponse(progress_data, safe=False)
-
-@shared_task
-def ping_healthchecks(service, success):
-    """
-    Ping Healthchecks.io for a specific service.
-    """
-    hc_urls = getattr(settings, 'HC_URLS', {})
-    url = f'{hc_urls.get(service, "")}{"" if success else "/fail"}'
-    try:
-        response = requests.get(url)
-        if response.status_code == 200:
-            print(f"{service.capitalize()} ping {'successful' if success else 'failed'}")
-        else:
-            print(f"{service.capitalize()} ping failed with status code {response.status_code}")
-    except Exception as e:
-        print(f"Error pinging Healthchecks.io for {service}: {e}")
-
-@shared_task
-def check_services():
-    """
-    Check the status of various services and ping Healthchecks.io accordingly.
-    """
-    # Define the URLs and commands for checking services
-    services = {
-        'web': 'http://web:8000/',  # URL to check if web service is up
-        'redis': 'redis-cli -h redis ping',  # Redis CLI command to check if Redis is up
-        'postgres': 'pg_isready -h postgres -p 5432'  # PostgreSQL CLI command to check if Postgres is up
-    }
     
-    # Dictionary to track service statuses
-    service_statuses = {
-        'web': True,
-        'redis': True,
-        'postgres': True
-    }
-
-    # Check web service
-    try:
-        response = requests.get(services['web'])
-        if response.status_code == 200:
-            print("Web service is up")
-        else:
-            print("Web service is down")
-            service_statuses['web'] = False
-    except requests.RequestException as e:
-        print(f"Web service check failed: {e}")
-        service_statuses['web'] = False
-
-    # Check Redis service
-    try:
-        result = subprocess.run(services['redis'], shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if result.returncode == 0:
-            print("Redis service is up")
-        else:
-            print("Redis service is down")
-            service_statuses['redis'] = False
-    except subprocess.CalledProcessError as e:
-        print(f"Redis service check failed: {e}")
-        service_statuses['redis'] = False
-
-    # Check PostgreSQL service
-    try:
-        result = subprocess.run(services['postgres'], shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if result.returncode == 0:
-            print("PostgreSQL service is up")
-        else:
-            print("PostgreSQL service is down")
-            service_statuses['postgres'] = False
-    except subprocess.CalledProcessError as e:
-        print(f"PostgreSQL service check failed: {e}")
-        service_statuses['postgres'] = False
-
-    # Ping Healthchecks.io for each service based on its status
-    for service, status in service_statuses.items():
-        ping_healthchecks(service, status)

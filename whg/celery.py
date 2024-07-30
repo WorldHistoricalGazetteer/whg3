@@ -8,11 +8,18 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "whg.settings")
 
 app = Celery('whg')
 
-# Load configuration from Django settings with the CELERY_ namespace
-app.config_from_object('django.conf:settings', namespace='CELERY')
+# Using a string here means the worker don't have to serialize
+# the configuration object to child processes.
+# - namespace='CELERY' means all celery-related configuration keys
+#   should have a `CELERY_` prefix.
 
-# Configure broker URL explicitly if needed; otherwise, use CELERY_BROKER_URL from settings
+app.config_from_object('django.conf:settings', namespace='CELERY')
 app.conf.broker_url = 'redis://localhost:6379'
+app.conf.result_expires = None
+
+
+# override Beat default daily cleanup task
+app.conf.result_expires = None
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
