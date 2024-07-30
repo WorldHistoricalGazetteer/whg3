@@ -118,7 +118,7 @@ services:
       - ./.env/.prod-whg3
     depends_on:
       - redis
-      - db
+      - db_beta
     restart: unless-stopped
 
   celery_beat:
@@ -133,7 +133,7 @@ services:
       - ./.env/.prod-whg3
     depends_on:
       - redis
-      - db
+      - db_beta
     restart: unless-stopped
 
   flower:
@@ -150,5 +150,5 @@ services:
       - 5557:5555
     depends_on:
       - redis
-      - db
+      - db_beta
     restart: unless-stopped
