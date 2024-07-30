@@ -44,15 +44,12 @@ create_database() {
 }
 
 # Append custom settings to postgresql.conf
-echo "USE_WAL_SETTINGS: $USE_WAL_SETTINGS"
 if [ "$USE_WAL_SETTINGS" = "True" ]; then
   CONFIG_FILE="/var/lib/postgresql/data/postgresql.conf"
   CUSTOM_CONFIG_FILE="/etc/postgresql/postgresql.wal-settings.conf"
   if [ -f "$CONFIG_FILE" ] && [ -f "$CUSTOM_CONFIG_FILE" ]; then
     echo "Adding custom configuration file..."
     echo "include = '/etc/postgresql/postgresql.wal-settings.conf'" >> $CONFIG_FILE
-  else
-    echo "Failed to locate necessary WAL configuration files"
   fi
 else
   echo "Skipping WAL archiving configuration."
