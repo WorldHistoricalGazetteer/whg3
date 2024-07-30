@@ -249,58 +249,76 @@ def get_tileset_task_progress(request):
     return JsonResponse(progress_data, safe=False)
 
 @shared_task
+def ping_healthchecks(service, success):
+    """
+    Ping Healthchecks.io for a specific service.
+    """
+    hc_urls = getattr(settings, 'HC_URLS', {})
+    url = f'{hc_urls.get(service, "")}{"" if success else "/fail"}'
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            print(f"{service.capitalize()} ping {'successful' if success else 'failed'}")
+        else:
+            print(f"{service.capitalize()} ping failed with status code {response.status_code}")
+    except Exception as e:
+        print(f"Error pinging Healthchecks.io for {service}: {e}")
+
+@shared_task
 def check_services():
     """
     Check the status of various services and ping Healthchecks.io accordingly.
     """
-    services = settings.HEALTHCHECKS
-    service_statuses = {service: check_service(details) for service, details in services.items()}
+    # Define the URLs and commands for checking services
+    services = {
+        'web': 'http://web:8003/',  # URL to check if web service is up (use port :8000 for dev Docker network)
+        'redis': 'redis-cli -h redis ping',  # Redis CLI command to check if Redis is up
+        'postgres': 'pg_isready -h postgres -p 5432'  # PostgreSQL CLI command to check if Postgres is up
+    }
     
-    for service, status in service_statuses.items():
-        try:
-            requests.get(f"{services[service]['healthcheck_url']}{'' if status else '/fail'}")
-        except requests.RequestException as e:
-            logger.error(f"Failed to ping Healthchecks.io for {service}: {e}")
+    # Dictionary to track service statuses
+    service_statuses = {
+        'web': True,
+        'redis': True,
+        'postgres': True
+    }
 
-def check_service(service_details):
-    service_type = service_details['type']
-    if service_type == 'http':
-        return check_http(service_details['url'])
-    elif service_type == 'command':
-        return check_command(service_details['command'])
-    elif service_type == 'elasticsearch':
-        return check_elasticsearch(service_details['command'])
-    else:
-        raise ValueError(f"Unknown service type: {service_type}")
-
-def check_http(url):
+    # Check web service
     try:
-        response = requests.get(url)
-        return response.status_code == 200
-    except requests.RequestException as e:
-        return False
-
-def check_command(command):
-    try:
-        result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return result.returncode == 0
-    except subprocess.CalledProcessError as e:
-        return False
-
-def check_elasticsearch(command):
-    try:
-        result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if result.returncode == 0:
-            try:
-                output = result.stdout.decode()
-                response_json = json.loads(output)
-                if 'status' in response_json and response_json['status'] in ['green', 'yellow']:
-                    return True
-                else:
-                    return False
-            except json.JSONDecodeError as e:
-                return False
+        response = requests.get(services['web'])
+        if response.status_code == 200:
+            print("Web service is up")
         else:
-            return False
+            print("Web service is down")
+            service_statuses['web'] = False
+    except requests.RequestException as e:
+        print(f"Web service check failed: {e}")
+        service_statuses['web'] = False
+
+    # Check Redis service
+    try:
+        result = subprocess.run(services['redis'], shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            print("Redis service is up")
+        else:
+            print("Redis service is down")
+            service_statuses['redis'] = False
     except subprocess.CalledProcessError as e:
-        return False
+        print(f"Redis service check failed: {e}")
+        service_statuses['redis'] = False
+
+    # Check PostgreSQL service
+    try:
+        result = subprocess.run(services['postgres'], shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            print("PostgreSQL service is up")
+        else:
+            print("PostgreSQL service is down")
+            service_statuses['postgres'] = False
+    except subprocess.CalledProcessError as e:
+        print(f"PostgreSQL service check failed: {e}")
+        service_statuses['postgres'] = False
+
+    # Ping Healthchecks.io for each service based on its status
+    for service, status in service_statuses.items():
+        ping_healthchecks(service, status)
