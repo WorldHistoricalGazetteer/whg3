@@ -36,7 +36,7 @@ services:
       - "host.docker.internal:host-gateway"
     depends_on:
       - redis
-      - db_beta
+      #- db_beta
     restart: unless-stopped
     ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
 #     deploy:
