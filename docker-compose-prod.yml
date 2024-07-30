@@ -85,7 +85,16 @@ services:
       - ./.env/.prod-whg3
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
-      DB_NAME: whgv3beta
+      # TODO: Replace the following with ${DB_NAME_BETA}
+      DB_NAME: whgv3beta 
+      # WAL-G Configuration
+      WALE_GS_PREFIX: gs://whg-backups
+      GOOGLE_APPLICATION_CREDENTIALS: /etc/wal-g/gcs-credentials.json
+      PGHOST: ${DB_HOST_BETA}
+      PGPORT: ${DB_PORT_BETA}
+      PGUSER: ${DB_USER_BETA}
+      PGPASSWORD: ${DB_PASSWORD_BETA}
+      PGDATABASE: ${DB_NAME_BETA}
     ports:
       - 127.0.0.1:5434:5432
 
