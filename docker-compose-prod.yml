@@ -49,29 +49,29 @@ services:
 #         constraints:
 #           - node.role == manager
 
-  db:
-    networks:
-      - WHG3
-    platform: linux/amd64
-    image: postgis/postgis:15-3.4
-    container_name: postgres
-    volumes:
-      - /home/whgadmin/databases/v2:/var/lib/postgresql/data
-    env_file:
-      - ./.env/.prod-whg3
-    environment:
-      POSTGRES_HOST_AUTH_METHOD: trust # SHOULD BE RECONFIGURED FOR PRODUCTION ENVIRONMENT
-      DB_NAME: whgv3
-    ports:
-      - 127.0.0.1:5433:5432
-    restart: unless-stopped
-    ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
-#     deploy:
-#       replicas: 1
-#       resources:
-#         limits:
-#           memory: 1G
-#           cpus: "1.0"
+#   db:
+#     networks:
+#       - WHG3
+#     platform: linux/amd64
+#     image: postgis/postgis:15-3.4
+#     container_name: postgres
+#     volumes:
+#       - /home/whgadmin/databases/v2:/var/lib/postgresql/data
+#     env_file:
+#       - ./.env/.prod-whg3
+#     environment:
+#       POSTGRES_HOST_AUTH_METHOD: trust # SHOULD BE RECONFIGURED FOR PRODUCTION ENVIRONMENT
+#       DB_NAME: whgv3
+#     ports:
+#       - 127.0.0.1:5433:5432
+#     restart: unless-stopped
+#     ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
+# #     deploy:
+# #       replicas: 1
+# #       resources:
+# #         limits:
+# #           memory: 1G
+# #           cpus: "1.0"
 
   db_beta:
     networks:
