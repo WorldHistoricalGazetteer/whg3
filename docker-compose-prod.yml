@@ -18,7 +18,7 @@ services:
       dockerfile: ./compose/production/django/Dockerfile-django.prod
       args:
         - WHGADMIN_PASSWORD
-    image: whg3_web
+    image: whg3_web:latest
     command: /start
     container_name: web
     volumes:
@@ -37,6 +37,17 @@ services:
     depends_on:
       - redis
       - db
+    restart: unless-stopped
+    ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
+#     deploy:
+#       replicas: 3
+#       resources:
+#         limits:
+#           memory: 500M
+#           cpus: "0.5"
+#       placement:
+#         constraints:
+#           - node.role == manager
 
   db:
     networks:
@@ -49,10 +60,18 @@ services:
     env_file:
       - ./.env/.prod-whg3
     environment:
-      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_HOST_AUTH_METHOD: trust # SHOULD BE RECONFIGURED FOR PRODUCTION ENVIRONMENT
       DB_NAME: whgv3
     ports:
       - 127.0.0.1:5433:5432
+    restart: unless-stopped
+    ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
+#     deploy:
+#       replicas: 1
+#       resources:
+#         limits:
+#           memory: 1G
+#           cpus: "1.0"
 
   db_beta:
     networks:
@@ -65,10 +84,18 @@ services:
     env_file:
       - ./.env/.prod-whg3
     environment:
-      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_HOST_AUTH_METHOD: trust # SHOULD BE RECONFIGURED FOR PRODUCTION ENVIRONMENT
       DB_NAME: whgv3beta
     ports:
       - 127.0.0.1:5434:5432
+    restart: unless-stopped
+    ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
+#     deploy:
+#       replicas: 2
+#       resources:
+#         limits:
+#           memory: 1G
+#           cpus: "1.0"
 
   redis:
     networks:
@@ -77,6 +104,7 @@ services:
     image: redis:bullseye
     container_name: redis
     ports: [6380:6379]
+    restart: unless-stopped
 
   celery_worker:
     image: whg3_web
@@ -91,6 +119,7 @@ services:
     depends_on:
       - redis
       - db
+    restart: unless-stopped
 
   celery_beat:
     image: whg3_web
@@ -105,6 +134,7 @@ services:
     depends_on:
       - redis
       - db
+    restart: unless-stopped
 
   flower:
     image: whg3_web
@@ -121,3 +151,4 @@ services:
     depends_on:
       - redis
       - db
+    restart: unless-stopped
