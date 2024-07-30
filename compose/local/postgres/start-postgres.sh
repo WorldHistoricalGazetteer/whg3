@@ -43,17 +43,6 @@ create_database() {
   echo "Data loaded successfully."
 }
 
-# Append custom settings to postgresql.conf
-if [ "$USE_WAL_SETTINGS" = "True" ]; then
-  CONFIG_FILE="/var/lib/postgresql/data/postgresql.conf"
-  CUSTOM_CONFIG_FILE="/etc/postgresql/postgresql.wal-settings.conf"
-  if [ -f "$CONFIG_FILE" ] && [ -f "$CUSTOM_CONFIG_FILE" ]; then
-    echo "Adding custom configuration file..."
-    echo "include = '/etc/postgresql/postgresql.wal-settings.conf'" >> $CONFIG_FILE
-  fi
-else
-  echo "Skipping WAL archiving configuration."
-fi
 
 if [ "$USE_BETA_DB" = "True" ]; then
   create_database "$DB_NAME_BETA" "$DB_USER_BETA" "$DB_PASSWORD_BETA"
