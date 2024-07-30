@@ -107,7 +107,7 @@ services:
     restart: unless-stopped
 
   celery_worker:
-    image: whg3_web
+    image: whg3_web:latest
     command: /start-celeryworker
     container_name: celery_worker
     networks:
@@ -122,7 +122,7 @@ services:
     restart: unless-stopped
 
   celery_beat:
-    image: whg3_web
+    image: whg3_web:latest
     command: /start-celerybeat
     container_name: celery_beat
     networks:
@@ -137,7 +137,7 @@ services:
     restart: unless-stopped
 
   flower:
-    image: whg3_web
+    image: whg3_web:latest
     command: /start-flower
     container_name: flower
     networks:
