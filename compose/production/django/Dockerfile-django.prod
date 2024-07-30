@@ -2,31 +2,52 @@ FROM --platform=linux/amd64 python:3.10.7-slim-bullseye
 
 LABEL maintainer="WHC @ Pitt"
 
+# Ensure that Python output is sent straight to the terminal without buffering
 ENV PYTHONUNBUFFERED 1
+
+# Prevent Python from writing `.pyc` files to disk
 ENV PYTHONDONTWRITEBYTECODE 1
+
+# Set a system-level configuration to increase the maximum number of memory map areas a process may have
+# This can be required for certain applications that need more memory mappings
 ENV MAX_MAP_COUNT 262144
 
-RUN groupadd whgadmin
-# 1000 matches whgadmin in ubuntu
+# Define an argument that can be passed during the build process
+# This will be used to set the password for the 'whgadmin' user
 ARG WHGADMIN_PASSWORD
+
+# Create a Unix group named 'whgadmin' in the container's OS
+RUN groupadd whgadmin
+
+# Create a Unix user named 'whgadmin' with specific attributes:
+# - Home directory: /home/whgadmin
+# - Default shell: /bin/bash
+# - User group: whgadmin
+# - Additional group: sudo (for administrative privileges)
+# - User ID: 1000 (matches 'whgadmin' in Ubuntu)
+# - Password: Set using hashed value derived from environment variable $WHGADMIN_PASSWORD
 RUN useradd -rm -d /home/whgadmin -g whgadmin -s /bin/bash \
     -G sudo -u 1000 whgadmin -p "$(openssl passwd -1 $WHGADMIN_PASSWORD)"
-
+    
+# Expose port 8003 to allow communication to/from the container on this port
 EXPOSE 8003
 
-RUN apt-get update && \
-	apt-get install -y lsb-release curl gnupg2 && \
-	# Update to ensure inclusion of the PostgreSQL 15 repository
-	echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list && \
-    curl -sSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
-    apt-get update && \
-    apt-get install -y build-essential python3-gdal libpq-dev sudo nano locate curl redis-server postgresql-15 postgis \
+# Update package lists, install necessary packages, and clean up afterwards
+RUN apt-get update && \                            # Update the list of available packages and their versions
+    apt-get install -y lsb-release curl gnupg2 && \ # Install packages for handling system information, downloading files, and managing GPG keys
+    # Update to ensure inclusion of the PostgreSQL 15 repository
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list && \ # Add PostgreSQL repository to the sources list
+    curl -sSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \ # Download and add the GPG key for PostgreSQL repository
+    apt-get update && \                         # Update package lists again to include packages from the new PostgreSQL repository
+    apt-get install -y build-essential python3-gdal libpq-dev sudo nano locate curl redis-server postgresql-15 postgis \ # Install essential build tools, Python GDAL bindings, PostgreSQL development libraries, and other utilities including PostgreSQL and PostGIS
     # clean up unused files
-    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \ # Remove unnecessary packages and dependencies
+    && rm -rf /var/lib/apt/lists/*              # Remove cached package lists to reduce image size
 
+# Create the /app/static directory and set ownership to the 'whgadmin' user
 RUN mkdir -p /app/static && chown -R whgadmin:whgadmin /app/static
 
+# Install Python dependencies
 COPY ./requirements.txt /tmp/requirements.txt
 RUN python -m venv /py && \
     /py/bin/pip install --upgrade pip && \
@@ -37,44 +58,28 @@ RUN python -m venv /py && \
 RUN chown -R whgadmin:root /py/lib/python3.10/site-packages/captcha/migrations/
 RUN chown -R whgadmin:root /py/lib/python3.10/site-packages/guardian/migrations/
 
+# Copy all required scripts, convert CRLF to LF and make executable
 COPY ./compose/local/django/entrypoint.sh /entrypoint
-# convert Windows line endings to UNIX line endings.
-RUN sed -i 's/\r$//g' /entrypoint
-RUN chmod +x /entrypoint
-
-COPY ./compose/production/django/start-prod.sh /start
-RUN sed -i 's/\r$//g' /start
-RUN chmod +x /start
-
 COPY ./compose/local/django/start-livereload.sh /start-livereload
-RUN sed -i 's/\r$//g' /start-livereload
-RUN chmod +x /start-livereload
-
 COPY ./compose/local/django/celery/worker/start.sh /start-celeryworker
-RUN sed -i 's/\r$//g' /start-celeryworker
-RUN chmod +x /start-celeryworker
-
 COPY ./compose/local/django/celery/beat/start.sh /start-celerybeat
-RUN sed -i 's/\r$//g' /start-celerybeat
-RUN chmod +x /start-celerybeat
-
 COPY ./compose/local/django/celery/flower/start.sh /start-flower
-RUN sed -i 's/\r$//g' /start-flower
-RUN chmod +x /start-flower
-
-## Create debug log file
-#RUN mkdir -p /whg/logs
-#RUN touch /whg/logs/debug.log
-#RUN chmod 777 /whg/logs/debug.log
-
+RUN sed -i 's/\r$//g' /entrypoint /start-livereload /start-celeryworker /start-celerybeat /start-flower && \
+    chmod +x /entrypoint /start-livereload /start-celeryworker /start-celerybeat /start-flower
+    
+# Set the working directory for the following instructions
 WORKDIR /app
 
+# Create the necessary directories and files with appropriate permissions for debug.log
 RUN mkdir -p /app/whg/logs && \
     touch /app/whg/logs/debug.log && \
     chmod 777 /app/whg/logs/debug.log
 
+# Update the PATH environment variable to include the /py/bin directory
 ENV PATH="/py/bin:$PATH"
 
+# Switch to the 'whgadmin' user for running subsequent commands
 USER whgadmin
 
+# Set the entry point for the container, specifying the script to execute when the container starts
 ENTRYPOINT ["/entrypoint"]

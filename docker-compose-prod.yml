@@ -19,8 +19,8 @@ services:
       args:
         - WHGADMIN_PASSWORD
     image: whg3_web:latest
-    command: /start
     container_name: web
+    command: gunicorn whg.wsgi:application --bind 0.0.0.0:8003 --timeout 1200 -w 4
     volumes:
       - .:/app
       - /home/whgadmin/sites/whgv3/media:/app/media
@@ -29,6 +29,8 @@ services:
       - /home/whgadmin/sites/whgv3/cache:/app/cache
     env_file:
       - ./.env/.prod-whg3
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust # SHOULD BE RECONFIGURED FOR PRODUCTION ENVIRONMENT
     ports:
       - 8001:8003
     user: "1000:1000"
@@ -36,7 +38,7 @@ services:
       - "host.docker.internal:host-gateway"
     depends_on:
       - redis
-      #- db_beta
+      - db_beta
     restart: unless-stopped
     ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
 #     deploy:
