@@ -17,50 +17,35 @@ import logging
 logger = logging.getLogger(__name__)
 import traceback
 from urllib.parse import urljoin
+from whgmail.messaging import WHGmail
 
 def register(request):
-  if request.method == 'POST':
-    form = UserModelForm(request.POST)
-    if form.is_valid():
-      user = form.save(commit=False)
-      user.set_password(request.POST['password1'])
-      user.save()
-      # rest of your code
+    if request.method == 'POST':
+        form = UserModelForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.set_password(request.POST['password1'])
+            user.save()
 
-      email = request.POST['email']
-      logo_url = request.build_absolute_uri(settings.STATIC_URL + 'images/whg_logo_38h.png')
-      signer = Signer()
-      token = signer.sign(user.pk)
-      print('token in register()', token)
-      # confirm_url = request.build_absolute_uri(reverse('accounts:confirm-email', args=[token]))
-
-      # Get the relative URL
-      relative_url = reverse('accounts:confirm-email', args=[token])
-      # Join the base URL with the relative URL
-      confirm_url = urljoin(settings.URL_FRONT, relative_url)
-
-      subject = 'Confirm your registration at World Historical Gazetteer'
-      text_content = (f'World Historical Gazetteer\n\n'
-                      f'-----------------------------\n\n'
-                      f'Greetings!\n\n'
-                      f'We received a registration request from {email}. Please click the link to confirm your WHG registration:\n\n'
-                      f'{confirm_url}')
-      html_content = (#f'<p><img src={logo_url} alt="WHG logo"/></p>' ## Image does not properly display in email
-                      f'Greetings,<br/>'
-                      f'<p>We received a registration request from {email}.</p> '
-                      f'<p>Please click this link to <a href="{confirm_url}">confirm your WHG registration</a></p>.')
-
-      email = EmailMultiAlternatives(subject, text_content, settings.DEFAULT_FROM_EMAIL, [user.email])
-      email.attach_alternative(html_content, "text/html")
-      email.send(fail_silently=False)
-
-      return redirect('accounts:confirmation-sent')
-
+            signer = Signer()
+            token = signer.sign(user.pk)
+            
+            context = {
+                'subject': 'Confirm your registration at World Historical Gazetteer',
+                'confirm_url': urljoin(settings.URL_FRONT, reverse('accounts:confirm-email', args=[token])),
+                'user': user,
+            }
+              
+            WHGmail(request, {
+                'template': 'register_confirm'
+            })
+            
+            return redirect('accounts:confirmation-sent')
+        else:
+            return render(request, 'register/register.html', {'form': form})
     else:
-      return render(request, 'register/register.html', {'form': form})
-  else:
-    form = UserModelForm()
-    return render(request, 'register/register.html', {'form': form})
+        form = UserModelForm()
+        return render(request, 'register/register.html', {'form': form})
 
 
 def login(request):
@@ -125,29 +110,6 @@ def confirm_email(request, token):
     logger.error(f"Exception while confirming email for token {token}: {str(e)}")
     traceback.print_exc()
     return render(request, 'register/invalid_token.html', {'error': str(e)})
-# def confirm_email(request, token):
-#   signer = Signer()
-#   try:
-#     user_id = signer.unsign(token)
-#     user = User.objects.get(pk=user_id)
-#     user.email_confirmed = True
-#     user.save()
-#
-#     # Redirect to a success page
-#     return redirect('accounts:confirmation-success')
-#   except BadSignature:
-#     # Handle invalid token
-#     traceback.print_exc()
-#     return render(request, 'register/invalid_token.html', {'error': 'Invalid token.'})
-#   except User.DoesNotExist:
-#     # Handle non-existent user
-#     traceback.print_exc()
-#     return render(request, 'register/invalid_token.html', {'error': 'User does not exist.'})
-#   except Exception as e:
-#     # Handle any other exceptions
-#     traceback.print_exc()
-#     return render(request, 'register/invalid_token.html', {'error': str(e)})
-
 
 def confirmation_sent(request):
   return render(request, 'register/confirmation_sent.html')
