@@ -18,7 +18,6 @@ services:
       dockerfile: ./compose/production/django/Dockerfile-django.prod
       args:
         - WHGADMIN_PASSWORD
-        - APP_PORT
     image: whg3_web:latest
     container_name: web
     volumes:
@@ -32,7 +31,7 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust # SHOULD BE RECONFIGURED FOR PRODUCTION ENVIRONMENT
     ports:
-      - "8001:${APP_PORT}"
+      - 8001:8003
     user: "1000:1000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -87,9 +86,9 @@ services:
       - ./.env/.prod-whg3
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust # SHOULD BE RECONFIGURED FOR PRODUCTION ENVIRONMENT
-      DB_NAME: "${DB_NAME_BETA}"
+      DB_NAME: whgv3beta
     ports:
-      - "127.0.0.1:5434:${DB_PORT_BETA}"
+      - 127.0.0.1:5434:5432
     restart: unless-stopped
     ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
 #     deploy:

@@ -12,9 +12,9 @@ ENV PYTHONDONTWRITEBYTECODE 1
 # This can be required for certain applications that need more memory mappings
 ENV MAX_MAP_COUNT 262144
 
-# Define arguments that can be passed during the build process
+# Define an argument that can be passed during the build process
+# This will be used to set the password for the 'whgadmin' user
 ARG WHGADMIN_PASSWORD
-ARG APP_PORT
 
 # Create a Unix group named 'whgadmin' in the container's OS
 RUN groupadd whgadmin
@@ -29,8 +29,8 @@ RUN groupadd whgadmin
 RUN useradd -rm -d /home/whgadmin -g whgadmin -s /bin/bash \
     -G sudo -u 1000 whgadmin -p "$(openssl passwd -1 $WHGADMIN_PASSWORD)"
     
-# Expose APP_PORT to allow communication to/from the container on this port
-EXPOSE ${APP_PORT}
+# Expose port 8003 to allow communication to/from the container on this port
+EXPOSE 8003
 
 # Update package lists, install necessary packages, and clean up afterwards
 RUN apt-get update && \
