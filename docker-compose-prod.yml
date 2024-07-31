@@ -82,13 +82,12 @@ services:
     platform: linux/amd64
     image: postgis/postgis:15-3.4
     container_name: postgres_beta
+    command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
     volumes:
       - /home/whgadmin/databases/v3:/var/lib/postgresql/data
+      - ./compose/production/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf
     env_file:
       - ./.env/.prod-whg3
-    environment:
-      POSTGRES_HOST_AUTH_METHOD: trust # SHOULD BE RECONFIGURED FOR PRODUCTION ENVIRONMENT
-      DB_NAME: "${DB_NAME_BETA}"
     ports:
       - "127.0.0.1:5434:${DB_PORT_BETA}"
     restart: unless-stopped
