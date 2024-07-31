@@ -61,6 +61,11 @@ docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 run --rm 
 ```bash
 docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 exec web bash
 ```
+or, more simply:
+```bash
+docker exec -it web bash
+```
+
 ```bash
 ./manage.py showmigrations
 ./manage.py migrate
