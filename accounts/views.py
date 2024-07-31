@@ -257,3 +257,4 @@ def update_profile(request):
       # 'profile_form': profile_form,
       'context': context
     })
+    
