@@ -52,6 +52,11 @@ docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 up -d --n
 docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 up -d --build
 ```
 
+#### Start web container without build:
+```bash
+docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 up -d --no-deps web
+```
+
 #### Static Files & Migrations
 - Collect static files:
 ```bash
