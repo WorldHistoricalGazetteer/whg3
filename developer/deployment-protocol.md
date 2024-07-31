@@ -59,9 +59,11 @@ docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 run --rm 
 ```
 - If necessary, apply Django migrations:
 ```bash
-docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 run --rm web bash
+docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 exec web bash
+```
+```bash
 ./manage.py showmigrations
-./manage.py migrate {app}
+./manage.py migrate
 ```
 
 ### Test/Revert new image
