@@ -18,6 +18,7 @@ services:
       dockerfile: ./compose/production/django/Dockerfile-django.prod
       args:
         - WHGADMIN_PASSWORD
+        - APP_PORT
     image: whg3_web:latest
     container_name: web
     volumes:
