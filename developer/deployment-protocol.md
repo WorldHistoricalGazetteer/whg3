@@ -35,31 +35,31 @@ watch -n 1 'netstat -tn | grep ":443" | grep ESTABLISHED'
 ##### Rebuild Docker Images:
 - Rebuild web container image if `requirements.py` includes new packages:
 ```bash
-dcprod build --no-cache web
+docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 build --no-cache web
 ```
 - Rebuild webpack image if `package.json` includes new modules:
 ```bash
-dcprod build --no-cache webpack
+docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 build --no-cache webpack
 ```
 
 ##### Apply Zero-Downtime Deployment:
 - Rebuild and Restart Containers (without stopping the entire stack):
 ```bash
-docker-compose -f docker-compose-prod.yml up -d --no-deps --build web
+docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 up -d --no-deps --build web
 ```
 - OR restart the Entire Stack (with minimal downtime):
 ```bash
-docker-compose -f docker-compose-prod.yml up -d --build
+docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 up -d --build
 ```
 
 #### Static Files & Migrations
 - Collect static files:
 ```bash
-dcprod run --rm web python manage.py collectstatic --noinput
+docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 run --rm web python manage.py collectstatic --noinput
 ```
 - If necessary, apply Django migrations:
 ```bash
-dcprod run --rm web bash
+docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 run --rm web bash
 ./manage.py showmigrations
 ./manage.py migrate {app}
 ```
@@ -69,5 +69,5 @@ dcprod run --rm web bash
 ```
 git pull origin staging
 docker restart web
-dcprod run --rm web python manage.py collectstatic --noinput
+docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 run --rm web python manage.py collectstatic --noinput
 ```
