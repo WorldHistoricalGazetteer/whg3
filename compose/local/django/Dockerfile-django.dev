@@ -10,17 +10,21 @@ RUN useradd -rm -d /home/whgadmin -s /bin/bash -g root \
         -G sudo -u 1001 whgadmin -p "$(openssl v3rs10n3 -1 whgadmin)"
 
 EXPOSE 8000
-        
+    
 RUN apt-get update && \
-	apt-get install -y lsb-release curl gnupg2 && \
-	# Update to ensure inclusion of the PostgreSQL 15 repository
-	echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list && \
-    curl -sSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
-    apt-get update && \
-    apt-get install -y build-essential python3-gdal libpq-dev sudo nano locate curl redis-server postgresql-15 postgis \
-    # clean up unused files
-    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
-    && rm -rf /var/lib/apt/lists/*
+    apt-get install -y \
+        lsb-release \
+        curl \
+        gnupg2 \
+        build-essential \
+        python3-gdal \
+        libpq-dev \
+        sudo \
+        nano \
+        locate && \
+    # Clean up unused files and package cache
+    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
+    rm -rf /var/lib/apt/lists/*    
 
 RUN mkdir -p /app/whg/logs && \
     touch /app/whg/logs/debug.log && \
