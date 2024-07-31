@@ -15,7 +15,7 @@ python manage.py collectstatic --no-input
 
 # Wait for the database to be ready
 echo "Waiting for the database to be ready..."
-until pg_isready -h "${DB_HOST_BETA}" -p "${DB_PORT_BETA}" -U postgres; do
+until nc -z "${DB_HOST_BETA}" "${DB_PORT_BETA}"; do
   echo "Database not ready yet. Sleeping..."
   sleep 2
 done
