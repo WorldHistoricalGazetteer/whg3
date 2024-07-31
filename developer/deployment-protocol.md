@@ -66,8 +66,7 @@ docker-compose -f docker-compose-prod.yml --env-file ./.env/.prod-whg3 run --rm 
 
 ### Test/Revert new image
 
-
-Rename existing image as backup, perform new build
+Mark existing image as backup
 ```bash
 SERVICE_NAME="web"
 SERVICE_PREFIX="whg3_"
@@ -76,6 +75,10 @@ LATEST_TAG="latest"
 DOCKER_COMPOSE_FILE="docker-compose-prod.yml --env-file ./.env/.prod-whg3"
 CURRENT_IMAGE_ID=$(docker-compose -f $DOCKER_COMPOSE_FILE images -q $SERVICE_NAME)
 docker tag $CURRENT_IMAGE_ID ${SERVICE_PREFIX}${SERVICE_NAME}:${BACKUP_TAG}
+```
+
+Perform new build
+```bash
 docker-compose -f $DOCKER_COMPOSE_FILE build --no-cache $SERVICE_NAME
 docker-compose -f $DOCKER_COMPOSE_FILE up -d --no-deps $SERVICE_NAME
 echo "Rebuild and restart process completed."
