@@ -9,13 +9,13 @@ echo "Collecting static files..."
 python manage.py collectstatic --no-input
 
 # Ensure required environment variables are set
-: "${DB_HOST:?Environment variable DB_HOST is not set}"
-: "${DB_PORT:?Environment variable DB_PORT is not set}"
+: "${DB_HOST_BETA:?Environment variable DB_HOST_BETA is not set}"
+: "${DB_PORT_BETA:?Environment variable DB_PORT_BETA is not set}"
 : "${APP_PORT:?Environment variable APP_PORT is not set}"
 
 # Wait for the database to be ready
 echo "Waiting for the database to be ready..."
-until pg_isready -h "${DB_HOST}" -p "${DB_PORT}" -U postgres; do
+until pg_isready -h "${DB_HOST_BETA}" -p "${DB_PORT_BETA}" -U postgres; do
   echo "Database not ready yet. Sleeping..."
   sleep 2
 done
