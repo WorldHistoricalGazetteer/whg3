@@ -31,7 +31,7 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust # SHOULD BE RECONFIGURED FOR PRODUCTION ENVIRONMENT
     ports:
-      - 8001:8003
+      - "8001:${APP_PORT}"
     user: "1000:1000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -86,9 +86,9 @@ services:
       - ./.env/.prod-whg3
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust # SHOULD BE RECONFIGURED FOR PRODUCTION ENVIRONMENT
-      DB_NAME: whgv3beta
+      DB_NAME: "${DB_NAME_BETA}"
     ports:
-      - 127.0.0.1:5434:5432
+      - "127.0.0.1:5434:${DB_PORT_BETA}"
     restart: unless-stopped
     ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
 #     deploy:
