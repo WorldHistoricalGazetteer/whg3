@@ -14,14 +14,16 @@ app = Celery('whg')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # Configure broker URL explicitly if needed; otherwise, use CELERY_BROKER_URL from settings
-app.conf.broker_url = 'redis://localhost:6379'
+#app.conf.broker_url = 'redis://localhost:6379'
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
 
 # Ensure Celery uses Django's logging settings
 app.conf.update(
-    worker_hijack_root_logger=False
+    worker_hijack_root_logger=False,  # Prevent Celery from configuring its own logging
+    worker_log_format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Log format for workers
+    worker_task_log_format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Log format for tasks
 )
 
 @app.task(bind=True)

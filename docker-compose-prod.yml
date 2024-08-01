@@ -131,7 +131,7 @@ services:
 
   celery_worker:
     image: whg3_web:latest
-    command: /start-celeryworker
+    command: celery -A whg worker -l INFO
     container_name: celery_worker
     networks:
       - WHG3
@@ -148,7 +148,7 @@ services:
 
   celery_beat:
     image: whg3_web:latest
-    command: /start-celerybeat
+    command: ["sh", "-c", "rm -f './celerybeat.pid' && celery -A whg beat -l INFO"]
     container_name: celery_beat
     networks:
       - WHG3
@@ -164,7 +164,15 @@ services:
 
   flower:
     image: whg3_web:latest
-    command: /start-flower
+    command: >
+      sh -c '
+        until celery -A whg inspect ping; do
+          echo "Celery workers not available" >&2;
+          sleep 1;
+        done;
+        echo "Celery workers are available" >&2;
+        celery -A whg --broker=${CELERY_BROKER} flower
+      '
     container_name: flower
     networks:
       - WHG3

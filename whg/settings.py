@@ -102,7 +102,7 @@ MESSAGE_TAGS = {
  }
 
 CELERY_RESULT_BACKEND = 'django-db'
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://127.0.0.1:6379/0")
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://127.0.0.1:6379/0") # set redis://redis:6379/0 as in .env file
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -173,7 +173,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'whg.wsgi.application'
 
 LOGGING_LEVELS = {
-    'dev': 'DEBUG',
+    'dev': 'INFO',
     'prod': 'WARNING',
 }
 LOGGING = {

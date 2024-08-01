@@ -63,14 +63,9 @@ RUN python -m venv /py && \
 RUN chown -R whgadmin:root /py/lib/python3.10/site-packages/captcha/migrations/
 RUN chown -R whgadmin:root /py/lib/python3.10/site-packages/guardian/migrations/
 
-# Copy all required scripts, convert CRLF to LF and make executable. USE PRODUCTION ENTRYPOINT!
+# Copy script, convert CRLF to LF and make executable. USE PRODUCTION ENTRYPOINT!
 COPY ./compose/production/django/entrypoint.sh /entrypoint
-COPY ./compose/local/django/start-livereload.sh /start-livereload
-COPY ./compose/local/django/celery/worker/start.sh /start-celeryworker
-COPY ./compose/local/django/celery/beat/start.sh /start-celerybeat
-COPY ./compose/local/django/celery/flower/start.sh /start-flower
-RUN sed -i 's/\r$//g' /entrypoint /start-livereload /start-celeryworker /start-celerybeat /start-flower && \
-    chmod +x /entrypoint /start-livereload /start-celeryworker /start-celerybeat /start-flower
+RUN sed -i 's/\r$//g' /entrypoint && chmod +x /entrypoint
     
 # Set the working directory for the following instructions
 WORKDIR /app
