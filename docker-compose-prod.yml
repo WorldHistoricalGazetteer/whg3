@@ -27,6 +27,7 @@ services:
       - /home/whgadmin/sites/whgv3/static:/app/static
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /home/whgadmin/sites/whgv3/cache:/app/cache
+      - /home/whgadmin/logs:/app/whg/logs
     env_file:
       - ./.env/.prod-whg3
     environment:
