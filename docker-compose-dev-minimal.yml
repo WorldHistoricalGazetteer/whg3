@@ -18,6 +18,12 @@ services:
       context: .
       dockerfile: ./compose/local/django/Dockerfile-django.dev
     image: whg3_web
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      retries: 3
+      start_period: 30s
+      timeout: 10s
     command: /start
     container_name: web
     volumes:
@@ -66,6 +72,12 @@ services:
     build:
       context: ./compose/local/postgres
       dockerfile: Dockerfile-postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      retries: 3
+      start_period: 30s
+      timeout: 10s
     container_name: postgres
     volumes:
       - dev-db-data:/var/lib/postgresql/data
@@ -82,6 +94,12 @@ services:
       - WHG3
     platform: linux/amd64
     image: redis:bullseye
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      retries: 3
+      start_period: 30s
+      timeout: 10s
     container_name: redis
     ports: [6380:6379]
 
@@ -93,6 +111,7 @@ services:
       - WHG3
     volumes:
       - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     env_file:
       - ./.env/.dev-whg3
     depends_on:

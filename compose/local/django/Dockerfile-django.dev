@@ -21,7 +21,8 @@ RUN apt-get update && \
         libpq-dev \
         sudo \
         nano \
-        locate && \
+        locate \
+        docker.io && \
     # Clean up unused files and package cache
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
     rm -rf /var/lib/apt/lists/*    

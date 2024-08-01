@@ -46,6 +46,30 @@ es = settings.ES_CONN
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 
+def health_check(request):
+    #TODO: Could be extended to check other aspects of app health, for example: 
+    # checks = { # These functions would need to be provided
+    #     "database": check_database,
+    #     "cache": check_cache,
+    #     "external_service": check_external_service,
+    #     "disk_space": check_disk_space,
+    #     "memory_usage": check_memory_usage,
+    #     "cpu_usage": check_cpu_usage
+    # }
+    #
+    # status = "healthy"
+    # details = {}
+    #
+    # for check, func in checks.items():
+    #     result, message = func()
+    #     details[check] = message
+    #     if not result:
+    #         status = "unhealthy"
+    #
+    # return JsonResponse({"status": status, "details": details})    
+    
+    return JsonResponse({"status": "healthy"})
+
 def OpenAPIView(request):
     return render(request, 'main/openapi.html', {'schema_url': '/api/schema/'})
 

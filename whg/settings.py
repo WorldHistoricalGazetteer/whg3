@@ -1,11 +1,12 @@
-"""
-2024-06-09
-"""
+# whg/settings.py
 
 import os, sys
 from celery.schedules import crontab
 from django.contrib.messages import constants as messages
 from django.core.cache.backends.filebased import FileBasedCache
+from logging.handlers import RotatingFileHandler
+
+ENV = os.environ.get('ENV', 'dev')  # Default to 'dev' if ENV is not set
 
 if 'test' in sys.argv:
     CELERY_ALWAYS_EAGER = True
@@ -171,20 +172,68 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'whg.wsgi.application'
 
+LOGGING_LEVELS = {
+    'dev': 'DEBUG',
+    'prod': 'WARNING',
+}
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
-        'file': {
-            'level': 'WARNING',
-            'class': 'logging.FileHandler',
-            'filename': 'whg/logs/debug.log',
+        'django_file': {
+            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'whg/logs/django.log'),
+            'maxBytes': 10485760,  # 10 MB
+            'backupCount': 5,      # Number of backup files to keep
+            'formatter': 'verbose',
+        },
+        'celery_file': {
+            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'whg/logs/celery.log'),
+            'maxBytes': 10485760,  # 10 MB
+            'backupCount': 5,      # Number of backup files to keep
+            'formatter': 'verbose',
+        },
+        'root_file': {
+            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'whg/logs/root.log'),
+            'maxBytes': 10485760,  # 10 MB
+            'backupCount': 5,      # Number of backup files to keep
+            'formatter': 'verbose',
+        },       
+        'console': {
+            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple',
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
-            'level': 'WARNING',
+            'handlers': ['django_file', 'console'],
+            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
+            'propagate': False,  # Ensure logs do not propagate to root logger
+        },
+        'celery': {
+            'handlers': ['celery_file', 'console'],
+            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
+            'propagate': False,  # Ensure logs do not propagate to root logger
+        },
+        '': {  # Root logger
+            'handlers': ['root_file', 'console'],
+            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
             'propagate': True,
         },
     },

@@ -88,13 +88,13 @@ def process_tileset_request(category, id, action):
         queued_request = redis_client.lpop('tileset_queue')
         if queued_request:
             queued_category, queued_id, queued_action = queued_request.decode('utf-8').split('-')
-            print(f'Dequeuing and processing queued request: {queued_category}-{queued_id}-{queued_action}')
+            logger.info(f'Dequeuing and processing queued request: {queued_category}-{queued_id}-{queued_action}')
             process_tileset_request.delay(queued_category, queued_id, queued_action)
         else:
             redis_client.delete(f'request_tileset_lock')        
     
     redis_client.set(f'{category}-{id}-{action}', 'pending', ex=3600)
-    print(f"Processing tileset request: {category}-{id}-{action}")
+    logger.info(f"Processing tileset request: {category}-{id}-{action}")
     if not category or not id:
         redis_client.set(f'{category}-{id}-{action}', 'failed', ex=3600)
         raise ValueError("A category and id must both be provided.")
@@ -132,7 +132,7 @@ def process_tileset_request(category, id, action):
                 note=f'Tileset {"created" if action == "generate" else "deleted"}'
                 )
             msg = f'Tileset {"created" if action == "generate" else "deleted"} successfully for {category}-{id}.'
-            print(msg)
+            logger.info(msg)
             
             # After completing the current request, recursively call process_tileset_request to handle any further queued requests
             recurse()
@@ -141,7 +141,7 @@ def process_tileset_request(category, id, action):
         else:
             redis_client.set(f'{category}-{id}-{action}', 'failed', ex=3600)
             msg = f'Tileset {"creation" if action == "generate" else "deletion"} failed for {category}-{id}.'
-            print(msg)
+            logger.info(msg)
             recurse() # Continue with any remaining queued requests
             return {'success': False, 'message': msg}
 
@@ -151,14 +151,14 @@ def request_tileset(category, id, action):
     This function receives and enqueues requests for tilesets
     '''
     
-    print(f'request_tileset() task: {category}-{id}')
+    logger.info(f'request_tileset() task: {category}-{id}')
 
     # Acquire distributed lock
     acquired_lock = redis_client.set(f'request_tileset_lock', 'locked', nx=True, ex=300)
-    print(f'acquired_lock: {category}-{id}-{action}', acquired_lock)
+    logger.info(f'acquired_lock: {category}-{id}-{action}', acquired_lock)
 
     if not acquired_lock:
-        print('Another instance of request_tileset() is already running. Queueing request.')
+        logger.info('Another instance of request_tileset() is already running. Queueing request.')
         redis_client.set(f'{category}-{id}-{action}', 'queued', ex=3600)
         # Enqueue the request if the lock is already acquired
         with redis_client.pipeline() as pipe:
@@ -186,7 +186,7 @@ def send_tileset_request(category=None, id=None, action='generate'):
             'error': 'Both category and id must be provided.'
         }
         
-    print(f"Preparing a <{action}> POST request to {settings.TILER_URL} for {category}-{id}.")
+    logger.info(f"Preparing a <{action}> POST request to {settings.TILER_URL} for {category}-{id}.")
         
     if action == 'delete':
         data = {
@@ -197,12 +197,12 @@ def send_tileset_request(category=None, id=None, action='generate'):
         
         dummy_request = HttpRequest()
         mapdata(dummy_request, category, id, 'tileset', 'refresh')
-        print(f"Mapdata regenerated.")        
+        logger.info(f"Mapdata regenerated.")        
         
         url_base = urlparse(settings.URL_FRONT).netloc
         url_base = 'dev.whgazetteer.org' if 'whgazetteer.org' not in url_base else url_base
         geoJSONUrl = f"https://{url_base}/mapdata/{category}/{id}/tileset/"
-        print(f"geoJSONUrl: {geoJSONUrl}")
+        logger.info(f"geoJSONUrl: {geoJSONUrl}")
         data = {
             "geoJSONUrl": geoJSONUrl,
         }
@@ -213,21 +213,21 @@ def send_tileset_request(category=None, id=None, action='generate'):
         cache.delete(f"{category}-{id}-tileset")
         
     # Check the response status code
-    print(f"TILER_URL Response status: {response.status_code}")
+    logger.info(f"TILER_URL Response status: {response.status_code}")
     if response.status_code == 200:
         response_data = response.json()
         if response_data.get("status") == "success":
             if action == 'delete':
                 reset_standard_mapdata(category, id)
-            print(f"Tileset <{action}> successful.")
+            logger.info(f"Tileset <{action}> successful.")
             return response_data
         else:
             message = response_data.get("message")
-            print(f"Tileset <{action}> failed: {message}")
+            logger.info(f"Tileset <{action}> failed: {message}")
     else:
         response_data = response.json()
         error = response_data.get("error")
-        print(f"Tileset <{action}> failed with status {response.status_code}: {error}")
+        logger.info(f"Tileset <{action}> failed with status {response.status_code}: {error}")
 
     # Tileset generation has failed so reset standard mapdata filecache
     if action == 'generate':
@@ -256,56 +256,76 @@ def check_services():
     Check the status of various services and ping Healthchecks.io accordingly.
     """
     services = settings.HEALTHCHECKS
-    service_statuses = {service: check_service(details) for service, details in services.items()}
-    
-    for service, status in service_statuses.items():
+
+    for service, details in services.items():
+        if service == 'elasticsearch':
+            # Special case for Elasticsearch until it is moved to a Docker container
+            status = check_elasticsearch()
+        else:
+            # General case for Docker containers
+            status = get_container_health(service)
+
+        healthcheck_url = details.get('healthcheck_url', '')
+        if status != 'healthy':
+            healthcheck_url += '/fail'
+        logger.info(f"Service '{service}' is {status}: Pinging {healthcheck_url}")
+        
         try:
-            requests.get(f"{services[service]['healthcheck_url']}{'' if status else '/fail'}")
+            requests.get(f"{healthcheck_url}")
         except requests.RequestException as e:
             logger.error(f"Failed to ping Healthchecks.io for {service}: {e}")
 
-def check_service(service_details):
-    service_type = service_details['type']
-    if service_type == 'http':
-        return check_http(service_details['url'])
-    elif service_type == 'command':
-        return check_command(service_details['command'])
-    elif service_type == 'elasticsearch':
-        return check_elasticsearch(service_details['command'])
-    else:
-        raise ValueError(f"Unknown service type: {service_type}")
-
-def check_http(url):
-    try:
-        response = requests.get(url)
-        return response.status_code == 200
-    except requests.RequestException as e:
-        return False
-
-def check_command(command):
+def get_container_health(container_id):
+    """
+    Get the health status of a service based on its Docker container health.
+    """
+    
+    command = f"docker inspect --format='{{{{json .State.Health}}}}' {container_id}"
+    
     try:
         result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return result.returncode == 0
+        if result.returncode == 0:
+            try:
+                health_json = result.stdout
+                container_info = json.loads(health_json)
+                health_status = container_info.get('Status', 'unknown')
+                return 'healthy' if health_status == 'healthy' else 'unhealthy'
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON decode error for container health check: {e}")
+                return 'unhealthy'
+        else:
+            logger.error(f"Container health check command failed with return code {result.returncode}")
+            return 'unhealthy'
     except subprocess.CalledProcessError as e:
-        return False
+        logger.error(f"Error executing container health check command: {e}")
+        return 'unhealthy'
 
-def check_elasticsearch(command):
+#TODO: Remove this once ElasticSearch has been moved to a Docker container
+def check_elasticsearch():
+    """
+    Check Elasticsearch health
+    """
+    command = f'curl -u elastic:{settings.ELASTIC_PASSWORD} -k -X GET "{settings.ES_SCHEME}://{settings.ES_HOST}:{settings.ES_PORT}/_cluster/health"'
     try:
         result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
             try:
                 output = result.stdout.decode()
                 response_json = json.loads(output)
-                if 'status' in response_json and response_json['status'] in ['green', 'yellow']:
-                    return True
+                status = response_json.get('status', '')
+                if status in ['green', 'yellow']:
+                    return 'healthy'
                 else:
-                    return False
+                    return 'unhealthy'
             except json.JSONDecodeError as e:
-                return False
+                logger.error(f"JSON decode error for Elasticsearch health check: {e}")
+                return 'unhealthy'
         else:
-            return False
+            logger.error(f"Elasticsearch health check command failed with return code {result.returncode}")
+            return 'unhealthy'
     except subprocess.CalledProcessError as e:
-        return False
+        logger.error(f"Error executing Elasticsearch health check command: {e}")
+        return 'unhealthy'
 
 # @shared_task
 # def backup_data():

@@ -43,7 +43,8 @@ RUN apt-get update && \
         sudo \
         nano \
         locate \
-        netcat && \
+        netcat \
+        docker.io && \
     # Clean up unused files and package cache
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
     rm -rf /var/lib/apt/lists/*    

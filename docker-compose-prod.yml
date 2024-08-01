@@ -41,6 +41,12 @@ services:
       - redis
       - db_beta
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 300s
+      retries: 3
+      start_period: 30s
+      timeout: 10s
     ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
 #     deploy:
 #       replicas: 3
@@ -91,6 +97,12 @@ services:
     ports:
       - "127.0.0.1:5434:${DB_PORT_BETA}"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 300s
+      retries: 3
+      start_period: 30s
+      timeout: 10s
     ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
 #     deploy:
 #       replicas: 2
@@ -107,6 +119,12 @@ services:
     container_name: redis
     ports: [6380:6379]
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 300s
+      retries: 3
+      start_period: 30s
+      timeout: 10s
 
   celery_worker:
     image: whg3_web:latest
@@ -116,6 +134,7 @@ services:
       - WHG3
     volumes:
       - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     env_file:
       - ./.env/.prod-whg3
     depends_on:
