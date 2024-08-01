@@ -119,6 +119,8 @@ services:
     image: redis:bullseye
     container_name: redis
     ports: [6380:6379]
+    volumes:
+      - /home/whgadmin/logs:/app/whg/logs
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -135,6 +137,7 @@ services:
       - WHG3
     volumes:
       - .:/app
+      - /home/whgadmin/logs:/app/whg/logs
       - /var/run/docker.sock:/var/run/docker.sock:ro
     env_file:
       - ./.env/.prod-whg3
@@ -151,6 +154,7 @@ services:
       - WHG3
     volumes:
       - .:/app
+      - /home/whgadmin/logs:/app/whg/logs
     env_file:
       - ./.env/.prod-whg3
     depends_on:
@@ -166,6 +170,7 @@ services:
       - WHG3
     volumes:
       - .:/app
+      - /home/whgadmin/logs:/app/whg/logs
     env_file:
       - ./.env/.prod-whg3
     ports:
