@@ -113,3 +113,4 @@ docker-compose-sg.yml
 /.ssh
 data/ca-cert.pem
 /whg/authorisation
+/whg/logs
