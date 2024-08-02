@@ -18,6 +18,15 @@
       opacity: 0;
       transition: opacity 1s ease;
     }
+    .maintenance-banner {
+      /* display: none; */
+      background-color: red;
+      color: white;
+      text-align: center;
+      padding: 10px;
+      font-size: 16px;
+      font-weight: bold;
+    }
   </style>
 
   {% block maplibre %}{% endblock %}
@@ -212,6 +221,12 @@
 </header>
 {% block content %}
 {% endblock %}
+
+<!-- Full-width red banner -->
+<div class="maintenance-banner">
+  We're having problems with some of the site functionality at present. Thanks for your patience while we fix things.
+</div>
+
 <footer class="container mt-2 mb-1">
   &copy; 2019 - {% now "Y" %} World Historical Gazetteer. All rights reserved. | <a data-whg-modal="/contact_modal/">Contact</a>
   <!-- | <a href="/home/30a4/" class="text-decoration-none">Home v30a4</a>-->
