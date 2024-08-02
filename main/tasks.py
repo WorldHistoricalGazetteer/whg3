@@ -2,7 +2,7 @@
 # Implement distributed lock to enqueue tileset generation requests
 import redis
 from celery.utils.log import get_task_logger
-logger = get_task_logger(__name__)
+logger = get_task_logger('main.tasks')
 redis_client = redis.StrictRedis(host='redis', port=6379, db=0)  # Use the service name from Docker Compose for the host
 from redis.exceptions import WatchError
 

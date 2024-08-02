@@ -68,7 +68,7 @@ def health_check(request):
     #
     # return JsonResponse({"status": status, "details": details})    
     
-    return JsonResponse({"status": "healthy"})
+    return JsonResponse({"Status": "healthy"})
 
 def OpenAPIView(request):
     return render(request, 'main/openapi.html', {'schema_url': '/api/schema/'})

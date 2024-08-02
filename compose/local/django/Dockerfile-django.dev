@@ -28,8 +28,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*    
 
 RUN mkdir -p /app/whg/logs && \
-    touch /app/whg/logs/debug.log && \
-    chmod 777 /app/whg/logs/debug.log
+    chmod 755 /app/whg/logs && \
+    chown -R whgadmin:root /app/whg/logs
 
 COPY ./requirements.txt /tmp/requirements.txt
 RUN python -m venv /py && \
