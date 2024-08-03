@@ -25,7 +25,7 @@ services:
     volumes:
       - .:/app
       - /home/whgadmin/sites/whg-staging/media:/app/media
-      # - /home/whgadmin/sites/whg-staging/static:/app/static
+      - /home/whgadmin/sites/whg-staging/static:/app/static
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /home/whgadmin/sites/whg-staging/cache:/app/cache
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
@@ -115,7 +115,7 @@ services:
     volumes:
       - .:/app
       - /home/whgadmin/sites/whg-staging/media:/app/media
-      # - /home/whgadmin/sites/whg-staging/static:/app/static
+      - /home/whgadmin/sites/whg-staging/static:/app/static
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /home/whgadmin/sites/whg-staging/cache:/app/cache
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
@@ -136,7 +136,7 @@ services:
     volumes:
       - .:/app
       - /home/whgadmin/sites/whg-staging/media:/app/media
-      # - /home/whgadmin/sites/whg-staging/static:/app/static
+      - /home/whgadmin/sites/whg-staging/static:/app/static
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /home/whgadmin/sites/whg-staging/cache:/app/cache
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
@@ -164,7 +164,7 @@ services:
     volumes:
       - .:/app
       - /home/whgadmin/sites/whg-staging/media:/app/media
-      # - /home/whgadmin/sites/whg-staging/static:/app/static
+      - /home/whgadmin/sites/whg-staging/static:/app/static
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /home/whgadmin/sites/whg-staging/cache:/app/cache
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
