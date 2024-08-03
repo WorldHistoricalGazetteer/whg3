@@ -24,10 +24,10 @@ services:
     container_name: staging_web
     volumes:
       - .:/app
-      - /home/whgadmin/sites/staging/media:/app/media
-      - /home/whgadmin/sites/staging/static:/app/static
+      - /home/whgadmin/sites/whg-staging/media:/app/media
+      # - /home/whgadmin/sites/whg-staging/static:/app/static
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
-      - /home/whgadmin/sites/staging/cache:/app/cache
+      - /home/whgadmin/sites/whg-staging/cache:/app/cache
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
     env_file:
       - ./.env/.staging
@@ -114,10 +114,10 @@ services:
       - STAGING
     volumes:
       - .:/app
-      - /home/whgadmin/sites/staging/media:/app/media
-      - /home/whgadmin/sites/staging/static:/app/static
+      - /home/whgadmin/sites/whg-staging/media:/app/media
+      # - /home/whgadmin/sites/whg-staging/static:/app/static
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
-      - /home/whgadmin/sites/staging/cache:/app/cache
+      - /home/whgadmin/sites/whg-staging/cache:/app/cache
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
       - /var/run/docker.sock:/var/run/docker.sock:ro
     env_file:
@@ -135,10 +135,10 @@ services:
       - STAGING
     volumes:
       - .:/app
-      - /home/whgadmin/sites/staging/media:/app/media
-      - /home/whgadmin/sites/staging/static:/app/static
+      - /home/whgadmin/sites/whg-staging/media:/app/media
+      # - /home/whgadmin/sites/whg-staging/static:/app/static
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
-      - /home/whgadmin/sites/staging/cache:/app/cache
+      - /home/whgadmin/sites/whg-staging/cache:/app/cache
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
     env_file:
       - ./.env/.staging
@@ -163,10 +163,10 @@ services:
       - STAGING
     volumes:
       - .:/app
-      - /home/whgadmin/sites/staging/media:/app/media
-      - /home/whgadmin/sites/staging/static:/app/static
+      - /home/whgadmin/sites/whg-staging/media:/app/media
+      # - /home/whgadmin/sites/whg-staging/static:/app/static
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
-      - /home/whgadmin/sites/staging/cache:/app/cache
+      - /home/whgadmin/sites/whg-staging/cache:/app/cache
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
     env_file:
       - ./.env/.staging
