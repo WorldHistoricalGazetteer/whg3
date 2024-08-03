@@ -322,6 +322,7 @@ def make_download(self, *args, **kwargs):
       # make pandas dataframe
       df = pd.read_csv('media/'+dsf.file.name,
                        delimiter=dsf.delimiter,
+                       engine='python',
                        # delimiter='\t',
                        dtype={'id':'str','aat_types':'str'})
       logger.debug('df', df)
