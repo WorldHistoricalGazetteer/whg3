@@ -9,11 +9,11 @@ ENV MAX_MAP_COUNT 262144
 RUN groupadd whgadmin
 # 1000 matches whgadmin in ubuntu
 ARG WHGADMIN_PASSWORD
+ARG APP_PORT
 RUN useradd -rm -d /home/whgadmin -g whgadmin -s /bin/bash \
     -G sudo -u 1000 whgadmin -p "$(openssl passwd -1 $WHGADMIN_PASSWORD)"
 
-# IMPORTANT!!!! This must match the APP_PORT value in .env file
-EXPOSE 8004
+EXPOSE ${APP_PORT}
 
 RUN apt-get update && \
 	apt-get install -y lsb-release curl gnupg2 && \
