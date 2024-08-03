@@ -62,6 +62,17 @@ class User(AbstractUser, PermissionsMixin):
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     image_file = ResizedImageField(size=[800, 600], upload_to=user_directory_path, blank=True, null=True)
+    orcid = models.CharField(
+        max_length=19, 
+        validators=[
+            RegexValidator(
+                regex=r'^\d{4}-\d{4}-\d{4}-\d{4}$',
+                message=_('Invalid ORCiD. Format should be: 0000-0000-0000-0000')
+            )
+        ],
+        null=True,
+        blank=True
+    )
 
     email_confirmed = models.BooleanField(default=False)
     must_reset_password = models.BooleanField(default=False)
@@ -84,3 +95,9 @@ class User(AbstractUser, PermissionsMixin):
 
     def __str__(self):
         return self.username
+    
+    @property
+    def display_name(self):
+        if self.given_name and self.surname:
+            return f"{self.given_name} {self.surname}"
+        return self.name if self.name else self.username

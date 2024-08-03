@@ -1,0 +1,57 @@
+FROM --platform=linux/amd64 python:3.10.7-slim-bullseye
+
+LABEL maintainer="WHC @ Pitt"
+
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV MAX_MAP_COUNT 262144
+
+RUN groupadd whgadmin
+# 1000 matches whgadmin in ubuntu
+ARG WHGADMIN_PASSWORD
+RUN useradd -rm -d /home/whgadmin -g whgadmin -s /bin/bash \
+    -G sudo -u 1000 whgadmin -p "$(openssl passwd -1 $WHGADMIN_PASSWORD)"
+
+# IMPORTANT!!!! This must match the APP_PORT value in .env file
+EXPOSE 8004
+
+RUN apt-get update && \
+	apt-get install -y lsb-release curl gnupg2 && \
+	# Update to ensure inclusion of the PostgreSQL 15 repository
+	echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list && \
+    curl -sSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
+    apt-get update && \
+    apt-get install -y build-essential python3-gdal libpq-dev sudo nano locate curl redis-server postgresql-15 postgis netcat docker.io \
+    # clean up unused files
+    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /app/static && chown -R whgadmin:whgadmin /app/static
+
+COPY ./requirements.txt /tmp/requirements.txt
+RUN python -m venv /py && \
+    /py/bin/pip install --upgrade pip && \
+    /py/bin/pip install -r /tmp/requirements.txt && \
+    rm -rf /tmp
+
+# Set correct ownership and permissions for the migrations directories
+RUN chown -R whgadmin:root /py/lib/python3.10/site-packages/captcha/migrations/
+RUN chown -R whgadmin:root /py/lib/python3.10/site-packages/guardian/migrations/
+
+COPY ./compose/staging/django/entrypoint.sh /entrypoint
+# convert Windows line endings to UNIX line endings.
+RUN sed -i 's/\r$//g' /entrypoint
+RUN chmod +x /entrypoint
+
+WORKDIR /app
+
+# TODO - IS THIS NOW REDUNDANT WITH THE IMPLEMENTATION OF FULLER LOGGING?
+RUN mkdir -p /app/whg/logs && \
+    touch /app/whg/logs/debug.log && \
+    chmod 777 /app/whg/logs/debug.log
+
+ENV PATH="/py/bin:$PATH"
+
+USER whgadmin
+
+ENTRYPOINT ["/entrypoint"]

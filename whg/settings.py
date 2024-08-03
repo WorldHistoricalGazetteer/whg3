@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'celery_progress',
     # uncomment for debug toolbar
     # 'debug_toolbar',
+#    'django_celery_beat',
     'django_celery_results',
     'django_extensions',
     'django_filters',
@@ -112,6 +113,7 @@ CELERY_TASK_EAGER_PROPAGATES = True
 # required per https://github.com/celery/django-celery-results/issues/334
 CELERY_RESULT_EXTENDED = True
 CELERY_RESULT_EXPIRES = None
+#CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 
 # CELERY_BEAT_SCHEDULE = {
