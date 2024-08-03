@@ -254,8 +254,6 @@ def check_services():
     Check the status of various services and ping Healthchecks.io accordingly.
     """
     services = getattr(settings, 'HEALTHCHECKS', {})
-    logger.info(f"HEALTHCHECKS settings: {settings.HEALTHCHECKS}")
-    logger.info(f"Loaded services configuration: {services}")
 
     for service, details in services.items():
         try:
@@ -276,7 +274,6 @@ def check_services():
             try:
                 response = requests.get(f"{healthcheck_url}")
                 response.raise_for_status()
-                logger.info(f"Successfully pinged {healthcheck_url}")
             except requests.RequestException as e:
                 logger.error(f"Failed to ping Healthchecks.io for {service}: {e}", exc_info=True)
         except Exception as e:
