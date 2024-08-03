@@ -39,8 +39,8 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      - staging_redis
-      - staging_db_beta
+      - redis
+      - db_beta
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -118,8 +118,8 @@ services:
     env_file:
       - ./.env/.staging
     depends_on:
-      - staging_redis
-      - staging_db_beta
+      - redis
+      - db_beta
     restart: unless-stopped
 
   celery_beat:
@@ -134,8 +134,8 @@ services:
     env_file:
       - ./.env/.staging
     depends_on:
-      - staging_redis
-      - staging_db_beta
+      - redis
+      - db_beta
     restart: unless-stopped
 
   flower:
@@ -160,6 +160,6 @@ services:
     ports:
       - 5557:5555
     depends_on:
-      - staging_redis
-      - staging_db_beta
+      - redis
+      - db_beta
     restart: unless-stopped
