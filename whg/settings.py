@@ -1,11 +1,12 @@
-"""
-2024-06-09
-"""
+# whg/settings.py
 
 import os, sys
 from celery.schedules import crontab
 from django.contrib.messages import constants as messages
 from django.core.cache.backends.filebased import FileBasedCache
+from logging.handlers import RotatingFileHandler
+
+ENV = os.environ.get('ENV', 'staging')
 
 if 'test' in sys.argv:
     CELERY_ALWAYS_EAGER = True
