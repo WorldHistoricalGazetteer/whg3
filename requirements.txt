@@ -65,6 +65,7 @@ et-xmlfile==1.1.0
 flower==1.2.0
 fontawesome==5.10.1.post1
 frictionless==3.31.0
+fsspec==2024.6.1
 geojson==2.5.0
 goodtables==2.5.4
 greenlet==2.0.2
