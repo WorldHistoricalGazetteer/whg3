@@ -94,7 +94,8 @@ services:
     platform: linux/amd64
     image: redis:bullseye
     container_name: staging_redis
-    ports: "${REDIS_PORT_STAGING}:6379"
+    ports: 
+      - "${REDIS_PORT_STAGING}:6379"
     volumes:
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
     restart: unless-stopped
