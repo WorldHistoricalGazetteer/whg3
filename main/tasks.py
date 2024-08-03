@@ -252,8 +252,9 @@ def check_services():
     """
     Check the status of various services and ping Healthchecks.io accordingly.
     """
-    services = settings.HEALTHCHECKS
+    services = getattr(settings, 'HEALTHCHECKS', {})
     logger.info(f"HEALTHCHECKS settings: {settings.HEALTHCHECKS}")
+    logger.info(f"Loaded services configuration: {services}")
 
     for service, details in services.items():
         if service == 'elasticsearch':
