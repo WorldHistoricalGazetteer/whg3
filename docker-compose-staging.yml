@@ -21,7 +21,7 @@ services:
         - WHGADMIN_PASSWORD
         - APP_PORT
     image: whg3_web:latest
-    container_name: web
+    container_name: staging_web
     volumes:
       - .:/app
       - /home/whgadmin/sites/staging/media:/app/media
@@ -39,8 +39,8 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      - redis
-      - db_beta
+      - staging_redis
+      - staging_db_beta
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -64,7 +64,7 @@ services:
       - WHG3
     platform: linux/amd64
     image: postgis/postgis:15-3.4
-    container_name: postgres_beta
+    container_name: staging_postgres_beta
     command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
     volumes:
       - /home/whgadmin/databases/staging:/var/lib/postgresql/data
@@ -93,7 +93,7 @@ services:
       - WHG3
     platform: linux/amd64
     image: redis:bullseye
-    container_name: redis
+    container_name: staging_redis
     ports: [6380:6379]
     volumes:
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
@@ -108,7 +108,7 @@ services:
   celery_worker:
     image: whg3_web:latest
     command: celery -A whg worker -l INFO
-    container_name: celery_worker
+    container_name: staging_celery_worker
     networks:
       - WHG3
     volumes:
@@ -118,14 +118,14 @@ services:
     env_file:
       - ./.env/.staging
     depends_on:
-      - redis
-      - db_beta
+      - staging_redis
+      - staging_db_beta
     restart: unless-stopped
 
   celery_beat:
     image: whg3_web:latest
     command: ["sh", "-c", "rm -f './celerybeat.pid' && celery -A whg beat -l INFO"]
-    container_name: celery_beat
+    container_name: staging_celery_beat
     networks:
       - WHG3
     volumes:
@@ -134,8 +134,8 @@ services:
     env_file:
       - ./.env/.staging
     depends_on:
-      - redis
-      - db_beta
+      - staging_redis
+      - staging_db_beta
     restart: unless-stopped
 
   flower:
@@ -149,7 +149,7 @@ services:
         echo "Celery workers are available" >&2;
         celery -A whg --broker=${CELERY_BROKER} flower
       '
-    container_name: flower
+    container_name: staging_flower
     networks:
       - WHG3
     volumes:
@@ -160,6 +160,6 @@ services:
     ports:
       - 5557:5555
     depends_on:
-      - redis
-      - db_beta
+      - staging_redis
+      - staging_db_beta
     restart: unless-stopped
