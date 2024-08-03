@@ -116,6 +116,11 @@ services:
       - .:/app
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     env_file:
       - ./.env/.staging
     depends_on:
