@@ -34,7 +34,7 @@ INSTALLED_APPS = [
     'celery_progress',
     # uncomment for debug toolbar
     # 'debug_toolbar',
-    'django_celery_beat',
+#    'django_celery_beat',
     'django_celery_results',
     'django_extensions',
     'django_filters',
