@@ -253,6 +253,7 @@ def check_services():
     Check the status of various services and ping Healthchecks.io accordingly.
     """
     services = settings.HEALTHCHECKS
+    logger.info(f"check_services!", services)
 
     for service, details in services.items():
         if service == 'elasticsearch':
