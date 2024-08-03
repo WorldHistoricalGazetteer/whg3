@@ -5,7 +5,8 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        # - subnet: 172.20.0.0/16 Used in production. REMEMBER TO CHANGE IN /compose/.../postgres/pg_hba.conf
+        - subnet: 172.21.0.0/16
 
 services:
 
