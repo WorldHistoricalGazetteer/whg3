@@ -1,7 +1,7 @@
 version: '2.19'
 
 networks:
-  WHG3:
+  STAGING:
     driver: bridge
     ipam:
       config:
@@ -12,7 +12,7 @@ services:
 
   web:
     networks:
-      - WHG3
+      - STAGING
     platform: linux/amd64
     build:
       context: .
@@ -61,7 +61,7 @@ services:
 
   db_beta:
     networks:
-      - WHG3
+      - STAGING
     platform: linux/amd64
     image: postgis/postgis:15-3.4
     container_name: staging_postgres_beta
@@ -90,7 +90,7 @@ services:
 
   redis:
     networks:
-      - WHG3
+      - STAGING
     platform: linux/amd64
     image: redis:bullseye
     container_name: staging_redis
@@ -111,7 +111,7 @@ services:
     command: celery -A whg worker -l INFO
     container_name: staging_celery_worker
     networks:
-      - WHG3
+      - STAGING
     volumes:
       - .:/app
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
@@ -128,7 +128,7 @@ services:
     command: ["sh", "-c", "rm -f './celerybeat.pid' && celery -A whg beat -l INFO"]
     container_name: staging_celery_beat
     networks:
-      - WHG3
+      - STAGING
     volumes:
       - .:/app
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
@@ -152,7 +152,7 @@ services:
       '
     container_name: staging_flower
     networks:
-      - WHG3
+      - STAGING
     volumes:
       - .:/app
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
