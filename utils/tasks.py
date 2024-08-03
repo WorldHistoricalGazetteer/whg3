@@ -31,13 +31,13 @@ User = get_user_model()
   called from download modals, ds_metadata.html
 """
 def downloader(request, *args, **kwargs):
-  print('downloader() user, request.POST', request.user, request.POST)
+  logger.debug('downloader() user, request.POST', request.user, request.POST)
   dsid = request.POST.get('dsid') or None
   collid = request.POST.get('collid') or None
   user = request.user
   # POST *should* be the only case...
   if request.method == 'POST' and request.accepts('XMLHttpRequest'):
-    print('ajax == True')
+    logger.debug('ajax == True')
     format=request.POST['format']
 
     userid = request.user.id if request.user.is_authenticated else 1
@@ -49,19 +49,19 @@ def downloader(request, *args, **kwargs):
       format=format or None
     )
 
-    print('task to Celery', download_task.task_id)
+    logger.debug('task to Celery', download_task.task_id)
     # return task_id
     obj={'task_id': download_task.task_id}
-    print('obj from downloader()', obj)
+    logger.debug('obj from downloader()', obj)
 
     return HttpResponse(json.dumps(obj), content_type='application/json')
 
   elif request.method == 'POST' and not request.is_ajax:
-    print('request.POST (not ajax)', request.POST)
+    logger.debug('request.POST (not ajax)', request.POST)
 
 
   elif request.method == 'GET':
-    print('request.GET', request.GET)
+    logger.debug('request.GET', request.GET)
 
 # give file a .zip extension
 def generate_zip_filename(data_dump_filename):
@@ -72,7 +72,7 @@ def generate_zip_filename(data_dump_filename):
 # create a DownloadFile record
 def create_downloadfile_record(user, ds, coll, zip_filename):
   # Determine the title based on whether it's a Collection or Dataset
-  print(f'@ create_downloadfile_record: user:{user}, ds: {ds}, coll: {coll}, zip_filename: {zip_filename}') # DEBUG
+  logger.debug(f'@ create_downloadfile_record: user:{user}, ds: {ds}, coll: {coll}, zip_filename: {zip_filename}') # DEBUG
   if coll and not ds:
     title = coll.title
   elif ds:
@@ -155,13 +155,13 @@ def create_zipfile(data_dump_filename, dsid=None, collid=None):
     metadata = dataset_to_json(dsid)
   elif collid:
     metadata = collection_to_json(collid)
-    print('metadata_json_str', type(metadata), metadata)
+    logger.debug('metadata_json_str', type(metadata), metadata)
     # return
   else:
     raise ValueError("Invalid parameters provided for zipfile creation.")
 
   pretty_metadata = json.dumps(metadata, indent=1, sort_keys=False)
-  print('metadata_json', metadata)
+  logger.debug('metadata_json', metadata)
   dl_class = "Dataset" if dsid else "Collection"
   # Create a README.txt file with the dataset JSON
   readme_content = (f'World Historical Gazetteer (WHG) \n{dl_class} Download\n'
@@ -176,7 +176,7 @@ def create_zipfile(data_dump_filename, dsid=None, collid=None):
                     "* NonCommercial — You may not use the material for commercial purposes.\n")
   readme_content += "\n***********************************\n"
   # for metadata_dict in metadata:
-  #   print('metadata_dict', metadata_dict)
+  #   logger.debug('metadata_dict', metadata_dict)
     # formatted_metadata = format_metadata(metadata_dict)
   readme_content += "\nMetadata:\n" + pretty_metadata
 
@@ -203,12 +203,12 @@ def create_zipfile(data_dump_filename, dsid=None, collid=None):
 """
 @shared_task(name="make_download", bind=True)
 def make_download(self, *args, **kwargs):
-  print('make_download() args, kwargs', args, kwargs)
+  logger.debug('make_download() args, kwargs', args, kwargs)
   user = User.objects.get(pk=kwargs['userid'])
   collid = kwargs['collid'] or None
   dsid = kwargs['dsid'] or None
   req_format = kwargs['format']
-  print('make_download() userid, dsid, collid, format',
+  logger.debug('make_download() userid, dsid, collid, format',
         user.id, dsid, collid, req_format)
   date = makeNow()
 
@@ -261,7 +261,7 @@ def make_download(self, *args, **kwargs):
       except Exception as e:
         # Handle cases where TraceAnnotation or CollPlace might not exist for a Place
         annotation = {}
-        print(f"Error fetching annotation or sequence for place {p.id}: {e}")
+        logger.debug(f"Error fetching annotation or sequence for place {p.id}: {e}")
 
       rec = {"type": "Feature",
              "properties": {"id": p.id,
@@ -280,11 +280,11 @@ def make_download(self, *args, **kwargs):
       if (i + 1) % 100 == 0:
         self.update_state(state='PROGRESS',
                                   meta={'current': i + 1, 'total': total_operations})
-        print(f"Task state: PROGRESS, current: {i + 1}, total: {total_operations}")
+        logger.debug(f"Task state: PROGRESS, current: {i + 1}, total: {total_operations}")
 
     features_sorted = sorted(features, key=lambda x: x['properties']['annotation'].get('sequence', float('inf')))
 
-    print(f'download file for {total_operations} places in {colltitle}')
+    logger.debug(f'download file for {total_operations} places in {colltitle}')
     result = {"type": "FeatureCollection", "features": features_sorted,
               "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
               "filename": "/" + fn}
@@ -301,9 +301,9 @@ def make_download(self, *args, **kwargs):
   elif dsid:
     # it's a single dataset
     if collid:
-      print('single dataset in collection', dsid, collid)
+      logger.debug('single dataset in collection', dsid, collid)
     else:
-      print('solo dataset', dsid)
+      logger.debug('solo dataset', dsid)
     ds = Dataset.objects.get(pk=dsid)
     dslabel = ds.label
     qs = ds.places.all()
@@ -311,10 +311,10 @@ def make_download(self, *args, **kwargs):
     # count for progress
     total_operations = qs.count()
 
-    print("tasks.make_download()", {"format": req_format, "ds": dsid})
+    logger.debug("tasks.make_download()", {"format": req_format, "ds": dsid})
 
     if ds.format == 'delimited' and req_format in ['tsv', 'delimited']:
-      print('making an augmented tsv file')
+      logger.debug('making an augmented tsv file')
 
       # get header as uploaded and create newheader w/any "missing" columns
       # get latest dataset file
@@ -324,7 +324,7 @@ def make_download(self, *args, **kwargs):
                        delimiter=dsf.delimiter,
                        # delimiter='\t',
                        dtype={'id':'str','aat_types':'str'})
-      print('df', df)
+      logger.debug('df', df)
       # copy existing header to newheader for write
       header = list(df)
       # header = list(df)[0].split(',')
@@ -342,7 +342,7 @@ def make_download(self, *args, **kwargs):
       writer.writerow(newheader)
       # missing columns (were added to newheader)
       missing=list(set(newheader)-set(list(df)))
-      print('missing',missing)
+      logger.debug('missing',missing)
 
       for i, row in df.iterrows():
         dfrow = df.loc[i,:]
@@ -398,13 +398,13 @@ def make_download(self, *args, **kwargs):
           try:
             self.update_state(state='PROGRESS',
                                       meta={'current': i + 1, 'total': total_operations})
-            print(f"Task state: PROGRESS, current: {i + 1}, total: {total_operations}")
+            logger.debug(f"Task state: PROGRESS, current: {i + 1}, total: {total_operations}")
 
             task_id = self.request.id
             task_result = AsyncResult(task_id)
-            print(f"Immediate task state: {task_result.state}, info: {task_result.info}")
+            logger.debug(f"Immediate task state: {task_result.state}, info: {task_result.info}")
           except Exception as e:
-            print(f"Error updating task state: {e}")
+            logger.debug(f"Error updating task state: {e}")
 
       csvfile.close()
       create_zipfile(fn, ds.id, None) # single dataset
@@ -412,7 +412,7 @@ def make_download(self, *args, **kwargs):
       create_downloadfile_record(user, ds, None, zipname)
 
     else:
-      print('building lpf file')
+      logger.debug('building lpf file')
       # make file name
       fn = 'media/downloads/'+str(user.id)+'_'+dslabel+'_'+date+'.json'
       # open file for writing
@@ -421,7 +421,7 @@ def make_download(self, *args, **kwargs):
       # build features list
       features = []
       for i, p in enumerate(qs):
-        print('place in make_download():424', p.__dict__)
+        logger.debug('place in make_download():424', p.__dict__)
         whens = p.whens.all()
         if len(whens) > 0:
           when = p.whens.first().jsonb
@@ -452,9 +452,9 @@ def make_download(self, *args, **kwargs):
         if (i + 1) % 100 == 0:
           self.update_state(state='PROGRESS',
                             meta={'current': i + 1, 'total': total_operations})
-          print(f"Task updated: current iteration is {i + 1}, total operations are {total_operations}")
+          logger.debug(f"Task updated: current iteration is {i + 1}, total operations are {total_operations}")
 
-      print('download file for ' + str(total_operations) + ' places')
+      logger.debug('download file for ' + str(total_operations) + ' places')
 
       result={"type":"FeatureCollection",
               "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
@@ -472,7 +472,7 @@ def make_download(self, *args, **kwargs):
       create_downloadfile_record(user, ds, None, zipname)
 
 
-  print(f'@ Log create: user_id:{user.id}, dsid: {dsid}, collid: {collid})') # DEBUG
+  logger.debug(f'@ Log create: user_id:{user.id}, dsid: {dsid}, collid: {collid})') # DEBUG
   # log the download, dataset or collection
   Log.objects.create(
     category = 'dataset' if dsid else 'collection',
@@ -498,7 +498,7 @@ def make_download(self, *args, **kwargs):
   )
 
   self.update_state(state='SUCCESS')
-  print("Task state: SUCCESS")
+  logger.debug("Task state: SUCCESS")
   # for ajax, just report filename
   # completed_message = {"msg": req_format+" written", "filename": fn, "rows": count}
   completed_message = {"msg": req_format+" written", "filename": fn}
