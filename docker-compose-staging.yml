@@ -42,10 +42,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 300s
-      retries: 3
-      start_period: 30s
-      timeout: 10s
+      interval: 60s
+      retries: 5
+      start_period: 60s
+      timeout: 15s
     ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
 #     deploy:
 #       replicas: 3
@@ -74,10 +74,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 300s
-      retries: 3
-      start_period: 30s
-      timeout: 10s
+      interval: 60s
+      retries: 5
+      start_period: 60s
+      timeout: 15s
     ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
 #     deploy:
 #       replicas: 2
@@ -99,10 +99,10 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 300s
-      retries: 3
-      start_period: 30s
-      timeout: 10s
+      interval: 60s
+      retries: 5
+      start_period: 60s
+      timeout: 15s
 
   celery_worker:
     networks:
