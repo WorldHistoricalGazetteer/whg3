@@ -31,6 +31,7 @@ from utils.mapdata import mapdata, mapdata_task, reset_standard_mapdata
 import json
 import requests
 import time
+import subprocess
 from urllib.parse import urlparse
 
 @shared_task()
