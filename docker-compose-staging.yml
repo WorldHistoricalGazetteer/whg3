@@ -17,9 +17,9 @@ services:
     build:
       context: .
       dockerfile: ./compose/staging/django/Dockerfile-django
-      args:
-        - WHGADMIN_PASSWORD
-        - APP_PORT
+#       args:
+#         - WHGADMIN_PASSWORD
+#         - APP_PORT
     image: whg_staging
     container_name: staging_web
     volumes:
@@ -29,10 +29,10 @@ services:
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /home/whgadmin/sites/whg-staging/cache:/app/cache
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
-    env_file:
-      - ./.env/.staging
+#     env_file:
+#       - ./.env/.staging
     environment:
-      APP_PORT: ${APP_PORT}
+      - DJANGO_SETTINGS_MODULE=whg.settings
     ports:
       - "${APP_PORT}:${APP_PORT}"
     user: "1000:1000"
