@@ -41,7 +41,7 @@ services:
     depends_on:
       - redis
       - db_beta
-    restart: unless-stopped
+    #restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 300s
@@ -73,7 +73,7 @@ services:
       - ./.env/.staging
     ports:
       - "127.0.0.1:${DB_PORT_STAGING}:${DB_PORT_BETA}"
-    restart: unless-stopped
+    #restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 300s
@@ -98,7 +98,7 @@ services:
       - "${REDIS_PORT_STAGING}:6379"
     volumes:
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
-    restart: unless-stopped
+    #restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 300s
@@ -121,7 +121,7 @@ services:
     depends_on:
       - redis
       - db_beta
-    restart: unless-stopped
+    #restart: unless-stopped
 
   celery_beat:
     image: whg3_web:latest
@@ -137,7 +137,7 @@ services:
     depends_on:
       - redis
       - db_beta
-    restart: unless-stopped
+    #restart: unless-stopped
 
   flower:
     image: whg3_web:latest
@@ -163,4 +163,4 @@ services:
     depends_on:
       - redis
       - db_beta
-    restart: unless-stopped
+    #restart: unless-stopped
