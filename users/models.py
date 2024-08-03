@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
+from django.core.validators import RegexValidator
 from main.choices import USER_ROLE
 
 
