@@ -13,9 +13,18 @@ EXPOSE ${APP_PORT}
 
 COPY ./entrypoints/ /entrypoints/
 COPY ./requirements.txt /tmp/requirements.txt
-
-RUN groupadd whgadmin && \
-    useradd -rm -d /home/whgadmin -g whgadmin -s /bin/bash -G sudo -u 1000 whgadmin -p "$(openssl passwd -1 $WHGADMIN_PASSWORD)" && \
+    
+RUN set -eux; \
+    
+	# Create groups only if they don't exist
+	if ! getent group docker > /dev/null; then \
+	    groupadd docker; \
+	fi && \
+	if ! getent group whgadmin > /dev/null; then \
+	    groupadd whgadmin; \
+	fi && \
+    useradd -rm -d /home/whgadmin -g whgadmin -s /bin/bash -G docker,sudo -u 1000 whgadmin -p "$(openssl passwd -1 $WHGADMIN_PASSWORD)" && \
+    
     # Update package lists and install necessary packages
     apt-get update && apt-get install -y lsb-release curl gnupg2 build-essential python3-gdal libpq-dev sudo nano locate netcat docker.io && \
     # Clean up unused files to reduce image size
