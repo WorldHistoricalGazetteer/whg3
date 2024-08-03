@@ -20,7 +20,7 @@ services:
       args:
         - WHGADMIN_PASSWORD
         - APP_PORT
-    image: whg3_web:latest
+    image: whg_staging
     container_name: staging_web
     volumes:
       - .:/app
