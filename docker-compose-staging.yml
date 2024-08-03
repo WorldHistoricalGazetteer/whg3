@@ -17,20 +17,17 @@ services:
     build:
       context: .
       dockerfile: ./compose/staging/django/Dockerfile-django
-#       args:
-#         - WHGADMIN_PASSWORD
-#         - APP_PORT
     image: whg_staging
     container_name: staging_web
     volumes:
       - .:/app
       - /home/whgadmin/sites/whg-staging/media:/app/media
       - /home/whgadmin/sites/whg-staging/static:/app/static
-      - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /home/whgadmin/sites/whg-staging/cache:/app/cache
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
-#     env_file:
-#       - ./.env/.staging
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
+    env_file:
+      - ./.env/.staging
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
     ports:
@@ -41,6 +38,7 @@ services:
     depends_on:
       - redis
       - db_beta
+    entrypoint: /app/entrypoints/entrypoint-web.sh
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -65,14 +63,14 @@ services:
     platform: linux/amd64
     image: postgis/postgis:15-3.4
     container_name: staging_postgres_beta
-    command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
+    ports:
+      - "127.0.0.1:${DB_PORT_STAGING}:${DB_PORT_BETA}"
     volumes:
       - /home/whgadmin/databases/staging:/var/lib/postgresql/data
       - ./compose/staging/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf
     env_file:
       - ./.env/.staging
-    ports:
-      - "127.0.0.1:${DB_PORT_STAGING}:${DB_PORT_BETA}"
+    command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
@@ -107,72 +105,70 @@ services:
       timeout: 10s
 
   celery_worker:
-    image: whg_staging
-    command: celery -A whg worker -l INFO
-    container_name: staging_celery_worker
     networks:
       - STAGING
+    image: whg_staging
+    container_name: staging_celery_worker
     volumes:
       - .:/app
       - /home/whgadmin/sites/whg-staging/media:/app/media
       - /home/whgadmin/sites/whg-staging/static:/app/static
-      - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /home/whgadmin/sites/whg-staging/cache:/app/cache
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /var/run/docker.sock:/var/run/docker.sock:ro
     env_file:
       - ./.env/.staging
+    environment:
+      - DJANGO_SETTINGS_MODULE=whg.settings
     depends_on:
       - redis
       - db_beta
+    entrypoint: /app/entrypoints/entrypoint-celery.sh
     restart: unless-stopped
 
   celery_beat:
-    image: whg_staging
-    command: ["sh", "-c", "rm -f './celerybeat.pid' && celery -A whg beat -l INFO"]
-    container_name: staging_celery_beat
     networks:
       - STAGING
+    image: whg_staging
+    container_name: staging_celery_beat
     volumes:
       - .:/app
       - /home/whgadmin/sites/whg-staging/media:/app/media
       - /home/whgadmin/sites/whg-staging/static:/app/static
-      - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /home/whgadmin/sites/whg-staging/cache:/app/cache
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
     env_file:
       - ./.env/.staging
+    environment:
+      - DJANGO_SETTINGS_MODULE=whg.settings
     depends_on:
       - redis
       - db_beta
+    entrypoint: /app/entrypoints/entrypoint-celery-beat.sh
     restart: unless-stopped
 
   flower:
-    image: whg_staging
-    command: >
-      sh -c '
-        until celery -A whg inspect ping; do
-          echo "Celery workers not available" >&2;
-          sleep 1;
-        done;
-        echo "Celery workers are available" >&2;
-        celery -A whg --broker=${CELERY_BROKER} flower
-      '
-    container_name: staging_flower
     networks:
       - STAGING
+    image: whg_staging
+    container_name: staging_flower
+    ports:
+      - "${FLOWER_PORT_STAGING}:5555"
     volumes:
       - .:/app
       - /home/whgadmin/sites/whg-staging/media:/app/media
       - /home/whgadmin/sites/whg-staging/static:/app/static
-      - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /home/whgadmin/sites/whg-staging/cache:/app/cache
       - /home/whgadmin/sites/logs/staging:/app/whg/logs
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
     env_file:
       - ./.env/.staging
-    ports:
-      - "${FLOWER_PORT_STAGING}:5555"
+    environment:
+      - DJANGO_SETTINGS_MODULE=whg.settings
     depends_on:
       - redis
       - db_beta
+    entrypoint: /app/entrypoints/entrypoint-flower.sh
     restart: unless-stopped

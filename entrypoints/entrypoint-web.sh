@@ -4,6 +4,9 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
+# Source the common functions script
+source /app/entrypoints/wait_for_db.sh
+
 # Collect static files
 echo "Collecting static files..."
 python manage.py collectstatic --no-input
@@ -14,13 +17,7 @@ python manage.py collectstatic --no-input
 : "${APP_PORT:?Environment variable APP_PORT is not set}"
 
 # Wait for the database to be ready
-echo "Waiting for the database to be ready..."
-until nc -z "${DB_HOST_BETA}" "${DB_PORT_BETA}"; do
-  echo "Database not ready yet. Sleeping..."
-  sleep 2
-done
+wait_for_db "${DB_HOST_BETA}" "${DB_PORT_BETA}"
 
-echo "Database is ready. Starting Gunicorn..."
-
-# Start Gunicorn server
+echo "Starting Gunicorn server..."
 exec gunicorn whg.wsgi:application --bind 0.0.0.0:${APP_PORT} --timeout 1200 -w 4
