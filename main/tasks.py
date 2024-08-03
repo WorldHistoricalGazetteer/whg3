@@ -246,4 +246,88 @@ def get_tileset_task_progress(request):
         progress_data.append({'category': category, 'id': id, 'action': action, 'progress': task_progress.decode('utf-8') if task_progress else None})
 
     return JsonResponse(progress_data, safe=False)
+
+@shared_task
+def check_services():
+    """
+    Check the status of various services and ping Healthchecks.io accordingly.
+    """
+    services = settings.HEALTHCHECKS
+
+    for service, details in services.items():
+        if service == 'elasticsearch':
+            # Special case for Elasticsearch until it is moved to a Docker container
+            status = check_elasticsearch()
+        else:
+            # General case for Docker containers
+            status = get_container_health(service)
+
+        healthcheck_url = details.get('healthcheck_url', '')
+        if status != 'healthy':
+            healthcheck_url += '/fail'
+        logger.info(f"Service '{service}' is {status}: Pinging {healthcheck_url}")
+        
+        try:
+            requests.get(f"{healthcheck_url}")
+        except requests.RequestException as e:
+            logger.error(f"Failed to ping Healthchecks.io for {service}: {e}")
+
+def get_container_health(container_id):
+    """
+    Get the health status of a service based on its Docker container health.
+    """
+    
+    command = f"docker inspect --format='{{{{json .State.Health}}}}' {container_id}"
+    
+    try:
+        result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            try:
+                health_json = result.stdout
+                container_info = json.loads(health_json)
+                health_status = container_info.get('Status', 'unknown')
+                return 'healthy' if health_status == 'healthy' else 'unhealthy'
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON decode error for container health check: {e}")
+                return 'unhealthy'
+        else:
+            logger.error(f"Container health check command failed with return code {result.returncode}")
+            return 'unhealthy'
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error executing container health check command: {e}")
+        return 'unhealthy'
+
+#TODO: Remove this once ElasticSearch has been moved to a Docker container
+def check_elasticsearch():
+    """
+    Check Elasticsearch health
+    """
+    command = f'curl -u elastic:{settings.ELASTIC_PASSWORD} -k -X GET "{settings.ES_SCHEME}://{settings.ES_HOST}:{settings.ES_PORT}/_cluster/health"'
+    try:
+        result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            try:
+                output = result.stdout.decode()
+                response_json = json.loads(output)
+                status = response_json.get('status', '')
+                if status in ['green', 'yellow']:
+                    return 'healthy'
+                else:
+                    return 'unhealthy'
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON decode error for Elasticsearch health check: {e}")
+                return 'unhealthy'
+        else:
+            logger.error(f"Elasticsearch health check command failed with return code {result.returncode}")
+            return 'unhealthy'
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error executing Elasticsearch health check command: {e}")
+        return 'unhealthy'
+
+# @shared_task
+# def backup_data():
+#
+#     es = settings.ES_CONN
+#     snapshot_name = f'Elastic_{datetime.now().strftime("%Y%m%d%H%M%S")}'
+#     es.snapshot.create(repository='GCS-WHG-Backups', snapshot=snapshot_name, wait_for_completion=True)
     
