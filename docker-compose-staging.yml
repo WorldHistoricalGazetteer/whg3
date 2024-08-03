@@ -34,7 +34,7 @@ services:
     environment:
       APP_PORT: ${APP_PORT}
     ports:
-      - "8001:${APP_PORT}"
+      - "${APP_PORT}:${APP_PORT}"
     user: "1000:1000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
