@@ -47,8 +47,19 @@
 	          <tr><td>Variants:</td><td>{% for n in object.names.all %}
 	          <i>{{n.jsonb.toponym }};</i> {% endfor %}</td></tr>
 	          
-	          {% if object.description %}
-	          <tr><td><b>Description</b></td><td>{{ object.description }}</td></tr>{% endif %}
+			  {% if object.descriptions.all %}
+				  <tr>
+				    <td><b>Description</b></td>
+				    <td>
+				      {% for description in object.descriptions.all %}
+				        {{ description.jsonb.some_field }}<br>
+				      {% empty %}
+				        No description available.
+				      {% endfor %}
+				    </td>
+				  </tr>
+			  {% endif %}
+	          
 	          <tr>
 	            <td>Earliest/Latest:</td>
 	            {% if object.minmax %}
