@@ -2,94 +2,49 @@ FROM --platform=linux/amd64 python:3.10.7-slim-bullseye
 
 LABEL maintainer="WHC @ Pitt"
 
-# Ensure that Python output is sent straight to the terminal without buffering
 ENV PYTHONUNBUFFERED 1
-
-# Prevent Python from writing `.pyc` files to disk
 ENV PYTHONDONTWRITEBYTECODE 1
-
-# Set a system-level configuration to increase the maximum number of memory map areas a process may have
-# This can be required for certain applications that need more memory mappings
 ENV MAX_MAP_COUNT 262144
 
-# Define arguments that can be passed during the build process
 ARG WHGADMIN_PASSWORD
 ARG APP_PORT
 
-# Create a Unix group named 'whgadmin' in the container's OS
-RUN groupadd whgadmin
-
-# Create a Unix user named 'whgadmin' with specific attributes:
-# - Home directory: /home/whgadmin
-# - Default shell: /bin/bash
-# - User group: whgadmin
-# - Additional group: sudo (for administrative privileges)
-# - User ID: 1000 (matches 'whgadmin' in Ubuntu)
-# - Password: Set using hashed value derived from environment variable $WHGADMIN_PASSWORD
-RUN useradd -rm -d /home/whgadmin -g whgadmin -s /bin/bash \
-    -G sudo -u 1000 whgadmin -p "$(openssl passwd -1 $WHGADMIN_PASSWORD)"
-    
-# Expose APP_PORT to allow communication to/from the container on this port
 EXPOSE ${APP_PORT}
 
-RUN apt-get update && \
-    apt-get install -y lsb-release curl gnupg2 && \
-    echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" >> /etc/apt/sources.list.d/pgdg.list && \
-    curl -sSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
-    apt-get update && \
-    apt-get install -y build-essential python3-gdal libpq-dev sudo nano locate curl redis-server postgresql-15 postgis netcat docker.io \
-    && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
-    && rm -rf /var/lib/apt/lists/*
-    
-# ABOVE REINSTATED FOR TESTING    
-#RUN apt-get update && \
-#    apt-get install -y \
-#        lsb-release \
-#        curl \
-#        gnupg2 \
-#        build-essential \
-#        python3-gdal \
-#        libpq-dev \
-#        sudo \
-#        nano \
-#        locate \
-#        netcat \
-#        docker.io && \
-#    # Clean up unused files and package cache
-#    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
-#    rm -rf /var/lib/apt/lists/*    
-
-# Create the /app/static directory and set ownership to the 'whgadmin' user
-RUN mkdir -p /app/static && chown -R whgadmin:whgadmin /app/static
-
-# Install Python dependencies
+COPY ./entrypoints/ /entrypoints/
 COPY ./requirements.txt /tmp/requirements.txt
-RUN python -m venv /py && \
+    
+RUN set -eux; \
+    
+	# Create groups only if they don't exist
+	if ! getent group docker > /dev/null; then \
+	    groupadd docker; \
+	fi && \
+	if ! getent group whgadmin > /dev/null; then \
+	    groupadd whgadmin; \
+	fi && \
+    useradd -rm -d /home/whgadmin -g whgadmin -s /bin/bash -G docker,sudo -u 1000 whgadmin -p "$(openssl passwd -1 $WHGADMIN_PASSWORD)" && \
+    
+    # Update package lists and install necessary packages
+    apt-get update && apt-get install -y lsb-release curl gnupg2 build-essential python3-gdal libpq-dev sudo nano locate netcat docker.io && \
+    # Clean up unused files to reduce image size
+    apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
+    rm -rf /var/lib/apt/lists/* && \
+    # Create and set permissions for static directory
+    mkdir -p /app/static && chown -R whgadmin:whgadmin /app/static && \
+    # Set up Python virtual environment and install dependencies
+    python -m venv /py && \
     /py/bin/pip install --upgrade pip && \
     /py/bin/pip install -r /tmp/requirements.txt && \
-    rm -rf /tmp
+    rm -rf /tmp && \
+    # Convert Windows line endings to UNIX line endings and make entrypoint scripts executable
+    sed -i 's/\r$//g' /entrypoints/*.sh && \
+    chmod +x /entrypoints/*.sh && \
+    # Set correct ownership and permissions for entrypoints and migrations directories
+    chown -R whgadmin:root /entrypoints/ /py/lib/python3.10/site-packages/captcha/migrations/ /py/lib/python3.10/site-packages/guardian/migrations/
 
-# Set correct ownership and permissions for the migrations directories
-RUN chown -R whgadmin:root /py/lib/python3.10/site-packages/captcha/migrations/
-RUN chown -R whgadmin:root /py/lib/python3.10/site-packages/guardian/migrations/
-
-# Copy script, convert CRLF to LF and make executable. USE PRODUCTION ENTRYPOINT!
-COPY ./compose/production/django/entrypoint.sh /entrypoint
-RUN sed -i 's/\r$//g' /entrypoint && chmod +x /entrypoint
-    
-# Set the working directory for the following instructions
 WORKDIR /app
 
-# Create the necessary directories and files with appropriate permissions for debug.log
-# RUN mkdir -p /app/whg/logs && \
-#     touch /app/whg/logs/debug.log && \
-#     chmod 777 /app/whg/logs/debug.log
-
-# Update the PATH environment variable to include the /py/bin directory
 ENV PATH="/py/bin:$PATH"
 
-# Switch to the 'whgadmin' user for running subsequent commands
 USER whgadmin
-
-# Set the entry point for the container, specifying the script to execute when the container starts
-ENTRYPOINT ["/entrypoint"]
