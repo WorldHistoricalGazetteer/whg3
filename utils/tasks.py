@@ -29,16 +29,21 @@ User = get_user_model()
 
 def downloader(request, *args, **kwargs):
     logger.debug(f'downloader() user: {request.user}, request.POST: {request.POST}')
-    dsid = request.POST.get('dsid')
-    collid = request.POST.get('collid')
-    user = request.user
-
+    
     if request.method == 'POST':
         if request.is_ajax():
             logger.debug('AJAX request detected')
             format = request.POST.get('format', 'json')
-            userid = user.id if user.is_authenticated else 1
+            dsid = request.POST.get('dsid')
+            collid = request.POST.get('collid')
+            user = request.user
+
+            if not dsid and not collid:
+                logger.error('No dsid or collid provided')
+                return HttpResponse(status=400, content='Missing required parameters.')
+
             try:
+                userid = user.id if user.is_authenticated else 1
                 download_task = make_download.delay(
                     userid=userid,
                     username=user.username,
@@ -47,14 +52,23 @@ def downloader(request, *args, **kwargs):
                     format=format
                 )
                 logger.info(f'Task sent to Celery, task_id: {download_task.task_id}')
-                return HttpResponse(json.dumps({'task_id': download_task.task_id}), content_type='application/json')
+                return HttpResponse(
+                    json.dumps({'task_id': download_task.task_id}),
+                    content_type='application/json'
+                )
             except Exception as e:
                 logger.error(f'Error sending task to Celery: {e}')
-                return HttpResponse(status=500)
+                return HttpResponse(status=500, content='Internal Server Error')
         else:
             logger.info(f'Non-AJAX POST request, data: {request.POST}')
+            return HttpResponse(status=400, content='Invalid request format.')
+    
     elif request.method == 'GET':
         logger.info(f'GET request, data: {request.GET}')
+        return HttpResponse(status=200, content='GET requests are not supported at this endpoint.')
+    
+    logger.error('Unsupported HTTP method')
+    return HttpResponse(status=405, content='Method Not Allowed')
 
 def generate_zip_filename(data_dump_filename):
     try:
