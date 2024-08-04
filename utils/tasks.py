@@ -31,7 +31,10 @@ def downloader(request, *args, **kwargs):
     logger.debug(f'downloader() user: {request.user}, request.POST: {request.POST}')
     
     if request.method == 'POST':
-        if request.is_ajax():
+        # Check if the request is an AJAX request
+        is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        
+        if is_ajax:
             logger.debug('AJAX request detected')
             format = request.POST.get('format', 'json')
             dsid = request.POST.get('dsid')
