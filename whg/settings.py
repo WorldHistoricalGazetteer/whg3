@@ -182,8 +182,8 @@ WSGI_APPLICATION = 'whg.wsgi.application'
 
 LOGGING_LEVELS = {
     'staging': 'DEBUG',
-    'dev': 'INFO',
-    'prod': 'WARNING',
+    'dev': 'DEBUG',
+    'prod': 'DEBUG',
 }
 LOGGING = {
     'version': 1,
@@ -226,7 +226,7 @@ LOGGING = {
         'console': {
             'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
             'class': 'logging.StreamHandler',
-            'formatter': 'simple',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
