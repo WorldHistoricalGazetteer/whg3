@@ -19,7 +19,7 @@ services:
       args:
         - WHGADMIN_PASSWORD
         - APP_PORT
-    image: whg3_web:latest
+    image: whg3_web
     container_name: web
     volumes:
       - .:/app
@@ -130,7 +130,7 @@ services:
       timeout: 10s
 
   celery_worker:
-    image: whg3_web:latest
+    image: whg3_web
     command: celery -A whg worker -l INFO
     container_name: celery_worker
     networks:
@@ -151,7 +151,7 @@ services:
     restart: unless-stopped
 
   celery_beat:
-    image: whg3_web:latest
+    image: whg3_web
     command: ["sh", "-c", "rm -f './celerybeat.pid' && celery -A whg beat -l INFO"]
     container_name: celery_beat
     networks:
@@ -171,7 +171,7 @@ services:
     restart: unless-stopped
 
   flower:
-    image: whg3_web:latest
+    image: whg3_web
     command: >
       sh -c '
         until celery -A whg inspect ping; do
