@@ -22,6 +22,15 @@ from datasets.utils import makeNow
 from main.models import DownloadFile, Log
 from places.models import Place
 
+import json
+import csv
+from copy import deepcopy
+from celery import shared_task
+from celery.result import AsyncResult
+import pandas as pd
+from django.conf import settings
+from utils.emailing import new_emailer
+
 logger = get_task_logger(__name__)
 es = settings.ES_CONN
 User = get_user_model()
@@ -31,13 +40,13 @@ User = get_user_model()
   called from download modals, ds_metadata.html
 """
 def downloader(request, *args, **kwargs):
-  print('downloader() user, request.POST', request.user, request.POST)
+  logger.debug('downloader() user, request.POST', request.user, request.POST)
   dsid = request.POST.get('dsid') or None
   collid = request.POST.get('collid') or None
   user = request.user
   # POST *should* be the only case...
   if request.method == 'POST' and request.accepts('XMLHttpRequest'):
-    print('ajax == True')
+    logger.debug('ajax == True')
     format=request.POST['format']
 
     userid = request.user.id if request.user.is_authenticated else 1
@@ -49,19 +58,19 @@ def downloader(request, *args, **kwargs):
       format=format or None
     )
 
-    print('task to Celery', download_task.task_id)
+    logger.debug('task to Celery', download_task.task_id)
     # return task_id
     obj={'task_id': download_task.task_id}
-    print('obj from downloader()', obj)
+    logger.debug('obj from downloader()', obj)
 
     return HttpResponse(json.dumps(obj), content_type='application/json')
 
   elif request.method == 'POST' and not request.is_ajax:
-    print('request.POST (not ajax)', request.POST)
+    logger.debug('request.POST (not ajax)', request.POST)
 
 
   elif request.method == 'GET':
-    print('request.GET', request.GET)
+    logger.debug('request.GET', request.GET)
 
 # give file a .zip extension
 def generate_zip_filename(data_dump_filename):
@@ -72,7 +81,7 @@ def generate_zip_filename(data_dump_filename):
 # create a DownloadFile record
 def create_downloadfile_record(user, ds, coll, zip_filename):
   # Determine the title based on whether it's a Collection or Dataset
-  print(f'@ create_downloadfile_record: user:{user}, ds: {ds}, coll: {coll}, zip_filename: {zip_filename}') # DEBUG
+  logger.debug(f'@ create_downloadfile_record: user:{user}, ds: {ds}, coll: {coll}, zip_filename: {zip_filename}') # DEBUG
   if coll and not ds:
     title = coll.title
   elif ds:
@@ -155,13 +164,13 @@ def create_zipfile(data_dump_filename, dsid=None, collid=None):
     metadata = dataset_to_json(dsid)
   elif collid:
     metadata = collection_to_json(collid)
-    print('metadata_json_str', type(metadata), metadata)
+    logger.debug('metadata_json_str', type(metadata), metadata)
     # return
   else:
     raise ValueError("Invalid parameters provided for zipfile creation.")
 
   pretty_metadata = json.dumps(metadata, indent=1, sort_keys=False)
-  print('metadata_json', metadata)
+  logger.debug('metadata_json', metadata)
   dl_class = "Dataset" if dsid else "Collection"
   # Create a README.txt file with the dataset JSON
   readme_content = (f'World Historical Gazetteer (WHG) \n{dl_class} Download\n'
@@ -176,7 +185,7 @@ def create_zipfile(data_dump_filename, dsid=None, collid=None):
                     "* NonCommercial — You may not use the material for commercial purposes.\n")
   readme_content += "\n***********************************\n"
   # for metadata_dict in metadata:
-  #   print('metadata_dict', metadata_dict)
+  #   logger.debug('metadata_dict', metadata_dict)
     # formatted_metadata = format_metadata(metadata_dict)
   readme_content += "\nMetadata:\n" + pretty_metadata
 
@@ -201,305 +210,276 @@ def create_zipfile(data_dump_filename, dsid=None, collid=None):
   builds download .zip file for single dataset or entire collection
   in lpf or tsv, as requested/required
 """
+
 @shared_task(name="make_download", bind=True)
 def make_download(self, *args, **kwargs):
-  print('make_download() args, kwargs', args, kwargs)
-  user = User.objects.get(pk=kwargs['userid'])
-  collid = kwargs['collid'] or None
-  dsid = kwargs['dsid'] or None
-  req_format = kwargs['format']
-  print('make_download() userid, dsid, collid, format',
-        user.id, dsid, collid, req_format)
-  date = makeNow()
-
-  # collection or dataset
-  if collid and not dsid:
-    # it's an entire collection;
-    # if 'place': all places in all its datasets
-    # if 'dataset': all places in all its datasets (individual are handled below)
-    coll = Collection.objects.get(id=collid)
-    colltitle = coll.title
-    collclass = coll.collection_class
-
-    qs = coll.places_all.all()
-
-    # count for progress
-    total_operations = qs.count()
-
-    # ensure format is lpf
-    req_format = 'lpf'
-
-    # name and open file for writing
-    fn = 'media/downloads/'+str(user.id)+'_'+str(collid)+'_'+date+'.json'
-    outfile = open(fn, 'w', encoding='utf-8')
-
-    # build features list
-    features = []
-    for i, p in enumerate(qs):
-      geoms = p.geoms.all()
-      if len(geoms) == 1:
-        geometry = geoms[0].jsonb
-      else:
-        geometry = {
-          "type": "GeometryCollection",
-          "geometries": [g.jsonb for g in geoms]
-        }
-      # Fetch annotation information
-      try:
-        anno = p.traces.filter(collection_id=collid, archived=False).first()
-        coll_place = CollPlace.objects.filter(collection=collid, place=p).first()
-
-        annotation = {
-          "place_id": p.id,
-          "sequence": coll_place.sequence if coll_place else None,
-          "note": anno.note if anno else "",
-          "relation": anno.relation if anno else [],
-          "start": anno.start if anno else "",
-          "end": anno.end if anno else "",
-          "created": anno.created.strftime('%Y-%m-%d') if anno else ""
-        }
-      except Exception as e:
-        # Handle cases where TraceAnnotation or CollPlace might not exist for a Place
-        annotation = {}
-        print(f"Error fetching annotation or sequence for place {p.id}: {e}")
-
-      rec = {"type": "Feature",
-             "properties": {"id": p.id,
-                            "src_id": p.src_id,
-                            "title": p.title,
-                            "ccodes": p.ccodes,
-                            "annotation": annotation},
-             "geometry": geometry,
-             "names": [n.jsonb for n in p.names.all()],
-             "types": [t.jsonb for t in p.types.all()],
-             "links": [ln.jsonb for ln in p.links.all()],
-             "whens": [w.jsonb for w in p.whens.all()],
-      }
-      features.append(rec)
-      # update task state every 100 iterations
-      if (i + 1) % 100 == 0:
-        self.update_state(state='PROGRESS',
-                                  meta={'current': i + 1, 'total': total_operations})
-        print(f"Task state: PROGRESS, current: {i + 1}, total: {total_operations}")
-
-    features_sorted = sorted(features, key=lambda x: x['properties']['annotation'].get('sequence', float('inf')))
-
-    print(f'download file for {total_operations} places in {colltitle}')
-    result = {"type": "FeatureCollection", "features": features_sorted,
-              "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
-              "filename": "/" + fn}
-
-    # write the data as json to fn
-    outfile.write(json.dumps(result,indent=2).replace('null', '""'))
-    outfile.close()
-    # create zip with README.txt
-    create_zipfile(fn, None, collid)
-    # create DownloadFile record
-    zipname = generate_zip_filename(fn)
-    create_downloadfile_record(user, None, coll, zipname)
-
-  elif dsid:
-    # it's a single dataset
-    if collid:
-      print('single dataset in collection', dsid, collid)
-    else:
-      print('solo dataset', dsid)
-    ds = Dataset.objects.get(pk=dsid)
-    dslabel = ds.label
-    qs = ds.places.all()
-
-    # count for progress
-    total_operations = qs.count()
-
-    print("tasks.make_download()", {"format": req_format, "ds": dsid})
-
-    if ds.format == 'delimited' and req_format in ['tsv', 'delimited']:
-      print('making an augmented tsv file')
-
-      # get header as uploaded and create newheader w/any "missing" columns
-      # get latest dataset file
-      dsf = ds.file
-      # make pandas dataframe
-      df = pd.read_csv('media/'+dsf.file.name,
-                       delimiter=dsf.delimiter,
-                       # delimiter='\t',
-                       dtype={'id':'str','aat_types':'str'})
-      print('df', df)
-      # copy existing header to newheader for write
-      header = list(df)
-      # header = list(df)[0].split(',')
-      newheader = deepcopy(header)
-
-      # all exports should have these, empty or not
-      newheader = list(set(newheader+['lon','lat','matches','geo_id','geo_source','geowkt']))
-
-      # name and open csv file for writer
-      fn = 'media/downloads/'+str(user.id)+'_'+dslabel+'_'+date+'.tsv'
-      csvfile = open(fn, 'w', newline='', encoding='utf-8')
-      writer = csv.writer(csvfile, delimiter='\t', quotechar='', quoting=csv.QUOTE_NONE)
-
-      # TODO: better order?
-      writer.writerow(newheader)
-      # missing columns (were added to newheader)
-      missing=list(set(newheader)-set(list(df)))
-      print('missing',missing)
-
-      for i, row in df.iterrows():
-        dfrow = df.loc[i,:]
-        # get db record
-        # src_id is NOT distinct amongst all places!!
-        p = qs.get(src_id = dfrow['id'], dataset = ds.label)
-
-        # df row to newrow json object
-        rowjs = json.loads(dfrow.to_json())
-        newrow = deepcopy(rowjs)
-
-        # add missing keys from newheader, if any
-        for m in missing:
-          newrow[m] = ''
-        # newrow now has all keys -> fill with db values as req.
-
-        # LINKS (matches)
-        # get all distinct matches in db as string
-        links = ';'.join(list(set([ln.jsonb['identifier'] for ln in p.links.all()])))
-        # replace whatever was in file
-        newrow['matches'] = links
-
-        # GEOMETRY
-        # if db has >0 geom and row has none, add lon/lat and geowkt
-        # otherwise, don't bother
-        geoms = p.geoms.all()
-        if geoms.count() > 0:
-          geowkt= newrow['geowkt'] if 'geowkt' in newrow else None
-
-          lonlat= [newrow['lon'],newrow['lat']] if \
-            len(set(newrow.keys())&set(['lon','lat']))==2 else None
-          # lon/lat may be empty
-          if not geowkt and (not lonlat or None in lonlat or lonlat[0]==''):
-            # get first db geometry & add to newrow dict
-            g=geoms[0]
-            #newheader.extend(['geowkt'])
-            newrow['geowkt']=g.geom.wkt if g.geom else ''
-            # there is always jsonb
-            # xy = g.geom.coords[0] if g.jsonb['type'] == 'MultiPoint' else g.geom.coords
-            xy = g.geom.coords[0] if g.jsonb['type'] == 'MultiPoint' else g.jsonb['coordinates']
-            newrow['lon'] = xy[0]
-            newrow['lat'] = xy[1]
-
-        # match newrow order to newheader already written
-        index_map = {v: i for i, v in enumerate(newheader)}
-        ordered_row = sorted(newrow.items(), key=lambda pair: index_map[pair[0]])
-
-        # write it
-        csvrow = [o[1] for o in ordered_row]
-        writer.writerow(csvrow)
-
-        if (i + 1) % 100 == 0:  # Update state every 100 iterations
-          try:
-            self.update_state(state='PROGRESS',
-                                      meta={'current': i + 1, 'total': total_operations})
-            print(f"Task state: PROGRESS, current: {i + 1}, total: {total_operations}")
-
-            task_id = self.request.id
-            task_result = AsyncResult(task_id)
-            print(f"Immediate task state: {task_result.state}, info: {task_result.info}")
-          except Exception as e:
-            print(f"Error updating task state: {e}")
-
-      csvfile.close()
-      create_zipfile(fn, ds.id, None) # single dataset
-      zipname = generate_zip_filename(fn)
-      create_downloadfile_record(user, ds, None, zipname)
-
-    else:
-      print('building lpf file')
-      # make file name
-      fn = 'media/downloads/'+str(user.id)+'_'+dslabel+'_'+date+'.json'
-      # open file for writing
-      outfile = open(fn, 'w', encoding='utf-8')
-
-      # build features list
-      features = []
-      for i, p in enumerate(qs):
-        print('place in make_download():424', p.__dict__)
-        whens = p.whens.all()
-        if len(whens) > 0:
-          when = p.whens.first().jsonb
-          if 'minmax' in when:
-            del when['minmax']
-        else:
-          when = {}
-        geoms = p.geoms.all()
-        if len(geoms) == 1:
-          geometry = geoms[0].jsonb
-        else:
-          geometry = {
-            "type": "GeometryCollection",
-            "geometries": [g.jsonb for g in geoms]
-          }
-        rec = {
-          "type": "Feature",
-          "@id": ds.uri_base + (str(p.id) if 'whgazetteer' in ds.uri_base else p.src_id),
-          "properties": {"pid": p.id, "src_id": p.src_id, "title": p.title, "ccodes": p.ccodes},
-          "geometry": geometry,
-          "names": [n.jsonb for n in p.names.all()],
-          "types": [t.jsonb for t in p.types.all()],
-          "links": [ln.jsonb for ln in p.links.all()],
-          "when": when
-        }
-        features.append(rec)
-        # update task state every 100 iterations
-        if (i + 1) % 100 == 0:
-          self.update_state(state='PROGRESS',
-                            meta={'current': i + 1, 'total': total_operations})
-          print(f"Task updated: current iteration is {i + 1}, total operations are {total_operations}")
-
-      print('download file for ' + str(total_operations) + ' places')
-
-      result={"type":"FeatureCollection",
-              "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
-              "filename": "/"+fn,
-              "decription": ds.description,
-              "features": features}
-
-      # write the data as json to fn
-      outfile.write(json.dumps(result, indent=2).replace('null', '""'))
-      outfile.close()
-      # create zip with README.txt
-      create_zipfile(fn, ds.id, None)
-      # create DownloadFile record
-      zipname = generate_zip_filename(fn)
-      create_downloadfile_record(user, ds, None, zipname)
-
-
-  print(f'@ Log create: user_id:{user.id}, dsid: {dsid}, collid: {collid})') # DEBUG
-  # log the download, dataset or collection
-  Log.objects.create(
-    category = 'dataset' if dsid else 'collection',
-    logtype = 'ds_download' if dsid else 'coll_download',
-    note = {"format": req_format, "name": user.username},
-    dataset_id = dsid or None,
-    collection_id = collid or None,
-    user_id = user.id
-  )
-
-  from utils.emailing import new_emailer
-  new_emailer(
-    email_type='download_ready',
-    subject='WHG download file is ready',
-    from_email=settings.DEFAULT_FROM_EMAIL,
-    to_email=[user.email],
-    name=user.username,
-    greeting_name=user.name if user.name else user.username,
-    label=ds.label if dsid else coll.title,
-    title=ds.title if dsid else coll.title,
-    email=user.email,
-    taskname='Download',
-  )
-
-  self.update_state(state='SUCCESS')
-  print("Task state: SUCCESS")
-  # for ajax, just report filename
-  # completed_message = {"msg": req_format+" written", "filename": fn, "rows": count}
-  completed_message = {"msg": req_format+" written", "filename": fn}
-  return completed_message
+    logger.debug('make_download() args, kwargs: %s, %s', args, kwargs)
+    
+    try:
+        user = User.objects.get(pk=kwargs['userid'])
+    except User.DoesNotExist as e:
+        logger.error('User with ID %s does not exist: %s', kwargs['userid'], e)
+        self.update_state(state='FAILURE', meta={'error': str(e)})
+        return {'msg': 'User not found', 'error': str(e)}
+    
+    collid = kwargs.get('collid', None)
+    dsid = kwargs.get('dsid', None)
+    req_format = kwargs.get('format', 'json')  # Default to 'json' if format is not provided
+    date = makeNow()
+    
+    try:
+        if collid and not dsid:
+            # Processing a collection
+            coll = Collection.objects.get(id=collid)
+            colltitle = coll.title
+            collclass = coll.collection_class
+            qs = coll.places_all.all()
+            total_operations = qs.count()
+            req_format = 'lpf'
+            fn = 'media/downloads/'+str(user.id)+'_'+str(collid)+'_'+date+'.json'
+            
+            with open(fn, 'w', encoding='utf-8') as outfile:
+                features = []
+                for i, p in enumerate(qs):
+                    try:
+                        geoms = p.geoms.all()
+                        if len(geoms) == 1:
+                            geometry = geoms[0].jsonb
+                        else:
+                            geometry = {
+                                "type": "GeometryCollection",
+                                "geometries": [g.jsonb for g in geoms]
+                            }
+                        
+                        try:
+                            anno = p.traces.filter(collection_id=collid, archived=False).first()
+                            coll_place = CollPlace.objects.filter(collection=collid, place=p).first()
+                            annotation = {
+                                "place_id": p.id,
+                                "sequence": coll_place.sequence if coll_place else None,
+                                "note": anno.note if anno else "",
+                                "relation": anno.relation if anno else [],
+                                "start": anno.start if anno else "",
+                                "end": anno.end if anno else "",
+                                "created": anno.created.strftime('%Y-%m-%d') if anno else ""
+                            }
+                        except Exception as e:
+                            annotation = {}
+                            logger.debug('Error fetching annotation or sequence for place %s: %s', p.id, e)
+                        
+                        rec = {
+                            "type": "Feature",
+                            "properties": {
+                                "id": p.id,
+                                "src_id": p.src_id,
+                                "title": p.title,
+                                "ccodes": p.ccodes,
+                                "annotation": annotation
+                            },
+                            "geometry": geometry,
+                            "names": [n.jsonb for n in p.names.all()],
+                            "types": [t.jsonb for t in p.types.all()],
+                            "links": [ln.jsonb for ln in p.links.all()],
+                            "whens": [w.jsonb for w in p.whens.all()]
+                        }
+                        features.append(rec)
+                        
+                        if (i + 1) % 100 == 0:
+                            self.update_state(state='PROGRESS',
+                                              meta={'current': i + 1, 'total': total_operations})
+                            logger.debug('Task state: PROGRESS, current: %d, total: %d', i + 1, total_operations)
+                    
+                    except Exception as e:
+                        logger.error('Error processing place %s: %s', p.id, e)
+                        continue
+                
+                features_sorted = sorted(features, key=lambda x: x['properties']['annotation'].get('sequence', float('inf')))
+                result = {
+                    "type": "FeatureCollection",
+                    "features": features_sorted,
+                    "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
+                    "filename": "/" + fn
+                }
+                outfile.write(json.dumps(result, indent=2).replace('null', '""'))
+            
+            create_zipfile(fn, None, collid)
+            zipname = generate_zip_filename(fn)
+            create_downloadfile_record(user, None, coll, zipname)
+        
+        elif dsid:
+            # Processing a single dataset
+            if collid:
+                logger.debug('Single dataset in collection: %s, %s', dsid, collid)
+            else:
+                logger.debug('Solo dataset: %s', dsid)
+            
+            ds = Dataset.objects.get(pk=dsid)
+            dslabel = ds.label
+            qs = ds.places.all()
+            total_operations = qs.count()
+            logger.debug('Processing dataset: %s', dsid)
+            
+            if ds.format == 'delimited' and req_format in ['tsv', 'delimited']:
+                try:
+                    dsf = ds.file
+                    df = pd.read_csv('media/'+dsf.file.name,
+                                     delimiter=dsf.delimiter,
+                                     engine='python',
+                                     dtype={'id':'str','aat_types':'str'})
+                    logger.debug('DataFrame loaded successfully')
+                    
+                    header = list(df)
+                    newheader = list(set(header + ['lon', 'lat', 'matches', 'geo_id', 'geo_source', 'geowkt']))
+                    
+                    fn = 'media/downloads/'+str(user.id)+'_'+dslabel+'_'+date+'.tsv'
+                    with open(fn, 'w', newline='', encoding='utf-8') as csvfile:
+                        writer = csv.writer(csvfile, delimiter='\t', quotechar='', quoting=csv.QUOTE_NONE)
+                        writer.writerow(newheader)
+                        missing = list(set(newheader) - set(header))
+                        logger.debug('Missing columns: %s', missing)
+                        
+                        for i, row in df.iterrows():
+                            try:
+                                dfrow = df.loc[i, :]
+                                p = qs.get(src_id=dfrow['id'], dataset=ds.label)
+                                rowjs = json.loads(dfrow.to_json())
+                                newrow = deepcopy(rowjs)
+                                
+                                for m in missing:
+                                    newrow[m] = ''
+                                
+                                links = ';'.join(list(set([ln.jsonb['identifier'] for ln in p.links.all()])))
+                                newrow['matches'] = links
+                                
+                                geoms = p.geoms.all()
+                                if geoms.count() > 0:
+                                    geowkt = newrow.get('geowkt', None)
+                                    lonlat = [newrow.get('lon'), newrow.get('lat')]
+                                    if not geowkt and (not lonlat or None in lonlat or lonlat[0] == ''):
+                                        g = geoms[0]
+                                        newrow['geowkt'] = g.geom.wkt if g.geom else ''
+                                        xy = g.geom.coords[0] if g.jsonb['type'] == 'MultiPoint' else g.geom.coords
+                                        newrow['lon'] = xy[0]
+                                        newrow['lat'] = xy[1]
+                                
+                                index_map = {v: i for i, v in enumerate(newheader)}
+                                ordered_row = sorted(newrow.items(), key=lambda pair: index_map[pair[0]])
+                                csvrow = [o[1] for o in ordered_row]
+                                writer.writerow(csvrow)
+                                
+                                if (i + 1) % 100 == 0:
+                                    self.update_state(state='PROGRESS',
+                                                      meta={'current': i + 1, 'total': total_operations})
+                                    logger.debug('Task state: PROGRESS, current: %d, total: %d', i + 1, total_operations)
+                                
+                            except Exception as e:
+                                logger.error('Error processing row %d: %s', i, e)
+                                continue
+                    
+                    create_zipfile(fn, ds.id, None)
+                    zipname = generate_zip_filename(fn)
+                    create_downloadfile_record(user, ds, None, zipname)
+                
+                except Exception as e:
+                    logger.error('Error processing dataset: %s', e)
+                    self.update_state(state='FAILURE', meta={'error': str(e)})
+                    return {'msg': 'Error processing dataset', 'error': str(e)}
+            
+            else:
+                try:
+                    fn = 'media/downloads/'+str(user.id)+'_'+dslabel+'_'+date+'.json'
+                    with open(fn, 'w', encoding='utf-8') as outfile:
+                        features = []
+                        for i, p in enumerate(qs):
+                            try:
+                                whens = p.whens.all()
+                                when = p.whens.first().jsonb if len(whens) > 0 else {}
+                                geoms = p.geoms.all()
+                                if len(geoms) == 1:
+                                    geometry = geoms[0].jsonb
+                                else:
+                                    geometry = {
+                                        "type": "GeometryCollection",
+                                        "geometries": [g.jsonb for g in geoms]
+                                    }
+                                rec = {
+                                    "type": "Feature",
+                                    "@id": ds.uri_base + (str(p.id) if 'whgazetteer' in ds.uri_base else p.src_id),
+                                    "properties": {
+                                        "pid": p.id,
+                                        "src_id": p.src_id,
+                                        "title": p.title,
+                                        "ccodes": p.ccodes
+                                    },
+                                    "geometry": geometry,
+                                    "names": [n.jsonb for n in p.names.all()],
+                                    "types": [t.jsonb for t in p.types.all()],
+                                    "links": [ln.jsonb for ln in p.links.all()],
+                                    "when": when
+                                }
+                                features.append(rec)
+                                
+                                if (i + 1) % 100 == 0:
+                                    self.update_state(state='PROGRESS',
+                                                      meta={'current': i + 1, 'total': total_operations})
+                                    logger.debug('Task state: PROGRESS, current: %d, total: %d', i + 1, total_operations)
+                            
+                            except Exception as e:
+                                logger.error('Error processing place %d: %s', p.id, e)
+                                continue
+                        
+                        result = {
+                            "type": "FeatureCollection",
+                            "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
+                            "filename": "/" + fn,
+                            "description": ds.description,
+                            "features": features
+                        }
+                        outfile.write(json.dumps(result, indent=2).replace('null', '""'))
+                    
+                    create_zipfile(fn, ds.id, None)
+                    zipname = generate_zip_filename(fn)
+                    create_downloadfile_record(user, ds, None, zipname)
+                
+                except Exception as e:
+                    logger.error('Error processing dataset in LPF format: %s', e)
+                    self.update_state(state='FAILURE', meta={'error': str(e)})
+                    return {'msg': 'Error processing dataset in LPF format', 'error': str(e)}
+    
+    except Exception as e:
+        logger.error('General error in make_download: %s', e)
+        self.update_state(state='FAILURE', meta={'error': str(e)})
+        return {'msg': 'Error processing download', 'error': str(e)}
+    
+    logger.debug('@ Log create: user_id: %d, dsid: %s, collid: %s', user.id, dsid, collid)
+    
+    Log.objects.create(
+        category='dataset' if dsid else 'collection',
+        logtype='ds_download' if dsid else 'coll_download',
+        note={"format": req_format, "name": user.username},
+        dataset_id=dsid or None,
+        collection_id=collid or None,
+        user_id=user.id
+    )
+    
+    try:
+        new_emailer(
+            email_type='download_ready',
+            subject='WHG download file is ready',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to_email=[user.email],
+            name=user.username,
+            greeting_name=user.name if user.name else user.username,
+            label=ds.label if dsid else coll.title,
+            title=ds.title if dsid else coll.title,
+            email=user.email,
+            taskname='Download',
+        )
+    except Exception as e:
+        logger.error('Error sending download ready email: %s', e)
+    
+    self.update_state(state='SUCCESS')
+    logger.debug('Task state: SUCCESS')
+    
+    completed_message = {"msg": req_format + " written", "filename": fn}
+    return completed_message
