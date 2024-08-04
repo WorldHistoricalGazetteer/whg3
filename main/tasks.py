@@ -2,7 +2,7 @@
 # Implement distributed lock to enqueue tileset generation requests
 import redis
 from celery.utils.log import get_task_logger
-logger = get_task_logger('main.tasks')
+logger = get_task_logger(__name__)
 redis_client = redis.StrictRedis(host='redis', port=6379, db=0)  # Use the service name from Docker Compose for the host
 from redis.exceptions import WatchError
 
@@ -33,6 +33,7 @@ import json
 import requests
 import subprocess
 import time
+import subprocess
 from urllib.parse import urlparse
 from datetime import datetime
 
@@ -255,33 +256,39 @@ def check_services():
     """
     Check the status of various services and ping Healthchecks.io accordingly.
     """
-    services = settings.HEALTHCHECKS
+    services = getattr(settings, 'HEALTHCHECKS', {})
 
     for service, details in services.items():
-        if service == 'elasticsearch':
-            # Special case for Elasticsearch until it is moved to a Docker container
-            status = check_elasticsearch()
-        else:
-            # General case for Docker containers
-            status = get_container_health(service)
-
-        healthcheck_url = details.get('healthcheck_url', '')
-        if status != 'healthy':
-            healthcheck_url += '/fail'
-        logger.info(f"Service '{service}' is {status}: Pinging {healthcheck_url}")
-        
         try:
-            requests.get(f"{healthcheck_url}")
-        except requests.RequestException as e:
-            logger.error(f"Failed to ping Healthchecks.io for {service}: {e}")
+            if service == 'elasticsearch':
+                # Special case for Elasticsearch until it is moved to a Docker container
+                status = check_elasticsearch()
+            else:
+                # General case for Docker containers
+                status = get_container_health(service)
+
+            healthcheck_url = details.get('healthcheck_url', '')
+            if status != 'healthy':
+                healthcheck_url += '/fail'
+
+            logger.info(f"Service '{service}' status: {status}")
+            logger.info(f"Pinging healthcheck URL: {healthcheck_url}")
+
+            try:
+                response = requests.get(f"{healthcheck_url}")
+                response.raise_for_status()
+            except requests.RequestException as e:
+                logger.error(f"Failed to ping Healthchecks.io for {service}: {e}", exc_info=True)
+        except Exception as e:
+            logger.error(f"Error checking service '{service}': {e}", exc_info=True)
 
 def get_container_health(container_id):
     """
     Get the health status of a service based on its Docker container health.
     """
-    
+
     command = f"docker inspect --format='{{{{json .State.Health}}}}' {container_id}"
-    
+
     try:
         result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:

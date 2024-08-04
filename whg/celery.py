@@ -4,6 +4,7 @@ from __future__ import absolute_import, unicode_literals
 import os
 import logging
 from celery import Celery
+from django.conf import settings
 
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "whg.settings")
@@ -16,15 +17,15 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 # Configure broker URL explicitly if needed; otherwise, use CELERY_BROKER_URL from settings
 #app.conf.broker_url = 'redis://localhost:6379'
 
+# override Beat default daily cleanup task
+app.conf.result_expires = None
+
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
 
-# Ensure Celery uses Django's logging settings
-app.conf.update(
-    worker_hijack_root_logger=False,  # Prevent Celery from configuring its own logging
-    worker_log_format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Log format for workers
-    worker_task_log_format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',  # Log format for tasks
-)
+# Ensure Celery uses Django's logging configuration
+from logging.config import dictConfig
+dictConfig(settings.LOGGING)
 
 @app.task(bind=True)
 def debug_task(self):

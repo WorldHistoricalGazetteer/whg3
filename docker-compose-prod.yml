@@ -25,9 +25,9 @@ services:
       - .:/app
       - /home/whgadmin/sites/whgv3/media:/app/media
       - /home/whgadmin/sites/whgv3/static:/app/static
-      - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /home/whgadmin/sites/whgv3/cache:/app/cache
-      - /home/whgadmin/logs:/app/whg/logs
+      - /home/whgadmin/logs/whgv3:/app/whg/logs
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
     env_file:
       - ./.env/.prod-whg3
     environment:
@@ -137,7 +137,11 @@ services:
       - WHG3
     volumes:
       - .:/app
-      - /home/whgadmin/logs:/app/whg/logs
+      - /home/whgadmin/sites/whgv3/media:/app/media
+      - /home/whgadmin/sites/whgv3/static:/app/static
+      - /home/whgadmin/sites/whgv3/cache:/app/cache
+      - /home/whgadmin/logs/whgv3:/app/whg/logs
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /var/run/docker.sock:/var/run/docker.sock:ro
     env_file:
       - ./.env/.prod-whg3
@@ -154,7 +158,11 @@ services:
       - WHG3
     volumes:
       - .:/app
-      - /home/whgadmin/logs:/app/whg/logs
+      - /home/whgadmin/sites/whgv3/media:/app/media
+      - /home/whgadmin/sites/whgv3/static:/app/static
+      - /home/whgadmin/sites/whgv3/cache:/app/cache
+      - /home/whgadmin/logs/whgv3:/app/whg/logs
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
     env_file:
       - ./.env/.prod-whg3
     depends_on:
@@ -178,7 +186,11 @@ services:
       - WHG3
     volumes:
       - .:/app
-      - /home/whgadmin/logs:/app/whg/logs
+      - /home/whgadmin/sites/whgv3/media:/app/media
+      - /home/whgadmin/sites/whgv3/static:/app/static
+      - /home/whgadmin/sites/whgv3/cache:/app/cache
+      - /home/whgadmin/logs/whgv3:/app/whg/logs
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
     env_file:
       - ./.env/.prod-whg3
     ports:

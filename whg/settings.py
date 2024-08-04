@@ -173,8 +173,8 @@ TEMPLATES = [
 WSGI_APPLICATION = 'whg.wsgi.application'
 
 LOGGING_LEVELS = {
-    'dev': 'INFO',
-    'prod': 'WARNING',
+    'dev': 'DEBUG',
+    'prod': 'DEBUG',
 }
 LOGGING = {
     'version': 1,
@@ -230,11 +230,6 @@ LOGGING = {
             'handlers': ['celery_file', 'console'],
             'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
             'propagate': False,  # Ensure logs do not propagate to root logger
-        },
-        'main.tasks': {  # Logs specific to 'main.tasks'
-            'handlers': ['celery_file', 'console'],
-            'level': 'DEBUG',
-            'propagate': False,
         },
         '': {  # Root logger
             'handlers': ['root_file', 'console'],
