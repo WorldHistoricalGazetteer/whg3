@@ -2,7 +2,7 @@
 # Implement distributed lock to enqueue tileset generation requests
 import redis
 from celery.utils.log import get_task_logger
-logger = get_task_logger('main.tasks')
+logger = get_task_logger(__name__)
 redis_client = redis.StrictRedis(host='redis', port=6379, db=0)  # Use the service name from Docker Compose for the host
 from redis.exceptions import WatchError
 
@@ -270,7 +270,7 @@ def check_services():
             healthcheck_url = details.get('healthcheck_url', '')
             if status != 'healthy':
                 healthcheck_url += '/fail'
-            
+
             logger.info(f"Service '{service}' status: {status}")
             logger.info(f"Pinging healthcheck URL: {healthcheck_url}")
 
@@ -286,9 +286,9 @@ def get_container_health(container_id):
     """
     Get the health status of a service based on its Docker container health.
     """
-    
+
     command = f"docker inspect --format='{{{{json .State.Health}}}}' {container_id}"
-    
+
     try:
         result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode == 0:
@@ -340,7 +340,3 @@ def check_elasticsearch():
 #     es = settings.ES_CONN
 #     snapshot_name = f'Elastic_{datetime.now().strftime("%Y%m%d%H%M%S")}'
 #     es.snapshot.create(repository='GCS-WHG-Backups', snapshot=snapshot_name, wait_for_completion=True)
-<<<<<<< HEAD
-=======
-    
->>>>>>> 3d7185e02f455933a051adee27f8de811307bc40

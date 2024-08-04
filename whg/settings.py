@@ -173,8 +173,8 @@ TEMPLATES = [
 WSGI_APPLICATION = 'whg.wsgi.application'
 
 LOGGING_LEVELS = {
-    'dev': 'INFO',
-    'prod': 'WARNING',
+    'dev': 'DEBUG',
+    'prod': 'DEBUG',
 }
 LOGGING = {
     'version': 1,
