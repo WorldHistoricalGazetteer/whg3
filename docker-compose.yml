@@ -1,0 +1,173 @@
+version: '2.19'
+
+networks:
+  WHG3:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+services:
+
+  web:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./compose/production/django/Dockerfile-django.prod
+    image: whg3_web
+    container_name: web
+    volumes:
+      - .:/app
+      - /home/whgadmin/sites/whgv3/media:/app/media
+      - /home/whgadmin/sites/whgv3/static:/app/static
+      - /home/whgadmin/sites/whgv3/cache:/app/cache
+      - /home/whgadmin/sites/logs/whgv3:/app/whg/logs
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
+    env_file:
+      - ./.env/.prod-whg3
+    environment:
+      - DJANGO_SETTINGS_MODULE=whg.settings
+    ports:
+      - "8001:${APP_PORT}"
+    user: "1000:1000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - redis
+      - db_beta
+    entrypoint: /entrypoints/entrypoint-web.sh
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 60s
+      retries: 5
+      start_period: 60s
+      timeout: 15s
+    ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
+#     deploy:
+#       replicas: 3
+#       resources:
+#         limits:
+#           memory: 500M
+#           cpus: "0.5"
+#       placement:
+#         constraints:
+#           - node.role == manager
+
+  db_beta:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    image: postgis/postgis:15-3.4
+    container_name: postgres_beta
+    ports:
+      - "127.0.0.1:5434:${DB_PORT_BETA}"
+    volumes:
+      - /home/whgadmin/databases/v3:/var/lib/postgresql/data
+      - ./compose/production/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    env_file:
+      - ./.env/.prod-whg3
+    command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 60s
+      retries: 5
+      start_period: 60s
+      timeout: 15s
+    ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
+#     deploy:
+#       replicas: 2
+#       resources:
+#         limits:
+#           memory: 1G
+#           cpus: "1.0"
+
+  redis:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    image: redis:bullseye
+    container_name: redis
+    ports: 
+      - "6380:6379"
+    volumes:
+      - /home/whgadmin/sites/logs/whgv3:/app/whg/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 60s
+      retries: 5
+      start_period: 60s
+      timeout: 15s
+
+  celery_worker:
+    networks:
+      - WHG3
+    image: whg3_web
+    container_name: celery_worker
+    volumes:
+      - .:/app
+      - /home/whgadmin/sites/whgv3/media:/app/media
+      - /home/whgadmin/sites/whgv3/static:/app/static
+      - /home/whgadmin/sites/whgv3/cache:/app/cache
+      - /home/whgadmin/sites/logs/whgv3:/app/whg/logs
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    env_file:
+      - ./.env/.prod-whg3
+    environment:
+      - DJANGO_SETTINGS_MODULE=whg.settings
+    depends_on:
+      - redis
+      - db_beta
+    entrypoint: /entrypoints/entrypoint-celery.sh
+    restart: unless-stopped
+
+  celery_beat:
+    networks:
+      - WHG3
+    image: whg3_web
+    container_name: celery_beat
+    volumes:
+      - .:/app
+      - /home/whgadmin/sites/whgv3/media:/app/media
+      - /home/whgadmin/sites/whgv3/static:/app/static
+      - /home/whgadmin/sites/whgv3/cache:/app/cache
+      - /home/whgadmin/sites/logs/whgv3:/app/whg/logs
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
+    env_file:
+      - ./.env/.prod-whg3
+    environment:
+      - DJANGO_SETTINGS_MODULE=whg.settings
+    depends_on:
+      - redis
+      - db_beta
+    entrypoint: /entrypoints/entrypoint-celery-beat.sh
+    restart: unless-stopped
+
+  flower:
+    networks:
+      - WHG3
+    image: whg3_web
+    container_name: flower
+    ports:
+      - "5557:5555"
+    volumes:
+      - .:/app
+      - /home/whgadmin/sites/whgv3/media:/app/media
+      - /home/whgadmin/sites/whgv3/static:/app/static
+      - /home/whgadmin/sites/whgv3/cache:/app/cache
+      - /home/whgadmin/sites/logs/whgv3:/app/whg/logs
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
+    env_file:
+      - ./.env/.prod-whg3
+    environment:
+      - DJANGO_SETTINGS_MODULE=whg.settings
+    depends_on:
+      - redis
+      - db_beta
+    entrypoint: /entrypoints/entrypoint-flower.sh
+    restart: unless-stopped

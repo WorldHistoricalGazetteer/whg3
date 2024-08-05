@@ -271,9 +271,6 @@ class Home30a(TemplateView):
     random.shuffle(carousel_metadata)
     context['carousel_metadata'] = json.dumps(carousel_metadata)
 
-    # context['mbtokenkg'] = settings.MAPBOX_TOKEN_KG
-    # context['mbtokenmb'] = settings.MAPBOX_TOKEN_MB
-    # context['mbtokenwhg'] = settings.MAPBOX_TOKEN_WHG
     #context['maptilerkey'] = settings.MAPTILER_KEY
     context['media_url'] = settings.MEDIA_URL
     context['base_dir'] = settings.BASE_DIR

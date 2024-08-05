@@ -1,0 +1,174 @@
+version: '2.19'
+
+networks:
+  STAGING:
+    driver: bridge
+    ipam:
+      config:
+        # - subnet: 172.20.0.0/16 Used in production. REMEMBER TO CHANGE IN /compose/.../postgres/pg_hba.conf
+        - subnet: 172.21.0.0/16
+
+services:
+
+  web:
+    networks:
+      - STAGING
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./compose/staging/django/Dockerfile-django
+    image: whg_staging
+    container_name: staging_web
+    volumes:
+      - .:/app
+      - /home/whgadmin/sites/whg-staging/media:/app/media
+      - /home/whgadmin/sites/whg-staging/static:/app/static
+      - /home/whgadmin/sites/whg-staging/cache:/app/cache
+      - /home/whgadmin/sites/logs/staging:/app/whg/logs
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
+    env_file:
+      - ./.env/.staging
+    environment:
+      - DJANGO_SETTINGS_MODULE=whg.settings
+    ports:
+      - "${APP_PORT}:${APP_PORT}"
+    user: "1000:1000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - redis
+      - db_beta
+    entrypoint: /entrypoints/entrypoint-web.sh
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 60s
+      retries: 5
+      start_period: 60s
+      timeout: 15s
+    ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
+#     deploy:
+#       replicas: 3
+#       resources:
+#         limits:
+#           memory: 500M
+#           cpus: "0.5"
+#       placement:
+#         constraints:
+#           - node.role == manager
+
+  db_beta:
+    networks:
+      - STAGING
+    platform: linux/amd64
+    image: postgis/postgis:15-3.4
+    container_name: staging_postgres_beta
+    ports:
+      - "127.0.0.1:${DB_PORT_STAGING}:${DB_PORT_BETA}"
+    volumes:
+      - /home/whgadmin/databases/staging:/var/lib/postgresql/data
+      - ./compose/staging/postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf
+    env_file:
+      - ./.env/.staging
+    command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 60s
+      retries: 5
+      start_period: 60s
+      timeout: 15s
+    ### SHOULD CONSIDER IMPLEMENTING THE FOLLOWING
+#     deploy:
+#       replicas: 2
+#       resources:
+#         limits:
+#           memory: 1G
+#           cpus: "1.0"
+
+  redis:
+    networks:
+      - STAGING
+    platform: linux/amd64
+    image: redis:bullseye
+    container_name: staging_redis
+    ports: 
+      - "${REDIS_PORT_STAGING}:6379"
+    volumes:
+      - /home/whgadmin/sites/logs/staging:/app/whg/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 60s
+      retries: 5
+      start_period: 60s
+      timeout: 15s
+
+  celery_worker:
+    networks:
+      - STAGING
+    image: whg_staging
+    container_name: staging_celery_worker
+    volumes:
+      - .:/app
+      - /home/whgadmin/sites/whg-staging/media:/app/media
+      - /home/whgadmin/sites/whg-staging/static:/app/static
+      - /home/whgadmin/sites/whg-staging/cache:/app/cache
+      - /home/whgadmin/sites/logs/staging:/app/whg/logs
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    env_file:
+      - ./.env/.staging
+    environment:
+      - DJANGO_SETTINGS_MODULE=whg.settings
+    depends_on:
+      - redis
+      - db_beta
+    entrypoint: /entrypoints/entrypoint-celery.sh
+    restart: unless-stopped
+
+  celery_beat:
+    networks:
+      - STAGING
+    image: whg_staging
+    container_name: staging_celery_beat
+    volumes:
+      - .:/app
+      - /home/whgadmin/sites/whg-staging/media:/app/media
+      - /home/whgadmin/sites/whg-staging/static:/app/static
+      - /home/whgadmin/sites/whg-staging/cache:/app/cache
+      - /home/whgadmin/sites/logs/staging:/app/whg/logs
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
+    env_file:
+      - ./.env/.staging
+    environment:
+      - DJANGO_SETTINGS_MODULE=whg.settings
+    depends_on:
+      - redis
+      - db_beta
+    entrypoint: /entrypoints/entrypoint-celery-beat.sh
+    restart: unless-stopped
+
+  flower:
+    networks:
+      - STAGING
+    image: whg_staging
+    container_name: staging_flower
+    ports:
+      - "${FLOWER_PORT_STAGING}:5555"
+    volumes:
+      - .:/app
+      - /home/whgadmin/sites/whg-staging/media:/app/media
+      - /home/whgadmin/sites/whg-staging/static:/app/static
+      - /home/whgadmin/sites/whg-staging/cache:/app/cache
+      - /home/whgadmin/sites/logs/staging:/app/whg/logs
+      - /home/whgadmin/sites/data_dumps:/app/data_dumps
+    env_file:
+      - ./.env/.staging
+    environment:
+      - DJANGO_SETTINGS_MODULE=whg.settings
+    depends_on:
+      - redis
+      - db_beta
+    entrypoint: /entrypoints/entrypoint-flower.sh
+    restart: unless-stopped

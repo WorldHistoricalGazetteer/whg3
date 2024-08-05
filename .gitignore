@@ -68,6 +68,7 @@ docker-compose-altnet.yml
 
 # Ignore all files in the .env directory
 .env/*
+!.env/load_env.py
 # Except this .gitignore file
 !.env/.gitignore
 # Except the .gitkeep placeholder file
