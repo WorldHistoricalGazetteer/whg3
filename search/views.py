@@ -61,7 +61,6 @@ class SearchPageView(TemplateView):
     dslist = Dataset.objects.filter(public=True)
 
     context = super(SearchPageView, self).get_context_data(*args, **kwargs)
-    ##context['maptilerkey'] = settings.MAPTILER_KEY
     context['media_url'] = settings.MEDIA_URL
     context['dslist'] = dslist
     context['search_params'] = self.request.session.get('search_params')

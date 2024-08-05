@@ -33,7 +33,6 @@ class TeachingPortalView(ListView):
     nominated = Collection.objects.filter(status='nominated', collection_class='place', public=True).order_by('title')
     context['regions'] = sorted(set(int(region) for item in Resource.objects.all().values_list('regions', flat=True) for region in item.split(',')))
     #context['regions'] = [x for l in regions for x in l]
-    #context['maptilerkey'] = settings.MAPTILER_KEY
     context['featured'] = Resource.objects.filter(featured__isnull=False).order_by('featured')
     context['nominated'] = nominated
     return context
@@ -147,7 +146,6 @@ class ResourceCreateView(LoginRequiredMixin, FormView):
   # def get_context_data(self, *args, **kwargs):
   #   context = super(ResourceCreateView,
   #                   self).get_context_data(*args, **kwargs)
-  #   #context['maptilerkey'] = settings.MAPTILER_KEY
   #   user = self.request.user
   #   #_id = self.kwargs.get("id")
   #   print('ResourceCreate() user', user)

@@ -79,7 +79,6 @@ class PlaceDetailView(DetailView):
 
   def get_context_data(self, *args, **kwargs):
     context = super().get_context_data(**kwargs)
-    #context['maptilerkey'] = settings.MAPTILER_KEY
 
     place = self.object
     dataset = place.dataset
@@ -99,7 +98,6 @@ class PlacePortalView(TemplateView):
 
   def get_context_data(self, *args, **kwargs):
     context = super(PlacePortalView, self).get_context_data(*args, **kwargs)
-    #context['maptilerkey'] = settings.MAPTILER_KEY
 
     me = self.request.user
     if not me.is_anonymous:
@@ -299,7 +297,6 @@ class PlacePortalView(TemplateView):
 #
 #   def get_context_data(self, *args, **kwargs):
 #     context = super().get_context_data(**kwargs)
-#     #context['maptilerkey'] = settings.MAPTILER_KEY
 #
 #     place = self.object
 #     dataset = place.dataset
@@ -332,7 +329,6 @@ class PlacePortalView(TemplateView):
 #
 #   def get_context_data(self, *args, **kwargs):
 #     context = super(PlaceModalView, self).get_context_data(*args, **kwargs)
-#     #context['maptilerkey'] = settings.MAPTILER_KEY
 #
 #     print('PlaceModalView get_context_data() kwargs:',self.kwargs)
 #     print('PlaceModalView get_context_data() request.user',self.request.user)
@@ -369,7 +365,6 @@ class PlacePortalView(TemplateView):
 #
 #   def get_context_data(self, *args, **kwargs):
 #     context = super(PlaceModalView, self).get_context_data(*args, **kwargs)
-#     #context['maptilerkey'] = settings.MAPTILER_KEY
 #
 #     print('PlaceModalView get_context_data() kwargs:',self.kwargs)
 #     print('PlaceModalView get_context_data() request.user',self.request.user)

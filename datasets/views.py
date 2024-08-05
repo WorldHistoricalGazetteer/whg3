@@ -596,7 +596,6 @@ def review(request, dsid, tid, passnum):
     "passnum": passnum,
     "page": page if request.method == "GET" else str(int(page) - 1),
     "aug_geoms": kwargs["aug_geoms"],
-    # "maptilerkey": settings.MAPTILER_KEY,
     "count_pass0": cnt_pass0,
     "count_pass1": cnt_pass1,
     "count_pass2": cnt_pass2,
@@ -3203,7 +3202,6 @@ class DatasetBrowseView(LoginRequiredMixin, DetailView):
 
   def get_context_data(self, *args, **kwargs):
     context = super(DatasetBrowseView, self).get_context_data(*args, **kwargs)
-    #context['maptilerkey'] = settings.MAPTILER_KEY
 
     print('DatasetBrowseView get_context_data() kwargs:', self.kwargs)
     print('DatasetBrowseView get_context_data() request.user', self.request.user)
@@ -3415,8 +3413,6 @@ class DatasetAddTaskView(LoginRequiredMixin, DetailView):
 
   def get_context_data(self, *args, **kwargs):
     context = super(DatasetAddTaskView, self).get_context_data(*args, **kwargs)
-    """ maps need these """
-    #context['maptilerkey'] = settings.MAPTILER_KEY
 
     id_ = self.kwargs.get("id")
     ds = get_object_or_404(Dataset, id=id_)

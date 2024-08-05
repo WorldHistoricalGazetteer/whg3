@@ -912,7 +912,6 @@ class PlaceCollectionUpdateView(LoginRequiredMixin, UpdateView):
         for cp in CollPlace.objects.filter(collection=_id).order_by('sequence')
     ]
     context['created'] = self.object.create_date.strftime("%Y-%m-%d")
-    #context['maptilerkey'] = settings.MAPTILER_KEY
     # context['whgteam'] = User.objects.filter(groups__name='whg_team')
 
     return context
@@ -944,7 +943,6 @@ class PlaceCollectionBrowseView(DetailView):
     coll = get_object_or_404(Collection, id=id_)
 
     context = super(PlaceCollectionBrowseView, self).get_context_data(*args, **kwargs)
-    #context['maptilerkey'] = settings.MAPTILER_KEY
     context['media_url'] = settings.MEDIA_URL
 
     context['is_admin'] = True if self.request.user.groups.filter(name__in=['whg_admins']).exists() else False
@@ -1010,7 +1008,6 @@ class CollectionGroupCreateView(CreateView):
 
   def get_context_data(self, *args, **kwargs):
     context = super(CollectionGroupCreateView, self).get_context_data(*args, **kwargs)
-    #context['maptilerkey'] = settings.MAPTILER_KEY
     # print('args',args,kwargs)
     context['action'] = 'create'
     # context['referrer'] = self.request.POST.get('referrer')
@@ -1031,7 +1028,6 @@ class CollectionGroupDetailView(DetailView):
 
   def get_context_data(self, *args, **kwargs):
     context = super(CollectionGroupDetailView, self).get_context_data(*args, **kwargs)
-    #context['maptilerkey'] = settings.MAPTILER_KEY
 
     print('CollectionGroupDetailView get_context_data() kwargs:', self.kwargs)
     print('CollectionGroupDetailView get_context_data() request.user', self.request.user)
@@ -1165,7 +1161,6 @@ class DatasetCollectionCreateView(LoginRequiredMixin, CreateView):
   def get_context_data(self, *args, **kwargs):
     user = self.request.user
     context = super(DatasetCollectionCreateView, self).get_context_data(*args, **kwargs)
-    #context['maptilerkey'] = settings.MAPTILER_KEY
     context['whgteam'] = User.objects.filter(groups__name='whg_team')
 
     datasets = []
@@ -1239,9 +1234,6 @@ class DatasetCollectionUpdateView(UpdateView):
     context['is_admin'] = True if user.groups.filter(name__in=['whg_admins']).exists() else False
     context['whgteam'] = True if user.groups.filter(name__in=['whg_team','editorial']).exists() else False
     context['collabs'] = CollectionUser.objects.filter(collection=coll.id)
-
-    # TODO: deprecated?
-    #context['maptilerkey'] = settings.MAPTILER_KEY
     
     vis_parameters = coll.vis_parameters
     if not vis_parameters:
