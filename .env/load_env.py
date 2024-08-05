@@ -2,6 +2,7 @@
 import os
 import importlib.util
 from dotenv import load_dotenv
+from collections import OrderedDict
 
 def determine_context():
     cwd = os.getcwd()
@@ -24,8 +25,8 @@ def apply_context_overrides(template_vars, context):
     context_vars = template_vars.get('base', {}).copy()
     context_vars.update(template_vars.get('sites', {}).get(context, {}))
     context_vars['BASE_DIR'] = os.getcwd()
-    context_vars['ENV_CONTEXT'] = context
-    return context_vars
+    context_vars['ENV_CONTEXT'] = context    
+    return OrderedDict(sorted(context_vars.items()))
 
 def write_env_file(env_vars, output_path):
     with open(output_path, 'w') as file:
