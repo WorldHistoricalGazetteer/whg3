@@ -20,9 +20,9 @@ def load_template(template_path):
     spec.loader.exec_module(env_template)
     return env_template.ENV_VARS
 
-def apply_context_overrides(template_vars, context):
-    context_vars = template_vars.get('BASE', {}).copy()
-    context_vars.update(template_vars.get('SITES', {}).get(context, {}))
+def apply_context_overrides(template_vars, context):    
+    context_vars = template_vars.get('base', {}).copy()
+    context_vars.update(template_vars.get('sites', {}).get(context, {}))
     context_vars['BASE_DIR'] = os.getcwd()
     context_vars['ENV_CONTEXT'] = context
     return context_vars
