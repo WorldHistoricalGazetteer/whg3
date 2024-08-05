@@ -33,7 +33,11 @@ def write_env_file(env_vars, output_path):
             file.write(f'{key}={value}\n')
 
 def load_environment(context='default', template_path='env_template.py', output_path='.env'):
-    template_path = os.path.join(os.path.dirname(__file__), template_path)
+    # Ensure paths are relative to the script's directory
+    script_dir = os.path.dirname(__file__)
+    template_path = os.path.join(script_dir, template_path)
+    output_path = os.path.join(script_dir, output_path)
+    
     try:
         template_vars = load_template(template_path)
     except FileNotFoundError as e:
