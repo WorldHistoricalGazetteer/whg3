@@ -9,8 +9,8 @@ set -o nounset
 : "${FLOWER_BASIC_AUTH:?Environment variable FLOWER_BASIC_AUTH is not set}"
 
 # Ensure Redis is available
-echo "Waiting for Redis at redis:${REDIS_PORT} to be ready..."
-until nc -z redis "${REDIS_PORT}"; do
+echo "Waiting for Redis at redis:6379 to be ready..."
+until nc -z redis 6379; do
   echo "Redis not available yet" >&2
   sleep 1
 done
