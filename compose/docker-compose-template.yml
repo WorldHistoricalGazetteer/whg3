@@ -17,7 +17,7 @@ services:
       context: ${BASE_DIR}
       dockerfile: ./compose/dockerfile-django
     image: ${ENV_CONTEXT}-${BRANCH}
-    container_name: web
+    container_name: web_${ENV_CONTEXT}_${BRANCH}
     volumes:
       - .:/app
       - ${BASE_DIR}/media:/app/media
@@ -61,7 +61,7 @@ services:
       - ${ENV_CONTEXT}
     platform: linux/amd64
     image: postgis/postgis:15-3.4
-    container_name: postgres_beta
+    container_name: postgres_${ENV_CONTEXT}_${BRANCH}
     ports:
       - "127.0.0.1:${DB_PORT}:5432"
     volumes:
@@ -90,7 +90,7 @@ services:
       - ${ENV_CONTEXT}
     platform: linux/amd64
     image: redis:bullseye
-    container_name: redis
+    container_name: redis_${ENV_CONTEXT}_${BRANCH}
     ports: 
       - "${REDIS_PORT}:6379"
     volumes:
@@ -107,7 +107,7 @@ services:
     networks:
       - ${ENV_CONTEXT}
     image: ${ENV_CONTEXT}-${BRANCH}
-    container_name: celery_worker
+    container_name: celery-worker_${ENV_CONTEXT}_${BRANCH}
     volumes:
       - .:/app
       - ${BASE_DIR}/media:/app/media
@@ -130,7 +130,7 @@ services:
     networks:
       - ${ENV_CONTEXT}
     image: ${ENV_CONTEXT}-${BRANCH}
-    container_name: celery_beat
+    container_name: celery-beat_${ENV_CONTEXT}_${BRANCH}
     volumes:
       - .:/app
       - ${BASE_DIR}/media:/app/media
@@ -152,7 +152,7 @@ services:
     networks:
       - ${ENV_CONTEXT}
     image: ${ENV_CONTEXT}-${BRANCH}
-    container_name: flower
+    container_name: celery-flower_${ENV_CONTEXT}_${BRANCH}
     ports:
       - "${FLOWER_PORT}:5555"
     volumes:
