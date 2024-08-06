@@ -29,7 +29,7 @@ def load_environment(context='default',
         template_path='env_template.py', 
         output_path='../.env/.env',
         compose_template_path='../compose/docker-compose-template.yml',
-        compose_output_path='../docker-compose.yml',
+        compose_output_path='../docker-compose-autocontext.yml',
         ):
     # Ensure paths are relative to the script's directory
     script_dir = os.path.dirname(__file__)
