@@ -23,6 +23,7 @@ services:
       - ${BASE_DIR}/media:/app/media
       - ${BASE_DIR}/static:/app/static
       - ${BASE_DIR}/cache:/app/cache
+      - ${BASE_DIR}/entrypoints/entrypoint-web.sh:/entrypoint.sh
       - /home/whgadmin/sites/logs/${ENV_CONTEXT}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
     env_file:
@@ -37,7 +38,6 @@ services:
     depends_on:
       - redis
       - db_beta
-    entrypoint: /entrypoints/entrypoint-web.sh
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -113,6 +113,7 @@ services:
       - ${BASE_DIR}/media:/app/media
       - ${BASE_DIR}/static:/app/static
       - ${BASE_DIR}/cache:/app/cache
+      - ${BASE_DIR}/entrypoints/entrypoint-celery.sh:/entrypoint.sh
       - /home/whgadmin/sites/logs/${ENV_CONTEXT}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -123,7 +124,6 @@ services:
     depends_on:
       - redis
       - db_beta
-    entrypoint: /entrypoints/entrypoint-celery.sh
     restart: unless-stopped
 
   celery_beat:
@@ -136,6 +136,7 @@ services:
       - ${BASE_DIR}/media:/app/media
       - ${BASE_DIR}/static:/app/static
       - ${BASE_DIR}/cache:/app/cache
+      - ${BASE_DIR}/entrypoints/entrypoint-celery-beat.sh:/entrypoint.sh
       - /home/whgadmin/sites/logs/${ENV_CONTEXT}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
     env_file:
@@ -145,7 +146,6 @@ services:
     depends_on:
       - redis
       - db_beta
-    entrypoint: /entrypoints/entrypoint-celery-beat.sh
     restart: unless-stopped
 
   flower:
@@ -160,6 +160,7 @@ services:
       - ${BASE_DIR}/media:/app/media
       - ${BASE_DIR}/static:/app/static
       - ${BASE_DIR}/cache:/app/cache
+      - ${BASE_DIR}/entrypoints/entrypoint-flower.sh:/entrypoint.sh
       - /home/whgadmin/sites/logs/${ENV_CONTEXT}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
     env_file:
@@ -169,5 +170,4 @@ services:
     depends_on:
       - redis
       - db_beta
-    entrypoint: /entrypoints/entrypoint-flower.sh
     restart: unless-stopped

@@ -11,7 +11,6 @@ ARG WHGADMIN_PASSWORD
 
 EXPOSE ${APP_PORT}
 
-COPY ./entrypoints/ /entrypoints/
 COPY ./requirements.txt /tmp/requirements.txt
     
 RUN set -eux; \
@@ -30,14 +29,14 @@ RUN set -eux; \
     /py/bin/pip install --upgrade pip && \
     /py/bin/pip install -r /tmp/requirements.txt && \
     rm -rf /tmp && \
-    # Convert Windows line endings to UNIX line endings and make entrypoint scripts executable
-    sed -i 's/\r$//g' /entrypoints/*.sh && \
-    chmod +x /entrypoints/*.sh && \
     # Set correct ownership and permissions for entrypoints and migrations directories
-    chown -R whgadmin:root /entrypoints/ /py/lib/python3.10/site-packages/captcha/migrations/ /py/lib/python3.10/site-packages/guardian/migrations/
+    chown -R whgadmin:root /py/lib/python3.10/site-packages/captcha/migrations/ /py/lib/python3.10/site-packages/guardian/migrations/
 
 WORKDIR /app
 
 ENV PATH="/py/bin:$PATH"
 
 USER whgadmin
+
+# Each service has a different `entrypoint.sh`, mounted in the compose file
+ENTRYPOINT ["/entrypoint.sh"]

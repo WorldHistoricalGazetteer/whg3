@@ -2,6 +2,9 @@
 import os
 import importlib.util
 import subprocess
+import stat
+import pwd
+import grp
 from dotenv import load_dotenv
 from collections import OrderedDict
 
@@ -12,6 +15,19 @@ def get_git_branch():
         return branch
     except subprocess.CalledProcessError:
         return None
+
+def update_entrypoints(entrypoints_path, user, group):
+    uid = pwd.getpwnam(user).pw_uid
+    gid = grp.getgrnam(group).gr_gid
+
+    for _, _, files in os.walk(entrypoints_path):
+        for file in files:
+            if file.endswith('.sh'):
+                file_path = os.path.join(root, file)
+                # Remove non-Unix carriage returns
+                subprocess.run(['sed', '-i', 's/\r$//g', file_path], check=True)
+                os.chmod(file_path, os.stat(file_path).st_mode | stat.S_IEXEC)
+                os.chown(file_path, uid, gid)
 
 def load_template(template_path):
     if not os.path.isfile(template_path):
@@ -42,6 +58,7 @@ def load_environment(context='default',
         compose_output_path='../docker-compose-autocontext.yml',
         hba_template_path='../compose/pg_hba-template.conf',
         hba_output_path='../compose/pg_hba.conf',
+        entrypoints_path='../entrypoints',
         ):
     # Ensure paths are relative to the script's directory
     script_dir = os.path.dirname(__file__)
@@ -51,6 +68,7 @@ def load_environment(context='default',
     compose_output_path = os.path.join(script_dir, compose_output_path)
     hba_template_path = os.path.join(script_dir, hba_template_path)
     hba_output_path = os.path.join(script_dir, hba_output_path)
+    entrypoints_path = os.path.join(script_dir, entrypoints_path)
     
     # Generate environment variable file
     try:
@@ -86,9 +104,11 @@ def load_environment(context='default',
         template_content = template_content.replace(f"${{{key}}}", value)
     with open(hba_output_path, 'w') as file:
         file.write(template_content)
+        
+    update_entrypoints(entrypoints_path, 'whgadmin', 'root')
 
 if __name__ == "__main__":
     context = os.path.basename(os.getcwd())
     load_environment(context)
     
-    print(f"Context '{context}': environment variables loaded, and written to `.env` and `docker-compose.yml`.")
+    print(f"Context '{context}': environment variables loaded, and written to `.env` and `docker-compose.yml`. Entrypoint permissions fixed.")
