@@ -6,6 +6,14 @@ from django.contrib.messages import constants as messages
 from django.core.cache.backends.filebased import FileBasedCache
 from logging.handlers import RotatingFileHandler
 
+try:
+  from .local_settings import *
+except ImportError:
+  print('Error importing from .local_settings')
+  pass
+
+SECRET_KEY = os.getenv('SECRET_KEY', 'whg-secret-key')
+
 ENV = os.environ.get('ENV', 'dev')  # Default to 'dev' if ENV is not set
 
 if 'test' in sys.argv:
@@ -310,9 +318,3 @@ SPECTACULAR_SETTINGS = {
         'drf_spectacular.hooks.preprocess_exclude_path_format',
     ],
 }
-
-try:
-  from .local_settings import *
-except ImportError:
-  print('Error importing from .local_settings')
-  pass
