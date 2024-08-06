@@ -26,8 +26,8 @@ services:
       - ${BASE_DIR}/entrypoints/permitted/entrypoint-web.sh:/entrypoint.sh
       - /home/whgadmin/sites/logs/${ENV_CONTEXT}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
-#     env_file:
-#       - ./.env/.env
+    env_file:
+      - ./.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
     ports:
