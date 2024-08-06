@@ -20,17 +20,23 @@ def update_entrypoints(entrypoints_path, user, group):
     uid = pwd.getpwnam(user).pw_uid
     gid = grp.getgrnam(group).gr_gid
 
+    # Define the path for the permitted subfolder
+    permitted_path = os.path.join(entrypoints_path, 'permitted')
+    if not os.path.exists(permitted_path):
+        os.makedirs(permitted_path)
+
     for root, dirs, files in os.walk(entrypoints_path):
         for file in files:
             if file.endswith('.sh'):
                 file_path = os.path.join(root, file)
+                permitted_file_path = os.path.join(permitted_path, file)
+
                 try:
-                    # Remove non-Unix carriage returns
-                    subprocess.run(['sed', '-i', 's/\r$//g', file_path], check=True)
-                    # Make the script executable
-                    os.chmod(file_path, os.stat(file_path).st_mode | stat.S_IEXEC)
-                    # Change ownership
-                    os.chown(file_path, uid, gid)
+                    shutil.copy2(file_path, permitted_file_path)
+                    subprocess.run(['sed', '-i', 's/\r$//g', permitted_file_path], check=True)
+                    os.chmod(permitted_file_path, os.stat(permitted_file_path).st_mode | stat.S_IEXEC)
+                    os.chown(permitted_file_path, uid, gid)
+                    
                 except PermissionError as e:
                     print(f"PermissionError: {e} - file_path: {file_path}")
                 except Exception as e:

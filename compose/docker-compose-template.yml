@@ -23,7 +23,7 @@ services:
       - ${BASE_DIR}/media:/app/media
       - ${BASE_DIR}/static:/app/static
       - ${BASE_DIR}/cache:/app/cache
-      - ${BASE_DIR}/entrypoints/entrypoint-web.sh:/entrypoint.sh
+      - ${BASE_DIR}/entrypoints/permitted/entrypoint-web.sh:/entrypoint.sh
       - /home/whgadmin/sites/logs/${ENV_CONTEXT}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
     env_file:
@@ -113,7 +113,7 @@ services:
       - ${BASE_DIR}/media:/app/media
       - ${BASE_DIR}/static:/app/static
       - ${BASE_DIR}/cache:/app/cache
-      - ${BASE_DIR}/entrypoints/entrypoint-celery.sh:/entrypoint.sh
+      - ${BASE_DIR}/entrypoints/permitted/entrypoint-celery.sh:/entrypoint.sh
       - /home/whgadmin/sites/logs/${ENV_CONTEXT}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -136,7 +136,7 @@ services:
       - ${BASE_DIR}/media:/app/media
       - ${BASE_DIR}/static:/app/static
       - ${BASE_DIR}/cache:/app/cache
-      - ${BASE_DIR}/entrypoints/entrypoint-celery-beat.sh:/entrypoint.sh
+      - ${BASE_DIR}/entrypoints/permitted/entrypoint-celery-beat.sh:/entrypoint.sh
       - /home/whgadmin/sites/logs/${ENV_CONTEXT}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
     env_file:
@@ -160,7 +160,7 @@ services:
       - ${BASE_DIR}/media:/app/media
       - ${BASE_DIR}/static:/app/static
       - ${BASE_DIR}/cache:/app/cache
-      - ${BASE_DIR}/entrypoints/entrypoint-flower.sh:/entrypoint.sh
+      - ${BASE_DIR}/entrypoints/permitted/entrypoint-flower.sh:/entrypoint.sh
       - /home/whgadmin/sites/logs/${ENV_CONTEXT}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
     env_file:
