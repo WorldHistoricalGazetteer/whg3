@@ -15,7 +15,7 @@ COPY ./entrypoints/ /entrypoints/
 COPY ./requirements.txt /tmp/requirements.txt
     
 RUN set -eux; \
-	groupadd whgadmin; && \
+	groupadd whgadmin && \
     useradd -rm -d /home/whgadmin -g whgadmin -s /bin/bash -G sudo -u 1000 whgadmin -p "$(openssl passwd -1 $WHGADMIN_PASSWORD)" && \
     
     # Update package lists and install necessary packages
