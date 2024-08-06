@@ -37,7 +37,7 @@ services:
     depends_on:
       - redis
       - db_beta
-    entrypoint: /app/entrypoints/entrypoint-web.sh
+    entrypoint: /entrypoints/entrypoint-web.sh
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -123,7 +123,7 @@ services:
     depends_on:
       - redis
       - db_beta
-    entrypoint: /app/entrypoints/entrypoint-celery.sh
+    entrypoint: /entrypoints/entrypoint-celery.sh
     restart: unless-stopped
 
   celery_beat:
@@ -145,7 +145,7 @@ services:
     depends_on:
       - redis
       - db_beta
-    entrypoint: /app/entrypoints/entrypoint-celery-beat.sh
+    entrypoint: /entrypoints/entrypoint-celery-beat.sh
     restart: unless-stopped
 
   flower:
@@ -169,5 +169,5 @@ services:
     depends_on:
       - redis
       - db_beta
-    entrypoint: /app/entrypoints/entrypoint-flower.sh
+    entrypoint: /entrypoints/entrypoint-flower.sh
     restart: unless-stopped
