@@ -1,5 +1,6 @@
 # load_env.py
 import os
+import shutil
 import importlib.util
 import subprocess
 import stat
