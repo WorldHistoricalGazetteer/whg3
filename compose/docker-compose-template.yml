@@ -31,7 +31,7 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
     ports:
-      - "8000:${APP_PORT}"
+      - "${APP_PORT}:${APP_PORT}"
     user: "1000:1000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -40,7 +40,7 @@ services:
       - db_beta
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_PORT}/health"]
       interval: 60s
       retries: 5
       start_period: 60s
