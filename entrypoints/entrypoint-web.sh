@@ -12,12 +12,12 @@ echo "Collecting static files..."
 python manage.py collectstatic --no-input
 
 # Ensure required environment variables are set
-: "${DB_HOST_BETA:?Environment variable DB_HOST_BETA is not set}"
-: "${DB_PORT_BETA:?Environment variable DB_PORT_BETA is not set}"
+: "${DB_HOST:?Environment variable DB_HOST is not set}"
+: "${DB_PORT:?Environment variable DB_PORT is not set}"
 : "${APP_PORT:?Environment variable APP_PORT is not set}"
 
 # Wait for the database to be ready
-wait_for_db "${DB_HOST_BETA}" "${DB_PORT_BETA}"
+wait_for_db "${DB_HOST}" "${DB_PORT}"
 
 echo "Starting Gunicorn server..."
 exec gunicorn whg.wsgi:application --bind 0.0.0.0:${APP_PORT} --timeout 1200 -w 4
