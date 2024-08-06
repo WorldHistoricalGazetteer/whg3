@@ -58,7 +58,7 @@ def apply_context_overrides(template_vars, context):
     context_vars['BASE_DIR'] = os.getcwd()
     context_vars['ENV_CONTEXT'] = context 
     context_vars['BRANCH'] = get_git_branch()
-    context_vars['CELERY_BROKER_URL'] = f"redis://redis:${context_vars['REDIS_PORT']}/0"
+    context_vars['CELERY_BROKER_URL'] = f"redis://redis:{context_vars['REDIS_PORT']}/0"
     return OrderedDict(sorted(context_vars.items()))
 
 def write_env_file(env_vars, output_path):
