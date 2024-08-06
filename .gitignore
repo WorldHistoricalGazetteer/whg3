@@ -115,3 +115,4 @@ docker-compose-sg.yml
 data/ca-cert.pem
 /whg/authorisation
 /whg/logs
+server-admin/env_template.py
