@@ -40,8 +40,23 @@ def load_environment(context='default', template_path='env_template.py', output_
     env_vars = apply_context_overrides(template_vars, context)
     write_env_file(env_vars, output_path)
     load_dotenv(output_path)
+    
+    # Generate Docker Compose file
+    compose_template_path = os.path.join(script_dir, '../compose/docker-compose-template.yml')
+    compose_output_path = os.path.join(script_dir, '../docker-compose.yml')
+    try:
+        with open(compose_template_path, 'r') as file:
+            template_content = file.read()
+    except FileNotFoundError as e:
+        print(f"Compose template file not found: {e}")
+        return
+    for key, value in env_vars.items():
+        template_content = template_content.replace(f"${{{key}}}", value)
+    with open(output_path, 'w') as file:
+        file.write(template_content)
 
 if __name__ == "__main__":
     context = os.path.basename(os.getcwd())
     load_environment(context)
-    print(f"Environment variables for context '{context}' have been written to .env and loaded into the environment")
+    
+    print(f"Context '{context}': environment variables loaded, and written to `.env` and `docker-compose.yml`.")
