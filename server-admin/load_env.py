@@ -5,17 +5,13 @@ import subprocess
 from dotenv import load_dotenv
 from collections import OrderedDict
 
-def get_git_branch(context):
+def get_git_branch():
     try:
-        original_dir = os.getcwd()
-        os.chdir(context)
         # Run 'git rev-parse --abbrev-ref HEAD' to get the current branch name
         branch = subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip().decode('utf-8')
         return branch
     except subprocess.CalledProcessError:
         return None
-    finally:
-        os.chdir(original_dir)
 
 def load_template(template_path):
     if not os.path.isfile(template_path):
@@ -31,7 +27,7 @@ def apply_context_overrides(template_vars, context):
     context_vars.update(template_vars.get('sites', {}).get(context, {}))
     context_vars['BASE_DIR'] = os.getcwd()
     context_vars['ENV_CONTEXT'] = context 
-    context_vars['BRANCH'] = get_git_branch(context)
+    context_vars['BRANCH'] = get_git_branch()
     return OrderedDict(sorted(context_vars.items()))
 
 def write_env_file(env_vars, output_path):
