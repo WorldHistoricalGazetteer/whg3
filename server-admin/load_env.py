@@ -25,7 +25,12 @@ def write_env_file(env_vars, output_path):
         for key, value in env_vars.items():
             file.write(f'{key}={value}\n')
 
-def load_environment(context='default', template_path='env_template.py', output_path='../.env/.env'):
+def load_environment(context='default', 
+        template_path='env_template.py', 
+        output_path='../.env/.env',
+        compose_template_path='../compose/docker-compose-template.yml',
+        compose_output_path='../docker-compose.yml',
+        ):
     # Ensure paths are relative to the script's directory
     script_dir = os.path.dirname(__file__)
     template_path = os.path.join(script_dir, template_path)
@@ -42,8 +47,6 @@ def load_environment(context='default', template_path='env_template.py', output_
     load_dotenv(output_path)
     
     # Generate Docker Compose file
-    compose_template_path = os.path.join(script_dir, '../compose/docker-compose-template.yml')
-    compose_output_path = os.path.join(script_dir, '../docker-compose.yml')
     try:
         with open(compose_template_path, 'r') as file:
             template_content = file.read()
@@ -52,7 +55,7 @@ def load_environment(context='default', template_path='env_template.py', output_
         return
     for key, value in env_vars.items():
         template_content = template_content.replace(f"${{{key}}}", value)
-    with open(output_path, 'w') as file:
+    with open(compose_output_path, 'w') as file:
         file.write(template_content)
 
 if __name__ == "__main__":
