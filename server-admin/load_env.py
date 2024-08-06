@@ -24,10 +24,17 @@ def update_entrypoints(entrypoints_path, user, group):
         for file in files:
             if file.endswith('.sh'):
                 file_path = os.path.join(root, file)
-                # Remove non-Unix carriage returns
-                subprocess.run(['sed', '-i', 's/\r$//g', file_path], check=True)
-                os.chmod(file_path, os.stat(file_path).st_mode | stat.S_IEXEC)
-                os.chown(file_path, uid, gid)
+                try:
+                    # Remove non-Unix carriage returns
+                    subprocess.run(['sed', '-i', 's/\r$//g', file_path], check=True)
+                    # Make the script executable
+                    os.chmod(file_path, os.stat(file_path).st_mode | stat.S_IEXEC)
+                    # Change ownership
+                    os.chown(file_path, uid, gid)
+                except PermissionError as e:
+                    print(f"PermissionError: {e} - file_path: {file_path}")
+                except Exception as e:
+                    print(f"Error: {e} - file_path: {file_path}")
 
 def load_template(template_path):
     if not os.path.isfile(template_path):
