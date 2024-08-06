@@ -40,6 +40,8 @@ def load_environment(context='default',
         output_path='../.env/.env',
         compose_template_path='../compose/docker-compose-template.yml',
         compose_output_path='../docker-compose-autocontext.yml',
+        hba_template_path='../compose/pg_hba-template.conf',
+        hba_output_path='../compose/pg_hba.conf',
         ):
     # Ensure paths are relative to the script's directory
     script_dir = os.path.dirname(__file__)
@@ -47,6 +49,8 @@ def load_environment(context='default',
     output_path = os.path.join(script_dir, output_path)
     compose_template_path = os.path.join(script_dir, compose_template_path)
     compose_output_path = os.path.join(script_dir, compose_output_path)
+    hba_template_path = os.path.join(script_dir, hba_template_path)
+    hba_output_path = os.path.join(script_dir, hba_output_path)
     
     # Generate environment variable file
     try:
@@ -69,6 +73,18 @@ def load_environment(context='default',
     for key, value in env_vars.items():
         template_content = template_content.replace(f"${{{key}}}", value)
     with open(compose_output_path, 'w') as file:
+        file.write(template_content)
+    
+    # Generate PostGres Authentication file
+    try:
+        with open(hba_template_path, 'r') as file:
+            template_content = file.read()
+    except FileNotFoundError as e:
+        print(f"Compose template file not found: {e}")
+        return
+    for key, value in env_vars.items():
+        template_content = template_content.replace(f"${{{key}}}", value)
+    with open(hba_output_path, 'w') as file:
         file.write(template_content)
 
 if __name__ == "__main__":
