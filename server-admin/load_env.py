@@ -20,7 +20,7 @@ def update_entrypoints(entrypoints_path, user, group):
     uid = pwd.getpwnam(user).pw_uid
     gid = grp.getgrnam(group).gr_gid
 
-    for _, _, files in os.walk(entrypoints_path):
+    for root, dirs, files in os.walk(entrypoints_path):
         for file in files:
             if file.endswith('.sh'):
                 file_path = os.path.join(root, file)
