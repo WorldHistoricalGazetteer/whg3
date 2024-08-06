@@ -31,7 +31,7 @@ services:
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
     ports:
-      - "${APP_PORT}:${APP_PORT}"
+      - "8000:${APP_PORT}"
     user: "1000:1000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
