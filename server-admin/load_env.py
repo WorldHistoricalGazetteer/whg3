@@ -35,7 +35,10 @@ def load_environment(context='default',
     script_dir = os.path.dirname(__file__)
     template_path = os.path.join(script_dir, template_path)
     output_path = os.path.join(script_dir, output_path)
+    compose_template_path = os.path.join(script_dir, compose_template_path)
+    compose_output_path = os.path.join(script_dir, compose_output_path)
     
+    # Generate environment variable file
     try:
         template_vars = load_template(template_path)
     except FileNotFoundError as e:
