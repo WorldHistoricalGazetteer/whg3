@@ -16,3 +16,4 @@ wait_for_db() {
   done
   echo "Database is ready."
 }
+

@@ -20,3 +20,4 @@ rm -f /app/celerybeat.pid
 
 echo "Starting Celery Beat..."
 exec celery -A whg beat --loglevel=debug --scheduler django_celery_beat.schedulers:DatabaseScheduler
+

@@ -18,3 +18,4 @@ echo "Celery workers are available" >&2
 
 # Start Flower
 exec celery -A whg --broker="${CELERY_BROKER}" flower --basic_auth="${FLOWER_BASIC_AUTH}"
+

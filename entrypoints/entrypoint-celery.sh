@@ -16,3 +16,4 @@ wait_for_db "${DB_HOST_BETA}" "${DB_PORT_BETA}"
 
 echo "Starting Celery worker..."
 exec celery -A whg worker --loglevel=debug
+

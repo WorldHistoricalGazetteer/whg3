@@ -21,3 +21,4 @@ wait_for_db "${DB_HOST}" "${DB_PORT}"
 
 echo "Starting Gunicorn server..."
 exec gunicorn whg.wsgi:application --bind 0.0.0.0:${APP_PORT} --timeout 1200 -w 4
+
