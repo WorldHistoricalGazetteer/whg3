@@ -18,8 +18,6 @@ except ImportError:
   print('Error importing from .local_settings')
   pass
 
-SECRET_KEY = os.getenv('SECRET_KEY', 'whg-secret-key')
-
 ENV = os.environ.get('ENV', 'dev')  # Default to 'dev' if ENV is not set
 
 if 'test' in sys.argv:
@@ -27,7 +25,6 @@ if 'test' in sys.argv:
 else:
     CELERY_ALWAYS_EAGER = False
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE_ID = 1
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
