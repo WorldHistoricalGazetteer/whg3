@@ -117,9 +117,9 @@ services:
       - /home/whgadmin/sites/logs/${ENV_CONTEXT}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /home/whgadmin/docker-certs/ca:/certs/ca:ro
-      - /home/whgadmin/docker-certs/client:/certs/client:ro
-      - /home/whgadmin/docker-certs/server:/certs/server:ro
+      - /home/whgadmin/docker-certs/ca/ca.pem:/certs/ca.pem:ro
+      - /home/whgadmin/docker-certs/client/client-cert.pem:/certs/client-cert.pem:ro
+      - /home/whgadmin/docker-certs/client/client-key.pem:/certs/client-key.pem:ro
     env_file:
       - ./.env/.env
     environment:
