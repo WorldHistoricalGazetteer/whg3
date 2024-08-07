@@ -117,10 +117,16 @@ services:
       - /home/whgadmin/sites/logs/${ENV_CONTEXT}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /home/whgadmin/docker-certs/ca:/certs/ca:ro
+      - /home/whgadmin/docker-certs/client:/certs/client:ro
+      - /home/whgadmin/docker-certs/server:/certs/server:ro
     env_file:
       - ./.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DOCKER_TLS_VERIFY=1
+      - DOCKER_CERT_PATH=/certs
     depends_on:
       - redis
       - db_beta
