@@ -125,7 +125,7 @@ services:
       - ./.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
-      - DOCKER_HOST=${DOCKER_HOST_URL}
+      - DOCKER_HOST=tcp://${DOCKER_HOST_IP}
       - DOCKER_TLS_VERIFY=1
       - DOCKER_CERT_PATH=/certs
     depends_on:
