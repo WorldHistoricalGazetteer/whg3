@@ -118,17 +118,16 @@ services:
       - /home/whgadmin/sites/logs/${ENV_CONTEXT}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - /home/whgadmin/.docker:/.docker
-#       - /home/whgadmin/docker-certs/ca/ca.pem:/.docker/ca.pem:ro
-#       - /home/whgadmin/docker-certs/client/client-cert.pem:/.docker/client-cert.pem:ro
-#       - /home/whgadmin/docker-certs/client/client-key.pem:/.docker/client-key.pem:ro
+      - /home/whgadmin/docker-certs/ca/ca.pem:/root/.docker/ca.pem:ro
+      - /home/whgadmin/docker-certs/client/client-cert.pem:/root/.docker/client-cert.pem:ro
+      - /home/whgadmin/docker-certs/client/client-key.pem:/root/.docker/client-key.pem:ro
     env_file:
       - ./.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
       - DOCKER_HOST=tcp://${DOCKER_HOST_IP}
       - DOCKER_TLS_VERIFY=1
-      - DOCKER_CERT_PATH=/.docker
+      - DOCKER_CERT_PATH=/root/.docker
     depends_on:
       - redis
       - db_beta
