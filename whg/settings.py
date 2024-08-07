@@ -7,6 +7,12 @@ from django.core.cache.backends.filebased import FileBasedCache
 from logging.handlers import RotatingFileHandler
 
 try:
+  from .local_settings_autocontext import *
+except ImportError:
+  print('Error importing from .local_settings_autocontext')
+  pass
+
+try:
   from .local_settings import *
 except ImportError:
   print('Error importing from .local_settings')

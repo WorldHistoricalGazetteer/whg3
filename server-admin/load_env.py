@@ -66,6 +66,17 @@ def write_env_file(env_vars, output_path):
         for key, value in env_vars.items():
             file.write(f'{key}={value}\n')
 
+def write_python_file(env_vars, output_path):
+    with open(output_path, 'w') as file:
+        file.write("# This file is auto-generated from .env\n\n")
+        for key, value in env_vars.items():
+            if value.isdigit():
+                file.write(f"{key} = {value}\n")
+            elif value.lower() in ['true', 'false']:
+                file.write(f"{key} = {value.capitalize()}\n")
+            else:
+                file.write(f"{key} = '{value}'\n")
+
 def load_environment(context='default', 
         template_path='env_template.py', 
         output_path='../.env/.env',
@@ -74,6 +85,7 @@ def load_environment(context='default',
         hba_template_path='../compose/pg_hba-template.conf',
         hba_output_path='../compose/pg_hba.conf',
         entrypoints_path='../entrypoints',
+        python_output_path='../whg/local_settings_autocontext.py',
         ):
     # Ensure paths are relative to the script's directory
     script_dir = os.path.dirname(__file__)
@@ -83,7 +95,8 @@ def load_environment(context='default',
     compose_output_path = os.path.join(script_dir, compose_output_path)
     hba_template_path = os.path.join(script_dir, hba_template_path)
     hba_output_path = os.path.join(script_dir, hba_output_path)
-    entrypoints_path = os.path.join(script_dir, entrypoints_path)
+    entrypoints_path = os.path.join(script_dir, entrypoints_path)    
+    python_output_path = os.path.join(script_dir, python_output_path)
     
     # Generate environment variable file
     try:
@@ -121,6 +134,7 @@ def load_environment(context='default',
         file.write(template_content)
         
     update_entrypoints(entrypoints_path, 'whgadmin', 'root')
+    write_python_file(env_vars, python_output_path)
 
 if __name__ == "__main__":
     context = os.path.basename(os.getcwd())
