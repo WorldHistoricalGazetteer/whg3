@@ -287,7 +287,7 @@ def get_container_health(container_id):
     Get the health status of a service based on its Docker container health.
     """
 
-    command = f"docker inspect --format='{{{{json .State.Health}}}}' {container_id}"
+    command = f"docker --tlsverify --tlscacert=/certs/ca.pem --tlscert=/certs/client-cert.pem --tlskey=/certs/client-key.pem -H=172.21.0.1:2376 inspect --format='{{{{json .State.Health}}}}' {container_id}"
 
     try:
         result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
