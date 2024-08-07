@@ -287,7 +287,7 @@ def get_container_health(container_id):
     Get the health status of a service based on its Docker container health.
     """
 
-    command = f"docker inspect --format='{{{{json .State.Health}}}}' {container_id}_{settings.ENV_CONTEXT}_{settings.BRANCH}"
+    command = f"docker --tlsverify --tlscacert=/certs/ca.pem --tlscert=/certs/client-cert.pem --tlskey=/certs/client-key.pem -H={settings.DOCKER_HOST_IP} inspect --format='{{{{json .State.Health}}}}' {container_id}_{settings.ENV_CONTEXT}_{settings.BRANCH}"
     #logger.debug(command)
     
     try:
