@@ -104,6 +104,7 @@ services:
       timeout: 15s
 
   celery_worker:
+    network_mode: "host"
     networks:
       - ${ENV_CONTEXT}
     image: ${ENV_CONTEXT}-${BRANCH}
