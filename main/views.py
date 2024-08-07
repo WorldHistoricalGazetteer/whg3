@@ -44,10 +44,6 @@ import urllib.parse
 
 es = settings.ES_CONN
 
-import pprint
-settings_dict = {key: getattr(settings, key) for key in dir(settings) if key.isupper()}
-pprint.pprint(settings_dict)
-
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 
 def health_check(request):
