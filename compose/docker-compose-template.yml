@@ -124,7 +124,7 @@ services:
       - ./.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
-      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DOCKER_HOST=tcp://0.0.0.0:2376
       - DOCKER_TLS_VERIFY=1
       - DOCKER_CERT_PATH=/certs
     depends_on:
