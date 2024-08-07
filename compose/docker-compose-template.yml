@@ -108,6 +108,7 @@ services:
       - ${ENV_CONTEXT}
     image: ${ENV_CONTEXT}-${BRANCH}
     container_name: celery-worker_${ENV_CONTEXT}_${BRANCH}
+    hostname: celery-worker
     volumes:
       - .:/app
       - ${BASE_DIR}/media:/app/media
