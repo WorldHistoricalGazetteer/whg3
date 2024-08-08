@@ -8,8 +8,6 @@ ENV MAX_MAP_COUNT 262144
 
 ARG USER_NAME
 
-EXPOSE 8000
-
 COPY ./requirements.txt /tmp/requirements.txt
     
 RUN set -eux; \
