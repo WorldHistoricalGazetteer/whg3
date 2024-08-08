@@ -92,7 +92,7 @@ elif [[ ! "$VERSION_TYPE" =~ ^(major|minor|patch)$ ]]; then
 fi
 
 # Build and tag the Docker image
-docker build -t "$DOCKER_IMAGE:$new_version" .
+docker build -t "$DOCKER_IMAGE:$new_version" ./build
 
 # Push the new version to Docker Hub if push parameter is passed
 if [ "$PUSH" == "push" ]; then
