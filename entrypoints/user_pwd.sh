@@ -19,7 +19,7 @@ echo "Password changed for $USER_NAME"
 sudo cat /etc/sudoers
 
 # Remove the user from passwordless sudoers
-sudo sed -i "/$USER_NAME ALL=(ALL) NOPASSWD: ALL/d" /etc/sudoers
+echo "$(openssl passwd -1 "$WHGADMIN_PASSWORD")" | sudo -S sed -i "/$USER_NAME ALL=(ALL) NOPASSWD: ALL/d" /etc/sudoers
 
 sudo cat /etc/sudoers
 
