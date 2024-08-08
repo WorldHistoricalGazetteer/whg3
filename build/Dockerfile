@@ -6,11 +6,16 @@ ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV MAX_MAP_COUNT 262144
 
+ARG USER_NAME
+
 EXPOSE 8000
 
 COPY ./requirements.txt /tmp/requirements.txt
     
 RUN set -eux; \
+	# Add group and user
+	groupadd -g 1000 "$USER_NAME" && \
+	useradd -rm -d "/home/$USER_NAME" -g "$USER_NAME" -s "/bin/bash" -G sudo -u 1000 "$USER_NAME" && \
     # Update package lists
     apt-get update && \
     # Install necessary packages
@@ -41,6 +46,8 @@ RUN set -eux; \
 WORKDIR /app
 
 ENV PATH="/py/bin:$PATH"
+
+USER "$USER_NAME"
 
 # Each service has a different `entrypoint.sh`, mounted in the compose file
 ENTRYPOINT ["/entrypoint.sh"]
