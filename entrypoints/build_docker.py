@@ -5,7 +5,7 @@ import requests
 
 def get_latest_version(dockerhub_api):
     try:
-        response = requests.get(f"{dockerhub_api}?page_size=1&ordering=created")
+        response = requests.get(f"{dockerhub_api}?page_size=1")
         response.raise_for_status()
         results = response.json().get('results', [])
         if results:
