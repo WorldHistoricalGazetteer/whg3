@@ -74,10 +74,6 @@ fi
 current_version=$(get_latest_version)
 echo "Current version: $current_version"
 
-# Increment the version
-new_version=$(increment_version "$current_version" "$VERSION_TYPE")
-echo "New version: $new_version"
-
 # If VERSION_TYPE is not provided, default to the latest version
 if [ -z "$VERSION_TYPE" ]; then
     VERSION_TYPE="patch"
@@ -90,6 +86,12 @@ elif [[ ! "$VERSION_TYPE" =~ ^(major|minor|patch)$ ]]; then
     echo "Invalid version type: $VERSION_TYPE. Use 'major', 'minor', or 'patch'."
     exit 1
 fi
+
+# Increment the version
+new_version=$(increment_version "$current_version" "$VERSION_TYPE")
+echo "New version: $new_version"
+
+exit 1
 
 # Build and tag the Docker image
 docker build -t "$DOCKER_IMAGE:$new_version" ./build
