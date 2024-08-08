@@ -42,7 +42,5 @@ WORKDIR /app
 
 ENV PATH="/py/bin:$PATH"
 
-USER 1000
-
 # Each service has a different `entrypoint.sh`, mounted in the compose file
 ENTRYPOINT ["/entrypoint.sh"]
