@@ -37,7 +37,8 @@ RUN set -eux; \
 	# Add group and user
 	groupadd -g 1000 "$USER_NAME" && \
 	useradd -rm -d "/home/$USER_NAME" -g "$USER_NAME" -s "/bin/bash" -G sudo -u 1000 "$USER_NAME" -p "$(openssl passwd -1 change_me)" && \
-    echo "$USER_NAME ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+	# Create a new sudoers file for the user
+	echo "$USER_NAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/"$USER_NAME" && \
     # Create directories and set ownership
     mkdir -p /app/static && \
     chown -R 1000:1000 /app/static && \
