@@ -36,7 +36,7 @@ sudo systemctl reload nginx
 
 #### Edit Site Configuration
 ```bash
- sudo nano /etc/nginx/sites-enabled/<example.com>
+ sudo nano /etc/nginx/sites-available/<example.com>
 ```
 
 #### Reload Nginx
