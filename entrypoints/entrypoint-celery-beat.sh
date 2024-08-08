@@ -4,10 +4,12 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
-# Source the common functions script
-source /app/entrypoints/wait_for_db.sh
+# Create user
+source /app/entrypoints/create_user.sh
+create_user
 
 # Wait for the database to be ready
+source /app/entrypoints/wait_for_db.sh
 wait_for_db
 
 # Remove the existing celerybeat.pid file if it exists

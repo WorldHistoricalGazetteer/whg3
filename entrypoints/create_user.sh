@@ -1,10 +1,12 @@
 #!/bin/bash
 
+set -o errexit
+set -o pipefail
+set -o nounset
+
 # Ensure environment variables are set
-if [ -z "$USER_NAME" ] || [ -z "$WHGADMIN_PASSWORD" ]; then
-    echo "Environment variables USER_NAME and WHGADMIN_PASSWORD must be set."
-    exit 1
-fi
+: "${USER_NAME:?Environment variable USER_NAME is not set}"
+: "${WHGADMIN_PASSWORD:?Environment variable WHGADMIN_PASSWORD is not set}"
 
 # Check if the group exists; if not, create it with same name as user
 if ! getent group $USER_NAME >/dev/null 2>&1; then
