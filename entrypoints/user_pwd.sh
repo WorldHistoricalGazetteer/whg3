@@ -16,12 +16,12 @@ echo "Groups: $(groups)"
 sudo usermod "$USER_NAME" --password "$(openssl passwd -1 "$WHGADMIN_PASSWORD")"
 echo "Password changed for $USER_NAME"
 
-cat /etc/sudoers
+sudo cat /etc/sudoers
 
 # Remove the user from passwordless sudoers
 sudo sed -i "/$USER_NAME ALL=(ALL) NOPASSWD: ALL/d" /etc/sudoers
 
-cat /etc/sudoers
+sudo cat /etc/sudoers
 
 # Verify that the user was removed from sudoers
 if ! sudo grep -q "$USER_NAME ALL=(ALL) NOPASSWD: ALL" /etc/sudoers; then
