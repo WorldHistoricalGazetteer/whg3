@@ -2,12 +2,12 @@
 
 #### Sites Available
 ```bash
-ls /etc/nginx/sites-available/
+ls -l /etc/nginx/sites-available/
 ```
 
 #### Sites Enabled
 ```bash
-ls /etc/nginx/sites-enabled/
+ls -l /etc/nginx/sites-enabled/
 ```
 
 #### Enable Site
@@ -18,6 +18,24 @@ sudo ln -s /etc/nginx/sites-available/<example.com> /etc/nginx/sites-enabled/
 #### Disable Site
 ```bash
 sudo rm /etc/nginx/sites-enabled/<example.com>
+```
+
+#### Switch Sites
+v3.whgazetteer.org -> whgazetteer.org
+```bash
+sudo rm /etc/nginx/sites-enabled/v3.whgazetteer.org
+sudo ln -s /etc/nginx/sites-available/whgazetteer.org /etc/nginx/sites-enabled/
+ls -l /etc/nginx/sites-enabled/
+sudo nginx -t
+echo If OK, reload Nginx
+```
+whgazetteer.org -> v3.whgazetteer.org
+```bash
+sudo rm /etc/nginx/sites-enabled/whgazetteer.org
+sudo ln -s /etc/nginx/sites-available/v3.whgazetteer.org /etc/nginx/sites-enabled/
+ls -l /etc/nginx/sites-enabled/
+sudo nginx -t
+echo If OK, reload Nginx
 ```
 
 #### Test Configuration
