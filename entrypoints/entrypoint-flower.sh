@@ -8,9 +8,9 @@ set -o nounset
 : "${CELERY_BROKER_URL:?Environment variable CELERY_BROKER_URL is not set}"
 : "${FLOWER_BASIC_AUTH:?Environment variable FLOWER_BASIC_AUTH is not set}"
 
-# Create user
-source /app/entrypoints/create_user.sh
-create_user
+# Change user password
+source /app/entrypoints/user_pwd.sh
+user_pwd
 
 # Ensure Redis is available
 echo "Waiting for Redis at redis:6379 to be ready..."

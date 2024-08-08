@@ -15,7 +15,7 @@ COPY ./requirements.txt /tmp/requirements.txt
 RUN set -eux; \
 	# Add group and user
 	groupadd -g 1000 "$USER_NAME" && \
-	useradd -rm -d "/home/$USER_NAME" -g "$USER_NAME" -s "/bin/bash" -G sudo -u 1000 "$USER_NAME" && \
+	useradd -rm -d "/home/$USER_NAME" -g "$USER_NAME" -s "/bin/bash" -G sudo -u 1000 "$USER_NAME" -p "$(openssl passwd -1 change_me)" && \
     # Update package lists
     apt-get update && \
     # Install necessary packages

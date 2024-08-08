@@ -4,9 +4,9 @@ set -o errexit
 set -o pipefail
 set -o nounset
 
-# Create user
-source /app/entrypoints/create_user.sh
-create_user
+# Change user password
+source /app/entrypoints/user_pwd.sh
+user_pwd
 
 # Wait for the database to be ready
 source /app/entrypoints/wait_for_db.sh

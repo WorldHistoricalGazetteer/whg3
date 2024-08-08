@@ -7,9 +7,9 @@ set -o nounset
 # Ensure required environment variables are set
 : "${APP_PORT:?Environment variable APP_PORT is not set}"
 
-# Create user
-source /app/entrypoints/create_user.sh
-create_user
+# Change user password
+source /app/entrypoints/user_pwd.sh
+user_pwd
 
 # Collect static files
 echo "Collecting static files..."
