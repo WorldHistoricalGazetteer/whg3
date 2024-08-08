@@ -18,10 +18,13 @@ if ! id -u "$USER_NAME" >/dev/null 2>&1; then
     sudo useradd -m -d "/home/$USER_NAME" -s "/bin/bash" -u 1000 -g 1000 "$USER_NAME"
 fi
 
-# Set the user's password
-echo "$USER_NAME:$WHGADMIN_PASSWORD" | sudo chpasswd
-
 # Grant sudo privileges to the user
 if command -v sudo >/dev/null 2>&1; then
     usermod -aG sudo "$USER_NAME"
 fi
+
+# Set the user's password
+echo "$USER_NAME:$WHGADMIN_PASSWORD" | sudo chpasswd
+
+# Switch to USER_NAME
+su - "$USER_NAME" -c "echo 'Switched to $USER_NAME'"
