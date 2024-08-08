@@ -12,5 +12,8 @@ echo "Groups: $(groups)"
 : "${USER_NAME:?Environment variable USER_NAME is not set}"
 : "${WHGADMIN_PASSWORD:?Environment variable WHGADMIN_PASSWORD is not set}"
 
-# Set the user's password
-echo "$USER_NAME:$WHGADMIN_PASSWORD" | chpasswd
+# Set the user's password using the hashed password
+usermod "$USER_NAME" --password "$(openssl passwd -1 "$WHGADMIN_PASSWORD")"
+
+# Optionally, verify that the password has been set
+echo "Password changed for $USER_NAME"
