@@ -14,10 +14,11 @@ COPY ./requirements.txt /tmp/requirements.txt
     
 RUN set -eux; \
     # Update package lists and install necessary packages
+    apt-get update && \
     apt-get install -y --no-install-recommends \
         lsb-release \
         curl \
-        gnupg2 \
+        gpgv \
         build-essential \
         python3-gdal \
         libpq-dev \
