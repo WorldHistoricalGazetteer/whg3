@@ -17,7 +17,7 @@ sudo ln -s /etc/nginx/sites-available/<example.com> /etc/nginx/sites-enabled/
 
 #### Disable Site
 ```bash
-sudo rm /etc/nginx/sites-available/<example.com>
+sudo rm /etc/nginx/sites-enabled/<example.com>
 ```
 
 #### Test Configuration
