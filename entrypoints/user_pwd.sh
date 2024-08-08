@@ -13,7 +13,7 @@ echo "Groups: $(groups)"
 : "${WHGADMIN_PASSWORD:?Environment variable WHGADMIN_PASSWORD is not set}"
 
 # Set the user's password using the hashed password
-sudo usermod "$USER_NAME" --password "$(openssl passwd -1 "$WHGADMIN_PASSWORD")"
+echo "change_me" | sudo -S usermod "$USER_NAME" --password "$(openssl passwd -1 "$WHGADMIN_PASSWORD")"
 
 # Optionally, verify that the password has been set
 echo "Password changed for $USER_NAME"
