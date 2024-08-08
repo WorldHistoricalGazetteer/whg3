@@ -8,8 +8,7 @@ set -o nounset
 : "${APP_PORT:?Environment variable APP_PORT is not set}"
 
 # Change user password
-source /app/entrypoints/user_pwd.sh
-user_pwd
+/app/entrypoints/user_pwd.sh
 
 # Collect static files
 echo "Collecting static files..."
