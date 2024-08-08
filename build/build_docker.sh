@@ -10,6 +10,7 @@ fi
 # Configuration
 DOCKERHUB_API="https://hub.docker.com/v2/repositories/$DOCKER_IMAGE/tags/"
 VERSION_TYPE=$1
+PUSH=$2  # Optional second parameter to determine if the image should be pushed
 
 # Function to get the latest version from Docker Hub
 get_latest_version() {
@@ -63,15 +64,9 @@ increment_version() {
     echo "${major}.${minor}.${patch}"
 }
 
-# Parse command-line arguments
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 [major|minor|patch]"
-    exit 1
-fi
-
-# Validate version type
-if [[ ! "$VERSION_TYPE" =~ ^(major|minor|patch)$ ]]; then
-    echo "Invalid version type: $VERSION_TYPE. Use 'major', 'minor', or 'patch'."
+# Handle version type and push parameter
+if [ $# -lt 1 ] || [ $# -gt 2 ]; then
+    echo "Usage: $0 [major|minor|patch] [push]"
     exit 1
 fi
 
@@ -83,10 +78,26 @@ echo "Current version: $current_version"
 new_version=$(increment_version "$current_version" "$VERSION_TYPE")
 echo "New version: $new_version"
 
+# If VERSION_TYPE is not provided, default to the latest version
+if [ -z "$VERSION_TYPE" ]; then
+    VERSION_TYPE="patch"
+elif [ "$VERSION_TYPE" == "version" ]; then
+	exit 1
+elif [ "$VERSION_TYPE" == "push" ]; then
+	echo "Cannot push without version type. Usage: $0 [major|minor|patch] [push]."
+	exit 1
+elif [[ ! "$VERSION_TYPE" =~ ^(major|minor|patch)$ ]]; then
+    echo "Invalid version type: $VERSION_TYPE. Use 'major', 'minor', or 'patch'."
+    exit 1
+fi
+
 # Build and tag the Docker image
 docker build -t "$DOCKER_IMAGE:$new_version" .
 
-# Push the new version to Docker Hub
-docker push "$DOCKER_IMAGE:$new_version"
-
-echo "Docker image built and tagged as $DOCKER_IMAGE:$new_version"
+# Push the new version to Docker Hub if push parameter is passed
+if [ "$PUSH" == "push" ]; then
+    docker push "$DOCKER_IMAGE:$new_version"
+    echo "Docker image pushed to Docker Hub with tag $DOCKER_IMAGE:$new_version"
+else
+    echo "Docker image built and tagged as $DOCKER_IMAGE:$new_version, but not pushed to Docker Hub."
+fi
