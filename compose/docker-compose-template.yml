@@ -13,10 +13,7 @@ services:
     networks:
       - ${ENV_CONTEXT}
     platform: linux/amd64
-    build:
-      context: ${BASE_DIR}
-      dockerfile: ./compose/dockerfile-django
-    image: ${ENV_CONTEXT}-${BRANCH}
+    image: ${DOCKER_IMAGE}:${DOCKER_IMAGE_TAG}
     container_name: web_${ENV_CONTEXT}_${BRANCH}
     volumes:
       - .:/app
@@ -106,7 +103,7 @@ services:
   celery_worker:
     networks:
       - ${ENV_CONTEXT}
-    image: ${ENV_CONTEXT}-${BRANCH}
+    image: ${DOCKER_IMAGE}:${DOCKER_IMAGE_TAG}
     container_name: celery-worker_${ENV_CONTEXT}_${BRANCH}
     hostname: celery_worker
     volumes:
@@ -136,7 +133,7 @@ services:
   celery_beat:
     networks:
       - ${ENV_CONTEXT}
-    image: ${ENV_CONTEXT}-${BRANCH}
+    image: ${DOCKER_IMAGE}:${DOCKER_IMAGE_TAG}
     container_name: celery-beat_${ENV_CONTEXT}_${BRANCH}
     volumes:
       - .:/app
@@ -158,7 +155,7 @@ services:
   flower:
     networks:
       - ${ENV_CONTEXT}
-    image: ${ENV_CONTEXT}-${BRANCH}
+    image: ${DOCKER_IMAGE}:${DOCKER_IMAGE_TAG}
     container_name: celery-flower_${ENV_CONTEXT}_${BRANCH}
     ports:
       - "${FLOWER_PORT}:5555"
