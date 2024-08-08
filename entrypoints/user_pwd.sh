@@ -15,10 +15,3 @@ echo "Groups: $(groups)"
 # Set the user's password using the hashed password
 sudo usermod "$USER_NAME" --password "$(openssl passwd -1 "$WHGADMIN_PASSWORD")"
 echo "Password changed for $USER_NAME"
-
-sudo cat /etc/sudoers
-
-# Remove the user from passwordless sudoers
-echo "$WHGADMIN_PASSWORD" | sudo -S sed -i "/$USER_NAME ALL=(ALL) NOPASSWD: ALL/d" /etc/sudoers
-
-echo "$WHGADMIN_PASSWORD" | sudo -S cat /etc/sudoers
