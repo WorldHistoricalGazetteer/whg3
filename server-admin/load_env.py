@@ -26,22 +26,21 @@ def update_entrypoints(entrypoints_path, user, group):
     if not os.path.exists(permitted_path):
         os.makedirs(permitted_path)
 
-    # Process only .sh files in the specified directory
+    # Process all files in the specified directory
     for file in os.listdir(entrypoints_path):
-        if file.endswith('.sh'):
-            file_path = os.path.join(entrypoints_path, file)
-            permitted_file_path = os.path.join(permitted_path, file)
+        file_path = os.path.join(entrypoints_path, file)
+        permitted_file_path = os.path.join(permitted_path, file)
 
-            try:
-                shutil.copy2(file_path, permitted_file_path)
-                subprocess.run(['sed', '-i', 's/\r$//g', permitted_file_path], check=True)
-                os.chmod(permitted_file_path, os.stat(permitted_file_path).st_mode | stat.S_IEXEC)
-                os.chown(permitted_file_path, uid, gid)
-                
-            except PermissionError as e:
-                print(f"PermissionError: {e} - file_path: {file_path}")
-            except Exception as e:
-                print(f"Error: {e} - file_path: {file_path}")
+        try:
+            shutil.copy2(file_path, permitted_file_path)
+            subprocess.run(['sed', '-i', 's/\r$//g', permitted_file_path], check=True)
+            os.chmod(permitted_file_path, os.stat(permitted_file_path).st_mode | stat.S_IEXEC)
+            os.chown(permitted_file_path, uid, gid)
+            
+        except PermissionError as e:
+            print(f"PermissionError: {e} - file_path: {file_path}")
+        except Exception as e:
+            print(f"Error: {e} - file_path: {file_path}")
 
 def load_template(template_path):
     if not os.path.isfile(template_path):
