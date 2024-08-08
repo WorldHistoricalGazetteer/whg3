@@ -13,12 +13,7 @@ EXPOSE 8000
 COPY ./requirements.txt /tmp/requirements.txt
     
 RUN set -eux; \
-	# Add group and user
-	groupadd -g 1000 "$USER_NAME" && \
-	useradd -rm -d "/home/$USER_NAME" -g "$USER_NAME" -s "/bin/bash" -G sudo -u 1000 "$USER_NAME" -p "$(openssl passwd -1 change_me)" && \
-    # Update package lists
-    apt-get update && \
-    # Install necessary packages
+    # Update package lists and install necessary packages
     apt-get install -y --no-install-recommends \
         lsb-release \
         curl \
@@ -38,6 +33,10 @@ RUN set -eux; \
     # Clean up unused packages, lists, and temporary files to reduce image size
     apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false && \
     rm -rf /var/lib/apt/lists/* /tmp && \
+	# Add group and user
+	groupadd -g 1000 "$USER_NAME" && \
+	useradd -rm -d "/home/$USER_NAME" -g "$USER_NAME" -s "/bin/bash" -G sudo -u 1000 "$USER_NAME" -p "$(openssl passwd -1 change_me)" && \
+    echo "$USER_NAME ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
     # Create directories and set ownership
     mkdir -p /app/static && \
     chown -R 1000:1000 /app/static && \
