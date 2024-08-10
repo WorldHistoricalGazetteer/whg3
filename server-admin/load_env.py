@@ -156,4 +156,4 @@ if __name__ == "__main__":
     context = os.path.basename(os.getcwd())
     load_environment(context)
     
-    print(f"Context '{context}': environment variables loaded, and written to `.env`, `docker-compose.yml`, and `{nginx_output_full_path}`. Entrypoint permissions fixed.")
+    print(f"Context '{context}': environment variables loaded, and written to `.env`, `docker-compose.yml`, and nginx configuration. Entrypoint permissions fixed.")
