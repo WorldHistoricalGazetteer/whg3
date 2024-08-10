@@ -85,6 +85,8 @@ def load_environment(context='default',
         hba_output_path='../compose/pg_hba.conf',
         entrypoints_path='../entrypoints',
         python_output_path='../whg/local_settings_autocontext.py',
+        nginx_template_path='nginx_template.conf',
+        nginx_output_path='/etc/nginx/sites-available/'
         ):
     # Ensure paths are relative to the script's directory
     script_dir = os.path.dirname(__file__)
@@ -96,6 +98,8 @@ def load_environment(context='default',
     hba_output_path = os.path.join(script_dir, hba_output_path)
     entrypoints_path = os.path.join(script_dir, entrypoints_path)    
     python_output_path = os.path.join(script_dir, python_output_path)
+    nginx_template_path = os.path.join(script_dir, nginx_template_path)
+    nginx_output_path = os.path.join(script_dir, nginx_output_path)
     
     # Generate environment variable file
     try:
@@ -131,6 +135,19 @@ def load_environment(context='default',
         template_content = template_content.replace(f"${{{key}}}", value)
     with open(hba_output_path, 'w') as file:
         file.write(template_content)
+
+    # Generate NGINX Configuration
+    try:
+        with open(nginx_template_path, 'r') as file:
+            template_content = file.read()
+    except FileNotFoundError as e:
+        print(f"NGINX template file not found: {e}")
+        return
+    for key, value in env_vars.items():
+        template_content = template_content.replace(f"${{{key}}}", value)
+    nginx_output_full_path = os.path.join(nginx_output_path, env_vars.get('NGINX_SERVER_NAME'))
+    with open(nginx_output_full_path, 'w') as file:
+        file.write(template_content)
         
     update_entrypoints(entrypoints_path, 'whgadmin', 'root')
     write_python_file(env_vars, python_output_path)
@@ -139,4 +156,4 @@ if __name__ == "__main__":
     context = os.path.basename(os.getcwd())
     load_environment(context)
     
-    print(f"Context '{context}': environment variables loaded, and written to `.env` and `docker-compose.yml`. Entrypoint permissions fixed.")
+    print(f"Context '{context}': environment variables loaded, and written to `.env`, `docker-compose.yml`, and `{nginx_output_full_path}`. Entrypoint permissions fixed.")
