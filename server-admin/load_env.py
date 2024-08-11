@@ -62,6 +62,9 @@ def apply_context_overrides(template_vars, context):
     context_vars['BASE_DIR'] = os.getcwd()
     context_vars['ENV_CONTEXT'] = context 
     context_vars['BRANCH'] = get_git_branch()
+    context_vars['POSTGRES_USER'] = context_vars['DB_USER']
+    context_vars['POSTGRES_PASSWORD'] = context_vars['DB_PASSWORD']
+    context_vars['POSTGRES_DB'] = context_vars['DB_NAME']
     context_vars['CELERY_BROKER_URL'] = f"redis://redis:6379/0"
     return OrderedDict(sorted(context_vars.items()))
 
