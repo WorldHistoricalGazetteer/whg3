@@ -1,5 +1,3 @@
-version: '2.19'
-
 networks:
   ${ENV_CONTEXT}:
     driver: bridge
