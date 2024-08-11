@@ -1,4 +1,14 @@
-### Deployment from Staging to Server
+## Deploy to Main from Staging
+
+```bash
+git checkout main        # Switch to main branch
+git pull origin main     # Update local main branch
+git merge staging        # Merge staging into main
+git push origin main     # Push changes to remote main branch
+git checkout staging     # Switch back to staging branch
+```
+
+## Deployment from Staging to Server
 
 #### GitHub Deployment
 - Establish SSH connection, and then:
@@ -76,8 +86,7 @@ docker exec -it web bash
 ./manage.py migrate
 ```
 
-### Test/Revert new image
-
+## Test/Revert new image
 
 Rename existing image as backup, perform new build
 ```bash
