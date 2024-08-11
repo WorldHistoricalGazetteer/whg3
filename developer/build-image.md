@@ -4,8 +4,7 @@
 Helper function will calculate next version number and push built image to Docker Hub
 ```bash
 # Usage: build_docker.py [major|minor|patch] [push]
-sudo chmod 774 ./entrypoints/build_docker.py
-python3 ./entrypoints/build_docker.py patch push
+python3 ./entrypoints/permitted/build_docker.py patch push
 ```
 
 #### Build image
