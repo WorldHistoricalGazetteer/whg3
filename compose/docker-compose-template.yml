@@ -64,10 +64,6 @@ services:
       - ./compose/pg_hba.conf:/etc/postgresql/pg_hba.conf
     env_file:
       - ./.env/.env
-    environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
     command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
     restart: unless-stopped
     healthcheck:
