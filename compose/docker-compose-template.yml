@@ -51,7 +51,7 @@ services:
 #         constraints:
 #           - node.role == manager
 
-  db_beta:
+  ${DB_HOST}:
     networks:
       - ${ENV_CONTEXT}
     platform: linux/amd64
