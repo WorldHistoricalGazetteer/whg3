@@ -29,6 +29,11 @@ def update_entrypoints(entrypoints_path, user, group):
     # Process all files in the specified directory
     for file in os.listdir(entrypoints_path):
         file_path = os.path.join(entrypoints_path, file)
+        
+        # Skip directories
+        if os.path.isdir(file_path):
+            continue
+        
         permitted_file_path = os.path.join(permitted_path, file)
 
         try:
