@@ -19,31 +19,25 @@ find ./ -type f \( -name "*.html" -o -name "*.py" -o -name "*.js" \) ! -path "./
 
 Due to the size of the backup files, restoration has to be multi-threaded and with the psql interface inside Docker container.
 
-Copy backup file into `postgres_beta` container
+Copy backup file into the relevant `postgres` container (identify by using `docker ps`):
 ```bash
-docker cp /home/whgadmin/backup/pgv3/whgv3beta_xxxxxxxx.backup postgres_beta:/tmp/whgv3beta_xxxxxxxx.backup
+docker cp /home/whgadmin/backup/<backup_folder>/<file_name.backup> <postgres_container>:/tmp/<file_name.backup>
 ```
 
 Enter the `postgres_beta` container
 ```bash
-docker exec -it postgres_beta /bin/bash
+docker exec -it <postgres_container> /bin/bash
 ```
 
-Delete existing database (if any), then create new one and users with necessary privileges
+Run the `restore_db_from_dump.sh` script, passing the previously-copied `<file_name.backup>` as a parameter:
 ```bash
-psql -U postgres
-```
-```sql
-DROP DATABASE whgv3beta;
-CREATE DATABASE whgv3beta;
-CREATE USER whgadmin WITH PASSWORD '***************';
-ALTER USER whgadmin WITH REPLICATION BYPASSRLS;
-CREATE USER ro_user
-\! pg_restore -U whgadmin -d whgv3beta -v --jobs=4 /whgv3beta_20240720.backup > /tmp/restore.log 2> /tmp/restore_errors.log
-\q
+/entrypoints/permitted/restore_db.sh <BACKUP_NAME>
 ```
 
-Check `restore_errors.log` and do not proceed before resolving any errors
+The database is built in two phases, schema first and then data. **Check both logs for significant errors before proceeding**.
 ```bash
-cat /tmp/restore_errors.log
+less /tmp/restore_schema_errors.log
+```
+```bash
+less /tmp/restore_data_errors.log
 ```
