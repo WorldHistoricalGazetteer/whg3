@@ -8,7 +8,7 @@ ENV MAX_MAP_COUNT 262144
 
 ARG USER_NAME
 
-COPY ./../requirements.txt /tmp/requirements.txt
+COPY ./requirements.txt /tmp/requirements.txt
     
 RUN set -eux; \
     # Update package lists and install necessary packages
