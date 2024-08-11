@@ -31,7 +31,8 @@ docker exec -it <postgres_container> /bin/bash
 
 Run the `restore_db_from_dump.sh` script, passing the previously-copied `<file_name.backup>` as a parameter:
 ```bash
-/entrypoints/permitted/restore_db.sh <BACKUP_NAME>
+chmod 554 /tmp/restore_db_from_dump.sh
+/tmp/restore_db_from_dump.sh /tmp/<BACKUP_NAME>
 ```
 
 The database is built in two phases, schema first and then data. **Check both logs for significant errors before proceeding**.
