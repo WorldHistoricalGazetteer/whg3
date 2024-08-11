@@ -9,7 +9,7 @@ python3 ./entrypoints/permitted/build_docker.py patch push
 
 #### Build image
 ```bash
-docker build --no-cache -t worldhistoricalgazetteer/web:<x.x.x> --build-arg USER_NAME=whgadmin ./build
+docker build --no-cache -t worldhistoricalgazetteer/web:<x.x.x> --build-arg USER_NAME=whgadmin .
 ```
 
 #### Push image to Docker Hub
