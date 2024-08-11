@@ -62,6 +62,7 @@ services:
     volumes:
       - /home/whgadmin/databases/${ENV_CONTEXT}:/var/lib/postgresql/data
       - ./compose/pg_hba.conf:/etc/postgresql/pg_hba.conf
+      - ./entrypoints/restore_db_from_dump.sh:/tmp/restore_db_from_dump.sh
     env_file:
       - ./.env/.env
     command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
