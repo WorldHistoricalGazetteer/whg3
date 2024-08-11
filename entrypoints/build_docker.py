@@ -44,7 +44,7 @@ def build_and_tag_image(docker_image, new_version):
             f"{docker_image}:{new_version}", 
             "--build-arg", 
             "USER_NAME=whgadmin", 
-            "./build"
+            "."
         ], check=True)
     except subprocess.CalledProcessError:
         print("Failed to build the Docker image.")
