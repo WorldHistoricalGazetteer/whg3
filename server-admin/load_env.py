@@ -8,6 +8,7 @@ import pwd
 import grp
 from dotenv import load_dotenv
 from collections import OrderedDict
+from jinja2 import Template
 
 def get_git_branch():
     try:
@@ -84,16 +85,26 @@ def write_python_file(env_vars, output_path):
             else:
                 file.write(f"{key} = '{value}'\n")
 
+def render_jinja_template(template_path, env_vars, output_path):
+    with open(template_path, 'r') as file:
+        template_content = file.read()
+
+    template = Template(template_content)
+    rendered_content = template.render(env_vars)
+
+    with open(output_path, 'w') as file:
+        file.write(rendered_content)
+
 def load_environment(context='default', 
         template_path='env_template.py', 
         output_path='../.env/.env',
-        compose_template_path='../compose/docker-compose-template.yml',
+        compose_template_path='../compose/docker-compose-template.j2',
         compose_output_path='../docker-compose-autocontext.yml',
-        hba_template_path='../compose/pg_hba-template.conf',
+        hba_template_path='../compose/pg_hba-template.j2',
         hba_output_path='../compose/pg_hba.conf',
         entrypoints_path='../entrypoints',
         python_output_path='../whg/local_settings_autocontext.py',
-        nginx_template_path='nginx_template.conf',
+        nginx_template_path='nginx-template.j2',
         nginx_output_path='/etc/nginx/sites-available/'
         ):
     # Ensure paths are relative to the script's directory
@@ -120,42 +131,10 @@ def load_environment(context='default',
     write_env_file(env_vars, output_path)
     load_dotenv(output_path)
     
-    # Generate Docker Compose file
-    try:
-        with open(compose_template_path, 'r') as file:
-            template_content = file.read()
-    except FileNotFoundError as e:
-        print(f"Compose template file not found: {e}")
-        return
-    for key, value in env_vars.items():
-        template_content = template_content.replace(f"${{{key}}}", value)
-    with open(compose_output_path, 'w') as file:
-        file.write(template_content)
-    
-    # Generate PostGres Authentication file
-    try:
-        with open(hba_template_path, 'r') as file:
-            template_content = file.read()
-    except FileNotFoundError as e:
-        print(f"Compose template file not found: {e}")
-        return
-    for key, value in env_vars.items():
-        template_content = template_content.replace(f"${{{key}}}", value)
-    with open(hba_output_path, 'w') as file:
-        file.write(template_content)
-
-    # Generate NGINX Configuration
-    try:
-        with open(nginx_template_path, 'r') as file:
-            template_content = file.read()
-    except FileNotFoundError as e:
-        print(f"NGINX template file not found: {e}")
-        return
-    for key, value in env_vars.items():
-        template_content = template_content.replace(f"${{{key}}}", value)
-    nginx_output_full_path = os.path.join(nginx_output_path, env_vars.get('NGINX_SERVER_NAME'))
-    with open(nginx_output_full_path, 'w') as file:
-        file.write(template_content)
+    # Render files using Jinja2
+    render_jinja_template(compose_template_path, env_vars, compose_output_path)
+    render_jinja_template(hba_template_path, env_vars, hba_output_path)
+    render_jinja_template(nginx_template_path, env_vars, os.path.join(nginx_output_path, env_vars.get('NGINX_SERVER_NAME')))
         
     update_entrypoints(entrypoints_path, 'whgadmin', 'root')
     write_python_file(env_vars, python_output_path)
