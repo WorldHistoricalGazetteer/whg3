@@ -33,6 +33,7 @@ def update_entrypoints(entrypoints_path, user, group):
         # Skip directories
         if os.path.isdir(file_path):
             continue
+            
         permitted_file_path = os.path.join(permitted_path, file)
 
         try:
