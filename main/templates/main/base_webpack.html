@@ -17,6 +17,9 @@
       /* Hide until CDN css files are fully loaded */
       opacity: 0;
       transition: opacity 1s ease;
+  	  {% if environment == 'dev-whgazetteer-org' %}
+    	border: 3px red solid !important;
+      {% endif %} 
     }
     .maintenance-banner {
       /* display: none; */
@@ -27,6 +30,12 @@
       font-size: 16px;
       font-weight: bold;
     }
+
+  {% if environment == 'dev-whgazetteer-org' %}
+    <link href="{% static 'css/dark-mode.css' %}" rel="stylesheet"/>
+  {% endif %}    
+    
+    
   </style>
 
   {% block maplibre %}{% endblock %}
