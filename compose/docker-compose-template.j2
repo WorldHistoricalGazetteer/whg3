@@ -158,7 +158,7 @@ services:
       - db_beta
     restart: unless-stopped
     
-{% if ENV_CONTEXT == 'dev-whgazetteer-org' %} ## SWITCH THIS FOR PRODUCTION
+{% if ENV_CONTEXT == 'REMOVE-dev-whgazetteer-org' %} ## SWITCH THIS FOR PRODUCTION
 
   wordpress_db:
     image: mysql:5.7
