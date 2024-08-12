@@ -48,7 +48,7 @@ def slack_notification(slack_message, channel="site-notifications"):
         logger.exception("Error occurred while sending notification to Slack")
         return False
 
-def WHGmail(request, context):
+def WHGmail(request=None, context):
     """
     Sends an email using the provided context and optionally posts a notification to Slack.
 
@@ -137,6 +137,8 @@ def WHGmail(request, context):
             body=text_content,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[to_email],
+            cc=context.get('cc', []),
+            bcc=context.get('bcc', []),
             headers={'Reply-To': context.get('reply_to')}
         )
     

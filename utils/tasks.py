@@ -22,7 +22,7 @@ from datasets.models import Dataset
 from datasets.utils import makeNow
 from main.models import DownloadFile, Log
 from places.models import Place
-from utils.emailing import new_emailer
+from whgmail.messaging import WHGmail
 
 logger = get_task_logger(__name__)
 User = get_user_model()
@@ -481,19 +481,14 @@ def make_download(self, *args, **kwargs):
         collection_id=collid or None,
         user_id=user.id,
     )
-
-    new_emailer(
-        email_type="download_ready",
-        subject="WHG download file is ready",
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to_email=[user.email],
-        name=user.username,
-        greeting_name=user.name if user.name else user.username,
-        label=ds.label if dsid else coll.title,
-        title=ds.title if dsid else coll.title,
-        email=user.email,
-        taskname="Download",
-    )
+              
+    WHGmail(context={
+        'template': 'download_ready',
+        'subject': 'WHG download file is ready',
+        'to_email': [user.email],
+        'greeting_name': user.display_name,
+        'title': ds.title if dsid else coll.title,
+    })
 
     self.update_state(state="SUCCESS")
     logger.info("Task state: SUCCESS")

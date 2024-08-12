@@ -1,0 +1,7 @@
+{% extends "base_email.html" %}
+
+{% block content %}
+    <p>Your WHG index alignment task for the {{ dataset_title }} dataset ({{ dataset_label }}) has completed.</p>
+    <p>{counthit} records got a total of {totalhits} hits.</p>
+    <p>View results on the "Linking" tab of your dataset page (you may have to refresh it).</p>
+{% endblock %}

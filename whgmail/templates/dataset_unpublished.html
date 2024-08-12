@@ -1,6 +1,6 @@
 {% extends "base_email.html" %}
 
 {% block content %}
-    <p>Your previously published dataset, "{{ dataset_title }} ({{ dataset_label }}", {{ dataset_id }}), has been made private again, and its records are no longer accessible in search or our API.</p>
-    <p>If you have any questions, please contact our editor at {{ editor_email }}.</p>
+    <p>Your previously published dataset, "{{ dataset_title }}" [<i>Label: {{ dataset_label }}; ID: {{ dataset_id }}</i>], has been made private again, and its records are no longer accessible in search or our API.</p>
+    <p>If you have any questions, please contact our editor at {{ reply_to }}.</p>
 {% endblock %}

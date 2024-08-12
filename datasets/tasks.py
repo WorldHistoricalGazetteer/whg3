@@ -32,6 +32,7 @@ from datasets.utils import elapsed, getQ, \
   HitRecord, hully, parse_wkt, post_recon_update #  bestParent, makeNow,
 from main.models import Log, DownloadFile
 from places.models import Place
+from whgmail.messaging import WHGmail
 
 logger = get_task_logger(__name__)
 es = settings.ES_CONN
@@ -876,23 +877,18 @@ def align_wdlocal(*args, **kwargs):
   post_recon_update(ds, user, 'wdlocal', test)
 
   # email owner when complete
-  from utils.emailing import new_emailer
-  new_emailer(
-    email_type='align_wdlocal',
-    subject='Wikidata alignment task complete',
-    from_email=settings.DEFAULT_FROM_EMAIL,
-    to_email=[user.email],
-    name=user.username,
-    greeting_name=user.name if user.name else user.username,
-    dslabel=ds.label,
-    dstitle=ds.title,
-    email=user.email,
-    # TODO: get correct counts for message
-    counthit=count_hit,  # of records with any hit(s)
-    totalhits=total_hits,  # of hits
-    taskname='Wikidata',
-    status=task_status,
-  )
+  WHGmail(context={
+    'template': 'align_wdlocal',
+    'to_email': user.email,
+    'bcc': [settings.DEFAULT_FROM_EDITORIAL],
+    'subject': 'Wikidata alignment task complete',
+    'greeting_name': user.display_name,
+    'dataset_title': ds.title if ds else 'N/A',
+    'dataset_label': ds.label if ds else 'N/A',
+    'dataset_id': ds.id if ds else 'N/A',
+    'counthit': count_hit,
+    'totalhits': total_hits
+  })
 
   return hit_parade['summary']
 
@@ -1335,24 +1331,18 @@ def align_idx(*args, **kwargs):
 
   # email owner when complete
   # tid, dslabel, name, email, counthit, totalhits, test
-  from utils.emailing import new_emailer
-  new_emailer(
-    email_type='align_idx',
-    subject='WHG alignment task complete',
-    from_email=settings.DEFAULT_FROM_EMAIL,
-    to_email=[user.email],
-    name=user.username,
-    greeting_name=user.name if user.name else user.username,
-    dslabel=ds.label,
-    dstitle=ds.title,
-    email=user.email,
-    # TODO: get correct counts for message
-    counthit=count_hit,  # of records with any hit(s)
-    totalhits=total_hits,  # of hits
-    taskname='WHG index',
-    status=task_status,
-    test=test
-  )
+  WHGmail(context={
+    'template': 'align_idx',
+    'to_email': user.email,
+    'bcc': [settings.DEFAULT_FROM_EDITORIAL],
+    'subject': 'WHG alignment task complete',
+    'greeting_name': user.display_name,
+    'dataset_title': ds.title if ds else 'N/A',
+    'dataset_label': ds.label if ds else 'N/A',
+    'dataset_id': ds.id if ds else 'N/A',
+    'counthit': count_hit,
+    'totalhits': total_hits
+  })
 
   print('elapsed time:', elapsed(end-start))
 
