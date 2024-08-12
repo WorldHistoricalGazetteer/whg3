@@ -17,6 +17,11 @@ git checkout staging     # Switch back to staging branch
 
 Then switch to the `whgazetteer-org` site, pull updates, update environment, and restart network:
 ```bash
+cd ~/sites/whgazetteer-org
+git pull origin main && sudo python3 ./server-admin/load_env.py
+docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env down && docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env up -d && docker ps
+# For safety's sake, switch back to staging site
+cd ~/sites/dev-whgazetteer-org
 ```
 
 ## Deployment from Staging to Server
