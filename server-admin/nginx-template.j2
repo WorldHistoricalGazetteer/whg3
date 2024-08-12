@@ -63,7 +63,7 @@ server {
     }
 
     location /media/ {
-        root /home/whgadmin/sites/{{ ENV_CONTEXT }}/media/;
+        alias /home/whgadmin/sites/{{ ENV_CONTEXT }}/media/;
     }
 
     location /static/ {
