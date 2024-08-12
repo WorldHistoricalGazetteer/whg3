@@ -179,8 +179,7 @@ services:
     env_file:
       - ./.env/.wordpress
     volumes:
-      # - /home/whgadmin/wordpress/data/whg-wp:/var/www/html
-      - /home/whgadmin/wordpress/data:/var/www/html
+      - /home/whgadmin/wordpress/data/whg-wp:/var/www/html
     depends_on:
       - wordpress_db
     restart: unless-stopped
