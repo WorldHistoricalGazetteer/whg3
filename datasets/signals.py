@@ -7,7 +7,7 @@ from django.db.models.signals import pre_delete, pre_save, post_save
 from django.dispatch import receiver
 
 from .models import Dataset, DatasetFile
-from utils.emailing import new_emailer
+from whgmail.messaging import WHGmail
 
 import logging
 
@@ -67,18 +67,16 @@ def handle_public_flag(sender, instance, **kwargs):
     if old_instance.public != instance.public:  # There's a change in 'public' status
       owner = instance.owner
       if instance.public:
-        new_emailer(
-          email_type='dataset_published',
-          subject='Your WHG dataset has been published',
-          from_email=settings.DEFAULT_FROM_EMAIL,
-          to_email=[owner.email],
-          reply_to=[settings.DEFAULT_FROM_EDITORIAL],
-          name=owner.name,
-          greeting_name=owner.name if owner.name else owner.username,
-          dataset_title=instance.title,
-          dataset_label=instance.label,
-          dataset_id=instance.id
-        )
+        WHGmail(context={
+            'template': 'dataset_published',
+            'to_email': owner.email,
+            'subject': 'Your WHG dataset has been published',
+            'reply_to': settings.DEFAULT_FROM_EDITORIAL,
+            'greeting_name': owner.display_name,
+            'dataset_title': ds.title if ds else 'N/A',
+            'dataset_label': ds.label if ds else 'N/A',
+            'dataset_id': ds.id if ds else 'N/A',
+        })
 
         # Changed from False to True, index the records
         transaction.on_commit(lambda: index_to_pub.delay(instance.id))
@@ -100,19 +98,15 @@ def handle_public_flag(sender, instance, **kwargs):
         transaction.on_commit(lambda: unindex_from_pub.delay(instance.id))
         # notify the owner
         owner = instance.owner
-        new_emailer(
-          email_type='dataset_unpublished',
-          subject='Your WHG dataset has been unpublished',
-          from_email=settings.DEFAULT_FROM_EMAIL,
-          to_email=[owner.email],
-          reply_to=[settings.DEFAULT_FROM_EDITORIAL],
-          name=owner.name,
-          greeting_name=owner.name if owner.name else owner.username,
-          dataset_title=instance.title,
-          dataset_label=instance.label,
-          dataset_id=instance.id
-        )
-
+        WHGmail(context={
+            'template': 'dataset_unpublished',
+            'to_email': owner.email,
+            'subject': 'Your WHG dataset has been unpublished',
+            'greeting_name': owner.display_name,
+            'dataset_title': ds.title if ds else 'N/A',
+            'dataset_label': ds.label if ds else 'N/A',
+            'dataset_id': ds.id if ds else 'N/A',
+        })
 
 # notify the owner when status changes to 'wd-complete' or 'indexed'
 @receiver(pre_save, sender=Dataset)
@@ -130,21 +124,17 @@ def handle_status_change(sender, instance, **kwargs):
       if old_instance.ds_status != instance.ds_status and instance.ds_status == 'wd-complete':
         print('handle_status_change: ds_status changed to wd-complete')
         owner = instance.owner
-        new_emailer(
-          email_type='wikidata_review_complete',
-          subject='WHG reconciliation review complete',
-          from_email=settings.DEFAULT_FROM_EMAIL,
-          # to_email=[settings.EMAIL_TO_ADMINS],
-          to_email=[owner.email],
-          reply_to=[settings.DEFAULT_FROM_EDITORIAL],
-          bcc=[settings.DEFAULT_FROM_EDITORIAL],
-          name=owner.name,
-          greeting_name=owner.name if owner.name else owner.username,
-          dataset_title=instance.title,
-          dataset_label=instance.label,
-          dataset_id=instance.id,
-          editorial=settings.DEFAULT_FROM_EDITORIAL
-        )
+        WHGmail(context={
+            'template': 'wikidata_review_complete',
+            'to_email': owner.email,
+            'bcc': [settings.DEFAULT_FROM_EDITORIAL],
+            'subject': 'WHG reconciliation review complete',
+            'greeting_name': owner.display_name,
+            'dataset_title': ds.title if ds else 'N/A',
+            'dataset_label': ds.label if ds else 'N/A',
+            'dataset_id': ds.id if ds else 'N/A',
+            'slack_notify': True,
+        })
         # print('handle_status_change: wd-complete')
         # remove from volunteers needed page
         instance.volunteers = False
@@ -154,19 +144,17 @@ def handle_status_change(sender, instance, **kwargs):
       if old_instance.ds_status != instance.ds_status and instance.ds_status == 'indexed':
         # print('handle_status_change: ds_status changed to indexed')
         owner = instance.owner
-        new_emailer(
-          email_type='dataset_indexed',
-          subject='Your WHG dataset is fully indexed',
-          from_email=settings.DEFAULT_FROM_EMAIL,
-          to_email=[owner.email],
-          reply_to=[settings.DEFAULT_FROM_EDITORIAL],
-          bcc=[settings.DEFAULT_FROM_EDITORIAL],
-          name=owner.name,
-          greeting_name=owner.name if owner.name else owner.username,
-          dataset_title=instance.title,
-          dataset_label=instance.label,
-          dataset_id=instance.id
-        )
+        WHGmail(context={
+            'template': 'dataset_indexed',
+            'to_email': owner.email,
+            'bcc': [settings.DEFAULT_FROM_EDITORIAL],
+            'subject': 'Your WHG dataset is fully indexed',
+            'greeting_name': owner.display_name,
+            'dataset_title': ds.title if ds else 'N/A',
+            'dataset_label': ds.label if ds else 'N/A',
+            'dataset_id': ds.id if ds else 'N/A',
+            'slack_notify': True,
+        })
         # remove from volunteers needed page
         instance.volunteers = False
         instance.save(update_fields=['volunteers'])

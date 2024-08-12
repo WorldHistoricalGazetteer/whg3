@@ -34,24 +34,23 @@ from datasets.static.hashes import aliases as al
 from main.models import Log
 from places.models import PlaceGeom, Type
 pp = pprint.PrettyPrinter(indent=1)
+from whgmail.messaging import WHGmail
 
 def volunteer_offer(request, ds):
-  from utils.emailing import new_emailer
   volunteer = request.user
   owner = ds.owner
 
   # common parameters for both emails
   common_params = {
-    'from_email': settings.DEFAULT_FROM_EMAIL,
     'bcc': [settings.DEFAULT_FROM_EDITORIAL],
     'volunteer_username': volunteer.username,
-    'volunteer_name': volunteer.first_name + ' ' + volunteer.last_name,
+    'volunteer_name': volunteer.display_name,
     'volunteer_email': volunteer.email,
-    'volunteer_greeting': volunteer.name if volunteer.name else volunteer.username,
+    'volunteer_greeting': volunteer.display_name,
     'owner_username': volunteer.username,
-    'owner_name': owner.first_name + ' ' + owner.last_name,
+    'owner_name': owner.display_name,
     'owner_email': volunteer.email,
-    'owner_greeting': owner.name if owner.name else owner.username,
+    'owner_greeting': owner.display_name,
     'dataset_title': ds.title,
     'dataset_label': ds.label,
     'dataset_id': ds.id,
@@ -65,8 +64,10 @@ def volunteer_offer(request, ds):
     'subject': 'Volunteer offer for ' + ds.title + ' dataset in WHG',
     'to_email': [owner.email],
     'reply_to': [volunteer.email],
+    'slack_notify': True,
   })
-  new_emailer(**owner_params)
+  WHGmail(context=owner_params)
+
 
   # return success message
   user_params = common_params.copy()
@@ -76,7 +77,7 @@ def volunteer_offer(request, ds):
     'to_email': [volunteer.email],
     'reply_to': [settings.DEFAULT_FROM_EDITORIAL],
   })
-  new_emailer(**user_params)
+  WHGmail(context=user_params)
 
   # return success message
   return 'volunteer offer for ' + ds

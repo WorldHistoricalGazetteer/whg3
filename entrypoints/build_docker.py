@@ -44,7 +44,7 @@ def build_and_tag_image(docker_image, new_version):
             f"{docker_image}:{new_version}", 
             "--build-arg", 
             "USER_NAME=whgadmin", 
-            "./build"
+            "."
         ], check=True)
     except subprocess.CalledProcessError:
         print("Failed to build the Docker image.")
@@ -67,7 +67,7 @@ def main():
     
     # Handle version type and push parameter
     if len(sys.argv) < 2 or len(sys.argv) > 3:
-        print("Usage: script.py [major|minor|patch] [push]")
+        print("Usage: build_docker.py [major|minor|patch] [push]")
         sys.exit(1)
 
     version_type = sys.argv[1]

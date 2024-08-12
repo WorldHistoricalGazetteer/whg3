@@ -33,7 +33,7 @@ from places.models import PlaceGeom, Place, CloseMatch
 from main.models import Log, Link
 from traces.forms import TraceAnnotationModelForm
 from traces.models import TraceAnnotation
-from utils.emailing import new_emailer #, construct_display_name
+from whgmail.messaging import WHGmail
 from array import array
 from itertools import chain
 import logging
@@ -147,10 +147,6 @@ def status_update(request, *args, **kwargs):
   return JsonResponse({'status': status, 'coll': coll.title}, safe=False,
                       json_dumps_params={'ensure_ascii': False, 'indent': 2})
 
-"""
-  set/unset nominated flag by group leader: boolean
-  send email to DEFAULT_FROM_EDITORIAL, who can flag as public
-"""
 def nominator(request, *args, **kwargs):
   print('in nominator()', request.POST)
 
@@ -161,46 +157,30 @@ def nominator(request, *args, **kwargs):
     coll.nominated = True
     coll.status = 'nominated'
     coll.save()
-    print('nominated!', nominated, 'coll', coll.title, 'id', coll.id)
-
-    editors = [settings.DEFAULT_FROM_EDITORIAL]
-    # leader_name, leader_email, nominated_title, nominated_id, nominated_url
-    # Slack message to editorial
-    try:
-        slack_message = (
-            f"*Subject:* Student Place Collection nominated for publication\n"
-            f"*From:* {construct_display_name(request.user)} (email: {request.user.email})\n"
-            f"*Collection Owner:* {coll.owner}\n"
-            f"*Collection Title:* {coll.title}\n"
-            f"*Collection ID:* {coll.id}\n"
-            f"*Collection URL:* {settings.URL_FRONT}collections/{coll.id}\n"
-            f"----------------------------------------"
-        )
-        response = requests.post(settings.SLACK_NOTIFICATION_WEBHOOK, json={"text": slack_message})
-        if response.status_code == 200:
-            print(f"Message sent to Slack.")
-        else:
-            print(f"Failed to send message to Slack: {response.status_code}, {response.text}")
-    except Exception as e:
-      print('Error occurred while sending nomination notification to Slack', e)
-      logger.exception("Error occurred while sending nomination notification to Slack")
+              
+    # Notify Nominator
+    WHGmail(request, {
+        'template': 'nomination_recd',
+        'subject': 'WHG Student Place Collection nomination',
+        'nominated_title': coll.title,
+        'nominated_id': coll.id,
+        'nominated_url': f'{settings.URL_FRONT}collections/{str(coll.id)}',
+    })
+              
+    # Notify WHG Editorial Staff (both Email and Slack)
+    WHGmail(request, {
+        'to_email': f'{settings.DEFAULT_FROM_EDITORIAL}',
+        'template': 'nomination_recd',
+        'subject': 'WHG Student Place Collection nomination',
+        'nominated_title': coll.title,
+        'nominated_id': coll.id,
+        'leader_name': request.user.display_name,
+        'leader_email': request.user.email,
+        'owner_name': coll.owner,
+        'nominated_url': f'{settings.URL_FRONT}collections/{str(coll.id)}',
+        'slack_notify': True,
+    })          
       
-    # email to group leader
-    try:
-      new_emailer(
-        email_type='nomination_recd',
-        subject='WHG Student Place Collection nomination',
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        to_email=[request.user.email],
-        leader_name=construct_display_name(request.user),
-        owner_name=coll.owner,
-        nominated_title=coll.title,
-        nominated_id=coll.id,
-        nominated_url=settings.URL_FRONT + 'collections/' + str(coll.id),
-      )
-    except Exception as e:
-      print('Error occurred while sending nomination_rcd email', e)
-      logger.exception("Error occurred while sending nomination_recd email")
   # else:
   #   coll.nominated = False
   #   coll.status = 'reviewed'

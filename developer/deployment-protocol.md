@@ -1,4 +1,30 @@
-### Deployment from Staging to Server
+## Deploy to Main from Staging
+
+Firstly, ensure that `whgazetteer-org/server-admin/env_template.py` is up-to-date, including the `DOCKER_IMAGE_TAG`:
+```bash
+cat ~/sites/whgazetteer-org/server-admin/env_template.py
+```
+
+Then update GitHub and the `whgazetteer-org` site:
+```bash
+cd ~/sites/dev-whgazetteer-org
+git checkout -- main     # Switch to main branch
+git pull origin main     # Update local main branch
+git merge staging        # Merge staging into main
+git push origin main     # Push changes to remote main branch
+git checkout staging     # Switch back to staging branch
+```
+
+Then switch to the `whgazetteer-org` site, pull updates, update environment, and restart network:
+```bash
+cd ~/sites/whgazetteer-org
+git pull origin main && sudo python3 ./server-admin/load_env.py
+docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env down && docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env up -d && docker ps
+# For safety's sake, switch back to staging site
+cd ~/sites/dev-whgazetteer-org
+```
+
+## Deployment from Staging to Server
 
 #### GitHub Deployment
 - Establish SSH connection, and then:
@@ -76,8 +102,7 @@ docker exec -it web bash
 ./manage.py migrate
 ```
 
-### Test/Revert new image
-
+## Test/Revert new image
 
 Rename existing image as backup, perform new build
 ```bash

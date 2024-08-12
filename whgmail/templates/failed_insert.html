@@ -1,0 +1,6 @@
+{% extends "base_email.html" %}
+
+{% block content %}
+    <p>We see that insertion into our database failed for your upload "{{ filename }}" [<i>Title: {{ dataset_title }}; Label: {{ dataset_label }}; ID: {{ dataset_id }}</i>].</p>
+    <p>We are aware of the problem and will let you know when we have managed to resolve it.</p>
+{% endblock %}

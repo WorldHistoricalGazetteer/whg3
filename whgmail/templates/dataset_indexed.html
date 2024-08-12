@@ -1,6 +1,6 @@
 {% extends "base_email.html" %}
 
 {% block content %}
-    <p>Thank you for indexing your dataset, {{ dataset_title }} ({{ dataset_label }}, {{ dataset_id }}).</p>
+    <p>Thank you for indexing your dataset [<i>Title: {{ dataset_title }}; Label: {{ dataset_label }}; ID: {{ dataset_id }}</i>].</p>
     <p>All of its records were already public; now many are linked with those for closely matched places coming from other projects.</p>
 {% endblock %}

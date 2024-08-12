@@ -1,6 +1,6 @@
 {% extends "base_email.html" %}
 
 {% block content %}
-    <p>Thank you for publishing your dataset, {{ dataset_title }} ({{ dataset_label }}, {{ dataset_id }}).</p>
+    <p>Thank you for publishing your dataset, "{{ dataset_title }}" [<i>Label: {{ dataset_label }}; ID: {{ dataset_id }}</i>].</p>
     <p> It is now publicly viewable, and its records accessible in search and our API.</p>
 {% endblock %}

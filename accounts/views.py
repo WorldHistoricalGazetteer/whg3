@@ -29,15 +29,12 @@ def register(request):
 
             signer = Signer()
             token = signer.sign(user.pk)
-            
-            context = {
+              
+            WHGmail(request, {
+                'template': 'register_confirm',
                 'subject': 'Confirm your registration at World Historical Gazetteer',
                 'confirm_url': urljoin(settings.URL_FRONT, reverse('accounts:confirm-email', args=[token])),
                 'user': user,
-            }
-              
-            WHGmail(request, {
-                'template': 'register_confirm'
             })
             
             return redirect('accounts:confirmation-sent')

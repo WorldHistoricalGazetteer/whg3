@@ -1,6 +1,8 @@
 {% extends "base_email.html" %}
 
 {% block content %}
+	<p><i>Title: {{ dataset_title }}; Label: {{ dataset_label }}; ID: {{ dataset_id }}</i></p>
+
     <p>Thank you for reconciling your data to the WHG’s Wikidata index. We hope it was useful for you! 
     	A member of the WHG team will review your data and follow up with you about making your dataset public.
     </p>
