@@ -8,7 +8,7 @@ cat ~/sites/whgazetteer-org/server-admin/env_template.py
 Then update GitHub and the `whgazetteer-org` site:
 ```bash
 cd ~/sites/dev-whgazetteer-org
-git checkout -- main     # Switch to main branch
+git checkout -B main origin/main  # Switch to main branch
 git pull origin main     # Update local main branch
 git merge staging        # Merge staging into main
 git push origin main     # Push changes to remote main branch
