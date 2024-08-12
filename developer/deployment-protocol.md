@@ -1,21 +1,12 @@
 ## Deploy to Main from Staging
 
-Firstly, ensure that `whgazetteer-org/server-admin/env_template.py` is up-to-date, including the `DOCKER_IMAGE_TAG`:
+- Firstly, using GitHub Web create a Pull Request to merge `staging` into `main`. Process it.
+
+- Then ensure that `whgazetteer-org/server-admin/env_template.py` is up-to-date, including the `DOCKER_IMAGE_TAG`:
 ```bash
 cat ~/sites/whgazetteer-org/server-admin/env_template.py
 ```
-
-Then update GitHub and the `whgazetteer-org` site:
-```bash
-cd ~/sites/dev-whgazetteer-org
-git checkout -- main     # Switch to main branch
-git pull origin main     # Update local main branch
-git merge staging        # Merge staging into main
-git push origin main     # Push changes to remote main branch
-git checkout staging     # Switch back to staging branch
-```
-
-Then switch to the `whgazetteer-org` site, pull updates, update environment, and restart network:
+- Then switch to the `whgazetteer-org` site, pull updates, update environment, and restart network:
 ```bash
 cd ~/sites/whgazetteer-org
 git pull origin main && sudo python3 ./server-admin/load_env.py

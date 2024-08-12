@@ -158,16 +158,13 @@ services:
       - db_beta
     restart: unless-stopped
     
-{% if ENV_CONTEXT == 'dev-whgazetteer-org' %} ## SWITCH THIS FOR PRODUCTION
+{% if ENV_CONTEXT == 'REMOVE-dev-whgazetteer-org' %} ## SWITCH THIS FOR PRODUCTION
 
   wordpress_db:
     image: mysql:5.7
     container_name: wordpress_db_{{ ENV_CONTEXT }}
-    environment:
-      MYSQL_DATABASE: wordpress
-      MYSQL_USER: wordpress
-      MYSQL_PASSWORD: wordpress
-      MYSQL_RANDOM_ROOT_PASSWORD: '1'
+    env_file:
+      - ./.env/.wordpress
     volumes:
       - /home/whgadmin/wordpress/db_data:/var/lib/mysql
     restart: unless-stopped
@@ -175,17 +172,15 @@ services:
       - {{ ENV_CONTEXT }}
 
   wordpress:
-    image: wordpress:latest
+    image: wordpress:6.6.1-php8.2-fpm-alpine
     container_name: wordpress_{{ ENV_CONTEXT }}
     ports:
       - "8080:80"
-    environment:
-      WORDPRESS_DB_HOST: wordpress_db
-      WORDPRESS_DB_USER: wordpress
-      WORDPRESS_DB_PASSWORD: wordpress
-      WORDPRESS_DB_NAME: wordpress
+      - "9000:9000"
+    env_file:
+      - ./.env/.wordpress
     volumes:
-      - /home/whgadmin/wordpress/data:/var/www/html
+      - /home/whgadmin/wordpress/data/whg-wp:/var/www/html
     depends_on:
       - wordpress_db
     restart: unless-stopped

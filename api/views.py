@@ -972,7 +972,7 @@ class DownloadDatasetAPIView(generics.ListAPIView):
 #     return qs
 from rest_framework.response import Response
 
-class DatasetAPIView(LoginRequiredMixin, generics.ListAPIView):
+class DatasetAPIView(generics.ListAPIView):
     """List public datasets"""
     serializer_class = DatasetSerializer
     renderer_classes = [JSONRenderer]
