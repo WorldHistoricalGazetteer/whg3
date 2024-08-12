@@ -163,6 +163,8 @@ services:
   wordpress_db:
     image: mysql:5.7
     container_name: wordpress_db_{{ ENV_CONTEXT }}
+    env_file:
+      - ./.env/.wordpress
     volumes:
       - /home/whgadmin/wordpress/db_data:/var/lib/mysql
     restart: unless-stopped
