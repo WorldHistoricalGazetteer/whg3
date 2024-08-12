@@ -176,6 +176,7 @@ services:
     container_name: wordpress_{{ ENV_CONTEXT }}
     ports:
       - "8080:80"
+  	  - "9000:9000"
     env_file:
       - ./.env/.wordpress
     volumes:
