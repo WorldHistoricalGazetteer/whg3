@@ -101,7 +101,8 @@ def WHGmail(request=None, context={}):
         'slack_notify': 'channel-name'
     })
     """
-    
+    logger.info("WHGmail function has been called.")
+
     try:        
         user = context.get('user', getattr(request, 'user', None))
         
@@ -147,6 +148,7 @@ def WHGmail(request=None, context={}):
         email.attach_alternative(html_content, "text/html")
         email.send(fail_silently=False)
         
+        logger.debug(f"slack_notify context value: {context.get('slack_notify')}")
         if context.get('slack_notify') is not False:
             logger.debug(f'Slack notification requested: {context.get("slack_notify")}')
             channel = context['slack_notify'] if isinstance(context['slack_notify'], str) else "site-notifications"
