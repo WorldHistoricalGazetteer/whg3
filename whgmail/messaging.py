@@ -9,7 +9,10 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
-logger = logging.getLogger('whg')
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
+
+logger = logging.getLogger('messaging')
 
 def slack_notification(slack_message, channel="site-notifications"):
     """
@@ -28,22 +31,21 @@ def slack_notification(slack_message, channel="site-notifications"):
     - bool: True if the notification was sent successfully, False otherwise.
     """
     try:
-        payload = {
-            'channel': channel,
-            'text': slack_message
-        }
-        headers = {
-            'Authorization': f'Bearer {settings.SLACK_BOT_OAUTH}',
-            'Content-Type': 'application/json; charset=utf-8'
-        }
-        response = requests.post('https://slack.com/api/chat.postMessage', json=payload, headers=headers)
-        
-        if response.status_code == 200 and response.json().get('ok'):
+        client = WebClient(token=settings.SLACK_BOT_OAUTH)
+        response = client.chat_postMessage(
+            channel=channel,
+            text=slack_message
+        )
+
+        if response["ok"]:
             logger.info("Message sent to Slack.")
             return True
         else:
-            logger.error(f"Failed to send message to Slack: {response.status_code}, {response.text}")
+            logger.error(f"Failed to send message to Slack: {response['error']}")
             return False
+    except SlackApiError as e:
+        logger.error(f"Slack API error: {e.response['error']}")
+        return False
     except Exception as e:
         logger.exception("Error occurred while sending notification to Slack")
         return False
@@ -146,6 +148,7 @@ def WHGmail(request=None, context={}):
         email.send(fail_silently=False)
         
         if context.get('slack_notify') is not False:
+            logger.debug(f'Slack notification requested: {context.get("slack_notify")}')
             channel = context['slack_notify'] if isinstance(context['slack_notify'], str) else "site-notifications"
             slack_message = (
                 f"*Copy of email sent to:* {context.get('greeting_name')} (email: {to_email})\n"
