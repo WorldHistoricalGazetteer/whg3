@@ -64,6 +64,7 @@ def volunteer_offer(request, ds):
     'subject': 'Volunteer offer for ' + ds.title + ' dataset in WHG',
     'to_email': [owner.email],
     'reply_to': [volunteer.email],
+    'slack_notify': True,
   })
   WHGmail(context=owner_params)
 

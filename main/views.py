@@ -938,6 +938,7 @@ def volunteer_view(request):
             'message': form.cleaned_data['message'],
             'dataset_title': dataset.title,
             'dataset_id': dataset.id,
+            'slack_notify': True,
         })
 
         return redirect('/success?return=' + request.GET.get('from', '/'))

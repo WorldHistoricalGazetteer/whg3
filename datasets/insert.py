@@ -673,6 +673,7 @@ def failed_insert_notification(user, fn, ds=None):
         'dataset_title': ds.title if ds else 'N/A',
         'dataset_label': ds.label if ds else 'N/A',
         'dataset_id': ds.id if ds else 'N/A',
+        'slack_notify': True,
     })
 
 """ 

@@ -887,7 +887,8 @@ def align_wdlocal(*args, **kwargs):
     'dataset_label': ds.label if ds else 'N/A',
     'dataset_id': ds.id if ds else 'N/A',
     'counthit': count_hit,
-    'totalhits': total_hits
+    'totalhits': total_hits,
+    'slack_notify': True,
   })
 
   return hit_parade['summary']
@@ -1341,7 +1342,8 @@ def align_idx(*args, **kwargs):
     'dataset_label': ds.label if ds else 'N/A',
     'dataset_id': ds.id if ds else 'N/A',
     'counthit': count_hit,
-    'totalhits': total_hits
+    'totalhits': total_hits,
+    'slack_notify': True,
   })
 
   print('elapsed time:', elapsed(end-start))

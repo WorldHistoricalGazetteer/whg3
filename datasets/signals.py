@@ -133,6 +133,7 @@ def handle_status_change(sender, instance, **kwargs):
             'dataset_title': ds.title if ds else 'N/A',
             'dataset_label': ds.label if ds else 'N/A',
             'dataset_id': ds.id if ds else 'N/A',
+            'slack_notify': True,
         })
         # print('handle_status_change: wd-complete')
         # remove from volunteers needed page
@@ -152,6 +153,7 @@ def handle_status_change(sender, instance, **kwargs):
             'dataset_title': ds.title if ds else 'N/A',
             'dataset_label': ds.label if ds else 'N/A',
             'dataset_id': ds.id if ds else 'N/A',
+            'slack_notify': True,
         })
         # remove from volunteers needed page
         instance.volunteers = False
