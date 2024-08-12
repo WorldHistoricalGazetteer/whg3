@@ -172,7 +172,7 @@ services:
       - {{ ENV_CONTEXT }}
 
   wordpress:
-    image: wordpress:latest-fpm
+    image: wordpress:6.6.1-php8.2-fpm-alpine
     container_name: wordpress_{{ ENV_CONTEXT }}
     ports:
       - "8080:80"
