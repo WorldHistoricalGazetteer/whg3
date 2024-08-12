@@ -18,7 +18,7 @@ except ImportError:
   print('Error importing from .local_settings')
   pass
 
-ENV = os.environ.get('ENV', 'dev')  # Default to 'dev' if ENV is not set
+ENV_CONTEXT = os.environ.get('ENV_CONTEXT', 'dev-whgazetteer-org')  # Default if ENV_CONTEXT is not set
 
 if 'test' in sys.argv:
     CELERY_ALWAYS_EAGER = True
@@ -183,8 +183,8 @@ TEMPLATES = [
 WSGI_APPLICATION = 'whg.wsgi.application'
 
 LOGGING_LEVELS = {
-    'dev': 'DEBUG',
-    'prod': 'DEBUG',
+    'dev-whgazetteer-org': 'DEBUG',
+    'whgazetteer-org': 'DEBUG',
 }
 LOGGING = {
     'version': 1,
@@ -201,7 +201,7 @@ LOGGING = {
     },
     'handlers': {
         'django_file': {
-            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'whg/logs/django.log'),
             'maxBytes': 10485760,  # 10 MB
@@ -209,7 +209,7 @@ LOGGING = {
             'formatter': 'verbose',
         },
         'celery_file': {
-            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'whg/logs/celery.log'),
             'maxBytes': 10485760,  # 10 MB
@@ -217,7 +217,7 @@ LOGGING = {
             'formatter': 'verbose',
         },
         'root_file': {
-            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'whg/logs/root.log'),
             'maxBytes': 10485760,  # 10 MB
@@ -225,7 +225,7 @@ LOGGING = {
             'formatter': 'verbose',
         },
         'messaging_file': {  # New handler for messaging logs
-            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'whg/logs/messaging.log'),
             'maxBytes': 10485760,  # 10 MB
@@ -233,7 +233,7 @@ LOGGING = {
             'formatter': 'verbose',
         },     
         'console': {
-            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'class': 'logging.StreamHandler',
             'formatter': 'simple',
         },
@@ -241,22 +241,22 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['django_file', 'console'],
-            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'propagate': False,  # Ensure logs do not propagate to root logger
         },
         'celery': {
             'handlers': ['celery_file', 'console'],
-            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'propagate': False,  # Ensure logs do not propagate to root logger
         },
         'messaging': {
             'handlers': ['messaging_file', 'console'],
-            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'propagate': False,  # Ensure logs do not propagate to root logger
         },
         '': {  # Root logger
             'handlers': ['root_file', 'console'],
-            'level': LOGGING_LEVELS.get(ENV, 'DEBUG'),
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'propagate': True,
         },
     },
