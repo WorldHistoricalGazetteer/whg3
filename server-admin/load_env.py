@@ -141,6 +141,7 @@ def load_environment(context='local',
     write_python_file(env_vars, python_output_path)
 
 if __name__ == "__main__":
+    print(f"Current working directory: {os.getcwd()}")
     context = os.path.basename(os.getcwd())
     if context not in ['dev-whgazetteer-org', 'whgazetteer-org']:
         context = 'local'

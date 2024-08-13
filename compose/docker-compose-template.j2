@@ -104,7 +104,9 @@ services:
       - {{ BASE_DIR }}/static:/app/static
       - {{ BASE_DIR }}/cache:/app/cache
       - {{ BASE_DIR }}/entrypoints/permitted/entrypoint-celery.sh:/entrypoint.sh
-    {% if not ENV_CONTEXT == 'local' %}
+    {% if ENV_CONTEXT == 'local' %}
+      - /etc/docker/certs:/certs
+    {% else %}
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
       - /home/whgadmin/docker-certs/ca/ca.pem:/certs/ca.pem:ro
