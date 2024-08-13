@@ -10,7 +10,15 @@ This guide assumes that you have already installed Docker on your local machine,
 
 ### Secret files & Default User
 - You will need a set of credential and environment variable files to augment the filesystem: please request this using the [Contact Form](https://whgazetteer.org/) on the project web site.
-- You will need to create the default `whgadmin` user in your linux environment.
+- You will need to create the default `whgadmin` user in your linux environment, maybe like this:
+```sh
+# You'll be prompted to set a password and fill in some user details.
+sudo adduser whgadmin
+```
+```sh
+# Add whgadmin to the sudo group
+sudo usermod -aG sudo whgadmin
+```
 
 ### Implementation
 - Run the environment-creation script (**you will need to run this again if you make any changes to any of the templates or entrypoint scripts**):
