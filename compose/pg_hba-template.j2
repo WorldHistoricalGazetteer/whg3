@@ -1,8 +1,11 @@
 # Allow local Unix socket connections
-local   all             all                                     trust
+local   all             all                                  trust
 
 # Allow trust authentication from Docker network
 host    all             all             {{ SUBNET }}         trust
+
+# Allow replication connections from Docker network
+host    replication     all             {{ SUBNET }}         trust
 
 # Reject all other connections
 host    all             all             0.0.0.0/0            reject

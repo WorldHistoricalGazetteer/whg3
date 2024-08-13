@@ -12,6 +12,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.gis.db.models.aggregates import Union
 from django.contrib.gis.db.models.functions import Centroid, Envelope
 from django.core.serializers import serialize
+from django.db.models import Q
 from django.http import JsonResponse, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -100,10 +101,11 @@ class PlacePortalView(TemplateView):
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(**kwargs)
         me = self.request.user
-        context['my_collections'] = Collection.objects.filter(
-            collection_class='place',
-            owner=me if not me.groups.filter(name='whg_admins').exists() else None
-        )
+        
+        filter_condition = Q(collection_class='place')
+        if me.is_authenticated:
+            filter_condition &= Q(owner=me)
+        context['my_collections'] = Collection.objects.filter(filter_condition)
 
         pid = kwargs.get('pid')
         whg_id = kwargs.get('whg_id')
