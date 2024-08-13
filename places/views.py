@@ -171,6 +171,9 @@ class PlacePortalView(TemplateView):
             unioned_geometry = PlaceGeom.objects.filter(place_id__in=place_ids).aggregate(union=Union('geom'))['union']
             context['extent'] = list(wkt.loads(unioned_geometry.envelope.wkt).bounds)
             context['centroid'] = list(unioned_geometry.centroid.tuple)
+        else:
+            context['extent'] = [-180, -90, 180, 90]
+            context['centroid'] = [0.0, 0.0]
 
         context.update({
             'portal_headword': "; ".join([name for name, _ in Counter(list(alltitles) + allvariants).most_common()]),
