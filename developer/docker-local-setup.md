@@ -18,9 +18,10 @@ unzip ./whg_credentials.zip -d /
 ```
 - You will need to create the default `whgadmin` user in your linux environment, maybe like this:
 ```sh
-# You'll be prompted to set a password and fill in some user details.
+# You'll be prompted to set a password (of your own choosing) and to fill in some user details.
 sudo adduser whgadmin
 ```
+- Grant sudo powers to the default `whgadmin` user:
 ```sh
 # Add whgadmin to the sudo group
 sudo usermod -aG sudo whgadmin
