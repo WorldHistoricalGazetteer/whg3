@@ -33,7 +33,7 @@ chmod 554 /tmp/restore_db_from_dump.sh
 /tmp/restore_db_from_dump.sh /tmp/<BACKUP_NAME>
 ```
 
-The database is built in two phases, schema first and then data. **Check both logs for significant errors before proceeding**.
+The database is built in two phases, schema first and then data. **Check both logs for significant errors before proceeding, as the process can be quite unreliable**.
 ```bash
 less /tmp/restore_schema_errors.log
 ```
