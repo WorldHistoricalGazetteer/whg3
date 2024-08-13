@@ -124,8 +124,8 @@
   {% csrf_token %} <!-- Used for Django POST requests -->
   <script type="text/javascript">
     let allts = {{ allts }};
-    const extent = {{ extent }};
-    const centroid = {{ centroid }};
+    const extent = {{ extent|default:[] }};
+    const centroid = {{ centroid|default:[]}};
     let geoData = {
       elevation: null,
       admin: [],
