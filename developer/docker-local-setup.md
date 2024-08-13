@@ -30,6 +30,7 @@ sudo usermod -aG sudo whgadmin
 ### Implementation
 - Run the environment-creation script (**you will need to run this again if you make any changes to any of the templates or entrypoint scripts**):
 ```sh
+# Create .env, docker-compose-autocontext.yml, pg_hba.conf, and local_settings_autocontext.py, and enable execution of relevant scripts
 python3 ./server-admin/load_env.py
 ```
 - (Re-)start the Docker network:
