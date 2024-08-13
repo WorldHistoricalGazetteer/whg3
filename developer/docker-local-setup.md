@@ -3,13 +3,13 @@
 This guide assumes that you have already installed Docker on your local machine, and that you are familiar with its use and with GitHub.
 
 ### Initial Installation
-- Create a project folder somewhere in your local filesystem, and enter it.
 - Fork this repository on GitHub.com
 - Make a new feature branch on GitHub.com
+- Create a project folder somewhere in your local filesystem, and enter it.
 - Clone the branch into your local project folder
 
 ### Secret files & Default User
-- You will need a set of credential and environment variable files to augment the filesystem: please use the Contact Form at .
+- You will need a set of credential and environment variable files to augment the filesystem: please request this using the [Contact Form](https://whgazetteer.org/) on the project web site.
 - You will need to create the default `whgadmin` user in your linux environment.
 
 ### Implementation
