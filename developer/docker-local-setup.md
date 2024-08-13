@@ -9,7 +9,13 @@ This guide assumes that you have already installed Docker on your local machine,
 - Clone the branch into your local project folder
 
 ### Secret files & Default User
-- You will need a set of credential and environment variable files to augment the filesystem: please request this using the [Contact Form](https://whgazetteer.org/) on the project web site.
+- You will need a set of credential and environment variable files to augment the filesystem: please request this using the [Contact Form](https://whgazetteer.org/) on the project web site, and place the supplied zip file in your project folder.
+```sh
+# The zip file was created in the project directory like this to contain the files and folder indicated:
+# zip -r ./whg_credentials.zip ./server-admin/env_template.py ./whg/local_settings.py ./whg/authorisation
+# Files can be unzipped and restored to their original filesystem locations like this (navigate first to your project folder):
+unzip ./whg_credentials.zip -d /
+```
 - You will need to create the default `whgadmin` user in your linux environment, maybe like this:
 ```sh
 # You'll be prompted to set a password and fill in some user details.
