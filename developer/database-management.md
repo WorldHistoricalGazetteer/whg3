@@ -1,6 +1,6 @@
 ## Replicate Main Database
 
-- Database copying is best done using `pg_basebackup`, which copies an entire database directory without having to dump and then reconstruct the database. Use the helper script at `duplicate_database_folder.sh` like this:
+- Database copying is best done using `pg_basebackup`, which copies an entire database directory without having to dump and then reconstruct the database. To replicate the main database running on `whgazetteer.org` into the directory used by `dev.whgazetteer.org`, use the helper script at `duplicate_database_folder.sh` like this:
 
 ```sh
 cd ~/sites/scripts
