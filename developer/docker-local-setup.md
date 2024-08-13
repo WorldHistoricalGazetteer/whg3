@@ -1,1 +1,37 @@
 ## Setting up Docker Environment for Local Feature Branch Development
+
+This guide assumes that you have already installed Docker on your local machine, and that you are familiar with its use and with GitHub.
+
+### Initial Installation
+- Create a project folder somewhere in your local filesystem, and enter it.
+- Fork this repository on GitHub.com
+- Make a new feature branch on GitHub.com
+- Clone the branch into your local project folder
+
+### Secret files & Default User
+- You will need a set of credential and environment variable files to augment the filesystem: please use the Contact Form at .
+- You will need to create the default `whgadmin` user in your linux environment.
+
+### Implementation
+- Run the environment-creation script (**you will need to run this again if you make any changes to any of the templates or entrypoint scripts**):
+```sh
+python3 ./server-admin/load_env.py
+```
+- (Re-)start the Docker network:
+```sh
+docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env down && \
+docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env up -d && \
+docker ps
+```
+- Check the logs to ensure that all services have started successfully, for example:
+```sh
+docker logs -f postgres_local_staging
+```
+```sh
+docker logs -f web_local_staging
+```
+- If all is well, you should see World Historical Gazetteer running in your browser at http://localhost:8003/ (you can change the port by adjusting the `APP_PORT` value in the provided `/server-admin/env_template.py` file).
+- If you need to stop the network, be sure to pass the environment file as a parameter:
+```sh
+docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env down
+```
