@@ -121,3 +121,4 @@ whg/local_settings_autocontext.py
 docker-compose-autocontext.yml
 compose/pg_hba.conf
 whg/local_settings.py.bak
+whg_credentials.zip
