@@ -5,7 +5,7 @@ This guide assumes that you have already installed Docker on your local machine,
 ### Initial Installation
 - Fork this repository on GitHub.com
 - Make a new feature branch on GitHub.com
-- Create a project folder somewhere in your local filesystem, and enter it.
+- Create a project folder somewhere in your local filesystem, and enter it. **You must navigate back to this folder to execute any of the commands given below.**
 - Clone the branch into your local project folder
 
 ### Secret files & Default User
