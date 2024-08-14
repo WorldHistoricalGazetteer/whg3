@@ -11,7 +11,9 @@ git pull origin staging && sudo python3 ./server-admin/load_env.py
 ```
 - If all is OK, restart network:
 ```bash
-docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env down && docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env up -d && docker ps
+docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env down && \
+docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env up -d && \
+docker ps
 ```
 
 #### If necessary, apply Django migrations
@@ -45,7 +47,9 @@ cat ~/sites/whgazetteer-org/server-admin/env_template.py
 ```bash
 cd ~/sites/whgazetteer-org
 git pull origin main && sudo python3 ./server-admin/load_env.py
-docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env down && docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env up -d && docker ps
+docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env down && \
+docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env up -d && \
+docker ps
 # For safety's sake, switch back to staging site
 cd ~/sites/dev-whgazetteer-org
 ```
