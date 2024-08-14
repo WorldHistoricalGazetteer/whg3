@@ -29,7 +29,6 @@ docker exec -it <postgres_container> /bin/bash
 
 Run the `restore_db_from_dump.sh` script, passing the previously-copied `<file_name.backup>` as a parameter:
 ```bash
-chmod 554 /tmp/restore_db_from_dump.sh
 /tmp/restore_db_from_dump.sh /tmp/<BACKUP_NAME>
 ```
 
