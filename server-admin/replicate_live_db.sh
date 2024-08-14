@@ -5,12 +5,12 @@ DATABASE_SOURCE="whgazetteer-org"
 DATABASE_TARGET="dev-whgazetteer-org"
 
 # Derived Variables
-DATABASE_COPY_DIR="~/databases/${DATABASE_SOURCE}-copy"  # Directory for the database copy
-TARGET_DB_DIR="~/databases/${DATABASE_TARGET}"  # Target database directory
+DATABASE_COPY_DIR="/home/whgadmin/databases/${DATABASE_SOURCE}-copy"  # Directory for the database copy
+TARGET_DB_DIR="/home/whgadmin/databases/${DATABASE_TARGET}"  # Target database directory
 TEMP_DB_DIR="${TARGET_DB_DIR}-temp"  # Temporary directory for the existing database
 
 # Load database connection variables from .env file
-ENV_FILE="~/sites/${DATABASE_SOURCE}/.env/.env"
+ENV_FILE="/home/whgadmin/sites/${DATABASE_SOURCE}/.env/.env"
 if [ -f "$ENV_FILE" ]; then
     export $(grep -v '^#' "$ENV_FILE" | xargs)
 else
