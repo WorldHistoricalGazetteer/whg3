@@ -263,6 +263,9 @@ def check_services():
             if service == 'elasticsearch':
                 # Special case for Elasticsearch until it is moved to a Docker container
                 status = check_elasticsearch()
+            elif service == 'tileboss':
+                # Special case for Tileboss until it is moved to a Docker container
+                status = check_elasticsearch()
             else:
                 # General case for Docker containers
                 status = get_container_health(service)
@@ -333,6 +336,38 @@ def check_elasticsearch():
             return 'unhealthy'
     except subprocess.CalledProcessError as e:
         logger.error(f"Error executing Elasticsearch health check command: {e}")
+        return 'unhealthy'
+
+#TODO: Remove this once Tileserver has been moved to a Docker container
+def check_tileboss():
+    """
+    Check Tileserver health by verifying the JSON response.
+    """
+    command = f'curl {settings.TILEBOSS}/index.json'
+    try:
+        result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0:
+            try:
+                output = result.stdout.decode()
+                response_json = json.loads(output)
+                if isinstance(response_json, list) and len(response_json) > 0:
+                    first_tileset = response_json[0]
+                    if "tiles" in first_tileset and "name" in first_tileset:
+                        return 'healthy'
+                    else:
+                        logger.error("Unexpected JSON structure in Tileserver response")
+                        return 'unhealthy'
+                else:
+                    logger.error("Tileserver returned an empty or invalid JSON list")
+                    return 'unhealthy'
+            except json.JSONDecodeError as e:
+                logger.error(f"JSON decode error for Tileserver health check: {e}")
+                return 'unhealthy'
+        else:
+            logger.error(f"Tileserver health check command failed with return code {result.returncode}")
+            return 'unhealthy'
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error executing Tileserver health check command: {e}")
         return 'unhealthy'
 
 # @shared_task
