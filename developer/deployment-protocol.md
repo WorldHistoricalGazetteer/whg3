@@ -37,7 +37,19 @@ docker logs -f celery-worker_dev-whgazetteer-org_staging
 
 ## Deploy to Main from Staging
 
-- Firstly, using GitHub Web create a Pull Request to merge `staging` into `main`. Process it.
+- Firstly, merge `staging` into `main`:
+```bash
+cd ~/sites/whgazetteer-org
+git fetch origin
+git checkout main
+git pull origin main
+git merge origin/staging
+# At this point, Git will attempt to merge the staging branch into the main branch. If there are merge conflicts,
+# Git will notify you, and you will need to manually resolve these conflicts.
+# After resolving conflicts, use `git add <resolved-files>` to stage the resolved files,
+# and `git commit` to complete the merge.
+git push origin main
+```
 
 - Then ensure that `whgazetteer-org/server-admin/env_template.py` is up-to-date, including the `DOCKER_IMAGE_TAG`:
 ```bash
