@@ -43,7 +43,7 @@ cd ~/sites/whgazetteer-org
 git fetch origin
 git checkout main
 git pull origin main
-git merge origin/staging
+git merge origin/staging -m "Merging staging into main"
 # At this point, Git will attempt to merge the staging branch into the main branch. If there are merge conflicts,
 # Git will notify you, and you will need to manually resolve these conflicts.
 # After resolving conflicts, use `git add <resolved-files>` to stage the resolved files,
