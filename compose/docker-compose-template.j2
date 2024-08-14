@@ -58,7 +58,7 @@ services:
       - {{ BASE_DIR }}/data:/app/data
     {% else %}
       - /home/whgadmin/databases/{{ ENV_CONTEXT }}:/var/lib/postgresql/data
-      - {{ BASE_DIR }}/entrypoints/restore_db_from_dump.sh:/tmp/restore_db_from_dump.sh
+      - {{ BASE_DIR }}/server-admin/restore_db_from_dump.sh:/tmp/restore_db_from_dump.sh
     {% endif %}
       - {{ BASE_DIR }}/compose/pg_hba.conf:/etc/postgresql/pg_hba.conf
     env_file:
