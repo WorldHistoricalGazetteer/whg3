@@ -116,8 +116,9 @@ data/ca-cert.pem
 /whg/authorisation
 /whg/logs
 server-admin/env_template.py
-whg_credentials.zip
 whg/local_settings_autocontext.py
-whg/local_settings.py.bak
+/entrypoints/permitted
 docker-compose-autocontext.yml
 compose/pg_hba.conf
+whg/local_settings.py.bak
+whg_credentials.zip

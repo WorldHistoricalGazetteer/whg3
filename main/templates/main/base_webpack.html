@@ -17,6 +17,11 @@
       /* Hide until CDN css files are fully loaded */
       opacity: 0;
       transition: opacity 1s ease;
+  	  {% if environment == 'local' %}
+    	border: 3px orange solid !important;
+  	  {% elif environment == 'dev-whgazetteer-org' %}
+    	border: 3px red solid !important;
+      {% endif %} 
     }
     .maintenance-banner {
       /* display: none; */
@@ -223,9 +228,9 @@
 {% endblock %}
 
 <!-- Full-width banner -->
-<div class="maintenance-banner">
+<!-- <div class="maintenance-banner">
   Thanks for your patience while we fixed a few things - we believe all is now in order.
-</div>
+</div> -->
 
 <footer class="container mt-2 mb-1">
   &copy; 2019 - {% now "Y" %} World Historical Gazetteer. All rights reserved. | <a data-whg-modal="/contact_modal/">Contact</a>

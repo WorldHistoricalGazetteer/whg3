@@ -22,26 +22,17 @@ def update_entrypoints(entrypoints_path, user, group):
     uid = pwd.getpwnam(user).pw_uid
     gid = grp.getgrnam(group).gr_gid
 
-    # Define the path for the permitted subfolder
-    permitted_path = os.path.join(entrypoints_path, 'permitted')
-    if not os.path.exists(permitted_path):
-        os.makedirs(permitted_path)
-
-    # Process all files in the specified directory
     for file in os.listdir(entrypoints_path):
         file_path = os.path.join(entrypoints_path, file)
         
         # Skip directories
         if os.path.isdir(file_path):
             continue
-            
-        permitted_file_path = os.path.join(permitted_path, file)
 
         try:
-            shutil.copy2(file_path, permitted_file_path)
-            subprocess.run(['sed', '-i', 's/\r$//g', permitted_file_path], check=True)
-            os.chmod(permitted_file_path, os.stat(permitted_file_path).st_mode | stat.S_IEXEC)
-            os.chown(permitted_file_path, uid, gid)
+            subprocess.run(['sed', '-i', 's/\r$//g', file_path], check=True)
+            os.chmod(file_path, os.stat(file_path).st_mode | stat.S_IEXEC)
+            os.chown(file_path, uid, gid)
             
         except PermissionError as e:
             print(f"PermissionError: {e} - file_path: {file_path}")
@@ -57,7 +48,7 @@ def load_template(template_path):
     spec.loader.exec_module(env_template)
     return env_template.ENV_VARS
 
-def apply_context_overrides(template_vars, context):    
+def apply_context_overrides(template_vars, context):
     context_vars = template_vars.get('base', {}).copy()
     context_vars.update(template_vars.get('sites', {}).get(context, {}))
     context_vars['BASE_DIR'] = os.getcwd()
@@ -95,7 +86,7 @@ def render_jinja_template(template_path, env_vars, output_path):
     with open(output_path, 'w') as file:
         file.write(rendered_content)
 
-def load_environment(context='default', 
+def load_environment(context='local', 
         template_path='env_template.py', 
         output_path='../.env/.env',
         compose_template_path='../compose/docker-compose-template.j2',
@@ -105,7 +96,8 @@ def load_environment(context='default',
         entrypoints_path='../entrypoints',
         python_output_path='../whg/local_settings_autocontext.py',
         nginx_template_path='nginx-template.j2',
-        nginx_output_path='/etc/nginx/sites-available/'
+        nginx_output_path='/etc/nginx/sites-available/',
+        scripts_to_make_executable=['./replicate_live_db.sh']
         ):
     # Ensure paths are relative to the script's directory
     script_dir = os.path.dirname(__file__)
@@ -134,13 +126,26 @@ def load_environment(context='default',
     # Render files using Jinja2
     render_jinja_template(compose_template_path, env_vars, compose_output_path)
     render_jinja_template(hba_template_path, env_vars, hba_output_path)
-    render_jinja_template(nginx_template_path, env_vars, os.path.join(nginx_output_path, env_vars.get('NGINX_SERVER_NAME')))
+    if not context == 'local':
+        render_jinja_template(nginx_template_path, env_vars, os.path.join(nginx_output_path, env_vars.get('NGINX_SERVER_NAME')))
         
     update_entrypoints(entrypoints_path, 'whgadmin', 'root')
     write_python_file(env_vars, python_output_path)
 
+    # Make specified scripts executable
+    for script in scripts_to_make_executable:
+        script_path = os.path.join(script_dir, script)
+        try:
+            os.chmod(script_path, os.stat(script_path).st_mode | stat.S_IEXEC)
+            print(f"Made {script_path} executable.")
+        except Exception as e:
+            print(f"Failed to make {script_path} executable: {e}")
+
 if __name__ == "__main__":
+    print(f"Current working directory: {os.getcwd()}")
     context = os.path.basename(os.getcwd())
+    if context not in ['dev-whgazetteer-org', 'whgazetteer-org']:
+        context = 'local'
     load_environment(context)
     
     print(f"Context '{context}': environment variables loaded, and written to `.env`, `docker-compose.yml`, and nginx configuration. Entrypoint permissions fixed.")

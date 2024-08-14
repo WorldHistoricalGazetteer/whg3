@@ -14,15 +14,17 @@ services:
     image: {{ DOCKER_IMAGE }}:{{ DOCKER_IMAGE_TAG }}
     container_name: web_{{ ENV_CONTEXT }}_{{ BRANCH }}
     volumes:
-      - .:/app
+      - {{ BASE_DIR }}:/app
       - {{ BASE_DIR }}/media:/app/media
       - {{ BASE_DIR }}/static:/app/static
       - {{ BASE_DIR }}/cache:/app/cache
-      - {{ BASE_DIR }}/entrypoints/permitted/entrypoint-web.sh:/entrypoint.sh
+      - {{ BASE_DIR }}/entrypoints/entrypoint-web.sh:/entrypoint.sh
+    {% if not ENV_CONTEXT == 'local' %}
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
+    {% endif %}
     env_file:
-      - ./.env/.env
+      - {{ BASE_DIR }}/.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
     ports:
@@ -32,7 +34,7 @@ services:
       - "host.docker.internal:host-gateway"
     depends_on:
       - redis
-      - db_beta
+      - {{ DB_HOST }}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:{{ APP_PORT }}/health"]
@@ -50,11 +52,17 @@ services:
     ports:
       - "127.0.0.1:{{ DB_PORT }}:{{ DB_PORT_INTERNAL }}"
     volumes:
+    {% if ENV_CONTEXT == 'local' %}
+      - dev-db-data:/var/lib/postgresql/data
+      - {{ BASE_DIR }}/entrypoints/entrypoint-postgres-local.sh:/docker-entrypoint-initdb.d/10_postgis.sh
+      - {{ BASE_DIR }}/data:/app/data
+    {% else %}
       - /home/whgadmin/databases/{{ ENV_CONTEXT }}:/var/lib/postgresql/data
-      - ./compose/pg_hba.conf:/etc/postgresql/pg_hba.conf
-      - ./entrypoints/restore_db_from_dump.sh:/tmp/restore_db_from_dump.sh
+      - {{ BASE_DIR }}/entrypoints/restore_db_from_dump.sh:/tmp/restore_db_from_dump.sh
+    {% endif %}
+      - {{ BASE_DIR }}/compose/pg_hba.conf:/etc/postgresql/pg_hba.conf
     env_file:
-      - ./.env/.env
+      - {{ BASE_DIR }}/.env/.env
     command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
     restart: unless-stopped
     healthcheck:
@@ -72,8 +80,10 @@ services:
     container_name: redis_{{ ENV_CONTEXT }}_{{ BRANCH }}
     ports: 
       - "{{ REDIS_PORT }}:6379"
+    {% if not ENV_CONTEXT == 'local' %}
     volumes:
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
+    {% endif %}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -89,19 +99,23 @@ services:
     container_name: celery-worker_{{ ENV_CONTEXT }}_{{ BRANCH }}
     hostname: celery_worker
     volumes:
-      - .:/app
+      - {{ BASE_DIR }}:/app
       - {{ BASE_DIR }}/media:/app/media
       - {{ BASE_DIR }}/static:/app/static
       - {{ BASE_DIR }}/cache:/app/cache
-      - {{ BASE_DIR }}/entrypoints/permitted/entrypoint-celery.sh:/entrypoint.sh
+      - {{ BASE_DIR }}/entrypoints/entrypoint-celery.sh:/entrypoint.sh
+    {% if ENV_CONTEXT == 'local' %}
+      - /etc/docker/certs:/certs
+    {% else %}
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - /home/whgadmin/docker-certs/ca/ca.pem:/certs/ca.pem:ro
       - /home/whgadmin/docker-certs/client/client-cert.pem:/certs/client-cert.pem:ro
       - /home/whgadmin/docker-certs/client/client-key.pem:/certs/client-key.pem:ro
+    {% endif %}
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     env_file:
-      - ./.env/.env
+      - {{ BASE_DIR }}/.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
       - DOCKER_HOST=tcp://{{ DOCKER_HOST_IP }}
@@ -109,7 +123,7 @@ services:
       - DOCKER_CERT_PATH=/certs
     depends_on:
       - redis
-      - db_beta
+      - {{ DB_HOST }}
     restart: unless-stopped
 
   celery_beat:
@@ -118,20 +132,22 @@ services:
     image: {{ DOCKER_IMAGE }}:{{ DOCKER_IMAGE_TAG }}
     container_name: celery-beat_{{ ENV_CONTEXT }}_{{ BRANCH }}
     volumes:
-      - .:/app
+      - {{ BASE_DIR }}:/app
       - {{ BASE_DIR }}/media:/app/media
       - {{ BASE_DIR }}/static:/app/static
       - {{ BASE_DIR }}/cache:/app/cache
-      - {{ BASE_DIR }}/entrypoints/permitted/entrypoint-celery-beat.sh:/entrypoint.sh
+      - {{ BASE_DIR }}/entrypoints/entrypoint-celery-beat.sh:/entrypoint.sh
+    {% if not ENV_CONTEXT == 'local' %}
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
+    {% endif %}
     env_file:
-      - ./.env/.env
+      - {{ BASE_DIR }}/.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
     depends_on:
       - redis
-      - db_beta
+      - {{ DB_HOST }}
     restart: unless-stopped
 
   flower:
@@ -142,29 +158,30 @@ services:
     ports:
       - "{{ FLOWER_PORT }}:5555"
     volumes:
-      - .:/app
+      - {{ BASE_DIR }}:/app
       - {{ BASE_DIR }}/media:/app/media
       - {{ BASE_DIR }}/static:/app/static
       - {{ BASE_DIR }}/cache:/app/cache
-      - {{ BASE_DIR }}/entrypoints/permitted/entrypoint-flower.sh:/entrypoint.sh
+      - {{ BASE_DIR }}/entrypoints/entrypoint-flower.sh:/entrypoint.sh
+    {% if not ENV_CONTEXT == 'local' %}
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
+    {% endif %}
     env_file:
-      - ./.env/.env
+      - {{ BASE_DIR }}/.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
     depends_on:
       - redis
-      - db_beta
+      - {{ DB_HOST }}
     restart: unless-stopped
     
 {% if ENV_CONTEXT == 'REMOVE-dev-whgazetteer-org' %} ## SWITCH THIS FOR PRODUCTION
-
   wordpress_db:
     image: mysql:5.7
     container_name: wordpress_db_{{ ENV_CONTEXT }}
     env_file:
-      - ./.env/.wordpress
+      - {{ BASE_DIR }}/.env/.wordpress
     volumes:
       - /home/whgadmin/wordpress/db_data:/var/lib/mysql
     restart: unless-stopped
@@ -178,7 +195,7 @@ services:
       - "8080:80"
       - "9000:9000"
     env_file:
-      - ./.env/.wordpress
+      - {{ BASE_DIR }}/.env/.wordpress
     volumes:
       - /home/whgadmin/wordpress/data/whg-wp:/var/www/html
     depends_on:
@@ -186,6 +203,25 @@ services:
     restart: unless-stopped
     networks:
       - {{ ENV_CONTEXT }}
-  
+{% endif %}
+
+{% if ENV_CONTEXT == 'local' %}
+  webpack:
+    networks:
+      - WHG3
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: ./compose/local/webpack/Dockerfile-webpack
+    image: whg3_webpack
+    container_name: webpack
+    logging:
+      driver: local
+    volumes:
+      - {{ BASE_DIR }}:/app
+      
+volumes:
+  app:
+  dev-db-data:
 {% endif %}
     

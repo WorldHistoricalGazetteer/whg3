@@ -1,18 +1,9 @@
-### Files required after cloning
-- `/.env/.dev-whg3`
-- `/data/ca-cert.pem`
-- `/whg/local_settings.py`
+## Replicate Main Database
 
-### Find all files containing given text
+- Database copying is best done using `pg_basebackup`, which copies an entire database directory without having to dump and then reconstruct the database. To replicate the main database running on `whgazetteer.org` into the directory used by `dev.whgazetteer.org`, use the helper script at `server-admin/replicate_live_db.sh` like this:
 
-#### Case-sensitive
-```bash
-find ./ -type f \( -name "*.html" -o -name "*.py" -o -name "*.js" \) ! -path "./whg/static/*" ! -path "./static/*" -exec grep -lz -P "Grossner" {} + | xargs -0 -I {} echo {} | sort -u | sed "s|^./||"
-```
-
-#### Non-case-sensitive
-```bash
-find ./ -type f \( -name "*.html" -o -name "*.py" -o -name "*.js" \) ! -path "./whg/static/*" ! -path "./static/*" -exec grep -lzi -P "grossner" {} + | xargs -0 -I {} echo {} | sort -u | sed "s|^./||"
+```sh
+bash ~/sites/dev-whgazetteer-org/server-admin/replicate_live_db.sh
 ```
 
 ## Restore Database from Backup
@@ -31,11 +22,10 @@ docker exec -it <postgres_container> /bin/bash
 
 Run the `restore_db_from_dump.sh` script, passing the previously-copied `<file_name.backup>` as a parameter:
 ```bash
-chmod 554 /tmp/restore_db_from_dump.sh
 /tmp/restore_db_from_dump.sh /tmp/<BACKUP_NAME>
 ```
 
-The database is built in two phases, schema first and then data. **Check both logs for significant errors before proceeding**.
+The database is built in two phases, schema first and then data. **Check both logs for significant errors before proceeding, as the process can be quite unreliable**.
 ```bash
 less /tmp/restore_schema_errors.log
 ```
