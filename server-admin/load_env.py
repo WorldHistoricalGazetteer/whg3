@@ -22,26 +22,17 @@ def update_entrypoints(entrypoints_path, user, group):
     uid = pwd.getpwnam(user).pw_uid
     gid = grp.getgrnam(group).gr_gid
 
-    # Define the path for the permitted subfolder
-    permitted_path = os.path.join(entrypoints_path, 'permitted')
-    if not os.path.exists(permitted_path):
-        os.makedirs(permitted_path)
-
-    # Process all files in the specified directory
     for file in os.listdir(entrypoints_path):
         file_path = os.path.join(entrypoints_path, file)
         
         # Skip directories
         if os.path.isdir(file_path):
             continue
-        
-        permitted_file_path = os.path.join(permitted_path, file)
 
         try:
-            shutil.copy2(file_path, permitted_file_path)
-            subprocess.run(['sed', '-i', 's/\r$//g', permitted_file_path], check=True)
-            os.chmod(permitted_file_path, os.stat(permitted_file_path).st_mode | stat.S_IEXEC)
-            os.chown(permitted_file_path, uid, gid)
+            subprocess.run(['sed', '-i', 's/\r$//g', file_path], check=True)
+            os.chmod(file_path, os.stat(file_path).st_mode | stat.S_IEXEC)
+            os.chown(file_path, uid, gid)
             
         except PermissionError as e:
             print(f"PermissionError: {e} - file_path: {file_path}")
@@ -105,7 +96,8 @@ def load_environment(context='local',
         entrypoints_path='../entrypoints',
         python_output_path='../whg/local_settings_autocontext.py',
         nginx_template_path='nginx-template.j2',
-        nginx_output_path='/etc/nginx/sites-available/'
+        nginx_output_path='/etc/nginx/sites-available/',
+        scripts_to_make_executable=['/server-admin/replicate_live_db.sh']
         ):
     # Ensure paths are relative to the script's directory
     script_dir = os.path.dirname(__file__)
@@ -139,6 +131,14 @@ def load_environment(context='local',
         
     update_entrypoints(entrypoints_path, 'whgadmin', 'root')
     write_python_file(env_vars, python_output_path)
+
+    # Make specified scripts executable
+    for script_path in scripts_to_make_executable:
+        try:
+            os.chmod(script_path, os.stat(script_path).st_mode | stat.S_IEXEC)
+            print(f"Made {script_path} executable.")
+        except Exception as e:
+            print(f"Failed to make {script_path} executable: {e}")
 
 if __name__ == "__main__":
     print(f"Current working directory: {os.getcwd()}")
