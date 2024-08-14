@@ -133,7 +133,8 @@ def load_environment(context='local',
     write_python_file(env_vars, python_output_path)
 
     # Make specified scripts executable
-    for script_path in scripts_to_make_executable:
+    for script in scripts_to_make_executable:
+        script_path = os.path.join(script_dir, script)
         try:
             os.chmod(script_path, os.stat(script_path).st_mode | stat.S_IEXEC)
             print(f"Made {script_path} executable.")
