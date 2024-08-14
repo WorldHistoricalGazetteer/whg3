@@ -97,7 +97,7 @@ def load_environment(context='local',
         python_output_path='../whg/local_settings_autocontext.py',
         nginx_template_path='nginx-template.j2',
         nginx_output_path='/etc/nginx/sites-available/',
-        scripts_to_make_executable=['/server-admin/replicate_live_db.sh']
+        scripts_to_make_executable=['./replicate_live_db.sh']
         ):
     # Ensure paths are relative to the script's directory
     script_dir = os.path.dirname(__file__)
