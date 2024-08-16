@@ -309,6 +309,7 @@ STATICFILES_DIRS = [
   os.path.join(BASE_DIR, 'datasets/static/'),
   os.path.join(BASE_DIR, 'main/static/'),
   os.path.join(BASE_DIR, 'whg/static/'),
+  # webpack.config now writes directly to static root /webpack
 ]
 
 # Use a file-based cache backend.

@@ -36,7 +36,7 @@ module.exports = {
 	},
 	output: {
 		filename: '[name].bundle.js',
-		path: path.resolve(__dirname, 'whg/static/webpack'),
+		path: path.resolve(__dirname, 'static/webpack'),
 	},
 	module: {
 		rules: [

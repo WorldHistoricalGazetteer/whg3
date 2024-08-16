@@ -104,10 +104,7 @@ whg/media/.DS_Store
 node_modules/
 
 # Ignore Webpack generated files
-whg/static/webpack/*.bundle.*
-whg/static/webpack/*.svg
-whg/static/webpack/stats.json
-whg/static/webpack/webpackReport.html
+whg/static/webpack/
 
 package-lock.json
 /.ssh
@@ -120,3 +117,4 @@ docker-compose-autocontext.yml
 compose/pg_hba.conf
 whg/local_settings.py.bak
 whg_credentials.zip
+/whg/static/webpack
