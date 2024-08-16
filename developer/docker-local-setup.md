@@ -47,7 +47,7 @@ docker logs -f postgres_local_staging
 ```sh
 docker logs -f web_local_staging
 ```
-- If all is well, you should see World Historical Gazetteer running in your browser at http://localhost:8003/ (you can change the port by adjusting the `APP_PORT` value in the provided `/server-admin/env_template.py` file).
+- If all is well, you should see World Historical Gazetteer running in your browser at http://localhost:8001/ (you can change the port by adjusting the `APP_PORT` value in the provided `/server-admin/env_template.py` file).
 - If you need to stop the network, be sure to pass the environment file as a parameter:
 ```sh
 docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env down
