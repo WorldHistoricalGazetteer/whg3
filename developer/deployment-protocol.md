@@ -21,7 +21,7 @@ docker ps
 docker exec -it web_dev-whgazetteer-org_staging bash -c "./manage.py showmigrations"
 ```
 ```bash
-docker exec -it web_dev-whgazetteer-org_staging bash -c "./manage.py ./manage.py migrate"
+docker exec -it web_dev-whgazetteer-org_staging bash -c "./manage.py migrate"
 ```
 
 #### Check Logs
