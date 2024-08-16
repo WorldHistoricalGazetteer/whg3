@@ -37,7 +37,12 @@ docker logs -f celery-worker_dev-whgazetteer-org_staging
 
 ## Deploy to Main from Staging
 
-- Firstly, merge `staging` into `main`:
+- Firstly, ensure that all static files (including webpack bundles) have been collected into the root static folder (this will be mounted in the `main` network):
+```bash
+docker exec -it web_dev-whgazetteer-org_staging bash -c "./manage.py collectstatic --no-input"
+```
+
+Next, merge `staging` into `main`:
 ```bash
 cd ~/sites/whgazetteer-org
 git fetch origin
