@@ -37,9 +37,7 @@ RUN set -eux; \
 	useradd -rm -d "/home/$USER_NAME" -g "$USER_NAME" -s "/bin/bash" -G sudo -u 1000 "$USER_NAME" -p "$(openssl passwd -1 change_me)" && \
 	# Create a new sudoers file for the user
 	echo "$USER_NAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/"$USER_NAME" && \
-    # Create directories and set ownership
-    mkdir -p /app/static && \
-    chown -R 1000:1000 /app/static && \
+    # Set ownership
     chown -R 1000:0 /py/lib/python3.10/site-packages/captcha/migrations/ /py/lib/python3.10/site-packages/guardian/migrations/    
 
 WORKDIR /app

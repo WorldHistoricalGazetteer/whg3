@@ -15,9 +15,6 @@ services:
     container_name: web_{{ ENV_CONTEXT }}_{{ BRANCH }}
     volumes:
       - {{ BASE_DIR }}:/app
-      - {{ BASE_DIR }}/media:/app/media
-      - {{ BASE_DIR }}/static:/app/static
-      - {{ BASE_DIR }}/cache:/app/cache
       - {{ BASE_DIR }}/entrypoints/entrypoint-web.sh:/entrypoint.sh
     {% if not ENV_CONTEXT == 'local' %}
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
@@ -100,9 +97,6 @@ services:
     hostname: celery_worker
     volumes:
       - {{ BASE_DIR }}:/app
-      - {{ BASE_DIR }}/media:/app/media
-      - {{ BASE_DIR }}/static:/app/static
-      - {{ BASE_DIR }}/cache:/app/cache
       - {{ BASE_DIR }}/entrypoints/entrypoint-celery.sh:/entrypoint.sh
     {% if ENV_CONTEXT == 'local' %}
       - /etc/docker/certs:/certs
@@ -133,9 +127,6 @@ services:
     container_name: celery-beat_{{ ENV_CONTEXT }}_{{ BRANCH }}
     volumes:
       - {{ BASE_DIR }}:/app
-      - {{ BASE_DIR }}/media:/app/media
-      - {{ BASE_DIR }}/static:/app/static
-      - {{ BASE_DIR }}/cache:/app/cache
       - {{ BASE_DIR }}/entrypoints/entrypoint-celery-beat.sh:/entrypoint.sh
     {% if not ENV_CONTEXT == 'local' %}
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
@@ -159,9 +150,6 @@ services:
       - "{{ FLOWER_PORT }}:5555"
     volumes:
       - {{ BASE_DIR }}:/app
-      - {{ BASE_DIR }}/media:/app/media
-      - {{ BASE_DIR }}/static:/app/static
-      - {{ BASE_DIR }}/cache:/app/cache
       - {{ BASE_DIR }}/entrypoints/entrypoint-flower.sh:/entrypoint.sh
     {% if not ENV_CONTEXT == 'local' %}
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
@@ -208,7 +196,7 @@ services:
 {% if ENV_CONTEXT == 'local' %}
   webpack:
     networks:
-      - WHG3
+      - {{ ENV_CONTEXT }}
     platform: linux/amd64
     build:
       context: .
