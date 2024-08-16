@@ -71,6 +71,7 @@ docker logs -f web_local_staging
 ```
 - If all is well, you should see World Historical Gazetteer running in your browser at http://localhost:8001/ (you can change the port by adjusting the `APP_PORT` value in the provided `/server-admin/env_template.py` file).
 - Log in: whg3dev/pl4c3b4c3d as a django superuser
+- NOTE: Search runs remotely against dev copies of WHG's indexes (2.2m records), and only Glasgow is fully represented in the local example database.
 - If you need to stop the network, be sure to pass the environment file as a parameter:
 ```sh
 docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env down
