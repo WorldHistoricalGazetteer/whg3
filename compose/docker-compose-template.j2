@@ -16,9 +16,6 @@ services:
     volumes:
       - {{ BASE_DIR }}:/app
       - {{ BASE_DIR }}/entrypoints/entrypoint-web.sh:/entrypoint.sh
-{% if ENV_CONTEXT == 'whgazetteer.org' %}
-      - /home/whgadmin/sites/dev-whgazetteer-org/static:/app/static # No webpack in this container, so mount from staging network
-{% endif %}
     {% if not ENV_CONTEXT == 'local' %}
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
