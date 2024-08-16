@@ -14,9 +14,9 @@ find ./ -type f \( -name "*.html" -o -name "*.py" -o -name "*.js" \) ! -path "./
 
 ### Open WSL in Console
 - Run PowerShell as Administrator (right-click)
-- Switch to WSL
+- Switch to WSL as root user
 ```sh
-wsl
+wsl -u root
 ```
 - Switch to local WHG directory
 ```sh
