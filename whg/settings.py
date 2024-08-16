@@ -36,7 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.sites',
-    'livereload', # https://github.com/tjwalch/django-livereload-server
+    # 'livereload', # https://github.com/tjwalch/django-livereload-server
     'django.contrib.staticfiles',
 
     # 3rd party
@@ -94,7 +94,7 @@ MIDDLEWARE = [
   'django.middleware.locale.LocaleMiddleware',
   'django.middleware.security.SecurityMiddleware',
   'django_user_agents.middleware.UserAgentMiddleware',
-  'livereload.middleware.LiveReloadScript', # https://github.com/tjwalch/django-livereload-server
+  # 'livereload.middleware.LiveReloadScript', # https://github.com/tjwalch/django-livereload-server
 
 ]
 

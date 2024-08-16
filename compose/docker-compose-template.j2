@@ -32,6 +32,9 @@ services:
     depends_on:
       - redis
       - {{ DB_HOST }}
+{% if ENV_CONTEXT != 'whgazetteer.org' %}
+      - webpack
+{% endif %}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:{{ APP_PORT }}/health"]
@@ -39,6 +42,20 @@ services:
       retries: 5
       start_period: 60s
       timeout: 15s
+
+{% if ENV_CONTEXT != 'whgazetteer.org' %}
+  webpack:
+    networks:
+      - {{ ENV_CONTEXT }}
+    platform: linux/amd64
+    image: node:18
+    container_name: webpack_{{ ENV_CONTEXT }}_{{ BRANCH }}
+    logging:
+      driver: local
+    volumes:
+      - {{ BASE_DIR }}:/app
+    entrypoint: ["/app/entrypoints/entrypoint-webpack.sh"]
+{% endif %}
 
   {{ DB_HOST }}:
     networks:
@@ -167,7 +184,7 @@ services:
 {% if ENV_CONTEXT == 'REMOVE-dev-whgazetteer-org' %} ## SWITCH THIS FOR PRODUCTION
   wordpress_db:
     image: mysql:5.7
-    container_name: wordpress_db_{{ ENV_CONTEXT }}
+    container_name: wordpress_db_{{ ENV_CONTEXT }}_{{ BRANCH }}
     env_file:
       - {{ BASE_DIR }}/.env/.wordpress
     volumes:
@@ -178,7 +195,7 @@ services:
 
   wordpress:
     image: wordpress:6.6.1-php8.2-fpm-alpine
-    container_name: wordpress_{{ ENV_CONTEXT }}
+    container_name: wordpress_{{ ENV_CONTEXT }}_{{ BRANCH }}
     ports:
       - "8080:80"
       - "9000:9000"
@@ -194,20 +211,6 @@ services:
 {% endif %}
 
 {% if ENV_CONTEXT == 'local' %}
-  webpack:
-    networks:
-      - {{ ENV_CONTEXT }}
-    platform: linux/amd64
-    build:
-      context: .
-      dockerfile: ./compose/local/webpack/Dockerfile-webpack
-    image: whg3_webpack
-    container_name: webpack
-    logging:
-      driver: local
-    volumes:
-      - {{ BASE_DIR }}:/app
-      
 volumes:
   app:
   dev-db-data:

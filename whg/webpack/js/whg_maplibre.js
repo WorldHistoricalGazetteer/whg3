@@ -87,7 +87,7 @@ maplibregl.Map.prototype.clearHighlights = function () {
 }
 
 function getStyleURL(style) {
-	return `${process.env.TILEBOSS}/styles/${style}/style.json`;
+	return `${process.env.TILEBOSS}/styles/${style}/style.json`; 
 }
 
 function getTilejsonURL(style) {
