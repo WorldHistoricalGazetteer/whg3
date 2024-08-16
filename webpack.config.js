@@ -55,7 +55,7 @@ module.exports = {
 	},
 	plugins: [
 		new Dotenv({
-			path: '/app/.env/.dev-whg3',
+			path: '/app/.env/.env',
 		}),
 		new MiniCssExtractPlugin({
 			filename: '[name].bundle.css',
