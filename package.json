@@ -5,8 +5,7 @@
   "main": "webpack.config.js",
   "scripts": {
     "build": "webpack",
-    "watch": "webpack --watch",
-    "start": "webpack serve --config webpack.config.js"
+    "watch": "webpack --watch"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.5.1",
@@ -33,7 +32,7 @@
     "maplibre-gl": "^3.2.1",
     "mini-css-extract-plugin": "^2.7.6",
     "moment": "^2.29.4",
-    "sass": "^1.50.2" 
+    "sass": "^1.50.2",
     "sass-loader": "^12.3.0",
     "script-loader": "^0.7.2",
     "select2": "^4.0.13",
@@ -43,7 +42,6 @@
     "twitter-typeahead-components-bundle": "^1.0.3",
     "webpack": "^5.89.0",
     "webpack-bundle-analyzer": "^4.10.1",
-    "webpack-dev-server": "^5.0.0",
     "webpack-cli": "^5.1.4"
   },
   "devDependencies": {

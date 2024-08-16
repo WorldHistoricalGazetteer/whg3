@@ -9,6 +9,6 @@ cd /app
 
 npm install
 
-# Start Webpack Dev Server
-echo "Starting Webpack Dev Server..."
-npx webpack serve --config webpack.config.js
+# Start Webpack
+echo "Starting Webpack..."
+npx webpack --watch --config webpack.config.js

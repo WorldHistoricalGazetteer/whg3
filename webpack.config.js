@@ -9,14 +9,9 @@ const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPl
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 const isProduction = process.env.ENV_CONTEXT === 'whgazetteer-org';
-const isDevelopment = !isProduction;
 
 module.exports = {
 	mode: isProduction ? 'production' : 'development', // Use production mode for staging
-	watch: true,
-	watchOptions: {
-		poll: 1000, // Check for changes every second
-	},
 	entry: {
 		areas: '/app/whg/webpack/js/areas.js',
 		base: '/app/whg/webpack/js/base.js',
@@ -129,14 +124,6 @@ module.exports = {
 	      	],
 	    }),
 	],
-	devServer: {
-	    contentBase: path.join(__dirname, 'dist'),
-	    compress: true,
-	    port: 9000,
-	    hot: true, // Enable Hot Module Replacement
-	    open: true, // Automatically open the browser
-	    watchContentBase: true, // Watch for changes in the content base
-	},
 	resolve: {
 		modules: [
 			path.resolve(__dirname, 'static/admin/js/vendor'),
