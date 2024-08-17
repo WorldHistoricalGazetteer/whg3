@@ -185,7 +185,7 @@ services:
     ports:
       - "9000:9000"
     volumes:
-      - /home/whgadmin/sites/wp-whgazetteer-org/wordpress:/var/www/html
+      - /home/whgadmin/sites/blog-whgazetteer-org/wordpress:/var/www/html
     env_file: {{ BASE_DIR }}/.env/.env
     environment:
       - WORDPRESS_DB_HOST=wordpress_db:3306
@@ -203,7 +203,7 @@ services:
     container_name: wordpress_db_{{ ENV_CONTEXT }}_{{ BRANCH }}
     env_file: {{ BASE_DIR }}/.env/.env
     volumes:
-      - /home/whgadmin/sites/wp-whgazetteer-org/dbdata:/var/lib/mysql
+      - /home/whgadmin/sites/blog-whgazetteer-org/dbdata:/var/lib/mysql
     command: '--default-authentication-plugin=mysql_native_password'
     restart: unless-stopped
 {% endif %}
