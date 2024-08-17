@@ -101,7 +101,7 @@ def load_environment(context='local',
         ):
     # Ensure paths are relative to the script's directory
     script_dir = os.path.dirname(__file__)
-    template_path = os.path.join(script_dir, template_path)
+    template_path = os.path.join(script_dir, template_path) if context == 'local' else f'/home/whgadmin/sites/{template_path}'
     output_path = os.path.join(script_dir, output_path)
     compose_template_path = os.path.join(script_dir, compose_template_path)
     compose_output_path = os.path.join(script_dir, compose_output_path)
