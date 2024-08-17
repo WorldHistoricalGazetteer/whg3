@@ -175,38 +175,6 @@ services:
       - redis
       - {{ DB_HOST }}
     restart: unless-stopped
-    
-{% if ENV_CONTEXT == 'dev-whgazetteer-org' %}
-  wordpress:
-    networks:
-      - {{ ENV_CONTEXT }}
-    image: wordpress:6.6.1-php8.2-fpm-alpine
-    container_name: wordpress
-    ports:
-      - "9000:9000"
-    volumes:
-      - /home/whgadmin/sites/blog-whgazetteer-org/wordpress:/var/www/html
-    env_file: {{ BASE_DIR }}/.env/.env
-    environment:
-      - WORDPRESS_DB_HOST=wordpress_db:3306
-      - WORDPRESS_DB_USER=${MYSQL_USER}
-      - WORDPRESS_DB_PASSWORD=${MYSQL_PASSWORD}
-      - WORDPRESS_DB_NAME=${MYSQL_DATABASE}
-    depends_on:
-      - wordpress_db
-    restart: unless-stopped
-      
-  wordpress_db:
-    networks:
-      - {{ ENV_CONTEXT }}
-    image: mysql:8.0
-    container_name: wordpress_db
-    env_file: {{ BASE_DIR }}/.env/.env
-    volumes:
-      - /home/whgadmin/sites/blog-whgazetteer-org/dbdata:/var/lib/mysql
-    command: '--default-authentication-plugin=mysql_native_password'
-    restart: unless-stopped
-{% endif %}
 
 {% if ENV_CONTEXT == 'local' %}
 volumes:
