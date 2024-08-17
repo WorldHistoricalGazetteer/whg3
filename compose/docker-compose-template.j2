@@ -20,8 +20,7 @@ services:
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
     {% endif %}
-    env_file:
-      - {{ BASE_DIR }}/.env/.env
+    env_file: {{ BASE_DIR }}/.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
     ports:
@@ -75,8 +74,7 @@ services:
       - {{ BASE_DIR }}/server-admin/restore_db_from_dump.sh:/tmp/restore_db_from_dump.sh
     {% endif %}
       - {{ BASE_DIR }}/compose/pg_hba.conf:/etc/postgresql/pg_hba.conf
-    env_file:
-      - {{ BASE_DIR }}/.env/.env
+    env_file: {{ BASE_DIR }}/.env/.env
     command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
     restart: unless-stopped
     healthcheck:
@@ -125,8 +123,7 @@ services:
       - /home/whgadmin/docker-certs/client/client-key.pem:/certs/client-key.pem:ro
     {% endif %}
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    env_file:
-      - {{ BASE_DIR }}/.env/.env
+    env_file: {{ BASE_DIR }}/.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
       - DOCKER_HOST=tcp://{{ DOCKER_HOST_IP }}
@@ -149,8 +146,7 @@ services:
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
     {% endif %}
-    env_file:
-      - {{ BASE_DIR }}/.env/.env
+    env_file: {{ BASE_DIR }}/.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
     depends_on:
@@ -172,8 +168,7 @@ services:
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
     {% endif %}
-    env_file:
-      - {{ BASE_DIR }}/.env/.env
+    env_file: {{ BASE_DIR }}/.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
     depends_on:
@@ -181,33 +176,34 @@ services:
       - {{ DB_HOST }}
     restart: unless-stopped
     
-{% if ENV_CONTEXT == 'REMOVE-dev-whgazetteer-org' %} ## SWITCH THIS FOR PRODUCTION
-  wordpress_db:
-    image: mysql:5.7
-    container_name: wordpress_db_{{ ENV_CONTEXT }}_{{ BRANCH }}
-    env_file:
-      - {{ BASE_DIR }}/.env/.wordpress
-    volumes:
-      - /home/whgadmin/wordpress/db_data:/var/lib/mysql
-    restart: unless-stopped
+{% if ENV_CONTEXT == 'dev-whgazetteer-org' %}
+  wordpress:
     networks:
       - {{ ENV_CONTEXT }}
-
-  wordpress:
     image: wordpress:6.6.1-php8.2-fpm-alpine
     container_name: wordpress_{{ ENV_CONTEXT }}_{{ BRANCH }}
-    ports:
-      - "8080:80"
-      - "9000:9000"
-    env_file:
-      - {{ BASE_DIR }}/.env/.wordpress
     volumes:
-      - /home/whgadmin/wordpress/data/whg-wp:/var/www/html
+      - /home/whgadmin/sites/wp-whgazetteer-org/wordpress:/var/www/html
+    env_file: {{ BASE_DIR }}/.env/.wordpress
+    environment:
+      - WORDPRESS_DB_HOST=wordpress_db:3306
+      - WORDPRESS_DB_USER={{ MYSQL_USER }}
+      - WORDPRESS_DB_PASSWORD={{ MYSQL_PASSWORD }}
+      - WORDPRESS_DB_NAME={{ MYSQL_DATABASE }}
     depends_on:
       - wordpress_db
     restart: unless-stopped
+      
+  wordpress_db:
     networks:
       - {{ ENV_CONTEXT }}
+    image: mysql:8.0
+    container_name: wordpress_db_{{ ENV_CONTEXT }}_{{ BRANCH }}
+    env_file: {{ BASE_DIR }}/.env/.wordpress
+    volumes:
+      - /home/whgadmin/sites/wp-whgazetteer-org/dbdata:/var/lib/mysql
+    command: '--default-authentication-plugin=mysql_native_password'
+    restart: unless-stopped
 {% endif %}
 
 {% if ENV_CONTEXT == 'local' %}
