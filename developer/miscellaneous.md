@@ -31,3 +31,7 @@ cd /mnt/i/workspace/whg3
 sudo certbot certonly --dns-digitalocean --dns-digitalocean-credentials /etc/letsencrypt/digitalocean.ini -d <domain.com>
 ```
 - The certificate and key will be stored locally and updated automatically when necessary.
+- If it becomes necessary to delete the certificate, the following will ensure that the certificate and its renewal are removed and cancelled:
+```sh
+sudo certbot delete --cert-name <domain.com>
+```
