@@ -182,6 +182,8 @@ services:
       - {{ ENV_CONTEXT }}
     image: wordpress:6.6.1-php8.2-fpm-alpine
     container_name: wordpress_{{ ENV_CONTEXT }}_{{ BRANCH }}
+    ports:
+      - "9000:9000"
     volumes:
       - /home/whgadmin/sites/wp-whgazetteer-org/wordpress:/var/www/html
     env_file: {{ BASE_DIR }}/.env/.wordpress
