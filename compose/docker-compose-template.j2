@@ -181,7 +181,7 @@ services:
     networks:
       - {{ ENV_CONTEXT }}
     image: wordpress:6.6.1-php8.2-fpm-alpine
-    container_name: wordpress_{{ ENV_CONTEXT }}_{{ BRANCH }}
+    container_name: wordpress
     ports:
       - "9000:9000"
     volumes:
@@ -200,7 +200,7 @@ services:
     networks:
       - {{ ENV_CONTEXT }}
     image: mysql:8.0
-    container_name: wordpress_db_{{ ENV_CONTEXT }}_{{ BRANCH }}
+    container_name: wordpress_db
     env_file: {{ BASE_DIR }}/.env/.env
     volumes:
       - /home/whgadmin/sites/blog-whgazetteer-org/dbdata:/var/lib/mysql
