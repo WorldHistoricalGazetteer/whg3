@@ -186,7 +186,7 @@ services:
       - "9000:9000"
     volumes:
       - /home/whgadmin/sites/wp-whgazetteer-org/wordpress:/var/www/html
-    env_file: {{ BASE_DIR }}/.env/.wordpress
+    env_file: {{ BASE_DIR }}/.env/.env
     environment:
       - WORDPRESS_DB_HOST=wordpress_db:3306
       - WORDPRESS_DB_USER=${MYSQL_USER}
@@ -201,7 +201,7 @@ services:
       - {{ ENV_CONTEXT }}
     image: mysql:8.0
     container_name: wordpress_db_{{ ENV_CONTEXT }}_{{ BRANCH }}
-    env_file: {{ BASE_DIR }}/.env/.wordpress
+    env_file: {{ BASE_DIR }}/.env/.env
     volumes:
       - /home/whgadmin/sites/wp-whgazetteer-org/dbdata:/var/lib/mysql
     command: '--default-authentication-plugin=mysql_native_password'
