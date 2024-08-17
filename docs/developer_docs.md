@@ -17,7 +17,6 @@ The Docker services/containers in use are:
 - web
 - db (container "postgres")
 - webpack
-- livereload
 - celery_worker
 - celery_beat
 - redis

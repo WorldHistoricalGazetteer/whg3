@@ -42,7 +42,6 @@ django-geojson==4.0.0
 django-guardian==2.3.0
 django-health-check
 django-leaflet==0.28.3
-django-livereload-server==0.4
 django-maintenance-mode
 django-mathfilters==0.4.0
 django-multiselectfield==0.1.12
