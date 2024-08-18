@@ -118,7 +118,6 @@ urlpatterns = [
 
     # Dataset Validation
     path('validation/', include('validation.urls')),
-    re_path(r'^schema/(?P<path>.*)$', serve, {'document_root': f'{settings.BASE_DIR}/validation/static/'}),
     
     # Serve the CDNfallbacks folder with host check
     re_path(r'^CDNfallbacks/(?P<path>.*)$', serve_cdnfallbacks),

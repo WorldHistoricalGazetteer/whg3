@@ -53,7 +53,7 @@ def apply_context_overrides(template_vars, context):
     context_vars.update(template_vars.get('sites', {}).get(context, {}))
     context_vars['BASE_DIR'] = os.getcwd()
     context_vars['ENV_CONTEXT'] = context 
-    context_vars['BRANCH'] = get_git_branch()
+    context_vars['BRANCH'] = get_git_branch().replace('/', '--')
     context_vars['POSTGRES_USER'] = 'postgres'
     context_vars['POSTGRES_PASSWORD'] = context_vars['DB_PASSWORD']
     context_vars['POSTGRES_DB'] = context_vars['DB_NAME']
