@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     'search.apps.SearchConfig',
     'traces.apps.TracesConfig',
     'users.apps.UsersConfig',
+    'validation.apps.ValidationConfig',
 ]
 
 AUTH_USER_MODEL = 'users.User'
@@ -223,14 +224,22 @@ LOGGING = {
             'backupCount': 5,      # Number of backup files to keep
             'formatter': 'verbose',
         },
-        'messaging_file': {  # New handler for messaging logs
+        'messaging_file': {
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'whg/logs/messaging.log'),
             'maxBytes': 10485760,  # 10 MB
             'backupCount': 5,      # Number of backup files to keep
             'formatter': 'verbose',
-        },     
+        },
+        'validation_file': {
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'whg/logs/validation.log'),
+            'maxBytes': 10485760,  # 10 MB
+            'backupCount': 5,      # Number of backup files to keep
+            'formatter': 'verbose',
+        },   
         'console': {
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'class': 'logging.StreamHandler',
@@ -241,17 +250,22 @@ LOGGING = {
         'django': {
             'handlers': ['django_file', 'console'],
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
-            'propagate': False,  # Ensure logs do not propagate to root logger
+            'propagate': False,
         },
         'celery': {
             'handlers': ['celery_file', 'console'],
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
-            'propagate': False,  # Ensure logs do not propagate to root logger
+            'propagate': False,
         },
         'messaging': {
             'handlers': ['messaging_file', 'console'],
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
-            'propagate': False,  # Ensure logs do not propagate to root logger
+            'propagate': False,
+        },
+        'validation': {
+            'handlers': ['validation_file', 'console'],
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
+            'propagate': False,
         },
         '': {  # Root logger
             'handlers': ['root_file', 'console'],
@@ -306,6 +320,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = [
   os.path.join(BASE_DIR, 'datasets/static/'),
   os.path.join(BASE_DIR, 'main/static/'),
+  os.path.join(BASE_DIR, 'validation/static/'),
   os.path.join(BASE_DIR, 'whg/static/'),
   # webpack.config now writes directly to static root /webpack
 ]
@@ -334,3 +349,6 @@ SPECTACULAR_SETTINGS = {
         'drf_spectacular.hooks.preprocess_exclude_path_format',
     ],
 }
+
+# Dataset Validation
+LPF_SCHEMA_PATH = 'validation/static/lpf_v2.0.json'
