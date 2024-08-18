@@ -116,9 +116,6 @@ urlpatterns = [
 
     #path('trigger500/', views.trigger_500_error, name='trigger-500-error'),
 
-    # Map the /schema/ URL to the static/validate/ directory
-    re_path(r'^schema/(?P<path>.*)$', serve, {'document_root': f'{settings.STATIC_ROOT}/validate/'}),
-    
     # Serve the CDNfallbacks folder with host check
     re_path(r'^CDNfallbacks/(?P<path>.*)$', serve_cdnfallbacks),
 
