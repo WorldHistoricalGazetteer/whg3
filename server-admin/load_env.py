@@ -18,9 +18,7 @@ def get_git_branch():
     except subprocess.CalledProcessError:
         return None
 
-def update_entrypoints(entrypoints_path, user, group):
-    uid = pwd.getpwnam(user).pw_uid
-    gid = grp.getgrnam(group).gr_gid
+def update_entrypoints(entrypoints_path):
 
     for file in os.listdir(entrypoints_path):
         file_path = os.path.join(entrypoints_path, file)
@@ -30,9 +28,10 @@ def update_entrypoints(entrypoints_path, user, group):
             continue
 
         try:
+            # Remove Windows-style line endings (carriage returns) for Unix-like compatibility
             subprocess.run(['sed', '-i', 's/\r$//g', file_path], check=True)
+            # Ensure file is executable by any user within the container
             os.chmod(file_path, os.stat(file_path).st_mode | stat.S_IEXEC)
-            os.chown(file_path, uid, gid)
             
         except PermissionError as e:
             print(f"PermissionError: {e} - file_path: {file_path}")
@@ -129,13 +128,15 @@ def load_environment(context='local',
     if not context == 'local':
         render_jinja_template(nginx_template_path, env_vars, os.path.join(nginx_output_path, env_vars.get('NGINX_SERVER_NAME')))
         
-    update_entrypoints(entrypoints_path, 'whgadmin', 'root')
+    update_entrypoints(entrypoints_path)
     write_python_file(env_vars, python_output_path)
 
     # Make specified scripts executable
     for script in scripts_to_make_executable:
         script_path = os.path.join(script_dir, script)
         try:
+            # Remove Windows-style line endings (carriage returns) for Unix-like compatibility
+            subprocess.run(['sed', '-i', 's/\r$//g', script_path], check=True)
             os.chmod(script_path, os.stat(script_path).st_mode | stat.S_IEXEC)
             print(f"Made {script_path} executable.")
         except Exception as e:
