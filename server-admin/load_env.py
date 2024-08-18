@@ -28,8 +28,13 @@ def update_entrypoints(entrypoints_path):
             continue
 
         try:
-            # Remove Windows-style line endings (carriage returns) for Unix-like compatibility
-            subprocess.run(['sed', '-i', 's/\r$//g', file_path], check=True)
+            # Remove any Windows-style line endings (carriage returns)
+            with open(file_path, 'r+b') as f:
+                content = f.read()
+                content = content.replace(b'\r\n', b'\n')
+                f.seek(0)
+                f.write(content)
+                f.truncate()
             # Ensure file is executable by any user within the container
             os.chmod(file_path, os.stat(file_path).st_mode | stat.S_IEXEC)
             
@@ -135,8 +140,13 @@ def load_environment(context='local',
     for script in scripts_to_make_executable:
         script_path = os.path.join(script_dir, script)
         try:
-            # Remove Windows-style line endings (carriage returns) for Unix-like compatibility
-            subprocess.run(['sed', '-i', 's/\r$//g', script_path], check=True)
+            # Remove any Windows-style line endings (carriage returns)
+            with open(script_path, 'r+b') as f:
+                content = f.read()
+                content = content.replace(b'\r\n', b'\n')
+                f.seek(0)
+                f.write(content)
+                f.truncate()
             os.chmod(script_path, os.stat(script_path).st_mode | stat.S_IEXEC)
             print(f"Made {script_path} executable.")
         except Exception as e:
