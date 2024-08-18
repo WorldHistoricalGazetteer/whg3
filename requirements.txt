@@ -75,7 +75,7 @@ greenlet==2.0.2
 gunicorn==21.2.0
 humanize==4.7.0
 idna==3.4
-ijson==3.2.0.post0
+ijson==3.3.0
 isodate==0.6.1
 jmespath==1.0.1
 jsonlines==3.1.0

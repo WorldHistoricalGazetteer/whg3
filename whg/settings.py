@@ -353,3 +353,5 @@ SPECTACULAR_SETTINGS = {
 # Dataset Validation
 LPF_SCHEMA_PATH = 'validation/static/lpf_v2.0.json'
 LPF_CONTEXT_PATH = 'validation/static/lpo_v2.0.jsonld'
+VALIDATION_TEST_SAMPLE = '/datasets/static/files/lugares_20.jsonld'
+VALIDATION_BATCH_MEMORY_LIMIT = 10 * 1024 * 1024  # 10 MB

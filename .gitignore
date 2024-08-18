@@ -118,3 +118,8 @@ compose/pg_hba.conf
 whg/local_settings.py.bak
 whg_credentials.zip
 /whg/static/webpack
+datasets/static/files/lugares_13k.jsonld
+datasets/static/files/lugares_20.jsonld
+datasets/static/files/nativelands2031.jsonld
+datasets/static/files/newLibyaData3.csv
+datasets/static/files/provinces_1911.tsv
