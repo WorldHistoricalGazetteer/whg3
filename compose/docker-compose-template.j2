@@ -54,6 +54,9 @@ services:
     volumes:
       - {{ BASE_DIR }}:/app
     entrypoint: ["/app/entrypoints/entrypoint-webpack.sh"]
+    depends_on:
+      - web
+    restart: unless-stopped
 {% endif %}
 
   {{ DB_HOST }}:
