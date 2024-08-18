@@ -10,6 +10,7 @@ from utils import mapdata
 from resources.views import TeachingPortalView
 from main.tasks import get_tileset_task_progress
 from utils.tasks import downloader
+import os
 
 # For CDNfallbacks
 from django.views.static import serve
@@ -135,4 +136,15 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    
+    # Serve files from the 'validation/static' directory with the 'schema/' URL prefix
+    schema_root = os.path.join(settings.BASE_DIR, 'validation', 'static')
+    urlpatterns += static('schema/', document_root=schema_root)
+    # NB: requires additional Nginx directive in staging/production:
+    #
+    # location /schema/ {
+    #     alias /home/whgadmin/sites/dev-whgazetteer-org/validation/static/;
+    #     autoindex on;  # Enable directory listing
+    # }
+    
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
