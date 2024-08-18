@@ -1,10 +1,10 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "$id": "schema_lpf_v2.0.json",
+    "$id": "https://whgazetteer.org/schema/lpf_v2.0.jsonld",
     "title": "The Linked Places Schema",
     "description": "TODO",
     "type": "FeatureCollection",
-    "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
+    "@context": "https://whgazetteer.org/schema/lpo_v2.0.jsonld",
     "additionalProperties": false,
     "required": [
         "@id",

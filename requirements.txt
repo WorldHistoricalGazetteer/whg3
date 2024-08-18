@@ -99,6 +99,7 @@ prompt-toolkit==3.0.38
 psycopg2-binary==2.9.5
 pycparser==2.21
 Pygments==2.14.0
+pyld==2.0.4
 PyJWT==2.6.0
 pyrsistent==0.19.3
 python-dateutil==2.8.2

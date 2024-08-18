@@ -352,3 +352,4 @@ SPECTACULAR_SETTINGS = {
 
 # Dataset Validation
 LPF_SCHEMA_PATH = 'validation/static/lpf_v2.0.json'
+LPF_CONTEXT_PATH = 'validation/static/lpo_v2.0.jsonld'
