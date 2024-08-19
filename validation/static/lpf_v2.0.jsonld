@@ -1,228 +1,125 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
     "$id": "https://whgazetteer.org/schema/lpf_v2.0.jsonld",
-    "title": "The Linked Places Schema",
-    "description": "TODO",
-    "type": "FeatureCollection",
+    "title": "Linked Places Format: FeatureCollection",
+    "type": "object",
     "@context": "https://whgazetteer.org/schema/lpo_v2.0.jsonld",
-    "additionalProperties": false,
     "required": [
-        "@id",
         "type",
-        "properties",
-        "names"
+        "features"
     ],
-    "definitions": {
-        "when": {
-            "type": "object",
-            "properties": {
-                "timespans": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/timespan"
-                    }
-                },
-                "periods": {
-                    "type": "array",
-                    "title": "When->Periods",
-                    "items": {
-                        "$ref": "#/definitions/period"
-                    }
-                },
-                "label": {
-                    "type": "string",
-                    "title": "When->Label"
-                },
-                "duration": {
-                    "$ref": "#/definitions/duration"
-                }
-            }
-        },
-        "timespan": {
-            "type": "object",
-            "properties": {
-                "start": {
-                    "type": "string",
-                    "format": "date",
-                    "title": "Timespan->Start"
-                },
-                "end": {
-                    "type": "string",
-                    "format": "date",
-                    "title": "Timespan->End"
-                }
-            },
-            "required": [
-                "start",
-                "end"
-            ]
-        },
-        "period": {
-            "type": "object",
-            "properties": {
-                "name": {
-                    "type": "string"
-                },
-                "uri": {
-                    "type": "string"
-                }
-            },
-            "required": [
-                "label"
-            ]
-        },
-        "duration": {
-            "type": "string",
-            "title": "Duration",
-            "examples": [
-                "P1Y",
-                "P2M"
-            ],
-            "pattern": "^[P][0-9]{1,2}[Y|M|D]$"
-        },
-        "citations": {
-            "type": "array",
-            "title": "Citations",
-            "items": {
-                "$ref": "#/definitions/citation"
-            }
-        },
-        "citation": {
-            "type": "object",
-            "title": "Citation",
-            "properties": {
-                "@id": {
-                    "type": [
-                        "string",
-                        "null"
-                    ],
-                    "title": "Citation->@id",
-                    "examples": [
-                        "http://foofah.org"
-                    ]
-                },
-                "label": {
-                    "type": "string",
-                    "title": "Citation->Label",
-                    "examples": [
-                        "Blow, J. (1708)"
-                    ],
-                    "pattern": "^(.*)$"
-                }
-            }
-        },
-        "lang": {
-            "type": "string",
-            "title": "Language",
-            "examples": [
-                "en",
-                "fr"
-            ],
-            "pattern": "^[a-z]{2}$"
-        },
-        "certainty": {
-            "type": "string",
-            "title": "Certainty",
-            "enum": [
-                "certain",
-                "less-certain",
-                "uncertain"
-            ]
-        }
-    },
     "properties": {
         "type": {
-            "$id": "#/properties/type",
             "type": "string",
-            "title": "The Type Schema",
             "enum": [
-                "Feature"
+                "FeatureCollection"
             ]
         },
-        "@id": {
-            "$id": "#/properties/@id",
-            "type": "string",
-            "title": "The @id Schema",
-            "default": "",
-            "examples": [
-                "https://foofah.com"
-            ],
-            "pattern": "^(.*)$"
-        },
-        "properties": {
-            "$id": "#/properties/properties",
+        "features": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/feature"
+            },
+            "minItems": 1
+        }
+    },
+    "definitions": {
+        "feature": {
             "type": "object",
-            "title": "The Properties Schema",
             "required": [
-                "title"
+                "@id",
+                "type",
+                "properties",
+                "geometry",
+                "names"
             ],
             "properties": {
-                "title": {
-                    "$id": "#/properties/properties/properties/title",
+                "type": {
                     "type": "string",
-                    "title": "Properties->Title",
+                    "enum": [
+                        "Feature"
+                    ]
+                },
+                "@id": {
+                    "type": "string",
                     "default": "",
                     "examples": [
-                        "San Miguel"
+                        "https://foofah.com"
                     ],
                     "pattern": "^(.*)$"
                 },
-                "ccodes": {
-                    "$id": "#/properties/properties/properties/ccodes",
-                    "type": "array",
-                    "title": "Properties->Ccodes",
-                    "items": {
-                        "$id": "#/properties/properties/properties/ccodes/items",
-                        "type": "string",
-                        "title": "Properties->Ccodes->Items",
-                        "default": "",
-                        "examples": [
-                            "CR"
-                        ],
-                        "pattern": "^([a-zA-Z]{2})$"
+                "properties": {
+                    "type": "object",
+                    "required": [
+                        "title"
+                    ],
+                    "properties": {
+                        "title": {
+                            "type": "string",
+                            "default": "",
+                            "examples": [
+                                "San Miguel"
+                            ],
+                            "pattern": "^(.*)$"
+                        },
+                        "ccodes": {
+                            "$ref": "#/definitions/ccodes"
+                        },
+                        "fclasses": {
+                            "$ref": "#/definitions/fclasses"
+                        }
                     }
                 },
-                "fclasses": {
-                    "type": "array",
-                    "title": "TODO",
-                    "items": {
-                        "type": "string"
-                    }
+                "names": {
+                    "$ref": "#/definitions/names"
+                },
+                "types": {
+                    "$ref": "#/definitions/types"
+                },
+                "geometry": {
+                    "$ref": "#/definitions/geometry"
+                },
+                "relations": {
+                    "$ref": "#/definitions/relations"
+                },
+                "when": {
+                    "$ref": "#/definitions/time/definitions/when"
+                },
+                "links": {
+                    "$ref": "#/definitions/links"
+                },
+                "depictions": {
+                    "$ref": "#/definitions/depictions"
+                },
+                "descriptions": {
+                    "$ref": "#/definitions/descriptions"
                 }
             }
         },
         "names": {
-            "$id": "#/properties/names",
             "type": "array",
-            "title": "The Names Schema",
             "items": {
-                "$id": "#/properties/names/items",
                 "type": "object",
-                "title": "Names->Items",
                 "properties": {
                     "toponym": {
-                        "$id": "#/properties/names/items/properties/toponym",
                         "type": "string",
-                        "title": "Names->Items->Toponym",
                         "examples": [
                             "San Miguel"
                         ],
                         "pattern": "^(.*)$"
                     },
                     "ethnonym": {
-                        "$id": "#/properties/names/items/properties/ethnonym",
                         "type": "string",
-                        "title": "Names->Items->Ethnonym",
                         "examples": [
                             "Lebenians"
                         ],
                         "pattern": "^(.*)$"
                     },
+                    "when": {
+                        "$ref": "#/definitions/time/definitions/when"
+                    },
                     "lang": {
                         "$ref": "#/definitions/lang"
-                    },
-                    "when": {
-                        "$ref": "#/definitions/when"
                     },
                     "citations": {
                         "$ref": "#/definitions/citations"
@@ -243,183 +140,106 @@
                 "additionalProperties": true
             }
         },
-        "types": {
-            "$id": "#/properties/types",
+        "citations": {
             "type": "array",
-            "title": "The Types Schema",
             "items": {
-                "$id": "#/properties/types/items",
-                "type": "object",
-                "title": "Types->Items",
-                "properties": {
-                    "label": {
-                        "$id": "#/properties/types/items/properties/label",
-                        "type": "string",
-                        "title": "Types->Items->Label",
-                        "default": "",
-                        "examples": [
-                            "village"
-                        ],
-                        "pattern": "^(.*)$"
-                    },
-                    "identifier": {
-                        "$id": "#/properties/types/items/properties/identifier",
-                        "type": "string",
-                        "title": "Types->Items->Identifier",
-                        "default": "",
-                        "examples": [
-                            "aat:300008372"
-                        ],
-                        "pattern": "^(.*)$"
-                    },
-                    "sourceLabels": {
-                        "type": "array",
-                        "title": "Source Labels",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "label": {
-                                    "type": "string",
-                                    "title": "Source Labels->Label",
-                                    "examples": [
-                                        "Pueblo"
-                                    ],
-                                    "pattern": "^(.*)$"
-                                },
-                                "lang": {
-                                    "$ref": "#/definitions/lang"
-                                }
-                            },
-                            "required": [
-                                "label"
-                            ]
-                        }
-                    },
-                    "when": {
-                        "$ref": "#/definitions/when"
-                    }
-                }
+                "$ref": "#/definitions/citation"
             }
         },
-        "geometry": {
-            "$id": "#/properties/geometry",
+        "citation": {
             "type": "object",
-            "title": "The Geometry Schema",
-            "required": [
-                "type"
-            ],
             "properties": {
-                "type": {
-                    "$id": "#/properties/geometry/properties/type",
-                    "type": "string",
-                    "enum": [
-                        "GeometryCollection",
-                        "Point",
-                        "MultiPoint",
-                        "LineString",
-                        "MultiLineString",
-                        "Polygon",
-                        "MultiPolygon"
+                "@id": {
+                    "type": [
+                        "string",
+                        "null"
                     ],
-                    "title": "Geometry->Type"
+                    "examples": [
+                        "http://foofah.org"
+                    ]
                 },
-                "geometries": {
-                    "$id": "#/properties/geometry/properties/geometries",
-                    "type": "array",
-                    "title": "Geometries",
-                    "items": {
-                        "$id": "#/properties/geometry/properties/geometries/items",
-                        "type": "object",
-                        "title": "Geometries->Items",
-                        "properties": {
-                            "type": {
-                                "$id": "#/properties/geometry/properties/geometries/items/properties/type",
-                                "type": "string",
-                                "title": "Geometries->Items->Type",
-                                "enum": [
-                                    "Point",
-                                    "MultiPoint",
-                                    "LineString",
-                                    "MultiLineString",
-                                    "Polygon",
-                                    "MultiPolygon"
-                                ]
-                            },
-                            "coordinates": {
-                                "type": "array",
-                                "items": {
-                                    "type": "number"
-                                }
-                            },
-                            "geowkt": {
-                                "$id": "#/properties/geometry/properties/geometries/items/properties/geowkt",
-                                "type": "string",
-                                "title": "Geometries->Items->Geowkt",
-                                "pattern": "^(.*)$"
-                            },
-                            "when": {
-                                "$ref": "#/definitions/when"
-                            },
-                            "citations": {
-                                "$ref": "#/definitions/citations"
-                            },
-                            "certainty": {
-                                "$ref": "#/definitions/certainty"
-                            }
-                        }
-                    }
+                "label": {
+                    "type": "string",
+                    "examples": [
+                        "Blow, J. (1708)"
+                    ],
+                    "pattern": "^(.*)$"
                 }
             }
         },
-        "relations": {
-            "$id": "#/properties/relations",
+        "lang": {
+            "type": "string",
+            "examples": [
+                "en",
+                "fr"
+            ],
+            "pattern": "^[a-z]{2}$"
+        },
+        "certainty": {
+            "type": "string",
+            "enum": [
+                "certain",
+                "less-certain",
+                "uncertain"
+            ]
+        },
+        "license": {
+            "type": "string",
+            "default": "",
+            "examples": [
+                "cc:by-sa/3.0/"
+            ],
+            "pattern": "^(.*)$"
+        },
+        "ccodes": {
             "type": "array",
-            "title": "The Relations Schema",
             "items": {
-                "$id": "#/properties/relations/items",
+                "type": "string",
+                "default": "",
+                "examples": [
+                    "CR"
+                ],
+                "pattern": "^([A-Z]{2})$"
+            }
+        },
+        "fclasses": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "descriptions": {
+            "type": "array",
+            "items": {
                 "type": "object",
-                "title": "Relations->Items",
                 "required": [
-                    "relationType",
-                    "relationTo",
-                    "label"
+                    "value"
                 ],
                 "properties": {
-                    "relationType": {
+                    "@id": {
                         "type": "string",
                         "examples": [
-                            "gvp:broaderPartitive"
+                            "https://en.wikipedia.org/wiki/Abingdon-on-Thames"
                         ],
                         "pattern": "^(.*)$"
                     },
-                    "relationTo": {
+                    "value": {
                         "type": "string",
+                        "examples": [
+                            "...a historic market town and civil parish..."
+                        ],
                         "pattern": "^(.*)$"
                     },
-                    "label": {
-                        "type": "string",
-                        "pattern": "^(.*)$"
-                    },
-                    "when": {
-                        "$ref": "#/definitions/when"
-                    },
-                    "citations": {
-                        "$ref": "#/definitions/citations"
-                    },
-                    "certainty": {
-                        "$ref": "#/definitions/certainty"
+                    "lang": {
+                        "$ref": "#/definitions/lang"
                     }
                 }
             }
         },
         "links": {
-            "$id": "#/properties/links",
             "type": "array",
-            "title": "The Links Schema",
             "items": {
-                "$id": "#/properties/links/items",
                 "type": "object",
-                "title": "Links->Items",
                 "properties": {
                     "type": {
                         "type": "string",
@@ -437,53 +257,91 @@
                 }
             }
         },
-        "when": {
-            "$ref": "#/definitions/when"
-        },
-        "descriptions": {
-            "$id": "#/properties/descriptions",
+        "relations": {
             "type": "array",
-            "title": "The Descriptions Schema",
             "items": {
-                "$id": "#/properties/descriptions/items",
+                "allOf": [
+                    { "$ref": "#/definitions/optionalProperties" },
+                    {
+		                "type": "object",
+		                "required": [
+		                    "relationType",
+		                    "relationTo",
+		                    "label"
+		                ],
+		                "properties": {
+		                    "relationType": {
+		                        "type": "string",
+		                        "examples": [
+		                            "gvp:broaderPartitive"
+		                        ],
+		                        "pattern": "^(.*)$"
+		                    },
+		                    "relationTo": {
+		                        "type": "string",
+		                        "pattern": "^(.*)$"
+		                    },
+		                    "label": {
+		                        "type": "string",
+		                        "pattern": "^(.*)$"
+		                    }
+		                }
+                    }
+                ]
+            }
+        },
+        "types": {
+            "type": "array",
+            "items": {
                 "type": "object",
-                "title": "Descriptions->Items",
-                "required": [
-                    "value"
-                ],
                 "properties": {
-                    "@id": {
-                        "$id": "#/properties/descriptions/items/properties/@id",
+                    "label": {
                         "type": "string",
-                        "title": "Descriptions->Items->@id",
+                        "default": "",
                         "examples": [
-                            "https://en.wikipedia.org/wiki/Abingdon-on-Thames"
+                            "village"
                         ],
                         "pattern": "^(.*)$"
                     },
-                    "value": {
-                        "$id": "#/properties/descriptions/items/properties/value",
+                    "identifier": {
                         "type": "string",
-                        "title": "Descriptions->Items->Value",
+                        "default": "",
                         "examples": [
-                            "...a historic market town and civil parish..."
+                            "aat:300008372"
                         ],
                         "pattern": "^(.*)$"
                     },
-                    "lang": {
-                        "$ref": "#/definitions/lang"
+                    "sourceLabels": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {
+                                    "type": "string",
+                                    "examples": [
+                                        "Pueblo"
+                                    ],
+                                    "pattern": "^(.*)$"
+                                },
+                                "lang": {
+                                    "$ref": "#/definitions/lang"
+                                }
+                            },
+                            "required": [
+                                "label"
+                            ]
+                        }
+                    },
+                    "when": {
+                        "$ref": "#/definitions/time/definitions/when"
                     }
                 }
             }
         },
         "depictions": {
-            "$id": "#/properties/depictions",
             "type": "array",
-            "title": "The Depictions Schema",
             "items": {
-                "$id": "#/properties/depictions/items",
                 "type": "object",
-                "title": "Depictions->Items",
                 "required": [
                     "@id",
                     "title",
@@ -491,18 +349,14 @@
                 ],
                 "properties": {
                     "@id": {
-                        "$id": "#/properties/depictions/items/properties/@id",
                         "type": "string",
-                        "title": "Depictions->Items->@id",
                         "examples": [
                             "https://commons.wikimedia.org/wiki/File:ThamesAtAbingdon.jpg"
                         ],
                         "pattern": "^(.*)$"
                     },
                     "title": {
-                        "$id": "#/properties/depictions/items/properties/title",
                         "type": "string",
-                        "title": "Depictions->Items->Title",
                         "default": "",
                         "examples": [
                             "The River Thames at Abingdon, Oxfordshire"
@@ -510,15 +364,419 @@
                         "pattern": "^(.*)$"
                     },
                     "license": {
-                        "$id": "#/properties/depictions/items/properties/license",
-                        "type": "string",
-                        "title": "Depictions->Items->License",
-                        "default": "",
-                        "examples": [
-                            "cc:by-sa/3.0/"
-                        ],
-                        "pattern": "^(.*)$"
+                        "$ref": "#/definitions/license"
                     }
+                }
+            }
+        },
+        "time": {
+            "definitions": {
+                "when": {
+                    "type": "object",
+                    "properties": {
+                        "timespans": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/time/definitions/timespan"
+                            }
+                        },
+                        "periods": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/time/definitions/period"
+                            }
+                        },
+                        "certainty": {
+                            "$ref": "#/definitions/certainty"
+                        },
+                        "label": {
+                            "type": "string"
+                        },
+                        "duration": {
+                            "$ref": "#/definitions/time/definitions/duration"
+                        }
+                    }
+                },
+                "dateString": {
+                    "type": "string",
+                    "pattern": "^(-?\\d{5,})$|^(-?\\d{1,4})(-(0[1-9]|1[0-2]))?(-([0-2][0-9]|3[01]))?$",
+                    "description": "A string representing a date. The format can be: A year with five or more digits (e.g., '-10000'); A year with four digits (e.g., '2024'), optionally followed by a month (e.g., '2024-08') and/or a day (e.g., '2024-08-19'). Negative years are supported and must be represented with a leading '-' sign. Months and days must be within valid ranges."
+                },
+                "dateObject": {
+                    "type": "object",
+                    "properties": {
+                        "in": {
+                            "$ref": "#/definitions/time/definitions/dateString"
+                        },
+                        "earliest": {
+                            "$ref": "#/definitions/time/definitions/dateString"
+                        },
+                        "latest": {
+                            "$ref": "#/definitions/time/definitions/dateString"
+                        }
+                    },
+                    "oneOf": [
+                        {
+                            "required": [
+                                "in"
+                            ]
+                        },
+                        {
+                            "oneOf": [
+                                {
+                                    "required": [
+                                        "earliest"
+                                    ]
+                                },
+                                {
+                                    "required": [
+                                        "latest"
+                                    ]
+                                }
+                            ],
+                            "not": {
+                                "required": [
+                                    "in"
+                                ]
+                            }
+                        }
+                    ],
+                    "additionalProperties": false
+                },
+                "timespan": {
+                    "type": "object",
+                    "properties": {
+                        "start": {
+                            "$ref": "#/definitions/time/definitions/dateObject"
+                        },
+                        "end": {
+                            "$ref": "#/definitions/time/definitions/dateObject"
+                        }
+                    },
+                    "required": [
+                        "start"
+                    ],
+                    "additionalProperties": false
+                },
+                "period": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string"
+                        },
+                        "uri": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "duration": {
+                    "type": "string",
+                    "examples": [
+                        "P1Y",
+                        "P2M"
+                    ],
+                    "pattern": "^P\\d+[Y|M|D]$"
+                }
+            }
+        },
+        "optionalProperties": {
+            "type": "object",
+            "properties": {
+                "when": {
+                    "$ref": "#/definitions/time/definitions/when"
+                },
+                "citations": {
+                    "$ref": "#/definitions/citations"
+                },
+                "certainty": {
+                    "$ref": "#/definitions/certainty"
+                }
+            }
+        },
+        "geometry": {
+            "oneOf": [
+                {
+                    "type": "null"
+                },
+                {
+                    "$ref": "#/definitions/geometry/definitions/point"
+                },
+                {
+                    "$ref": "#/definitions/geometry/definitions/linestring"
+                },
+                {
+                    "$ref": "#/definitions/geometry/definitions/polygon"
+                },
+                {
+                    "$ref": "#/definitions/geometry/definitions/multipoint"
+                },
+                {
+                    "$ref": "#/definitions/geometry/definitions/multilinestring"
+                },
+                {
+                    "$ref": "#/definitions/geometry/definitions/multipolygon"
+                },
+                {
+                    "$ref": "#/definitions/geometry/definitions/geometrycollection"
+                }
+            ],
+            "definitions": {
+                "point": {
+	                "allOf": [
+	                    { "$ref": "#/definitions/optionalProperties" },
+	                    {
+		                    "title": "GeoJSON Point",
+		                    "type": "object",
+		                    "required": [
+		                        "type",
+		                        "coordinates"
+		                    ],
+		                    "properties": {
+		                        "type": {
+		                            "type": "string",
+		                            "enum": [
+		                                "Point"
+		                            ]
+		                        },
+		                        "coordinates": {
+		                            "$ref": "#/definitions/geometry/definitions/coordinate_pair"
+		                        },
+		                        "bbox": {
+		                            "$ref": "#/definitions/geometry/definitions/bbox"
+		                        }
+		                    }
+	                    }
+	                ]
+                },
+                "linestring": {
+	                "allOf": [
+	                    { "$ref": "#/definitions/optionalProperties" },
+	                    {
+		                    "title": "GeoJSON LineString",
+		                    "type": "object",
+		                    "required": [
+		                        "type",
+		                        "coordinates"
+		                    ],
+		                    "properties": {
+		                        "type": {
+		                            "type": "string",
+		                            "enum": [
+		                                "LineString"
+		                            ]
+		                        },
+		                        "coordinates": {
+		                            "type": "array",
+		                            "minItems": 2,
+		                            "items": {
+		                                "$ref": "#/definitions/geometry/definitions/coordinate_pair"
+		                            }
+		                        },
+		                        "bbox": {
+		                            "$ref": "#/definitions/geometry/definitions/bbox"
+		                        }
+		                    }
+	                    }
+	                ]
+                },
+                "polygon": {
+	                "allOf": [
+	                    { "$ref": "#/definitions/optionalProperties" },
+	                    {
+		                    "title": "GeoJSON Polygon",
+		                    "type": "object",
+		                    "required": [
+		                        "type",
+		                        "coordinates"
+		                    ],
+		                    "properties": {
+		                        "type": {
+		                            "type": "string",
+		                            "enum": [
+		                                "Polygon"
+		                            ]
+		                        },
+		                        "coordinates": {
+		                            "type": "array",
+		                            "items": {
+		                                "type": "array",
+		                                "minItems": 4,
+		                                "items": {
+		                                    "$ref": "#/definitions/geometry/definitions/coordinate_pair"
+		                                }
+		                            }
+		                        },
+		                        "bbox": {
+		                            "$ref": "#/definitions/geometry/definitions/bbox"
+		                        }
+		                    }
+	                    }
+	                ]
+                },
+                "multipoint": {
+	                "allOf": [
+	                    { "$ref": "#/definitions/optionalProperties" },
+	                    {
+		                    "title": "GeoJSON MultiPoint",
+		                    "type": "object",
+		                    "required": [
+		                        "type",
+		                        "coordinates"
+		                    ],
+		                    "properties": {
+		                        "type": {
+		                            "type": "string",
+		                            "enum": [
+		                                "MultiPoint"
+		                            ]
+		                        },
+		                        "coordinates": {
+		                            "type": "array",
+		                            "items": {
+		                                "$ref": "#/definitions/geometry/definitions/coordinate_pair"
+		                            }
+		                        },
+		                        "bbox": {
+		                            "$ref": "#/definitions/geometry/definitions/bbox"
+		                        }
+		                    }
+	                    }
+	                ]
+                },
+                "multilinestring": {
+	                "allOf": [
+	                    { "$ref": "#/definitions/optionalProperties" },
+	                    {
+		                    "title": "GeoJSON MultiLineString",
+		                    "type": "object",
+		                    "required": [
+		                        "type",
+		                        "coordinates"
+		                    ],
+		                    "properties": {
+		                        "type": {
+		                            "type": "string",
+		                            "enum": [
+		                                "MultiLineString"
+		                            ]
+		                        },
+		                        "coordinates": {
+		                            "type": "array",
+		                            "items": {
+		                                "type": "array",
+		                                "minItems": 2,
+		                                "items": {
+		                                    "$ref": "#/definitions/geometry/definitions/coordinate_pair"
+		                                }
+		                            }
+		                        },
+		                        "bbox": {
+		                            "$ref": "#/definitions/geometry/definitions/bbox"
+		                        }
+		                    }
+	                    }
+	                ]
+                },
+                "multipolygon": {
+	                "allOf": [
+	                    { "$ref": "#/definitions/optionalProperties" },
+	                    {
+		                    "title": "GeoJSON MultiPolygon",
+		                    "type": "object",
+		                    "required": [
+		                        "type",
+		                        "coordinates"
+		                    ],
+		                    "properties": {
+		                        "type": {
+		                            "type": "string",
+		                            "enum": [
+		                                "MultiPolygon"
+		                            ]
+		                        },
+		                        "coordinates": {
+		                            "type": "array",
+		                            "items": {
+		                                "type": "array",
+		                                "items": {
+		                                    "type": "array",
+		                                    "minItems": 4,
+		                                    "items": {
+		                                        "$ref": "#/definitions/geometry/definitions/coordinate_pair"
+		                                    }
+		                                }
+		                            }
+		                        },
+		                        "bbox": {
+		                            "$ref": "#/definitions/geometry/definitions/bbox"
+		                        }
+		                    }
+	                    }
+	                ]
+                },
+                "geometrycollection": {
+                    "title": "GeoJSON GeometryCollection",
+                    "type": "object",
+                    "required": [
+                        "type",
+                        "geometries"
+                    ],
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "enum": [
+                                "GeometryCollection"
+                            ]
+                        },
+                        "geometries": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/geometry"
+                            }
+                        }
+                    }
+                },
+                "coordinate_pair": {
+                    "type": "array",
+                    "items": [
+                        {
+                            "$ref": "#/definitions/geometry/definitions/longitude"
+                        },
+                        {
+                            "$ref": "#/definitions/geometry/definitions/latitude"
+                        }
+                    ],
+                    "maxItems": 2,
+                    "minItems": 2
+                },
+                "bbox": {
+                    "type": "array",
+                    "items": [
+                        {
+                            "$ref": "#/definitions/geometry/definitions/longitude"
+                        },
+                        {
+                            "$ref": "#/definitions/geometry/definitions/latitude"
+                        },
+                        {
+                            "$ref": "#/definitions/geometry/definitions/longitude"
+                        },
+                        {
+                            "$ref": "#/definitions/geometry/definitions/latitude"
+                        }
+                    ],
+                    "maxItems": 4,
+                    "minItems": 4
+                },
+                "longitude": {
+                    "maximum": 180,
+                    "minimum": -180,
+                    "type": "number"
+                },
+                "latitude": {
+                    "maximum": 90,
+                    "minimum": -90,
+                    "type": "number"
                 }
             }
         }

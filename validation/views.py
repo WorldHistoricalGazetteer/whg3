@@ -6,9 +6,11 @@ import uuid
 import ijson
 from django.conf import settings
 from django.http import JsonResponse
+from django.utils import timezone
 from pyld import jsonld
 from .tasks import validate_feature_batch
 import redis
+import sys
 
 logger = logging.getLogger('validation')
 
@@ -36,19 +38,23 @@ def process_lpf(request, file_path=settings.VALIDATION_TEST_SAMPLE):
     redis_client.hset(task_id, mapping={
         'status': 'in_progress',
         'start_time': timezone.now().isoformat(),
-        'all_queued': False,
+        'all_queued': 'false',
+        'total_features': 0,
         'queued_features': 0,
     })
 
     try:
         # Process each batch of features with Celery
         for feature_batch in read_json_features_in_batches(file_path, task_id):
-            compacted_batch = [jsonld.compact(feature, context) for feature in feature_batch]
-            validate_feature_batch.delay(compacted_batch, schema, task_id)
-            redis_client.hincrby(task_id, 'queued_features', len(compacted_batch))
+            # The following line could be implemented if the LP Ontology were correct
+            #feature_batch = [jsonld.compact(feature, context) for feature in feature_batch]
+            validate_feature_batch.delay(feature_batch, schema, task_id)
+            feature_count = len(feature_batch)
+            redis_client.hincrby(task_id, 'total_features', feature_count)
+            redis_client.hincrby(task_id, 'queued_features', feature_count)
             redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
             
-        redis_client.hset(task_id, 'all_queued', True)
+        redis_client.hset(task_id, 'all_queued', 'true')
         redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
             
     except Exception as e:
@@ -72,41 +78,27 @@ def read_json_features_in_batches(file_path, task_id):
     """
     try:
         with open(file_path, 'r') as file:
-            parser = ijson.items(file, 'features.item')
+            logger.debug(f'Opened {file_path}...')
+            parser = ijson.items(file, 'features.item', use_float=True)
             feature_batch = []
             current_memory_size = 0
 
+            logger.debug(f'Parsing batch from {file_path} with parser: {type(parser)}')
             for feature in parser:
                 current_memory_size += get_memory_size(feature)
                 feature_batch.append(feature)
 
                 if current_memory_size >= settings.VALIDATION_BATCH_MEMORY_LIMIT:
+                    logger.debug(f'Yielding final batch ({current_memory_size} bytes): {feature_batch}')
                     yield feature_batch
                     feature_batch = []
                     current_memory_size = 0
 
             # Yield any remaining features in the last batch
             if feature_batch:
+                logger.debug(f'Yielding final batch ({current_memory_size} bytes): {feature_batch}')
                 yield feature_batch
 
     except (IOError, ValueError) as e:
+        logger.error(f"Error reading JSON features in batches: {e}")
         raise
-
-def get_task_status(task_id):
-    redis_client = get_redis_client()
-    status = redis_client.hgetall(task_id)
-    if not status:
-        return JsonResponse({"status": "not_found", "message": "Task ID not found"}, status=404)
-    status = {k.decode('utf-8'): v.decode('utf-8') for k, v in status.items()}
-    
-    current_time = timezone.now()
-    last_update_time_str = status.get('last_update', status.get('start_time'))
-    last_update_time = timezone.datetime.fromisoformat(last_update_time_str)
-    status['time_since_last_update'] = (current_time - last_update_time).total_seconds()
-    
-    status['errors'] = [error.decode('utf-8') for error in redis_client.lrange(f"{task_id}_errors", 0, -1)]
-    status['task_id'] = task_id
-    return JsonResponse({
-        "status": "success",
-        "task_status": status
-    })
