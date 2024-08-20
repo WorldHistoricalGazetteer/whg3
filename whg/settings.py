@@ -355,3 +355,5 @@ LPF_SCHEMA_PATH = os.path.join(BASE_DIR, 'validation/static/lpf_v2.0.jsonld')
 LPF_CONTEXT_PATH = os.path.join(BASE_DIR, 'validation/static/lpo_v2.0.jsonld')
 VALIDATION_TEST_SAMPLE = os.path.join(BASE_DIR, 'datasets/static/files/lugares_20.jsonld')
 VALIDATION_BATCH_MEMORY_LIMIT = 1 * 1024 * 1024  # 1 MB
+VALIDATION_MAXFIXATTEMPTS = 100 # Maximum number of errors to try to fix on each feature
+VALIDATION_MAX_ERRORS = 100 # Stop validation of dataset if this number of errors is reached (checked only on completion of each batch, so may exceed this number)
