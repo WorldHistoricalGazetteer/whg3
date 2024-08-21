@@ -49,8 +49,8 @@ python3 ./server-admin/load_env.py
 ```
 - (Re-)start the Docker network:
 ```sh
-docker compose -f docker compose-autocontext.yml --env-file ./.env/.env down && \
-docker compose -f docker compose-autocontext.yml --env-file ./.env/.env up -d && \
+docker compose -f docker-compose-autocontext.yml --env-file ./.env/.env down && \
+docker compose -f docker-compose-autocontext.yml --env-file ./.env/.env up -d && \
 docker ps
 ```
 - If necessary, apply Django migrations (**replace `web_local_staging` with the name of your web container**)
@@ -72,7 +72,7 @@ docker logs -f web_local_staging
 - NOTE: Search runs remotely against dev copies of WHG's indexes (2.2m records), and only Glasgow is fully represented in the local example database.
 - If you need to stop the network, be sure to pass the environment file as a parameter:
 ```sh
-docker compose -f docker compose-autocontext.yml --env-file ./.env/.env down
+docker compose -f docker-compose-autocontext.yml --env-file ./.env/.env down
 ```
   
 ________________________
