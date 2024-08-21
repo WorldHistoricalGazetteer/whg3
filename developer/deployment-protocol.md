@@ -56,6 +56,15 @@ git push origin main
 ```bash
 cat ~/sites/env_template.py
 ```
+
+- Then update the root static folder, which may include webpack updates:
+```bash
+# Synchronise from dev-whgazetteer-org/static/ to whgazetteer-org/static/, overwriting older files but deleting none
+rsync -a ~/sites/dev-whgazetteer-org/static/ ~/sites/whgazetteer-org/static/
+# Ensure correct ownerships
+sudo chown -R whgadmin:whgadmin ~/sites/whgazetteer-org/static/
+```
+
 - Then switch to the `whgazetteer-org` site, pull updates, update environment, and restart network:
 ```bash
 cd ~/sites/whgazetteer-org
