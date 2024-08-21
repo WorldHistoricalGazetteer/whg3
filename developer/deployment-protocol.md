@@ -3,7 +3,7 @@
 - Firstly, check current status of https://dev.whgazetteer.org/ so that the impact of any deployment can be gauged.
 - Ensure that `~/sites/env_template.py` is up-to-date, including the `DOCKER_IMAGE_TAG`:
 ```bash
-cat ~/sites/dev-whgazetteer-org/server-admin/env_template.py
+cat ~/sites/env_template.py
 ```
 - Then switch to the `dev-whgazetteer-org` site, pull updates, and update environment:
 ```bash
@@ -38,12 +38,7 @@ docker logs -f celery-worker_dev-whgazetteer-org_staging
 
 ## Deploy to Main from Staging
 
-- ~Firstly, ensure that all static files have been collected into the root static folder (this will be mounted in the `main` network):~
-```bash
-docker exec -it web_dev-whgazetteer-org_staging bash -c "./manage.py collectstatic --no-input"
-```
-
-Next, merge `staging` into `main`:
+Firstly, merge `staging` into `main`:
 ```bash
 cd ~/sites/whgazetteer-org
 git fetch origin
@@ -59,7 +54,7 @@ git push origin main
 
 - Then ensure that `whgazetteer-org/server-admin/env_template.py` is up-to-date, including the `DOCKER_IMAGE_TAG`:
 ```bash
-cat ~/sites/whgazetteer-org/server-admin/env_template.py
+cat ~/sites/env_template.py
 ```
 - Then switch to the `whgazetteer-org` site, pull updates, update environment, and restart network:
 ```bash
