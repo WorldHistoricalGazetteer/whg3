@@ -13,15 +13,18 @@ This guide assumes that you have already installed Docker on your local machine,
 
 ### Initial Installation
 - Sign in to your GitHub account, navigate to the [WHG3 respository](https://github.com/WorldHistoricalGazetteer/whg3) and [fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo) your own copy of the repository.
-- Make a new feature branch.
+- Make a new feature branch from your fork.
 - Create a project folder somewhere in your local filesystem, and enter it. **You must navigate back to this folder to execute any of the commands given below.**
+- Clone your fork into the project folder (signified by the "." dot at the end of this command):
+```bash
+git clone https://github.com/<your-github-username>/<whg3-fork-name>.git .
+```
 
 ### Prepare Docker:
 - Open Docker Desktop to start the Docker Engine.
 - If this is not the first install, the previously created database volume should be deleted to ensure the latest schema. 
     - Docker Desktop: on the `Volumes` tab, delete any existing `<your-fork-name>_dev-db-data` volume
     - Docker CLI: `docker volume ls | grep db-data`; `docker volume rm <volume name>`
-- Clone your feature branch into your local project folder
 
 ### Secret files
 - You will need a set of credential and environment variable files to augment the filesystem: please request this using the [Contact Form](https://whgazetteer.org/) on the project web site, and place the supplied zip file in your project folder.
