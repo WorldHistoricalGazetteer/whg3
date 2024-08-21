@@ -36,6 +36,11 @@ unzip ./whg_credentials.zip -d ./
 ```
 
 ### Implementation
+- Add your project directory to git's safe directory list:
+```sh
+git config --global --add safe.directory <full-path-to-your-working-directory>
+```
+
 - Run the environment-creation script (**you will need to run this again if you make any changes to any of the templates or entrypoint scripts**):
 ```sh
 # Create .env, docker compose-autocontext.yml, pg_hba.conf, and local_settings_autocontext.py,
