@@ -32,12 +32,6 @@ This guide assumes that you have already installed Docker on your local machine,
 unzip ./whg_credentials.zip -d ./
 ```
 
-### Prepare Docker:
-- Open Docker Desktop to start the Docker Engine.
-- If this is not the first install, the previously created database volume should be deleted to ensure the latest schema. 
-    - Docker desktop: on the `Volumes` tab, delete any existing `<your-fork-name>_dev-db-data` volume
-    - Docker CLI: `docker volume ls |grep db-data`; `docker volume rm <volume name>`
-
 ### Implementation
 - Run the environment-creation script (**you will need to run this again if you make any changes to any of the templates or entrypoint scripts**):
 ```sh
