@@ -117,5 +117,4 @@ docker-compose-autocontext.yml
 compose/pg_hba.conf
 whg/local_settings.py.bak
 whg_credentials.zip
-/whg/static/webpack
 /datasets/static/files
