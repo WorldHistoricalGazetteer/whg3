@@ -15,16 +15,12 @@ services:
     container_name: web_{{ ENV_CONTEXT }}_{{ BRANCH }}
     volumes:
       - {{ BASE_DIR }}:/app
-      - {{ BASE_DIR }}/media:/app/media
-      - {{ BASE_DIR }}/static:/app/static
-      - {{ BASE_DIR }}/cache:/app/cache
       - {{ BASE_DIR }}/entrypoints/entrypoint-web.sh:/entrypoint.sh
     {% if not ENV_CONTEXT == 'local' %}
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
     {% endif %}
-    env_file:
-      - {{ BASE_DIR }}/.env/.env
+    env_file: {{ BASE_DIR }}/.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
     ports:
@@ -35,6 +31,9 @@ services:
     depends_on:
       - redis
       - {{ DB_HOST }}
+{% if ENV_CONTEXT != 'whgazetteer.org' %}
+      - webpack
+{% endif %}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:{{ APP_PORT }}/health"]
@@ -42,6 +41,21 @@ services:
       retries: 5
       start_period: 60s
       timeout: 15s
+
+{% if ENV_CONTEXT != 'whgazetteer.org' %}
+  webpack:
+    networks:
+      - {{ ENV_CONTEXT }}
+    platform: linux/amd64
+    image: node:18
+    container_name: webpack_{{ ENV_CONTEXT }}_{{ BRANCH }}
+    logging:
+      driver: local
+    volumes:
+      - {{ BASE_DIR }}:/app
+    entrypoint: ["/app/entrypoints/entrypoint-webpack.sh"]
+    restart: unless-stopped
+{% endif %}
 
   {{ DB_HOST }}:
     networks:
@@ -61,8 +75,7 @@ services:
       - {{ BASE_DIR }}/server-admin/restore_db_from_dump.sh:/tmp/restore_db_from_dump.sh
     {% endif %}
       - {{ BASE_DIR }}/compose/pg_hba.conf:/etc/postgresql/pg_hba.conf
-    env_file:
-      - {{ BASE_DIR }}/.env/.env
+    env_file: {{ BASE_DIR }}/.env/.env
     command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
     restart: unless-stopped
     healthcheck:
@@ -100,9 +113,6 @@ services:
     hostname: celery_worker
     volumes:
       - {{ BASE_DIR }}:/app
-      - {{ BASE_DIR }}/media:/app/media
-      - {{ BASE_DIR }}/static:/app/static
-      - {{ BASE_DIR }}/cache:/app/cache
       - {{ BASE_DIR }}/entrypoints/entrypoint-celery.sh:/entrypoint.sh
     {% if ENV_CONTEXT == 'local' %}
       - /etc/docker/certs:/certs
@@ -114,8 +124,7 @@ services:
       - /home/whgadmin/docker-certs/client/client-key.pem:/certs/client-key.pem:ro
     {% endif %}
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    env_file:
-      - {{ BASE_DIR }}/.env/.env
+    env_file: {{ BASE_DIR }}/.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
       - DOCKER_HOST=tcp://{{ DOCKER_HOST_IP }}
@@ -133,16 +142,12 @@ services:
     container_name: celery-beat_{{ ENV_CONTEXT }}_{{ BRANCH }}
     volumes:
       - {{ BASE_DIR }}:/app
-      - {{ BASE_DIR }}/media:/app/media
-      - {{ BASE_DIR }}/static:/app/static
-      - {{ BASE_DIR }}/cache:/app/cache
       - {{ BASE_DIR }}/entrypoints/entrypoint-celery-beat.sh:/entrypoint.sh
     {% if not ENV_CONTEXT == 'local' %}
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
     {% endif %}
-    env_file:
-      - {{ BASE_DIR }}/.env/.env
+    env_file: {{ BASE_DIR }}/.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
     depends_on:
@@ -159,67 +164,20 @@ services:
       - "{{ FLOWER_PORT }}:5555"
     volumes:
       - {{ BASE_DIR }}:/app
-      - {{ BASE_DIR }}/media:/app/media
-      - {{ BASE_DIR }}/static:/app/static
-      - {{ BASE_DIR }}/cache:/app/cache
       - {{ BASE_DIR }}/entrypoints/entrypoint-flower.sh:/entrypoint.sh
     {% if not ENV_CONTEXT == 'local' %}
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
     {% endif %}
-    env_file:
-      - {{ BASE_DIR }}/.env/.env
+    env_file: {{ BASE_DIR }}/.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
     depends_on:
       - redis
       - {{ DB_HOST }}
     restart: unless-stopped
-    
-{% if ENV_CONTEXT == 'REMOVE-dev-whgazetteer-org' %} ## SWITCH THIS FOR PRODUCTION
-  wordpress_db:
-    image: mysql:5.7
-    container_name: wordpress_db_{{ ENV_CONTEXT }}
-    env_file:
-      - {{ BASE_DIR }}/.env/.wordpress
-    volumes:
-      - /home/whgadmin/wordpress/db_data:/var/lib/mysql
-    restart: unless-stopped
-    networks:
-      - {{ ENV_CONTEXT }}
-
-  wordpress:
-    image: wordpress:6.6.1-php8.2-fpm-alpine
-    container_name: wordpress_{{ ENV_CONTEXT }}
-    ports:
-      - "8080:80"
-      - "9000:9000"
-    env_file:
-      - {{ BASE_DIR }}/.env/.wordpress
-    volumes:
-      - /home/whgadmin/wordpress/data/whg-wp:/var/www/html
-    depends_on:
-      - wordpress_db
-    restart: unless-stopped
-    networks:
-      - {{ ENV_CONTEXT }}
-{% endif %}
 
 {% if ENV_CONTEXT == 'local' %}
-  webpack:
-    networks:
-      - WHG3
-    platform: linux/amd64
-    build:
-      context: .
-      dockerfile: ./compose/local/webpack/Dockerfile-webpack
-    image: whg3_webpack
-    container_name: webpack
-    logging:
-      driver: local
-    volumes:
-      - {{ BASE_DIR }}:/app
-      
 volumes:
   app:
   dev-db-data:

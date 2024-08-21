@@ -1,8 +1,9 @@
 ## Deploy Staging
 
-- Ensure that `dev-whgazetteer-org/server-admin/env_template.py` is up-to-date, including the `DOCKER_IMAGE_TAG`:
+- Firstly, check current status of https://dev.whgazetteer.org/ so that the impact of any deployment can be gauged.
+- Ensure that `~/sites/env_template.py` is up-to-date, including the `DOCKER_IMAGE_TAG`:
 ```bash
-cat ~/sites/dev-whgazetteer-org/server-admin/env_template.py
+cat ~/sites/env_template.py
 ```
 - Then switch to the `dev-whgazetteer-org` site, pull updates, and update environment:
 ```bash
@@ -21,7 +22,7 @@ docker ps
 docker exec -it web_dev-whgazetteer-org_staging bash -c "./manage.py showmigrations"
 ```
 ```bash
-docker exec -it web_dev-whgazetteer-org_staging bash -c "./manage.py ./manage.py migrate"
+docker exec -it web_dev-whgazetteer-org_staging bash -c "./manage.py migrate"
 ```
 
 #### Check Logs
@@ -37,13 +38,13 @@ docker logs -f celery-worker_dev-whgazetteer-org_staging
 
 ## Deploy to Main from Staging
 
-- Firstly, merge `staging` into `main`:
+Firstly, merge `staging` into `main`:
 ```bash
 cd ~/sites/whgazetteer-org
 git fetch origin
 git checkout main
 git pull origin main
-git merge origin/staging
+git merge origin/staging -m "Merging staging into main"
 # At this point, Git will attempt to merge the staging branch into the main branch. If there are merge conflicts,
 # Git will notify you, and you will need to manually resolve these conflicts.
 # After resolving conflicts, use `git add <resolved-files>` to stage the resolved files,
@@ -53,7 +54,7 @@ git push origin main
 
 - Then ensure that `whgazetteer-org/server-admin/env_template.py` is up-to-date, including the `DOCKER_IMAGE_TAG`:
 ```bash
-cat ~/sites/whgazetteer-org/server-admin/env_template.py
+cat ~/sites/env_template.py
 ```
 - Then switch to the `whgazetteer-org` site, pull updates, update environment, and restart network:
 ```bash

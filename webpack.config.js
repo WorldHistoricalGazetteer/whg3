@@ -8,12 +8,10 @@ const Dotenv = require('dotenv-webpack');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
+const isProduction = process.env.ENV_CONTEXT === 'whgazetteer-org';
+
 module.exports = {
-	mode: 'production',
-	watch: true,
-	watchOptions: {
-		poll: 1000, // Check for changes every second
-	},
+	mode: isProduction ? 'production' : 'development', // Use production mode for staging
 	entry: {
 		areas: '/app/whg/webpack/js/areas.js',
 		base: '/app/whg/webpack/js/base.js',
@@ -38,8 +36,7 @@ module.exports = {
 	},
 	output: {
 		filename: '[name].bundle.js',
-		path: '/app/whg/static/webpack',
-		//path: '/app/static/webpack',
+		path: path.resolve(__dirname, 'static/webpack'),
 	},
 	module: {
 		rules: [
@@ -55,7 +52,7 @@ module.exports = {
 	},
 	plugins: [
 		new Dotenv({
-			path: '/app/.env/.dev-whg3',
+			path: '/app/.env/.env',
 		}),
 		new MiniCssExtractPlugin({
 			filename: '[name].bundle.css',
@@ -153,7 +150,6 @@ module.exports = {
 				},
 			},
 		},
-		minimize: false, // Switch to true for production
 		minimizer: [
 			new TerserPlugin({
 				terserOptions: {
@@ -162,8 +158,8 @@ module.exports = {
 					},
 				},
 				extractComments: false,
-			}), // Minimize JavaScript using TerserPlugin
-			new CssMinimizerPlugin(), // Minimize CSS using CssMinimizerPlugin
+			}),
+			new CssMinimizerPlugin(),
 		],
 	},
 };

@@ -36,7 +36,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.sites',
-    'livereload', # https://github.com/tjwalch/django-livereload-server
     'django.contrib.staticfiles',
 
     # 3rd party
@@ -94,7 +93,6 @@ MIDDLEWARE = [
   'django.middleware.locale.LocaleMiddleware',
   'django.middleware.security.SecurityMiddleware',
   'django_user_agents.middleware.UserAgentMiddleware',
-  'livereload.middleware.LiveReloadScript', # https://github.com/tjwalch/django-livereload-server
 
 ]
 
@@ -309,6 +307,7 @@ STATICFILES_DIRS = [
   os.path.join(BASE_DIR, 'datasets/static/'),
   os.path.join(BASE_DIR, 'main/static/'),
   os.path.join(BASE_DIR, 'whg/static/'),
+  # webpack.config now writes directly to static root /webpack
 ]
 
 # Use a file-based cache backend.
