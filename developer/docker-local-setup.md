@@ -23,7 +23,7 @@ This guide assumes that you have already installed Docker on your local machine,
 # The zip file was created in the project directory like this to contain the files and folder indicated:
 # zip -r ./whg_credentials.zip ./server-admin/env_template.py ./whg/local_settings.py ./whg/authorisation
 # Files can be unzipped and restored to their original filesystem locations like this (navigate first to your project folder):
-unzip ./whg_credentials.zip -d /
+unzip ./whg_credentials.zip -d ./
 ```
 
 ### Prepare Docker:
@@ -35,14 +35,14 @@ unzip ./whg_credentials.zip -d /
 ### Implementation
 - Run the environment-creation script (**you will need to run this again if you make any changes to any of the templates or entrypoint scripts**):
 ```sh
-# Create .env, docker-compose-autocontext.yml, pg_hba.conf, and local_settings_autocontext.py,
+# Create .env, docker compose-autocontext.yml, pg_hba.conf, and local_settings_autocontext.py,
 # and enable execution of relevant scripts
 python3 ./server-admin/load_env.py
 ```
 - (Re-)start the Docker network:
 ```sh
-docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env down && \
-docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env up -d && \
+docker compose -f docker compose-autocontext.yml --env-file ./.env/.env down && \
+docker compose -f docker compose-autocontext.yml --env-file ./.env/.env up -d && \
 docker ps
 ```
 - If necessary, apply Django migrations (**replace `web_local_staging` with the name of your web container**)
@@ -64,7 +64,7 @@ docker logs -f web_local_staging
 - NOTE: Search runs remotely against dev copies of WHG's indexes (2.2m records), and only Glasgow is fully represented in the local example database.
 - If you need to stop the network, be sure to pass the environment file as a parameter:
 ```sh
-docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env down
+docker compose -f docker compose-autocontext.yml --env-file ./.env/.env down
 ```
   
 ________________________
