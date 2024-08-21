@@ -1,5 +1,6 @@
 ## Deploy Staging
 
+- Firstly, check current status of https://dev.whgazetteer.org/ so that the impact of any deployment can be gauged.
 - Ensure that `~/sites/env_template.py` is up-to-date, including the `DOCKER_IMAGE_TAG`:
 ```bash
 cat ~/sites/dev-whgazetteer-org/server-admin/env_template.py
