@@ -450,17 +450,10 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
         logger.error(f"Error checking or updating task status: {e}")
 
 def parse_validation_error(error: ValidationError) -> str:
-    # Get the part of the schema that failed validation
-    schema_path = " -> ".join([str(p) for p in error.schema_path])
-    
-    # Get the path within the instance (the JSON being validated)
-    instance_path = " -> ".join([str(p) for p in error.absolute_path])
-    
-    # Get the error message and value that caused the error
+    schema_path = ".".join([str(p) for p in error.schema_path])
+    instance_path = ".".join([str(p) for p in error.absolute_path])
     error_message = error.message
     error_value = error.instance
-    
-    # Format the message for better readability
     formatted_error = (
         f"Error Type: {error.validator} ({error.validator_value})\n"
         f"Schema Path: {schema_path}\n"
@@ -468,5 +461,4 @@ def parse_validation_error(error: ValidationError) -> str:
         f"Invalid Value: {error_value}\n"
         f"Message: {error_message}"
     )
-    
     return formatted_error

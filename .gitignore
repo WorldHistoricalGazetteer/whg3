@@ -123,3 +123,5 @@ datasets/static/files/lugares_20.jsonld
 datasets/static/files/nativelands2031.jsonld
 datasets/static/files/newLibyaData3.csv
 datasets/static/files/provinces_1911.tsv
+/validation/test_data
+validation/test_data/Cyprus Settlements.xlsx

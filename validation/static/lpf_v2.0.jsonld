@@ -21,6 +21,9 @@
                 "$ref": "#/definitions/feature"
             },
             "minItems": 1
+        },
+        "citation": {
+            "$ref": "https://whgazetteer.org/schema/csl-citation.json"
         }
     },
     "definitions": {
@@ -38,13 +41,17 @@
                         "P40D"
                     ]
                 },
-                "validURL": {
-                    "type": "string",
-                    "pattern": "^(https?:\\/\\/)(www\\.)?[a-zA-Z0-9\\-\\.]{2,256}\\.[a-z]{2,63}(\\:[0-9]{1,5})?(\\/.*)?$"
-                },
                 "namespaceTerm": {
                     "type": "string",
                     "pattern": "^\\w+:\\w+$"
+                },
+                "namespaceTermNarrow": {
+                    "type": "string",
+                    "pattern": "^(bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wp):\\w+$"
+                },
+                "validURL": {
+                    "type": "string",
+                    "pattern": "^(https?:\\/\\/)(www\\.)?[a-zA-Z0-9\\-\\.]{2,256}\\.[a-z]{2,63}(\\:[0-9]{1,5})?(\\/.*)?$"
                 },
                 "validURLorNamespaceTerm": {
                     "type": "string",
@@ -56,10 +63,6 @@
                             "$ref": "#/definitions/patterns/definitions/namespaceTerm"
                         }
                     ]
-                },
-                "namespaceTermNarrow": {
-                    "type": "string",
-                    "pattern": "^(bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wp):\\w+$"
                 },
                 "year": {
                     "type": "string",
