@@ -57,7 +57,7 @@ git push origin main
 cat ~/sites/env_template.py
 ```
 
-- Then update the root static folder, which may include webpack updates:
+- Then update the root static folder, which may include webpack updates which would not otherwise be modified in the absence of a webpack service in this docker network:
 ```bash
 # Synchronise from dev-whgazetteer-org/static/ to whgazetteer-org/static/, overwriting older files but deleting none
 rsync -a ~/sites/dev-whgazetteer-org/static/ ~/sites/whgazetteer-org/static/
