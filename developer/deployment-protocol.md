@@ -1,6 +1,6 @@
 ## Deploy Staging
 
-- Ensure that `dev-whgazetteer-org/server-admin/env_template.py` is up-to-date, including the `DOCKER_IMAGE_TAG`:
+- Ensure that `~/sites/env_template.py` is up-to-date, including the `DOCKER_IMAGE_TAG`:
 ```bash
 cat ~/sites/dev-whgazetteer-org/server-admin/env_template.py
 ```
