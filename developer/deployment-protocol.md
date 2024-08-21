@@ -38,7 +38,7 @@ docker logs -f celery-worker_dev-whgazetteer-org_staging
 
 ## Deploy to Main from Staging
 
-- Firstly, ensure that all static files have been collected into the root static folder (this will be mounted in the `main` network):
+- ~Firstly, ensure that all static files have been collected into the root static folder (this will be mounted in the `main` network):~
 ```bash
 docker exec -it web_dev-whgazetteer-org_staging bash -c "./manage.py collectstatic --no-input"
 ```
