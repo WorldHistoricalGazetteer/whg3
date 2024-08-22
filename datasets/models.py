@@ -136,28 +136,31 @@ class Dataset(models.Model):
     @property
     def citation_csl(self):
         try:
+            # Collect all creators and contributors into a single list
+            authors = [
+                {
+                    "family": creator.family or "Unknown",
+                    "given": creator.given or "",
+                    **({"ORCiD": creator.orcid} if creator.orcid else {}),
+                    **({"emails": ", ".join(email.address for email in creator.emails.all())} if creator.emails.exists() else {}),
+                }
+                for creator in self.creators_csl.all()
+            ]
+            authors.extend(
+                {
+                    "family": contributor.family or "Unknown",
+                    "given": contributor.given or "",
+                    **({"ORCiD": contributor.orcid} if contributor.orcid else {}),
+                    **({"emails": ", ".join(email.address for email in contributor.emails.all())} if contributor.emails.exists() else {}),
+                }
+                for contributor in self.contributors_csl.all()
+            )
+            
             csl_data = {
                 "id": self.label or "Unknown",
                 "type": "dataset",
                 "title": self.title or "No Title",
-                "author": [
-                    {
-                        "family": creator.family or "Unknown",
-                        "given": creator.given or "",
-                        **({"ORCiD": creator.orcid} if creator.orcid else {}),
-                        **({"emails": ", ".join(email.address for email in creator.emails.all())} if creator.emails.exists() else {}),
-                    }
-                    for creator in self.creators_csl.all()
-                ],
-                "editor": [
-                    {
-                        "family": contributor.family or "Unknown",
-                        "given": contributor.given or "",
-                        **({"ORCiD": contributor.orcid} if contributor.orcid else {}),
-                        **({"emails": ", ".join(email.address for email in contributor.emails.all())} if contributor.emails.exists() else {}),
-                    }
-                    for contributor in self.contributors_csl.all()
-                ],
+                "author": authors,
                 "issued": {
                     "date-parts": [[self.create_date.year, self.create_date.month, self.create_date.day]] if self.create_date else []
                 },
