@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'datasets.apps.DatasetsConfig',
     'elastic.apps.ElasticConfig',
     'main.apps.MainConfig',
+    'persons.apps.PersonsConfig',
     'places.apps.PlacesConfig',
     'remote.apps.RemoteConfig',
     'resources.apps.ResourcesConfig', # for teaching
