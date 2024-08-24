@@ -8,6 +8,7 @@
     "watch": "webpack --watch"
   },
   "dependencies": {
+    "@citation-js/plugin-csl": "^0.7.14",
     "@fortawesome/fontawesome-free": "^6.5.1",
     "@mapbox/mapbox-gl-draw": "^1.4.3",
     "@maptiler/sdk": "^1.1.2",
@@ -15,6 +16,7 @@
     "bootstrap": "~5.2.3",
     "canvas-toBlob": "^1.0.0",
     "canvg": "^4.0.1",
+    "citation-js": "^0.7.15",
     "clipboard": "~2.0.11",
     "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.8.1",
@@ -42,8 +44,7 @@
     "twitter-typeahead-components-bundle": "^1.0.3",
     "webpack": "^5.89.0",
     "webpack-bundle-analyzer": "^4.10.1",
-    "webpack-cli": "^5.1.4"
-  },
-  "devDependencies": {
+    "webpack-cli": "^5.1.4",
+    "xml-loader": "^1.2.1"
   }
 }
