@@ -12,10 +12,6 @@ const isProduction = process.env.ENV_CONTEXT === 'whgazetteer-org';
 
 module.exports = {
 	mode: isProduction ? 'production' : 'development', // Use production mode for staging
-	watch: true,
-	watchOptions: {
-		poll: 1000, // Check for changes every second
-	},
 	entry: {
 		areas: '/app/whg/webpack/js/areas.js',
 		base: '/app/whg/webpack/js/base.js',
@@ -52,11 +48,6 @@ module.exports = {
 				test: /\.scss$/,
 				use: [MiniCssExtractPlugin.loader, 'css-loader', 'sass-loader'],
 			},
-		    {
-		        test: /\.csl$/,
-		        use: 'xml-loader', // Use xml-loader for .csl files
-		        type: 'javascript/auto'
-		    }
 		],
 	},
 	plugins: [
@@ -134,7 +125,6 @@ module.exports = {
 	    }),
 	],
 	resolve: {
-    	extensions: ['.js', '.xml', '.csl'],
 		modules: [
 			path.resolve(__dirname, 'static/admin/js/vendor'),
 			path.resolve(__dirname, 'node_modules'),

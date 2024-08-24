@@ -3229,103 +3229,54 @@ class DatasetBrowseView(LoginRequiredMixin, DetailView):
 """
 
 class DatasetPlacesView(DetailView):
-    login_url = "/accounts/login/"
-    redirect_field_name = "redirect_to"
+  login_url = '/accounts/login/'
+  redirect_field_name = 'redirect_to'
 
-    model = Dataset
-    template_name = "datasets/ds_places.html"
+  model = Dataset
+  template_name = 'datasets/ds_places.html'
 
-    def get_object(self):
-        id_ = self.kwargs.get("id")
-        return get_object_or_404(Dataset, id=id_)
+  def get_object(self):
+    id_ = self.kwargs.get("id")
+    return get_object_or_404(Dataset, id=id_)
 
-    def get_context_data(self, *args, **kwargs):
-        context = super().get_context_data(*args, **kwargs)
-        id_ = self.kwargs.get("id")
-        ds = get_object_or_404(Dataset, id=id_)
-        me = self.request.user
+  def get_context_data(self, *args, **kwargs):
+    context = super(DatasetPlacesView, self).get_context_data(*args, **kwargs)
+    context['URL_FRONT'] = settings.URL_FRONT
 
-        context.update(
-            {
-                "URL_FRONT": settings.URL_FRONT,
-                "ds": ds,
-                "num_places": ds.num_places,
-                "is_admin": me.groups.filter(name__in=["whg_admins"]).exists(),
-                "loggedin": "true" if not me.is_anonymous else "false",
-                "coordinate_density": "{:.15f}".format(ds.coordinate_density_value),
-                "visParameters": ds.vis_parameters
-                or (
-                    # Populate with default values:
-                    # tabulate: 'initial'|true|false - include sortable table column, 'initial' indicating the initial sort column
-                    # temporal_control: 'player'|'filter'|null - control to be displayed when sorting on this column
-                    # trail: true|false - whether to include ant-trail motion indicators on map
-                    "{'seq': {'tabulate': false, 'temporal_control': null, 'trail': true},"
-                    "'min': {'tabulate': false, 'temporal_control': null, 'trail': true},"
-                    "'max': {'tabulate': false, 'temporal_control': null, 'trail': false}}"
-                ),
-                "my_collections": Collection.objects.filter(
-                    collection_class="place",
-                    **(
-                        {"owner": me}
-                        if not me.groups.filter(name="whg_admins").exists()
-                        else {}
-                    )
-                )
-                if not me.is_anonymous
-                else None,
-            }
-        )
+    print('DatasetPlacesView get_context_data() kwargs:', self.kwargs)
+    print('DatasetPlacesView get_context_data() request.user', self.request.user)
+    id_ = self.kwargs.get("id")
 
-        return context
-    
-# class DatasetPlacesView(DetailView):
-#   login_url = '/accounts/login/'
-#   redirect_field_name = 'redirect_to'
-#
-#   model = Dataset
-#   template_name = 'datasets/ds_places.html'
-#
-#   def get_object(self):
-#     id_ = self.kwargs.get("id")
-#     return get_object_or_404(Dataset, id=id_)
-#
-#   def get_context_data(self, *args, **kwargs):
-#     context = super(DatasetPlacesView, self).get_context_data(*args, **kwargs)
-#     context['URL_FRONT'] = settings.URL_FRONT
-#
-#     print('DatasetPlacesView get_context_data() kwargs:', self.kwargs)
-#     print('DatasetPlacesView get_context_data() request.user', self.request.user)
-#     id_ = self.kwargs.get("id")
-#
-#     ds = get_object_or_404(Dataset, id=id_)
-#     me = self.request.user
-#     if not me.is_anonymous:
-#       if me.groups.filter(name='whg_admins').exists():
-#         context['my_collections'] = Collection.objects.filter(collection_class='place')
-#       else:
-#         context['my_collections'] = Collection.objects.filter(owner=me, collection_class='place')
-#
-#     context['loggedin'] = 'true' if not me.is_anonymous else 'false'
-#
-#     context['updates'] = {}
-#     context['ds'] = ds
-#     context['num_places'] = ds.num_places
-#     context['is_admin'] = True if me.groups.filter(name__in=['whg_admins']).exists() else False
-#
-#     if not ds.vis_parameters:
-#       # Populate with default values:
-#       # tabulate: 'initial'|true|false - include sortable table column, 'initial' indicating the initial sort column
-#       # temporal_control: 'player'|'filter'|null - control to be displayed when sorting on this column
-#       # trail: true|false - whether to include ant-trail motion indicators on map
-#       ds.vis_parameters = "{'seq': {'tabulate': false, 'temporal_control': null, 'trail': true},'min': {'tabulate': false, 'temporal_control': null, 'trail': true},'max': {'tabulate': false, 'temporal_control': null, 'trail': false}}"
-#     context['visParameters'] = ds.vis_parameters
-#
-#     # context['coordinate_density'] = ds.coordinate_density_value
-#     # force decimal
-#     context['coordinate_density'] = "{:.15f}".format(ds.coordinate_density_value)
-#     context['filter'] = None
-#
-#     return context
+    ds = get_object_or_404(Dataset, id=id_)
+    me = self.request.user
+
+    me = self.request.user
+    if not me.is_anonymous:
+      if me.groups.filter(name='whg_admins').exists():
+        context['my_collections'] = Collection.objects.filter(collection_class='place')
+      else:
+        context['my_collections'] = Collection.objects.filter(owner=me, collection_class='place')
+
+    context['loggedin'] = 'true' if not me.is_anonymous else 'false'
+
+    context['updates'] = {}
+    context['ds'] = ds
+    context['num_places'] = ds.num_places
+    context['is_admin'] = True if me.groups.filter(name__in=['whg_admins']).exists() else False
+
+    if not ds.vis_parameters:
+      # Populate with default values:
+      # tabulate: 'initial'|true|false - include sortable table column, 'initial' indicating the initial sort column
+      # temporal_control: 'player'|'filter'|null - control to be displayed when sorting on this column
+      # trail: true|false - whether to include ant-trail motion indicators on map
+      ds.vis_parameters = "{'seq': {'tabulate': false, 'temporal_control': null, 'trail': true},'min': {'tabulate': false, 'temporal_control': null, 'trail': true},'max': {'tabulate': false, 'temporal_control': null, 'trail': false}}"
+    context['visParameters'] = ds.vis_parameters
+
+    # context['coordinate_density'] = ds.coordinate_density_value
+    # force decimal
+    context['coordinate_density'] = "{:.15f}".format(ds.coordinate_density_value)
+
+    return context
 
 
 """
