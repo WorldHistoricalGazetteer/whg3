@@ -54,8 +54,7 @@ module.exports = {
 			},
 		    {
 		        test: /\.csl$/,
-		        use: 'xml-loader', // Use xml-loader for .csl files
-		        type: 'javascript/auto'
+		        use: 'raw-loader', // Use raw-loader for .csl files
 		    }
 		],
 	},

@@ -3,23 +3,23 @@ import { plugins } from '@citation-js/core';
 import '@citation-js/plugin-csl';
 
 async function loadAndRegisterCSLTemplates() {
-    const templatePaths = {
-        'chicago-author-date': './csl-styles/chicago-author-date.csl',
-        'modern-language-association': './csl-styles/modern-language-association.csl',
-        'turabian-author-date': './csl-styles/turabian-author-date.csl',
-    };
+    const templates = Object.fromEntries(
+        Object.entries(this.cslStyles)
+        	// Exclude built-in styles
+            .filter(([styleName, templateName]) => templateName !== 'apa' && templateName !== 'harvard1' && templateName !== 'vancouver')
+            .map(([styleName, templateName]) => [templateName, () => import(`./csl-styles/${templateName}.csl`)])
+    );
 
     const config = plugins.config.get('@csl');
 
-    for (const [templateName, path] of Object.entries(templatePaths)) {
+    for (const [templateName, loadTemplate] of Object.entries(templates)) {
         try {
-            // Dynamically import the CSL file
-            console.log(`Loading CSL template from: ${path}`);
-            const template = await import(/* webpackMode: "eager" */ `${path}`);
-            console.log(`Registering CSL template: ${templateName}`);
-            config.templates.add(templateName, template.default);
+            console.log(`Loading and registering CSL template: ${templateName}`);
+            const templateModule = await loadTemplate();
+            config.templates.add(templateName, templateModule.default);
+            console.log(`Successfully registered CSL template: ${templateName}`);
         } catch (error) {
-            console.error(`Error loading or registering CSL template ${path}:`, error);
+            console.error(`Error loading or registering CSL template ${templateName}:`, error);
         }
     }
 }
@@ -54,7 +54,9 @@ class CitationFormatter {
             console.error('Error parsing CSL JSON:', error);
             this.cslJson = {};
         }
-        loadAndRegisterCSLTemplates().then(() => {
+
+        this.loadAndRegisterCSLTemplates = loadAndRegisterCSLTemplates.bind(this);
+        this.loadAndRegisterCSLTemplates().then(() => {
             this.init();
         });
     }
@@ -102,9 +104,14 @@ class CitationFormatter {
 
         // Create the download JSON button
         const downloadButton = document.createElement('button');
+        const firstAuthor = this.cslJson.author ? this.cslJson.author[0] : null;
+        const firstAuthorLastname = firstAuthor ? firstAuthor.family : 'anon';
+		const issuedDate = this.cslJson.issued && this.cslJson.issued['date-parts'] ? this.cslJson.issued['date-parts'][0] : [];
+		const issuedYear = issuedDate.length > 0 ? issuedDate[0] : 'unknown';
+        this.sanitisedFilename = `WHG_${this.cslJson.title || 'dataset'}_(${firstAuthorLastname}_${issuedYear}).bib`.replace(/[\/\\?%*:|"<> \t\r\n]+/g, '_');
         downloadButton.classList.add('btn', 'btn-primary', 'ms-2');
         downloadButton.innerHTML = '<i class="fas fa-download"></i>';
-        downloadButton.setAttribute('data-bs-title', 'Download CSL JSON');
+        downloadButton.setAttribute('data-bs-title', `Download citation <strong>${this.sanitisedFilename}</strong> as BibTeX (can be imported into <em>citation manager</em> software)`);
         downloadButton.setAttribute('data-bs-toggle', 'tooltip');
 
         // Add the selector and copy button to the wrapper
@@ -155,19 +162,21 @@ class CitationFormatter {
 
         // Handle the download button click event
         downloadButton.addEventListener('click', () => {
-            const jsonString = JSON.stringify(this.cslJson, null, 2); // Pretty print JSON
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'whg_citation.json';
-            document.body.appendChild(a);
-            a.click();
-
-            // Clean up the URL object after the download is triggered
-            URL.revokeObjectURL(url);
-            a.remove();
+		    try {
+		        const cite = new Cite(this.cslJson);
+		        const bibtexString = cite.format('bibtex');
+		        const blob = new Blob([bibtexString], { type: 'text/plain' });
+		        const url = URL.createObjectURL(blob);
+		        const a = document.createElement('a');
+		        a.href = url;
+		        a.download = this.sanitisedFilename;
+		        document.body.appendChild(a);
+		        a.click();
+		        URL.revokeObjectURL(url);
+		        a.remove();
+		    } catch (error) {
+		        console.error('Error formatting or downloading citation:', error);
+		    }
         });
 
         // Trigger change event to display the default format (APA) on load
