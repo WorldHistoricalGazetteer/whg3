@@ -2,6 +2,7 @@
 import json
 import codecs
 import logging
+import subprocess
 import uuid
 import ijson
 from django.conf import settings
@@ -21,7 +22,83 @@ def get_memory_size(obj):
     """Estimate the memory size of an object."""
     return sys.getsizeof(obj) + sum(sys.getsizeof(v) for v in obj.values() if isinstance(obj, dict))
 
-def process_lpf(request, file_path=settings.VALIDATION_TEST_SAMPLE):
+def get_file_info(file_path):
+    info = {}
+    
+    try:
+        # Get MIME type
+        mime_type_result = subprocess.run(
+            ['file', '--mime-type', '-b', file_path],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        info['mime_type'] = mime_type_result.stdout.strip()
+
+        # Get MIME encoding
+        mime_encoding_result = subprocess.run(
+            ['file', '--mime-encoding', '-b', file_path],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        info['mime_encoding'] = mime_encoding_result.stdout.strip()
+
+        return info
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Error running file command: {e}")
+        return {'mime_type': None, 'mime_encoding': None}
+    except Exception as e:
+        logger.error(f"Unexpected error while getting file information: {e}")
+        return {'mime_type': None, 'mime_encoding': None}
+    return LPF_file_path
+    
+def parse_to_LPF(delimited_file_path):
+    
+    # Open with pandas
+    # Read first line only and transform field names
+    # Read line by line converting to JSON (opposite of pandas json_normalize method?)
+    # Use dtype rather than converters?
+    # Specify true_values and false_values
+    # skipinitialspace true
+    # nrows = 1
+    # na_values
+    # parse_dates
+    
+    
+    
+    
+    
+    
+    
+    # TODO: Handle the `attestation_year` property from LP-TSV
+    
+    return LPF_file_path
+
+def validate_file(request, file_path=settings.VALIDATION_TEST_SAMPLE):
+    
+    file_info = get_file_info(file_path)  
+    
+    if file_info['mime_type'] is None:
+        message = "Unable to determine the content type of the file."
+        logger.error(message)
+        return JsonResponse({"status": "failed", "message": message}, status=500)
+    elif file_info['mime_type'] not in settings.VALIDATION_SUPPORTED_TYPES:
+        message = f"The detected content type (<b>{file_info['mime_type']}</b>) is not supported."
+        logger.error(message)
+        return JsonResponse({"status": "failed", "message": message}, status=500) 
+    
+    if file_info['mime_encoding'] is None:
+        message = "Unable to determine the encoding type of the file."
+        logger.error(message)
+        return JsonResponse({"status": "failed", "message": message}, status=500)
+    elif file_info['mime_encoding'] not in settings.VALIDATION_ALLOWED_ENCODINGS:
+        message = f"The detected encoding type (<b>{file_info['mime_encoding']}</b>) is not supported. Please ensure that the file is encoded as UTF or ASCII."
+        logger.error(message)
+        return JsonResponse({"status": "failed", "message": message}, status=500)
+    
+    if not file_info['mime_type'] == 'application/json':
+        parse_to_LPF(file_path)
     
     try:
         with codecs.open(settings.LPF_SCHEMA_PATH, 'r', 'utf8') as schema_file:

@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from django.test import RequestFactory
 from django.http import JsonResponse
 from django.conf import settings
-from validation.views import process_lpf
+from validation.views import validate_file
 from validation.tasks import get_task_status
 
 class Command(BaseCommand):
@@ -20,8 +20,8 @@ class Command(BaseCommand):
 
         request = RequestFactory().get('/')  # Create a mock request object
         
-        # Call the process_lpf function with the file path argument
-        response = process_lpf(request, file_path=file_path)
+        # Call the validate_file function with the file path argument
+        response = validate_file(request, file_path=file_path)
         
         # Print the response
         self.stdout.write(self.style.SUCCESS('Response content: %s' % response.content))
