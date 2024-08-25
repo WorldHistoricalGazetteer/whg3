@@ -85,6 +85,9 @@
             {% endif %}
           </table>
           <div class="">
+          
+            <div data-csl-json="{{ object.citation_csl }}"></div>
+            
             <p>
               <span data-bs-toggle="tooltip"
                   title="Show download options">
@@ -398,7 +401,6 @@
     var visParameters = JSON.parse(document.getElementById('vis_parameters_data').innerHTML);
     window.loggedin = "{{ loggedin }}";
     window.dslabel = "{{ ds.label }}";
-    window.filter = "{{ filter }}";
     window.ds_list = [
       {
         bounds: {{ ds.bounds | safe }},
