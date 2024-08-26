@@ -1,4 +1,6 @@
 # validation/views.py
+import os
+import pandas as pd
 import json
 import codecs
 import logging
@@ -12,6 +14,10 @@ from pyld import jsonld
 from .tasks import validate_feature_batch
 import redis
 import sys
+from .tLPF_mappings import tLPF_mappings
+from shapely import wkt
+from shapely.geometry import mapping
+import geojson
 
 logger = logging.getLogger('validation')
 
@@ -44,6 +50,7 @@ def get_file_info(file_path):
         )
         info['mime_encoding'] = mime_encoding_result.stdout.strip()
 
+        logger.debug(f"File info: {info}")
         return info
     except subprocess.CalledProcessError as e:
         logger.error(f"Error running file command: {e}")
@@ -54,26 +61,120 @@ def get_file_info(file_path):
     return LPF_file_path
     
 def parse_to_LPF(delimited_file_path):
-    
-    # Open with pandas
-    # Read first line only and transform field names
-    # Read line by line converting to JSON (opposite of pandas json_normalize method?)
-    # Use dtype rather than converters?
-    # Specify true_values and false_values
-    # skipinitialspace true
-    # nrows = 1
-    # na_values
-    # parse_dates
-    
-    
-    
-    
-    
-    
-    
-    # TODO: Handle the `attestation_year` property from LP-TSV
-    
-    return LPF_file_path
+    try:
+        _, ext = os.path.splitext(delimited_file_path)
+        ext = ext.lower()
+        separator = ',' if ext == '.csv' else '\t' if ext == '.tsv' else None
+
+        lpf_file_path = delimited_file_path.replace(ext, '.jsonld')
+        logger.debug(f"Processing [separator: {separator}] file '{delimited_file_path}'.")
+
+        converters = {key: mapping['converter'] for key, mapping in tLPF_mappings.items()}
+        logger.debug(f"converters: {converters}")
+
+        def get_df_reader():
+            configuration = {
+                'iterator': True,
+                'chunksize': 500,
+                'skipinitialspace': True,
+                'true_values': ['true', 'True'],
+                'false_values': ['false', 'False'],
+                'na_values': ['NA', 'NaN', ''],
+                'converters': converters
+            }
+            try:
+                if separator:
+                    logger.debug(f"Reading from CSV.")
+                    return pd.read_csv(delimited_file_path, sep=separator, **configuration)
+                else:
+                    logger.debug(f"Reading from Excel.")
+                    return pd.read_excel(delimited_file_path, sheet_name=0, **configuration)
+            except Exception as e:
+                logger.error(f"Error reading file {delimited_file_path}: {e}")
+                raise
+            
+        def assign_nested_value(d, keys, value):
+            """
+            Assigns a value to a nested dictionary, creating any intermediate keys as necessary.
+            Initializes the nested structure based on the type of the final value.
+            """    
+
+            for i, key in enumerate(keys[:-1]):
+                next_key = keys[i + 1]
+                
+                if isinstance(d, dict) and key not in d:
+                    if isinstance(next_key, int):
+                        d[key] = [{}] * (next_key + 1)
+                    else:
+                        d[key] = {}
+                    
+                d = d[key]
+                
+            final_key = keys[-1]
+            if isinstance(d, list) and final_key >= len(d):
+                d.extend([{}])
+            d[final_key] = value
+
+        with open(lpf_file_path, 'w') as lpf_file:
+            first_line = True  # To handle commas between records in feature array
+
+            # Write the opening of the JSON FeatureCollection
+            lpf_file.write('{\n"type": "FeatureCollection",\n"features": [\n')
+            logger.debug(f"Started writing output to '{lpf_file_path}'.")
+        
+            for chunk in get_df_reader():
+                logger.debug(f"Processing chunk: {chunk}")
+        
+                for _, record in chunk.iterrows():
+                    record = record.to_dict()  # Convert row to a dictionary
+                    logger.debug(f"Processing record: '{record}'.")
+        
+                    # Create the nested JSON structure
+                    lpf_feature = {}
+                    for key, mapping in tLPF_mappings.items():
+                        if key in record:
+                            value = record[key]
+                            if pd.notna(value):
+                                nested_keys = [int(key) if key.isdigit() else key for key in mapping['lpf'].split('.')]
+                                assign_nested_value(lpf_feature, nested_keys, value)                             
+        
+                    # Append additional names or types to the main record if needed
+                    if 'names' in lpf_feature and 'additional_names' in lpf_feature:
+                        lpf_feature['names'].extend(lpf_feature.pop('additional_names'))
+                    if 'types' in lpf_feature and 'additional_types' in lpf_feature:
+                        lpf_feature['types'].extend(lpf_feature.pop('additional_types'))
+                    
+                    if 'geometry' in lpf_feature:
+                        lpf_feature['geometry']['type'] = 'Point'
+                    else:
+                        lpf_feature['geometry'] = None
+                    
+                    # Replace any existing geometry with geometry contained in any `geowkt`
+                    if 'geowkt' in lpf_feature:
+                        geometry = wkt.loads(lpf_feature['geowkt'])
+                        geojson_geometry = mapping(geometry)
+                        lpf_feature['geometry'] = geojson.dumps(geojson_geometry)
+                        lpf_feature.pop('geowkt')
+                        
+                    logger.debug(f"Processed record: '{lpf_feature}'.")
+        
+                    # Write the JSON object to the file
+                    if not first_line:
+                        lpf_file.write(',\n')
+                    else:
+                        first_line = False
+        
+                    json.dump(lpf_feature, lpf_file, ensure_ascii=False)
+        
+            # Write the closing of the JSON FeatureCollection
+            lpf_file.write('\n]}\n')
+
+        logger.debug(f"fLPF file '{delimited_file_path}' converted to LPF and written to '{lpf_file_path}'.")
+        return lpf_file_path
+
+    except Exception as e:
+        logger.error(f"Error processing file {delimited_file_path}: {e}")
+        return None
 
 def validate_file(request, file_path=settings.VALIDATION_TEST_SAMPLE):
     
@@ -98,7 +199,7 @@ def validate_file(request, file_path=settings.VALIDATION_TEST_SAMPLE):
         return JsonResponse({"status": "failed", "message": message}, status=500)
     
     if not file_info['mime_type'] == 'application/json':
-        parse_to_LPF(file_path)
+        file_path = parse_to_LPF(file_path)
     
     try:
         with codecs.open(settings.LPF_SCHEMA_PATH, 'r', 'utf8') as schema_file:
@@ -117,7 +218,6 @@ def validate_file(request, file_path=settings.VALIDATION_TEST_SAMPLE):
         'start_time': timezone.now().isoformat(),
         'all_queued': 'false',
         'total_features': 0,
-        'queued_features': 0,
     })
 
     try:

@@ -14,17 +14,18 @@ RUN set -eux; \
     # Update package lists and install necessary packages
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        lsb-release \
-        curl \
-        gpgv \
         build-essential \
-        python3-gdal \
+        curl \
+        docker.io \
+        file \
+        gpgv \
         libpq-dev \
-        sudo \
-        nano \
         locate \
+        nano \
         netcat \
-        docker.io && \
+        python3-gdal \
+        sudo \
+        lsb-release && \
     # Set up Python virtual environment
     python -m venv /py && \
     /py/bin/pip install --upgrade pip && \

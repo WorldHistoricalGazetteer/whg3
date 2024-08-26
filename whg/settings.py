@@ -344,6 +344,7 @@ VALIDATION_ALLOWED_EXTENSIONS = ['.csv', '.tsv', '.xlsx', '.ods', '.jsonld', '.g
 VALIDATION_ALLOWED_ENCODINGS = ['us-ascii', 'utf-8']
 VALIDATION_SUPPORTED_TYPES = [
     'application/json',
+    'text/plain',
     'text/csv',
     'text/tab-separated-values',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

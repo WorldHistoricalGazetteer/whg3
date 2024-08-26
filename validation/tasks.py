@@ -95,74 +95,74 @@ def fix_feature(featureCollection, e):
         invalid_value = e.instance
         feature_id = featureCollection["features"][0].get("@id", "unknown")
 
-        # # Attempt to convert integers to strings where necessary
-        # if e.validator == 'type' and e.validator_value == 'string':
-        #     if isinstance(invalid_value, int):
-        #         current_element[last_key] = str(invalid_value)
-        #         fix_description = f"Converted integer '{invalid_value}' to string '{current_element[last_key]}'"
-        #         fixes.append({
-        #             "feature_id": feature_id,
-        #             "path": ".".join(map(str, path_list)),
-        #             "description": fix_description
-        #         })
-        #         logger.debug(fix_description)
-        #     else:
-        #         logger.debug("Invalid value is not an integer or does not require conversion.")
-        # else:
-        #     logger.debug(f"Validator or validator_value does not match type check: validator={e.validator}, validator_value={e.validator_value}")
-        #
-        # # Attempt to fix missing timespans
-        # if e.validator == 'required' and isinstance(e.validator_value, list):
-        #     if any(ref == 'timespans' for ref in e.validator_value):
-        #         logger.debug(f'Attempting "timespans" fix... ({current_element})')
-        #         when = current_element.get('when', None)
-        #         start = when.get('start', None)
-        #         end = when.get('end', None)
-        #         if start or end:
-        #             timespan = {}
-        #             if start:
-        #                 timespan['start'] = start
-        #             if end:
-        #                 timespan['end'] = end
-        #             when['timespans'] = [timespan]
-        #             when.pop('start', None)
-        #             when.pop('end', None)
-        #             fix_description = f"Created '{current_element['when']}' from start='{start}' and end='{end}'"
-        #             fixes.append({
-        #                 "feature_id": feature_id,
-        #                 "path": ".".join(map(str, path_list)),
-        #                 "description": fix_description
-        #             })
-        #             logger.debug(fix_description)
-        #         else:
-        #             logger.debug(f"... failed: no appropriate start or end values found.")
-        #
-        # # Attempt to fix ids/urls by either removal or prepending a dummy namespace
-        # if isinstance(invalid_value, str) and isinstance(e.validator_value, list):
-        #     ref_list = [ref.get('$ref') for ref in e.validator_value]
-        #
-        #     if '#/definitions/patterns/definitions/validURL' in ref_list or '#/definitions/patterns/definitions/namespaceTerm' in ref_list:
-        #         if invalid_value == "":
-        #             # Remove the element if invalid_value is an empty string
-        #             del current_element[last_key]
-        #             fix_description = f"Removed empty @id field from element"
-        #             fixes.append({
-        #                 "feature_id": feature_id,
-        #                 "path": ".".join(map(str, path_list)),
-        #                 "description": fix_description
-        #             })
-        #             logger.debug(fix_description)
-        #         else:
-        #             # Prepend a dummy namespace if invalid_value is not empty
-        #             new_value = f"custom_namespace:{invalid_value}"
-        #             current_element[last_key] = new_value
-        #             fix_description = f"Fixed @id value: '{invalid_value}' to '{new_value}'"
-        #             fixes.append({
-        #                 "feature_id": feature_id,
-        #                 "path": ".".join(map(str, path_list)),
-        #                 "description": fix_description
-        #             })
-        #             logger.debug(fix_description)
+        # Attempt to convert integers to strings where necessary
+        if e.validator == 'type' and e.validator_value == 'string':
+            if isinstance(invalid_value, int):
+                current_element[last_key] = str(invalid_value)
+                fix_description = f"Converted integer '{invalid_value}' to string '{current_element[last_key]}'"
+                fixes.append({
+                    "feature_id": feature_id,
+                    "path": ".".join(map(str, path_list)),
+                    "description": fix_description
+                })
+                logger.debug(fix_description)
+            else:
+                logger.debug("Invalid value is not an integer or does not require conversion.")
+        else:
+            logger.debug(f"Validator or validator_value does not match type check: validator={e.validator}, validator_value={e.validator_value}")
+        
+        # Attempt to fix missing timespans
+        if e.validator == 'required' and isinstance(e.validator_value, list):
+            if any(ref == 'timespans' for ref in e.validator_value):
+                logger.debug(f'Attempting "timespans" fix... ({current_element})')
+                when = current_element.get('when', None)
+                start = when.get('start', None)
+                end = when.get('end', None)
+                if start or end:
+                    timespan = {}
+                    if start:
+                        timespan['start'] = start
+                    if end:
+                        timespan['end'] = end
+                    when['timespans'] = [timespan]
+                    when.pop('start', None)
+                    when.pop('end', None)
+                    fix_description = f"Created '{current_element['when']}' from start='{start}' and end='{end}'"
+                    fixes.append({
+                        "feature_id": feature_id,
+                        "path": ".".join(map(str, path_list)),
+                        "description": fix_description
+                    })
+                    logger.debug(fix_description)
+                else:
+                    logger.debug(f"... failed: no appropriate start or end values found.")
+        
+        # Attempt to fix ids/urls by either removal or prepending a dummy namespace
+        if isinstance(invalid_value, str) and isinstance(e.validator_value, list):
+            ref_list = [ref.get('$ref') for ref in e.validator_value]
+        
+            if '#/definitions/patterns/definitions/validURL' in ref_list or '#/definitions/patterns/definitions/namespaceTerm' in ref_list:
+                if invalid_value == "":
+                    # Remove the element if invalid_value is an empty string
+                    del current_element[last_key]
+                    fix_description = f"Removed empty @id field from element"
+                    fixes.append({
+                        "feature_id": feature_id,
+                        "path": ".".join(map(str, path_list)),
+                        "description": fix_description
+                    })
+                    logger.debug(fix_description)
+                else:
+                    # Prepend a dummy namespace if invalid_value is not empty
+                    new_value = f"custom_namespace:{invalid_value}"
+                    current_element[last_key] = new_value
+                    fix_description = f"Fixed @id value: '{invalid_value}' to '{new_value}'"
+                    fixes.append({
+                        "feature_id": feature_id,
+                        "path": ".".join(map(str, path_list)),
+                        "description": fix_description
+                    })
+                    logger.debug(fix_description)
 
     except Exception as e:
         raise

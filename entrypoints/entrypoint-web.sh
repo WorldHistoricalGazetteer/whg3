@@ -22,8 +22,8 @@ fi
 /app/entrypoints/user_pwd.sh
 
 # Collect static files
-echo "Collecting static files..."
-/py/bin/python manage.py collectstatic --no-input
+#echo "Collecting static files..."
+#/py/bin/python manage.py collectstatic --no-input
 
 # Wait for the database to be ready
 source /app/entrypoints/wait_for_db.sh
