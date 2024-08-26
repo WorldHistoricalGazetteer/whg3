@@ -169,7 +169,7 @@ def fix_feature(featureCollection, e):
 
     return featureCollection, fixes
 
-def get_task_status(task_id):
+def get_task_status(request, task_id):
     redis_client = get_redis_client()
     status = redis_client.hgetall(task_id)
     if not status:
