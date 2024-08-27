@@ -341,15 +341,17 @@ SPECTACULAR_SETTINGS = {
 LPF_SCHEMA_PATH = os.path.join(BASE_DIR, 'validation/static/lpf_v2.0.jsonld')
 LPF_CONTEXT_PATH = os.path.join(BASE_DIR, 'validation/static/lpo_v2.0.jsonld')
 VALIDATION_ALLOWED_EXTENSIONS = ['.csv', '.tsv', '.xlsx', '.ods', '.jsonld', '.geojson', '.json']
-VALIDATION_ALLOWED_ENCODINGS = ['us-ascii', 'utf-8']
+VALIDATION_ALLOWED_ENCODINGS = ['ascii', 'us-ascii', 'utf-8']
 VALIDATION_SUPPORTED_TYPES = [
     'application/json',
     'text/plain',
     'text/csv',
     'text/tab-separated-values',
+    'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     'application/vnd.oasis.opendocument.spreadsheet'
 ]
+VALIDATION_CHUNK_ROWS = 500
 VALIDATION_TEST_SAMPLE = os.path.join(BASE_DIR, 'datasets/static/files/lugares_20.jsonld')
 VALIDATION_BATCH_MEMORY_LIMIT = 1 * 1024 * 1024  # 1 MB
 VALIDATION_MAXFIXATTEMPTS = 100 # Maximum number of errors to try to fix on each feature

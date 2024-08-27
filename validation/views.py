@@ -60,7 +60,7 @@ def get_file_info(file_path):
         return {'mime_type': None, 'mime_encoding': None}
     return LPF_file_path
     
-def parse_to_LPF(delimited_file_path):
+def parse_to_LPF(delimited_file_path, ext):
     try:
         _, ext = os.path.splitext(delimited_file_path)
         ext = ext.lower()
@@ -74,21 +74,36 @@ def parse_to_LPF(delimited_file_path):
 
         def get_df_reader():
             configuration = {
-                'iterator': True,
-                'chunksize': 500,
-                'skipinitialspace': True,
+                'nrows': settings.VALIDATION_CHUNK_ROWS,
+                'header': 0,
                 'true_values': ['true', 'True'],
                 'false_values': ['false', 'False'],
-                'na_values': ['NA', 'NaN', ''],
-                'converters': converters
+                'na_values': ['NA', 'NaN'],
+                'na_filter': False
             }
-            try:
-                if separator:
-                    logger.debug(f"Reading from CSV.")
-                    return pd.read_csv(delimited_file_path, sep=separator, **configuration)
-                else:
-                    logger.debug(f"Reading from Excel.")
-                    return pd.read_excel(delimited_file_path, sheet_name=0, **configuration)
+            try: # read_excel does not support chunk-size, so implementation requires line-reading
+                skiprows = 0
+                while True:
+                    if separator:
+                        logger.debug(f"Reading from CSV.")
+                        df_chunk = pd.read_csv(delimited_file_path, skiprows=skiprows, **configuration, sep=separator, encoding='utf-8', skipinitialspace=True)
+                    else:
+                        logger.debug(f"Reading from Excel.")
+                        df_chunk = pd.read_excel(delimited_file_path, skiprows=skiprows, **configuration, sheet_name=0)
+                        logger.debug(f"Chunk: {df_chunk}")
+                    skiprows += settings.VALIDATION_CHUNK_ROWS
+                    if df_chunk.empty:
+                        break
+                    yield df_chunk
+
+            except pd.errors.EmptyDataError:
+                logger.warning("Empty chunk encountered; stopping.")
+            except UnicodeDecodeError as e:
+                logger.error(f"Encoding error detected: {e}")
+                raise
+            except pd.errors.ParserError as e:
+                logger.error(f"Parsing error detected: {e}")
+                raise 
             except Exception as e:
                 logger.error(f"Error reading file {delimited_file_path}: {e}")
                 raise
@@ -128,20 +143,26 @@ def parse_to_LPF(delimited_file_path):
                 for _, record in chunk.iterrows():
                     record = record.to_dict()  # Convert row to a dictionary
                     logger.debug(f"Processing record: '{record}'.")
+                    
+                    # Apply converters: NB these cannot be applied during pd.read_excel due to the unhashable lists they produce
+                    for key, converter in converters.items():
+                        if key in record:
+                            logger.debug(f"Processing key: '{key}'.")
+                            record[key] = converter(record[key])
         
                     # Create the nested JSON structure
                     lpf_feature = {}
                     for key, mapping in tLPF_mappings.items():
                         if key in record:
                             value = record[key]
-                            if pd.notna(value):
+                            if isinstance(value, list) or pd.notna(value):
                                 nested_keys = [int(key) if key.isdigit() else key for key in mapping['lpf'].split('.')]
                                 assign_nested_value(lpf_feature, nested_keys, value)                             
         
                     # Append additional names or types to the main record if needed
-                    if 'names' in lpf_feature and 'additional_names' in lpf_feature:
+                    if 'names' in lpf_feature and isinstance(lpf_feature['names'], list) and 'additional_names' in lpf_feature:
                         lpf_feature['names'].extend(lpf_feature.pop('additional_names'))
-                    if 'types' in lpf_feature and 'additional_types' in lpf_feature:
+                    if 'types' in lpf_feature and isinstance(lpf_feature['types'], list) and 'additional_types' in lpf_feature:
                         lpf_feature['types'].extend(lpf_feature.pop('additional_types'))
                     
                     if 'geometry' in lpf_feature:
@@ -174,11 +195,22 @@ def parse_to_LPF(delimited_file_path):
 
     except Exception as e:
         logger.error(f"Error processing file {delimited_file_path}: {e}")
-        return None
+        raise
 
 def validate_file(request, file_path=settings.VALIDATION_TEST_SAMPLE):
     
-    file_info = get_file_info(file_path)  
+    try:
+        with codecs.open(settings.LPF_SCHEMA_PATH, 'r', 'utf8') as schema_file:
+            schema = json.load(schema_file)
+        with codecs.open(settings.LPF_CONTEXT_PATH, 'r', 'utf8') as context_file:
+            context = json.load(context_file)
+    except (IOError, json.JSONDecodeError) as e:
+        message = f"Error reading schema or context file: {e}"
+        logger.error(message)
+        return JsonResponse({"status": "failed", "message": message}, status=500)
+    
+    # The following test uses the Unix file command: additional testing for encoding is implemented for spreadsheets
+    file_info = get_file_info(file_path)
     
     if file_info['mime_type'] is None:
         message = "Unable to determine the content type of the file."
@@ -189,25 +221,24 @@ def validate_file(request, file_path=settings.VALIDATION_TEST_SAMPLE):
         logger.error(message)
         return JsonResponse({"status": "failed", "message": message}, status=500) 
     
+    allowed_encodings = settings.VALIDATION_ALLOWED_ENCODINGS + ['binary'] # 'binary' required for spreadsheets when using Unix file command
     if file_info['mime_encoding'] is None:
         message = "Unable to determine the encoding type of the file."
         logger.error(message)
         return JsonResponse({"status": "failed", "message": message}, status=500)
-    elif file_info['mime_encoding'] not in settings.VALIDATION_ALLOWED_ENCODINGS:
+    elif file_info['mime_encoding'] not in allowed_encodings:
         message = f"The detected encoding type (<b>{file_info['mime_encoding']}</b>) is not supported. Please ensure that the file is encoded as UTF or ASCII."
         logger.error(message)
         return JsonResponse({"status": "failed", "message": message}, status=500)
     
-    if not file_info['mime_type'] == 'application/json':
-        file_path = parse_to_LPF(file_path)
+    _, ext = os.path.splitext(file_path)
+    ext = ext.lower()
     
     try:
-        with codecs.open(settings.LPF_SCHEMA_PATH, 'r', 'utf8') as schema_file:
-            schema = json.load(schema_file)
-        with codecs.open(settings.LPF_CONTEXT_PATH, 'r', 'utf8') as context_file:
-            context = json.load(context_file)
-    except (IOError, json.JSONDecodeError) as e:
-        message = f"Error reading schema or context file: {e}"
+        if not 'json' in ext: # mime type is not a reliable determinant of json
+            file_path = parse_to_LPF(file_path, ext)
+    except Exception as e:
+        message = f"Error converting delimited text to LPF: {e}"
         logger.error(message)
         return JsonResponse({"status": "failed", "message": message}, status=500)
     

@@ -16,13 +16,11 @@ MATCHTYPES = [
     ('none', 'no match'),
 ]
 
-class DatasetValidateForm(forms.ModelForm):
-    valid_extensions = settings.VALIDATION_ALLOWED_EXTENSIONS
-    
+class DatasetValidateForm(forms.ModelForm):    
     file = forms.FileField(label='Data file', widget=forms.FileInput(attrs={
         'class': 'form-control',
         'required': 'required',
-        'accept': ','.join(valid_extensions),
+        'accept': ','.join(settings.VALIDATION_ALLOWED_EXTENSIONS),
     }))
 
     class Meta:

@@ -1,15 +1,43 @@
 # tLPF_mappings.py
 
 import numpy as np
+import chardet
+from django.conf import settings
+
+import logging
+logger = logging.getLogger('validation')
+
+def variant_conversion(x):
+    x = str(x).strip()
+    
+    if not x:
+        return []
+    
+    variants = []
+    for variant in x.split(';'):
+        variant = variant.strip()
+        if variant:
+            if '@' in variant:
+                toponym, lang_script = variant.split('@', 1)
+                variants.append({
+                    'toponym': toponym.strip(),
+                    'lang': lang_script.strip()
+                })
+            else:
+                variants.append({
+                    'toponym': variant
+                })
+    
+    return variants
 
 def safe_float_conversion(x):
-    """Safely convert input to np.float32, handling empty strings and None."""
-    if x is None or x.strip() == "":
-        return np.float32(np.nan)
+    """Safely convert input to float, handling empty strings and None."""
+    if x is None or str(x).strip() == "":
+        return None
     try:
-        return np.float32(x.strip())
+        return float(str(x).strip())
     except ValueError:
-        return np.float32(np.nan)
+        return None
 
 tLPF_mappings = {
     'id': {
@@ -26,11 +54,11 @@ tLPF_mappings = {
     },
     'fclasses': {
         'lpf': 'properties.fclasses',
-        'converter': lambda x: [item.strip() for item in x.split(';') if item.strip()] or None
+        'converter': lambda x: [item.strip() for item in str(x).split(';') if item.strip()] or None
     },
     'aat_types': {
         'lpf': 'types',
-        'converter': lambda x: [{'identifier': f'aat:{item.strip()}'} for item in x.split(';') if item.strip()] or None
+        'converter': lambda x: [{'identifier': f'aat:{item.strip()}'} for item in str(x).split(';') if item.strip()] or None
     },
     'attestation_year': {
         'lpf': 'names.0.citations.0.year',
@@ -50,23 +78,19 @@ tLPF_mappings = {
     },
     'ccodes': {
         'lpf': 'properties.ccodes',
-        'converter': lambda x: [item.strip() for item in x.split(';') if item.strip()] or None
+        'converter': lambda x: [item.strip() for item in str(x).split(';') if item.strip()] or None
     },
     'matches': {
         'lpf': 'links',
-        'converter': lambda x: [{'type': 'exactMatch', 'identifier': item.strip()} for item in x.split(';') if item.strip()] or None
+        'converter': lambda x: [{'type': 'exactMatch', 'identifier': item.strip()} for item in str(x).split(';') if item.strip()] or None
     },
     'variants': {
         'lpf': 'additional_names',
-        'converter': lambda x: [
-            {'toponym': variant.split('@')[0].strip(), 'lang_script': variant.split('@')[1].strip()}
-            if '@' in variant else {'toponym': variant.strip()}
-            for variant in x.split(';') if variant.strip()
-        ] if x else []
+        'converter': lambda x: variant_conversion(x)
     },
     'types': {
         'lpf': 'additional_types',
-        'converter': lambda x: [{'label': item.strip()} for item in x.split(';') if item.strip()] or None
+        'converter': lambda x: [{'label': item.strip()} for item in str(x).strip().split(';') if item.strip()] or None
     },
     'parent_name': {
         'lpf': 'relations.0',
