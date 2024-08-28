@@ -1,9 +1,12 @@
 # validation/tasks.py
 import json
 import logging
+import time
+from celery import Celery
 from celery import shared_task
 from celery.result import AsyncResult
 from datetime import timedelta
+from itertools import chain
 from jsonschema import Draft7Validator, ValidationError
 from django.http import JsonResponse
 from django.utils import timezone
@@ -17,6 +20,24 @@ logger = logging.getLogger('validation')
 
 def get_redis_client():
     return redis.StrictRedis.from_url(settings.CELERY_BROKER_URL)
+    
+def task_count(task_name='validation.tasks.validate_feature_batch'):
+    
+    app = Celery('whg')
+    i = app.control.inspect()  
+
+    def count_tasks_of_type(task_data, task_type):
+        if task_data:
+            return len([
+                task for task in chain.from_iterable(task_data.values())
+                if task.get("name") == task_type
+            ])
+        return 0
+    
+    task_count = 0
+    task_count += count_tasks_of_type(i.active(), task_name)
+    task_count += count_tasks_of_type(i.reserved(), task_name)
+    return task_count
 
 def traverse_path(data, path):
     """
@@ -141,6 +162,7 @@ def cleanup(task_id):
     logger.debug(f"Cleanup completed for task {task_id}.")
 
 def get_task_status(request, task_id):
+    current_time = timezone.now()
     redis_client = get_redis_client()
     status = redis_client.hgetall(task_id)
     if not status:
@@ -152,9 +174,15 @@ def get_task_status(request, task_id):
     queued_features = int(status.get('queued_features', 0))
     processed_features = total_features - queued_features
     
+    # Calculate remaining queue
+    if processed_features == 0:
+        queued_batches = int(status.get('queued_batches', 0))
+        status['remaining_queue'] = task_count() - queued_batches
+        # Queueing - reset start time        
+        redis_client.hset(task_id, 'start_time', current_time.isoformat())
+    
     # Estimate remaining time
     start_time = timezone.datetime.fromisoformat(status['start_time'])
-    current_time = timezone.now()
     last_update_time_str = status.get('last_update', status.get('start_time'))
     last_update_time = timezone.datetime.fromisoformat(last_update_time_str)
     
@@ -167,8 +195,8 @@ def get_task_status(request, task_id):
     else:
         estimated_remaining_time = None
     
-    status['time_since_last_update'] = (current_time - last_update_time).total_seconds()
-    status['estimated_remaining_time'] = str(timedelta(seconds=estimated_remaining_time)) if estimated_remaining_time is not None else "Calculating..."
+    status['time_since_last_update'] = str((current_time - last_update_time).total_seconds())
+    status['estimated_remaining_time'] = str(timedelta(seconds=estimated_remaining_time)) if estimated_remaining_time is not None else "queueing"
     
     # Add fixes and errors if they exist
     status['fixes'] = [fix.decode('utf-8') for fix in redis_client.lrange(f"{task_id}_fixes", 0, -1)]
@@ -335,6 +363,7 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
     # Store the current task ID as a subtask
     sub_task_id = self.request.id
     redis_client.rpush(f"{task_id}_subtasks", sub_task_id)
+    redis_client.hincrby(task_id, 'queued_batches', 1)
 
     for feature in feature_batch:
         stopValidation = False
@@ -409,10 +438,24 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
                     redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
                 except Exception as e:
                     logger.error(f"Error updating Redis status: {e}")
+        
+            # Add a delay to each iteration for testing UI
+            time.sleep(settings.VALIDATION_TEST_DELAY)
 
     try:
+        task_status = redis_client.hgetall(task_id)
+        
         errors = [error.decode('utf-8') for error in redis_client.lrange(f"{task_id}_errors", 0, -1)]
         if len(errors) > settings.VALIDATION_MAX_ERRORS:
+            
+            # Clean up files
+            delimited_file_path = task_status.get(b'delimited_file_path', b'').decode('utf-8')
+            if delimited_file_path and os.path.exists(delimited_file_path):
+                os.remove(delimited_file_path)
+            file_path = task_status.get(b'file_path', b'').decode('utf-8')
+            if file_path and os.path.exists(file_path):
+                os.remove(file_path)
+                
             revoke_all_subtasks(redis_client, task_id)
             redis_client.hset(task_id, mapping={
                 'status': 'aborted',
@@ -420,8 +463,7 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
                 'time_taken': elapsed_time,
                 'time_remaining': 0
             })
-
-        task_status = redis_client.hgetall(task_id)
+            
         all_queued = task_status.get(b'all_queued', b'').decode('utf-8')
         queued_features = int(task_status.get(b'queued_features', 0))        
         start_time_str = task_status.get(b'start_time', b'').decode('utf-8')

@@ -123,39 +123,38 @@ class DatasetValidate(CreateView):
             uploaded_filepath = self.save_file_temporarily(uploaded_file)
             self.logger.debug(f'File saved to `{uploaded_filepath}`')
 
-            validation_response = validate_file(self.request, uploaded_filepath)
+            validation_response = validate_file(self.request, uploaded_filepath, uploaded_file.name)
             if not validation_response:
+                self.cleanup_uploaded_file(uploaded_filepath)
                 return self.handle_invalid_form(form, "No response from validation service.")
             
             if isinstance(validation_response, JsonResponse):
                 response_data = validation_response.content.decode('utf-8')
                 response_data = json.loads(response_data)
-                
                 status = response_data.get("status")
-                message = response_data.get("message", "Unknown error")
-                task_id = response_data.get("task_id")
     
                 if status == "in_progress":
-                    messages.info(self.request, "Validation is in progress..")
+                    task_id = response_data.get("task_id")
                     context = self.get_context_data(form=form)
                     context['task_id'] = task_id
                     return self.render_to_response(context)
     
                 elif status == "failed":
+                    message = response_data.get("message", "Unknown error")
                     messages.error(self.request, f"Validation failed: {message}")
                     return self.form_invalid(form)
     
                 else:
                     messages.error(self.request, "Unknown validation status received.")
+                    self.cleanup_uploaded_file(uploaded_filepath)
                     return self.form_invalid(form)
 
         except Exception as e:
             self.logger.error(f"Error during file validation: {str(e)}", exc_info=True)
+            self.cleanup_uploaded_file(uploaded_filepath)
             return self.handle_invalid_form(form, f"Sorry, there was an error while processing the uploaded file: {str(e)}")
 
-        finally:
-            self.cleanup_uploaded_file(uploaded_filepath)
-            # TODO: Remove any generated .lpjson too
+        # finally:
             # return redirect('some_success_url') # <<< Dataset browse
 
     def handle_invalid_form(self, form, message):

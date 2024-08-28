@@ -205,7 +205,7 @@ def parse_to_LPF(delimited_file_path, ext):
         logger.error(f"Error processing file {delimited_file_path}: {e}")
         raise
 
-def validate_file(request, file_path=settings.VALIDATION_TEST_SAMPLE):
+def validate_file(request, file_path, original_file_name):
     
     try:
         with codecs.open(settings.LPF_SCHEMA_PATH, 'r', 'utf8') as schema_file:
@@ -244,8 +244,9 @@ def validate_file(request, file_path=settings.VALIDATION_TEST_SAMPLE):
     ext = ext.lower()
     try:
         if 'json' in ext: # mime type is not a reliable determinant of JSON
-            delimited_file_path = None
+            delimited_file_path = ''
             feature_count = json_feature_count(file_path)
+            logger.debug(f'JSON contains {feature_count} features.')
         else:
             delimited_file_path = file_path
             file_path, feature_count = parse_to_LPF(file_path, ext)
@@ -262,14 +263,20 @@ def validate_file(request, file_path=settings.VALIDATION_TEST_SAMPLE):
     cleanup_task_result = cleanup.apply_async((task_id,), countdown=settings.VALIDATION_TIMEOUT)
     cleanup_task_id = cleanup_task_result.id
     
+    # TODO: Read any CSL citation and store as JSON in redis_client ?
+    
     # Store task details in Redis
     redis_client.hset(task_id, mapping={
         'status': 'in_progress',
         'start_time': timezone.now().isoformat(),
         'all_queued': 'false',
         'total_features': feature_count,
+        'delimited_file_path': delimited_file_path,
+        'file_path': file_path,
+        'original_file_name': original_file_name,
         'cleanup_task_id': cleanup_task_id,
     })
+    logger.debug('Redis client initialised.')
 
     try:
         # Process each batch of features as a separate Celery task

@@ -352,8 +352,8 @@ VALIDATION_SUPPORTED_TYPES = [
     'application/vnd.oasis.opendocument.spreadsheet'
 ]
 VALIDATION_CHUNK_ROWS = 500
-VALIDATION_TEST_SAMPLE = os.path.join(BASE_DIR, 'datasets/static/files/lugares_20.jsonld')
 VALIDATION_BATCH_MEMORY_LIMIT = 1 * 1024 * 1024  # 1 MB
 VALIDATION_MAXFIXATTEMPTS = 50 # Maximum number of errors to try to fix on each feature
 VALIDATION_MAX_ERRORS = 100 # Stop validation of dataset if this number of unfixed errors is reached (checked only on completion of each batch, so may exceed this number)
-VALIDATION_TIMEOUT = 3600 # seconds: after which, tasks are revoked and records are removed from redis
+VALIDATION_TIMEOUT = 3600 # seconds, after which tasks are revoked and records are removed from redis
+VALIDATION_TEST_DELAY = 0 # seconds to pause after each JSON schema validation attempt
