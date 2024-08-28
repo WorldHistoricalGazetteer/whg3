@@ -80,7 +80,6 @@ def parse_to_LPF(delimited_file_path, ext):
         logger.debug(f"Processing [separator: {separator}] file '{delimited_file_path}'.")
 
         converters = {key: mapping['converter'] for key, mapping in tLPF_mappings.items()}
-        logger.debug(f"converters: {converters}")
 
         def get_df_reader():
             configuration = {
@@ -100,7 +99,6 @@ def parse_to_LPF(delimited_file_path, ext):
                     else:
                         logger.debug(f"Reading from Excel.")
                         df_chunk = pd.read_excel(delimited_file_path, skiprows=skiprows, **configuration, sheet_name=0)
-                        logger.debug(f"Chunk: {df_chunk}")
                     skiprows += settings.VALIDATION_CHUNK_ROWS
                     if df_chunk.empty:
                         break
@@ -152,7 +150,7 @@ def parse_to_LPF(delimited_file_path, ext):
         
                 for _, record in chunk.iterrows():
                     record = record.to_dict()  # Convert row to a dictionary
-                    logger.debug(f"Processing record #{feature_count}: '{record}'.")
+                    # logger.debug(f"Processing record #{feature_count}: '{record}'.")
                     
                     # Apply converters: NB these cannot be applied during pd.read_excel due to the unhashable lists they produce
                     for key, converter in converters.items():
@@ -186,7 +184,7 @@ def parse_to_LPF(delimited_file_path, ext):
                         lpf_feature['geometry'] = geojson.dumps(geojson_geometry)
                         lpf_feature.pop('geowkt')
                         
-                    logger.debug(f"Processed record #{feature_count}: '{lpf_feature}'.")
+                    # logger.debug(f"Processed record #{feature_count}: '{lpf_feature}'.")
         
                     # Write the JSON object to the file
                     if not first_line:
@@ -318,14 +316,14 @@ def read_json_features_in_batches(file_path, task_id):
                 feature_batch.append(feature)
 
                 if current_memory_size >= settings.VALIDATION_BATCH_MEMORY_LIMIT:
-                    logger.debug(f'Yielding batch ({current_memory_size} bytes): {feature_batch}')
+                    # logger.debug(f'Yielding batch ({current_memory_size} bytes): {feature_batch}')
                     yield feature_batch
                     feature_batch = []
                     current_memory_size = 0
 
             # Yield any remaining features in the last batch
             if feature_batch:
-                logger.debug(f'Yielding final batch ({current_memory_size} bytes): {feature_batch}')
+                # logger.debug(f'Yielding final batch ({current_memory_size} bytes): {feature_batch}')
                 yield feature_batch
 
     except (IOError, ValueError) as e:

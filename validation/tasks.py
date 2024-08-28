@@ -45,7 +45,7 @@ def fix_feature(featureCollection, e):
     """
     fixes = []
     try:
-        logger.debug(f'Attempting fix of: {featureCollection}')
+        # logger.debug(f'Attempting fix of: {featureCollection}')
 
         path_list = list(e.absolute_path)
         current_element = traverse_path(featureCollection, path_list[:-1])
@@ -99,32 +99,32 @@ def fix_feature(featureCollection, e):
                 else:
                     logger.debug(f"... failed: no appropriate start or end values found.")
         
-        # # Attempt to fix ids/urls by either removal or prepending a dummy namespace
-        # if isinstance(invalid_value, str) and isinstance(e.validator_value, list):
-        #     ref_list = [ref.get('$ref') for ref in e.validator_value]
-        #
-        #     if '#/definitions/patterns/definitions/validURL' in ref_list or '#/definitions/patterns/definitions/namespaceTerm' in ref_list:
-        #         if invalid_value == "":
-        #             # Remove the element if invalid_value is an empty string
-        #             del current_element[last_key]
-        #             fix_description = f"Removed empty @id field from element"
-        #             fixes.append({
-        #                 "feature_id": feature_id,
-        #                 "path": ".".join(map(str, path_list)),
-        #                 "description": fix_description
-        #             })
-        #             logger.debug(fix_description)
-        #         else:
-        #             # Prepend a dummy namespace if invalid_value is not empty
-        #             new_value = f"custom_namespace:{invalid_value}"
-        #             current_element[last_key] = new_value
-        #             fix_description = f"Fixed @id value: '{invalid_value}' to '{new_value}'"
-        #             fixes.append({
-        #                 "feature_id": feature_id,
-        #                 "path": ".".join(map(str, path_list)),
-        #                 "description": fix_description
-        #             })
-        #             logger.debug(fix_description)
+        # Attempt to fix ids/urls by either removal or prepending a dummy namespace
+        if isinstance(invalid_value, str) and isinstance(e.validator_value, list):
+            ref_list = [ref.get('$ref') for ref in e.validator_value]
+        
+            if '#/definitions/patterns/definitions/validURL' in ref_list or '#/definitions/patterns/definitions/namespaceTerm' in ref_list:
+                if invalid_value == "":
+                    # Remove the element if invalid_value is an empty string
+                    del current_element[last_key]
+                    fix_description = f"Removed empty @id field from element"
+                    fixes.append({
+                        "feature_id": feature_id,
+                        "path": ".".join(map(str, path_list)),
+                        "description": fix_description
+                    })
+                    logger.debug(fix_description)
+                else:
+                    # Prepend a dummy namespace if invalid_value is not empty
+                    new_value = f"custom_namespace:{invalid_value}"
+                    current_element[last_key] = new_value
+                    fix_description = f"Fixed @id value: '{invalid_value}' to '{new_value}'"
+                    fixes.append({
+                        "feature_id": feature_id,
+                        "path": ".".join(map(str, path_list)),
+                        "description": fix_description
+                    })
+                    logger.debug(fix_description)
 
     except Exception as e:
         raise
@@ -359,10 +359,10 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
         
         while not stopValidation:        
             try:
-                logger.debug(f'Validating feature: {feature}')
+                # logger.debug(f'Validating feature: {feature}')
                 validator.validate(featureCollection)
                 stopValidation = True
-                logger.debug(f'Validated feature: {feature}')
+                # logger.debug(f'Validated feature: {feature}')
             except ValidationError as e:
                 error_message = e.message
                 error_path = " -> ".join([str(p) for p in e.absolute_path])
