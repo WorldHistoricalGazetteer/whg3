@@ -99,45 +99,46 @@ def fix_feature(featureCollection, e):
                 else:
                     logger.debug(f"... failed: no appropriate start or end values found.")
         
-        # Attempt to fix ids/urls by either removal or prepending a dummy namespace
-        if isinstance(invalid_value, str) and isinstance(e.validator_value, list):
-            ref_list = [ref.get('$ref') for ref in e.validator_value]
-        
-            if '#/definitions/patterns/definitions/validURL' in ref_list or '#/definitions/patterns/definitions/namespaceTerm' in ref_list:
-                if invalid_value == "":
-                    # Remove the element if invalid_value is an empty string
-                    del current_element[last_key]
-                    fix_description = f"Removed empty @id field from element"
-                    fixes.append({
-                        "feature_id": feature_id,
-                        "path": ".".join(map(str, path_list)),
-                        "description": fix_description
-                    })
-                    logger.debug(fix_description)
-                else:
-                    # Prepend a dummy namespace if invalid_value is not empty
-                    new_value = f"custom_namespace:{invalid_value}"
-                    current_element[last_key] = new_value
-                    fix_description = f"Fixed @id value: '{invalid_value}' to '{new_value}'"
-                    fixes.append({
-                        "feature_id": feature_id,
-                        "path": ".".join(map(str, path_list)),
-                        "description": fix_description
-                    })
-                    logger.debug(fix_description)
+        # # Attempt to fix ids/urls by either removal or prepending a dummy namespace
+        # if isinstance(invalid_value, str) and isinstance(e.validator_value, list):
+        #     ref_list = [ref.get('$ref') for ref in e.validator_value]
+        #
+        #     if '#/definitions/patterns/definitions/validURL' in ref_list or '#/definitions/patterns/definitions/namespaceTerm' in ref_list:
+        #         if invalid_value == "":
+        #             # Remove the element if invalid_value is an empty string
+        #             del current_element[last_key]
+        #             fix_description = f"Removed empty @id field from element"
+        #             fixes.append({
+        #                 "feature_id": feature_id,
+        #                 "path": ".".join(map(str, path_list)),
+        #                 "description": fix_description
+        #             })
+        #             logger.debug(fix_description)
+        #         else:
+        #             # Prepend a dummy namespace if invalid_value is not empty
+        #             new_value = f"custom_namespace:{invalid_value}"
+        #             current_element[last_key] = new_value
+        #             fix_description = f"Fixed @id value: '{invalid_value}' to '{new_value}'"
+        #             fixes.append({
+        #                 "feature_id": feature_id,
+        #                 "path": ".".join(map(str, path_list)),
+        #                 "description": fix_description
+        #             })
+        #             logger.debug(fix_description)
 
     except Exception as e:
         raise
 
     return featureCollection, fixes
 
+@shared_task
 def cleanup(task_id):
     redis_client = get_redis_client()
     revoke_all_subtasks(redis_client, task_id)
     redis_client.delete(f"{task_id}_errors")
     redis_client.delete(f"{task_id}_fixes")
     redis_client.delete(task_id)
-    logger.debug(f"Cleanup completed for task {task_id}.")   
+    logger.debug(f"Cleanup completed for task {task_id}.")
 
 def get_task_status(request, task_id):
     redis_client = get_redis_client()
@@ -176,11 +177,13 @@ def get_task_status(request, task_id):
     # Check if task is no longer in progress
     if status.get('status') != 'in_progress':
         # revoke scheduled default cleanup task
-        if status.get('cleanup_task_id'):
+        cleanup_task_id = status.get('cleanup_task_id')
+        if cleanup_task_id:
             cleanup_task_result = AsyncResult(cleanup_task_id)
             cleanup_task_result.revoke(terminate=True)
             logger.debug(f"Revoked scheduled cleanup task {cleanup_task_id} for task {task_id}.")
             redis_client.hdel(task_id, 'cleanup_task_id')
+            del status['cleanup_task_id']
         cleanup(task_id)
     
     return JsonResponse({
