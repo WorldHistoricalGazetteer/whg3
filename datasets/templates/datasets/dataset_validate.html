@@ -165,53 +165,45 @@
         // Polling functionality for validation status
         function pollTaskStatus(taskId) {
             const url = "{% url 'get_task_status' task_id='TASK_ID_PLACEHOLDER' %}".replace('TASK_ID_PLACEHOLDER', taskId);
-            
-            $.get(url, function(data) {
-                if (data.status === "success") {
-                    const taskStatus = data.task_status;
-                    
-                    // Update the UI with live information
-                    let statusMessage = `<p>Status: ${taskStatus.status}</p>`;
-                    statusMessage += `<p>Last Update: ${taskStatus.time_since_last_update} seconds ago</p>`;
-                    
-                    if (taskStatus.fixes && taskStatus.fixes.length > 0) {
-                        statusMessage += `<p>Fixes:</p><ul>`;
-                        taskStatus.fixes.forEach(function(fix) {
-                            statusMessage += `<li>${fix}</li>`;
-                        });
-                        statusMessage += `</ul>`;
-                    }
-                    
-                    if (taskStatus.errors && taskStatus.errors.length > 0) {
-                        statusMessage += `<p>Errors:</p><ul>`;
-                        taskStatus.errors.forEach(function(error) {
-                            statusMessage += `<li>${error}</li>`;
-                        });
-                        statusMessage += `</ul>`;
-                    }
 
-                    // Display the status in the validation_status div
-                    $('#validation_status').html(statusMessage);
-                    
-                    if (taskStatus.status === "success") {
-                        // Redirect to the next step when done
-                        // window.location.href = "{% url 'home' %}";
-                        console.log('Success - requires next step url.')
-                    } else if (taskStatus.status === "failed") {
-                        // Display error message
-                        $('#validation_status').html('<div class="alert alert-danger">Validation failed: ' + taskStatus.message + '</div>');
+            $.get(url)
+                .done(function(data) {
+                    if (data.status === "success") {
+                        const taskStatus = data.task_status;
+                        let statusMessage = `<p>Status: ${taskStatus.status}</p>`;
+                        statusMessage += `<p>Last Update: ${taskStatus.time_since_last_update} seconds ago</p>`;
+
+                        if (taskStatus.fixes && taskStatus.fixes.length > 0) {
+                            statusMessage += `<p>Fixes:</p><ul>`;
+                            taskStatus.fixes.forEach(fix => statusMessage += `<li>${fix}</li>`);
+                            statusMessage += `</ul>`;
+                        }
+
+                        if (taskStatus.errors && taskStatus.errors.length > 0) {
+                            statusMessage += `<p>Errors:</p><ul>`;
+                            taskStatus.errors.forEach(error => statusMessage += `<li>${error}</li>`);
+                            statusMessage += `</ul>`;
+                        }
+
+                        $('#validation_status').html(statusMessage);
+
+                        // Handle different statuses
+                        if (taskStatus.status === "complete") {
+                            console.log('Success - requires next step url.');
+                            // Optionally redirect or perform next steps here
+                        } else if (taskStatus.status === "aborted") {
+                            $('#validation_status').html('<div class="alert alert-danger">Validation aborted: ' + (taskStatus.message || 'No additional details available.') + '</div>');
+                        } else if (taskStatus.status === "in_progress") {
+                            // Continue polling if still in progress
+                            setTimeout(() => pollTaskStatus(taskId), 5000); // Poll every 5 seconds
+                        }
                     } else {
-                        // Continue polling if still in progress
-                        setTimeout(function() {
-                            pollTaskStatus(taskId);
-                        }, 5000);  // Poll every 5 seconds
+                        $('#validation_status').html('<div class="alert alert-danger">Error: ' + data.message + '</div>');
                     }
-                } else {
-                    $('#validation_status').html('<div class="alert alert-danger">Error: ' + data.message + '</div>');
-                }
-            }).fail(function() {
-                $('#validation_status').html('<div class="alert alert-danger">An error occurred while checking the validation status.</div>');
-            });
+                })
+                .fail(function() {
+                    $('#validation_status').html('<div class="alert alert-danger">An error occurred while checking the validation status.</div>');
+                });
         }
 
         // Start polling if task_id is available

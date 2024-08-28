@@ -11,7 +11,7 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.utils import timezone
 from pyld import jsonld
-from .tasks import validate_feature_batch
+from .tasks import validate_feature_batch, cleanup
 import redis
 import sys
 from .tLPF_mappings import tLPF_mappings
@@ -27,6 +27,16 @@ def get_redis_client():
 def get_memory_size(obj):
     """Estimate the memory size of an object."""
     return sys.getsizeof(obj) + sum(sys.getsizeof(v) for v in obj.values() if isinstance(obj, dict))
+
+def json_feature_count(file_path):
+    """ Count the number of features in a JSON FeatureCollection file."""
+    try:
+        with open(file_path, 'r') as file:
+            feature_count = sum(1 for _ in ijson.items(file, 'features.item'))
+            return feature_count
+    except (IOError, ValueError) as e:
+        logger.error(f"Error counting features in JSON file: {e}")
+        raise
 
 def get_file_info(file_path):
     info = {}
@@ -132,22 +142,21 @@ def parse_to_LPF(delimited_file_path, ext):
 
         with open(lpf_file_path, 'w') as lpf_file:
             first_line = True  # To handle commas between records in feature array
+            feature_count = 0
 
             # Write the opening of the JSON FeatureCollection
             lpf_file.write('{\n"type": "FeatureCollection",\n"features": [\n')
             logger.debug(f"Started writing output to '{lpf_file_path}'.")
         
             for chunk in get_df_reader():
-                logger.debug(f"Processing chunk: {chunk}")
         
                 for _, record in chunk.iterrows():
                     record = record.to_dict()  # Convert row to a dictionary
-                    logger.debug(f"Processing record: '{record}'.")
+                    logger.debug(f"Processing record #{feature_count}: '{record}'.")
                     
                     # Apply converters: NB these cannot be applied during pd.read_excel due to the unhashable lists they produce
                     for key, converter in converters.items():
                         if key in record:
-                            logger.debug(f"Processing key: '{key}'.")
                             record[key] = converter(record[key])
         
                     # Create the nested JSON structure
@@ -177,7 +186,7 @@ def parse_to_LPF(delimited_file_path, ext):
                         lpf_feature['geometry'] = geojson.dumps(geojson_geometry)
                         lpf_feature.pop('geowkt')
                         
-                    logger.debug(f"Processed record: '{lpf_feature}'.")
+                    logger.debug(f"Processed record #{feature_count}: '{lpf_feature}'.")
         
                     # Write the JSON object to the file
                     if not first_line:
@@ -186,12 +195,13 @@ def parse_to_LPF(delimited_file_path, ext):
                         first_line = False
         
                     json.dump(lpf_feature, lpf_file, ensure_ascii=False)
+                    feature_count += 1
         
             # Write the closing of the JSON FeatureCollection
             lpf_file.write('\n]}\n')
 
         logger.debug(f"fLPF file '{delimited_file_path}' converted to LPF and written to '{lpf_file_path}'.")
-        return lpf_file_path
+        return lpf_file_path, feature_count
 
     except Exception as e:
         logger.error(f"Error processing file {delimited_file_path}: {e}")
@@ -209,7 +219,6 @@ def validate_file(request, file_path=settings.VALIDATION_TEST_SAMPLE):
         logger.error(message)
         return JsonResponse({"status": "failed", "message": message}, status=500)
     
-    # The following test uses the Unix file command: additional testing for encoding is implemented for spreadsheets
     file_info = get_file_info(file_path)
     
     if file_info['mime_type'] is None:
@@ -221,6 +230,7 @@ def validate_file(request, file_path=settings.VALIDATION_TEST_SAMPLE):
         logger.error(message)
         return JsonResponse({"status": "failed", "message": message}, status=500) 
     
+    # Preliminary utf-8 encoding test: further validation is performed when reading non-JSON files
     allowed_encodings = settings.VALIDATION_ALLOWED_ENCODINGS + ['binary'] # 'binary' required for spreadsheets when using Unix file command
     if file_info['mime_encoding'] is None:
         message = "Unable to determine the encoding type of the file."
@@ -231,35 +241,46 @@ def validate_file(request, file_path=settings.VALIDATION_TEST_SAMPLE):
         logger.error(message)
         return JsonResponse({"status": "failed", "message": message}, status=500)
     
+    # Convert delimited files to LPF JSON
     _, ext = os.path.splitext(file_path)
     ext = ext.lower()
-    
     try:
-        if not 'json' in ext: # mime type is not a reliable determinant of json
-            file_path = parse_to_LPF(file_path, ext)
+        if 'json' in ext: # mime type is not a reliable determinant of JSON
+            delimited_file_path = None
+            feature_count = json_feature_count(file_path)
+        else:
+            delimited_file_path = file_path
+            file_path, feature_count = parse_to_LPF(file_path, ext)
     except Exception as e:
         message = f"Error converting delimited text to LPF: {e}"
         logger.error(message)
         return JsonResponse({"status": "failed", "message": message}, status=500)
-    
+        
+    # Initialise Redis client
     redis_client = get_redis_client()
     task_id = f"validation_task_{uuid.uuid4()}"
+    
+    # Schedule the cleanup task
+    cleanup_task_result = cleanup.apply_async((task_id,), countdown=settings.VALIDATION_TIMEOUT)
+    cleanup_task_id = cleanup_task_result.id
+    
+    # Store task details in Redis
     redis_client.hset(task_id, mapping={
         'status': 'in_progress',
         'start_time': timezone.now().isoformat(),
         'all_queued': 'false',
-        'total_features': 0,
+        'total_features': feature_count,
+        'cleanup_task_id': cleanup_task_id,
     })
 
     try:
-        # Process each batch of features with Celery
+        # Process each batch of features as a separate Celery task
         for feature_batch in read_json_features_in_batches(file_path, task_id):
             # The following line could be implemented if the LP Ontology were correct
             #feature_batch = [jsonld.compact(feature, context) for feature in feature_batch]
             validate_feature_batch.delay(feature_batch, schema, task_id)
-            feature_count = len(feature_batch)
-            redis_client.hincrby(task_id, 'total_features', feature_count)
-            redis_client.hincrby(task_id, 'queued_features', feature_count)
+            feature_tally = len(feature_batch)
+            redis_client.hincrby(task_id, 'queued_features', feature_tally)
             redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
             
         redis_client.hset(task_id, 'all_queued', 'true')
@@ -297,7 +318,7 @@ def read_json_features_in_batches(file_path, task_id):
                 feature_batch.append(feature)
 
                 if current_memory_size >= settings.VALIDATION_BATCH_MEMORY_LIMIT:
-                    logger.debug(f'Yielding final batch ({current_memory_size} bytes): {feature_batch}')
+                    logger.debug(f'Yielding batch ({current_memory_size} bytes): {feature_batch}')
                     yield feature_batch
                     feature_batch = []
                     current_memory_size = 0

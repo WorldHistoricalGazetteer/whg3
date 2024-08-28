@@ -3,6 +3,7 @@ import json
 import logging
 from celery import shared_task
 from celery.result import AsyncResult
+from datetime import timedelta
 from jsonschema import Draft7Validator, ValidationError
 from django.http import JsonResponse
 from django.utils import timezone
@@ -13,45 +14,6 @@ from shapely.geometry import shape
 from shapely.validation import make_valid
 
 logger = logging.getLogger('validation')
-
-class RedisClientWithExpiry:
-    def __init__(self, redis_client, default_expiry=3600):
-        self.redis_client = redis_client
-        self.default_expiry = default_expiry
-
-    def hset(self, key, field, value):
-        """
-        Set the value of a hash field.
-        """
-        self.redis_client.hset(key, field, value)
-
-    def hincrby(self, key, field, increment):
-        """
-        Increment the integer value of a hash field by a given amount.
-        """
-        self.redis_client.hincrby(key, field, increment)
-
-    def hgetall(self, key):
-        """
-        Get all fields and values in a hash.
-        """
-        return self.redis_client.hgetall(key)
-
-    def rpush(self, key, value, expiry=None):
-        """
-        Append a value to the end of a list.
-        """
-        self.redis_client.rpush(key, value)
-        if expiry:
-            self.redis_client.expire(key, expiry)
-        else:
-            self.redis_client.expire(key, self.default_expiry)
-
-    def lrange(self, key, start, end):
-        """
-        Get a range of elements from a list.
-        """
-        return self.redis_client.lrange(key, start, end)
 
 def get_redis_client():
     return redis.StrictRedis.from_url(settings.CELERY_BROKER_URL)
@@ -169,6 +131,14 @@ def fix_feature(featureCollection, e):
 
     return featureCollection, fixes
 
+def cleanup(task_id):
+    redis_client = get_redis_client()
+    revoke_all_subtasks(redis_client, task_id)
+    redis_client.delete(f"{task_id}_errors")
+    redis_client.delete(f"{task_id}_fixes")
+    redis_client.delete(task_id)
+    logger.debug(f"Cleanup completed for task {task_id}.")   
+
 def get_task_status(request, task_id):
     redis_client = get_redis_client()
     status = redis_client.hgetall(task_id)
@@ -176,14 +146,43 @@ def get_task_status(request, task_id):
         return JsonResponse({"status": "not_found", "message": "Task ID not found"}, status=404)
     status = {k.decode('utf-8'): v.decode('utf-8') for k, v in status.items()}
     
+    # Calculate remaining features
+    total_features = int(status.get('total_features', 0))
+    queued_features = int(status.get('queued_features', 0))
+    processed_features = total_features - queued_features
+    
+    # Estimate remaining time
+    start_time = timezone.datetime.fromisoformat(status['start_time'])
     current_time = timezone.now()
     last_update_time_str = status.get('last_update', status.get('start_time'))
     last_update_time = timezone.datetime.fromisoformat(last_update_time_str)
-    status['time_since_last_update'] = (current_time - last_update_time).total_seconds()
     
+    if queued_features == 0:
+        estimated_remaining_time = 0
+    elif processed_features > 0:
+        elapsed_time = (current_time - start_time).total_seconds()
+        average_time_per_feature = elapsed_time / processed_features
+        estimated_remaining_time = average_time_per_feature * queued_features
+    else:
+        estimated_remaining_time = None
+    
+    status['time_since_last_update'] = (current_time - last_update_time).total_seconds()
+    status['estimated_remaining_time'] = str(timedelta(seconds=estimated_remaining_time)) if estimated_remaining_time is not None else "Calculating..."
+    
+    # Add fixes and errors if they exist
     status['fixes'] = [fix.decode('utf-8') for fix in redis_client.lrange(f"{task_id}_fixes", 0, -1)]
     status['errors'] = [error.decode('utf-8') for error in redis_client.lrange(f"{task_id}_errors", 0, -1)]
-    status['task_id'] = task_id
+    
+    # Check if task is no longer in progress
+    if status.get('status') != 'in_progress':
+        # revoke scheduled default cleanup task
+        if status.get('cleanup_task_id'):
+            cleanup_task_result = AsyncResult(cleanup_task_id)
+            cleanup_task_result.revoke(terminate=True)
+            logger.debug(f"Revoked scheduled cleanup task {cleanup_task_id} for task {task_id}.")
+            redis_client.hdel(task_id, 'cleanup_task_id')
+        cleanup(task_id)
+    
     return JsonResponse({
         "status": "success",
         "task_status": status
@@ -301,14 +300,20 @@ def validate_feature_geometry(feature):
     # No need to handle absence of `geometry` or other errors as this will be done by JSON Schema validation
     return feature, fixed, valid
 
-def cancel_all_subtasks(sub_tasks):
-    for sub_task_id in sub_tasks:
+def revoke_all_subtasks(redis_client, task_id):
+    subtasks = [subtask.decode('utf-8') for subtask in redis_client.lrange(f"{task_id}_subtasks", 0, -1)]
+    
+    for sub_task_id in subtasks:
         try:
             task_result = AsyncResult(sub_task_id)
             task_result.revoke(terminate=True)
-            print(f"Sub-task {sub_task_id} has been cancelled.")
+            logger.debug(f"Sub-task {sub_task_id} has been cancelled.")
         except Exception as e:
-            print(f"Failed to cancel sub-task {sub_task_id}: {e}")
+            logger.error(f"Failed to cancel sub-task {sub_task_id}: {e}")
+    
+    # Cleanup Redis record of subtasks
+    redis_client.delete(f"{task_id}_subtasks")
+    logger.debug(f"Redis list '{task_id}_subtasks' has been deleted.")
 
 @shared_task(bind=True)
 def validate_feature_batch(self, feature_batch, schema, task_id):
@@ -323,11 +328,10 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
     
     validator = Draft7Validator(schema)    
     redis_client = get_redis_client()
-    client_with_expiry = RedisClientWithExpiry(redis_client) # default_expiry=3600 (1 hour)
 
     # Store the current task ID as a subtask
     sub_task_id = self.request.id
-    client_with_expiry.rpush(f"{task_id}_subtasks", sub_task_id)
+    redis_client.rpush(f"{task_id}_subtasks", sub_task_id)
 
     for feature in feature_batch:
         stopValidation = False
@@ -335,15 +339,15 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
         
         feature, fixed, valid = validate_feature_geometry(feature)
         if not valid:
-            client_with_expiry.rpush(f"{task_id}_errors", 'Geometry failed validation and could not be fixed.')
-            client_with_expiry.hset(task_id, 'last_update', timezone.now().isoformat())
+            redis_client.rpush(f"{task_id}_errors", 'Geometry failed validation and could not be fixed.')
+            redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
         if fixed:
-            client_with_expiry.rpush(f"{task_id}_fixes", json.dumps({
+            redis_client.rpush(f"{task_id}_fixes", json.dumps({
                 "feature_id": feature.get("@id", "unknown"),
                 "path": "features.feature.geometry",
                 "description": "Geometry fixed."
             }))
-            client_with_expiry.hset(task_id, 'last_update', timezone.now().isoformat())
+            redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
         
         featureCollection = {
             "type": "FeatureCollection",
@@ -372,7 +376,7 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
                         if fixes:
                             for fix in fixes:  # Iterate over the list of fixes
                                 try:
-                                    client_with_expiry.rpush(f"{task_id}_fixes", json.dumps(fix))
+                                    redis_client.rpush(f"{task_id}_fixes", json.dumps(fix))
                                 except Exception as e:
                                     logger.error(f"Failed to push fix to Redis: {e}")
                         else:
@@ -382,70 +386,63 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
                     except Exception as fix_error:
                         logger.error(f"Failed to fix feature: {fix_error}")
                         logger.error(full_error)
-                        client_with_expiry.rpush(f"{task_id}_errors", full_error)
-                        client_with_expiry.hset(task_id, 'last_update', timezone.now().isoformat())
+                        redis_client.rpush(f"{task_id}_errors", full_error)
+                        redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
                         stopValidation = True
                 else:
                     logger.error(full_error)
-                    client_with_expiry.rpush(f"{task_id}_errors", full_error)
-                    client_with_expiry.hset(task_id, 'last_update', timezone.now().isoformat())
+                    redis_client.rpush(f"{task_id}_errors", full_error)
+                    redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
                     stopValidation = True
             except Exception as e:
                 logger.error(f"Unexpected error during validation: {e}")
-                client_with_expiry.rpush(f"{task_id}_errors", str(e))
-                client_with_expiry.hset(task_id, 'last_update', timezone.now().isoformat())
+                redis_client.rpush(f"{task_id}_errors", str(e))
+                redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
                 stopValidation = True
                 
             if stopValidation:
                 try:
-                    client_with_expiry.hincrby(task_id, 'queued_features', -1)
-                    client_with_expiry.hset(task_id, 'last_update', timezone.now().isoformat())
+                    redis_client.hincrby(task_id, 'queued_features', -1)
+                    redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
                 except Exception as e:
                     logger.error(f"Error updating Redis status: {e}")
 
-    # Check if all tasks are done
     try:
+        errors = [error.decode('utf-8') for error in redis_client.lrange(f"{task_id}_errors", 0, -1)]
+        if len(errors) > settings.VALIDATION_MAX_ERRORS:
+            revoke_all_subtasks(redis_client, task_id)
+            redis_client.hset(task_id, mapping={
+                'status': 'aborted',
+                'end_time': timezone.now().isoformat(),
+                'time_taken': elapsed_time,
+                'time_remaining': 0
+            })
 
-        task_status = client_with_expiry.hgetall(task_id)
+        task_status = redis_client.hgetall(task_id)
         all_queued = task_status.get(b'all_queued', b'').decode('utf-8')
-        total_features = int(task_status.get(b'total_features', 0))
-        queued_features = int(task_status.get(b'queued_features', 0))
-        errors = [error.decode('utf-8') for error in client_with_expiry.lrange(f"{task_id}_errors", 0, -1)]
-        
+        queued_features = int(task_status.get(b'queued_features', 0))        
         start_time_str = task_status.get(b'start_time', b'').decode('utf-8')
+        
         if start_time_str:
             start_time = timezone.datetime.fromisoformat(start_time_str)
         else:
             start_time = timezone.now()
-        
         end_time = timezone.now()
         elapsed_time = (end_time - start_time).total_seconds()
              
         if all_queued == 'true' and queued_features == 0:
-            client_with_expiry.hset(task_id, mapping={
+            redis_client.hset(task_id, mapping={
                 'status': 'complete',
                 'end_time': end_time.isoformat(),
                 'time_taken': elapsed_time,
                 'time_remaining': 0
             })
             logger.debug(f'Task {task_id} completed successfully.')
-        elif len(errors) > settings.VALIDATION_MAX_ERRORS:
-            subtasks = [subtask.decode('utf-8') for subtask in client_with_expiry.lrange(f"{task_id}_subtasks", 0, -1)]
-            cancel_all_subtasks(subtasks)
-            client_with_expiry.hset(task_id, mapping={
-                'status': f'aborted',
-                'end_time': end_time.isoformat(),
-                'time_taken': elapsed_time,
-                'time_remaining': 0
-            })   
-        else:
-            if total_features > queued_features:
-                estimated_total_time = (elapsed_time / (total_features - queued_features)) * total_features
-                estimated_time_remaining = estimated_total_time - elapsed_time
-            else:
-                estimated_time_remaining = 0            
-            client_with_expiry.hset(task_id, 'time_remaining', estimated_time_remaining)
-            logger.debug(f'Task {task_id} not yet complete. Status: {task_status}')
+            
+            # Cleanup Redis record of subtasks
+            redis_client.delete(f"{task_id}_subtasks")
+            logger.debug(f"Redis list '{task_id}_subtasks' has been deleted.")
+            
     except Exception as e:
         logger.error(f"Error checking or updating task status: {e}")
 
