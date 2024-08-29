@@ -62,6 +62,13 @@
         color: black;
         z-index: 2;
     }
+    #fixes_content, #errors_content {
+        max-height: 100px;
+    	overflow: auto;
+    }
+    #errors {
+    	color: red;
+    }
 </style>
 
 <main class="container">
@@ -88,18 +95,86 @@
                     {% endfor %}
                 </div>
                 {% endif %}
-
-                <div class="mb-3 input-group">
-                    <div class="input-group-prepend input-group-text">
-                        Choose Data File
-                        <a class="pointer" data-bs-toggle="popover" title="Data Formats" 
-                          data-bs-content="There are specific requirements for your data file. Please read the note on Data Formats to the right of this form.">
-                            <i class="fas fa-question-circle linky"></i>
-                        </a>
-                    </div>
-                    <input type="text" id="file-name" class="form-control dummy-file-input" placeholder="(required)" required spellcheck="false">
-                    {{ form.file }}
-                </div>
+        
+		        <div class="mb-3 input-group">
+		          <div class="input-group-prepend input-group-text">Title</div>
+		          {{ form.title }}
+		        </div>
+		
+		        <div class="mb-3 input-group">
+		          <div class="input-group-prepend input-group-text">Label
+			        <a class="pointer" data-bs-toggle="popover" title="Dataset label" 
+			          data-bs-content="A short identifying label for your dataset; must be unique. Try using some portion of the dataset title, without spaces. Add version number suffix if you get a 'not unique' error.">
+			          <i class="fas fa-question-circle linky"></i>
+			        </a>
+		          </div>
+		          {{ form.label }}
+		        </div>
+		
+		        <div class="mb-3 input-group">
+		          <div class="input-group-prepend input-group-text">Description</div>
+		          {{ form.description }}
+		        </div>
+		
+		        <div class="mb-3 input-group">
+		          <div class="input-group-prepend input-group-text">Choose Data File
+			        <a class="pointer" data-bs-toggle="popover" title="Data Formats" 
+			          data-bs-content="There are specific requirements for your data file. Please read the note on Data Formats to the right of this form.">
+			          <i class="fas fa-question-circle linky"></i>
+			        </a>
+				  </div>
+		          <input type="text" id="file-name" class="form-control dummy-file-input" placeholder="(required)" required spellcheck="false">
+		          {{ form.file }}
+		        </div>
+		
+		        <div class="mb-3 input-group">
+		          <div class="input-group-prepend input-group-text">
+		            Accept&nbsp;<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a>&nbsp;Licence
+		          </div>
+		          <div class="input-group-text">
+		            {{ form.license_acceptance }}
+		          </div>
+		        </div>
+		<!--
+		        <div class="inputs-optional">
+		        	<span>Optional</span>
+			        <div class="mb-3 input-group">
+			          <div class="input-group-prepend input-group-text">Creator(s)</div>
+			          {{ form.creator }}
+			        </div>
+			
+			        <div class="mb-3 input-group">
+			          <div class="input-group-prepend input-group-text">Source(s)</div>
+			          {{ form.source }}
+			        </div>
+			
+			        <div class="mb-3 input-group">
+			          <div class="input-group-prepend input-group-text">Contributors</div>
+			          {{ form.contributors }}
+			        </div>
+			        
+			        <div class="mb-3 input-group">
+			          <div class="input-group-prepend input-group-text">URI base
+			        	<a class="pointer" data-bs-toggle="popover" title="Prefix for source place page url" 
+			        	  data-bs-content="If your records are published and each place has a landing page, enter the URI base prefix, e.g. <span class='ms-2'><i>http://mygaz.org/places/</i></span><br/>Otherwise leave blank, and they will be assigned a WHG base URI.">
+			        	  <i class="fas fa-question-circle linky"></i>
+			        	</a>
+			          </div>
+			          {{ form.uri_base }}
+			        </div>
+			
+			        <div class="mb-3 input-group">
+			          <div class="input-group-prepend input-group-text">Web page</div>
+			          {{ form.webpage }}
+			        </div>
+			
+			        <div class="mb-3 input-group">
+			          <div class="input-group-prepend input-group-text">Essay file&nbsp;&nbsp;<i class="fas fa-file-pdf"></i></div>
+			          <input type="text" class="form-control dummy-file-input" placeholder="No file chosen" spellcheck="false">
+			          {{ form.pdf }}
+			        </div>        	
+		        </div>
+		-->        
 
                 <div class="d-flex justify-content-end">
                     <a href="javascript:void(0);" onclick="window.history.back();" class="btn btn-secondary mx-2">Cancel</a>
@@ -115,8 +190,16 @@
 				    <div id="progress_bar_text" class="progress-bar-text">0% Complete</div>
 				</div>
 			    <p id="estimated_time"></p>
-			    <div id="fixes" class="collapse"></div>
-			    <div id="errors" class="collapse"></div>
+			    <!-- Fixes -->
+		        <a id="fixes" class="btn btn-link" data-bs-toggle="collapse" href="#fixes_content" role="button" aria-expanded="false" aria-controls="fixes_content"></a>
+			    <div id="fixes_content" class="collapse">
+			        <ul id="fixes_list"></ul>
+			    </div>			
+			    <!-- Errors -->
+		        <a id="errors" class="btn btn-link" data-bs-toggle="collapse" href="#errors_content" role="button" aria-expanded="false" aria-controls="errors_content"></a>
+			    <div id="errors_content" class="collapse">
+			        <ul id="errors_list"></ul>
+			    </div>
 			</div>    
             
         </div>
@@ -191,6 +274,11 @@
             }
             $(this).addClass('was-validated');
         });
+        
+        function formatMessage(message) {
+            const { feature_id, description } = JSON.parse(message);
+            return `<strong>${feature_id}</strong>: <em>${description}</em>`;
+        }
 
         // Polling functionality for validation status
 		function pollTaskStatus(taskId) {
@@ -231,25 +319,23 @@
 	
 		                $('#progress_bar_text').text(bar_text);
 		                
-		
-		                // Handle fixes (if any)
+		                // Handle fixes
 		                if (taskStatus.fixes && taskStatus.fixes.length > 0) {
-		                    let fixesContent = `<p><a data-toggle="collapse" href="#fixes" role="button" aria-expanded="false" aria-controls="fixes">${taskStatus.fixes.length} Fixes (click to expand)</a></p><ul>`;
-		                    taskStatus.fixes.forEach(fix => fixesContent += `<li>${fix}</li>`);
-		                    fixesContent += `</ul>`;
-		                    $('#fixes').html(fixesContent).collapse('hide');
+		                    $('#fixes').html(`${taskStatus.fixes.length} fix${taskStatus.fixes.length > 1 ? "es" : ""} applied <small>(click to show/hide)</small>`).show();
+		                    let fixesContent = taskStatus.fixes.map(fix => `<li>${formatMessage(fix)}</li>`).join('');
+		                    $('#fixes_list').html(fixesContent);
 		                } else {
-		                    $('#fixes').html('');  // Clear if no fixes
+		                    $('#fixes, #fixes_content').hide();
 		                }
-		
-		                // Handle errors (if any)
+
+		                // Handle errors
 		                if (taskStatus.errors && taskStatus.errors.length > 0) {
-		                    let errorsContent = `<p><a data-toggle="collapse" href="#errors" role="button" aria-expanded="false" aria-controls="errors">${taskStatus.errors.length} Errors (click to expand)</a></p><ul>`;
-		                    taskStatus.errors.forEach(error => errorsContent += `<li>${error}</li>`);
-		                    errorsContent += `</ul>`;
-		                    $('#errors').html(errorsContent).collapse('hide');
+		                    $('#errors').html(`${taskStatus.errors.length} error${taskStatus.errors.length > 1 ? "s" : ""} found <small>(click to show/hide)</small>`).show();
+		                    let errorsContent = taskStatus.errors.map(error => `<li>${formatMessage(error)}</li>`).join('');
+		                    $('#errors_list').html(errorsContent);
+		                    $('#errors_content').collapse('show');
 		                } else {
-		                    $('#errors').html('');  // Clear if no errors
+		                    $('#errors, #errors_content').hide();
 		                }
 		
 		                // Handle different statuses
@@ -272,10 +358,17 @@
 		}
 
         // Start polling if task_id is available
-        {% if task_id %}
+        {% if task_id|default:'' %}
         $('#ds_validate_form, #validation_status').toggle();
         pollTaskStatus("{{ task_id }}");
         {% endif %}
+        
+      /*   
+        TODO:
+        	Form for adding/checking metadata; 
+        	Advise that navigation away and reloading causes re-validation;
+        	You may leave this page - if validation passes, dataset will have "label" - unless CSL JSON
+         */
     });
 </script>
 {% endblock %}

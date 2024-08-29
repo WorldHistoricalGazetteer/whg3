@@ -45,6 +45,7 @@ from django.shortcuts import redirect, get_object_or_404, render
 from django.test import Client
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
+from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import (
@@ -80,8 +81,7 @@ from .exceptions import (
 from .forms import (
     HitModelForm, 
     DatasetDetailModelForm,
-    DatasetUploadForm, 
-    DatasetValidateForm,
+    DatasetUploadForm,
     DatasetCreateEmptyModelForm
 )
 from .insert import (
@@ -105,7 +105,19 @@ class DatasetValidate(CreateView):
     login_url = '/accounts/login/'
     redirect_field_name = 'redirect_to'
     template_name = 'datasets/dataset_validate.html'
-    form_class = DatasetValidateForm
+    form_class = DatasetUploadForm
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['task_id'] = ''
+        return context
 
     def form_invalid(self, form):
         return self.render_to_response(self.get_context_data(form=form))
@@ -123,7 +135,22 @@ class DatasetValidate(CreateView):
             uploaded_filepath = self.save_file_temporarily(uploaded_file)
             self.logger.debug(f'File saved to `{uploaded_filepath}`')
 
-            validation_response = validate_file(self.request, uploaded_filepath, uploaded_file.name)
+            validation_response = validate_file(self.request, {
+                'title': form.cleaned_data.get('title'),
+                'label': form.cleaned_data.get('label') or self.generate_unique_label(uploaded_file),
+                'description': form.cleaned_data.get('description'),
+                'creator': form.cleaned_data.get('creator'),
+                'source': form.cleaned_data.get('source'),
+                'contributors': form.cleaned_data.get('contributors'),
+                'uri_base': form.cleaned_data.get('uri_base') or 'https://whgazetteer.org/api/db/?id=',
+                'webpage': form.cleaned_data.get('webpage'),
+                'pdf': form.cleaned_data.get('pdf'),
+                'owner_id': user.id,
+                'username': user.username,
+                'uploaded_filepath': uploaded_filepath,
+                'uploaded_filename': uploaded_file.name
+            })
+
             if not validation_response:
                 self.cleanup_uploaded_file(uploaded_filepath)
                 return self.handle_invalid_form(form, "No response from validation service.")
@@ -167,6 +194,7 @@ class DatasetValidate(CreateView):
         
         # Create a temporary file with the same extension
         with tempfile.NamedTemporaryFile(suffix=file_extension, delete=False) as temp_file:
+            # Deletion is managed by validation.tasks.clean_tmp_files, triggered by beat_schedule in celery.py
             temp_file_path = temp_file.name
             try:
                 # If the file is stored on disk (TemporaryUploadedFile)
@@ -186,6 +214,37 @@ class DatasetValidate(CreateView):
     def cleanup_uploaded_file(self, uploaded_filepath):
         if uploaded_filepath is not None and os.path.exists(uploaded_filepath):
             os.remove(uploaded_filepath)
+
+    def generate_unique_label(self, uploaded_file):
+        min_length = 3
+        max_length = 20
+
+        # Initialise label from the file name
+        base_label = slugify(os.path.splitext(uploaded_file.name)[0])
+
+        # Helper function to ensure the label does not exceed max length
+        def adjust_label_length(label):
+            if len(label) > max_length:
+                return label[-max_length:]
+            return label
+    
+        # Adjust the base label length
+        label = adjust_label_length(base_label)
+
+        # Check if the label already exists and ensure uniqueness
+        if Dataset.objects.filter(label=label).exists():
+            # If the label already exists, append the user's surname
+            label = f"{label}_{slugify(self.request.user.surname)}"
+            label = adjust_label_length(label)  # Adjust length after appending surname
+    
+            count = 1
+            # If the new label still exists, append "_v" and a number
+            while Dataset.objects.filter(label=label).exists():
+                label = f"{base_label}_v{count}"
+                label = adjust_label_length(label)  # Adjust length after appending version
+                count += 1
+    
+        return label
 
 class VolunteeringView(ListView):
   template_name = 'datasets/volunteering.html'

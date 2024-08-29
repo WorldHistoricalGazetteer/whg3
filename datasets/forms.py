@@ -16,43 +16,32 @@ MATCHTYPES = [
     ('none', 'no match'),
 ]
 
-class DatasetValidateForm(forms.ModelForm):    
-    file = forms.FileField(label='Data file', widget=forms.FileInput(attrs={
-        'class': 'form-control',
-        'required': 'required',
-        'accept': ','.join(settings.VALIDATION_ALLOWED_EXTENSIONS),
-    }))
-
-    class Meta:
-        model = Dataset
-        fields = ('file',)
-
 """
   DatasetUploadForm()
 """
 class DatasetUploadForm(forms.ModelForm):
-    title = forms.CharField(label='Title', widget=forms.TextInput(attrs={
-        'placeholder': '5-100 characters (required)',
+    title = forms.CharField(label='Title', required=False, widget=forms.TextInput(attrs={
+        'placeholder': '5-100 characters (optional)',
         'size': 45,
         'minlength': 5,
         'maxlength': 100,
         'class': 'form-control',
     }))
 
-    label = forms.CharField(label='Label', widget=forms.TextInput(attrs={
-        'placeholder': '3-20 characters, no spaces (required)',
+    label = forms.CharField(label='Label', required=False, widget=forms.TextInput(attrs={
+        'placeholder': '3-20 characters, no spaces (optional)',
         'size': 45,
         'minlength': 3,
         'maxlength': 20,
         'class': 'form-control',
     }))
 
-    description = forms.CharField(label='Description', widget=forms.Textarea(attrs={
+    description = forms.CharField(label='Description', required=False, widget=forms.Textarea(attrs={
         'rows': 2,
         'cols': 45,
         'minlength': 10,
         'class': 'form-control',
-        'placeholder': 'At least 10 characters (required)',
+        'placeholder': 'At least 10 characters (optional)',
     }))
 
     creator = forms.CharField(label='Creator(s)', required=False, widget=forms.TextInput(attrs={
@@ -90,11 +79,10 @@ class DatasetUploadForm(forms.ModelForm):
         'accept': '.pdf',
     }))
 
-    valid_extensions = ['.csv', '.tsv', '.xlsx', '.ods', '.jsonld', '.geojson', '.json']
     file = forms.FileField(label='Data file', widget=forms.FileInput(attrs={
         'class': 'form-control',
         'required': 'required',
-        'accept': ','.join(valid_extensions),
+        'accept': ','.join(settings.VALIDATION_ALLOWED_EXTENSIONS),
     }))
 
     license_acceptance = forms.CharField(label='Licence Acceptance', widget=forms.CheckboxInput(attrs={

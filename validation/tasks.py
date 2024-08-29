@@ -1,4 +1,6 @@
 # validation/tasks.py
+import os
+import shutil
 import json
 import logging
 import time
@@ -11,10 +13,14 @@ from jsonschema import Draft7Validator, ValidationError
 from django.http import JsonResponse
 from django.utils import timezone
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 import redis
 
 from shapely.geometry import shape
 from shapely.validation import make_valid
+
+from datasets.models import Dataset, DatasetFile
+from main.models import Log
 
 logger = logging.getLogger('validation')
 
@@ -153,13 +159,125 @@ def fix_feature(featureCollection, e):
     return featureCollection, fixes
 
 @shared_task
+def clean_tmp_files(directory='/var/tmp', age_in_seconds=10800): # 10800 = 3 hours
+    """Delete files older than `age_in_seconds` in `directory`."""
+    now = time.time()
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+        if os.path.isfile(filepath) and os.stat(filepath).st_mtime < (now - age_in_seconds):
+            os.remove(filepath)
+
+@shared_task
 def cleanup(task_id):
     redis_client = get_redis_client()
     revoke_all_subtasks(redis_client, task_id)
     redis_client.delete(f"{task_id}_errors")
     redis_client.delete(f"{task_id}_fixes")
+    redis_client.delete(f"{task_id}_metadata")
     redis_client.delete(task_id)
     logger.debug(f"Cleanup completed for task {task_id}.")
+    
+def save_dataset(task_id):
+    try:      
+        # Retrieve stored form data from Redis
+        redis_client = get_redis_client()
+        dataset_metadata = redis_client.hgetall(f"{task_id}_metadata")
+        dataset_metadata = {k.decode('utf-8'): v.decode('utf-8') for k, v in dataset_metadata.items()}
+        
+        logger.debug(f"Retrieved dataset metadata: {dataset_metadata}")
+
+        # Create Dataset object
+        dataset = Dataset.objects.create(
+            title=dataset_metadata['title'] or dataset_metadata['label'],
+            label=dataset_metadata['label'],
+            description=dataset_metadata['description'],
+            creator=dataset_metadata['creator'],
+            source=dataset_metadata['source'],
+            contributors=dataset_metadata['contributors'],
+            uri_base=dataset_metadata['uri_base'],
+            webpage=dataset_metadata['webpage'],
+            pdf=dataset_metadata['pdf'],
+            owner_id=int(dataset_metadata['owner_id']),
+            ds_status='uploaded'
+        )
+        
+        # Log the creation
+        Log.objects.create(
+            category='dataset',
+            logtype='ds_create',
+            subtype='place',
+            dataset_id=dataset.id,
+            user_id=int(dataset_metadata['owner_id'])
+        )
+        
+        # Define paths and filenames
+        username = dataset_metadata.get('username', 'unknown_user')
+        user_folder = os.path.join(settings.MEDIA_ROOT, f"user_{username}")
+        
+        # Ensure that the user folder exists
+        os.makedirs(user_folder, exist_ok=True)
+    
+        uploaded_filename = dataset_metadata.get('uploaded_filename', 'default_filename.tsv')
+        jsonld_filepath = dataset_metadata.get('uploaded_filepath', '')
+        delimited_filepath = dataset_metadata.get('delimited_file_path', '')
+        
+        def get_unique_filename(filename, new_ext=None):
+            base, ext = os.path.splitext(filename)
+            ext = new_ext or ext
+            counter = 1
+            new_filename = f"{base}.{ext}"
+            while os.path.exists(os.path.join(user_folder, new_filename)):
+                new_filename = f"{base}_{counter}.{ext}"
+                counter += 1
+            return new_filename
+        
+        def create_DatasetFile(file, format=dataset_metadata['format'], delimiter=None, header=None):    
+            # Create DatasetFile object
+            DatasetFile.objects.create(
+                dataset=dataset,
+                file=file,
+                rev=1,
+                format=format,
+                delimiter=delimiter,
+                header=header,
+                numrows=dataset_metadata["feature_count"],
+                df_status='uploaded'
+            )
+        
+        if not delimited_filepath: # No LPF conversion was done, simply move the uploaded file
+            if jsonld_filepath:
+                new_filename = get_unique_filename(uploaded_filename)
+                destination_path = os.path.join(user_folder, new_filename)
+                shutil.move(jsonld_filepath, destination_path)
+                logger.debug(f"Moved uploaded file to {destination_path}")
+                create_DatasetFile(destination_path)
+            else:
+                logger.warning("No file to move as both jsonld_filepath and delimited_filepath are missing.")
+        else:  # Move both files
+            if delimited_filepath:
+                new_filename = get_unique_filename(uploaded_filename)
+                destination_path = os.path.join(user_folder, new_filename)
+                shutil.move(delimited_filepath, destination_path)
+                logger.debug(f"Moved delimited file to {destination_path}")
+                create_DatasetFile(destination_path, delimiter=dataset_metadata['separator'], header=dataset_metadata['header'])
+            if jsonld_filepath:
+                new_filename_jsonld = get_unique_filename(uploaded_filename, 'jsonld')
+                destination_path_jsonld = os.path.join(user_folder, new_filename_jsonld)
+                shutil.move(jsonld_filepath, destination_path_jsonld)
+                logger.debug(f"Moved uploaded file to {destination_path_jsonld}")
+                create_DatasetFile(destination_path_jsonld, format='application/json')
+        
+        redis_client.delete(f"{task_id}_metadata")
+        # Do not use cleanup task yet - user may still be polling `get_task_status`
+
+    except ObjectDoesNotExist as e:
+        logger.error(f"Dataset or Log object does not exist: {e}")
+    except KeyError as e:
+        logger.error(f"Missing expected key in dataset metadata: {e}")
+    except (OSError, shutil.Error) as e:
+        logger.error(f"File operation error: {e}")
+    except Exception as e:
+        logger.error(f"Unexpected error occurred: {e}")
 
 def get_task_status(request, task_id):
     current_time = timezone.now()
@@ -371,7 +489,11 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
         
         feature, fixed, valid = validate_feature_geometry(feature)
         if not valid:
-            redis_client.rpush(f"{task_id}_errors", 'Geometry failed validation and could not be fixed.')
+            redis_client.rpush(f"{task_id}_errors", json.dumps({
+                "feature_id": feature.get("@id", "unknown"),
+                "path": "features.feature.geometry",
+                "description": "Geometry failed validation and could not be fixed."
+            }))
             redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
         if fixed:
             redis_client.rpush(f"{task_id}_fixes", json.dumps({
@@ -397,6 +519,11 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
                 error_path = " -> ".join([str(p) for p in e.absolute_path])
                 detailed_error = parse_validation_error(e)
                 full_error = f"Validation error at {error_path}: {detailed_error}"
+                json_error = json.dumps({
+                    "feature_id": feature.get("@id", "unknown"),
+                    "path": error_path,
+                    "description": detailed_error
+                })
                 if fixAttempts < settings.VALIDATION_MAXFIXATTEMPTS:
                     try:
                         featureCollection, fixes = fix_feature({
@@ -418,12 +545,12 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
                     except Exception as fix_error:
                         logger.error(f"Failed to fix feature: {fix_error}")
                         logger.error(full_error)
-                        redis_client.rpush(f"{task_id}_errors", full_error)
+                        redis_client.rpush(f"{task_id}_errors", json_error)
                         redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
                         stopValidation = True
                 else:
                     logger.error(full_error)
-                    redis_client.rpush(f"{task_id}_errors", full_error)
+                    redis_client.rpush(f"{task_id}_errors", json_error)
                     redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
                     stopValidation = True
             except Exception as e:
@@ -439,34 +566,40 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
                 except Exception as e:
                     logger.error(f"Error updating Redis status: {e}")
         
+            # NB: Cannot keep tally of errors within this task because it may be running multiple times concurrently
+            errors = [error.decode('utf-8') for error in redis_client.lrange(f"{task_id}_errors", 0, -1)]
+            if len(errors) > settings.VALIDATION_MAX_ERRORS:
+                task_status = redis_client.hgetall(f"{task_id}_metadata")
+                task_status = {k.decode('utf-8'): v.decode('utf-8') for k, v in task_status.items()}
+                
+                # Clean up files
+                delimited_file_path = task_status.get('delimited_file_path', '')
+                if delimited_file_path and os.path.exists(delimited_file_path):
+                    os.remove(delimited_file_path)
+                file_path = task_status.get('file_path', '')
+                if file_path and os.path.exists(file_path):
+                    os.remove(file_path)
+                    
+                revoke_all_subtasks(redis_client, task_id)
+                redis_client.hset(task_id, mapping={
+                    'status': 'aborted',
+                    'end_time': timezone.now().isoformat(),
+                    'time_remaining': 0
+                })
+                
+                logger.debug(f"More than {settings.VALIDATION_MAX_ERRORS} errors found: aborting validation of feature batch.")
+                return 
+        
             # Add a delay to each iteration for testing UI
             time.sleep(settings.VALIDATION_TEST_DELAY)
 
-    try:
+    try:    
         task_status = redis_client.hgetall(task_id)
-        
-        errors = [error.decode('utf-8') for error in redis_client.lrange(f"{task_id}_errors", 0, -1)]
-        if len(errors) > settings.VALIDATION_MAX_ERRORS:
+        task_status = {k.decode('utf-8'): v.decode('utf-8') for k, v in task_status.items()}
             
-            # Clean up files
-            delimited_file_path = task_status.get(b'delimited_file_path', b'').decode('utf-8')
-            if delimited_file_path and os.path.exists(delimited_file_path):
-                os.remove(delimited_file_path)
-            file_path = task_status.get(b'file_path', b'').decode('utf-8')
-            if file_path and os.path.exists(file_path):
-                os.remove(file_path)
-                
-            revoke_all_subtasks(redis_client, task_id)
-            redis_client.hset(task_id, mapping={
-                'status': 'aborted',
-                'end_time': timezone.now().isoformat(),
-                'time_taken': elapsed_time,
-                'time_remaining': 0
-            })
-            
-        all_queued = task_status.get(b'all_queued', b'').decode('utf-8')
-        queued_features = int(task_status.get(b'queued_features', 0))        
-        start_time_str = task_status.get(b'start_time', b'').decode('utf-8')
+        all_queued = task_status.get('all_queued', '')
+        queued_features = int(task_status.get('queued_features', 0))        
+        start_time_str = task_status.get('start_time', '')
         
         if start_time_str:
             start_time = timezone.datetime.fromisoformat(start_time_str)
@@ -476,6 +609,10 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
         elapsed_time = (end_time - start_time).total_seconds()
              
         if all_queued == 'true' and queued_features == 0:
+            
+            logger.debug(f"Saving Dataset: {task_status.get('label', '(missing label)')}")
+            save_dataset(task_id)            
+            
             redis_client.hset(task_id, mapping={
                 'status': 'complete',
                 'end_time': end_time.isoformat(),
