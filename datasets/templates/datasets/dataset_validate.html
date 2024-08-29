@@ -290,7 +290,7 @@
 		                const taskStatus = data.task_status;
 		
 		                // Display file name and total features
-		                $('#file_name').html(`Validating: <b>${taskStatus.original_file_name}</b>: <i>${taskStatus.total_features} features</i>`);
+		                $('#file_name').html(`Validating: <b>${taskStatus.uploaded_filename}</b>: <i>${taskStatus.total_features} features</i>`);
 		                
 		                if (!!taskStatus.remaining_queue) {
 		                	bar_text = `Waiting ... Job #${taskStatus.remaining_queue+1} in queue.`;

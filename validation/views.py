@@ -61,27 +61,27 @@ def get_file_info(file_path):
         info['mime_encoding'] = mime_encoding_result.stdout.strip()
 
         logger.debug(f"File info: {info}")
-        return info
     except subprocess.CalledProcessError as e:
         logger.error(f"Error running file command: {e}")
         return {'mime_type': None, 'mime_encoding': None}
     except Exception as e:
         logger.error(f"Unexpected error while getting file information: {e}")
         return {'mime_type': None, 'mime_encoding': None}
-    return LPF_file_path
     
-def parse_to_LPF(delimited_file_path, ext):
+    return info
+    
+def parse_to_LPF(delimited_filepath, ext):
     try:
-        _, ext = os.path.splitext(delimited_file_path)
+        _, ext = os.path.splitext(delimited_filepath)
         ext = ext.lower()
-        separator = ',' if ext == '.csv' else '\t' if ext == '.tsv' else None
+        separator = ',' if ext == '.csv' else '\t' if ext == '.tsv' else ''
 
-        lpf_file_path = delimited_file_path.replace(ext, '.jsonld')
+        lpf_file_path = delimited_filepath.replace(ext, '.jsonld')
         # Deletion is managed by validation.tasks.clean_tmp_files, triggered by beat_schedule in celery.py
-        logger.debug(f"Processing [separator: {separator}] file '{delimited_file_path}'.")
+        logger.debug(f"Processing [separator: {separator}] file '{delimited_filepath}'.")
 
         converters = {key: mapping['converter'] for key, mapping in tLPF_mappings.items()}
-        header = None
+        header = ""
 
         def get_df_reader():
             nonlocal header
@@ -98,12 +98,12 @@ def parse_to_LPF(delimited_file_path, ext):
                 while True:
                     if separator:
                         logger.debug(f"Reading from CSV.")
-                        df_chunk = pd.read_csv(delimited_file_path, skiprows=skiprows, **configuration, sep=separator, encoding='utf-8', skipinitialspace=True)
-                        if header is None:  # Capture the header only once, from the first chunk
-                            header = ";".join(df_chunk.columns.tolist())
+                        df_chunk = pd.read_csv(delimited_filepath, skiprows=skiprows, **configuration, sep=separator, encoding='utf-8', skipinitialspace=True)
                     else:
                         logger.debug(f"Reading from Excel.")
-                        df_chunk = pd.read_excel(delimited_file_path, skiprows=skiprows, **configuration, sheet_name=0)
+                        df_chunk = pd.read_excel(delimited_filepath, skiprows=skiprows, **configuration, sheet_name=0)
+                    if header is None:  # Capture the header only once, from the first chunk
+                        header = ";".join(df_chunk.columns.tolist()) or ""
                     skiprows += settings.VALIDATION_CHUNK_ROWS
                     if df_chunk.empty:
                         break
@@ -118,7 +118,7 @@ def parse_to_LPF(delimited_file_path, ext):
                 logger.error(f"Parsing error detected: {e}")
                 raise 
             except Exception as e:
-                logger.error(f"Error reading file {delimited_file_path}: {e}")
+                logger.error(f"Error reading file {delimited_filepath}: {e}")
                 raise
             
         def assign_nested_value(d, keys, value):
@@ -203,11 +203,11 @@ def parse_to_LPF(delimited_file_path, ext):
             # Write the closing of the JSON FeatureCollection
             lpf_file.write('\n]}\n')
 
-        logger.debug(f"fLPF file '{delimited_file_path}' converted to LPF and written to '{lpf_file_path}'.")
+        logger.debug(f"fLPF file '{delimited_filepath}' converted to LPF and written to '{lpf_file_path}'.")
         return lpf_file_path, feature_count, separator, header
 
     except Exception as e:
-        logger.error(f"Error processing file {delimited_file_path}: {e}")
+        logger.error(f"Error processing file {delimited_filepath}: {e}")
         raise
 
 def validate_file(request, dataset_metadata):
@@ -221,8 +221,8 @@ def validate_file(request, dataset_metadata):
 
     logger.debug(f"Validating file with form data: {dataset_metadata}")
     
-    file_path = dataset_metadata.get('uploaded_filepath')
-    original_file_name = dataset_metadata.get('uploaded_filename')
+    uploaded_filepath = dataset_metadata.get('uploaded_filepath')
+    uploaded_filename = dataset_metadata.get('uploaded_filename')
     
     try:
         with codecs.open(settings.LPF_SCHEMA_PATH, 'r', 'utf8') as schema_file:
@@ -234,7 +234,7 @@ def validate_file(request, dataset_metadata):
         logger.error(message)
         return JsonResponse({"status": "failed", "message": message}, status=500)
     
-    file_info = get_file_info(file_path)
+    file_info = get_file_info(uploaded_filepath)
     
     if file_info['mime_type'] is None:
         message = "Unable to determine the content type of the file."
@@ -244,7 +244,6 @@ def validate_file(request, dataset_metadata):
         message = f"The detected content type (<b>{file_info['mime_type']}</b>) is not supported."
         logger.error(message)
         return JsonResponse({"status": "failed", "message": message}, status=500)
-    dataset_metadata["format"] = file_info['mime_type']
     
     # Preliminary utf-8 encoding test: further validation is performed when reading non-JSON files
     allowed_encodings = settings.VALIDATION_ALLOWED_ENCODINGS + ['binary'] # 'binary' required for spreadsheets when using Unix file command
@@ -258,16 +257,19 @@ def validate_file(request, dataset_metadata):
         return JsonResponse({"status": "failed", "message": message}, status=500)
     
     # Convert delimited files to LPF JSON
-    _, ext = os.path.splitext(file_path)
-    ext = ext.lower()
+    _, ext = os.path.splitext(uploaded_filepath)
+    ext = ext.lower().lstrip('.')
     try:
         if 'json' in ext: # mime type is not a reliable determinant of JSON
-            dataset_metadata["delimited_file_path"] = ''
-            dataset_metadata["feature_count"] = json_feature_count(file_path)
+            dataset_metadata["format"] = 'json'
+            dataset_metadata["delimited_filepath"] = ''
+            dataset_metadata["jsonld_filepath"] = uploaded_filepath
+            dataset_metadata["feature_count"] = json_feature_count(dataset_metadata["jsonld_filepath"])
             logger.debug(f'JSON contains {dataset_metadata.get("feature_count")} features.')
         else:
-            dataset_metadata["delimited_file_path"] = file_path
-            file_path, dataset_metadata["feature_count"], dataset_metadata["separator"], dataset_metadata["header"] = parse_to_LPF(file_path, ext)
+            dataset_metadata["format"] = ext
+            dataset_metadata["delimited_filepath"] = uploaded_filepath
+            dataset_metadata["jsonld_filepath"], dataset_metadata["feature_count"], dataset_metadata["separator"], dataset_metadata["header"] = parse_to_LPF(dataset_metadata["delimited_filepath"], ext)
     except Exception as e:
         message = f"Error converting delimited text to LPF: {e}"
         logger.error(message)
@@ -290,7 +292,7 @@ def validate_file(request, dataset_metadata):
         'start_time': timezone.now().isoformat(),
         'all_queued': 'false',
         'total_features': dataset_metadata.get('feature_count'),
-        'original_file_name': original_file_name,
+        'uploaded_filename': uploaded_filename,
         'label': dataset_metadata.get('label'),
         'cleanup_task_id': cleanup_task_id,
     })
@@ -300,7 +302,7 @@ def validate_file(request, dataset_metadata):
 
     try:
         # Process each batch of features as a separate Celery task
-        for feature_batch in read_json_features_in_batches(file_path, task_id):
+        for feature_batch in read_json_features_in_batches(dataset_metadata["jsonld_filepath"], task_id):
             # The following line could be implemented if the LP Ontology were correct
             #feature_batch = [jsonld.compact(feature, context) for feature in feature_batch]
             validate_feature_batch.delay(feature_batch, schema, task_id)

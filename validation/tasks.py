@@ -188,9 +188,10 @@ def save_dataset(task_id):
 
         # Create Dataset object
         dataset = Dataset.objects.create(
-            title=dataset_metadata['title'] or dataset_metadata['label'],
+            title=dataset_metadata['title'] or f"-- placeholder ({dataset_metadata['label']}) --",
             label=dataset_metadata['label'],
-            description=dataset_metadata['description'],
+            description=dataset_metadata['description'] or '-- placeholder --',
+            numrows=dataset_metadata['feature_count'],
             creator=dataset_metadata['creator'],
             source=dataset_metadata['source'],
             contributors=dataset_metadata['contributors'],
@@ -217,30 +218,29 @@ def save_dataset(task_id):
         # Ensure that the user folder exists
         os.makedirs(user_folder, exist_ok=True)
     
-        uploaded_filename = dataset_metadata.get('uploaded_filename', 'default_filename.tsv')
-        jsonld_filepath = dataset_metadata.get('uploaded_filepath', '')
-        delimited_filepath = dataset_metadata.get('delimited_file_path', '')
+        uploaded_filename = dataset_metadata.get('uploaded_filename')
+        jsonld_filepath = dataset_metadata.get('jsonld_filepath')
+        delimited_filepath = dataset_metadata.get('delimited_filepath')
         
         def get_unique_filename(filename, new_ext=None):
             base, ext = os.path.splitext(filename)
             ext = new_ext or ext
             counter = 1
-            new_filename = f"{base}.{ext}"
+            new_filename = f"{base}{ext}"
             while os.path.exists(os.path.join(user_folder, new_filename)):
-                new_filename = f"{base}_{counter}.{ext}"
+                new_filename = f"{base}_{counter}{ext}"
                 counter += 1
             return new_filename
         
-        def create_DatasetFile(file, format=dataset_metadata['format'], delimiter=None, header=None):    
-            # Create DatasetFile object
+        def create_DatasetFile(file, format=dataset_metadata['format'], delimiter=None, header=""):  
             DatasetFile.objects.create(
-                dataset=dataset,
+                dataset_id=dataset,
                 file=file,
                 rev=1,
                 format=format,
                 delimiter=delimiter,
-                header=header,
-                numrows=dataset_metadata["feature_count"],
+                header=header.split(';'),
+                numrows=dataset_metadata['feature_count'],
                 df_status='uploaded'
             )
         
@@ -261,11 +261,11 @@ def save_dataset(task_id):
                 logger.debug(f"Moved delimited file to {destination_path}")
                 create_DatasetFile(destination_path, delimiter=dataset_metadata['separator'], header=dataset_metadata['header'])
             if jsonld_filepath:
-                new_filename_jsonld = get_unique_filename(uploaded_filename, 'jsonld')
+                new_filename_jsonld = get_unique_filename(uploaded_filename, '.jsonld')
                 destination_path_jsonld = os.path.join(user_folder, new_filename_jsonld)
                 shutil.move(jsonld_filepath, destination_path_jsonld)
                 logger.debug(f"Moved uploaded file to {destination_path_jsonld}")
-                create_DatasetFile(destination_path_jsonld, format='application/json')
+                create_DatasetFile(destination_path_jsonld, format='json')
         
         redis_client.delete(f"{task_id}_metadata")
         # Do not use cleanup task yet - user may still be polling `get_task_status`
@@ -573,9 +573,9 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
                 task_status = {k.decode('utf-8'): v.decode('utf-8') for k, v in task_status.items()}
                 
                 # Clean up files
-                delimited_file_path = task_status.get('delimited_file_path', '')
-                if delimited_file_path and os.path.exists(delimited_file_path):
-                    os.remove(delimited_file_path)
+                delimited_filepath = task_status.get('delimited_filepath', '')
+                if delimited_filepath and os.path.exists(delimited_filepath):
+                    os.remove(delimited_filepath)
                 file_path = task_status.get('file_path', '')
                 if file_path and os.path.exists(file_path):
                     os.remove(file_path)
