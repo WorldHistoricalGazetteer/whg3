@@ -4,6 +4,7 @@ from __future__ import absolute_import, unicode_literals
 import os
 import logging
 from celery import Celery
+from celery.schedules import crontab
 from django.conf import settings
 
 # set the default Django settings module for the 'celery' program.
@@ -19,6 +20,13 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 
 # override Beat default daily cleanup task
 app.conf.result_expires = None
+
+app.conf.beat_schedule = {
+    'clean-tmp-files-every-hour': {
+        'task': 'validation.tasks.clean_tmp_files',
+        'schedule': crontab(minute=0, hour='*'),  # Runs every hour
+    },
+}
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()

@@ -1,0 +1,385 @@
+<!-- datasets/dataset_validate.html -->
+{% extends "main/base_webpack.html" %}
+{% block title %}<title>WHG::Validate Dataset</title>{% endblock %}
+
+{% block content %}
+{% load static %}
+{% load dataset_extras %}
+
+<style>
+    .required-field {
+        margin-bottom: 0;
+    }
+    .required-field::after {
+        content: "*";
+        color: red;
+        font-size: xx-large;
+        height: 20px;
+        top: -12px;
+        position: relative;
+    }
+    .input-group-prepend {
+        align-items: center;
+        display: flex;
+    }
+    .input-group-text .fas {
+        color: #5d96cd;
+        font-size: .8rem;
+        vertical-align: super;
+    }
+    .dummy-file-input {
+        border-top-right-radius: 0.375rem !important;
+        border-bottom-right-radius: 0.375rem !important;
+        cursor: pointer;
+    }
+    #id_file {
+    	display: none;
+    }
+    form .alert {
+        padding: 0 0.75rem !important;
+    }
+    form .alert p {
+        margin: .5rem 0;
+    }
+    #validation_status {
+    	display: none;
+    }
+    .progress {
+        position: relative;
+        height: 30px;
+        background-color: white;
+    }
+    .progress-bar {
+        background-color: #daebf1 !important;
+        height: 100%;
+        position: absolute;
+    }
+    .progress-bar-text {
+        position: absolute;
+        width: 100%;
+        text-align: center;
+        line-height: 30px;
+        color: black;
+        z-index: 2;
+    }
+    #fixes_content, #errors_content {
+        max-height: 100px;
+    	overflow: auto;
+    }
+    #errors {
+    	color: red;
+    }
+</style>
+
+<main class="container">
+    <h4 class="mt-3">Validate Dataset</h4>
+    <div id="content_validate" class="row mx-1">
+        <div id="validate_form" class="form-box mt-2 col-md-7 col-lg-5">
+            <form id="ds_validate_form" method="POST" enctype="multipart/form-data" novalidate class="needs-validation">
+                {% csrf_token %}
+
+                {% if form.errors %}
+                <div class="alert alert-danger">
+                    {% for field in form %}
+                    {% for error in field.errors %}
+                    <p>{{ error }}</p>
+                    {% endfor %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% if messages %}
+                <div class="alert alert-danger">
+                    {% for message in messages %}
+                    <p>{{ message|safe }}</p>
+                    {% endfor %}
+                </div>
+                {% endif %}
+        
+		        <div class="mb-3 input-group">
+		          <div class="input-group-prepend input-group-text">Title</div>
+		          {{ form.title }}
+		        </div>
+		
+		        <div class="mb-3 input-group">
+		          <div class="input-group-prepend input-group-text">Label
+			        <a class="pointer" data-bs-toggle="popover" title="Dataset label" 
+			          data-bs-content="A short identifying label for your dataset; must be unique. Try using some portion of the dataset title, without spaces. Add version number suffix if you get a 'not unique' error.">
+			          <i class="fas fa-question-circle linky"></i>
+			        </a>
+		          </div>
+		          {{ form.label }}
+		        </div>
+		
+		        <div class="mb-3 input-group">
+		          <div class="input-group-prepend input-group-text">Description</div>
+		          {{ form.description }}
+		        </div>
+		
+		        <div class="mb-3 input-group">
+		          <div class="input-group-prepend input-group-text">Choose Data File
+			        <a class="pointer" data-bs-toggle="popover" title="Data Formats" 
+			          data-bs-content="There are specific requirements for your data file. Please read the note on Data Formats to the right of this form.">
+			          <i class="fas fa-question-circle linky"></i>
+			        </a>
+				  </div>
+		          <input type="text" id="file-name" class="form-control dummy-file-input" placeholder="(required)" required spellcheck="false">
+		          {{ form.file }}
+		        </div>
+		
+		        <div class="mb-3 input-group">
+		          <div class="input-group-prepend input-group-text">
+		            Accept&nbsp;<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a>&nbsp;Licence
+		          </div>
+		          <div class="input-group-text">
+		            {{ form.license_acceptance }}
+		          </div>
+		        </div>
+		<!--
+		        <div class="inputs-optional">
+		        	<span>Optional</span>
+			        <div class="mb-3 input-group">
+			          <div class="input-group-prepend input-group-text">Creator(s)</div>
+			          {{ form.creator }}
+			        </div>
+			
+			        <div class="mb-3 input-group">
+			          <div class="input-group-prepend input-group-text">Source(s)</div>
+			          {{ form.source }}
+			        </div>
+			
+			        <div class="mb-3 input-group">
+			          <div class="input-group-prepend input-group-text">Contributors</div>
+			          {{ form.contributors }}
+			        </div>
+			        
+			        <div class="mb-3 input-group">
+			          <div class="input-group-prepend input-group-text">URI base
+			        	<a class="pointer" data-bs-toggle="popover" title="Prefix for source place page url" 
+			        	  data-bs-content="If your records are published and each place has a landing page, enter the URI base prefix, e.g. <span class='ms-2'><i>http://mygaz.org/places/</i></span><br/>Otherwise leave blank, and they will be assigned a WHG base URI.">
+			        	  <i class="fas fa-question-circle linky"></i>
+			        	</a>
+			          </div>
+			          {{ form.uri_base }}
+			        </div>
+			
+			        <div class="mb-3 input-group">
+			          <div class="input-group-prepend input-group-text">Web page</div>
+			          {{ form.webpage }}
+			        </div>
+			
+			        <div class="mb-3 input-group">
+			          <div class="input-group-prepend input-group-text">Essay file&nbsp;&nbsp;<i class="fas fa-file-pdf"></i></div>
+			          <input type="text" class="form-control dummy-file-input" placeholder="No file chosen" spellcheck="false">
+			          {{ form.pdf }}
+			        </div>        	
+		        </div>
+		-->        
+
+                <div class="d-flex justify-content-end">
+                    <a href="javascript:void(0);" onclick="window.history.back();" class="btn btn-secondary mx-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary">Validate</button>
+                </div>
+
+            </form>
+            
+            <div id="validation_status" class="mt-3">
+			    <p id="file_name"></p>
+			    <div class="progress">
+				    <div id="progress_bar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+				    <div id="progress_bar_text" class="progress-bar-text">0% Complete</div>
+				</div>
+			    <p id="estimated_time"></p>
+			    <!-- Fixes -->
+		        <a id="fixes" class="btn btn-link" data-bs-toggle="collapse" href="#fixes_content" role="button" aria-expanded="false" aria-controls="fixes_content"></a>
+			    <div id="fixes_content" class="collapse">
+			        <ul id="fixes_list"></ul>
+			    </div>			
+			    <!-- Errors -->
+		        <a id="errors" class="btn btn-link" data-bs-toggle="collapse" href="#errors_content" role="button" aria-expanded="false" aria-controls="errors_content"></a>
+			    <div id="errors_content" class="collapse">
+			        <ul id="errors_list"></ul>
+			    </div>
+			</div>    
+            
+        </div>
+
+        <div class="mt-2 col-md-5 col-lg-7" id="create_review">
+            <div class="smallish">
+                <p class="mb-0 text-uppercase"><b>data formats</b></p>
+                <p class="mb-2">
+                    The WHG platform can read two upload formats: 
+                    <a href="https://github.com/LinkedPasts/linked-places" target="_blank">Linked Places</a> 
+                    (JSON-LD based, GeoJSON compatible, expressive), and 
+                    <a href="https://github.com/LinkedPasts/linked-places/blob/master/tsv_0.5.md" target="_blank">LP-TSV</a>, 
+                    a tabular format for relatively simpler records uploaded as either text files (.csv, .tsv), or spreadsheets (.xlsx, .ods). 
+                    <span class="strong"><i>NOTE: Encoding for all uploaded files must be unicode (UTF-8)</i>.</span>
+                </p>
+                <p class="mb-0 text-uppercase"><mark-g>Quick Start</mark-g></p>
+                <ol class="mb-2 ps-3">
+                    <li>Download a copy of 
+                        <a href="https://docs.google.com/spreadsheets/d/1DM4MmagkYkeUEMtB00QZdYGkrCfth3_FsUp6JGGPwa0/copy" target="_blank">
+                            this Google spreadsheet
+                        </a> 
+                        to your computer and follow its included instructions.
+                    </li>
+                    <li>Choose that file in the form on the left, fill out the first three fields of metadata, and click "Upload"&mdash;now you have a test dataset in your private workspace!</li>
+                    <li>Explore WHG features for managing it from its new dataset page, e.g. under the Linking tab, begin reconciliation with our index of 13.5 million 
+                        <a href="https://www.wikidata.org/" target="_blank">Wikidata</a> and 
+                        <a href="https://www.geonames.org/" target="_blank">GeoNames</a> place records.
+                    </li>
+                </ol>
+                <p class="mb-0 text-uppercase"><b>Sample data and templates</b></p>
+                <p class="mb-2">Some sample datasets and templates are available in 
+                    <a href="https://github.com/WorldHistoricalGazetteer/whgazetteer/raw/main/example_data/whg_example-data.zip" download>
+                        this zip file
+                    </a>, check its README.txt file, and try loading a sample from your local computer, then reconciling it against Wikidata records.
+                </p>
+                <p class="mb-0 text-uppercase"><b>Validation Errors</b></p>
+                <p class="mb-2">Uploaded files are validated for conformance to our Linked Places format(s). In most cases, if there is a problem, an error message will explain, but the error-trapping is not yet perfect. If you are unable to upload a dataset successfully, please 
+                    <a data-whg-modal="/contact_modal/">contact us</a>. We will gladly help sort out the issue quickly.
+                </p>
+                <p class="mb-0"><b>Consultation requests welcome!</b></p>
+                <p class="mb-1">If you are planning a data contribution to WHG, or want help exploring its usefulness or feasibility for your project, please do 
+                    <a data-whg-modal="/contact_modal/">contact us</a>.
+                </p>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}
+
+{% block inlineScripts %}
+<script>
+    $(document).ready(function() {
+        $('.dummy-file-input')
+            .on('keydown', function() {
+                event.preventDefault();
+            })
+            .on('click', function() {
+                $(this).next('input[type="file"]').click();
+            });
+
+        $('input[type="file"]').on('change', function() {
+            var fileName = $(this).val().split('\\').pop();
+            $(this).prev('.dummy-file-input').val(fileName);
+        });
+
+        $('#ds_validate_form').submit(function(event) {
+            if (this.checkValidity() === false) {
+                event.preventDefault();
+                event.stopPropagation();
+            } else {
+                $('body').spin();
+            }
+            $(this).addClass('was-validated');
+        });
+        
+        function formatMessage(message) {
+            const { feature_id, description } = JSON.parse(message);
+            return `<strong>${feature_id}</strong>: <em>${description}</em>`;
+        }
+
+        // Polling functionality for validation status
+		function pollTaskStatus(taskId) {
+		    const url = "{% url 'get_task_status' task_id='TASK_ID_PLACEHOLDER' %}".replace('TASK_ID_PLACEHOLDER', taskId);
+		
+		    $.get(url)
+		        .done(function(data) {
+		            if (data.status === "success") {
+		                const taskStatus = data.task_status;
+		
+		                // Display file name and total features
+		                $('#file_name').html(`Validating: <b>${taskStatus.uploaded_filename}</b>: <i>${taskStatus.total_features} features</i>`);
+		                
+		                if (!!taskStatus.remaining_queue) {
+		                	bar_text = `Waiting ... Job #${taskStatus.remaining_queue+1} in queue.`;
+		                }
+		                else {
+			                // Calculate and update progress
+			                const totalFeatures = parseInt(taskStatus.total_features);
+			                const processedFeatures = totalFeatures - parseInt(taskStatus.queued_features);
+			                const progressPercent = (processedFeatures / totalFeatures) * 100;
+			
+			                $('#progress_bar')
+			                    .css('width', `${progressPercent}%`)
+			                    .attr('aria-valuenow', progressPercent);
+			                
+			                // Update estimated remaining time
+			                const nonZeroRegex = /[1-9]/;
+			                var remainingTime = '';
+			                if (nonZeroRegex.test(taskStatus.estimated_remaining_time)) {
+			                    const estimatedTimeParts = taskStatus.estimated_remaining_time.split(':');
+			                    const minutes = estimatedTimeParts[1];
+			                    const seconds = estimatedTimeParts[2].split('.')[0];
+			                    remainingTime = `: ETA ${minutes}:${seconds}`;
+			                }
+		                	bar_text = `${progressPercent.toFixed(0)}%${remainingTime}`;
+		                }
+	
+		                $('#progress_bar_text').text(bar_text);
+		                
+		                // Handle fixes
+		                if (taskStatus.fixes && taskStatus.fixes.length > 0) {
+		                    $('#fixes').html(`${taskStatus.fixes.length} fix${taskStatus.fixes.length > 1 ? "es" : ""} applied <small>(click to show/hide)</small>`).show();
+		                    let fixesContent = taskStatus.fixes.map(fix => `<li>${formatMessage(fix)}</li>`).join('');
+		                    $('#fixes_list').html(fixesContent);
+		                } else {
+		                    $('#fixes, #fixes_content').hide();
+		                }
+
+		                // Handle errors
+		                if (taskStatus.errors && taskStatus.errors.length > 0) {
+		                    $('#errors').html(`${taskStatus.errors.length} error${taskStatus.errors.length > 1 ? "s" : ""} found <small>(click to show/hide)</small>`).show();
+		                    let errorsContent = taskStatus.errors.map(error => `<li>${formatMessage(error)}</li>`).join('');
+		                    $('#errors_list').html(errorsContent);
+		                    $('#errors_content').collapse('show');
+		                } else {
+		                    $('#errors, #errors_content').hide();
+		                }
+		
+		                // Handle different statuses
+		                if (taskStatus.status === "complete") {
+		                	if (!!taskStatus.dataset_places_url){
+		                		window.location.href = taskStatus.dataset_places_url;
+		                	}
+		                	else if (!!taskStatus.insertion_error) {
+		                		$('#validation_status').append(
+		                	            `<div class="alert alert-danger" role="alert">
+		                                <strong>Sorry, an error occurred while ingesting the dataset:</strong> ${taskStatus.insertion_error}
+		                            </div>`
+		                        );
+		                	}
+		                	else {
+		                		$('#validation_status').append('.');
+		                	}
+		                } else if (taskStatus.status === "aborted") {
+		                    $('#validation_status').html('<div class="alert alert-danger">Validation aborted: ' + (taskStatus.message || 'No additional details available.') + '</div>');
+		                } else if (taskStatus.status === "in_progress") {
+		                    // Continue polling if still in progress
+		                    setTimeout(() => pollTaskStatus(taskId), 5000); // Poll every 5 seconds
+		                }
+		            } else {
+		                $('#validation_status').html('<div class="alert alert-danger">Error: ' + data.message + '</div>');
+		            }
+		        })
+		        .fail(function() {
+		            $('#validation_status').html('<div class="alert alert-danger">An error occurred while checking the validation status.</div>');
+		        });
+		}
+
+        // Start polling if task_id is available
+        {% if task_id|default:'' %}
+        $('#ds_validate_form, #validation_status').toggle();
+        pollTaskStatus("{{ task_id }}");
+        {% endif %}
+        
+      /*   
+        TODO:
+        	Form for adding/checking metadata; 
+        	Advise that navigation away and reloading causes re-validation;
+        	You may leave this page - if validation passes, dataset will have "label" - unless CSL JSON
+         */
+    });
+</script>
+{% endblock %}

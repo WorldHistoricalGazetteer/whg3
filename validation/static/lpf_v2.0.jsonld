@@ -43,11 +43,11 @@
                 },
                 "namespaceTerm": {
                     "type": "string",
-                    "pattern": "^\\w+:\\w+$"
+                    "pattern": "^\\w+:[^\\s]+$"
                 },
                 "namespaceTermNarrow": {
                     "type": "string",
-                    "pattern": "^(bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wp):\\w+$"
+                    "pattern": "^(bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wp):[^\\s]+$"
                 },
                 "validURL": {
                     "type": "string",
