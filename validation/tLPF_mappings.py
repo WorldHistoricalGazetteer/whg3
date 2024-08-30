@@ -2,13 +2,14 @@
 
 import numpy as np
 import chardet
+import re
 from django.conf import settings
 
 import logging
 logger = logging.getLogger('validation')
 
 def variant_conversion(x):
-    x = str(x).strip()
+    x = str_x(x)
     
     if not x:
         return []
@@ -39,50 +40,65 @@ def safe_float_conversion(x):
     except ValueError:
         return None
 
+def str_x(x, split=False):
+    """
+    Convert to string and remove '.0' if it's a float ending with .0.
+    pandas read_excel is very uncooperative with regard to forcing dtype, and infers type regardless of configuration
+    """
+    stripped = re.sub(r'\.0$', '', str(x).strip()) # Remove any trailing '.0'
+    if not stripped:
+        if split:
+            return []
+        return None
+    elif split:
+        return stripped.split(';')
+    else:
+        return stripped
+
 tLPF_mappings = {
     'id': {
         'lpf': '@id',
-        'converter': lambda x: str(x).strip() or None
+        'converter': lambda x: str_x(x)
     },
     'title': {
         'lpf': 'names.0.toponym',
-        'converter': lambda x: str(x).strip() or None
+        'converter': lambda x: str_x(x)
     },
     'title_source': {
         'lpf': 'names.0.citations.0.label',
-        'converter': lambda x: str(x).strip() or None
+        'converter': lambda x: str_x(x)
     },
     'fclasses': {
         'lpf': 'properties.fclasses',
-        'converter': lambda x: [item.strip() for item in str(x).split(';') if item.strip()] or None
+        'converter': lambda x: [item.strip() for item in str_x(x, True) if item.strip()] or None
     },
     'aat_types': {
         'lpf': 'types',
-        'converter': lambda x: [{'identifier': f'aat:{item.strip()}'} for item in str(x).split(';') if item.strip()] or None
+        'converter': lambda x: [{'identifier': f'aat:{item.strip()}'} for item in str_x(x, True) if item.strip()] or None
     },
     'attestation_year': {
         'lpf': 'names.0.citations.0.year',
-        'converter': lambda x: str(x).strip() or None
+        'converter': lambda x: str_x(x)
     },
     'start': {
         'lpf': 'when.timespans.0.start.in',
-        'converter': lambda x: str(x).strip() or None
+        'converter': lambda x: str_x(x)
     },
     'end': {
         'lpf': 'when.timespans.0.end.in',
-        'converter': lambda x: str(x).strip() or None
+        'converter': lambda x: str_x(x)
     },
     'title_uri': {
         'lpf': 'names.0.citations.0.@id',
-        'converter': lambda x: str(x).strip() or None
+        'converter': lambda x: str_x(x)
     },
     'ccodes': {
         'lpf': 'properties.ccodes',
-        'converter': lambda x: [item.strip() for item in str(x).split(';') if item.strip()] or None
+        'converter': lambda x: [item.strip() for item in str_x(x, True) if item.strip()] or None
     },
     'matches': {
         'lpf': 'links',
-        'converter': lambda x: [{'type': 'exactMatch', 'identifier': item.strip()} for item in str(x).split(';') if item.strip()] or None
+        'converter': lambda x: [{'type': 'exactMatch', 'identifier': item.strip()} for item in str_x(x, True) if item.strip()] or None
     },
     'variants': {
         'lpf': 'additional_names',
@@ -90,15 +106,15 @@ tLPF_mappings = {
     },
     'types': {
         'lpf': 'additional_types',
-        'converter': lambda x: [{'label': item.strip()} for item in str(x).strip().split(';') if item.strip()] or None
+        'converter': lambda x: [{'label': item.strip()} for item in str_x(x, True) if item.strip()] or None
     },
     'parent_name': {
         'lpf': 'relations.0',
-        'converter': lambda x: {'relationType': 'gvp:broaderPartitive', 'label': str(x).strip()} if str(x).strip() else None
+        'converter': lambda x: {'relationType': 'gvp:broaderPartitive', 'label': str_x(x)} if str_x(x) else None
     },
     'parent_id': {
         'lpf': 'relations.0.relationTo',
-        'converter': lambda x: str(x).strip() or None
+        'converter': lambda x: str_x(x)
     },
     'lon': {
         'lpf': 'geometry.coordinates.0',
@@ -110,18 +126,18 @@ tLPF_mappings = {
     },
     'geowkt': {
         'lpf': 'geometry.geowkt',
-        'converter': lambda x: str(x).strip() or None
+        'converter': lambda x: str_x(x)
     },
     'geo_source': {
         'lpf': 'geometry.citations.0.label',
-        'converter': lambda x: str(x).strip() or None
+        'converter': lambda x: str_x(x)
     },
     'geo_id': {
         'lpf': 'geometry.citations.0.@id',
-        'converter': lambda x: str(x).strip() or None
+        'converter': lambda x: str_x(x)
     },
     'description': {
         'lpf': 'descriptions.0.value',
-        'converter': lambda x: str(x).strip() or None
+        'converter': lambda x: str_x(x)
     },
 }

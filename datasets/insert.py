@@ -3,6 +3,7 @@
 import csv, json, os, re, sys
 from datetime import datetime
 import pandas as pd
+import logging
 import numpy as np
 import traceback
 import warnings
@@ -25,6 +26,8 @@ from datasets.utils import aliasIt, aat_lookup, ccodesFromGeom, \
   makeCoords, parse_wkt, parsedates_tsv, parsedates_lpf # emailer,
 from places.models import *
 from whgmail.messaging import WHGmail
+
+logger = logging.getLogger('validation')
 
 # 'lugares_20.jsonld','lugares_20_broken.jsonld'
 # test setup
@@ -536,28 +539,67 @@ def ds_insert_delim(df, pk):
   PlaceWhen.objects.bulk_create(objlists['PlaceWhen'],batch_size=10000)
   PlaceDescription.objects.bulk_create(objlists['PlaceDescription'],batch_size=10000)
 
+def get_fclass_list(feat):
+    # Mappings between GeoNames and Wikidata types
+    geo_wd_mapping = {
+        'A': ['Q56061', 'Q192611', 'Q102496', 'Q10864048', 'Q1799794', 'Q1149654', 'Q82794', 'Q15642541', 'Q217151'],
+        'P': ['Q515', 'Q15310171', 'Q18511725', 'Q98929991', 'Q7930989', 'Q486972', 'Q3957', 'Q532', 'Q178342', 'Q22698', 'Q2983893', 'Q13221722'],
+        'S': ['Q41176', 'Q189004', 'Q168719', 'Q3957', 'Q16917', 'Q515', 'Q811979', 'Q220933', 'Q55488', 'Q13221722', 'Q47168', 'Q32815', 'Q57821', 'Q23442'],
+        'R': ['Q34442', 'Q728937', 'Q55488', 'Q22649', 'Q11053', 'Q41176', 'Q1457376', 'Q1078747', 'Q4119149'],
+        'L': ['Q82794', 'Q2542546', 'Q15642541', 'Q131681', 'Q35657', 'Q19836241', 'Q27096235'],
+        'T': ['Q8502', 'Q207326', 'Q145694', 'Q650118', 'Q54050', 'Q16917', 'Q11444', 'Q8502', 'Q1170715', 'Q189604', 'Q24415136', 'Q2329'],
+        'H': ['Q8502', 'Q4022', 'Q23397', 'Q12284', 'Q9131', 'Q124482', 'Q13100073', 'Q1232506', 'Q166620', 'Q283', 'Q26557']
+    }
+    
+    types = feat.get('types', [])
+            
+    fclass_list = []
+    for t in types:
+        identifier = t.get('identifier')
+        if identifier and identifier.startswith('aat:'):
+            aat_id = int(identifier[4:])
+            # Check if the aat_id exists in the database
+            if Type.objects.filter(aat_id=aat_id).exists():
+                try:
+                    fclass = get_object_or_404(Type, aat_id=aat_id).fclass
+                    fclass_list.append(fclass)
+                except Exception as e:
+                    logger.error(f"Error retrieving fclass for aat_id {aat_id}: {e}")
+            else:
+                logger.warning(f"aat_id {aat_id} not found in Type model.")
+        elif identifier:
+            # Mapping from geo_wd_mapping
+            mapped_fclass = next((fclass for fclass, wd_types in geo_wd_mapping.items() if identifier[3:] in wd_types), None)
+            if mapped_fclass:
+                fclass_list.append(mapped_fclass)
+            else:
+                logger.warning(f"Identifier {identifier} not found in geo_wd_mapping.")
+        else:
+            logger.warning(f"Invalid identifier format: {identifier}")
+
+    return fclass_list
 
 """ 
   ds_insert_json(data, pk)
   *** replaces ds_insert_lpf() ***
   insert LPF into database
 """
-def ds_insert_json(data, pk, user):    
+def ds_insert_json(data, pk):    
     ds = get_object_or_404(Dataset, id=pk)
     places_already_exist = Place.objects.filter(dataset=ds.label).exists()
     if places_already_exist:
-        print("Database already contains places for this dataset. Cannot add more.")
+        logger.error("Database already contains places for this dataset. Cannot add more.")
         raise Exception("Database already contains places for this dataset. Cannot add more.")
     
     jdata = json.loads(data) if isinstance(data, str) else data
     
     uribase = ds.uri_base
-    print(f"New dataset: {ds.label}, uri_base: {uribase}, data type: {type(jdata)}, feature count: {len(jdata['features'])}")
+    #logger.debug(f"New dataset: {ds.label}, uri_base: {uribase}, data type: {type(jdata)}, feature count: {len(jdata['features'])}")
 
     errors=[]    
     try:
         with transaction.atomic():
-            
+            logger.debug("transaction.atomic")
             data_mappings = {
                 'PlaceGeoms': ('Geom', 'geometry', lambda feat: [
                     PlaceGeom(place=newpl, src_id=newpl.src_id, jsonb=g, geom=GEOSGeometry(json.dumps(g)))
@@ -583,42 +625,29 @@ def ds_insert_json(data, pk, user):
                     PlaceType(place=newpl, src_id=newpl.src_id, jsonb=t, fclass=fc) 
                     for t, fc in zip(feat.get('types', []), fclass_list)])
             }
-                
-            # Mappings between GeoNames and Wikidata types
-            geo_wd_mapping = {
-                'A': ['Q56061', 'Q192611', 'Q102496', 'Q10864048', 'Q1799794', 'Q1149654', 'Q82794', 'Q15642541', 'Q217151'],
-                'P': ['Q515', 'Q15310171', 'Q18511725', 'Q98929991', 'Q7930989', 'Q486972', 'Q3957', 'Q532', 'Q178342', 'Q22698', 'Q2983893', 'Q13221722'],
-                'S': ['Q41176', 'Q189004', 'Q168719', 'Q3957', 'Q16917', 'Q515', 'Q811979', 'Q220933', 'Q55488', 'Q13221722', 'Q47168', 'Q32815', 'Q57821', 'Q23442'],
-                'R': ['Q34442', 'Q728937', 'Q55488', 'Q22649', 'Q11053', 'Q41176', 'Q1457376', 'Q1078747', 'Q4119149'],
-                'L': ['Q82794', 'Q2542546', 'Q15642541', 'Q131681', 'Q35657', 'Q19836241', 'Q27096235'],
-                'T': ['Q8502', 'Q207326', 'Q145694', 'Q650118', 'Q54050', 'Q16917', 'Q11444', 'Q8502', 'Q1170715', 'Q189604', 'Q24415136', 'Q2329'],
-                'H': ['Q8502', 'Q4022', 'Q23397', 'Q12284', 'Q9131', 'Q124482', 'Q13100073', 'Q1232506', 'Q166620', 'Q283', 'Q26557']
-            }
+            logger.debug(f"data_mappings: {data_mappings}")
 
             for feat in jdata['features']:
+                logger.debug(f"feat: {feat}")
         
-                title = re.sub(r'\(.*?\)', '', feat['properties'].get('title', ''))
+                title = re.sub(r'\(.*?\)', '', feat.get('properties').get('title', ''))
                 
                 geojson = feat.get('geometry')
-                ccodes = feat['properties'].get('ccodes')
+                ccodes = feat.get('properties').get('ccodes', [])
                 if ccodes is None and geojson:
                     ccodes = ccodesFromGeom(geojson)
-                    print('ccodes', ccodes)
+                logger.debug('ccodes: {ccodes}')
     
                 # (minmax and intervals[])
-                datesobj = parsedates_lpf(feat)            
+                datesobj = parsedates_lpf(feat)       
+                logger.debug(f"datesobj: {datesobj}")  
 
-                fclass_list = [
-                    get_object_or_404(Type, aat_id=int(t['identifier'][4:])).fclass
-                    if 'identifier' in t and t['identifier'].startswith('aat:')
-                    and int(t['identifier'][4:]) in Type.objects.values_list('aat_id', flat=True)
-                    else next((fclass for fclass, wd_types in geo_wd_mapping.items() if t['identifier'][3:] in wd_types), None)
-                    for t in feat.get('types', [])
-                ]
+                fclass_list = get_fclass_list(feat)
+                logger.debug(f"fclass_list: {fclass_list}")
                 
                 newpl = Place(
                     # strip uribase from @id
-                    src_id = feat['@id'] if uribase in ['', None] or not feat['@id'].startswith(uribase) else feat['@id'][len(uribase):],
+                    src_id = feat.get('@id') if uribase in ['', None] or not feat.get('@id').startswith(uribase) else feat.get('@id')[len(uribase):],
                     dataset=ds,
                     title=title,
                     fclasses=fclass_list,
@@ -628,7 +657,7 @@ def ds_insert_json(data, pk, user):
                     create_date=timezone.now()
                 )
                 newpl.save()
-                print('New place: ', newpl)
+                logger.debug(f'New place: {newpl}')
                 
                 objs = {}
                 objs.update({
@@ -655,12 +684,12 @@ def ds_insert_json(data, pk, user):
                         raise Exception(f"Unexpected error in bulk create for {model}: {e}")
 
     except Exception as e:
-        print(f"Failed to insert data into dataset: {e}")
+        logger.debug(f"Failed to insert data into dataset: {e}")
         raise Exception(f"Failed to insert data into dataset: {e}, Errors: {errors}")
 
-    print('new dataset:', ds.__dict__)
+    #print('new dataset:', ds.__dict__)
 
-    return ({"numrows": len(jdata['features'])})
+    return #({"numrows": len(jdata['features'])})
 
 def failed_insert_notification(user, fn, ds=None):
     """Send email to user and Slack notification when insert fails"""

@@ -10,16 +10,20 @@ from celery.result import AsyncResult
 from datetime import timedelta
 from itertools import chain
 from jsonschema import Draft7Validator, ValidationError
+from django.db import transaction
 from django.http import JsonResponse
 from django.utils import timezone
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.urls import reverse
 import redis
 
 from shapely.geometry import shape
 from shapely.validation import make_valid
 
 from datasets.models import Dataset, DatasetFile
+from datasets.insert import ds_insert_json
+
 from main.models import Log
 
 logger = logging.getLogger('validation')
@@ -185,99 +189,122 @@ def save_dataset(task_id):
         dataset_metadata = {k.decode('utf-8'): v.decode('utf-8') for k, v in dataset_metadata.items()}
         
         logger.debug(f"Retrieved dataset metadata: {dataset_metadata}")
-
-        # Create Dataset object
-        dataset = Dataset.objects.create(
-            title=dataset_metadata['title'] or f"-- placeholder ({dataset_metadata['label']}) --",
-            label=dataset_metadata['label'],
-            description=dataset_metadata['description'] or '-- placeholder --',
-            numrows=dataset_metadata['feature_count'],
-            creator=dataset_metadata['creator'],
-            source=dataset_metadata['source'],
-            contributors=dataset_metadata['contributors'],
-            uri_base=dataset_metadata['uri_base'],
-            webpage=dataset_metadata['webpage'],
-            pdf=dataset_metadata['pdf'],
-            owner_id=int(dataset_metadata['owner_id']),
-            ds_status='uploaded'
-        )
-        
-        # Log the creation
-        Log.objects.create(
-            category='dataset',
-            logtype='ds_create',
-            subtype='place',
-            dataset_id=dataset.id,
-            user_id=int(dataset_metadata['owner_id'])
-        )
-        
-        # Define paths and filenames
-        username = dataset_metadata.get('username', 'unknown_user')
-        user_folder = os.path.join(settings.MEDIA_ROOT, f"user_{username}")
-        
-        # Ensure that the user folder exists
-        os.makedirs(user_folder, exist_ok=True)
     
         uploaded_filename = dataset_metadata.get('uploaded_filename')
         jsonld_filepath = dataset_metadata.get('jsonld_filepath')
         delimited_filepath = dataset_metadata.get('delimited_filepath')
-        
-        def get_unique_filename(filename, new_ext=None):
-            base, ext = os.path.splitext(filename)
-            ext = new_ext or ext
-            counter = 1
-            new_filename = f"{base}{ext}"
-            while os.path.exists(os.path.join(user_folder, new_filename)):
-                new_filename = f"{base}_{counter}{ext}"
-                counter += 1
-            return new_filename
-        
-        def create_DatasetFile(file, format=dataset_metadata['format'], delimiter=None, header=""):  
-            DatasetFile.objects.create(
-                dataset_id=dataset,
-                file=file,
-                rev=1,
-                format=format,
-                delimiter=delimiter,
-                header=header.split(';'),
+
+        # Start a transaction to ensure atomicity
+        with transaction.atomic():
+    
+            # Create Dataset object
+            dataset = Dataset.objects.create(
+                title=dataset_metadata['title'] or f"-- placeholder ({dataset_metadata['label']}) --",
+                label=dataset_metadata['label'],
+                description=dataset_metadata['description'] or '-- placeholder --',
                 numrows=dataset_metadata['feature_count'],
-                df_status='uploaded'
+                creator=dataset_metadata['creator'],
+                source=dataset_metadata['source'],
+                contributors=dataset_metadata['contributors'],
+                uri_base=dataset_metadata['uri_base'],
+                webpage=dataset_metadata['webpage'],
+                pdf=dataset_metadata['pdf'],
+                owner_id=int(dataset_metadata['owner_id']),
+                ds_status='uploaded'
             )
-        
-        if not delimited_filepath: # No LPF conversion was done, simply move the uploaded file
-            if jsonld_filepath:
-                new_filename = get_unique_filename(uploaded_filename)
-                destination_path = os.path.join(user_folder, new_filename)
-                shutil.move(jsonld_filepath, destination_path)
-                logger.debug(f"Moved uploaded file to {destination_path}")
-                create_DatasetFile(destination_path)
-            else:
-                logger.warning("No file to move as both jsonld_filepath and delimited_filepath are missing.")
-        else:  # Move both files
-            if delimited_filepath:
-                new_filename = get_unique_filename(uploaded_filename)
-                destination_path = os.path.join(user_folder, new_filename)
-                shutil.move(delimited_filepath, destination_path)
-                logger.debug(f"Moved delimited file to {destination_path}")
-                create_DatasetFile(destination_path, delimiter=dataset_metadata['separator'], header=dataset_metadata['header'])
-            if jsonld_filepath:
-                new_filename_jsonld = get_unique_filename(uploaded_filename, '.jsonld')
-                destination_path_jsonld = os.path.join(user_folder, new_filename_jsonld)
-                shutil.move(jsonld_filepath, destination_path_jsonld)
-                logger.debug(f"Moved uploaded file to {destination_path_jsonld}")
-                create_DatasetFile(destination_path_jsonld, format='json')
-        
-        redis_client.delete(f"{task_id}_metadata")
-        # Do not use cleanup task yet - user may still be polling `get_task_status`
+            
+            '''
+            TODO: This codeblock needs to be rewritten with line reading and multiple task threads
+            - Large datasets see errors like this: IntegrityError in bulk create for Name: duplicate key value violates unique constraint "place_name_pkey" DETAIL: Key (id)=(97964) already exists. 
+            - Use database-level locking mechanisms to prevent concurrent operations from causing integrity issues.
+            '''
+            try:
+                with open(jsonld_filepath, 'r') as file:
+                    lpf_data = json.load(file)
+                ds_insert_json(lpf_data, dataset.id) # NOT GOOD - REQUIRES ENTIRE DATASET IN MEMORY
+            except Exception as e:
+                dataset.delete()
+                raise
+            
+            # Log the creation
+            Log.objects.create(
+                category='dataset',
+                logtype='ds_create',
+                subtype='place',
+                dataset_id=dataset.id,
+                user_id=int(dataset_metadata['owner_id'])
+            )
+            
+            # Define paths and filenames
+            username = dataset_metadata.get('username', 'unknown_user')
+            user_folder = os.path.join(settings.MEDIA_ROOT, f"user_{username}")
+            
+            # Ensure that the user folder exists
+            os.makedirs(user_folder, exist_ok=True)
+            
+            def get_unique_filename(filename, new_ext=None):
+                base, ext = os.path.splitext(filename)
+                ext = new_ext or ext
+                counter = 1
+                new_filename = f"{base}{ext}"
+                while os.path.exists(os.path.join(user_folder, new_filename)):
+                    new_filename = f"{base}_{counter}{ext}"
+                    counter += 1
+                return new_filename
+            
+            def create_DatasetFile(file, format=dataset_metadata['format'], delimiter=None, header=""):  
+                DatasetFile.objects.create(
+                    dataset_id=dataset,
+                    file=file,
+                    rev=1,
+                    format=format,
+                    delimiter=delimiter,
+                    header=header.split(';'),
+                    numrows=dataset_metadata['feature_count'],
+                    df_status='uploaded'
+                )
+            
+            if not delimited_filepath: # No LPF conversion was done, simply move the uploaded file
+                if jsonld_filepath:
+                    new_filename = get_unique_filename(uploaded_filename)
+                    destination_path = os.path.join(user_folder, new_filename)
+                    shutil.move(jsonld_filepath, destination_path)
+                    logger.debug(f"Moved uploaded file to {destination_path}")
+                    create_DatasetFile(destination_path)
+                else:
+                    logger.warning("No file to move as both jsonld_filepath and delimited_filepath are missing.")
+            else:  # Move both files
+                if delimited_filepath:
+                    new_filename = get_unique_filename(uploaded_filename)
+                    destination_path = os.path.join(user_folder, new_filename)
+                    shutil.move(delimited_filepath, destination_path)
+                    logger.debug(f"Moved delimited file to {destination_path}")
+                    create_DatasetFile(destination_path, delimiter=dataset_metadata['separator'], header=dataset_metadata['header'])
+                if jsonld_filepath:
+                    new_filename_jsonld = get_unique_filename(uploaded_filename, '.jsonld')
+                    destination_path_jsonld = os.path.join(user_folder, new_filename_jsonld)
+                    shutil.move(jsonld_filepath, destination_path_jsonld)
+                    logger.debug(f"Moved uploaded file to {destination_path_jsonld}")
+                    create_DatasetFile(destination_path_jsonld, format='json')
+            
+            redis_client.delete(f"{task_id}_metadata")
+            # Do not use cleanup task yet - user may still be polling `get_task_status` to fetch the following URL
+            dataset_places_url = reverse('datasets:ds_places', kwargs={'id': dataset.id})
+            redis_client.hset(task_id, 'dataset_places_url', dataset_places_url)
+            logger.debug(f"DatasetPlacesView URL: {dataset_places_url}")
+            return
 
     except ObjectDoesNotExist as e:
-        logger.error(f"Dataset or Log object does not exist: {e}")
+        message = f"Dataset or Log object does not exist: {e}"
     except KeyError as e:
-        logger.error(f"Missing expected key in dataset metadata: {e}")
+        message = f"Missing expected key in dataset metadata: {e}"
     except (OSError, shutil.Error) as e:
-        logger.error(f"File operation error: {e}")
+        message = f"File operation error: {e}"
     except Exception as e:
-        logger.error(f"Unexpected error occurred: {e}")
+        message = f"Unexpected error occurred: {e}"
+        
+    logger.error(message)
+    redis_client.hset(task_id, 'insertion_error', message)       
 
 def get_task_status(request, task_id):
     current_time = timezone.now()

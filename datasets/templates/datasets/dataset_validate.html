@@ -340,8 +340,19 @@
 		
 		                // Handle different statuses
 		                if (taskStatus.status === "complete") {
-		                    console.log('Success - requires next step url.');
-		                    // Optionally redirect or perform next steps here
+		                	if (!!taskStatus.dataset_places_url){
+		                		window.location.href = taskStatus.dataset_places_url;
+		                	}
+		                	else if (!!taskStatus.insertion_error) {
+		                		$('#validation_status').append(
+		                	            `<div class="alert alert-danger" role="alert">
+		                                <strong>Sorry, an error occurred while ingesting the dataset:</strong> ${taskStatus.insertion_error}
+		                            </div>`
+		                        );
+		                	}
+		                	else {
+		                		$('#validation_status').append('.');
+		                	}
 		                } else if (taskStatus.status === "aborted") {
 		                    $('#validation_status').html('<div class="alert alert-danger">Validation aborted: ' + (taskStatus.message || 'No additional details available.') + '</div>');
 		                } else if (taskStatus.status === "in_progress") {

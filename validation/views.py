@@ -91,20 +91,22 @@ def parse_to_LPF(delimited_filepath, ext):
                 'true_values': ['true', 'True'],
                 'false_values': ['false', 'False'],
                 'na_values': ['NA', 'NaN'],
-                'na_filter': False
+                'na_filter': False,
             }
             try: # read_excel does not support chunk-size, so implementation requires line-reading
-                skiprows = 0
+                skiprows_set = set()  # Keep track of the rows to skip, excluding the header (0th row)
+                skiprows_start = 1  # Start reading after the header
                 while True:
                     if separator:
                         logger.debug(f"Reading from CSV.")
-                        df_chunk = pd.read_csv(delimited_filepath, skiprows=skiprows, **configuration, sep=separator, encoding='utf-8', skipinitialspace=True)
+                        df_chunk = pd.read_csv(delimited_filepath, skiprows=lambda x: x != 0 and x in skiprows_set, **configuration, sep=separator, encoding='utf-8', skipinitialspace=True)
+                        if header is None:  # Capture the header only once, from the first chunk
+                            header = ";".join(df_chunk.columns.tolist()) or ""
                     else:
                         logger.debug(f"Reading from Excel.")
-                        df_chunk = pd.read_excel(delimited_filepath, skiprows=skiprows, **configuration, sheet_name=0)
-                    if header is None:  # Capture the header only once, from the first chunk
-                        header = ";".join(df_chunk.columns.tolist()) or ""
-                    skiprows += settings.VALIDATION_CHUNK_ROWS
+                        df_chunk = pd.read_excel(delimited_filepath, skiprows=lambda x: x != 0 and x in skiprows_set, **configuration, sheet_name=0)
+                    skiprows_set.update(range(skiprows_start, skiprows_start + settings.VALIDATION_CHUNK_ROWS))
+                    skiprows_start += settings.VALIDATION_CHUNK_ROWS
                     if df_chunk.empty:
                         break
                     yield df_chunk
@@ -155,7 +157,7 @@ def parse_to_LPF(delimited_filepath, ext):
         
                 for _, record in chunk.iterrows():
                     record = record.to_dict()  # Convert row to a dictionary
-                    # logger.debug(f"Processing record #{feature_count}: '{record}'.")
+                    logger.debug(f"Processing record #{feature_count}: '{record}'.")
                     
                     # Apply converters: NB these cannot be applied during pd.read_excel due to the unhashable lists they produce
                     for key, converter in converters.items():
@@ -176,6 +178,11 @@ def parse_to_LPF(delimited_filepath, ext):
                         lpf_feature['names'].extend(lpf_feature.pop('additional_names'))
                     if 'types' in lpf_feature and isinstance(lpf_feature['types'], list) and 'additional_types' in lpf_feature:
                         lpf_feature['types'].extend(lpf_feature.pop('additional_types'))
+                        
+                    # Create `title` from names.0.toponym
+                    if 'properties' not in lpf_feature:
+                        lpf_feature['properties'] = {}
+                    lpf_feature['properties']['title'] = lpf_feature['names'][0]['toponym']
                     
                     if 'geometry' in lpf_feature:
                         lpf_feature['geometry']['type'] = 'Point'
