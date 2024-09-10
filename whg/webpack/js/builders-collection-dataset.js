@@ -169,7 +169,7 @@ $(function() {
 				} else if (response.result == 'bad uri') {
 					alert('That url is not formed correctly!')
 				} else {
-					linky = response.result
+					let linky = response.result
 					console.log(linky)
 					$("#linklist").append(linky.link_icon + ' <a href="' + linky.uri +
 						'" target="_blank">' + linky.label + '</a>')
