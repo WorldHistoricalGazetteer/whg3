@@ -242,8 +242,7 @@ class RemoteIndexAPIView(View):
       print('index_set (collector() result)', index_set)
 
       # format hit items
-      items = [collectionItem(i) for i in index_set['items']]
-      # items = [collectionItem(s, 'place', None) for s in index_set['items']]
+      items = [childItem(i) for i in index_set['items']]
 
       # result object
       result = {'type': 'FeatureCollection',

@@ -75,7 +75,7 @@ class Dataset(models.Model):
         blank=True,
         error_messages={
             "unique": "The dataset label entered is already in use, and must be unique. "
-            "Try appending a version # or initials."
+                      "Try appending a version # or initials."
         },
     )
     title = models.CharField(max_length=255, null=False)
@@ -106,12 +106,12 @@ class Dataset(models.Model):
     volunteers_text = models.CharField(max_length=2044, null=True, blank=True)
 
     source = models.CharField(max_length=500, null=True, blank=True)
-    citation = models.CharField(max_length=2044, null=True, blank=True) # user-added; if absent, generated in browser
-    
+    citation = models.CharField(max_length=2044, null=True, blank=True)  # user-added; if absent, generated in browser
+
     # Fields to be deprecated following their migration to CSL
     creator = models.CharField(max_length=500, null=True, blank=True)
     contributors = models.CharField(max_length=500, null=True, blank=True)
-    
+
     # People associated with Dataset creation
     creators_csl = models.ManyToManyField('persons.Person', related_name='datasets_as_creator', blank=True)
     contributors_csl = models.ManyToManyField('persons.Person', related_name='datasets_as_contributor', blank=True)
@@ -132,7 +132,7 @@ class Dataset(models.Model):
 
     def get_absolute_url(self):
         return reverse("datasets:ds_status", kwargs={"id": self.id})
-    
+
     @property
     def citation_csl(self):
         try:
@@ -142,7 +142,8 @@ class Dataset(models.Model):
                     "family": creator.family or "Unknown",
                     "given": creator.given or "",
                     **({"ORCiD": creator.orcid} if creator.orcid else {}),
-                    **({"emails": ", ".join(email.address for email in creator.emails.all())} if creator.emails.exists() else {}),
+                    **({"emails": ", ".join(
+                        email.address for email in creator.emails.all())} if creator.emails.exists() else {}),
                 }
                 for creator in self.creators_csl.all()
             ]
@@ -151,32 +152,34 @@ class Dataset(models.Model):
                     "family": contributor.family or "Unknown",
                     "given": contributor.given or "",
                     **({"ORCiD": contributor.orcid} if contributor.orcid else {}),
-                    **({"emails": ", ".join(email.address for email in contributor.emails.all())} if contributor.emails.exists() else {}),
+                    **({"emails": ", ".join(
+                        email.address for email in contributor.emails.all())} if contributor.emails.exists() else {}),
                 }
                 for contributor in self.contributors_csl.all()
             )
-            
+
             csl_data = {
                 "id": self.label or "Unknown",
                 "type": "dataset",
                 "title": self.title or "No Title",
                 "author": authors,
                 "issued": {
-                    "date-parts": [[self.create_date.year, self.create_date.month, self.create_date.day]] if self.create_date else []
+                    "date-parts": [[self.create_date.year, self.create_date.month,
+                                    self.create_date.day]] if self.create_date else []
                 },
                 "URL": self.webpage or "",
                 "publisher": "World Historical Gazetteer",
                 "publisher-place": "Pittsburgh, PA, USA",
-                
+
                 # Custom fields (ignored by CSL processors)
                 "description": self.description or "",
                 "record_count": self.numrows or 0,
-                **({ "source": self.source } if self.source else {}),
-                **({ "source_citation": self.citation } if self.citation else {}),
+                **({"source": self.source} if self.source else {}),
+                **({"source_citation": self.citation} if self.citation else {}),
             }
         except Exception as e:
             csl_data = {"error": str(e)}
-            
+
         return json.dumps(csl_data)
 
     @property
@@ -225,8 +228,8 @@ class Dataset(models.Model):
             combined_geom = geom_list[0].convex_hull
 
             for geom in geom_list[
-                1:
-            ]:  # Union of convex hulls is much faster than union of full geometries
+                        1:
+                        ]:  # Union of convex hulls is much faster than union of full geometries
                 combined_geom = combined_geom.union(geom.convex_hull)
 
             geometry = json.loads(combined_geom.convex_hull.geojson)
@@ -643,6 +646,7 @@ class DatasetFile(models.Model):
     upload_date = models.DateTimeField(null=True, auto_now_add=True)
     header = ArrayField(models.CharField(max_length=30), null=True, blank=True)
     numrows = models.IntegerField(null=True, blank=True)
+
     # TODO: generate geotypes, add to file instance
     # geotypes = JSONField(blank=True, null=True)
 

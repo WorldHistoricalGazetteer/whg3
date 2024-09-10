@@ -1,9 +1,6 @@
 # tLPF_mappings.py
 
-import numpy as np
-import chardet
 import re
-from django.conf import settings
 
 import logging
 logger = logging.getLogger('validation')
