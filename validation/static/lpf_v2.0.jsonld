@@ -639,8 +639,8 @@
                 },
                 "dateString": {
                     "type": "string",
-                    "pattern": "^(-?\\d{5,})$|^(-?\\d{1,4})(-(0[1-9]|1[0-2]))?(-([0-2][0-9]|3[01]))?$",
-                    "description": "A string representing a date. The format can be: A year with five or more digits (e.g., '-10000'); A year with four digits (e.g., '2024'), optionally followed by a month (e.g., '2024-08') and/or a day (e.g., '2024-08-19'). Negative years are supported and must be represented with a leading '-' sign. Months and days must be within valid ranges."
+                    "pattern": "^(-\\d{5,})$|^(-?\\d{1,4})(-(0[1-9]|1[0-2]))?(-([0-2][0-9]|3[01]))?$",
+                    "description": "A string representing a date. The format can be: A negative year with five or more digits (e.g., '-10000'); A year with four digits (e.g., '2024'), optionally followed by a month (e.g., '2024-08') and/or a day (e.g., '2024-08-19'). Negative years are supported and must be represented with a leading '-' sign. Months and days must be within valid ranges."
                 },
                 "dateObject": {
                     "type": "object",

@@ -357,3 +357,4 @@ VALIDATION_MAXFIXATTEMPTS = 50 # Maximum number of errors to try to fix on each 
 VALIDATION_MAX_ERRORS = 100 # Stop validation of dataset if this number of unfixed errors is reached (checked only on completion of each batch, so may exceed this number)
 VALIDATION_TIMEOUT = 3600 # seconds, after which tasks are revoked and records are removed from redis
 VALIDATION_TEST_DELAY = 0 # seconds to pause after each JSON schema validation attempt
+VALIDATION_INTEGRITY_RETRIES = 5

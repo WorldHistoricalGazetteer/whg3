@@ -85,7 +85,6 @@ from .forms import (
     DatasetCreateEmptyModelForm
 )
 from .insert import (
-    ds_insert_json, 
     ds_insert_delim, 
     failed_insert_notification
 )

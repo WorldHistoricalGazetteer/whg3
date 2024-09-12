@@ -1,16 +1,17 @@
 # tLPF_mappings.py
 
 import re
-
 import logging
+
 logger = logging.getLogger('validation')
+
 
 def variant_conversion(x):
     x = str_x(x)
-    
+
     if not x:
         return []
-    
+
     variants = []
     for variant in x.split(';'):
         variant = variant.strip()
@@ -25,8 +26,9 @@ def variant_conversion(x):
                 variants.append({
                     'toponym': variant
                 })
-    
+
     return variants
+
 
 def safe_float_conversion(x):
     """Safely convert input to float, handling empty strings and None."""
@@ -37,12 +39,13 @@ def safe_float_conversion(x):
     except ValueError:
         return None
 
+
 def str_x(x, split=False):
     """
     Convert to string and remove '.0' if it's a float ending with .0.
     pandas read_excel is very uncooperative with regard to forcing dtype, and infers type regardless of configuration
     """
-    stripped = re.sub(r'\.0$', '', str(x).strip()) # Remove any trailing '.0'
+    stripped = re.sub(r'\.0$', '', str(x).strip())  # Remove any trailing '.0'
     if not stripped:
         if split:
             return []
@@ -51,6 +54,7 @@ def str_x(x, split=False):
         return stripped.split(';')
     else:
         return stripped
+
 
 tLPF_mappings = {
     'id': {
@@ -71,7 +75,8 @@ tLPF_mappings = {
     },
     'aat_types': {
         'lpf': 'types',
-        'converter': lambda x: [{'identifier': f'aat:{item.strip()}'} for item in str_x(x, True) if item.strip()] or None
+        'converter': lambda x: [{'identifier': f'aat:{item.strip()}'} for item in str_x(x, True) if
+                                item.strip()] or None
     },
     'attestation_year': {
         'lpf': 'names.0.citations.0.year',
@@ -95,7 +100,8 @@ tLPF_mappings = {
     },
     'matches': {
         'lpf': 'links',
-        'converter': lambda x: [{'type': 'exactMatch', 'identifier': item.strip()} for item in str_x(x, True) if item.strip()] or None
+        'converter': lambda x: [{'type': 'exactMatch', 'identifier': item.strip()} for item in str_x(x, True) if
+                                item.strip()] or None
     },
     'variants': {
         'lpf': 'additional_names',
