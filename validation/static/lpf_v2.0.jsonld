@@ -505,13 +505,12 @@
                     },
                     "identifier": {
                         "type": "string",
-                        "notes": "Specification is for namespaceTermNarrow: here it has been relaxed.",
                         "anyOf": [
                             {
                                 "$ref": "#/definitions/patterns/definitions/validURL"
                             },
                             {
-                                "$ref": "#/definitions/patterns/definitions/namespaceTerm"
+                                "$ref": "#/definitions/patterns/definitions/namespaceTermNarrow"
                             }
                         ]
                     }

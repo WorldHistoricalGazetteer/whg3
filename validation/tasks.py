@@ -93,6 +93,7 @@ def fix_feature(featureCollection, e, namespaces):
                 fixes.append({
                     "feature_id": feature_id,
                     "path": ".".join(map(str, path_list)),
+                    "fix": current_element[last_key],
                     "description": fix_description
                 })
                 logger.debug(fix_description)
@@ -122,6 +123,7 @@ def fix_feature(featureCollection, e, namespaces):
                     fixes.append({
                         "feature_id": feature_id,
                         "path": ".".join(map(str, path_list)),
+                        "fix": current_element['when'],
                         "description": fix_description
                     })
                     logger.debug(fix_description)
@@ -132,7 +134,7 @@ def fix_feature(featureCollection, e, namespaces):
         if isinstance(invalid_value, str) and isinstance(e.validator_value, list):
             ref_list = [ref.get('$ref') for ref in e.validator_value]
 
-            if '#/definitions/patterns/definitions/validURL' in ref_list or '#/definitions/patterns/definitions/namespaceTerm' in ref_list:
+            if '#/definitions/patterns/definitions/validURL' in ref_list or '#/definitions/patterns/definitions/namespaceTermNarrow' in ref_list:
                 if invalid_value == "":
                     # Remove the element if invalid_value is an empty string
                     del current_element[last_key]
@@ -147,12 +149,13 @@ def fix_feature(featureCollection, e, namespaces):
                     # Replace any namespaces which were defined in @context of uploaded jsonld file
                     for prefix, namespace_uri in namespaces.items():
                         if invalid_value.startswith(prefix):
-                            new_value = invalid_value.replace(prefix, namespace_uri, 1)
+                            new_value = invalid_value.replace(f'{prefix}:', namespace_uri, 1)
                             current_element[last_key] = new_value
                             fix_description = f"Substituted prefix '{prefix}' with '{namespace_uri}' in '{invalid_value}'"
                             fixes.append({
                                 "feature_id": feature_id,
                                 "path": ".".join(map(str, path_list)),
+                                "fix": current_element[last_key],
                                 "description": fix_description
                             })
                             logger.debug(fix_description)
@@ -165,6 +168,7 @@ def fix_feature(featureCollection, e, namespaces):
                         fixes.append({
                             "feature_id": feature_id,
                             "path": ".".join(map(str, path_list)),
+                            "fix": current_element[last_key],
                             "description": fix_description
                         })
                         logger.debug(fix_description)
@@ -217,7 +221,10 @@ def get_task_status(request, task_id):
         redis_client.hset(task_id, 'start_time', current_time.isoformat())
 
     # Estimate remaining time
-    start_time = timezone.datetime.fromisoformat(status.get('insert_start_time', status.get('start_time')))
+    start_time = timezone.datetime.fromisoformat(
+        status.get('mapdata_start_time') or
+        status.get('insert_start_time', status.get('start_time'))
+    )
     last_update_time_str = status.get('last_update', status.get('start_time'))
     last_update_time = timezone.datetime.fromisoformat(last_update_time_str)
 
@@ -235,7 +242,8 @@ def get_task_status(request, task_id):
         timedelta(seconds=estimated_remaining_time)) if estimated_remaining_time is not None else "queueing"
 
     # Add fixes and errors if they exist
-    status['fixes'] = [fix.decode('utf-8') for fix in redis_client.lrange(f"{task_id}_fixes", 0, -1)]
+    if not status.get('insert_start_time'): # Insertion necessitates incremental removal of fixes from redis array
+        status['fixes'] = [fix.decode('utf-8') for fix in redis_client.lrange(f"{task_id}_fixes", 0, -1)]
     status['errors'] = [error.decode('utf-8') for error in redis_client.lrange(f"{task_id}_errors", 0, -1)]
 
     # Check if task is no longer in progress
@@ -421,6 +429,7 @@ def validate_feature_batch(self, feature_batch, schema, task_id, namespaces=None
             redis_client.rpush(f"{task_id}_fixes", json.dumps({
                 "feature_id": feature.get("@id", "-- no @id --"),
                 "path": "features.feature.geometry",
+                "fix": feature['geometry'],
                 "description": "Geometry fixed."
             }))
             redis_client.hset(task_id, 'last_update', timezone.now().isoformat())

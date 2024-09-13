@@ -10,7 +10,9 @@ import logging
 from django.conf import settings
 
 from django.contrib.gis.geos import GEOSGeometry
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.db.models import Max
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
@@ -23,12 +25,102 @@ from main.models import Log
 
 from places.models import PlaceGeom, PlaceWhen, PlaceLink, PlaceRelated, PlaceDescription, PlaceDepiction, PlaceName, \
     PlaceType, Place, Type
+from utils.mapdata import mapdata_dataset
 
 logger = logging.getLogger('validation')
 
 
 def get_redis_client():
     return redis.StrictRedis.from_url(settings.CELERY_BROKER_URL)
+
+
+class PrimaryKeyManager:
+    """
+    Manages primary key values for database models using Redis. Ensures unique
+    and sequential primary keys across multiple processes by:
+    - Initializing Redis with the next available primary key based on the maximum
+      value from the database.
+    - Providing atomic increment operations to fetch the next primary key.
+    """
+
+    def __init__(self):
+        self.redis_client = get_redis_client()
+
+    def get_next_pk(self, model_name):
+        """Get the next primary key for the given model."""
+        key = f"{model_name}_max_pk"
+        # Increment the key and return the previous value
+        return self.redis_client.incr(key)
+
+    def initialize_pks(self, model_names):
+        """Initialize the primary keys for a list of models."""
+        for model_name in model_names:
+            key = f"{model_name}_max_pk"
+
+            # Check if the key already exists in Redis
+            redis_value = self.redis_client.get(key)
+            if redis_value is not None:
+                redis_value = int(redis_value)
+            else:
+                redis_value = None
+
+            # Get the maximum primary key from the database
+            max_pk = self.get_max_pk_from_db(model_name)
+
+            # Determine the initial value to set in Redis
+            if redis_value is None:
+                initial_value = max_pk + 1 if max_pk is not None else 1
+                self.redis_client.set(key, initial_value)
+            elif max_pk is not None and redis_value <= max_pk:
+                # Only update if the Redis value is less than or equal to the max_pk
+                self.redis_client.set(key, max_pk + 1)
+
+    def get_max_pk_from_db(self, model_name):
+        """Fetch the maximum primary key from the database for a given model."""
+        model_class = globals().get(f'Place{model_name}')
+        if model_class:
+            try:
+                # Fetch the maximum value from the database
+                max_pk = model_class.objects.aggregate(max_pk=Max('pk'))['max_pk']
+                return max_pk
+            except Exception as e:
+                logger.error(f"Error fetching max primary key from database for model {model_name}: {e}")
+                return None
+        else:
+            logger.error(f"Model class {model_name} not found.")
+            return None
+
+
+def safe_key(value):
+    """Create a Redis-safe key by replacing unsafe characters."""
+    return re.sub(r'\W+', '_', value)
+
+
+def sort_fixes(task_id):
+    # Sort by feature @id the fixes stored in Redis for the given task_id
+    redis_client = get_redis_client()
+    while True:
+        # Pop an item from the fixes list (blocking pop in case the list is empty)
+        item_json = redis_client.lpop(f"{task_id}_fixes")
+        if not item_json:
+            break  # No more items to process
+
+        # Parse the JSON object
+        item = json.loads(item_json)
+
+        feature_id = item.get("feature_id", "-- no @id --")
+        path = item.get("path")
+        fix = item.get("fix")
+
+        # Create a safe Redis key using the feature_id
+        safe_feature_id = safe_key(feature_id)
+        new_key = f"{task_id}_fixes_{safe_feature_id}"
+
+        # Create a new Redis array containing the path and fix as a JSON object
+        redis_client.rpush(new_key, json.dumps({
+            "path": path,
+            "fix": fix
+        }))
 
 
 def save_dataset(task_id):
@@ -89,14 +181,7 @@ def save_dataset(task_id):
         user_folder = os.path.join(settings.MEDIA_ROOT, f"user_{username}")
 
         # Cache mapdata
-        cache_file_path = os.path.join(settings.CACHES['default']['LOCATION'], f"dataset-{dataset.id}-standard.json")
-        try:
-            shutil.copy(jsonld_filepath, cache_file_path)
-            logger.debug(f"Copied {jsonld_filepath} to mapdata cache.")
-            cleanup_paths.append(cache_file_path)
-        except (OSError, shutil.Error) as e:
-            logger.error(f"Failed to copy file to cache: {e}")
-            raise
+        cache.set(f"datasets-{dataset.id}-standard", mapdata_dataset(dataset.id, task_id))
 
         # Ensure that the user folder exists
         os.makedirs(user_folder, exist_ok=True)
@@ -220,12 +305,56 @@ def ds_insert(jsonld_filepath, ds, task_id):
     }
 
     errors = []
+    pk_manager = PrimaryKeyManager()
+    pk_manager.initialize_pks([model for model, _, _ in data_mappings.values()])
+
+    sort_fixes(task_id)
+
+    def apply_fix(target, fix):
+        """Apply a fix to a target object based on the path and fix provided."""
+        logger.debug(f"apply_fix: {target}, {fix}")
+        if target is None or fix is None:
+            return
+        path = fix.get('path', '')
+        keys = path.split('.')
+        if len(keys) > 2:
+            keys = keys[2:]  # Ignore initial "features.0."
+        else:
+            return  # Path is not valid if it has fewer than 3 parts
+        value = fix.get('fix')
+        logger.debug(f"apply_fix path & value: {keys}, {value}")
+
+        current = target
+        for key in keys[:-1]:  # Traverse to the second-last key
+            current = current[int(key) if key.isdigit() else key]
+
+        last_key = keys[-1]
+        if value is None:
+            del current[last_key]
+        else:
+            current[last_key] = value
+
+        logger.debug(f"Updated target: {target}")
 
     # Start a transaction to ensure atomicity
     with transaction.atomic():
         try:
             for feature_batch in read_json_features_in_batches(jsonld_filepath):
                 for feat in feature_batch:
+                    feature_id = feat.get("@id", "-- no @id --")
+                    fixes_key = f"{task_id}_fixes_{safe_key(feature_id)}"
+                    # logger.debug(f"Fixes key: {fixes_key}")
+
+                    # Apply fixes if available
+                    if redis_client.exists(fixes_key):
+                        while redis_client.llen(fixes_key) > 0:
+                            fix_json = redis_client.lpop(fixes_key)
+                            if fix_json:
+                                fix = json.loads(fix_json)
+                                apply_fix(feat, fix)
+                                logger.debug(f"Feature after applying fix: {feat}")
+                            # feat = apply_fix(feat, json.loads(redis_client.lpop(fixes_key)))
+
                     title = re.sub(r'\(.*?\)', '', feat.get('properties', {}).get('title', ''))
                     geojson = feat.get('geometry')
                     ccodes = feat.get('properties', {}).get('ccodes', [])
@@ -260,10 +389,10 @@ def ds_insert(jsonld_filepath, ds, task_id):
                     for model, obj_list in [(model, objs[key]) for key, (model, _, _) in data_mappings.items() if
                                             objs.get(key)]:
                         try:
-                            with connection.cursor() as cursor:  # required to mitigate race-condition integrity errors
-                                cursor.execute(f'LOCK TABLE place_{model.lower()} IN ACCESS EXCLUSIVE MODE')
-                                model_class = globals()[f'Place{model}']
-                                model_class.objects.bulk_create(obj_list)
+                            model_class = globals()[f'Place{model}']
+                            for obj in obj_list:
+                                obj.pk = pk_manager.get_next_pk(model_class.__name__)
+                                obj.save()
                         except IntegrityError as e:
                             errors.append({"field": model, "error": str(e)})
                             raise IntegrityError(f"IntegrityError in database insertion for {model}: {e}")
