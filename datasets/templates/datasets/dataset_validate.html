@@ -63,8 +63,9 @@
         z-index: 2;
     }
     #fixes_content, #errors_content {
-        max-height: 100px;
-    	overflow: auto;
+        max-height: 250px;
+        overflow-y: auto;
+        overflow-x: hidden;
     }
     #errors {
     	color: red;
@@ -290,6 +291,7 @@
 		                const taskStatus = data.task_status;
 
                         let stage = !!taskStatus.insert_start_time ? 'Ingesting' : 'Validating';
+                        if (taskStatus.status === "aborted") stage = 'Aborted Validation'
 		
 		                // Display file name and total features
 		                $('#file_name').html(`${stage}: <b>${taskStatus.uploaded_filename}</b>: <i>${taskStatus.total_features} features</i>`);
@@ -355,8 +357,10 @@
 		                	else {
 		                		$('#validation_status').append('.');
 		                	}
-		                } else if (taskStatus.status === "aborted") {
-		                    $('#validation_status').html('<div class="alert alert-danger">Validation aborted: ' + (taskStatus.message || 'No additional details available.') + '</div>');
+		                 } else if (taskStatus.status === "aborted") {
+                            $('#progress_bar_text').text('Aborted');
+                            // $('#validation_status').html('<div class="alert alert-danger">Validation aborted: ' + (taskStatus.message || 'No additional details available.') + '</div>');
+
 		                } else if (taskStatus.status === "in_progress") {
 		                    // Continue polling if still in progress
 		                    setTimeout(() => pollTaskStatus(taskId), 5000); // Poll every 5 seconds

@@ -14,7 +14,7 @@ from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
-from django.db import transaction, IntegrityError, DataError
+from django.db import connection, transaction, IntegrityError, DataError
 import redis
 
 from datasets.models import Dataset, DatasetFile
@@ -33,6 +33,9 @@ def get_redis_client():
 
 def save_dataset(task_id):
     redis_client = get_redis_client()
+
+    cleanup_paths = []  # Keep track of paths to clean up in case of failure
+
     try:
         # Retrieve stored form data from Redis
         dataset_metadata = redis_client.hgetall(f"{task_id}_metadata")
@@ -43,6 +46,9 @@ def save_dataset(task_id):
         uploaded_filename = dataset_metadata.get('uploaded_filename')
         jsonld_filepath = dataset_metadata.get('jsonld_filepath')
         delimited_filepath = dataset_metadata.get('delimited_filepath')
+
+        cleanup_paths.append(jsonld_filepath)
+        cleanup_paths.append(delimited_filepath)
 
         # Start a transaction to ensure atomicity
         with transaction.atomic():
@@ -82,6 +88,16 @@ def save_dataset(task_id):
         username = dataset_metadata.get('username', 'unknown_user')
         user_folder = os.path.join(settings.MEDIA_ROOT, f"user_{username}")
 
+        # Cache mapdata
+        cache_file_path = os.path.join(settings.CACHES['default']['LOCATION'], f"dataset-{dataset.id}-standard.json")
+        try:
+            shutil.copy(jsonld_filepath, cache_file_path)
+            logger.debug(f"Copied {jsonld_filepath} to mapdata cache.")
+            cleanup_paths.append(cache_file_path)
+        except (OSError, shutil.Error) as e:
+            logger.error(f"Failed to copy file to cache: {e}")
+            raise
+
         # Ensure that the user folder exists
         os.makedirs(user_folder, exist_ok=True)
 
@@ -112,6 +128,7 @@ def save_dataset(task_id):
                 new_filename = get_unique_filename(uploaded_filename)
                 destination_path = os.path.join(user_folder, new_filename)
                 shutil.move(jsonld_filepath, destination_path)
+                cleanup_paths.append(destination_path)
                 logger.debug(f"Moved uploaded file to {destination_path}")
                 create_DatasetFile(destination_path)
             else:
@@ -121,6 +138,7 @@ def save_dataset(task_id):
                 new_filename = get_unique_filename(uploaded_filename)
                 destination_path = os.path.join(user_folder, new_filename)
                 shutil.move(delimited_filepath, destination_path)
+                cleanup_paths.append(destination_path)
                 logger.debug(f"Moved delimited file to {destination_path}")
                 create_DatasetFile(destination_path, delimiter=dataset_metadata['separator'],
                                    header=dataset_metadata['header'])
@@ -128,6 +146,7 @@ def save_dataset(task_id):
                 new_filename_jsonld = get_unique_filename(uploaded_filename, '.jsonld')
                 destination_path_jsonld = os.path.join(user_folder, new_filename_jsonld)
                 shutil.move(jsonld_filepath, destination_path_jsonld)
+                cleanup_paths.append(destination_path_jsonld)
                 logger.debug(f"Moved uploaded file to {destination_path_jsonld}")
                 create_DatasetFile(destination_path_jsonld, format='json')
 
@@ -147,23 +166,17 @@ def save_dataset(task_id):
     except Exception as e:
         message = f"Unexpected error occurred: {e}"
 
+    # Cleanup files after failure
+    for path in cleanup_paths:
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+                logger.debug(f"Cleaned up {path}")
+            except Exception as cleanup_err:
+                logger.error(f"Failed to clean up {path}: {cleanup_err}")
+
     logger.error(message)
     redis_client.hset(task_id, 'insertion_error', message)
-
-
-def retry_on_integrity_error(func, retries=settings.VALIDATION_INTEGRITY_RETRIES):
-    def wrapper(*args, **kwargs):
-        for attempt in range(retries):
-            try:
-                return func(*args, **kwargs)
-            except IntegrityError as e:
-                transaction.set_rollback(True)
-                if attempt < retries - 1:
-                    sleep(2 ** attempt)  # Exponential backoff
-                else:
-                    raise e
-
-    return wrapper
 
 
 def ds_insert(jsonld_filepath, ds, task_id):
@@ -224,6 +237,8 @@ def ds_insert(jsonld_filepath, ds, task_id):
                     fclass_list = get_fclass_list(feat)
                     # logger.debug(f"fclass_list: {fclass_list}")
 
+                    logger.debug(f"New Place from feature: {feat}")
+
                     newpl = Place(
                         src_id=feat.get('@id') if ds.uri_base in ['', None] or not feat.get('@id').startswith(
                             ds.uri_base) else feat.get('@id')[len(ds.uri_base):],
@@ -245,22 +260,22 @@ def ds_insert(jsonld_filepath, ds, task_id):
                     for model, obj_list in [(model, objs[key]) for key, (model, _, _) in data_mappings.items() if
                                             objs.get(key)]:
                         try:
-                            with transaction.atomic(): # Inner transaction for bulk create
-                                retry_on_integrity_error(
-                                    getattr(globals()[f'Place{model}'], 'objects').bulk_create
-                                )(obj_list)
+                            with connection.cursor() as cursor:  # required to mitigate race-condition integrity errors
+                                cursor.execute(f'LOCK TABLE place_{model.lower()} IN ACCESS EXCLUSIVE MODE')
+                                model_class = globals()[f'Place{model}']
+                                model_class.objects.bulk_create(obj_list)
                         except IntegrityError as e:
                             errors.append({"field": model, "error": str(e)})
-                            raise IntegrityError(f"IntegrityError in bulk create for {model}: {e}")
+                            raise IntegrityError(f"IntegrityError in database insertion for {model}: {e}")
                         except ValidationError as e:
                             errors.append({"field": model, "error": str(e)})
-                            raise ValidationError(f"ValidationError in bulk create for {model}: {e}")
+                            raise ValidationError(f"ValidationError in database insertion for {model}: {e}")
                         except DataError as e:
                             errors.append({"field": model, "error": str(e)})
-                            raise DataError(f"Bulk load for {model} failed on {newpl}: {e}")
+                            raise DataError(f"Database insertion load for {model} failed on {newpl}: {e}")
                         except Exception as e:
                             errors.append({"field": model, "error": str(e)})
-                            raise Exception(f"Unexpected error in bulk create for {model}: {e}")
+                            raise Exception(f"Unexpected error in database insertion for {model}: {e}")
 
                     redis_client.hincrby(task_id, 'queued_features', -1)
 

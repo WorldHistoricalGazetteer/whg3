@@ -324,6 +324,14 @@ class MapdataFileBasedCache(FileBasedCache):
     def __init__(self, dir, params):
         super().__init__(dir, params)
 
+    def _get_key_file_path(self, key):
+        """
+        Return the file path for the given cache key.
+        """
+        # Use the cache key directly as the filename
+        safe_key = key.replace('/', '_').replace('\\', '_')
+        return os.path.join(self._cache_dir, f"{safe_key}.json")
+
     def _cull(self):
         """
         Custom cull implementation: Remove the smallest cache entries if max_entries is reached.

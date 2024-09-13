@@ -505,12 +505,13 @@
                     },
                     "identifier": {
                         "type": "string",
+                        "notes": "Specification is for namespaceTermNarrow: here it has been relaxed.",
                         "anyOf": [
                             {
                                 "$ref": "#/definitions/patterns/definitions/validURL"
                             },
                             {
-                                "$ref": "#/definitions/patterns/definitions/namespaceTermNarrow"
+                                "$ref": "#/definitions/patterns/definitions/namespaceTerm"
                             }
                         ]
                     }
@@ -693,7 +694,8 @@
                             "$ref": "#/definitions/time/definitions/dateObject"
                         }
                     },
-                    "required": [
+                    "notes": "A case can be made for allowing timespans without a start",
+                    "required-REMOVE-FROM-SPECIFICATION": [
                         "start"
                     ],
                     "additionalProperties": false

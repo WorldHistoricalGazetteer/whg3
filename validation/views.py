@@ -277,6 +277,7 @@ def validate_file(request, dataset_metadata):
     # Convert delimited files to LPF JSON
     _, ext = os.path.splitext(uploaded_filepath)
     ext = ext.lower().lstrip('.')
+    namespaces = None
     try:
         if 'json' in ext:  # mime type is not a reliable determinant of JSON
             dataset_metadata["format"] = 'json'
@@ -284,11 +285,14 @@ def validate_file(request, dataset_metadata):
             dataset_metadata["jsonld_filepath"] = uploaded_filepath
             dataset_metadata["feature_count"] = json_feature_count(dataset_metadata["jsonld_filepath"])
             logger.debug(f'JSON contains {dataset_metadata.get("feature_count")} features.')
+
+            # Extract any local namespace definitions (these will be expanded during validation)
+            namespaces = extract_context_namespaces(uploaded_filepath)
         else:
             dataset_metadata["format"] = ext
             dataset_metadata["delimited_filepath"] = uploaded_filepath
             dataset_metadata["jsonld_filepath"], dataset_metadata["feature_count"], dataset_metadata["separator"], \
-            dataset_metadata["header"] = parse_to_LPF(dataset_metadata["delimited_filepath"], ext)
+                dataset_metadata["header"] = parse_to_LPF(dataset_metadata["delimited_filepath"], ext)
     except Exception as e:
         message = f"Error converting delimited text to LPF: {e}"
         logger.error(message)
@@ -323,7 +327,7 @@ def validate_file(request, dataset_metadata):
         for feature_batch in read_json_features_in_batches(dataset_metadata["jsonld_filepath"]):
             # The following line could be implemented if the LP Ontology were correct
             # feature_batch = [jsonld.compact(feature, context) for feature in feature_batch]
-            validate_feature_batch.delay(feature_batch, schema, task_id)
+            validate_feature_batch.delay(feature_batch, schema, task_id, namespaces)
             feature_tally = len(feature_batch)
             redis_client.hincrby(task_id, 'queued_features', feature_tally)
             redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
@@ -344,3 +348,16 @@ def validate_file(request, dataset_metadata):
         return JsonResponse({"status": "failed", "message": str(e)}, status=500)
 
     return JsonResponse({"status": "in_progress", "task_id": task_id})
+
+
+def extract_context_namespaces(file_path):
+    context_namespaces = {}
+
+    with open(file_path, 'r') as file:
+        parser = ijson.items(file, '@context.item', use_float=True)
+
+        for item in parser:
+            if isinstance(item, dict):
+                context_namespaces.update(item)
+
+    return context_namespaces

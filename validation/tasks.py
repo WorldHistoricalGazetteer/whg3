@@ -67,7 +67,7 @@ def traverse_path(data, path):
     return current
 
 
-def fix_feature(featureCollection, e):
+def fix_feature(featureCollection, e, namespaces):
     """
     Traverse the featureCollection according to the error_path and attempt fixes.
     """
@@ -83,7 +83,7 @@ def fix_feature(featureCollection, e):
 
         last_key = path_list[-1]
         invalid_value = e.instance
-        feature_id = featureCollection["features"][0].get("@id", "unknown")
+        feature_id = featureCollection["features"][0].get("@id", "- no @id -")
 
         # Attempt to convert integers to strings where necessary
         if e.validator == 'type' and e.validator_value == 'string':
@@ -128,7 +128,7 @@ def fix_feature(featureCollection, e):
                 else:
                     logger.debug(f"... failed: no appropriate start or end values found.")
 
-        # Attempt to fix ids/urls by either removal or prepending a dummy namespace
+        # Attempt to fix ids/urls by either removal, expansion from namespaces, or prepending a dummy namespace
         if isinstance(invalid_value, str) and isinstance(e.validator_value, list):
             ref_list = [ref.get('$ref') for ref in e.validator_value]
 
@@ -144,16 +144,30 @@ def fix_feature(featureCollection, e):
                     })
                     logger.debug(fix_description)
                 else:
-                    # Prepend a dummy namespace if invalid_value is not empty
-                    new_value = f"custom_namespace:{invalid_value}"
-                    current_element[last_key] = new_value
-                    fix_description = f"Fixed @id value: '{invalid_value}' to '{new_value}'"
-                    fixes.append({
-                        "feature_id": feature_id,
-                        "path": ".".join(map(str, path_list)),
-                        "description": fix_description
-                    })
-                    logger.debug(fix_description)
+                    # Replace any namespaces which were defined in @context of uploaded jsonld file
+                    for prefix, namespace_uri in namespaces.items():
+                        if invalid_value.startswith(prefix):
+                            new_value = invalid_value.replace(prefix, namespace_uri, 1)
+                            current_element[last_key] = new_value
+                            fix_description = f"Substituted prefix '{prefix}' with '{namespace_uri}' in '{invalid_value}'"
+                            fixes.append({
+                                "feature_id": feature_id,
+                                "path": ".".join(map(str, path_list)),
+                                "description": fix_description
+                            })
+                            logger.debug(fix_description)
+                            break
+                    # Otherwise, prepend a dummy namespace if invalid_value is not empty
+                    else:
+                        new_value = f"anon:{invalid_value}"
+                        current_element[last_key] = new_value
+                        fix_description = f"Fixed @id value: '{invalid_value}' to '{new_value}'"
+                        fixes.append({
+                            "feature_id": feature_id,
+                            "path": ".".join(map(str, path_list)),
+                            "description": fix_description
+                        })
+                        logger.debug(fix_description)
 
     except Exception as e:
         raise
@@ -373,7 +387,7 @@ def revoke_all_subtasks(redis_client, task_id):
 
 
 @shared_task(bind=True)
-def validate_feature_batch(self, feature_batch, schema, task_id):
+def validate_feature_batch(self, feature_batch, schema, task_id, namespaces=None):
     """
     Validate a batch of features and manage subtasks.
     
@@ -398,14 +412,14 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
         feature, fixed, valid = validate_feature_geometry(feature)
         if not valid:
             redis_client.rpush(f"{task_id}_errors", json.dumps({
-                "feature_id": feature.get("@id", "unknown"),
+                "feature_id": feature.get("@id", "-- no @id --"),
                 "path": "features.feature.geometry",
                 "description": "Geometry failed validation and could not be fixed."
             }))
             redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
         if fixed:
             redis_client.rpush(f"{task_id}_fixes", json.dumps({
-                "feature_id": feature.get("@id", "unknown"),
+                "feature_id": feature.get("@id", "-- no @id --"),
                 "path": "features.feature.geometry",
                 "description": "Geometry fixed."
             }))
@@ -423,12 +437,13 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
                 stopValidation = True
                 # logger.debug(f'Validated feature: {feature}')
             except ValidationError as e:
-                error_message = e.message
+                # logger.debug(f'ValidationError: {e}')
                 error_path = " -> ".join([str(p) for p in e.absolute_path])
                 detailed_error = parse_validation_error(e)
                 full_error = f"Validation error at {error_path}: {detailed_error}"
+                # logger.debug(full_error)
                 json_error = json.dumps({
-                    "feature_id": feature.get("@id", "unknown"),
+                    "feature_id": feature.get("@id", "-- no @id --"),
                     "path": error_path,
                     "description": detailed_error
                 })
@@ -437,7 +452,7 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
                         featureCollection, fixes = fix_feature({
                             "type": "FeatureCollection",
                             "features": [feature]
-                        }, e)
+                        }, e, namespaces)
                         fixAttempts += 1
 
                         if fixes:
@@ -448,6 +463,9 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
                                     logger.error(f"Failed to push fix to Redis: {e}")
                         else:
                             # No fixes applied; no point in revalidating
+                            logger.error(full_error)
+                            redis_client.rpush(f"{task_id}_errors", json_error)
+                            redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
                             stopValidation = True
 
                     except Exception as fix_error:
@@ -518,8 +536,10 @@ def validate_feature_batch(self, feature_batch, schema, task_id):
         elapsed_time = (end_time - start_time).total_seconds()
 
         if all_queued == 'true' and queued_features == 0:
-            logger.debug(f"Saving Dataset: {task_status.get('label', '(missing label)')}")
-            save_dataset(task_id)
+
+            if redis_client.llen(f"{task_id}_errors") == 0:
+                logger.debug(f"Saving Dataset: {task_status.get('label', '(missing label)')}")
+                save_dataset(task_id)
 
             redis_client.hset(task_id, mapping={
                 'status': 'complete',
@@ -541,7 +561,8 @@ def parse_validation_error(error: ValidationError) -> str:
     schema_path = ".".join([str(p) for p in error.schema_path])
     instance_path = ".".join([str(p) for p in error.absolute_path])
     error_message = error.message
-    error_value = error.instance
+    error_value = '...' if error.validator == "required" else error.instance
+
     formatted_error = (
         f"Error Type: {error.validator} ({error.validator_value})\n"
         f"Schema Path: {schema_path}\n"
