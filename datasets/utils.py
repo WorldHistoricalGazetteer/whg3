@@ -202,62 +202,6 @@ def parsedates_lpf(feat):
   return {"intervals": unique, "minmax": minmax}
 '''
 
-def parsedates_lpf(feat):
-    '''
-    TODO:
-    This method ignores the `earliest`, `in`, and `latest` attributes of `start` and `end`, which
-    can lead to misrepresentation of attestations.
-    
-    '''
-    allowed_keys = ['names', 'types', 'relations', 'geometry', 'geometries']
-
-    def timespansReduce(tsl):
-        def extract_year(time_dict):
-            if not time_dict:
-                return None
-            year_string = next(iter(time_dict.values()), '')
-            year_match = re.search(r'(-?\d+)', year_string)
-            return int(year_match.group(1)) if year_match else None
-        
-        return [
-            [
-                extract_year(ts.get('start', {})),
-                extract_year(ts.get('end', {}))
-            ]
-            for ts in tsl
-        ]
-
-    def find_intervalspans(obj, allowed_keys):
-        return [
-            [start, end, value['timespans']]
-            for key, value in obj.items() if key == 'when' and 'timespans' in value
-            for interval in timespansReduce(value['timespans'])
-            for start, end in [interval]
-        ] + [
-            interval
-            for key, value in obj.items() if key in allowed_keys
-            for interval in find_intervalspans(value, allowed_keys)
-        ] if isinstance(obj, dict) else [
-            interval
-            for item in obj
-            for interval in find_intervalspans(item, allowed_keys)
-        ] if isinstance(obj, list) else []
-
-    intervalspans = find_intervalspans(feat, allowed_keys)
-    
-    minmax = [val for val in (
-        min([start for start, _, _ in intervalspans if start is not None], default=None),
-        max([end for _, end, _ in intervalspans if end is not None], default=None)
-    ) if val is not None]
-    if len(minmax) == 1:
-        minmax.append(minmax[0]) 
-    
-    # Ensure unique timespans by converting from JSON and back
-    unique_timespans = [json.loads(timespanjson) for timespanjson in {json.dumps(timespan) for _, _, timespan in intervalspans}]
-    
-    print('returning from parsedates_lpf', unique_timespans, minmax)
-    return {"intervals": unique_timespans, "minmax": minmax}
-
 class HitRecord(object):
   def __init__(self, place_id, dataset, auth_id, title):
     self.place_id = place_id

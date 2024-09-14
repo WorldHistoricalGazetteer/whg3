@@ -11,22 +11,26 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.utils import timezone
 from pyld import jsonld
-from .tasks import validate_feature_batch, cleanup
+
+from validation.create_dataset import read_json_features_in_batches
+from validation.tasks import validate_feature_batch, cleanup
 import redis
 import sys
-from .tLPF_mappings import tLPF_mappings
+from validation.tLPF_mappings import tLPF_mappings
 from shapely import wkt
 from shapely.geometry import mapping
 import geojson
 
 logger = logging.getLogger('validation')
 
+
 def get_redis_client():
     return redis.StrictRedis.from_url(settings.CELERY_BROKER_URL)
 
-def get_memory_size(obj):
-    """Estimate the memory size of an object."""
-    return sys.getsizeof(obj) + sum(sys.getsizeof(v) for v in obj.values() if isinstance(obj, dict))
+
+# def get_memory_size(obj):
+#     """Estimate the memory size of an object."""
+#     return sys.getsizeof(obj) + sum(sys.getsizeof(v) for v in obj.values() if isinstance(obj, dict))
 
 def json_feature_count(file_path):
     """ Count the number of features in a JSON FeatureCollection file."""
@@ -38,9 +42,10 @@ def json_feature_count(file_path):
         logger.error(f"Error counting features in JSON file: {e}")
         raise
 
+
 def get_file_info(file_path):
     info = {}
-    
+
     try:
         # Get MIME type
         mime_type_result = subprocess.run(
@@ -67,9 +72,10 @@ def get_file_info(file_path):
     except Exception as e:
         logger.error(f"Unexpected error while getting file information: {e}")
         return {'mime_type': None, 'mime_encoding': None}
-    
+
     return info
-    
+
+
 def parse_to_LPF(delimited_filepath, ext):
     try:
         _, ext = os.path.splitext(delimited_filepath)
@@ -91,20 +97,22 @@ def parse_to_LPF(delimited_filepath, ext):
                 'true_values': ['true', 'True'],
                 'false_values': ['false', 'False'],
                 'na_values': ['NA', 'NaN'],
-                'na_filter': False,
+                'na_filter': False
             }
-            try: # read_excel does not support chunk-size, so implementation requires line-reading
+            try:  # read_excel does not support chunk-size, so implementation requires line-reading
                 skiprows_set = set()  # Keep track of the rows to skip, excluding the header (0th row)
                 skiprows_start = 1  # Start reading after the header
                 while True:
                     if separator:
                         logger.debug(f"Reading from CSV.")
-                        df_chunk = pd.read_csv(delimited_filepath, skiprows=lambda x: x != 0 and x in skiprows_set, **configuration, sep=separator, encoding='utf-8', skipinitialspace=True)
+                        df_chunk = pd.read_csv(delimited_filepath, skiprows=lambda x: x != 0 and x in skiprows_set,
+                                               **configuration, sep=separator, encoding='utf-8', skipinitialspace=True)
                         if header is None:  # Capture the header only once, from the first chunk
                             header = ";".join(df_chunk.columns.tolist()) or ""
                     else:
                         logger.debug(f"Reading from Excel.")
-                        df_chunk = pd.read_excel(delimited_filepath, skiprows=lambda x: x != 0 and x in skiprows_set, **configuration, sheet_name=0)
+                        df_chunk = pd.read_excel(delimited_filepath, skiprows=lambda x: x != 0 and x in skiprows_set,
+                                                 **configuration, sheet_name=0, convert_float=False)
                     skiprows_set.update(range(skiprows_start, skiprows_start + settings.VALIDATION_CHUNK_ROWS))
                     skiprows_start += settings.VALIDATION_CHUNK_ROWS
                     if df_chunk.empty:
@@ -118,28 +126,28 @@ def parse_to_LPF(delimited_filepath, ext):
                 raise
             except pd.errors.ParserError as e:
                 logger.error(f"Parsing error detected: {e}")
-                raise 
+                raise
             except Exception as e:
                 logger.error(f"Error reading file {delimited_filepath}: {e}")
                 raise
-            
+
         def assign_nested_value(d, keys, value):
             """
             Assigns a value to a nested dictionary, creating any intermediate keys as necessary.
             Initializes the nested structure based on the type of the final value.
-            """    
+            """
 
             for i, key in enumerate(keys[:-1]):
                 next_key = keys[i + 1]
-                
+
                 if isinstance(d, dict) and key not in d:
                     if isinstance(next_key, int):
                         d[key] = [{}] * (next_key + 1)
                     else:
                         d[key] = {}
-                    
+
                 d = d[key]
-                
+
             final_key = keys[-1]
             if isinstance(d, list) and final_key >= len(d):
                 d.extend([{}])
@@ -152,61 +160,63 @@ def parse_to_LPF(delimited_filepath, ext):
             # Write the opening of the JSON FeatureCollection
             lpf_file.write('{\n"type": "FeatureCollection",\n"features": [\n')
             logger.debug(f"Started writing output to '{lpf_file_path}'.")
-        
+
             for chunk in get_df_reader():
-        
+
                 for _, record in chunk.iterrows():
                     record = record.to_dict()  # Convert row to a dictionary
                     logger.debug(f"Processing record #{feature_count}: '{record}'.")
-                    
+
                     # Apply converters: NB these cannot be applied during pd.read_excel due to the unhashable lists they produce
                     for key, converter in converters.items():
                         if key in record:
                             record[key] = converter(record[key])
-        
+
                     # Create the nested JSON structure
-                    lpf_feature = {}
+                    lpf_feature = {'type': 'Feature'}
                     for key, mapping in tLPF_mappings.items():
                         if key in record:
                             value = record[key]
                             if isinstance(value, list) or pd.notna(value):
                                 nested_keys = [int(key) if key.isdigit() else key for key in mapping['lpf'].split('.')]
-                                assign_nested_value(lpf_feature, nested_keys, value)                             
-        
-                    # Append additional names or types to the main record if needed
-                    if 'names' in lpf_feature and isinstance(lpf_feature['names'], list) and 'additional_names' in lpf_feature:
+                                assign_nested_value(lpf_feature, nested_keys, value)
+
+                                # Append additional names or types to the main record if needed
+                    if 'names' in lpf_feature and isinstance(lpf_feature['names'],
+                                                             list) and 'additional_names' in lpf_feature:
                         lpf_feature['names'].extend(lpf_feature.pop('additional_names'))
-                    if 'types' in lpf_feature and isinstance(lpf_feature['types'], list) and 'additional_types' in lpf_feature:
+                    if 'types' in lpf_feature and isinstance(lpf_feature['types'],
+                                                             list) and 'additional_types' in lpf_feature:
                         lpf_feature['types'].extend(lpf_feature.pop('additional_types'))
-                        
+
                     # Create `title` from names.0.toponym
                     if 'properties' not in lpf_feature:
                         lpf_feature['properties'] = {}
                     lpf_feature['properties']['title'] = lpf_feature['names'][0]['toponym']
-                    
+
                     if 'geometry' in lpf_feature:
                         lpf_feature['geometry']['type'] = 'Point'
                     else:
                         lpf_feature['geometry'] = None
-                    
+
                     # Replace any existing geometry with geometry contained in any `geowkt`
                     if 'geowkt' in lpf_feature:
                         geometry = wkt.loads(lpf_feature['geowkt'])
                         geojson_geometry = mapping(geometry)
                         lpf_feature['geometry'] = geojson.dumps(geojson_geometry)
                         lpf_feature.pop('geowkt')
-                        
+
                     # logger.debug(f"Processed record #{feature_count}: '{lpf_feature}'.")
-        
+
                     # Write the JSON object to the file
                     if not first_line:
                         lpf_file.write(',\n')
                     else:
                         first_line = False
-        
+
                     json.dump(lpf_feature, lpf_file, ensure_ascii=False)
                     feature_count += 1
-        
+
             # Write the closing of the JSON FeatureCollection
             lpf_file.write('\n]}\n')
 
@@ -217,20 +227,20 @@ def parse_to_LPF(delimited_filepath, ext):
         logger.error(f"Error processing file {delimited_filepath}: {e}")
         raise
 
+
 def validate_file(request, dataset_metadata):
-    
     dataset_metadata = {
         key: (
             ";".join(value) if isinstance(value, list) else (value if value is not None else '')
-        ) 
+        )
         for key, value in dataset_metadata.items()
     }
 
     logger.debug(f"Validating file with form data: {dataset_metadata}")
-    
+
     uploaded_filepath = dataset_metadata.get('uploaded_filepath')
     uploaded_filename = dataset_metadata.get('uploaded_filename')
-    
+
     try:
         with codecs.open(settings.LPF_SCHEMA_PATH, 'r', 'utf8') as schema_file:
             schema = json.load(schema_file)
@@ -240,9 +250,9 @@ def validate_file(request, dataset_metadata):
         message = f"Error reading schema or context file: {e}"
         logger.error(message)
         return JsonResponse({"status": "failed", "message": message}, status=500)
-    
+
     file_info = get_file_info(uploaded_filepath)
-    
+
     if file_info['mime_type'] is None:
         message = "Unable to determine the content type of the file."
         logger.error(message)
@@ -251,9 +261,10 @@ def validate_file(request, dataset_metadata):
         message = f"The detected content type (<b>{file_info['mime_type']}</b>) is not supported."
         logger.error(message)
         return JsonResponse({"status": "failed", "message": message}, status=500)
-    
+
     # Preliminary utf-8 encoding test: further validation is performed when reading non-JSON files
-    allowed_encodings = settings.VALIDATION_ALLOWED_ENCODINGS + ['binary'] # 'binary' required for spreadsheets when using Unix file command
+    allowed_encodings = settings.VALIDATION_ALLOWED_ENCODINGS + [
+        'binary']  # 'binary' required for spreadsheets when using Unix file command
     if file_info['mime_encoding'] is None:
         message = "Unable to determine the encoding type of the file."
         logger.error(message)
@@ -262,37 +273,42 @@ def validate_file(request, dataset_metadata):
         message = f"The detected encoding type (<b>{file_info['mime_encoding']}</b>) is not supported. Please ensure that the file is encoded as UTF or ASCII."
         logger.error(message)
         return JsonResponse({"status": "failed", "message": message}, status=500)
-    
+
     # Convert delimited files to LPF JSON
     _, ext = os.path.splitext(uploaded_filepath)
     ext = ext.lower().lstrip('.')
+    namespaces = None
     try:
-        if 'json' in ext: # mime type is not a reliable determinant of JSON
+        if 'json' in ext:  # mime type is not a reliable determinant of JSON
             dataset_metadata["format"] = 'json'
             dataset_metadata["delimited_filepath"] = ''
             dataset_metadata["jsonld_filepath"] = uploaded_filepath
             dataset_metadata["feature_count"] = json_feature_count(dataset_metadata["jsonld_filepath"])
             logger.debug(f'JSON contains {dataset_metadata.get("feature_count")} features.')
+
+            # Extract any local namespace definitions (these will be expanded during validation)
+            namespaces = extract_context_namespaces(uploaded_filepath)
         else:
             dataset_metadata["format"] = ext
             dataset_metadata["delimited_filepath"] = uploaded_filepath
-            dataset_metadata["jsonld_filepath"], dataset_metadata["feature_count"], dataset_metadata["separator"], dataset_metadata["header"] = parse_to_LPF(dataset_metadata["delimited_filepath"], ext)
+            dataset_metadata["jsonld_filepath"], dataset_metadata["feature_count"], dataset_metadata["separator"], \
+                dataset_metadata["header"] = parse_to_LPF(dataset_metadata["delimited_filepath"], ext)
     except Exception as e:
         message = f"Error converting delimited text to LPF: {e}"
         logger.error(message)
         return JsonResponse({"status": "failed", "message": message}, status=500)
-        
+
     # Initialise Redis client
     redis_client = get_redis_client()
     logger.debug('Redis client initialised.')
     task_id = f"validation_task_{uuid.uuid4()}"
-    
+
     # Schedule the cleanup task
     cleanup_task_result = cleanup.apply_async((task_id,), countdown=settings.VALIDATION_TIMEOUT)
     cleanup_task_id = cleanup_task_result.id
-    
+
     # TODO: Read any CSL citation and store as _metadata in redis_client
-    
+
     # Store task details in Redis
     redis_client.hset(task_id, mapping={
         'status': 'in_progress',
@@ -303,28 +319,27 @@ def validate_file(request, dataset_metadata):
         'label': dataset_metadata.get('label'),
         'cleanup_task_id': cleanup_task_id,
     })
-    logger.debug(f"TESTDataset metadata saved to redis: {dataset_metadata}")
     redis_client.hset(f"{task_id}_metadata", mapping=dataset_metadata)
     logger.debug(f"Dataset metadata saved to redis: {dataset_metadata}")
 
     try:
         # Process each batch of features as a separate Celery task
-        for feature_batch in read_json_features_in_batches(dataset_metadata["jsonld_filepath"], task_id):
+        for feature_batch in read_json_features_in_batches(dataset_metadata["jsonld_filepath"]):
             # The following line could be implemented if the LP Ontology were correct
-            #feature_batch = [jsonld.compact(feature, context) for feature in feature_batch]
-            validate_feature_batch.delay(feature_batch, schema, task_id)
+            # feature_batch = [jsonld.compact(feature, context) for feature in feature_batch]
+            validate_feature_batch.delay(feature_batch, schema, task_id, namespaces)
             feature_tally = len(feature_batch)
             redis_client.hincrby(task_id, 'queued_features', feature_tally)
             redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
-            
+
         redis_client.hset(task_id, 'all_queued', 'true')
         redis_client.hset(task_id, 'last_update', timezone.now().isoformat())
-            
+
     except Exception as e:
         full_error = f"Batch processing error: {str(e)}"
         logger.error(full_error)
         redis_client.rpush(f"{task_id}_errors", full_error)
-            
+
         redis_client.hset(task_id, mapping={
             'status': 'failed',
             'end_time': timezone.now().isoformat()
@@ -334,34 +349,15 @@ def validate_file(request, dataset_metadata):
 
     return JsonResponse({"status": "in_progress", "task_id": task_id})
 
-def read_json_features_in_batches(file_path, task_id):
-    """
-    Streams JSON features from a file and yields batches of complete `Feature` objects
-    without loading the entire file into memory.
-    """
-    try:
-        with open(file_path, 'r') as file:
-            logger.debug(f'Opened {file_path}...')
-            parser = ijson.items(file, 'features.item', use_float=True)
-            feature_batch = []
-            current_memory_size = 0
 
-            logger.debug(f'Parsing batch from {file_path} with parser: {type(parser)}')
-            for feature in parser:
-                current_memory_size += get_memory_size(feature)
-                feature_batch.append(feature)
+def extract_context_namespaces(file_path):
+    context_namespaces = {}
 
-                if current_memory_size >= settings.VALIDATION_BATCH_MEMORY_LIMIT:
-                    # logger.debug(f'Yielding batch ({current_memory_size} bytes): {feature_batch}')
-                    yield feature_batch
-                    feature_batch = []
-                    current_memory_size = 0
+    with open(file_path, 'r') as file:
+        parser = ijson.items(file, '@context.item', use_float=True)
 
-            # Yield any remaining features in the last batch
-            if feature_batch:
-                # logger.debug(f'Yielding final batch ({current_memory_size} bytes): {feature_batch}')
-                yield feature_batch
+        for item in parser:
+            if isinstance(item, dict):
+                context_namespaces.update(item)
 
-    except (IOError, ValueError) as e:
-        logger.error(f"Error reading JSON features in batches: {e}")
-        raise
+    return context_namespaces

@@ -261,7 +261,7 @@ class Home30a(TemplateView):
     context = super(Home30a, self).get_context_data(*args, **kwargs)
 
     carousel_metadata = []
-    # rulling out Olaudah; owtrad dataset also an issue
+    # ruling out Olaudah; owtrad dataset also an issue
     for dataset_types in [Collection, Dataset]:
       featured = dataset_types.objects.exclude(featured__isnull=True)
       for dataset in featured:

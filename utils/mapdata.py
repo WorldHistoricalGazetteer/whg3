@@ -1,35 +1,46 @@
-
 from celery import shared_task
+from django.conf import settings
 from django.contrib.gis.db.models import Extent
 from django.contrib.gis.db.models.aggregates import Union
 from django.contrib.gis.geos import GeometryCollection, Polygon
 from django.core.cache import cache
-from django.core.cache.backends.filebased import FileBasedCache
+from django.core.cache.backends.base import BaseCache
 from django.db.models import Min, Max, Prefetch, F, Q
 from django.http import JsonResponse, HttpRequest
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
+
 from collection.models import Collection
 from collection.views import year_from_string
 from datasets.models import Dataset
-from itertools import chain
+from itertools import chain, islice
 from places.models import Place, PlaceGeom, Type, CloseMatch
 
 import networkx as nx
 import os, requests, time, json
+import redis
+
+
+def get_redis_client():
+    return redis.StrictRedis.from_url(settings.CELERY_BROKER_URL)
+
 
 @shared_task
 def mapdata_task(category, id, variant=None, refresh=False):
     dummy_request = HttpRequest()
     response = mapdata(dummy_request, category, id, variant=variant, refresh=str(refresh))
 
-    return json.loads(response.content) if isinstance(response, JsonResponse) else {'status': 'failure', 'error': 'Failed to generate mapdata'}
+    return json.loads(response.content) if isinstance(response, JsonResponse) else {'status': 'failure',
+                                                                                    'error': 'Failed to generate mapdata'}
+
 
 def reset_standard_mapdata(category, id):
     # This will generate standard mapdata and also delete any existing standard or tileset mapdata cache
     print(f"Resetting standard mapdata for {category}-{id}.")
     mapdata_task.delay(category, id, 'standard', 'refresh')
 
-def mapdata(request, category, id, variant='standard', refresh='false'): # variant options are "standard" | "tileset"
+
+def mapdata(request, category, id, variant='standard', refresh='false'):  # variant options are "standard" | "tileset"
     refresh = variant == 'refresh' or refresh.lower() in ['refresh', 'true', '1', 'yes']
     if variant != 'tileset':
         variant = 'standard'
@@ -54,7 +65,7 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
     if variant == "standard":
         # Clean up any existing tileset cache
         cache.delete(f"{category}-{id}-tileset")
-        tiler_url = os.environ.get('TILER_URL') # Must be set in /.env/.dev-whg3
+        tiler_url = os.environ.get('TILER_URL')  # Must be set in /.env/.dev-whg3
         response = requests.post(tiler_url, json={"getTilesets": {"type": category, "id": id}})
 
         if response.status_code == 200:
@@ -82,7 +93,8 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
         # Reduce feature properties in mapdata to be fetched by tiler
         mapdata_tileset = mapdata_result.copy()
         mapdata_tileset["features"] = [
-            {**feature, "properties": {k: v for k, v in feature["properties"].items() if k in ["fclasses", "relation", "pid", "min", "max"]}}
+            {**feature, "properties": {k: v for k, v in feature["properties"].items() if
+                                       k in ["fclasses", "relation", "pid", "min", "max"]}}
             for feature in mapdata_tileset["features"]
         ]
         cache.set(f"{category}-{id}-tileset", mapdata_tileset)
@@ -93,26 +105,100 @@ def mapdata(request, category, id, variant='standard', refresh='false'): # varia
             available_tilesets.append(new_tileset)
         cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata_result))
 
-    elif response_time > 1: # Cache if generation time exceeds 1 second
+    elif response_time > 1:  # Cache if generation time exceeds 1 second
         print(f"Caching standard mapdata.")
-        cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata_result) if available_tilesets else mapdata_result)
+        cache.set(f"{category}-{id}-standard",
+                  reduced_geometry(mapdata_result) if available_tilesets else mapdata_result)
     else:
         print(f"No need to cache mapdata.")
 
     return JsonResponse(mapdata_result, safe=False, json_dumps_params={'ensure_ascii': False})
 
+
 def buffer_extent(extent, buffer_distance=0.1):
     return Polygon.from_bbox(extent).buffer(buffer_distance).extent if extent else None
 
-def mapdata_dataset(id):
 
+def mapdata_dataset(id, task_id=None, chunk_size=1000):
     ds = get_object_or_404(Dataset, pk=id)
 
-    places = ds.places.prefetch_related(
-        Prefetch('geoms', queryset=PlaceGeom.objects.only('jsonb'))
-    ).order_by('id')
+    # Initialize Redis key if task_id is provided
+    if task_id:
+        redis_client = get_redis_client()
+        redis_client.hset(task_id, 'mapdata_start_time', timezone.now().isoformat())
+        redis_client.hset(task_id, 'queued_features', ds.numrows)
 
-    extent = buffer_extent( ds.places.aggregate(Extent('geoms__geom')).get('geoms__geom__extent') )
+    features = []
+    redis_batch_size = 100  # Define batch size for Redis updates
+
+    # Initialize extent to None, will be updated with actual values
+    extent_polygon = None
+
+    # Fetch places in chunks to avoid hitting the database in one go
+    places_qs = ds.places.values('id', 'title', 'fclasses', 'review_wd', 'review_tgn', 'review_whg', 'minmax').order_by(
+        'id')
+    place_iterator = iter(places_qs)
+    index = 0
+
+    while True:
+        chunk = list(islice(place_iterator, chunk_size))
+        if not chunk:
+            break
+
+        # Fetch geometries for the current chunk of places
+        place_ids = [place['id'] for place in chunk]
+        geometries = PlaceGeom.objects.filter(place_id__in=place_ids).only('jsonb', 'geom')
+
+        # Organize geometries by place_id for efficient lookup
+        geom_map = {}
+        for geom in geometries:
+            geom_map.setdefault(geom.place_id, []).append(geom.jsonb)
+
+            # Update the extent dynamically
+            if geom.geom and not geom.geom.empty:
+                geom_extent = geom.geom.extent  # Returns (xmin, ymin, xmax, ymax)
+                geom_bbox = Polygon.from_bbox(geom_extent)
+                extent_polygon = geom_bbox if extent_polygon is None else extent_polygon.union(geom_bbox)
+
+        for place in chunk:
+            geom_list = geom_map.get(place['id'], [])
+            feature = {
+                "type": "Feature",
+                "properties": {
+                    "pid": place['id'],
+                    "title": place['title'],
+                    "fclasses": place['fclasses'],
+                    "review_wd": place['review_wd'],
+                    "review_tgn": place['review_tgn'],
+                    "review_whg": place['review_whg'],
+                    "min": "null" if place['minmax'] is None or place['minmax'][0] is None else place['minmax'][0],
+                    "max": "null" if place['minmax'] is None or place['minmax'][1] is None else place['minmax'][1],
+                },
+                "geometry": geom_list[0] if len(geom_list) == 1
+                else (
+                    None if len(geom_list) == 0
+                    else {
+                        "type": "GeometryCollection",
+                        "geometries": geom_list
+                    }
+                ),
+                "id": index  # Required for MapLibre conditional styling
+            }
+            features.append(feature)
+
+            # Batch Redis updates for better performance
+            if task_id and (index + 1) % redis_batch_size == 0:
+                redis_client.hincrby(task_id, 'queued_features', -redis_batch_size)
+
+            index += 1
+
+    # Final Redis update for any remaining items
+    if task_id:
+        redis_client.hincrby(task_id, 'queued_features', -(index % redis_batch_size))
+
+    # Convert the final extent polygon to a tuple in the format (xmin, ymin, xmax, ymax)
+    final_extent = extent_polygon.extent if extent_polygon else None
+    buffered_extent = buffer_extent(final_extent) if final_extent else None
 
     return {
         "title": ds.title,
@@ -120,35 +206,68 @@ def mapdata_dataset(id):
         "citation": ds.citation,
         "creator": ds.creator,
         "minmax": ds.minmax,
-        "extent": extent,
+        "extent": buffered_extent,
         "type": "FeatureCollection",
-        "features": [
-            {
-                "type": "Feature",
-                "properties": {
-                    "pid": place.id,
-                    "title": place.title,
-                    "fclasses": place.fclasses,
-                    "review_wd": place.review_wd,
-                    "review_tgn": place.review_tgn,
-                    "review_whg": place.review_whg,
-                    "min": "null" if place.minmax is None or place.minmax[0] is None else place.minmax[0],
-                    "max": "null" if place.minmax is None or place.minmax[1] is None else place.minmax[1],
-                },
-                "geometry": geometries[0].jsonb if len(geometries) == 1
-                    else (
-                        None if len(geometries) == 0
-                        else {
-                            "type": "GeometryCollection",
-                            "geometries": [geo.jsonb for geo in geometries]
-                        }
-                    ),
-                "id": index  # Required for MapLibre conditional styling
-            }
-            for index, place in enumerate(places)
-            for geometries in [place.geoms.all()]
-        ],
+        "features": features,
     }
+
+
+# def mapdata_dataset(id, task_id=None):
+#     ds = get_object_or_404(Dataset, pk=id)
+#
+#     places = ds.places.prefetch_related(
+#         Prefetch('geoms', queryset=PlaceGeom.objects.only('jsonb'))
+#     ).values('id', 'title', 'fclasses', 'review_wd', 'review_tgn', 'review_whg', 'minmax').order_by('id')
+#
+#     extent = buffer_extent(ds.places.aggregate(Extent('geoms__geom')).get('geoms__geom__extent'))
+#
+#     # Initialize Redis key if task_id is provided
+#     if task_id:
+#         redis_client = get_redis_client()
+#         redis_client.hset(task_id, 'mapdata_start_time', timezone.now().isoformat())
+#         redis_client.hset(task_id, 'queued_features', ds.numrows)
+#
+#     features = []
+#     for index, place in enumerate(places):
+#         geometries = place.geoms.all()
+#         feature = {
+#             "type": "Feature",
+#             "properties": {
+#                 "pid": place.id,
+#                 "title": place.title,
+#                 "fclasses": place.fclasses,
+#                 "review_wd": place.review_wd,
+#                 "review_tgn": place.review_tgn,
+#                 "review_whg": place.review_whg,
+#                 "min": "null" if place.minmax is None or place.minmax[0] is None else place.minmax[0],
+#                 "max": "null" if place.minmax is None or place.minmax[1] is None else place.minmax[1],
+#             },
+#             "geometry": geometries[0].jsonb if len(geometries) == 1
+#             else (
+#                 None if len(geometries) == 0
+#                 else {
+#                     "type": "GeometryCollection",
+#                     "geometries": [geo.jsonb for geo in geometries]
+#                 }
+#             ),
+#             "id": index  # Required for MapLibre conditional styling
+#         }
+#         features.append(feature)
+#
+#         if task_id:
+#             redis_client.hincrby(task_id, 'queued_features', -1)
+#
+#     return {
+#         "title": ds.title,
+#         "contributors": ds.contributors,
+#         "citation": ds.citation,
+#         "creator": ds.creator,
+#         "minmax": ds.minmax,
+#         "extent": extent,
+#         "type": "FeatureCollection",
+#         "features": features,
+#     }
+
 
 def mapdata_collection(id):
     collection = get_object_or_404(Collection, id=id)
@@ -157,10 +276,10 @@ def mapdata_collection(id):
         traces_with_place_ids = collection.traces.filter(archived=False).annotate(annotated_place_id=F('place__id'))
         unique_place_ids = traces_with_place_ids.values_list('annotated_place_id', flat=True).distinct()
         collection_places_all = Place.objects.filter(id__in=unique_place_ids)
-    else: # collection.collection_class == 'dataset'
+    else:  # collection.collection_class == 'dataset'
         collection_places_all = collection.places_all
 
-    extent = buffer_extent( list(collection_places_all.aggregate(Extent('geoms__geom')).values())[0] )
+    extent = buffer_extent(list(collection_places_all.aggregate(Extent('geoms__geom')).values())[0])
 
     feature_collection = {
         "title": collection.title,
@@ -172,8 +291,9 @@ def mapdata_collection(id):
 
     if collection.collection_class == 'place':
         return mapdata_collection_place(collection, feature_collection)
-    else: # collection.collection_class == 'dataset'
+    else:  # collection.collection_class == 'dataset'
         return mapdata_collection_dataset(collection, collection_places_all, feature_collection)
+
 
 def mapdata_collection_place(collection, feature_collection):
     traces = collection.traces.filter(archived=False).select_related('place')
@@ -191,10 +311,13 @@ def mapdata_collection_place(collection, feature_collection):
             if unioned_geometry:
                 try:
                     centroid = unioned_geometry.centroid if reduce_geometry else None
-                    geometry_collection = json.loads(GeometryCollection(centroid if centroid else unioned_geometry).geojson)
+                    geometry_collection = json.loads(
+                        GeometryCollection(centroid if centroid else unioned_geometry).geojson)
                 except (TypeError, ValueError) as e:
-                    print(f"Trying alternative geometry collection tranformation for place {place.id}: {e}", unioned_geometry)
-                    geometry_collection = json.loads(GeometryCollection(centroid if centroid else list(unioned_geometry)).geojson)
+                    print(f"Trying alternative geometry collection tranformation for place {place.id}: {e}",
+                          unioned_geometry)
+                    geometry_collection = json.loads(
+                        GeometryCollection(centroid if centroid else list(unioned_geometry)).geojson)
         else:
             geometry_collection = None
 
@@ -223,14 +346,15 @@ def mapdata_collection_place(collection, feature_collection):
 
     return feature_collection
 
+
 def mapdata_collection_dataset(collection, collection_places_all, feature_collection):
     '''
     Construct families of matched places within collection
     '''
 
-    close_matches = list( CloseMatch.objects.filter(
+    close_matches = list(CloseMatch.objects.filter(
         Q(place_a__in=collection_places_all) & Q(place_b__in=collection_places_all)
-    ).values_list('place_a_id', 'place_b_id') )
+    ).values_list('place_a_id', 'place_b_id'))
     # close_matches = list( CloseMatch.objects.filter(Q(place_a__in=cpa) & Q(place_b__in=cpa)).values_list('place_a_id', 'place_b_id') )
     print(close_matches)
 
@@ -243,7 +367,9 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
     unmatched_places = collection_places_all.exclude(id__in=G.nodes).prefetch_related('geoms').order_by('id')
     # unmatched_places = cpa.exclude(id__in=G.nodes).prefetch_related('geoms').order_by('id')
 
-    print(f"Collection {collection.id}: {collection_places_all.count()} places sorted into {len(families)} families and {len(unmatched_places)} unmatched.")
+    print(
+        f"Collection {collection.id}: {collection_places_all.count()} places sorted into {len(families)} families and {len(unmatched_places)} unmatched.")
+
     # print(f"Collection {collection.id}: {cpa.count()} places sorted into {len(families)} families and {len(unmatched_places)} unmatched.")
 
     # Helper function to aggregate place information
@@ -256,7 +382,8 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
                 try:
                     geometry_collection = json.loads(GeometryCollection(unioned_geometry).geojson)
                 except (TypeError, ValueError) as e:
-                    print(f"Trying alternative geometry collection tranformation for place {place.id}: {e}", unioned_geometry)
+                    print(f"Trying alternative geometry collection tranformation for place {place.id}: {e}",
+                          unioned_geometry)
                     geometry_collection = json.loads(GeometryCollection(list(unioned_geometry)).geojson)
         place_min, place_max = place.minmax or (None, None)
         return {
@@ -315,30 +442,73 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
         feature_collection["features"].append(feature)
 
     # Calculate min-max values
-    min_max_values = [(float(place_info["min"]), float(place_info["max"])) for place_info in places_info if place_info["min"] != "null" and place_info["max"] != "null"]
-    feature_collection["minmax"] = [str(min(min_max_values)), str(max(min_max_values))] if min_max_values else [None, None]
+    min_max_values = [(float(place_info["min"]), float(place_info["max"])) for place_info in places_info if
+                      place_info["min"] != "null" and place_info["max"] != "null"]
+    feature_collection["minmax"] = [str(min(min_max_values)), str(max(min_max_values))] if min_max_values else [None,
+                                                                                                                None]
 
     return feature_collection
 
-class MapdataFileBasedCache(FileBasedCache):
-    def __init__(self, dir, params):
-        super().__init__(dir, params)
 
-    def _cull(self):
+class MapdataFileBasedCache(BaseCache):
+    def __init__(self, location, params):
         """
-        Custom cull implementation: Remove the smallest cache entries if max_entries is reached.
+        Initialize the cache backend with a location directory and parameters.
         """
-        filelist = self._list_cache_files()
-        num_entries = len(filelist)
-        if num_entries < self._max_entries:
-            return  # return early if no culling is required
-        if self._cull_frequency == 0:
-            return self.clear()  # Clear the cache when CULL_FREQUENCY = 0
+        super().__init__(params)
+        self._cache_dir = location
+        if not os.path.isdir(self._cache_dir):
+            os.makedirs(self._cache_dir)
 
-        # Sort filelist by file size
-        filelist.sort(key=lambda x: os.path.getsize(x))
+    def _get_key_file_path(self, key):
+        """
+        Convert the cache key to a file path.
+        """
+        safe_key = key.replace('/', '_').replace('\\', '_')
+        return os.path.join(self._cache_dir, f"{safe_key}.json")
 
-        # Delete the oldest entries
-        num_to_delete = int(num_entries / self._cull_frequency)
-        for fname in filelist[:num_to_delete]:
-            self._delete(fname)
+    def get(self, key, default=None):
+        """
+        Retrieve the value from the cache.
+        """
+        file_path = self._get_key_file_path(key)
+        try:
+            with open(file_path, 'r') as f:
+                return json.load(f)
+        except (IOError, json.JSONDecodeError):
+            return default
+
+    def set(self, key, value, timeout=None):
+        """
+        Store the value in the cache.
+        """
+        file_path = self._get_key_file_path(key)
+        with open(file_path, 'w') as f:
+            json.dump(value, f)
+        # Optionally handle timeout (e.g., delete file after timeout)
+
+    def delete(self, key):
+        """
+        Delete the cache entry.
+        """
+        file_path = self._get_key_file_path(key)
+        try:
+            os.remove(file_path)
+        except FileNotFoundError:
+            pass
+
+    def clear(self):
+        """
+        Clear all cache entries.
+        """
+        for fname in os.listdir(self._cache_dir):
+            file_path = os.path.join(self._cache_dir, fname)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+
+    def _list_cache_files(self):
+        """
+        List all cache files in the directory.
+        """
+        return [os.path.join(self._cache_dir, f) for f in os.listdir(self._cache_dir)
+                if os.path.isfile(os.path.join(self._cache_dir, f))]

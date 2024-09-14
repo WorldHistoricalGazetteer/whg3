@@ -312,13 +312,10 @@ STATICFILES_DIRS = [
   # webpack.config now writes directly to static root /webpack
 ]
 
-# Use a file-based cache backend.
 CACHES = {
     'default': {
         'BACKEND': 'utils.mapdata.MapdataFileBasedCache',
-        'LOCATION': os.path.join(BASE_DIR, 'cache'),
-        'TIMEOUT': None,  # Cache data indefinitely until manually updated
-        "OPTIONS": {"MAX_ENTRIES": 1000}, # Increase from default of 300
+        'LOCATION': os.path.join(BASE_DIR, 'cache_mapdata'),
     }
 }
 
@@ -357,3 +354,4 @@ VALIDATION_MAXFIXATTEMPTS = 50 # Maximum number of errors to try to fix on each 
 VALIDATION_MAX_ERRORS = 100 # Stop validation of dataset if this number of unfixed errors is reached (checked only on completion of each batch, so may exceed this number)
 VALIDATION_TIMEOUT = 3600 # seconds, after which tasks are revoked and records are removed from redis
 VALIDATION_TEST_DELAY = 0 # seconds to pause after each JSON schema validation attempt
+VALIDATION_INTEGRITY_RETRIES = 7
