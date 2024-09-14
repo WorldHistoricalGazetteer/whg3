@@ -29,15 +29,14 @@ def variant_conversion(x):
             groups = match.groupdict()
             toponym = groups.get('toponym', '')
             variant_entry = {
-                'toponym': toponym,
-                'language': groups.get('language', '')
+                'toponym': toponym
             }
 
             lang_data = {k: v for k, v in groups.items() if k != 'toponym' and v}
             if lang_data:
                 variant_entry['rfc5646'] = lang_data
 
-            lang = lang_data.get('language_code', None)
+            lang = lang_data.get('language', None)
             if lang:
                 variant_entry['lang'] = lang
 

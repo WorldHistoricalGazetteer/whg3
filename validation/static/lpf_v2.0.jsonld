@@ -342,9 +342,6 @@
                     "lang": {
                         "$ref": "#/definitions/lang"
                     },
-                    "language": {
-                        "$ref": "#/definitions/language"
-                    },
                     "citations": {
                         "$ref": "#/definitions/citations"
                     }
@@ -406,14 +403,6 @@
             ]
         },
         "lang": {
-            "type": "string",
-            "examples": [
-                "en",
-                "fr"
-            ],
-            "pattern": "^[A-Za-z]{2,3}$"
-        },
-        "language": {
             "type": "string",
             "examples": [
                 "de-Arab-AR",
@@ -493,9 +482,6 @@
                     },
                     "lang": {
                         "$ref": "#/definitions/lang"
-                    },
-                    "language": {
-                        "$ref": "#/definitions/language"
                     },
                     "source": {
                         "$ref": "#/definitions/patterns/definitions/validURL"
@@ -585,9 +571,6 @@
                                 },
                                 "lang": {
                                     "$ref": "#/definitions/lang"
-                                },
-                                "language": {
-                                    "$ref": "#/definitions/language"
                                 }
                             },
                             "required": [
