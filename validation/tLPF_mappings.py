@@ -30,7 +30,7 @@ def variant_conversion(x):
             toponym = groups.get('toponym', '')
             variant_entry = {
                 'toponym': toponym,
-                'language': variant.strip()
+                'language': groups.get('language', '')
             }
 
             lang_data = {k: v for k, v in groups.items() if k != 'toponym' and v}
