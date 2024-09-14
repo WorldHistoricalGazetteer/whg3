@@ -173,7 +173,7 @@ def parse_to_LPF(delimited_filepath, ext):
                             record[key] = converter(record[key])
 
                     # Create the nested JSON structure
-                    lpf_feature = {}
+                    lpf_feature = {'type': 'Feature'}
                     for key, mapping in tLPF_mappings.items():
                         if key in record:
                             value = record[key]

@@ -342,6 +342,9 @@
                     "lang": {
                         "$ref": "#/definitions/lang"
                     },
+                    "language": {
+                        "$ref": "#/definitions/language"
+                    },
                     "citations": {
                         "$ref": "#/definitions/citations"
                     }
@@ -408,7 +411,16 @@
                 "en",
                 "fr"
             ],
-            "pattern": "^[a-z]{2}$"
+            "pattern": "^[A-Za-z]{2,3}$"
+        },
+        "language": {
+            "type": "string",
+            "examples": [
+                "de-Arab-AR",
+                "tr",
+                "ar-Latn-x-ijmes"
+            ],
+            "pattern": "^(((?:([A-Za-z]{2,3}(-(?:[A-Za-z]{3}(-[A-Za-z]{3}){0,2}))?)|[A-Za-z]{4}|[A-Za-z]{5,8})(-(?:[A-Za-z]{4}))?(-(?:[A-Za-z]{2}|[0-9]{3}))?(-(?:[A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*(-(?:[0-9A-WY-Za-wy-z](-[A-Za-z0-9]{2,8})+))*))$"
         },
         "certainty": {
             "type": "string",
@@ -481,6 +493,9 @@
                     },
                     "lang": {
                         "$ref": "#/definitions/lang"
+                    },
+                    "language": {
+                        "$ref": "#/definitions/language"
                     },
                     "source": {
                         "$ref": "#/definitions/patterns/definitions/validURL"
@@ -570,6 +585,9 @@
                                 },
                                 "lang": {
                                     "$ref": "#/definitions/lang"
+                                },
+                                "language": {
+                                    "$ref": "#/definitions/language"
                                 }
                             },
                             "required": [
@@ -581,7 +599,7 @@
                         "$ref": "#/definitions/time/definitions/when"
                     }
                 },
-		        "required": [
+		        "required-NOT-IN-LPF-TSV-SPEC": [
 		            "identifier"
 		        ]
             }

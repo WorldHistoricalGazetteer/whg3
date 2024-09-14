@@ -26,6 +26,7 @@ from main.models import Log
 from places.models import PlaceGeom, PlaceWhen, PlaceLink, PlaceRelated, PlaceDescription, PlaceDepiction, PlaceName, \
     PlaceType, Place, Type
 from utils.mapdata import mapdata_dataset
+from whgmail.messaging import slack_notification
 
 logger = logging.getLogger('validation')
 
@@ -162,6 +163,7 @@ def save_dataset(task_id):
             )
 
         try:
+            logger.debug(f"Trying ds_insert...")
             ds_insert(jsonld_filepath, dataset, task_id)
         except Exception as e:
             dataset.delete()
@@ -240,6 +242,18 @@ def save_dataset(task_id):
         dataset_places_url = reverse('datasets:ds_places', kwargs={'id': dataset.id})
         redis_client.hset(task_id, 'dataset_places_url', dataset_places_url)
         logger.debug(f"DatasetPlacesView URL: {dataset_places_url}")
+
+        slack_notification((
+            f"*Subject:* New Dataset Created (platform: {settings.ENV_CONTEXT})\n"
+            f"*Owner Name:* {dataset.owner.name if dataset.owner.name else dataset.owner.username}\n"
+            f"*Username:* {dataset.owner.username}\n"
+            f"*Dataset Title:* {dataset.title}\n"
+            f"*Dataset Label:* {dataset.label}\n"
+            f"*Dataset ID:* {dataset.id}\n"
+            f"*Dataset Feature Count:* {dataset.numrows}\n"
+            f"----------------------------------------"
+        ))
+
         return
 
     except ObjectDoesNotExist as e:
@@ -341,6 +355,7 @@ def ds_insert(jsonld_filepath, ds, task_id):
         try:
             for feature_batch in read_json_features_in_batches(jsonld_filepath):
                 for feat in feature_batch:
+                    logger.debug(f"Inserting feature: {feat}")
                     feature_id = feat.get("@id", "-- no @id --")
                     fixes_key = f"{task_id}_fixes_{safe_key(feature_id)}"
                     # logger.debug(f"Fixes key: {fixes_key}")
@@ -356,13 +371,16 @@ def ds_insert(jsonld_filepath, ds, task_id):
                             # feat = apply_fix(feat, json.loads(redis_client.lpop(fixes_key)))
 
                     title = re.sub(r'\(.*?\)', '', feat.get('properties', {}).get('title', ''))
+                    # logger.debug(f'title: {title}')
                     geojson = feat.get('geometry')
+                    # logger.debug(f'geojson: {geojson}')
                     ccodes = feat.get('properties', {}).get('ccodes', [])
                     if ccodes is None and geojson:
                         ccodes = ccodesFromGeom(geojson)
-                    # logger.debug('ccodes: {ccodes}')
+                    # logger.debug(f'ccodes: {ccodes}')
                     intervals, minmax = parse_dates(feat)
-                    # logger.debug(f"datesobj: {datesobj}")
+                    # logger.debug(f"intervals: {intervals}")
+                    # logger.debug(f"minmax: {minmax}")
                     fclass_list = get_fclass_list(feat)
                     # logger.debug(f"fclass_list: {fclass_list}")
 
@@ -439,9 +457,9 @@ def parse_dates(feature):
             return {extract_year(dates.get(key)) for key in ('in', 'earliest', 'latest') if dates.get(key)}
 
         years = set()
-        if 'start' in timespan:
+        if 'start' in timespan and timespan['start']:
             years.update(extract_from_dates(timespan['start']))
-        if 'end' in timespan:
+        if 'end' in timespan and timespan['end']:
             years.update(extract_from_dates(timespan['end']))
 
         sorted_years = sorted(year for year in years if year is not None)
@@ -454,13 +472,17 @@ def parse_dates(feature):
     for path in paths:
         obj = feature
         for key in path[:-1]:
+            if obj is None:
+                break
             obj = obj.get(key, [])
             if isinstance(obj, list):
                 for item in obj:
-                    timespans.extend(when_timespans(item.get(path[-1])))
+                    if item is not None:
+                        timespans.extend(when_timespans(item.get(path[-1])))
                 break
         else:
-            timespans.extend(when_timespans(obj.get(path[-1])))
+            if obj is not None:
+                timespans.extend(when_timespans(obj.get(path[-1])))
 
     unique_intervals = sorted(
         set(

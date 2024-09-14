@@ -134,7 +134,19 @@ def fix_feature(featureCollection, e, namespaces):
         if isinstance(invalid_value, str) and isinstance(e.validator_value, list):
             ref_list = [ref.get('$ref') for ref in e.validator_value]
 
-            if '#/definitions/patterns/definitions/validURL' in ref_list or '#/definitions/patterns/definitions/namespaceTermNarrow' in ref_list:
+            def insert_anon():
+                new_value = f"anon:{invalid_value}"
+                current_element[last_key] = new_value
+                fix_description = f"Fixed @id value: '{invalid_value}' to '{new_value}'"
+                fixes.append({
+                    "feature_id": feature_id,
+                    "path": ".".join(map(str, path_list)),
+                    "fix": current_element[last_key],
+                    "description": fix_description
+                })
+                logger.debug(fix_description)
+
+            if '#/definitions/patterns/definitions/validURL' in ref_list or '#/definitions/patterns/definitions/namespaceTerm' in ref_list or '#/definitions/patterns/definitions/namespaceTermNarrow' in ref_list:
                 if invalid_value == "":
                     # Remove the element if invalid_value is an empty string
                     del current_element[last_key]
@@ -146,32 +158,25 @@ def fix_feature(featureCollection, e, namespaces):
                     })
                     logger.debug(fix_description)
                 else:
-                    # Replace any namespaces which were defined in @context of uploaded jsonld file
-                    for prefix, namespace_uri in namespaces.items():
-                        if invalid_value.startswith(prefix):
-                            new_value = invalid_value.replace(f'{prefix}:', namespace_uri, 1)
-                            current_element[last_key] = new_value
-                            fix_description = f"Substituted prefix '{prefix}' with '{namespace_uri}' in '{invalid_value}'"
-                            fixes.append({
-                                "feature_id": feature_id,
-                                "path": ".".join(map(str, path_list)),
-                                "fix": current_element[last_key],
-                                "description": fix_description
-                            })
-                            logger.debug(fix_description)
-                            break
-                    # Otherwise, prepend a dummy namespace if invalid_value is not empty
+                    if namespaces:
+                        # Replace any namespaces which were defined in @context of uploaded jsonld file
+                        for prefix, namespace_uri in namespaces.items():
+                            if invalid_value.startswith(prefix):
+                                new_value = invalid_value.replace(f'{prefix}:', namespace_uri, 1)
+                                current_element[last_key] = new_value
+                                fix_description = f"Substituted prefix '{prefix}' with '{namespace_uri}' in '{invalid_value}'"
+                                fixes.append({
+                                    "feature_id": feature_id,
+                                    "path": ".".join(map(str, path_list)),
+                                    "fix": current_element[last_key],
+                                    "description": fix_description
+                                })
+                                logger.debug(fix_description)
+                                break
+                        else:
+                            insert_anon()
                     else:
-                        new_value = f"anon:{invalid_value}"
-                        current_element[last_key] = new_value
-                        fix_description = f"Fixed @id value: '{invalid_value}' to '{new_value}'"
-                        fixes.append({
-                            "feature_id": feature_id,
-                            "path": ".".join(map(str, path_list)),
-                            "fix": current_element[last_key],
-                            "description": fix_description
-                        })
-                        logger.debug(fix_description)
+                        insert_anon()
 
     except Exception as e:
         raise

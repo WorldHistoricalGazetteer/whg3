@@ -5,27 +5,49 @@ import logging
 
 logger = logging.getLogger('validation')
 
+# Regex to capture toponyms and RFC 5646 language tags
+pattern = re.compile(r'''
+    ^(?P<toponym>[^\s@]+)
+    (?:@(?P<language>
+        (?:(?P<language_code>[A-Za-z]{2,3})(?:-(?P<language_code_ext>[A-Za-z]{3}(-[A-Za-z]{3}){0,2}))?|[A-Za-z]{4}|[A-Za-z]{5,8})
+        (-(?P<script>[A-Za-z]{4}))?
+        (-(?P<region>[A-Za-z]{2}|[0-9]{3}))?
+        (-(?P<variant>[A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*
+        (-(?P<extension>[0-9A-WY-Za-wy-z](-[A-Za-z0-9]{2,8})+))?
+    )?)$
+''', re.VERBOSE)
+
 
 def variant_conversion(x):
-    x = str_x(x)
-
     if not x:
         return []
 
     variants = []
-    for variant in x.split(';'):
-        variant = variant.strip()
-        if variant:
-            if '@' in variant:
-                toponym, lang_script = variant.split('@', 1)
-                variants.append({
-                    'toponym': toponym.strip(),
-                    'lang': lang_script.strip()
-                })
-            else:
-                variants.append({
-                    'toponym': variant
-                })
+    for variant in (v.strip() for v in x.split(';') if v.strip()):
+        match = pattern.match(variant)
+        if match:
+            groups = match.groupdict()
+            toponym = groups.get('toponym', '')
+            variant_entry = {
+                'toponym': toponym,
+                'language': variant.strip()
+            }
+
+            lang_data = {k: v for k, v in groups.items() if k != 'toponym' and v}
+            if lang_data:
+                variant_entry['rfc5646'] = lang_data
+
+            lang = lang_data.get('language_code', None)
+            if lang:
+                variant_entry['lang'] = lang
+
+            variants.append(variant_entry)
+        else:
+            variants.append({
+                'toponym': variant.strip()
+            })
+
+    logger.debug(variants)
 
     return variants
 

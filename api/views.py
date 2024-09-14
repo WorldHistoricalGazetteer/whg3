@@ -1136,14 +1136,14 @@ class PlacesDetailAPIView(View):
             seen_items = set()
 
             for item in arr:
-                item_unique = item[key] if key else json.dumps(item)
+                item_unique = item.get(key) if key else json.dumps(item)
                 if item_unique not in seen_items:
                     unique_items.append(item)
                     seen_items.add(item_unique)
 
             sort_key = sort_key or key
             if sort_key:
-                unique_items.sort(key=lambda x: x[sort_key])
+                unique_items.sort(key=lambda x: x.get(sort_key, ''))
 
             return unique_items
 
