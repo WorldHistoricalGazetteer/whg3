@@ -179,102 +179,101 @@ function waitDocumentReady() {
 Promise.all([waitMapLoad(), waitDocumentReady()])
     .then(() => {
 
-            payload.forEach(place => { // Ensure that years are all base-10 integers
-                place.timespans = place.timespans.map(timespan => timespan.map(year => parseInt(year, 10)));
-            });
+        payload.forEach(place => { // Ensure that years are all base-10 integers
+            place.timespans = place.timespans.map(timespan => timespan.map(year => parseInt(year, 10)));
+        });
 
-            const allTimespans = payload.flatMap(place => place.timespans);
-            const {
-                earliestStartYear,
-                latestEndYear
-            } = allTimespans.reduce((acc, timespan) => {
-                const [startYear, endYear] = timespan;
-                return {
-                    earliestStartYear: Math.min(acc.earliestStartYear, startYear),
-                    latestEndYear: Math.max(acc.latestEndYear, endYear)
-                };
-            }, {
-                earliestStartYear: Infinity,
-                latestEndYear: -Infinity
-            });
+        const allTimespans = payload.flatMap(place => place.timespans);
+        const {
+            earliestStartYear,
+            latestEndYear
+        } = allTimespans.reduce((acc, timespan) => {
+            const [startYear, endYear] = timespan;
+            return {
+                earliestStartYear: Math.min(acc.earliestStartYear, startYear),
+                latestEndYear: Math.max(acc.latestEndYear, endYear)
+            };
+        }, {
+            earliestStartYear: Infinity,
+            latestEndYear: -Infinity
+        });
 
-            const temporalRange = Number.isFinite(earliestStartYear) && Number.isFinite(latestEndYear) ?
-                `, and a temporal extent of <b>${Math.abs(earliestStartYear)}${earliestStartYear < 0 ? 'B' : ''}CE to ${Math.abs(latestEndYear)}${latestEndYear < 0 ? 'B' : ''}CE</b>` :
-                '';
+        const temporalRange = Number.isFinite(earliestStartYear) && Number.isFinite(latestEndYear) ?
+            `, and a temporal extent of <b>${Math.abs(earliestStartYear)}${earliestStartYear < 0 ? 'B' : ''}CE to ${Math.abs(latestEndYear)}${latestEndYear < 0 ? 'B' : ''}CE</b>` :
+            '';
 
-            const allNameVariants = payload.flatMap(place => place.names.map(label => label.label));
-            const distinctNameVariants = new Set(allNameVariants);
+        const allNameVariants = payload.flatMap(place => place.names.map(label => label.label));
+        const distinctNameVariants = new Set(allNameVariants);
 
-            const allTypes = payload
-                .flatMap(place => place.types)
-                .filter(type => type.label !== null)
-                .map(type => type.label);
-            const distinctTypes = new Set(allTypes);
-            const distinctTypesArray = [...distinctTypes].sort();
-            const distinctTypesText = distinctTypesArray.length > 0 ?
-                `  as having type${distinctTypesArray.length > 1 ? 's' : ''} ${distinctTypesArray.map((name, index) => index < distinctTypesArray.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${distinctTypesArray.length == 2 ? '' : ','} and$1`)}` :
-                '';
+        const allTypes = payload
+            .flatMap(place => place.types)
+            .filter(type => type.label !== null)
+            .map(type => type.label);
+        const distinctTypes = new Set(allTypes);
+        const distinctTypesArray = [...distinctTypes].sort();
+        const distinctTypesText = distinctTypesArray.length > 0 ?
+            `  as having type${distinctTypesArray.length > 1 ? 's' : ''} ${distinctTypesArray.map((name, index) => index < distinctTypesArray.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${distinctTypesArray.length == 2 ? '' : ','} and$1`)}` :
+            '';
 
-            $('#gloss').append($('<p>').addClass('mb-1 smallish').html(`
+        $('#gloss').append($('<p>').addClass('mb-1 smallish').html(`
 			This place is attested (so far) in the ${payload.length == 1 ? 'unlinked source' : `<b>${payload.length}</b> source${payload.length > 1 ? 's' : ''}`} listed below${distinctTypesText}, 
 			with <b>${distinctNameVariants.size}</b> distinct name variant${distinctNameVariants.size > 1 ? 's' : ''}${temporalRange}.
 		`));
 
-            const elevationString = geoData.elevation !== null ?
-                ` at an elevation of about <b>${geoData.elevation} metres</b>` :
-                '';
-            const adminString = geoData.admin.length > 0 ?
-                ` within the modern boundaries of ${geoData.admin.map((name, index) => index < geoData.admin.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${geoData.admin.length == 2 ? '' : ','} and$1`)}, and` :
-                '';
-            const ecoString = geoData.ecoregion.name ?
-                ` within the <a href="${geoData.ecoregion.url}" target="_blank">${geoData.ecoregion.name}</a> ecoregion${geoData.biome.name ? ` and <a href="${geoData.biome.url}" target="_blank">${geoData.biome.name}</a> biome` : ''}` :
-                '';
-            $('<p class="map-data">').addClass('mb-1').html(`
+        const elevationString = geoData.elevation !== null ?
+            ` at an elevation of about <b>${geoData.elevation} metres</b>` :
+            '';
+        const adminString = geoData.admin.length > 0 ?
+            ` within the modern boundaries of ${geoData.admin.map((name, index) => index < geoData.admin.length - 1 ? `<b>${name}</b>, ` : `<b>${name}</b>`).join('').replace(/,([^,]*)$/, `${geoData.admin.length == 2 ? '' : ','} and$1`)}, and` :
+            '';
+        const ecoString = geoData.ecoregion.name ?
+            ` within the <a href="${geoData.ecoregion.url}" target="_blank">${geoData.ecoregion.name}</a> ecoregion${geoData.biome.name ? ` and <a href="${geoData.biome.url}" target="_blank">${geoData.biome.name}</a> biome` : ''}` :
+            '';
+        $('<p class="map-data">').addClass('mb-1').html(`
 		    It lies${elevationString}${adminString}${ecoString}.
 		    <!--<span class="asterisk" data-bs-toggle="tooltip" data-bs-title="Information in this paragraph is based on a point at the centroid of the associated source geometries.">*</span>-->
 		`).insertAfter($('#gloss').find('p:first'));
 
-            $('#gloss').append($('<span id="collectionInfo">'));
+        $('#gloss').append($('<span id="collectionInfo">'));
 
-            $('#sources').find('h6').html(`${payload.length == 1 ? 'Unlinked Source' : `${payload.length} Source${payload.length > 1 ? 's' : ''}`} <span id="filterCount"></span>`);
+        $('#sources').find('h6').html(`${payload.length == 1 ? 'Unlinked Source' : `${payload.length} Source${payload.length > 1 ? 's' : ''}`} <span id="filterCount"></span>`);
 
-            payload[0]['primary'] = true; // Payload arrives with Places in descending link-count order
-            payload.forEach(place => { // Reverse-sort each set of timespans by end year
-                place.timespans.sort((a, b) => b[1] - a[1]);
-            });
+        payload[0]['primary'] = true; // Payload arrives with Places in descending link-count order
+        payload.forEach(place => { // Reverse-sort each set of timespans by end year
+            place.timespans.sort((a, b) => b[1] - a[1]);
+        });
 
-            payload.sort((a, b) => { // Sort places based on the latest end year
-                const endYearA = a.timespans.length > 0 ? a.timespans[0][1] : Number.NEGATIVE_INFINITY;
-                const endYearB = b.timespans.length > 0 ? b.timespans[0][1] : Number.NEGATIVE_INFINITY;
-                return endYearB - endYearA;
-            });
+        payload.sort((a, b) => { // Sort places based on the latest end year
+            const endYearA = a.timespans.length > 0 ? a.timespans[0][1] : Number.NEGATIVE_INFINITY;
+            const endYearB = b.timespans.length > 0 ? b.timespans[0][1] : Number.NEGATIVE_INFINITY;
+            return endYearB - endYearA;
+        });
 
-            function extractCoordinates(geom) {
-                const coordinates = [];
+        function extractCoordinates(geom) {
+            const coordinates = [];
 
-                geom.forEach(g => {
-                        if (g.type === 'Point') {
-                            coordinates.push(g.coordinates);
-                        } else if (g.type === 'GeometryCollection') {
-                            g.geometries.forEach(subGeom => {
-                                if (subGeom.type==='Point') {
-                                    coordinates.push(subGeom.coordinates);
-                                }
-                                else return JSON.stringify(geom);
-                            });
-                        } else {
+            geom.forEach(g => {
+                if (g.type !== 'Point') {
+                    return JSON.stringify(geom);
+                } else if (g.type === 'GeometryCollection') {
+                    g.geometries.forEach(subGeom => {
+                        if (subGeom.type !== 'Point') {
                             return JSON.stringify(geom);
+                        } else if (subGeom.coordinates) {
+                            coordinates.push(subGeom.coordinates);
                         }
-                    }
-                )
-                ;
+                    });
+                } else if (g.coordinates) {
+                    coordinates.push(g.coordinates);
+                }
+            });
 
-                return JSON.stringify(coordinates);
-            }
+            return JSON.stringify(coordinates);
+        }
 
-            payload.forEach(place => {
-                const coordinates = !!place.geom ? extractCoordinates(place.geom) : null;
-                const sourceHTML = `
+        payload.forEach(place => {
+            const coordinates = !!place.geom ? extractCoordinates(place.geom) : null;
+            const sourceHTML = `
 				<div class="source-box${!!place.primary ? ' primary-place' : ''}"${payload.length == 1 ? '' : ` data-bs-toggle="tooltip" data-bs-title="${!!place.primary ? 'This is considered to be the <i>Primary Source</i>. ' : ''}Click to zoom map to features associated with this source."`}>
 		            <span class="notes" ${userId == false ? '' : `data-user-id="${userId}" `}data-place-id="${place.place_id}">
 		            	${place.notes.map(note => `<p title="${note.tag}" data-bs-toggle="tooltip" data-creator="${note.user}" data-note-id="${note.id}">${note.note}</p>`).join('')}
@@ -295,180 +294,179 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
     			</div>
 	        `;
 
-                $('#sources').append(sourceHTML);
+            $('#sources').append(sourceHTML);
+        });
+        $('#sources .toggle-truncate').toggleTruncate();
+        $('#sources').height($('#sources').height()); // Fix height to prevent change when content is hidden
+        $('.notes').notes();
+
+        var sourceOptions = payload.map(function (item) {
+            return `<option value="${item.place_id}"${!!item.primary ? ' selected' : ''}>${item.dataset.title}: ${item.title}</option>`;
+        }).join('');
+        $('#collection_form #primarySource').html(sourceOptions);
+
+        updateCollections();
+        var chevron = $('#source_detail h6 i.fas');
+        var collectionList = $('#collection_list');
+        collectionList.on('show.bs.collapse hide.bs.collapse', function () {
+            chevron.toggleClass('fa-chevron-down fa-chevron-up');
+        });
+        $('#source_detail h6').click(function () {
+            collectionList.collapse('toggle');
+        });
+
+        $('#sources').append(noSources);
+
+        featureCollection = geomsGeoJSON(payload);
+        mappy
+            .getSource('places')
+            .setData(featureCollection);
+        mappy
+            .reset(false)
+            .once('idle', function () {
+                // Do not use fitBounds or flyTo due to padding bug in MapLibre/Maptiler
+                mappy.fitViewport(bbox(featureCollection), defaultZoom);
             });
-            $('#sources .toggle-truncate').toggleTruncate();
-            $('#sources').height($('#sources').height()); // Fix height to prevent change when content is hidden
-            $('.notes').notes();
 
-            var sourceOptions = payload.map(function (item) {
-                return `<option value="${item.place_id}"${!!item.primary ? ' selected' : ''}>${item.dataset.title}: ${item.title}</option>`;
-            }).join('');
-            $('#collection_form #primarySource').html(sourceOptions);
-
-            updateCollections();
-            var chevron = $('#source_detail h6 i.fas');
-            var collectionList = $('#collection_list');
-            collectionList.on('show.bs.collapse hide.bs.collapse', function () {
-                chevron.toggleClass('fa-chevron-down fa-chevron-up');
-            });
-            $('#source_detail h6').click(function () {
-                collectionList.collapse('toggle');
-            });
-
-            $('#sources').append(noSources);
-
-            featureCollection = geomsGeoJSON(payload);
-            mappy
-                .getSource('places')
-                .setData(featureCollection);
-            mappy
-                .reset(false)
-                .once('idle', function () {
-                    // Do not use fitBounds or flyTo due to padding bug in MapLibre/Maptiler
-                    mappy.fitViewport(bbox(featureCollection), defaultZoom);
+        $('#textContent')
+            .on('mousemove', '#sources:not([disabled]) .source-box', function () {
+                $(this)
+                    .addClass('highlight');
+                const index = $(this).index() - 1;
+                mappy.setFeatureState({
+                    source: 'places',
+                    id: index
+                }, {
+                    highlight: true
                 });
-
-            $('#textContent')
-                .on('mousemove', '#sources:not([disabled]) .source-box', function () {
-                    $(this)
-                        .addClass('highlight');
-                    const index = $(this).index() - 1;
-                    mappy.setFeatureState({
-                        source: 'places',
-                        id: index
-                    }, {
-                        highlight: true
-                    });
-                })
-                .on('mouseleave', '#sources:not([disabled]) .source-box', function () {
-                    $(this)
-                        .removeClass('highlight');
-                    const index = $(this).index() - 1;
-                    mappy.setFeatureState({
-                        source: 'places',
-                        id: index
-                    }, {
-                        highlight: false
-                    });
-                    mappy.fitViewport(bbox(featureCollection), defaultZoom);
-                })
-                .on('click', '#sources:not([disabled]) .source-box', function () {
-                    $(this)
-                    const index = $(this).index() - 1;
-                    mappy.fitViewport(bbox(featureCollection.features[index].geometry), defaultZoom);
-                })
-
-            // Show/Hide related Collection (propagate event delegation to dynamically added elements)
-            $('#collection_list').on('click', '.show-collection', function (e) {
-                e.preventDefault();
-                const parentItem = $(this).parent('li');
-                parentItem.toggleClass('showing');
-                if (parentItem.hasClass('showing')) {
-                    parentItem.siblings().removeClass('showing');
-                    $.get("/search/collgeom", { // TODO: This doesn't appear to be fetching geometries updated with new additions ######################
-                            coll_id: $(this).data('id')
-                        },
-                        function (collgeom) {
-                            relatedFeatureCollection = collgeom;
-                            console.log('coll_places', relatedFeatureCollection);
-                            mappy.getSource('places').setData(relatedFeatureCollection);
-                            mappy.fitViewport(bbox(relatedFeatureCollection), defaultZoom);
-                        });
-                    showingRelated = true;
-                    $('#sources, .source-box').attr('disabled', true);
-                } else {
-                    mappy.getSource('places').setData(featureCollection);
-                    mappy.fitViewport(bbox(featureCollection), defaultZoom);
-                    showingRelated = false;
-                    $('#sources, .source-box').removeAttr('disabled');
-                }
-            });
-
-            document.querySelectorAll('.toggle-link').forEach(link => {
-                link.addEventListener('click', function (event) {
-                    toggleVariants(event, this);
+            })
+            .on('mouseleave', '#sources:not([disabled]) .source-box', function () {
+                $(this)
+                    .removeClass('highlight');
+                const index = $(this).index() - 1;
+                mappy.setFeatureState({
+                    source: 'places',
+                    id: index
+                }, {
+                    highlight: false
                 });
-            });
+                mappy.fitViewport(bbox(featureCollection), defaultZoom);
+            })
+            .on('click', '#sources:not([disabled]) .source-box', function () {
+                $(this)
+                const index = $(this).index() - 1;
+                mappy.fitViewport(bbox(featureCollection.features[index].geometry), defaultZoom);
+            })
 
-            fetchWatershed();
+        // Show/Hide related Collection (propagate event delegation to dynamically added elements)
+        $('#collection_list').on('click', '.show-collection', function (e) {
+            e.preventDefault();
+            const parentItem = $(this).parent('li');
+            parentItem.toggleClass('showing');
+            if (parentItem.hasClass('showing')) {
+                parentItem.siblings().removeClass('showing');
+                $.get("/search/collgeom", { // TODO: This doesn't appear to be fetching geometries updated with new additions ######################
+                        coll_id: $(this).data('id')
+                    },
+                    function (collgeom) {
+                        relatedFeatureCollection = collgeom;
+                        console.log('coll_places', relatedFeatureCollection);
+                        mappy.getSource('places').setData(relatedFeatureCollection);
+                        mappy.fitViewport(bbox(relatedFeatureCollection), defaultZoom);
+                    });
+                showingRelated = true;
+                $('#sources, .source-box').attr('disabled', true);
+            } else {
+                mappy.getSource('places').setData(featureCollection);
+                mappy.fitViewport(bbox(featureCollection), defaultZoom);
+                showingRelated = false;
+                $('#sources, .source-box').removeAttr('disabled');
+            }
+        });
 
-            $('body').on('change', '#nearby_places, #radiusSelect', function () {
-                nearbyPlaces();
+        document.querySelectorAll('.toggle-link').forEach(link => {
+            link.addEventListener('click', function (event) {
+                toggleVariants(event, this);
             });
-            $('body').on('click', '#update_nearby', function () {
-                nearbyPlaces();
-            });
+        });
 
-            $(".pop-dataset").popover({
-                title: 'Dataset Profile',
-                content: function () {
-                    var placeId = $(this).data('id');
-                    var place = payload.find(p => p.dataset.id == placeId);
-                    if (place) {
-                        var content = `
+        fetchWatershed();
+
+        $('body').on('change', '#nearby_places, #radiusSelect', function () {
+            nearbyPlaces();
+        });
+        $('body').on('click', '#update_nearby', function () {
+            nearbyPlaces();
+        });
+
+        $(".pop-dataset").popover({
+            title: 'Dataset Profile',
+            content: function () {
+                var placeId = $(this).data('id');
+                var place = payload.find(p => p.dataset.id == placeId);
+                if (place) {
+                    var content = `
 		                <p class='thin'><b>Title</b>: ${place.dataset.title.replace('(stub) ', '').substring(0, 25)}</p>
 		                <p class='thin'><b>Description</b>: ${place.dataset.description}</p>
 		                <p class='thin'><b>WHG Owner</b>: ${place.dataset.owner}</p>
 		                <p class='thin'><b>Creator</b>: ${place.dataset.creator}</p>
 		            `;
-                        return content;
-                    } else {
-                        return ''; // Return empty content if place data is not found
-                    }
+                    return content;
+                } else {
+                    return ''; // Return empty content if place data is not found
                 }
-            }).on('show.bs.popover', function () { // Close the tooltip on the parent div
-                $(this).closest('.source-box').tooltip('hide');
+            }
+        }).on('show.bs.popover', function () { // Close the tooltip on the parent div
+            $(this).closest('.source-box').tooltip('hide');
+        });
+
+        new ClipboardJS('#permalinkButton', {
+            text: function () {
+                return window.location.href;
+            }
+        })
+            .on('success', function (e) {
+                e.clearSelection();
+                const tooltip = bootstrap.Tooltip.getInstance(e.trigger);
+                tooltip.setContent({
+                    '.tooltip-inner': 'Permalink copied to clipboard successfully!'
+                });
+                console.log('tooltip', tooltip);
+                setTimeout(function () { // Hide the tooltip after 2 seconds
+                    tooltip.hide();
+                    tooltip.setContent({
+                        '.tooltip-inner': tooltip._config.title
+                    }) // Restore original text
+                }, 2000);
+            })
+            .on('error', function (e) {
+                console.error('Failed to copy:', e.trigger);
             });
 
-            new ClipboardJS('#permalinkButton', {
-                text: function () {
-                    return window.location.href;
-                }
-            })
-                .on('success', function (e) {
-                    e.clearSelection();
-                    const tooltip = bootstrap.Tooltip.getInstance(e.trigger);
-                    tooltip.setContent({
-                        '.tooltip-inner': 'Permalink copied to clipboard successfully!'
-                    });
-                    console.log('tooltip', tooltip);
-                    setTimeout(function () { // Hide the tooltip after 2 seconds
-                        tooltip.hide();
-                        tooltip.setContent({
-                            '.tooltip-inner': tooltip._config.title
-                        }) // Restore original text
-                    }, 2000);
-                })
-                .on('error', function (e) {
-                    console.error('Failed to copy:', e.trigger);
+        new ClipboardJS('.clip-coordinates', {
+            text: function (trigger) {
+                return $(trigger).attr('data-coordinates');
+            }
+        })
+            .on('success', function (e) {
+                e.clearSelection();
+                const tooltip = bootstrap.Tooltip.getInstance(e.trigger);
+                tooltip.setContent({
+                    '.tooltip-inner': 'Geometry copied to clipboard successfully!'
                 });
-
-            new ClipboardJS('.clip-coordinates', {
-                text: function (trigger) {
-                    return $(trigger).attr('data-coordinates');
-                }
-            })
-                .on('success', function (e) {
-                    e.clearSelection();
-                    const tooltip = bootstrap.Tooltip.getInstance(e.trigger);
+                console.log('tooltip', tooltip);
+                setTimeout(function () { // Hide the tooltip after 2 seconds
+                    tooltip.hide();
                     tooltip.setContent({
-                        '.tooltip-inner': 'Geometry copied to clipboard successfully!'
-                    });
-                    console.log('tooltip', tooltip);
-                    setTimeout(function () { // Hide the tooltip after 2 seconds
-                        tooltip.hide();
-                        tooltip.setContent({
-                            '.tooltip-inner': tooltip._config.title
-                        }) // Restore original text
-                    }, 2000);
-                })
-                .on('error', function (e) {
-                    console.error('Failed to copy:', e.trigger);
-                });
+                        '.tooltip-inner': tooltip._config.title
+                    }) // Restore original text
+                }, 2000);
+            })
+            .on('error', function (e) {
+                console.error('Failed to copy:', e.trigger);
+            });
 
-        }
-    )
+    })
     .catch(error => console.error("An error occurred:", error))
     .finally(function () {
         $('#dataset_content').stopSpin();
