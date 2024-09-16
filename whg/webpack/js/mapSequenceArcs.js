@@ -71,16 +71,19 @@ export default class SequenceArcs {
 				const startPoint = sortedData[i];
 				const endPoint = sortedData[i + 1];
 
+				const startPointCoordinates = !startPoint.geometry.coordinates ? startPoint.geometry.geometries[0].coordinates : startPoint.geometry.coordinates;
+				const endPointCoordinates = !endPoint.geometry.coordinates ? endPoint.geometry.geometries[0].coordinates : endPoint.geometry.coordinates;
+
 				const controlPoint = calculateControlPoint(
-					startPoint.geometry.coordinates || startPoint.geometry.geometries[0].coordinates,
-					endPoint.geometry.coordinates || endPoint.geometry.geometries[0].coordinates,
+					startPointCoordinates,
+					endPointCoordinates,
 					this.deflectionValue
 				);
 
 				const line = lineString([
-					startPoint.geometry.coordinates || startPoint.geometry.geometries[0].coordinates,
+					startPointCoordinates,
 					controlPoint,
-					endPoint.geometry.coordinates || endPoint.geometry.geometries[0].coordinates,
+					endPointCoordinates,
 				]);
 
 				const arc = bezierSpline(line, {
