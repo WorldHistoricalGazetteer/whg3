@@ -182,7 +182,13 @@ export default class SequenceArcs {
 	convertToRepresentativePoints(dataset) {
 		if (dataset && dataset.type === 'FeatureCollection') {
 			const convertedFeatures = dataset.features.map((feature) => {
-				const representative = representativePoint(feature.geometry);
+
+				if (feature.geometry.type === 'GeometryCollection') {
+					return feature;
+
+				}
+
+				const representative = representativePoint(feature.geometry.type === 'GeometryCollection' ? feature.geometry.geometries[0] : feature.geometry);
 				return {
 					type: 'Feature',
 					properties: feature.properties,
