@@ -253,9 +253,13 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
             const coordinates = [];
 
             geom.forEach(g => {
-                if (g.type === 'GeometryCollection') {
+                if (g.type !== 'Point') {
+                    return JSON.stringify(geom);
+                } else if (g.type === 'GeometryCollection') {
                     g.geometries.forEach(subGeom => {
-                        if (subGeom.coordinates) {
+                        if (subGeom.type !== 'Point') {
+                            return JSON.stringify(geom);
+                        } else if (subGeom.coordinates) {
                             coordinates.push(subGeom.coordinates);
                         }
                     });
@@ -284,7 +288,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 					<div class="name-variants toggle-truncate">
 					    <strong class="larger">${place.title}</strong> ${place.names.map(label => label.label.trim()).join('; ')}
 					</div>
-		            ${coordinates ? `<div>Coordinates: <a class="clip-coordinates" data-coordinates="${coordinates}" data-bs-toggle="tooltip" title="copy to clipboard"><i class="fas fa-clipboard linky"></i></a></div>` : ''}
+		            ${coordinates ? `<div>${Array.isArray(JSON.parse(coordinates)) ? 'Coordinates' : 'Geometry'}: <a class="clip-coordinates" data-coordinates="${coordinates}" data-bs-toggle="tooltip" title="copy to clipboard"><i class="fas fa-clipboard linky"></i></a></div>` : ''}
 		            ${place.types.length > 0 ? `<div>Type${place.types.length > 1 ? 's' : ''}: ${place.types.map(type => type.label).join(', ')}</div>` : ''}
 	    			${place.timespans.length > 0 ? `<div>Chronology: ${place.timespans.reverse().map(timespan => timespan.join('-')).join(', ')}</div>` : ''}
     			</div>
@@ -448,7 +452,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
                 e.clearSelection();
                 const tooltip = bootstrap.Tooltip.getInstance(e.trigger);
                 tooltip.setContent({
-                    '.tooltip-inner': 'Coordinates copied to clipboard successfully!'
+                    '.tooltip-inner': 'Geometry copied to clipboard successfully!'
                 });
                 console.log('tooltip', tooltip);
                 setTimeout(function () { // Hide the tooltip after 2 seconds
