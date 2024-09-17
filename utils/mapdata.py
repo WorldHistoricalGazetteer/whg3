@@ -19,9 +19,6 @@ from places.models import Place, PlaceGeom, Type, CloseMatch
 import networkx as nx
 import os, requests, time, json
 import redis
-import logging
-
-logger = logging.getLogger('validation')
 
 
 def get_redis_client():
@@ -162,8 +159,6 @@ def mapdata_dataset(id, task_id=None, chunk_size=1000):
                 geom_extent = geom.geom.extent  # Returns (xmin, ymin, xmax, ymax)
                 geom_bbox = Polygon.from_bbox(geom_extent)
                 extent_polygon = geom_bbox if extent_polygon is None else extent_polygon.union(geom_bbox)
-
-        logger.debug(f"Geometries: {geom_map}")
 
         for place in chunk:
             geom_list = geom_map.get(place['id'], [])
