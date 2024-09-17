@@ -206,27 +206,27 @@
             the page advance to the next of your records in the queue of those that had any "hits."<br/>
             <img src="{% static 'images/docs/review_decide.png' %}" height="80"/></li>
           </li>
-          <li>When the Review step is complete, your options are to
-            <ol><li>Download your now augmented data for use in other software</li>
-            <li>Complete the metadata on the Metadata tab and request publication.</li>
+          <li>When the Review step is complete, your options are to:
+            <ol><li>Download your now augmented data for use in other software;</li>
+            <li>Complete the metadata on the Metadata tab and request publication;</li>
             <li>A further step is strongly encouraged: linking your data with records from other
             datasets already in the WHG union index. This is accomplished in a second reconciliation task,
             initiated on request by WHG editorial staff.</li>
             </ol>
           </li>
-          <li><b>Accessioning to the WHG union index</b>. This step procedes much like steps 4 & 5 above, with
+          <li><b>Accessioning to the WHG union index</b>. This step proceeds much like steps 4 & 5 above, with
           these differences:
             <ol>
-            <li>If no prospective match is found for a record, it is written to the index as a "seed"&mdash'a place
-            for which we had no previous information.</li>
+            <li>If no prospective match is found for a record, it is written to the index as a "seed" &mdash; 'a place
+            for which we had no previous information;</li>
             <li>Prospective matches presented can be either a single record or a set of 2 or more that have been previously linked
             during accessioning tasks for other datasets. A match to a set causes the incoming record to be added to that set.
             This accessioning step is how <a href="#portal">Place Portal</a> pages are generated
-            (<a href="{% url 'places:place-portal-whg-id' 12346428 %}" target="_blank">example</a>).<br/>
+            (<a href="{% url 'places:place-portal-whg-id' 12346428 %}" target="_blank">example</a>);<br/>
             <img src="{% static 'images/docs/review_linked.jpg' %}" height="200"/></li>
             <li>When the task is complete, the dataset is considered fully accessioned, and its records are now linked with others
             for the same places where possible. That said, it remains a distinct, published dataset within the platform,
-            discoverable in the WHG <a href="{% url 'datasets:dataset-gallery' %}">publications gallery</a> and browseable
+            discoverable in the WHG <a href="{% url 'datasets:dataset-gallery' %}">publications gallery</a> and browsable
             and searchable in its own publication page.</li>
             </ol>
           </li>
@@ -236,17 +236,17 @@
         <h5>Multiple datasets</h5>
         <p>The <b>Dataset Collection</b> feature in WHG allows an individual or collaborative group to create
          a historical gazetteer resource from multiple datasets, linking those records that refer to the same place.
-         Some examples, currently at various stages of development, include;
+         Some examples, currently at various stages of development, include:
          <ul>
-          <li>"A Historical Gazetteer of Ukraine," so far with five datasets from several timeperiods.</li>
+          <li>"A Historical Gazetteer of Ukraine," so far with five datasets from several time periods;</li>
           <li>"Indigenous Place Names in North America," so far with four datasets for distinct regions, and a fifth covering
-          all of North America.</li>
-          <li>"A Historical Gazetteer of Central Asia"&mdash;an ambitious undertaking with, so far, 13 disparate datasets
+          all of North America;</li>
+          <li>"A Historical Gazetteer of Central Asia" &mdash; an ambitious undertaking with, so far, 13 disparate datasets
           drawn from many sources for this huge and ill-defined region.</li>
          </ul>
          </p>
         <p>Published Dataset Collections can be browsed in a rich publication page including an explanatory essay, and
-        in the near future will be independently searchable via the WHG API&mdash;for example as a resource in
+        in the near future will be independently searchable via the WHG API &mdash; for example as a resource in
         annotation software. See this step-by-step guide, <a href="#dscolls">Create and publish a Dataset Collection</a></p>
         <p>Note that in order for a dataset to be added to a Dataset Collection, it must have been fully accessioned
         in the WHG union index. See the "WHG Union Index" section in <a href="#indexes">Explaining the WHG indexes</a> guide.</p>
@@ -259,11 +259,11 @@
         <h6>Instructional exercise in a class setting, or workshop</h6>
         <p>Registered WHG users can request "group leader" permissions, which allows them to create and manage a WHG <b>Collection Group</b>. This is a private space where students or workshop participants can create and share collections of places, annotated with custom keywords, notes, dates, and images. The group leader can review and comment on the collections, and can nominate exceptional collections for inclusion in the WHG Student Gallery. Students or workshop participants join the group by entering an access key
         created and distributed by the instructor or workshop leader.</p>
-        <p><a>See <a href="#collgroups">"Create and manage a class or workshop Collection Group"</a></p>
+        <p>See <a href="#collgroups">"Create and manage a class or workshop Collection Group"</a>.</p>
         <p>As a member of a Collection Group, an option appears on all of their <i>collection builder pages</i> to submit the collection when complete&mdash;for review by the instructor or workshop leader.<br/>
         <img src="{% static 'images/docs/submit-to-group.jpg' %}" height="60" class="ms-3"/></p>
         <h6 class="mt-2">Authored publication</h6>
-        <p>Any registerd WHG user can create a thematic annotated Place Collection (<a href="#pcolls">guide</a>), and request its publication on the WHG
+        <p>Any registered WHG user can create a thematic annotated Place Collection (<a href="#pcolls">guide</a>), and request its publication on the WHG
         platform, subject to review and approval by WHG editorial staff.</p>
       </section>
 
@@ -358,12 +358,12 @@
         <h5>Choosing an upload data format: LPF or LP-TSV?</h5>
         <p>World Historical Gazetteer supports uploads of both Linked Places format (LPF; <a href="https://github.com/LinkedPasts/linked-places" target="_blank">v1.2.2 specification</a>) and its delimited file derivative, LP&#8209;TSV, which is more useful for relatively simple data (<a href="https://github.com/LinkedPasts/linked-places/blob/master/tsv_0.5.md" target="_blank">v0.5 specification</a>). In both cases, some level of transformation has to happen between your source data and the chosen format. <b>Both formats require that there be one record per place</b>. The main distinctions can be summarized this way:
         <ul>
-          <li>LPF is JSON-based and supports both temporal scoping and citations for individual place names, geometries, types, and relations <b>within a single place record</b>.</li>
-          <li>LP-TSV is a delimited file format&mdash;either a spreadsheet or a text file in CSV or TSV format. Although it can handle multiple name variants and place types in a single column, it can have only one geometry per place, and citation is possible only for the principal name ('title').</li>
+          <li>LPF is JSON-based and supports both temporal scoping and citations for individual place names, geometries, types, and relations <b>within a single place record</b>;</li>
+          <li>LP-TSV is a delimited file format &mdash; either a spreadsheet or a text file in CSV or TSV format. Although it can handle multiple name variants and place types in a single column, it can have only one geometry per place, and citation is possible only for the principal name ('title').</li>
         </ul>
         <p>Choose LPF if:
         <ul>
-          <li>You have multiple names, types, geometries, or relations <i>for a single place</i> that are temporally scoped; i.e. any of these attributes are associated in your data with a given year, timespan, or period&mdash;<i>and you want that represented in your WHG representation</i>.</li>
+          <li>You have multiple names, types, geometries, or relations <i>for a single place</i> that are temporally scoped; i.e. any of these attributes are associated in your data with a given year, timespan, or period&mdash;<i>and you want that represented in your WHG representation</i>;</li>
           <li>You wish to include citations per name, type, geometry, or timespan.</li>
         </ul>
         </p>
@@ -386,7 +386,7 @@
           <li>Do two different names actually refer to the same place?</li>
           <li>Are an archaeological site and a modern city with the same name the same place?</li>
           <li>If there are multiple name variants, which should be the primary "title" of the record?</li>
-          <li>If some references are at the scale of settlement and others at the scale of county, should they be normalizzed to county for purposes of analysis?</li>
+          <li>If some references are at the scale of settlement and others at the scale of county, should they be normalized to county for purposes of analysis?</li>
         </ul>
         </p>
         <h6>Linked Places format (LPF), a GeoJSON extension</h6>
@@ -395,9 +395,9 @@
       </section>
       <section id="indexes">
         <h5>Explaining the WHG Indexes</h5>
-        <p>WHG maintains three high-speed indexes for use in the platform, "<b>Wikidata+GeoNames</b>", the "<b>WHG Union Index</b>," and the "Pub" index.</p>
+        <p>WHG maintains three high-speed indexes for use in the platform, "<b>Wikidata+GeoNames</b>", the "<b>WHG Union Index</b>," and the "<b>Pub</b>" index.</p>
         <h6>Wikidata+GeoNames</h6>
-        <p>This index of over 13 million place records from Wikidata (3.6m) and GeoNames (10m) is used for intitial
+        <p>This index of over 13 million place records from Wikidata (3.6m) and GeoNames (10m) is used for initial
         intitial reconciliation of uploaded datasets, enabling their augmentation with
         <ul>
         <li>Coordinate geometry their records may be missing (a "geocoding" function")</li>
@@ -412,11 +412,11 @@
         are linked. Search results privilege these linked sets or "clusters" of records, and present them in
         Place Portal pages like <a href="/places/12346428/portal/" target="_blank">this one for Glasgow.</a></p>
         <p>Records from published datasets make their way into the union index by means of a second reconciliation step,
-        follwoing that for the Wikidata+Geonames index. This step is initiated by WHG editorial staff, and when complete
+        following that for the Wikidata+Geonames index. This step is initiated by WHG editorial staff, and when complete
         the dataset is considered fully accessioned. See "Accessioning to the WHG Index" in <a href="#augment">Individual datasets</a> for details.
         </p>
         <h6>WHG "Pub" index</h6>
-        <p>When a dataset has been reconciled to the Wikidata+Geonames index and published, it is automatically added to the "Pub" index so that's its records can be discovered not only via browsing its publication page, but in search and via our Application Programming Interface (API). If and when the dataset is reconciled to the <i>union index</i>, its records are removed from "Pub," as they are now linked where possible and will appear in Place Portal pages.</p>
+        <p>When a dataset has been reconciled to the Wikidata+Geonames index and published, it is automatically added to the "Pub" index so that its records can be discovered not only via browsing its publication page, but in search and via our Application Programming Interface (API). If and when the dataset is reconciled to the <i>union index</i>, its records are removed from "Pub," as they are now linked where possible and will appear in Place Portal pages.</p>
       </section>
       <section id="reviewing">
         <h5>Reviewing reconciliation results</h5>
@@ -425,7 +425,7 @@
         right of the screen, with your record on the left. The dataset owner and any designated collaborators decide, for each
         of its records, whether one or more of the hits is a "close match." Clicking the save button records those
         closeMatch/no match decisions and advances to the next record from the dataset. It is also possible to defer a
-        decision, and placed in a separate queue that can be revisited, possibly by someone with more relavant expertise. It is
+        decision, and placed in a separate queue that can be revisited, possibly by someone with more relevant expertise. It is
         also possible to add a note to the record for future reference.</p>
         <p><img src="/static/images/annotated-review-screen.jpg" height=400></p>
         <p>The information displayed and options offered are explained below.</p>
@@ -435,15 +435,15 @@
             <li>Save / defer: After making match decisions (closeMatch or no match), click the Save button, If you want to defer a decision on this record, click 'defer' and it will go in a 'deferred' queue where it can be revisited. Optionally, add a note to help
             with the decision.</li>
             <li>The current "PASS." If any automatic matches were made based on shared links, a PASS 0 is included, and these can be accepted <i>en masse</i> from the Linking screen. Otherwise, you  will be stepped through potential matches from PASS 1 and then PASS 2, and in the case of Getty TGN, possibly PASS 3.</li>
-            <li>It is possible to undo the las Save action; sometimes we click, then think better of it.</li>
-            <li>The record from your dataset, as sent for matching. If it had associate geometry it will appear as green markers.</li>
+            <li>It is possible to undo the last Save action; sometimes we click, then think better of it.</li>
+            <li>The record from your dataset, as sent for matching. If it had associated geometry those will appear as green markers.</li>
             <li>Close match vs. no match. This is explained in depth in its own section below</li>
             <li>The globe icon indicates the potential match includes geometry. Hovering the mouse over the link will highlight it on the map.</li>
           </ol>
         </div>
         <div>
           <h6>What does closeMatch mean?</h6>
-          <p>The meaning of <i>closeMatch</i> derives from the <a href="https://www.w3.org/TR/2009/REC-skos-reference-20090818/" target="_blank">Simple Knowledge Organization System (SKOS) vocabulary</a>, a widely used data model. Practically speaking, for WHG asserting a "clseMatch" serves as a linking "glue." Specifically, records that share one or more common linked asserted as (<i>closeMatch</i>) are joined/linked in our "union index" and returned together in response to queries. For example, records for Abyssinia and Ethiopia share two <i>closeMatch</i> links, to a DBPedia record and a TGN record. Therefore, they appear together when searching for either Abyssinia or Ethiopia. We have determined there is not a clear enough distinction with SKOS:exactMatch to offer that choice.</p>
+          <p>The meaning of <i>closeMatch</i> derives from the <a href="https://www.w3.org/TR/2009/REC-skos-reference-20090818/" target="_blank">Simple Knowledge Organization System (SKOS) vocabulary</a>, a widely used data model. Practically speaking, for WHG asserting a "closeMatch" serves as a linking "glue." Specifically, records that share one or more common linked asserted as (<i>closeMatch</i>) are joined/linked in our "union index" and returned together in response to queries. For example, records for Abyssinia and Ethiopia share two <i>closeMatch</i> links, to a DBPedia record and a TGN record. Therefore, they appear together when searching for either Abyssinia or Ethiopia. We have determined there is not a clear enough distinction with SKOS:exactMatch to offer that choice.</p>
           <p>From the SKOS specification:</p>
           <ul>
             <li><i>closeMatch</i>: "...(the) two concepts are sufficiently similar that they can be used interchangeably
@@ -466,7 +466,7 @@
         <div>
           <ol>
             <li>Instead of matching to individual records from Wikidata or GeoNames, you are deciding on matches
-            to <b class="red-bold">sets</b> of records in the WHG union index&mdash;records that have been previously
+            to <b class="red-bold">sets</b> of records in the WHG union index &mdash; records that have been previously
             linked to each other. If you decide to match to a set, your record will be added to that set; in
             this case adding a third attestation for Lund.<br/>
             <img src="{% static 'images/docs/review_linked.jpg' %}" height=250>
@@ -480,23 +480,23 @@
       </section>
       <section id="pcolls">
         <h5>Create and publish a Place Collection</h5>
-        <p>Place Collections in thw WHG are annotated sets of place records from published datasets. Places can be added
+        <p>Place Collections in the WHG are annotated sets of place records from published datasets. Places can be added
         to a collection in three ways:
           <ol>
             <li>From a Place Portal page, using the "Add to Collection" button<br/>
             <img src="{% static 'images/docs/addtocoll_portal.jpg' %}" height="40"/></li>
             <li>One or more from a published dataset's Browse page, using the "Add to Collection" button<br/>
             <img src="{% static 'images/docs/addtocoll_ds.jpg' %}" height="120"/></li>
-            <li>By adding all of the places in one of your datasets&mdash;usually a small one created for the purpose<br/>
+            <li>By adding all of the places in one of your datasets &mdash; usually a small one created for the purpose<br/>
             <img src="{% static 'images/docs/addtocoll_allds.jpg'%}" height="110" /></li>
           </ol>
         </p>
         <p>Once places have been added, they can be annotated in the following way:
           <ul>
-            <li>Create a set of "annotation keywords" for the collection&mdash;a custom vocabulary used to classify
+            <li>Create a set of "annotation keywords" for the collection &mdash; a custom vocabulary used to classify
             each place's relation to the collection theme and to style map markers<br/>
             <img src="{% static 'images/docs/anno_keywords.jpg' %}" height="60"/></li>
-            <li>For each place, choose a relation keyword, and a note and optional date(s) and image&mdash;then save.</li>
+            <li>For each place, choose a relation keyword, and a note and optional date(s) and image &mdash; then save.</li>
             <li>If desired, drag and drop place "cards" to order them in a sequence</li>
           </ul>
         </p>
@@ -528,7 +528,7 @@
       <section id="dscolls">
         <h5>Create and publish a Dataset Collection</h5>
         <p>A WHG Dataset Collection is a set of published, indexed datasets in WHG, whose place records have been linked with others for the same place where they occur. Its potential purposes and possibilities are outlined in the <a href="#dscoll">Multiple datasets</a> pathway section of this documentation.</p>
-        <p>All datasets in a Dataset Collection must be published and fully accessioned&mdash;that is, indexed in the WHG union index. This is because the linking of records for the same place from multiple datasets occurs during the final indexing step. See "Accessioning to the WHG union index" in the <a href="#augment">Individual datasets</a> section.</p>
+        <p>All datasets in a Dataset Collection must be published and fully accessioned &mdash; that is, indexed in the WHG union index. This is because the linking of records for the same place from multiple datasets occurs during the final indexing step. See "Accessioning to the WHG union index" in the <a href="#augment">Individual datasets</a> section.</p>
         <p>The steps in creating a Dataset Collection are as follows:
         <ol>
           <li>Click the <span class="larger strong">+</span> in that section of your My Data dashboard, then fill in the three required fields on the Create Dataset Collection form<br/>
