@@ -315,7 +315,10 @@ STATICFILES_DIRS = [
 CACHES = {
     'default': {
         'BACKEND': 'utils.mapdata.MapdataFileBasedCache',
-        'LOCATION': os.path.join(BASE_DIR, 'cache_mapdata'),
+        'LOCATION': os.path.join(BASE_DIR, 'cache'),
+        'TIMEOUT': None,  # Cache data indefinitely until manually updated
+        "OPTIONS": {"MAX_ENTRIES": 10000}, # Increase from default of 300
+        'LOCATION': os.path.join(BASE_DIR, 'cache'),
     }
 }
 
