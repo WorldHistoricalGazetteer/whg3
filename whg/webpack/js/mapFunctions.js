@@ -10,8 +10,14 @@ export function updatePadding() {
     const ControlsRect = mapParams.ControlsRectEl.getBoundingClientRect();
     const MapRect = mapParams.MapRectEl.getBoundingClientRect();
 
-    function getValidPadding(value) {
-        return (typeof value === 'number' && !isNaN(value)) ? value : 0;
+    // Function to validate and log padding values
+    function getValidPadding(value, name) {
+        // Ensure value is a number and is non-negative
+        const validValue = (typeof value === 'number' && !isNaN(value) && value >= 0) ? value : 0;
+        if (validValue !== value) {
+            console.warn(`Invalid value for ${name}: ${value}. Defaulting to 0.`);
+        }
+        return validValue;
     }
 
     if ($('#mapOverlays').length > 0) {
