@@ -160,11 +160,12 @@ def mapdata_dataset(id, task_id=None, chunk_size=1000):
             # Update the extent dynamically
             if geom.geom and not geom.geom.empty:
                 geom_extent = geom.geom.extent  # Returns (xmin, ymin, xmax, ymax)
-                geom_bbox = Polygon.from_bbox(geom_extent)
-                if extent_polygon is None:
-                    extent_polygon = geom_bbox.buffer(0)
-                else:
-                    extent_polygon = extent_polygon.union(geom_bbox.buffer(0))
+                if geom_extent and len(geom_extent) == 4:  # Ensure the extent has 4 values
+                    geom_bbox = Polygon.from_bbox(geom_extent)
+                    if extent_polygon is None:
+                        extent_polygon = geom_bbox.buffer(0)
+                    else:
+                        extent_polygon = extent_polygon.union(geom_bbox.buffer(0))
 
         logger.debug(f"Geometries: {geom_map}")
 
@@ -194,19 +195,39 @@ def mapdata_dataset(id, task_id=None, chunk_size=1000):
             }
             features.append(feature)
 
+            logger.debug(f"feature: {feature}")
+
             # Batch Redis updates for better performance
             if task_id and (index + 1) % redis_batch_size == 0:
                 redis_client.hincrby(task_id, 'queued_features', -redis_batch_size)
 
             index += 1
 
+    logger.debug(f"Chunk completed")
+
     # Final Redis update for any remaining items
     if task_id:
         redis_client.hincrby(task_id, 'queued_features', -(index % redis_batch_size))
 
+    logger.debug(f"Redis updated")
+
     # Convert the final extent polygon to a tuple in the format (xmin, ymin, xmax, ymax)
-    final_extent = extent_polygon.extent if extent_polygon else None
-    buffered_extent = buffer_extent(final_extent) if final_extent else None
+    if extent_polygon:
+        try:
+            final_extent = extent_polygon.extent
+            if final_extent and len(final_extent) == 4:  # Ensure valid extent
+                logger.debug(f"final_extent: {final_extent}")
+                buffered_extent = buffer_extent(final_extent)
+            else:
+                logger.error(f"Invalid extent: {final_extent}")
+                buffered_extent = None
+        except Exception as e:
+            logger.error(f"Error calculating final extent: {e}")
+            buffered_extent = None
+    else:
+        buffered_extent = None
+
+    logger.debug(f"buffered_extent: {buffered_extent}")
 
     return {
         "title": ds.title,
