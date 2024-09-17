@@ -16,7 +16,7 @@ from django.db.models import Max
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
-from django.db import connection, transaction, IntegrityError, DataError
+from django.db import transaction, IntegrityError, DataError
 import redis
 
 from datasets.models import Dataset, DatasetFile

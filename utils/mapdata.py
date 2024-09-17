@@ -4,7 +4,7 @@ from django.contrib.gis.db.models import Extent
 from django.contrib.gis.db.models.aggregates import Union
 from django.contrib.gis.geos import GeometryCollection, Polygon
 from django.core.cache import cache
-from django.core.cache.backends.base import BaseCache
+from django.core.cache.backends.filebased import FileBasedCache
 from django.db.models import Min, Max, Prefetch, F, Q
 from django.http import JsonResponse, HttpRequest
 from django.shortcuts import get_object_or_404
@@ -450,65 +450,25 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
     return feature_collection
 
 
-class MapdataFileBasedCache(BaseCache):
-    def __init__(self, location, params):
-        """
-        Initialize the cache backend with a location directory and parameters.
-        """
-        super().__init__(params)
-        self._cache_dir = location
-        if not os.path.isdir(self._cache_dir):
-            os.makedirs(self._cache_dir)
+class MapdataFileBasedCache(FileBasedCache):
+    def __init__(self, dir, params):
+        super().__init__(dir, params)
 
-    def _get_key_file_path(self, key):
+    def _cull(self):
         """
-        Convert the cache key to a file path.
+        Custom cull implementation: Remove the smallest cache entries if max_entries is reached.
         """
-        safe_key = key.replace('/', '_').replace('\\', '_')
-        return os.path.join(self._cache_dir, f"{safe_key}.json")
+        filelist = self._list_cache_files()
+        num_entries = len(filelist)
+        if num_entries < self._max_entries:
+            return  # return early if no culling is required
+        if self._cull_frequency == 0:
+            return self.clear()  # Clear the cache when CULL_FREQUENCY = 0
 
-    def get(self, key, default=None):
-        """
-        Retrieve the value from the cache.
-        """
-        file_path = self._get_key_file_path(key)
-        try:
-            with open(file_path, 'r') as f:
-                return json.load(f)
-        except (IOError, json.JSONDecodeError):
-            return default
+        # Sort filelist by file size
+        filelist.sort(key=lambda x: os.path.getsize(x))
 
-    def set(self, key, value, timeout=None):
-        """
-        Store the value in the cache.
-        """
-        file_path = self._get_key_file_path(key)
-        with open(file_path, 'w') as f:
-            json.dump(value, f)
-        # Optionally handle timeout (e.g., delete file after timeout)
-
-    def delete(self, key):
-        """
-        Delete the cache entry.
-        """
-        file_path = self._get_key_file_path(key)
-        try:
-            os.remove(file_path)
-        except FileNotFoundError:
-            pass
-
-    def clear(self):
-        """
-        Clear all cache entries.
-        """
-        for fname in os.listdir(self._cache_dir):
-            file_path = os.path.join(self._cache_dir, fname)
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-
-    def _list_cache_files(self):
-        """
-        List all cache files in the directory.
-        """
-        return [os.path.join(self._cache_dir, f) for f in os.listdir(self._cache_dir)
-                if os.path.isfile(os.path.join(self._cache_dir, f))]
+        # Delete the oldest entries
+        num_to_delete = int(num_entries / self._cull_frequency)
+        for fname in filelist[:num_to_delete]:
+            self._delete(fname)

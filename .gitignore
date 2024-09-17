@@ -128,4 +128,3 @@ datasets/static/files/provinces_1911.tsv
 validation/test_data/Cyprus Settlements.xlsx
 .idea/misc.xml
 package-lock.json
-/cache_mapdata
