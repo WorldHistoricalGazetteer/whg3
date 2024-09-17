@@ -161,7 +161,10 @@ def mapdata_dataset(id, task_id=None, chunk_size=1000):
             if geom.geom and not geom.geom.empty:
                 geom_extent = geom.geom.extent  # Returns (xmin, ymin, xmax, ymax)
                 geom_bbox = Polygon.from_bbox(geom_extent)
-                extent_polygon = geom_bbox if extent_polygon is None else extent_polygon.union(geom_bbox)
+                if extent_polygon is None:
+                    extent_polygon = geom_bbox.buffer(0)
+                else:
+                    extent_polygon = extent_polygon.union(geom_bbox.buffer(0))
 
         logger.debug(f"Geometries: {geom_map}")
 
