@@ -149,7 +149,7 @@ tLPF_mappings = {
         'converter': lambda x: safe_float_conversion(x)
     },
     'geowkt': {
-        'lpf': 'geometry.geowkt',
+        'lpf': 'geowkt',
         'converter': lambda x: str_x(x)
     },
     'geo_source': {

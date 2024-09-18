@@ -18,7 +18,7 @@ import redis
 import sys
 from validation.tLPF_mappings import tLPF_mappings
 from shapely import wkt
-from shapely.geometry import mapping
+from shapely.geometry import mapping as shapely_mapping
 import geojson
 
 logger = logging.getLogger('validation')
@@ -202,11 +202,11 @@ def parse_to_LPF(delimited_filepath, ext):
                     # Replace any existing geometry with geometry contained in any `geowkt`
                     if 'geowkt' in lpf_feature:
                         geometry = wkt.loads(lpf_feature['geowkt'])
-                        geojson_geometry = mapping(geometry)
-                        lpf_feature['geometry'] = geojson.dumps(geojson_geometry)
+                        geojson_geometry = shapely_mapping(geometry)
+                        lpf_feature['geometry'] = geojson_geometry
                         lpf_feature.pop('geowkt')
 
-                    # logger.debug(f"Processed record #{feature_count}: '{lpf_feature}'.")
+                    logger.debug(f"Processed record #{feature_count}: '{lpf_feature}'.")
 
                     # Write the JSON object to the file
                     if not first_line:
@@ -255,8 +255,9 @@ def validate_file(request, dataset_metadata):
 
     if file_info['mime_type'] is None:
         message = "Unable to determine the content type of the file."
-        logger.error(message)
-        return JsonResponse({"status": "failed", "message": message}, status=500)
+        logger.info(message)
+        # Downloaded files may not have a MIME type
+        # return JsonResponse({"status": "failed", "message": message}, status=500)
     elif file_info['mime_type'] not in settings.VALIDATION_SUPPORTED_TYPES:
         message = f"The detected content type (<b>{file_info['mime_type']}</b>) is not supported."
         logger.error(message)
@@ -268,7 +269,8 @@ def validate_file(request, dataset_metadata):
     if file_info['mime_encoding'] is None:
         message = "Unable to determine the encoding type of the file."
         logger.error(message)
-        return JsonResponse({"status": "failed", "message": message}, status=500)
+        # Downloaded files may not have a MIME encoding
+        # return JsonResponse({"status": "failed", "message": message}, status=500)
     elif file_info['mime_encoding'] not in allowed_encodings:
         message = f"The detected encoding type (<b>{file_info['mime_encoding']}</b>) is not supported. Please ensure that the file is encoded as UTF or ASCII."
         logger.error(message)
