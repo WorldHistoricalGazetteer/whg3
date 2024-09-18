@@ -245,7 +245,7 @@ THE FOLLOWING FUNCTIONS ARE AS-YET REDUNDANT AND MIGHT EVENTUALLY BE REMOVED
 function fetchCount(coords) {
 	//startMapitSpinner()
 	console.log('coords', coords)
-	context = {
+	let context = {
 		"type": "FeatureCollection",
 		"features": []
 	}
@@ -264,7 +264,7 @@ function random_rgba() {
 	var o = Math.round,
 		ra = Math.random,
 		s = 255;
-	tup = [o(ra() * s), o(ra() * s), o(ra() * s)]
+	let tup = [o(ra() * s), o(ra() * s), o(ra() * s)]
 
 	const rgbToHex = (r, g, b) => '#' + [r, g, b].map(x => {
 		const hex = x.toString(16)

@@ -242,8 +242,7 @@ class RemoteIndexAPIView(View):
       print('index_set (collector() result)', index_set)
 
       # format hit items
-      items = [collectionItem(i) for i in index_set['items']]
-      # items = [collectionItem(s, 'place', None) for s in index_set['items']]
+      items = [childItem(i) for i in index_set['items']]
 
       # result object
       result = {'type': 'FeatureCollection',
@@ -1137,14 +1136,14 @@ class PlacesDetailAPIView(View):
             seen_items = set()
 
             for item in arr:
-                item_unique = item[key] if key else json.dumps(item)
+                item_unique = item.get(key) if key else json.dumps(item)
                 if item_unique not in seen_items:
                     unique_items.append(item)
                     seen_items.add(item_unique)
 
             sort_key = sort_key or key
             if sort_key:
-                unique_items.sort(key=lambda x: x[sort_key])
+                unique_items.sort(key=lambda x: x.get(sort_key, ''))
 
             return unique_items
 

@@ -1,3 +1,8 @@
+/* Fix required for Safari browsers only, August 2024*/
+#whgModal, #whgModal .modal-dialog, #whgModal .modal-content {
+	overflow: visible;
+}
+
 #whgModal {
     z-index: 9999999; /* Above any spinners */
     user-select: none;

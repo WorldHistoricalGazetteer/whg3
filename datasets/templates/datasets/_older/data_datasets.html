@@ -53,7 +53,7 @@
     <div class="tb-content">
       <div id="mydslist" class="tab-pane fade show active" role="tabpanel" aria-labelledby="mydslist-tab">
         <div class="mb-1 ms-1 clearfix">
-	          <a href="{% url 'datasets:dataset-create' %}" class="">
+	          <a href="{% url 'datasets:dataset-validate' %}" class="">
 		          <i class="fas fa-plus-square linky"></i> upload new</a>
 						{% if user|has_group:"beta30" or whgteam %}
 							<span>

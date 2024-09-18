@@ -14,7 +14,8 @@ urlpatterns = [
 
   # BASICS: create from upload, create empty, delete
   # new validation workflow
-  path('create/', views.DatasetCreate.as_view(), name='dataset-create'),
+  # path('create/', views.DatasetCreate.as_view(), name='dataset-create'), # superseded by validate/
+  path('validate/', views.DatasetValidate.as_view(), name='dataset-validate'),
 
   path('create_empty/', views.DatasetCreateEmptyView.as_view(), name='dataset-create-empty'),
   path('<int:id>/delete', views.DatasetDeleteView.as_view(), name='dataset-delete'),
@@ -36,6 +37,7 @@ urlpatterns = [
   # dataset owner pages (tabs); names correspond to template names
   path('<int:id>/status', views.DatasetStatusView.as_view(), name='ds_status'),
   path('<int:id>/metadata', views.DatasetMetadataView.as_view(), name='ds_metadata'),
+  path('<int:id>/citation', views.dataset_citation, name='dataset-citation'),
   path('<int:id>/browse', views.DatasetBrowseView.as_view(), name='ds_browse'),
   path('<int:id>/reconcile', views.DatasetReconcileView.as_view(), name='ds_reconcile'),
   path('<int:id>/collab', views.DatasetCollabView.as_view(), name='ds_collab'),
@@ -57,7 +59,7 @@ urlpatterns = [
   # path('<int:id>/augmented/<str:format>', download_augmented, name="dl-aug"), #
 
   ## UPDATES (in progress)
-  path('compare/', views.ds_compare, name='dataset-compare'),
+  # path('compare/', views.ds_compare, name='dataset-compare'),
   path('update/', views.ds_update, name='dataset-update'),
   path('update_vis_parameters/', views.update_vis_parameters, name='update-vis-parameters'),
   path('update_volunteers_text/', views.update_volunteers_text, name='update-volunteers-text'),

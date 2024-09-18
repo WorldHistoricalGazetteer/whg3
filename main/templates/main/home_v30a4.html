@@ -89,7 +89,7 @@
         </div>
         <div class="border p-2 mt-2 mb-0 small" style="border-style:
             dashed !important;; border-width: 0.1rem !important;">
-          <p class="mb-0 red-head">NEWS & ANNOUNCEMENTS <span class="ms-3"><a href="{%  url 'announcements-list' %}">view all</a></span</p>
+          <p class="mb-0 red-head">NEWS & ANNOUNCEMENTS <span class="ms-3"><a href="{%  url 'announcements-list' %}">view all</a></span></p>
           <div id="announcement-container" class="mb-0">
             {% for announcement in announcements|slice:":3" %}
               <div class="announcement constrained"
@@ -107,7 +107,7 @@
           <div id="search_bar" class="mb-2">
             <div id="input" class="input-group mx-auto">
               <!-- Label only for Large Screens -->
-              <label class="input-group-text" for="search_mode">Search</label>
+              <label class="input-group-text" for="search_input">Search</label>
               <!-- Search Input -->
               <input id="search_input" class="form-control typeahead" data-provide="typeahead" type="text"
                      placeholder="Enter place name" aria-label="Search" aria-describedby="search-addon"

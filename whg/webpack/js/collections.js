@@ -76,9 +76,9 @@ function create_collection() {
 			cache: false,
 			data: formData,
 			success: function(data) {
-				el = $('<li><a class="a_addtocoll" href="#" ref=' + data.id + '>' + data.title + '</a></li>')
+				let el = $('<li><a class="a_addtocoll" href="#" ref=' + data.id + '>' + data.title + '</a></li>')
 				el.click(function() {
-					coll = data.id
+					let coll = data.id
 					// pids = checked_rows
 					// add_to_collection(coll, pids, checked_rows)
 					add_to_collection(coll, checked_rows)

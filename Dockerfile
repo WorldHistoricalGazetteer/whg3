@@ -2,9 +2,9 @@ FROM --platform=linux/amd64 python:3.10.7-slim-bullseye
 
 LABEL maintainer="WHC @ Pitt"
 
-ENV PYTHONUNBUFFERED 1
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV MAX_MAP_COUNT 262144
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    MAX_MAP_COUNT=262144
 
 ARG USER_NAME
 
@@ -14,17 +14,18 @@ RUN set -eux; \
     # Update package lists and install necessary packages
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        lsb-release \
-        curl \
-        gpgv \
         build-essential \
-        python3-gdal \
+        curl \
+        docker.io \
+        file \
+        gpgv \
         libpq-dev \
-        sudo \
-        nano \
         locate \
+        nano \
         netcat \
-        docker.io && \
+        python3-gdal \
+        sudo \
+        lsb-release && \
     # Set up Python virtual environment
     python -m venv /py && \
     /py/bin/pip install --upgrade pip && \

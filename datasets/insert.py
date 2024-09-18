@@ -3,6 +3,7 @@
 import csv, json, os, re, sys
 from datetime import datetime
 import pandas as pd
+import logging
 import numpy as np
 import traceback
 import warnings
@@ -21,34 +22,38 @@ from django.utils import timezone
 from .exceptions import DelimInsertError, DataAlreadyProcessedError
 from .models import Dataset
 from areas.models import Area
-from datasets.utils import aliasIt, aat_lookup, ccodesFromGeom, \
-  makeCoords, parse_wkt, parsedates_tsv, parsedates_lpf # emailer,
+from datasets.utils import aat_lookup, ccodesFromGeom, \
+    makeCoords, parse_wkt, parsedates_tsv
 from places.models import *
 from whgmail.messaging import WHGmail
+
+logger = logging.getLogger('validation')
 
 # 'lugares_20.jsonld','lugares_20_broken.jsonld'
 # test setup
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+
 def test_insert():
-  from datasets.models import Dataset, DatasetFile
-  Dataset.objects.get(label='delim_test').delete()
-  ds=Dataset.objects.create(
-    owner=User.objects.get(id=1),
-    label='delim_test',
-    title='Delim Test',
-    description='new, empty to receive from ds_insert_delim()'
-  )
+    from datasets.models import Dataset, DatasetFile
+    Dataset.objects.get(label='delim_test').delete()
+    ds = Dataset.objects.create(
+        owner=User.objects.get(id=1),
+        label='delim_test',
+        title='Delim Test',
+        description='new, empty to receive from ds_insert_delim()'
+    )
 
 
 def read_tsv_into_dataframe(file):
-  files = ['lp7_100.tsv',
-           'lp7_100_broken.tsv']
-  path = os.getcwd() + '/_testdata/_upload/'
-  df = pd.read_csv(path+file, sep='\t')
-  # df = read_tsv_into_dataframe(files[0])
-  # dfbroken = read_tsv_into_dataframe(files[1])
-  # df=dfbroken
+    files = ['lp7_100.tsv',
+             'lp7_100_broken.tsv']
+    path = os.getcwd() + '/_testdata/_upload/'
+    df = pd.read_csv(path + file, sep='\t')
+    # df = read_tsv_into_dataframe(files[0])
+    # dfbroken = read_tsv_into_dataframe(files[1])
+    # df=dfbroken
+
 
 aat_fclass = {}
 for type_obj in Type.objects.all():
@@ -58,137 +63,140 @@ for type_obj in Type.objects.all():
         "term_full": type_obj.term_full
     }
 
+
 # create Place and a PlaceName for its 'title'
 def create_place(row, ds):
-  # build & save a Place object & PlaceName object for its title
-  pl = Place.objects.create(
-    src_id=row['id'],
-    title=row['title'].strip(),
-    dataset=ds,
-    ccodes=[] if pd.isnull(row.get('ccodes')) else row.get('ccodes').split(';')
-  )
+    # build & save a Place object & PlaceName object for its title
+    pl = Place.objects.create(
+        src_id=row['id'],
+        title=row['title'].strip(),
+        dataset=ds,
+        ccodes=[] if pd.isnull(row.get('ccodes')) else row.get('ccodes').split(';')
+    )
 
-  title_source = row['title_source'],
-  title_uri = None if pd.isnull(row.get('title_uri')) else row.get('title_uri'),
+    title_source = row['title_source'],
+    title_uri = None if pd.isnull(row.get('title_uri')) else row.get('title_uri'),
 
-  PlaceName.objects.create(
-    place=pl,
-    src_id=row['id'],
-    toponym=row['title'].strip(),
-    jsonb={"toponym": pl.title, "citations": [{"id": title_uri,"label": title_source}]}
-  )
-  return pl
+    PlaceName.objects.create(
+        place=pl,
+        src_id=row['id'],
+        toponym=row['title'].strip(),
+        jsonb={"toponym": pl.title, "citations": [{"id": title_uri, "label": title_source}]}
+    )
+    return pl
+
 
 # create PlaceName object for each variant
 def process_variants(row, newpl):
-  variants = None if pd.isnull(row.get('variants')) else \
-    [x.strip() for x in str(row.get('variants', '')).split(';')] \
-      if row.get('variants', '') != '' else []
-  name_objects = []  # gather variants to be written
-  error_msgs = []  # gather error messages
-  title_uri = None if pd.isnull(row.get('title_uri')) else row.get('title_uri'),
-  if variants:
-    for v in variants:
-      try:
-        name = v.strip()
-        haslang = re.search("@(.*)$", name)
-        new_name = PlaceName(
-          place=newpl,
-          src_id=newpl.src_id,
-          toponym=v.strip(),
-          jsonb={"toponym": v.strip(),
-                 "citations": [
-                   {"id": title_uri,
-                    "label": row['title_source']}
-                 ]})
-        if haslang:
-          new_name.jsonb['lang'] = haslang.group(1)
+    variants = None if pd.isnull(row.get('variants')) else \
+        [x.strip() for x in str(row.get('variants', '')).split(';')] \
+            if row.get('variants', '') != '' else []
+    name_objects = []  # gather variants to be written
+    error_msgs = []  # gather error messages
+    title_uri = None if pd.isnull(row.get('title_uri')) else row.get('title_uri'),
+    if variants:
+        for v in variants:
+            try:
+                name = v.strip()
+                haslang = re.search("@(.*)$", name)
+                new_name = PlaceName(
+                    place=newpl,
+                    src_id=newpl.src_id,
+                    toponym=v.strip(),
+                    jsonb={"toponym": v.strip(),
+                           "citations": [
+                               {"id": title_uri,
+                                "label": row['title_source']}
+                           ]})
+                if haslang:
+                    new_name.jsonb['lang'] = haslang.group(1)
 
-        name_objects.append(new_name)
-      except Exception as e:
-        full_trace = traceback.format_exc()
-        print("Full trace:", full_trace)
-        error_msgs.append(f"Error writing variant '{v}' for place <b>{row['id']}</b>: <b>{row['title']}</b>. Details: {e}")
+                name_objects.append(new_name)
+            except Exception as e:
+                full_trace = traceback.format_exc()
+                print("Full trace:", full_trace)
+                error_msgs.append(
+                    f"Error writing variant '{v}' for place <b>{row['id']}</b>: <b>{row['title']}</b>. Details: {e}")
 
-  if error_msgs:  # if there are any error messages
-    raise DelimInsertError("; ".join(error_msgs))  # raise an exception with all error messages joined
+    if error_msgs:  # if there are any error messages
+        raise DelimInsertError("; ".join(error_msgs))  # raise an exception with all error messages joined
 
-  return name_objects
+    return name_objects
+
 
 # create PlaceType object for each aat_type; update Place with fclasses[]
 def process_types(row, newpl):
-  type_objects = []
-  error_msgs = []
+    type_objects = []
+    error_msgs = []
 
-  try:
-    types = [t.strip() for t in str(row.get('types', '') or '').split(';') if t]
-  except Exception as e:
-    print(f"Error processing 'types': {e}")
-    types = []
-
-
-
-  try:
-    aat_types = [int(a.strip()) for a in str(row.get('aat_types', '')).split(';') if a]
-    #aat_types = [int(a.strip()) for a in str(row.get('aat_types', '') or '').split(';') if a]
-  except ValueError as ve:
-    print(f"Error converting 'aat_types' to int: {ve}")
-    aat_types = []
-  except Exception as e:
-    print(f"Error processing 'aat_types': {e}")
-    aat_types = []
-
-  try:
-    fclasses_from_row = [f.strip() for f in str(row.get('fclasses', '') or '').split(';') if f]
-  except Exception as e:
-    print(f"Error processing 'fclasses': {e}")
-    fclasses_from_row = []
-
-  print("Extracted types:", types)
-  print("Extracted aat_types:", aat_types)
-  print("Extracted fclasses:", fclasses_from_row)
-
-  # Build the PlaceType objects for each type and aat_type
-  for type_, aat_type in zip_longest(types, aat_types, fillvalue=None):
     try:
-      pt_data = {
-        'place': newpl,
-        'src_id': newpl.src_id,
-        'aat_id': aat_type,
-        # 'jsonb': {}
-        'jsonb': {
-          'sourceLabel': type_ if type_ else '',
-          'identifier': 'aat:' + str(aat_type) if aat_type else '',
-          'label': aat_fclass.get(aat_type, {}).get('term_full') if aat_type else ''
-        }
-      }
-      type_objects.append(PlaceType(**pt_data))
+        types = [t.strip() for t in str(row.get('types', '') or '').split(';') if t]
+    except Exception as e:
+        print(f"Error processing 'types': {e}")
+        types = []
+
+    try:
+        aat_types = [int(a.strip()) for a in str(row.get('aat_types', '')).split(';') if a]
+        # aat_types = [int(a.strip()) for a in str(row.get('aat_types', '') or '').split(';') if a]
+    except ValueError as ve:
+        print(f"Error converting 'aat_types' to int: {ve}")
+        aat_types = []
+    except Exception as e:
+        print(f"Error processing 'aat_types': {e}")
+        aat_types = []
+
+    try:
+        fclasses_from_row = [f.strip() for f in str(row.get('fclasses', '') or '').split(';') if f]
+    except Exception as e:
+        print(f"Error processing 'fclasses': {e}")
+        fclasses_from_row = []
+
+    print("Extracted types:", types)
+    print("Extracted aat_types:", aat_types)
+    print("Extracted fclasses:", fclasses_from_row)
+
+    # Build the PlaceType objects for each type and aat_type
+    for type_, aat_type in zip_longest(types, aat_types, fillvalue=None):
+        try:
+            pt_data = {
+                'place': newpl,
+                'src_id': newpl.src_id,
+                'aat_id': aat_type,
+                # 'jsonb': {}
+                'jsonb': {
+                    'sourceLabel': type_ if type_ else '',
+                    'identifier': 'aat:' + str(aat_type) if aat_type else '',
+                    'label': aat_fclass.get(aat_type, {}).get('term_full') if aat_type else ''
+                }
+            }
+            type_objects.append(PlaceType(**pt_data))
+        except Exception as e:  # Catch all exceptions and store in variable e
+            error_msgs.append(f"Error writing type '{type_}' for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
+
+    # Extract fclasses from aat_types and fclasses_from_row
+    try:
+        fclass_list = [aat_fclass.get(aat, {}).get('fclass') for aat in aat_types if aat]
+        fclass_list.extend(fclasses_from_row)
+
+        # Deduplicate fclass_list
+        fclass_list = list(set(fclass_list))
+        # Update the Place object's fclasses field
+        newpl.fclasses = fclass_list
+        newpl.save()
     except Exception as e:  # Catch all exceptions and store in variable e
-      error_msgs.append(f"Error writing type '{type_}' for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
+        error_msgs.append(f"Error writing fclass codes for place <b>{newpl.title} ({newpl.src_id})</b>. Details: {e}")
 
-  # Extract fclasses from aat_types and fclasses_from_row
-  try:
-    fclass_list = [aat_fclass.get(aat, {}).get('fclass') for aat in aat_types if aat]
-    fclass_list.extend(fclasses_from_row)
+    if error_msgs:  # if there are any error messages
+        raise DelimInsertError("; ".join(error_msgs))  # raise an exception with all error messages joined
 
-    # Deduplicate fclass_list
-    fclass_list = list(set(fclass_list))
-    # Update the Place object's fclasses field
-    newpl.fclasses = fclass_list
-    newpl.save()
-  except Exception as e:  # Catch all exceptions and store in variable e
-    error_msgs.append(f"Error writing fclass codes for place <b>{newpl.title} ({newpl.src_id})</b>. Details: {e}")
-
-  if error_msgs:  # if there are any error messages
-    raise DelimInsertError("; ".join(error_msgs))  # raise an exception with all error messages joined
-
-  return type_objects
+    return type_objects
 
 
 # create PlaceWhen object; update Place with minmax, timespans
 from dateutil.parser import isoparse, ParserError
 
 from dateutil.parser import isoparse, ParserError
+
 
 class CustomDate:
     def __init__(self, year, month=1, day=1):
@@ -204,6 +212,7 @@ class CustomDate:
         if self.year < 0:
             year_str = f"-{year_str}"
         return f"{year_str}-{self.month:02d}-{self.day:02d}"
+
 
 def process_when(row, newpl):
     error_msgs = []
@@ -263,7 +272,7 @@ def process_when(row, newpl):
         start = parse_iso_date(str(row['start'])) if 'start' in row and row.get('start', '') else None
         end = parse_iso_date(str(row['end'])) if 'end' in row and row.get('end', '') else None
         attestation_year = str(row['attestation_year']) if 'attestation_year' in row and not pd.isna(
-          row['attestation_year']) else None
+            row['attestation_year']) else None
         # attestation_year = str(row['attestation_year']) if 'attestation_year' in row and row.get('attestation_year', '') else None
 
         print(f"Start: {start}, End: {end}, Attestation Year: {attestation_year}")
@@ -297,6 +306,7 @@ def process_when(row, newpl):
         raise DelimInsertError("; ".join(error_msgs))
 
     return [when_object]
+
 
 # create PlaceWhen object; update Place with minmax, timespans
 # def process_when(row, newpl):
@@ -339,111 +349,113 @@ def process_when(row, newpl):
 
 # create PlaceGeom object and/or generate ccodes
 def process_geom(row, newpl):
-  error_msgs = []
-  geojson = None
-  valid_ccodes = [ccode.upper() for c in Area.objects.filter(type='country') for ccode in c.ccodes]
+    error_msgs = []
+    geojson = None
+    valid_ccodes = [ccode.upper() for c in Area.objects.filter(type='country') for ccode in c.ccodes]
 
-  # If 'lat' and 'lon' are both present, generate Point geometry
-  if all(col in row for col in ['lat', 'lon']) and row['lat'] and row['lon']:
-    coords = [float(row['lon']), float(row['lat'])]
-    geojson = {
-      "type": "Point",
-      "coordinates": coords,
-      "geowkt": 'POINT(' + str(coords[0]) + ' ' + str(coords[1]) + ')'
-    }
-  # If 'geowkt' is present, parse and generate corresponding geojson
-  elif 'geowkt' in row and row['geowkt']:
-    # print('geowkt', row['geowkt'])
-    try:
-      geojson = parse_wkt(row['geowkt'])
-      # print('geojson', geojson)
-    except Exception as e:
-      error_msgs.append(f"Error converting WKT for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
+    # If 'lat' and 'lon' are both present, generate Point geometry
+    if all(col in row for col in ['lat', 'lon']) and row['lat'] and row['lon']:
+        coords = [float(row['lon']), float(row['lat'])]
+        geojson = {
+            "type": "Point",
+            "coordinates": coords,
+            "geowkt": 'POINT(' + str(coords[0]) + ' ' + str(coords[1]) + ')'
+        }
+    # If 'geowkt' is present, parse and generate corresponding geojson
+    elif 'geowkt' in row and row['geowkt']:
+        # print('geowkt', row['geowkt'])
+        try:
+            geojson = parse_wkt(row['geowkt'])
+            # print('geojson', geojson)
+        except Exception as e:
+            error_msgs.append(f"Error converting WKT for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
 
-  # Add optional 'geo_source' and 'geo_id' to geojson
-  if geojson and 'geo_source' in row and row['geo_source']:
-    geojson['citation'] = {
-      'label': row['geo_source'],
-      'id': row['geo_id'] if 'geo_id' in row else None
-    }
+    # Add optional 'geo_source' and 'geo_id' to geojson
+    if geojson and 'geo_source' in row and row['geo_source']:
+        geojson['citation'] = {
+            'label': row['geo_source'],
+            'id': row['geo_id'] if 'geo_id' in row else None
+        }
 
-  # Create the PlaceGeom object if geojson exists
-  geom_object = None
-  if geojson:
-    try:
-      geom_object = PlaceGeom(
-          place=newpl,
-          src_id=newpl.src_id,
-          jsonb=geojson,
-          geom=GEOSGeometry(json.dumps(geojson))
-      )
-    except Exception as e:
-      error_msgs.append(f"Error creating GEOSGeometry for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
+    # Create the PlaceGeom object if geojson exists
+    geom_object = None
+    if geojson:
+        try:
+            geom_object = PlaceGeom(
+                place=newpl,
+                src_id=newpl.src_id,
+                jsonb=geojson,
+                geom=GEOSGeometry(json.dumps(geojson))
+            )
+        except Exception as e:
+            error_msgs.append(f"Error creating GEOSGeometry for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
 
-  # Process ccodes
-  if 'ccodes' in row and row['ccodes']:
-    ccodes = [x.strip().upper() for x in row['ccodes'].split(';')]
-    # print('ccodes', ccodes)
-    for ccode in ccodes:
-      if ccode not in valid_ccodes:
-        error_msgs.append(f"At least one invalid ccode: {ccode} for place <b>{newpl} ({newpl.src_id})</b>")
-  elif geojson:
-    print('no ccodes, but geojson', geojson)
-    try:
-      ccodes = ccodesFromGeom(geojson) # might be if not terrestrial []
-    except Exception as e:
-      pass
-  else:
-    ccodes = []
+    # Process ccodes
+    if 'ccodes' in row and row['ccodes']:
+        ccodes = [x.strip().upper() for x in row['ccodes'].split(';')]
+        # print('ccodes', ccodes)
+        for ccode in ccodes:
+            if ccode not in valid_ccodes:
+                error_msgs.append(f"At least one invalid ccode: {ccode} for place <b>{newpl} ({newpl.src_id})</b>")
+    elif geojson:
+        print('no ccodes, but geojson', geojson)
+        try:
+            ccodes = ccodesFromGeom(geojson)  # might be if not terrestrial []
+        except Exception as e:
+            pass
+    else:
+        ccodes = []
 
+    newpl.ccodes = ccodes
+    newpl.save()
 
-  newpl.ccodes = ccodes
-  newpl.save()
+    if error_msgs:
+        raise DelimInsertError("; ".join(error_msgs))
 
-  if error_msgs:
-    raise DelimInsertError("; ".join(error_msgs))
+    # Return the geom_object (if it was created)
+    return [geom_object] if geom_object else []
 
-  # Return the geom_object (if it was created)
-  return [geom_object] if geom_object else []
 
 # create PlaceLink object for each matches value
 def process_links(row, newpl):
-  link_objects = []
+    link_objects = []
 
-  # confirmed previously to have accepted alias prefix
-  for link in row['matches'].split(';'):
-    link_object = PlaceLink(
-      place=newpl,
-      src_id=newpl.src_id,
-      jsonb={"identifier": link, "type": "closeMatch"}
-    )
-    link_objects.append(link_object)
-  return link_objects
+    # confirmed previously to have accepted alias prefix
+    for link in row['matches'].split(';'):
+        link_object = PlaceLink(
+            place=newpl,
+            src_id=newpl.src_id,
+            jsonb={"identifier": link, "type": "closeMatch"}
+        )
+        link_objects.append(link_object)
+    return link_objects
+
 
 # create PlaceRelated object from parent_name, parent_id
 def process_related(row, newpl):
-  # in LP-Delim, only parent relation is gvp:broaderPartitive
-  related_object = PlaceRelated(
-    place=newpl,
-    src_id=newpl.src_id,
-    jsonb={"label": row["parent_name"],
-           "relationType": "gvp:broaderPartitive"},
-  )
-  parent_id = row.get('parent_id')
-  if parent_id is not None:
-    related_object.jsonb['relationTo'] = parent_id
+    # in LP-Delim, only parent relation is gvp:broaderPartitive
+    related_object = PlaceRelated(
+        place=newpl,
+        src_id=newpl.src_id,
+        jsonb={"label": row["parent_name"],
+               "relationType": "gvp:broaderPartitive"},
+    )
+    parent_id = row.get('parent_id')
+    if parent_id is not None:
+        related_object.jsonb['relationTo'] = parent_id
 
-  return [related_object]
+    return [related_object]
+
 
 # create PlaceDescription object
 def process_descriptions(row, newpl):
-  descrip_object = PlaceDescription(
-    place=newpl,
-    src_id=newpl.src_id,
-    jsonb={"value": row['description']}
-  )
+    descrip_object = PlaceDescription(
+        place=newpl,
+        src_id=newpl.src_id,
+        jsonb={"value": row['description']}
+    )
 
-  return [descrip_object]
+    return [descrip_object]
 
 
 """
@@ -452,219 +464,214 @@ def process_descriptions(row, newpl):
   insert delimited data into database
   if insert fails anywhere, delete dataset + any related objects
 """
+
+
 def ds_insert_delim(df, pk):
-  """
-  :param df: dataframe
-  :param pk: primary key of dataset
-  """
-  # print('in ds_insert_delim() with df, pk', df, pk)
-  # tidy up dataframe
-  df.dropna(axis=1, how='all', inplace=True)
-  df.replace({np.nan: None}, inplace=True)
-  # get new dataset
-  ds = get_object_or_404(Dataset, id=pk)
-  uribase = ds.uri_base
-  # print('existing places', [p.__dict__ for p in Place.objects.filter(dataset=ds.label)])
-  noplaces = Place.objects.filter(dataset=ds.label).count() == 0
-  skipped_rows = []
-  skipped_row_ids = []
-
-
-  # ensure dataset has no orphaned Place records
-  # this appears to be a pre-refactor remnant
-  if not noplaces:
-    raise DataAlreadyProcessedError("The data appears to have already been processed.")
-
-  # bins for bulk_insert at end
-  objlists = {"PlaceName": [], "PlaceType": [], "PlaceGeom": [], "PlaceWhen": [],
-              "PlaceLink": [], "PlaceRelated": [], "PlaceDescription": []}
-
-  # Loop through rows for insert
-  for index, row in df.iterrows():
-    with transaction.atomic():
-      """
-        create new Place + a PlaceName record from its title
-      """
-      print('row in insert', row)
-      if not Place.objects.filter(src_id=row['id'], dataset=ds).exists():
-        newpl = create_place(row, ds)
-      else:
-        skipped_rows += 1
-        skipped_row_ids.append(row['id'])
-        print('skipping existing place', row['id'])
-
-      """
-      generate new related objects for objlists[]
-      """
-      # PlaceName
-      if 'variants' in df.columns and row['variants'] not in ['', None]:
-        objlists['PlaceName'].extend(process_variants(row, newpl))
-
-      # PlaceType
-      relevant_columns = ['types', 'aat_types', 'fclasses']
-
-      if any(col in df.columns for col in relevant_columns) and any(row.get(col, None) not in ['', None] for col in relevant_columns):
-        objlists['PlaceType'].extend(process_types(row, newpl))
-
-      # PlaceWhen (always at least a start or attestation_year)
-      objlists['PlaceWhen'].extend(process_when(row, newpl))
-
-      # PlaceGeom
-      if ('lat' in row and 'lon' in row and row['lat'] and row['lon']) or ('geowkt' in row and row['geowkt']):
-        objlists['PlaceGeom'].extend(process_geom(row, newpl))
-
-      # PlaceLink
-      if ('matches' in row and row['matches']):
-        objlists['PlaceLink'].extend(process_links(row, newpl))
-
-      # PlaceRelated
-      # TODO: does not handle parent_id
-      if ('parent_name' in row and row['parent_name']):
-        objlists['PlaceRelated'].extend(process_related(row, newpl))
-
-      # PlaceDescription
-      if ('description' in row and row['description']):
-        objlists['PlaceDescription'].extend(process_descriptions(row, newpl))
-
-  # print('PlaceWhen list', len(objlists['PlaceWhen']), objlists['PlaceWhen'][0].__dict__)
-  # bulk_create for each related model; NB no depictions in LP-Delim
-  PlaceName.objects.bulk_create(objlists['PlaceName'],batch_size=10000)
-  PlaceType.objects.bulk_create(objlists['PlaceType'],batch_size=10000)
-  PlaceGeom.objects.bulk_create(objlists['PlaceGeom'],batch_size=10000)
-  PlaceLink.objects.bulk_create(objlists['PlaceLink'],batch_size=10000)
-  PlaceRelated.objects.bulk_create(objlists['PlaceRelated'],batch_size=10000)
-  PlaceWhen.objects.bulk_create(objlists['PlaceWhen'],batch_size=10000)
-  PlaceDescription.objects.bulk_create(objlists['PlaceDescription'],batch_size=10000)
-
-
-""" 
-  ds_insert_json(data, pk)
-  *** replaces ds_insert_lpf() ***
-  insert LPF into database
-"""
-def ds_insert_json(data, pk, user):    
+    """
+    :param df: dataframe
+    :param pk: primary key of dataset
+    """
+    # print('in ds_insert_delim() with df, pk', df, pk)
+    # tidy up dataframe
+    df.dropna(axis=1, how='all', inplace=True)
+    df.replace({np.nan: None}, inplace=True)
+    # get new dataset
     ds = get_object_or_404(Dataset, id=pk)
-    places_already_exist = Place.objects.filter(dataset=ds.label).exists()
-    if places_already_exist:
-        print("Database already contains places for this dataset. Cannot add more.")
-        raise Exception("Database already contains places for this dataset. Cannot add more.")
-    
-    jdata = json.loads(data) if isinstance(data, str) else data
-    
     uribase = ds.uri_base
-    print(f"New dataset: {ds.label}, uri_base: {uribase}, data type: {type(jdata)}, feature count: {len(jdata['features'])}")
+    # print('existing places', [p.__dict__ for p in Place.objects.filter(dataset=ds.label)])
+    noplaces = Place.objects.filter(dataset=ds.label).count() == 0
+    skipped_rows = []
+    skipped_row_ids = []
 
-    errors=[]    
-    try:
+    # ensure dataset has no orphaned Place records
+    # this appears to be a pre-refactor remnant
+    if not noplaces:
+        raise DataAlreadyProcessedError("The data appears to have already been processed.")
+
+    # bins for bulk_insert at end
+    objlists = {"PlaceName": [], "PlaceType": [], "PlaceGeom": [], "PlaceWhen": [],
+                "PlaceLink": [], "PlaceRelated": [], "PlaceDescription": []}
+
+    # Loop through rows for insert
+    for index, row in df.iterrows():
         with transaction.atomic():
-            
-            data_mappings = {
-                'PlaceGeoms': ('Geom', 'geometry', lambda feat: [
-                    PlaceGeom(place=newpl, src_id=newpl.src_id, jsonb=g, geom=GEOSGeometry(json.dumps(g)))
-                    for g in feat['geometry']['geometries']] if feat['geometry']['type'] == 'GeometryCollection' else
-                    [PlaceGeom(place=newpl, src_id=newpl.src_id, jsonb=feat['geometry'], geom=GEOSGeometry(json.dumps(feat['geometry'])))]),
-                'PlaceWhens': ('When', 'when', lambda feat: [PlaceWhen(place=newpl, src_id=newpl.src_id, jsonb=feat['when'], minmax=newpl.minmax)]),
-                'PlaceLinks': ('Link', 'links', lambda feat: [
-                    PlaceLink(place=newpl, src_id=newpl.src_id, jsonb={"type": l['type'], "identifier": aliasIt(l['identifier'].rstrip('/'))})
-                    for l in feat['links']]),
-                'PlaceRelated': ('Related', 'relations', lambda feat: [
-                    PlaceRelated(place=newpl, src_id=newpl.src_id, jsonb=r)
-                    for r in feat['relations']]),
-                'PlaceDescriptions': ('Description', 'descriptions', lambda feat: [
-                    PlaceDescription(place=newpl, src_id=newpl.src_id, jsonb=des)
-                    for des in feat['descriptions']]),
-                'PlaceDepictions': ('Depiction', 'depictions', lambda feat: [
-                    PlaceDepiction(place=newpl, src_id=newpl.src_id, jsonb=dep)
-                    for dep in feat['depictions']]),
-                'PlaceNames': ('Name', 'names', lambda feat: [
-                    PlaceName(place=newpl, src_id=newpl.src_id, toponym=n['toponym'].split(',')[0].strip(), jsonb=n) 
-                    for n in feat.get('names', []) if 'toponym' in n]),
-                'PlaceTypes': ('Type', 'types', lambda feat: [
-                    PlaceType(place=newpl, src_id=newpl.src_id, jsonb=t, fclass=fc) 
-                    for t, fc in zip(feat.get('types', []), fclass_list)])
-            }
-                
-            # Mappings between GeoNames and Wikidata types
-            geo_wd_mapping = {
-                'A': ['Q56061', 'Q192611', 'Q102496', 'Q10864048', 'Q1799794', 'Q1149654', 'Q82794', 'Q15642541', 'Q217151'],
-                'P': ['Q515', 'Q15310171', 'Q18511725', 'Q98929991', 'Q7930989', 'Q486972', 'Q3957', 'Q532', 'Q178342', 'Q22698', 'Q2983893', 'Q13221722'],
-                'S': ['Q41176', 'Q189004', 'Q168719', 'Q3957', 'Q16917', 'Q515', 'Q811979', 'Q220933', 'Q55488', 'Q13221722', 'Q47168', 'Q32815', 'Q57821', 'Q23442'],
-                'R': ['Q34442', 'Q728937', 'Q55488', 'Q22649', 'Q11053', 'Q41176', 'Q1457376', 'Q1078747', 'Q4119149'],
-                'L': ['Q82794', 'Q2542546', 'Q15642541', 'Q131681', 'Q35657', 'Q19836241', 'Q27096235'],
-                'T': ['Q8502', 'Q207326', 'Q145694', 'Q650118', 'Q54050', 'Q16917', 'Q11444', 'Q8502', 'Q1170715', 'Q189604', 'Q24415136', 'Q2329'],
-                'H': ['Q8502', 'Q4022', 'Q23397', 'Q12284', 'Q9131', 'Q124482', 'Q13100073', 'Q1232506', 'Q166620', 'Q283', 'Q26557']
-            }
+            """
+              create new Place + a PlaceName record from its title
+            """
+            print('row in insert', row)
+            if not Place.objects.filter(src_id=row['id'], dataset=ds).exists():
+                newpl = create_place(row, ds)
+            else:
+                skipped_rows += 1
+                skipped_row_ids.append(row['id'])
+                print('skipping existing place', row['id'])
 
-            for feat in jdata['features']:
-        
-                title = re.sub(r'\(.*?\)', '', feat['properties'].get('title', ''))
-                
-                geojson = feat.get('geometry')
-                ccodes = feat['properties'].get('ccodes')
-                if ccodes is None and geojson:
-                    ccodes = ccodesFromGeom(geojson)
-                    print('ccodes', ccodes)
-    
-                # (minmax and intervals[])
-                datesobj = parsedates_lpf(feat)            
+            """
+            generate new related objects for objlists[]
+            """
+            # PlaceName
+            if 'variants' in df.columns and row['variants'] not in ['', None]:
+                objlists['PlaceName'].extend(process_variants(row, newpl))
 
-                fclass_list = [
-                    get_object_or_404(Type, aat_id=int(t['identifier'][4:])).fclass
-                    if 'identifier' in t and t['identifier'].startswith('aat:')
-                    and int(t['identifier'][4:]) in Type.objects.values_list('aat_id', flat=True)
-                    else next((fclass for fclass, wd_types in geo_wd_mapping.items() if t['identifier'][3:] in wd_types), None)
-                    for t in feat.get('types', [])
-                ]
-                
-                newpl = Place(
-                    # strip uribase from @id
-                    src_id = feat['@id'] if uribase in ['', None] or not feat['@id'].startswith(uribase) else feat['@id'][len(uribase):],
-                    dataset=ds,
-                    title=title,
-                    fclasses=fclass_list,
-                    ccodes=ccodes,
-                    minmax=datesobj['minmax'],
-                    timespans=datesobj['intervals'],
-                    create_date=timezone.now()
-                )
-                newpl.save()
-                print('New place: ', newpl)
-                
-                objs = {}
-                objs.update({
-                    key: list(filter(None, [item for sublist in map(create_func, [feat]) for item in sublist]))
-                    for key, (_, feat_key, create_func) in data_mappings.items()
-                    if feat.get(feat_key)
-                })
-                        
-                for model, obj_list in [(model, objs[key]) for key, (model, _, _) in data_mappings.items() if objs.get(key)]:
-                    try:
-                        bulk_create_method = getattr(globals()[f'Place{model}'], 'objects').bulk_create
-                        bulk_create_method(obj_list)
-                    except IntegrityError as e:
-                        errors.append({"field": model, "error": str(e)})
-                        raise IntegrityError(f"IntegrityError in bulk create for {model}: {e}")
-                    except ValidationError as e:
-                        errors.append({"field": model, "error": str(e)})
-                        raise ValidationError(f"ValidationError in bulk create for {model}: {e}")
-                    except DataError as e:
-                        errors.append({"field": model, "error": str(e)})
-                        raise DataError(f"Bulk load for {model} failed on {newpl}: {e}")
-                    except Exception as e:
-                        errors.append({"field": model, "error": str(e)})
-                        raise Exception(f"Unexpected error in bulk create for {model}: {e}")
+            # PlaceType
+            relevant_columns = ['types', 'aat_types', 'fclasses']
 
-    except Exception as e:
-        print(f"Failed to insert data into dataset: {e}")
-        raise Exception(f"Failed to insert data into dataset: {e}, Errors: {errors}")
+            if any(col in df.columns for col in relevant_columns) and any(
+                    row.get(col, None) not in ['', None] for col in relevant_columns):
+                objlists['PlaceType'].extend(process_types(row, newpl))
 
-    print('new dataset:', ds.__dict__)
+            # PlaceWhen (always at least a start or attestation_year)
+            objlists['PlaceWhen'].extend(process_when(row, newpl))
 
-    return ({"numrows": len(jdata['features'])})
+            # PlaceGeom
+            if ('lat' in row and 'lon' in row and row['lat'] and row['lon']) or ('geowkt' in row and row['geowkt']):
+                objlists['PlaceGeom'].extend(process_geom(row, newpl))
+
+            # PlaceLink
+            if ('matches' in row and row['matches']):
+                objlists['PlaceLink'].extend(process_links(row, newpl))
+
+            # PlaceRelated
+            # TODO: does not handle parent_id
+            if ('parent_name' in row and row['parent_name']):
+                objlists['PlaceRelated'].extend(process_related(row, newpl))
+
+            # PlaceDescription
+            if ('description' in row and row['description']):
+                objlists['PlaceDescription'].extend(process_descriptions(row, newpl))
+
+    # print('PlaceWhen list', len(objlists['PlaceWhen']), objlists['PlaceWhen'][0].__dict__)
+    # bulk_create for each related model; NB no depictions in LP-Delim
+    PlaceName.objects.bulk_create(objlists['PlaceName'], batch_size=10000)
+    PlaceType.objects.bulk_create(objlists['PlaceType'], batch_size=10000)
+    PlaceGeom.objects.bulk_create(objlists['PlaceGeom'], batch_size=10000)
+    PlaceLink.objects.bulk_create(objlists['PlaceLink'], batch_size=10000)
+    PlaceRelated.objects.bulk_create(objlists['PlaceRelated'], batch_size=10000)
+    PlaceWhen.objects.bulk_create(objlists['PlaceWhen'], batch_size=10000)
+    PlaceDescription.objects.bulk_create(objlists['PlaceDescription'], batch_size=10000)
+
+
+# """
+#   ds_insert_json(data, pk)
+#   *** replaces ds_insert_lpf() ***
+#   insert LPF into database
+# """
+# def ds_insert_json_DEPRECATED(data, pk):
+#     ds = get_object_or_404(Dataset, id=pk)
+#     places_already_exist = Place.objects.filter(dataset=ds.label).exists()
+#     if places_already_exist:
+#         logger.error("Database already contains places for this dataset. Cannot add more.")
+#         raise Exception("Database already contains places for this dataset. Cannot add more.")
+#
+#     jdata = json.loads(data) if isinstance(data, str) else data
+#
+#     uribase = ds.uri_base
+#     # logger.debug(f"New dataset: {ds.label}, uri_base: {uribase}, data type: {type(jdata)}, feature count: {len(jdata['features'])}")
+#
+#     errors = []
+#     try:
+#         with transaction.atomic():
+#             logger.debug("transaction.atomic")
+#             data_mappings = {
+#                 'PlaceGeoms': ('Geom', 'geometry', lambda feat: [
+#                     PlaceGeom(place=newpl, src_id=newpl.src_id, jsonb=g, geom=GEOSGeometry(json.dumps(g)))
+#                     for g in feat['geometry']['geometries']] if feat['geometry']['type'] == 'GeometryCollection' else
+#                 [PlaceGeom(place=newpl, src_id=newpl.src_id, jsonb=feat['geometry'],
+#                            geom=GEOSGeometry(json.dumps(feat['geometry'])))]),
+#                 'PlaceWhens': ('When', 'when', lambda feat: [
+#                     PlaceWhen(place=newpl, src_id=newpl.src_id, jsonb=feat['when'], minmax=newpl.minmax)]),
+#                 'PlaceLinks': ('Link', 'links', lambda feat: [
+#                     PlaceLink(place=newpl, src_id=newpl.src_id,
+#                               jsonb={"type": l['type'], "identifier": aliasIt(l['identifier'].rstrip('/'))})
+#                     for l in feat['links']]),
+#                 'PlaceRelated': ('Related', 'relations', lambda feat: [
+#                     PlaceRelated(place=newpl, src_id=newpl.src_id, jsonb=r)
+#                     for r in feat['relations']]),
+#                 'PlaceDescriptions': ('Description', 'descriptions', lambda feat: [
+#                     PlaceDescription(place=newpl, src_id=newpl.src_id, jsonb=des)
+#                     for des in feat['descriptions']]),
+#                 'PlaceDepictions': ('Depiction', 'depictions', lambda feat: [
+#                     PlaceDepiction(place=newpl, src_id=newpl.src_id, jsonb=dep)
+#                     for dep in feat['depictions']]),
+#                 'PlaceNames': ('Name', 'names', lambda feat: [
+#                     PlaceName(place=newpl, src_id=newpl.src_id, toponym=n['toponym'].split(',')[0].strip(), jsonb=n)
+#                     for n in feat.get('names', []) if 'toponym' in n]),
+#                 'PlaceTypes': ('Type', 'types', lambda feat: [
+#                     PlaceType(place=newpl, src_id=newpl.src_id, jsonb=t, fclass=fc)
+#                     for t, fc in zip(feat.get('types', []), fclass_list)])
+#             }
+#             logger.debug(f"data_mappings: {data_mappings}")
+#
+#             for feat in jdata['features']:
+#                 logger.debug(f"feat: {feat}")
+#
+#                 title = re.sub(r'\(.*?\)', '', feat.get('properties').get('title', ''))
+#
+#                 geojson = feat.get('geometry')
+#                 ccodes = feat.get('properties').get('ccodes', [])
+#                 if ccodes is None and geojson:
+#                     ccodes = ccodesFromGeom(geojson)
+#                 logger.debug('ccodes: {ccodes}')
+#
+#                 # (minmax and intervals[])
+#                 datesobj = parsedates_lpf(feat)
+#                 logger.debug(f"datesobj: {datesobj}")
+#
+#                 fclass_list = get_fclass_list(feat)
+#                 logger.debug(f"fclass_list: {fclass_list}")
+#
+#                 newpl = Place(
+#                     # strip uribase from @id
+#                     src_id=feat.get('@id') if uribase in ['', None] or not feat.get('@id').startswith(
+#                         uribase) else feat.get('@id')[len(uribase):],
+#                     dataset=ds,
+#                     title=title,
+#                     fclasses=fclass_list,
+#                     ccodes=ccodes,
+#                     minmax=datesobj['minmax'],
+#                     timespans=datesobj['intervals'],
+#                     create_date=timezone.now()
+#                 )
+#                 newpl.save()
+#                 logger.debug(f'New place: {newpl}')
+#
+#                 objs = {}
+#                 objs.update({
+#                     key: list(filter(None, [item for sublist in map(create_func, [feat]) for item in sublist]))
+#                     for key, (_, feat_key, create_func) in data_mappings.items()
+#                     if feat.get(feat_key)
+#                 })
+#
+#                 for model, obj_list in [(model, objs[key]) for key, (model, _, _) in data_mappings.items() if
+#                                         objs.get(key)]:
+#                     try:
+#                         bulk_create_method = getattr(globals()[f'Place{model}'], 'objects').bulk_create
+#                         bulk_create_method(obj_list)
+#                     except IntegrityError as e:
+#                         errors.append({"field": model, "error": str(e)})
+#                         raise IntegrityError(f"IntegrityError in bulk create for {model}: {e}")
+#                     except ValidationError as e:
+#                         errors.append({"field": model, "error": str(e)})
+#                         raise ValidationError(f"ValidationError in bulk create for {model}: {e}")
+#                     except DataError as e:
+#                         errors.append({"field": model, "error": str(e)})
+#                         raise DataError(f"Bulk load for {model} failed on {newpl}: {e}")
+#                     except Exception as e:
+#                         errors.append({"field": model, "error": str(e)})
+#                         raise Exception(f"Unexpected error in bulk create for {model}: {e}")
+#
+#     except Exception as e:
+#         logger.debug(f"Failed to insert data into dataset: {e}")
+#         raise Exception(f"Failed to insert data into dataset: {e}, Errors: {errors}")
+#
+#     # print('new dataset:', ds.__dict__)
+#
+#     return  # ({"numrows": len(jdata['features'])})
+
 
 def failed_insert_notification(user, fn, ds=None):
     """Send email to user and Slack notification when insert fails"""
-              
+
     WHGmail(context={
         'template': 'failed_insert',
         'to_email': user.email,
@@ -675,6 +682,7 @@ def failed_insert_notification(user, fn, ds=None):
         'dataset_id': ds.id if ds else 'N/A',
         'slack_notify': True,
     })
+
 
 """ 
 	DEPRECATED 2023-08

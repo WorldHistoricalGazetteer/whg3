@@ -67,26 +67,41 @@ export default class SequenceArcs {
             });
 
 			for (let i = 0; i < sortedData.length - 1; i++) {
+
 				const startPoint = sortedData[i];
 				const endPoint = sortedData[i + 1];
 
-				const controlPoint = calculateControlPoint(
-					startPoint.geometry.coordinates,
-					endPoint.geometry.coordinates,
-					this.deflectionValue
-				);
+				const startPointCoordinates =
+					startPoint && startPoint.geometry
+					? (startPoint.geometry.coordinates || startPoint.geometry.geometries?.[0]?.coordinates)
+					: null;
 
-				const line = lineString([
-					startPoint.geometry.coordinates,
-					controlPoint,
-					endPoint.geometry.coordinates,
-				]);
+				const endPointCoordinates =
+					endPoint && endPoint.geometry
+					? (endPoint.geometry.coordinates || endPoint.geometry.geometries?.[0]?.coordinates)
+					: null;
 
-				const arc = bezierSpline(line, {
-					sharpness: 1
-				});
+				if (startPointCoordinates && endPointCoordinates) {
 
-				arcFeatures.push(arc);
+					const controlPoint = calculateControlPoint(
+						startPointCoordinates,
+						endPointCoordinates,
+						this.deflectionValue
+					);
+
+					const line = lineString([
+						startPointCoordinates,
+						controlPoint,
+						endPointCoordinates,
+					]);
+
+					const arc = bezierSpline(line, {
+						sharpness: 1
+					});
+
+					arcFeatures.push(arc);
+
+				}
 			}
 
 			this.arcFeatures = arcFeatures;
@@ -167,7 +182,13 @@ export default class SequenceArcs {
 	convertToRepresentativePoints(dataset) {
 		if (dataset && dataset.type === 'FeatureCollection') {
 			const convertedFeatures = dataset.features.map((feature) => {
-				const representative = representativePoint(feature.geometry);
+
+				if (feature.geometry.type === 'GeometryCollection') {
+					return feature;
+
+				}
+
+				const representative = representativePoint(feature.geometry.type === 'GeometryCollection' ? feature.geometry.geometries[0] : feature.geometry);
 				return {
 					type: 'Feature',
 					properties: feature.properties,

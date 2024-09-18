@@ -106,3 +106,15 @@ sudo systemctl reload nginx
 # Restart Nginx
 sudo systemctl start nginx
 ```
+
+## Update Local Test Data `base_data.sql.gz`
+
+- This will be necessary after any migrations. Be sure to change the container name if necessary.
+```bash
+docker exec -it postgres_local_staging bash -c "pg_dump -U postgres -d whgv3 | gzip > /app/data/base_data.sql.gz && ls -lAh /app/data"
+```
+- Alternatively, go to the postgres `Exec` tab within Docker Desktop.
+```bash
+pg_dump -U postgres -d whgv3 | gzip > /app/data/base_data.sql.gz && ls -lAh /app/data
+```
+

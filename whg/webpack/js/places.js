@@ -54,7 +54,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		$("#id_geojson").attr("placeholder", "generated from country codes")
 	
 		$(".a_more").click(function(e) {
-			clicked = $(this)
+			let clicked = $(this)
 			clicked.hide()
 			clicked.parent().find("#dots").hide()
 			clicked.next().removeClass('hidden')
@@ -79,7 +79,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		// don't try to make a histogram if no temporal data
 		if (pminmax.length > 0 && pts.length > 0) {
 			allts = JSON.parse(pts[0].text)['ts']
-			minmax = JSON.parse(pminmax[0].text)['mm']
+			let minmax = JSON.parse(pminmax[0].text)['mm']
 			console.log('allts', allts)
 			console.log('minmax', minmax)
 	
