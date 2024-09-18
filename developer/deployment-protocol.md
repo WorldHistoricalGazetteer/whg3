@@ -81,7 +81,7 @@ cd ~/sites/dev-whgazetteer-org
 docker exec -it web_whgazetteer-org_main bash -c "./manage.py showmigrations"
 ```
 ```bash
-docker exec -it web_whgazetteer-org_main bash -c "./manage.py ./manage.py migrate"
+docker exec -it web_whgazetteer-org_main bash -c "./manage.py migrate"
 ```
 
 #### Check Logs
