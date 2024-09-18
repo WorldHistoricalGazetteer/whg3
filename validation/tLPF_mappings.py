@@ -34,7 +34,7 @@ def variant_conversion(x):
 
             lang_data = {k: v for k, v in groups.items() if k != 'toponym' and v}
             if lang_data:
-                variant_entry['rfc5646'] = lang_data
+                variant_entry['bcp47'] = lang_data
 
             lang = lang_data.get('language', None)
             if lang:
