@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'collection.apps.CollectionConfig',  # "collections" (plural) is reserved in python
     'datasets.apps.DatasetsConfig',
     'elastic.apps.ElasticConfig',
+    'index.apps.IndexConfig',
     'main.apps.MainConfig',
     'persons.apps.PersonsConfig',
     'places.apps.PlacesConfig',

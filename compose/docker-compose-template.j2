@@ -24,6 +24,7 @@ services:
     env_file: {{ BASE_DIR }}/.env/.env
     environment:
       - DJANGO_SETTINGS_MODULE=whg.settings
+      - PYTHONPATH=/app/index/cli/bin:${PYTHONPATH}
     ports:
       - "{{ APP_PORT }}:{{ APP_PORT }}"
     user: "1000:1000"

@@ -1,4 +1,6 @@
 beautifulsoup4==4.11.2
+bs4==0.0.1
+celery==5.2.7
 chardet==3.0.4
 charset-normalizer==2.1.1
 deepdiff==6.2.1
@@ -20,6 +22,7 @@ drf-spectacular==0.24.1
 edtf==4.0.1
 elasticsearch8==8.9.0
 frictionless==3.31.0
+fsspec==2024.6.1
 geojson==2.5.0
 geopy==2.4.1
 goodtables==2.5.4
@@ -37,6 +40,7 @@ Pillow==10.4.0
 PyLD==2.0.4
 psycopg2-binary==2.9.5
 python-dateutil==2.8.2
+python-dotenv~=1.0.1
 pytz==2022.7
 pyvespa==0.49.0
 redis==4.5.2
