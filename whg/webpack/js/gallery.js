@@ -65,10 +65,9 @@ function buildGallery(datacollections) {
 	if (datacollections.length === 0) {
 		const noResultsMessage = $(`
             <h3>No matching ${datacollection} found</h3>
-            <p>${$('.nav-link.active').
-        find('input[type="checkbox"]:not(:checked)').length == 3 ?
-        'You have not selected any Collection classes.' :
-        'Try adjusting the filters.'}</p>
+            <p>${$('.nav-link.active').find('input[type="checkbox"]:not(:checked)').length === 3 ?
+            'You have not selected any Collection classes.' :
+            'Try adjusting the filters.'}</p>
         `);
 		dynamicGallery.append(noResultsMessage);
 		var layersToRemove = mappy.getStyle().layers.filter(layer => !!layer.source && layer.source == 'featured-data-source');

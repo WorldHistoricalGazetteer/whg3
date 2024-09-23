@@ -86,13 +86,30 @@ services:
       start_period: 60s
       timeout: 15s
 
+  vespa:
+    networks:
+      - {{ ENV_CONTEXT }}
+    platform: linux/amd64
+    image: vespaengine/vespa:latest
+    container_name: vespa_{{ ENV_CONTEXT }}_{{ BRANCH }}
+    ports:
+      - "${VESPA_QUERY_PORT}:8080"
+      - "${VESPA_ADMIN_PORT}:19071"
+    volumes:
+      - vespa_data:/opt/vespa/var  # Persist Vespa data
+    environment:
+      - VESPA_HOST=vespa_{{ ENV_CONTEXT }}_{{ BRANCH }}  # Set environment variables as needed
+    depends_on:
+      - {{ DB_HOST }}
+    restart: unless-stopped
+
   redis:
     networks:
       - {{ ENV_CONTEXT }}
     platform: linux/amd64
     image: redis:bullseye
     container_name: redis_{{ ENV_CONTEXT }}_{{ BRANCH }}
-    ports: 
+    ports:
       - "{{ REDIS_PORT }}:6379"
     {% if not ENV_CONTEXT == 'local' %}
     volumes:
@@ -181,6 +198,7 @@ services:
 
 volumes:
   shared-tmp:
+  vespa_data:
 {% if ENV_CONTEXT == 'local' %}
   app:
   dev-db-data:

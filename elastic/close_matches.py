@@ -1,7 +1,7 @@
 import csv
-import pandas as pd
-from elasticsearch8 import Elasticsearch, helpers
+
 from django.conf import settings
+from elasticsearch8 import helpers
 
 es = settings.ES_CONN
 index_name = settings.ES_WHG

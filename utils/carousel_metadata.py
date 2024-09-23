@@ -1,7 +1,7 @@
 # carousel_metadata.py
 
 from django.urls import reverse
-import traceback
+
 
 def carousel_metadata(caller):
     # traceback.print_stack()
