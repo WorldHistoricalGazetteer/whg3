@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.10.7-slim-bullseye
+FROM python:3.10.7-slim-bullseye
 
 LABEL maintainer="WHC @ Pitt"
 
@@ -37,7 +37,7 @@ RUN set -eux; \
 	groupadd -g 1000 "$USER_NAME" && \
 	useradd -rm -d "/home/$USER_NAME" -g "$USER_NAME" -s "/bin/bash" -G sudo -u 1000 "$USER_NAME" -p "$(openssl passwd -1 change_me)" && \
 	# Create a new sudoers file for the user
-	echo "$USER_NAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/"$USER_NAME" && \
+	echo "$USER_NAME ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/"$USER_NAME"
 
 WORKDIR /app
 

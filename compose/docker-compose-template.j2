@@ -174,28 +174,6 @@ services:
       - {{ DB_HOST }}
     restart: unless-stopped
 
-  flower:
-    networks:
-      - {{ ENV_CONTEXT }}
-    image: {{ DOCKER_IMAGE }}:{{ DOCKER_IMAGE_TAG }}
-    container_name: celery-flower_{{ ENV_CONTEXT }}_{{ BRANCH }}
-    ports:
-      - "{{ FLOWER_PORT }}:5555"
-    volumes:
-      - {{ BASE_DIR }}:/app
-      - {{ BASE_DIR }}/entrypoints/entrypoint-flower.sh:/entrypoint.sh
-    {% if not ENV_CONTEXT == 'local' %}
-      - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
-      - /home/whgadmin/sites/data_dumps:/app/data_dumps
-    {% endif %}
-    env_file: {{ BASE_DIR }}/.env/.env
-    environment:
-      - DJANGO_SETTINGS_MODULE=whg.settings
-    depends_on:
-      - redis
-      - {{ DB_HOST }}
-    restart: unless-stopped
-
 volumes:
   shared-tmp:
   vespa_data:

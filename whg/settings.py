@@ -41,19 +41,19 @@ INSTALLED_APPS = [
     # 3rd party
     'bootstrap_modal_forms',
     'captcha',
-    'celery_progress',
+    # 'celery_progress',
     # uncomment for debug toolbar
     # 'debug_toolbar',
     'django_celery_beat',
     'django_celery_results',
-    'django_extensions',
-    'django_filters',
+    # 'django_extensions',
+    # 'django_filters',
     'django_resized',
-    'django_tables2',
-    'django_user_agents',
-    'djgeojson',
+    # 'django_tables2',
+    # 'django_user_agents',
+    # 'djgeojson',
     'guardian',
-    'leaflet',
+    # 'leaflet',
     'mathfilters',
     'multiselectfield',
     'rest_framework',
@@ -93,7 +93,7 @@ MIDDLEWARE = [
   'django.middleware.csrf.CsrfViewMiddleware',
   'django.middleware.locale.LocaleMiddleware',
   'django.middleware.security.SecurityMiddleware',
-  'django_user_agents.middleware.UserAgentMiddleware',
+  # 'django_user_agents.middleware.UserAgentMiddleware',
 
 ]
 
