@@ -3,6 +3,7 @@ bs4==0.0.1
 celery==5.2.7
 chardet==3.0.4
 charset-normalizer==2.1.1
+datasets
 deepdiff==6.2.1
 Django==4.1.7
 django-bootstrap-modal-forms==1.4.1
@@ -44,7 +45,7 @@ python-dotenv~=1.0.1
 pytz==2022.7
 pyvespa==0.49.0
 redis==4.5.2
-Requests==2.31
+Requests>=2.31
 scikit-learn==1.5.2
 sendgrid==6.11.0
 Shapely==2.0.6

@@ -4,12 +4,26 @@ networks:
     ipam:
       config:
         - subnet: {{ SUBNET }}
+  {{ VESPA_NETWORK }}:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16
+
+volumes:
+  vespa_data:
+  shared-tmp:
+{% if ENV_CONTEXT == 'local' %}
+  app:
+  dev-db-data:
+{% endif %}
 
 services:
 
   web:
     networks:
       - {{ ENV_CONTEXT }}
+      - {{ VESPA_NETWORK }}
     platform: linux/amd64
     image: {{ DOCKER_IMAGE }}:{{ DOCKER_IMAGE_TAG }}
     container_name: web_{{ ENV_CONTEXT }}_{{ BRANCH }}
@@ -17,6 +31,8 @@ services:
       - {{ BASE_DIR }}:/app
       - {{ BASE_DIR }}/entrypoints/entrypoint-web.sh:/entrypoint.sh
       - shared-tmp:/var/tmp
+      - /run/docker.sock:/var/run/docker.sock  # Mount Docker socket
+      - ~/.docker:/root/.docker  # Mount Docker config for auth, etc.
     {% if not ENV_CONTEXT == 'local' %}
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
@@ -30,6 +46,8 @@ services:
     user: "1000:1000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+      - "{{ VESPA_CONFIG_HOSTNAME }}:{{ VESPA_CONFIG_IP }}"
+      - "{{ VESPA_SERVICE_HOSTNAME }}:{{ VESPA_SERVICE_IP }}"
     depends_on:
       - redis
       - {{ DB_HOST }}
@@ -86,23 +104,6 @@ services:
       retries: 5
       start_period: 60s
       timeout: 15s
-
-  vespa:
-    networks:
-      - {{ ENV_CONTEXT }}
-    platform: linux/amd64
-    image: vespaengine/vespa:latest
-    container_name: vespa_{{ ENV_CONTEXT }}_{{ BRANCH }}
-    ports:
-      - "${VESPA_QUERY_PORT}:8080"
-      - "${VESPA_ADMIN_PORT}:19071"
-    volumes:
-      - vespa_data:/opt/vespa/var  # Persist Vespa data
-    environment:
-      - VESPA_HOST=vespa_{{ ENV_CONTEXT }}_{{ BRANCH }}  # Set environment variables as needed
-    depends_on:
-      - {{ DB_HOST }}
-    restart: unless-stopped
 
   redis:
     networks:
@@ -175,11 +176,38 @@ services:
       - {{ DB_HOST }}
     restart: unless-stopped
 
-volumes:
-  shared-tmp:
-  vespa_data:
-{% if ENV_CONTEXT == 'local' %}
-  app:
-  dev-db-data:
-{% endif %}
+  {{ VESPA_CONFIG_HOSTNAME }}:
+    image: {{ VESPA_IMAGE }}
+    container_name: {{ VESPA_CONFIG_HOSTNAME }}
+    hostname: {{ VESPA_CONFIG_HOSTNAME }}
+    privileged: true
+    environment:
+      - VESPA_CONFIGSERVERS={{ VESPA_CONFIG_IP }}
+      - VESPA_HOSTNAME={{ VESPA_CONFIG_IP }}
+    ports:
+      - "{{ VESPA_CONFIG_PORT }}:19071"
+      - "{{ VESPA_CONFIG_SERVICE_PORT }}:8080"
+    networks:
+      {{ VESPA_NETWORK }}:
+        ipv4_address: {{ VESPA_CONFIG_IP }}
+    volumes:
+      - vespa_data:/opt/vespa/var
+    command: configserver
+
+  {{ VESPA_SERVICE_HOSTNAME }}:
+    image: {{ VESPA_IMAGE }}
+    container_name: {{ VESPA_SERVICE_HOSTNAME }}
+    hostname: {{ VESPA_SERVICE_HOSTNAME }}
+    privileged: true
+    environment:
+      - VESPA_CONFIGSERVERS={{ VESPA_CONFIG_IP }}
+      - VESPA_HOSTNAME={{ VESPA_SERVICE_IP }}
+    ports:
+      - "{{ VESPA_SERVICE_PORT }}:8080"
+    networks:
+      {{ VESPA_NETWORK }}:
+        ipv4_address: {{ VESPA_SERVICE_IP }}
+    volumes:
+      - vespa_data:/opt/vespa/var
+    command: services
     
