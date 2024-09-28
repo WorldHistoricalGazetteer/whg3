@@ -1,3 +1,19 @@
+## Update mapdata cache
+- For a single collection or dataset:
+```sh
+# EXAMPLE
+docker exec -it web_whgazetteer-org_main bash -c "./manage.py refresh_mapdata_cache collection 134"
+```
+- For all collections or datasets:
+```sh
+# EXAMPLE
+docker exec -it web_whgazetteer-org_main bash -c "./manage.py refresh_mapdata_cache dataset"
+```
+- For all collections and datasets:
+```sh
+docker exec -it web_whgazetteer-org_main bash -c "./manage.py refresh_mapdata_cache"
+```
+
 ## Find all files containing given text
 
 ### Case-sensitive
