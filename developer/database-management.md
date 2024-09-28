@@ -6,6 +6,12 @@
 bash ~/sites/dev-whgazetteer-org/server-admin/replicate_live_db.sh
 ```
 
+- The entire remote dev database can be copied to a local machine (depends on installation of correct keys):
+```sh
+# EXAMPLE
+sudo -E rsync -avz -e "ssh -i /home/stephen/.ssh/id_rsa_whg" whgadmin@144.126.204.70:/home/whgadmin/databases/dev-whgazetteer-org/ /var/lib/docker/volumes/whg3_dev-db-data/_data/
+```
+
 ## Restore Database from Backup
 
 Due to the size of the backup files, restoration has to be multi-threaded and with the psql interface inside Docker container.
