@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.sites',
+    'django.contrib.sitemaps',
     'django.contrib.staticfiles',
 
     # 3rd party
@@ -70,6 +71,7 @@ INSTALLED_APPS = [
     'collection.apps.CollectionConfig',  # "collections" (plural) is reserved in python
     'datasets.apps.DatasetsConfig',
     'elastic.apps.ElasticConfig',
+    'find.apps.FindConfig',
     'main.apps.MainConfig',
     'persons.apps.PersonsConfig',
     'places.apps.PlacesConfig',

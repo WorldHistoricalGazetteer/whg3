@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="Aggregation page for the place name '{{ name }}'.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aggregation: {{ name }} - World Historical Gazetteer</title>
+
+    <link rel="shortcut icon" type="image/png" href="/static/images/favicon.ico"/>
+    <link href="/static/webpack/base.bundle.css" rel="stylesheet"/>
+
+    <style>
+        body {
+            text-align: left;
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif; /* Use your site's font */
+        }
+
+        .logo {
+            max-width: 6rem;
+            height: auto;
+            vertical-align: middle; /* Aligns the logo with the text */
+        }
+
+        .header {
+            display: flex;
+            align-items: center; /* Align logo and text */
+            margin-bottom: 20px; /* Space below header */
+        }
+
+        .header h1 {
+            margin-left: 10px; /* Space between logo and title */
+            font-size: 2rem; /* Adjust as needed for prominence */
+        }
+
+        .data-section {
+            margin: 10px 0; /* Reduced gap between sections */
+        }
+
+        .prominent {
+            font-size: 1.2rem; /* Increased font size for visibility */
+            margin: 20px 0; /* Space around the prominent text */
+            font-weight: bold; /* Make the text bold */
+        }
+
+        a {
+            color: blue; /* Change link color as needed */
+            text-decoration: underline; /* Underline links for clarity */
+        }
+    </style>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context":"https://schema.org/",
+      "@type":"Dataset",
+      "name":"WHG Data for toponym: '{{ name }}'",
+      "description":"Aggregation of name variants, countries, and historical periods for the toponym '{{ name }}'.",
+      "url":"https://whgazetteer.org/find/{{ name }}",
+      "license" : "https://creativecommons.org/licenses/by/4.0/",
+      "isAccessibleForFree" : true,
+      "creator":{
+         "@type":"Organization",
+         "url": "https://whgazetteer.org/",
+         "name":"World Historical Gazetteer"
+      },
+      "temporalCoverage": "{{ earliest_date }}/{{ latest_date }}",
+      "spatialCoverage": [
+        {% for country in unique_countries %}
+        {
+          "@type": "Place",
+          "address": {
+            "@type": "PostalAddress",
+            "addressCountry": "{{ country }}"
+          }
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ]
+    }
+    </script>
+</head>
+<body>
+
+    <div class="header">
+        <img src="/static/images/whg_logo.svg" alt="WHG Logo" class="logo"/>
+        <h1>World Historical Gazetteer</h1>
+    </div>
+
+    <h2>Aggregation: {{ name }}</h2>
+    <p>This page aggregates all known variants, countries, and historical periods for the place name "{{ name }}".</p>
+
+    <p class="prominent">For more details and maps, <a href="/search?q={{ name }}">search WHG for '{{ name }}'</a></p>
+
+    <div class="data-section">
+        <h2>Toponym Variants</h2>
+        <p>
+            {% for variant in unique_variants %}
+                {{ variant }}{% if not forloop.last %} | {% endif %}
+            {% endfor %}
+        </p>
+    </div>
+
+    <div class="data-section">
+        <h2>Countries</h2>
+        <p>
+            {% for country in unique_countries %}
+                {{ country }}{% if not forloop.last %} | {% endif %}
+            {% endfor %}
+        </p>
+    </div>
+
+    <div class="data-section">
+        <h2>Historical Periods</h2>
+        <p>
+            {% for timespan in unique_time_periods %}
+                {{ timespan.gte }} to {{ timespan.lte }}{% if not forloop.last %} | {% endif %}
+            {% endfor %}
+        </p>
+    </div>
+</body>
+</html>
