@@ -6,9 +6,38 @@
 <html lang="en">
 <head> {% block title %} <title>WHG</title>{% endblock %}
   <meta charset="utf-8">
+  <meta name="description" content="Explore the World Historical Gazetteer, a platform that links historical records about places, enabling spatial connections across time and language.">
+  <meta property="og:title" content="World Historical Gazetteer">
+  <meta property="og:description" content="Linking historical places across time and language.">
+  <meta property="og:url" content="https://whgazetteer.org/">
+  <meta property="og:image" content="{% static 'images/whg_logo.svg' %}">
+  <meta property="og:type" content="website">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="csrf-token" content="{{ csrf_token }}">
   <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.ico' %}"/>
+  {% block schema_org %}
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "World Historical Gazetteer",
+      "url": "https://whgazetteer.org",
+      "logo": "https://whgazetteer.org/static/images/whg_logo.svg",
+      "description": "The World Historical Gazetteer links historical records about places, enabling spatial connections across time and language.",
+      "image": "https://whgazetteer.org/static/images/whg_logo.svg",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "University of Pittsburgh World History Center, 3900 Wesley W. Posvar Hall",
+        "addressLocality": "Pittsburgh",
+        "addressRegion": "PA",
+        "postalCode": "15260",
+        "addressCountry": "US"
+      },
+      "mainEntityOfPage": "https://whgazetteer.org/"
+    }
+  </script>
+  {% endblock %}
+
   <script defer src="{% static 'webpack/base.bundle.js' %}"></script>
   <link href="{% static 'webpack/base.bundle.css' %}" rel="stylesheet"/>
   <style>
