@@ -67,20 +67,25 @@ class SearchPageView(TemplateView):
     context['toponym'] = kwargs.get('toponym', None)
 
     if context['toponym']:
-        toponym = get_object_or_404(Toponym, name=context['toponym'])
+        toponym_qs = Toponym.objects.filter(name=context['toponym'])
 
-        yearspans = toponym.yearspans
-        if yearspans:
-            earliest_date = min(span[0] for span in yearspans)
-            latest_date = max(span[1] for span in yearspans)
+        if toponym_qs.exists():
+            toponym = toponym_qs.first()
+
+            yearspans = toponym.yearspans
+            if yearspans:
+                earliest_date = min(span[0] for span in yearspans)
+                latest_date = max(span[1] for span in yearspans)
+            else:
+                earliest_date, latest_date = None, None  # Handle case with no dates
+
+            context['unique_countries'] = toponym.ccodes
+            context['yearspans'] = yearspans
+            context['earliest_date'] = earliest_date
+            context['latest_date'] = latest_date
         else:
-            earliest_date, latest_date = None, None  # Handle case with no dates
-
-        context['unique_countries'] = toponym.ccodes
-        context['yearspans'] = yearspans
-        context['earliest_date'] = earliest_date
-        context['latest_date'] = latest_date
-
+            # Handle the case where the toponym does not exist in the database table
+            context['toponym'] = None
 
     context['media_url'] = settings.MEDIA_URL
     context['dslist'] = dslist
