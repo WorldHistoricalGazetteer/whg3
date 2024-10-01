@@ -43,9 +43,9 @@ class ToponymSitemap(Sitemap):
     lastmod = None
 
     def items(self):
-        # return Toponym.objects.filter(instance_count__gt=1).exclude(ccodes=[]).exclude(yearspans=[]).order_by(
-        #     '-instance_count')
-        return Toponym.objects.order_by('-instance_count')
+        return Toponym.objects.filter(instance_count__gt=1).exclude(ccodes=[]).exclude(yearspans=[]).order_by(
+            '-instance_count')
+        # return Toponym.objects.order_by('-instance_count')
 
     def location(self, obj):
         return f'https://whgazetteer.org/search/{quote(obj.name)}'
