@@ -21,7 +21,7 @@ urlpatterns = [
   path('<int:id>/delete', views.DatasetDeleteView.as_view(), name='dataset-delete'),
 
   # public datasets & collections
-  path('gallery', views.DatasetGalleryView.as_view(), name='dataset-gallery'),
+  path('gallery/', views.DatasetGalleryView.as_view(), name='dataset-gallery'),
   path('gallery/<str:gallery_type>/', views.DatasetGalleryView.as_view(), name='dataset-gallery-type'),
 
   # insert validated delimited file data to db (csv, tsv, spreadsheet)

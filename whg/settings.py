@@ -71,13 +71,13 @@ INSTALLED_APPS = [
     'collection.apps.CollectionConfig',  # "collections" (plural) is reserved in python
     'datasets.apps.DatasetsConfig',
     'elastic.apps.ElasticConfig',
-    'find.apps.FindConfig',
     'main.apps.MainConfig',
     'persons.apps.PersonsConfig',
     'places.apps.PlacesConfig',
     'remote.apps.RemoteConfig',
     'resources.apps.ResourcesConfig', # for teaching
     'search.apps.SearchConfig',
+    'sitemap.apps.SitemapConfig',
     'traces.apps.TracesConfig',
     'users.apps.UsersConfig',
 ]
@@ -320,9 +320,18 @@ CACHES = {
         'LOCATION': os.path.join(BASE_DIR, 'cache'),
         'TIMEOUT': None,  # Cache data indefinitely until manually updated
         "OPTIONS": {"MAX_ENTRIES": 10000}, # Increase from default of 300
-        'LOCATION': os.path.join(BASE_DIR, 'cache'),
+    },
+    'sitemap_cache': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.path.join(BASE_DIR, 'sitemap_cache'),
+        'TIMEOUT': 3600,  # Cache sitemap for 1 hour (3600 seconds)
+        'OPTIONS': {
+            'MAX_ENTRIES': 5000  # Configure based on expected sitemap entries
+        },
     }
 }
+
+SITEMAP_CACHE = 'sitemap_cache'
 
 ## GIS Libraries
 GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'

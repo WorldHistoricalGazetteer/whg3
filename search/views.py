@@ -1,4 +1,6 @@
 # various search.views
+from pydoc import locate
+
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q, Count
@@ -13,6 +15,7 @@ from collection.models import Collection
 from datasets.models import Dataset, Hit
 from datasets.tasks import normalize, get_bounds_filter
 from places.models import Place, PlaceGeom
+from sitemap.models import Toponym
 from utils.regions_countries import get_regions_countries
 from datetime import datetime
 
@@ -61,6 +64,25 @@ class SearchPageView(TemplateView):
     dslist = Dataset.objects.filter(public=True)
 
     context = super(SearchPageView, self).get_context_data(*args, **kwargs)
+
+    context['toponym'] = kwargs.get('toponym', None)
+
+    if context['toponym']:
+        toponym = get_object_or_404(Toponym, name=context['toponym'])
+
+        yearspans = toponym.yearspans
+        if yearspans:
+            earliest_date = min(span[0] for span in yearspans)
+            latest_date = max(span[1] for span in yearspans)
+        else:
+            earliest_date, latest_date = None, None  # Handle case with no dates
+
+        context['unique_countries'] = toponym.ccodes
+        context['yearspans'] = yearspans
+        context['earliest_date'] = earliest_date
+        context['latest_date'] = latest_date
+
+
     context['media_url'] = settings.MEDIA_URL
     context['dslist'] = dslist
     context['search_params'] = self.request.session.get('search_params')
