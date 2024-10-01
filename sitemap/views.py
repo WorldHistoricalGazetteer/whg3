@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class StaticViewSitemap(Sitemap):
+    protocol = 'https'
     priority = 0.9
     changefreq = 'monthly'
     alternates = []
@@ -35,6 +36,7 @@ class StaticViewSitemap(Sitemap):
 
 
 class ToponymSitemap(Sitemap):
+    protocol = 'https'
     priority = 0.6
     changefreq = 'monthly'
     alternates = []
