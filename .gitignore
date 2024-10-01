@@ -3,6 +3,7 @@ _local/
 
 node_modules/
 cache/
+sitemap_cache/
 
 CDNfallbacks/
 
