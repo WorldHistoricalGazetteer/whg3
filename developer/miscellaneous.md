@@ -14,6 +14,15 @@ docker exec -it web_whgazetteer-org_main bash -c "./manage.py refresh_mapdata_ca
 docker exec -it web_whgazetteer-org_main bash -c "./manage.py refresh_mapdata_cache"
 ```
 
+## Update `toponyms` (table of unique place names)
+- This database table is used to create sitemap.xml and the schema.org metadata in related search landing pages (e.g. https://whgazetteer.org/search/San%20Jos%C3%A9)
+- A search landing page is created for every place name which has more than one attestation AND at least one country code AND at least one timespan.
+- It uses the database as its source, because `timespans` have not been rigorously aggregated into the Elasticsearch index.
+- It takes a couple of hours to complete so should not be triggered unless an update is considered essential.
+```sh
+docker exec -it web_whgazetteer-org_main bash -c "./manage.py populate_toponyms"
+```
+
 ## Find all files containing given text
 
 ### Case-sensitive

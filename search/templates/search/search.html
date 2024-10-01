@@ -9,39 +9,56 @@
 <link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet"/>
 {% endblock %}
 
+{% if toponym %}
+    {% block schema_org %}
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type":"Dataset",
+        "name":"WHG Data for toponym: '{{ toponym }}'",
+        "description":"Attestations of name variants, countries, and historical periods for the toponym '{{ toponym }}'.",
+        "url":"https://whgazetteer.org/search/{{ toponym }}",
+        "license" : "https://creativecommons.org/licenses/by/4.0/",
+        "isAccessibleForFree" : true,
+        "creator":{
+          "@type": "Organization",
+          "name": "World Historical Gazetteer",
+          "url": "https://whgazetteer.org",
+          "logo": "https://whgazetteer.org/static/images/whg_logo.svg",
+          "description": "The World Historical Gazetteer links historical records about places, enabling spatial connections across time and language.",
+          "image": "https://whgazetteer.org/static/images/whg_logo.svg",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "University of Pittsburgh World History Center, 3900 Wesley W. Posvar Hall",
+            "addressLocality": "Pittsburgh",
+            "addressRegion": "PA",
+            "postalCode": "15260",
+            "addressCountry": "US"
+          }
+        }
+        {% if earliest_date %},
+        "temporalCoverage": "{{ earliest_date }}/{{ latest_date }}"
+        {% endif %}
+        {% if unique_countries %},
+        "spatialCoverage": [
+          {% for country in unique_countries %}
+          {
+            "@type": "Place",
+            "address": {
+              "@type": "PostalAddress",
+              "addressCountry": "{{ country }}"
+            }
+          }{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        ]
+        {% endif %}
+      }
+    </script>
+    {% endblock %}
+{% endif %}
+
 {% block extra_head %}
 <link href="{% static 'webpack/search.bundle.css' %}" rel="stylesheet"/>
-{% if toponym %}
-<!-- Structured Data -->
-<script type="application/ld+json">
-{
-  "@context":"https://schema.org/",
-  "@type":"Dataset",
-  "name":"WHG Data for toponym: '{{ toponym }}'",
-  "description":"Attestations of name variants, countries, and historical periods for the toponym '{{ toponym }}'.",
-  "url":"https://whgazetteer.org/search/{{ toponym }}",
-  "license" : "https://creativecommons.org/licenses/by/4.0/",
-  "isAccessibleForFree" : true,
-  "creator":{
-     "@type":"Organization",
-     "url": "https://whgazetteer.org/",
-     "name":"World Historical Gazetteer"
-  },{% if earliest_date %}
-  "temporalCoverage": "{{ earliest_date }}/{{ latest_date }}",{% endif %}{% if unique_countries %}
-  "spatialCoverage": [
-    {% for country in unique_countries %}
-    {
-      "@type": "Place",
-      "address": {
-        "@type": "PostalAddress",
-        "addressCountry": "{{ country }}"
-      }
-    }{% if not forloop.last %},{% endif %}
-    {% endfor %}
-  ]{% endif %}
-}
-</script>
-{% endif %}
 {% endblock %}
 
 {% block header %}
