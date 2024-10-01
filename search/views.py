@@ -1,5 +1,4 @@
 # various search.views
-from pydoc import locate
 
 from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
