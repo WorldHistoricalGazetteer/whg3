@@ -41,14 +41,17 @@ class ToponymSitemap(Sitemap):
     lastmod = None
 
     def items(self):
-        return Toponym.objects.filter(instance_count__gt=1).exclude(ccodes=[]).exclude(yearspans=[]).order_by(
-            '-instance_count')
+        # return Toponym.objects.filter(instance_count__gt=1).exclude(ccodes=[]).exclude(yearspans=[]).order_by(
+        #     '-instance_count')
+        return Toponym.objects.order_by('-instance_count')
 
     def location(self, obj):
         return f'https://whgazetteer.org/search/{quote(obj.name)}'
 
     def get_urls(self, page=1, site=None, protocol=None):
         items = self.items()
+
+        logger.debug(f"ToponymSitemap.get_urls() items count: {len(items)}")
 
         urls = []
         for item in items:
