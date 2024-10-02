@@ -419,16 +419,31 @@ class SpatialAPIView(generics.ListAPIView):
                 msg = "nearby query (lon, lat): " + str(pnt.coords) + ' w/' + str(dist) + 'km buffer'
                 print(msg)
         elif qtype == 'bbox':
+            # http://localhost:8001/api/spatial/?type=bbox&sw=-124.409591,32.534156&ne=-114.131211,42.009518&pagesize=10
             if not all(v for v in [sw, ne]):
                 raise BadRequestException("A 'bbox' spatial query requires both 'sw' and 'ne' parameters.")
-            else:
+            try:
                 qs = Place.objects.filter(dataset__public=True, geoms__jsonb__type='Point')
-                bb = [float(sw.split(',')[0]), float(sw.split(',')[1]), float(ne.split(',')[0]),
-                      float(ne.split(',')[1])]
+
+                # Split and convert the southwest and northeast coordinates into floats
+                sw_lon, sw_lat = map(float, sw.split(','))
+                ne_lon, ne_lat = map(float, ne.split(','))
+
+                # Ensure coordinates are within valid longitude/latitude bounds
+                if not (-180 <= sw_lon <= 180) or not (-90 <= sw_lat <= 90):
+                    raise ValueError("Southwest coordinates out of bounds.")
+                if not (-180 <= ne_lon <= 180) or not (-90 <= ne_lat <= 90):
+                    raise ValueError("Northeast coordinates out of bounds.")
+
+                bb = [sw_lon, sw_lat, ne_lon, ne_lat]
+
                 bbox = Polygon.from_bbox(bb)  # [xmin, ymin, xmax, ymax]
                 placeids = PlaceGeom.objects.filter(geom__within=bbox).values_list('place_id')
                 msg = "bbox query (sw, ne): " + str(bbox)
                 print(msg)
+
+            except ValueError as ve:
+                raise BadRequestException(f"Invalid 'sw' or 'ne' coordinates: {ve}")
 
         qs = qs.filter(id__in=placeids)
         # filter on params
