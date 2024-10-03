@@ -8,14 +8,23 @@ import re
 def valid_dates(value):
     # Regular expression to match dates in formats: YYYY, YYYY-MM, YYYY-MM-DD
     # Allows years up to 6 digits, optional negative sign for BCE years
+
+    # Allow blank entry (no validation required)
+    if value == "":
+        return
+
+    # Disallow "-0"
+    if value == "-0":
+        raise ValidationError('Invalid date: "-0" is not allowed.')
+
     if not re.match(r'^-?\d{1,6}(-\d{2})?(-\d{2})?$', value):
         raise ValidationError(
             f'Enter a valid date in one of the formats: YYYY, YYYY-MM, YYYY-MM-DD, with optional negative year ({value} is invalid).'
         )
 
 class TraceAnnotationModelForm(forms.ModelForm):
-	start = forms.CharField(validators=[valid_dates], widget=forms.TextInput(attrs={'size': 11, 'placeholder': 'yyyy-mm-dd'}))
-	end = forms.CharField(validators=[valid_dates], widget=forms.TextInput(attrs={'size': 11, 'placeholder': 'yyyy-mm-dd'}))
+	start = forms.CharField(validators=[valid_dates], required=False, widget=forms.TextInput(attrs={'size': 11, 'placeholder': 'yyyy-mm-dd'}))
+	end = forms.CharField(validators=[valid_dates], required=False, widget=forms.TextInput(attrs={'size': 11, 'placeholder': 'yyyy-mm-dd'}))
 	
 	class Meta:
 		model = TraceAnnotation
