@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.sites',
+    'django.contrib.sitemaps',
     'django.contrib.staticfiles',
 
     # 3rd party
@@ -76,6 +77,7 @@ INSTALLED_APPS = [
     'remote.apps.RemoteConfig',
     'resources.apps.ResourcesConfig', # for teaching
     'search.apps.SearchConfig',
+    'sitemap.apps.SitemapConfig',
     'traces.apps.TracesConfig',
     'users.apps.UsersConfig',
 ]
@@ -312,15 +314,24 @@ STATICFILES_DIRS = [
   # webpack.config now writes directly to static root /webpack
 ]
 
-# Use a file-based cache backend.
 CACHES = {
     'default': {
         'BACKEND': 'utils.mapdata.MapdataFileBasedCache',
         'LOCATION': os.path.join(BASE_DIR, 'cache'),
         'TIMEOUT': None,  # Cache data indefinitely until manually updated
-        "OPTIONS": {"MAX_ENTRIES": 1000}, # Increase from default of 300
+        "OPTIONS": {"MAX_ENTRIES": 10000}, # Increase from default of 300
+    },
+    'sitemap_cache': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.path.join(BASE_DIR, 'sitemap_cache'),
+        'TIMEOUT': 3600,  # Cache sitemap for 1 hour (3600 seconds)
+        'OPTIONS': {
+            'MAX_ENTRIES': 5000  # Configure based on expected sitemap entries
+        },
     }
 }
+
+SITEMAP_CACHE = 'sitemap_cache'
 
 ## GIS Libraries
 GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
@@ -340,7 +351,21 @@ SPECTACULAR_SETTINGS = {
 # Dataset Validation
 LPF_SCHEMA_PATH = os.path.join(BASE_DIR, 'validation/static/lpf_v2.0.jsonld')
 LPF_CONTEXT_PATH = os.path.join(BASE_DIR, 'validation/static/lpo_v2.0.jsonld')
-VALIDATION_TEST_SAMPLE = os.path.join(BASE_DIR, 'datasets/static/files/lugares_20.jsonld')
+VALIDATION_ALLOWED_EXTENSIONS = ['.csv', '.tsv', '.xlsx', '.ods', '.jsonld', '.geojson', '.json']
+VALIDATION_ALLOWED_ENCODINGS = ['ascii', 'us-ascii', 'utf-8']
+VALIDATION_SUPPORTED_TYPES = [
+    'application/json',
+    'text/plain',
+    'text/csv',
+    'text/tab-separated-values',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.oasis.opendocument.spreadsheet'
+]
+VALIDATION_CHUNK_ROWS = 500
 VALIDATION_BATCH_MEMORY_LIMIT = 1 * 1024 * 1024  # 1 MB
-VALIDATION_MAXFIXATTEMPTS = 100 # Maximum number of errors to try to fix on each feature
-VALIDATION_MAX_ERRORS = 100 # Stop validation of dataset if this number of errors is reached (checked only on completion of each batch, so may exceed this number)
+VALIDATION_MAXFIXATTEMPTS = 50 # Maximum number of errors to try to fix on each feature
+VALIDATION_MAX_ERRORS = 100 # Stop validation of dataset if this number of unfixed errors is reached (checked only on completion of each batch, so may exceed this number)
+VALIDATION_TIMEOUT = 3600 # seconds, after which tasks are revoked and records are removed from redis
+VALIDATION_TEST_DELAY = 0 # seconds to pause after each JSON schema validation attempt
+VALIDATION_INTEGRITY_RETRIES = 7

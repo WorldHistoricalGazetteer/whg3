@@ -1,71 +1,249 @@
 # datasets.views
-# NB!!! some imports greyed out but ARE USED!
+import ast
+import chardet
+import charset_normalizer as cn
+import codecs
+import json
+import logging
+import math
+import mimetypes
+import numpy as np
+import os
+import re
+import shutil
+import sys
+import tempfile
+from copy import deepcopy
+from pathlib import Path
+from shutil import copyfile
+
+from celery import current_app as celapp
+from deepdiff import DeepDiff as diff
+from shapely import wkt
+
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import get_user_model
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib.gis.geos import GEOSGeometry
 from django.core.mail import send_mail
 from django.core.paginator import Paginator
+from django.core.serializers import serialize
 from django.db import transaction
-from django.db.models import Q, F
+from django.db.models import Q, F, CharField, JSONField
+from django.db.models.functions import Cast
 from django.db.utils import DataError
 from django.forms import modelformset_factory
-from django.http import HttpResponseServerError, HttpResponseRedirect, JsonResponse, HttpResponse
+from django.http import (
+    HttpResponse, 
+    HttpResponseRedirect, 
+    HttpResponseServerError, 
+    JsonResponse
+)
 from django.shortcuts import redirect, get_object_or_404, render
 from django.test import Client
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
+from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from django.views.generic import (CreateView, ListView, UpdateView, DeleteView, DetailView)
+from django.views.generic import (
+    CreateView, 
+    ListView, 
+    UpdateView, 
+    DeleteView, 
+    DetailView
+)
 from django_celery_results.models import TaskResult
-from django.core.serializers import serialize
-
-from django.db.models.functions import Cast
-from django.db.models import CharField, JSONField
-
-# external
-from celery import current_app as celapp
-from copy import deepcopy
-import charset_normalizer as cn
-import ast, chardet, shutil, tempfile  # , codecs, math, mimetypes, os, re, sys
-from deepdiff import DeepDiff as diff
-from elastic.es_utils import makeDoc, removePlacesFromIndex, replaceInIndex, removeDatasetFromIndex
-import numpy as np
-
-from pathlib import Path
-from shapely import wkt
-from shutil import copyfile
 
 from areas.models import Area, Country
 from collection.models import Collection, CollectionGroup
+from elastic.es_utils import (
+    makeDoc, 
+    removePlacesFromIndex, 
+    replaceInIndex, 
+    removeDatasetFromIndex
+)
 from main.choices import AUTHORITY_BASEURI
 from main.models import Log, Comment
 from places.models import *
 from utils.regions_countries import get_regions_countries
-#from utils.mapdata import mapdata_task ## Results in circular import error
+from validation.views import validate_file
+from validation.tasks import get_task_status
 
-from .exceptions import LPFValidationError, DelimValidationError, \
-  DelimInsertError, DataAlreadyProcessedError
-from .forms import (HitModelForm, DatasetDetailModelForm,
-                    DatasetUploadForm,  # DatasetCreateModelForm,
-                    DatasetCreateEmptyModelForm)
-from .insert import (ds_insert_json, ds_insert_delim, failed_insert_notification)
-from .validation import validate_delim, validate_lpf
-
+from .exceptions import (
+    LPFValidationError, 
+    DelimValidationError, 
+    DelimInsertError, 
+    DataAlreadyProcessedError
+)
+from .forms import (
+    HitModelForm, 
+    DatasetDetailModelForm,
+    DatasetUploadForm,
+    DatasetCreateEmptyModelForm
+)
+from .insert import (
+    ds_insert_delim, 
+    failed_insert_notification
+)
 from .models import Dataset, Hit, DatasetFile
 from .static.hashes import mimetypes_plus as mthash_plus
 from .static.hashes.parents import ccodes as cchash
-
-# NB 'align_*' task names ARE in use; they are generated dynamically
 from .tasks import align_wdlocal, align_idx, maxID
 from .utils import *
 
 es = settings.ES_CONN
 User = get_user_model()
 
+class DatasetValidate(CreateView):
+    
+    logger = logging.getLogger('validation')
+    
+    login_url = '/accounts/login/'
+    redirect_field_name = 'redirect_to'
+    template_name = 'datasets/dataset_validate.html'
+    form_class = DatasetUploadForm
+
+    def get(self, request, *args, **kwargs):
+        response = super().get(request, *args, **kwargs)
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['task_id'] = ''
+        return context
+
+    def form_invalid(self, form):
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def form_valid(self, form):
+        uploaded_file = None
+        uploaded_filepath = None
+        try:
+            user = self.request.user
+            
+            uploaded_file = form.cleaned_data.get('file')
+            if uploaded_file is None:
+                return self.handle_invalid_form(form, "No file uploaded.")
+            
+            uploaded_filepath = self.save_file_temporarily(uploaded_file)
+            self.logger.debug(f'File saved to `{uploaded_filepath}`')
+
+            validation_response = validate_file(self.request, {
+                'title': form.cleaned_data.get('title'),
+                'label': form.cleaned_data.get('label') or self.generate_unique_label(uploaded_file),
+                'description': form.cleaned_data.get('description'),
+                'creator': form.cleaned_data.get('creator'),
+                'source': form.cleaned_data.get('source'),
+                'contributors': form.cleaned_data.get('contributors'),
+                'uri_base': form.cleaned_data.get('uri_base') or 'https://whgazetteer.org/api/db/?id=',
+                'webpage': form.cleaned_data.get('webpage'),
+                'pdf': form.cleaned_data.get('pdf'),
+                'owner_id': user.id,
+                'username': user.username,
+                'uploaded_filepath': uploaded_filepath,
+                'uploaded_filename': uploaded_file.name
+            })
+
+            if not validation_response:
+                self.cleanup_uploaded_file(uploaded_filepath)
+                return self.handle_invalid_form(form, "No response from validation service.")
+            
+            if isinstance(validation_response, JsonResponse):
+                response_data = validation_response.content.decode('utf-8')
+                response_data = json.loads(response_data)
+                status = response_data.get("status")
+    
+                if status == "in_progress":
+                    task_id = response_data.get("task_id")
+                    context = self.get_context_data(form=form)
+                    context['task_id'] = task_id
+                    return self.render_to_response(context)
+    
+                elif status == "failed":
+                    message = response_data.get("message", "Unknown error")
+                    messages.error(self.request, f"Validation failed: {message}")
+                    return self.form_invalid(form)
+    
+                else:
+                    messages.error(self.request, "Unknown validation status received.")
+                    self.cleanup_uploaded_file(uploaded_filepath)
+                    return self.form_invalid(form)
+
+        except Exception as e:
+            self.logger.error(f"Error during file validation: {str(e)}", exc_info=True)
+            self.cleanup_uploaded_file(uploaded_filepath)
+            return self.handle_invalid_form(form, f"Sorry, there was an error while processing the uploaded file: {str(e)}")
+
+        # finally:
+            # return redirect('some_success_url') # <<< Dataset browse
+
+    def handle_invalid_form(self, form, message):
+        messages.error(self.request, message)
+        return self.form_invalid(form)
+
+    def save_file_temporarily(self, uploaded_file):
+        original_file_name = uploaded_file.name
+        _, file_extension = os.path.splitext(original_file_name)
+        
+        # Create a temporary file with the same extension
+        with tempfile.NamedTemporaryFile(suffix=file_extension, delete=False) as temp_file:
+            # Deletion is managed by validation.tasks.clean_tmp_files, triggered by beat_schedule in celery.py
+            temp_file_path = temp_file.name
+            try:
+                # If the file is stored on disk (TemporaryUploadedFile)
+                if hasattr(uploaded_file, 'temporary_file_path'):
+                    shutil.copy(uploaded_file.temporary_file_path(), temp_file_path)
+                else:
+                    # If the file is in memory (InMemoryUploadedFile)
+                    for chunk in uploaded_file.chunks():
+                        temp_file.write(chunk)
+            except Exception as e:
+                # Ensure file is removed in case of error
+                self.cleanup_uploaded_file(temp_file_path)
+                raise e
+            
+        return temp_file_path
+
+    def cleanup_uploaded_file(self, uploaded_filepath):
+        if uploaded_filepath is not None and os.path.exists(uploaded_filepath):
+            os.remove(uploaded_filepath)
+
+    def generate_unique_label(self, uploaded_file):
+        min_length = 3
+        max_length = 20
+
+        # Initialise label from the file name
+        base_label = slugify(os.path.splitext(uploaded_file.name)[0])
+
+        # Helper function to ensure the label does not exceed max length
+        def adjust_label_length(label):
+            if len(label) > max_length:
+                return label[-max_length:]
+            return label
+    
+        # Adjust the base label length
+        label = adjust_label_length(base_label)
+
+        # Check if the label already exists and ensure uniqueness
+        if Dataset.objects.filter(label=label).exists():
+            # If the label already exists, append the user's surname
+            label = f"{label}_{slugify(self.request.user.surname)}"
+            label = adjust_label_length(label)  # Adjust length after appending surname
+    
+            count = 1
+            # If the new label still exists, append "_v" and a number
+            while Dataset.objects.filter(label=label).exists():
+                label = f"{base_label}_v{count}"
+                label = adjust_label_length(label)  # Adjust length after appending version
+                count += 1
+    
+        return label
 
 class VolunteeringView(ListView):
   template_name = 'datasets/volunteering.html'
@@ -1927,130 +2105,6 @@ def ds_update(request):
     elif file_format == 'lpf':
       print("ds_update for lpf; doesn't get here yet")
 
-
-"""
-  DEPRECATED for v3
-  ds_compare() refactored 26 Nov 2022 (backup below)
-  validates updated dataset file & compares w/existing
-  called by ajax function from modal in ds_status.html
-  returns json result object 'comparison' for use by ds_update()
-"""
-
-
-def ds_compare(request):
-  if request.method == 'POST':
-    print('ds_compare() request.POST', request.POST)
-    print('ds_compare() request.FILES', request.FILES)
-    dsid = request.POST['dsid']
-    user = request.user.name
-    format = request.POST['format']
-    ds = get_object_or_404(Dataset, id=dsid)
-    ds_status = ds.ds_status
-
-    # get most recent file
-    file_cur = ds.files.all().order_by('-rev')[0].file
-    file_cur_delimiter = ds.files.all().order_by('-rev')[0].delimiter
-    filename_cur = file_cur.name
-
-    # new file
-    file_new = request.FILES['file']
-    tempf, tempfn = tempfile.mkstemp()
-    # write new file as temporary to /var/folders/../...
-    try:
-      for chunk in file_new.chunks():
-        os.write(tempf, chunk)
-    except:
-      raise Exception("Problem with the input file %s" % request.FILES['file'])
-    finally:
-      os.close(tempf)
-
-    print('tempfn,filename_cur,file_new.name', tempfn, filename_cur, file_new.name)
-
-    # validate new file (tempfn is file path)
-    # if errors, stop and return them to modal
-    if format == 'delimited':
-      print('format:', format)
-      try:
-        vresult = validate_delim(tempfn, 'delimited')
-      except:
-        print('validate_delim() failed:', sys.exc_info())
-
-    elif format == 'lpf':
-      # TODO: feed tempfn only?
-      # TODO: accept json-lines; only FeatureCollections ('coll') now
-      vresult = validate_lpf(tempfn, 'coll')
-      # print('format, vresult:',format,vresult)
-
-    # which expects {validation_result{errors['','']}}
-    print('vresult', vresult)
-    if len(vresult['errors']) > 0:
-      errormsg = {"failed": {
-        "errors": vresult['errors']
-      }}
-      return JsonResponse(errormsg, safe=False)
-
-    # give new file a path
-    filename_new = 'user_' + user + '/' + file_new.name
-    # temp files were given extensions in validation functions
-    tempfn_new = tempfn + '.tsv' if format == 'delimited' else tempfn + '.jsonld'
-    print('tempfn_new', tempfn_new)
-
-    # begin comparison report
-    comparison = {
-      "id": dsid,
-      "filename_cur": filename_cur,
-      "filename_new": filename_new,
-      "format": format,
-      "validation_result": vresult,
-      "tempfn": tempfn,
-      "count_indexed": ds.status_idx['idxcount'],
-      'count_links_added': ds.links.filter(task_id__isnull=False).count(),
-      'count_geoms_added': ds.geometries.filter(task_id__isnull=False).count()
-    }
-
-    # create pandas (pd) objects, then perform comparison
-    # a = existing, b = new
-    fn_a = 'media/' + filename_cur
-    fn_b = tempfn
-    if format == 'delimited':
-      adf = pd.read_csv(fn_a,
-                        # delimiter='\t',
-                        delimiter=file_cur_delimiter,
-                        dtype={'id': 'str', 'aat_types': 'str'})
-      try:
-        # must have same delimiter as original
-        bdf = pd.read_csv(fn_b, delimiter=file_cur_delimiter)
-        # bdf = pd.read_csv(fn_b, delimiter='\t')
-      except:
-        print('bdf read failed', sys.exc_info())
-
-      ids_a = adf['id'].tolist()
-      ids_b = bdf['id'].tolist()
-      print('ids_a, ids_b', ids_a[:10], ids_b[:10])
-      # new or removed columns?
-      cols_del = list(set(adf.columns) - set(bdf.columns))
-      cols_add = list(set(bdf.columns) - set(adf.columns))
-
-      comparison['compare_result'] = {
-        "count_new": len(ids_b),
-        'count_diff': len(ids_b) - len(ids_a),
-        'count_replace': len(set.intersection(set(ids_b), set(ids_a))),
-        'cols_del': cols_del,
-        'cols_add': cols_add,
-        'header_new': vresult['columns'],
-        'rows_add': [str(x) for x in (set(ids_b) - set(ids_a))],
-        'rows_del': [str(x) for x in (set(ids_a) - set(ids_b))]
-      }
-    # TODO: process LP format, collections + json-lines
-    elif format == 'lpf':
-      # print('need to compare lpf files:',fn_a,fn_b)
-      comparison['compare_result'] = "it's lpf...tougher row to hoe"
-
-    print('comparison (compare_data)', comparison)
-    # back to calling modal
-    return JsonResponse(comparison, safe=False)
-
-
 """
   PublicListView()
   list public datasets and collections
@@ -2265,529 +2319,216 @@ def is_json_file(file):
     file.seek(0)  # Reset file pointer on failure
     return False
 
-"""
-  DatasetCreate()
-  2024-06-25; refactored
-  2023-08; replaces DatasetCreateView()
-  - validates form
-  - checks file encoding, gets mimetype
-  - initiates content validation (validation.py)
-  - initiates database writes (insert.py)
-  - raises errors from each stage to dataset_create.html form
-"""
-
-class DatasetCreate(CreateView):
-    login_url = '/accounts/login/'
-    redirect_field_name = 'redirect_to'
-
-    template_name = 'datasets/dataset_create.html'
-    form_class = DatasetUploadForm
-
-    def form_invalid(self, form):
-        # Implement custom logic for invalid form submissions
-        return self.render_to_response(self.get_context_data(form=form))
-
-    def form_valid(self, form):
-        
-        user = self.request.user
-        uploaded_file = form.cleaned_data['file']
-        
-        temp_file, temp_filepath = None, None
-        try:        
-
-            temp_file, temp_filepath = tempfile.mkstemp()
-            try:
-                for chunk in uploaded_file.chunks():
-                    os.write(temp_file, chunk)
-            except Exception as e:
-                messages.error(self.request, f"Error processing the uploaded file: {str(e)}")
-                return self.form_invalid(form)
-    
-            # Check content type of uploaded_file
-            content_type = self.detect_content_type(uploaded_file)
-            if content_type not in ['json', 'csv', 'tsv', 'xlsx', 'ods']:
-                messages.error(self.request, f"The detected uploaded file content type is not supported. Detected content type: <b>{content_type}</b>")
-                return self.form_invalid(form)
-            
-            if content_type == 'json':
-                # Check encoding of uploaded_file
-                try:
-                    uploaded_file.seek(0)
-                    detected_encoding = cn.detect(uploaded_file.read())
-                    print(f"Detected encoding: {detected_encoding['encoding']}, Confidence: {detected_encoding['confidence']}")
-                    allowed_encodings = ['ascii', 'utf-8'] # NOT ANSI; database does not permit 'utf-16', 'utf-32'
-                    if detected_encoding['encoding'].lower() not in allowed_encodings:
-                        messages.error(self.request, f"Sorry, the file does not appear to be UTF or ASCII encoded, and so cannot be processed. Detected encoding: <b>{detected_encoding['encoding']}</b>")
-                        return self.form_invalid(form)
-                except Exception as e:
-                    print(f"Error detecting file encoding: {e}")
-                    messages.error(self.request, f"Sorry, there was an error while trying to detect encoding in the uploaded file: {str(e)}")
-                    return self.form_invalid(form)
-                finally:
-                    uploaded_file.seek(0)
-                    
-                try:
-                    with open(temp_filepath, 'r', encoding='utf-8') as jsonfile:
-                        jdata = json.load(jsonfile)          
-                        
-                    result = validate_lpf(jdata, 'coll')
-                except LPFValidationError as e:
-                    error_list = e.args[0]
-                    message = self.construct_error_message(error_list, "in your file")
-                    messages.error(self.request, message)
-                    return self.form_invalid(form)
-                except Exception as e:
-                    messages.error(self.request, f"Sorry, there was an error while processing the JSON file: {str(e)}")
-                
-                dataset = form.save(commit=False)
-                dataset.owner_id = user.id
-                dataset.uri_base = dataset.uri_base or 'https://whgazetteer.org/api/db/?id='
-                dataset.save()
-                
-                try:
-                    result = ds_insert_json(jdata, dataset.pk, user)
-                except Exception as e:
-                    dataset.delete()
-                    messages.error(self.request, f"Failed to insert data into dataset: {str(e)}")
-                    return self.form_invalid(form)
-                
-            else: # if delimited text
-                # Check encoding of uploaded_file   
-                try:
-                    df = read_file_into_dataframe(temp_filepath, content_type)
-                except UnicodeDecodeError as e:
-                    messages.error(self.request, f"Sorry, the file does not appear to be UTF-8 encoded, and so cannot be processed.")
-                    return self.form_invalid(form)
-                except Exception as e:
-                    print("Sorry, the uploaded file could not be processed. Error: {}".format(str(e)))
-                    messages.error(self.request, f"Sorry, the uploaded file cannot be processed as a table.")
-                    return self.form_invalid(form)
-                
-                try:
-                    validate_delim(df)
-                except DelimValidationError as e:
-                    print("Sorry, the uploaded file could not be processed. Error: {}".format(str(e)))
-                    messages.error(self.request, self.construct_error_message(e.args[0], "in your file"))
-                    return self.form_invalid(form)
-                except Exception as e:
-                    messages.error(self.request, f"Error validating data: {str(e)}")
-                    return self.form_invalid(form)
-                
-                print('Validation successful.')
-            
-                dataset = form.save(commit=False)
-                dataset.owner_id = user.id
-                dataset.uri_base = dataset.uri_base or 'https://whgazetteer.org/api/db/?id='
-                dataset.save()
-                
-                try:
-                    with transaction.atomic():
-                        skipped_rows = ds_insert_delim(df, dataset.pk)
-                except DataAlreadyProcessedError:
-                    dataset.delete()
-                    messages.info(self.request, "The data appears already to have been processed.")
-                    return self.form_invalid(form)
-                except DelimInsertError as e:
-                    dataset.delete()
-                    error_list = e.args[0]
-                    message = self.construct_error_message(error_list, "insertion")
-                    messages.error(self.request, message)
-                    failed_insert_notification(user, file, ds=None)
-                    return self.form_invalid(form)
-
-        except Exception as e:
-            dataset.delete()
-            messages.error(self.request, f"Sorry, there was an error while processing the uploaded file: {str(e)}")
-            return self.form_invalid(form)
-        
-        finally:
-            # Ensure temporary file cleanup in case of success or failure
-            if temp_file is not None:
-                os.close(temp_file)
-            if temp_filepath is not None and os.path.exists(temp_filepath):
-                os.remove(temp_filepath)
-                
-        # If all processing is successful, continue with dataset creation
-        if dataset:
-            dataset.ds_status = 'uploaded'
-            dataset.save()
-
-            DatasetFile.objects.create(
-                dataset_id=dataset,
-                file=form.cleaned_data['file'],
-                rev=1,
-                format=content_type,
-                delimiter='\t' if content_type in ['tsv', 'xlsx', 'ods'] else ',' if content_type == 'csv' else 'n/a',
-                upload_date=timezone.now(),
-                header=df.columns.tolist() if content_type != 'json' else None,
-                numrows=len(df) if content_type != 'json' else result['numrows'],
-                df_status='uploaded'
-            )
-
-            Log.objects.create(
-                category='dataset',
-                logtype='ds_create',
-                subtype='place',
-                dataset_id=dataset.id,
-                user_id=user.id
-            )
-
-            return redirect(self.get_success_url(dataset.id))
-        else:
-            messages.error(self.request, "Sorry, there was an error while processing the uploaded file.")
-            return self.form_invalid(form)
-
-    def get_success_url(self, dataset_id):
-        return reverse_lazy('datasets:ds_status', kwargs={'id': dataset_id})
-
-    def detect_content_type(self, uploaded_file):
-        try:
-            mimetype = uploaded_file.content_type
-            content_type = MIME_TYPE_MAPPING.get(mimetype, None)
-            
-            print(mimetype, content_type)
-            
-            # If the content type has not been determined by MIME type, use file inspection
-            if not content_type:
-              if is_json_file(uploaded_file):
-                content_type = 'json'
-              else:
-                content_type = os.path.splitext(uploaded_file.name)[1][1:].lower()
-                
-            return content_type
-                
-        except Exception as e:
-            print(f"Error detecting content_type: {e}")
-            return None
-
-    def construct_error_message(self, error_list, context):
-        if len(error_list) > 1:
-            message = f"<b>Several errors were found {context}; the first of these are</b>:<ul class='no-indent'>"
-        else:
-            message = f"<b>Errors were found {context}</b>:<ul class='no-indent'>"
-    
-        for err in error_list[:15]:
-            row = err.get('row', "Unknown")
-            reason = err.get('error', "Unknown error")
-            message += f"<li>Row {row}: {reason}</li>"
-            
-        if len(error_list) > 15:
-            message += "<li>...</li>"
-            
-        message += "</ul>"
-        return message
-
-class DEPRECATED_DatasetCreate(LoginRequiredMixin, CreateView):
-  login_url = '/accounts/login/'
-  redirect_field_name = 'redirect_to'
-
-  form_class = DatasetUploadForm
-  template_name = 'datasets/dataset_create.html'
-  success_message = 'dataset created'
-
-  def form_invalid(self, form):
-    print('form invalid...', form.errors.as_data())
-    context = {'form': form}
-    return self.render_to_response(self.get_context_data(form=form))
-
-  def form_valid(self, form):
-    print('form valid...')
-    form_data = form.cleaned_data
-    file = form_data['file']
-    context = {"format": form_data['format']}
-    user = self.request.user
-    filename = file.name
-    tempfn = form.cleaned_data['temp_file_path']
-
-    # Get the mimetype and extension
-    mimetype = file.content_type
-    # ext = mimetype.split('/')[-1]
-    ext = MIME_TYPE_MAPPING.get(mimetype, None)
-    print('ext from mimetype', ext)
-
-    # If the extension is not determined by MIME type, use file inspection
-    if not ext:
-      if is_json_file(file):
-        ext = 'json'
-      else:
-        # Attempt to guess the extension from the file name
-        ext = os.path.splitext(filename)[1][1:].lower()
-
-    # For JSON files:
-    if ext == 'json':
-      infile = file.open(mode="r")
-      jdata = json.loads(infile.read())
-      try:
-        result = validate_lpf(tempfn, 'coll')
-      except LPFValidationError as e:
-        # Handle JSON validation errors
-        error_list = e.args[0]
-        message = self.construct_error_message(error_list, "your file")
-        messages.error(self.request, message)
-        return self.render_to_response(self.get_context_data(form=form))
-
-      dataset = form.save(commit=False)
-      dataset.uri_base = dataset.uri_base or 'https://whgazetteer.org/api/db/?id='
-      dataset.save()
-
-      result = ds_insert_json(jdata, dataset.pk, user)
-
-    # For delimited files (CSV, TSV, XLSX, ODS):
-    elif ext in ['csv', 'tsv', 'xlsx', 'ods']:
-      try:
-        df = read_file_into_dataframe(tempfn, ext)
-      except UnicodeDecodeError as e:
-        form.add_error(None, "File is not UTF-8 encoded. Error: {}".format(str(e)))
-        return self.form_invalid(form)
-      except Exception as e:
-        form.add_error(None, "File could not be processed. Error: {}".format(str(e)))
-        return self.form_invalid(form)
-
-      try:
-        validate_delim(df)
-      except DelimValidationError as e:
-        error_list = e.args[0]
-        message = self.construct_error_message(error_list, "your file")
-        messages.error(self.request, message)
-        return self.render_to_response(self.get_context_data(form=form))
-
-      dataset = form.save(commit=False)
-      dataset.uri_base = dataset.uri_base or 'https://whgazetteer.org/api/db/?id='
-      dataset.save()
-
-      try:
-        with transaction.atomic():
-          skipped_rows = ds_insert_delim(df, dataset.pk)
-      except DataAlreadyProcessedError:
-        messages.info(self.request, "The data appears to have already been processed.")
-        return self.render_to_response(self.get_context_data(form=form))
-      except DelimInsertError as e:
-        dataset.delete()
-        error_list = e.args[0]
-        message = self.construct_error_message(error_list, "insertion")
-        messages.error(self.request, message)
-        failed_insert_notification(user, file, ds=None)
-        return self.render_to_response(self.get_context_data(form=form))
-
-    else:
-      message = "Detected file type is not supported - must be one of json, csv, tsv, xlsx, or ods."
-      messages.error(self.request, message)
-      return self.render_to_response(self.get_context_data(form=form))
-
-    dataset.ds_status = 'uploaded'
-    dataset.save()
-
-    DatasetFile.objects.create(
-      dataset_id=dataset,
-      file=form.cleaned_data['file'],
-      rev=1,
-      format=ext,
-      delimiter='\t' if ext in ['tsv', 'xlsx', 'ods'] else ',' if ext == 'csv' else 'n/a',
-      upload_date=None,
-      header=df.columns.tolist() if ext != 'json' else None,
-      numrows=len(df) if ext != 'json' else result['numrows'],
-      df_status='uploaded'
-    )
-
-    Log.objects.create(
-      category='dataset',
-      logtype='ds_create',
-      subtype=form_data['datatype'],
-      dataset_id=dataset.id,
-      user_id=user.id
-    )
-
-    return redirect('/datasets/' + str(dataset.id) + '/status')
-
-  def construct_error_message(self, error_list, context):
-    if len(error_list) > 1:
-      message = f"<b>Several errors were found {context}; the first of these are</b>:<ul class='no-indent'>"
-    else:
-      message = f"<b>Errors were found {context}</b>:<ul class='no-indent'>"
-
-    for err in error_list:
-      row = err.get('row', "Unknown")
-      reason = err.get('error', "Unknown error")
-      message += f"<li>Row {row}: {reason}</li>"
-    message += "</ul>"
-    return message
-
-
-# class DatasetCreate(LoginRequiredMixin, CreateView):
-#   login_url = '/accounts/login/'
-#   redirect_field_name = 'redirect_to'
+# """
+#   DatasetCreate()
+#   2024-06-25; refactored
+#   2023-08; replaces DatasetCreateView()
+#   - validates form
+#   - checks file encoding, gets mimetype
+#   - initiates content validation (validation.py)
+#   - initiates database writes (insert.py)
+#   - raises errors from each stage to dataset_create.html form
+# """
+# class DatasetCreate(CreateView):
+#     login_url = '/accounts/login/'
+#     redirect_field_name = 'redirect_to'
 #
-#   form_class = DatasetUploadForm
-#   template_name = 'datasets/dataset_create.html'
-#   success_message = 'dataset created'
+#     template_name = 'datasets/dataset_create.html'
+#     form_class = DatasetUploadForm
 #
-#   def form_invalid(self, form):
-#     print('form invalid...', form.errors.as_data())
-#     context = {'form': form}
-#     return self.render_to_response(self.get_context_data(form=form))
+#     def form_invalid(self, form):
+#         # Implement custom logic for invalid form submissions
+#         return self.render_to_response(self.get_context_data(form=form))
 #
-#   def form_valid(self, form):
-#     print('form valid...')
-#     form_data = form.cleaned_data
-#     file = form_data['file']
-#     context = {"format": form_data['format']}
-#     user = self.request.user
-#     filename = file.name
-#     tempfn = form.cleaned_data['temp_file_path']
+#     def form_valid(self, form):
 #
-#     # open as utf-8 and report back failure
-#     try:
-#       with open(tempfn, 'r', encoding='utf-8') as f:
-#         f.read()
-#     except UnicodeDecodeError as e:
-#       # If the file is not UTF-8 encoded, add an error to the form and return the form
-#       form.add_error(None, "File is not UTF-8 encoded. Error: {}".format(str(e)))
-#       return self.form_invalid(form)
+#         user = self.request.user
+#         uploaded_file = form.cleaned_data['file']
 #
-#     # Get the mimetype and extension
-#     mimetype = file.content_type
-#     ext = mthash_plus.mimetypes.get(mimetype, None)
-#     # print('ext in form_valid', ext)
-#     infile = file.open(mode="r")
+#         temp_file, temp_filepath = None, None
+#         try:        
 #
-#     # For JSON files:
-#     if ext == 'json':
-#       jdata = json.loads(infile.read())
-#       try:
-#         result = validate_lpf(tempfn, 'coll')
-#       except LPFValidationError as e:
-#         # Assuming 'e' contains a list of error dictionaries
-#         error_list = e.args[0]
+#             temp_file, temp_filepath = tempfile.mkstemp()
+#             try:
+#                 for chunk in uploaded_file.chunks():
+#                     os.write(temp_file, chunk)
+#             except Exception as e:
+#                 messages.error(self.request, f"Error processing the uploaded file: {str(e)}")
+#                 return self.form_invalid(form)
 #
-#         # Construct the error message for the user
-#         if len(error_list) == 3:
-#           message = "<b>Several errors were found in your file; the first of these are</b>:<ul class='no-indent'>"
+#             # Check content type of uploaded_file
+#             content_type = self.detect_content_type(uploaded_file)
+#             if content_type not in ['json', 'csv', 'tsv', 'xlsx', 'ods']:
+#                 messages.error(self.request, f"The detected uploaded file content type is not supported. Detected content type: <b>{content_type}</b>")
+#                 return self.form_invalid(form)
+#
+#             if content_type == 'json':
+#                 # Check encoding of uploaded_file
+#                 try:
+#                     uploaded_file.seek(0)
+#                     detected_encoding = cn.detect(uploaded_file.read())
+#                     print(f"Detected encoding: {detected_encoding['encoding']}, Confidence: {detected_encoding['confidence']}")
+#                     allowed_encodings = ['ascii', 'utf-8'] # NOT ANSI; database does not permit 'utf-16', 'utf-32'
+#                     if detected_encoding['encoding'].lower() not in allowed_encodings:
+#                         messages.error(self.request, f"Sorry, the file does not appear to be UTF or ASCII encoded, and so cannot be processed. Detected encoding: <b>{detected_encoding['encoding']}</b>")
+#                         return self.form_invalid(form)
+#                 except Exception as e:
+#                     print(f"Error detecting file encoding: {e}")
+#                     messages.error(self.request, f"Sorry, there was an error while trying to detect encoding in the uploaded file: {str(e)}")
+#                     return self.form_invalid(form)
+#                 finally:
+#                     uploaded_file.seek(0)
+#
+#                 try:
+#                     with open(temp_filepath, 'r', encoding='utf-8') as jsonfile:
+#                         jdata = json.load(jsonfile)          
+#
+#                     result = validate_lpf(jdata, 'coll')
+#                 except LPFValidationError as e:
+#                     error_list = e.args[0]
+#                     message = self.construct_error_message(error_list, "in your file")
+#                     messages.error(self.request, message)
+#                     return self.form_invalid(form)
+#                 except Exception as e:
+#                     messages.error(self.request, f"Sorry, there was an error while processing the JSON file: {str(e)}")
+#
+#                 dataset = form.save(commit=False)
+#                 dataset.owner_id = user.id
+#                 dataset.uri_base = dataset.uri_base or 'https://whgazetteer.org/api/db/?id='
+#                 dataset.save()
+#
+#                 try:
+#                     result = ds_insert_json(jdata, dataset.pk, user)
+#                 except Exception as e:
+#                     dataset.delete()
+#                     messages.error(self.request, f"Failed to insert data into dataset: {str(e)}")
+#                     return self.form_invalid(form)
+#
+#             else: # if delimited text
+#                 # Check encoding of uploaded_file   
+#                 try:
+#                     df = read_file_into_dataframe(temp_filepath, content_type)
+#                 except UnicodeDecodeError as e:
+#                     messages.error(self.request, f"Sorry, the file does not appear to be UTF-8 encoded, and so cannot be processed.")
+#                     return self.form_invalid(form)
+#                 except Exception as e:
+#                     print("Sorry, the uploaded file could not be processed. Error: {}".format(str(e)))
+#                     messages.error(self.request, f"Sorry, the uploaded file cannot be processed as a table.")
+#                     return self.form_invalid(form)
+#
+#                 try:
+#                     validate_delim(df)
+#                 except DelimValidationError as e:
+#                     print("Sorry, the uploaded file could not be processed. Error: {}".format(str(e)))
+#                     messages.error(self.request, self.construct_error_message(e.args[0], "in your file"))
+#                     return self.form_invalid(form)
+#                 except Exception as e:
+#                     messages.error(self.request, f"Error validating data: {str(e)}")
+#                     return self.form_invalid(form)
+#
+#                 print('Validation successful.')
+#
+#                 dataset = form.save(commit=False)
+#                 dataset.owner_id = user.id
+#                 dataset.uri_base = dataset.uri_base or 'https://whgazetteer.org/api/db/?id='
+#                 dataset.save()
+#
+#                 try:
+#                     with transaction.atomic():
+#                         skipped_rows = ds_insert_delim(df, dataset.pk)
+#                 except DataAlreadyProcessedError:
+#                     dataset.delete()
+#                     messages.info(self.request, "The data appears already to have been processed.")
+#                     return self.form_invalid(form)
+#                 except DelimInsertError as e:
+#                     dataset.delete()
+#                     error_list = e.args[0]
+#                     message = self.construct_error_message(error_list, "insertion")
+#                     messages.error(self.request, message)
+#                     failed_insert_notification(user, file, ds=None)
+#                     return self.form_invalid(form)
+#
+#         except Exception as e:
+#             dataset.delete()
+#             messages.error(self.request, f"Sorry, there was an error while processing the uploaded file: {str(e)}")
+#             return self.form_invalid(form)
+#
+#         finally:
+#             # Ensure temporary file cleanup in case of success or failure
+#             if temp_file is not None:
+#                 os.close(temp_file)
+#             if temp_filepath is not None and os.path.exists(temp_filepath):
+#                 os.remove(temp_filepath)
+#
+#         # If all processing is successful, continue with dataset creation
+#         if dataset:
+#             dataset.ds_status = 'uploaded'
+#             dataset.save()
+#
+#             DatasetFile.objects.create(
+#                 dataset_id=dataset,
+#                 file=form.cleaned_data['file'],
+#                 rev=1,
+#                 format=content_type,
+#                 delimiter='\t' if content_type in ['tsv', 'xlsx', 'ods'] else ',' if content_type == 'csv' else 'n/a',
+#                 upload_date=timezone.now(),
+#                 header=df.columns.tolist() if content_type != 'json' else None,
+#                 numrows=len(df) if content_type != 'json' else result['numrows'],
+#                 df_status='uploaded'
+#             )
+#
+#             Log.objects.create(
+#                 category='dataset',
+#                 logtype='ds_create',
+#                 subtype='place',
+#                 dataset_id=dataset.id,
+#                 user_id=user.id
+#             )
+#
+#             return redirect(self.get_success_url(dataset.id))
 #         else:
-#           message = "<b>Errors were found in your file</b>:<ul class='no-indent'>"
+#             messages.error(self.request, "Sorry, there was an error while processing the uploaded file.")
+#             return self.form_invalid(form)
 #
-#         for err in error_list:
-#           row = err['feat']
-#           reason_match = re.search(r'Reason: (.*?) Schema path', err['error'])
-#           if reason_match:
-#             reason = reason_match.group(1)
+#     def get_success_url(self, dataset_id):
+#         return reverse_lazy('datasets:ds_status', kwargs={'id': dataset_id})
+#
+#     def detect_content_type(self, uploaded_file):
+#         try:
+#             mimetype = uploaded_file.content_type
+#             content_type = MIME_TYPE_MAPPING.get(mimetype, None)
+#
+#             print(mimetype, content_type)
+#
+#             # If the content type has not been determined by MIME type, use file inspection
+#             if not content_type:
+#               if is_json_file(uploaded_file):
+#                 content_type = 'json'
+#               else:
+#                 content_type = os.path.splitext(uploaded_file.name)[1][1:].lower()
+#
+#             return content_type
+#
+#         except Exception as e:
+#             print(f"Error detecting content_type: {e}")
+#             return None
+#
+#     def construct_error_message(self, error_list, context):
+#         if len(error_list) > 1:
+#             message = f"<b>Several errors were found {context}; the first of these are</b>:<ul class='no-indent'>"
+#         else:
+#             message = f"<b>Errors were found {context}</b>:<ul class='no-indent'>"
+#
+#         for err in error_list[:15]:
+#             row = err.get('row', "Unknown")
+#             reason = err.get('error', "Unknown error")
 #             message += f"<li>Row {row}: {reason}</li>"
+#
+#         if len(error_list) > 15:
+#             message += "<li>...</li>"
+#
 #         message += "</ul>"
-#
-#         messages.error(self.request, message)
-#         return self.render_to_response(self.get_context_data(form=form))
-#
-#       # Create the Dataset object
-#       dataset = form.save(commit=False)
-#       if not dataset.uri_base:
-#         dataset.uri_base = 'https://whgazetteer.org/api/db/?id='
-#       dataset.save()
-#
-#       # Directly process the data and create database entries
-#       # insert_lpf_data(data, dataset.pk)
-#       result = ds_insert_json(jdata, dataset.pk, user)
-#
-#     # For delimited files:
-#     elif ext in ['csv', 'tsv', 'xlsx', 'ods']:
-#       print('uploading in DatasetCreate()', filename, ext)
-#       df = read_file_into_dataframe(file, ext)
-#       try:
-#         validate_delim(df)
-#       except DelimValidationError as e:
-#         error_list = e.args[0]
-#
-#         if isinstance(error_list, str):
-#           error_list = [{"row": "Unknown", "error": error_list}]
-#
-#         # Construct the error message for the user
-#         if len(error_list) > 1:
-#           message = "<b>Several errors were found in your file; the first of these are</b>:<ul class='no-indent'>"
-#         else:
-#           message = "<b>Errors were found in your file</b>:<ul class='no-indent'>"
-#
-#         for err in error_list:
-#           row = err['row']
-#           reason = err['error']
-#           message += f"<li>Row {row}: {reason}</li>"
-#         message += "</ul>"
-#
-#         messages.error(self.request, message)
-#         return self.render_to_response(self.get_context_data(form=form))
-#
-#       # Create the Dataset object
-#       dataset = form.save(commit=False)
-#       # If base_uri is empty, set it to the default value
-#       if not dataset.uri_base:
-#         dataset.uri_base = 'https://whgazetteer.org/api/db/?id='
-#       dataset.save()
-#
-#       # Directly process the DataFrame and create database entries
-#       try:
-#         with transaction.atomic():
-#           skipped_rows = ds_insert_delim(df, dataset.pk)
-#       except DataAlreadyProcessedError:
-#         messages.info(self.request, "The data appears to have already been processed.")
-#         return self.render_to_response(self.get_context_data(form=form))
-#       except DelimInsertError as e:
-#         dataset.delete()
-#         error_list = e.args[0]
-#
-#         if isinstance(error_list, str):
-#           error_list = [{"row": "Unknown", "error": error_list}]
-#
-#         # Construct the error message for the user
-#         if len(error_list) > 1:
-#           message = "<b>Several errors occurred during insertion, including</b>:<ul class='no-indent'>"
-#         else:
-#           message = "<b>Errors occurred during insertion</b>:<ul class='no-indent'>"
-#
-#         print('error_list', error_list)
-#         for err in error_list:
-#           row = err['row']
-#           reason = err['error']
-#           message += f"<li>{reason}</li>"
-#           # message += f"<li>Row {row}: {reason}</li>"
-#         message += "</ul>"
-#         messages.error(self.request, message)
-#
-#         failed_insert_notification(user, file, ds=None)
-#         return self.render_to_response(self.get_context_data(form=form))
-#
-#     else:
-#       message = "Detected file type is not supported - must be one of json, csv, tsv, xlsx, or ods."
-#       messages.error(self.request, message)
-#       return self.render_to_response(self.get_context_data(form=form))
-#
-#     dataset.ds_status = 'uploaded'
-#     dataset.save()
-#
-#     # Create the DatasetFile object
-#     DatasetFile.objects.create(
-#       dataset_id=dataset,
-#       # uploaded valid file as is
-#       file=form.cleaned_data['file'],
-#       rev=1,
-#       format=ext,
-#       delimiter='\t' if ext in ['tsv', 'xlsx', 'ods'] else ',' if ext == 'csv' else 'n/a',
-#       upload_date=None,
-#       header=df.columns.tolist() if ext != 'json' else None,
-#       numrows=len(df) if ext != 'json' else result['numrows'],
-#       df_status='uploaded'
-#     )
-#
-#     # write log entry
-#     Log.objects.create(
-#       # category, logtype, "timestamp", subtype, dataset_id, user_id
-#       category='dataset',
-#       logtype='ds_create',
-#       subtype=form_data['datatype'],
-#       dataset_id=dataset.id,
-#       user_id=user.id
-#     )
-#
-#     # If everything went well:
-#     # messages.info(self.request, f"{skipped_rows} rows were skipped.")
-#     return redirect('/datasets/' + str(dataset.id) + '/status')
-#
+#         return message
 
 """
   returns public dataset 'meta' (summary) page

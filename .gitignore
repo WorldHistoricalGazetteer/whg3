@@ -3,6 +3,7 @@ _local/
 
 node_modules/
 cache/
+sitemap_cache/
 
 CDNfallbacks/
 
@@ -126,3 +127,6 @@ datasets/static/files/provinces_1911.tsv
 
 /validation/test_data
 validation/test_data/Cyprus Settlements.xlsx
+.idea/misc.xml
+package-lock.json
+.idea/misc.xml

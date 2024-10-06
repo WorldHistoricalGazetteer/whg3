@@ -144,7 +144,7 @@ class Collection(models.Model):
     vis_parameters = JSONField(default=default_vis_parameters, null=True, blank=True)
 
     coordinate_density = models.FloatField(null=True, blank=True)  # for scaling map markers
-
+    
     @property
     def citation_csl(self):
         try:

@@ -43,11 +43,11 @@
                 },
                 "namespaceTerm": {
                     "type": "string",
-                    "pattern": "^\\w+:\\w+$"
+                    "pattern": "^\\w+:[^\\s]+$"
                 },
                 "namespaceTermNarrow": {
                     "type": "string",
-                    "pattern": "^(bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wp):\\w+$"
+                    "pattern": "^(bnf|cerl|dbp|gn|gnd|gov|loc|pl|tgn|viaf|wd|wp):[^\\s]+$"
                 },
                 "validURL": {
                     "type": "string",
@@ -405,10 +405,11 @@
         "lang": {
             "type": "string",
             "examples": [
-                "en",
-                "fr"
+                "de-Arab-AR",
+                "tr",
+                "ar-Latn-x-ijmes"
             ],
-            "pattern": "^[a-z]{2}$"
+            "pattern": "^(((?:([A-Za-z]{2,3}(-(?:[A-Za-z]{3}(-[A-Za-z]{3}){0,2}))?)|[A-Za-z]{4}|[A-Za-z]{5,8})(-(?:[A-Za-z]{4}))?(-(?:[A-Za-z]{2}|[0-9]{3}))?(-(?:[A-Za-z0-9]{5,8}|[0-9][A-Za-z0-9]{3}))*(-(?:[0-9A-WY-Za-wy-z](-[A-Za-z0-9]{2,8})+))*))$"
         },
         "certainty": {
             "type": "string",
@@ -581,7 +582,7 @@
                         "$ref": "#/definitions/time/definitions/when"
                     }
                 },
-		        "required": [
+		        "required-NOT-IN-LPF-TSV-SPEC": [
 		            "identifier"
 		        ]
             }
@@ -639,8 +640,8 @@
                 },
                 "dateString": {
                     "type": "string",
-                    "pattern": "^(-?\\d{5,})$|^(-?\\d{1,4})(-(0[1-9]|1[0-2]))?(-([0-2][0-9]|3[01]))?$",
-                    "description": "A string representing a date. The format can be: A year with five or more digits (e.g., '-10000'); A year with four digits (e.g., '2024'), optionally followed by a month (e.g., '2024-08') and/or a day (e.g., '2024-08-19'). Negative years are supported and must be represented with a leading '-' sign. Months and days must be within valid ranges."
+                    "pattern": "^(-\\d{5,})$|^(-?\\d{1,4})(-(0[1-9]|1[0-2]))?(-([0-2][0-9]|3[01]))?$",
+                    "description": "A string representing a date. The format can be: A negative year with five or more digits (e.g., '-10000'); A year with four digits (e.g., '2024'), optionally followed by a month (e.g., '2024-08') and/or a day (e.g., '2024-08-19'). Negative years are supported and must be represented with a leading '-' sign. Months and days must be within valid ranges."
                 },
                 "dateObject": {
                     "type": "object",
@@ -693,7 +694,8 @@
                             "$ref": "#/definitions/time/definitions/dateObject"
                         }
                     },
-                    "required": [
+                    "notes": "A case can be made for allowing timespans without a start",
+                    "required-REMOVE-FROM-SPECIFICATION": [
                         "start"
                     ],
                     "additionalProperties": false

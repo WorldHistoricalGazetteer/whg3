@@ -16,6 +16,7 @@ services:
     volumes:
       - {{ BASE_DIR }}:/app
       - {{ BASE_DIR }}/entrypoints/entrypoint-web.sh:/entrypoint.sh
+      - shared-tmp:/var/tmp
     {% if not ENV_CONTEXT == 'local' %}
       - /home/whgadmin/sites/logs/{{ ENV_CONTEXT }}:/app/whg/logs
       - /home/whgadmin/sites/data_dumps:/app/data_dumps
@@ -91,7 +92,7 @@ services:
     platform: linux/amd64
     image: redis:bullseye
     container_name: redis_{{ ENV_CONTEXT }}_{{ BRANCH }}
-    ports: 
+    ports:
       - "{{ REDIS_PORT }}:6379"
     {% if not ENV_CONTEXT == 'local' %}
     volumes:
@@ -114,6 +115,7 @@ services:
     volumes:
       - {{ BASE_DIR }}:/app
       - {{ BASE_DIR }}/entrypoints/entrypoint-celery.sh:/entrypoint.sh
+      - shared-tmp:/var/tmp
     {% if ENV_CONTEXT == 'local' %}
       - /etc/docker/certs:/certs
     {% else %}

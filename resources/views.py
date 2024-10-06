@@ -31,7 +31,11 @@ class TeachingPortalView(ListView):
     context['beta_or_better'] = True if self.request.user.groups.filter(
         name__in=['beta', 'admins']).exists() else False
     nominated = Collection.objects.filter(status='nominated', collection_class='place', public=True).order_by('title')
-    context['regions'] = sorted(set(int(region) for item in Resource.objects.all().values_list('regions', flat=True) for region in item.split(',')))
+    # context['regions'] = sorted(set(int(region) for item in Resource.objects.all().values_list('regions', flat=True) for region in item.split(',')))
+    context['regions'] = sorted(set(
+      int(region) for item in Resource.objects.all().values_list('regions', flat=True) if item
+      for region in item.split(',')
+    ))
     #context['regions'] = [x for l in regions for x in l]
     context['featured'] = Resource.objects.filter(featured__isnull=False).order_by('featured')
     context['nominated'] = nominated

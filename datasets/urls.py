@@ -14,13 +14,14 @@ urlpatterns = [
 
   # BASICS: create from upload, create empty, delete
   # new validation workflow
-  path('create/', views.DatasetCreate.as_view(), name='dataset-create'),
+  # path('create/', views.DatasetCreate.as_view(), name='dataset-create'), # superseded by validate/
+  path('validate/', views.DatasetValidate.as_view(), name='dataset-validate'),
 
   path('create_empty/', views.DatasetCreateEmptyView.as_view(), name='dataset-create-empty'),
   path('<int:id>/delete', views.DatasetDeleteView.as_view(), name='dataset-delete'),
 
   # public datasets & collections
-  path('gallery', views.DatasetGalleryView.as_view(), name='dataset-gallery'),
+  path('gallery/', views.DatasetGalleryView.as_view(), name='dataset-gallery'),
   path('gallery/<str:gallery_type>/', views.DatasetGalleryView.as_view(), name='dataset-gallery-type'),
 
   # insert validated delimited file data to db (csv, tsv, spreadsheet)
@@ -58,7 +59,7 @@ urlpatterns = [
   # path('<int:id>/augmented/<str:format>', download_augmented, name="dl-aug"), #
 
   ## UPDATES (in progress)
-  path('compare/', views.ds_compare, name='dataset-compare'),
+  # path('compare/', views.ds_compare, name='dataset-compare'),
   path('update/', views.ds_update, name='dataset-update'),
   path('update_vis_parameters/', views.update_vis_parameters, name='update-vis-parameters'),
   path('update_volunteers_text/', views.update_volunteers_text, name='update-volunteers-text'),
