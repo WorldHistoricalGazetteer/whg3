@@ -2,6 +2,8 @@ import Cite from 'citation-js';
 import { plugins } from '@citation-js/core';
 import '@citation-js/plugin-csl';
 
+import '../css/citationFormatter.css';
+
 async function loadAndRegisterCSLTemplates() {
     const templates = Object.fromEntries(
         Object.entries(this.cslStyles)
@@ -64,7 +66,7 @@ class CitationFormatter {
     init() {
         // Create the container for the widget with rounded corners and shaded background
         const container = document.createElement('div');
-        container.classList.add('p-3', 'bg-light', 'border', 'rounded');
+        container.classList.add('csl-container', 'p-2', 'bg-light', 'border', 'rounded');
 
         // Create the citation format selector with Bootstrap styling
         const selectorWrapper = document.createElement('div');

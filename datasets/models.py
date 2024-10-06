@@ -1,4 +1,6 @@
 # datasets.models
+import re
+
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.gis.db import models as geomodels
@@ -32,6 +34,8 @@ from utils.hull_geometries import hull_geometries
 from utils.feature_collection import feature_collection
 from utils.carousel_metadata import carousel_metadata
 from geojson import loads, dumps
+
+from nameparser import HumanName
 
 User = get_user_model()
 
@@ -75,7 +79,7 @@ class Dataset(models.Model):
         blank=True,
         error_messages={
             "unique": "The dataset label entered is already in use, and must be unique. "
-            "Try appending a version # or initials."
+                      "Try appending a version # or initials."
         },
     )
     title = models.CharField(max_length=255, null=False)
@@ -106,12 +110,12 @@ class Dataset(models.Model):
     volunteers_text = models.CharField(max_length=2044, null=True, blank=True)
 
     source = models.CharField(max_length=500, null=True, blank=True)
-    citation = models.CharField(max_length=2044, null=True, blank=True) # user-added; if absent, generated in browser
-    
+    citation = models.CharField(max_length=2044, null=True, blank=True)  # user-added; if absent, generated in browser
+
     # Fields to be deprecated following their migration to CSL
     creator = models.CharField(max_length=500, null=True, blank=True)
     contributors = models.CharField(max_length=500, null=True, blank=True)
-    
+
     # People associated with Dataset creation
     creators_csl = models.ManyToManyField('persons.Person', related_name='datasets_as_creator', blank=True)
     contributors_csl = models.ManyToManyField('persons.Person', related_name='datasets_as_contributor', blank=True)
@@ -132,47 +136,61 @@ class Dataset(models.Model):
 
     def get_absolute_url(self):
         return reverse("datasets:ds_status", kwargs={"id": self.id})
-    
+
     @property
     def citation_csl(self):
         try:
             def create_author_dict(person):
+                given = f"{person.first} {person.middle}".strip() if person.middle else person.first
                 return {
-                    "family": person.family or "Unknown",
-                    "given": person.given or "",
-                    **({"ORCiD": person.orcid} if person.orcid else {}),
-                    **({"emails": ", ".join(email.address for email in person.emails.all())} if person.emails.exists() else {}),
+                    "family": person.last or "Unknown",
+                    "given": given or "",
                 }
-            authors = [
-                create_author_dict(creator) for creator in self.creators_csl.all()
-            ]
-            authors.extend(
-                create_author_dict(contributor) for contributor in self.contributors_csl.all()
-            )
+
+            def parse_names(names):
+                # Regex pattern to match human names while ignoring bracketed organisations
+                human_name_pattern = r'(?<!\[)(\b[A-Z][a-zA-Z\s,.]+)(?=\s*;|$)'
+
+                persons = re.findall(human_name_pattern, names)
+                authors = [create_author_dict(HumanName(person)) for person in persons]
+
+                # Regex pattern to match organisation names while ignoring human names
+                organisation_name_pattern = r'\[([^\]]+)\]'
+
+                organisations = re.findall(organisation_name_pattern, names)
+                authors.extend([{"literal": organisation} for organisation in organisations])
+
+                return authors
+
+            # Parse creators and contributors from the database fields
+            authors = parse_names(self.creator)
+            authors.extend(parse_names(self.contributors))
+
             unique_authors = list({tuple(sorted(author.items())) for author in authors})
             unique_authors = [dict(author) for author in unique_authors]
-            
+
             csl_data = {
                 "id": self.label or "Unknown",
                 "type": "dataset",
                 "title": self.title or "No Title",
                 "author": unique_authors,
                 "issued": {
-                    "date-parts": [[self.create_date.year, self.create_date.month, self.create_date.day]] if self.create_date else []
+                    "date-parts": [[self.create_date.year, self.create_date.month,
+                                    self.create_date.day]] if self.create_date else []
                 },
                 "URL": self.webpage or "",
                 "publisher": "World Historical Gazetteer",
                 "publisher-place": "Pittsburgh, PA, USA",
-                
+
                 # Custom fields (ignored by CSL processors)
                 "description": self.description or "",
                 "record_count": self.numrows or 0,
-                **({ "source": self.source } if self.source else {}),
-                **({ "source_citation": self.citation } if self.citation else {}),
+                **({"source": self.source} if self.source else {}),
+                **({"source_citation": self.citation} if self.citation else {}),
             }
         except Exception as e:
             csl_data = {"error": str(e)}
-            
+
         return json.dumps(csl_data)
 
     @property
@@ -221,8 +239,8 @@ class Dataset(models.Model):
             combined_geom = geom_list[0].convex_hull
 
             for geom in geom_list[
-                1:
-            ]:  # Union of convex hulls is much faster than union of full geometries
+                        1:
+                        ]:  # Union of convex hulls is much faster than union of full geometries
                 combined_geom = combined_geom.union(geom.convex_hull)
 
             geometry = json.loads(combined_geom.convex_hull.geojson)
@@ -639,6 +657,7 @@ class DatasetFile(models.Model):
     upload_date = models.DateTimeField(null=True, auto_now_add=True)
     header = ArrayField(models.CharField(max_length=30), null=True, blank=True)
     numrows = models.IntegerField(null=True, blank=True)
+
     # TODO: generate geotypes, add to file instance
     # geotypes = JSONField(blank=True, null=True)
 

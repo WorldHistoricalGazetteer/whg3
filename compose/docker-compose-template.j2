@@ -179,15 +179,15 @@ services:
 
   {% if ENV_CONTEXT == 'local' %}
 
-  embedding:
-    build:
-      context: ./embeddings
-    networks:
-      - {{ ENV_CONTEXT }}
-    ports:
-      - "6000:6000"
-    depends_on:
-      - web
+{#  embedding:#}
+{#    build:#}
+{#      context: ./embeddings#}
+{#    networks:#}
+{#      - {{ ENV_CONTEXT }}#}
+{#    ports:#}
+{#      - "6000:6000"#}
+{#    depends_on:#}
+{#      - web#}
 
 {#  kibana:#}
 {#    image: kibana:8.6.2#}
@@ -209,7 +209,6 @@ services:
 volumes:
   shared-tmp:
 {% if ENV_CONTEXT == 'local' %}
-volumes:
   app:
   dev-db-data:
 {% endif %}
