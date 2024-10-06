@@ -1,4 +1,6 @@
 # datasets.models
+import re
+
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.gis.db import models as geomodels
@@ -32,6 +34,8 @@ from utils.hull_geometries import hull_geometries
 from utils.feature_collection import feature_collection
 from utils.carousel_metadata import carousel_metadata
 from geojson import loads, dumps
+
+from nameparser import HumanName
 
 User = get_user_model()
 
@@ -136,33 +140,40 @@ class Dataset(models.Model):
     @property
     def citation_csl(self):
         try:
-            # Collect all creators and contributors into a single list
-            authors = [
-                {
-                    "family": creator.family or "Unknown",
-                    "given": creator.given or "",
-                    **({"ORCiD": creator.orcid} if creator.orcid else {}),
-                    **({"emails": ", ".join(
-                        email.address for email in creator.emails.all())} if creator.emails.exists() else {}),
+            def create_author_dict(person):
+                given = f"{person.first} {person.middle}".strip() if person.middle else person.first
+                return {
+                    "family": person.last or "Unknown",
+                    "given": given or "",
                 }
-                for creator in self.creators_csl.all()
-            ]
-            authors.extend(
-                {
-                    "family": contributor.family or "Unknown",
-                    "given": contributor.given or "",
-                    **({"ORCiD": contributor.orcid} if contributor.orcid else {}),
-                    **({"emails": ", ".join(
-                        email.address for email in contributor.emails.all())} if contributor.emails.exists() else {}),
-                }
-                for contributor in self.contributors_csl.all()
-            )
+
+            def parse_names(names):
+                # Regex pattern to match human names while ignoring bracketed organisations
+                human_name_pattern = r'(?<!\[)(\b[A-Z][a-zA-Z\s,.]+)(?=\s*;|$)'
+
+                persons = re.findall(human_name_pattern, names)
+                authors = [create_author_dict(HumanName(person)) for person in persons]
+
+                # Regex pattern to match organisation names while ignoring human names
+                organisation_name_pattern = r'\[([^\]]+)\]'
+
+                organisations = re.findall(organisation_name_pattern, names)
+                authors.extend([{"literal": organisation} for organisation in organisations])
+
+                return authors
+
+            # Parse creators and contributors from the database fields
+            authors = parse_names(self.creator)
+            authors.extend(parse_names(self.contributors))
+
+            unique_authors = list({tuple(sorted(author.items())) for author in authors})
+            unique_authors = [dict(author) for author in unique_authors]
 
             csl_data = {
                 "id": self.label or "Unknown",
                 "type": "dataset",
                 "title": self.title or "No Title",
-                "author": authors,
+                "author": unique_authors,
                 "issued": {
                     "date-parts": [[self.create_date.year, self.create_date.month,
                                     self.create_date.day]] if self.create_date else []

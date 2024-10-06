@@ -2,6 +2,7 @@
 
 import { Spinner } from './spin.js';
 import { initWHGModal } from './whg-modal.js';
+import { initializeCitationFormatters } from './citationFormatter';
 import { base_urls } from './aliases.js';
 import '../css/base.css';
 import '../../static/css/styles.css'; // /whg/static/css/styles.css
@@ -220,6 +221,7 @@ Promise.all([
 		$('[data-bs-toggle="popover"]').popover();
 		
 		initWHGModal();
+		initializeCitationFormatters();
 		
 		// Extend Spinner module to operate with JQuery initialisation
 		(function($) {

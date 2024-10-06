@@ -104,7 +104,7 @@
               <td style="vertical-align:top;"><b>Creator(s)</b>
                 <a href="#" class="edit-creator"><i class="fas fa-edit linky fa-xs"></i></a>
               </td>
-              <td>
+              <td data-bs-toggle="tooltip" data-bs-title="Add a ';' between multiple creators, and enclose organisation names in [square brackets].">
                 <span class="form-creator">{{ form.creator.value }}</span>
                 <span class="hidden editing-creator">{{ form.creator }}</span>
               </td>
@@ -119,7 +119,7 @@
               </td>
             </tr> <!-- source(s) -->
             <tr>
-              <td style="vertical-align:top;"><b>Contributors</b>
+              <td style="vertical-align:top;" data-bs-toggle="tooltip" data-bs-title="Add a ';' between multiple contributors, and enclose organisation names in [square brackets]."><b>Contributors</b>
                 <a href="#" class="edit-contrib"><i class="fas fa-edit linky fa-xs"></i></a>
               </td>
               <td>
