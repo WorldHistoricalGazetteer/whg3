@@ -18,41 +18,42 @@ from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.views.decorators.csrf import csrf_exempt
 
+
 def annotate(request, *args, **kwargs):
-  print('request.POST',request.POST)
-  print('request.FILES',request.FILES)
-  print('traces.annotate() kwargs',kwargs)
-  cid = kwargs.get('id')
-  pid = request.POST.get('place')
-  anno_id = request.POST.get('anno_id')
-  saved = request.POST.get('saved')
-  coll = get_object_or_404(Collection, id=cid)
-  context = {}
+    print('request.POST', request.POST)
+    print('request.FILES', request.FILES)
+    print('traces.annotate() kwargs', kwargs)
+    cid = kwargs.get('id')
+    pid = request.POST.get('place')
+    anno_id = request.POST.get('anno_id')
+    saved = request.POST.get('saved')
+    coll = get_object_or_404(Collection, id=cid)
+    context = {}
 
-  if anno_id:
-    # form with instance
-    print('has anno_id')
-    traceanno = TraceAnnotation.objects.get(id=anno_id)
-    form = TraceAnnotationModelForm(request.POST, request.FILES, instance = traceanno)
-    traceanno.saved = True
-    traceanno.save()
-    # form = TraceAnnotationModelForm(request.POST)
-  else:
-    print('no anno_id')
-    form = TraceAnnotationModelForm(request.POST, request.FILES)
-  # print('form.cleaned_fields', form.cleaned_fields)
+    if anno_id:
+        # form with instance
+        print('has anno_id')
+        traceanno = TraceAnnotation.objects.get(id=anno_id)
+        form = TraceAnnotationModelForm(request.POST, request.FILES, instance=traceanno)
+        traceanno.saved = True
+        traceanno.save()
+        # form = TraceAnnotationModelForm(request.POST)
+    else:
+        print('no anno_id')
+        form = TraceAnnotationModelForm(request.POST, request.FILES)
+    # print('form.cleaned_fields', form.cleaned_fields)
 
-  if form.is_valid():
-    form.save()
-  else:
-    # new empty form
-    messages.error(request, "Error")
-    print('trace form not valid', form.errors)
+    if form.is_valid():
+        form.save()
+        return JsonResponse({'status': 'ok', 'msg': 'Annotation saved successfully!'}, status=200)
+    else:
+        error_msg = form.errors.as_json()
+        return JsonResponse({'status': 'error', 'errors': error_msg}, status=400)
 
-  # return JsonResponse({'status': 'ok', 'msg': msg}, safe=False)
-  return redirect('/collections/'+str(cid)+'/update_pl')
 
 """ BETA: annotate collection with place """
+
+
 # def annotate(request, cid, pid):
 # def annotate(request, *args, **kwargs):
 #   cid = kwargs.get('id')
@@ -126,9 +127,9 @@ def get_form(request):
     # is there a trace_annotation record already?
     existing = TraceAnnotation.objects.filter(place=pid, collection=cid, archived=False)
     if existing:
-      form = TraceAnnotationModelForm(instance=existing[0],auto_id=False)
+        form = TraceAnnotationModelForm(instance=existing[0], auto_id=False)
     else:
-      form = TraceAnnotationModelForm(auto_id=False)
+        form = TraceAnnotationModelForm(auto_id=False)
     context = {
         "form": form,
         "place": place,
@@ -139,4 +140,3 @@ def get_form(request):
     }
     template = render_to_string('../templates/traceanno_form.html', context=context)
     return JsonResponse({"form": template})
-
