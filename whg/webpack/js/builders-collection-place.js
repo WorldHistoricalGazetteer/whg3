@@ -91,6 +91,50 @@ $(function() {
 	
 	// ******************* LISTENERS *******************
 
+	$(document).on('click', '#b_anno_submit', function(event) {
+		event.preventDefault();
+		const formData = new FormData($('#anno_form')[0]);
+
+		// Function to show success/failure tooltip
+		function showTooltip(message, type) {
+            const button = $('#b_anno_submit');
+            button.attr('data-bs-original-title', '');
+            button.attr('data-bs-title', message);
+
+            let tooltip = bootstrap.Tooltip.getInstance(button[0]);
+            if (!tooltip) {
+                tooltip = new bootstrap.Tooltip(button[0]);
+            }
+
+            tooltip.show();
+
+            setTimeout(function() {
+                tooltip.dispose();
+            	button.attr('data-bs-original-title', '');
+            	button.attr('data-bs-title', '');
+            }, 3000);
+		}
+
+		$.ajax({
+			url: $('#anno_form').data('action'),
+			type: 'POST',
+			data: formData,
+			processData: false,
+			contentType: false,
+			success: function(response) {
+				showTooltip('Annotation saved successfully!', 'success');
+				const placeId = $('#anno_form').find('input[name="place"]').val();
+				const placeCard = $(`.col-place-card#${placeId}`);
+				if (placeCard.length && !placeCard.find('p i.red-head').length) {
+                    placeCard.find('p').append('<i class="red-head ms-3">annotated</i>');
+                }
+			},
+			error: function(xhr) {
+				showTooltip('An error occurred: ' + xhr.responseText, 'danger');
+			}
+		});
+	});
+
 	$('#sharing_form').submit(function(event) {
 		// Stop form from submitting normally
 		event.preventDefault();
