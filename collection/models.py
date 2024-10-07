@@ -1,5 +1,3 @@
-import json
-import re
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -11,7 +9,6 @@ from django.db.models import Q, JSONField, Func, CharField, Exists, OuterRef, Su
 from django.db.models.functions import Coalesce
 from django.urls import reverse
 from django.utils import timezone
-from nameparser import HumanName
 
 from datasets.models import Dataset
 from main.choices import COLLECTIONCLASSES, LINKTYPES, TEAMROLES, STATUS_COLL, \
@@ -19,6 +16,7 @@ from main.choices import COLLECTIONCLASSES, LINKTYPES, TEAMROLES, STATUS_COLL, \
 from places.models import Place, PlaceGeom
 from traces.models import TraceAnnotation
 from utils.cluster_geometries import clustered_geometries as calculate_clustered_geometries
+from utils.csl_citation_formatter import csl_citation
 from utils.heatmap_geometries import heatmapped_geometries
 from utils.hull_geometries import hull_geometries
 from utils.feature_collection import feature_collection
@@ -144,58 +142,10 @@ class Collection(models.Model):
     vis_parameters = JSONField(default=default_vis_parameters, null=True, blank=True)
 
     coordinate_density = models.FloatField(null=True, blank=True)  # for scaling map markers
-    
+
     @property
     def citation_csl(self):
-        try:
-            def create_author_dict(person):
-                given = f"{person.first} {person.middle}".strip() if person.middle else person.first
-                return {
-                    "family": person.last or "Unknown",
-                    "given": given or "",
-                }
-
-            def parse_names(names):
-                # Regex pattern to match human names while ignoring bracketed organisations
-                human_name_pattern = r'(?<!\[)(\b[A-Z][a-zA-Z\s,.]+)(?=\s*;|$)'
-
-                persons = re.findall(human_name_pattern, names)
-                authors = [create_author_dict(HumanName(person)) for person in persons]
-
-                # Regex pattern to match organisation names while ignoring human names
-                organisation_name_pattern = r'\[([^\]]+)\]'
-
-                organisations = re.findall(organisation_name_pattern, names)
-                authors.extend([{"literal": organisation} for organisation in organisations])
-
-                return authors
-
-            # Parse creators from the database fields
-            authors = parse_names(self.creator)
-
-            unique_authors = list({tuple(sorted(author.items())) for author in authors})
-            unique_authors = [dict(author) for author in unique_authors]
-
-            csl_data = {
-                "id": self.id or "Unknown",
-                "type": "dataset",
-                "title": self.title or "No Title",
-                "author": unique_authors,
-                "issued": {
-                    "date-parts": [[self.create_date.year, self.create_date.month,
-                                    self.create_date.day]] if self.create_date else []
-                },
-                "URL": self.webpage or "",
-                "publisher": "World Historical Gazetteer",
-                "publisher-place": "Pittsburgh, PA, USA",
-
-                # Custom fields (ignored by CSL processors)
-                "description": self.description or "",
-            }
-        except Exception as e:
-            csl_data = {"error": str(e)}
-
-        return json.dumps(csl_data)
+        return csl_citation(self)
 
     def get_absolute_url(self):
         # return reverse('datasets:dashboard', kwargs={'id': self.id})

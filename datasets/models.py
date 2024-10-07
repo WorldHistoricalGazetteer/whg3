@@ -1,5 +1,4 @@
 # datasets.models
-import re
 
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
@@ -29,13 +28,12 @@ from shapely.geometry import box, mapping
 from utils.cluster_geometries import (
     clustered_geometries as calculate_clustered_geometries,
 )
+from utils.csl_citation_formatter import csl_citation
 from utils.heatmap_geometries import heatmapped_geometries
 from utils.hull_geometries import hull_geometries
 from utils.feature_collection import feature_collection
 from utils.carousel_metadata import carousel_metadata
 from geojson import loads, dumps
-
-from nameparser import HumanName
 
 User = get_user_model()
 
@@ -138,62 +136,6 @@ class Dataset(models.Model):
         return reverse("datasets:ds_status", kwargs={"id": self.id})
 
     @property
-    def citation_csl(self):
-        try:
-            def create_author_dict(person):
-                given = f"{person.first} {person.middle}".strip() if person.middle else person.first
-                return {
-                    "family": person.last or "Unknown",
-                    "given": given or "",
-                }
-
-            def parse_names(names):
-                # Regex pattern to match human names while ignoring bracketed organisations
-                human_name_pattern = r'(?<!\[)(\b[A-Z][a-zA-Z\s,.]+)(?=\s*;|$)'
-
-                persons = re.findall(human_name_pattern, names)
-                authors = [create_author_dict(HumanName(person)) for person in persons]
-
-                # Regex pattern to match organisation names while ignoring human names
-                organisation_name_pattern = r'\[([^\]]+)\]'
-
-                organisations = re.findall(organisation_name_pattern, names)
-                authors.extend([{"literal": organisation} for organisation in organisations])
-
-                return authors
-
-            # Parse creators and contributors from the database fields
-            authors = parse_names(self.creator)
-            authors.extend(parse_names(self.contributors))
-
-            unique_authors = list({tuple(sorted(author.items())) for author in authors})
-            unique_authors = [dict(author) for author in unique_authors]
-
-            csl_data = {
-                "id": self.label or "Unknown",
-                "type": "dataset",
-                "title": self.title or "No Title",
-                "author": unique_authors,
-                "issued": {
-                    "date-parts": [[self.create_date.year, self.create_date.month,
-                                    self.create_date.day]] if self.create_date else []
-                },
-                "URL": self.webpage or "",
-                "publisher": "World Historical Gazetteer",
-                "publisher-place": "Pittsburgh, PA, USA",
-
-                # Custom fields (ignored by CSL processors)
-                "description": self.description or "",
-                "record_count": self.numrows or 0,
-                **({"source": self.source} if self.source else {}),
-                **({"source_citation": self.citation} if self.citation else {}),
-            }
-        except Exception as e:
-            csl_data = {"error": str(e)}
-
-        return json.dumps(csl_data)
-
-    @property
     def bounds(self):
         extent = self.extent
         b = box(extent[0], extent[1], extent[2], extent[3])
@@ -248,6 +190,10 @@ class Dataset(models.Model):
     @property
     def clustered_geometries(self):
         return calculate_clustered_geometries(self)
+
+    @property
+    def citation_csl(self):
+        return csl_citation(self)
 
     @property
     def collaborators(self):
