@@ -383,9 +383,9 @@ def extract_dataset_metadata(file_path):
                 if 'description' in item:
                     dataset_metadata['description'] = item['description']
 
-                # Extract 'identifier' as 'webpage'
-                if 'identifier' in item:
-                    dataset_metadata['webpage'] = item['identifier']
+                # Extract 'url' as 'webpage'
+                if 'url' in item:
+                    dataset_metadata['webpage'] = item['url']
 
     return dataset_metadata['creator'], dataset_metadata['title'], dataset_metadata['description'], dataset_metadata['webpage']
 

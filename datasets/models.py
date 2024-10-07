@@ -84,7 +84,7 @@ class Dataset(models.Model):
     description = models.CharField(max_length=2044, null=False)
     webpage = models.URLField(null=True, blank=True)
     create_date = models.DateTimeField(null=True, auto_now_add=True)
-    uri_base = models.URLField(null=True, blank=True)
+    uri_base = models.CharField(max_length=200, null=True, blank=True)
     image_file = ResizedImageField(
         size=[800, 600], upload_to=ds_image_path, blank=True, null=True
     )

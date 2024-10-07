@@ -2,6 +2,8 @@
 
 from django import forms
 from django.conf import settings
+from django.core.validators import RegexValidator
+
 # from django.core.exceptions import ValidationError
 from datasets.models import Dataset, Hit, DatasetFile
 # from datasets.utils import insert_delim, insert_lpf, validator_delim, validate_lpf, sniff_file_type
@@ -19,6 +21,8 @@ MATCHTYPES = [
 """
   DatasetUploadForm()
 """
+
+
 class DatasetUploadForm(forms.ModelForm):
     title = forms.CharField(label='Title', required=False, widget=forms.TextInput(attrs={
         'placeholder': '5-100 characters (optional)',
@@ -62,11 +66,26 @@ class DatasetUploadForm(forms.ModelForm):
         'class': 'form-control',
     }))
 
-    uri_base = forms.URLField(label='URI base', required=False, widget=forms.URLInput(attrs={
-        'placeholder': 'Use only if record IDs are URIs',
-        'size': 45,
-        'class': 'form-control',
-    }))
+    NAMESPACE_REGEX = r'^\w+:$'
+    URL_REGEX = r'^(https?:\/\/)(www\.)?[a-zA-Z0-9\-\.]{2,256}\.[a-z]{2,63}(\:[0-9]{1,5})?(\/.*)?$'
+    uri_base = forms.CharField(
+        label='URI base',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter a URI base or namespace',
+            'size': 45,
+            'class': 'form-control',
+            'data-bs-title': 'Enter a URI base if applicable, either as a URL or a namespace, e.g., <span class="text-danger">https://example.com/resource/</span> or <span class="text-danger">example:</span>',
+            'data-bs-toggle': 'tooltip',
+        }),
+        validators=[
+            RegexValidator(
+                regex=f'({URL_REGEX})|({NAMESPACE_REGEX})',
+                message='Enter a valid URL or namespace term (e.g., https://example.com/resource/ or example:).',
+                code='invalid_url_or_namespace'
+            )
+        ]
+    )
 
     webpage = forms.URLField(label='Web page', required=False, widget=forms.URLInput(attrs={
         'size': 45,
@@ -92,7 +111,9 @@ class DatasetUploadForm(forms.ModelForm):
 
     class Meta:
         model = Dataset
-        fields = ('title', 'label', 'description', 'creator', 'source', 'contributors', 'uri_base', 'webpage', 'pdf', 'file')
+        fields = (
+        'title', 'label', 'description', 'creator', 'source', 'contributors', 'uri_base', 'webpage', 'pdf', 'file')
+
 
 class HitModelForm(forms.ModelForm):
     match = forms.CharField(
@@ -119,6 +140,7 @@ class HitModelForm(forms.ModelForm):
         for key in self.fields:
             self.fields[key].required = False
 
+
 class DatasetFileModelForm(forms.ModelForm):
     class Meta:
         model = DatasetFile
@@ -130,6 +152,7 @@ class DatasetFileModelForm(forms.ModelForm):
         for field in self.fields.values():
             field.error_messages = {'required': 'The field {fieldname} is required'.format(
                 fieldname=field.label)}
+
 
 class DatasetDetailModelForm(forms.ModelForm):
     class Meta:
@@ -147,7 +170,7 @@ class DatasetDetailModelForm(forms.ModelForm):
             'source': forms.TextInput(attrs={'size': 50}),
             'contributors': forms.TextInput(attrs={'size': 50}),
             'webpage': forms.TextInput(attrs={'size': 20}),
-            'uri_base': forms.URLInput(attrs={'size': 50}),
+            'uri_base': forms.TextInput(attrs={'size': 50}),
             'featured': forms.TextInput(attrs={'size': 4}),
             'pdf': forms.FileInput(attrs={'class': 'fileinput'}),
         }
@@ -160,12 +183,35 @@ class DatasetDetailModelForm(forms.ModelForm):
         return label
 
     file = forms.FileField(required=False)
-    uri_base = forms.URLField(
-        widget=forms.URLInput(
-            attrs={'placeholder': 'Leave blank unless changed', 'size': 40}
-        ),
-        required=False
+
+    # uri_base = forms.URLField(
+    #     widget=forms.URLInput(
+    #         attrs={'placeholder': 'Leave blank unless changed', 'size': 40}
+    #     ),
+    #     required=False
+    # )
+
+    NAMESPACE_REGEX = r'^\w+:$'
+    URL_REGEX = r'^(https?:\/\/)(www\.)?[a-zA-Z0-9\-\.]{2,256}\.[a-z]{2,63}(\:[0-9]{1,5})?(\/.*)?$'
+    uri_base = forms.CharField(
+        label='URI base',
+        required=False,
+        widget=forms.TextInput(attrs={
+            'placeholder': 'Enter a URI base or namespace',
+            'size': 45,
+            'class': 'form-control',
+            'data-bs-title': 'Enter a URI base if applicable, either as a URL or a namespace, e.g., <span class="text-danger">https://example.com/resource/</span> or <span class="text-danger">example:</span>',
+            'data-bs-toggle': 'tooltip',
+        }),
+        validators=[
+            RegexValidator(
+                regex=f'({URL_REGEX})|({NAMESPACE_REGEX})',
+                message='Enter a valid URL or namespace term (e.g., https://example.com/resource/ or example:).',
+                code='invalid_url_or_namespace'
+            )
+        ]
     )
+
     format = forms.ChoiceField(choices=FORMATS, initial="delimited")
 
     def __init__(self, *args, **kwargs):
@@ -173,6 +219,7 @@ class DatasetDetailModelForm(forms.ModelForm):
         for field in self.fields.values():
             field.error_messages = {'required': 'The field {fieldname} is required'.format(
                 fieldname=field.label)}
+
 
 class DatasetCreateEmptyModelForm(forms.ModelForm):
     class Meta:
@@ -183,10 +230,10 @@ class DatasetCreateEmptyModelForm(forms.ModelForm):
         widgets = {
             'description': forms.Textarea(attrs={
                 'rows': 2, 'cols': 45, 'class': 'textarea', 'placeholder': 'Brief description'}),
-            'uri_base': forms.URLInput(attrs={
-                    'placeholder': 'Leave blank unless record IDs are URIs', 'size': 45}),
+            'uri_base': forms.TextInput(attrs={
+                'placeholder': 'Leave blank unless record IDs are URIs', 'size': 45}),
             'title': forms.TextInput(attrs={'size': 45}),
-            'label': forms.TextInput(attrs={'placeholder': '20 char max; no spaces','size': 22}),
+            'label': forms.TextInput(attrs={'placeholder': '20 char max; no spaces', 'size': 22}),
             'creator': forms.TextInput(attrs={'size': 45}),
             'source': forms.TextInput(attrs={'size': 45}),
             'featured': forms.TextInput(attrs={'size': 4}),
