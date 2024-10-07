@@ -1,3 +1,4 @@
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -15,6 +16,7 @@ from main.choices import COLLECTIONCLASSES, LINKTYPES, TEAMROLES, STATUS_COLL, \
 from places.models import Place, PlaceGeom
 from traces.models import TraceAnnotation
 from utils.cluster_geometries import clustered_geometries as calculate_clustered_geometries
+from utils.csl_citation_formatter import csl_citation
 from utils.heatmap_geometries import heatmapped_geometries
 from utils.hull_geometries import hull_geometries
 from utils.feature_collection import feature_collection
@@ -140,6 +142,10 @@ class Collection(models.Model):
     vis_parameters = JSONField(default=default_vis_parameters, null=True, blank=True)
 
     coordinate_density = models.FloatField(null=True, blank=True)  # for scaling map markers
+
+    @property
+    def citation_csl(self):
+        return csl_citation(self)
 
     def get_absolute_url(self):
         # return reverse('datasets:dashboard', kwargs={'id': self.id})

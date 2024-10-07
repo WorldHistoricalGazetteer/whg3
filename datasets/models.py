@@ -1,4 +1,5 @@
 # datasets.models
+
 from django.conf import settings
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.gis.db import models as geomodels
@@ -27,6 +28,7 @@ from shapely.geometry import box, mapping
 from utils.cluster_geometries import (
     clustered_geometries as calculate_clustered_geometries,
 )
+from utils.csl_citation_formatter import csl_citation
 from utils.heatmap_geometries import heatmapped_geometries
 from utils.hull_geometries import hull_geometries
 from utils.feature_collection import feature_collection
@@ -134,55 +136,6 @@ class Dataset(models.Model):
         return reverse("datasets:ds_status", kwargs={"id": self.id})
 
     @property
-    def citation_csl(self):
-        try:
-            # Collect all creators and contributors into a single list
-            authors = [
-                {
-                    "family": creator.family or "Unknown",
-                    "given": creator.given or "",
-                    **({"ORCiD": creator.orcid} if creator.orcid else {}),
-                    **({"emails": ", ".join(
-                        email.address for email in creator.emails.all())} if creator.emails.exists() else {}),
-                }
-                for creator in self.creators_csl.all()
-            ]
-            authors.extend(
-                {
-                    "family": contributor.family or "Unknown",
-                    "given": contributor.given or "",
-                    **({"ORCiD": contributor.orcid} if contributor.orcid else {}),
-                    **({"emails": ", ".join(
-                        email.address for email in contributor.emails.all())} if contributor.emails.exists() else {}),
-                }
-                for contributor in self.contributors_csl.all()
-            )
-
-            csl_data = {
-                "id": self.label or "Unknown",
-                "type": "dataset",
-                "title": self.title or "No Title",
-                "author": authors,
-                "issued": {
-                    "date-parts": [[self.create_date.year, self.create_date.month,
-                                    self.create_date.day]] if self.create_date else []
-                },
-                "URL": self.webpage or "",
-                "publisher": "World Historical Gazetteer",
-                "publisher-place": "Pittsburgh, PA, USA",
-
-                # Custom fields (ignored by CSL processors)
-                "description": self.description or "",
-                "record_count": self.numrows or 0,
-                **({"source": self.source} if self.source else {}),
-                **({"source_citation": self.citation} if self.citation else {}),
-            }
-        except Exception as e:
-            csl_data = {"error": str(e)}
-
-        return json.dumps(csl_data)
-
-    @property
     def bounds(self):
         extent = self.extent
         b = box(extent[0], extent[1], extent[2], extent[3])
@@ -237,6 +190,10 @@ class Dataset(models.Model):
     @property
     def clustered_geometries(self):
         return calculate_clustered_geometries(self)
+
+    @property
+    def citation_csl(self):
+        return csl_citation(self)
 
     @property
     def collaborators(self):

@@ -94,14 +94,14 @@ class VisualisationControl {
             const tr = `
                 <tr>
                     <td style="text-align: right;">${label}:</td>
-                    <td><input type="checkbox" id="${attribute}" name="${attribute}Tabulate" class="tabulate-checkbox" title="Should this value be included in the tabulation of the dataset?" ${config.tabulate !== false ? "checked" : ""}></td>
+                    <td><input type="checkbox" id="${attribute}" name="${attribute}Tabulate" class="tabulate-checkbox" data-bs-toggle="tooltip" data-bs-title="Should this value be included in the tabulation of the dataset?" ${config.tabulate !== false ? "checked" : ""}></td>
                     <td>
-                        <select name="${attribute}TemporalControl" class="control-select" title="Choose (or remove) a temporal control to be used when sorting the tabulated dataset on this value.">
+                        <select name="${attribute}TemporalControl" class="control-select" data-bs-toggle="tooltip" data-bs-title="Choose (or remove) a temporal control to be used when sorting the tabulated dataset on this value.">
                             ${optionHTML}
                         </select>
                     </td>
-                    <td><input type="checkbox" id="${attribute}Trail" name="${attribute}Trail" class="trail-checkbox" title="Draw map-trails between consecutive features when sorting the tabulated dataset on this value." ${config.trail === true ? "checked" : ""}></td>
-                    <td><input type="radio" id="${attribute}InitialTabulate" name="initialTabulate" value="${attribute}" class="initial-sort-radio" title="Sort the tabulated dataset on this value initially." ${config.tabulate === "initial" ? "checked" : ""}></td>
+                    <td><input type="checkbox" id="${attribute}Trail" name="${attribute}Trail" class="trail-checkbox" data-bs-toggle="tooltip" data-bs-title="Draw map-trails between consecutive features when sorting the tabulated dataset on this value. <p class='text-bold red-head'>Trails can only be displayed if ALL of your records have associated geometry.</p>" ${config.trail === true ? "checked" : ""}></td>
+                    <td><input type="radio" id="${attribute}InitialTabulate" name="initialTabulate" value="${attribute}" class="initial-sort-radio" data-bs-toggle="tooltip" data-bs-title="Sort the tabulated dataset on this value initially." ${config.tabulate === "initial" ? "checked" : ""}></td>
                 </tr>
             `;
             tbody.append(tr);

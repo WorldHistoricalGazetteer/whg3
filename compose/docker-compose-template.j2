@@ -180,21 +180,32 @@ services:
     restart: unless-stopped
 
   {% if ENV_CONTEXT == 'local' %}
-  kibana:
-    image: kibana:8.6.2
-    container_name: kibana_{{ ENV_CONTEXT }}_{{ BRANCH }}
-    environment:
-      - ELASTICSEARCH_HOSTS={{ ES_SCHEME }}://{{ ES_HOST }}:{{ ES_PORT }}
-      - ELASTICSEARCH_SSL_VERIFICATION_MODE=full
-      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=/usr/share/kibana/config/ca-cert.pem
-      - ELASTICSEARCH_USERNAME=kibana_docker
-      - ELASTICSEARCH_PASSWORD={{ ELASTIC_PASSWORD }}
-    volumes:
-      - {{ BASE_DIR }}/whg/authorisation/ca-cert.pem:/usr/share/kibana/config/ca-cert.pem
-    ports:
-      - "5601:5601"
-    networks:
-      - local
+
+{#  embedding:#}
+{#    build:#}
+{#      context: ./embeddings#}
+{#    networks:#}
+{#      - {{ ENV_CONTEXT }}#}
+{#    ports:#}
+{#      - "6000:6000"#}
+{#    depends_on:#}
+{#      - web#}
+
+{#  kibana:#}
+{#    image: kibana:8.6.2#}
+{#    container_name: kibana_{{ ENV_CONTEXT }}_{{ BRANCH }}#}
+{#    environment:#}
+{#      - ELASTICSEARCH_HOSTS={{ ES_SCHEME }}://{{ ES_HOST }}:{{ ES_PORT }}#}
+{#      - ELASTICSEARCH_SSL_VERIFICATION_MODE=full#}
+{#      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=/usr/share/kibana/config/ca-cert.pem#}
+{#      - ELASTICSEARCH_USERNAME=kibana_docker#}
+{#      - ELASTICSEARCH_PASSWORD={{ ELASTIC_PASSWORD }}#}
+{#    volumes:#}
+{#      - {{ BASE_DIR }}/whg/authorisation/ca-cert.pem:/usr/share/kibana/config/ca-cert.pem#}
+{#    ports:#}
+{#      - "5601:5601"#}
+{#    networks:#}
+{#      - local#}
   {% endif %}
 
 volumes:

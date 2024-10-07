@@ -62,7 +62,11 @@ class CollectionModelForm(forms.ModelForm):
             'title': forms.TextInput(attrs={'size': 45}),
             'keywords': forms.TextInput(attrs={'placeholder': 'comma-delimited', 'size': 45}),
             'rel_keywords': forms.TextInput(attrs={'size': 45, 'placeholder':'comma-delimited'}),
-            'creator': forms.TextInput(attrs={'size': 45}),
+            'creator': forms.TextInput(attrs={
+                'size': 45,
+                'data-bs-toggle': 'tooltip',
+                'data-bs-title': 'Add a ; between multiple creators, and enclose organisation names in [square brackets].',
+            }),
             'contact': forms.TextInput(attrs={'size': 45}),
             'webpage': forms.TextInput(attrs={'size': 45}),
             'description': forms.Textarea(attrs={'rows': 2, 'class': 'textarea',

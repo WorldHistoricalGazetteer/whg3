@@ -95,14 +95,6 @@
                 </td>
               </tr>
             {% endif %}
-            {% if object.creator %}
-              <tr>
-                <td>
-                  <b>Creator(s)</b>
-                </td>
-                <td>{{ object.creator }}</td>
-              </tr>
-            {% endif %}
             {% if object.contact %}
               <tr>
                 <td>
@@ -112,6 +104,7 @@
               </tr>
             {% endif %}
           </table>
+          <div data-csl-json="{{ object.citation_csl }}"></div>
           <div class=""><p>
  			<span data-bs-toggle="tooltip"
                   title="Show download options">
