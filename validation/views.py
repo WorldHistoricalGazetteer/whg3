@@ -280,6 +280,7 @@ def validate_file(request, dataset_metadata):
     _, ext = os.path.splitext(uploaded_filepath)
     ext = ext.lower().lstrip('.')
     namespaces = None
+    schema_org_metadata = None
     try:
         if 'json' in ext:  # mime type is not a reliable determinant of JSON
             dataset_metadata["format"] = 'json'
@@ -290,6 +291,10 @@ def validate_file(request, dataset_metadata):
 
             # Extract any local namespace definitions (these will be expanded during validation)
             namespaces = extract_context_namespaces(uploaded_filepath)
+
+            # Extract any metadata from JSON file
+            dataset_metadata['creator'], dataset_metadata['title'], dataset_metadata['description'], dataset_metadata['webpage'] = extract_dataset_metadata(uploaded_filepath)
+            logger.debug(f'Metadata extracted from JSON: {schema_org_metadata}')
         else:
             dataset_metadata["format"] = ext
             dataset_metadata["delimited_filepath"] = uploaded_filepath
@@ -308,8 +313,6 @@ def validate_file(request, dataset_metadata):
     # Schedule the cleanup task
     cleanup_task_result = cleanup.apply_async((task_id,), countdown=settings.VALIDATION_TIMEOUT)
     cleanup_task_id = cleanup_task_result.id
-
-    # TODO: Read any CSL citation and store as _metadata in redis_client
 
     # Store task details in Redis
     redis_client.hset(task_id, mapping={
@@ -350,6 +353,41 @@ def validate_file(request, dataset_metadata):
         return JsonResponse({"status": "failed", "message": str(e)}, status=500)
 
     return JsonResponse({"status": "in_progress", "task_id": task_id})
+
+
+def extract_dataset_metadata(file_path):
+    dataset_metadata = {
+        'creator': '',
+        'title': '',
+        'description': '',
+        'webpage': ''
+    }
+
+    with open(file_path, 'r') as file:
+        # Iterate through 'indexing' object
+        indexing_data = ijson.items(file, 'indexing', use_float=True)
+
+        for item in indexing_data:
+            if isinstance(item, dict):
+                # Extract 'creator' names
+                if 'creator' in item and isinstance(item['creator'], list):
+                    dataset_metadata['creator'] = "; ".join(
+                        creator.get('name', '') for creator in item['creator'] if 'name' in creator
+                    )
+
+                # Extract 'name' as 'title'
+                if 'name' in item:
+                    dataset_metadata['title'] = item['name']
+
+                # Extract 'description'
+                if 'description' in item:
+                    dataset_metadata['description'] = item['description']
+
+                # Extract 'identifier' as 'webpage'
+                if 'identifier' in item:
+                    dataset_metadata['webpage'] = item['identifier']
+
+    return dataset_metadata['creator'], dataset_metadata['title'], dataset_metadata['description'], dataset_metadata['webpage']
 
 
 def extract_context_namespaces(file_path):
