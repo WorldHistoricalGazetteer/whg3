@@ -281,7 +281,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		            in: <a class="pop-link pop-dataset"
 		                   data-id="${place.dataset.id}" 
 		                   data-bs-toggle="popover"
-                           ${place.dataset.show_link === false ? '' : 'href="/datasets/${place.dataset.id}/places"'}
+                           ${place.dataset.show_link === false ? '' : `href="/datasets/${place.dataset.id}/places"`}
 						   tabindex="0" 
 						   rel="clickover">
 		                ${place.dataset.title.replace('(stub) ', '').substring(0, 25)}
