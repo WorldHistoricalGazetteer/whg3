@@ -281,7 +281,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		            in: <a class="pop-link pop-dataset"
 		                   data-id="${place.dataset.id}" 
 		                   data-bs-toggle="popover"
-                           href="/datasets/${place.dataset.id}/places"
+                           ${place.dataset.show_link === false ? '' : `href="/datasets/${place.dataset.id}/places"`}
 						   tabindex="0" 
 						   rel="clickover">
 		                ${place.dataset.title.replace('(stub) ', '').substring(0, 25)}
@@ -412,6 +412,10 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		                <p class='thin'><b>WHG Owner</b>: ${place.dataset.owner}</p>
 		                <p class='thin'><b>Creator</b>: ${place.dataset.creator}</p>
 		            `;
+                    if (place.dataset.show_link === false) {
+                        content += `<p class='strong-red'>This dataset is too large to be displayed.</p>`;
+                    }
+                    console.log(place);
                     return content;
                 } else {
                     return ''; // Return empty content if place data is not found
