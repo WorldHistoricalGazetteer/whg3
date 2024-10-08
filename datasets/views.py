@@ -3014,10 +3014,25 @@ class DatasetPlacesView(DetailView):
 
     model = Dataset
     template_name = "datasets/ds_places.html"
+    unavailable_template_name = "main/503.html"
 
     def get_object(self):
         id_ = self.kwargs.get("id")
         return get_object_or_404(Dataset, id=id_)
+
+    def get(self, request, *args, **kwargs):
+        ds = self.get_object()
+
+        if ds.num_places > settings.DATASETS_PLACES_LIMIT:
+            message = f"Sorry, this dataset cannot be viewed on this page because it has too many places."
+            return render(
+                request,
+                self.unavailable_template_name,
+                {"message": message},
+                status=503
+            )
+
+        return super().get(request, *args, **kwargs)
 
     def get_context_data(self, *args, **kwargs):
         context = super().get_context_data(*args, **kwargs)

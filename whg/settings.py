@@ -348,6 +348,9 @@ SPECTACULAR_SETTINGS = {
     ],
 }
 
+# Page-specific settings
+DATASETS_PLACES_LIMIT = 100000
+
 # Dataset Validation
 LPF_SCHEMA_PATH = os.path.join(BASE_DIR, 'validation/static/lpf_v2.0.jsonld')
 LPF_CONTEXT_PATH = os.path.join(BASE_DIR, 'validation/static/lpo_v2.0.jsonld')
