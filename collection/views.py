@@ -328,6 +328,13 @@ def add_collection_places(request):
     
     # Perform data processing and database operations
     try:
+        # Ensure collection_id and place_id are provided
+        if not collection_id or not place_id:
+            raise ValueError("Collection ID and Place ID must be provided.")
+
+        collection_id = int(collection_id)
+        place_id = int(place_id)
+
         if collection_id == -1:
             # Create a new collection
             collobj = Collection.objects.create(

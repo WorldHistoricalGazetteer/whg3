@@ -35,17 +35,6 @@
         <h5 class="more-or-less">{{ portal_headword }}</h5>
 
         <div id="gloss"><!-- Populated dynamically from context in JavaScript --></div>
-
-        {% if user.is_authenticated %}
-          <p class="my-0">
-          <span id="addtocoll" class="me-1 small">
-					<span id="added_flash" class="mr-2 hidden"
-                style="background-color: yellow; position:absolute; top:10px; right:10px;"> added! </span>
-					<button id="addchecked" class="btn btn-warning btn-sm" data-bs-toggle="modal"
-                  data-bs-target="#addtocoll_popup"><i class="fas fa-plus-circle"></i> Add to a Collection</button>
-          </span>
-          </p>
-        {% endif %}
         
         <div id="source_detail" class="mt-2 bg-light info-box">
           <span data-bs-toggle="tooltip" data-bs-title="Click to toggle the list of Collections in which this Place appears.">
@@ -133,6 +122,7 @@
       biome: {name: null, url: null},
     };
     const userId = {{ user.id|default_if_none:"false" }};
+    const userAuthenticated = {{ user.is_authenticated|yesno:"true,false"|default:"false" }};
   </script>
 
   {{ payload|json_script:"payload_data" }}
