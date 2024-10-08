@@ -255,15 +255,22 @@ def collab_remove(request, uid, cid):
   response_data = {"status": "ok", "uid": uid}
   return JsonResponse(response_data)
 
-""" utility: get next sequence for a collection """
+
 def seq(coll):
-  cps = CollPlace.objects.filter(collection=coll).values_list("sequence",flat=True)
-  if cps:
-    next=max(cps)+1
-  else:
-    next=0
-  print(next)
-  return next
+    """ Utility: get the next sequence for a collection """
+    cps = CollPlace.objects.filter(collection=coll).values_list("sequence", flat=True)
+
+    # Filter out None values and convert to a list
+    cps = [s for s in cps if s is not None]
+
+    # Determine the next sequence number
+    if cps:  # Check if cps is not empty
+        next_sequence = max(cps) + 1
+    else:
+        next_sequence = 0  # Initialize to 0 if no existing sequences
+
+    logger.debug(f"Next sequence: {next_sequence}")
+    return next_sequence
 
 """
   add list of >=1 places to collection
@@ -317,23 +324,22 @@ def add_places(request, *args, **kwargs):
 @require_POST
 def add_collection_places(request):
     payload = request.POST
-
-    collection_id = int(payload.get('collection'))
-    title = payload.get('title')
-    place_id = payload.get('primarySource')
-    include_all = payload.get('includeAll')
     
     # Initialize response data
     response_data = {'status': 'success', 'msg': '', 'added_places': [], 'existing_places': [], 'payload_received': payload}
     
     # Perform data processing and database operations
     try:
-        # Ensure collection_id and place_id are provided
+        collection_id = payload.get('collection')
+        place_id = payload.get('primarySource')
         if not collection_id or not place_id:
             raise ValueError("Collection ID and Place ID must be provided.")
 
         collection_id = int(collection_id)
         place_id = int(place_id)
+
+        title = payload.get('title')
+        include_all = payload.get('includeAll')
 
         if collection_id == -1:
             # Create a new collection
@@ -350,10 +356,14 @@ def add_collection_places(request):
 
         # Add places to the collection
         collection = Collection.objects.get(id=collection_id)
-
         place = Place.objects.get(id=place_id)
+
+        logger.debug(f"Adding place {place_id} to collection {collection_id}.")
+        logger.debug(f"Place: {place}, Collection: {collection}")
+
         # Check if the place already exists in the collection
         existing_place = TraceAnnotation.objects.filter(collection=collection, place=place, archived=False)
+        logger.debug(f"Existing place: {existing_place}")
         if not existing_place:
             trace_annotation = TraceAnnotation.objects.create(
                 place=place,
@@ -367,10 +377,15 @@ def add_collection_places(request):
             )
             trace_annotation.save()
 
+            sequence = seq(collection)
+            logger.debug(f"Sequence: {sequence}")
+            if sequence is None:
+                raise ValueError("Sequence cannot be None.")
+
             CollPlace.objects.create(
                 collection=collection,
                 place=place,
-                sequence=seq(collection)
+                sequence=sequence
             )
             
             response_data['added_places'].append(place_id)
