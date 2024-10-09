@@ -10,6 +10,9 @@ from django.conf import settings
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "whg.settings")
 
+import django
+django.setup()  # Ensure Django is fully set up before importing anything else
+
 app = Celery('whg')
 
 # Load configuration from Django settings with the CELERY_ namespace

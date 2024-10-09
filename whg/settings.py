@@ -7,16 +7,16 @@ from django.core.cache.backends.filebased import FileBasedCache
 from logging.handlers import RotatingFileHandler
 
 try:
-  from .local_settings_autocontext import *
+    from .local_settings_autocontext import *
 except ImportError:
-  print('Error importing from .local_settings_autocontext')
-  pass
+    print('Error importing from .local_settings_autocontext')
+    pass
 
 try:
-  from .local_settings import *
+    from .local_settings import *
 except ImportError:
-  print('Error importing from .local_settings')
-  pass
+    print('Error importing from .local_settings')
+    pass
 
 ENV_CONTEXT = os.environ.get('ENV_CONTEXT', 'dev-whgazetteer-org')  # Default if ENV_CONTEXT is not set
 
@@ -71,11 +71,12 @@ INSTALLED_APPS = [
     'collection.apps.CollectionConfig',  # "collections" (plural) is reserved in python
     'datasets.apps.DatasetsConfig',
     'elastic.apps.ElasticConfig',
+    'ingestion.apps.IngestionConfig',
     'main.apps.MainConfig',
     'persons.apps.PersonsConfig',
     'places.apps.PlacesConfig',
     'remote.apps.RemoteConfig',
-    'resources.apps.ResourcesConfig', # for teaching
+    'resources.apps.ResourcesConfig',  # for teaching
     'search.apps.SearchConfig',
     'sitemap.apps.SitemapConfig',
     'traces.apps.TracesConfig',
@@ -85,17 +86,17 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'users.User'
 
 MIDDLEWARE = [
-  # uncomment for debug toolbar
-  # 'debug_toolbar.middleware.DebugToolbarMiddleware',
-  'django.contrib.sessions.middleware.SessionMiddleware',
-  'django.contrib.auth.middleware.AuthenticationMiddleware',
-  'django.contrib.messages.middleware.MessageMiddleware',
-  'django.middleware.clickjacking.XFrameOptionsMiddleware',
-  'django.middleware.common.CommonMiddleware',
-  'django.middleware.csrf.CsrfViewMiddleware',
-  'django.middleware.locale.LocaleMiddleware',
-  'django.middleware.security.SecurityMiddleware',
-  'django_user_agents.middleware.UserAgentMiddleware',
+    # uncomment for debug toolbar
+    # 'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django_user_agents.middleware.UserAgentMiddleware',
 
 ]
 
@@ -106,12 +107,12 @@ PUBLIC_GROUP_ID = 'review'
 TIME_ZONE = 'America/New_York'
 
 MESSAGE_TAGS = {
-        messages.DEBUG: 'alert-secondary',
-        messages.INFO: 'alert-info',
-        messages.SUCCESS: 'alert-success',
-        messages.WARNING: 'alert-warning',
-        messages.ERROR: 'alert-danger',
- }
+    messages.DEBUG: 'alert-secondary',
+    messages.INFO: 'alert-info',
+    messages.SUCCESS: 'alert-success',
+    messages.WARNING: 'alert-warning',
+    messages.ERROR: 'alert-danger',
+}
 
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_ACCEPT_CONTENT = ['application/json']
@@ -142,14 +143,14 @@ DJANGORESIZED_DEFAULT_NORMALIZE_ROTATION = True
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
-        #'api.views.PrettyJsonRenderer',
-        #'rest_framework.renderers.BrowsableAPIRenderer',
+        # 'api.views.PrettyJsonRenderer',
+        # 'rest_framework.renderers.BrowsableAPIRenderer',
         'rest_framework_datatables.renderers.DatatablesRenderer',
-        ),
+    ),
     'DEFAULT_FILTER_BACKENDS': (
-      'rest_framework_datatables.filters.DatatablesFilterBackend',
-        #'django_filters.rest_framework.DjangoFilterBackend'
-        ),
+        'rest_framework_datatables.filters.DatatablesFilterBackend',
+        # 'django_filters.rest_framework.DjangoFilterBackend'
+    ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework_datatables.pagination.DatatablesPageNumberPagination',
     'PAGE_SIZE': 15000,
     'PAGE_SIZE': 20,
@@ -207,7 +208,7 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'whg/logs/django.log'),
             'maxBytes': 10485760,  # 10 MB
-            'backupCount': 5,      # Number of backup files to keep
+            'backupCount': 5,  # Number of backup files to keep
             'formatter': 'verbose',
         },
         'celery_file': {
@@ -215,7 +216,7 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'whg/logs/celery.log'),
             'maxBytes': 10485760,  # 10 MB
-            'backupCount': 5,      # Number of backup files to keep
+            'backupCount': 5,  # Number of backup files to keep
             'formatter': 'verbose',
         },
         'root_file': {
@@ -223,7 +224,7 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'whg/logs/root.log'),
             'maxBytes': 10485760,  # 10 MB
-            'backupCount': 5,      # Number of backup files to keep
+            'backupCount': 5,  # Number of backup files to keep
             'formatter': 'verbose',
         },
         'messaging_file': {  # New handler for messaging logs
@@ -231,9 +232,9 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'whg/logs/messaging.log'),
             'maxBytes': 10485760,  # 10 MB
-            'backupCount': 5,      # Number of backup files to keep
+            'backupCount': 5,  # Number of backup files to keep
             'formatter': 'verbose',
-        },     
+        },
         'console': {
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'class': 'logging.StreamHandler',
@@ -271,22 +272,21 @@ GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
 GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
 
 LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL='/accounts/login/'
-LOGOUT_REDIRECT_URL='/'
+LOGIN_REDIRECT_URL = '/accounts/login/'
+LOGOUT_REDIRECT_URL = '/'
 
 AUTHENTICATION_BACKENDS = (
-  'django.contrib.auth.backends.ModelBackend', # default
-  'guardian.backends.ObjectPermissionBackend',
+    'django.contrib.auth.backends.ModelBackend',  # default
+    'guardian.backends.ObjectPermissionBackend',
 )
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-  {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
-  {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
-  {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
-  {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
@@ -298,7 +298,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 
-
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 MEDIA_URL = '/media/'
 
@@ -307,11 +306,11 @@ MEDIA_URL = '/media/'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = [
-  os.path.join(BASE_DIR, 'datasets', 'static'),
-  os.path.join(BASE_DIR, 'main', 'static'),
-  os.path.join(BASE_DIR, 'validation', 'static'),
-  os.path.join(BASE_DIR, 'whg', 'static'),
-  # webpack.config now writes directly to static root /webpack
+    os.path.join(BASE_DIR, 'datasets', 'static'),
+    os.path.join(BASE_DIR, 'main', 'static'),
+    os.path.join(BASE_DIR, 'validation', 'static'),
+    os.path.join(BASE_DIR, 'whg', 'static'),
+    # webpack.config now writes directly to static root /webpack
 ]
 
 CACHES = {
@@ -319,7 +318,7 @@ CACHES = {
         'BACKEND': 'utils.mapdata.MapdataFileBasedCache',
         'LOCATION': os.path.join(BASE_DIR, 'cache'),
         'TIMEOUT': None,  # Cache data indefinitely until manually updated
-        "OPTIONS": {"MAX_ENTRIES": 10000}, # Increase from default of 300
+        "OPTIONS": {"MAX_ENTRIES": 10000},  # Increase from default of 300
     },
     'sitemap_cache': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
@@ -351,6 +350,16 @@ SPECTACULAR_SETTINGS = {
 # Page-specific settings
 DATASETS_PLACES_LIMIT = 100000
 
+# Remote Dataset Configurations
+REMOTE_DATASET_CONFIGS = [
+    {
+        'dataset_name': 'Pleiades',
+        'url': 'https://atlantides.org/downloads/pleiades/json/pleiades-places-latest.json.gz',
+        'item_path': '@graph.item',
+        'api_item': 'https://pleiades.stoa.org/places/<id>/json',
+    },
+]
+
 # Dataset Validation
 LPF_SCHEMA_PATH = os.path.join(BASE_DIR, 'validation/static/lpf_v2.0.jsonld')
 LPF_CONTEXT_PATH = os.path.join(BASE_DIR, 'validation/static/lpo_v2.0.jsonld')
@@ -367,8 +376,8 @@ VALIDATION_SUPPORTED_TYPES = [
 ]
 VALIDATION_CHUNK_ROWS = 500
 VALIDATION_BATCH_MEMORY_LIMIT = 1 * 1024 * 1024  # 1 MB
-VALIDATION_MAXFIXATTEMPTS = 50 # Maximum number of errors to try to fix on each feature
-VALIDATION_MAX_ERRORS = 100 # Stop validation of dataset if this number of unfixed errors is reached (checked only on completion of each batch, so may exceed this number)
-VALIDATION_TIMEOUT = 3600 # seconds, after which tasks are revoked and records are removed from redis
-VALIDATION_TEST_DELAY = 0 # seconds to pause after each JSON schema validation attempt
+VALIDATION_MAXFIXATTEMPTS = 50  # Maximum number of errors to try to fix on each feature
+VALIDATION_MAX_ERRORS = 100  # Stop validation of dataset if this number of unfixed errors is reached (checked only on completion of each batch, so may exceed this number)
+VALIDATION_TIMEOUT = 3600  # seconds, after which tasks are revoked and records are removed from redis
+VALIDATION_TEST_DELAY = 0  # seconds to pause after each JSON schema validation attempt
 VALIDATION_INTEGRITY_RETRIES = 7
