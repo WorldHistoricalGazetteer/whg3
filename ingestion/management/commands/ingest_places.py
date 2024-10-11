@@ -1,7 +1,7 @@
 # ingestion/management/commands/ingest_places.py
 
 from django.core.management.base import BaseCommand
-from ingestion.tasks import ingest_gzipped_data_from_url  # Import the shared task
+from ingestion.tasks import process_dataset  # Import the shared task
 import logging
 
 logger = logging.getLogger(__name__)
@@ -20,6 +20,6 @@ class Command(BaseCommand):
         limit = kwargs.get('limit')
 
         # Call the Celery task for ingestion
-        ingest_gzipped_data_from_url.delay(dataset_name, limit)
+        process_dataset.delay(dataset_name, limit)
 
         self.stdout.write(self.style.SUCCESS(f'Successfully initiated ingestion for dataset: {dataset_name}'))

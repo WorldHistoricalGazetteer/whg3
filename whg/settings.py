@@ -327,6 +327,14 @@ CACHES = {
         'OPTIONS': {
             'MAX_ENTRIES': 5000  # Configure based on expected sitemap entries
         },
+    },
+    'remote_datasets': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.path.join(BASE_DIR, 'remote_datasets_cache'),
+        'TIMEOUT': 2678400,  # Cache for 31 days
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        },
     }
 }
 
@@ -354,10 +362,44 @@ DATASETS_PLACES_LIMIT = 100000
 REMOTE_DATASET_CONFIGS = [
     {
         'dataset_name': 'Pleiades',
-        'url': 'https://atlantides.org/downloads/pleiades/json/pleiades-places-latest.json.gz',
-        'item_path': '@graph.item',
+        'namespace': 'pleiades',
+        'files': [
+            {
+                'url': 'https://atlantides.org/downloads/pleiades/json/pleiades-places-latest.json.gz',
+                'file_type': 'json',
+                'item_path': '@graph.item',
+            }
+        ],
         'api_item': 'https://pleiades.stoa.org/places/<id>/json',
     },
+    {
+        'dataset_name': 'GeoNames',
+        'namespace': 'gn',
+        'files': [
+            {
+                'url': 'https://download.geonames.org/export/dump/allCountries.zip',
+                'fieldnames': [
+                    'geonameid', 'name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'feature_class',
+                    'feature_code', 'country_code', 'cc2', 'admin1_code', 'admin2_code', 'admin3_code', 'admin4_code',
+                    'population', 'elevation', 'dem', 'timezone', 'modification_date',
+                ],
+                'file_name': 'allCountries.txt',
+                'file_type': 'csv',
+                'delimiter': '\t',
+            },
+            {
+                'url': 'https://download.geonames.org/export/dump/alternateNamesV2.zip',
+                'fieldnames': [
+                    'alternateNameId', 'geonameid', 'isolanguage', 'alternate_name', 'isPreferredName',
+                    'isShortName', 'isColloquial', 'isHistoric', 'from', 'to',
+                ],
+                'file_name': 'alternateNamesV2.txt', # Zip file also includes iso-languagecodes.txt
+                'file_type': 'csv',
+                'delimiter': '\t',
+            },
+        ],
+        'api_item': 'http://api.geonames.org/getJSON?formatted=true&geonameId=<id>&username=<username>&style=full',
+    }
 ]
 
 # Dataset Validation
