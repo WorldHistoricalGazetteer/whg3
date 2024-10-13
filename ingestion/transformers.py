@@ -10,6 +10,22 @@ from areas.models import Country
 class NPRTransformer:
     """Transforms raw data into Normalised Place Records with Toponyms linked by Attestations."""
     transformers = {
+        "LPF": [ # Linked Places Format: default transformer
+            lambda data: (
+                { # NPR (Normalised Place Record)
+                    # "item_id": ,
+                    # "primary_name": ,
+                    # "latitude": ,
+                    # "longitude": ,
+                    # "geometry_bbox": ,
+                    # "feature_classes": ,
+                    # "ccodes": ,
+                    "lpf_feature": data,
+                },
+                [ # Attestations and Toponyms
+                ]
+            )
+        ],
         "Pleiades": [
             lambda data: (
                 {
@@ -99,6 +115,7 @@ class NPRTransformer:
                     "primary_name": data.get("object", "").strip('"').encode('utf-8').decode('unicode_escape'),
                 } if data.get("predicate") == "http://vocab.getty.edu/ontology#parentString" else
 
+                # TODO: Map to GeoNames feature classes from aat:
                 {  # PlaceTypes
                     "item_id": int(data.get("subject", "").split('/')[-1]),
                     "feature_classes": [data.get("object", "").split('/')[-1]],
@@ -159,7 +176,7 @@ class NPRTransformer:
                 ]
             )
         ],
-        "GB1900": [
+        "OSM": [
             lambda data: (
                 {
                 },
@@ -167,7 +184,15 @@ class NPRTransformer:
                 ]
             )
         ],
-        "fLPF": [
+        "LOC": [
+            lambda data: (
+                {
+                },
+                [
+                ]
+            )
+        ],
+        "GB1900": [
             lambda data: (
                 {
                 },
