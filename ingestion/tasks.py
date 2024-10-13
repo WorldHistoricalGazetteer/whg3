@@ -6,7 +6,6 @@ import traceback
 import xml.etree.ElementTree as ET
 import zipfile
 
-from rdflib.plugins.parsers.ntriples import W3CNTriplesParser
 import requests
 import gzip
 import ijson
