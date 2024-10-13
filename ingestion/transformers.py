@@ -15,11 +15,10 @@ class NPRTransformer:
                 {
                     "item_id": data.get("id", ""),
                     "primary_name": data.get("title", ""),
-                    "geometry_point": (
-                        [float(coord) for coord in data["reprPoint"]]
-                        if isinstance(data.get("reprPoint"), list) and len(data["reprPoint"]) == 2
-                        else None
-                    ),
+                    "latitude": float(data["reprPoint"][0]) if isinstance(data.get("reprPoint"), list) and len(
+                        data["reprPoint"]) == 2 else None,
+                    "longitude": float(data["reprPoint"][1]) if isinstance(data.get("reprPoint"), list) and len(
+                        data["reprPoint"]) == 2 else None,
                     "geometry_bbox": (
                         [float(coord) for coord in data["bbox"]]
                         if isinstance(data.get("bbox"), list) and len(data["bbox"]) == 4
@@ -56,11 +55,8 @@ class NPRTransformer:
                 {
                     "item_id": data.get("geonameid", ""),
                     "primary_name": data.get("name", ""),
-                    "geometry_point": (
-                        [float(data["latitude"]), float(data["longitude"])]
-                        if data.get("latitude") and data.get("longitude")
-                        else None
-                    ),
+                    "latitude": float(data.get("latitude")) if data.get("latitude") else None,
+                    "longitude": float(data.get("longitude")) if data.get("longitude") else None,
                     "geometry_bbox": None,
                     "feature_classes": [data.get("feature_class", "")],
                     "ccodes": (
@@ -82,8 +78,8 @@ class NPRTransformer:
                 },
                 [
                     {
-                        "geoname_id": data.get("geonameid", ""),
-                        "geoname_toponym_id": data.get("alternateNameId", ""),
+                        "npr_item_id": data.get("geonameid", ""),
+                        "source_toponym_id": data.get("alternateNameId", ""),
                         "toponym": data.get("alternate_name", ""),
                         "language": data.get("isolanguage") or None,
                         "is_preferred": bool(data.get("isPreferredName", False)),
@@ -96,6 +92,65 @@ class NPRTransformer:
                 else None
             )
         ],
+        "TGN": [
+            lambda data: (
+                {  # Subjects
+                    "item_id": int(data.get("subject", "").split('/')[-1]),
+                    "primary_name": data.get("object", "").strip('"').encode('utf-8').decode('unicode_escape'),
+                } if data.get("predicate") == "http://vocab.getty.edu/ontology#parentString" else
+
+                {  # PlaceTypes
+                    "item_id": int(data.get("subject", "").split('/')[-1]),
+                    "feature_classes": [data.get("object", "").split('/')[-1]],
+                } if data.get("predicate") == "http://vocab.getty.edu/ontology#placeType" else
+
+                {  # Coordinates
+                    "item_id": int(data.get("subject", "").split('/')[-1].split('-')[0]),
+                    **({"longitude": float(data.get("object", "").split("^^")[0].strip('"'))} if data.get("predicate",
+                                                                                                          "") == "http://schema.org/longitude" else {}),
+                    **({"latitude": float(data.get("object", "").split("^^")[0].strip('"'))} if data.get("predicate",
+                                                                                                         "") == "http://schema.org/latitude" else {}),
+                } if data.get("predicate") in ["http://schema.org/longitude", "http://schema.org/latitude"] else
+
+                # Terms
+                {"item_id": data.get("subject", "").split('/')[-1]} if data.get("predicate") in [
+                    "http://vocab.getty.edu/ontology#prefLabelGVP",
+                    "http://www.w3.org/2008/05/skos-xl#prefLabel",
+                    "http://www.w3.org/2008/05/skos-xl#altLabel"] else
+
+                None,
+                [
+                    {  # Terms
+                        **({"npr_item_id": data.get("subject", "").split('/')[-1]} if data.get("predicate") in [
+                            "http://vocab.getty.edu/ontology#prefLabelGVP",
+                            "http://www.w3.org/2008/05/skos-xl#prefLabel",
+                            "http://www.w3.org/2008/05/skos-xl#altLabel"] else {}
+                           ),
+                        "source_toponym_id": data.get("subject", "").split('/')[-1] if data.get("predicate") in [
+                            "http://vocab.getty.edu/ontology#term",
+                            "http://vocab.getty.edu/ontology#estStart"] else
+                        data.get("object", "").split('/')[-1],
+                        **({"toponym": data.get("object", "").encode('utf-8').decode('unicode_escape').split("@")[
+                            0].strip('"')} if data.get(
+                            "predicate") == "http://vocab.getty.edu/ontology#term" else {}),
+                        **({"language": data.get("object", "").encode('utf-8').decode('unicode_escape').split("@")[
+                            -1]} if len(
+                            data.get("object", "").split("@")) == 2 and data.get(
+                            "predicate") == "http://vocab.getty.edu/ontology#term" else {}),
+                        **({"is_preferred": True} if data.get(
+                            "predicate") == "http://vocab.getty.edu/ontology#prefLabelGVP" else {}),
+                        **({"start": int(data.get("object", "").split("^^")[0].strip('"'))} if data.get(
+                            "predicate") == "http://vocab.getty.edu/ontology#estStart" else {}),
+                    }
+                ] if data.get("predicate") in ["http://vocab.getty.edu/ontology#prefLabelGVP",
+                                               "http://www.w3.org/2008/05/skos-xl#prefLabel",
+                                               "http://www.w3.org/2008/05/skos-xl#altLabel",
+                                               "http://vocab.getty.edu/ontology#term",
+                                               "http://vocab.getty.edu/ontology#estStart"] else
+
+                None
+            ),
+        ],
         "Wikidata": [
             lambda data: (
                 {
@@ -104,7 +159,7 @@ class NPRTransformer:
                 ]
             )
         ],
-        "TGN": lambda data: [
+        "GB1900": [
             lambda data: (
                 {
                 },
@@ -112,15 +167,7 @@ class NPRTransformer:
                 ]
             )
         ],
-        "GB1900": lambda data: [
-            lambda data: (
-                {
-                },
-                [
-                ]
-            )
-        ],
-        "fLPF": lambda data: [
+        "fLPF": [
             lambda data: (
                 {
                 },

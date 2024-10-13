@@ -393,12 +393,72 @@ REMOTE_DATASET_CONFIGS = [
                     'alternateNameId', 'geonameid', 'isolanguage', 'alternate_name', 'isPreferredName',
                     'isShortName', 'isColloquial', 'isHistoric', 'from', 'to',
                 ],
-                'file_name': 'alternateNamesV2.txt', # Zip file also includes iso-languagecodes.txt
+                'file_name': 'alternateNamesV2.txt',  # Zip file also includes iso-languagecodes.txt
                 'file_type': 'csv',
                 'delimiter': '\t',
             },
         ],
         'api_item': 'http://api.geonames.org/getJSON?formatted=true&geonameId=<id>&username=<username>&style=full',
+    },
+    {
+        'dataset_name': 'TGN',
+        'namespace': 'tgn',
+        'files': [
+            {
+                'url': 'http://tgndownloads.getty.edu/VocabData/full.zip',
+                'file_name': 'TGNOut_Full.nt',
+                'file_type': 'nt',
+                'filter': [
+                    '<http://vocab.getty.edu/ontology#parentString>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#parentString> "Siena, Tuscany, Italy, Europe, World"
+                    '<http://vocab.getty.edu/ontology#prefLabelGVP>', # '<http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#prefLabelGVP> <http://vocab.getty.edu/tgn/term/47413-en>
+                    '<http://www.w3.org/2008/05/skos-xl#prefLabel>', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#prefLabel> <http://vocab.getty.edu/tgn/term/47413-en>
+                    '<http://www.w3.org/2008/05/skos-xl#altLabel>', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#altLabel> <http://vocab.getty.edu/tgn/term/140808-en>
+                    '<http://vocab.getty.edu/ontology#term>', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#term> "Siena"@en
+                    '<http://vocab.getty.edu/ontology#estStart>', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#estStart> "1200"^^<http://www.w3.org/2001/XMLSchema#gYear>
+                    '<http://schema.org/longitude>', # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/longitude> "11.33"^^<http://www.w3.org/2001/XMLSchema#decimal>
+                    '<http://schema.org/latitude>', # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/latitude> "43.318"^^<http://www.w3.org/2001/XMLSchema#decimal>
+                    '<http://vocab.getty.edu/ontology#placeType>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#placeType> <http://vocab.getty.edu/aat/300387236>
+                ],
+            },
+            # {
+            #     'url': 'http://tgndownloads.getty.edu/VocabData/explicit.zip',
+            #     'file_name': 'TGNOut_1Subjects.nt',
+            #     'file_type': 'nt',
+            #     'filter': [
+            #         '<http://vocab.getty.edu/ontology#parentString>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#parentString> "Siena, Tuscany, Italy, Europe, World"
+            #     ],
+            # },
+            # {
+            #     'url': 'http://tgndownloads.getty.edu/VocabData/explicit.zip',
+            #     'file_name': 'TGNOut_2Terms.nt',
+            #     'file_type': 'nt',
+            #     'filter': [
+            #         '<http://vocab.getty.edu/ontology#prefLabelGVP>', # '<http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#prefLabelGVP> <http://vocab.getty.edu/tgn/term/47413-en>
+            #         '<http://www.w3.org/2008/05/skos-xl#prefLabel>', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#prefLabel> <http://vocab.getty.edu/tgn/term/47413-en>
+            #         '<http://www.w3.org/2008/05/skos-xl#altLabel>', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#altLabel> <http://vocab.getty.edu/tgn/term/140808-en>
+            #         '<http://vocab.getty.edu/ontology#term>', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#term> "Siena"@en
+            #         '<http://vocab.getty.edu/ontology#estStart>', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#estStart> "1200"^^<http://www.w3.org/2001/XMLSchema#gYear>
+            #     ],
+            # },
+            # {
+            #     'url': 'http://tgndownloads.getty.edu/VocabData/explicit.zip',
+            #     'file_name': 'TGNOut_Coordinates.nt',
+            #     'file_type': 'nt',
+            #     'filter': [
+            #         '<http://schema.org/longitude>', # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/longitude> "11.33"^^<http://www.w3.org/2001/XMLSchema#decimal>
+            #         '<http://schema.org/latitude>', # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/latitude> "43.318"^^<http://www.w3.org/2001/XMLSchema#decimal>
+            #     ],
+            # },
+            # {
+            #     'url': 'http://tgndownloads.getty.edu/VocabData/explicit.zip',
+            #     'file_name': 'TGNOut_PlaceTypes.nt',
+            #     'file_type': 'nt',
+            #     'filter': [
+            #         '<http://vocab.getty.edu/ontology#placeType>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#placeType> <http://vocab.getty.edu/aat/300387236>
+            #     ],
+            # },
+        ],
+        'api_item': 'https://www.getty.edu/vow/TGNFullDisplay?find=&place=&nation=&english=Y&subjectid=<id>',
     }
 ]
 
