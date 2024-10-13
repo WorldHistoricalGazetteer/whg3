@@ -7,16 +7,16 @@ from django.core.cache.backends.filebased import FileBasedCache
 from logging.handlers import RotatingFileHandler
 
 try:
-  from .local_settings_autocontext import *
+    from .local_settings_autocontext import *
 except ImportError:
-  print('Error importing from .local_settings_autocontext')
-  pass
+    print('Error importing from .local_settings_autocontext')
+    pass
 
 try:
-  from .local_settings import *
+    from .local_settings import *
 except ImportError:
-  print('Error importing from .local_settings')
-  pass
+    print('Error importing from .local_settings')
+    pass
 
 ENV_CONTEXT = os.environ.get('ENV_CONTEXT', 'dev-whgazetteer-org')  # Default if ENV_CONTEXT is not set
 
@@ -71,11 +71,12 @@ INSTALLED_APPS = [
     'collection.apps.CollectionConfig',  # "collections" (plural) is reserved in python
     'datasets.apps.DatasetsConfig',
     'elastic.apps.ElasticConfig',
+    'ingestion.apps.IngestionConfig',
     'main.apps.MainConfig',
     'persons.apps.PersonsConfig',
     'places.apps.PlacesConfig',
     'remote.apps.RemoteConfig',
-    'resources.apps.ResourcesConfig', # for teaching
+    'resources.apps.ResourcesConfig',  # for teaching
     'search.apps.SearchConfig',
     'sitemap.apps.SitemapConfig',
     'traces.apps.TracesConfig',
@@ -85,17 +86,17 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'users.User'
 
 MIDDLEWARE = [
-  # uncomment for debug toolbar
-  # 'debug_toolbar.middleware.DebugToolbarMiddleware',
-  'django.contrib.sessions.middleware.SessionMiddleware',
-  'django.contrib.auth.middleware.AuthenticationMiddleware',
-  'django.contrib.messages.middleware.MessageMiddleware',
-  'django.middleware.clickjacking.XFrameOptionsMiddleware',
-  'django.middleware.common.CommonMiddleware',
-  'django.middleware.csrf.CsrfViewMiddleware',
-  'django.middleware.locale.LocaleMiddleware',
-  'django.middleware.security.SecurityMiddleware',
-  'django_user_agents.middleware.UserAgentMiddleware',
+    # uncomment for debug toolbar
+    # 'debug_toolbar.middleware.DebugToolbarMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django_user_agents.middleware.UserAgentMiddleware',
 
 ]
 
@@ -106,12 +107,12 @@ PUBLIC_GROUP_ID = 'review'
 TIME_ZONE = 'America/New_York'
 
 MESSAGE_TAGS = {
-        messages.DEBUG: 'alert-secondary',
-        messages.INFO: 'alert-info',
-        messages.SUCCESS: 'alert-success',
-        messages.WARNING: 'alert-warning',
-        messages.ERROR: 'alert-danger',
- }
+    messages.DEBUG: 'alert-secondary',
+    messages.INFO: 'alert-info',
+    messages.SUCCESS: 'alert-success',
+    messages.WARNING: 'alert-warning',
+    messages.ERROR: 'alert-danger',
+}
 
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_ACCEPT_CONTENT = ['application/json']
@@ -142,14 +143,14 @@ DJANGORESIZED_DEFAULT_NORMALIZE_ROTATION = True
 REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
-        #'api.views.PrettyJsonRenderer',
-        #'rest_framework.renderers.BrowsableAPIRenderer',
+        # 'api.views.PrettyJsonRenderer',
+        # 'rest_framework.renderers.BrowsableAPIRenderer',
         'rest_framework_datatables.renderers.DatatablesRenderer',
-        ),
+    ),
     'DEFAULT_FILTER_BACKENDS': (
-      'rest_framework_datatables.filters.DatatablesFilterBackend',
-        #'django_filters.rest_framework.DjangoFilterBackend'
-        ),
+        'rest_framework_datatables.filters.DatatablesFilterBackend',
+        # 'django_filters.rest_framework.DjangoFilterBackend'
+    ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework_datatables.pagination.DatatablesPageNumberPagination',
     'PAGE_SIZE': 15000,
     'PAGE_SIZE': 20,
@@ -207,7 +208,7 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'whg/logs/django.log'),
             'maxBytes': 10485760,  # 10 MB
-            'backupCount': 5,      # Number of backup files to keep
+            'backupCount': 5,  # Number of backup files to keep
             'formatter': 'verbose',
         },
         'celery_file': {
@@ -215,7 +216,7 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'whg/logs/celery.log'),
             'maxBytes': 10485760,  # 10 MB
-            'backupCount': 5,      # Number of backup files to keep
+            'backupCount': 5,  # Number of backup files to keep
             'formatter': 'verbose',
         },
         'root_file': {
@@ -223,7 +224,7 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'whg/logs/root.log'),
             'maxBytes': 10485760,  # 10 MB
-            'backupCount': 5,      # Number of backup files to keep
+            'backupCount': 5,  # Number of backup files to keep
             'formatter': 'verbose',
         },
         'messaging_file': {  # New handler for messaging logs
@@ -231,9 +232,9 @@ LOGGING = {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'whg/logs/messaging.log'),
             'maxBytes': 10485760,  # 10 MB
-            'backupCount': 5,      # Number of backup files to keep
+            'backupCount': 5,  # Number of backup files to keep
             'formatter': 'verbose',
-        },     
+        },
         'console': {
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'class': 'logging.StreamHandler',
@@ -271,22 +272,21 @@ GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
 GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
 
 LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL='/accounts/login/'
-LOGOUT_REDIRECT_URL='/'
+LOGIN_REDIRECT_URL = '/accounts/login/'
+LOGOUT_REDIRECT_URL = '/'
 
 AUTHENTICATION_BACKENDS = (
-  'django.contrib.auth.backends.ModelBackend', # default
-  'guardian.backends.ObjectPermissionBackend',
+    'django.contrib.auth.backends.ModelBackend',  # default
+    'guardian.backends.ObjectPermissionBackend',
 )
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
-  {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
-  {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
-  {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
-  {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
@@ -298,7 +298,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 
-
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
 MEDIA_URL = '/media/'
 
@@ -307,11 +306,11 @@ MEDIA_URL = '/media/'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATICFILES_DIRS = [
-  os.path.join(BASE_DIR, 'datasets', 'static'),
-  os.path.join(BASE_DIR, 'main', 'static'),
-  os.path.join(BASE_DIR, 'validation', 'static'),
-  os.path.join(BASE_DIR, 'whg', 'static'),
-  # webpack.config now writes directly to static root /webpack
+    os.path.join(BASE_DIR, 'datasets', 'static'),
+    os.path.join(BASE_DIR, 'main', 'static'),
+    os.path.join(BASE_DIR, 'validation', 'static'),
+    os.path.join(BASE_DIR, 'whg', 'static'),
+    # webpack.config now writes directly to static root /webpack
 ]
 
 CACHES = {
@@ -319,7 +318,7 @@ CACHES = {
         'BACKEND': 'utils.mapdata.MapdataFileBasedCache',
         'LOCATION': os.path.join(BASE_DIR, 'cache'),
         'TIMEOUT': None,  # Cache data indefinitely until manually updated
-        "OPTIONS": {"MAX_ENTRIES": 10000}, # Increase from default of 300
+        "OPTIONS": {"MAX_ENTRIES": 10000},  # Increase from default of 300
     },
     'sitemap_cache': {
         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
@@ -327,6 +326,14 @@ CACHES = {
         'TIMEOUT': 3600,  # Cache sitemap for 1 hour (3600 seconds)
         'OPTIONS': {
             'MAX_ENTRIES': 5000  # Configure based on expected sitemap entries
+        },
+    },
+    'remote_datasets': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.path.join(BASE_DIR, 'remote_datasets_cache'),
+        'TIMEOUT': 2678400,  # Cache for 31 days
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
         },
     }
 }
@@ -351,6 +358,138 @@ SPECTACULAR_SETTINGS = {
 # Page-specific settings
 DATASETS_PLACES_LIMIT = 100000
 
+# Remote Dataset Configurations
+REMOTE_DATASET_CONFIGS = [
+    { # 2024: 37k+ places
+        'dataset_name': 'Pleiades',
+        'namespace': 'pleiades',
+        'api_item': 'https://pleiades.stoa.org/places/<id>/json',
+        'citation': 'Pleiades: A community-built gazetteer and graph of ancient places. Copyright © Institute for the Study of the Ancient World. Sharing and remixing permitted under terms of the Creative Commons Attribution 3.0 License (cc-by). https://pleiades.stoa.org/',
+        'files': [
+            {
+                'url': 'https://atlantides.org/downloads/pleiades/json/pleiades-places-latest.json.gz',
+                'file_type': 'json',
+                'item_path': '@graph.item',
+            }
+        ],
+    },
+    { # 2024: 12m+ places
+        'dataset_name': 'GeoNames',
+        'namespace': 'gn',
+        'api_item': 'http://api.geonames.org/getJSON?formatted=true&geonameId=<id>&username=<username>&style=full',
+        'citation': 'GeoNames geographical database. https://www.geonames.org/',
+        'files': [
+            {
+                'url': 'https://download.geonames.org/export/dump/allCountries.zip',
+                'fieldnames': [
+                    'geonameid', 'name', 'asciiname', 'alternatenames', 'latitude', 'longitude', 'feature_class',
+                    'feature_code', 'country_code', 'cc2', 'admin1_code', 'admin2_code', 'admin3_code', 'admin4_code',
+                    'population', 'elevation', 'dem', 'timezone', 'modification_date',
+                ],
+                'file_name': 'allCountries.txt',
+                'file_type': 'csv',
+                'delimiter': '\t',
+            },
+            {
+                'url': 'https://download.geonames.org/export/dump/alternateNamesV2.zip',
+                'fieldnames': [
+                    'alternateNameId', 'geonameid', 'isolanguage', 'alternate_name', 'isPreferredName',
+                    'isShortName', 'isColloquial', 'isHistoric', 'from', 'to',
+                ],
+                'file_name': 'alternateNamesV2.txt',  # Zip file also includes iso-languagecodes.txt
+                'file_type': 'csv',
+                'delimiter': '\t',
+            },
+        ],
+    },
+    { # 2024: 3m+ places
+        'dataset_name': 'TGN',
+        'namespace': 'tgn',
+        'api_item': 'https://vocab.getty.edu/tgn/<id>.jsonld',
+        'citation': 'The Getty Thesaurus of Geographic Names® (TGN) is provided by the J. Paul Getty Trust under the Open Data Commons Attribution License (ODC-By) 1.0. https://www.getty.edu/research/tools/vocabularies/tgn/',
+        'files': [
+            {
+                'url': 'http://tgndownloads.getty.edu/VocabData/full.zip',
+                'file_name': 'TGNOut_Full.nt',
+                'file_type': 'nt',
+                'filter': [ # Filter to only include records with these predicates (examples of each given below)
+                    '<http://vocab.getty.edu/ontology#parentString>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#parentString> "Siena, Tuscany, Italy, Europe, World"
+                    '<http://vocab.getty.edu/ontology#prefLabelGVP>', # '<http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#prefLabelGVP> <http://vocab.getty.edu/tgn/term/47413-en>
+                    '<http://www.w3.org/2008/05/skos-xl#prefLabel>', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#prefLabel> <http://vocab.getty.edu/tgn/term/47413-en>
+                    '<http://www.w3.org/2008/05/skos-xl#altLabel>', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#altLabel> <http://vocab.getty.edu/tgn/term/140808-en>
+                    '<http://vocab.getty.edu/ontology#term>', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#term> "Siena"@en
+                    '<http://vocab.getty.edu/ontology#estStart>', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#estStart> "1200"^^<http://www.w3.org/2001/XMLSchema#gYear>
+                    '<http://schema.org/longitude>', # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/longitude> "11.33"^^<http://www.w3.org/2001/XMLSchema#decimal>
+                    '<http://schema.org/latitude>', # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/latitude> "43.318"^^<http://www.w3.org/2001/XMLSchema#decimal>
+                    '<http://vocab.getty.edu/ontology#placeType>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#placeType> <http://vocab.getty.edu/aat/300387236>
+                ],
+            },
+        ],
+    },
+    { # 2024: 8m+ items classified as places
+        'dataset_name': 'Wikidata',
+        'namespace': 'wd',
+        'api_item': 'https://www.wikidata.org/wiki/Special:EntityData/<id>.json',
+        'citation': 'Wikidata is a free and open knowledge base that can be read and edited by both humans and machines. https://www.wikidata.org/',
+        'files': [
+            {
+                'url': 'https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.gz',
+                'file_type': 'json',
+                'item_path': 'entities',
+            },
+        ],
+    },
+    { # 2024: 6m+ nodes tagged as places
+        'dataset_name': 'OSM',
+        'namespace': 'osm',
+        'api_item': 'https://nominatim.openstreetmap.org/details.php?osmtype=R&osmid=<id>&format=json',
+        'citation': 'OpenStreetMap is open data, licensed under the Open Data Commons Open Database License (ODbL). https://www.openstreetmap.org/',
+        'files': [
+            {
+                'url': 'https://planet.openstreetmap.org/planet/planet-latest.osm.bz2',
+                'file_type': 'xml',
+            }
+        ],
+    },
+    {
+        'dataset_name': 'LOC',
+        'namespace': 'loc',
+        'api_item': 'https://www.loc.gov/item/<id>/',
+        'citation': 'Library of Congress. https://www.loc.gov/',
+        'files': [
+            {
+                'url': 'http://id.loc.gov/download/authorities/names.madsrdf.jsonld.gz',
+                'file_type': 'json',
+            }
+        ],
+    },
+    {
+        'dataset_name': 'GB1900',
+        'namespace': 'GB1900',
+        'api_item': '',
+        'citation': 'GB1900 Gazetteer: British place names, 1888-1914. https://www.pastplace.org/data/#tabgb1900',
+        'files': [
+            {
+                'url': 'https://www.pastplace.org/downloads/GB1900_gazetteer_abridged_july_2018.zip',
+                'file_type': 'csv',
+                'delimiter': ',',
+            }
+        ],
+    },
+    { #  24,000 place names
+        'dataset_name': 'IndexVillaris',
+        'namespace': 'IV1680',
+        'api_item': '',
+        'citation': 'Index Villaris, 1680',
+        'files': [
+            {
+                'url': 'https://github.com/docuracy/IndexVillaris1680/raw/refs/heads/main/docs/data/IV-GB1900-OSM-WD.lp.json',
+                'file_type': 'json',
+            }
+        ],
+    },
+]
+
 # Dataset Validation
 LPF_SCHEMA_PATH = os.path.join(BASE_DIR, 'validation/static/lpf_v2.0.jsonld')
 LPF_CONTEXT_PATH = os.path.join(BASE_DIR, 'validation/static/lpo_v2.0.jsonld')
@@ -367,8 +506,8 @@ VALIDATION_SUPPORTED_TYPES = [
 ]
 VALIDATION_CHUNK_ROWS = 500
 VALIDATION_BATCH_MEMORY_LIMIT = 1 * 1024 * 1024  # 1 MB
-VALIDATION_MAXFIXATTEMPTS = 50 # Maximum number of errors to try to fix on each feature
-VALIDATION_MAX_ERRORS = 100 # Stop validation of dataset if this number of unfixed errors is reached (checked only on completion of each batch, so may exceed this number)
-VALIDATION_TIMEOUT = 3600 # seconds, after which tasks are revoked and records are removed from redis
-VALIDATION_TEST_DELAY = 0 # seconds to pause after each JSON schema validation attempt
+VALIDATION_MAXFIXATTEMPTS = 50  # Maximum number of errors to try to fix on each feature
+VALIDATION_MAX_ERRORS = 100  # Stop validation of dataset if this number of unfixed errors is reached (checked only on completion of each batch, so may exceed this number)
+VALIDATION_TIMEOUT = 3600  # seconds, after which tasks are revoked and records are removed from redis
+VALIDATION_TEST_DELAY = 0  # seconds to pause after each JSON schema validation attempt
 VALIDATION_INTEGRITY_RETRIES = 7
