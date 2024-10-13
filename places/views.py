@@ -190,7 +190,7 @@ class PlacePortalView(TemplateView):
             "dataset": {
                 "id": ds.id, "label": ds.label, "title": ds.title,
                 "webpage": ds.webpage, "description": ds.description,
-                "owner": ds.owner.name, "creator": ds.creator, "show_link": ds.numrows <= settings.DATASETS_PLACES_LIMIT
+                "owner": ds.owner.name, "creator": ds.creator, "show_link": (ds.numrows or 0) <= settings.DATASETS_PLACES_LIMIT
             },
             "place_id": place.id,
             "src_id": place.src_id,
