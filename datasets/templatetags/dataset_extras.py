@@ -181,7 +181,7 @@ def startswith(text, starts):
 
 @register.filter(name='subtract')
 def subtract(value, arg):
-    return int(value) - int(arg)
+    return int((value or 0)) - int((arg or 0))
 
 @register.filter
 def time_estimate(numrows):

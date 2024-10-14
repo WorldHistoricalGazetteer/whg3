@@ -243,6 +243,14 @@ LOGGING = {
             'backupCount': 5,
             'formatter': 'verbose',
         },
+        'accession_file': {
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'whg/logs/accession.log'),
+            'maxBytes': 10485760,
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
         'console': {
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'class': 'logging.StreamHandler',
@@ -267,6 +275,11 @@ LOGGING = {
         },
         'reconciliation': {
             'handlers': ['reconciliation_file', 'console'],
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
+            'propagate': False,
+        },
+        'accession': {
+            'handlers': ['accession_file', 'console'],
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'propagate': False,
         },

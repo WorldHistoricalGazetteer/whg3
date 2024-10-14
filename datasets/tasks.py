@@ -1112,231 +1112,250 @@ def es_lookup_idx(qobj, *args, **kwargs):
     return result_obj
 
 
-"""
-# align/accession to whg index
-# gets result_obj per Place
-# writes 'union' Hit records to db for review
-# OR writes seed parent to whg index 
-"""
-
-
-# TODO (1): "passive analysis option" reports unmatched and matched only
-# TODO (2): "passive analysis option" that reports matches within datasets in a collection
-# TODO (3): option with collection constraint; writes place_link records for partner records
 @shared_task(name="align_idx")
 def align_idx(*args, **kwargs):
-    task_id = align_idx.request.id
-    task_status = AsyncResult(task_id).status
-    ds = get_object_or_404(Dataset, id=kwargs['ds'])
-    print('kwargs in align_idx()', kwargs)
-    test = kwargs['test']  # always 'on' for dev - no writing to the production index!
-
-    idx = settings.ES_WHG
-    print('idx in align_idx', idx)
-    user = get_object_or_404(User, id=kwargs['user'])
-    # get last index identifier (used for _id)
-    whg_id = maxID(es, idx)
-
-    # TODO: ?? open file for writing new seed/parents for inspection
-    wd = "_scratch/"
-    fn1 = "new-parents_" + str(ds.id) + ".txt"
-    fout1 = codecs.open(fn1, mode="w", encoding="utf8")
-
-    # bounds = {'type': ['userarea'], 'id': ['0']}
-    bounds = kwargs['bounds']
-    scope = kwargs['scope']
-
-    hit_parade = {"summary": {}, "hits": []}
-    [count_hit, count_nohit, total_hits, count_p0, count_p1] = [0, 0, 0, 0, 0]
-    [count_errors, count_seeds, count_kids, count_fail] = [0, 0, 0, 0]
-    new_seeds = []  # ids of places indexed immediately
-    for_review = []  # ids of places for which there were hits
-    start = datetime.datetime.now()
-
-    # limit scope if some are already indexed
-    qs = ds.places.filter(indexed=False)
-    # TODO: scope = 'all' should be not possible for align_idx
-    # qs = ds.places.all() if scope == 'all' else ds.places.filter(indexed=False) \
-    #   if scope == 'unindexed' else ds.places.filter(review_wd != 1)
-
     """
-    for each place, create qobj and run es_lookup_idx(qobj)
-    if hits: write Hit instances for review
-    if no hits: write new parent doc in index
+    Aligns and consolidates new place records with existing indexed place records in WHG index.
+
+    This task compares new place records in a dataset with existing records in an Elasticsearch index.
+    It either matches them for review (if hits are found) or indexes them as new parent records (if no hits are found).
+
+    - Generates 'Hit' records for manual review if there are matches.
+    - Indexes unmatched records as new parent records.
+    - Manages merging of parent-child relationships in the index.
+
+    Args:
+        *args: Additional positional arguments (not used).
+        **kwargs: Dictionary of keyword arguments:
+            - 'ds' (int): Dataset ID.
+            - 'user' (int): User ID.
+            - 'test' (str): Test mode ('on' or 'off'), controls whether indexing writes to the production index.
+            - 'bounds' (dict): Geographic bounds for limiting the search.
+            - 'scope' (str): Defines the scope of the search (e.g., 'all', 'unindexed').
+
+    Returns:
+        dict: A summary of the alignment process, including counts of records processed, hits, and new indexed records.
     """
-    for p in qs:
-        qobj = build_qobj(p)
+    logger = logging.getLogger('accession')
+    logger.info(f'Starting align_idx task with kwargs: {kwargs}')
 
-        result_obj = es_lookup_idx(qobj, bounds=bounds)
+    try:
 
-        # PARSE RESULTS
-        # no hits on any pass, index as new seed/parent
-        if len(result_obj['hits']) == 0:
-            # create new parent
-            whg_id += 1
-            doc = makeDoc(p)
-            doc['relation']['name'] = 'parent'
-            doc['whg_id'] = whg_id
-            # get names for search fields
-            names = [p.toponym for p in p.names.all()]
-            doc['searchy'] = names
-            print("seed", whg_id, doc)
-            new_seeds.append(p.id)
-            if test == 'off':
-                res = es.index(index=idx, id=str(whg_id), document=json.dumps(doc))
-                p.indexed = True
-                p.save()
+        start = datetime.datetime.now()
+        task_id = align_idx.request.id
+        ds = get_object_or_404(Dataset, id=kwargs['ds'])
+        user = get_object_or_404(User, id=kwargs['user'])
+        test_mode = kwargs.get('test', 'on') # always 'on' for dev - no writing to the production index!
 
-        # got some hits, format json & write to db as for align_wdlocal, etc.
-        elif len(result_obj['hits']) > 0:
-            count_hit += 1  # this record got >=1 hits
-            # set place/task status to 0 (has unreviewed hits)
-            p.review_whg = 0
-            p.save()
-            for_review.append(p.id)
+        es = settings.ES_CONN
+        whg_id = maxID(es, settings.ES_WHG)  # get max whg_id for new parent docs
 
-            hits = result_obj['hits']
-            [count_kids, count_errors] = [0, 0]
-            total_hits += result_obj['total_hits']
+        # Prepare tracking variables
+        hit_summary, tracking_vars, places_to_review, new_seeds = initialize_tracking()
 
-            # identify parents and children
-            parents = [profileHit(h) for h in hits \
-                       if h['_source']['relation']['name'] == 'parent']
-            children = [profileHit(h) for h in hits \
-                        if h['_source']['relation']['name'] == 'child']
+        # Get places to process
+        places = get_place_queryset(ds, kwargs.get('scope', 'unindexed'))
+        logger.info(f'places count: {places.count()}')
 
-            """ *** """
-            p0 = len(set(['pass0a', 'pass0b']) & set([p['pass'] for p in parents])) > 0
-            p1 = 'pass1' in [p['pass'] for p in parents]
-            if p0:
-                count_p0 += 1
-            elif p1:
-                count_p1 += 1
+        # Process each place
+        for place in places:
+            try:
+                logger.info(f'Processing place: {place.id} - {place.title}')
+                result_obj = es_lookup_idx(build_qobj(place), bounds=kwargs['bounds'])
 
-            def uniq_geom(lst):
-                for _, grp in itertools.groupby(lst, lambda d: (d['coordinates'])):
-                    yield list(grp)[0]
+                if not result_obj['hits']:
+                    new_doc = process_no_hits(place, whg_id, test_mode, es, new_seeds, logger)
+                    logger.info(f'new_doc: {new_doc}')
+                    whg_id += 1
+                else:
+                    logger.info(f'Processing {len(result_obj["hits"])} hits found for place {place.id}')
+                    process_hits(place, result_obj, task_id, ds, places_to_review, tracking_vars, hit_summary, logger)
 
-            # if there are any
-            for par in parents:
-                # 20220828 test
-                print('parent minmax', par['minmax'])
-                # any children of *this* parent in this result?
-                kids = [c for c in children if c['_id'] in par['children']] or None
-                # merge values into hit.json object
-                # profile keys ['_id', 'pid', 'title', 'role', 'dataset', 'parent', 'children', 'links', 'countries', 'variants', 'geoms']
-                # boost parent score if kids
-                score = par['score'] + sum([k['score'] for k in kids]) if kids else par['score']
-                #
-                hitobj = {
-                    'whg_id': par['_id'],
-                    'pid': par['pid'],
-                    'score': score,
-                    'titles': [par['title']],
-                    'countries': par['countries'],
-                    'geoms': list(uniq_geom(par['geoms'])),
-                    'links': par['links'],
-                    'sources': [
-                        {'dslabel': par['dataset'],
-                         'pid': par['pid'],
-                         'variants': par['variants'],
-                         'types': par['types'],
-                         'related': par['related'],
-                         'children': par['children'],
-                         'minmax': par['minmax'],
-                         'pass': par['pass'][:5]
-                         }]
-                }
-                if kids:
-                    hitobj['titles'].extend([k['title'] for k in kids])
-                    hitobj['countries'].extend([','.join(k['countries']) for k in kids])
+            except Exception as e:
+                logger.error(f"Error processing place {place.id}: {e}", exc_info=True)
+                tracking_vars['count_fail'] += 1
 
-                    # unnest
-                    if hitobj['geoms']:
-                        hitobj['geoms'].extend(list(chain.from_iterable([k['geoms'] for k in kids])))
-                    if hitobj['links']:
-                        hitobj['links'].extend(list(chain.from_iterable([k['links'] for k in kids])))
+        hit_summary = finalise_summary(hit_summary, places.count(), tracking_vars, new_seeds, start)
+        logger.info(f'hit_summary: {hit_summary}')
 
-                    # add kids to parent in sources
-                    hitobj['sources'].extend(
-                        [{'dslabel': k['dataset'],
-                          'pid': k['pid'],
-                          'variants': k['variants'],
-                          'types': k['types'],
-                          'related': par['related'],
-                          'minmax': k['minmax'],
-                          'pass': k['pass'][:5]} for k in kids])
+        # Finalize: Update dataset status, send email, and log results
+        try:
+            finalise_task(ds, user, test_mode, hit_summary, logger)
+        except Exception as e:
+            logger.error(f"Error finalizing task: {e}", exc_info=True)
 
-                passes = list(set([s['pass'] for s in hitobj['sources']]))
-                hitobj['passes'] = passes
+        return hit_summary
 
-                hitobj['titles'] = ', '.join(list(dict.fromkeys(hitobj['titles'])))
+    except Exception as e:
+        logger.error(f'Error in align_idx task: {str(e)}', exc_info=True)
+        raise e
 
-                if hitobj['links']:
-                    hitobj['links'] = list(dict.fromkeys(hitobj['links']))
 
-                hitobj['countries'] = ', '.join(list(dict.fromkeys(hitobj['countries'])))
-
-                new = Hit(
-                    task_id=task_id,
-                    authority='whg',
-
-                    # incoming place
-                    dataset=ds,
-                    place=p,
-                    src_id=p.src_id,
-
-                    # candidate parent, might have children
-                    authrecord_id=par['_id'],
-                    query_pass=', '.join(passes),  #
-                    score=hitobj['score'],
-                    geom=hitobj['geoms'],
-                    reviewed=False,
-                    matched=False,
-                    json=hitobj
-                )
-                new.save()
-                # print(json.dumps(jsonic,indent=2))
-
-    # testing: write new index seed/parent docs for inspection
-    # fout1.write(str(new_seeds))
-    # fout1.write('\n\nFor Review\n'+str(for_review))
-    # fout1.close()
-    # print(str(len(new_seeds)+len(for_review)) + ' IDs written to '+ fn1)
-
-    end = datetime.datetime.now()
-
-    hit_parade['summary'] = {
-        'count': qs.count(),  # records in dataset
-        'got_hits': count_hit,  # count of parents
-        'total_hits': total_hits,  # overall total
-        'seeds': len(new_seeds),  # new index seeds
-        'pass0': count_p0,
-        'pass1': count_p1,
-        'elapsed_min': elapsed(end - start),
-        'skipped': count_fail
+def initialize_tracking():
+    """Initializes the tracking variables for hits, errors, and seeds."""
+    hit_summary = {"summary": {}, "hits": []}
+    tracking_vars = {
+        'count_hit': 0,
+        'count_nohit': 0,
+        'total_hits': 0,
+        'count_p0': 0,
+        'count_p1': 0,
+        'count_errors': 0,
+        'count_seeds': 0,
+        'count_kids': 0,
+        'count_fail': 0,
     }
-    print("hit_parade['summary']", hit_parade['summary'])
+    places_to_review, new_seeds = [], []
+    return hit_summary, tracking_vars, places_to_review, new_seeds
 
-    # create log entry and update ds status
-    post_recon_update(ds, user, 'idx', test)
 
-    # email owner when complete
-    # tid, dslabel, name, email, counthit, totalhits, test
-    WHGmail(context={
-        'template': 'align_idx',
-        'to_email': user.email,
-        'bcc': [settings.DEFAULT_FROM_EDITORIAL],
-        'subject': 'WHG alignment task complete',
-        'greeting_name': user.display_name,
-        'dataset_title': ds.title if ds else 'N/A',
-        'dataset_label': ds.label if ds else 'N/A',
-        'dataset_id': ds.id if ds else 'N/A',
-        'counthit': count_hit,
-        'totalhits': total_hits,
-        'slack_notify': True,
-    })
+def get_place_queryset(dataset, scope):
+    """Fetches the queryset of places to be processed based on the scope."""
+    if scope == 'all':
+        return dataset.places.all()
+    return dataset.places.filter(indexed=False)
 
-    print('elapsed time:', elapsed(end - start))
 
-    return hit_parade['summary']
+def process_no_hits(place, whg_id, test_mode, es, new_seeds, logger):
+    """Handles the case where no hits are found for a place and indexes it as a new parent."""
+    try:
+        new_doc = makeDoc(place)
+        new_doc['relation']['name'] = 'parent'
+        new_doc['whg_id'] = whg_id
+        new_doc['searchy'] = [n.toponym for n in place.names.all()]
+
+        new_seeds.append(place.id)
+
+        if test_mode == 'off':
+            es.index(index=settings.ES_WHG, id=str(whg_id), document=json.dumps(new_doc))
+            place.indexed = True
+            place.save()
+
+        return new_doc
+    except Exception as e:
+        logger.error(f"Error processing no-hit place {place.id}: {e}", exc_info=True)
+        raise e
+
+
+def process_hits(place, result_obj, task_id, dataset, places_to_review, tracking_vars, hit_summary, logger):
+    """Handles the case where hits are found, and prepares them for review."""
+    try:
+        tracking_vars['count_hit'] += 1
+        place.review_whg = 0
+        place.save()
+        places_to_review.append(place.id)
+
+        parents, children = classify_hits(result_obj['hits'])
+        logger.info(f"Parents: {parents}")
+        logger.info(f"Children: {children}")
+        for parent in parents:
+            merged_hit = merge_parent_child(parent, children)
+            # hit_summary['hits'].append(merged_hit)
+            save_hit_record(merged_hit, place, dataset, task_id, logger)
+            logger.info(f"Saved hit record: {merged_hit}")
+    except Exception as e:
+        logger.error(f"Error processing hits for place {place.id}: {e}", exc_info=True)
+        raise e
+
+
+def classify_hits(hits):
+    """Classifies hits into parents and children."""
+    parents = [profileHit(h) for h in hits if h['_source']['relation']['name'] == 'parent']
+    children = [profileHit(h) for h in hits if h['_source']['relation']['name'] == 'child']
+    return parents, children
+
+
+def merge_parent_child(parent, children):
+    """Merges parent and child records into a single hit object."""
+    merged = {
+        'whg_id': parent['_id'],
+        'pid': parent['pid'],
+        'score': parent['score'] + sum(c['score'] for c in children) if children else parent['score'],
+        'titles': [parent['title']] + [c['title'] for c in children],
+        'countries': parent['countries'] + [c['countries'] for c in children],
+        'geoms': list(uniq_geom(parent['geoms'])),
+        'links': parent['links'] + list(chain.from_iterable([c['links'] for c in children])),
+        'sources': build_sources(parent, children),
+        'passes': list(set([s['pass'] for s in build_sources(parent, children)])),
+    }
+    return merged
+
+
+def build_sources(parent, children):
+    """Builds the sources field for the hit object."""
+    sources = [
+        {'dslabel': parent['dataset'], 'pid': parent['pid'], 'variants': parent['variants'], 'types': parent['types'],
+         'related': parent['related'], 'children': parent['children'], 'minmax': parent['minmax'], 'pass': parent['pass'][:5]}
+    ]
+    sources.extend(
+        {'dslabel': c['dataset'], 'pid': c['pid'], 'variants': c['variants'], 'types': c['types'],
+         'related': parent['related'], 'minmax': c['minmax'], 'pass': c['pass'][:5]} for c in children
+    )
+    return sources
+
+
+def save_hit_record(hit_obj, place, dataset, task_id, logger):
+    """Saves a hit record to the database."""
+    try:
+        new_hit = Hit(
+            task_id=task_id,
+            authority='whg',
+            dataset=dataset,
+            place=place,
+            src_id=place.src_id,
+            authrecord_id=hit_obj['whg_id'],
+            query_pass=', '.join(hit_obj['passes']),
+            score=hit_obj['score'],
+            geom=hit_obj['geoms'],
+            reviewed=False,
+            matched=False,
+            json=hit_obj
+        )
+        new_hit.save()
+    except Exception as e:
+        logger.error(f"Error saving hit record for place {place.id}: {e}", exc_info=True)
+        raise
+
+
+def uniq_geom(geom_list):
+    """Returns unique geometries from a list."""
+    for _, group in itertools.groupby(geom_list, lambda g: g['coordinates']):
+        yield list(group)[0]
+
+
+def finalise_summary(summary, total_places, tracking_vars, new_seeds, start):
+    """Finalizes the summary of the alignment process."""
+    summary['summary'] = {
+        'count': total_places,
+        'got_hits': tracking_vars['count_hit'],
+        'total_hits': tracking_vars['total_hits'],
+        'seeds': len(new_seeds),
+        'pass0': tracking_vars['count_p0'],
+        'pass1': tracking_vars['count_p1'],
+        'elapsed_min': elapsed(datetime.datetime.now() - start),
+        'skipped': tracking_vars['count_fail']
+    }
+    return summary
+
+
+def finalise_task(dataset, user, test_mode, hit_summary, logger):
+    """Handles final updates after task completion, including logs and notifications."""
+    try:
+        post_recon_update(dataset, user, 'idx', test_mode)
+
+        WHGmail(context={
+            'template': 'align_idx',
+            'to_email': user.email,
+            'bcc': [settings.DEFAULT_FROM_EDITORIAL],
+            'subject': 'WHG alignment task complete',
+            'greeting_name': user.display_name,
+            'dataset_title': dataset.title,
+            'dataset_label': dataset.label,
+            'dataset_id': dataset.id,
+            'counthit': hit_summary['summary']['got_hits'],
+            'totalhits': hit_summary['summary']['total_hits'],
+            'slack_notify': True,
+        })
+    except Exception as e:
+        logger.error(f"Error in finalizing task for dataset {dataset.id}: {e}", exc_info=True)
+        raise e
