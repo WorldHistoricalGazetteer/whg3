@@ -549,14 +549,14 @@ def getQ(arr,what):
       if c.upper() in ccodes[0]:
         qids.append('wd:'+ccodes[0][c.upper()]['wdid'].upper())
   elif what == 'types':
-    if len(arr) == 0:
-      qids.append('wd:Q486972')
+    # if len(arr) == 0:
+    #   qids.append('wd:Q486972')
     for t in arr:
       if t in aat_q.qnums:
         for q in aat_q.qnums[t]:
           qids.append('wd:'+q)
-      else:
-        qids.append('wd:Q486972')
+      # else:
+      #   qids.append('wd:Q486972')
   return list(set(qids))
 
 def roundy(x, direct="up", base=10):
