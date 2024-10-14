@@ -83,9 +83,16 @@
                 {
                     "anyOf": [
                         {
-                            "required": [
+                          "required": [
+                            "properties"
+                          ],
+                          "properties": {
+                            "properties": {
+                              "required": [
                                 "fclasses"
-                            ]
+                              ]
+                            }
+                          }
                         },
                         {
                             "required": [
