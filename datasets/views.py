@@ -722,10 +722,10 @@ def review(request, dsid, tid, passnum):
                 try:
                     dataset = Dataset.objects.get(label=source["dslabel"])
                     dataset_details[dataset.label] = {
-                        "title": dataset.title,
-                        "description": dataset.description,
-                        "owner": dataset.owner.name,
-                        "creator": dataset.creator
+                        "title": dataset.title or "N/A",
+                        "description": dataset.description or "N/A",
+                        "owner": dataset.owner.name or "N/A",
+                        "creator": dataset.creator or "N/A"
                     }
                 except Dataset.DoesNotExist:
                     dataset_details[source["dslabel"]] = {
