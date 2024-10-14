@@ -227,12 +227,20 @@ LOGGING = {
             'backupCount': 5,  # Number of backup files to keep
             'formatter': 'verbose',
         },
-        'messaging_file': {  # New handler for messaging logs
+        'messaging_file': {
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'whg/logs/messaging.log'),
             'maxBytes': 10485760,  # 10 MB
             'backupCount': 5,  # Number of backup files to keep
+            'formatter': 'verbose',
+        },
+        'reconciliation_file': {
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'whg/logs/reconciliation.log'),
+            'maxBytes': 10485760,
+            'backupCount': 5,
             'formatter': 'verbose',
         },
         'console': {
@@ -256,6 +264,11 @@ LOGGING = {
             'handlers': ['messaging_file', 'console'],
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'propagate': False,  # Ensure logs do not propagate to root logger
+        },
+        'reconciliation': {
+            'handlers': ['reconciliation_file', 'console'],
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
+            'propagate': False,
         },
         '': {  # Root logger
             'handlers': ['root_file', 'console'],
