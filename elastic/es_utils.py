@@ -558,8 +558,10 @@ def removeDatasetFromIndex(request, *args, **kwargs):
   # remove indexed flag in places
 
   # delete latest idx task (its hits were removed already)
-  latest = ds.tasks.filter(task_name='align_idx',status="SUCCESS").order_by('-date_done')[0]
-  latest.delete()
+  tasks = ds.tasks.filter(task_name='align_idx', status="SUCCESS").order_by('-date_done')
+  if tasks.exists():
+    latest = tasks[0]
+    latest.delete()
 
   # for browser console
   return JsonResponse({ 'msg':'pids passed to removePlacesFromIndex('+str(ds.id)+')',

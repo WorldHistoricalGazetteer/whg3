@@ -42,7 +42,7 @@ from django.http import (
     HttpResponse,
     HttpResponseRedirect,
     HttpResponseServerError,
-    JsonResponse
+    JsonResponse, HttpResponseNotFound
 )
 from django.shortcuts import redirect, get_object_or_404, render
 from django.test import Client
@@ -326,11 +326,19 @@ def indexMatch(pid, hit_pid=None, user=None, task=None):
       indexes a db record upon a single hit match in align_idx review
       new record becomes child in the matched hit group
     """
-    print(f'indexMatch(): pid {str(pid)}; hit_pid: {str(hit_pid)}')
-    print(f'indexMatch(): user: {user}; task: {str(hit_pid)}')
+    logger = logging.getLogger('accession')
+
+    logger.debug(f'indexMatch(): user: {user}; task: {str(hit_pid)}')
+    logger.debug(f'indexMatch(): pid {str(pid)}; hit_pid: {str(hit_pid)}')
+
     es = settings.ES_CONN
     idx = settings.ES_WHG
-    place = get_object_or_404(Place, id=pid)
+    try:
+        place = get_object_or_404(Place, id=int(pid))
+    except ValueError:
+        message = f"The provided 'pid' value '{pid}' is not a valid integer."
+        logger.error(message)
+        return
 
     # Check if this place is already indexed
     q_place = {"query": {"bool": {"must": [{"match": {"place_id": pid}}]}}}
@@ -346,7 +354,7 @@ def indexMatch(pid, hit_pid=None, user=None, task=None):
 
     if hit_pid is None and not p_hits:
         # No match and place is not already indexed, create new parent
-        print('making ' + str(pid) + ' a parent')
+        logger.debug(f'Making {pid} a parent')
         new_obj['relation'] = {"name": "parent"}
 
         # Increment a whg_id for it
@@ -358,9 +366,9 @@ def indexMatch(pid, hit_pid=None, user=None, task=None):
             res = es.index(index=idx, id=str(whg_id), body=json.dumps(new_obj))
             place.indexed = True
             place.save()
-            print('created parent:', pid, place.title)
+            logger.debug(f'Created parent: {pid} ({place.title})')
         except Exception as e:
-            print(f'failed indexing (as parent) {pid}: {e}')
+            logger.error(f'failed indexing (as parent) {pid}: {e}')
             pass
     else:
         # There was a match or place is already indexed
@@ -391,14 +399,15 @@ def indexMatch(pid, hit_pid=None, user=None, task=None):
             },
                 "query": {"match": {"_id": parent_whgid}}}
             es.update_by_query(index=idx, body=q_update, conflicts='proceed')
-            print('indexed? ', place.indexed)
-            print(f'added {place.id} as child of {hit_pid}')
+
+            logger.debug(f'Added {place.id} as child of {parent_whgid}')
+            logger.debug(f'Indexed? {place.indexed}')
 
             # Update close_matches table in Django
             update_close_matches(pid, hit_pid, user, task)
 
         except Exception as e:
-            print(f'failed indexing {pid} as child of {parent_whgid}: {e}', new_obj)
+            logger.error(f'failed indexing {pid} as child of {parent_whgid}: {e} ({new_obj})')
             pass
 
 
@@ -1341,29 +1350,31 @@ def task_delete(request, tid, scope="foo"):
       hits + any geoms and links added by review
       reset Place.review_{auth} to null
     """
-    hits = Hit.objects.all().filter(task_id=tid)
-    tr = TaskResult.objects.get(task_id=tid)
-    auth = tr.task_name[6:]  # wdlocal, idx
+    try:
+        tr = TaskResult.objects.get(task_id=tid)
+    except TaskResult.DoesNotExist:
+        return HttpResponseNotFound(f"Task with ID {tid} does not exist.")
+
+    auth = tr.task_name[6:]  # extracts 'wdlocal' or 'idx'
     dsid = int(tr.task_args[2:-3])
     kwargs = ast.literal_eval(tr.task_kwargs.strip('"'))
-    test = kwargs["test"] if "test" in kwargs else "off"
-    # test = json.loads(tr.task_kwargs[1:-1].replace("'", '"'))['test'] \
-    #   if 'test' in tr.task_kwargs else 'off'
+    test = kwargs.get("test", "off")
+
+    # Get the associated dataset
     ds = get_object_or_404(Dataset, pk=dsid)
     ds_status = ds.ds_status
     print('task_delete() dsid', dsid)
-    # return HttpResponse(
-    #   content='<h3>stopped task_delete()</h3>')
 
-    # only the places that had hit(s) in this task
+    # Get related objects for deletion
+    hits = Hit.objects.filter(task_id=tid)
     places = Place.objects.filter(id__in=[h.place_id for h in hits])
-    # links and geometry added by a task have the task_id
-    placelinks = PlaceLink.objects.all().filter(task_id=tid)
-    placegeoms = PlaceGeom.objects.all().filter(task_id=tid)
-    placenames = PlaceName.objects.all().filter(task_id=tid)
+    placelinks = PlaceLink.objects.filter(task_id=tid)
+    placegeoms = PlaceGeom.objects.filter(task_id=tid)
+    placenames = PlaceName.objects.filter(task_id=tid)
+
     print('task_delete()', {'tid': tr, 'dsid': dsid, 'auth': auth})
 
-    # reset Place.review_{auth} to null
+    # Reset the review status for places
     for p in places:
         if auth in ['whg', 'idx']:
             p.review_whg = None
@@ -1371,11 +1382,10 @@ def task_delete(request, tid, scope="foo"):
             p.review_wd = None
         else:
             p.review_tgn = None
-        p.defer_comments.delete()
+        p.defer_comments.delete()  # Assuming defer_comments is a related model to delete
         p.save()
 
-    # zap task record & its hits
-    # or only geoms if that was the choice
+    # Handle deletion based on scope
     if scope == 'task':
         tr.delete()
         hits.delete()
@@ -1384,25 +1394,19 @@ def task_delete(request, tid, scope="foo"):
         placenames.delete()
     elif scope == 'geoms':
         placegeoms.delete()
+    else:
+        print(f"Unsupported scope: {scope}")
 
-    # delete dataset from index
-    # undoes any acceessioning work
+    # Remove dataset from index if not in test mode
     if auth in ['whg', 'idx'] and test == 'off':
         removeDatasetFromIndex('whg', dsid)
 
-    # set status
-    print('ds.tasks.all()', ds.tasks.all())
-    print('ds.file.file.name', ds.file.file.name)
-    # last SUCCESS task is gone, back to 'uploaded' or 'remote'
-    # 'remote' is new empty datasets created by API POST
+    # Update the dataset status
     if ds.tasks.filter(status='SUCCESS').count() == 0:
-        if ds.file.file.name.startswith('dummy'):
-            ds.ds_status = 'remote'
-        else:
-            ds.ds_status = 'uploaded'
+        ds.ds_status = 'remote' if ds.file.file.name.startswith('dummy') else 'uploaded'
     ds.save()
 
-    return redirect('/datasets/' + str(dsid) + '/status')
+    return redirect(f'/datasets/{dsid}/status')
 
 
 def task_archive(tid, prior):
