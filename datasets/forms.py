@@ -18,10 +18,6 @@ MATCHTYPES = [
     ('none', 'no match'),
 ]
 
-"""
-  DatasetUploadForm()
-"""
-
 
 class DatasetUploadForm(forms.ModelForm):
     title = forms.CharField(label='Title', required=False, widget=forms.TextInput(attrs={
@@ -251,69 +247,3 @@ class DatasetCreateEmptyModelForm(forms.ModelForm):
         for field in self.fields.values():
             field.error_messages = {'required': 'The field {fieldname} is required'.format(
                 fieldname=field.label)}
-
-# ***
-# will replace DatasetCreateModelForm()
-# ***
-# class DatasetCreateForm(forms.ModelForm):
-#     class Meta:
-#         model = Dataset
-#         fields = ('owner', 'id', 'title', 'label', 'datatype', 'description', 'uri_base', 'public',
-#                   'creator', 'contributors', 'source', 'webpage', 'image_file', 'featured')
-#         widgets = {
-#             'description': forms.Textarea(attrs={
-#                 'rows': 2, 'cols': 45, 'class': 'textarea', 'placeholder': 'Brief description'}),
-#             'uri_base': forms.URLInput(attrs={
-#                     'placeholder': 'Leave blank unless record IDs are URIs', 'size': 45}),
-#             'title': forms.TextInput(attrs={'size': 45}),
-#             'label': forms.TextInput(attrs={'placeholder': '20 char max; no spaces','size': 22}),
-#             'creator': forms.TextInput(attrs={'size': 45}),
-#             'source': forms.TextInput(attrs={'size': 45}),
-#             'featured': forms.TextInput(attrs={'size': 4}),
-#             'webpage': forms.URLInput(attrs={'size': 45, 'placeholder': 'Project home page, if any'})
-#         }
-#
-#     def clean(self):
-#         cleaned_data = super().clean()
-#
-#         file = cleaned_data.get('file')
-#
-#         if file:
-#             file_type = sniff_file_type(file)  # implement this function
-#
-#             if file_type == 'delimited':
-#                 validation_result = validator_delim(file)
-#             elif file_type == 'json':
-#                 validation_result = validate_lpf(file)
-#             else:
-#                 raise ValidationError('Invalid file type')
-#
-#             if validation_result != 'Validation passed':
-#                 raise ValidationError(validation_result)
-#
-#         return cleaned_data
-#
-#     def clean_label(self):
-#         label = self.cleaned_data['label']
-#         if ' ' in label:
-#             raise forms.ValidationError('Label cannot contain any spaces; replace with underscores (_)')
-#         return label
-#
-#     def save(self, commit=True):
-#         instance = super().save(commit=commit)  # Save Dataset instance
-#
-#         file = self.cleaned_data.get('file')
-#
-#         if file:
-#             file_type = sniff_file_type(file)  # implement this function
-#
-#             try:
-#                 if file_type == 'delimited':
-#                     insert_delim(file, instance.label)
-#                 elif file_type == 'json':
-#                     insert_lpf(file, instance.label)
-#             except Exception as e:
-#                 # Catch any exceptions that occur during database insertion and turn them into validation errors
-#                 raise ValidationError(f'An error occurred while inserting data into the database: {str(e)}')
-#
-#         return instance

@@ -1,4 +1,6 @@
 # datasets.views
+
+# Standard library imports
 import ast
 import chardet
 import charset_normalizer as cn
@@ -7,7 +9,6 @@ import json
 import logging
 import math
 import mimetypes
-import numpy as np
 import os
 import re
 import shutil
@@ -17,6 +18,8 @@ from copy import deepcopy
 from pathlib import Path
 from shutil import copyfile
 
+# Third-party imports
+import numpy as np
 from celery import current_app as celapp
 from deepdiff import DeepDiff as diff
 from shapely import wkt
@@ -57,6 +60,8 @@ from django.views.generic import (
 )
 from django_celery_results.models import TaskResult
 
+from accounts.views import logger
+# Local application imports
 from areas.models import Area, Country
 from collection.models import Collection, CollectionGroup
 from elastic.es_utils import (
@@ -65,7 +70,6 @@ from elastic.es_utils import (
     replaceInIndex,
     removeDatasetFromIndex
 )
-from main.choices import AUTHORITY_BASEURI
 from main.models import Log, Comment
 from places.models import *
 from utils.regions_countries import get_regions_countries
@@ -92,10 +96,13 @@ from .models import Dataset, Hit, DatasetFile
 from .static.hashes import mimetypes_plus as mthash_plus
 from .static.hashes.parents import ccodes as cchash
 from .tasks import align_wdlocal, align_idx, maxID
+from .helpers import *
 from .utils import *
 
 es = settings.ES_CONN
 User = get_user_model()
+
+logger = logging.getLogger(__name__)
 
 # known MIME types for supported file formats
 MIME_TYPE_MAPPING = {
@@ -306,30 +313,10 @@ class DatasetGalleryView(ListView):
         return context
 
 
-def emailer(subj, msg, from_addr, to_addr):
-    """
-      TODO: replaced by new_emailer()??
-      email various, incl. Celery down notice
-      to ['whgazetteer@gmail.com','karl@kgeographer.org'],
-    """
-    print('subj, msg, from_addr, to_addr', subj, msg, from_addr, to_addr)
-    send_mail(
-        subj, msg, from_addr, to_addr,
-        fail_silently=False,
-    )
-
-
 # check Celery process is running before initiating reconciliation task
 def celeryUp():
     response = celapp.control.ping(timeout=1.0)
     return len(response) > 0
-
-
-# append src_id to base_uri
-def link_uri(auth, id):
-    baseuri = AUTHORITY_BASEURI[auth]
-    uri = baseuri + str(id)
-    return uri
 
 
 # hotfix 17 June 2024
@@ -2226,56 +2213,6 @@ class DatasetCreateEmptyView(LoginRequiredMixin, CreateView):
         context = super(DatasetCreateEmptyView, self).get_context_data(*args, **kwargs)
         # context['action'] = 'create'
         return context
-
-
-def get_file_type(file):
-    """Determine the file type based on its MIME type."""
-    mimetype = file.content_type
-    return mthash_plus.mimetypes.get(mimetype, None)
-
-
-def read_file_into_dataframe(file, ext):
-    """
-    Reads the given file into a pandas DataFrame based on the provided extension.
-    """
-    converters = {
-        'id': str, 'start': str, 'end': str, 'aat_types': str
-    }
-
-    if ext == 'csv':
-        df = pd.read_csv(file, sep=',', converters=converters)
-    elif ext == 'tsv':
-        df = pd.read_csv(file, sep='\t', converters=converters)
-    elif ext == 'xlsx' or ext == 'ods':
-        df = pd.read_excel(file, converters=converters)
-    else:
-        raise ValueError(f"Unsupported file extension: {ext}")
-
-    # Convert 'lon' and 'lat' with error handling, if they exist
-    if 'lon' in df.columns:
-        df['lon'] = pd.to_numeric(df['lon'], errors='coerce')
-    if 'lat' in df.columns:
-        df['lat'] = pd.to_numeric(df['lat'], errors='coerce')
-
-    # Additional step to coerce 'attestation_year' to integers, with error handling
-    if 'attestation_year' in df.columns:
-        # df['attestation_year'] = pd.to_numeric(df['attestation_year'], errors='coerce', downcast='integer')
-        df['attestation_year'] = pd.to_numeric(df['attestation_year'], errors='coerce').astype('Int64')
-    print(df.dtypes)
-
-    return df
-
-
-# brute force check for JSON file
-def is_json_file(file):
-    try:
-        file.seek(0)  # Ensure file pointer is at the start
-        json.load(file)
-        file.seek(0)  # Reset file pointer after reading
-        return True
-    except (ValueError, UnicodeDecodeError):
-        file.seek(0)  # Reset file pointer on failure
-        return False
 
 
 class DatasetPublicView(DetailView):
