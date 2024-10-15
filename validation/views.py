@@ -82,6 +82,14 @@ def parse_to_LPF(delimited_filepath, ext):
         ext = ext.lower()
         separator = ',' if ext == '.csv' else '\t' if ext == '.tsv' else ''
 
+        # Detect TSV format in CSV files
+        if separator == ',':
+            with open(delimited_filepath, 'r', encoding='utf-8') as f:
+                first_line = f.readline()
+                if '\t' in first_line:
+                    separator = '\t'
+                    logger.debug(f"Detected TSV format in '{delimited_filepath}'.")
+
         lpf_file_path = delimited_filepath.replace(ext, '.jsonld')
         # Deletion is managed by validation.tasks.clean_tmp_files, triggered by beat_schedule in celery.py
         logger.debug(f"Processing [separator: {separator}] file '{delimited_filepath}'.")
@@ -104,11 +112,12 @@ def parse_to_LPF(delimited_filepath, ext):
                 skiprows_start = 1  # Start reading after the header
                 while True:
                     if separator:
-                        logger.debug(f"Reading from CSV.")
+                        logger.debug(f"Reading from CSV (separator: '{separator}').")
                         df_chunk = pd.read_csv(delimited_filepath, skiprows=lambda x: x != 0 and x in skiprows_set,
                                                **configuration, sep=separator, encoding='utf-8', skipinitialspace=True)
                         if header is None:  # Capture the header only once, from the first chunk
                             header = ";".join(df_chunk.columns.tolist()) or ""
+                            logger.debug(f"Header: '{header}'.")
                     else:
                         logger.debug(f"Reading from Excel.")
                         df_chunk = pd.read_excel(delimited_filepath, skiprows=lambda x: x != 0 and x in skiprows_set,
