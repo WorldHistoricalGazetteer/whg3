@@ -181,6 +181,21 @@ services:
 
   {% if ENV_CONTEXT == 'local' %}
 
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer_{{ ENV_CONTEXT }}_{{ BRANCH }}
+    networks:
+      - {{ ENV_CONTEXT }}
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /portainer/data:/data
+    environment:
+      - ADMIN_USERNAME=whgadmin
+      - ADMIN_PASSWORD=whgadmin
+    restart: unless-stopped
+
 {#  embedding:#}
 {#    build:#}
 {#      context: ./embeddings#}
@@ -213,5 +228,6 @@ volumes:
 {% if ENV_CONTEXT == 'local' %}
   app:
   dev-db-data:
+  portainer_data:
 {% endif %}
     

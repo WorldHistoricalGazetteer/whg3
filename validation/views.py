@@ -82,13 +82,22 @@ def parse_to_LPF(delimited_filepath, ext):
         ext = ext.lower()
         separator = ',' if ext == '.csv' else '\t' if ext == '.tsv' else ''
 
-        # Detect TSV format in CSV files
-        if separator == ',':
+        # Detect delimiter in CSV/TSV files
+        if ext in ['.csv', '.tsv']:
             with open(delimited_filepath, 'r', encoding='utf-8') as f:
                 first_line = f.readline()
                 if '\t' in first_line:
                     separator = '\t'
                     logger.debug(f"Detected TSV format in '{delimited_filepath}'.")
+                elif ',' in first_line:
+                    separator = ','
+                    logger.debug(f"Detected CSV format in '{delimited_filepath}'.")
+                elif first_line == '':
+                    message = f"Empty first line in '{delimited_filepath}'. The first line should contain the LPF field names (e.g. `id`, `title` etc.)."
+                    logger.error(message)
+                    raise ValueError(message)
+        else:
+            separator = '' # Do not use `None` as it is not serializable for storage in Redis
 
         lpf_file_path = delimited_filepath.replace(ext, '.jsonld')
         # Deletion is managed by validation.tasks.clean_tmp_files, triggered by beat_schedule in celery.py
@@ -110,16 +119,33 @@ def parse_to_LPF(delimited_filepath, ext):
             try:  # read_excel does not support chunk-size, so implementation requires line-reading
                 skiprows_set = set()  # Keep track of the rows to skip, excluding the header (0th row)
                 skiprows_start = 1  # Start reading after the header
+
                 while True:
                     if separator:
-                        logger.debug(f"Reading from CSV (separator: '{separator}').")
+                        if skiprows_start == 1:
+                            logger.debug(f"Reading from CSV (separator: '{separator}').")
                         df_chunk = pd.read_csv(delimited_filepath, skiprows=lambda x: x != 0 and x in skiprows_set,
                                                **configuration, sep=separator, encoding='utf-8', skipinitialspace=True)
                         if header is None:  # Capture the header only once, from the first chunk
                             header = ";".join(df_chunk.columns.tolist()) or ""
                             logger.debug(f"Header: '{header}'.")
                     else:
-                        logger.debug(f"Reading from Excel.")
+                        if skiprows_start == 1:
+                            logger.debug(f"Reading from Excel.")
+                            first_row = pd.read_excel(delimited_filepath, nrows=1, header=None, sheet_name=0, convert_float=False)
+                            first_row_values = first_row.iloc[0].tolist()
+
+                            if all(pd.isna(val) for val in first_row_values):
+                                message = f"Empty first row in Excel file '{delimited_filepath}'. The first row should contain the LPF field names."
+                                logger.error(message)
+                                raise ValueError(message)
+                            elif not any(isinstance(val, str) and val.strip() for val in first_row_values):
+                                message = f"Invalid labels in the first row of Excel file '{delimited_filepath}'. The first row should contain the LPF field names."
+                                logger.error(message)
+                                raise ValueError(message)
+                            else:
+                                logger.debug(f"Header: {first_row_values}")
+
                         df_chunk = pd.read_excel(delimited_filepath, skiprows=lambda x: x != 0 and x in skiprows_set,
                                                  **configuration, sheet_name=0, convert_float=False)
                     skiprows_set.update(range(skiprows_start, skiprows_start + settings.VALIDATION_CHUNK_ROWS))
