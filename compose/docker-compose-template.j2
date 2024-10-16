@@ -191,9 +191,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /portainer/data:/data
-    environment:
-      - ADMIN_USERNAME=whgadmin
-      - ADMIN_PASSWORD=whgadmin
     restart: unless-stopped
 
 {#  embedding:#}
