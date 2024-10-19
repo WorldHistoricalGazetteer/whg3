@@ -343,9 +343,11 @@ Promise.all([
                 e.preventDefault();
                 $('#initiate_search').focus();
                 initiateSearch();
-                toggleButtonState();
             }
+            // Update search button state
+            toggleButtonState();
         });
+    // Initialise search button state
     toggleButtonState();
 
 
