@@ -22,6 +22,7 @@ from shutil import copyfile
 import numpy as np
 from celery import current_app as celapp
 from deepdiff import DeepDiff as diff
+from django.utils.datastructures import MultiValueDictKeyError
 from shapely import wkt
 
 from django.conf import settings
@@ -1455,22 +1456,34 @@ def collab_add(request, dsid, v):
     """
     print('collab_add() request, dsid', request, dsid)
     try:
-        uid = get_object_or_404(User, email=request.POST['email']).id
+        email = request.POST['email']
         role = request.POST['role']
-    except:
-        # TODO: raise error to screen
+        uid = get_object_or_404(User, email=email).id
+    except MultiValueDictKeyError:
+        # Handle missing 'email' or 'role' key in POST data
         messages.add_message(
-            request, messages.INFO, "Please check email, we don't have '" + request.POST['email'] + "'")
+            request, messages.INFO, "The email or role field is missing from the form. Please check and try again.")
+        return redirect('/datasets/' + str(dsid) + '/collab') if v == '1' else HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    except User.DoesNotExist:
+        # Handle case where user with the provided email does not exist
+        messages.add_message(
+            request, messages.INFO, f"Please check email address: we don't have '{request.POST.get('email', 'unknown')}'")
+        return redirect('/datasets/' + str(dsid) + '/collab') if v == '1' else HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    except:
+        messages.add_message(
+            request, messages.INFO, "An error occurred while processing the request. Please try again.")
         if not v:
             return redirect('/datasets/' + str(dsid) + '/collab')
         else:
             return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
     print('collab_add():', request.POST['email'], role, dsid, uid)
+
+    # Create the dataset-user relationship
     DatasetUser.objects.create(user_id_id=uid, dataset_id_id=dsid, role=role)
-    if v == '1':
-        return redirect('/datasets/' + str(dsid) + '/collab')
-    else:
-        return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
+    # Redirect based on the value of 'v'
+    return redirect('/datasets/' + str(dsid) + '/collab') if v == '1' else HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
 
 def collab_delete(request, uid, dsid, v):
