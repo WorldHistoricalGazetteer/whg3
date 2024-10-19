@@ -36,9 +36,10 @@ unzip ./whg_credentials.zip -d ./
 ```
 
 ### Implementation
-- Add your project directory to git's safe directory list:
+- Add your project directory to git's safe directory list, and ignore permission changes:
 ```sh
 git config --global --add safe.directory <full-path-to-your-working-directory>
+git config --global core.fileMode false
 ```
 
 - Run the environment-creation script (**you will need to run this again if you make any changes to any of the templates or entrypoint scripts**):

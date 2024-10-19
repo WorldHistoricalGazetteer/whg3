@@ -43,7 +43,7 @@ services:
       start_period: 60s
       timeout: 15s
 
-{% if ENV_CONTEXT != 'whgazetteer.org' %}
+{% if ENV_CONTEXT != 'whgazetteer.org-TEMPORARY-WEBPACK-ENABLING-ON-PRODUCTION-SERVER' %}
   webpack:
     networks:
       - {{ ENV_CONTEXT }}
@@ -181,6 +181,18 @@ services:
 
   {% if ENV_CONTEXT == 'local' %}
 
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer_{{ ENV_CONTEXT }}_{{ BRANCH }}
+    networks:
+      - {{ ENV_CONTEXT }}
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /portainer/data:/data
+    restart: unless-stopped
+
 {#  embedding:#}
 {#    build:#}
 {#      context: ./embeddings#}
@@ -213,5 +225,6 @@ volumes:
 {% if ENV_CONTEXT == 'local' %}
   app:
   dev-db-data:
+  portainer_data:
 {% endif %}
     
