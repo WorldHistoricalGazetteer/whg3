@@ -5,7 +5,11 @@ from django.utils.lorem_ipsum import paragraphs
 from django.utils.text import capfirst
 import ast, json, os, re, textwrap, validators
 
+from main.choices import FEATURE_CLASSES
+
 register = template.Library()
+
+FCLASSES_DICTIONARY = {key: value for key, value in FEATURE_CLASSES}
 
 # test user in group
 @register.filter
@@ -33,22 +37,8 @@ def define(val=None):
 
 @register.filter
 def fclasser(val_list):
-    # Define a dictionary to map the single letters to their meanings
-    mapping = {
-        'A': 'Administrative area',
-        'P': 'Populated place',
-        'S': 'Site',
-        'T': 'Terrestrial landform',
-        'H': 'Water body',
-        'R': 'Road/route/railroad',
-        'L': 'Region/landscape area'
-    }
-
-    # Use a list comprehension to replace each letter in the list with its meaning
-    meanings = [mapping[val] for val in val_list]
-
-    # Join the meanings into a string with a '. ' delimiter and return it
-    return '. '.join(meanings)
+    """Map feature class codes to their meanings"""
+    return '. '.join([FCLASSES_DICTIONARY.get(val, 'Unknown') for val in val_list])
 
 @register.filter
 def filename(val):
