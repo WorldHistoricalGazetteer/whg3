@@ -88,7 +88,7 @@ urlpatterns = [
 
                   path('people_overview/', TemplateView.as_view(template_name="main/people_overview.html"),
                        name="credits"),
-                  path('licensing/', TemplateView.as_view(template_name="main/licensing.html"), name="licensing"),
+                  path('licensing/', TemplateView.as_view(template_name="main/licensing.html.DEPRECATED"), name="licensing"),
                   # path('system/', TemplateView.as_view(template_name="main/../_local/_older/system.html"), name="system"),
 
                   path('publications/', TemplateView.as_view(template_name="main/publications.html"),
@@ -131,6 +131,9 @@ urlpatterns = [
                   path('comment/', views.handle_comment, name='comment-handle'),
                   # path('contact/', views.contact_view, name='contact'),
                   path('contact_modal/', views.contact_modal_view, name='contact-modal'),
+                  path('license/', views.license_view, name='license'),
+                  path('terms_of_use/', views.terms_of_use_view, name='terms_of_use'),
+                  path('privacy_policy/', views.privacy_policy_view, name='privacy_policy'),
                   path('success/', views.contactSuccessView, name='success'),
                   path('status/', views.statusView, name='status'),
                   path('create_link/', views.create_link, name="create-link"),

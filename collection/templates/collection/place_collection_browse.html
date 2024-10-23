@@ -23,7 +23,7 @@
 {% block content %}
   <main id="dataset_content" class="container px-0">
     <div class="row col-12 mx-0 px-0">
-  
+
     <div id="ds_info" class="col-12 my-1 overlay left">
       <div id="pcoll_header">
           <span class="">
@@ -128,12 +128,12 @@
                style="width:100%"></table>
 	</div>
 	<div id="detail" class="col-12 my-1 overlay right"></div>
-	
+
     <div id="map" class="col-12 my-1" style="opacity: 0;"></div>
-  
-  </div>  
+
+  </div>
   </main>
-      
+
   <div id="downloadModal" class="modal fade" tabindex="-1"
        aria-labelledby="downloadModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -149,15 +149,7 @@
             <p class="mb-1">Data uploaded as Linked Places format (LPF) are available only in that format.
               Data uploaded as LP-TSV (delimited text files or spreadsheets) can be downloaded as
               either <sr>LPF</sr> or <sr>LP-TSV</sr></p>
-            <div id="dl_licensing">
-              <p><sr>IMPORTANT LICENSING INFORMATION</sr>
-                : Data made public in WHG by its creators are available under the Creative Commons Attribution 4.0
-                International (CC BY 4.0) License. They can be freely shared, re-used, and adapted, but "you
-                <b>must</b> give appropriate credit, provide a link to the license, and indicate if changes were
-                made." Please see <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC-BY-4.0
-                details</a>; and <a href="{% url 'licensing' %}" target="_blank">WHG policy.</a> Citations are
-                provided below. <b>By clicking download on this form, you are agreeing to those terms</b>.</p>
-            </div>
+            {% include 'main/licensing_info.html' %}
           </div>
           <div class="row">
             <div class="col-sm-8 pe-0 scroll-div">
