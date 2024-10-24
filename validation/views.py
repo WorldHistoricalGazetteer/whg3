@@ -126,7 +126,7 @@ def parse_to_LPF(delimited_filepath, ext):
                             logger.debug(f"Reading from CSV (separator: '{separator}').")
                         df_chunk = pd.read_csv(delimited_filepath, skiprows=lambda x: x != 0 and x in skiprows_set,
                                                **configuration, sep=separator, encoding='utf-8', skipinitialspace=True)
-                        if header is None:  # Capture the header only once, from the first chunk
+                        if header == "":  # Capture the header only once, from the first chunk
                             header = ";".join(df_chunk.columns.tolist()) or ""
                             logger.debug(f"Header: '{header}'.")
                     else:
@@ -256,6 +256,7 @@ def parse_to_LPF(delimited_filepath, ext):
             lpf_file.write('\n]}\n')
 
         logger.debug(f"fLPF file '{delimited_filepath}' converted to LPF and written to '{lpf_file_path}'.")
+        logger.debug(f"Returning additional values: feature_count: {feature_count}, separator: {separator}, header: {header}.")
         return lpf_file_path, feature_count, separator, header
 
     except Exception as e:

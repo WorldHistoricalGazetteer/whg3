@@ -25,7 +25,7 @@ from main.models import DownloadFile, Log
 from places.models import Place
 from whgmail.messaging import WHGmail
 
-logger = get_task_logger(__name__)
+logger = get_task_logger('tasks')
 User = get_user_model()
 
 
@@ -205,7 +205,7 @@ def create_zipfile(data_dump_filename, dsid=None, collid=None):
 @shared_task(name="make_download", bind=True)
 def make_download(self, *args, **kwargs):
     import logging
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger('tasks')
     user = User.objects.get(pk=kwargs["userid"])
     collid = kwargs["collid"] or None
     dsid = kwargs["dsid"] or None

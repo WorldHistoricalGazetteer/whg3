@@ -1,5 +1,6 @@
 # /datasets/utils.py
 import requests
+import logging
 
 from django.conf import settings
 from django.contrib.gis.geos import GEOSGeometry
@@ -9,7 +10,7 @@ from django.core.exceptions import ValidationError
 from django.core import mail
 from django.core.mail import EmailMultiAlternatives
 from django.db.models import Prefetch
-from django.http import FileResponse, JsonResponse, HttpResponse
+from django.http import FileResponse, JsonResponse, HttpResponse, Http404
 from django.shortcuts import get_object_or_404, render  # , redirect
 from django.views.generic import View
 
@@ -27,7 +28,7 @@ from shapely.geometry import mapping
 from shapely.wkt import loads as wkt_loads
 
 from areas.models import Country
-from datasets.models import Dataset, DatasetUser, Hit
+from datasets.models import Dataset, DatasetUser, Hit, DatasetFile
 from datasets.static.hashes import aat, parents, aat_q
 from datasets.static.hashes import aliases as al
 # from datasets.tasks import make_download
@@ -36,6 +37,8 @@ from places.models import PlaceGeom, Type
 
 pp = pprint.PrettyPrinter(indent=1)
 from whgmail.messaging import WHGmail
+
+logger = logging.getLogger(__name__)
 
 
 def volunteer_offer(request, ds):
@@ -105,6 +108,38 @@ def download_file(request, *args, **kwargs):
     response['Content-Disposition'] = 'attachment; filename="' + fileobj.file.name + '"'
 
     return response
+
+
+def download_dataset(request, file_id):
+    """Downloads a specific dataset file based on file_id."""
+    try:
+        # Get the specific file using file_id
+        fileobj = get_object_or_404(DatasetFile, pk=file_id)
+
+        # Construct the full file path
+        fn = 'media/' + fileobj.file.name
+
+        # Open the file
+        file_handle = fileobj.file.open()
+
+        logger.info('download_dataset: file_id=%s, filename=%s, format=%s', file_id, fileobj.file.name, fileobj.format)
+
+        # Set content type based on the file format
+        content_type = 'text/csv' if fileobj.format == 'delimited' else 'application/json'
+        response = FileResponse(file_handle, content_type=content_type)
+
+        # Set the Content-Disposition header
+        response['Content-Disposition'] = f'attachment; filename="{fileobj.file.name.replace("/app/media/", "")}"'
+
+        return response
+
+    except Http404:
+        logger.error('File not found: file_id=%s', file_id)
+        return HttpResponse('File not found', status=404)
+
+    except Exception as e:
+        logger.exception('Error downloading file: file_id=%s', file_id)
+        return HttpResponse('An error occurred while downloading the file', status=500)
 
 
 #
