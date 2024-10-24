@@ -28,13 +28,14 @@ from whgmail.messaging import WHGmail
 logger = get_task_logger(__name__)
 User = get_user_model()
 
+
 def downloader(request, *args, **kwargs):
     logger.debug(f'downloader() user: {request.user}, request.POST: {request.POST}')
-    
+
     if request.method == 'POST':
         # Check if the request is an AJAX request
         is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
-        
+
         if is_ajax:
             logger.debug('AJAX request detected')
             format = request.POST.get('format', 'json')
@@ -66,27 +67,32 @@ def downloader(request, *args, **kwargs):
         else:
             logger.info(f'Non-AJAX POST request, data: {request.POST}')
             return HttpResponse(status=400, content='Invalid request format.')
-    
+
     elif request.method == 'GET':
         logger.info(f'GET request, data: {request.GET}')
         return HttpResponse(status=200, content='GET requests are not supported at this endpoint.')
-    
+
     logger.error('Unsupported HTTP method')
     return HttpResponse(status=405, content='Method Not Allowed')
 
+
 def generate_zip_filename(data_dump_filename):
     try:
-        base_name, _ = os.path.splitext(data_dump_filename)
-        zip_filename = f'{base_name}.zip'
+        data_filename = os.path.basename(data_dump_filename)
+        zip_filename = os.path.join(settings.MEDIA_ROOT, 'downloads', f'{data_filename}.zip')
         logger.debug(f'Generated zip filename: {zip_filename}')
         return zip_filename
     except Exception as e:
         logger.error(f'Error generating zip filename: {e}')
         raise
 
+
 def create_downloadfile_record(user, ds, coll, zip_filename):
     try:
-        logger.debug(f'Creating DownloadFile record for user: {user}, dataset: {ds}, collection: {coll}, zip_filename: {zip_filename}')
+        if zip_filename.startswith('/app/'):
+            zip_filename = zip_filename[5:] # Remove '/app/' from the beginning of the path
+        logger.debug(
+            f'Creating DownloadFile record for user: {user}, dataset: {ds}, collection: {coll}, zip_filename: {zip_filename}')
         title = coll.title if coll and not ds else ds.title if ds else None
         DownloadFile.objects.create(
             user=user,
@@ -100,6 +106,7 @@ def create_downloadfile_record(user, ds, coll, zip_filename):
         logger.error(f'Error creating DownloadFile record: {e}')
         raise
 
+
 def filter_and_order(metadata_json, desired_fields):
     try:
         filtered_metadata = {field: metadata_json['fields'].get(field) for field in desired_fields}
@@ -108,6 +115,7 @@ def filter_and_order(metadata_json, desired_fields):
     except Exception as e:
         logger.error(f'Error filtering metadata: {e}')
         raise
+
 
 def dataset_to_json(dsid):
     try:
@@ -128,21 +136,23 @@ def dataset_to_json(dsid):
         logger.error(f'Error converting dataset to JSON: {e}')
         raise
 
+
 def collection_to_json(collid):
     try:
         coll = Collection.objects.get(id=collid)
         metadata_json = json.loads(serializers.serialize('json', [coll]))[0]
-        collection_fields = ['title', 'creator', 'created', 'description', 'keywords', 'rel_keywords', 'numrows', 'webpage']
+        collection_fields = ['title', 'creator', 'created', 'description', 'keywords', 'rel_keywords', 'numrows',
+                             'webpage']
         dataset_fields = ['title', 'creator', 'create_date', 'description', 'numrows', 'source', 'webpage']
         filtered_collection = filter_and_order(metadata_json, collection_fields)
-        
+
         if coll.collection_class == 'dataset':
             filtered_collection['datasets'] = []
             for ds in coll.datasets.all():
                 dataset_json = json.loads(serializers.serialize('json', [ds]))[0]
                 filtered_dataset = filter_and_order(dataset_json, dataset_fields)
                 filtered_collection['datasets'].append(filtered_dataset)
-        
+
         filtered_collection.update({
             'model': metadata_json['model'],
             'pk': metadata_json['pk']
@@ -155,6 +165,7 @@ def collection_to_json(collid):
     except Exception as e:
         logger.error(f'Error converting collection to JSON: {e}')
         raise
+
 
 def create_zipfile(data_dump_filename, dsid=None, collid=None):
     try:
@@ -174,7 +185,7 @@ def create_zipfile(data_dump_filename, dsid=None, collid=None):
                           "* NonCommercial — You may not use the material for commercial purposes.\n\n"
                           "***********************************\n"
                           "Metadata:\n" + pretty_metadata)
-        
+
         with open('README.txt', 'w') as f:
             f.write(readme_content)
 
@@ -182,7 +193,7 @@ def create_zipfile(data_dump_filename, dsid=None, collid=None):
         with zipfile.ZipFile(zipname, 'w') as zipf:
             zipf.write('README.txt', arcname='README.txt')
             zipf.write(data_dump_filename, arcname=os.path.basename(data_dump_filename))
-        
+
         os.remove('README.txt')
         os.remove(data_dump_filename)
         logger.info(f'Created zip file: {zipname}')
@@ -190,9 +201,11 @@ def create_zipfile(data_dump_filename, dsid=None, collid=None):
         logger.error(f'Error creating zip file: {e}')
         raise
 
+
 @shared_task(name="make_download", bind=True)
 def make_download(self, *args, **kwargs):
-    logger.debug(f"make_download() args, kwargs: {args}, {kwargs}")
+    import logging
+    logger = logging.getLogger(__name__)
     user = User.objects.get(pk=kwargs["userid"])
     collid = kwargs["collid"] or None
     dsid = kwargs["dsid"] or None
@@ -211,7 +224,10 @@ def make_download(self, *args, **kwargs):
 
         req_format = "lpf"
 
-        fn = f"media/downloads/{user.id}_{collid}_{date}.json"
+        fn = os.path.join(settings.MEDIA_ROOT, 'downloads', f'{user.id}_{collid}_{date}.json')
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(fn), exist_ok=True)
+
         with open(fn, "w", encoding="utf-8") as outfile:
             features = []
             for i, p in enumerate(qs):
@@ -265,8 +281,8 @@ def make_download(self, *args, **kwargs):
                     logger.info(f"Task state: PROGRESS, current: {i + 1}, total: {total_operations}")
 
             features_sorted = sorted(
-                features,
-                key=lambda x: x["properties"]["annotation"].get("sequence", float("inf")),
+                (f for f in features if f is not None),  # Filter out None values
+                key=lambda x: x["properties"].get("annotation", {}).get("sequence") or float("inf")
             )
 
             logger.info(f"Download file for {total_operations} places in {colltitle}")
@@ -300,7 +316,7 @@ def make_download(self, *args, **kwargs):
 
         if ds.format == "delimited" and req_format in ["tsv", "delimited"]:
             logger.info("Making an augmented TSV file")
-    
+
             dsf = ds.file
             dsf.delimiter = dsf.delimiter if not dsf.delimiter == 'n/a' else '\t'
             df = pd.read_csv(
@@ -310,10 +326,10 @@ def make_download(self, *args, **kwargs):
                 engine='python'
             )
             logger.debug(f"DataFrame: {df}")
-            
+
             header = list(df)
             logger.debug(f"Original header: {header}")
-    
+
             newheader = deepcopy(header)
             newheader = list(
                 set(
@@ -322,35 +338,38 @@ def make_download(self, *args, **kwargs):
                 )
             )
             logger.debug(f"New header with additional columns: {newheader}")
-    
-            fn = f"media/downloads/{user.id}_{dslabel}_{date}.tsv"
+
+            fn = os.path.join(settings.MEDIA_ROOT, 'downloads', f'{user.id}_{dslabel}_{date}.tsv')
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(fn), exist_ok=True)
+
             logger.debug(f"Output file name: {fn}")
-    
+
             try:
                 with open(fn, "w", newline="", encoding="utf-8") as csvfile:
                     writer = csv.writer(csvfile, delimiter="\t", quotechar="\"", quoting=csv.QUOTE_NONE)
                     writer.writerow(newheader)
-    
+
                     missing = list(set(newheader) - set(header))
                     logger.debug(f"Missing columns: {missing}")
-    
+
                     for i, row in df.iterrows():
                         dfrow = df.loc[i, :]
                         try:
                             p = qs.get(src_id=dfrow["id"], dataset=ds.label)
                             logger.debug(f"Processing row index {i}, place ID {p.id}")
-    
+
                             rowjs = json.loads(dfrow.to_json())
                             newrow = deepcopy(rowjs)
                             for m in missing:
                                 newrow[m] = ""
-    
+
                             links = ";".join(
                                 list(set([ln.jsonb["identifier"] for ln in p.links.all()]))
                             )
                             newrow["matches"] = links
                             logger.debug(f"Links for place ID {p.id}: {links}")
-    
+
                             geoms = p.geoms.all()
                             if geoms.count() > 0:
                                 geowkt = newrow.get("geowkt", None)
@@ -369,15 +388,16 @@ def make_download(self, *args, **kwargs):
                                     )
                                     newrow["lon"] = xy[0]
                                     newrow["lat"] = xy[1]
-                                    logger.debug(f"Updated geowkt and coordinates for place ID {p.id}: geowkt={newrow['geowkt']}, lon={newrow['lon']}, lat={newrow['lat']}")
-    
+                                    logger.debug(
+                                        f"Updated geowkt and coordinates for place ID {p.id}: geowkt={newrow['geowkt']}, lon={newrow['lon']}, lat={newrow['lat']}")
+
                             index_map = {v: i for i, v in enumerate(newheader)}
                             ordered_row = sorted(
                                 newrow.items(), key=lambda pair: index_map[pair[0]]
                             )
                             csvrow = [o[1] for o in ordered_row]
                             writer.writerow(csvrow)
-    
+
                             if (i + 1) % 100 == 0:
                                 try:
                                     self.update_state(
@@ -385,20 +405,20 @@ def make_download(self, *args, **kwargs):
                                         meta={"current": i + 1, "total": total_operations},
                                     )
                                     logger.info(f"Task state: PROGRESS, current: {i + 1}, total: {total_operations}")
-    
+
                                     task_id = self.request.id
                                     task_result = AsyncResult(task_id)
                                     logger.info(f"Immediate task state: {task_result.state}, info: {task_result.info}")
                                 except Exception as e:
                                     logger.error(f"Error updating task state: {e}")
-    
+
                         except Exception as e:
                             logger.error(f"Error processing row index {i}: {e}")
-    
+
             except Exception as e:
                 logger.error(f"Error writing to TSV file {fn}: {e}")
                 return {"msg": "Error writing TSV file", "error": str(e)}
-    
+
             # Create zip with README.txt
             try:
                 create_zipfile(fn, ds.id, None)  # Single dataset
@@ -411,7 +431,11 @@ def make_download(self, *args, **kwargs):
 
         else:
             logger.info("Building LPF file")
-            fn = f"media/downloads/{user.id}_{dslabel}_{date}.json"
+
+            fn = os.path.join(settings.MEDIA_ROOT, 'downloads', f'{user.id}_{dslabel}_{date}.json')
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(fn), exist_ok=True)
+
             with open(fn, "w", encoding="utf-8") as outfile:
                 features = []
                 for i, p in enumerate(qs):
@@ -434,7 +458,7 @@ def make_download(self, *args, **kwargs):
                     rec = {
                         "type": "Feature",
                         "@id": ds.uri_base
-                        + (str(p.id) if "whgazetteer" in ds.uri_base else p.src_id),
+                               + (str(p.id) if "whgazetteer" in ds.uri_base else p.src_id),
                         "properties": {
                             "pid": p.id,
                             "src_id": p.src_id,
@@ -453,7 +477,8 @@ def make_download(self, *args, **kwargs):
                             state="PROGRESS",
                             meta={"current": i + 1, "total": total_operations},
                         )
-                        logger.info(f"Task updated: current iteration is {i + 1}, total operations are {total_operations}")
+                        logger.info(
+                            f"Task updated: current iteration is {i + 1}, total operations are {total_operations}")
 
                 logger.info(f"Download file for {total_operations} places")
 
@@ -482,11 +507,11 @@ def make_download(self, *args, **kwargs):
         collection_id=collid or None,
         user_id=user.id,
     )
-              
+
     WHGmail(context={
         'template': 'download_ready',
         'subject': 'WHG download file is ready',
-        'to_email': [user.email],
+        'to_email': user.email,
         'greeting_name': user.display_name,
         'title': ds.title if dsid else coll.title,
     })

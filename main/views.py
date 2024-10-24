@@ -23,6 +23,7 @@ from .forms import CommentModalForm, ContactForm, AnnouncementForm, VolunteerFor
 from areas.models import Area
 from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
+
 logger = get_task_logger(__name__)
 from collection.models import Collection, CollectionGroup
 from datasets.models import Dataset
@@ -46,8 +47,9 @@ es = settings.ES_CONN
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 
+
 def health_check(request):
-    #TODO: Could be extended to check other aspects of app health, for example: 
+    # TODO: Could be extended to check other aspects of app health, for example:
     # checks = { # These functions would need to be provided
     #     "database": check_database,
     #     "cache": check_cache,
@@ -67,14 +69,16 @@ def health_check(request):
     #         status = "unhealthy"
     #
     # return JsonResponse({"status": status, "details": details})    
-    
+
     return JsonResponse({"Status": "healthy"})
+
 
 def OpenAPIView(request):
     return render(request, 'main/openapi.html', {'schema_url': '/api/schema/'})
 
+
 def get_task_progress(request, taskid):
-    task = AsyncResult(taskid)    
+    task = AsyncResult(taskid)
     response_data = {
         'state': task.state,
         'progress': {
@@ -82,14 +86,15 @@ def get_task_progress(request, taskid):
             'total': 0
         }
     }
-    
+
     if isinstance(task.result, dict):
         response_data['progress'] = {
             'current': task.result.get('current', 0),
             'total': task.result.get('total', 0)
         }
-    
+
     return JsonResponse(response_data)
+
 
 class AnnouncementListView(ListView):
     model = Announcement
@@ -102,32 +107,36 @@ class AnnouncementListView(ListView):
         context['is_whgadmin'] = self.request.user.groups.filter(name='whg_admins').exists()
         return context
 
+
 class AnnouncementCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Announcement
     form_class = AnnouncementForm
     template_name = 'announcements/announcement_form.html'
     success_url = reverse_lazy('announcements-list')
-    permission_required = 'main.add_announcement' # Adjust based on your app's name and permissions
+    permission_required = 'main.add_announcement'  # Adjust based on your app's name and permissions
+
 
 class AnnouncementDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = Announcement
     template_name = 'announcements/announcement_confirm_delete.html'
     success_url = reverse_lazy('announcements-list')
-    permission_required = 'main.delete_announcement' # Adjust based on your app's name and permissions
+    permission_required = 'main.delete_announcement'  # Adjust based on your app's name and permissions
+
 
 class AnnouncementUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Announcement
     form_class = AnnouncementForm
     template_name = 'announcements/announcement_form.html'
     success_url = reverse_lazy('announcements-list')
-    permission_required = 'main.change_announcement' # Adjust based on your app's name and permissions
+    permission_required = 'main.change_announcement'  # Adjust based on your app's name and permissions
 
     def form_valid(self, form):
-      if form.is_valid():
-        return super().form_valid(form)
-      else:
-        print(form.errors)
-        return self.form_invalid(form)
+        if form.is_valid():
+            return super().form_valid(form)
+        else:
+            print(form.errors)
+            return self.form_invalid(form)
+
 
 @method_decorator(uber_user_required, name='dispatch')
 class TilesetListView(LoginRequiredMixin, TemplateView):
@@ -145,7 +154,8 @@ class TilesetListView(LoginRequiredMixin, TemplateView):
         # Fetch tilesets
         tilesets_url = settings.TILER_URL
         tilesets_data = {"getTilesetsAll": {}}
-        tilesets_response = requests.post(tilesets_url, headers={"Content-Type": "application/json"}, data=json.dumps(tilesets_data))
+        tilesets_response = requests.post(tilesets_url, headers={"Content-Type": "application/json"},
+                                          data=json.dumps(tilesets_data))
         tilesets = sorted(list(tilesets_response.json()))
 
         # Fetch datasets and collections
@@ -206,6 +216,7 @@ class TilesetListView(LoginRequiredMixin, TemplateView):
 
         return context
 
+
 @login_required
 def tileset_generate_view(request, category, id):
     # Ensure that only the user with username "whgadmin" can access this view
@@ -220,6 +231,7 @@ def tileset_generate_view(request, category, id):
         return JsonResponse({'task_id': None})
     else:
         return JsonResponse({'error': 'Access forbidden'}, status=403)
+
 
 # class TilesetGenerateView(LoginRequiredMixin, View):
 #     def get(self, request, category, id):
@@ -244,364 +256,369 @@ def tileset_generate_view(request, category, id):
 
 # Mixin for checking splash screen pass
 class SplashCheckMixin:
-  def dispatch(self, request, *args, **kwargs):
-    if not request.session.get('passed_splash'):
-      return HttpResponseRedirect('/splash')  # Redirect to splash
-    return super().dispatch(request, *args, **kwargs)
+    def dispatch(self, request, *args, **kwargs):
+        if not request.session.get('passed_splash'):
+            return HttpResponseRedirect('/splash')  # Redirect to splash
+        return super().dispatch(request, *args, **kwargs)
+
 
 class Home30a(TemplateView):
-  template_name = 'main/home_v30a4.html'
+    template_name = 'main/home_v30a4.html'
 
-  # def get_template_names(self):
-  #   version = self.kwargs.get('version', '30a4')
-  #   print(f"get_template_names accessed with version: {version}")
-  #   return [f'main/home_v{version}.html']
+    # def get_template_names(self):
+    #   version = self.kwargs.get('version', '30a4')
+    #   print(f"get_template_names accessed with version: {version}")
+    #   return [f'main/home_v{version}.html']
 
-  def get_context_data(self, *args, **kwargs):
-    context = super(Home30a, self).get_context_data(*args, **kwargs)
+    def get_context_data(self, *args, **kwargs):
+        context = super(Home30a, self).get_context_data(*args, **kwargs)
 
-    carousel_metadata = []
-    # ruling out Olaudah; owtrad dataset also an issue
-    for dataset_types in [Collection, Dataset]:
-      featured = dataset_types.objects.exclude(featured__isnull=True)
-      for dataset in featured:
-        # print('dataset in views:186', dataset, dataset.id)
-        if dataset.id != 50:
-          carousel_metadata.append(dataset.carousel_metadata)
-    random.shuffle(carousel_metadata)
-    context['carousel_metadata'] = json.dumps(carousel_metadata)
+        carousel_metadata = []
+        # ruling out Olaudah; owtrad dataset also an issue
+        for dataset_types in [Collection, Dataset]:
+            featured = dataset_types.objects.exclude(featured__isnull=True)
+            for dataset in featured:
+                # print('dataset in views:186', dataset, dataset.id)
+                if dataset.id != 50:
+                    carousel_metadata.append(dataset.carousel_metadata)
+        random.shuffle(carousel_metadata)
+        context['carousel_metadata'] = json.dumps(carousel_metadata)
 
-    context['media_url'] = settings.MEDIA_URL
-    context['base_dir'] = settings.BASE_DIR
-    context['es_whg'] = settings.ES_WHG
-    context['beta_or_better'] = True if self.request.user.groups.filter(
-      name__in=['beta', 'admins']).exists() else False
-    context['teacher'] = True if self.request.user.groups.filter(
-      name__in=['teacher']).exists() else False
-    context['count'] = Place.objects.filter(dataset__public=True, dataset__core=True).count()
-    context['announcements'] = Announcement.objects.filter(active=True).order_by('-created_at')[:3]
-    context['count_places'] = Place.objects.filter(Q(dataset__public=True) | Q(dataset__core=True)).count()
+        context['media_url'] = settings.MEDIA_URL
+        context['base_dir'] = settings.BASE_DIR
+        context['es_whg'] = settings.ES_WHG
+        context['beta_or_better'] = True if self.request.user.groups.filter(
+            name__in=['beta', 'admins']).exists() else False
+        context['teacher'] = True if self.request.user.groups.filter(
+            name__in=['teacher']).exists() else False
+        context['count'] = Place.objects.filter(dataset__public=True, dataset__core=True).count()
+        context['announcements'] = Announcement.objects.filter(active=True).order_by('-created_at')[:3]
+        context['count_places'] = Place.objects.filter(Q(dataset__public=True) | Q(dataset__core=True)).count()
 
-    # TODO: REMOVE THE FOLLOWING? ****************************************************
-    # Serialize the querysets to JSON
-    f_collections = Collection.objects.exclude(featured__isnull=True)
-    f_datasets = Dataset.objects.exclude(featured__isnull=True)
-    context['featured_coll'] = f_collections
-    context['featured_ds'] = f_datasets
+        # TODO: REMOVE THE FOLLOWING? ****************************************************
+        # Serialize the querysets to JSON
+        f_collections = Collection.objects.exclude(featured__isnull=True)
+        f_datasets = Dataset.objects.exclude(featured__isnull=True)
+        context['featured_coll'] = f_collections
+        context['featured_ds'] = f_datasets
 
-    return context
+        return context
+
 
 # TODO: what rules? this or the *_list() functions?
 # used for dashboard_user() and dataset_list()
 def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
-  print('get_objects_for_user',
-        dict(model=model, filter_criteria=filter_criteria, is_admin=is_admin, extra_filters=extra_filters))
-  from django.db.models import Q
-  collaborator_objects = model.objects.none()
+    print('get_objects_for_user',
+          dict(model=model, filter_criteria=filter_criteria, is_admin=is_admin, extra_filters=extra_filters))
+    from django.db.models import Q
+    collaborator_objects = model.objects.none()
 
-  # Always apply extra filters if they are provided and the model is Area
-  if extra_filters and model == Area:
-    objects = model.objects.filter(**extra_filters)
-  elif is_admin:
-    objects = model.objects.all()
-  else:
-    # Get the objects owned by the user
-    owned_objects = model.objects.filter(**filter_criteria).exclude(title__startswith='(stub)')
+    # Always apply extra filters if they are provided and the model is Area
+    if extra_filters and model == Area:
+        objects = model.objects.filter(**extra_filters)
+    elif is_admin:
+        objects = model.objects.all()
+    else:
+        # Get the objects owned by the user
+        owned_objects = model.objects.filter(**filter_criteria).exclude(title__startswith='(stub)')
 
-    # Get the objects where the user is a collaborator
-    if model == Dataset:
-      collaborator_objects = Dataset.objects.filter(collabs__user_id=user.id)
-    elif model == Collection:
-      collaborator_objects = Collection.objects.filter(collabs__user_id=user.id)
+        # Get the objects where the user is a collaborator
+        if model == Dataset:
+            collaborator_objects = Dataset.objects.filter(collabs__user_id=user.id)
+        elif model == Collection:
+            collaborator_objects = Collection.objects.filter(collabs__user_id=user.id)
 
-    # Combine the querysets
-    objects = owned_objects | collaborator_objects
+        # Combine the querysets
+        objects = owned_objects | collaborator_objects
 
-  if model == Area:
-    objects = objects.filter(type__in=['ccodes', 'copied', 'drawn']).order_by('-created')
+    if model == Area:
+        objects = objects.filter(type__in=['ccodes', 'copied', 'drawn']).order_by('-created')
 
-  if is_admin and model == Area and 'type' in filter_criteria:
-    objects = objects.exclude(type__in=filter_criteria['type'])
-  elif model == Dataset:  # reverse sort, and some dummy datasets need to be filtered
-    print('model == Dataset')
-    objects = objects.exclude(Q(title__startswith='(stub)')|Q(numrows__lt=1)).order_by('-create_date')
-    # print('Dataset objects count', objects.count())
-    # print('Datasets:', objects)
-    # objects = objects.annotate(recent_log_timestamp=Max('log__timestamp'))
+    if is_admin and model == Area and 'type' in filter_criteria:
+        objects = objects.exclude(type__in=filter_criteria['type'])
+    elif model == Dataset:  # reverse sort, and some dummy datasets need to be filtered
+        print('model == Dataset')
+        objects = objects.exclude(Q(title__startswith='(stub)') | Q(numrows__lt=1)).order_by('-create_date')
+        # print('Dataset objects count', objects.count())
+        # print('Datasets:', objects)
+        # objects = objects.annotate(recent_log_timestamp=Max('log__timestamp'))
 
-  return objects
+    return objects
+
 
 def area_list(request, sort='', order=''):
-  filters = request.GET
-  print("area_list() GET (filters):", request.GET)
-  print('area_list() sort, order', sort, order)
+    filters = request.GET
+    print("area_list() GET (filters):", request.GET)
+    print('area_list() sort, order', sort, order)
 
-  is_admin = request.user.groups.filter(name='whg_admins').exists()
-  text_fields = ['title', 'description', 'type', 'owner']
+    is_admin = request.user.groups.filter(name='whg_admins').exists()
+    text_fields = ['title', 'description', 'type', 'owner']
 
-  # only user-created areas
-  areas = Area.objects.filter(type__in=['ccodes', 'copied', 'drawn'])
+    # only user-created areas
+    areas = Area.objects.filter(type__in=['ccodes', 'copied', 'drawn'])
 
- # Sort based on the parameters
-  if sort and order:
-    if sort == 'owner':
-      sort = 'owner__username'
-    if sort in text_fields:
-        if order == 'desc':
-            areas = areas.order_by(Lower(sort).desc())
+    # Sort based on the parameters
+    if sort and order:
+        if sort == 'owner':
+            sort = 'owner__username'
+        if sort in text_fields:
+            if order == 'desc':
+                areas = areas.order_by(Lower(sort).desc())
+            else:
+                areas = areas.order_by(Lower(sort))
         else:
-            areas = areas.order_by(Lower(sort))
-    else:
-        sort_param = f'-{sort}' if order == 'desc' else sort
-        areas = areas.order_by(sort_param)
-  context = {'areas': areas, 'is_admin': is_admin, 'section': 'areas'}
+            sort_param = f'-{sort}' if order == 'desc' else sort
+            areas = areas.order_by(sort_param)
+    context = {'areas': areas, 'is_admin': is_admin, 'section': 'areas'}
 
-  # Apply filters from request if any
-  print("area filters:", filters)
-  # type, owner, title
-  if filters:
-    if 'type' in filters and filters['type'] != 'all':
-      areas = areas.filter(type=filters['type'])
-      print('type filter:', areas)
+    # Apply filters from request if any
+    print("area filters:", filters)
+    # type, owner, title
+    if filters:
+        if 'type' in filters and filters['type'] != 'all':
+            areas = areas.filter(type=filters['type'])
+            print('type filter:', areas)
 
-    if 'owner' in filters:
-      print('filtering owners')
-      staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
-      if filters['owner'] == 'staff':
-        print('staff only')
-        areas = areas.filter(owner__groups__in=staff_groups)
-      elif filters['owner'] == 'contributors':
-        print('exclude staff;')
-        areas = areas.exclude(owner__groups__in=staff_groups)
-      print('owner filter:', areas)
+        if 'owner' in filters:
+            print('filtering owners')
+            staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
+            if filters['owner'] == 'staff':
+                print('staff only')
+                areas = areas.filter(owner__groups__in=staff_groups)
+            elif filters['owner'] == 'contributors':
+                print('exclude staff;')
+                areas = areas.exclude(owner__groups__in=staff_groups)
+            print('owner filter:', areas)
 
-    if 'title' in filters and filters['title']:
-      search_term = filters['title']
-      areas = areas.filter(Q(title__icontains=search_term) | Q(description__icontains=search_term))
-      print('title filter:', areas)
+        if 'title' in filters and filters['title']:
+            search_term = filters['title']
+            areas = areas.filter(Q(title__icontains=search_term) | Q(description__icontains=search_term))
+            print('title filter:', areas)
 
-    context = {
-        'areas': areas,
-        'is_admin': is_admin,
-        'section': 'areas',
-        'filtered': True,
-        'filters': {
-            'type': request.GET.get('type', ''),
-            'owner': request.GET.get('owner', ''),
-            'title': request.GET.get('title', '')
+        context = {
+            'areas': areas,
+            'is_admin': is_admin,
+            'section': 'areas',
+            'filtered': True,
+            'filters': {
+                'type': request.GET.get('type', ''),
+                'owner': request.GET.get('owner', ''),
+                'title': request.GET.get('title', '')
+            }
         }
-    }
-  return render(request, 'lists/area_list.html', context)
+    return render(request, 'lists/area_list.html', context)
+
 
 def dataset_list(request, sort='', order=''):
-  filters = request.GET
-  print("dataset_list() GET:", request.GET)
-  print('dataset_list() sort, order', sort, order)
+    filters = request.GET
+    print("dataset_list() GET:", request.GET)
+    print('dataset_list() sort, order', sort, order)
 
-  is_admin = request.user.groups.filter(name='whg_admins').exists()
-  datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
-  text_fields = ['title', 'label', 'status', 'owner']
+    is_admin = request.user.groups.filter(name='whg_admins').exists()
+    datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
+    text_fields = ['title', 'label', 'status', 'owner']
 
-  # Sort based on the parameters
-  if sort == 'last_modified':
-    if order == 'desc':
-      datasets = datasets.order_by('-create_date')
-    else:
-      datasets = datasets.order_by('create_date')
-  elif sort and order:
-    if sort == 'owner':
-      sort = 'owner__username'
-    if sort in text_fields:
-        # Apply Lower function for text fields
+    # Sort based on the parameters
+    if sort == 'last_modified':
         if order == 'desc':
-            datasets = datasets.order_by(Lower(sort).desc())
+            datasets = datasets.order_by('-create_date')
         else:
-            datasets = datasets.order_by(Lower(sort))
-    else:
-        # Standard sorting for non-text fields
-        sort_param = f'-{sort}' if order == 'desc' else sort
-        datasets = datasets.order_by(sort_param)
-  context = {'datasets': datasets, 'is_admin': is_admin, 'section': 'datasets'}
+            datasets = datasets.order_by('create_date')
+    elif sort and order:
+        if sort == 'owner':
+            sort = 'owner__username'
+        if sort in text_fields:
+            # Apply Lower function for text fields
+            if order == 'desc':
+                datasets = datasets.order_by(Lower(sort).desc())
+            else:
+                datasets = datasets.order_by(Lower(sort))
+        else:
+            # Standard sorting for non-text fields
+            sort_param = f'-{sort}' if order == 'desc' else sort
+            datasets = datasets.order_by(sort_param)
+    context = {'datasets': datasets, 'is_admin': is_admin, 'section': 'datasets'}
 
+    print("Filters received:", filters)
+    # ds_status, owner, title
+    if filters:
+        if 'ds_status' in filters and filters['ds_status'] != 'all':
+            if filters['ds_status'] == 'published':
+                datasets = datasets.filter(public=True)
+            else:
+                datasets = datasets.filter(ds_status=filters['ds_status'])
 
-  print("Filters received:", filters)
-  # ds_status, owner, title
-  if filters:
-    if 'ds_status' in filters and filters['ds_status'] != 'all':
-      if filters['ds_status'] == 'published':
-        datasets = datasets.filter(public=True)
-      else:
-        datasets = datasets.filter(ds_status=filters['ds_status'])
+        if 'owner' in filters:
+            staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
+            if filters['owner'] == 'staff':
+                datasets = datasets.filter(owner__groups__in=staff_groups)
+            elif filters['owner'] == 'contributors':
+                datasets = datasets.exclude(owner__groups__in=staff_groups)
 
-    if 'owner' in filters:
-      staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
-      if filters['owner'] == 'staff':
-        datasets = datasets.filter(owner__groups__in=staff_groups)
-      elif filters['owner'] == 'contributors':
-        datasets = datasets.exclude(owner__groups__in=staff_groups)
+        if 'title' in filters and filters['title']:
+            # datasets = datasets.filter(title__icontains=filters['title'])
+            search_term = filters['title']
+            datasets = datasets.filter(Q(title__icontains=search_term) | Q(owner__username__icontains=search_term))
+            print('title filter:', datasets)
 
-    if 'title' in filters and filters['title']:
-      # datasets = datasets.filter(title__icontains=filters['title'])
-      search_term = filters['title']
-      datasets = datasets.filter(Q(title__icontains=search_term) | Q(owner__username__icontains=search_term))
-      print('title filter:', datasets)
-
-    context = {
-        'datasets': datasets,
-        'is_admin': is_admin,
-        'section': 'datasets',
-        'filtered': True,
-        'filters': {
-            'ds_status': request.GET.get('ds_status', ''),
-            'owner': request.GET.get('owner', ''),
-            'title': request.GET.get('title', '')
+        context = {
+            'datasets': datasets,
+            'is_admin': is_admin,
+            'section': 'datasets',
+            'filtered': True,
+            'filters': {
+                'ds_status': request.GET.get('ds_status', ''),
+                'owner': request.GET.get('owner', ''),
+                'title': request.GET.get('title', '')
+            }
         }
-    }
 
-  return render(request, 'lists/dataset_list.html', context)
+    return render(request, 'lists/dataset_list.html', context)
+
 
 def collection_list(request, sort='', order=''):
-  filters = request.GET
-  print("collection_list() GET (filters):", request.GET)
-  print('collection_list() sort, order', sort, order)
+    filters = request.GET
+    print("collection_list() GET (filters):", request.GET)
+    print('collection_list() sort, order', sort, order)
 
-  is_admin = request.user.groups.filter(name='whg_admins').exists()
-  text_fields = ['title', 'type', 'status', 'owner']
+    is_admin = request.user.groups.filter(name='whg_admins').exists()
+    text_fields = ['title', 'type', 'status', 'owner']
 
-  collections = Collection.objects.all()
-  # collections = collections.annotate(recent_log_timestamp=Max('log__timestamp')).order_by('recent_log_timestamp')
-  #
-  # collections = collections.annotate(
-  #   count=Case(
-  #     When(collection_class='place', then=Count('annos')),
-  #     # When(collection_class='dataset', then=Count('datasets__places')),
-  #     default=0
-  #   )
-  # )
+    collections = Collection.objects.all()
+    # collections = collections.annotate(recent_log_timestamp=Max('log__timestamp')).order_by('recent_log_timestamp')
+    #
+    # collections = collections.annotate(
+    #   count=Case(
+    #     When(collection_class='place', then=Count('annos')),
+    #     # When(collection_class='dataset', then=Count('datasets__places')),
+    #     default=0
+    #   )
+    # )
 
-  # Sort based on the parameters
-  if sort == 'create_date':
-    if order == 'desc':
-      collections = collections.order_by('-create_date')
-    else:
-      collections = collections.order_by('create_date')
-  elif sort == 'count':
-    if order == 'desc':
-      collections = collections.order_by('-count')
-    else:
-      collections = collections.order_by('count')
-  elif sort and order:
-    if sort == 'owner':
-      sort = 'owner__username'
-    if sort in text_fields:
-        # Apply Lower function for text fields
+    # Sort based on the parameters
+    if sort == 'create_date':
         if order == 'desc':
-            collections = collections.order_by(Lower(sort).desc())
+            collections = collections.order_by('-create_date')
         else:
-            collections = collections.order_by(Lower(sort))
-    else:
-        # Standard sorting for non-text fields
-        sort_param = f'-{sort}' if order == 'desc' else sort
-        collections = collections.order_by(sort_param)
-  context = {'collections': collections, 'is_admin': is_admin, 'section': 'collections'}
+            collections = collections.order_by('create_date')
+    elif sort == 'count':
+        if order == 'desc':
+            collections = collections.order_by('-count')
+        else:
+            collections = collections.order_by('count')
+    elif sort and order:
+        if sort == 'owner':
+            sort = 'owner__username'
+        if sort in text_fields:
+            # Apply Lower function for text fields
+            if order == 'desc':
+                collections = collections.order_by(Lower(sort).desc())
+            else:
+                collections = collections.order_by(Lower(sort))
+        else:
+            # Standard sorting for non-text fields
+            sort_param = f'-{sort}' if order == 'desc' else sort
+            collections = collections.order_by(sort_param)
+    context = {'collections': collections, 'is_admin': is_admin, 'section': 'collections'}
 
+    print("Filters received:", filters)
+    # status, collection_class, owner, title
+    if filters:
+        if 'status' in filters and filters['status'] != 'all':
+            collections = collections.filter(status=filters['status'])
+            print('status filter:', collections)
 
-  print("Filters received:", filters)
-  # status, collection_class, owner, title
-  if filters:
-    if 'status' in filters and filters['status'] != 'all':
-      collections = collections.filter(status=filters['status'])
-      print('status filter:', collections)
+        if 'class' in filters and filters['class'] != 'all':
+            collections = collections.filter(collection_class=filters['class'])
+            print('class filter:', collections)
 
-    if 'class' in filters and filters['class'] != 'all':
-      collections = collections.filter(collection_class=filters['class'])
-      print('class filter:', collections)
+        if 'owner' in filters:
+            staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
+            if filters['owner'] == 'staff':
+                collections = collections.filter(owner__groups__in=staff_groups)
+            elif filters['owner'] == 'contributors':
+                collections = collections.exclude(owner__groups__in=staff_groups)
+            print('owner filter:', collections)
 
-    if 'owner' in filters:
-      staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
-      if filters['owner'] == 'staff':
-        collections = collections.filter(owner__groups__in=staff_groups)
-      elif filters['owner'] == 'contributors':
-        collections = collections.exclude(owner__groups__in=staff_groups)
-      print('owner filter:', collections)
+        if 'title' in filters and filters['title']:
+            # collections = collections.filter(title__icontains=filters['title'])
+            search_term = filters['title']
+            collections = collections.filter(
+                Q(title__icontains=search_term) | Q(owner__username__icontains=search_term))
+            print('title filter:', collections)
 
-    if 'title' in filters and filters['title']:
-      # collections = collections.filter(title__icontains=filters['title'])
-      search_term = filters['title']
-      collections = collections.filter(Q(title__icontains=search_term) | Q(owner__username__icontains=search_term))
-      print('title filter:', collections)
-
-    context = {
-        'collections': collections,
-        'is_admin': is_admin,
-        'section': 'collections',
-        'filtered': True,
-        'filters': {
-            'status': request.GET.get('status', ''),
-            'class': request.GET.get('class', ''),
-            'owner': request.GET.get('owner', ''),
-            'title': request.GET.get('title', '')
+        context = {
+            'collections': collections,
+            'is_admin': is_admin,
+            'section': 'collections',
+            'filtered': True,
+            'filters': {
+                'status': request.GET.get('status', ''),
+                'class': request.GET.get('class', ''),
+                'owner': request.GET.get('owner', ''),
+                'title': request.GET.get('title', '')
+            }
         }
-    }
 
-  return render(request, 'lists/collection_list.html', context)
+    return render(request, 'lists/collection_list.html', context)
+
 
 def group_list(request, sort='', order=''):
-  filters = request.GET
-  print("group_list() GET (filters):", request.GET)
-  print('group_list() sort, order', sort, order)
+    filters = request.GET
+    print("group_list() GET (filters):", request.GET)
+    print('group_list() sort, order', sort, order)
 
-  is_admin = request.user.groups.filter(name='whg_admins').exists()
-  text_fields = ['title', 'category', 'owner']
+    is_admin = request.user.groups.filter(name='whg_admins').exists()
+    text_fields = ['title', 'category', 'owner']
 
-  groups = CollectionGroup.objects.all()
+    groups = CollectionGroup.objects.all()
 
-  if sort and order:
-    if sort == 'owner':
-      sort = 'owner__username'
-    if sort in text_fields:
-        # Apply Lower function for text fields
-        if order == 'desc':
-            groups = groups.order_by(Lower(sort).desc())
+    if sort and order:
+        if sort == 'owner':
+            sort = 'owner__username'
+        if sort in text_fields:
+            # Apply Lower function for text fields
+            if order == 'desc':
+                groups = groups.order_by(Lower(sort).desc())
+            else:
+                groups = groups.order_by(Lower(sort))
         else:
-            groups = groups.order_by(Lower(sort))
-    else:
-        sort_param = f'-{sort}' if order == 'desc' else sort
-        groups = groups.order_by(sort_param)
-  context = {'groups': groups, 'is_admin': is_admin, 'section': 'groups'}
+            sort_param = f'-{sort}' if order == 'desc' else sort
+            groups = groups.order_by(sort_param)
+    context = {'groups': groups, 'is_admin': is_admin, 'section': 'groups'}
 
-  print("group filters:", filters)
-  # type, owner, title
-  if filters:
-    if 'type' in filters and filters['type'] != 'all':
-      groups = groups.filter(type=filters['type'])
-      print('type filter:', groups)
+    print("group filters:", filters)
+    # type, owner, title
+    if filters:
+        if 'type' in filters and filters['type'] != 'all':
+            groups = groups.filter(type=filters['type'])
+            print('type filter:', groups)
 
-    if 'owner' in filters:
-      staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
-      if filters['owner'] == 'staff':
-        groups = groups.filter(owner__groups__in=staff_groups)
-      elif filters['owner'] == 'users':
-        groups = groups.exclude(owner__groups__in=staff_groups)
-      print('owner filter:', groups)
+        if 'owner' in filters:
+            staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
+            if filters['owner'] == 'staff':
+                groups = groups.filter(owner__groups__in=staff_groups)
+            elif filters['owner'] == 'users':
+                groups = groups.exclude(owner__groups__in=staff_groups)
+            print('owner filter:', groups)
 
-    if 'title' in filters and filters['title']:
-      groups = groups.filter(title__icontains=filters['title'])
-      print('title filter:', groups)
+        if 'title' in filters and filters['title']:
+            groups = groups.filter(title__icontains=filters['title'])
+            print('title filter:', groups)
 
-    context = {
-        'groups': groups,
-        'is_admin': is_admin,
-        'section': 'groups',
-        'filtered': True,
-        'filters': {
-            'type': request.GET.get('class', ''),
-            'owner': request.GET.get('owner', ''),
-            'title': request.GET.get('title', '')
+        context = {
+            'groups': groups,
+            'is_admin': is_admin,
+            'section': 'groups',
+            'filtered': True,
+            'filters': {
+                'type': request.GET.get('class', ''),
+                'owner': request.GET.get('owner', ''),
+                'title': request.GET.get('title', '')
+            }
         }
-    }
 
-  return render(request, 'lists/group_list.html', context)
+    return render(request, 'lists/group_list.html', context)
 
 
 # gets the correct view based on user group
@@ -612,92 +629,94 @@ def dashboard_redirect(request):
     else:
         return redirect('dashboard-user')
 
+
 # all-purpose for admins
 @login_required
 def dashboard_admin_view(request):
-  print('dashboard_admin() request.GET', request.GET)
-  user = request.user
-  is_admin = user.groups.filter(name='whg_admins').exists()
-  print(f'Is Admin: {is_admin}')
-  is_leader = user.groups.filter(name='group_leaders').exists()
-  django_groups = [group.name for group in user.groups.all()]
+    print('dashboard_admin() request.GET', request.GET)
+    user = request.user
+    is_admin = user.groups.filter(name='whg_admins').exists()
+    print(f'Is Admin: {is_admin}')
+    is_leader = user.groups.filter(name='group_leaders').exists()
+    django_groups = [group.name for group in user.groups.all()]
 
+    user_datasets_count = Dataset.objects.filter(owner=user.id).count()
+    user_collections_count = Collection.objects.filter(owner=user).count()
 
-  user_datasets_count = Dataset.objects.filter(owner=user.id).count()
-  user_collections_count = Collection.objects.filter(owner=user).count()
+    # section = request.GET.get('section')
+    section = request.GET.get('section', 'datasets')
 
-  # section = request.GET.get('section')
-  section = request.GET.get('section', 'datasets')
+    #
+    datasets = get_objects_for_user(Dataset, request.user, {}, is_admin)
+    datasets = datasets.order_by('create_date')
 
-  #
-  datasets = get_objects_for_user(Dataset, request.user, {}, is_admin)
-  datasets = datasets.order_by('create_date')
+    collections = get_objects_for_user(Collection, request.user, {}, is_admin)
+    areas = get_objects_for_user(Area, request.user, {'type': ['predefined', 'country']}, is_admin)
+    groups_member = CollectionGroup.objects.filter(members__user=user)
+    groups_led = CollectionGroup.objects.filter(owner=user)
 
-  collections = get_objects_for_user(Collection, request.user, {}, is_admin)
-  areas = get_objects_for_user(Area, request.user, {'type': ['predefined', 'country']}, is_admin)
-  groups_member = CollectionGroup.objects.filter(members__user=user)
-  groups_led = CollectionGroup.objects.filter(owner=user)
+    context = {
+        'datasets': datasets,
+        'collections': collections,
+        'areas': areas,
+        'has_datasets': user_datasets_count > 0,
+        'has_collections': user_collections_count > 0,
+        'section': section,
+        'django_groups': django_groups,
+        'groups_member': groups_member,
+        'groups_led': groups_led,
+        'is_admin': is_admin,
+        'is_leader': is_leader,
+    }
+    return render(request, 'main/dashboard_admin.html', context)
 
-  context = {
-    'datasets': datasets,
-    'collections': collections,
-    'areas': areas,
-    'has_datasets': user_datasets_count > 0,
-    'has_collections': user_collections_count > 0,
-    'section': section,
-    'django_groups': django_groups,
-    'groups_member': groups_member,
-    'groups_led': groups_led,
-    'is_admin': is_admin,
-    'is_leader': is_leader,
-  }
-  return render(request, 'main/dashboard_admin.html', context)
 
 # for non-admins
 @login_required
 def dashboard_user_view(request):
-  user=request.user
-  is_admin = user.groups.filter(name='whg_admins').exists()
-  is_leader = user.groups.filter(name='group_leaders').exists()
-  django_groups = [group.name for group in user.groups.all()]
+    user = request.user
+    is_admin = user.groups.filter(name='whg_admins').exists()
+    is_leader = user.groups.filter(name='group_leaders').exists()
+    django_groups = [group.name for group in user.groups.all()]
 
-  user_datasets_count = Dataset.objects.filter(owner=user.id).count()
-  user_collections_count = Collection.objects.filter(owner=user).count()
-  user_areas_count = Area.objects.filter(owner=user).count()
-  user_resources_count = Resource.objects.filter(owner=user).count()
-  user_downloads_count = DownloadFile.objects.filter(user=user).count()
+    user_datasets_count = Dataset.objects.filter(owner=user.id).count()
+    user_collections_count = Collection.objects.filter(owner=user).count()
+    user_areas_count = Area.objects.filter(owner=user).count()
+    user_resources_count = Resource.objects.filter(owner=user).count()
+    user_downloads_count = DownloadFile.objects.filter(user=user).count()
 
-  section = request.GET.get('section')
+    section = request.GET.get('section')
 
-  datasets = get_objects_for_user(Dataset, request.user, {'owner': user}, False)
-  collections = get_objects_for_user(Collection, request.user, {'owner': user}, False)
-  areas = get_objects_for_user(Area, request.user, {'owner': user}, False)
-  resources = get_objects_for_user(Resource, request.user, {'owner': user}, False)
-  downloads = get_objects_for_user(DownloadFile, request.user, {'user': user}, False)
-  groups_member = CollectionGroup.objects.filter(members__user=user)
-  groups_led = CollectionGroup.objects.filter(owner=user)
+    datasets = get_objects_for_user(Dataset, request.user, {'owner': user}, False)
+    collections = get_objects_for_user(Collection, request.user, {'owner': user}, False)
+    areas = get_objects_for_user(Area, request.user, {'owner': user}, False)
+    resources = get_objects_for_user(Resource, request.user, {'owner': user}, False)
+    downloads = get_objects_for_user(DownloadFile, request.user, {'user': user}, False)
+    groups_member = CollectionGroup.objects.filter(members__user=user)
+    groups_led = CollectionGroup.objects.filter(owner=user)
 
-  context = {
-    'datasets': datasets,
-    'collections': collections,
-    'areas': areas,
-    'resources': resources,
-    'downloads': downloads,
-    'has_datasets': datasets.count() > 0,
-    'has_collections': collections.count() > 0,
-    'has_areas': user_areas_count > 0,
-    'has_resources': user_resources_count > 0,
-    'has_downloads': user_downloads_count > 0,
-    'section': section,
-    'django_groups': django_groups,
-    'groups_member': groups_member,
-    'groups_led': groups_led,
-    'is_admin': is_admin,
-    'is_leader': is_leader,
-    'box_titles': ['Datasets', 'Place Collections', 'Dataset Collections', 'Study Areas', 'Groups'],
+    context = {
+        'datasets': datasets,
+        'collections': collections,
+        'areas': areas,
+        'resources': resources,
+        'downloads': downloads,
+        'has_datasets': datasets.count() > 0,
+        'has_collections': collections.count() > 0,
+        'has_areas': user_areas_count > 0,
+        'has_resources': user_resources_count > 0,
+        'has_downloads': user_downloads_count > 0,
+        'section': section,
+        'django_groups': django_groups,
+        'groups_member': groups_member,
+        'groups_led': groups_led,
+        'is_admin': is_admin,
+        'is_leader': is_leader,
+        'box_titles': ['Datasets', 'Place Collections', 'Dataset Collections', 'Study Areas', 'Groups'],
 
-  }
-  return render(request, 'main/dashboard_user.html', context)
+    }
+    return render(request, 'main/dashboard_user.html', context)
+
 
 # @csrf_exempt
 # def home_modal(request):
@@ -710,14 +729,16 @@ def dashboard_user_view(request):
 # main/views.py
 from django.shortcuts import render
 
+
 def trigger_500_error(request):
     # This will simulate a server error
     raise Exception("Simulated server error")
 
+
 def server_error_view(request):
     import traceback
 
-    try:    
+    try:
         print('Formatting message for Slack...')
 
         # Capture request details
@@ -728,7 +749,7 @@ def server_error_view(request):
         headers_pretty = json.dumps(headers, indent=2)
         body = request.body.decode('utf-8', errors='replace')
         body_formatted = f"```{body}```" if body else 'None'
-        
+
         # Capture authenticated user details
         if request.user and request.user.is_authenticated:
             authenticated_user = f'{request.user.username} ({request.user.email})'
@@ -768,10 +789,10 @@ def server_error_view(request):
 
     except Exception as e:
         # Handle exceptions that occur while sending the message to Slack (avoid infinite loop!)
-        print(f"Error sending message to Slack: {e}")       
+        print(f"Error sending message to Slack: {e}")
 
-    # Return a user-friendly error page
-    context = { # Rendering of this message is not currently implemented
+        # Return a user-friendly error page
+    context = {  # Rendering of this message is not currently implemented
         'error_message': 'An unexpected error occurred. Our team has been notified and is looking into the issue. Please try again later.'
     }
     try:
@@ -779,6 +800,7 @@ def server_error_view(request):
     except Exception as e:
         # In case rendering the error page fails, return a plain HTTP response
         return HttpResponseServerError('An unexpected error occurred and we were unable to handle it properly.')
+
 
 # def server_error_view(request, exception=None):
 #   import traceback
@@ -824,76 +846,81 @@ def server_error_view(request):
 #     return render(request, "main/500.html", {'error':'fubar'})
 
 def custom_404(request, exception):
-  print('404 error request', request.GET.__dict__)
-  return render(request, 'main/404.html', {}, status=404)
+    print('404 error request', request.GET.__dict__)
+    return render(request, 'main/404.html', {}, status=404)
+
 
 def is_url(url):
-  try:
-    result = urlparse(url)
-    return all([result.scheme, result.netloc])
-  except ValueError:
-    return False
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
 
 
 """
   create link associated with instance of various models, so far:
   Collection, CollectionGroup, TraceAnnotation, Place
 """
+
+
 def create_link(request, *args, **kwargs):
-  if request.method == 'POST':
-    print('main.create_link() request.POST', request.POST)
-    model = request.POST['model']
-    objectid = request.POST['objectid']
+    if request.method == 'POST':
+        print('main.create_link() request.POST', request.POST)
+        model = request.POST['model']
+        objectid = request.POST['objectid']
 
-    uri = request.POST['uri']
-    if not is_url(uri):
-      return JsonResponse({'status': 'failed', 'result': 'bad uri'}, safe=False)
+        uri = request.POST['uri']
+        if not is_url(uri):
+            return JsonResponse({'status': 'failed', 'result': 'bad uri'}, safe=False)
 
-    label = request.POST['label']
-    link_type = request.POST['link_type']
-    # license = request.POST['license']
+        label = request.POST['label']
+        link_type = request.POST['link_type']
+        # license = request.POST['license']
 
-    # Collection or CollectionGroup
-    # from django.apps import apps
-    Model = apps.get_model(f"collection.{model}")
-    print('Model', Model)
-    model_str=model.lower() if model == 'Collection' else 'collection_group'
-    obj = Model.objects.get(id=objectid)
-    gotlink = obj.related_links.filter(uri=uri)
-    # gotlink = obj.links.filter(uri=uri)
-    print('model_str, obj, gotlink', model_str, obj, gotlink)
-    status, msg = ['','']
-    # columns in Links table
-    # collection_id, collection_group_id, trace_annotation_id, place_id
-    if not gotlink:
-      print('not got_link')
-      try:
-        link=Link.objects.create(
-          **{model_str:obj}, # instance identifier
-          uri = uri,
-          label = label,
-          link_type = link_type
-        )
-        result = {'uri': link.uri, 'label': link.label,
-                  'link_type':link.link_type,
-                  'link_icon':link.get_link_type_display(),
-                  'id':link.id}
-        status="ok"
-      except:
-        print('failed', sys.exc_info())
-        status = "failed"
-        result = "Link *not* created...why?"
-    else:
-      result = 'dupe'
-    return JsonResponse({'status': status, 'result': result}, safe=False)
+        # Collection or CollectionGroup
+        # from django.apps import apps
+        Model = apps.get_model(f"collection.{model}")
+        print('Model', Model)
+        model_str = model.lower() if model == 'Collection' else 'collection_group'
+        obj = Model.objects.get(id=objectid)
+        gotlink = obj.related_links.filter(uri=uri)
+        # gotlink = obj.links.filter(uri=uri)
+        print('model_str, obj, gotlink', model_str, obj, gotlink)
+        status, msg = ['', '']
+        # columns in Links table
+        # collection_id, collection_group_id, trace_annotation_id, place_id
+        if not gotlink:
+            print('not got_link')
+            try:
+                link = Link.objects.create(
+                    **{model_str: obj},  # instance identifier
+                    uri=uri,
+                    label=label,
+                    link_type=link_type
+                )
+                result = {'uri': link.uri, 'label': link.label,
+                          'link_type': link.link_type,
+                          'link_icon': link.get_link_type_display(),
+                          'id': link.id}
+                status = "ok"
+            except:
+                print('failed', sys.exc_info())
+                status = "failed"
+                result = "Link *not* created...why?"
+        else:
+            result = 'dupe'
+        return JsonResponse({'status': status, 'result': result}, safe=False)
+
 
 def remove_link(request, *args, **kwargs):
-  #print('kwargs', kwargs)
-  link = Link.objects.get(id=kwargs['id'])
-  # link = CollectionLink.objects.get(id=kwargs['id'])
-  print('remove_link()', link)
-  link.delete()
-  return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    # print('kwargs', kwargs)
+    link = Link.objects.get(id=kwargs['id'])
+    # link = CollectionLink.objects.get(id=kwargs['id'])
+    print('remove_link()', link)
+    link.delete()
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+
 
 # TODO on cron in v3?
 def statusView(request):
@@ -919,33 +946,34 @@ def statusView(request):
 
 
 def volunteer_view(request):
-  if request.method == 'POST':
-    form = VolunteerForm(request.POST)
-    if form.is_valid():
-        # Extract the data from the form
-        dataset_id = form.cleaned_data.get('dataset_id')
-        dataset = Dataset.objects.get(id=dataset_id)
-        
-        WHGmail(context={
-            'template': 'volunteer_offer_owner',
-            'subject': 'WHG Volunteer to Review',
-            'to_email': dataset.owner.email,
-            'bcc': [settings.DEFAULT_FROM_EDITORIAL],
-            'greeting_name': dataset.owner.display_name,
-            'volunteer_greeting': request.user.display_name,
-            'volunteer_username': request.user.username,
-            'volunteer_email': request.user.email,
-            'message': form.cleaned_data['message'],
-            'dataset_title': dataset.title,
-            'dataset_id': dataset.id,
-            'slack_notify': True,
-        })
+    if request.method == 'POST':
+        form = VolunteerForm(request.POST)
+        if form.is_valid():
+            # Extract the data from the form
+            dataset_id = form.cleaned_data.get('dataset_id')
+            dataset = Dataset.objects.get(id=dataset_id)
 
-        return redirect('/success?return=' + request.GET.get('from', '/'))
-  else:
-    form = VolunteerForm()
+            WHGmail(context={
+                'template': 'volunteer_offer_owner',
+                'subject': 'WHG Volunteer to Review',
+                'to_email': dataset.owner.email,
+                'bcc': [settings.DEFAULT_FROM_EDITORIAL],
+                'greeting_name': dataset.owner.display_name,
+                'volunteer_greeting': request.user.display_name,
+                'volunteer_username': request.user.username,
+                'volunteer_email': request.user.email,
+                'message': form.cleaned_data['message'],
+                'dataset_title': dataset.title,
+                'dataset_id': dataset.id,
+                'slack_notify': True,
+            })
 
-  return render(request, 'volunteer.html', {'form': form})
+            return redirect('/success?return=' + request.GET.get('from', '/'))
+    else:
+        form = VolunteerForm()
+
+    return render(request, 'volunteer.html', {'form': form})
+
 
 # # contact form used throughout
 # def contact_view(request):
@@ -1058,7 +1086,6 @@ def volunteer_view(request):
 #                                                'dataset': dataset})
 
 def contact_modal_view(request):
-    
     if request.method == 'GET':
         initial_data = {}
         if request.user.is_authenticated:
@@ -1077,16 +1104,16 @@ def contact_modal_view(request):
             user_email = form.cleaned_data['from_email']
             user_message = form.cleaned_data['message']
             page_url = request.POST.get('page_url', 'No page URL provided')
-            
+
             # URL-encode the subject and body for the mailto link
             encoded_subject = urllib.parse.quote(user_subject)
             encoded_body = urllib.parse.quote(
                 f"\n\n\nOriginal message:\nSent on: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n{user_message}"
             )
             mailto_link = f"mailto:{user_email}?subject={encoded_subject}&body={encoded_body}"
-            
+
             try:
-                
+
                 slack_message = (
                     f"*Subject:* {user_subject}\n"
                     f"*From:* {name} (username: {username or '(none)'})\n"
@@ -1100,7 +1127,7 @@ def contact_modal_view(request):
                     print(f"Message sent to Slack.")
                 else:
                     print(f"Failed to send message to Slack: {response.status_code}, {response.text}")
-                
+
                 # # reply to user
                 # new_emailer(
                 #     email_type='contact_reply',
@@ -1112,11 +1139,11 @@ def contact_modal_view(request):
                 #     greeting_name=name if name else username,
                 #     user_subject=user_subject,
                 # )
-                
+
                 messages.success(request, "Your message has been sent successfully.")
                 print("Contact form processed.")
                 return JsonResponse({'success': True})
-            
+
             except BadHeaderError:
                 return HttpResponse('Invalid header found.')
 
@@ -1132,11 +1159,24 @@ def contact_modal_view(request):
     context = {'form': form}
     return render(request, 'main/contact_modal.html', context)
 
+
 def contactSuccessView(request, *args, **kwargs):
     returnurl = request.GET.get('return')
     print('return, request', returnurl, str(request.GET))
     return HttpResponse(
-        '<div style="font-family:sans-serif;margin-top:3rem; width:50%; margin-left:auto; margin-right:auto;"><h4>Thank you for your message! We will reply soon.</h4><p><a href="'+returnurl+'">Return</a><p></div>')
+        '<div style="font-family:sans-serif;margin-top:3rem; width:50%; margin-left:auto; margin-right:auto;"><h4>Thank you for your message! We will reply soon.</h4><p><a href="' + returnurl + '">Return</a><p></div>')
+
+
+def license_view(request):
+    return render(request, 'main/license.html')
+
+
+def terms_of_use_view(request):
+    return render(request, 'main/terms_of_use.html')
+
+
+def privacy_policy_view(request):
+    return render(request, 'main/privacy_policy.html')
 
 
 class CommentCreateView(BSModalCreateView):
@@ -1175,6 +1215,7 @@ class CommentCreateView(BSModalCreateView):
         return kwargs
     # ** END
 
+
 @login_required
 @require_POST
 def handle_comment(request):
@@ -1205,7 +1246,8 @@ def handle_comment(request):
                 'created': comment.created.strftime('%Y-%m-%d %H:%M:%S')
             }
 
-            return JsonResponse({'success': True, 'message': f'Comment #{comment.id} created successfully', 'comment': comment_data})
+            return JsonResponse(
+                {'success': True, 'message': f'Comment #{comment.id} created successfully', 'comment': comment_data})
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
