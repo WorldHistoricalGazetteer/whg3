@@ -64,8 +64,8 @@ def volunteer_offer(request, ds):
     owner_params.update({
         'email_type': 'volunteer_offer_owner',
         'subject': 'Volunteer offer for ' + ds.title + ' dataset in WHG',
-        'to_email': [owner.email],
-        'reply_to': [volunteer.email],
+        'to_email': owner.email,
+        'reply_to': volunteer.email,
         'slack_notify': True,
     })
     WHGmail(context=owner_params)
@@ -75,8 +75,7 @@ def volunteer_offer(request, ds):
     user_params.update({
         'email_type': 'volunteer_offer_user',
         'subject': 'Volunteer offer for ' + ds.title + ' dataset in WHG received',
-        'to_email': [volunteer.email],
-        'reply_to': [settings.DEFAULT_FROM_EDITORIAL],
+        'to_email': volunteer.email,
     })
     WHGmail(context=user_params)
 
