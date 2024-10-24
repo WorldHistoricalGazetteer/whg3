@@ -591,7 +591,9 @@ function renderResults(data, fromStorage = false) {
         })
         .on('click', '.portal-link', function (event) {
             event.preventDefault();
-            window.location.href = `/places/${$(this).data('whg-id')}/portal/`;
+            const id = $(this).data('whg-id') || $(this).data('pid');
+            const path = $(this).data('whg-id') ? 'portal/' : 'detail';
+            window.location.href = `/places/${id}/${path}`;
         })
         .on('click', '.unlinked', function () {
             $(this)
