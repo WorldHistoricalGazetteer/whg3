@@ -94,3 +94,23 @@ docker logs -f web_whgazetteer-org_main
 ```bash
 docker logs -f celery-worker_whgazetteer-org_main
 ```
+
+### Regenerate Map Data
+Occasionally, it may be necessary to force a refresh of mapdata. You can refresh the data for a single dataset, a collection, all datasets, or all collections.
+
+#### Refresh a Single Dataset by its ID:
+```bash
+docker exec -it web_whgazetteer-org_main bash -c "./manage.py refresh_mapdata_cache dataset <id>"
+```
+#### Refresh a Single Collection by its ID:
+```bash
+docker exec -it web_whgazetteer-org_main bash -c "./manage.py refresh_mapdata_cache collection <id>"
+```
+#### Refresh All Datasets
+```bash
+docker exec -it web_whgazetteer-org_main bash -c "./manage.py refresh_mapdata_cache dataset"
+```
+#### Refresh All Collections
+```bash
+docker exec -it web_whgazetteer-org_main bash -c "./manage.py refresh_mapdata_cache collection"
+```
