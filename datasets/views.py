@@ -2592,6 +2592,8 @@ class DatasetMetadataView(LoginRequiredMixin, UpdateView):
         context['is_admin'] = True if me.groups.filter(name__in=['whg_admins']).exists() else False
         context['editorial'] = True if me.groups.filter(name__in=['editorial']).exists() else False
 
+        context['files'] = ds.files.order_by('-id') or None
+
         # excludes datasets w/o an associated DatasetFile
         if file and hasattr(file, 'file') and os.path.exists(file.file.path):
             context['current_file'] = file

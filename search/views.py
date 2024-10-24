@@ -143,31 +143,32 @@ def makeGeom(pid, geom):
   format search result items
 """
 
+
 def suggestionItem(s):
-  h = s['hit']
-  unique_children = list(set(h['children']))
-  timespans = []
-  for span in h.get('timespans', []):
-    if 'gte' in span and 'lte' in span:
-        timespans.append([span['gte'], span['lte']])
-    else:
-        timespans.append(span)
-  item = {
-    "whg_id": h['whg_id'] if 'whg_id' in h else '',
-    "pid": h['place_id'],
-    "index": s['_index'],
-    "children": unique_children,
-    "linkcount": s['linkcount'],
-    "title": h['title'],
-    "variants": [n for n in h['searchy'] if n != h['title']],
-    "ccodes": h['ccodes'],
-    "fclasses": h['fclasses'],
-    # TODO: 'label' is an AAT value; sourceLabel is probably preferred if available
-    "types": [t['label'] for t in h['types']],
-    "geom": makeGeom(h['place_id'], h['geoms']),
-    "timespans": timespans
-  }
-  return item
+    h = s['hit']
+    unique_children = list(set(h['children']))
+    timespans = []
+    for span in h.get('timespans', []):
+        if 'gte' in span and 'lte' in span:
+            timespans.append([span['gte'], span['lte']])
+        else:
+            timespans.append(span)
+    item = {
+        "whg_id": h.get('whg_id', ''),
+        "pid": h['place_id'],
+        "index": s['_index'],
+        "children": unique_children,
+        "linkcount": s['linkcount'],
+        "title": h['title'],
+        "variants": [n for n in h['searchy'] if n != h['title']],
+        "ccodes": h['ccodes'],
+        "fclasses": h['fclasses'],
+        # TODO: 'label' is an AAT value; sourceLabel is probably preferred if available
+        "types": [t['label'] for t in h.get('types', []) if 'label' in t],
+        "geom": makeGeom(h['place_id'], h['geoms']),
+        "timespans": timespans
+    }
+    return item
 
 
 """

@@ -8,6 +8,7 @@ from django.db.models.signals import pre_delete, pre_save, post_save
 from django.dispatch import receiver
 
 from .models import Dataset, DatasetFile
+from utils.mapdata import mapdata_task
 from whgmail.messaging import WHGmail
 
 import logging
@@ -95,6 +96,8 @@ def handle_public_flag(sender, instance, **kwargs):
                 # Changed from False to True, create a tileset if the geometry or coordinate counts exceeds the thresholds
                 if object_needs_tileset:
                     transaction.on_commit(lambda: process_tileset_request.delay('datasets', instance.id, 'generate'))
+                else:
+                    transaction.on_commit(lambda: mapdata_task.delay('datasets', instance.id, 'standard', refresh=True))
 
                 # remove from volunteers needed page
                 # if instance.volunteers:

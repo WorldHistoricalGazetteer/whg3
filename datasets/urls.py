@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 from django.conf import settings
 
 from . import views
-from datasets.utils import download_file, UpdateCountsView, toggle_volunteers
+from datasets.utils import download_file, download_dataset, UpdateCountsView, toggle_volunteers
   # fetch_geojson_flat, fetch_geojson_ds, download_augmented, downloadLP7,
 
 # dataset actions
@@ -53,7 +53,8 @@ urlpatterns = [
   # path('download_lp7/', downloadLP7, name='download_lp7'),
 
   # download latest file, as uploaded
-  path('<int:id>/file/', download_file, name="dl-file"), #
+  path('<int:id>/file/', download_file, name="dl-file"),
+  path('<int:file_id>/download_dataset/', download_dataset, name='download_dataset'),
 
   ## DEPRECATing download augmented dataset
   # path('<int:id>/augmented/<str:format>', download_augmented, name="dl-aug"), #
