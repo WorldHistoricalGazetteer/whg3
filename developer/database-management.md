@@ -18,6 +18,11 @@ sudo -E rsync -avz -e "ssh -i /home/stephen/.ssh/id_rsa_whg" --rsync-path="sudo 
 # Stop Docker network and delete mounted database volume
 docker compose -f docker-compose-autocontext.yml --env-file ./.env/.env down
 docker volume rm whg_dev-db-data
+sudo rm -rf /var/lib/docker/volumes/whg_dev-db-data
+sudo mkdir /var/lib/docker/volumes/whg_dev-db-data
+sudo chown root:root /var/lib/docker/volumes/whg_dev-db-data
+sudo mkdir /var/lib/docker/volumes/whg_dev-db-data/_data
+sudo chown dnsmasq:stephen /var/lib/docker/volumes/whg_dev-db-data/_data
 
 # Define variables
 REMOTE_USER="whgadmin"
@@ -37,10 +42,16 @@ BACKUP_FILENAME=$(basename "$LATEST_BACKUP_FILE")
 sudo tar -xzf "$LOCAL_BACKUP_DIR/$BACKUP_FILENAME" -C "$LOCAL_BACKUP_DIR"
 
 # Delete the downloaded tar.gz file
-sudo rm -f "$BACKUP_FILENAME"
+sudo rm -f "$LOCAL_BACKUP_DIR/$BACKUP_FILENAME"
+
+#Fix permissions and ownership
+sudo chown -R stephen:stephen "$LOCAL_BACKUP_DIR*"
 
 # Restart Docker network
 docker compose -f docker-compose-autocontext.yml --env-file ./.env/.env up -d
+
+# Check log file
+docker logs -f postgres_local_staging
 ```
 
 ## Restore Database from Backup
