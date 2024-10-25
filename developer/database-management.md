@@ -13,6 +13,36 @@ sudo -E rsync -avz -e "ssh -i /home/stephen/.ssh/id_rsa_whg" --rsync-path="sudo 
 
 ```
 
+- The most recent backup of the remote production database can be copied to a local machine (depends on installation of correct keys):
+```sh
+# Stop Docker network and delete mounted database volume
+docker compose -f docker-compose-autocontext.yml --env-file ./.env/.env down
+docker volume rm whg_dev-db-data
+
+# Define variables
+REMOTE_USER="whgadmin"
+REMOTE_HOST="144.126.204.70"
+REMOTE_BACKUP_DIR="/home/whgadmin/backup/whgazetteer-org"
+LOCAL_BACKUP_DIR="/var/lib/docker/volumes/whg_dev-db-data/_data/"
+SSH_KEY="/home/stephen/.ssh/id_rsa_whg"
+
+# Find the most recent backup file
+LATEST_BACKUP_FILE=$(ssh -i "$SSH_KEY" "$REMOTE_USER@$REMOTE_HOST" "ls -t $REMOTE_BACKUP_DIR/*.tar.gz | head -n 1")
+
+# Use rsync to fetch the latest backup file
+sudo -E rsync -avz -e "ssh -i $SSH_KEY" --rsync-path="sudo rsync" "$REMOTE_USER@$REMOTE_HOST:$LATEST_BACKUP_FILE" "$LOCAL_BACKUP_DIR"
+
+# Get the filename from the full path
+BACKUP_FILENAME=$(basename "$LATEST_BACKUP_FILE")
+sudo tar -xzf "$LOCAL_BACKUP_DIR/$BACKUP_FILENAME" -C "$LOCAL_BACKUP_DIR"
+
+# Delete the downloaded tar.gz file
+sudo rm -f "$BACKUP_FILENAME"
+
+# Restart Docker network
+docker compose -f docker-compose-autocontext.yml --env-file ./.env/.env up -d
+```
+
 ## Restore Database from Backup
 
 Due to the size of the backup files, restoration has to be multi-threaded and with the psql interface inside Docker container.
