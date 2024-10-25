@@ -18,34 +18,26 @@ sudo -E rsync -avz -e "ssh -i /home/stephen/.ssh/id_rsa_whg" --rsync-path="sudo 
 # Stop Docker network and delete mounted database volume
 docker compose -f docker-compose-autocontext.yml --env-file ./.env/.env down
 docker volume rm whg_dev-db-data
-sudo rm -rf /var/lib/docker/volumes/whg_dev-db-data
-sudo mkdir /var/lib/docker/volumes/whg_dev-db-data
-sudo chown root:root /var/lib/docker/volumes/whg_dev-db-data
-sudo mkdir /var/lib/docker/volumes/whg_dev-db-data/_data
-sudo chown dnsmasq:stephen /var/lib/docker/volumes/whg_dev-db-data/_data
 
 # Define variables
 REMOTE_USER="whgadmin"
 REMOTE_HOST="144.126.204.70"
 REMOTE_BACKUP_DIR="/home/whgadmin/backup/whgazetteer-org"
-LOCAL_BACKUP_DIR="/var/lib/docker/volumes/whg_dev-db-data/_data/"
+LOCAL_DATABASE_DIR="/home/stephen/workspace/whg_database"
 SSH_KEY="/home/stephen/.ssh/id_rsa_whg"
 
 # Find the most recent backup file
 LATEST_BACKUP_FILE=$(ssh -i "$SSH_KEY" "$REMOTE_USER@$REMOTE_HOST" "ls -t $REMOTE_BACKUP_DIR/*.tar.gz | head -n 1")
 
 # Use rsync to fetch the latest backup file
-sudo -E rsync -avz -e "ssh -i $SSH_KEY" --rsync-path="sudo rsync" "$REMOTE_USER@$REMOTE_HOST:$LATEST_BACKUP_FILE" "$LOCAL_BACKUP_DIR"
+sudo -E rsync -avz -e "ssh -i $SSH_KEY" --rsync-path="sudo rsync" "$REMOTE_USER@$REMOTE_HOST:$LATEST_BACKUP_FILE" "$LOCAL_DATABASE_DIR/"
 
 # Get the filename from the full path
 BACKUP_FILENAME=$(basename "$LATEST_BACKUP_FILE")
-sudo tar -xzf "$LOCAL_BACKUP_DIR/$BACKUP_FILENAME" -C "$LOCAL_BACKUP_DIR"
+sudo tar -xzf "$LOCAL_DATABASE_DIR/$BACKUP_FILENAME" -C "$LOCAL_DATABASE_DIR"
 
-# Delete the downloaded tar.gz file
-sudo rm -f "$LOCAL_BACKUP_DIR/$BACKUP_FILENAME"
-
-#Fix permissions and ownership
-sudo chown -R stephen:stephen "$LOCAL_BACKUP_DIR*"
+# Clean up: delete the downloaded tar.gz file and temporary backup directory
+sudo rm -f "$LOCAL_DATABASE_DIR/$BACKUP_FILENAME"
 
 # Restart Docker network
 docker compose -f docker-compose-autocontext.yml --env-file ./.env/.env up -d
