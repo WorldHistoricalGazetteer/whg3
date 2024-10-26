@@ -300,7 +300,7 @@
               {% if ds.places.count <= 25000 %}
                 {% if links_added > 0 or geoms_added > 0 %}
                   <!-- offer dl if augmented -->
-                  <p><a data-bs-toggle="tooltip" data-bs-title="Generate dataset augmented with links and geometries. <b>This task will be queued, and when ready the dataset will appear in your 'My Data' download section.</b>" class="a-dl-celery cursor-pointer" href="#" ref="lpf">Linked Places format <i class="fas fa-download linky"></i></a> <span id="file_lpf" class="ms-1"></span></p>
+                  <p><a data-bs-toggle="tooltip" data-bs-title="Generate dataset augmented with links and geometries. <b>This task will be queued, and when ready the dataset will appear in your 'My Data' download section.</b>" class="a-dl-celery cursor-pointer" href="#" data-format="lpf" ref="lpf">Linked Places format <i class="fas fa-download linky"></i></a> <span id="file_lpf" class="ms-1"></span></p>
                 {% else %}
                   <!-- originally lpf, not yet augmented -->
                   <p><i>Dataset is not yet augmented</i></p>

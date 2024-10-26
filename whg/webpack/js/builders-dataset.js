@@ -62,7 +62,7 @@ $(function() {
 			.tooltip('dispose')
 			.html('Download is being prepared. It will be available shortly in your \'My Data\' download section.');
 
-		let format = context_format
+		let format = $(this).data('format') || context_format
 		let dsid = context_datasetId
 		let urly = '/dlcelery/'
 		$.ajax({
