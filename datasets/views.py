@@ -1463,12 +1463,15 @@ def collab_add(request, dsid, v):
         # Handle missing 'email' or 'role' key in POST data
         messages.add_message(
             request, messages.INFO, "The email or role field is missing from the form. Please check and try again.")
-        return redirect('/datasets/' + str(dsid) + '/collab') if v == '1' else HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+        return redirect('/datasets/' + str(dsid) + '/collab') if v == '1' else HttpResponseRedirect(
+            request.META.get('HTTP_REFERER'))
     except User.DoesNotExist:
         # Handle case where user with the provided email does not exist
         messages.add_message(
-            request, messages.INFO, f"Please check email address: we don't have '{request.POST.get('email', 'unknown')}'")
-        return redirect('/datasets/' + str(dsid) + '/collab') if v == '1' else HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+            request, messages.INFO,
+            f"Please check email address: we don't have '{request.POST.get('email', 'unknown')}'")
+        return redirect('/datasets/' + str(dsid) + '/collab') if v == '1' else HttpResponseRedirect(
+            request.META.get('HTTP_REFERER'))
     except:
         messages.add_message(
             request, messages.INFO, "An error occurred while processing the request. Please try again.")
@@ -1483,7 +1486,8 @@ def collab_add(request, dsid, v):
     DatasetUser.objects.create(user_id_id=uid, dataset_id_id=dsid, role=role)
 
     # Redirect based on the value of 'v'
-    return redirect('/datasets/' + str(dsid) + '/collab') if v == '1' else HttpResponseRedirect(request.META.get('HTTP_REFERER'))
+    return redirect('/datasets/' + str(dsid) + '/collab') if v == '1' else HttpResponseRedirect(
+        request.META.get('HTTP_REFERER'))
 
 
 def collab_delete(request, uid, dsid, v):
@@ -2592,7 +2596,11 @@ class DatasetMetadataView(LoginRequiredMixin, UpdateView):
         context['is_admin'] = True if me.groups.filter(name__in=['whg_admins']).exists() else False
         context['editorial'] = True if me.groups.filter(name__in=['editorial']).exists() else False
 
-        context['files'] = ds.files.order_by('-id') or None
+        # Filter files to include only those that exist on the filesystem
+        context['files'] = [
+                               file for file in ds.files.order_by('-id')
+                               if os.path.exists(file.file.path)  # Check if the file exists
+                           ] or None  # If no files exist, set to None
 
         # excludes datasets w/o an associated DatasetFile
         if file and hasattr(file, 'file') and os.path.exists(file.file.path):

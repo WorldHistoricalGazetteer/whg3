@@ -26,7 +26,7 @@ def factored_size(value):
 
 @register.filter
 def format_label(format_value):
-    if format_value == 'json':
+    if format_value in ['json', 'lpf']:
         return 'Linked Places format (LPF)'
     elif format_value == 'delimited':
         return 'Delimited (LP-TSV)'
@@ -35,5 +35,4 @@ def format_label(format_value):
 
 @register.filter
 def strip_media_path(path):
-    """Strips any '/app/media/' part from the file path."""
-    return path.replace('/media/app/media/', '') if path else path
+    return path.split('/')[-1] if path else path

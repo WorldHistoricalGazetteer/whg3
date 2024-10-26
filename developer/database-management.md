@@ -6,10 +6,37 @@
 bash ~/sites/dev-whgazetteer-org/server-admin/replicate_live_db.sh
 ```
 
-- The entire remote dev database can be copied to a local machine (depends on installation of correct keys):
+- The most recent backup of the remote production database can be copied to a local machine (depends on installation of correct keys):
 ```sh
-# EXAMPLE
-sudo -E rsync -avz -e "ssh -i /home/stephen/.ssh/id_rsa_whg" whgadmin@144.126.204.70:/home/whgadmin/databases/dev-whgazetteer-org/ /var/lib/docker/volumes/whg3_dev-db-data/_data/
+# Stop Docker network and delete mounted database volume
+docker compose -f docker-compose-autocontext.yml --env-file ./.env/.env down
+docker volume rm whg_dev-db-data
+
+# Define variables
+REMOTE_USER="whgadmin"
+REMOTE_HOST="144.126.204.70"
+REMOTE_BACKUP_DIR="/home/whgadmin/backup/whgazetteer-org"
+LOCAL_DATABASE_DIR="/home/stephen/workspace/whg_database"
+SSH_KEY="/home/stephen/.ssh/id_rsa_whg"
+
+# Find the most recent backup file
+LATEST_BACKUP_FILE=$(ssh -i "$SSH_KEY" "$REMOTE_USER@$REMOTE_HOST" "ls -t $REMOTE_BACKUP_DIR/*.tar.gz | head -n 1")
+
+# Use rsync to fetch the latest backup file
+sudo -E rsync -avz -e "ssh -i $SSH_KEY" --rsync-path="sudo rsync" "$REMOTE_USER@$REMOTE_HOST:$LATEST_BACKUP_FILE" "$LOCAL_DATABASE_DIR/"
+
+# Get the filename from the full path
+BACKUP_FILENAME=$(basename "$LATEST_BACKUP_FILE")
+sudo tar -xzf "$LOCAL_DATABASE_DIR/$BACKUP_FILENAME" -C "$LOCAL_DATABASE_DIR"
+
+# Clean up: delete the downloaded tar.gz file and temporary backup directory
+sudo rm -f "$LOCAL_DATABASE_DIR/$BACKUP_FILENAME"
+
+# Restart Docker network
+docker compose -f docker-compose-autocontext.yml --env-file ./.env/.env up -d
+
+# Check log file
+docker logs -f postgres_local_staging
 ```
 
 ## Restore Database from Backup

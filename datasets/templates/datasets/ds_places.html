@@ -81,15 +81,15 @@
                         <div class="">
                             <div data-csl-json="{{ object.citation_csl }}"></div>
                             <p>
-              <span data-bs-toggle="tooltip"
-                    title="Show download options">
-	              <a href="#" id="a_download_modal"
-                     class="me-2" data-collid="{{ object.id }}"
-                     data-bs-toggle="modal"
-                     data-bs-target="#downloadModal">Download options
-	              	<i class="fas fa-download linky"></i>
-	              </a>
-              </span>
+				              <span data-bs-toggle="tooltip"
+				                    title="Show download options">
+					              <a href="#" id="a_download_modal"
+				                     class="me-2" data-collid="{{ object.id }}"
+				                     data-bs-toggle="modal"
+				                     data-bs-target="#downloadModal">Download options
+					                <i class="fas fa-download linky"></i>
+					              </a>
+				              </span>
                                 <span class="ms-3"
                                       data-bs-toggle="tooltip"
                                       title="Show dataset metadata">
@@ -164,25 +164,16 @@
                 </div>
                 <div class="modal-body container">
                     <div class="dl-blurb">
-                        <p class="mb-1">Data uploaded as Linked Places format (LPF) are available only in that format.
-                            Data
-                            uploaded as LP-TSV (delimited text files or spreadsheets) can be downloaded as either
-                            <sr>LPF</sr>
-                            or
-                            <sr>LP-TSV</sr>
-                            .
-                            <!--Downloads totaling more than {n} records will be queued, and a notification email sent when completed.-->
-                        </p>
                         {% include 'main/licensing_info.html' %}
                     </div>
                     <div class="row">
                         <div class="col-sm-8 pr-0 scroll-div">
                             <p class="modal-col-head p-1 mb-2">Dataset
                                 <span class="float-end me-2">
-	                  <span id="progress-bar" style="display: block;
-	                  height:8px;background-color: #0d6efd; width:0;"></span>
-	                  <span id="progress-message" class="ms-3 small"></span>
-	                </span>
+                                  <span id="progress-bar" style="display: block;
+                                  height:8px;background-color: #0d6efd; width:0;"></span>
+                                  <span id="progress-message" class="ms-3 small"></span>
+                                </span>
                             </p>
                             <table class="dl-table small">
                                 <thead>
@@ -198,11 +189,13 @@
                                     <td>{{ object.title }}&nbsp;
                                         <a id="cite_{{ object.id }}" class="clippy" aria-label="
 
+
+
                                                 {% if object.citation %}{{ object.citation }}{% else %}{{ object.title }}. [Data file, last modified {{ object.last_modified_text }}]. Retrieved from http://whgazetteer.org/datasets/{{ object.id }}/places/, {% now 'd M Y' %}{% endif %}"
                                            rel="tooltip" title="copy to clipboard">
                                             <i class="fas fa-clipboard linky"></i></a><br/>
                                         <span class="ml-2 small" style="disply:block">
-	                        <i>est. download time: {{ object.dl_est }}</i></span>
+	                        <i>est. file creation time: {{ object.dl_est }}</i></span>
                                     </td>
                                     <td>{{ object.numrows }}</td>
                                     <td> <!-- always offer lpf -->
@@ -211,7 +204,8 @@
                                                    value="lpf">
                                             <label class="form-check-label" for="r_lpf">LPF</label>
                                         </div>
-                                        {% if object.format == 'delimited' %}
+                                        {% if object.format == 'delimited-TEMPORARILY-DISABLED' %}
+	                                        <!-- Some transformation and loss of detail would be required to generate a delimited dataset for augmented data  -->
                                             <div class="form-check form-check-inline ml-1">
                                                 <input class="form-check-input hover" type="radio" name="format"
                                                        value="tsv" checked="checked">
@@ -227,7 +221,7 @@
                                 </tr>
                                 </tbody>
                             </table>
-                            <p class="small mt-2">The download task will be queued and when ready, you will receive an
+                            <p class="small mt-2">The download file creation will be queued. When ready, you will receive an
                                 email notification.
                                 It will also be listed on <a href="{% url 'dashboard' %}">your 'My Data' dashboard</a>
                             </p>
