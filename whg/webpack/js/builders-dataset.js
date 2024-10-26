@@ -1,4 +1,4 @@
-// builders-datase.js <- used by ds_metadata.html
+// builders-dataset.js <- used by ds_metadata.html
 
 import '../css/builders-dataset.css';
 
@@ -39,14 +39,31 @@ $(function() {
 
 	// views_dl.downloader()
 	$(".a-dl-celery").click(function(e) {
-		e.preventDefault()
-		// startDownloadSpinner()
-		console.log('sending post')
-		console.time('dl')
-		// let format = $(this).attr('ref')
+		e.preventDefault();
+
+		// Check if it's already been clicked
+		if ($(this).hasClass('clicked')) {
+			return; // Exit if already clicked
+		}
+
+		// Mark as clicked
+		$(this).addClass('clicked');
+
+		// Indicate it's disabled
+		$(this).css({
+			'cursor': 'not-allowed',
+			'pointer-events': 'none', // prevents further clicks
+			'color': '#777',          // changes the color to a "disabled" gray
+			'text-decoration': 'none' // removes underline
+		});
+
+		// Change tooltip text
+		$(this)
+			.tooltip('dispose')
+			.html('Download is being prepared. It will be available shortly in your \'My Data\' download section.');
+
 		let format = context_format
 		let dsid = context_datasetId
-		console.log('send to downloader()')
 		let urly = '/dlcelery/'
 		$.ajax({
 			type: 'POST',
@@ -58,14 +75,14 @@ $(function() {
 			},
 			datatype: 'json',
 			success: function(response) {
-				$("#ds_downloads").spin();
-				console.log('got task_id', response)
-				let task_id = response.task_id
-				var progressUrl = "/celery-progress/" + task_id + "/";
-				CeleryProgressBar.initProgressBar(progressUrl, {
-					pollingInterval: 500,
-					onResult: customResult,
-				})
+				if ($("#ds_downloads").length) {
+					let task_id = response.task_id
+					var progressUrl = "/celery-progress/" + task_id + "/";
+					CeleryProgressBar.initProgressBar(progressUrl, {
+						pollingInterval: 500,
+						onResult: customResult,
+					})
+				}
 			}
 		})
 	})

@@ -260,7 +260,7 @@
                         </tr>
                         <tr>
                           <td class="fw-bold">File</td>
-                          <td>
+                          <td class="text-break">
                             <a href="{% url 'datasets:download_dataset' file.id %}" ref="current" download>
                               {{ file.file.url|strip_media_path }} <i class="fas fa-download"></i>
                             </a>
@@ -294,29 +294,13 @@
               {% endfor %}
             </div>
             <div id="ds_downloads" class="pt-0 px-0 ds-card">
-              <p class="ds-card-header pt-1"> Downloads
-                <span id='progress-bar' class='progress-bar' style="background-color: #68a9ef; width: 0%; line-height:.5rem;">&nbsp;</span>
-              </p>
+              <p class="ds-card-header pt-1"> Augmented Dataset Downloads</p>
               {# TODO: review download size cases #}
 	            <!-- if length <= 20k -->
               {% if ds.places.count <= 25000 %}
-                <!-- lptsv originally -->
-                {% if current_file.format == 'delimited' %} 
-                  <!-- offer lpf, augmented or not -->
-                  <p><a class="a-dl-celery" href="#" ref="lpf">
-	                  Linked Places format <i class="fas fa-download linky"></i></a>
-	                  <span id="file_lpf" class="ms-1"></span></p>
-                  {% if links_added > 0 or geoms_added > 0 %}
-                    <!-- augmented, offer tsv -->
-                    <p><a class="a-dl-celery" href="#" ref="tsv">LP-TSV (augmented)
-	                    <i class="fas fa-download linky"></i></a>
-                      <span id="file_tsv" class="ms-1"></span></p>
-                  {% endif %}
-                <!-- lpf originally -->
-                {% elif links_added > 0 or geoms_added > 0 %} 
+                {% if links_added > 0 or geoms_added > 0 %}
                   <!-- offer dl if augmented -->
-                  <p><a class="a-dl-celery" href="#" ref="lpf">Linked Places format <i class="fas fa-download linky"></i></a> (augmented) <span id="file_lpf" class="ms-1"></span></p>
-                  <p class="mt-2"><i>LP-TSV conversion is not possible for this LPF dataset. <a id="conversion_help" class="pointer" data-bs-toggle="popover" title="LPF download options" data-content="<p>Data initially loaded in Linked Places format (LPF) has one&#8209;to&#8209;many relations that can't be converted to simple TSV files.</p>" tabindex="0" data-trigger="focus" data-original-title=""><i title="" class="fa fa-question-circle" style="color:#336699;"></i></a></i></p>
+                  <p><a data-bs-toggle="tooltip" data-bs-title="Generate dataset augmented with links and geometries. <b>This task will be queued, and when ready the dataset will appear in your 'My Data' download section.</b>" class="a-dl-celery cursor-pointer" href="#" ref="lpf">Linked Places format <i class="fas fa-download linky"></i></a> <span id="file_lpf" class="ms-1"></span></p>
                 {% else %}
                   <!-- originally lpf, not yet augmented -->
                   <p><i>Dataset is not yet augmented</i></p>

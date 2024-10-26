@@ -87,9 +87,9 @@
         else {
             // Execute inline scripts after all external scripts are loaded
             const inlineScriptContent = document.getElementById('inline-scripts').innerHTML;
-            const cleanInlineScriptContent = inlineScriptContent.replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gi, function(match, p1) {
-                return p1;
-            });
+            const cleanInlineScriptContent = inlineScriptContent.match(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)?.map(match => {
+                return match.replace(/<script\b[^>]*>|<\/script>/gi, '');
+            }).join('\n') || '';
             const scriptElement = document.createElement('script');
             scriptElement.type = 'text/javascript';
             scriptElement.text = cleanInlineScriptContent;
