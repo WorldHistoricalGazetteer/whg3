@@ -106,22 +106,28 @@
 							{% endif %}
 						</table>
 						<div data-csl-json="{{ object.citation_csl }}"></div>
-						<div class=""><p>
- 			<span data-bs-toggle="tooltip"
-		          title="Show download options">
-	              <a href="#" id="a_download_modal"
-	                 class="me-2" data-collid="{{ object.id }}"
-	                 data-bs-toggle="modal"
-	                 data-bs-target="#downloadModal">Download options
-	              	<i class="fas fa-download linky"></i>
-	              </a>
-			</span>
-							<span class="float-end">
-		                <label for="checkbox" class="small">
-			                Close intro by default</label>
-		                <input type="checkbox" id="checkbox">
-		              </span>
-						</p>
+						<div class="">
+							<p>
+								{% if user.is_authenticated %}
+									<span data-bs-toggle="tooltip" title="Show download options">
+										<a href="#" id="a_download_modal"
+										   class="me-2" data-collid="{{ object.id }}"
+										   data-bs-toggle="modal"
+										   data-bs-target="#downloadModal">Download options
+											<i class="fas fa-download linky"></i>
+										</a>
+									</span>
+								{% else %}
+									<span class="text-muted" data-bs-toggle="tooltip" data-bs-title="<strong>Downloads are available only to logged-in registered users.</strong><br>Registration is free of charge!">
+										Download options
+										<i class="fas fa-download linky"></i>
+									</span>
+								{% endif %}
+								<span class="float-end">
+									<label class="small" for="checkbox">Close intro by default</label>
+									<input id="checkbox" type="checkbox">
+								</span>
+							</p>
 						</div>
 					</div>
 				</div>
