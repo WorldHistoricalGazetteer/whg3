@@ -1,3 +1,7 @@
+import json
+from functools import reduce
+
+from django.contrib.gis.geos import GEOSGeometry
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -5,6 +9,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 from django.contrib.postgres.fields import ArrayField
 from main.choices import *
+from utils.csl_citation_formatter import csl_citation
 
 from multiselectfield import MultiSelectField
 
@@ -50,6 +55,23 @@ class Resource(models.Model):
     @property
     def region_ids(self):
         return self.regions
+
+    @property
+    def citation_csl(self):
+        return csl_citation(self)
+
+    @property
+    def bbox(self):
+        # Fetch bounding boxes for the regions associated with this resource
+        area_bboxes = (
+            Area.objects.filter(id__in=self.region_ids)
+            .aggregate(Extent("bbox"))["bbox__extent"]
+        )
+
+        if area_bboxes:
+            xmin, ymin, xmax, ymax = area_bboxes
+            return (xmin, ymin, xmax, ymax)
+        return None
 
     class Meta:
         managed = True

@@ -1,8 +1,12 @@
+import json
+
 import requests
 from django.conf import settings
 import logging
 
-from requests.auth import HTTPBasicAuth
+from collection.models import Collection
+from datasets.models import Dataset
+from resources.models import Resource
 
 # Set up logger
 logger = logging.getLogger('django')  # Or another logger name from your configuration
@@ -10,6 +14,7 @@ logger = logging.getLogger('django')  # Or another logger name from your configu
 
 def format_doi(type, id):
     return f"{settings.DOI_PREFIX}/whg-{type}-{id}"
+
 
 def format_url(type, id):
     if type == 'dataset':
@@ -23,8 +28,128 @@ def format_url(type, id):
     else:
         return None
 
-def draft_doi(metadata):
-    logger.info(f"Starting to draft DOI for {metadata['title']}")  # Log the beginning of the process
+
+def get_creators(obj):
+    try:
+        citation_data = json.loads(obj.citation_csl) if isinstance(obj.citation_csl, str) else obj.citation_csl
+    except json.JSONDecodeError:
+        logger.error("Error decoding citation_csl JSON.")
+        return []
+
+    creators = citation_data.get('author', [])
+    return [
+        {
+            "nameType": "Organizational" if "literal" in creator else "Personal",
+            "name": creator.get("literal") or f"{creator['family']}, {creator.get('given', '')}",
+            **({"givenName": creator.get("given"), "familyName": creator["family"]} if "family" in creator else {})
+        }
+        for creator in creators
+    ]
+
+
+def get_bbox(obj):
+    if obj.bbox:
+        min_lon, min_lat, max_lon, max_lat = obj.bbox.extent
+        return {
+            "geoLocationBox": {
+                "westBoundLongitude": min_lon,
+                "eastBoundLongitude": max_lon,
+                "southBoundLatitude": min_lat,
+                "northBoundLatitude": max_lat
+            }
+        }
+    else:
+        return None
+
+
+def get_doi_metadata(type, id):
+
+    model_mapping = {
+        'dataset': Dataset,
+        'collection': Collection,
+        'resource': Resource
+    }
+
+    model_class = model_mapping.get(type)
+
+    if model_class:
+        obj = model_class.objects.filter(pk=id).first()
+    else:
+        obj = None
+
+    if not obj:
+        return None
+
+    metadata = {
+        'doi': format_doi(type, id),
+        'url': format_url(type, id),
+        "creators": get_creators(obj),
+        "titles": [{"title": obj.title or "No title"}],
+        "publicationYear": obj.create_date.year if obj.create_date else None,
+        "descriptions": [{"description": obj.description or "", "descriptionType": "Abstract"}],
+        **({"sizes": [f"{obj.numrows} places"]} if hasattr(obj, 'numrows') else {}),
+        **({"geoLocations": [get_bbox(obj)]} if get_bbox(obj) else {}),
+        'publisher': {
+            "name": "World Historical Gazetteer",
+            "publisherIdentifierScheme": "Wikidata",
+            "publisherIdentifier": "https://www.wikidata.org/wiki/Q130424771",
+            "schemeUri": "https://www.wikidata.org/wiki/",
+            "lang": "en"
+        },
+        'types': {
+            "resourceTypeGeneral": "Dataset",
+            "resourceType": "Linked Places Dataset"
+        },
+        "subjects": [
+            {
+                "subject": "Historical geography",
+                "subjectScheme": "LCSH",
+                "schemeURI": "http://id.loc.gov/authorities/subjects"
+            },
+            {
+                "subject": "Place names, History",
+                "subjectScheme": "LCSH",
+                "schemeURI": "http://id.loc.gov/authorities/subjects"
+            },
+            {
+                "subject": "Geographical names, History",
+                "subjectScheme": "LCSH",
+                "schemeURI": "http://id.loc.gov/authorities/subjects"
+            },
+            {
+                "subject": "Maps, Historical",
+                "subjectScheme": "LCSH",
+                "schemeURI": "http://id.loc.gov/authorities/subjects"
+            },
+            {
+                "subject": "Historical regions",
+                "subjectScheme": "LCSH",
+                "schemeURI": "http://id.loc.gov/authorities/subjects"
+            }
+        ],
+        "rightsList": [
+            {
+                "rights": "Creative Commons Attribution-NonCommercial 4.0 International",
+                "rightsURI": "https://creativecommons.org/licenses/by-nc/4.0/",
+                "rightsIdentifier": "CC-BY-NC-4.0",
+                "rightsIdentifierScheme": "SPDX",
+                "schemeURI": "https://spdx.org/licenses/",
+                "lang": "en"
+            }
+        ]
+    }
+
+    return metadata
+
+
+def doi(type, id, event="draft"):
+    attributes = get_doi_metadata(type, id)
+
+    if not attributes:
+        logger.error(f"DOI metadata could not be retrieved for type '{type}' and id '{id}'")
+        return None
+
+    attributes['event'] = event  # Event type (e.g., 'draft', 'register', 'publish', 'hide') - default is 'draft'
 
     # Set the headers for the API request
     headers = {
@@ -33,134 +158,27 @@ def draft_doi(metadata):
     }
 
     logger.info(f"Headers: {headers}")
+    logger.info(f"Attributes: {attributes}")
 
-    # Define the DOI data with mandatory, recommended, and optional fields
-    doi_data = {
-        "data": {
-            "type": "dois",
-            "attributes": {
-                "event": "draft",  # Set the event to "draft" to create a draft DOI (defaults to this value in any case if not set)
-
-                # Mandatory fields
-                "doi": format_doi(metadata['type'], metadata['id']),  # DOI to be created
-                "url": format_url(metadata['type'], metadata['id']),  # URL of the resource
-                "creators": [{"name": creator} for creator in metadata['creators']],
-                "titles": [{"title": metadata['title']}],
-                "publisher": metadata['publisher'],
-                "publicationYear": metadata['publication_year'],
-                "types": {"resourceTypeGeneral": metadata['resource_type_general']},
-
-                # Recommended fields
-                # "subjects": [{"subject": subject} for subject in metadata.get('subjects', [])],
-                # "contributors": [{"name": contributor} for contributor in metadata.get('contributors', [])],
-                # "dates": [{"date": metadata['publication_year'], "dateType": "Issued"}],  # Add more as needed
-                # "relatedIdentifiers": [
-                #     {
-                #         "relatedIdentifier": identifier['id'],
-                #         "relatedIdentifierType": identifier['type'],
-                #         "relationType": identifier['relation']
-                #     } for identifier in metadata.get('related_identifiers', [])
-                # ],
-                # "descriptions": [{"description": metadata['description'], "descriptionType": "Abstract"}],
-                # "geoLocations": [
-                #     {
-                #         "geoLocationPlace": geo['place'],
-                #         "geoLocationPoint": {
-                #             "pointLatitude": geo['latitude'],
-                #             "pointLongitude": geo['longitude']
-                #         }
-                #     } for geo in metadata.get('geo_locations', [])
-                # ],
-
-                # Optional fields
-                # "language": metadata.get('language'),
-                # "alternateIdentifiers": [
-                #     {
-                #         "alternateIdentifier": identifier['id'],
-                #         "alternateIdentifierType": identifier['type']
-                #     } for identifier in metadata.get('alternate_identifiers', [])
-                # ],
-                # "rightsList": [{"rights": metadata['rights']} for rights in metadata.get('rights_list', [])],
-                # "sizes": metadata.get('sizes'),
-                # "formats": metadata.get('formats'),
-                # "version": metadata.get('version'),
-                # "fundingReferences": [
-                #     {
-                #         "funderName": fund['name'],
-                #         "funderIdentifier": fund.get('identifier'),
-                #         "funderIdentifierType": fund.get('identifierType')
-                #     } for fund in metadata.get('funding_references', [])
-                # ],
-                # "relatedItems": [
-                #     {
-                #         "relatedItemIdentifier": item['id'],
-                #         "relatedItemIdentifierType": item['type'],
-                #         "relationType": item['relation']
-                #     } for item in metadata.get('related_items', [])
-                # ],
-            }
-        }
-    }
-
-    # Clean out None values from optional fields
-    def remove_none(d):
-        """Recursively remove None values from dictionaries and lists."""
-        if isinstance(d, list):
-            return [remove_none(v) for v in d if v is not None]
-        elif isinstance(d, dict):
-            return {k: remove_none(v) for k, v in d.items() if v is not None}
-        return d
-
-    # Send the POST request to DataCite API with cleaned data
-    cleaned_doi_data = remove_none(doi_data)
-    logger.debug(f"Sending DOI creation request with data: {cleaned_doi_data}")  # Log the DOI data being sent
-    response = requests.post(
-        settings.DOI_API_URL,
-        json=cleaned_doi_data,
-        headers=headers,
-    )
-
-    # Check the response status
-    if response.status_code == 201:
-        logger.info(f"DOI created successfully: {response.json()['data']['id']}")  # Log success
-        return response.json()  # DOI created successfully
-    else:
-        logger.error(f"Failed to create DOI: {response.json()}")  # Log error
-        return response.json()  # Handle errors (like invalid metadata)
-
-
-def update_doi_state(type, id, action="register"):
-    doi = format_doi(type, id)
-    logger.info(f"Updating DOI {doi} to {action} state")  # Log the update action
-
-    headers = {
-        'Content-Type': 'application/vnd.api+json',
-        'authorization': f"Basic {settings.DOI_ENCODED_CREDENTIALS}"
-    }
-
-    update_data = {
-        "data": {
-            "type": "dois",
-            "attributes": {
-                "event": action  # Change state to "register" or "publish"
-            }
-        }
-    }
-
-    # Send a PATCH request to update the DOI's state
-    logger.debug(f"Sending request to update DOI state with data: {update_data}")  # Log the request data
-    response = requests.patch(
-        f"{settings.DOI_API_URL}/{doi}",
-        json=update_data,
-        headers=headers,
-    )
-
-    if response.status_code == 200:
-        logger.info(f"DOI state updated successfully to {action}")  # Log success
-        return response.json()  # DOI updated successfully
-    else:
-        logger.error(f"Failed to update DOI state: {response.json()}")  # Log error
-        return response.json()  # Handle errors (e.g., invalid state transition)
+    # # Send the POST request to DataCite API
+    # response = requests.post(
+    #     f"{settings.DOI_API_URL}?publisher=true",
+    #     json = {
+    #         "data": {
+    #             "type": "dois",
+    #             "attributes": attributes,
+    #         }
+    #     },
+    #     headers = headers,
+    # )
+    #
+    # # Check the response status
+    # if response.status_code == 201:
+    #     logger.info(f"DOI created successfully: {response.json()['data']['id']}")  # Log success
+    #     return response.json()  # DOI created successfully
+    # else:
+    #     logger.error(f"Failed to create DOI: {response.json()}")  # Log error
+    #     return response.json()  # Handle errors (like invalid metadata)
 
 
 def get_doi_state(type, id):

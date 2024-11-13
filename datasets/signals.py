@@ -3,10 +3,13 @@
 import requests
 
 from django.conf import settings
+from django.contrib.gis.db.models import Extent
+from django.contrib.gis.geos import Polygon
 from django.db import transaction
 from django.db.models.signals import pre_delete, pre_save, post_save
 from django.dispatch import receiver
 
+from places.models import PlaceGeom
 from .models import Dataset, DatasetFile
 from utils.mapdata import mapdata_task
 from whgmail.messaging import WHGmail
@@ -61,6 +64,18 @@ def test_complexity(dsid):
     duration = format_time(end - start)
     print(
         f'object_needs_tileset: {object_needs_tileset}, total_coords: {total_coords}, total_geometries: {total_geometries}, time: {duration} ')
+
+
+@receiver(pre_save, sender=Dataset)
+def handle_dataset_bbox(sender, instance, **kwargs):
+    # Get the extent of the associated geometries
+    dsgeoms = PlaceGeom.objects.filter(place__dataset=instance.label)
+    extent = dsgeoms.aggregate(Extent("geom"))["geom__extent"]
+
+    if extent:
+        # Create a bounding box (Polygon) from the extent
+        # extent = (xmin, ymin, xmax, ymax)
+        instance.bbox = Polygon.from_bbox(extent)
 
 
 @receiver(pre_save, sender=Dataset)
