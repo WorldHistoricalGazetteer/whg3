@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 
 User = get_user_model()
 from django.contrib.auth.models import Group
@@ -60,6 +61,9 @@ import json
 import random
 import os, requests
 
+import logging
+
+logger = logging.getLogger(__name__)
 
 class BadRequestException(APIException):
     serializer_class = ErrorResponseSerializer
@@ -381,92 +385,75 @@ class SpatialAPIView(generics.ListAPIView):
             400: ErrorResponseSerializer,
         }
     )
+
     def get(self, *args, **kwargs):
         params = self.request.query_params
-        print('SpatialAPIView() params', params)
+        logger.info("SpatialAPIView received params: %s", params)
 
-        qtype = params.get('type', None)
-        lon = params.get('lon', None)
-        lat = params.get('lat', None)
-        dist = params.get('km', None)
-        sw = params.get('sw', None)
-        ne = params.get('ne', None)
-        fc = params.get('fc', None)
-        fclasses = list(set([x.upper() for x in ','.join(fc)])) if fc else None
-        ds = params.get('dataset', None)
-        coll = params.get('collection', None)
-        pagesize = params.get('pagesize', None)
+        qtype = params.get('type')
+        lon, lat, dist = params.get('lon'), params.get('lat'), params.get('km')
+        sw, ne = params.get('sw'), params.get('ne')
+        fc, ds, coll = params.get('fc'), params.get('dataset'), params.get('collection')
+        pagesize = int(params.get('pagesize', 20)) if params.get('pagesize', '20').isdigit() else 20
+
+        result = {"type": "FeatureCollection", "features": [], "parameters": params, "errors": None}
+
         try:
-            pagesize = int(pagesize)
-        except (TypeError, ValueError):
-            pagesize = 20
-        # year = params.get('year', None)
-
-        err_note = None
-
-        # Use Place records and LPFSerializer
-        if not qtype:
-            raise BadRequestException("Spatial query parameters must include either 'type=nearby' or 'type=bbox'.")
-        elif qtype == 'nearby':
-            # http://localhost:8001/api/spatial/?type=nearby&lon=-103.71&lat=20.66&km=100&dataset=lugares20_redux
-            # 33.285556,26.809167
-            if not all(v for v in [lon, lat, dist]):
-                raise BadRequestException("A 'nearby' spatial query requires 'lon', 'lat', and 'km' parameters.")
-            else:
+            # Handle nearby and bbox query types
+            if qtype == 'nearby':
+                if not all([lon, lat, dist]):
+                    raise BadRequestException("A 'nearby' spatial query requires 'lon', 'lat', and 'km' parameters.")
                 pnt = Point(float(lon), float(lat), srid=4326)
-                qs = Place.objects.filter(dataset__public=True, geoms__jsonb__type='Point')
-                placeids = PlaceGeom.objects.filter(geom__distance_lte=(pnt, D(km=float(dist)))).values_list('place_id')
-                msg = "nearby query (lon, lat): " + str(pnt.coords) + ' w/' + str(dist) + 'km buffer'
-                print(msg)
-        elif qtype == 'bbox':
-            # http://localhost:8001/api/spatial/?type=bbox&sw=-124.409591,32.534156&ne=-114.131211,42.009518&pagesize=10
-            if not all(v for v in [sw, ne]):
-                raise BadRequestException("A 'bbox' spatial query requires both 'sw' and 'ne' parameters.")
-            try:
-                qs = Place.objects.filter(dataset__public=True, geoms__jsonb__type='Point')
+                placeids = PlaceGeom.objects.filter(geom__distance_lte=(pnt, D(km=float(dist)))).values_list('place_id', flat=True)
 
-                # Split and convert the southwest and northeast coordinates into floats
+            elif qtype == 'bbox':
+                if not all([sw, ne]):
+                    raise BadRequestException("A 'bbox' spatial query requires both 'sw' and 'ne' parameters.")
                 sw_lon, sw_lat = map(float, sw.split(','))
                 ne_lon, ne_lat = map(float, ne.split(','))
+                if not (-180 <= sw_lon <= 180 and -90 <= sw_lat <= 90 and -180 <= ne_lon <= 180 and -90 <= ne_lat <= 90):
+                    raise BadRequestException("Bounding box coordinates are out of bounds.")
+                bbox = Polygon.from_bbox([sw_lon, sw_lat, ne_lon, ne_lat])
+                placeids = PlaceGeom.objects.filter(geom__within=bbox).values_list('place_id', flat=True)
+            else:
+                raise BadRequestException("Spatial query requires 'type' parameter to be 'nearby' or 'bbox'.")
 
-                # Ensure coordinates are within valid longitude/latitude bounds
-                if not (-180 <= sw_lon <= 180) or not (-90 <= sw_lat <= 90):
-                    raise ValueError("Southwest coordinates out of bounds.")
-                if not (-180 <= ne_lon <= 180) or not (-90 <= ne_lat <= 90):
-                    raise ValueError("Northeast coordinates out of bounds.")
+            # Query places and apply additional filters
+            qs = Place.objects.filter(id__in=placeids)
+            if coll:
+                try:
+                    coll_ids = Collection.objects.get(id=coll).places.values_list('id', flat=True)
+                    qs = qs.filter(id__in=coll_ids)
+                except Collection.DoesNotExist:
+                    raise BadRequestException(f"The requested collection with ID {coll} does not exist.")
+            if ds:
+                try:
+                    qs = qs.filter(dataset=Dataset.objects.get(id=ds))
+                except Dataset.DoesNotExist:
+                    raise BadRequestException(f"The requested dataset with ID {ds} does not exist.")
+            if fc:
+                fclasses = list(set([x.upper() for x in fc.split(',')]))
+                qs = qs.filter(fclasses__overlap=fclasses)
 
-                bb = [sw_lon, sw_lat, ne_lon, ne_lat]
+            filtered = qs[:pagesize]
+            serializer = LPFSerializer(filtered, many=True, context={'request': self.request})
+            result.update({
+                "count": qs.count(),
+                "features": serializer.data,
+                "pagesize": len(serializer.data),
+            })
 
-                bbox = Polygon.from_bbox(bb)  # [xmin, ymin, xmax, ymax]
-                placeids = PlaceGeom.objects.filter(geom__within=bbox).values_list('place_id')
-                msg = "bbox query (sw, ne): " + str(bbox)
-                print(msg)
+        # Handle specific error types without generic fallback
+        except (ValueError, TypeError, ValidationError) as e:
+            logger.error("Parameter error: %s", e)
+            return JsonResponse(
+                {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST, json_dumps_params={'ensure_ascii': False, 'indent': 2}
+            )
+        except Place.DoesNotExist:
+            result["errors"] = "No matching places found."
+            return JsonResponse(result, status=status.HTTP_404_NOT_FOUND, json_dumps_params={'ensure_ascii': False, 'indent': 2})
 
-            except ValueError as ve:
-                raise BadRequestException(f"Invalid 'sw' or 'ne' coordinates: {ve}")
-
-        qs = qs.filter(id__in=placeids)
-        # filter on params
-        if coll:
-            collids = Collection.objects.get(id=coll).places.all().values_list('id', flat=True)
-            qs = qs.filter(id__in=collids)
-        qs = qs.filter(dataset=ds) if ds else qs
-        qs = qs.filter(fclasses__overlap=fclasses) if fclasses else qs
-
-        filtered = qs[:pagesize]
-        print(filtered)
-        serializer = LPFSerializer(filtered, many=True, context={'request': self.request})
-        result = {
-            "count": qs.count(),
-            "pagesize": filtered.count(),
-            "parameters": params,
-            "errors": err_note,
-            "type": "FeatureCollection",
-            "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
-            "features": serializer.data
-        }
-        # print('place result',result)
-        return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
+        return JsonResponse(result, json_dumps_params={'ensure_ascii': False, 'indent': 2})
 
 
 """
