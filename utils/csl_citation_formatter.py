@@ -2,6 +2,7 @@
 
 import json
 
+from django.conf import settings
 from nameparser import HumanName
 
 
@@ -40,8 +41,11 @@ def csl_citation(self):
             objects = [self]  # Otherwise, just process the current object (self)
 
         for obj in objects:
-            # Parse creators and contributors from the database fields
-            authors.extend(parse_names(obj.creator))
+            # Parse authors, creators, and contributors from the database fields
+            if hasattr(obj, 'authors') and obj.authors:
+                authors.extend(parse_names(obj.authors))
+            if hasattr(obj, 'creator') and obj.creator:
+                authors.extend(parse_names(obj.creator))
             if hasattr(obj, 'contributors') and obj.contributors:
                 authors.extend(parse_names(obj.contributors))
 
@@ -66,6 +70,7 @@ def csl_citation(self):
                                 self.create_date.day]] if self.create_date else []
             },
             "URL": self.webpage or "",
+            "DOI": f"{settings.DOI_PREFIX}/whg-{self._meta.model_name}-{self.id}" if self.doi else "",
             "publisher": "World Historical Gazetteer",
             "publisher-place": "Pittsburgh, PA, USA",
 
