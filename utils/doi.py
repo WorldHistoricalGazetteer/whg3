@@ -16,15 +16,18 @@ def format_doi(type, id):
     return f"{settings.DOI_PREFIX}/whg-{type}-{id}"
 
 
-def format_url(type, id):
+def format_url(type, id, obj):
     if type == 'dataset':
-        return f"{settings.URL_FRONT}datasets/{id}/places"
-    elif type == 'collection_dataset':
-        return f"{settings.URL_FRONT}collections/{id}/browse_ds"
-    elif type == 'collection_place':
-        return f"{settings.URL_FRONT}collections/{id}/browse_pl"
+        return f"{settings.DOI_LANDING_PAGE}datasets/{id}/places"
+    elif type == 'collection':
+        if obj.collection_class == 'dataset':
+            return f"{settings.DOI_LANDING_PAGE}collections/{id}/browse_ds"
+        elif obj.collection_class == 'place':
+            return f"{settings.DOI_LANDING_PAGE}collections/{id}/browse_pl"
+        else:
+            return None
     elif type == 'resource':
-        return f"{settings.URL_FRONT}resources/{id}/detail"
+        return f"{settings.DOI_LANDING_PAGE}resources/{id}/detail"
     else:
         return None
 
@@ -62,8 +65,7 @@ def get_bbox(obj):
         return None
 
 
-def get_doi_metadata(type, id):
-
+def get_object(type, id):
     model_mapping = {
         'dataset': Dataset,
         'collection': Collection,
@@ -73,16 +75,21 @@ def get_doi_metadata(type, id):
     model_class = model_mapping.get(type)
 
     if model_class:
-        obj = model_class.objects.filter(pk=id).first()
+        return model_class.objects.filter(pk=id).first()
     else:
-        obj = None
+        return None
+
+
+def get_doi_metadata(type, id):
+
+    obj = get_object(type, id)
 
     if not obj:
-        return None
+        return None, None
 
     metadata = {
         'doi': format_doi(type, id),
-        'url': format_url(type, id),
+        'url': format_url(type, id, obj),
         "creators": get_creators(obj),
         "titles": [{"title": obj.title or "No title"}],
         "publicationYear": obj.create_date.year if obj.create_date else None,
@@ -139,17 +146,22 @@ def get_doi_metadata(type, id):
         ]
     }
 
-    return metadata
+    return obj, metadata
 
 
-def doi(type, id, event="draft"):
-    attributes = get_doi_metadata(type, id)
+def doi(type, id, event='publish'):
+    obj, attributes = get_doi_metadata(type, id)
 
-    if not attributes:
+    if not obj or not attributes:
         logger.error(f"DOI metadata could not be retrieved for type '{type}' and id '{id}'")
         return None
 
-    attributes['event'] = event  # Event type (e.g., 'draft', 'register', 'publish', 'hide') - default is 'draft'
+    # Read `doi` & `public` fields from the object
+    doi_exists = hasattr(obj, 'doi') and obj.doi
+    public = hasattr(obj, 'public') and obj.public
+
+    # Override event type (e.g., 'draft', 'register', 'publish', 'hide') - default is 'publish'
+    attributes['event'] = 'hide' if not public else event
 
     # Set the headers for the API request
     headers = {
@@ -160,25 +172,29 @@ def doi(type, id, event="draft"):
     logger.info(f"Headers: {headers}")
     logger.info(f"Attributes: {attributes}")
 
-    # # Send the POST request to DataCite API
-    # response = requests.post(
-    #     f"{settings.DOI_API_URL}?publisher=true",
-    #     json = {
-    #         "data": {
-    #             "type": "dois",
-    #             "attributes": attributes,
-    #         }
-    #     },
-    #     headers = headers,
-    # )
-    #
-    # # Check the response status
-    # if response.status_code == 201:
-    #     logger.info(f"DOI created successfully: {response.json()['data']['id']}")  # Log success
-    #     return response.json()  # DOI created successfully
-    # else:
-    #     logger.error(f"Failed to create DOI: {response.json()}")  # Log error
-    #     return response.json()  # Handle errors (like invalid metadata)
+    # Send the request to DataCite API: POST for draft, PUT for update
+    response = getattr(requests, 'put' if doi_exists else 'post')(
+        f"{settings.DOI_API_URL}/{attributes['doi']}" if doi_exists else f"{settings.DOI_API_URL}?publisher=true",
+        json={
+            "data": {
+                "type": "dois",
+                "attributes": attributes,
+            }
+        },
+        headers=headers,
+    )
+
+    # Check the response status
+    if response.status_code == 201:
+        logger.info(f"DOI {'updated' if doi_exists else 'created'} successfully: {response.json()['data']['id']}")  # Log success
+        if not doi_exists:
+            # Set `doi` field to True in the object
+            obj.doi = True
+            obj.save()
+        return response.json()  # DOI created successfully
+    else:
+        logger.error(f"Failed to create DOI: {response.json()}")  # Log error
+        return response.json()  # Handle errors (like invalid metadata)
 
 
 def get_doi_state(type, id):

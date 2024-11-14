@@ -118,6 +118,7 @@ class Collection(models.Model):
     status = models.CharField(max_length=12, choices=STATUS_COLL, default='sandbox', null=True, blank=True)
     featured = models.IntegerField(null=True, blank=True)
     public = models.BooleanField(default=False)
+    doi = models.BooleanField(default=False, help_text="Indicates if a DOI is associated with this collection")
 
     # flag set by group_leader
     nominated = models.BooleanField(default=False)

@@ -21,7 +21,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--action',
             type=str,
-            choices=['draft', 'publish', 'get_state'],
+            choices=['draft', 'publish', 'get_state', 'hide'],
             required=True,
             help="Action to perform: 'draft' for creating, 'publish' for publishing, 'get_state' to retrieve DOI state."
         )
@@ -29,7 +29,7 @@ class Command(BaseCommand):
             '--type',
             type=str,
             required=True,
-            help="The type of the DOI (e.g., 'dataset', 'article')."
+            help="The type of the DOI (i.e., 'collection', 'dataset', 'resource')."
         )
         parser.add_argument(
             '--id',
@@ -43,7 +43,7 @@ class Command(BaseCommand):
         type_ = kwargs['type']
         id_ = kwargs['id']
 
-        if action in ['draft', 'publish']:
+        if action in ['draft', 'publish', 'hide']:
             response = doi(type_, id_, event=action)
             self.stdout.write(f"DOI {action.capitalize()} Response: {response}")
         elif action == 'get_state':

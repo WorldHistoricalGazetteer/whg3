@@ -2,6 +2,7 @@
 
 import json
 
+from django.conf import settings
 from nameparser import HumanName
 
 
@@ -69,6 +70,7 @@ def csl_citation(self):
                                 self.create_date.day]] if self.create_date else []
             },
             "URL": self.webpage or "",
+            "DOI": f"{settings.DOI_PREFIX}/whg-{self._meta.model_name}-{self.id}" if self.doi else "",
             "publisher": "World Historical Gazetteer",
             "publisher-place": "Pittsburgh, PA, USA",
 

@@ -1,10 +1,13 @@
 import json
 from functools import reduce
 
-from django.contrib.gis.geos import GEOSGeometry
+from django.contrib.gis.db.models import Extent
+from django.contrib.gis.geos import GEOSGeometry, Polygon
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
+
+from areas.models import Area
 
 User = get_user_model()
 from django.contrib.postgres.fields import ArrayField
@@ -35,6 +38,7 @@ class Resource(models.Model):
     contact = models.CharField(max_length=500, null=True, blank=True)
     webpage = models.URLField(null=True, blank=True)
     public = models.BooleanField(default=False)
+    doi = models.BooleanField(default=False, help_text="Indicates if a DOI is associated with this resource")
     featured = models.IntegerField(null=True, blank=True)
 
     # test commented 28 Mar
@@ -54,7 +58,12 @@ class Resource(models.Model):
 
     @property
     def region_ids(self):
-        return self.regions
+        # Ensure `regions` is converted to a list of integers, handling potential comma-separated strings.
+        if isinstance(self.regions, str):
+            return [int(region_id.strip()) for region_id in self.regions.split(',') if region_id.strip().isdigit()]
+        elif isinstance(self.regions, list):
+            return [int(region_id) for region_id in self.regions if isinstance(region_id, int)]
+        return []
 
     @property
     def citation_csl(self):
@@ -63,15 +72,9 @@ class Resource(models.Model):
     @property
     def bbox(self):
         # Fetch bounding boxes for the regions associated with this resource
-        area_bboxes = (
-            Area.objects.filter(id__in=self.region_ids)
-            .aggregate(Extent("bbox"))["bbox__extent"]
-        )
+        extent = Area.objects.filter(id__in=self.region_ids).aggregate(Extent("bbox"))["bbox__extent"]
 
-        if area_bboxes:
-            xmin, ymin, xmax, ymax = area_bboxes
-            return (xmin, ymin, xmax, ymax)
-        return None
+        return Polygon.from_bbox(extent) if extent else None
 
     class Meta:
         managed = True
