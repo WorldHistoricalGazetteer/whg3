@@ -44,7 +44,16 @@ def get_creators(obj):
         {
             "nameType": "Organizational" if "literal" in creator else "Personal",
             "name": creator.get("literal") or f"{creator['family']}, {creator.get('given', '')}",
-            **({"givenName": creator.get("given"), "familyName": creator["family"]} if "family" in creator else {})
+            **({"givenName": creator.get("given"), "familyName": creator["family"]} if "family" in creator else {}),
+            **({
+                "nameIdentifiers": [
+                    {
+                        "nameIdentifier": creator["ORCID"],
+                        "nameIdentifierScheme": "ORCID",
+                        "schemeURI": "https://orcid.org"
+                    }
+                ]
+            } if "ORCID" in creator else {})
         }
         for creator in creators
     ]
@@ -104,8 +113,8 @@ def get_doi_metadata(type, id):
             "lang": "en"
         },
         'types': {
-            "resourceTypeGeneral": "Dataset",
-            "resourceType": "Linked Places Dataset"
+            "resourceTypeGeneral": "Other" if type =="resource" else "Dataset",
+            "resourceType": "Learning Resource" if type =="resource" else "Linked Places Dataset"
         },
         "subjects": [
             {

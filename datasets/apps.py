@@ -5,4 +5,3 @@ class DatasetsConfig(AppConfig):
     def ready(self):
         # Import the signals module to ensure signal handlers are registered.
         import datasets.signals
-        print(datasets.signals)

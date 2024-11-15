@@ -52,6 +52,7 @@ class CitationFormatter {
                     this.cslJson.URL = pageUrl;
                 }
 		    }
+            console.log('Parsed CSL JSON:', this.cslJson);
         } catch (error) {
             console.error('Error parsing CSL JSON:', error);
             this.cslJson = {};

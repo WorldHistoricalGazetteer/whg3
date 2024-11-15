@@ -177,13 +177,13 @@
 			</div>
             <div class="resource-gallery">
               <div class="gallery-banner ps-2 small w-100";>
-                TEACHING RESOURCES (showing <span id="resourceCount">{{ resource_list|length }}</span> of {{ resource_list|length }})
+                TEACHING RESOURCES (showing <span id="resourceCount">{{ total_resources }}</span> of {{ total_resources }})
                 <span id="regions_reset" class="reset-link me-2" style="cursor:pointer;">reset filter</span>
               </div>
 {#              <div class="header bg-warning">Header</div>#}
               <div class="scrolling-div" style="overflow: auto;">
                 {% for r in featured %}
-                  <div class="resource-card mt-1" data-regions="{{r.regions}}">
+                  <div class="resource-card mt-1" data-regions="{{r.region_ids_csv}}">
                     <div class="resource-card-header ps-2 small ">{{ r.type }}</div>
                     <div class="resource-card-content px-2 pt-1" data-id={{r.id}}>
                       {% with remainder=190|add:r.title_length %}
@@ -194,7 +194,7 @@
                   </div>
                 {% endfor %}
                 {% for r in resource_list %}
-                  <div class="resource-card mt-1" data-regions="{{r.regions}}">
+                  <div class="resource-card mt-1" data-regions="{{r.region_ids_csv}}">
                     <div class="resource-card-header ps-2 small ">{{ r.type }}
                     </div>
                     <div class="resource-card-content px-2 pt-1" data-id={{r.id}}>

@@ -54,7 +54,8 @@ class Area(models.Model):
     bbox = geomodels.PolygonField(null=True, blank=True, srid=4326)
 
     def __str__(self):
-        return str(self.id)
+        # return str(self.id)
+        return self.title
 
     def get_absolute_url(self):
         return reverse('areas:area-update', kwargs={'id': self.id})

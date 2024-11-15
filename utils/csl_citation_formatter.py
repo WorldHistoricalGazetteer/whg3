@@ -1,6 +1,7 @@
 # utils/csl_citation_formatter
 
 import json
+import re
 
 from django.conf import settings
 from nameparser import HumanName
@@ -8,16 +9,20 @@ from nameparser import HumanName
 
 def csl_citation(self):
     try:
-        def create_author_dict(person):
+        def create_author_dict(person, orcid=None):
             given = f"{person.first} {person.middle}".strip() if person.middle else person.first
-            return {
+            author_dict = {
                 "family": person.last or "Unknown",
                 "given": given or "",
             }
+            if orcid:
+                author_dict["ORCID"] = f"https://orcid.org/{orcid}"
+            return author_dict
 
         def parse_names(names):
             authors = []
             name_parts = [name.strip() for name in names.split(';') if name.strip()]
+            orcid_pattern = re.compile(r'\b\d{4}-\d{4}-\d{4}-\d{4}\b')
 
             for name in name_parts:
                 if name.startswith('[') and name.endswith(']'):
@@ -25,9 +30,14 @@ def csl_citation(self):
                     organisation = name[1:-1]  # Remove the brackets
                     authors.append({"literal": organisation})
                 else:
+                    # Check for ORCID ID
+                    orcid_match = orcid_pattern.search(name)
+                    orcid = orcid_match.group() if orcid_match else None
+                    # Remove ORCID from name for parsing
+                    clean_name = orcid_pattern.sub('', name).strip()
                     # Human name
-                    person = HumanName(name)
-                    authors.append(create_author_dict(person))
+                    person = HumanName(clean_name)
+                    authors.append(create_author_dict(person, orcid=orcid))
 
             return authors
 

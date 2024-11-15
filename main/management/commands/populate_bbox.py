@@ -10,8 +10,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         # Pre-populate bbox for all datasets
-        # self.stdout.write('Populating bbox fields for all datasets...')
-        # self.populate_dataset_bbox()
+        self.stdout.write('Populating bbox fields for all datasets...')
+        self.populate_dataset_bbox()
 
         # Pre-populate bbox for all collections
         self.stdout.write('Populating bbox fields for all collections...')

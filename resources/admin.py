@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from areas.models import Area
 # Register your models here.
 from .models import Resource, ResourceFile, ResourceImage
 
@@ -20,6 +21,12 @@ class ResourceAdmin(admin.ModelAdmin):
     list_display = ('title', 'pub_date', 'authors', 'gradelevels', 'type', 'featured')
     list_filters = ('gradelevels', 'authors')
     # date_hierarchy = 'pub_date'
+
+    # Dynamically populate the regions field in the admin form with Areas where type == "predefined"
+    def formfield_for_manytomany(self, db_field, request, **kwargs):
+        if db_field.name == "regions":
+            kwargs["queryset"] = Area.objects.filter(type="predefined")
+        return super().formfield_for_manytomany(db_field, request, **kwargs)
 
     inlines = [ResourceFileAdmin, ResourceImageAdmin]
 
