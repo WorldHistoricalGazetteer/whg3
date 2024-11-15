@@ -3,10 +3,14 @@
 import requests
 
 from django.conf import settings
+from django.contrib.gis.db.models import Extent
+from django.contrib.gis.geos import Polygon
 from django.db import transaction
 from django.db.models.signals import pre_delete, pre_save, post_save
 from django.dispatch import receiver
 
+from places.models import PlaceGeom
+from utils.doi import doi
 from .models import Dataset, DatasetFile
 from utils.mapdata import mapdata_task
 from whgmail.messaging import WHGmail
@@ -63,6 +67,15 @@ def test_complexity(dsid):
         f'object_needs_tileset: {object_needs_tileset}, total_coords: {total_coords}, total_geometries: {total_geometries}, time: {duration} ')
 
 
+def handle_dataset_bbox(sender, instance, **kwargs):
+    # Get the extent of the associated geometries
+    dsgeoms = PlaceGeom.objects.filter(place__dataset=instance.label)
+    extent = dsgeoms.aggregate(Extent("geom"))["geom__extent"]
+
+    if extent:
+        instance.bbox = Polygon.from_bbox(extent)
+
+
 @receiver(pre_save, sender=Dataset)
 def handle_public_flag(sender, instance, **kwargs):
     from .tasks import index_to_pub, unindex_from_pub
@@ -117,6 +130,13 @@ def handle_public_flag(sender, instance, **kwargs):
                     'dataset_label': instance.label if instance else 'N/A',
                     'dataset_id': instance.id if instance else 'N/A',
                 })
+
+    handle_dataset_bbox(sender, instance, **kwargs)
+
+
+@receiver(post_save, sender=Dataset)
+def handle_dataset_post_save(sender, instance, created, **kwargs):
+    doi(instance._meta.model_name, instance.id)
 
 
 # notify the owner when status changes to 'wd-complete' or 'indexed'
@@ -184,3 +204,4 @@ def remove_files(**kwargs):
     ds_instance = kwargs.get('instance')
     files = DatasetFile.objects.filter(dataset_id_id=ds_instance.id)
     files.delete()
+    doi(ds_instance._meta.model_name, ds_instance.id, 'hide')

@@ -1,11 +1,33 @@
 # collections.signals.py
+from functools import reduce
 
+from django.contrib.gis.geos import Polygon, MultiPolygon
 from django.db import models, transaction
-from django.db.models.signals import pre_delete, pre_save
+from django.db.models.signals import pre_delete, pre_save, post_save
 from django.dispatch import receiver
 
+from utils.doi import doi
 from .models import Collection
 from utils.mapdata import mapdata_task
+
+
+def handle_collection_bbox(sender, instance, **kwargs):
+    if instance.collection_class == "place":
+        # Collect bounding boxes from places and convert them to Polygons
+        bboxes = [
+            Polygon.from_bbox(place.extent) for place in instance.places.all() if place.extent
+        ]
+    else:  # collection_class == "dataset"
+        # Collect bounding boxes from datasets and convert them to Polygons
+        bboxes = [dataset.bbox for dataset in instance.datasets.all() if dataset.bbox]
+
+    if bboxes:
+        # Combine all bounding boxes into a MultiPolygon
+        combined_bbox = MultiPolygon(bboxes)
+        instance.bbox = Polygon.from_bbox(combined_bbox.extent)
+
+    else:
+        instance.bbox = None
 
 
 # if public changes to True & size threshold met, create tileset
@@ -39,3 +61,15 @@ def handle_public_status_change(sender, instance, **kwargs):
         else:
             if old_instance.rel_keywords != instance.rel_keywords:
                 transaction.on_commit(lambda: mapdata_task.delay('collections', instance.id, 'standard', refresh=True))
+
+    handle_collection_bbox(sender, instance, **kwargs)
+
+
+@receiver(post_save, sender=Collection)
+def handle_collection_post_save(sender, instance, created, **kwargs):
+    doi(instance._meta.model_name, instance.id)
+
+
+@receiver(pre_delete, sender=Collection)
+def handle_collection_delete(sender, instance, **kwargs):
+    doi(instance._meta.model_name, instance.id, 'hide')

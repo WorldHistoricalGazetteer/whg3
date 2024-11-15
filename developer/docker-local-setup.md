@@ -56,7 +56,7 @@ docker ps
 ```
 - If necessary, apply Django migrations (**replace `web_local_staging` with the name of your web container**)
 ```bash
-docker exec -it web_local_staging bash -c "./manage.py showmigrations"
+docker exec -it web_local_staging bash -c "./manage.py makemigrations"
 ```
 ```bash
 docker exec -it web_local_staging bash -c "./manage.py migrate"

@@ -1,8 +1,10 @@
+from functools import reduce
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.postgres.fields import ArrayField
+from django.contrib.gis.db import models as geomodels
 from django.core.validators import URLValidator
 from django.db import models
 from django.db.models import Q, JSONField, Func, CharField, Exists, OuterRef, Subquery
@@ -116,6 +118,7 @@ class Collection(models.Model):
     status = models.CharField(max_length=12, choices=STATUS_COLL, default='sandbox', null=True, blank=True)
     featured = models.IntegerField(null=True, blank=True)
     public = models.BooleanField(default=False)
+    doi = models.BooleanField(default=False, help_text="Indicates if a DOI is associated with this collection")
 
     # flag set by group_leader
     nominated = models.BooleanField(default=False)
@@ -137,6 +140,8 @@ class Collection(models.Model):
 
     # writes CollPlace record to collection_collplace
     places = models.ManyToManyField("places.Place", through='CollPlace', blank=True)
+
+    bbox = geomodels.PolygonField(null=True, blank=True, srid=4326)
 
     # Visualisation parameters (used in place_collection_browse.html & place_collection_build.html)
     vis_parameters = JSONField(default=default_vis_parameters, null=True, blank=True)
@@ -310,13 +315,6 @@ class Collection(models.Model):
         return last.strftime("%Y-%m-%d")
 
     @property
-    def num_places(self):
-        if self.collection_class == "dataset":
-            return Place.objects.filter(dataset__in=self.datasets.all()).count()
-        else:
-            return self.places.all().count()
-
-    @property
     def owners(self):
         owner_ids = list(CollectionUser.objects.filter(collection=self, role='owner').values_list('user_id', flat=True))
         owner_ids.append(self.owner.id)
@@ -343,10 +341,24 @@ class Collection(models.Model):
         # return all.exclude(id__in=self.omitted)
 
     @property
+    def num_places(self):
+        if self.collection_class == "dataset":
+            return Place.objects.filter(dataset__in=self.datasets.all()).count()
+        else:
+            return self.places.all().count()
+
+    @property
+    def numrows(self):
+        # Added for consistency with Dataset model
+        return self.num_places
+
+    @property
     def rowcount(self):
-        dses = self.datasets.all()
-        ds_counts = [ds.places.count() for ds in dses]
-        return sum(ds_counts) + self.places.count()
+        # Switch to more efficient method but keep property for backward compatibility
+        return self.num_places
+        # dses = self.datasets.all()
+        # ds_counts = [ds.places.count() for ds in dses]
+        # return sum(ds_counts) + self.places.count()
 
     def __str__(self):
         return '%s' % (self.title)

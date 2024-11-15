@@ -19,7 +19,7 @@ docker ps
 
 #### If necessary, apply Django migrations
 ```bash
-docker exec -it web_dev-whgazetteer-org_staging bash -c "./manage.py showmigrations"
+docker exec -it web_dev-whgazetteer-org_staging bash -c "./manage.py makemigrations"
 ```
 ```bash
 docker exec -it web_dev-whgazetteer-org_staging bash -c "./manage.py migrate"
@@ -78,7 +78,7 @@ cd ~/sites/dev-whgazetteer-org
 
 #### If necessary, apply Django migrations
 ```bash
-docker exec -it web_whgazetteer-org_main bash -c "./manage.py showmigrations"
+docker exec -it web_whgazetteer-org_main bash -c "./manage.py makemigrations"
 ```
 ```bash
 docker exec -it web_whgazetteer-org_main bash -c "./manage.py migrate"

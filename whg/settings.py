@@ -1,6 +1,8 @@
 # whg/settings.py
 
 import os, sys
+import base64
+
 from celery.schedules import crontab
 from django.contrib.messages import constants as messages
 from django.core.cache.backends.filebased import FileBasedCache
@@ -380,6 +382,13 @@ SPECTACULAR_SETTINGS = {
         'drf_spectacular.hooks.preprocess_exclude_path_format',
     ],
 }
+
+# Settings for DataCite API (DOI registration)
+DOI_USER_ID = os.environ.get("DOI_USER_ID")
+DOI_PASSWORD = os.environ.get("DOI_PASSWORD")
+DOI_PREFIX = os.environ.get("DOI_PREFIX")
+DOI_API_URL = f"https://api{'' if os.environ.get('ENV_CONTEXT') == 'whgazetteer-org' else '.test'}.datacite.org/dois"
+DOI_ENCODED_CREDENTIALS = base64.b64encode(f"{DOI_USER_ID}:{DOI_PASSWORD}".encode('utf-8')).decode('utf-8')
 
 # Page-specific settings
 DATASETS_PLACES_LIMIT = 100000
