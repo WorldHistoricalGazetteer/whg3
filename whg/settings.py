@@ -1,6 +1,8 @@
 # whg/settings.py
 
 import os, sys
+import base64
+
 from celery.schedules import crontab
 from django.contrib.messages import constants as messages
 from django.core.cache.backends.filebased import FileBasedCache
