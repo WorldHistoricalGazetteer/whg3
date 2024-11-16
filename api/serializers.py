@@ -1,6 +1,12 @@
 # api.serializers.py
+import re
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.urls import reverse
+
+from collection.models import Collection
+
 User = get_user_model()
 
 from django.contrib.gis.geos import GEOSGeometry, Point, Polygon, MultiPolygon, LineString, MultiLineString
@@ -17,7 +23,7 @@ import json, geojson
 from shapely.geometry import shape
 
 # TODO: these are updated in both Dataset & DatasetFile  (??)
-datatype = models.CharField(max_length=12, null=False,choices=DATATYPES,
+datatype = models.CharField(max_length=12, null=False, choices=DATATYPES,
                             default='place')
 numrows = models.IntegerField(null=True, blank=True)
 
@@ -25,399 +31,554 @@ numrows = models.IntegerField(null=True, blank=True)
 numlinked = models.IntegerField(null=True, blank=True)
 total_links = models.IntegerField(null=True, blank=True)
 
+
 class ErrorResponseSerializer(serializers.Serializer):
     error = serializers.CharField()
+
 
 # ***
 # IN USE Apr 2020
 # ***
 class DatasetSerializer(serializers.HyperlinkedModelSerializer):
-  # don't list all places in a dataset API record
-  owner = serializers.ReadOnlyField(source='owner.name')
-  contributors = serializers.CharField(allow_null=True, allow_blank=True)
+    # don't list all places in a dataset API record
+    owner = serializers.ReadOnlyField(source='owner.name')
+    contributors = serializers.CharField(allow_null=True, allow_blank=True)
 
-  place_count = serializers.SerializerMethodField('get_count')
-  def get_count(self,ds):
-    return ds.places.count()
+    place_count = serializers.SerializerMethodField('get_count')
 
-  class Meta:
-    model = Dataset
-    fields = ('id', 'place_count', 'owner', 'label', 'title', 'description','datatype',
-              'ds_status', 'create_date', 'public', 'core','creator', 'webpage',
-              'contributors')
-    extra_kwargs = {
-          'created_by': { 'read_only': True }}
+    def get_count(self, ds):
+        return ds.places.count()
+
+    class Meta:
+        model = Dataset
+        fields = ('id', 'place_count', 'owner', 'label', 'title', 'description', 'datatype',
+                  'ds_status', 'create_date', 'public', 'core', 'creator', 'webpage',
+                  'contributors')
+        extra_kwargs = {
+            'created_by': {'read_only': True}}
+
+
+class GallerySerializer(serializers.HyperlinkedModelSerializer):
+    type = serializers.SerializerMethodField()
+    icon = serializers.SerializerMethodField()
+    label = serializers.SerializerMethodField()
+    authors = serializers.SerializerMethodField()
+    ds_or_c_id = serializers.SerializerMethodField()
+    url = serializers.SerializerMethodField()
+    geometry_url = serializers.SerializerMethodField()
+
+    def __init__(self, *args, **kwargs):
+        model = kwargs.pop('model', None)
+        if model:
+            self.Meta.model = model
+        super().__init__(*args, **kwargs)
+
+    def get_type(self, obj):
+        if self.Meta.model == Collection:
+            return f"{obj.collection_class}_collection"
+        else:
+            return 'dataset'
+
+    def get_icon(self, obj):
+        if self.Meta.model == Collection:
+            if obj.collection_class == 'dataset':
+                return 'fa-layer-group'
+            elif obj.collection_class == 'place':
+                return 'fa-map-pin'
+        else:
+            return 'fa-globe-americas'
+
+    def get_label(self, obj):
+        if self.Meta.model == Collection:
+            if obj.collection_class == 'dataset':
+                return 'Dataset Collection'
+            elif obj.collection_class == 'place':
+                return 'Place Collection'
+        else:
+            return 'Dataset'
+
+    def get_authors(self, obj):
+        csl = obj.citation_csl
+        if csl:
+            # Convert CSL JSON to dictionary
+            csl_dict = json.loads(csl)
+            formatted_authors = []
+
+            for index, author in enumerate(csl_dict.get('author', [])):
+                if isinstance(author, dict):  # Check if author is a dictionary
+                    if 'family' in author:
+                        # Add a space only if both given and family names exist
+                        this_author = f"{author.get('given', '')}{' ' if author.get('given') and author.get('family') else ''}{author.get('family', '')}"
+                        # Wrap the first author in an ORCID link if ORCID is present
+                        if index == 0 and 'ORCID' in author:
+                            this_author = f'<a data-bs-toggle="tooltip" data-bs-title="Click to see author\'s ORCiD record" href="https://orcid.org/{author["ORCID"]}" target="_blank">{this_author}</a>'
+                    else:
+                        # Handle organizations or other literal cases
+                        this_author = author.get('literal', 'Unknown Author')
+                elif isinstance(author, str):  # Handle cases where author is a string
+                    this_author = author
+                else:
+                    this_author = 'Unknown Author'
+
+                formatted_authors.append(this_author)
+
+            # Return the first author, appending 'et al.' if there are multiple authors
+            if len(formatted_authors) > 1:
+                # Create a tooltip with all authors
+                tooltip_authors = ', '.join(formatted_authors[1:])
+                return f"""{formatted_authors[0]} 
+                           <span data-bs-toggle="tooltip" data-bs-title="{tooltip_authors}"><i>et al.</i></span>"""
+            else:
+                return formatted_authors[0]
+
+        return "Unknown Author"
+
+    def get_ds_or_c_id(self, obj):
+        return obj.id
+
+    def get_url(self, obj):
+        if self.Meta.model == Collection:
+            if obj.collection_class == 'dataset':
+                return reverse('collection:ds-collection-browse', args=[obj.id])
+            elif obj.collection_class == 'place':
+                return reverse('collection:place-collection-browse', args=[obj.id])
+        else:
+            return reverse('datasets:ds_places', args=[obj.id])
+
+    def get_geometry_url(self, obj):
+        if self.Meta.model == Collection:
+            return f"/api/featureCollection/?coll={obj.id}&mode={obj.display_mode or ''}"
+        else:
+            return f"/api/featureCollection/?id={obj.id}&mode={obj.display_mode or ''}"
+
+    class Meta:
+        model = Dataset # May be overridden by __init__ and changed to Collection
+        fields = (
+            'title',
+            'image_file',
+            'description',
+            'authors',
+            'owner',
+            'type',
+            'icon',
+            'label',
+            'featured',
+            'ds_or_c_id',
+            'display_mode',
+            'webpage',
+            'url',
+            'geometry_url',
+            'citation_csl',
+        )
+
 
 class UserSerializer(serializers.HyperlinkedModelSerializer):
-  datasets = serializers.HyperlinkedRelatedField(
-      #many=True, view_name='dataset-detail', read_only=True)
-      many=True, view_name='ds_status', read_only=True)
+    datasets = serializers.HyperlinkedRelatedField(
+        # many=True, view_name='dataset-detail', read_only=True)
+        many=True, view_name='ds_status', read_only=True)
 
-  class Meta:
-    model = User
-    fields = ['id', 'name', 'email', 'url', 'datasets']
-    #fields = ('id','url', 'username', 'email', 'groups', 'datasets')
+    class Meta:
+        model = User
+        fields = ['id', 'name', 'email', 'url', 'datasets']
+        # fields = ('id','url', 'username', 'email', 'groups', 'datasets')
+
 
 class TraceAnnotationSerializer(serializers.ModelSerializer):
-  class Meta:
-    model = TraceAnnotation
-    fields = ('id', 'src_id', 'collection', 'anno_type', 'motivation',
-              'when', 'sequence', 'creator', 'created')
+    class Meta:
+        model = TraceAnnotation
+        fields = ('id', 'src_id', 'collection', 'anno_type', 'motivation',
+                  'when', 'sequence', 'creator', 'created')
+
 
 class PlaceDepictionSerializer(serializers.ModelSerializer):
-  # json: @id, title, license
-  identifier = serializers.ReadOnlyField(source='jsonb.@id')
-  title = serializers.ReadOnlyField(source='jsonb.title')
-  license = serializers.ReadOnlyField(source='jsonb.license')
+    # json: @id, title, license
+    identifier = serializers.ReadOnlyField(source='jsonb.@id')
+    title = serializers.ReadOnlyField(source='jsonb.title')
+    license = serializers.ReadOnlyField(source='jsonb.license')
 
-  class Meta:
-    model = PlaceDepiction
-    fields = ('identifier','title','license')
+    class Meta:
+        model = PlaceDepiction
+        fields = ('identifier', 'title', 'license')
+
 
 class PlaceDescriptionSerializer(serializers.ModelSerializer):
-  # json: @id, value, lang
-  identifier = serializers.ReadOnlyField(source='jsonb.id')
-  value = serializers.ReadOnlyField(source='jsonb.value')
-  lang = serializers.ReadOnlyField(source='jsonb.lang')
+    # json: @id, value, lang
+    identifier = serializers.ReadOnlyField(source='jsonb.id')
+    value = serializers.ReadOnlyField(source='jsonb.value')
+    lang = serializers.ReadOnlyField(source='jsonb.lang')
 
-  class Meta:
-    model = PlaceDescription
-    fields = ('identifier','value','lang')
+    class Meta:
+        model = PlaceDescription
+        fields = ('identifier', 'value', 'lang')
+
 
 class PlaceWhenSerializer(serializers.ModelSerializer):
-  # json: timespans, periods, label, duration
-  timespans = serializers.ReadOnlyField(source='jsonb.timespans')
-  periods = serializers.ReadOnlyField(source='jsonb.periods')
-  label = serializers.ReadOnlyField(source='jsonb.label')
-  duration = serializers.ReadOnlyField(source='jsonb.duration')
+    # json: timespans, periods, label, duration
+    timespans = serializers.ReadOnlyField(source='jsonb.timespans')
+    periods = serializers.ReadOnlyField(source='jsonb.periods')
+    label = serializers.ReadOnlyField(source='jsonb.label')
+    duration = serializers.ReadOnlyField(source='jsonb.duration')
 
-  class Meta:
-    model = PlaceWhen
-    fields = ('timespans', 'periods', 'label', 'duration')
+    class Meta:
+        model = PlaceWhen
+        fields = ('timespans', 'periods', 'label', 'duration')
+
 
 class PlaceRelatedSerializer(serializers.ModelSerializer):
-  # json: relation_type, relation_to, label, when, citation, certainty
-  relation_type = serializers.ReadOnlyField(source='jsonb.relationType')
-  relation_to = serializers.ReadOnlyField(source='jsonb.relationTo')
-  label = serializers.ReadOnlyField(source='jsonb.label')
-  when = serializers.ReadOnlyField(source='jsonb.when')
-  citation = serializers.ReadOnlyField(source='jsonb.citation')
-  certainty = serializers.ReadOnlyField(source='jsonb.certainty')
+    # json: relation_type, relation_to, label, when, citation, certainty
+    relation_type = serializers.ReadOnlyField(source='jsonb.relationType')
+    relation_to = serializers.ReadOnlyField(source='jsonb.relationTo')
+    label = serializers.ReadOnlyField(source='jsonb.label')
+    when = serializers.ReadOnlyField(source='jsonb.when')
+    citation = serializers.ReadOnlyField(source='jsonb.citation')
+    certainty = serializers.ReadOnlyField(source='jsonb.certainty')
 
-  class Meta:
-    model = PlaceRelated
-    fields = ('relation_type', 'relation_to', 'label', 'when',
+    class Meta:
+        model = PlaceRelated
+        fields = ('relation_type', 'relation_to', 'label', 'when',
                   'citation', 'certainty')
 
+
 class PlaceLinkSerializer(serializers.ModelSerializer):
-  # json: type, identifier
-  aug = serializers.SerializerMethodField('augmented')
-  def augmented(self, obj):
-    return True if obj.task_id is not None else False
+    # json: type, identifier
+    aug = serializers.SerializerMethodField('augmented')
 
-  type = serializers.ReadOnlyField(source='jsonb.type')
-  identifier = serializers.ReadOnlyField(source='jsonb.identifier')
+    def augmented(self, obj):
+        return True if obj.task_id is not None else False
 
-  class Meta:
-    model = PlaceLink
-    fields = ('type', 'identifier', 'aug')
+    type = serializers.ReadOnlyField(source='jsonb.type')
+    identifier = serializers.ReadOnlyField(source='jsonb.identifier')
+
+    class Meta:
+        model = PlaceLink
+        fields = ('type', 'identifier', 'aug')
+
 
 # returns single (first) geom for a place
 class PlaceGeomSerializer(serializers.ModelSerializer):
-  # json: type, geowkt, coordinates, when{}
-  #title = serializers.ReadOnlyField(source='title')
-  ds = serializers.SerializerMethodField()
-  def get_ds(self, obj):
-    return obj.place.dataset.id
-  #title = serializers.SerializerMethodField()
-  #def get_title(self, obj):
-    #return obj.place.title
+    # json: type, geowkt, coordinates, when{}
+    # title = serializers.ReadOnlyField(source='title')
+    ds = serializers.SerializerMethodField()
 
-  type = serializers.ReadOnlyField(source='jsonb.type')
-  geowkt = serializers.ReadOnlyField(source='jsonb.geowkt')
-  coordinates = serializers.ReadOnlyField(source='jsonb.coordinates')
-  citation = serializers.ReadOnlyField(source='jsonb.citation')
-  when = serializers.ReadOnlyField(source='jsonb.when')
-  certainty = serializers.ReadOnlyField(source='jsonb.certainty')
+    def get_ds(self, obj):
+        return obj.place.dataset.id
 
-  class Meta:
-    model = PlaceGeom
-    fields = ('place_id','src_id','type', 'geowkt', 'coordinates',
-              'geom_src', 'citation', 'when', 'title', 'ds',
-              'certainty')
+    # title = serializers.SerializerMethodField()
+    # def get_title(self, obj):
+    # return obj.place.title
+
+    type = serializers.ReadOnlyField(source='jsonb.type')
+    geowkt = serializers.ReadOnlyField(source='jsonb.geowkt')
+    coordinates = serializers.ReadOnlyField(source='jsonb.coordinates')
+    citation = serializers.ReadOnlyField(source='jsonb.citation')
+    when = serializers.ReadOnlyField(source='jsonb.when')
+    certainty = serializers.ReadOnlyField(source='jsonb.certainty')
+
+    class Meta:
+        model = PlaceGeom
+        fields = ('place_id', 'src_id', 'type', 'geowkt', 'coordinates',
+                  'geom_src', 'citation', 'when', 'title', 'ds',
+                  'certainty')
+
 
 # return list of normalized coordinates for a place
 class PlaceGeomsSerializer(serializers.ModelSerializer):
-  # ds = serializers.SerializerMethodField()
-  # def get_ds(self, obj):
-  #   return obj.place.dataset.id
+    # ds = serializers.SerializerMethodField()
+    # def get_ds(self, obj):
+    #   return obj.place.dataset.id
 
-  type = serializers.ReadOnlyField(source='jsonb.type')
-  geowkt = serializers.ReadOnlyField(source='jsonb.geowkt')
-  coordinates = serializers.ReadOnlyField(source='jsonb.coordinates')
-  citation = serializers.ReadOnlyField(source='jsonb.citation')
-  # citation = serializers.ReadOnlyField(source='jsonb.citation') or None
-  # when = serializers.ReadOnlyField(source='jsonb.when')
-  # certainty = serializers.ReadOnlyField(source='jsonb.certainty')
+    type = serializers.ReadOnlyField(source='jsonb.type')
+    geowkt = serializers.ReadOnlyField(source='jsonb.geowkt')
+    coordinates = serializers.ReadOnlyField(source='jsonb.coordinates')
+    citation = serializers.ReadOnlyField(source='jsonb.citation')
 
-  class Meta:
-    model = PlaceGeom
-    fields = ('place_id','src_id','type', 'geowkt', 'coordinates',
-              'citation'
-              #, 'ds'
-              #'title', 'geom_src', 'when', 'certainty'
-    )
-    
+    # citation = serializers.ReadOnlyField(source='jsonb.citation') or None
+    # when = serializers.ReadOnlyField(source='jsonb.when')
+    # certainty = serializers.ReadOnlyField(source='jsonb.certainty')
+
+    class Meta:
+        model = PlaceGeom
+        fields = ('place_id', 'src_id', 'type', 'geowkt', 'coordinates',
+                  'citation'
+                  # , 'ds'
+                  # 'title', 'geom_src', 'when', 'certainty'
+                  )
+
+
 class PlaceGeoFeatureSerializer(GeoFeatureModelSerializer):
-    
     ds = serializers.SerializerMethodField()
     title = serializers.CharField(source='place.title')  # To include the 'title' attribute
 
     def get_ds(self, obj):
         return obj.place.dataset.id
-    
+
     type = serializers.ReadOnlyField(source='jsonb.type')
     coordinates = serializers.ReadOnlyField(source='jsonb.coordinates')
     when = serializers.ReadOnlyField(source='jsonb.when', default=None)
     citation = serializers.ReadOnlyField(source='jsonb.citation', default=None)
-    certainty = serializers.ReadOnlyField(source='jsonb.certainty', default=None) 
+    certainty = serializers.ReadOnlyField(source='jsonb.certainty', default=None)
 
     class Meta:
         model = PlaceGeom
         geo_field = 'geom'
         fields = ('ds', 'title', 'place_id', 'type', 'coordinates', 'geom_src', 'citation', 'when', 'certainty')
-        
+
     def to_representation(self, instance):
         data = super().to_representation(instance)
         # Remove 'coordinates' from the 'properties' dictionary
         if 'coordinates' in data.get('properties', {}):
             data['properties'].pop('coordinates')
-        
-        return data        
+
+        return data
+
 
 class PlaceTypeSerializer(serializers.ModelSerializer):
-  # json: identifier, label, sourceLabel OR sourceLabels[{}], when{}
-  identifier = serializers.ReadOnlyField(source='jsonb.identifier')
-  label = serializers.ReadOnlyField(source='jsonb.label')
-  sourceLabel = serializers.ReadOnlyField(source='jsonb.sourceLabel')
-  sourceLabels = serializers.ReadOnlyField(source='jsonb.sourceLabels')
-  when = serializers.ReadOnlyField(source='jsonb.when')
-  gn_class = serializers.ReadOnlyField(source='fclass')
+    # json: identifier, label, sourceLabel OR sourceLabels[{}], when{}
+    identifier = serializers.ReadOnlyField(source='jsonb.identifier')
+    label = serializers.ReadOnlyField(source='jsonb.label')
+    sourceLabel = serializers.ReadOnlyField(source='jsonb.sourceLabel')
+    sourceLabels = serializers.ReadOnlyField(source='jsonb.sourceLabels')
+    when = serializers.ReadOnlyField(source='jsonb.when')
+    gn_class = serializers.ReadOnlyField(source='fclass')
 
-  class Meta:
-    model = PlaceType
-    fields = ('label', 'sourceLabel', 'sourceLabels', 'when', 'identifier','gn_class')
+    class Meta:
+        model = PlaceType
+        fields = ('label', 'sourceLabel', 'sourceLabels', 'when', 'identifier', 'gn_class')
+
 
 class PlaceNameSerializer(serializers.ModelSerializer):
-  # jsonb: toponym, citation{}
-  toponym = serializers.ReadOnlyField(source='jsonb.toponym')
-  citations = serializers.ReadOnlyField(source='jsonb.citations')
-  # id = serializers.ReadOnlyField(source='jsonb.citation["id"]')
-  # label = serializers.ReadOnlyField(source='jsonb.citation.label')
-  when = serializers.ReadOnlyField(source='jsonb.when')
+    # jsonb: toponym, citation{}
+    toponym = serializers.ReadOnlyField(source='jsonb.toponym')
+    citations = serializers.ReadOnlyField(source='jsonb.citations')
+    # id = serializers.ReadOnlyField(source='jsonb.citation["id"]')
+    # label = serializers.ReadOnlyField(source='jsonb.citation.label')
+    when = serializers.ReadOnlyField(source='jsonb.when')
 
-  class Meta:
-    model = PlaceName
-    fields = ('toponym','when','citations')
+    class Meta:
+        model = PlaceName
+        fields = ('toponym', 'when', 'citations')
+
 
 """
     direct representation of normalized records in database
     used in multiple views
 """
 
+
 class PlaceSerializer(serializers.ModelSerializer):
-  dataset = serializers.ReadOnlyField(source='dataset.title')
-  dataset_id = serializers.ReadOnlyField(source='dataset.id')
-  names = PlaceNameSerializer(many=True, read_only=True)
-  types = PlaceTypeSerializer(many=True, read_only=True)
-  geoms = PlaceGeomSerializer(many=True, read_only=True)
-  extent = serializers.ReadOnlyField()
-  links = PlaceLinkSerializer(many=True, read_only=True)
-  related = PlaceRelatedSerializer(many=True, read_only=True)
-  whens = PlaceWhenSerializer(many=True, read_only=True)
-  descriptions = PlaceDescriptionSerializer(many=True, read_only=True)
-  depictions = PlaceDepictionSerializer(many=True, read_only=True)
+    dataset = serializers.ReadOnlyField(source='dataset.title')
+    dataset_id = serializers.ReadOnlyField(source='dataset.id')
+    names = PlaceNameSerializer(many=True, read_only=True)
+    types = PlaceTypeSerializer(many=True, read_only=True)
+    geoms = PlaceGeomSerializer(many=True, read_only=True)
+    extent = serializers.ReadOnlyField()
+    links = PlaceLinkSerializer(many=True, read_only=True)
+    related = PlaceRelatedSerializer(many=True, read_only=True)
+    whens = PlaceWhenSerializer(many=True, read_only=True)
+    descriptions = PlaceDescriptionSerializer(many=True, read_only=True)
+    depictions = PlaceDepictionSerializer(many=True, read_only=True)
 
-  # cid param passed only from place collection browse screen
-  traces = serializers.SerializerMethodField('trace_anno')
-  def trace_anno(self, place):
-    cid = self.context.get("cid")
-    if cid is not None:
-        return json.loads(
-            coreserializers.serialize("json", TraceAnnotation.objects.filter(
-                place=place.id, collection=cid, archived=False)))
-    else:
-        print('no cid in context')
-        return json.loads('[]')
+    # cid param passed only from place collection browse screen
+    traces = serializers.SerializerMethodField('trace_anno')
 
-  # traces = serializers.SerializerMethodField('trace_anno')
-  # def trace_anno(self, place):
-  #   cid = self.context["query_params"]['cid']
-  #   return json.loads(
-  #     coreserializers.serialize("json", TraceAnnotation.objects.filter(
-  #       place=place.id, collection=cid, archived=False)))
-  #
-  geo = serializers.SerializerMethodField('has_geom')
-  def has_geom(self,place):
-    return '<i class="fa fa-globe"></i>' if place.geom_count > 0 else "-"
+    def trace_anno(self, place):
+        cid = self.context.get("cid")
+        if cid is not None:
+            return json.loads(
+                coreserializers.serialize("json", TraceAnnotation.objects.filter(
+                    place=place.id, collection=cid, archived=False)))
+        else:
+            print('no cid in context')
+            return json.loads('[]')
 
-  class Meta:
-    model = Place
-    fields = ('url', 'id', 'title', 'src_id', 'dataset', 'dataset_id', 'ccodes', 'fclasses',
-              'names', 'types', 'geoms', 'extent', 'links', 'related', 'whens',
-              'descriptions', 'depictions', 'geo', 'minmax', 'traces'
-            )
+    # traces = serializers.SerializerMethodField('trace_anno')
+    # def trace_anno(self, place):
+    #   cid = self.context["query_params"]['cid']
+    #   return json.loads(
+    #     coreserializers.serialize("json", TraceAnnotation.objects.filter(
+    #       place=place.id, collection=cid, archived=False)))
+    #
+    geo = serializers.SerializerMethodField('has_geom')
+
+    def has_geom(self, place):
+        return '<i class="fa fa-globe"></i>' if place.geom_count > 0 else "-"
+
+    class Meta:
+        model = Place
+        fields = ('url', 'id', 'title', 'src_id', 'dataset', 'dataset_id', 'ccodes', 'fclasses',
+                  'names', 'types', 'geoms', 'extent', 'links', 'related', 'whens',
+                  'descriptions', 'depictions', 'geo', 'minmax', 'traces'
+                  )
+
 
 """
     partial direct representation of normalized place-related records in database
     used for dataset updates
 """
-class PlaceCompareSerializer(serializers.ModelSerializer):
-  dataset = serializers.ReadOnlyField(source='dataset.title')
-  names = PlaceNameSerializer(many=True, read_only=True)
-  types = PlaceTypeSerializer(many=True, read_only=True)
-  geoms = PlaceGeomsSerializer(many=True, read_only=True)
-  links = PlaceLinkSerializer(many=True, read_only=True)
-  related = PlaceRelatedSerializer(many=True, read_only=True)
-  whens = PlaceWhenSerializer(many=True, read_only=True)
 
-  class Meta:
-    model = Place
-    fields = ('url', 'id', 'title', 'src_id', 'dataset', 'ccodes', 'fclasses',
-              'names', 'types', 'geoms', 'links', 'related', 'whens',
-              'minmax' )
+
+class PlaceCompareSerializer(serializers.ModelSerializer):
+    dataset = serializers.ReadOnlyField(source='dataset.title')
+    names = PlaceNameSerializer(many=True, read_only=True)
+    types = PlaceTypeSerializer(many=True, read_only=True)
+    geoms = PlaceGeomsSerializer(many=True, read_only=True)
+    links = PlaceLinkSerializer(many=True, read_only=True)
+    related = PlaceRelatedSerializer(many=True, read_only=True)
+    whens = PlaceWhenSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Place
+        fields = ('url', 'id', 'title', 'src_id', 'dataset', 'ccodes', 'fclasses',
+                  'names', 'types', 'geoms', 'links', 'related', 'whens',
+                  'minmax')
+
 
 # returns default and computed columns for owner ds browse table (ds_browse.html)
 # TODO: used by both PlaceTableViewSet and PlaceTableCollViewSet - PROBLEM?
 class PlaceTableSerializer(serializers.ModelSerializer):
-  # print('hit PlaceTableSerializer()')
-  dataset = DatasetSerializer()
-  ds = serializers.SerializerMethodField()
-  def get_ds(self, place):
-    cell_value = '<a class="pop-link pop-dataset" data-id='+str(place.dataset.id)+\
-          ' data-toggle="popover" title="Dataset Profile" data-content=""'+\
-          ' tabindex="0" rel="clickover">'+place.dataset.label+'</a>'
-    return cell_value
+    # print('hit PlaceTableSerializer()')
+    dataset = DatasetSerializer()
+    ds = serializers.SerializerMethodField()
 
-  id = serializers.SerializerMethodField()
-  def get_id(self, place):
-    # link to place record
-    uri_base = place.dataset.uri_base
-    uri_prefix = uri_base if 'whg' not in uri_base else settings.URL_FRONT+'/api/db/?id='
-    if place.dataset.public or place.dataset.core:
-      pid = '<a href="'+uri_prefix+str(place.id)+'" target="_blank">'+str(place.id)+'</a>'
-    else:
-      pid = place.id
-    return pid
+    def get_ds(self, place):
+        cell_value = '<a class="pop-link pop-dataset" data-id=' + str(place.dataset.id) + \
+                     ' data-toggle="popover" title="Dataset Profile" data-content=""' + \
+                     ' tabindex="0" rel="clickover">' + place.dataset.label + '</a>'
+        return cell_value
 
-  geo = serializers.SerializerMethodField()
-  def get_geo(self, place):
-    if place.geom_count > 0:
-      gtype = place.geoms.all()[0].jsonb['type'].lower()
-      fn="point" if 'point' in gtype else "polygon" if 'poly' in gtype else "linestring"
-      return '<img src="/static/images/geo_'+fn+'.svg" width=12/>'
-    else:
-      return '&mdash;'
+    id = serializers.SerializerMethodField()
 
-  chk = serializers.SerializerMethodField()
-  def get_chk(self, place):
-    return '<input type="checkbox" name="addme" class="table-chk" data-id="'+str(place.id)+'"/>'
+    def get_id(self, place):
+        # link to place record
+        uri_base = place.dataset.uri_base
+        uri_prefix = uri_base if 'whg' not in uri_base else settings.URL_FRONT + '/api/db/?id='
+        if place.dataset.public or place.dataset.core:
+            pid = '<a href="' + uri_prefix + str(place.id) + '" target="_blank">' + str(place.id) + '</a>'
+        else:
+            pid = place.id
+        return pid
 
-  revwd = serializers.SerializerMethodField('rev_wd')
-  def rev_wd(self, place):
-    tasks_wd = place.dataset.tasks.filter(task_name='align_wdlocal', status='SUCCESS')
-    if place.review_wd == 1:
-      val = '<i class="fa fa-check"></i>'
-    elif not place.hashits_wd:
-        val = '<i>no hits</i>'
-    elif place.review_wd == 0:
-      val = '&#9744;'
-    elif place.flag == True:
-      val = 'altered'
-    else:
-      # direct link to deferred record
-      val = '<a href="/datasets/'+str(place.dataset.id)+'/review/'+\
-            tasks_wd[0].task_id+'/def?pid='+str(place.id)+'"><i>deferred</i></a>' \
-            if len(tasks_wd) > 0 else '<i>deferred</i>'
-    return val
+    geo = serializers.SerializerMethodField()
 
-  revwhg = serializers.SerializerMethodField('rev_whg')
-  def rev_whg(self, place):
-    tasks_whg = place.dataset.tasks.filter(task_name='align_idx', status='SUCCESS')
-    if place.review_whg == 1:
-      val = '<i class="fa fa-check"></i>'
-    elif not place.hashits_whg:
-      val = '<i>no hits</i>'
-    elif place.review_whg == 0:
-      val = '&#9744;'
-    else:
-      # direct link to deferred record
-      val = '<a href="/datasets/' + str(place.dataset.id) + '/review/' + \
-          tasks_whg[0].task_id + '/def?pid=' + str(place.id) + '"><i>deferred</i></a>' \
-      if len(tasks_whg) > 0 else '<i>deferred</i>'
-    return val
+    def get_geo(self, place):
+        if place.geom_count > 0:
+            gtype = place.geoms.all()[0].jsonb['type'].lower()
+            fn = "point" if 'point' in gtype else "polygon" if 'poly' in gtype else "linestring"
+            return '<img src="/static/images/geo_' + fn + '.svg" width=12/>'
+        else:
+            return '&mdash;'
 
-  revtgn = serializers.SerializerMethodField('rev_tgn')
-  def rev_tgn(self, place):
-    if place.review_tgn == 1:
-      val = '<i class="fa fa-check"></i>'
-    elif not place.hashits_tgn:
-      val = '<i>no hits</i>'
-    elif place.review_tgn == 0:
-      val = '&#9744;'
-    else:
-      val = '<i>deferred</i>'
-    return val
+    chk = serializers.SerializerMethodField()
 
-  class Meta:
-    model = Place
-    fields =  ('url','id', 'title', 'src_id', 'fclasses',
+    def get_chk(self, place):
+        return '<input type="checkbox" name="addme" class="table-chk" data-id="' + str(place.id) + '"/>'
+
+    revwd = serializers.SerializerMethodField('rev_wd')
+
+    def rev_wd(self, place):
+        tasks_wd = place.dataset.tasks.filter(task_name='align_wdlocal', status='SUCCESS')
+        if place.review_wd == 1:
+            val = '<i class="fa fa-check"></i>'
+        elif not place.hashits_wd:
+            val = '<i>no hits</i>'
+        elif place.review_wd == 0:
+            val = '&#9744;'
+        elif place.flag == True:
+            val = 'altered'
+        else:
+            # direct link to deferred record
+            val = '<a href="/datasets/' + str(place.dataset.id) + '/review/' + \
+                  tasks_wd[0].task_id + '/def?pid=' + str(place.id) + '"><i>deferred</i></a>' \
+                if len(tasks_wd) > 0 else '<i>deferred</i>'
+        return val
+
+    revwhg = serializers.SerializerMethodField('rev_whg')
+
+    def rev_whg(self, place):
+        tasks_whg = place.dataset.tasks.filter(task_name='align_idx', status='SUCCESS')
+        if place.review_whg == 1:
+            val = '<i class="fa fa-check"></i>'
+        elif not place.hashits_whg:
+            val = '<i>no hits</i>'
+        elif place.review_whg == 0:
+            val = '&#9744;'
+        else:
+            # direct link to deferred record
+            val = '<a href="/datasets/' + str(place.dataset.id) + '/review/' + \
+                  tasks_whg[0].task_id + '/def?pid=' + str(place.id) + '"><i>deferred</i></a>' \
+                if len(tasks_whg) > 0 else '<i>deferred</i>'
+        return val
+
+    revtgn = serializers.SerializerMethodField('rev_tgn')
+
+    def rev_tgn(self, place):
+        if place.review_tgn == 1:
+            val = '<i class="fa fa-check"></i>'
+        elif not place.hashits_tgn:
+            val = '<i>no hits</i>'
+        elif place.review_tgn == 0:
+            val = '&#9744;'
+        else:
+            val = '<i>deferred</i>'
+        return val
+
+    class Meta:
+        model = Place
+        fields = ('url', 'id', 'title', 'src_id', 'fclasses',
                   'ccodes', 'geo', 'minmax',
                   'revwhg', 'revwd', 'revtgn',
                   'review_whg', 'review_wd', 'review_tgn'
-                  ,'ds', 'dataset', 'dataset_id', 'chk',
+                  , 'ds', 'dataset', 'dataset_id', 'chk',
                   'annos')
 
+
 """ used by: api.views.GeoJSONViewSet() """
+
+
 class FeatureSerializer(GeoFeatureModelSerializer):
-  geom = GeometrySerializerMethodField()
-  def get_geom(self, obj):
-    #print('obj',obj.__dict__)
-    s=json.dumps(obj.jsonb)
-    g1 = geojson.loads(s)
-    g2 = shape(g1)
-    djgeo = GEOSGeometry(g2.wkt)
-    #print('geom', djgeo.geojson)
-    return GEOSGeometry(g2.wkt)
+    geom = GeometrySerializerMethodField()
 
-  #
-  title = serializers.SerializerMethodField('get_title')
-  def get_title(self, obj):
-    return obj.place.title
+    def get_geom(self, obj):
+        # print('obj',obj.__dict__)
+        s = json.dumps(obj.jsonb)
+        g1 = geojson.loads(s)
+        g2 = shape(g1)
+        djgeo = GEOSGeometry(g2.wkt)
+        # print('geom', djgeo.geojson)
+        return GEOSGeometry(g2.wkt)
 
-  class Meta:
-    model = PlaceGeom
-    geo_field = 'geom'
-    id_field = False
-    #fields = ('place_id','src_id','title')
-    fields = ('place_id','src_id','title','geom')
+    #
+    title = serializers.SerializerMethodField('get_title')
+
+    def get_title(self, obj):
+        return obj.place.title
+
+    class Meta:
+        model = PlaceGeom
+        geo_field = 'geom'
+        id_field = False
+        # fields = ('place_id','src_id','title')
+        fields = ('place_id', 'src_id', 'title', 'geom')
+
 
 """ uses: AreaViewset()"""
+
+
 class AreaSerializer(serializers.HyperlinkedModelSerializer):
-  class Meta:
-    model = Area
-    fields = ('title', 'type', 'geojson')
+    class Meta:
+        model = Area
+        fields = ('title', 'type', 'geojson')
 
 
 # TODO: what is this???
 class SearchDatabaseSerializer(serializers.HyperlinkedModelSerializer):
+    class Meta:
+        model = Place
+        # depth = 1
+        fields = ('url', 'type', 'properties', 'geometry', 'names', 'types', 'links'
+                  , 'related', 'whens', 'descriptions', 'depictions', 'minmax'
+                  )
 
-  class Meta:
-    model = Place
-    #depth = 1
-    fields = ('url','type','properties','geometry','names', 'types','links'
-                  ,'related','whens', 'descriptions', 'depictions','minmax'
-            )
 
 """ TEST TEST TEST TEST TEST TEST
   used for nearby queries in SpatialAPIView() from /api/spatial? 
@@ -511,54 +672,60 @@ class SearchDatabaseSerializer(serializers.HyperlinkedModelSerializer):
     SearchAPIView() from /api/db? 
     bbox queries in SpatialAPIView() from /api/spatial?
 """
+
+
 class LPFSerializer(serializers.Serializer):
-  names = PlaceNameSerializer(source="placename_set", many=True, read_only=True)
-  types = PlaceTypeSerializer(many=True, read_only=True)
-  links = PlaceLinkSerializer(many=True, read_only=True)
-  related = PlaceRelatedSerializer(many=True, read_only=True)
-  whens = PlaceWhenSerializer(many=True, read_only=True)
-  descriptions = PlaceDescriptionSerializer(many=True, read_only=True)
-  depictions = PlaceDepictionSerializer(many=True, read_only=True)
+    names = PlaceNameSerializer(source="placename_set", many=True, read_only=True)
+    types = PlaceTypeSerializer(many=True, read_only=True)
+    links = PlaceLinkSerializer(many=True, read_only=True)
+    related = PlaceRelatedSerializer(many=True, read_only=True)
+    whens = PlaceWhenSerializer(many=True, read_only=True)
+    descriptions = PlaceDescriptionSerializer(many=True, read_only=True)
+    depictions = PlaceDepictionSerializer(many=True, read_only=True)
 
-  # custom fields for LPF transform
-  type = serializers.SerializerMethodField('get_type')
-  def get_type(self, place) -> str:
-    return "Feature"
+    # custom fields for LPF transform
+    type = serializers.SerializerMethodField('get_type')
 
-  uri = serializers.SerializerMethodField('get_uri')
-  def get_uri(self, place) -> str:
-    return "https://whgazetteer.org/api/place/" + str(place.id)
+    def get_type(self, place) -> str:
+        return "Feature"
 
-  properties = serializers.SerializerMethodField('get_properties')
-  def get_properties(self, place) -> dict:
-    props = {
-      "place_id":place.id,
-      "dataset_label":place.dataset.label,
-      "dataset_title":place.dataset.title,
-      "dataset_uri":place.dataset.uri,
-      "src_id":place.src_id,
-      "title":place.title,
-      "ccodes":place.ccodes,
-      "fclasses":place.fclasses,
-      "minmax":place.minmax,
-      "timespans":place.timespans
-    }
-    return props
+    uri = serializers.SerializerMethodField('get_uri')
 
-  geometry = serializers.SerializerMethodField('get_geometry')
-  def get_geometry(self, place) -> dict:
+    def get_uri(self, place) -> str:
+        return "https://whgazetteer.org/api/place/" + str(place.id)
+
+    properties = serializers.SerializerMethodField('get_properties')
+
+    def get_properties(self, place) -> dict:
+        props = {
+            "place_id": place.id,
+            "dataset_label": place.dataset.label,
+            "dataset_title": place.dataset.title,
+            "dataset_uri": place.dataset.uri,
+            "src_id": place.src_id,
+            "title": place.title,
+            "ccodes": place.ccodes,
+            "fclasses": place.fclasses,
+            "minmax": place.minmax,
+            "timespans": place.timespans
+        }
+        return props
+
+    geometry = serializers.SerializerMethodField('get_geometry')
+
+    def get_geometry(self, place) -> dict:
         geometries_data = PlaceGeomSerializer(place.geoms.all(), many=True).data
-        print('geometries_data from PlaceGeomSerializer',geometries_data)
+        print('geometries_data from PlaceGeomSerializer', geometries_data)
         if len(geometries_data) == 1:
-          return geometries_data[0]
+            return geometries_data[0]
 
         return {
             "type": "GeometryCollection",
             "geometries": geometries_data
         }
 
-  class Meta:
-    model = Place
-    fields = ('uri','type','properties','geometry','names', 'types','links'
-                  ,'related','whens', 'descriptions', 'depictions', 'minmax'
-            )
+    class Meta:
+        model = Place
+        fields = ('uri', 'type', 'properties', 'geometry', 'names', 'types', 'links'
+                  , 'related', 'whens', 'descriptions', 'depictions', 'minmax'
+                  )
