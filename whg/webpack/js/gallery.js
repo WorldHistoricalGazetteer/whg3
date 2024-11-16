@@ -181,7 +181,7 @@ Promise.all([
     });
     // ['Dataset', 'Place', 'Student'].forEach(function(tab_checkbox) {
     ['Dataset', 'Place'].forEach(function (tab_checkbox) {
-        const icon = tab_checkbox == 'Dataset' ? 'fa-database' : 'fa-map-pin';
+        const icon = tab_checkbox == 'Dataset' ? 'fa-layer-group' : 'fa-map-pin';
         const labelWithIcon = `${tab_checkbox} <i class="fas ${icon}"></i>`;
         $checkbox_container.append(
             $('<label>', {
