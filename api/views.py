@@ -47,7 +47,8 @@ from accounts.permissions import IsOwnerOrReadOnly
 from api.serializers import (
     UserSerializer, DatasetSerializer, PlaceSerializer,
     PlaceTableSerializer, PlaceGeomSerializer, PlaceGeoFeatureSerializer, AreaSerializer,
-    FeatureSerializer, LPFSerializer, PlaceCompareSerializer, ErrorResponseSerializer)
+    FeatureSerializer, LPFSerializer, PlaceCompareSerializer, ErrorResponseSerializer,
+    GallerySerializer)
 from areas.models import Area
 from collection.models import Collection, CollPlace
 from datasets.models import Dataset
@@ -79,10 +80,11 @@ class BadRequestException(APIException):
 class GalleryView(ListAPIView):
     pagination_class = PageNumberPagination
     pagination_class.page_size = 6
+    serializer_class = GallerySerializer
 
     def get_queryset(self):
-        gallery_type = self.kwargs.get('type')
-        model = Collection if gallery_type == 'collections' else Dataset
+        self.gallery_type = self.kwargs.get('type')
+        model = Collection if self.gallery_type == 'collections' else Dataset
 
         filter = Q(public=True)
         if hasattr(model, 'core'):  # Omit "core" Datasets
@@ -96,7 +98,7 @@ class GalleryView(ListAPIView):
             if 'student' in class_list:
                 classfilters |= Q(nominated=True)
             filter &= classfilters
-        elif gallery_type == 'collections':
+        elif self.gallery_type == 'collections':
             return model.objects.none()
 
         # ADD TEXT FILTERS
@@ -146,26 +148,71 @@ class GalleryView(ListAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
 
-        # Paginate the data
-        paginator = self.pagination_class()
-        try:
-            page = paginator.paginate_queryset(queryset, request)
-        except PageNotAnInteger:
-            page = 1
-        except EmptyPage:
-            page = paginator.page.paginator.num_pages
+        # Paginate the data (DRF handles pagination)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            # Serialize the paginated data
+            serializer = self.get_serializer(page, many=True, model=Collection if self.gallery_type == 'collections' else Dataset)
+            serializer_data = serializer.data
+            return self.get_paginated_response(self.custom_response_format(serializer_data, queryset))
 
-        qs_list = [instance.carousel_metadata for instance in page]
-        qs_json = json.dumps(qs_list, default=str)
+        # Serialize the non-paginated data
+        serializer = self.get_serializer(page, many=True, model=Collection if self.gallery_type == 'collections' else Dataset)
+        return Response(self.custom_response_format(serializer.data, queryset))
 
-        response_data = {
-            'items': json.loads(qs_json),
+    def custom_response_format(self, serializer_data, queryset):
+        return {
+            'items': serializer_data,
             'total_items': queryset.count(),
-            'current_page': int(request.query_params.get('page', 1)),
-            'total_pages': paginator.page.paginator.num_pages,
+            'current_page': int(self.request.query_params.get('page', 1)),
+            'total_pages': (queryset.count() // self.pagination_class.page_size) + (1 if queryset.count() % self.pagination_class.page_size > 0 else 0),
         }
 
-        return JsonResponse(response_data, safe=False)
+    # def list(self, request, *args, **kwargs):
+    #     # Retrieve the queryset
+    #     queryset = self.get_queryset()
+    #
+    #     # Paginate the queryset (DRF handles pagination automatically)
+    #     page = self.paginate_queryset(queryset)
+    #     if page is not None:
+    #         serializer = self.get_serializer(page, many=True)
+    #         return self.get_paginated_response(serializer.data)
+    #
+    #     # If pagination is not applied, return all data
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)
+
+    # def list(self, request, *args, **kwargs):
+    #     queryset = self.get_queryset()
+    #
+    #     # Paginate the data
+    #     paginator = self.pagination_class()
+    #     try:
+    #         page = paginator.paginate_queryset(queryset, request)
+    #     except PageNotAnInteger:
+    #         page = 1
+    #     except EmptyPage:
+    #         page = paginator.page.paginator.num_pages
+    #
+    #     # Use the defined serializer class to serialize the data
+    #     serializer = self.get_serializer(page, many=True)
+    #
+    #     # Get the serialized data
+    #     serializer_data = serializer.data
+    #
+    #     # qs_list = [instance.carousel_metadata for instance in serializer_data]
+    #     # qs_json = json.dumps(qs_list, default=str)
+    #
+    #     qs_json = json.dumps(serializer_data, default=str)
+    #
+    #     response_data = {
+    #         'items': json.loads(qs_json),
+    #         'total_items': queryset.count(),
+    #         'current_page': int(request.query_params.get('page', 1)),
+    #         'total_pages': paginator.page.paginator.num_pages,
+    #     }
+    #
+    #     return JsonResponse(response_data, safe=False)
 
 
 class StandardResultsSetPagination(PageNumberPagination):

@@ -1,6 +1,11 @@
 from django import forms
 from django.db import models
+from django.template.loader import render_to_string
+from django.utils.functional import lazy
+
 from .models import Collection, CollectionGroup, CollectionLink
+
+render_tooltip = lazy(lambda: render_to_string('includes/tooltip_contributors.html'), str)
 
 class CollectionGroupModelForm(forms.ModelForm):
     # create and/or edit CollectionGroup
@@ -65,7 +70,7 @@ class CollectionModelForm(forms.ModelForm):
             'creator': forms.TextInput(attrs={
                 'size': 45,
                 'data-bs-toggle': 'tooltip',
-                'data-bs-title': 'Add a ; between multiple creators, and enclose organisation names in [square brackets].',
+                'data-bs-title': render_tooltip(),
             }),
             'contact': forms.TextInput(attrs={'size': 45}),
             'webpage': forms.TextInput(attrs={'size': 45}),
