@@ -1,5 +1,6 @@
 # api.serializers.py
 import re
+from html import escape
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -100,38 +101,47 @@ class GallerySerializer(serializers.HyperlinkedModelSerializer):
     def get_authors(self, obj):
         csl = obj.citation_csl
         if csl:
-            # Convert CSL JSON to dictionary
-            csl_dict = json.loads(csl)
-            formatted_authors = []
+            try:
+                # Convert CSL JSON to dictionary
+                csl_dict = json.loads(csl)
+                formatted_authors = []
 
-            for index, author in enumerate(csl_dict.get('author', [])):
-                if isinstance(author, dict):  # Check if author is a dictionary
-                    if 'family' in author:
-                        # Add a space only if both given and family names exist
-                        this_author = f"{author.get('given', '')}{' ' if author.get('given') and author.get('family') else ''}{author.get('family', '')}"
-                        # Wrap the first author in an ORCID link if ORCID is present
-                        if index == 0 and 'ORCID' in author:
-                            this_author = f'<a data-bs-toggle="tooltip" data-bs-title="Click to see author\'s ORCiD record" href="https://orcid.org/{author["ORCID"]}" target="_blank">{this_author}</a>'
+                for index, author in enumerate(csl_dict.get('author', [])):
+                    if isinstance(author, dict):  # Check if author is a dictionary
+                        if 'family' in author:
+                            # Add a space only if both given and family names exist
+                            this_author = f"{author.get('given', '')}{' ' if author.get('given') and author.get('family') else ''}{author.get('family', '')}"
+                            # Wrap the first author in an ORCID link if ORCID is present
+                            if index == 0 and 'ORCID' in author:
+                                this_author = f'<a data-bs-toggle="tooltip" data-bs-title="Click to see author\'s ORCiD record" href="https://orcid.org/{author["ORCID"]}" target="_blank">{this_author}</a>'
+                        else:
+                            # Handle organizations or other literal cases
+                            this_author = author.get('literal', '<i>Unknown Author</i>')
+                    elif isinstance(author, str):  # Handle cases where author is a string
+                        this_author = author
                     else:
-                        # Handle organizations or other literal cases
-                        this_author = author.get('literal', 'Unknown Author')
-                elif isinstance(author, str):  # Handle cases where author is a string
-                    this_author = author
+                        this_author = '<i>Unknown Author</i>'
+
+                    formatted_authors.append(this_author)
+
+                if isinstance(formatted_authors, list) and formatted_authors:
+                    # Get the first author and remove from the list
+                    authors = formatted_authors.pop(0)
+
+                    # If any remain, build a tooltip with all authors
+                    if formatted_authors:
+                        tooltip_authors = escape(', '.join(formatted_authors))
+                        authors += f""" <span data-bs-toggle="tooltip" data-bs-title="{tooltip_authors}"><i>et al.</i></span>"""
+
+                    return authors
                 else:
-                    this_author = 'Unknown Author'
+                    return "<i>Unknown Author</i>"
 
-                formatted_authors.append(this_author)
+            except (json.JSONDecodeError, KeyError):
+                # Handle cases where the citation_csl is not valid JSON or lacks expected keys
+                return "<i>Unknown Author</i>"
 
-            # Return the first author, appending 'et al.' if there are multiple authors
-            if len(formatted_authors) > 1:
-                # Create a tooltip with all authors
-                tooltip_authors = ', '.join(formatted_authors[1:])
-                return f"""{formatted_authors[0]} 
-                           <span data-bs-toggle="tooltip" data-bs-title="{tooltip_authors}"><i>et al.</i></span>"""
-            else:
-                return formatted_authors[0]
-
-        return "Unknown Author"
+        return "<i>Unknown Author</i>"
 
     def get_ds_or_c_id(self, obj):
         return obj.id
@@ -152,7 +162,7 @@ class GallerySerializer(serializers.HyperlinkedModelSerializer):
             return f"/api/featureCollection/?id={obj.id}&mode={obj.display_mode or ''}"
 
     class Meta:
-        model = Dataset # May be overridden by __init__ and changed to Collection
+        model = Dataset  # May be overridden by __init__ and changed to Collection
         fields = (
             'title',
             'image_file',
