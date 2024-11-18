@@ -21,7 +21,7 @@ from areas.models import Area
 from collection.models import Collection, CollPlace
 from datasets.models import Dataset
 from datasets.utils import makeNow
-from main.models import DownloadFile, Log
+from main.models import DownloadFile, Log, Comment
 from places.models import Place
 from whgmail.messaging import WHGmail
 
@@ -286,10 +286,12 @@ def make_download(self, *args, **kwargs):
             )
 
             logger.info(f"Download file for {total_operations} places in {colltitle}")
+            citation = coll.citation_csl
             result = {
                 "type": "FeatureCollection",
                 "features": features_sorted,
                 "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
+                "citation": json.loads(citation) if citation else {},
                 "filename": "/" + fn,
             }
 
@@ -464,6 +466,14 @@ def make_download(self, *args, **kwargs):
                             "src_id": p.src_id,
                             "title": p.title,
                             "ccodes": p.ccodes,
+                            "comment": [
+                                {
+                                    "user": c.user.display_name,
+                                    "note": c.note,
+                                    "created": c.created.isoformat(),
+                                }
+                                for c in Comment.objects.filter(place_id=p)
+                            ],
                         },
                         "geometry": geometry,
                         "names": [n.jsonb for n in p.names.all()],
@@ -482,9 +492,12 @@ def make_download(self, *args, **kwargs):
 
                 logger.info(f"Download file for {total_operations} places")
 
+                citation = ds.citation_csl
+
                 result = {
                     "type": "FeatureCollection",
                     "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
+                    "citation": json.loads(citation) if citation else {},
                     "filename": "/" + fn,
                     "description": ds.description,
                     "features": features,
