@@ -13,8 +13,6 @@ export function formatAuthors(csl) {
         return "<i>Unknown Author</i>";
     }
 
-    console.log(csl);
-
     const formattedAuthors = csl.author.map((author, index) => {
         let thisAuthor = '';
 

@@ -241,63 +241,6 @@ def mapdata_dataset(id, task_id=None, chunk_size=1000):
     }
 
 
-# def mapdata_dataset(id, task_id=None):
-#     ds = get_object_or_404(Dataset, pk=id)
-#
-#     places = ds.places.prefetch_related(
-#         Prefetch('geoms', queryset=PlaceGeom.objects.only('jsonb'))
-#     ).values('id', 'title', 'fclasses', 'review_wd', 'review_tgn', 'review_whg', 'minmax').order_by('id')
-#
-#     extent = buffer_extent(ds.places.aggregate(Extent('geoms__geom')).get('geoms__geom__extent'))
-#
-#     # Initialize Redis key if task_id is provided
-#     if task_id:
-#         redis_client = get_redis_client()
-#         redis_client.hset(task_id, 'mapdata_start_time', timezone.now().isoformat())
-#         redis_client.hset(task_id, 'queued_features', ds.numrows)
-#
-#     features = []
-#     for index, place in enumerate(places):
-#         geometries = place.geoms.all()
-#         feature = {
-#             "type": "Feature",
-#             "properties": {
-#                 "pid": place.id,
-#                 "title": place.title,
-#                 "fclasses": place.fclasses,
-#                 "review_wd": place.review_wd,
-#                 "review_tgn": place.review_tgn,
-#                 "review_whg": place.review_whg,
-#                 "min": "null" if place.minmax is None or place.minmax[0] is None else place.minmax[0],
-#                 "max": "null" if place.minmax is None or place.minmax[1] is None else place.minmax[1],
-#             },
-#             "geometry": geometries[0].jsonb if len(geometries) == 1
-#             else (
-#                 None if len(geometries) == 0
-#                 else {
-#                     "type": "GeometryCollection",
-#                     "geometries": [geo.jsonb for geo in geometries]
-#                 }
-#             ),
-#             "id": index  # Required for MapLibre conditional styling
-#         }
-#         features.append(feature)
-#
-#         if task_id:
-#             redis_client.hincrby(task_id, 'queued_features', -1)
-#
-#     return {
-#         "title": ds.title,
-#         "contributors": ds.contributors,
-#         "citation": ds.citation,
-#         "creator": ds.creator,
-#         "minmax": ds.minmax,
-#         "extent": extent,
-#         "type": "FeatureCollection",
-#         "features": features,
-#     }
-
-
 def mapdata_collection(id):
     collection = get_object_or_404(Collection, id=id)
 
@@ -462,6 +405,12 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
 
     # Add places to the feature collection
     for index, place_info in enumerate(places_info):
+        # Set relation (used to colourise markers) as the dataset ID(s) joined by hyphen
+        relation = "-".join([str(dataset.id) for dataset in collection.datasets.filter(places=place_info['pid'])])
+
+        # Add the relation to the place_info dictionary before constructing the feature
+        place_info["relation"] = relation
+
         feature = {
             "type": "Feature",
             "geometry": place_info.pop('geometry'),
