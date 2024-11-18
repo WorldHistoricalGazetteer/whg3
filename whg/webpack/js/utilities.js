@@ -147,11 +147,20 @@ export function arrayColors(strings) {
 }
 
 export function colorTable(arrayColors, target, labels = null, multiDataset = false, ds_id = null, mappy = null) {
-    const colorKeyTable = $('<table>').addClass('color-key-table');
+    const colorKeyTable = $('<table>').addClass('color-key-table expanded');
     const tableBody = $('<tbody>');
 
+    // Add a header row
+    const headerRow = $('<tr>');
+    const headerCell = $('<th>')
+        .attr('colspan', 2)
+        .css({fontSize: '10px'})
+        .html('<span id="keyLabel">KEY</span><i id="keySlider" class="fas fa-arrow-circle-right"></i>');
+    headerRow.append(headerCell);
+    tableBody.append(headerRow);
+
     function fancyLabel(id, label) {
-        return `<a href="/datasets/${id}/places" target= "_blank" data-bs-toggle="tooltip" data-bs-title="Click to go to page for this dataset.">${label}</a>`;
+        return `<a href="/datasets/${id}/places" target= "_blank" data-bs-toggle="tooltip" data-bs-title="<b>Open the <i>${label}</i> dataset in a new tab.</b><br><small>Click the coloured marker on the left to hide/reveal the associated map markers.</small>">${label}</a>`;
     }
 
     for (let i = 0; i < arrayColors.length - (multiDataset ? 0 : 2); i += 2) {
@@ -174,6 +183,14 @@ export function colorTable(arrayColors, target, labels = null, multiDataset = fa
 
     colorKeyTable.append(tableBody);
     $(target).append(colorKeyTable);
+
+    $('#keySlider')
+        .attr('data-bs-toggle', 'tooltip')
+        .attr('data-bs-title', 'Click to hide/reveal key.')
+        .click(function () {
+            colorKeyTable.toggleClass('expanded');
+            // $('#colorKeyTable').toggle();
+        });
 
     // For dataset collections add click event to each color swatch
     $('div.dataset-selector').click(function () {
@@ -209,8 +226,7 @@ export function colorTable(arrayColors, target, labels = null, multiDataset = fa
                 console.log('Existing filter:', structuredClone(existingFilter));
                 if (existingFilter[0] === '==') {
                     existingFilter = ['all', existingFilter, filter];
-                }
-                else existingFilter[existingFilter.length - 1] = filter; // Replace the dataset filter
+                } else existingFilter[existingFilter.length - 1] = filter; // Replace the dataset filter
                 console.log('Existing filter:', structuredClone(existingFilter));
                 mappy.setFilter(layer.id, existingFilter); // Update the filter
             });
@@ -218,7 +234,7 @@ export function colorTable(arrayColors, target, labels = null, multiDataset = fa
     }).each(function () {
         $(this)
             .attr('data-bs-toggle', 'tooltip')
-            .attr('data-bs-title', 'Click to toggle visibility of this dataset.');
+            .attr('data-bs-title', 'Click to toggle visibility of this dataset\'s map markers.');
     });
 
 }
