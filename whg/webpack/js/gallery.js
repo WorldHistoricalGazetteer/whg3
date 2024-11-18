@@ -331,6 +331,8 @@ Promise.all([
                 const disabled = eval($(this).data('disability'));
                 $(this).data('page', eval($(this).data('click-page'))).attr('disabled', disabled).attr('title', $(this).data('titles')[disabled ? 1 : 0]).attr('aria-label', $(this).data('titles')[disabled ? 1 : 0]);
             });
+            // Toggle disabled state of place_checkbox and dataset_checkbox
+            $('.checkbox-label input').prop('disabled', datacollection !== 'collections');
         }).catch(error => {
             console.error('Fetch error:', error);
         })
@@ -364,8 +366,6 @@ Promise.all([
 
     $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function () {
         datacollection = $(this).attr('href').substring(1);
-        // Toggle disabled state of place_checkbox and dataset_checkbox
-        $('.checkbox-label input').prop('disabled', datacollection !== 'collections');
         fetchData();
     });
 
