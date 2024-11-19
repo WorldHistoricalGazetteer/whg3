@@ -8,6 +8,8 @@ import {
     CountryCacheFeatureCollection,
 } from './countryCache';
 
+import {formatAuthors} from './authors';
+
 import '../css/gallery.scss';
 
 let mappy = new whg_maplibre.Map({
@@ -79,6 +81,7 @@ function buildGallery(datacollections) {
     } else {
         datacollections.forEach(dc => {
             const truncatedDescription = truncateAfterSpace(dc.description, 250);
+            const authors = formatAuthors(dc.citation_csl);
             const dsCard = $(`
 	            <div data-bs-toggle="tooltip" data-bs-custom-class="custom-tooltip-red" title="View publication page" class="ds-card-container col-md-4 mt-1">
 	              <div class="ds-card-gallery">
@@ -90,7 +93,7 @@ function buildGallery(datacollections) {
 	                  </span>
 	                  <h6 class="ds-card-title strong-red">${dc.title}</h6>
 	                  <div class="ds-card-inner">
-	                  	<p class="ds-card-creator"><i>Created by</i>: ${dc.authors}</p>
+	                  	<p class="ds-card-creator"><i>Created by</i>: ${authors}</p>
 	                    <p class="ds-card-blurb my-1">
 	                    	${dc.image_file == null ? '' : `<img src="${dc.image_file}" width="60" class="float-end">`}
 	                        ${truncatedDescription}
@@ -103,7 +106,7 @@ function buildGallery(datacollections) {
                 .data({
                     id: dc.ds_or_c_id,
                     type: dc.type,
-                    contributors: dc.authors,
+                    contributors: authors,
                     mode: dc.display_mode,
                     geometry_url: dc.geometry_url,
                     url: dc.url,
@@ -331,6 +334,8 @@ Promise.all([
                 const disabled = eval($(this).data('disability'));
                 $(this).data('page', eval($(this).data('click-page'))).attr('disabled', disabled).attr('title', $(this).data('titles')[disabled ? 1 : 0]).attr('aria-label', $(this).data('titles')[disabled ? 1 : 0]);
             });
+            // Toggle disabled state of place_checkbox and dataset_checkbox
+            $('.checkbox-label input').prop('disabled', datacollection !== 'collections');
         }).catch(error => {
             console.error('Fetch error:', error);
         })
@@ -364,8 +369,6 @@ Promise.all([
 
     $('a[data-bs-toggle="tab"]').on('shown.bs.tab', function () {
         datacollection = $(this).attr('href').substring(1);
-        // Toggle disabled state of place_checkbox and dataset_checkbox
-        $('.checkbox-label input').prop('disabled', datacollection !== 'collections');
         fetchData();
     });
 

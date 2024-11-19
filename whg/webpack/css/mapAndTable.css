@@ -288,6 +288,54 @@
     left: 0px;
     top: 40px;
     background-color: rgb(255 255 255 / 75%);
+    border-radius: 8px;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, .1);
+}
+
+.color-key-table #keyLabel {
+    margin-left: 2px;
+}
+
+.color-key-table i.fa-arrow-circle-right {
+    float: inline-end;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.color-key-table.expanded i.fa-arrow-circle-right {
+    rotate: 180deg;
+}
+
+.color-key-table td:nth-child(2) {
+    white-space: nowrap; /* Prevents wrapping to the next line */
+    overflow: hidden;    /* Hides overflowed content */
+    text-overflow: ellipsis;
+    padding-left: 0;
+    max-width: 250px;
+    opacity: 1;
+    transition: max-width 0.3s ease, opacity 0.3s ease;
+}
+
+.color-key-table:not(.expanded) td:nth-child(2) {
+    max-width: 0px;
+    opacity: 0;
+}
+
+.color-key-table:not(.expanded) #keyLabel {
+    display: none;
+}
+
+.color-key-table .dataset-selector {
+    cursor: pointer;
+}
+
+.color-key-table tr.disabled {
+	opacity: 0.3;
+}
+
+.color-key-table tr.disabled a {
+    pointer-events: none;
+	cursor: not-allowed;
 }
 
 .color-key-table td {
@@ -296,8 +344,8 @@
 
 .color-key-table .color-swatch {
 	border-radius: 50%;
-    width: .5rem;
-    height: .5rem;
+    width: .8rem;
+    height: .8rem;
     /*width: 1rem;*/
     /*height: 1rem;*/
 }

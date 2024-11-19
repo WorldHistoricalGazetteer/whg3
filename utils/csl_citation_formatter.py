@@ -47,6 +47,8 @@ def csl_citation(self):
         if hasattr(self, 'collection_class') and self.collection_class == 'dataset':
             # Access the related datasets for this collection
             objects = self.datasets.all()  # Get all related datasets
+            # Push self to front of list to include the collection metadata
+            objects = [self] + list(objects)
         else:
             objects = [self]  # Otherwise, just process the current object (self)
 
