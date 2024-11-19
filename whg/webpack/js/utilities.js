@@ -173,6 +173,7 @@ export function colorTable(arrayColors, target, labels = null, multiDataset = fa
         const colorSwatch = $('<div>')
             .addClass('color-swatch')
             .toggleClass('dataset-selector', labels ? true : false)
+            .data('label', labels ? labels[i / 2] : null)
             .data('dataset', labels ? arrayColors[i] : null);
         colorSwatch.css('background-color', color);
         colorCell.append(colorSwatch);
@@ -217,24 +218,20 @@ export function colorTable(arrayColors, target, labels = null, multiDataset = fa
 
         const filter = ['in', 'relation', ...visibleDatasets];
 
-        console.log('Layers:', mappy.getStyle().layers);
-
         mappy.getStyle().layers
             .filter(layer => layer.id.startsWith(ds_id))
             .forEach(layer => {
                 let existingFilter = mappy.getFilter(layer.id);
-                console.log('Existing filter:', structuredClone(existingFilter));
                 if (existingFilter[0] === '==') {
                     existingFilter = ['all', existingFilter, filter];
                 } else existingFilter[existingFilter.length - 1] = filter; // Replace the dataset filter
-                console.log('Existing filter:', structuredClone(existingFilter));
                 mappy.setFilter(layer.id, existingFilter); // Update the filter
             });
 
     }).each(function () {
         $(this)
             .attr('data-bs-toggle', 'tooltip')
-            .attr('data-bs-title', 'Click to toggle visibility of this dataset\'s map markers.');
+            .attr('data-bs-title', `${$(this).data('label') ? `<b>${$(this).data('label')}</b><br>` : ''}<i>Click to toggle visibility of this dataset\'s map markers.</i>`);
     });
 
 }
