@@ -163,7 +163,7 @@ export function colorTable(arrayColors, target, labels = null, multiDataset = fa
         return `<a href="/datasets/${id}/places" target= "_blank" data-bs-toggle="tooltip" data-bs-title="<b>Open the <i>${label}</i> dataset in a new tab.</b><br><small>Click the coloured marker on the left to hide/reveal the associated map markers.</small>">${label}</a>`;
     }
 
-    for (let i = 0; i < arrayColors.length - (multiDataset ? 0 : 2); i += 2) {
+    for (let i = 0; i < arrayColors.length - (multiDataset.length > 0 ? 0 : 2); i += 2) {
         const label = i == arrayColors.length - 2 ?
             labels ? '<i>various</i>' : '<i>other</i>' :
             labels ? fancyLabel(arrayColors[i], labels[i / 2]) : arrayColors[i];
@@ -174,7 +174,7 @@ export function colorTable(arrayColors, target, labels = null, multiDataset = fa
             .addClass('color-swatch')
             .toggleClass('dataset-selector', labels ? true : false)
             .data('label', labels ? labels[i / 2] : null)
-            .data('dataset', labels ? arrayColors[i] : null);
+            .data('dataset', labels ? (multiDataset.length > 0 && i === arrayColors.length - (multiDataset.length > 0 ? 0 : 2) - 2 ? multiDataset : arrayColors[i]) : null);
         colorSwatch.css('background-color', color);
         colorCell.append(colorSwatch);
         const labelCell = $('<td>').html(label);
