@@ -2,6 +2,7 @@
 from functools import reduce
 
 from django.contrib.gis.geos import Polygon, MultiPolygon
+from django.core.cache import caches
 from django.db import models, transaction
 from django.db.models.signals import pre_delete, pre_save, post_save
 from django.dispatch import receiver
@@ -28,6 +29,22 @@ def handle_collection_bbox(sender, instance, **kwargs):
 
     else:
         instance.bbox = None
+
+
+@receiver(pre_save, sender=Collection)
+def check_featured_field_change(sender, instance, **kwargs):
+    """
+    Signal handler to detect if the 'featured' field has been changed.
+    """
+    if instance.pk:
+        try:
+            existing_instance = sender.objects.get(pk=instance.pk)
+            # Check if the 'featured' field has changed
+            if existing_instance.featured != instance.featured:
+                caches['property_cache'].delete(f"collection:{instance.pk}:carousel_metadata")
+                caches['property_cache'].delete(f"collection:{instance.pk}:citation_csl")
+        except sender.DoesNotExist:
+            pass
 
 
 # if public changes to True & size threshold met, create tileset

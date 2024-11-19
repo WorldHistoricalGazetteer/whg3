@@ -5,6 +5,7 @@ import requests
 from django.conf import settings
 from django.contrib.gis.db.models import Extent
 from django.contrib.gis.geos import Polygon
+from django.core.cache import caches
 from django.db import transaction
 from django.db.models.signals import pre_delete, pre_save, post_save
 from django.dispatch import receiver
@@ -74,6 +75,22 @@ def handle_dataset_bbox(sender, instance, **kwargs):
 
     if extent:
         instance.bbox = Polygon.from_bbox(extent)
+
+
+@receiver(pre_save, sender=Dataset)
+def check_featured_field_change(sender, instance, **kwargs):
+    """
+    Signal handler to detect if the 'featured' field has been changed.
+    """
+    if instance.pk:
+        try:
+            existing_instance = sender.objects.get(pk=instance.pk)
+            # Check if the 'featured' field has changed
+            if existing_instance.featured != instance.featured:
+                caches['property_cache'].delete(f"dataset:{instance.pk}:carousel_metadata")
+                caches['property_cache'].delete(f"dataset:{instance.pk}:citation_csl")
+        except sender.DoesNotExist:
+            pass
 
 
 @receiver(pre_save, sender=Dataset)

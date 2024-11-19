@@ -363,7 +363,15 @@ CACHES = {
         'OPTIONS': {
             'MAX_ENTRIES': 1000,
         },
-    }
+    },
+    'property_cache': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://redis:6379/1',  # 0 is used by Celery
+        'TIMEOUT': 604800, # Default cache timeout (1 week)
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        },
+    },
 }
 
 SITEMAP_CACHE = 'sitemap_cache'

@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.gis.db import models as geomodels
+from django.core.cache import caches
 from django.core.validators import URLValidator
 from django.db import models
 from django.db.models import Q, JSONField, Func, CharField, Exists, OuterRef, Subquery
@@ -150,7 +151,14 @@ class Collection(models.Model):
 
     @property
     def citation_csl(self):
-        return csl_citation(self)
+        cached_value = caches['property_cache'].get(f"collection:{self.pk}:citation_csl")
+        if cached_value:
+            return cached_value
+
+        result = csl_citation(self)
+        caches['property_cache'].set(f"collection:{self.pk}:citation_csl", result, timeout=None)
+
+        return result
 
     def get_absolute_url(self):
         # return reverse('datasets:dashboard', kwargs={'id': self.id})
@@ -158,7 +166,14 @@ class Collection(models.Model):
 
     @property
     def carousel_metadata(self):
-        return carousel_metadata(self)
+        cached_value = caches['property_cache'].get(f"collection:{self.pk}:carousel_metadata")
+        if cached_value:
+            return cached_value
+
+        result = carousel_metadata(self)
+        caches['property_cache'].set(f"collection:{self.pk}:carousel_metadata", result, timeout=None)
+
+        return result
 
     @property
     def clustered_geometries(self):

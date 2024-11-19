@@ -46,6 +46,7 @@ django-maintenance-mode
 django-mathfilters==0.4.0
 django-multiselectfield==0.1.12
 django-ranged-response==0.2.0
+django-redis==5.4.0
 django-resized==0.3.11
 django-shapeshifter==18.9.23
 django-simple-captcha==0.5.13
