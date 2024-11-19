@@ -20,9 +20,6 @@ from django.views.decorators.csrf import csrf_exempt
 
 
 def annotate(request, *args, **kwargs):
-    print('request.POST', request.POST)
-    print('request.FILES', request.FILES)
-    print('traces.annotate() kwargs', kwargs)
     cid = kwargs.get('id')
     pid = request.POST.get('place')
     anno_id = request.POST.get('anno_id')
@@ -32,14 +29,12 @@ def annotate(request, *args, **kwargs):
 
     if anno_id:
         # form with instance
-        print('has anno_id')
         traceanno = TraceAnnotation.objects.get(id=anno_id)
         form = TraceAnnotationModelForm(request.POST, request.FILES, instance=traceanno)
         traceanno.saved = True
         traceanno.save()
         # form = TraceAnnotationModelForm(request.POST)
     else:
-        print('no anno_id')
         form = TraceAnnotationModelForm(request.POST, request.FILES)
     # print('form.cleaned_fields', form.cleaned_fields)
 

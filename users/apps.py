@@ -7,4 +7,3 @@ class UsersConfig(AppConfig):
 
     def ready(self):
         import users.signals  # noqa
-        print(users.signals)
