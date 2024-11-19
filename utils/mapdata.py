@@ -21,7 +21,7 @@ import os, requests, time, json
 import redis
 import logging
 
-logger = logging.getLogger('validation')
+logger = logging.getLogger('mapdata')
 
 
 def get_redis_client():
@@ -39,7 +39,7 @@ def mapdata_task(category, id, variant=None, refresh=False):
 
 def reset_standard_mapdata(category, id):
     # This will generate standard mapdata and also delete any existing standard or tileset mapdata cache
-    print(f"Resetting standard mapdata for {category}-{id}.")
+    logger.debug(f"Resetting standard mapdata for {category}-{id}.")
     mapdata_task.delay(category, id, 'standard', 'refresh')
 
 
@@ -49,13 +49,13 @@ def mapdata(request, category, id, variant='standard', refresh='false'):  # vari
         variant = 'standard'
     # Generate cache key
     cache_key = f"{category}-{id}-{variant}"
-    print(f"Mapdata requested for {cache_key} (refresh={refresh}).")
+    logger.debug(f"Mapdata requested for {cache_key} (refresh={refresh}).")
 
     # Check if cached data exists and return it if found
     if refresh == False:
         cached_data = cache.get(cache_key)
         if cached_data is not None:
-            print("Found cached mapdata.")
+            logger.debug("Found cached mapdata.")
             return JsonResponse(cached_data, safe=False, json_dumps_params={'ensure_ascii': False})
 
     # Ensure that cache will be refreshed
@@ -73,14 +73,14 @@ def mapdata(request, category, id, variant='standard', refresh='false'):  # vari
 
         if response.status_code == 200:
             available_tilesets = response.json().get('tilesets', [])
-            print("available_tilesets", available_tilesets)
+            logger.debug("available_tilesets", available_tilesets)
 
     # Determine feature collection generation based on category
     mapdata_result = mapdata_dataset(id) if category == "datasets" else mapdata_collection(id)
 
     end_time = time.time()  # Record the end time
     response_time = end_time - start_time  # Calculate the response time
-    print(f"Mapdata generation time: {response_time:.2f} seconds")
+    logger.debug(f"Mapdata generation time: {response_time:.2f} seconds")
 
     def reduced_geometry(mapdata_result):
         mapdata_result["features"] = [
@@ -91,7 +91,7 @@ def mapdata(request, category, id, variant='standard', refresh='false'):  # vari
         return mapdata_result
 
     if variant == "tileset":
-        print(f"Splitting and caching mapdata.")
+        logger.debug(f"Splitting and caching mapdata.")
 
         # Reduce feature properties in mapdata to be fetched by tiler
         mapdata_tileset = mapdata_result.copy()
@@ -109,11 +109,11 @@ def mapdata(request, category, id, variant='standard', refresh='false'):  # vari
         cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata_result))
 
     elif response_time > 1:  # Cache if generation time exceeds 1 second
-        print(f"Caching standard mapdata.")
+        logger.debug(f"Caching standard mapdata.")
         cache.set(f"{category}-{id}-standard",
                   reduced_geometry(mapdata_result) if available_tilesets else mapdata_result)
     else:
-        print(f"No need to cache mapdata.")
+        logger.debug(f"No need to cache mapdata.")
 
     return JsonResponse(mapdata_result, safe=False, json_dumps_params={'ensure_ascii': False})
 
@@ -286,7 +286,7 @@ def mapdata_collection_place(collection, feature_collection):
                     geometry_collection = json.loads(
                         GeometryCollection(centroid if centroid else unioned_geometry).geojson)
                 except (TypeError, ValueError) as e:
-                    print(f"Trying alternative geometry collection tranformation for place {place.id}: {e}",
+                    logger.debug(f"Trying alternative geometry collection tranformation for place {place.id}: {e}",
                           unioned_geometry)
                     geometry_collection = json.loads(
                         GeometryCollection(centroid if centroid else list(unioned_geometry)).geojson)
@@ -328,7 +328,7 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
         Q(place_a__in=collection_places_all) & Q(place_b__in=collection_places_all)
     ).values_list('place_a_id', 'place_b_id'))
     # close_matches = list( CloseMatch.objects.filter(Q(place_a__in=cpa) & Q(place_b__in=cpa)).values_list('place_a_id', 'place_b_id') )
-    print(close_matches)
+    logger.debug(close_matches)
 
     # Create a graph if there are close matches, otherwise, an empty graph
     G = nx.Graph(close_matches) if close_matches else nx.Graph()
@@ -339,10 +339,10 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
     unmatched_places = collection_places_all.exclude(id__in=G.nodes).prefetch_related('geoms').order_by('id')
     # unmatched_places = cpa.exclude(id__in=G.nodes).prefetch_related('geoms').order_by('id')
 
-    print(
+    logger.debug(
         f"Collection {collection.id}: {collection_places_all.count()} places sorted into {len(families)} families and {len(unmatched_places)} unmatched.")
 
-    # print(f"Collection {collection.id}: {cpa.count()} places sorted into {len(families)} families and {len(unmatched_places)} unmatched.")
+    # logger.debug(f"Collection {collection.id}: {cpa.count()} places sorted into {len(families)} families and {len(unmatched_places)} unmatched.")
 
     # Helper function to aggregate place information
     def aggregate_place_info(place):
@@ -354,7 +354,7 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
                 try:
                     geometry_collection = json.loads(GeometryCollection(unioned_geometry).geojson)
                 except (TypeError, ValueError) as e:
-                    print(f"Trying alternative geometry collection tranformation for place {place.id}: {e}",
+                    logger.debug(f"Trying alternative geometry collection tranformation for place {place.id}: {e}",
                           unioned_geometry)
                     geometry_collection = json.loads(GeometryCollection(list(unioned_geometry)).geojson)
         place_min, place_max = place.minmax or (None, None)
@@ -397,7 +397,7 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
 
         family_info = aggregate_place_info(family_place)
         places_info.append(family_info)
-        print(f"Aggregated places {family_info['id']}")
+        logger.debug(f"Aggregated places {family_info['id']}")
 
     # Sort places by ID (ensure all IDs are strings)
     places_info.sort(key=lambda x: x['id'])
@@ -405,11 +405,19 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
 
     # Add places to the feature collection
     for index, place_info in enumerate(places_info):
-        # Set relation (used to colourise markers) as the dataset ID(s) joined by hyphen
-        relation = "-".join([str(dataset.id) for dataset in collection.datasets.filter(places=place_info['pid'])])
+        # Extract the pids and split on '-' if necessary
+        pid_values = place_info['pid'].split('-') if isinstance(place_info['pid'], str) else [place_info['pid']]
 
-        # Add the relation to the place_info dictionary before constructing the feature
-        place_info["relation"] = relation
+        # Set relation (used to colourise markers) as the dataset ID(s) joined by hyphen
+        place_info["relation"] = "-".join([
+            str(dataset.id)
+            for pid in pid_values
+            if pid.isdigit()
+            for dataset in collection.datasets.filter(places=int(pid))
+        ])
+        invalid_pids = [pid for pid in pid_values if not pid.isdigit()]
+        for pid in invalid_pids:
+            logger.error(f"Invalid place ID: {pid}")
 
         feature = {
             "type": "Feature",

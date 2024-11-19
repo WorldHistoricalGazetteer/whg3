@@ -8,7 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import BadHeaderError
 from django.db.models import Q
 from django.db.models.functions import Lower
-from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponseForbidden
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect, HttpResponseForbidden, HttpResponseServerError
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
@@ -801,50 +801,6 @@ def server_error_view(request):
         # In case rendering the error page fails, return a plain HTTP response
         return HttpResponseServerError('An unexpected error occurred and we were unable to handle it properly.')
 
-
-# def server_error_view(request, exception=None):
-#   import traceback
-#   # Capture request details
-#   url = request.build_absolute_uri()
-#   method = request.method
-#   headers = dict(request.headers)
-#   body = request.body.decode('utf-8', errors='replace')
-#
-#   # Capture exception details
-#   exc_type = type(exception).__name__ if exception else 'N/A'
-#   exc_message = str(exception) if exception else 'N/A'
-#   tb = traceback.format_exc()
-#
-#   # Send the email with details
-#   # new_emailer(
-#   #   email_type='500_error',
-#   #   subject='Server error',
-#   #   from_email=settings.DEFAULT_FROM_EMAIL,
-#   #   to_email=settings.EMAIL_TO_ADMINS,  # a list in settings
-#   #   username=request.user.username if request.user.is_authenticated else 'Anonymous',
-#   #   url=url,
-#   #   method=method,
-#   #   headers=headers,
-#   #   body=body,
-#   #   exc_type=exc_type,
-#   #   exc_message=exc_message,
-#   #   traceback=tb,
-#   # )
-#
-#   return render(request, "main/500.html", {'error': 'fubar'}, status=500)
-
-
-# def server_error_view(request, exception=None):
-#     print('500 error request', request.GET.__dict__)
-#     new_emailer(
-#       email_type='500_error',
-#       subject='Server error',
-#       from_email=settings.DEFAULT_FROM_EMAIL,
-#       to_email=settings.EMAIL_TO_ADMINS,
-#       username=request.user.username,
-#     )
-#     return render(request, "main/500.html", {'error':'fubar'})
-
 def custom_404(request, exception):
     print('404 error request', request.GET.__dict__)
     return render(request, 'main/404.html', {}, status=404)
@@ -974,117 +930,6 @@ def volunteer_view(request):
 
     return render(request, 'volunteer.html', {'form': form})
 
-
-# # contact form used throughout
-# def contact_view(request):
-#   sending_url = request.GET.get('from')
-#   initial_subject = request.GET.get('subject', None)
-#   dataset_id = request.GET.get('dataset_id', None)
-#   dataset = Dataset.objects.get(id=dataset_id) if dataset_id else None
-#   is_volunteer = False
-#   if sending_url == '/datasets/volunteer_requests/' and dataset:
-#     is_volunteer = True
-#   print('contact_view() sending_url:', sending_url)
-#   print('dataset:', dataset.title if dataset else None)
-#   if request.method == 'GET':
-#     if is_volunteer:
-#       user_email = request.user.email
-#       username = request.user.username
-#       name = request.user.first_name  # or another field that stores the user's name
-#       owner_greeting = dataset.owner.name if dataset.owner.name else dataset.owner.username
-#       # Send the volunteer offer emails here
-#       try:
-#         # message to dataset owner, cc editors
-#         new_emailer(
-#           email_type='volunteer_offer_owner',
-#           subject=f'WHG volunteer offer',
-#           from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt to admins
-#           to_email=[dataset.owner.email],  # to ds owner
-#           reply_to=[user_email],  # owner replies to user
-#           owner_name=dataset.owner.name,  # owner's name
-#           name=name,  # user's name
-#           greeting_name=name if name else username,
-#           username=username,  # user's username
-#           user_subject=initial_subject,  # user-submitted subject
-#           user_email=user_email,  # user's email
-#           dataset_title=dataset.title,
-#           dataset_id=dataset.id,
-#         )
-#         # 'received' reply to sender
-#         new_emailer(
-#           email_type='volunteer_offer_user',
-#           subject="WHG volunteering offer received",  # got it
-#           from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt
-#           to_email=[user_email],  # to sender
-#           reply_to=[settings.DEFAULT_FROM_EDITORIAL],  # reply-to editorial
-#           cc=[settings.DEFAULT_FROM_EDITORIAL],  # cc editorial
-#           name=name,  # user's name
-#           owner_greeting=owner_greeting,
-#           greeting_name=name if name else username,
-#           user_subject=initial_subject,  # user-submitted subject
-#           dataset_title=dataset.title,
-#         )
-#         messages.success(request, f"Thank you! Your offer to volunteering was forwarded to the dataset owner, ({owner_greeting}).")
-#       except BadHeaderError:
-#         return HttpResponse('Invalid header found.')
-#       return redirect('datasets:volunteer-requests')
-#
-#     initial_data = {}
-#     if initial_subject:
-#       initial_data['subject'] = initial_subject
-#     if request.user.is_authenticated:
-#       initial_data['from_email'] = request.user.email
-#     form = ContactForm(initial=initial_data)
-#   else:
-#     print('contact_view() request.POST', request.POST)
-#     # print('contact_view() sending_url', sending_url)
-#     form = ContactForm(request.POST)
-#     # print("POST request. Form: ", form)
-#     if form.is_valid():
-#       name = form.cleaned_data['name']
-#       username = form.cleaned_data.get('username', None)
-#       user_subject = form.cleaned_data['subject']
-#       user_email = form.cleaned_data['from_email']
-#       user_message = form.cleaned_data['message']
-#       if not is_volunteer: # standard contact messages
-#         try:
-#           # form message to admins
-#           print('EMAIL_TO_ADMINS', settings.EMAIL_TO_ADMINS)
-#           new_emailer(
-#             email_type='contact_form',
-#             subject=user_subject, # may be supplied in request.GET
-#             from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt to admins
-#             to_email=settings.EMAIL_TO_ADMINS,  # to editor
-#             reply_to=[user_email],  # reply-to sender
-#             name=name,  # user's name
-#             username=username,  # user's username
-#             user_subject=user_subject,  # user-submitted subject
-#             user_email=user_email,  # user's email
-#             user_message=user_message,  # user-submitted message
-#           )
-#           # 'received' reply to sender
-#           new_emailer(
-#             email_type='contact_reply',
-#             subject="Message to WHG received",  # got it
-#             from_email=settings.DEFAULT_FROM_EMAIL,  # whg@pitt
-#             to_email=[user_email],  # to sender
-#             reply_to=[settings.DEFAULT_FROM_EDITORIAL],  # reply-to editorial
-#             name=name,  # user's name
-#             greeting_name=name if name else username,
-#             user_subject=user_subject,  # user-submitted subject
-#           )
-#         except BadHeaderError:
-#           return HttpResponse('Invalid header found.')
-#
-#       return redirect('/success?return=' + sending_url if sending_url else '/')
-#     else:
-#       print('Form errors from contact_view():', form.errors)
-#
-#   return render(request, "main/contact.html", {'form': form,
-#                                                'user': request.user,
-#                                                'is_volunteer': is_volunteer or False,
-#                                                'dataset': dataset})
-
 def contact_modal_view(request):
     if request.method == 'GET':
         initial_data = {}
@@ -1127,18 +972,6 @@ def contact_modal_view(request):
                     print(f"Message sent to Slack.")
                 else:
                     print(f"Failed to send message to Slack: {response.status_code}, {response.text}")
-
-                # # reply to user
-                # new_emailer(
-                #     email_type='contact_reply',
-                #     subject="Message to WHG received",
-                #     from_email=settings.DEFAULT_FROM_EMAIL,
-                #     to_email=[user_email],
-                #     reply_to=[settings.DEFAULT_FROM_EDITORIAL],
-                #     name=name,
-                #     greeting_name=name if name else username,
-                #     user_subject=user_subject,
-                # )
 
                 messages.success(request, "Your message has been sent successfully.")
                 print("Contact form processed.")

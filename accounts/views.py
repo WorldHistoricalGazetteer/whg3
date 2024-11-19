@@ -5,7 +5,6 @@ from django.contrib.auth import views as auth_views
 User = get_user_model()
 from django.conf import settings
 from django.contrib import auth, messages
-from django.core.mail import EmailMultiAlternatives
 from django.core.signing import Signer, BadSignature
 from django.db import transaction
 from django.shortcuts import render, redirect, reverse, get_object_or_404
