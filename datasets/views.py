@@ -31,7 +31,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import Group
 from django.contrib.gis.geos import GEOSGeometry
-from django.core.mail import send_mail
 from django.core.paginator import Paginator
 from django.core.serializers import serialize
 from django.db import transaction
@@ -1295,15 +1294,15 @@ def ds_recon(request, pk):
             "id": [region if region != "0" else userarea]}
 
         # check Celery service
-        if not celeryUp():
-            print('Celery is down :^(')
-            emailer('Celery is down :^(',
-                    'if not celeryUp() -- look into it!',
-                    'whg@kgeographer.org',
-                    ['karlg@kgeographer.org'])
-            messages.add_message(request, messages.INFO, """Sorry! The WHG reconciliation service appears to be down.
-        The system administrator has been notified.""")
-            return redirect('/datasets/' + str(ds.id) + '/reconcile')
+        # if not celeryUp():
+        #     print('Celery is down :^(')
+        #     emailer('Celery is down :^(',
+        #             'if not celeryUp() -- look into it!',
+        #             'whg@kgeographer.org',
+        #             ['karlg@kgeographer.org'])
+        #     messages.add_message(request, messages.INFO, """Sorry! The WHG reconciliation service appears to be down.
+        # The system administrator has been notified.""")
+        #     return redirect('/datasets/' + str(ds.id) + '/reconcile')
 
         # 4ce548e4-b765-4f04-aaf6-2824da89f385
 
@@ -1334,11 +1333,11 @@ def ds_recon(request, pk):
             messages.add_message(request, messages.INFO,
                                  "Sorry! Reconciliation services appear to be down. The system administrator has been notified.<br/>" + str(
                                      sys.exc_info()))
-            emailer('WHG recon task failed',
-                    'a reconciliation task has failed for dataset #' + str(ds.id) + ', w/error: \n' + str(
-                        sys.exc_info()) + '\n\n',
-                    'whg@kgeographer.org',
-                    'karl@kgeographer.org')
+            # emailer('WHG recon task failed',
+            #         'a reconciliation task has failed for dataset #' + str(ds.id) + ', w/error: \n' + str(
+            #             sys.exc_info()) + '\n\n',
+            #         'whg@kgeographer.org',
+            #         'karl@kgeographer.org')
 
             return redirect('/datasets/' + str(ds.id) + '/reconcile')
 

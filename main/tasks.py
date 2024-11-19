@@ -13,9 +13,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from django.views.decorators.http import require_POST
-from django.core import mail
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.mail import EmailMultiAlternatives, EmailMessage
 from django.db import transaction, connection
 from django.db.models import Sum, Count, Subquery, OuterRef # import Q, Count
 from django.http import HttpRequest, HttpResponse, JsonResponse

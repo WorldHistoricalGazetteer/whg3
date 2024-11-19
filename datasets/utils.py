@@ -7,8 +7,6 @@ from django.contrib.gis.geos import GEOSGeometry
 from django.contrib.gis.db.models import Extent
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
-from django.core import mail
-from django.core.mail import EmailMultiAlternatives
 from django.db.models import Prefetch
 from django.http import FileResponse, JsonResponse, HttpResponse, Http404
 from django.shortcuts import get_object_or_404, render  # , redirect
