@@ -408,13 +408,18 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
         # Extract the pids and split on '-' if necessary
         pid_values = place_info['pid'].split('-') if isinstance(place_info['pid'], str) else [place_info['pid']]
 
-        # Set relation (used to colourise markers) as the dataset ID(s) joined by hyphen
-        place_info["relation"] = "-".join([
+        # Collect unique dataset IDs
+        unique_ids = {
             str(dataset.id)
             for pid in pid_values
             if pid.isdigit()
             for dataset in collection.datasets.filter(places=int(pid))
-        ])
+        }
+
+        # Set relation (used to colorise markers) as the unique dataset IDs joined by hyphen
+        place_info["relation"] = "-".join(sorted(unique_ids))
+
+        # Log any invalid PIDs
         invalid_pids = [pid for pid in pid_values if not pid.isdigit()]
         for pid in invalid_pids:
             logger.error(f"Invalid place ID: {pid}")

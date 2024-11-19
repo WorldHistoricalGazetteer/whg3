@@ -121,7 +121,7 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 	
 	let allFeatures = [];
 	let allExtents = [];
-	let multiDataset = false;
+	let multiDataset = [];
 	
 	/* TODO: This loop is redundant since the aggregation of Dataset Collections - there is only one dataset */
 	window.ds_list.forEach(function(ds) {
@@ -130,7 +130,9 @@ Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fal
 		    feature.properties.dsid = ds.id;
 		    feature.properties.dslabel = ds.label;
 		    feature.properties.ds_id = ds.ds_id; // Required for table->map linkage
-			multiDataset = multiDataset || feature.properties?.relation?.includes('-'); // Determine whether to show additional line in colour table
+			if (feature.properties?.relation?.includes('-')) {
+				multiDataset.push(feature.properties.relation); // Determines properties for additional line in colour table
+			}
 		});
 		allFeatures.push(...ds.features);
 		
