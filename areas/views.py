@@ -22,15 +22,12 @@ class AreaFormMixin:
             success_url = f"{next_url}?userarea={self.object.id}"
         else:
             success_url = reverse('dashboard')
-        print('Redirecting to:', success_url)
         return success_url
 
     def form_invalid(self, form):
-        print('Form is invalid:', form.errors.as_data())
         return super().form_invalid(form)
 
     def form_valid(self, form):
-        print('Form is valid, cleaned_data:', form.cleaned_data)
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
@@ -67,5 +64,4 @@ class AreaDeleteView(DeleteView):
             success_url = f"{next_url}"
         else:
             success_url = reverse('dashboard')
-        print('Redirecting to:', success_url)
         return success_url

@@ -74,7 +74,6 @@ def is_url(val):
 
 @register.filter
 def join(value,delimit):
-    print('join', value, delimit)
     """joins list/array items"""
     if type(value[0]) == int:
         value=map(str,value)
@@ -110,7 +109,6 @@ def parsedict(value,key):
 def parsejson(val,key):
     # my_string = "{'key':'val','key2':2}"
     obj = ast.literal_eval(val)
-    print('obj, key', obj[key])
     return
     if key in obj:
         return obj[key]
@@ -120,11 +118,8 @@ def parsejson(val,key):
 @register.filter
 @register.filter
 def parsetest(val, key):
-    print('val before ast.literal_eval:', val)
     val = val.strip('"')
     obj = ast.literal_eval(val)
-    print('obj after ast.literal_eval:', obj)
-    print('type(obj) after ast.literal_eval:', type(obj))
     if key in obj:
         return obj[key]
     else:
@@ -157,7 +152,6 @@ def sortts(objlist):
 
 @register.filter
 def split(value,delimit):
-    print('split', value, delimit)
     """split string to list"""
     # if type(value[0]) == int:
     #     value=map(str,value)

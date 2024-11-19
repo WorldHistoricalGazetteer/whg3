@@ -26,9 +26,6 @@ from django.contrib.gis.geos import Point, GEOSGeometry
 # Points
 pnt = Point(-9.3385, 29.7245)
 qs=Country.objects.filter(mpoly__contains = pnt)
-print(qs.count(),' countries')
-for c in qs:
-    print(c.iso, c.gnlabel)
 
 # any geometry from wkt or json
 gpointwkt = 'POINT (22.9139937912115 43.9859450581153)'
@@ -40,5 +37,3 @@ qs=Country.objects.filter(mpoly__intersects = gpointwkt)
 qs=Country.objects.filter(mpoly__intersects = gpoint)
 qs=Country.objects.filter(mpoly__intersects = gmpoly)
 qs=Country.objects.filter(mpoly__intersects = gline)
-for c in qs:
-    print(c.iso, c.gnlabel)

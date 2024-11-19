@@ -115,7 +115,6 @@ class GalleryView(ListAPIView):
 
         # SPATIAL FILTERS
         country_codes = self.request.query_params.get('countries', '').split(',')
-        print(country_codes)
         if country_codes != ['']:
             country_codes = [code.upper() for code in country_codes]
             queryset = queryset.filter(places__ccodes__overlap=country_codes).distinct()
@@ -255,8 +254,6 @@ class RemoteIndexAPIView(View):
         offset = params.get('offset', None)
         fuzzy = params.get('fuzzy', None)
 
-        print('offset', offset)
-
         if all(v is None for v in [name, name_startswith]):
             return HttpResponse(
                 content='<h3>Query requires either name or name_startswith</h3>')
@@ -295,12 +292,9 @@ class RemoteIndexAPIView(View):
                 q['size'] = 20 if not pagesize else pagesize
                 q['from'] = 20 if not offset else offset
 
-            print('q', q)
-
             # run query
             # index_set = collector(q, 'whg')
             index_set = collector(q, settings.ES_WHG)
-            print('index_set (collector() result)', index_set)
 
             # format hit items
             items = [childItem(i) for i in index_set['items']]
@@ -660,7 +654,6 @@ def bundler(q, whgid, idx):
 class IndexAPIView(View):
     def get(self, request):
         params = request.GET
-        print('IndexAPIView request.GET', params)
         # idx = ['whg', 'pub']  # search both indexes
         idx = [settings.ES_WHG, settings.ES_PUB]  # search both indexes
 
@@ -684,7 +677,6 @@ class IndexAPIView(View):
 
         else:
             if whgid and whgid != '':
-                print('fetching whg_id', whgid)
                 q = {
                     "query": {
                         "bool": {
@@ -696,7 +688,6 @@ class IndexAPIView(View):
                     }
                 }
                 bundle = bundler(q, whgid, idx)
-                print('bundler q', q)
                 result = {"index_id": whgid,
                           "note": str(len(bundle)) + " records in WHGasserted as skos:closeMatch",
                           "type": "FeatureCollection",
@@ -747,12 +738,10 @@ class IndexAPIView(View):
                 # response = collector(q, 'whg')
                 response = collector(q, settings.ES_WHG)
                 # print('response in IndexAPIView()', response)
-                print('len(items)', len(response['items']))
                 # ex = response['items'][1]
                 union_records = []
                 for item in response['items']:
                     parent = responseItem(item)
-                    print()
                     # print('formatted parent', parent)
                     union_records.append(parent)  # the parent
                     # all parents have inner_hits, not all have children
@@ -763,7 +752,6 @@ class IndexAPIView(View):
                             # print()
                             # print('child', childItem(child))
                             union_records.append(childItem(child))  # the children
-                print(str(len(union_records)) + ' total records returned')
                 result = {
                     'note': str(len(union_records)) + " records in WHG asserted as skos:closeMatch",
                     'type': 'FeatureCollection',
@@ -898,7 +886,6 @@ class SearchAPIView(generics.ListAPIView):
 
     def get(self, format=None, *args, **kwargs):
         params = self.request.query_params
-        print('SearchAPIView() params', params)
 
         id_ = params.get('id', None)
         name = params.get('name', None)
@@ -912,7 +899,6 @@ class SearchAPIView(generics.ListAPIView):
         err_note = None
         context = params.get('context', None)
         # params
-        print({"id_": id_, "fclasses": fclasses})
 
         qs = Place.objects.filter(Q(dataset__public=True) | Q(dataset__core=True))
 
@@ -924,7 +910,6 @@ class SearchAPIView(generics.ListAPIView):
             if id_:
                 qs = qs.filter(id=id_)
                 err_note = 'id given, other parameters ignored' if len(params.keys()) > 1 else None
-                print('qs', qs)
             else:
                 qs = qs.filter(minmax__0__lte=year, minmax__1__gte=year) if year else qs
                 qs = qs.filter(fclasses__overlap=fclasses) if fc else qs
@@ -969,8 +954,6 @@ class PlaceAPIView(generics.ListAPIView):
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self, format=None, *args, **kwargs):
-        print('kwargs', self.kwargs)
-        print('self.request.GET', self.request.GET)
         dslabel = self.kwargs['dslabel']
         qs = Place.objects.all().filter(dataset=dslabel).order_by('title')
         query = self.request.GET.get('q')
@@ -994,7 +977,6 @@ class DownloadDatasetAPIView(generics.ListAPIView):
     # pagination_class = StandardResultsSetPagination
 
     def get(self, format=None):
-        print('self.request.GET', self.request.GET)
         dslabel = self.request.GET.get('dataset')
         ds = get_object_or_404(Dataset, label=dslabel)
         features = []
@@ -1013,7 +995,6 @@ class DownloadDatasetAPIView(generics.ListAPIView):
             features.append(rec)
 
         result = {"type": "FeatureCollection", "features": features}
-        print('result', result)
         return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
 
     # permission_classes = [permissions.IsAuthenticatedOrReadOnly,IsOwnerOrReadOnly]
@@ -1096,8 +1077,6 @@ class AreaFeaturesView(generics.ListAPIView):
     def get(self, format=None, *args, **kwargs):
         params = self.request.query_params
         user = self.request.user
-        print('params', params)
-        print('api/areas request', self.request)
 
         id_ = params.get('id', None)
         query = params.get('q', None)
@@ -1438,8 +1417,6 @@ class GeoJSONAPIView(generics.ListAPIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
     def get_queryset(self, format=None, *args, **kwargs):
-        print('GeoJSONViewSet request.GET', self.request.GET)
-        print('GeoJSONViewSet args, kwargs', args, kwargs)
         if 'id' in self.request.GET:
             dsid = self.request.GET.get('id')
             dslabel = get_object_or_404(Dataset, pk=dsid).label
@@ -1546,7 +1523,6 @@ class PlaceTableViewSet(viewsets.ModelViewSet):
         Instantiates and returns the list of permissions that this view requires.
         """
         if self.action in ['list', 'retrieve']:
-            print(self.action)
             permission_classes = [permissions.AllowAny]
         else:
             permission_classes = [permissions.IsAdminUser]
@@ -1590,7 +1566,6 @@ class PlaceTableCollViewSet(viewsets.ModelViewSet):
         Instantiates and returns the list of permissions that this view requires.
         """
         if self.action in ['list', 'retrieve']:
-            print(self.action)
             permission_classes = [permissions.AllowAny]
         else:
             permission_classes = [permissions.IsAdminUser]
@@ -1628,7 +1603,6 @@ class AreaListView(View):
 class AreaListAllView(View):
     @staticmethod
     def get(request):
-        print('area_list() request', request)
         user = request.user
         area_list = []
         # qs = Area.objects.all().filter(Q(type='predefined')| Q(owner=request.user)).values('id','title','type')
