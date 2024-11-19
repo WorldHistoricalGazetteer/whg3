@@ -8,6 +8,7 @@ from django.contrib.gis.db.models.functions import Area
 from django.contrib.gis.geos import GeometryCollection, Polygon, GEOSGeometry
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
+from django.core.cache import caches
 from django.db import models
 from django.db.models import JSONField, Exists, OuterRef, Q, Func, CharField, Min, Max
 from django.db.models.signals import pre_delete
@@ -154,7 +155,14 @@ class Dataset(models.Model):
 
     @property
     def carousel_metadata(self):
-        return carousel_metadata(self)
+        cached_value = caches['property_cache'].get(f"dataset:{self.pk}:carousel_metadata")
+        if cached_value:
+            return cached_value
+
+        result = carousel_metadata(self)
+        caches['property_cache'].set(f"dataset:{self.pk}:carousel_metadata", result, timeout=None)
+
+        return result
 
     # @property
     # def builder_hastask(self):
@@ -194,7 +202,14 @@ class Dataset(models.Model):
 
     @property
     def citation_csl(self):
-        return csl_citation(self)
+        cached_value = caches['property_cache'].get(f"dataset:{self.pk}:citation_csl")
+        if cached_value:
+            return cached_value
+
+        result = csl_citation(self)
+        caches['property_cache'].set(f"dataset:{self.pk}:citation_csl", result, timeout=None)
+
+        return result
 
     @property
     def collaborators(self):
