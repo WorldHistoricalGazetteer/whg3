@@ -1093,8 +1093,8 @@ class AreaFeaturesView(generics.ListAPIView):
             qs = qs.filter(title__icontains=query)
         if filter and filter == 'un':
             qs = qs.filter(description="UN Statistical Division Sub-Region")
-        if regions is not None:
-            qs = qs.filter(id__in=[int(region_id) for region_id in regions.split(',')])
+        if regions is not None and regions != '':
+            qs = qs.filter(id__in=[int(region_id) for region_id in regions.split(',') if region_id.strip()])
 
         for a in qs:
             feat = {
