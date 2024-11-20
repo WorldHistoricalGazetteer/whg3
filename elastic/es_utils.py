@@ -4,7 +4,7 @@
 
 from django.contrib.auth import get_user_model
 
-from main.views import logger
+# from main.views import logger
 
 User = get_user_model()
 from django.conf import settings
