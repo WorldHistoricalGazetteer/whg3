@@ -1,5 +1,7 @@
 import csv
 from datetime import datetime
+import logging
+logger = logging.getLogger(__name__)
 
 # Input and output file names
 input_csv_filename = "data/migration/close_matches.csv"
@@ -28,4 +30,4 @@ def generate_db_csv(input_filename, output_filename):
 # Generate the new CSV file
 generate_db_csv(input_csv_filename, output_csv_filename)
 
-print(f"New CSV file for database import has been written to {output_csv_filename}")
+logger.debug(f"New CSV file for database import has been written to {output_csv_filename}")

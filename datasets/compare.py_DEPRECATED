@@ -33,4 +33,3 @@ text += 'Records to be added: '+str(resobj['rows_add'])+'. ' if len(resobj['rows
 text += 'Records to be removed: '+str(resobj['rows_del'])+'. ' if len(resobj['rows_del'])>0 else ''
 text += 'All records with an ID matching one in the existing dataset will be replaced.'
 resobj['text'] = text
-print(text)

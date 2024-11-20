@@ -234,7 +234,6 @@ class PlaceRemoteDetailSerializer(PlaceRemoteSerializer):
 				src_id = place.src_id,
 				**descrip,
 			)
-			print('pd_obj', pd_obj)
 			place.descriptions.add(pd_obj)
 
 	def create(self, validated_data):

@@ -11,5 +11,4 @@ hully=river.convex_hull
 hull_dict=mapping(hully)
 #gj=json.loads(json.dumps(hull_dict).replace("\'", "\""))
 gj=json.loads(json.dumps(hull_dict))
-print(river.length)
 

@@ -114,7 +114,6 @@ def process_variants(row, newpl):
                 name_objects.append(new_name)
             except Exception as e:
                 full_trace = traceback.format_exc()
-                print("Full trace:", full_trace)
                 error_msgs.append(
                     f"Error writing variant '{v}' for place <b>{row['id']}</b>: <b>{row['title']}</b>. Details: {e}")
 
@@ -132,28 +131,28 @@ def process_types(row, newpl):
     try:
         types = [t.strip() for t in str(row.get('types', '') or '').split(';') if t]
     except Exception as e:
-        print(f"Error processing 'types': {e}")
+        logger.exception(f"Error processing 'types': {e}")
         types = []
 
     try:
         aat_types = [int(a.strip()) for a in str(row.get('aat_types', '')).split(';') if a]
         # aat_types = [int(a.strip()) for a in str(row.get('aat_types', '') or '').split(';') if a]
     except ValueError as ve:
-        print(f"Error converting 'aat_types' to int: {ve}")
+        logger.exception(f"Error converting 'aat_types' to int: {ve}")
         aat_types = []
     except Exception as e:
-        print(f"Error processing 'aat_types': {e}")
+        logger.exception(f"Error processing 'aat_types': {e}")
         aat_types = []
 
     try:
         fclasses_from_row = [f.strip() for f in str(row.get('fclasses', '') or '').split(';') if f]
     except Exception as e:
-        print(f"Error processing 'fclasses': {e}")
+        logger.exception(f"Error processing 'fclasses': {e}")
         fclasses_from_row = []
 
-    print("Extracted types:", types)
-    print("Extracted aat_types:", aat_types)
-    print("Extracted fclasses:", fclasses_from_row)
+    logger.debug(f'Extracted types: {types}')
+    logger.debug(f'Extracted aat_types: {aat_types}')
+    logger.debug(f'Extracted fclasses: {fclasses_from_row}')
 
     # Build the PlaceType objects for each type and aat_type
     for type_, aat_type in zip_longest(types, aat_types, fillvalue=None):
@@ -218,38 +217,28 @@ def process_when(row, newpl):
     error_msgs = []
 
     def pad_and_format_date(date_str):
-        print(f"Pad and format date input: {date_str}")
         if date_str.startswith('-'):
             parts = date_str[1:].split('-')
             parts[0] = parts[0].zfill(4)
-            print(f"Negative year part: -{parts[0]}, Remaining parts: {parts[1:]}")
             formatted_date = '-' + '-'.join(parts)
         else:
             parts = date_str.split('-')
             parts[0] = parts[0].zfill(4)
-            print(f"Positive year part: {parts[0]}, Remaining parts: {parts[1:]}")
             formatted_date = '-'.join(parts)
 
         return formatted_date
 
     def parse_iso_date(date_str):
         try:
-            print(f"Original date string: {date_str}")
             padded_date_str = pad_and_format_date(date_str)
-            print(f"Padded date string: {padded_date_str}")
             parts = padded_date_str.split('-')
-            print(f"Parts after padding: {parts}")
 
             if padded_date_str.startswith('-'):
-                print(f"Negative year date: {padded_date_str}")
                 year = -int(parts[1])
                 remaining_parts = parts[1:]
             else:
-                print(f"Positive year date: {padded_date_str}")
                 year = int(parts[0])
                 remaining_parts = parts[1:]
-
-            print(f"Year: {year}, Remaining parts: {remaining_parts}")
 
             if year < 0:
                 if len(remaining_parts) == 0:
@@ -258,14 +247,11 @@ def process_when(row, newpl):
                     date = CustomDate(year, int(remaining_parts[0]))
                 elif len(remaining_parts) == 2:
                     date = CustomDate(year, int(remaining_parts[0]), int(remaining_parts[1]))
-                print(f"Parsed negative year date: {date}")
                 return date
             else:
                 date = isoparse(padded_date_str)
-                print(f"Parsed positive year date: {date}")
                 return date
         except (ValueError, ParserError) as e:
-            print(f"Error parsing date: {e}")
             raise ValueError(f"Invalid ISO-8601 date: {date_str}. Error: {e}")
 
     try:
@@ -275,16 +261,12 @@ def process_when(row, newpl):
             row['attestation_year']) else None
         # attestation_year = str(row['attestation_year']) if 'attestation_year' in row and row.get('attestation_year', '') else None
 
-        print(f"Start: {start}, End: {end}, Attestation Year: {attestation_year}")
-
         if start and end and isinstance(start, CustomDate) and isinstance(end, CustomDate) and start.year > end.year:
             raise ValueError("Start date (" + str(start) + ") is greater than end date (" + str(end) + ")")
 
         dates = (start, end, attestation_year)
 
-        print("Calling parsedates_tsv...")
         datesobj = parsedates_tsv(dates)
-        print("Dates object returned from parsedates_tsv:", datesobj)
 
         newpl.minmax = datesobj['minmax']
         newpl.attestation_year = attestation_year
@@ -296,8 +278,6 @@ def process_when(row, newpl):
             src_id=newpl.src_id,
             jsonb=datesobj
         )
-
-        print(f"PlaceWhen object created: {when_object}")
 
     except ValueError as e:
         error_msgs.append(f"Error processing dates for place <b>{newpl} ({newpl.src_id})</b>. Details: {e}")
@@ -398,7 +378,6 @@ def process_geom(row, newpl):
             if ccode not in valid_ccodes:
                 error_msgs.append(f"At least one invalid ccode: {ccode} for place <b>{newpl} ({newpl.src_id})</b>")
     elif geojson:
-        print('no ccodes, but geojson', geojson)
         try:
             ccodes = ccodesFromGeom(geojson)  # might be if not terrestrial []
         except Exception as e:
@@ -498,13 +477,11 @@ def ds_insert_delim(df, pk):
             """
               create new Place + a PlaceName record from its title
             """
-            print('row in insert', row)
             if not Place.objects.filter(src_id=row['id'], dataset=ds).exists():
                 newpl = create_place(row, ds)
             else:
                 skipped_rows += 1
                 skipped_row_ids.append(row['id'])
-                print('skipping existing place', row['id'])
 
             """
             generate new related objects for objlists[]

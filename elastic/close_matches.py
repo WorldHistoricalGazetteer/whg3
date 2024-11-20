@@ -49,5 +49,3 @@ with open(csv_filename, mode='w', newline='') as file:
     writer.writerow(["place_a_id", "place_b_id"])
     for pair in close_match_pairs:
         writer.writerow(pair)
-
-print(f"Close match pairs have been written to {csv_filename}")

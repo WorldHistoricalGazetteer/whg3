@@ -134,7 +134,7 @@ class AnnouncementUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
         if form.is_valid():
             return super().form_valid(form)
         else:
-            print(form.errors)
+            logger.debug(f'form.errors: {form.errors}')
             return self.form_invalid(form)
 
 
@@ -308,8 +308,6 @@ class Home30a(TemplateView):
 # TODO: what rules? this or the *_list() functions?
 # used for dashboard_user() and dataset_list()
 def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_filters=None):
-    print('get_objects_for_user',
-          dict(model=model, filter_criteria=filter_criteria, is_admin=is_admin, extra_filters=extra_filters))
     from django.db.models import Q
     collaborator_objects = model.objects.none()
 
@@ -337,7 +335,6 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
     if is_admin and model == Area and 'type' in filter_criteria:
         objects = objects.exclude(type__in=filter_criteria['type'])
     elif model == Dataset:  # reverse sort, and some dummy datasets need to be filtered
-        print('model == Dataset')
         objects = objects.exclude(Q(title__startswith='(stub)') | Q(numrows__lt=1)).order_by('-create_date')
         # print('Dataset objects count', objects.count())
         # print('Datasets:', objects)
@@ -348,8 +345,6 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
 
 def area_list(request, sort='', order=''):
     filters = request.GET
-    print("area_list() GET (filters):", request.GET)
-    print('area_list() sort, order', sort, order)
 
     is_admin = request.user.groups.filter(name='whg_admins').exists()
     text_fields = ['title', 'description', 'type', 'owner']
@@ -372,28 +367,21 @@ def area_list(request, sort='', order=''):
     context = {'areas': areas, 'is_admin': is_admin, 'section': 'areas'}
 
     # Apply filters from request if any
-    print("area filters:", filters)
     # type, owner, title
     if filters:
         if 'type' in filters and filters['type'] != 'all':
             areas = areas.filter(type=filters['type'])
-            print('type filter:', areas)
 
         if 'owner' in filters:
-            print('filtering owners')
             staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
             if filters['owner'] == 'staff':
-                print('staff only')
                 areas = areas.filter(owner__groups__in=staff_groups)
             elif filters['owner'] == 'contributors':
-                print('exclude staff;')
                 areas = areas.exclude(owner__groups__in=staff_groups)
-            print('owner filter:', areas)
 
         if 'title' in filters and filters['title']:
             search_term = filters['title']
             areas = areas.filter(Q(title__icontains=search_term) | Q(description__icontains=search_term))
-            print('title filter:', areas)
 
         context = {
             'areas': areas,
@@ -411,8 +399,6 @@ def area_list(request, sort='', order=''):
 
 def dataset_list(request, sort='', order=''):
     filters = request.GET
-    print("dataset_list() GET:", request.GET)
-    print('dataset_list() sort, order', sort, order)
 
     is_admin = request.user.groups.filter(name='whg_admins').exists()
     datasets = get_objects_for_user(Dataset, request.user, {'owner': request.user}, is_admin)
@@ -439,7 +425,6 @@ def dataset_list(request, sort='', order=''):
             datasets = datasets.order_by(sort_param)
     context = {'datasets': datasets, 'is_admin': is_admin, 'section': 'datasets'}
 
-    print("Filters received:", filters)
     # ds_status, owner, title
     if filters:
         if 'ds_status' in filters and filters['ds_status'] != 'all':
@@ -459,7 +444,6 @@ def dataset_list(request, sort='', order=''):
             # datasets = datasets.filter(title__icontains=filters['title'])
             search_term = filters['title']
             datasets = datasets.filter(Q(title__icontains=search_term) | Q(owner__username__icontains=search_term))
-            print('title filter:', datasets)
 
         context = {
             'datasets': datasets,
@@ -478,8 +462,6 @@ def dataset_list(request, sort='', order=''):
 
 def collection_list(request, sort='', order=''):
     filters = request.GET
-    print("collection_list() GET (filters):", request.GET)
-    print('collection_list() sort, order', sort, order)
 
     is_admin = request.user.groups.filter(name='whg_admins').exists()
     text_fields = ['title', 'type', 'status', 'owner']
@@ -521,16 +503,13 @@ def collection_list(request, sort='', order=''):
             collections = collections.order_by(sort_param)
     context = {'collections': collections, 'is_admin': is_admin, 'section': 'collections'}
 
-    print("Filters received:", filters)
     # status, collection_class, owner, title
     if filters:
         if 'status' in filters and filters['status'] != 'all':
             collections = collections.filter(status=filters['status'])
-            print('status filter:', collections)
 
         if 'class' in filters and filters['class'] != 'all':
             collections = collections.filter(collection_class=filters['class'])
-            print('class filter:', collections)
 
         if 'owner' in filters:
             staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
@@ -538,14 +517,12 @@ def collection_list(request, sort='', order=''):
                 collections = collections.filter(owner__groups__in=staff_groups)
             elif filters['owner'] == 'contributors':
                 collections = collections.exclude(owner__groups__in=staff_groups)
-            print('owner filter:', collections)
 
         if 'title' in filters and filters['title']:
             # collections = collections.filter(title__icontains=filters['title'])
             search_term = filters['title']
             collections = collections.filter(
                 Q(title__icontains=search_term) | Q(owner__username__icontains=search_term))
-            print('title filter:', collections)
 
         context = {
             'collections': collections,
@@ -565,8 +542,6 @@ def collection_list(request, sort='', order=''):
 
 def group_list(request, sort='', order=''):
     filters = request.GET
-    print("group_list() GET (filters):", request.GET)
-    print('group_list() sort, order', sort, order)
 
     is_admin = request.user.groups.filter(name='whg_admins').exists()
     text_fields = ['title', 'category', 'owner']
@@ -587,12 +562,10 @@ def group_list(request, sort='', order=''):
             groups = groups.order_by(sort_param)
     context = {'groups': groups, 'is_admin': is_admin, 'section': 'groups'}
 
-    print("group filters:", filters)
     # type, owner, title
     if filters:
         if 'type' in filters and filters['type'] != 'all':
             groups = groups.filter(type=filters['type'])
-            print('type filter:', groups)
 
         if 'owner' in filters:
             staff_groups = Group.objects.filter(name__in=['whg_admins', 'whg_staff'])
@@ -600,11 +573,9 @@ def group_list(request, sort='', order=''):
                 groups = groups.filter(owner__groups__in=staff_groups)
             elif filters['owner'] == 'users':
                 groups = groups.exclude(owner__groups__in=staff_groups)
-            print('owner filter:', groups)
 
         if 'title' in filters and filters['title']:
             groups = groups.filter(title__icontains=filters['title'])
-            print('title filter:', groups)
 
         context = {
             'groups': groups,
@@ -633,10 +604,8 @@ def dashboard_redirect(request):
 # all-purpose for admins
 @login_required
 def dashboard_admin_view(request):
-    print('dashboard_admin() request.GET', request.GET)
     user = request.user
     is_admin = user.groups.filter(name='whg_admins').exists()
-    print(f'Is Admin: {is_admin}')
     is_leader = user.groups.filter(name='group_leaders').exists()
     django_groups = [group.name for group in user.groups.all()]
 
@@ -739,8 +708,6 @@ def server_error_view(request):
     import traceback
 
     try:
-        print('Formatting message for Slack...')
-
         # Capture request details
         path = request.get_full_path().lstrip('/')
         url = f"{settings.URL_FRONT}{path}"
@@ -781,15 +748,12 @@ def server_error_view(request):
         # Send the message to Slack
         response = requests.post(settings.SLACK_ERROR_WEBHOOK, json=payload)
 
-        if response.status_code == 200:
-            # Log the error or handle it accordingly
-            print(f"Message sent to Slack.")
-        else:
-            print(f"Failed to send message to Slack: {response.status_code}, {response.text}")
+        if not response.status_code == 200:
+            logger.debug(f"Failed to send message to Slack: {response.status_code}, {response.text}")
 
     except Exception as e:
         # Handle exceptions that occur while sending the message to Slack (avoid infinite loop!)
-        print(f"Error sending message to Slack: {e}")
+        logger.debug(f"Error sending message to Slack: {e}")
 
         # Return a user-friendly error page
     context = {  # Rendering of this message is not currently implemented
@@ -802,7 +766,7 @@ def server_error_view(request):
         return HttpResponseServerError('An unexpected error occurred and we were unable to handle it properly.')
 
 def custom_404(request, exception):
-    print('404 error request', request.GET.__dict__)
+    logger.debug(f'404 error request: {request.GET.__dict__}')
     return render(request, 'main/404.html', {}, status=404)
 
 
@@ -822,7 +786,6 @@ def is_url(url):
 
 def create_link(request, *args, **kwargs):
     if request.method == 'POST':
-        print('main.create_link() request.POST', request.POST)
         model = request.POST['model']
         objectid = request.POST['objectid']
 
@@ -837,17 +800,14 @@ def create_link(request, *args, **kwargs):
         # Collection or CollectionGroup
         # from django.apps import apps
         Model = apps.get_model(f"collection.{model}")
-        print('Model', Model)
         model_str = model.lower() if model == 'Collection' else 'collection_group'
         obj = Model.objects.get(id=objectid)
         gotlink = obj.related_links.filter(uri=uri)
         # gotlink = obj.links.filter(uri=uri)
-        print('model_str, obj, gotlink', model_str, obj, gotlink)
         status, msg = ['', '']
         # columns in Links table
         # collection_id, collection_group_id, trace_annotation_id, place_id
         if not gotlink:
-            print('not got_link')
             try:
                 link = Link.objects.create(
                     **{model_str: obj},  # instance identifier
@@ -861,7 +821,7 @@ def create_link(request, *args, **kwargs):
                           'id': link.id}
                 status = "ok"
             except:
-                print('failed', sys.exc_info())
+                logger.debug(f'failed: {sys.exc_info()}')
                 status = "failed"
                 result = "Link *not* created...why?"
         else:
@@ -873,7 +833,6 @@ def remove_link(request, *args, **kwargs):
     # print('kwargs', kwargs)
     link = Link.objects.get(id=kwargs['id'])
     # link = CollectionLink.objects.get(id=kwargs['id'])
-    print('remove_link()', link)
     link.delete()
     return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
@@ -939,10 +898,8 @@ def contact_modal_view(request):
             initial_data['subject'] = request.GET['subject'] if 'subject' in request.GET else None
         form = ContactForm(initial=initial_data)
     else:
-        print("Contact form received.")
         form = ContactForm(request.POST)
         if form.is_valid():
-            print("Contact form validated.")
             name = form.cleaned_data['name']
             username = form.cleaned_data.get('username', None)
             user_subject = form.cleaned_data['subject']
@@ -968,13 +925,10 @@ def contact_modal_view(request):
                     f"----------------------------------------"
                 )
                 response = requests.post(settings.SLACK_CONTACT_WEBHOOK, json={"text": slack_message})
-                if response.status_code == 200:
-                    print(f"Message sent to Slack.")
-                else:
-                    print(f"Failed to send message to Slack: {response.status_code}, {response.text}")
+                if not response.status_code == 200:
+                    logger.debug(f"Failed to send message to Slack: {response.status_code}, {response.text}")
 
                 messages.success(request, "Your message has been sent successfully.")
-                print("Contact form processed.")
                 return JsonResponse({'success': True})
 
             except BadHeaderError:
@@ -985,7 +939,7 @@ def contact_modal_view(request):
                 messages.error(request, "There was an error sending your message. Please try again later.")
                 return JsonResponse({'success': False, 'error': str(e)})
         else:
-            print('Form errors:', form.errors)
+            logger.debug(f'form.errors: {form.errors}')
             # Form is not valid, render the form again with errors
             return render(request, 'main/contact_modal.html', {'form': form})
 
@@ -995,7 +949,6 @@ def contact_modal_view(request):
 
 def contactSuccessView(request, *args, **kwargs):
     returnurl = request.GET.get('return')
-    print('return, request', returnurl, str(request.GET))
     return HttpResponse(
         '<div style="font-family:sans-serif;margin-top:3rem; width:50%; margin-left:auto; margin-right:auto;"><h4>Thank you for your message! We will reply soon.</h4><p><a href="' + returnurl + '">Return</a><p></div>')
 
@@ -1033,7 +986,6 @@ class CommentCreateView(BSModalCreateView):
     def get_form_kwargs(self, **kwargs):
         kwargs = super(CommentCreateView, self).get_form_kwargs()
         redirect = self.request.GET.get('next')
-        print('redirect in get_form_kwargs():', redirect)
         if redirect is not None:
             self.success_url = redirect
         else:
@@ -1044,7 +996,6 @@ class CommentCreateView(BSModalCreateView):
                 kwargs['initial'].update({'next': redirect})
             else:
                 kwargs['initial'] = {'next': redirect}
-        print('kwargs in get_form_kwargs():', kwargs)
         return kwargs
     # ** END
 

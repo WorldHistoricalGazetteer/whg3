@@ -40,7 +40,8 @@ def test_remove_dataset_from_index(dslabel):
  #
   res = es.search(index=idx, body=q)
   """is it gone from index?"""
-  zapped = res['hits']['total']['value'] == 0; print('zapped?:', zapped)
+  zapped = res['hits']['total']['value'] == 0
+  print('zapped?:', zapped)
 
   print({'zapped': zapped,
          'unreviewed': unreviewed,
