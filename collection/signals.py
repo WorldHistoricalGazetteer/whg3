@@ -75,11 +75,10 @@ def handle_public_status_change(sender, instance, **kwargs):
             if old_instance.rel_keywords != instance.rel_keywords:
                 transaction.on_commit(lambda: mapdata_task.delay('collections', instance.id, 'standard', refresh=True))
 
-    handle_collection_bbox(sender, instance, **kwargs)
-
 
 @receiver(post_save, sender=Collection)
 def handle_collection_post_save(sender, instance, created, **kwargs):
+    handle_collection_bbox(sender, instance, **kwargs)
     doi(instance._meta.model_name, instance.id)
 
 
