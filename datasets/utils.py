@@ -100,7 +100,6 @@ def download_file(request, *args, **kwargs):
     fileobj = ds.files.all().order_by('-rev')[0]
     fn = 'media/' + fileobj.file.name
     file_handle = fileobj.file.open()
-    print('download_file: kwargs,fn,fileobj.format', kwargs, fn, fileobj.format)
     # set content type
     response = FileResponse(file_handle, content_type='text/csv' if fileobj.format == 'delimited' else 'text/json')
     response['Content-Disposition'] = 'attachment; filename="' + fileobj.file.name + '"'
@@ -209,7 +208,7 @@ def aat_lookup(aid):
         typeobj = get_object_or_404(Type, aat_id=aid)
         return typeobj.term
     except:
-        print(str(aid) + ' broke aat_lookup()', sys.exc_info())
+        logger.exception(f'aat_lookup({aid})', exc_info=True)
         # return {"label": None, "fclass":None}
         return None
 
@@ -420,7 +419,7 @@ def hully(g_list):
         hull = GeometryCollection(mp).convex_hull
         # hull=GeometryCollection([GEOSGeometry(json.dumps(g)) for g in g_list]).convex_hull
     except:
-        print('hully() failed on g_list', g_list)
+        logger.exception(f'hully() failed on g_list {g_list}')
 
     if hull.geom_type in ['Point', 'LineString', 'Polygon']:
         # buffer hull, but only a little if near meridian
@@ -433,7 +432,7 @@ def hully(g_list):
             else:
                 hull = hull.buffer(0.1)
         except:
-            print('hully buffer error longs:', longs)
+            logger.exception(f'hully buffer error longs: {longs}')
     # print(hull.geojson)
     return json.loads(hull.geojson) if hull.geojson != None else []
 
@@ -597,7 +596,6 @@ def classy(gaz, typeArray):
 
 # log recon action & update status
 def post_recon_update(ds, user, task, test):
-    print('test in utils.post_recon_update()', test)
     if test == "off":
         if task == 'idx':
             ds.ds_status = 'indexed' if ds.unindexed == 0 else 'accessioning'

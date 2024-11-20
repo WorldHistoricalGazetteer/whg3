@@ -138,12 +138,10 @@ class PrivateAPITests(TestCase):
 
 		create_collection_group(other_user)
 		cg = CollectionGroup.objects.first().title
-		print('leader, cg', other_user.name, cg)
 
 		# non-group_leader
 		create_collection_group(self.user, title='Should not happen')
 		cg = CollectionGroup.objects.last().title
-		print('user, cg', other_user.name, cg)
 
 
 

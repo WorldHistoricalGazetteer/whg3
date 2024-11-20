@@ -11,6 +11,9 @@ from .models import *
 from collection.models import Collection
 from main.models import Log
 
+import logging
+logger = logging.getLogger(__name__)
+
 #
 # TeachingPortalView()
 # displays essay and gallery of resources
@@ -65,18 +68,17 @@ class ResourceCreateView(LoginRequiredMixin, FormView):
     return kwargs
 
   def form_invalid(self, form):
-    print('form invalid...', form.errors.as_data())
-    print('form invalid, cleaned_data', form.cleaned_data)
+    logger.debug(f'form invalid, errors: {form.errors.as_data()}')
+    logger.debug(f'form invalid, cleaned_data: {form.cleaned_data}')
     context = {'form': form}
     return self.render_to_response(context=context)
 
   def form_valid(self, form):
     context = {}
     if form.is_valid():
-      print('form is valid, cleaned_data', form.cleaned_data)
       form.save(commit=True)
     else:
-      print('form not valid', form.errors)
+      logger.debug(f'form not valid, errors: {form.errors.as_data()}')
       context['errors'] = form.errors
     return super().form_valid(form)
 
@@ -93,14 +95,12 @@ class ResourceCreateView(LoginRequiredMixin, FormView):
     # save to media/resources
     for f in files:
       # handle_resource_file(f)
-      print('file', f, type(f))
       ResourceFile.objects.create(
         file = f
       )
       
     for i in images:
-      # handle_resource_file(i)
-      print('image', i, type(i))  # Do something with each file.
+      # handle_resource_file(i)o something with each file.
       ResourceImage.objects.create(
         file=f
       )
@@ -169,7 +169,6 @@ class ResourceUpdateView(UpdateView):
 
   def form_valid(self, form):
     if form.is_valid():
-      print(form.cleaned_data)
       obj = form.save(commit=False)
       obj.save()
       Log.objects.create(
@@ -181,7 +180,7 @@ class ResourceUpdateView(UpdateView):
           user_id=self.request.user.id
       )
     else:
-      print('form not valid', form.errors)
+      logger.debug(f'form not valid, errors: {form.errors.as_data()}')
     return super().form_valid(form)
 
   def get_context_data(self, *args, **kwargs):
@@ -189,7 +188,6 @@ class ResourceUpdateView(UpdateView):
                     self).get_context_data(*args, **kwargs)
     user = self.request.user
     _id = self.kwargs.get("id")
-    print('ResourceUpdateView() kwargs', self.kwargs)
 
     context['action'] = 'update'
     context['create_date'] = self.object.create_date.strftime("%Y-%m-%d")
@@ -206,7 +204,6 @@ class ResourceDetailView(DetailView):
   def get_context_data(self, **kwargs):
     context = super(ResourceDetailView, self).get_context_data(**kwargs)
     id_ = self.kwargs.get("pk")
-    print('ResourceDetailView(), kwargs', self, self.kwargs)
 
     context['primary'] = ResourceFile.objects.filter(resource_id = id_, filetype = 'primary')
     context['supporting'] = ResourceFile.objects.filter(

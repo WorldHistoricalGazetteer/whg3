@@ -107,7 +107,6 @@ class Command(BaseCommand):
                     }
 
                     place_when.jsonb = jsonb_data
-                    print(place.title, jsonb_data)
                     place_when.save()
                 
                 place.minmax = [place_start, place_end]

@@ -23,7 +23,6 @@ def attribListFromSet(attr, qs, exclude_title=None):
                        int(t['start'][list(t['start'].keys())[0]])]
                       for t in item.jsonb['when']['timespans']]
       }
-      print(obj)
     else:
       obj={"label": item.jsonb['toponym'] if attr == 'names'
         else item.jsonb.get('sourceLabel', item.jsonb.get('source_label'))}

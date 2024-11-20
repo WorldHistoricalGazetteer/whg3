@@ -41,13 +41,10 @@ def send_new_dataset_email(sender, instance, **kwargs):
                     f"----------------------------------------"
                 )
                 response = requests.post(settings.SLACK_NOTIFICATION_WEBHOOK, json={"text": slack_message})
-                if response.status_code == 200:
-                    print("Message sent to Slack.")
-                else:
-                    print(f"Failed to send message to Slack: {response.status_code}, {response.text}")
+                if not response.status_code == 200:
+                    logger.debug(f"Failed to send message to Slack: {response.status_code}, {response.text}")
             except Exception as e:
-                print('Error occurred while sending Slack notification for new dataset', e)
-                logger.exception("Error occurred while sending Slack notification for new dataset")
+                logger.exception(f"Error occurred while sending Slack notification for new dataset: {e}")
 
 
 def format_time(seconds):
@@ -64,8 +61,6 @@ def test_complexity(dsid):
     end = time.time()
     # Print the result
     duration = format_time(end - start)
-    print(
-        f'object_needs_tileset: {object_needs_tileset}, total_coords: {total_coords}, total_geometries: {total_geometries}, time: {duration} ')
 
 
 def handle_dataset_bbox(sender, instance, **kwargs):
@@ -163,14 +158,12 @@ def handle_status_change(sender, instance, **kwargs):
     if hasattr(instance, '_updating'):
         return
     setattr(instance, '_updating', True)
-    print(f'handle_status_change(): status: {instance.ds_status}, is public?: {instance.public}')
     try:
         if instance.pk is not None:  # Check if it's an existing instance, not new
             old_instance = sender.objects.get(pk=instance.pk)
             # Check whether 'ds_status' has been changed to 'wd-complete'
             # and notify the owner, bcc to editorial
             if old_instance.ds_status != instance.ds_status and instance.ds_status == 'wd-complete':
-                print('handle_status_change: ds_status changed to wd-complete')
                 owner = instance.owner
                 WHGmail(context={
                     'template': 'wikidata_review_complete',
@@ -217,7 +210,6 @@ def handle_status_change(sender, instance, **kwargs):
 
 @receiver(pre_delete, sender=Dataset)
 def remove_files(**kwargs):
-    print('pre_delete remove_files()', kwargs)
     ds_instance = kwargs.get('instance')
     files = DatasetFile.objects.filter(dataset_id_id=ds_instance.id)
     files.delete()

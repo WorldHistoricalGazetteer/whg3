@@ -6,4 +6,3 @@ class PlacesConfig(AppConfig):
         # Import the signals module to ensure signal handlers are registered.
         import places.signals
 
-        print(places.signals)

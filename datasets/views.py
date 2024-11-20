@@ -60,7 +60,7 @@ from django.views.generic import (
 )
 from django_celery_results.models import TaskResult
 
-from accounts.views import logger
+# from accounts.views import logger
 # Local application imports
 from areas.models import Area, Country
 from collection.models import Collection, CollectionGroup
@@ -416,11 +416,6 @@ def indexMatch(pid, hit_pid=None, user=None, task=None):
 def update_close_matches(new_child_id, parent_place_id, user, task):
     # Normalize the tuple
     place_a_id, place_b_id = sorted([new_child_id, parent_place_id])
-
-    # Record the new match in CloseMatch table
-    print('Updating CloseMatch table')
-    print(f'new_child_id: {new_child_id}, parent_place_id: {parent_place_id}')
-
     try:
         # Ensure that the user and task are valid instances
         assert isinstance(user, User), f'user is not a User instance: {type(user)}'
@@ -430,8 +425,7 @@ def update_close_matches(new_child_id, parent_place_id, user, task):
         if not CloseMatch.objects.filter(
                 Q(place_a_id=place_a_id) & Q(place_b_id=place_b_id)
         ).exists():
-            # Print debug information
-            print(f'User: {user} (ID: {user.id}), Task: {task} (ID: {task.id})')
+            logger.debug(f'User: {user} (ID: {user.id}), Task: {task} (ID: {task.id})')
 
             # Create the CloseMatch record
             CloseMatch.objects.create(
@@ -441,12 +435,10 @@ def update_close_matches(new_child_id, parent_place_id, user, task):
                 task=task,
                 basis='reviewed'
             )
-            print('CloseMatch record created successfully')
         else:
-            print(f'CloseMatch record already exists for {parent_place_id} and {new_child_id}')
+            logger.debug(f'CloseMatch record already exists for {parent_place_id} and {new_child_id}')
     except Exception as e:
-        print(f'Error creating CloseMatch record: {e}')
-        print(f'Debug info: new_child_id={new_child_id}, parent_place_id={parent_place_id}, user={user}, task={task}')
+        logger.exception(f'Error creating CloseMatch record: {e}; new_child_id={new_child_id}, parent_place_id={parent_place_id}, user={user}, task={task}')
 
 
 # hotfix 17 June 2024
@@ -461,7 +453,6 @@ def indexMultiMatch(pid, matchlist, user, task):
           - whg_id and children[] ids (if any) added to winner
           - name variants added to winner's searchy[] and suggest.item[] lists
     """
-    print('indexMultiMatch(): pid ' + str(pid) + ' matches ' + str(matchlist))
     from elasticsearch8 import RequestError
     es = settings.ES_CONN
     idx = settings.ES_WHG
@@ -476,10 +467,8 @@ def indexMultiMatch(pid, matchlist, user, task):
     # max score is winner
     winner = max(matchlist, key=lambda x: x['score'])  # 14158663
     winner_place_id = winner['pid']  # This is the place_id of the winner
-    print(f'winner_place_id: {winner_place_id}, incoming pid: {pid}')
     # this is multimatch so there is at least one demoted (list of whg_ids)
     demoted = [str(i['whg_id']) for i in matchlist if not (i['whg_id'] == winner['whg_id'])]  # ['14090523']
-    print('demoted', demoted)
 
     # complete doc for new record
     new_obj['relation'] = {"name": "child", "parent": winner['whg_id']}
@@ -491,7 +480,6 @@ def indexMultiMatch(pid, matchlist, user, task):
 
     # New relationships for CloseMatch records
     new_relationships = [(pid, winner_place_id)]  # Add the initial relationship
-    print('initial new_relationships', new_relationships)
 
     # generate script used to update winner w/kids and names
     # from new record and any kids of 'other' matched parents
@@ -510,16 +498,14 @@ def indexMultiMatch(pid, matchlist, user, task):
     try:
         es.index(index=idx, id=str(pid), routing=1, body=json.dumps(new_obj))
     except RequestError as rq:
-        print('Error: ', rq.error, rq.info)
+        logger. exception(f'Error indexing new record {pid} as child of {winner["whg_id"]}: {rq.error} {rq.info}')
 
     # demote others
     for _id in demoted:
-        print('find & demote whg_id', _id)
         # get index record stuff, to be altered then re-indexed
         # ES won't allow altering parent/child relations directly
         q_demote = {"query": {"bool": {"must": [{"match": {"whg_id": _id}}]}}}
         res = es.search(body=q_demote, index=idx)
-        print('res for demoted - hits hits ', res)
         srcd = res['hits']['hits'][0]['_source']
         # add names in suggest to names[]
         sugs = srcd['searchy']
@@ -542,8 +528,7 @@ def indexMultiMatch(pid, matchlist, user, task):
         try:
             es.update(index=idx, id=winner['whg_id'], body=q)
         except RequestError as rq:
-            print('q_updatewinner failed (whg_id)', winner['whg_id'])
-            print('Error: ', rq.error, rq.info)
+            logger.exception(f'Error updating winner {winner["whg_id"]}: {rq.error} {rq.info}')
 
         from copy import deepcopy
         newsrcd = deepcopy(srcd)
@@ -558,11 +543,9 @@ def indexMultiMatch(pid, matchlist, user, task):
             es.delete(index=idx, id=_id)
             es.index(index=idx, id=_id, body=newsrcd, routing=1)
         except RequestError as rq:
-            print('reindex failed (demoted)', _id)
-            print('Error: ', rq.error, rq.info)
+            logger.exception(f'Error reindexing demoted record {_id}: {rq.error} {rq.info}')
 
         # re-assign parent for kids of all/any demoted parents
-        print('addkids', addkids)
         if len(addkids) > 0:
             for kid in addkids:
                 q_adopt = {"script": {
@@ -578,7 +561,6 @@ def indexMultiMatch(pid, matchlist, user, task):
                 new_relationships.append((int(kid_place_id), int(winner_place_id)))
 
     # Create new CloseMatch records
-    print('new_relationships', new_relationships)
     for place_a, place_b in new_relationships:
         update_close_matches(place_a, place_b, user, task)
 
@@ -589,8 +571,6 @@ def review(request, dsid, tid, passnum):
       POST  for each record that got hits, process user matching decisions
       NB.   'passnum' is always a string: ['pass*' | 'def' | '0and1' (for idx)]
     """
-    print('request.GET entering review()', request.GET)
-    print(f'entering review(): dsid:{dsid}, tid:{tid}, passnum:{passnum}')
     pid = None
     if "pid" in request.GET:
         pid = request.GET["pid"]
@@ -601,7 +581,6 @@ def review(request, dsid, tid, passnum):
     auth = task.task_name[6:].replace("local", "")
     authname = "Wikidata" if auth == "wd" else "WHG"
     kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
-    print('task_kwargs in review()', kwargs)
     test = kwargs["test"] if "test" in kwargs else "off"
 
     # beta = "beta" in list(request.user.groups.all().values_list("name", flat=True))
@@ -617,7 +596,6 @@ def review(request, dsid, tid, passnum):
     # if request passnum is complete, increment
     # hit count for this pass
     cnt_pass = get_pass_count(tid, False, passnum)
-    print(f'cnt_pass for {passnum}: {cnt_pass}')
     # hit counts for all numbered passes
     cnt_pass0 = get_pass_count(tid, False, "pass0")
     cnt_pass1 = get_pass_count(tid, False, "pass1")
@@ -627,19 +605,15 @@ def review(request, dsid, tid, passnum):
     # calling link passnum may be 'pass*', 'def', or '0and1' (for idx)
     # if 'pass*', get place_ids for just that pass
     if passnum.startswith("pass"):
-        print('passnum starts with "pass":', passnum)
         pass_int = int(passnum[4])
         # if no unreviewed left, go to next pass
         passnum = passnum if cnt_pass > 0 else "pass" + str(pass_int + 1)
         hitplaces = Hit.objects.values("place_id").filter(
             task_id=tid, reviewed=False, query_pass=passnum
         )
-        print(f'{len(hitplaces)} hitplaces for {passnum}: {hitplaces}')
     else:
-        print('passnum does not start with "pass":', passnum)
         # all unreviewed
         hitplaces = Hit.objects.values("place_id").filter(task_id=tid, reviewed=False)
-        print(f'{len(hitplaces)} hitplaces for {passnum}: {hitplaces}')
 
     # set review page returned
     if auth in ["whg", "idx"]:
@@ -682,10 +656,8 @@ def review(request, dsid, tid, passnum):
     # handle request for singleton (e.g. deferred from browse table)
     # if 'pid' in request.GET, bypass per-pass sequential loading
     if pid:
-        print("pid in URI, just show that", pid)
         # get its index and add 1 to get page
         page = (*record_list,).index(Place.objects.get(id=pid)) + 1
-        print("pagenum", page)
     else:
         # default action, sequence of all pages for the pass
         page = 1 if not request.GET.get("page") else request.GET.get("page")
@@ -695,16 +667,12 @@ def review(request, dsid, tid, passnum):
     # get hits for this record
     placeid = records[0].id
     place = get_object_or_404(Place, id=placeid)
-    print('passnum', passnum)
     dataset_details = {}  # needed for context in either case
     # if auth not in ["whg", "idx"]:
     if passnum.startswith("pass") and auth not in ["whg", "idx"]:
         # ***this is wdgn review*** raw_hits are only numered pass
-        print('wdgn case in review(), raw_hits only for this pass', passnum)
         raw_hits = Hit.objects.filter(
             place_id=placeid, task_id=tid, query_pass=passnum).order_by("-authority", "-score")
-        print(f'place_id:{placeid}; task_id:{tid}; query_pass: {passnum}')
-        print('authorities:', [rh.authority for rh in raw_hits])
     elif passnum == "def":
         raw_hits = Hit.objects.filter(
             place_id=placeid, task_id=tid).order_by("-authority", "-score")
@@ -749,7 +717,6 @@ def review(request, dsid, tid, passnum):
         if auth in ["whg", "idx"]
         else None
     )
-    print('passes', passes)
 
     # convert ccodes to names
     countries = []
@@ -843,10 +810,7 @@ def review(request, dsid, tid, passnum):
        - For wikidata review, act on each hit considered (new place_geom and place_link records if matched)
        - For accession, act on index 'clusters'  
     '''
-    if method == "GET":  # just displays
-        print("review() GET, just displaying next")
-    elif method == "POST":
-        print('request.POST in review()', request.POST)
+    if method == "POST":
 
         place_post = get_object_or_404(Place, pk=placeid)
         review_status = getattr(place_post, review_field)
@@ -868,8 +832,6 @@ def review(request, dsid, tid, passnum):
             # are any of the listed hits matches?
             for x in range(len(hits)):
                 hit = hits[x]["id"]
-                print("hit # " + str(hits[x]) + " reviewed")
-                print("hit['json']", hits[x]["json"])
                 # print("dataset", hits[x]["json"]["dataset"])
                 # is this hit a match?
                 if hits[x]["match"] not in ["none"]:
@@ -917,12 +879,10 @@ def review(request, dsid, tid, passnum):
                                 },
                             )
                         # NAMES
-                        print('hasNames', hasNames, hits[x]["json"]["variants"])
                         if ('aug_names' in kwargs and kwargs['aug_names'] == 'on'
                                 and hasNames
                                 and tid not in place_post.names.all().values_list('task_id', flat=True)
                         ):
-                            print('aug_names was "on", doing names in review() now')
                             for n in hits[x]["json"]["variants"]:
                                 # handle different name formats
                                 # print('n has type', type(n))
@@ -931,10 +891,7 @@ def review(request, dsid, tid, passnum):
                                 elif hits[x]["json"]['dataset'] == 'geonames':
                                     name = n
                                 else:
-                                    print("failed to parse name", n)
                                     continue  # Skip if n is not in the expected format
-                                print('place_post, name', place_post, name)
-                                print('existing:', place_post.names.all().values_list("toponym", flat=True))
                                 # exclude duplicates
                                 if name not in place_post.names.all().values_list("toponym", flat=True):
                                     PlaceName.objects.create(
@@ -972,7 +929,6 @@ def review(request, dsid, tid, passnum):
                                     ),
                                 },
                             )
-                            print("created place_link instance:", link)
 
                         # create multiple PlaceLink records (e.g. Wikidata)
                         # TODO: filter duplicates
@@ -1022,16 +978,11 @@ def review(request, dsid, tid, passnum):
                 hitobj = get_object_or_404(Hit, id=hit.id)
                 hitobj.reviewed = True
                 hitobj.save()
-                print("hit # " + str(hitobj.id) + " flagged reviewed")
 
             # handle accessioning match results
             if len(matched_for_idx) == 0 and task.task_name == "align_idx":
                 # 0 matches during accession, indexMatch() makes it s seed (parent)
-                print("no accession matches, index place_id " + str(pid) + " as seed (parent)")
-                print("maxID() for seed in review()", maxID(es, "whg"))
-
-                # mod 18 Jun 2024
-                print(f'review()->parent. user: {request.user}, place_post: {place_post.id}, task: {task}')
+                logger.debug(f'review()->parent. user: {request.user}, place_post: {place_post.id}, task: {task}')
                 indexMatch(str(pid), user=request.user, task=task)
 
                 place_post.indexed = True
@@ -1040,8 +991,6 @@ def review(request, dsid, tid, passnum):
                 # 1 match - indexMatch() makes it a child of the match
                 # mod 18 Jun 2024
                 parent_id = matched_for_idx[0]["pid"]
-                print(f'review()->child: {place_post.id}, parent: {parent_id}')
-                print(f'user in review()->: {request.user}, task in review(): {task}')
                 indexMatch(str(place_post.id), hit_pid=parent_id, user=request.user, task=task)
 
                 place_post.indexed = True
@@ -1069,7 +1018,6 @@ def review(request, dsid, tid, passnum):
             #   status_emailer(ds, "idx")
             #   print("sent status email")
 
-            print("review_field", review_field)
             setattr(place_post, review_field, 1)
             place_post.save()
 
@@ -1084,8 +1032,7 @@ def review(request, dsid, tid, passnum):
                 + str(int(page))
             )
         else:
-            print("formset is NOT valid. errors:", formset.errors)
-            print("formset data:", formset.data)
+            logger.debug(f'formset is NOT valid. errors: {formset.errors} data: {formset.data}')
     # print('context', context)
     return render(request, "datasets/" + review_page, context=context)
 
@@ -1104,27 +1051,20 @@ def write_wd_pass0(request, tid):
       called from dataset_detail>status tab
       accepts all pass0 wikidata matches, writes geoms and links
     """
-    print('task_id (tid) in write_wd_pass0()', tid)
     task = get_object_or_404(TaskResult, task_id=tid)
-    print('task.task_kwargs', task.task_kwargs)
     try:
         kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
-        print('kwargs in write_wd_pass0()', kwargs, kwargs['ds'])
     except (ValueError, SyntaxError) as e:
-        print(f"Error evaluating task_kwargs: {e}")
+        logger.exception(f"Error evaluating task_kwargs: {e}")
         # return  # Handle the error appropriately
 
     # kwargs_str = task.task_kwargs.replace("'", '"')
     # kwargs = json.loads(kwargs_str)
     # kwargs = ast.literal_eval(task.task_kwargs)
-    print('kwargs in write_wd_pass0()', kwargs, kwargs['ds'])
-    print('type kwargs', type(kwargs))
     referer = request.META.get('HTTP_REFERER') + '#reconciliation'
     auth = task.task_name[6:].replace('local', '')
     # ds = get_object_or_404(Dataset, pk=kwargs['ds'])
     ds = Dataset.objects.get(id=kwargs['ds'])
-
-    print('Dataset found:', ds)
 
     referer = request.META.get('HTTP_REFERER') + '#reconciliation'
     auth = task.task_name[6:].replace('local', '')
@@ -1160,7 +1100,6 @@ def write_wd_pass0(request, tid):
                         "coordinates": g['coordinates']
                     }
                 )
-            print('created place_geom instance in write_wd_pass0', pg)
 
         # LINKS
         link_counter = 0
@@ -1177,7 +1116,6 @@ def write_wd_pass0(request, tid):
                     "identifier": link_uri(task.task_name, h.authrecord_id)
                 }
             )
-            print('created wd place_link instance:', link)
 
         # create link for each wikidata concordance, if any
         if hasLinks:
@@ -1186,7 +1124,6 @@ def write_wd_pass0(request, tid):
             for l in h.json['links']:
                 link_counter += 1
                 authid = re.search(":?(.*?)$", l).group(1)
-                print(authid)
                 # TODO: same no-dupe logic in review()
                 # don't write duplicates
                 if authid not in authids:
@@ -1200,7 +1137,6 @@ def write_wd_pass0(request, tid):
                             "identifier": authid
                         }
                     )
-            print('created ' + str(len(h.json['links'])) + ' place_link instances')
 
         # only matters if autocomplete was the last review action
         if auth in ["wd"] and ds.recon_status["wdlocal"] == 0:
@@ -1238,10 +1174,7 @@ def ds_recon(request, pk):
     # TODO: handle multipolygons from "#area_load" and "#area_draw"
     user = request.user
     context = {"dataset": ds.title}
-    if request.method == 'GET':
-        print('ds_recon() GET')
-    elif request.method == 'POST' and request.POST:
-        print('ds_recon() request.POST:', request.POST)
+    if request.method == 'POST' and request.POST:
 
         # return
 
@@ -1273,15 +1206,11 @@ def ds_recon(request, pk):
                 tid = previous.first().task_id
                 task_archive(tid, prior)
                 scope = 'unreviewed'
-                print('recon(): archived previous task')
-                print('ds_recon(): links & geoms were ' + ('kept' if prior == 'keep' else 'zapped'))
         else:
             # no existing task, submit all rows
             # print('ds_recon(): no previous, submitting all')
             scope = 'all'
 
-        print('ds_recon() scope', scope)
-        print('ds_recon() auth', auth)
         # which task? wdlocal, idx, builder. wdgn
         func = eval('align_' + auth)
 
@@ -1328,8 +1257,7 @@ def ds_recon(request, pk):
                                  "<span class='text-danger'>Your reconciliation task is under way.</span><br/>When complete, you will receive an email and if successful, results will appear below (you may have to refresh screen). <br/>In the meantime, you can navigate elsewhere.")
             return redirect('/datasets/' + str(ds.id) + '/reconcile')
         except:
-            print('failed: align_' + auth)
-            print(sys.exc_info())
+            logger.exception(f"Failed to start task align_{auth} for dataset {ds.id}", exc_info=True)
             messages.add_message(request, messages.INFO,
                                  "Sorry! Reconciliation services appear to be down. The system administrator has been notified.<br/>" + str(
                                      sys.exc_info()))
@@ -1363,7 +1291,6 @@ def task_delete(request, tid, scope="foo"):
     # Get the associated dataset
     ds = get_object_or_404(Dataset, pk=dsid)
     ds_status = ds.ds_status
-    print('task_delete() dsid', dsid)
 
     # Get related objects for deletion
     hits = Hit.objects.filter(task_id=tid)
@@ -1371,8 +1298,6 @@ def task_delete(request, tid, scope="foo"):
     placelinks = PlaceLink.objects.filter(task_id=tid)
     placegeoms = PlaceGeom.objects.filter(task_id=tid)
     placenames = PlaceName.objects.filter(task_id=tid)
-
-    print('task_delete()', {'tid': tr, 'dsid': dsid, 'auth': auth})
 
     # Reset the review status for places
     for p in places:
@@ -1395,7 +1320,7 @@ def task_delete(request, tid, scope="foo"):
     elif scope == 'geoms':
         placegeoms.delete()
     else:
-        print(f"Unsupported scope: {scope}")
+        logger.debug(f"Unsupported scope: {scope}")
 
     # Remove dataset from index if not in test mode
     if auth in ['whg', 'idx'] and test == 'off':
@@ -1422,7 +1347,6 @@ def task_archive(tid, prior):
     dsid = tr.task_args[1:-1]
     auth = tr.task_name[6:]
     places = Place.objects.filter(id__in=[h.place_id for h in hits])
-    print('task_archive()', {'tid': tr, 'dsid': dsid, 'auth': auth})
 
     # reset Place.review_{auth} to null
     for p in places:
@@ -1453,7 +1377,6 @@ def collab_add(request, dsid, v):
     """
       add collaborator to dataset in role
     """
-    print('collab_add() request, dsid', request, dsid)
     try:
         email = request.POST['email']
         role = request.POST['role']
@@ -1479,8 +1402,6 @@ def collab_add(request, dsid, v):
         else:
             return HttpResponseRedirect(request.META.get('HTTP_REFERER'))
 
-    print('collab_add():', request.POST['email'], role, dsid, uid)
-
     # Create the dataset-user relationship
     DatasetUser.objects.create(user_id_id=uid, dataset_id_id=dsid, role=role)
 
@@ -1494,7 +1415,6 @@ def collab_delete(request, uid, dsid, v):
       collab_delete(uid, dsid)
       remove collaborator from dataset
     """
-    print('collab_delete() request, uid, dsid', request, uid, dsid)
     get_object_or_404(DatasetUser, user_id_id=uid, dataset_id_id=dsid).delete()
     if v == '1':
         return redirect('/datasets/' + str(dsid) + '/collab')
@@ -1512,9 +1432,8 @@ def dataset_file_delete(ds):
         ffn = 'media/' + f.file.name
         if os.path.exists(ffn) and f.file.name != 'dummy_file.txt':
             os.remove(ffn)
-            print('zapped file ' + ffn)
         else:
-            print('did not find or ignored file ' + ffn)
+            logger.debug(f'file {ffn} not found')
 
 
 def update_rels_tsv(pobj, row):
@@ -1549,12 +1468,11 @@ def update_rels_tsv(pobj, row):
     # empty lon and lat are None
     coords = makeCoords(row['lon'], row['lat']) \
         if 'lon' in header and 'lat' in header and row['lon'] else []
-    print('coords', coords)
     try:
         matches = [x.strip() for x in row['matches'].split(';')] \
             if 'matches' in header and row['matches'] else []
     except:
-        print('matches, error', row['matches'], sys.exc_info())
+        logger.exception(f'error on matches: {row["matches"]}', sys.exc_info())
 
     description = row['description'] \
         if row['description'] else ''
@@ -1585,10 +1503,8 @@ def update_rels_tsv(pobj, row):
             if haslang:
                 new_name.jsonb['lang'] = haslang.group(1)
             objs['PlaceName'].append(new_name)
-    print('objs after names', objs)
     #
     # PlaceType()
-    print('types', types)
     if len(types) > 0:
         for i, t in enumerate(types):
             fclass_list = []
@@ -1609,22 +1525,18 @@ def update_rels_tsv(pobj, row):
                 ))
         pobj.fclasses = fclass_list
         pobj.save()
-    print('objs after types', objs)
 
     #
     # PlaceGeom()
     # TODO: test no existing identical geometry
-    print('coords', coords)
     if len(coords) > 0:
         geom = {"type": "Point",
                 "coordinates": coords,
                 "geowkt": 'POINT(' + str(coords[0]) + ' ' + str(coords[1]) + ')'}
     elif 'geowkt' in header and row['geowkt'] not in ['', None]:  # some rows no geom
         geom = parse_wkt(row['geowkt'])
-        print('from geowkt', geom)
     else:
         geom = None
-    print('geom', geom)
     # TODO:
     # if pobj is existing place, add geom only if it's new
     # if pobj is new place and row has geom, always add it
@@ -1647,8 +1559,6 @@ def update_rels_tsv(pobj, row):
         elif pobj.geoms.count() > 0:
             try:
                 for g in pobj.geoms.all():
-                    print('exist. coords', list(map(trunc4, g.jsonb['coordinates'])))
-                    print('new_coords', new_coords)
                     if list(map(trunc4, g.jsonb['coordinates'])) != new_coords:
                         objs['PlaceGeom'].append(
                             PlaceGeom(
@@ -1658,16 +1568,13 @@ def update_rels_tsv(pobj, row):
                                 geom=GEOSGeometry(json.dumps(geom))
                             ))
             except:
-                print('failed on ', pobj, sys.exc_info())
-    print('objs after geom', objs)
+                logger.exception(f'failed on {pobj}', sys.exc_info())
 
     # PlaceLink() - all are closeMatch
     # Pandas turns nulls into NaN strings, 'nan'
-    print('matches', matches)
     if len(matches) > 0:
         # any existing? only add new
         exist_links = list(pobj.links.all().values_list('jsonb__identifier', flat=True))
-        print('matches, exist_links at create', matches, exist_links)
         if len(set(matches) - set(exist_links)) > 0:
             # one or more new matches; add 'em
             for m in matches:
@@ -1710,7 +1617,6 @@ def update_rels_tsv(pobj, row):
     #
     # PlaceDescription()
     # @id, value, lang
-    print('description', description)
     if description != '':
         objs['PlaceDescription'].append(
             PlaceDescription(
@@ -1721,36 +1627,23 @@ def update_rels_tsv(pobj, row):
                 }
             ))
 
-    print('objs after all', objs)
-
-    # what came from this row
-    print('COUNTS:')
-    print('PlaceName:', len(objs['PlaceName']))
-    print('PlaceType:', len(objs['PlaceType']))
-    print('PlaceGeom:', len(objs['PlaceGeom']))
-    print('PlaceLink:', len(objs['PlaceLink']))
-    print('PlaceRelated:', len(objs['PlaceRelated']))
-    print('PlaceWhen:', len(objs['PlaceWhen']))
-    print('PlaceDescription:', len(objs['PlaceDescription']))
-    # no depictions in LP-TSV
-
     # TODO: update place.fclasses, place.minmax, place.timespans
 
     # bulk_create(Class, batch_size=n) for each
     PlaceName.objects.bulk_create(objs['PlaceName'], batch_size=10000)
-    print('names done')
+    logger.info('names done')
     PlaceType.objects.bulk_create(objs['PlaceType'], batch_size=10000)
-    print('types done')
+    logger.info('types done')
     PlaceGeom.objects.bulk_create(objs['PlaceGeom'], batch_size=10000)
-    print('geoms done')
+    logger.info('geoms done')
     PlaceLink.objects.bulk_create(objs['PlaceLink'], batch_size=10000)
-    print('links done')
+    logger.info('links done')
     PlaceRelated.objects.bulk_create(objs['PlaceRelated'], batch_size=10000)
-    print('related done')
+    logger.info('related done')
     PlaceWhen.objects.bulk_create(objs['PlaceWhen'], batch_size=10000)
-    print('whens done')
+    logger.info('whens done')
     PlaceDescription.objects.bulk_create(objs['PlaceDescription'], batch_size=10000)
-    print('descriptions done')
+    logger.info('descriptions done')
 
 
 def ds_update(request):
@@ -1760,7 +1653,6 @@ def ds_update(request):
       params: dsid, format, keepg, keepl, compare_data (json string)
     """
     if request.method == 'POST':
-        print('request.POST ds_update()', request.POST)
         dsid = request.POST['dsid']
         ds = get_object_or_404(Dataset, id=dsid)
         file_format = request.POST['format']
@@ -1768,12 +1660,10 @@ def ds_update(request):
         # keep previous recon/review results?
         keepg = request.POST['keepg']
         keepl = request.POST['keepl']
-        print('keepg, keepl', keepg, keepl)
 
         # comparison returned by ds_compare
         compare_data = json.loads(request.POST['compare_data'])
         compare_result = compare_data['compare_result']
-        print('compare_data from ds_compare', compare_data)
 
         # tempfn has .tsv or .jsonld extension from validation step
         tempfn = compare_data['tempfn']
@@ -1812,16 +1702,13 @@ def ds_update(request):
                 # bdf = bdf.replace({np.nan: None})
                 # force data types
                 bdf = bdf.astype({"id": str, "ccodes": str, "types": str, "aat_types": str})
-                print('reopened new file, # lines:', len(bdf))
             except:
                 raise
 
             # CURRENT PLACES
             ds_places = ds.places.all()
-            print('ds_places', ds_places)
             # pids of missing src_ids
             rows_delete = list(ds_places.filter(src_id__in=compare_result['rows_del']).values_list('id', flat=True))
-            print('rows_delete', rows_delete)  # 6880702
 
             # CASCADE includes links & geoms
             try:
@@ -1864,7 +1751,6 @@ def ds_update(request):
                 # row=bdf.iloc[1]
                 # new row as dict
                 row = row.to_dict()
-                print('row as dict', row)
 
                 start = int(row['start']) if 'start' in row else int(row['attestation_year']) \
                     if ('attestation_year' in row) else None
@@ -1914,7 +1800,7 @@ def ds_update(request):
                         pobj = result.json()
                         pobj = {key: val for key, val in sorted(pobj.items(), key=lambda ele: ele[0])}
                     except:
-                        print('pobj failed', p.id, sys.exc_info())
+                        logger.exception(f'pobj failed {p.id}', sys.exc_info())
 
                     # build object for comparison
                     # TODO: build separate serializer(s) for this? performance?
@@ -1977,7 +1863,6 @@ def ds_update(request):
                     if row_mapper['coords'] != []:
                         diffs.append(row_mapper['coords'] == p_mapper['coords'])
 
-                    print('diffs', diffs)
                     alldiffs.append({'title': row_mapper['title'], 'diffs': diffs})
 
                     # update Place record in all cases
@@ -2017,7 +1902,6 @@ def ds_update(request):
                     p.save()
                 except:
                     # no corresponding Place, create new one
-                    print('new place record needed from rdp', row)
                     count_new += 1
                     newpl = Place.objects.create(
                         src_id=row['id'],
@@ -2032,7 +1916,6 @@ def ds_update(request):
                     newpl.save()
                     pobj = newpl
                     rows_add.append(pobj.id)
-                    print('new place, related:', newpl)
                     # add related rcords (PlaceName, PlaceType, etc.)
                     update_rels_tsv(pobj, row)
                 # except:
@@ -2049,9 +1932,6 @@ def ds_update(request):
                       "new_count": count_new, "deleted_count": len(rows_delete),
                       "newfile": filepath}
 
-            print('update result', result)
-            print("compare_data['count_indexed']", compare_data['count_indexed'])
-
             #
             if compare_data['count_indexed'] > 0:
                 result["indexed"] = True
@@ -2059,14 +1939,12 @@ def ds_update(request):
                 # surgically remove as req.
                 # rows_delete(gone from db) + idx_delete(rows with meaningful change)
                 idx_delete = rows_delete + idx_delete
-                print('idx_delete', idx_delete)
                 if len(idx_delete) > 0:
                     es = settings.ES_CONN
                     idx = settings.ES_WHG
-                    print('pids to delete from index:', idx_delete)
                     removePlacesFromIndex(es, idx, idx_delete)
             else:
-                print('not indexed, that is all')
+                logger.info('not indexed')
 
             # write log entry
             Log.objects.create(
@@ -2083,7 +1961,7 @@ def ds_update(request):
             # return to update modal
             return JsonResponse(result, safe=False)
         elif file_format == 'lpf':
-            print("ds_update for lpf; doesn't get here yet")
+            logger.info("ds_update for lpf; doesn't get here yet")
 
 
 class PublicListsView(ListView):
@@ -2129,13 +2007,12 @@ class DatasetCreateEmptyView(LoginRequiredMixin, CreateView):
     success_message = 'empty dataset created'
 
     def form_invalid(self, form):
-        print('form invalid...', form.errors.as_data())
+        logger.error(f'form invalid: {form.errors.as_data()}')
         context = {'form': form}
         return self.render_to_response(context=context)
 
     def form_valid(self, form):
         data = form.cleaned_data
-        print('cleaned_data', data)
         context = {"format": "empty"}
         # context={"format":data['format']}
         user = self.request.user
@@ -2163,7 +2040,6 @@ class DatasetCreateEmptyView(LoginRequiredMixin, CreateView):
             dsobj.save()
             ds = Dataset.objects.get(id=dsobj.id)
             label = 'ds_' + str(ds.id)
-            print('new dataset label', 'ds_' + label)
             # generate a unique label if none was entered
             if dsobj.label == '':
                 ds.label = 'ds_' + str(dsobj.id)
@@ -2245,7 +2121,6 @@ class DatasetPublicView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(DatasetPublicView, self).get_context_data(**kwargs)
-        print('self, kwargs', self, self.kwargs)
 
         ds = get_object_or_404(Dataset, id=self.kwargs['pk'])
         file = ds.file
@@ -2304,7 +2179,6 @@ def ds_list(request, label):
       fetch places in specified dataset
       utility used for place collections
     """
-    print('in ds_list() for', label)
     qs = Place.objects.all().filter(dataset=label)
     geoms = []
     for p in qs.all():
@@ -2321,7 +2195,6 @@ def match_undo(request, ds, tid, pid):
       - delete any geoms or links created
       - reset flags for hit.reviewed and place.review_xxx
     """
-    print('in match_undo() ds, task, pid:', ds, tid, pid)
     from django_celery_results.models import TaskResult
     geom_matches = PlaceGeom.objects.filter(task_id=tid, place_id=pid)
     link_matches = PlaceLink.objects.filter(task_id=tid, place_id=pid)
@@ -2330,7 +2203,6 @@ def match_undo(request, ds, tid, pid):
 
     # reset place.review_xxx to 0
     tasktype = TaskResult.objects.get(task_id=tid).task_name[6:]
-    print('tasktype', tasktype)
     place = Place.objects.get(pk=pid)
     # remove any defer comments
     place.defer_comments.delete()
@@ -2542,9 +2414,7 @@ class DatasetMetadataView(LoginRequiredMixin, UpdateView):
         file = data['file']
         filerev = ds.files.all().order_by('-rev')[0].rev
         # print('DatasetSummaryView kwargs',self.kwargs)
-        print('DatasetSummaryView form_valid() data->', data)
         if data["file"] == None:
-            print('data["file"] == None')
             # no file, updating dataset only
             ds.title = data['title']
             ds.description = data['description']
@@ -2559,10 +2429,7 @@ class DatasetMetadataView(LoginRequiredMixin, UpdateView):
         return super().form_valid(form)
 
     def form_invalid(self, form):
-        print('kwargs', self.kwargs)
-        context = {}
-        print('form not valid; errors:', form.errors)
-        print('cleaned_data', form.cleaned_data)
+        logger.error(f'form invalid: {form.errors.as_data()}')
         return super().form_invalid(form)
 
     def get_object(self):
@@ -2641,7 +2508,6 @@ class DatasetBrowseView(LoginRequiredMixin, DetailView):
     def get_success_url(self):
         id_ = self.kwargs.get("id")
         user = self.request.user
-        print('messages:', messages.get_messages(self.kwargs))
         return '/datasets/' + str(id_) + '/browse'
 
     def get_object(self):
@@ -2651,8 +2517,6 @@ class DatasetBrowseView(LoginRequiredMixin, DetailView):
     def get_context_data(self, *args, **kwargs):
         context = super(DatasetBrowseView, self).get_context_data(*args, **kwargs)
 
-        print('DatasetBrowseView get_context_data() kwargs:', self.kwargs)
-        print('DatasetBrowseView get_context_data() request.user', self.request.user)
         id_ = self.kwargs.get("id")
 
         ds = get_object_or_404(Dataset, id=id_)
@@ -2754,7 +2618,6 @@ class DatasetReconcileView(LoginRequiredMixin, DetailView):
     def get_success_url(self):
         id_ = self.kwargs.get("id")
         user = self.request.user
-        print('messages:', messages.get_messages(self.kwargs))
         return '/datasets/' + str(id_) + '/reconcile'
 
     def get_object(self):
@@ -2777,7 +2640,6 @@ class DatasetReconcileView(LoginRequiredMixin, DetailView):
             "deferred": ds.places.filter(review_wd=2).count(),
             "remain": ds.places.filter(review_wd=0).count() + ds.places.filter(review_wd=2).count(),
         }
-        print('wdgn_status', wdgn_status)
 
         idx_status = {
             "rows": place_count,
@@ -2819,7 +2681,6 @@ class DatasetCollabView(LoginRequiredMixin, DetailView):
     def get_success_url(self):
         id_ = self.kwargs.get("id")
         user = self.request.user
-        print('messages:', messages.get_messages(self.kwargs))
         return '/datasets/' + str(id_) + '/collab'
 
     def get_object(self):
@@ -2829,8 +2690,6 @@ class DatasetCollabView(LoginRequiredMixin, DetailView):
     def get_context_data(self, *args, **kwargs):
         context = super(DatasetCollabView, self).get_context_data(*args, **kwargs)
 
-        print('DatasetCollabView get_context_data() kwargs:', self.kwargs)
-        print('DatasetCollabView get_context_data() request.user:', self.request.user)
         id_ = self.kwargs.get("id")
         ds = get_object_or_404(Dataset, id=id_)
 

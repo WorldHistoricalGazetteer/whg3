@@ -30,7 +30,6 @@ def handle_index_change(sender, instance, **kwargs):
 
     # Check if 'indexed' was False and has changed to True
     if not current_place.indexed and instance.indexed:
-        print('in signal, gonna run unindex_from_pub()')
         # Perform the unindex operation synchronously or asynchronously based on your choice.
         unindex_from_pub.delay(place_id=instance.pk)
 

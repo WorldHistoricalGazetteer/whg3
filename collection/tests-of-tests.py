@@ -80,11 +80,6 @@ pcoll = Collection.objects.create(
 )
 pcoll.save()
 passed = pcoll.title == 'Student example {n}'
-if passed:
-  print('ok')
-  # Collection.objects.filter(title='Place Collection test 01').delete()
-else:
-  print('whoops, failed')
 
 # if cg: cg.delete();
 cg2 = CollectionGroup.objects.create(
@@ -97,7 +92,6 @@ cg2 = CollectionGroup.objects.create(
 cg2.save()
 cg2.collections.add(pcoll)
 # cg2.collections.add(*[c for c in Collection.objects.all()])
-print(cg2.collections.all())
 
 u1=User.objects.get(id=7)
 u2=User.objects.get(id=12)

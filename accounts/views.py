@@ -81,7 +81,6 @@ def logout(request):
     return redirect('home')
 
 def confirm_email(request, token):
-  print('token in confirm_email()', token)
   signer = Signer()
   try:
     user_id = signer.unsign(token)
@@ -180,7 +179,6 @@ class CustomPasswordChangeDoneView(auth_views.PasswordChangeDoneView):
     return super().get(request, *args, **kwargs)
 
 def add_to_group(cg, member):
-  print('add_to_group', cg, member)
   cguser = CollectionGroupUser.objects.create(
     role='member',
     collectiongroup=cg,
@@ -192,14 +190,13 @@ def add_to_group(cg, member):
 @login_required
 def profile_edit(request):
     if request.method == 'POST':
-        print('request.FILES', request.FILES)
         form = UserModelForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             form.save()
             return redirect('profile-edit')
         else:
-            print("Form Errors:", form.errors)
-            print("Cleaned Data:", form.cleaned_data)
+            logger.debug(f"Form Errors: {form.errors}")
+            logger.debug(f"Cleansed Data: {form.cleaned_data}")
     else:
         form = UserModelForm(instance=request.user)
 
@@ -210,10 +207,8 @@ def profile_edit(request):
 @login_required
 @transaction.atomic
 def update_profile(request):
-  print('update_profile() request.method', request.method)
   context = {}
   if request.method == 'POST':
-    print('update_profile() POST', request.POST)
     user_form = UserModelForm(request.POST, instance=request.user)
     # profile_form = ProfileModelForm(request.POST, instance=request.user.profile)
     if user_form.is_valid():
@@ -223,8 +218,6 @@ def update_profile(request):
       messages.success(request, ('Your profile was successfully updated!'))
       return redirect('accounts:profile')
     else:
-      print('error, user_form', user_form.cleaned_data)
-      # print('error, profile_form',profile_form.cleaned_data)
       messages.error(request, ('Please correct the error below.'))
   else:
     user_form = UserModelForm(instance=request.user)

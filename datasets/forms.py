@@ -174,7 +174,6 @@ class DatasetDetailModelForm(forms.ModelForm):
     def clean_label(self):
         label = self.cleaned_data['label']
         if ' ' in label:
-            print("there's a space goddamit")
             raise forms.ValidationError('label cannot contain any space')
         return label
 

@@ -58,10 +58,9 @@ def index_to_pub(dataset_id):
     try:
         dataset = Dataset.objects.get(pk=dataset_id, ds_status__in=['wd-complete', 'accessioning'])
     except Dataset.DoesNotExist:
-        print(f"Dataset with ID {dataset_id} does not exist or is not public/ready for accessioning.")
+        logger.exception(f"Dataset with ID {dataset_id} does not exist or is not public/ready for accessioning.")
         return  # Exit if dataset conditions aren't met
 
-    print(f"Indexing dataset {dataset_id} to 'pub' index...")
     places_to_index = Place.objects.filter(dataset=dataset, indexed=False, idx_pub=False)
     place_ids_to_index = list(places_to_index.values_list('id', flat=True))
 
@@ -94,9 +93,9 @@ def index_to_pub(dataset_id):
     # Update the idx_pub flag for all successful Place objects using the Place IDs
     Place.objects.filter(id__in=place_ids_to_index).update(idx_pub=True)
 
-    print(f"Indexing complete. Total indexed places: {successes}. Failed documents: {len(failed_docs)}")
+    logger.debug(f"Indexing complete. Total indexed places: {successes}. Failed documents: {len(failed_docs)}")
     if failed_docs:
-        print(f"Failed documents: {failed_docs}")
+        logger.debug(f"Failed documents: {failed_docs}")
 
 
 """
@@ -118,8 +117,6 @@ def unindex_from_pub(dataset_id=None, place_id=None):
             # Check if delete operation was successful
             if response.get('result') != 'deleted':
                 raise Exception("Elasticsearch delete operation failed")
-            else:
-                print('pub record deleted in unindex_from_pub():', place)
             # Update the idx_pub flag for this Place object
             place.idx_pub = False
             place.save()
@@ -134,7 +131,7 @@ def unindex_from_pub(dataset_id=None, place_id=None):
         try:
             dataset = Dataset.objects.get(pk=dataset_id)
         except Dataset.DoesNotExist:
-            print(f"Dataset with ID {dataset_id} does not exist.")
+            logger.exception(f"Dataset with ID {dataset_id} does not exist.")
             return  # Exit if the dataset is not found
 
         # query for es.delete_by_query
@@ -151,7 +148,7 @@ def unindex_from_pub(dataset_id=None, place_id=None):
 
         # Check for failures and take necessary actions
         if response['failures']:
-            print(f"Failures in unindexing: {response['failures']}")
+            logger.debug(f"Failures in unindexing: {response['failures']}")
 
         # Now, update the idx_pub flag for all Place objects of this dataset
         with transaction.atomic():
@@ -160,7 +157,7 @@ def unindex_from_pub(dataset_id=None, place_id=None):
         place_ids = Place.objects.filter(dataset_id=dataset_id, idx_pub=True).values_list('id', flat=True)
         return {'place_ids': list(place_ids)}
 
-    print(f"Unindexing complete")
+    logger.debug(f"Unindexing complete")
 
 
 # test task for uptimerobot
@@ -293,7 +290,6 @@ def normalize_whg(hits):
 # normalize hit json from any authority
 # language relevant only for wikidata local)
 def normalize(h, auth, language=None):
-    print('auth in normalize', auth)
     rec = None
     if auth.startswith('whg'):
         # for whg h is full hit, not only _source
@@ -372,18 +368,15 @@ def normalize(h, auth, language=None):
             rec.inception = parseDateTime(h['inception']['value']) if 'inception' in h.keys() else ''
             rec.dataset = h['dataset'] if 'dataset' in h.keys() else ''
         except:
-            print("normalize(wd) error:", h['place']['value'][31:], sys.exc_info())
+            logger.exception(f'Error in normalize(wd): {h["place"]["value"][31:]}', sys.exc_info())
     elif auth == 'wdlocal':
         # hit['_source'] keys() for dataset='wikidata': ['types', 'authids', 'claims', 'fclasses',
         # 'sitelinks', 'location', 'id', 'variants', 'type', 'descriptions', 'dataset', 'repr_point'])
         # hit['_source'] keys() for dataset='geonames': ['id', 'fclasses', 'location', 'repr_point', 'variants', 'dataset']
         try:
-            print('h in normalize', h)
             # which index is the target?
             is_wdgn = 'dataset' in h.keys()
-            print('is_wdgn?', is_wdgn)
             dataset = h['dataset'] if is_wdgn else 'wd'
-            print('dataset', dataset)
             variants = h['variants']
             fclasses = h['fclasses']
             title = make_title(h, language)
@@ -407,13 +400,12 @@ def normalize(h, auth, language=None):
             if 'location' in h.keys():
                 # single MultiPoint geometry
                 loc = h['location']
-                print('location IS in hit', loc)
                 loc['id'] = h['id']
                 loc['ds'] = dataset
                 # single MultiPoint geom if exists
                 rec.geoms = [loc]
             else:
-                print('no location in hit', h)
+                logger.debug(f'No location in hit {h["id"]}')
 
             # if not is_wdgn: # it's wd
             if dataset != 'geonames':  # it's wd or wikidata
@@ -439,8 +431,7 @@ def normalize(h, auth, language=None):
                 # no minmax in hit if no inception value(s)
                 rec.minmax = [h['minmax']['gte'], h['minmax']['lte']] if 'minmax' in h else []
         except Exception as e:
-            print("normalize(wdlocal) error:", h['id'], str(e))
-            print('Hit rec', rec)
+            logger.exception(f'Error in normalize(wdlocal): {h["id"]}, {rec}', sys.exc_info())
 
     # elif auth == 'tgn':
     #   rec = HitRecord(-1, 'tgn', h['tgnid'], h['title'])
@@ -465,7 +456,6 @@ def normalize(h, auth, language=None):
     else:
         rec = HitRecord(-1, 'unknown', 'unknown', 'unknown')
 
-    print('normalized hit record', rec.toJSON())
     return rec.toJSON()
 
 
@@ -732,7 +722,6 @@ def align_wdlocal(*args, **kwargs):
     if scope_geom == 'geom_free':
         qs = qs.filter(geoms__isnull=True)
 
-    print('scope, count', scope, qs.count())
     for place in qs:
         # build query object
         qobj = {"place_id": place.id,
@@ -990,7 +979,6 @@ def es_lookup_idx(qobj, *args, **kwargs):
 
     # grab a copy
     q1 = qbase
-    print('q1', q1)
 
     # /\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
     # pass0a, pass0b (identifiers)
@@ -1000,7 +988,7 @@ def es_lookup_idx(qobj, *args, **kwargs):
         hits0a = result0a["hits"]["hits"]
         # print('len(hits0)',len(hits0a))
     except:
-        print("q0a, ES error:", q0, sys.exc_info())
+        logger.exception(f'Error in es.search(q0a): {q0}', sys.exc_info())
     if len(hits0a) > 0:
         # >=1 matching identifier
         result_obj['hit_count'] += len(hits0a)
@@ -1025,7 +1013,6 @@ def es_lookup_idx(qobj, *args, **kwargs):
                 hitobj["parent"] = relation["parent"]
             # add profile to hitlist
             hitobjlist.append(hitobj)
-        print(str(len(hitobjlist)) + " hits @ q0a")
         _ids = [h['_id'] for h in hitobjlist]
         for hobj in hitobjlist:
             for l in hobj['links']:
@@ -1034,12 +1021,10 @@ def es_lookup_idx(qobj, *args, **kwargs):
         # if new links, crawl again
         if len(set(linklist) - set(links)) > 0:
             try:
-                print('q0 at 0b search, new link identifiers?', q0)
                 result0b = es.search(index=idx, body=q0)
                 hits0b = result0b["hits"]["hits"]
-                print('len(hits0b)', len(hits0b))
             except:
-                print("q0b, ES error:", sys.exc_info())
+                logger.exception(f'Error in es.search(q0b): {q0}', sys.exc_info())
             # add new results if any to hitobjlist and result_obj["hits"]
             result_obj['hit_count'] += len(hits0b)
             for h in hits0b:
@@ -1075,7 +1060,7 @@ def es_lookup_idx(qobj, *args, **kwargs):
         result1 = es.search(index=idx, body=q1)
         hits1 = result1["hits"]["hits"]
     except:
-        print("q1, ES error:", q1, sys.exc_info())
+        logger.exception(f'Error in es.search(q1): {q1}', sys.exc_info())
         h["pass"] = "pass1"
 
     result_obj['hit_count'] += len(hits1)

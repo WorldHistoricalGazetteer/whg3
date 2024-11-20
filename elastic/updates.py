@@ -22,4 +22,3 @@ for p in qs:
     },
     "query": {"match":{"place_id": p.id}}}
     es.update_by_query(index='whg', body=q_update, conflicts='proceed')
-print(str(count)+' updated')

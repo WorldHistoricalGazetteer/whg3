@@ -351,7 +351,6 @@ class PlaceSerializer(serializers.ModelSerializer):
                 coreserializers.serialize("json", TraceAnnotation.objects.filter(
                     place=place.id, collection=cid, archived=False)))
         else:
-            print('no cid in context')
             return json.loads('[]')
 
     # traces = serializers.SerializerMethodField('trace_anno')
@@ -678,7 +677,6 @@ class LPFSerializer(serializers.Serializer):
 
     def get_geometry(self, place) -> dict:
         geometries_data = PlaceGeomSerializer(place.geoms.all(), many=True).data
-        print('geometries_data from PlaceGeomSerializer', geometries_data)
         if len(geometries_data) == 1:
             return geometries_data[0]
 
