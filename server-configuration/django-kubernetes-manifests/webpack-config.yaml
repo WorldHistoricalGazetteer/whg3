@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webpack-config
+data:
+  package.json: |
+    {
+      "name": "webpack-app",
+      "version": "1.0.0",
+      "scripts": {
+        "build": "webpack --mode production"
+      },
+      "dependencies": {
+        "webpack": "^5.0.0",
+        "webpack-cli": "^4.0.0",
+        "http-server": "^14.1.1"
+      }
+    }
+  webpack.config.js: |
+    const path = require('path');
+    module.exports = {
+      entry: './src/index.js',
+      output: {
+        filename: 'main.js',
+        path: path.resolve(__dirname, 'dist'),
+      },
+    };
+  src/index.js: |
+    console.log("Hello, Webpack!");

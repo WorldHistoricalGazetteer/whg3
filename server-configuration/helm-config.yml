@@ -1,0 +1,3 @@
+helm:
+  version: "v3.12.0"
+  repo_url: "https://get.helm.sh"

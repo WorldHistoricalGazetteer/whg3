@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tileserver-gl
+  labels:
+    app: tileserver-gl
+spec:
+  replicas: 1  # Adjust the number of replicas as needed
+  selector:
+    matchLabels:
+      app: tileserver-gl
+  template:
+    metadata:
+      labels:
+        app: tileserver-gl
+    spec:
+      containers:
+      - name: tileserver-gl
+        image: klokantech/tileserver-gl # Image for tileserver-gl
+        ports:
+          - containerPort: 80  # The port where the tile server will be exposed
+        volumeMounts:
+          - name: tiles-data
+            mountPath: /var/lib/tileserver-gl
+        env:
+          - name: TILESERVER_GL_GLOBALLINKS
+            value: "true" # Customize your environment variables as necessary

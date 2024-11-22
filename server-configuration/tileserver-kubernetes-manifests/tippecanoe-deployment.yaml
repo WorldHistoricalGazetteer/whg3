@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tippecanoe-node
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: tippecanoe-node
+  template:
+    metadata:
+      labels:
+        app: tippecanoe-node
+    spec:
+      containers:
+        - name: tippecanoe-node
+          image: yourdockerusername/tippecanoe-node:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: NODE_ENV
+              value: "production"
+          volumeMounts:
+            - name: tileserver-storage
+              mountPath: /app/tiles
+      volumes:
+        - name: tileserver-storage
+          persistentVolumeClaim:
+            claimName: tileserver-pvc

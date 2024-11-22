@@ -1,0 +1,3 @@
+vespa:
+  version: "8.441.21"
+  download_url: "https://github.com/vespa-engine/vespa/releases/download/v8.441.21/vespa-cli_8.441.21_linux_amd64.tar.gz"

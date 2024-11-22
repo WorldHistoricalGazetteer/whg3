@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vespa-search
+  labels:
+    app: vespa
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vespa
+      role: search
+  template:
+    metadata:
+      labels:
+        app: vespa
+        role: search
+    spec:
+      containers:
+        - name: vespa-search
+          image: vespa-engine/vespa
+          ports:
+            - containerPort: 8080
+          env:
+            - name: VESPA_CONFIGSERVER_HOST
+              value: "vespa-config"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vespa-search
+spec:
+  selector:
+    app: vespa
+    role: search
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  clusterIP: None

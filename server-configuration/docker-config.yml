@@ -1,0 +1,4 @@
+docker:
+  version: "20.10.9"
+  repo_url: "https://download.docker.com/linux/ubuntu"
+  repo_key: "https://download.docker.com/linux/ubuntu/gpg"

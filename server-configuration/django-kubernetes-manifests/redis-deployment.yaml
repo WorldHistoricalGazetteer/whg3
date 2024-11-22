@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7.0
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        volumeMounts:
+        - mountPath: /data
+          name: redis-storage
+        args:
+        - "--appendonly"
+        - "yes"
+        livenessProbe:
+          tcpSocket:
+            port: 6379
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          exec:
+            command:
+              - redis-cli
+              - ping
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+        - name: redis-storage
+          persistentVolumeClaim:
+            claimName: redis-pvc

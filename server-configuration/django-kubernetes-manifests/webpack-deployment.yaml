@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webpack
+  labels:
+    app: webpack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: webpack
+  template:
+    metadata:
+      labels:
+        app: webpack
+    spec:
+      containers:
+      - name: webpack
+        image: node:18-alpine
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - mountPath: /usr/src/app
+          name: webpack-source
+        workingDir: /usr/src/app
+        command: ["sh", "-c"]
+        args:
+        - |
+          npm install && \
+          npm run build && \
+          npx http-server ./dist -p 8080
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      volumes:
+      - name: webpack-source
+        configMap:
+          name: webpack-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webpack
+spec:
+  selector:
+    app: webpack
+  ports:
+  - port: 8080
+    targetPort: 8080
