@@ -9,20 +9,6 @@ if [ -z "$ROLE" ]; then
     exit 1
 fi
 
-# Define script directory
-SCRIPT_DIR=$(dirname "$0")
-
-# Load configuration from YAML files
-DOCKER_VERSION=$(yq eval '.docker.version' "$SCRIPT_DIR/docker-config.yml")
-DOCKER_REPO_URL=$(yq eval '.docker.repo_url' "$SCRIPT_DIR/docker-config.yml")
-DOCKER_REPO_KEY=$(yq eval '.docker.repo_key' "$SCRIPT_DIR/docker-config.yml")
-KUBE_VERSION=$(yq eval '.kubernetes.version' "$SCRIPT_DIR/kubernetes-config.yml")
-POD_NETWORK_CIDR=$(yq eval '.kubernetes.pod_network_cidr' "$SCRIPT_DIR/kubernetes-config.yml")
-HELM_VERSION=$(yq eval '.helm.version' "$SCRIPT_DIR/helm-config.yml")
-HELM_REPO_URL=$(yq eval '.helm.repo_url' "$SCRIPT_DIR/helm-config.yml")
-VESPA_VERSION=$(yq eval '.vespa.version' "$SCRIPT_DIR/vespa-config.yml")
-VESPA_DOWNLOAD_URL=$(yq eval '.vespa.download_url' "$SCRIPT_DIR/vespa-config.yml")
-
 # Update and install dependencies
 echo "Updating package list..."
 sudo apt-get update
@@ -31,7 +17,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common jq
 if [ $? -ne 0 ]; then
     echo "Error occurred during the installation of dependencies."
     exit 1
@@ -44,6 +30,20 @@ if [ $? -ne 0 ]; then
 fi
 
 sudo chmod +x /usr/local/bin/yq
+
+# Define script directory
+SCRIPT_DIR=$(dirname "$0")
+
+# Load configuration from YAML files
+DOCKER_VERSION=$(yq eval '.docker.version' "$SCRIPT_DIR/system/docker-config.yaml")
+DOCKER_REPO_URL=$(yq eval '.docker.repo_url' "$SCRIPT_DIR/system/docker-config.yaml")
+DOCKER_REPO_KEY=$(yq eval '.docker.repo_key' "$SCRIPT_DIR/system/docker-config.yaml")
+KUBE_VERSION=$(yq eval '.kubernetes.version' "$SCRIPT_DIR/system/kubernetes-config.yaml")
+POD_NETWORK_CIDR=$(yq eval '.kubernetes.pod_network_cidr' "$SCRIPT_DIR/system/kubernetes-config.yaml")
+HELM_VERSION=$(yq eval '.helm.version' "$SCRIPT_DIR/system/helm-config.yaml")
+HELM_REPO_URL=$(yq eval '.helm.repo_url' "$SCRIPT_DIR/system/helm-config.yaml")
+VESPA_VERSION=$(yq eval '.vespa.version' "$SCRIPT_DIR/system/vespa-config.yaml")
+VESPA_DOWNLOAD_URL=$(yq eval '.vespa.download_url' "$SCRIPT_DIR/system/vespa-config.yaml")
 
 # Install Docker
 echo "Installing Docker version $DOCKER_VERSION..."
@@ -136,7 +136,7 @@ fi
 
 # Install Flannel
 echo "Installing Flannel for Kubernetes..."
-kubectl apply -f "$SCRIPT_DIR/flannel-config.yml"
+kubectl apply -f "$SCRIPT_DIR/system/flannel-config.yaml"
 kubectl get pods -n kube-system -l app=flannel
 if [ $? -ne 0 ]; then
     echo "Error occurred during Flannel installation."
@@ -146,7 +146,7 @@ fi
 if [ "$ROLE" == "master" ]; then
   # Install Contour
   echo "Installing Contour Ingress controller..."
-  kubectl apply -f "$SCRIPT_DIR/contour-config.yml"
+  kubectl apply -f "$SCRIPT_DIR/system/contour-config.yaml"
   kubectl get pods -n projectcontour
   if [ $? -ne 0 ]; then
       echo "Error occurred during Contour installation."
@@ -171,11 +171,11 @@ echo "Deployment complete!"
 
 # Deploy Vespa manifests
 echo "Deploying Vespa components..."
-kubectl apply -f "$SCRIPT_DIR/vespa-kubernetes-manifests/content-node-deployment.yaml"
-kubectl apply -f "$SCRIPT_DIR/vespa-kubernetes-manifests/search-node-deployment.yaml"
+kubectl apply -f "$SCRIPT_DIR/vespa/content-node-deployment.yaml"
+kubectl apply -f "$SCRIPT_DIR/vespa/search-node-deployment.yaml"
 if [ "$ROLE" == "master" ]; then
-  kubectl apply -f "$SCRIPT_DIR/vespa-kubernetes-manifests/config-server-deployment.yaml"
-  kubectl apply -f "$SCRIPT_DIR/vespa-kubernetes-manifests/vespa-ingress.yaml"
+  kubectl apply -f "$SCRIPT_DIR/vespa/config-server-deployment.yaml"
+  kubectl apply -f "$SCRIPT_DIR/vespa/vespa-ingress.yaml"
 fi
 
 # Deploy Django and Tile services
