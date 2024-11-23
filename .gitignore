@@ -130,9 +130,7 @@ validation/test_data/Cyprus Settlements.xlsx
 .idea/misc.xml
 package-lock.json
 .idea/misc.xml
-package-lock.json
-package-lock.json
 /remote_datasets_cache
 
 # Ignore all config.json files in server-configuration
-server-configuration/secrets.yaml
+server-configuration/secret.yaml

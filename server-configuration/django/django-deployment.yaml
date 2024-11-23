@@ -14,12 +14,33 @@ spec:
       labels:
         app: django
     spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+      initContainers:
+        - name: git-sync
+          image: alpine/git
+          command: ["git", "clone", "https://github.com/WorldHistoricalGazetteer/place.git", "/repo"]
+          volumeMounts:
+            - name: repo
+              mountPath: /repo
       containers:
         - name: django-container
-          image: worldhistoricalgazetteer/web:0.1.4
+          image: worldhistoricalgazetteer/web:${IMAGE_VERSION}"
           ports:
             - containerPort: 8000
           env:
+            - name: DJANGO_SETTINGS_MODULE
+              value: "whg.settings"
+            - name: IMAGE_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  name: whg-config
+                  key: IMAGE_VERSION
+
+
+
+
             - name: DATABASE_URL
               value: "postgres://your_username:your_password@postgres:5432/your_database_name"
             - name: REDIS_URL
@@ -27,9 +48,11 @@ spec:
             - name: DJANGO_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: django-secret
+                  name: kubernetes-secrets
                   key: secret-key
           volumeMounts:
+            - name: repo
+              mountPath: /app
             - name: static-files
               mountPath: /app/static
             - name: media-files
@@ -47,6 +70,8 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
       volumes:
+        - name: repo
+          emptyDir: {}
         - name: static-files
           persistentVolumeClaim:
             claimName: django-static-pvc
