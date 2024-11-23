@@ -135,4 +135,4 @@ package-lock.json
 /remote_datasets_cache
 
 # Ignore all config.json files in server-configuration
-server-configuration/**/config.json
+server-configuration/secrets.yaml
