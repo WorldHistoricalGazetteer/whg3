@@ -134,5 +134,5 @@ package-lock.json
 package-lock.json
 /remote_datasets_cache
 
-# Ignore all config.json files in server-configuration
-server-configuration/**/config.json
+# Ignore Kubernetes secrets file
+server-configuration/secrets.yaml
