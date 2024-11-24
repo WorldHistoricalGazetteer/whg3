@@ -122,6 +122,7 @@ whg_credentials.zip
 /datasets/static/files
 package-lock.json
 .idea/misc.xml
-package-lock.json
-package-lock.json
 /remote_datasets_cache
+
+# Ignore all config.json files in server-configuration
+server-configuration/secret.yaml
