@@ -197,19 +197,24 @@ def suggester(q, indices):
 
     suggestions = []
 
-    # Search across multiple indices
-    res = es.search(index=','.join(indices), body=q)
-    hits = res['hits']['hits']
-    if len(hits) > 0:
-        for h in hits:
-            suggestions.append(
-                {"_id": h['_id'],
-                 "_index": h['_index'],
-                 "linkcount": len(set(h['_source']['children'])),
-                 "hit": h['_source'],
-                 "timespans": h['_source'].get('timespans', [])
-                 }
-            )
+    try:
+        # Search across multiple indices
+        res = es.search(index=','.join(indices), body=q)
+        hits = res['hits']['hits']
+        if len(hits) > 0:
+            for h in hits:
+                suggestions.append(
+                    {
+                        "_id": h['_id'],
+                        "_index": h['_index'],
+                        "linkcount": len(set(h['_source']['children'])),
+                        "hit": h['_source'],
+                        "timespans": h['_source'].get('timespans', [])
+                    }
+                )
+    except Exception as e:
+        logger.debug(f"ES query failed: {e}")
+        return []
 
     sortedsugs = sorted(suggestions, key=lambda x: x['linkcount'], reverse=True)
     # print('sortedsugs', sortedsugs)
