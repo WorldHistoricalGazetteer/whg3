@@ -5,252 +5,275 @@
 
 <html lang="en">
 <head> {% block title %} <title>WHG</title>{% endblock %}
-  <meta charset="utf-8">
-  <meta name="description" content="Explore the World Historical Gazetteer, a platform that links historical records about places, enabling spatial connections across time and language.">
-  <meta property="og:title" content="World Historical Gazetteer">
-  <meta property="og:description" content="Linking historical places across time and language.">
-  <meta property="og:url" content="https://whgazetteer.org/">
-  <meta property="og:image" content="{% static 'images/whg_logo.svg' %}">
-  <meta property="og:type" content="website">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="csrf-token" content="{{ csrf_token }}">
-  <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.ico' %}"/>
-  {% block schema_org %}
-  <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "World Historical Gazetteer",
-      "url": "https://whgazetteer.org",
-      "logo": "https://whgazetteer.org/static/images/whg_logo.svg",
-      "description": "The World Historical Gazetteer links historical records about places, enabling spatial connections across time and language.",
-      "image": "https://whgazetteer.org/static/images/whg_logo.svg",
-      "address": {
-        "@type": "PostalAddress",
-        "streetAddress": "University of Pittsburgh World History Center, 3900 Wesley W. Posvar Hall",
-        "addressLocality": "Pittsburgh",
-        "addressRegion": "PA",
-        "postalCode": "15260",
-        "addressCountry": "US"
-      },
-      "mainEntityOfPage": "https://whgazetteer.org/"
-    }
-  </script>
-  {% endblock %}
-
-  <script defer src="{% static 'webpack/base.bundle.js' %}"></script>
-  <link href="{% static 'webpack/base.bundle.css' %}" rel="stylesheet"/>
-  <style>
-    body {
-      /* Hide until CDN css files are fully loaded */
-      opacity: 0;
-      transition: opacity 1s ease;
-  	  {% if environment == 'local' %}
-    	border: 3px orange solid !important;
-  	  {% elif environment == 'dev-whgazetteer-org' %}
-    	border: 3px red solid !important;
-      {% endif %} 
-    }
-    .maintenance-banner {
-      /* display: none; */
-      background-color: #ffc1078f;
-      color: #0000005e;
-      text-align: center;
-      padding: 10px;
-      font-size: 16px;
-      font-weight: bold;
-    }
-  </style>
-
-  {% block maplibre %}{% endblock %}
-  {% block extra_head %}{% endblock %}
-  <script type="text/javascript">
-    {% block deferredScripts %}
-    var scripts = [];  // Initialize scripts array if not present in template
+    <meta charset="utf-8">
+    <meta name="description"
+          content="Explore the World Historical Gazetteer, a platform that links historical records about places, enabling spatial connections across time and language.">
+    <meta property="og:title" content="World Historical Gazetteer">
+    <meta property="og:description" content="Linking historical places across time and language.">
+    <meta property="og:url" content="https://whgazetteer.org/">
+    <meta property="og:image" content="{% static 'images/whg_logo.svg' %}">
+    <meta property="og:type" content="website">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <link rel="shortcut icon" type="image/png" href="{% static 'images/favicon.ico' %}"/>
+    {% block schema_org %}
+    <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "name": "World Historical Gazetteer",
+            "url": "https://whgazetteer.org",
+            "logo": "https://whgazetteer.org/static/images/whg_logo.svg",
+            "description": "The World Historical Gazetteer links historical records about places, enabling spatial connections across time and language.",
+            "image": "https://whgazetteer.org/static/images/whg_logo.svg",
+            "address": {
+                "@type": "PostalAddress",
+                "streetAddress": "University of Pittsburgh World History Center, 3900 Wesley W. Posvar Hall",
+                "addressLocality": "Pittsburgh",
+                "addressRegion": "PA",
+                "postalCode": "15260",
+                "addressCountry": "US"
+            },
+            "mainEntityOfPage": "https://whgazetteer.org/"
+        }
+    </script>
     {% endblock %}
-    function executeDeferredScripts() {
-      const loadNextScript = function(index) {
-        if (index !== -1 && index < scripts.length) {
-          const script = scripts[index];
-          const scriptElement = document.createElement('script');
-          scriptElement.src = script.src;
-          scriptElement.defer = true; // Prevent loading before base.bundle.js
-          if (script.type) {
-            scriptElement.type = script.type;
-          }
-          scriptElement.onload = function() {
-            console.log(`Loaded ${script.src}`);
-            loadNextScript(index + 1); // Load the next script
-          };
-          document.body.appendChild(scriptElement);
+
+    <script defer src="{% static 'webpack/base.bundle.js' %}"></script>
+    <link href="{% static 'webpack/base.bundle.css' %}" rel="stylesheet"/>
+    <style>
+        body {
+            /* Hide until CDN css files are fully loaded */
+            opacity: 0;
+            transition: opacity 1s ease;
+        {
+        % if environment = = 'local' %
+        } border: 3px orange solid !important;
+        {
+        % elif environment = = 'dev-whgazetteer-org' %
+        } border: 3px red solid !important;
+        {
+        % endif %
         }
-        else {
-            // Execute inline scripts after all external scripts are loaded
-            const inlineScriptContent = document.getElementById('inline-scripts').innerHTML;
-            const cleanInlineScriptContent = inlineScriptContent.match(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)?.map(match => {
-                return match.replace(/<script\b[^>]*>|<\/script>/gi, '');
-            }).join('\n') || '';
-            const scriptElement = document.createElement('script');
-            scriptElement.type = 'text/javascript';
-            scriptElement.text = cleanInlineScriptContent;
-            document.body.appendChild(scriptElement);
         }
-      };
-      loadNextScript(scripts.length == 0 ? -1 : 0);
-    }
-  </script>
+
+        .maintenance-banner {
+            /* display: none; */
+            background-color: #ffc1078f;
+            color: #0000005e;
+            text-align: center;
+            padding: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+    </style>
+
+    {% block maplibre %}{% endblock %}
+    {% block extra_head %}{% endblock %}
+    <script type="text/javascript">
+        {%
+            block
+            deferredScripts %
+        }
+        var scripts = [];  // Initialize scripts array if not present in template
+        {%
+            endblock %
+        }
+
+        function executeDeferredScripts() {
+            const loadNextScript = function (index) {
+                if (index !== -1 && index < scripts.length) {
+                    const script = scripts[index];
+                    const scriptElement = document.createElement('script');
+                    scriptElement.src = script.src;
+                    scriptElement.defer = true; // Prevent loading before base.bundle.js
+                    if (script.type) {
+                        scriptElement.type = script.type;
+                    }
+                    scriptElement.onload = function () {
+                        console.log(`Loaded ${script.src}`);
+                        loadNextScript(index + 1); // Load the next script
+                    };
+                    document.body.appendChild(scriptElement);
+                } else {
+                    // Execute inline scripts after all external scripts are loaded
+                    const inlineScriptContent = document.getElementById('inline-scripts').innerHTML;
+                    const cleanInlineScriptContent = inlineScriptContent.match(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)?.map(match => {
+                        return match.replace(/<script\b[^>]*>|<\/script>/gi, '');
+                    }).join('\n') || '';
+                    const scriptElement = document.createElement('script');
+                    scriptElement.type = 'text/javascript';
+                    scriptElement.text = cleanInlineScriptContent;
+                    document.body.appendChild(scriptElement);
+                }
+            };
+            loadNextScript(scripts.length == 0 ? -1 : 0);
+        }
+    </script>
 </head>
 
 <div id="inline-scripts" style="display: none;">
-  <!-- Enclose within HTML Comment to prevent premature execution {% block inlineScripts %}{% endblock inlineScripts %}-->
+    <!-- Enclose within HTML Comment to prevent premature execution {% block inlineScripts %}{% endblock inlineScripts %}-->
 </div>
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-ZB73342G3Y"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
+    window.dataLayer = window.dataLayer || [];
 
-  function gtag() {
-    dataLayer.push(arguments);
-  }
+    function gtag() {
+        dataLayer.push(arguments);
+    }
 
-  gtag('js', new Date());
-  gtag('config', 'G-ZB73342G3Y');
+    gtag('js', new Date());
+    gtag('config', 'G-ZB73342G3Y');
 </script>
 <body>
 <header>
-  <nav class="navbar navbar-expand-lg bg-white">
-    <div class="container">
-      <a href="/">
-        <img src="{% static 'images/whg_logo.svg' %}" alt="WHG" width="50" height="38">
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
-              aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse smallish pt-2" id="navbarSupportedContent">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-          <div id="links_home">
-            <span id="version_badge" class="badge text-bg-success">v3.0 beta</span>
-            <span id="beta_links"></span>
-            <a data-whg-modal="/contact_modal/">contact</a>
-          </div>
-          <div id="links_other" class="d-none">
-            <a class="navbar-brand me-0" href="{% url 'home' %}">&nbsp; World Historical Gazetteer</a>
-            <!--<a data-whg-modal="/contact_modal/" class="hide-on-narrow">contact</a>-->
-          </div>
-        </ul>
-        <ul class="navbar-nav">
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'search-page' %}">Search</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'workbench' %}">Workbench</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'teaching' %}">Teaching</a>
-          </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Documentation</a>
-            <ul class="dropdown-menu">
-              <li>
-                <a class="dropdown-item" href="{% url 'documentation' %}">User documentation</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'usingapi' %}">API (developers)</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="https://github.com/WorldHistoricalGazetteer/whg3/">GitHub repository</a>
-              </li>
-            </ul>
-          </li>
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              About </a>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li>
-                <a class="dropdown-item" href="{% url 'about' %}">Vision & mission</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'credits' %}">Project overview & people</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'publications' %}">Publications & press</a>
-              </li>
-              <li>
-                <hr class="dropdown-divider">
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'announcements-list' %}">News & announcements</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'v3-new' %}">New in v3</a>
-              </li>
-              <li>
-                <hr class="dropdown-divider">
-              </li>
-              <li>
-                <a class="dropdown-item" data-whg-modal="/contact_modal/">Contact Us</a>
-              </li>
-            </ul>
-          </li>
-          <!-- about -->
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Data</a>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li>
-                {% is_whg_admin as user_is_whg_admin %}
-                {% if user_is_whg_admin %}
-                <a class="dropdown-item" href="{% url 'dashboard-admin' %}">Admin Dashboard</a>
-                {% endif %}
+    <nav class="navbar navbar-expand-lg bg-white">
+        <div class="container">
+            <a href="/">
+                <img src="{% static 'images/whg_logo.svg' %}" alt="WHG" width="50" height="38">
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse smallish pt-2" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <div id="links_home">
+                        <span id="version_badge" class="badge text-bg-success">v3.0 beta</span>
+                        <span id="beta_links"></span>
+                        <a data-whg-modal="/contact_modal/">contact</a>
+                    </div>
+                    <div id="links_other" class="d-none">
+                        <a class="navbar-brand me-0" href="{% url 'home' %}">&nbsp; World Historical Gazetteer</a>
+                        <!--<a data-whg-modal="/contact_modal/" class="hide-on-narrow">contact</a>-->
+                    </div>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'search-page' %}">Search</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'workbench' %}">Workbench</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'teaching' %}">Teaching</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                           aria-expanded="false">Documentation</a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'documentation' %}">User documentation</a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'usingapi' %}">API (developers)</a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="https://github.com/WorldHistoricalGazetteer/whg3/">GitHub
+                                    repository</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                           aria-expanded="false">
+                            About </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'about' %}">Vision & mission</a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'credits' %}">Project overview & people</a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'publications' %}">Publications & press</a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'announcements-list' %}">News & announcements</a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'v3-new' %}">New in v3</a>
+                            </li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li>
+                                <a class="dropdown-item" data-whg-modal="/contact_modal/">Contact Us</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <!-- about -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                           aria-expanded="false">Data</a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                {% is_whg_admin as user_is_whg_admin %}
+                                {% if user_is_whg_admin %}
+                                <a class="dropdown-item" href="{% url 'dashboard-admin' %}">Admin Dashboard</a>
+                                {% endif %}
+                                {% if user.is_authenticated %}
+                                <a class="dropdown-item" href="{% url 'dashboard-user' %}">My Data</a>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            {% endif %}
+                    </li>
+                    <li>
+                        <a class="dropdown-item"
+                           href="{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}">
+                            Published Datasets</a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item"
+                           href="{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}">
+                            Published Collections</a>
+                    </li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'datasets:volunteer-requests' %}">Volunteering</a>
+                    </li>
+                </ul>
+                </li>
+                <!-- data -->
                 {% if user.is_authenticated %}
-                <a class="dropdown-item" href="{% url 'dashboard-user' %}">My Data</a>
-                <li>
-                  <hr class="dropdown-divider">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
+                       aria-expanded="false"
+                       title="{{ user.name }}">
+                        <i class="fas fa-user" style="color:#336699;"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'profile-edit' %}"> Profile </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link"
+                               href="javascript:{document.getElementById('logout').submit()}">Logout</a>
+                            <form id="logout" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}</form>
+                        </li>
+                    </ul>
+                </li>
+                <!-- user --> {% else %}
+                <li class="nav-item">
+                    <a class="nav-link ms-5" href="{% url 'accounts:register' %}">Register</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'accounts:login' %}">Login</a>
                 </li>
                 {% endif %}
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}">
-                  Published Datasets</a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="{% url 'datasets:dataset-gallery-type' gallery_type='collections' %}">
-                  Published Collections</a>
-              </li>
-              <li><hr class="dropdown-divider"></li>
-              <li>
-                <a class="dropdown-item" href="{% url 'datasets:volunteer-requests' %}">Volunteering</a>
-              </li>
-            </ul>
-          </li>
-          <!-- data -->
-          {% if user.is_authenticated %}
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
-               title="{{ user.name }}">
-              <i class="fas fa-user" style="color:#336699;"></i>
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'profile-edit' %}"> Profile </a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="javascript:{document.getElementById('logout').submit()}">Logout</a>
-                <form id="logout" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}</form>
-              </li>
-            </ul>
-          </li>
-          <!-- user --> {% else %}
-          <li class="nav-item">
-            <a class="nav-link ms-5" href="{% url 'accounts:register' %}">Register</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'accounts:login' %}">Login</a>
-          </li> {% endif %}
-        </ul>
-      </div>
-    </div>
-  </nav>
+                </ul>
+            </div>
+        </div>
+    </nav>
 </header>
 {% block content %}
 {% endblock %}
@@ -261,8 +284,20 @@
 </div> -->
 
 <footer class="container mt-2 mb-1">
-  &copy; 2019 - {% now "Y" %} World Historical Gazetteer. All rights reserved. | <a href="https://bsky.app/profile/whgazetteer.org" target="_blank">Social Media</a> | <a href="https://blog.whgazetteer.org/" target="_blank">Blog</a> | <a data-whg-modal="/contact_modal/">Contact</a> | <a data-whg-modal="/license/">License</a> | <a data-whg-modal="/terms_of_use/">Terms of Use</a> | <a data-whg-modal="/privacy_policy/">Privacy Policy</a>
-  <!-- | Sponsors | Disclaimer -->
+    &copy; 2019 - {% now "Y" %} World Historical Gazetteer. All rights reserved. |
+    <a href="https://bsky.app/profile/whgazetteer.org" target="_blank">
+        Social Media
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -3.268 64 68.414" width="20" height="21.37" style="margin-left: 5px;">
+            <path fill="#0085ff"
+                  d="M13.873 3.805C21.21 9.332 29.103 20.537 32 26.55v15.882c0-.338-.13.044-.41.867-1.512 4.456-7.418 21.847-20.923 7.944-7.111-7.32-3.819-14.64 9.125-16.85-7.405 1.264-15.73-.825-18.014-9.015C1.12 23.022 0 8.51 0 6.55 0-3.268 8.579-.182 13.873 3.805zm36.254 0C42.79 9.332 34.897 20.537 32 26.55v15.882c0-.338.13.044.41.867 1.512 4.456 7.418 21.847 20.923 7.944 7.111-7.32 3.819-14.64-9.125-16.85 7.405 1.264 15.73-.825 18.014-9.015C62.88 23.022 64 8.51 64 6.55c0-9.818-8.578-6.732-13.873-2.745z"/>
+        </svg>
+    </a> |
+    <a href="https://blog.whgazetteer.org/" target="_blank">Blog</a> |
+    <a data-whg-modal="/contact_modal/">Contact</a> |
+    <a data-whg-modal="/license/">License</a> |
+    <a data-whg-modal="/terms_of_use/">Terms of Use</a> |
+    <a data-whg-modal="/privacy_policy/">Privacy Policy</a>
+    <!-- | Sponsors | Disclaimer -->
 </footer>
 </body>
 </html>
