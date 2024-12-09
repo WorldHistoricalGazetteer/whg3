@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.10.7-slim-bullseye
+FROM python:3.10.7-slim-bullseye
 
 LABEL maintainer="WHC @ Pitt"
 
@@ -11,21 +11,27 @@ ARG USER_NAME
 COPY ./requirements.txt /tmp/requirements.txt
     
 RUN set -eux; \
-    # Update package lists and install necessary packages
+    # Update package lists and install necessary packages \
     apt-get update && \
     apt-get install -y --no-install-recommends \
+        # Build tools
         build-essential \
+        python3-gdal \
+        libpq-dev \
+        # System utilities
         curl \
-        docker.io \
+        rsync \
         file \
         gpgv \
-        libpq-dev \
-        locate \
-        nano \
-        netcat \
-        python3-gdal \
+        lsb-release \
         sudo \
-        lsb-release && \
+        nano \
+        locate \
+        netcat \
+        procps \
+        psmisc \
+        # Version control
+        git && \
     # Set up Python virtual environment
     python -m venv /py && \
     /py/bin/pip install --upgrade pip && \

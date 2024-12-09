@@ -70,8 +70,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         })
     });
 
-	console.log(`already: ${ already }`)
-	if (already !=='') {
+	if (already !==false) {
 		alert('last record was saved by someone else, this is the next')
 	}
 

@@ -64,6 +64,7 @@ sudo certbot delete --cert-name <domain.com>
 ## Blog
 - The WHG Blog runs in a separate Docker network
 - The filesystem is at `~/sites/blog-whgazetteer-org`
+- Credentials are stored in the hidden `.env` file
 - Nginx requires a particularly quirky configuration:
 ```
 # Redirect HTTP to HTTPS
