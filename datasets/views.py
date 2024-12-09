@@ -1034,6 +1034,11 @@ def review(request, dsid, tid, passnum):
         else:
             logger.debug(f'formset is NOT valid. errors: {formset.errors} data: {formset.data}')
     # print('context', context)
+
+    context["mbtoken"] = context.get("mbtoken", False)
+    context["already"] = context.get("already", False)
+    context["nohits"] = context.get("nohits", False)
+
     return render(request, "datasets/" + review_page, context=context)
 
 

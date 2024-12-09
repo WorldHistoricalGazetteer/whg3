@@ -111,7 +111,7 @@
           </div> <!-- #review_nav-->
           <div class="row mt-2">
             <div id="review_record" class="col-sm-4 ps-0 small">
-              <div class="bg-secondary font-weight-bold ps-2 text-light">{{ dataset_label }}</div>
+              <div class="bg-secondary font-weight-bold ps-2 text-light">{{ ds_label }}</div>
               <div id="place_record" class="mb-2">
                 <input type="hidden" name="place_id" value="{{ record.id }}" />
                 <div>
@@ -321,11 +321,11 @@
   </div>
   <script type="text/javascript">
     const featureCollectionJSON = '{{ feature_collection|safe }}';
-    let already = '{{ already }}';
+    let already = {% if already %}true{% else %}false{% endif %};
     let ds_label = '{{ ds_label }}';
     let test = '{{ test }}';
     let passnum = '{{ passnum }}';
-    let mbtoken = '{{ mbtoken }}';
+    let mbtoken = {% if mbtoken %}true{% else %}false{% endif %};
     let page_variant = 'reconciliation';
     let nextURL = "{% url 'datasets:review' dsid=ds_id tid=task_id passnum=passnum %}";
   </script>
