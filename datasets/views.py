@@ -319,12 +319,10 @@ def celeryUp():
     return len(response) > 0
 
 
-# hotfix 17 June 2024
 def indexMatch(pid, hit_pid=None, user=None, task=None):
     """
-      from datasets.views.review()
-      indexes a db record upon a single hit match in align_idx review
-      new record becomes child in the matched hit group
+    Indexes a db record upon a single hit match in align_idx review.
+    If the place is already indexed, it is related as a child to an existing parent.
     """
     logger = logging.getLogger('accession')
 
@@ -333,82 +331,70 @@ def indexMatch(pid, hit_pid=None, user=None, task=None):
 
     es = settings.ES_CONN
     idx = settings.ES_WHG
+
+    # Ensure valid Place object
     try:
         place = get_object_or_404(Place, id=int(pid))
     except ValueError:
-        message = f"The provided 'pid' value '{pid}' is not a valid integer."
-        logger.error(message)
+        logger.error(f"Invalid 'pid': {pid} is not a valid integer.")
+        return
+    except Exception as e:
+        logger.error(f"Error fetching Place with id={pid}: {e}")
         return
 
-    # Check if this place is already indexed
-    q_place = {"query": {"bool": {"must": [{"match": {"place_id": pid}}]}}}
-    res = es.search(index=idx, body=q_place)
-    if res['hits']['total']['value'] == 0:
-        # Not indexed, create a new doc
-        new_obj = makeDoc(place)
-        p_hits = None
-    else:
-        # It's indexed, get parent
-        p_hits = res['hits']['hits']
-        place_parent = p_hits[0]['_source']['relation']['parent']
+    # Query Elasticsearch for place_id
+    try:
+        q_place = {"query": {"bool": {"must": [{"match": {"place_id": pid}}]}}}
+        res = es.search(index=idx, body=q_place)
+        logger.debug(f'Elasticsearch query for place_id={pid}: {res}')
+    except Exception as e:
+        logger.error(f"Elasticsearch query failed for place_id={pid}: {e}")
+        return
 
-    if hit_pid is None and not p_hits:
-        # No match and place is not already indexed, create new parent
-        logger.debug(f'Making {pid} a parent')
-        new_obj['relation'] = {"name": "parent"}
+    is_already_indexed = res['hits']['total']['value'] > 0
 
-        # Increment a whg_id for it
-        whg_id = maxID(es, idx) + 1
-        new_obj['whg_id'] = whg_id
-
-        # Index the new parent
+    if not is_already_indexed:
+        # If the place is not indexed, create it as a new parent
+        logger.debug(f'Place {pid} not found in index. Creating as parent.')
         try:
-            res = es.index(index=idx, id=str(whg_id), body=json.dumps(new_obj))
+            new_doc = makeDoc(place)
+            new_doc['relation'] = {"name": "parent"}
+            new_doc['whg_id'] = maxID(es, idx) + 1
+
+            es.index(index=idx, id=str(new_doc['whg_id']), body=json.dumps(new_doc))
             place.indexed = True
             place.save()
-            logger.debug(f'Created parent: {pid} ({place.title})')
+            logger.info(f'Place {pid} indexed as new parent.')
         except Exception as e:
-            logger.error(f'failed indexing (as parent) {pid}: {e}')
-            pass
-    else:
-        # There was a match or place is already indexed
-        # Get hit record in index
-        q_hit = {"query": {"bool": {"must": [{"match": {"place_id": hit_pid}}]}}}
-        res = es.search(index=idx, body=q_hit)
-        hit = res['hits']['hits'][0]
+            logger.error(f"Failed to index Place {pid} as parent: {e}")
+        return
 
-        # Determine if the hit is a parent or child
-        if hit['_source']['relation']['name'] == 'child':
-            parent_whgid = hit['_source']['relation']['parent']
+    # If already indexed, handle relationship logic
+    try:
+        parent_record = res['hits']['hits'][0]
+        parent_id = parent_record['_id']
+        logger.debug(f'Place {pid} found in index. Parent ID: {parent_id}')
+
+        # Handle hit_pid logic
+        if hit_pid:
+            q_hit = {"query": {"bool": {"must": [{"match": {"place_id": hit_pid}}]}}}
+            res_hit = es.search(index=idx, body=q_hit)
+            if not res_hit['hits']['hits']:
+                logger.warning(f"No hits found for hit_pid={hit_pid}.")
+                return
+
+            hit = res_hit['hits']['hits'][0]
+            parent_whgid = hit['_id'] if hit['_source']['relation']['name'] != 'child' else hit['_source']['relation']['parent']
+
+            new_doc = makeDoc(place)
+            new_doc['relation'] = {"name": "child", "parent": parent_whgid}
+
+            es.index(index=idx, id=place.id, body=json.dumps(new_doc))
+            logger.info(f"Place {pid} added as child of parent {parent_whgid}.")
         else:
-            parent_whgid = hit['_id']
-
-        # Mine new place for its names and create an index doc
-        match_names = [p.toponym for p in place.names.all()]
-        new_obj = makeDoc(place)
-        new_obj['relation'] = {"name": "child", "parent": parent_whgid}
-
-        # Index the new child and update the parent
-        try:
-            res = es.index(index=idx, id=place.id, routing=1, body=json.dumps(new_obj))
-            # Update parent's fields with child's name variants
-            q_update = {"script": {
-                "source": "ctx._source.children.add(params.id); ctx._source.searchy.addAll(params.names)",
-                "lang": "painless",
-                "params": {"names": match_names, "id": str(place.id)}
-            },
-                "query": {"match": {"_id": parent_whgid}}}
-            es.update_by_query(index=idx, body=q_update, conflicts='proceed')
-
-            logger.debug(f'Added {place.id} as child of {parent_whgid}')
-            logger.debug(f'Indexed? {place.indexed}')
-
-            # Update close_matches table in Django
-            update_close_matches(pid, hit_pid, user, task)
-
-        except Exception as e:
-            logger.error(f'failed indexing {pid} as child of {parent_whgid}: {e} ({new_obj})')
-            pass
+            logger.debug(f"No hit_pid provided for Place {pid}. No child-parent relationship created.")
+    except Exception as e:
+        logger.error(f"Error processing relationship for Place {pid}: {e}")
 
 
 @transaction.atomic
@@ -996,7 +982,7 @@ def review(request, dsid, tid, passnum):
                 place_post.indexed = True
                 place_post.save()
             elif len(matched_for_idx) > 1:
-                indexMultiMatch(place_post.id, matched_for_idx)
+                indexMultiMatch(place_post.id, matched_for_idx, user=request.user, task=task)
                 place_post.indexed = True
                 place_post.save()
 
