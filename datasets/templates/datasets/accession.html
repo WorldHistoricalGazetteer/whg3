@@ -232,11 +232,11 @@
 <script type="text/javascript">
 	const featureCollectionJSON = '{{ feature_collection|safe }}';
 	const datasetDetails = {{ dataset_details|safe }};
-    let already = '{{ already }}';
+    let already = {{ already|yesno:"true,false" }};
     let ds_label = '{{ ds_label }}';
     let test = '{{ test }}';
     let passnum = '{{ passnum }}';
-    let mbtoken = '{{ mbtoken }}';
+    let mbtoken = {{ mbtoken|yesno:"true,false" }};
     let page_variant = 'accession';
 
 	$(".pop-dataset").popover({
