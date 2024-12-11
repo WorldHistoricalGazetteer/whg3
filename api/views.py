@@ -297,7 +297,7 @@ class RemoteIndexAPIView(View):
             index_set = collector(q, settings.ES_WHG)
 
             # format hit items
-            items = [childItem(i) for i in index_set['items']]
+            items = [child for i in index_set.get('items', []) if (child := childItem(i))]
 
             # result object
             result = {'type': 'FeatureCollection',
@@ -518,9 +518,14 @@ def makeGeom(geom):
 
 
 def childItem(i):
-    _id = i['_id']
+    _id = i.get('_id', None)
     score = i.get('_score', None)
-    i = i['_source']
+    i = i.get('_source', None)
+
+    if i is None or _id is None:
+        logging.warning(f"Item is missing '_id' or '_source'")
+        return None
+
     item = {
         "type": "Feature",
         "score": score,
