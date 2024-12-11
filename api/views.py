@@ -301,7 +301,8 @@ class RemoteIndexAPIView(View):
 
             # result object
             result = {'type': 'FeatureCollection',
-                      'count': index_set['count'],
+                      # Count is the number of valid child items
+                      'count': len(items),
                       'offset': q['from'],
                       'pagesize': q['size'],
                       'features': items[:int(pagesize)] if pagesize else items}
