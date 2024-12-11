@@ -321,11 +321,11 @@
   </div>
   <script type="text/javascript">
     const featureCollectionJSON = '{{ feature_collection|safe }}';
-    let already = {% if already %}true{% else %}false{% endif %};
+    let already = {{ already|yesno:"true,false" }};
     let ds_label = '{{ ds_label }}';
     let test = '{{ test }}';
     let passnum = '{{ passnum }}';
-    let mbtoken = {% if mbtoken %}true{% else %}false{% endif %};
+    let mbtoken = {{ mbtoken|yesno:"true,false" }};
     let page_variant = 'reconciliation';
     let nextURL = "{% url 'datasets:review' dsid=ds_id tid=task_id passnum=passnum %}";
   </script>
