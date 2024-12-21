@@ -2,8 +2,8 @@
 
 import '../css/workbench.css';
 
-$(document).ready(function() {
-  $(".help-matches").click(function() {
-    window.location.href = `/documentation/#${$(this).data('id').replace('wb_', '')}`;
-  });
+$(document).ready(function () {
+    $(".help-matches").click(function () {
+        window.open(`https://docs.whgazetteer.org/content/${$(this).data('url')}`, '_blank').focus();
+    });
 })
