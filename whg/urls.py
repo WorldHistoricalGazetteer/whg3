@@ -94,11 +94,7 @@ urlpatterns = [
                   path('publications/', TemplateView.as_view(template_name="main/publications.html"),
                        name="publications"),
 
-                  path('usingapi/', TemplateView.as_view(template_name="main/usingapi.html"), name="usingapi"),
-                  # path('api/', TemplateView.as_view(template_name="main/../_local/_older/api.html"), name="api"),
                   path('downloads/', TemplateView.as_view(template_name="main/downloads.html"), name="downloads"),
-                  path('documentation/', TemplateView.as_view(template_name="main/documentation.html"),
-                       name="documentation"),
 
                   # more static content - 2024-01
                   path('workbench/', TemplateView.as_view(template_name="main/workbench_3col.html"), name="workbench"),
