@@ -2890,7 +2890,7 @@ class DatasetLogView(LoginRequiredMixin, DetailView):
 def dataset_citation(request, id):
     try:
         dataset = Dataset.objects.get(id=id)
-        citation_data = dataset.citation_csl
+        citation_data = json.loads(dataset.citation_csl)
         return JsonResponse(citation_data, safe=False)
     except Dataset.DoesNotExist:
         return JsonResponse({'error': 'Dataset not found'}, status=404)
