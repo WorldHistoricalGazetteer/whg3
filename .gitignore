@@ -110,7 +110,7 @@ whg/static/webpack/
 package-lock.json
 /.ssh
 data/ca-cert.pem
-/whg/authorisation
+/whg/authorisation/*
 /whg/logs
 server-admin/env_template.py
 whg/local_settings_autocontext.py

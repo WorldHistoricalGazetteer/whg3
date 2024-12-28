@@ -44,6 +44,7 @@ def reset_standard_mapdata(category, id):
 
 
 def mapdata(request, category, id, variant='standard', refresh='false'):  # variant options are "standard" | "tileset"
+    no_reduction = refresh == 'full' # Use <category>/<id>/refresh/full to bypass geometry reduction (used in PLACE branch)
     refresh = variant == 'refresh' or refresh.lower() in ['refresh', 'true', '1', 'yes']
     if variant != 'tileset':
         variant = 'standard'
@@ -96,6 +97,7 @@ def mapdata(request, category, id, variant='standard', refresh='false'):  # vari
         # Reduce feature properties in mapdata to be fetched by tiler
         mapdata_tileset = mapdata_result.copy()
         mapdata_tileset["features"] = [
+            # This is redundant - filtering is achieved in Tippecanoe parameters
             {**feature, "properties": {k: v for k, v in feature["properties"].items() if
                                        k in ["fclasses", "relation", "pid", "min", "max"]}}
             for feature in mapdata_tileset["features"]
@@ -108,7 +110,7 @@ def mapdata(request, category, id, variant='standard', refresh='false'):  # vari
             available_tilesets.append(new_tileset)
         cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata_result))
 
-    elif response_time > 1:  # Cache if generation time exceeds 1 second
+    elif response_time > 1 and not no_reduction:  # Cache if generation time exceeds 1 second
         logger.debug(f"Caching standard mapdata.")
         cache.set(f"{category}-{id}-standard",
                   reduced_geometry(mapdata_result) if available_tilesets else mapdata_result)

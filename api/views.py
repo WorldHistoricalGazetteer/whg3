@@ -678,7 +678,7 @@ class IndexAPIView(View):
         if all(v is None for v in [name, whgid, pid]):
             return JsonResponse({
                 'error': 'Query requires either name, namestartswith, pid, or whgid',
-                'instructions': 'API instructions can be found at https://whgazetteer/usingapi/'
+                'instructions': 'API instructions can be found at https://docs.whgazetteer.org/content/400-Technical.html#api'
             }, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2}, status=400)
 
         else:
@@ -789,7 +789,7 @@ class IndexAPIView(View):
 #     if all(v is None for v in [name, whgid, pid]):
 #       return JsonResponse({
 #         'error': 'Query requires either name, namestartswith, pid, or whgid',
-#         'instructions': 'API instructions can be found at https://whgazetteer/usingapi/'
+#         'instructions': 'API instructions can be found at https://docs.whgazetteer.org/content/400-Technical.html#api'
 #       }, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2}, status=400)
 #
 #     else:
