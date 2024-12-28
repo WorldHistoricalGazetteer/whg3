@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 def collection_citation(request, id):
     try:
         collection = Collection.objects.get(id=id)
-        citation_data = collection.citation_csl
+        citation_data = json.loads(collection.citation_csl)
         return JsonResponse(citation_data, safe=False)
     except Collection.DoesNotExist:
         return JsonResponse({'error': 'Collection not found'}, status=404)
