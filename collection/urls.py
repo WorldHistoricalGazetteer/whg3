@@ -45,6 +45,7 @@ urlpatterns = [
     path('group/<int:id>/gallery', views.CollectionGroupGalleryView.as_view(), name='collection-group-gallery'),
 
     # UTILITY
+    path('<int:id>/citation', views.collection_citation, name='collection-citation'),
     path('list_ds/', views.ListDatasetView.as_view(), name='list-ds'),
     path('add_ds/<int:coll_id>/<int:ds_id>', views.add_dataset, name='add-ds'),
     path('add_dsplaces/<int:coll_id>/<int:ds_id>', views.add_dataset_places, name='add-dsplaces'),
