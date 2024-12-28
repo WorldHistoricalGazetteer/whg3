@@ -25,8 +25,6 @@ class StaticViewSitemap(Sitemap):
             'credits',
             'datasets:dataset-gallery',
             'publications',
-            'usingapi',
-            'documentation',
             'workbench',
             'announcements-list'
         ]
