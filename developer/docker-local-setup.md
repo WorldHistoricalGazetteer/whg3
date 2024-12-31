@@ -78,4 +78,4 @@ docker compose -f docker-compose-autocontext.yml --env-file ./.env/.env down
   
 ________________________
 
-_See [WHG documentation](https://whgazetteer.org/documentation/) for an overview of the software functionality from a user's perspective._
+_See [WHG documentation](https://docs.whgazetteer.org/content/001-Introduction.html) for an overview of the software functionality from a user's perspective._
