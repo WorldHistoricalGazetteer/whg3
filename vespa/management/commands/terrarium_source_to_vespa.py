@@ -38,8 +38,10 @@ def process_geojson_to_file(geojson_url: str, file_path: str):
 
         # Prepare the document for Vespa
         bounds = shape(feature['geometry']).bounds
+        namespace = "terrarium"
+        document_type = "area"
         document = {
-            "id": f"terrarium-area-{i}",
+            "id": f"id:{namespace}:{document_type}:n={i}:document-{i}",
             "fields": {
                 "bounding_box": {"x": [bounds[0], bounds[2]], "y": [bounds[1], bounds[3]]},
                 "resolution": feature['properties']['resolution'],
