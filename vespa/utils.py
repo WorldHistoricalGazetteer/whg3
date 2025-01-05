@@ -8,11 +8,15 @@ def feed_file_to_vespa(file_path, endpoint_url="http://vespa-feed-container-0.ve
     Feed a file to Vespa using the vespa-feed-client CLI.
     """
     try:
+        classpath = "/usr/local/vespa/vespa-feed-client-cli/vespa-feed-client-cli-jar-with-dependencies.jar"
         command = [
-            "vespa-feed-client-cli",
+            "java",
+            "-cp", classpath,
+            "ai.vespa.feed.client.impl.CliClient",
             "--endpoint", endpoint_url,
             file_path
         ]
+        logger.info(f"Executing command: {' '.join(command)}")
         result = subprocess.run(
             command,
             stdout=subprocess.PIPE,

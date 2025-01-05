@@ -28,7 +28,9 @@ RUN set -eux; \
         psmisc \
         git \
         unzip \
-        tar && \
+        tar \
+        default-jre \
+        openjdk-11-jdk && \
     # Install Vespa tools
     mkdir -p /usr/local/vespa && \
     # Download and extract vespa-feed-client-cli
