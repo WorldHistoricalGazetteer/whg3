@@ -9,8 +9,10 @@ from shapely.geometry import shape
 from django.core.management.base import BaseCommand, CommandError
 from vespa.utils import feed_file_to_vespa
 
-geojson_url = "https://s3.amazonaws.com/elevation-tiles-prod/docs/footprints.geojson.gz"
-file_path = "/app/media/data/terrarium-sources.json"
+# Constants
+GEOJSON_URL = "https://s3.amazonaws.com/elevation-tiles-prod/docs/footprints.geojson.gz"
+FILE_PATH = "/app/media/data/terrarium-sources.json"
+
 
 def process_geojson_to_file(geojson_url: str, file_path: str):
     """
@@ -59,11 +61,25 @@ def process_geojson_to_file(geojson_url: str, file_path: str):
 
 class Command(BaseCommand):
     help = "Feed Terrarium sources to Vespa."
-    if not os.path.exists(file_path):
-        process_geojson_to_file(geojson_url, file_path)
 
-    result = feed_file_to_vespa(file_path)
-    if result["success"]:
-        print(f"Success: {result['output']}")
-    else:
-        raise CommandError(f"Failed: {result['output']}")
+    def handle(self, *args, **options):
+        """
+        Main entry point for the management command.
+        """
+        try:
+            # Check if the data file exists; generate it if not
+            if not os.path.exists(FILE_PATH):
+                self.stdout.write("Generating data file...")
+                process_geojson_to_file(GEOJSON_URL, FILE_PATH)
+
+            # Feed the file to Vespa
+            self.stdout.write("Feeding data to Vespa...")
+            result = feed_file_to_vespa(FILE_PATH)
+
+            if result["success"]:
+                self.stdout.write(self.style.SUCCESS(f"Success: {result['output']}"))
+            else:
+                raise CommandError(f"Failed: {result['output']}")
+
+        except Exception as e:
+            raise CommandError(f"An error occurred: {e}")
