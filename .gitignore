@@ -1,5 +1,6 @@
 # private local, untracked files
 _local/
+.idea/
 
 node_modules/
 cache/

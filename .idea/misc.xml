@@ -3,7 +3,7 @@
   <component name="Black">
     <option name="sdkName" value="Remote Python 3.10.7 Docker Compose (web)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.10 (whg3)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Remote Python 3.10.7 Docker (worldhistoricalgazetteer/web:1.0.0)" project-jdk-type="Python SDK" />
   <component name="PythonCompatibilityInspectionAdvertiser">
     <option name="version" value="3" />
   </component>

@@ -83,6 +83,7 @@ INSTALLED_APPS = [
     'sitemap.apps.SitemapConfig',
     'traces.apps.TracesConfig',
     'users.apps.UsersConfig',
+    'vespa.apps.VespaConfig',
 ]
 
 AUTH_USER_MODEL = 'users.User'
