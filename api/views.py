@@ -40,6 +40,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
+from rest_framework.request import Request
+
 from rest_framework.reverse import reverse
 from rest_framework.generics import ListAPIView
 from rest_framework.views import APIView
@@ -82,8 +84,11 @@ class GalleryView(ListAPIView):
     pagination_class.page_size = 6
     serializer_class = GallerySerializer
 
+    def get_gallery_type(self):
+        return self.kwargs.get('type')
+
     def get_queryset(self):
-        self.gallery_type = self.kwargs.get('type')
+        self.gallery_type = self.get_gallery_type()
         model = Collection if self.gallery_type == 'collections' else Dataset
 
         filter = Q(public=True)
@@ -125,7 +130,7 @@ class GalleryView(ListAPIView):
             queryset = queryset.annotate(earliest=Min('places__minmax__0'))
         elif sort_by.endswith('latest'):
             queryset = queryset.annotate(latest=Max('places__minmax__1'))
-        elif sort_by.endswith('numrows') and gallery_type == 'collections':
+        elif sort_by.endswith('numrows') and self.gallery_type == 'collections':
             queryset = queryset.annotate(numrows=Count(
                 Case(
                     When(
@@ -144,7 +149,8 @@ class GalleryView(ListAPIView):
 
         return queryset.order_by(sort_by)
 
-    def list(self, request, *args, **kwargs):
+    def list(self, request: Request, *args, **kwargs):
+        self.gallery_type = self.get_gallery_type()
         queryset = self.get_queryset()
 
         # Paginate the data (DRF handles pagination)
