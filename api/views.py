@@ -1,30 +1,24 @@
 # api.views
 
 from django.conf import settings
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from rest_framework.request import Request
 
 User = get_user_model()
-from django.contrib.auth.models import Group
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.gis.geos import Polygon, Point
 # from django.contrib.postgres import search
 from django.contrib.gis.measure import D
-from django.contrib.gis.db.models import Extent
-from django.contrib.gis.db.models.functions import Distance, GeometryField
-from django.contrib.gis.geos import GEOSGeometry
-from django.db.models import JSONField
-from django.db.models import Case, When, Min, Max, Q, F, ExpressionWrapper, fields, Subquery, OuterRef, Count, \
+from django.db.models import Case, When, Min, Max, Q, Subquery, OuterRef, Count, \
     IntegerField
 from django.http import JsonResponse, HttpResponse, Http404
 from django.shortcuts import get_object_or_404
-from django.views.generic import View, ListView
-from django.core.paginator import PageNotAnInteger, EmptyPage, Paginator
+from django.views.generic import View
 from django.utils.decorators import method_decorator
 
-from drf_spectacular.utils import extend_schema, inline_serializer, OpenApiParameter, OpenApiResponse, OpenApiTypes, \
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes, \
     OpenApiExample
 
 from rest_framework import filters
@@ -32,13 +26,11 @@ from rest_framework import generics
 from rest_framework import permissions
 from rest_framework import viewsets
 from rest_framework import status
-from rest_framework import serializers
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import APIException
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from rest_framework.reverse import reverse
 from rest_framework.generics import ListAPIView
@@ -46,25 +38,23 @@ from rest_framework.views import APIView
 from accounts.permissions import IsOwnerOrReadOnly
 from api.serializers import (
     UserSerializer, DatasetSerializer, PlaceSerializer,
-    PlaceTableSerializer, PlaceGeomSerializer, PlaceGeoFeatureSerializer, AreaSerializer,
+    PlaceTableSerializer, PlaceGeomSerializer, AreaSerializer,
     FeatureSerializer, LPFSerializer, PlaceCompareSerializer, ErrorResponseSerializer,
     GallerySerializer)
 from areas.models import Area
-from collection.models import Collection, CollPlace
+from collection.models import Collection
 from datasets.models import Dataset
 from main.choices import FEATURE_CLASSES
 from main.models import Log
 from datasets.tasks import get_bounds_filter
 from places.models import Place, PlaceGeom
-from search.views import getGeomCollection
-import inspect
 import json
-import random
 import os, requests
 
 import logging
 
 logger = logging.getLogger(__name__)
+
 
 class BadRequestException(APIException):
     serializer_class = ErrorResponseSerializer
@@ -82,8 +72,11 @@ class GalleryView(ListAPIView):
     pagination_class.page_size = 6
     serializer_class = GallerySerializer
 
+    def get_gallery_type(self):
+        return self.kwargs.get('type')
+
     def get_queryset(self):
-        self.gallery_type = self.kwargs.get('type')
+        self.gallery_type = self.get_gallery_type()
         model = Collection if self.gallery_type == 'collections' else Dataset
 
         filter = Q(public=True)
@@ -125,7 +118,7 @@ class GalleryView(ListAPIView):
             queryset = queryset.annotate(earliest=Min('places__minmax__0'))
         elif sort_by.endswith('latest'):
             queryset = queryset.annotate(latest=Max('places__minmax__1'))
-        elif sort_by.endswith('numrows') and gallery_type == 'collections':
+        elif sort_by.endswith('numrows') and self.gallery_type == 'collections':
             queryset = queryset.annotate(numrows=Count(
                 Case(
                     When(
@@ -144,19 +137,22 @@ class GalleryView(ListAPIView):
 
         return queryset.order_by(sort_by)
 
-    def list(self, request, *args, **kwargs):
+    def list(self, request: Request, *args, **kwargs):
+        self.gallery_type = self.get_gallery_type()
         queryset = self.get_queryset()
 
         # Paginate the data (DRF handles pagination)
         page = self.paginate_queryset(queryset)
         if page is not None:
             # Serialize the paginated data
-            serializer = self.get_serializer(page, many=True, model=Collection if self.gallery_type == 'collections' else Dataset)
+            serializer = self.get_serializer(page, many=True,
+                                             model=Collection if self.gallery_type == 'collections' else Dataset)
             serializer_data = serializer.data
             return self.get_paginated_response(self.custom_response_format(serializer_data, queryset))
 
         # Serialize the non-paginated data
-        serializer = self.get_serializer(page, many=True, model=Collection if self.gallery_type == 'collections' else Dataset)
+        serializer = self.get_serializer(page, many=True,
+                                         model=Collection if self.gallery_type == 'collections' else Dataset)
         return Response(self.custom_response_format(serializer.data, queryset))
 
     def custom_response_format(self, serializer_data, queryset):
@@ -164,7 +160,8 @@ class GalleryView(ListAPIView):
             'items': serializer_data,
             'total_items': queryset.count(),
             'current_page': int(self.request.query_params.get('page', 1)),
-            'total_pages': (queryset.count() // self.pagination_class.page_size) + (1 if queryset.count() % self.pagination_class.page_size > 0 else 0),
+            'total_pages': (queryset.count() // self.pagination_class.page_size) + (
+                1 if queryset.count() % self.pagination_class.page_size > 0 else 0),
         }
 
     # def list(self, request, *args, **kwargs):
@@ -427,7 +424,6 @@ class SpatialAPIView(generics.ListAPIView):
             400: ErrorResponseSerializer,
         }
     )
-
     def get(self, *args, **kwargs):
         params = self.request.query_params
         logger.info("SpatialAPIView received params: %s", params)
@@ -446,14 +442,16 @@ class SpatialAPIView(generics.ListAPIView):
                 if not all([lon, lat, dist]):
                     raise BadRequestException("A 'nearby' spatial query requires 'lon', 'lat', and 'km' parameters.")
                 pnt = Point(float(lon), float(lat), srid=4326)
-                placeids = PlaceGeom.objects.filter(geom__distance_lte=(pnt, D(km=float(dist)))).values_list('place_id', flat=True)
+                placeids = PlaceGeom.objects.filter(geom__distance_lte=(pnt, D(km=float(dist)))).values_list('place_id',
+                                                                                                             flat=True)
 
             elif qtype == 'bbox':
                 if not all([sw, ne]):
                     raise BadRequestException("A 'bbox' spatial query requires both 'sw' and 'ne' parameters.")
                 sw_lon, sw_lat = map(float, sw.split(','))
                 ne_lon, ne_lat = map(float, ne.split(','))
-                if not (-180 <= sw_lon <= 180 and -90 <= sw_lat <= 90 and -180 <= ne_lon <= 180 and -90 <= ne_lat <= 90):
+                if not (
+                        -180 <= sw_lon <= 180 and -90 <= sw_lat <= 90 and -180 <= ne_lon <= 180 and -90 <= ne_lat <= 90):
                     raise BadRequestException("Bounding box coordinates are out of bounds.")
                 bbox = Polygon.from_bbox([sw_lon, sw_lat, ne_lon, ne_lat])
                 placeids = PlaceGeom.objects.filter(geom__within=bbox).values_list('place_id', flat=True)
@@ -489,11 +487,13 @@ class SpatialAPIView(generics.ListAPIView):
         except (ValueError, TypeError, ValidationError) as e:
             logger.error("Parameter error: %s", e)
             return JsonResponse(
-                {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST, json_dumps_params={'ensure_ascii': False, 'indent': 2}
+                {"error": str(e)}, status=status.HTTP_400_BAD_REQUEST,
+                json_dumps_params={'ensure_ascii': False, 'indent': 2}
             )
         except Place.DoesNotExist:
             result["errors"] = "No matching places found."
-            return JsonResponse(result, status=status.HTTP_404_NOT_FOUND, json_dumps_params={'ensure_ascii': False, 'indent': 2})
+            return JsonResponse(result, status=status.HTTP_404_NOT_FOUND,
+                                json_dumps_params={'ensure_ascii': False, 'indent': 2})
 
         return JsonResponse(result, json_dumps_params={'ensure_ascii': False, 'indent': 2})
 
@@ -1555,7 +1555,7 @@ class PlaceTableCollViewSet(viewsets.ModelViewSet):
         # a q value if it's a search on the table
         query = self.request.GET.get('q')
         id_ = self.request.GET.get('id')
-        from django.db.models import Min, Max
+        from django.db.models import Min
         coll = get_object_or_404(Collection, id=id_)
         if coll.collection_class == 'dataset':
             qs = coll.places_all
