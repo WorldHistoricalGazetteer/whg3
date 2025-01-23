@@ -917,7 +917,11 @@ class SearchAPIView(generics.ListAPIView):
           minimum <br/>(e.g. ?name=myplacename or ?name_contains=astring or ?id=integer)</h3>')
         else:
             if id_:
-                qs = qs.filter(id=id_)
+                if ',' in id_:  # Check if id_ contains multiple IDs
+                    id_list = id_.split(',')  # Split the comma-separated string into a list
+                    qs = qs.filter(id__in=id_list)  # Use __in lookup to filter by multiple IDs
+                else:
+                    qs = qs.filter(id=id_)  # Single ID filter
                 err_note = 'id given, other parameters ignored' if len(params.keys()) > 1 else None
             else:
                 qs = qs.filter(minmax__0__lte=year, minmax__1__gte=year) if year else qs
