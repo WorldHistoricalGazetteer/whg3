@@ -229,13 +229,14 @@ def parse_to_LPF(delimited_filepath, ext):
                         lpf_feature['properties'] = {}
                     lpf_feature['properties']['title'] = lpf_feature['names'][0]['toponym']
 
-                    if 'geometry' in lpf_feature:
+                    if 'geometry' in lpf_feature and 'coordinates' in lpf_feature['geometry']:
                         lpf_feature['geometry']['type'] = 'Point'
                     else:
                         lpf_feature['geometry'] = None
 
                     # Replace any existing geometry with geometry contained in any `geowkt`
                     if 'geowkt' in lpf_feature:
+                        logger.debug(f"Converting WKT geometry to GeoJSON for record #{feature_count}.")
                         geometry = wkt.loads(lpf_feature['geowkt'])
                         geojson_geometry = shapely_mapping(geometry)
                         lpf_feature['geometry'] = geojson_geometry
