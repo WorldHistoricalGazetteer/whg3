@@ -229,7 +229,7 @@ def parse_to_LPF(delimited_filepath, ext):
                         lpf_feature['properties'] = {}
                     lpf_feature['properties']['title'] = lpf_feature['names'][0]['toponym']
 
-                    if 'geometry' in lpf_feature:
+                    if 'geometry' in lpf_feature and 'coordinates' in lpf_feature['geometry']:
                         lpf_feature['geometry']['type'] = 'Point'
                     else:
                         lpf_feature['geometry'] = None
