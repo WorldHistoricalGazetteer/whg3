@@ -685,6 +685,7 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
     });
 
     downloadButton.on('click', function () {
+    	this.blur();
 		const canvas = renderMap.getCanvas();
 		const imageFileName = `${fileName}.png`;
 		const a = $('<a>');
@@ -701,17 +702,18 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
     });
 
     $('#map-download-dialog').on('hidden.bs.modal', function () {
-		if (previouslyFocused) {
-			previouslyFocused.focus();
-		}
+		const dialog = this;
 
-		// Defer cleanup slightly to allow focus restoration
+		// Delay both focus and DOM cleanup
 		setTimeout(() => {
+			if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+				previouslyFocused.focus();
+			}
+
 			renderMap.remove();
 			container.remove();
-			$(this).remove();
-		}, 0);
-
+			$(dialog).remove();
+		}, 100);
     });
 }
 
