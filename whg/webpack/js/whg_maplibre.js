@@ -622,6 +622,7 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
     const downloadButton = $('<button type="button" class="btn btn-success" id="download" style="display: none;" disabled>...rendering...</button>');
     const cancelButton = $('<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>');
 	const copyAttributionButton = $('<button type="button" class="btn btn-primary" id="copy-attribution">Acknowledge and Copy Attribution</button>');
+	const previouslyFocused = document.activeElement;
     modalHeader.append(modalTitle, modalCloseButton);
     modalBody.append(injunctionText, attributionText);
     modalFooter.append(cancelButton, copyAttributionButton, downloadButton);
@@ -702,6 +703,10 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 		renderMap.remove();
 		container.remove();
         $(this).remove();
+
+		if (previouslyFocused) {
+			previouslyFocused.focus();
+		}
     });
 }
 
