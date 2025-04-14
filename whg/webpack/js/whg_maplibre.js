@@ -622,6 +622,7 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
     const downloadButton = $('<button type="button" class="btn btn-success" id="download" style="display: none;" disabled>...rendering...</button>');
     const cancelButton = $('<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>');
 	const copyAttributionButton = $('<button type="button" class="btn btn-primary" id="copy-attribution">Acknowledge and Copy Attribution</button>');
+	const previouslyFocused = document.activeElement;
     modalHeader.append(modalTitle, modalCloseButton);
     modalBody.append(injunctionText, attributionText);
     modalFooter.append(cancelButton, copyAttributionButton, downloadButton);
@@ -649,6 +650,11 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 	container.id = 'map-render-container';
 	container.style.width = width / actualPixelRatio + 'px';
 	container.style.height = height / actualPixelRatio + 'px';
+	container.style.position = 'absolute';
+	container.style.top = '-9999px';
+	container.style.left = '-9999px';
+	container.style.zIndex = '-1';
+	container.style.opacity = '1';
 	originalMapContainer.appendChild(container);
     
 	const renderMap = new maplibregl.Map({
@@ -665,8 +671,22 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
 		pixelRatio: newPixelRatio, // Set for higher DPI rendering
 		transformRequest: map._requestManager._transformRequestFn,
 	});
-	renderMap.once('idle', () => {
-		downloadButton.prop('disabled', false).text('Download');
+
+	function waitForRenderComplete(mapInstance, callback) {
+		const check = () => {
+			const renderStatus = mapInstance.areTilesLoaded() && !mapInstance.isMoving();
+			if (renderStatus) {
+				callback();
+			} else {
+				setTimeout(check, 100); // Poll until ready
+			}
+		};
+		check();
+	}
+	renderMap.once('load', () => {
+		waitForRenderComplete(renderMap, () => {
+			downloadButton.prop('disabled', false).text('Download');
+		});
 	});
 
     $('#map-download-dialog').on('shown.bs.modal', function () {
@@ -684,6 +704,7 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
     });
 
     downloadButton.on('click', function () {
+    	this.blur();
 		const canvas = renderMap.getCanvas();
 		const imageFileName = `${fileName}.png`;
 		const a = $('<a>');
@@ -695,13 +716,23 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
     });
 
     cancelButton.on('click', function () {
+    	this.blur();
         $('#map-download-dialog').modal('hide');
     });
 
     $('#map-download-dialog').on('hidden.bs.modal', function () {
-		renderMap.remove();
-		container.remove();
-        $(this).remove();
+		const dialog = this;
+
+		// Delay both focus and DOM cleanup
+		setTimeout(() => {
+			if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+				previouslyFocused.focus();
+			}
+
+			renderMap.remove();
+			container.remove();
+			$(dialog).remove();
+		}, 100);
     });
 }
 
