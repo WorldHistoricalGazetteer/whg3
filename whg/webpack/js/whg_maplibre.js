@@ -696,17 +696,22 @@ function generateMapImage(map, dpi = 300, fileName = 'WHG_Map') {
     });
 
     cancelButton.on('click', function () {
+    	this.blur();
         $('#map-download-dialog').modal('hide');
     });
 
     $('#map-download-dialog').on('hidden.bs.modal', function () {
-		renderMap.remove();
-		container.remove();
-        $(this).remove();
-
 		if (previouslyFocused) {
 			previouslyFocused.focus();
 		}
+
+		// Defer cleanup slightly to allow focus restoration
+		setTimeout(() => {
+			renderMap.remove();
+			container.remove();
+			$(this).remove();
+		}, 0);
+
     });
 }
 
