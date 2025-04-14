@@ -104,8 +104,7 @@ class PlacePortalView(TemplateView):
         
         filter_condition = Q(collection_class='place')
         if me.is_authenticated:
-            filter_condition &= Q(owner=me)
-            filter_condition |= Q(collabs__user=me)
+            filter_condition &= (Q(owner=me) | Q(collabs__user=me))
         context['my_collections'] = Collection.objects.filter(filter_condition)
 
         pid = kwargs.get('pid')
