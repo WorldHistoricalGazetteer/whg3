@@ -566,7 +566,10 @@ def review(request, dsid, tid, passnum):
     task = get_object_or_404(TaskResult, task_id=tid)
     auth = task.task_name[6:].replace("local", "")
     authname = "Wikidata" if auth == "wd" else "WHG"
-    kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
+    try:
+        kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
+    except (SyntaxError, ValueError):
+        kwargs = {}
     test = kwargs["test"] if "test" in kwargs else "off"
 
     # beta = "beta" in list(request.user.groups.all().values_list("name", flat=True))
@@ -591,7 +594,10 @@ def review(request, dsid, tid, passnum):
     # calling link passnum may be 'pass*', 'def', or '0and1' (for idx)
     # if 'pass*', get place_ids for just that pass
     if passnum.startswith("pass"):
-        pass_int = int(passnum[4])
+        try:
+            pass_int = int(passnum[4])
+        except (IndexError, ValueError):
+            pass_int = 10
         # if no unreviewed left, go to next pass
         passnum = passnum if cnt_pass > 0 else "pass" + str(pass_int + 1)
         hitplaces = Hit.objects.values("place_id").filter(
@@ -625,15 +631,17 @@ def review(request, dsid, tid, passnum):
 
     # unreviewed place objects from place_ids (a single pass or all)
     record_list = ds.places.order_by("id").filter(**{lookup: status}, pk__in=hitplaces)
-    if len(record_list) == 0:
+
+    nohit_context = {
+        "nohits": True,
+        "ds_id": dsid,
+        "task_id": tid,
+        "passnum": passnum,
+    }
+
+    if not record_list.exists() or len(record_list) == 0:
         # no records left for pass (or in deferred queue)
-        context = {
-            "nohits": True,
-            "ds_id": dsid,
-            "task_id": tid,
-            "passnum": passnum,
-        }
-        return render(request, "datasets/" + review_page, context=context)
+        return render(request, "datasets/" + review_page, context=nohit_context)
 
     # manage pagination & urls
     # gets next place record as records[0]
@@ -643,15 +651,25 @@ def review(request, dsid, tid, passnum):
     # if 'pid' in request.GET, bypass per-pass sequential loading
     if pid:
         # get its index and add 1 to get page
-        page = (*record_list,).index(Place.objects.get(id=pid)) + 1
+        try:
+            place_obj = Place.objects.get(id=pid)
+            page = list(record_list).index(place_obj) + 1
+        except (Place.DoesNotExist, ValueError):
+            return render(request, "datasets/" + review_page, context=nohit_context)
     else:
         # default action, sequence of all pages for the pass
         page = 1 if not request.GET.get("page") else request.GET.get("page")
     records = paginator.get_page(page)
     count = len(record_list)
 
+    if not records:
+        return render(request, "datasets/" + review_page, context=nohit_context)
+
     # get hits for this record
-    placeid = records[0].id
+    try:
+        placeid = records[0].id
+    except IndexError:
+        return render(request, "datasets/" + review_page, context=nohit_context)
     place = get_object_or_404(Place, id=placeid)
     dataset_details = {}  # needed for context in either case
     # if auth not in ["whg", "idx"]:
