@@ -26,7 +26,7 @@ from datasets.models import Dataset
 from elasticsearch8 import Elasticsearch
 from main.models import Log, Tileset
 from places.models import PlaceGeom
-from utils.mapdata import mapdata, mapdata_task, reset_standard_mapdata
+from utils.mapdata import mapdata, mapdata_task, reset_mapdata
 import json
 import requests
 import subprocess
@@ -217,7 +217,7 @@ def send_tileset_request(category=None, id=None, action='generate'):
         response_data = response.json()
         if response_data.get("status") == "success":
             if action == 'delete':
-                reset_standard_mapdata(category, id)
+                reset_mapdata(category, id)
             logger.info(f"Tileset <{action}> successful.")
             return response_data
         else:
@@ -230,7 +230,7 @@ def send_tileset_request(category=None, id=None, action='generate'):
 
     # Tileset generation has failed so reset standard mapdata filecache
     if action == 'generate':
-        reset_standard_mapdata(category, id)
+        reset_mapdata(category, id)
     return {
         'status': 'failure',
         'error': f'Error processing tileset <{action}> request.'

@@ -1,11 +1,20 @@
+import json
+import logging
+import os
+import time
+from itertools import chain, islice
+
+import networkx as nx
+import numpy as np
+import redis
 from celery import shared_task
 from django.conf import settings
-from django.contrib.gis.db.models import Extent
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.gis.db.models.aggregates import Union
 from django.contrib.gis.geos import GeometryCollection, Polygon
 from django.core.cache import cache
 from django.core.cache.backends.filebased import FileBasedCache
-from django.db.models import Min, Max, Prefetch, F, Q
+from django.db.models import Q, Prefetch
 from django.http import JsonResponse, HttpRequest
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -13,13 +22,7 @@ from django.utils import timezone
 from collection.models import Collection
 from collection.views import year_from_string
 from datasets.models import Dataset
-from itertools import chain, islice
-from places.models import Place, PlaceGeom, Type, CloseMatch
-
-import networkx as nx
-import os, requests, time, json
-import redis
-import logging
+from places.models import Place, PlaceGeom, CloseMatch
 
 logger = logging.getLogger('mapdata')
 
@@ -28,94 +31,68 @@ def get_redis_client():
     return redis.StrictRedis.from_url(settings.CELERY_BROKER_URL)
 
 
+def compute_minmax(places_info):
+    """
+    Computes the global min and max values from a list of place info dicts.
+    Expects each dict to have string 'min' and 'max' keys.
+    Returns a [min, max] list as strings, or [None, None] if unavailable.
+    """
+    try:
+        arr = np.array([
+            (float(p["min"]), float(p["max"]))
+            for p in places_info
+            if p["min"] != "null" and p["max"] != "null"
+        ])
+        if arr.size > 0:
+            return [str(np.min(arr[:, 0])), str(np.max(arr[:, 1]))]
+    except Exception as e:
+        logger.warning(f"Failed to compute minmax: {e}")
+    return [None, None]
+
+
 @shared_task
-def mapdata_task(category, id, variant=None, refresh=False):
+def mapdata_task(category, id, refresh=False):
     dummy_request = HttpRequest()
-    response = mapdata(dummy_request, category, id, variant=variant, refresh=str(refresh))
+    dummy_request.user = AnonymousUser()
 
-    return json.loads(response.content) if isinstance(response, JsonResponse) else {'status': 'failure',
-                                                                                    'error': 'Failed to generate mapdata'}
-
-
-def reset_standard_mapdata(category, id):
-    # This will generate standard mapdata and also delete any existing standard or tileset mapdata cache
-    logger.debug(f"Resetting standard mapdata for {category}-{id}.")
-    mapdata_task.delay(category, id, 'standard', 'refresh')
+    result = mapdata(dummy_request, category, id, refresh=refresh)
+    if isinstance(result, JsonResponse):
+        return result.json()
+    else:
+        raise ValueError("`mapdata` function did not return a JsonResponse")
 
 
-def mapdata(request, category, id, variant='standard', refresh='false'):  # variant options are "standard" | "tileset"
-    no_reduction = refresh == 'full' # Use <category>/<id>/refresh/full to bypass geometry reduction (used in PLACE branch)
-    refresh = variant == 'refresh' or refresh.lower() in ['refresh', 'true', '1', 'yes']
-    if variant != 'tileset':
-        variant = 'standard'
-    # Generate cache key
-    cache_key = f"{category}-{id}-{variant}"
+def reset_mapdata(category, id):
+    logger.debug(f"Resetting mapdata for {category}-{id}.")
+    mapdata_task.delay(category, id, refresh=True)
+
+
+def mapdata(request, category, id, refresh='false'):
+    # TODO: Fix use of <category>/<id>/refresh/full to bypass geometry reduction in PLACE branch
+    refresh = str(refresh).lower() in ['refresh', 'true', '1', 'yes']
+    cache_key = f"{category}-{id}"
     logger.debug(f"Mapdata requested for {cache_key} (refresh={refresh}).")
 
     # Check if cached data exists and return it if found
-    if refresh == False:
+    if not refresh:
         cached_data = cache.get(cache_key)
         if cached_data is not None:
             logger.debug("Found cached mapdata.")
             return JsonResponse(cached_data, safe=False, json_dumps_params={'ensure_ascii': False})
 
-    # Ensure that cache will be refreshed
-    cache.delete(f"{category}-{id}-standard")
+    cache.delete(cache_key)
+    start_time = time.time()
 
-    start_time = time.time()  # Record the start time
-
-    # If variant is not 'tileset', fetch available tilesets
-    available_tilesets = []
-    if variant == "standard":
-        # Clean up any existing tileset cache
-        cache.delete(f"{category}-{id}-tileset")
-        tiler_url = os.environ.get('TILER_URL')  # Must be set in /.env/.dev-whg3
-        response = requests.post(tiler_url, json={"getTilesets": {"type": category, "id": id}})
-
-        if response.status_code == 200:
-            available_tilesets = response.json().get('tilesets', [])
-            logger.debug("available_tilesets", available_tilesets)
-
-    # Determine feature collection generation based on category
     mapdata_result = mapdata_dataset(id) if category == "datasets" else mapdata_collection(id)
 
-    end_time = time.time()  # Record the end time
-    response_time = end_time - start_time  # Calculate the response time
+    response_time = time.time() - start_time
     logger.debug(f"Mapdata generation time: {response_time:.2f} seconds")
 
-    def reduced_geometry(mapdata_result):
-        mapdata_result["features"] = [
-            {**feature, "geometry": {"type": feature["geometry"]["type"]} if feature.get("geometry") else None}
-            for feature in mapdata_result["features"]
-        ]
-        mapdata_result["tilesets"] = available_tilesets
-        return mapdata_result
-
-    if variant == "tileset":
-        logger.debug(f"Splitting and caching mapdata.")
-
-        # Reduce feature properties in mapdata to be fetched by tiler
-        mapdata_tileset = mapdata_result.copy()
-        mapdata_tileset["features"] = [
-            # This is redundant - filtering is achieved in Tippecanoe parameters
-            {**feature, "properties": {k: v for k, v in feature["properties"].items() if
-                                       k in ["fclasses", "relation", "pid", "min", "max"]}}
-            for feature in mapdata_tileset["features"]
-        ]
-        cache.set(f"{category}-{id}-tileset", mapdata_tileset)
-
-        # Reduce feature geometry in mapdata sent to browser
-        new_tileset = f"{category}-{id}"
-        if new_tileset not in available_tilesets:
-            available_tilesets.append(new_tileset)
-        cache.set(f"{category}-{id}-standard", reduced_geometry(mapdata_result))
-
-    elif response_time > 1 and not no_reduction:  # Cache if generation time exceeds 1 second
-        logger.debug(f"Caching standard mapdata.")
-        cache.set(f"{category}-{id}-standard",
-                  reduced_geometry(mapdata_result) if available_tilesets else mapdata_result)
+    if response_time > 1:
+        logger.debug("Caching mapdata.")
+        cache.set(cache_key, mapdata_result)
     else:
-        logger.debug(f"No need to cache mapdata.")
+        logger.debug("No need to cache mapdata.")
 
     return JsonResponse(mapdata_result, safe=False, json_dumps_params={'ensure_ascii': False})
 
@@ -124,55 +101,58 @@ def buffer_extent(extent, buffer_distance=0.1):
     return Polygon.from_bbox(extent).buffer(buffer_distance).extent if extent else None
 
 
+def buffered_extent_from_bbox(bbox, buffer_distance=0.1):
+    return bbox.buffer(buffer_distance).extent if isinstance(bbox, Polygon) else None
+
+
 def mapdata_dataset(id, task_id=None, chunk_size=1000):
     ds = get_object_or_404(Dataset, pk=id)
 
-    # Initialize Redis key if task_id is provided
     if task_id:
         redis_client = get_redis_client()
         redis_client.hset(task_id, 'mapdata_start_time', timezone.now().isoformat())
         redis_client.hset(task_id, 'queued_features', ds.numrows)
 
     features = []
-    redis_batch_size = 100  # Define batch size for Redis updates
-
-    # Initialize extent to None, will be updated with actual values
-    extent_polygon = None
-
-    # Fetch places in chunks to avoid hitting the database in one go
-    places_qs = ds.places.values('id', 'title', 'fclasses', 'review_wd', 'review_tgn', 'review_whg', 'minmax').order_by(
-        'id')
-    place_iterator = iter(places_qs)
+    redis_batch_size = 100
     index = 0
+
+    # Get the extent directly from the dataset's bbox
+    buffered_extent = buffered_extent_from_bbox(ds.bbox)
+
+    # Prefetch related geometries using Prefetch object
+    places_qs = ds.places.prefetch_related(
+        Prefetch(
+            'geoms',
+            queryset=PlaceGeom.objects.only('place_id', 'jsonb', 'geom'),
+            to_attr='prefetched_geoms'
+        )
+    ).values('id', 'title', 'fclasses', 'review_wd', 'review_tgn', 'review_whg', 'minmax').order_by('id')
+
+    place_iterator = iter(places_qs)
 
     while True:
         chunk = list(islice(place_iterator, chunk_size))
         if not chunk:
             break
 
-        # Fetch geometries for the current chunk of places
         place_ids = [place['id'] for place in chunk]
-        geometries = PlaceGeom.objects.filter(place_id__in=place_ids).only('jsonb', 'geom')
 
-        # Organize geometries by place_id for efficient lookup
-        geom_map = {}
-        for geom in geometries:
-            geom_map.setdefault(geom.place_id, []).append(geom.jsonb)
+        # Fetch full Place instances with prefetched geoms
+        full_places = ds.places.filter(id__in=place_ids).prefetch_related(
+            Prefetch(
+                'geoms',
+                queryset=PlaceGeom.objects.only('place_id', 'jsonb', 'geom'),
+                to_attr='prefetched_geoms'
+            )
+        )
 
-            # Update the extent dynamically
-            if geom.geom and not geom.geom.empty:
-                geom_extent = geom.geom.extent  # Returns (xmin, ymin, xmax, ymax)
-                if geom_extent and len(geom_extent) == 4:  # Ensure the extent has 4 values
-                    geom_bbox = Polygon.from_bbox(geom_extent)
-                    if extent_polygon is None:
-                        extent_polygon = geom_bbox.buffer(0)
-                    else:
-                        extent_polygon = extent_polygon.union(geom_bbox.buffer(0))
-
-        logger.debug(f"Geometries: {geom_map}")
+        place_map = {p.id: p for p in full_places}
 
         for place in chunk:
-            geom_list = geom_map.get(place['id'], [])
+            place_obj = place_map[place['id']]
+            geom_list = [g.jsonb for g in getattr(place_obj, 'prefetched_geoms', [])]
+
             feature = {
                 "type": "Feature",
                 "properties": {
@@ -193,43 +173,17 @@ def mapdata_dataset(id, task_id=None, chunk_size=1000):
                         "geometries": geom_list
                     }
                 ),
-                "id": index  # Required for MapLibre conditional styling
+                "id": index
             }
             features.append(feature)
 
-            logger.debug(f"feature: {feature}")
-
-            # Batch Redis updates for better performance
             if task_id and (index + 1) % redis_batch_size == 0:
                 redis_client.hincrby(task_id, 'queued_features', -redis_batch_size)
 
             index += 1
 
-    logger.debug(f"Chunk completed")
-
-    # Final Redis update for any remaining items
     if task_id:
         redis_client.hincrby(task_id, 'queued_features', -(index % redis_batch_size))
-
-    logger.debug(f"Redis updated")
-
-    # Convert the final extent polygon to a tuple in the format (xmin, ymin, xmax, ymax)
-    if extent_polygon:
-        try:
-            final_extent = extent_polygon.extent
-            if final_extent and len(final_extent) == 4:  # Ensure valid extent
-                logger.debug(f"final_extent: {final_extent}")
-                buffered_extent = buffer_extent(final_extent)
-            else:
-                logger.error(f"Invalid extent: {final_extent}")
-                buffered_extent = None
-        except Exception as e:
-            logger.error(f"Error calculating final extent: {e}")
-            buffered_extent = None
-    else:
-        buffered_extent = None
-
-    logger.debug(f"buffered_extent: {buffered_extent}")
 
     return {
         "title": ds.title,
@@ -246,41 +200,36 @@ def mapdata_dataset(id, task_id=None, chunk_size=1000):
 def mapdata_collection(id):
     collection = get_object_or_404(Collection, id=id)
 
-    if collection.collection_class == 'place':
-        traces_with_place_ids = collection.traces.filter(archived=False).annotate(annotated_place_id=F('place__id'))
-        unique_place_ids = traces_with_place_ids.values_list('annotated_place_id', flat=True).distinct()
-        collection_places_all = Place.objects.filter(id__in=unique_place_ids)
-    else:  # collection.collection_class == 'dataset'
-        collection_places_all = collection.places_all
-
-    extent = buffer_extent(list(collection_places_all.aggregate(Extent('geoms__geom')).values())[0])
-
     feature_collection = {
         "title": collection.title,
         "creator": collection.creator,
         "type": "FeatureCollection",
         "features": [],
-        "extent": extent,
+        "extent": buffered_extent_from_bbox(collection.bbox)
     }
 
     if collection.collection_class == 'place':
         return mapdata_collection_place(collection, feature_collection)
-    else:  # collection.collection_class == 'dataset'
-        return mapdata_collection_dataset(collection, collection_places_all, feature_collection)
+    else:
+        return mapdata_collection_dataset(collection, feature_collection)
 
 
 def mapdata_collection_place(collection, feature_collection):
     traces = collection.traces.filter(archived=False).select_related('place')
     reduce_geometry = any(facet.get("trail") for facet in collection.vis_parameters.values())
-
     feature_collection["relations"] = collection.rel_keywords
 
+    # Prefetch geoms for places to avoid querying them multiple times
+    places = {trace.place.id: trace.place for trace in traces.prefetch_related('place__geoms')}
+
     for index, trace in enumerate(traces):
-        place = trace.place
+        place = places[trace.place.id]
         first_anno_sequence = place.annos.first().sequence if place.annos.exists() else None
         reference_place = place.matches[0] if trace.include_matches and place.matches else place
 
+        geometry_collection = None
         if reference_place.geoms.exists():
+            # Perform the union of geometries only once for the place
             unioned_geometry = reference_place.geoms.aggregate(union=Union('geom'))['union']
             if unioned_geometry:
                 try:
@@ -288,12 +237,9 @@ def mapdata_collection_place(collection, feature_collection):
                     geometry_collection = json.loads(
                         GeometryCollection(centroid if centroid else unioned_geometry).geojson)
                 except (TypeError, ValueError) as e:
-                    logger.debug(f"Trying alternative geometry collection tranformation for place {place.id}: {e}",
-                          unioned_geometry)
+                    logger.debug(f"Error with geometry collection for place {place.id}: {e}", unioned_geometry)
                     geometry_collection = json.loads(
                         GeometryCollection(centroid if centroid else list(unioned_geometry)).geojson)
-        else:
-            geometry_collection = None
 
         feature = {
             "type": "Feature",
@@ -321,30 +267,28 @@ def mapdata_collection_place(collection, feature_collection):
     return feature_collection
 
 
-def mapdata_collection_dataset(collection, collection_places_all, feature_collection):
+def mapdata_collection_dataset(collection, feature_collection):
     '''
     Construct families of matched places within collection
     '''
 
-    close_matches = list(CloseMatch.objects.filter(
+    # Prefetch geoms for all places in collection
+    collection_places_all = collection.places_all.prefetch_related('geoms')
+
+    # Get close matches in one query
+    close_matches = CloseMatch.objects.filter(
         Q(place_a__in=collection_places_all) & Q(place_b__in=collection_places_all)
-    ).values_list('place_a_id', 'place_b_id'))
-    # close_matches = list( CloseMatch.objects.filter(Q(place_a__in=cpa) & Q(place_b__in=cpa)).values_list('place_a_id', 'place_b_id') )
-    logger.debug(close_matches)
+    ).values_list('place_a_id', 'place_b_id')
 
-    # Create a graph if there are close matches, otherwise, an empty graph
+    # Create a graph of close matches (using networkx)
     G = nx.Graph(close_matches) if close_matches else nx.Graph()
-
     families = list(nx.connected_components(G))
 
-    # Start places list with places that have no family connections
-    unmatched_places = collection_places_all.exclude(id__in=G.nodes).prefetch_related('geoms').order_by('id')
-    # unmatched_places = cpa.exclude(id__in=G.nodes).prefetch_related('geoms').order_by('id')
+    # Process unmatched places
+    unmatched_places = collection_places_all.exclude(id__in=G.nodes).order_by('id')
 
     logger.debug(
         f"Collection {collection.id}: {collection_places_all.count()} places sorted into {len(families)} families and {len(unmatched_places)} unmatched.")
-
-    # logger.debug(f"Collection {collection.id}: {cpa.count()} places sorted into {len(families)} families and {len(unmatched_places)} unmatched.")
 
     # Helper function to aggregate place information
     def aggregate_place_info(place):
@@ -356,12 +300,12 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
                 try:
                     geometry_collection = json.loads(GeometryCollection(unioned_geometry).geojson)
                 except (TypeError, ValueError) as e:
-                    logger.debug(f"Trying alternative geometry collection tranformation for place {place.id}: {e}",
-                          unioned_geometry)
+                    logger.debug(f"Error with geometry collection for place {place.id}: {e}", unioned_geometry)
                     geometry_collection = json.loads(GeometryCollection(list(unioned_geometry)).geojson)
+
         place_min, place_max = place.minmax or (None, None)
         return {
-            "id": str(place.id),  # Ensure ID is a string
+            "id": str(place.id),
             "src_id": [place.src_id] if isinstance(place.src_id, int) else place.src_id,
             "title": place.title,
             "fclasses": sorted(set(fc for fc in place.fclasses if fc)) if place.fclasses else [],
@@ -372,73 +316,73 @@ def mapdata_collection_dataset(collection, collection_places_all, feature_collec
             "geometry": geometry_collection
         }
 
-    # Aggregate information for unmatched places
+    # Aggregate info for unmatched places
     places_info = [aggregate_place_info(place) for place in unmatched_places]
 
-    # Aggregate information for family places
+    # Process families of places
     for family in families:
         family_members = Place.objects.filter(id__in=family)
-        family_place_geoms = PlaceGeom.objects.filter(place_id__in=family).select_related('place')
+        family_place_geoms = PlaceGeom.objects.filter(place_id__in=family)
 
-        # Create a family place as a pseudo-place object
+        # Create a pseudo "family" place object for aggregation
         family_place = type('FamilyPlace', (object,), {})()
         family_place.id = "-".join(str(place_id) for place_id in sorted(family))
-        family_place.src_id = sorted(list(family_members.values_list('src_id', flat=True)))
+
+        # Directly use set and sorted to handle duplicates efficiently
+        family_place.src_id = sorted(set(family_members.values_list('src_id', flat=True)))
         family_place.title = "|".join(set(family_members.values_list('title', flat=True)))
-        family_place.ccodes = sorted(list(set(chain.from_iterable(family_members.values_list('ccodes', flat=True)))))
-        # family_place.fclasses = sorted(list(set(chain.from_iterable(family_members.values_list('fclasses', flat=True)))))
-        # family_place.fclasses = sorted(set(filter(None, family_members.values_list('fclasses', flat=True))))
+        family_place.ccodes = sorted(set(chain.from_iterable(family_members.values_list('ccodes', flat=True))))
         family_place.fclasses = sorted(
             set(chain.from_iterable(filter(None, family_members.values_list('fclasses', flat=True)))))
-        family_place.minmax = [
-            min(filter(None, family_members.values_list('minmax__0', flat=True)), default=None),
-            max(filter(None, family_members.values_list('minmax__1', flat=True)), default=None)
-        ]
+
+        family_place.minmax = compute_minmax([
+            {"min": str(m[0]), "max": str(m[1])}
+            for m in family_members.values_list('minmax')
+            if m[0] is not None and m[1] is not None
+        ])
+
         family_place.geoms = family_place_geoms
         family_place.seq = None
 
         family_info = aggregate_place_info(family_place)
         places_info.append(family_info)
-        logger.debug(f"Aggregated places {family_info['id']}")
 
-    # Sort places by ID (ensure all IDs are strings)
+    # Sort places and add to feature collection
     places_info.sort(key=lambda x: x['id'])
     places_info = [{'pid': place_info.pop('id'), **place_info} for place_info in places_info]
 
-    # Add places to the feature collection
+    dataset_lookup = {
+        str(place.id): set(ds.id for ds in collection.datasets.filter(places=place))
+        for place in collection_places_all
+    }
+
     for index, place_info in enumerate(places_info):
-        # Extract the pids and split on '-' if necessary
         pid_values = place_info['pid'].split('-') if isinstance(place_info['pid'], str) else [place_info['pid']]
-
-        # Collect unique dataset IDs
         unique_ids = {
-            str(dataset.id)
+            dataset_id
             for pid in pid_values
-            if pid.isdigit()
-            for dataset in collection.datasets.filter(places=int(pid))
+            if pid.isdigit() and pid in dataset_lookup  # Check if pid is a digit and exists in dataset_lookup
+            for dataset_id in dataset_lookup[pid]  # Get the datasets corresponding to the place_id (pid)
         }
+        place_info["relation"] = "-".join(sorted(str(unique_id) for unique_id in unique_ids))
 
-        # Set relation (used to colorise markers) as the unique dataset IDs joined by hyphen
-        place_info["relation"] = "-".join(sorted(unique_ids))
-
-        # Log any invalid PIDs
-        invalid_pids = [pid for pid in pid_values if not pid.isdigit()]
-        for pid in invalid_pids:
-            logger.error(f"Invalid place ID: {pid}")
-
+        # Construct the feature object for the collection
         feature = {
             "type": "Feature",
             "geometry": place_info.pop('geometry'),
             "properties": place_info,
-            "id": index  # Required for MapLibre conditional styling
+            "id": index
         }
         feature_collection["features"].append(feature)
 
-    # Calculate min-max values
+    # Aggregate min-max values for the feature collection
     min_max_values = [(float(place_info["min"]), float(place_info["max"])) for place_info in places_info if
                       place_info["min"] != "null" and place_info["max"] != "null"]
-    feature_collection["minmax"] = [str(min(min_max_values)), str(max(min_max_values))] if min_max_values else [None,
-                                                                                                                None]
+    feature_collection["minmax"] = compute_minmax([
+        {"min": str(v[0]), "max": str(v[1])}
+        for v in min_max_values
+        if v[0] is not None and v[1] is not None
+    ])
 
     return feature_collection
 
