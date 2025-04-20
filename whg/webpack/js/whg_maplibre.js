@@ -1156,6 +1156,20 @@ maplibregl.Map = function (options = {}) {
 			mapInstance.styleControl = new acmeStyleControl( mapInstance );
 			mapInstance.addControl(mapInstance.styleControl, 'top-right');
 		}
+		if (chosenOptions.globeControl) {
+			mapInstance.addControl(new maplibregl.GlobeControl(), 'top-right');
+			mapInstance.setProjection({ type: 'globe' });
+			// MapLibre adds a redundant `title` attribute to the globe control button after first click on it
+			const globeButton = mapInstance.getContainer().querySelector('.maplibregl-ctrl-globe');
+			if (globeButton) {
+				globeButton.removeAttribute('title');
+				globeButton.setAttribute('data-bs-title', 'Toggle Globe');
+				// Add a click listener to the globe button to remove the title attribute
+				globeButton.addEventListener('click', function() {
+					this.removeAttribute('title');
+				});
+			}
+		}
 		if (chosenOptions.terrainControl) mapInstance.addControl(new CustomTerrainControl({source: 'terrarium-aws'}), 'top-right');
 		if (chosenOptions.navigationControl) mapInstance.addControl(new maplibregl.NavigationControl(chosenOptions.navigationControl), chosenOptions.navigationControl.position);
 		if (!!chosenOptions.customAttributionControl) {

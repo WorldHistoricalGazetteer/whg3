@@ -36,6 +36,7 @@ let mapParameters = {
 	maxZoom: 20,
 	downloadMapControl: true,
     fullscreenControl: true,
+	globeControl: true,
 }
 
 console.log('visParameters',visParameters);
