@@ -29,7 +29,7 @@ let mapParameters = {
     temporalControl: true
 }
 
-let mappy = new whg_maplibre.Map(mapParameters);
+let whg_map = new whg_maplibre.Map(mapParameters);
 
 const noSources = $('<div>').html('<i>None - please adjust time slider.</i>').hide();
 
@@ -41,19 +41,19 @@ let showingRelated = false;
 let nearPlacePopup = new whg_maplibre.Popup({
     closeButton: false,
 })
-    .addTo(mappy);
+    .addTo(whg_map);
 $(nearPlacePopup.getElement()).hide();
 
 function waitMapLoad() {
     return new Promise((resolve) => {
-        mappy.on('load', () => {
+        whg_map.on('load', () => {
             console.log('Map loaded.');
 
-            mappy
+            whg_map
                 .newSource('nearbyPlaces') // Add empty source
                 .newLayerset('nearbyPlaces', 'nearbyPlaces', 'nearby-places');
 
-            mappy
+            whg_map
                 .newSource('places') // Add empty source
                 .newLayerset('places')
                 .addFilter(['!=', 'outOfDateRange', true]);
@@ -63,11 +63,11 @@ function waitMapLoad() {
             }, 300);
 
             if (!!mapParameters.temporalControl) {
-                new Historygram(mappy, allts, dateRangeChanged);
+                new Historygram(whg_map, allts, dateRangeChanged);
             }
             ;
 
-            const ecoAdminFeatures = mappy.queryRenderedFeatures(mappy.project(centroid)).filter(feature => {
+            const ecoAdminFeatures = whg_map.queryRenderedFeatures(whg_map.project(centroid)).filter(feature => {
                 return feature.source === 'ecoregions' || feature.source === 'natural_earth';
             });
             ecoAdminFeatures.forEach(feature => {
@@ -82,23 +82,23 @@ function waitMapLoad() {
                 }
             });
 
-            mappy
+            whg_map
                 .setZoom(mapParameters.maxZoom) // Maximum resolution for terrain elevation query
                 .once('idle', function () {
-                    const elevation = -mappy.queryTerrainElevation([4.892321, 52.372748], {exaggerated: false}); // Using datum coordinates of European Vertical Reference System
+                    const elevation = -whg_map.queryTerrainElevation([4.892321, 52.372748], {exaggerated: false}); // Using datum coordinates of European Vertical Reference System
                     console.log('raw elevation', elevation);
                     geoData.elevation = Math.max(0, Math.floor(elevation));
-                    mappy.getContainer().style.opacity = 1;
+                    whg_map.getContainer().style.opacity = 1;
                     resolve();
                 });
 
-            mappy.on('mousemove', function (e) {
-                const features = mappy.queryRenderedFeatures(e.point);
+            whg_map.on('mousemove', function (e) {
+                const features = whg_map.queryRenderedFeatures(e.point);
 
                 function clearHighlights() {
-                    if (mappy.highlights.length > 0) {
-                        mappy.getCanvas().style.cursor = 'grab';
-                        mappy.clearHighlights();
+                    if (whg_map.highlights.length > 0) {
+                        whg_map.getCanvas().style.cursor = 'grab';
+                        whg_map.clearHighlights();
                         $('.source-box').removeClass('highlight');
                     }
                 }
@@ -108,7 +108,7 @@ function waitMapLoad() {
                         clearHighlights();
                         features.forEach(feature => {
                             if (feature.layer.id.startsWith('places_')) {
-                                mappy.highlight(feature);
+                                whg_map.highlight(feature);
                                 $('.source-box').eq(feature.id).addClass('highlight');
                             }
                         });
@@ -120,8 +120,8 @@ function waitMapLoad() {
                             }
                             $(nearPlacePopup.getElement()).show();
                         });
-                        if (mappy.highlights.length > 0) {
-                            mappy.getCanvas().style.cursor = 'pointer';
+                        if (whg_map.highlights.length > 0) {
+                            whg_map.getCanvas().style.cursor = 'pointer';
                         }
 
                     } else {
@@ -132,10 +132,10 @@ function waitMapLoad() {
 
             });
 
-            mappy.on('click', function () {
-                if (!showingRelated && mappy.highlights.length > 0) {
-                    console.log(mappy.highlights);
-                    mappy.fitViewport(bbox(geomsGeoJSON(mappy.highlights)), defaultZoom);
+            whg_map.on('click', function () {
+                if (!showingRelated && whg_map.highlights.length > 0) {
+                    console.log(whg_map.highlights);
+                    whg_map.fitViewport(bbox(geomsGeoJSON(whg_map.highlights)), defaultZoom);
                 }
             });
 
@@ -337,14 +337,14 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
         }
 
         featureCollection = geomsGeoJSON(payload);
-        mappy
+        whg_map
             .getSource('places')
             .setData(featureCollection);
-        mappy
+        whg_map
             .reset(false)
             .once('idle', function () {
                 // Do not use fitBounds or flyTo due to padding bug in MapLibre/Maptiler
-                mappy.fitViewport(bbox(featureCollection), defaultZoom);
+                whg_map.fitViewport(bbox(featureCollection), defaultZoom);
             });
 
         $('#textContent')
@@ -352,7 +352,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
                 $(this)
                     .addClass('highlight');
                 const index = $(this).index() - 1;
-                mappy.setFeatureState({
+                whg_map.setFeatureState({
                     source: 'places',
                     id: index
                 }, {
@@ -363,18 +363,18 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
                 $(this)
                     .removeClass('highlight');
                 const index = $(this).index() - 1;
-                mappy.setFeatureState({
+                whg_map.setFeatureState({
                     source: 'places',
                     id: index
                 }, {
                     highlight: false
                 });
-                mappy.fitViewport(bbox(featureCollection), defaultZoom);
+                whg_map.fitViewport(bbox(featureCollection), defaultZoom);
             })
             .on('click', '#sources:not([disabled]) .source-box', function () {
                 $(this)
                 const index = $(this).index() - 1;
-                mappy.fitViewport(bbox(featureCollection.features[index].geometry), defaultZoom);
+                whg_map.fitViewport(bbox(featureCollection.features[index].geometry), defaultZoom);
             })
 
         // Show/Hide related Collection (propagate event delegation to dynamically added elements)
@@ -390,14 +390,14 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
                     function (collgeom) {
                         relatedFeatureCollection = collgeom;
                         console.log('coll_places', relatedFeatureCollection);
-                        mappy.getSource('places').setData(relatedFeatureCollection);
-                        mappy.fitViewport(bbox(relatedFeatureCollection), defaultZoom);
+                        whg_map.getSource('places').setData(relatedFeatureCollection);
+                        whg_map.fitViewport(bbox(relatedFeatureCollection), defaultZoom);
                     });
                 showingRelated = true;
                 $('#sources, .source-box').attr('disabled', true);
             } else {
-                mappy.getSource('places').setData(featureCollection);
-                mappy.fitViewport(bbox(featureCollection), defaultZoom);
+                whg_map.getSource('places').setData(featureCollection);
+                whg_map.fitViewport(bbox(featureCollection), defaultZoom);
                 showingRelated = false;
                 $('#sources, .source-box').removeAttr('disabled');
             }
@@ -661,7 +661,7 @@ function filterSources(fromValue, toValue, includeUndated) {
         feature.properties['outOfDateRange'] = outOfDateRange;
         $('.source-box').eq(index).toggle(!outOfDateRange);
     });
-    mappy.getSource('places').setData(featureCollection);
+    whg_map.getSource('places').setData(featureCollection);
     let hiddenCount = $('.source-box:not(:visible)').length;
     $('#filterCount').text(hiddenCount == 0 ? '' : `(${payload.length < 2 ? '' : `${hiddenCount} `}hidden by temporal filter)`);
     noSources.toggle($('.source-box:visible').length == 0);
@@ -671,7 +671,7 @@ function nearbyPlaces() {
     console.log('nearbyPlaces');
 
     if ($('#nearby_places').prop('checked')) {
-        const center = mappy.getCenter();
+        const center = whg_map.getCenter();
         const radius = $('#radiusSelect').val();
         const lon = center.lng;
         const lat = center.lat;
@@ -688,10 +688,10 @@ function nearbyPlaces() {
                 data.features.forEach((feature, index) => feature.id = index);
                 nearbyFeatureCollection = data; // Set the global variable
                 console.log(nearbyFeatureCollection);
-                mappy.getSource('nearbyPlaces').setData(nearbyFeatureCollection);
+                whg_map.getSource('nearbyPlaces').setData(nearbyFeatureCollection);
                 $('#update_nearby span').html(`${nearbyFeatureCollection.features.length}`);
                 if (!showingRelated && nearbyFeatureCollection.features.length > 0) {
-                    mappy.fitViewport(bbox(nearbyFeatureCollection), defaultZoom);
+                    whg_map.fitViewport(bbox(nearbyFeatureCollection), defaultZoom);
                 }
             })
             .catch((error) => {
@@ -699,7 +699,7 @@ function nearbyPlaces() {
             });
 
     } else {
-        mappy.clearSource('nearbyPlaces');
+        whg_map.clearSource('nearbyPlaces');
         $('#update_nearby').hide();
     }
 }
@@ -709,12 +709,12 @@ function fetchWatershed() {
         .then(response => response.json())
         .then(data => {
             if (data && !!data.type && data.type === 'FeatureCollection') {
-                mappy.addSource('watershed', {
+                whg_map.addSource('watershed', {
                     type: 'geojson',
                     data: data,
                     attribution: data.attribution
                 });
-                mappy.addLayer({
+                whg_map.addLayer({
                     id: 'watershed-layer',
                     type: 'fill',
                     source: 'watershed',
@@ -726,7 +726,7 @@ function fetchWatershed() {
                         visibility: 'none'
                     }
                 });
-                mappy.addSource('watershed-origin-marker', {
+                whg_map.addSource('watershed-origin-marker', {
                     type: 'geojson',
                     data: {
                         type: 'FeatureCollection',
@@ -742,7 +742,7 @@ function fetchWatershed() {
                         }]
                     }
                 });
-                mappy.addLayer({
+                whg_map.addLayer({
                     id: 'watershed-origin-marker',
                     type: 'circle',
                     source: 'watershed-origin-marker',
@@ -755,17 +755,17 @@ function fetchWatershed() {
                         visibility: 'none'
                     }
                 });
-                $(mappy.styleControl._listContainer).find('#layerSwitches').before(
+                $(whg_map.styleControl._listContainer).find('#layerSwitches').before(
                     '<li class="group-item strong-red">Watershed<input type="checkbox" id="watershedCheckbox"></li>'
                 );
                 $('#watershedCheckbox').change(function () {
                     const isVisible = this.checked;
                     if (isVisible) {
-                        mappy.setLayoutProperty('watershed-layer', 'visibility', 'visible');
-                        mappy.setLayoutProperty('watershed-origin-marker', 'visibility', 'visible');
+                        whg_map.setLayoutProperty('watershed-layer', 'visibility', 'visible');
+                        whg_map.setLayoutProperty('watershed-origin-marker', 'visibility', 'visible');
                     } else {
-                        mappy.setLayoutProperty('watershed-layer', 'visibility', 'none');
-                        mappy.setLayoutProperty('watershed-origin-marker', 'visibility', 'none');
+                        whg_map.setLayoutProperty('watershed-layer', 'visibility', 'none');
+                        whg_map.setLayoutProperty('watershed-origin-marker', 'visibility', 'none');
                     }
                 });
 

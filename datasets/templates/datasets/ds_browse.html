@@ -110,18 +110,8 @@
 </div>
 
 <script type="text/javascript">
-    const dslabel = "{{ ds.label }}"
+    const mapdata_url = "/mapdata/datasets/{{ ds.id }}/";
 	window.filter = "{{ filter }}"
-    window.ds_list = [
-        {
-          bounds: {{ ds.bounds | safe }},
-          id: {{ ds.id }},
-          label: "{{ ds.label }}",
-          modified: "{{ ds.last_modified_text }}",
-          title: "{{ ds.title }}",
-          ds_type: "datasets",
-          num_places: {{ num_places }}
-        }];
     const wdtask = {% if wdtask %} true {% else %} false {% endif %};
     const tgntask = {% if tgntask %} true {% else %} false {% endif %};
     const whgtask = {% if whgtask %} true {% else %} false {% endif %};

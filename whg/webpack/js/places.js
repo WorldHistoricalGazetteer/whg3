@@ -4,13 +4,13 @@ import { geomsGeoJSON } from './utilities';
 
 import '../css/places.css';
 
-let mappy = new whg_maplibre.Map({
+let whg_map = new whg_maplibre.Map({
 	maxZoom: 10,
 });
 
 function waitMapLoad() {
     return new Promise((resolve) => {
-        mappy.on('load', () => {
+        whg_map.on('load', () => {
             console.log('Map loaded.');
             
             const pgeoms = $('#pgeom script').map(function() {
@@ -20,12 +20,12 @@ function waitMapLoad() {
 
             const featureCollection = geomsGeoJSON(pgeoms);
             
-			mappy
+			whg_map
 			.newSource('places', featureCollection)
 			.newLayerset('places');
 			
-			mappy.setFeatureState({ source: 'places', id: 0 }, { highlight: true });
-			mappy.fitBounds(bbox(featureCollection), {
+			whg_map.setFeatureState({ source: 'places', id: 0 }, { highlight: true });
+			whg_map.fitBounds(bbox(featureCollection), {
 		        padding: 30,
 		        duration: 1000,
 		    });
@@ -99,7 +99,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 			// raise z-index
 			l.bringToFront().setStyle(styles['Polygon']['focus'])
 			// get a centroid
-			mappy.fitBounds(l.getBounds().pad(0.5))
+			whg_map.fitBounds(l.getBounds().pad(0.5))
 		})
 		
 		$(".ds_card").hover(function() {

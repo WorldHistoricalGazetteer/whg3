@@ -1,6 +1,6 @@
 // /whg/webpack/js/review.js
 
-import { mappy, layersets, initialiseMap, addReviewListeners } from './review-common';
+import { whg_map, layersets, initialiseMap, addReviewListeners } from './review-common';
 import './notes.js';
 
 import '../css/review.css';
@@ -8,7 +8,7 @@ import '../css/review.css';
 
 function waitMapLoad() {
     return new Promise((resolve) => {
-        mappy.on('load', () => {
+        whg_map.on('load', () => {
 			initialiseMap();
 			resolve();
         });

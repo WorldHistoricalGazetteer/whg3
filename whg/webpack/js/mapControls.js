@@ -8,8 +8,8 @@ import { scrollToRowByProperty } from './tableFunctions-extended';
 
 class sequencerControl {
 	onAdd() {
-		this.minSeq = 0; //window.ds_list_stats.seqmin;
-        this.maxSeq = window.ds_list_stats.count - 1; //window.ds_list_stats.seqmax;
+		this.minSeq = 0; //window.datacollection.metadata.seqmin;
+        this.maxSeq = window.datacollection.metadata.num_places - 1; //window.datacollection.metadata.seqmax;
 		console.log(`Sequence range (${this.minSeq}-${this.maxSeq}).`);
         if (this.minSeq == this.maxSeq) {
 			return;
@@ -206,15 +206,15 @@ class sequencerControl {
 }
 
 let mapSequencer;
-function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table){
+function init_mapControls(whg_map, datelineContainer, toggleFilters, mapParameters, table){
 
 	if (!!mapParameters.controls && !!mapParameters.controls.sequencer && mapParameters.controls.sequencer) {
 		mapSequencer = new sequencerControl();
-		mappy.addControl(mapSequencer, 'bottom-left');
+		whg_map.addControl(mapSequencer, 'bottom-left');
 	}
 			
 	const dateRangeChanged = throttle(() => { // Uses imported lodash function
-	    toggleFilters(true, mappy, table);
+	    toggleFilters(true, whg_map, table);
 	}, 300);
 
 	if (window.dateline) {
@@ -231,14 +231,14 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 		datelineContainer.id = 'dateline';
 		$('.maplibregl-control-container').first()[0].appendChild(datelineContainer);
 
-		const range = window.ds_list_stats.max - window.ds_list_stats.min;
+		const range = window.datacollection.metadata.max - window.datacollection.metadata.min;
 		const buffer = range * 0.1; // 10% buffer
 
 		// Update the temporal settings
-		mapParameters.temporalControl.fromValue = window.ds_list_stats.min;
-		mapParameters.temporalControl.toValue = window.ds_list_stats.max;
-		mapParameters.temporalControl.minValue = Math.floor(window.ds_list_stats.min - buffer);
-		mapParameters.temporalControl.maxValue = Math.ceil(window.ds_list_stats.max + buffer);
+		mapParameters.temporalControl.fromValue = window.datacollection.metadata.min;
+		mapParameters.temporalControl.toValue = window.datacollection.metadata.max;
+		mapParameters.temporalControl.minValue = Math.floor(window.datacollection.metadata.min - buffer);
+		mapParameters.temporalControl.maxValue = Math.ceil(window.datacollection.metadata.max + buffer);
 
 		window.dateline = new Dateline({
 			...mapParameters.temporalControl,
@@ -258,7 +258,7 @@ function init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters
 					$('#mapOverlays').removeClass('fullscreen');
 				}
 				else if (parentNodeClassList.contains('dateline-button')) {
-		            toggleFilters($('.range_container.expanded').length > 0, mappy, table);
+		            toggleFilters($('.range_container.expanded').length > 0, whg_map, table);
 		        }
 			}
 		}

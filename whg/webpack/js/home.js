@@ -4,7 +4,7 @@ import '../css/home.css';
 import { errorModal } from './error-modal.js';
 import { initialiseCarousels } from './carousels';
 
-let mappy = new whg_maplibre.Map({
+let whg_map = new whg_maplibre.Map({
     style: ['whg-basic-light'],
 	navigationControl: false,
 	maxZoom: 10,
@@ -16,13 +16,13 @@ let area_objs = [];
 
 function waitMapLoad() {
 	return new Promise((resolve) => {
-		mappy.on('load', () => {
+		whg_map.on('load', () => {
 			console.log('Map loaded.');
 
-			const style = mappy.getStyle();
+			const style = whg_map.getStyle();
 			style.layers.forEach(layer => { // Hide map labels
 				if (layer.id.includes('label')) {
-					mappy.setLayoutProperty(layer.id, 'visibility', 'none');
+					whg_map.setLayoutProperty(layer.id, 'visibility', 'none');
 				}
 			});
 			
@@ -46,7 +46,7 @@ Promise.all([
 	waitDocumentReady()
 ]).then(() => {
 
-	initialiseCarousels(galleries, carouselMetadata, startCarousels, mappy);
+	initialiseCarousels(galleries, carouselMetadata, startCarousels, whg_map);
 
 	// v3 welcome modal
 	if (!localStorage.getItem('dontShowSplash')) {
@@ -123,7 +123,7 @@ Promise.all([
 
 			// clear existing
 			if (typeof arealayer !== 'undefined') {
-				arealayer.removeFrom(mappy);
+				arealayer.removeFrom(whg_map);
 			}
 		});
 	};

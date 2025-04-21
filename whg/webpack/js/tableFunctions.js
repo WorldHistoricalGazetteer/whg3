@@ -1,7 +1,7 @@
 import {getPlace} from './getPlace';
 import {updatePadding, recenterMap} from './mapFunctions';
 import {mapSequencer} from './mapControls';
-import {mappy} from './mapAndTable';
+import {whg_map} from './mapAndTable';
 import {scrollToRowByProperty} from './tableFunctions-extended';
 
 let table;
@@ -81,27 +81,27 @@ function clearFilters() {
 	$("#status_select").val('99')
 }*/
 
-function toggleMapLayers(mappy, val) {
+function toggleMapLayers(whg_map, val) {
 	if (val !== 'all') {
-		window.mapBounds = mappy.getSource(val)._data.extent;
+		window.mapBounds = whg_map.getSource(val)._data.extent;
 		recenterMap('lazy');
 	}
-	mappy.getStyle().layers.forEach(layer => {
-		if (mappy.layersets.includes(layer.source)) {
-			mappy.setLayoutProperty(layer.id, 'visibility',
+	whg_map.getStyle().layers.forEach(layer => {
+		if (whg_map.layersets.includes(layer.source)) {
+			whg_map.setLayoutProperty(layer.id, 'visibility',
 				(val == 'all' || val == layer.source) ? 'visible' : 'none');
 		}
 	});
 }
 
-export function highlightFeature(ds_pid, features, mappy, extent = false) {
+export function highlightFeature(ds_pid, features, whg_map, extent = false) {
 
 	features = features.filter(f => f.properties.dsid === ds_pid.ds);
 
 	var featureIndex = features.findIndex(
 		f => String(f.properties.pid) === String(ds_pid.pid)); /* Usually an integer, but not in the case of aggregated places in Dataset Collections */
 	if (featureIndex !== -1) {
-		if (window.highlightedFeatureIndex !== undefined) mappy.setFeatureState(
+		if (window.highlightedFeatureIndex !== undefined) whg_map.setFeatureState(
 			window.highlightedFeatureIndex, {
 				highlight: false,
 			});
@@ -110,12 +110,12 @@ export function highlightFeature(ds_pid, features, mappy, extent = false) {
 		if (geom) {
 			window.highlightedFeatureIndex = {
 				source: ds_pid.ds_id,
-				sourceLayer: mappy.getSource(ds_pid.ds_id).type == 'vector' ?
+				sourceLayer: whg_map.getSource(ds_pid.ds_id).type == 'vector' ?
 					'features' : '',
 				id: featureIndex,
 			};
 			// zoom to feature
-			mappy
+			whg_map
 			.fitViewport(extent || bbox(geom), defaultZoom)
 			.setFeatureState(window.highlightedFeatureIndex, {
 				highlight: true,
@@ -131,7 +131,7 @@ export function highlightFeature(ds_pid, features, mappy, extent = false) {
 }
 
 export function initialiseTable(
-	features, checked_rows, mappy) {
+	features, checked_rows, whg_map) {
 
 	// TODO: remove these artifacts of table used for review
 	localStorage.setItem('filter', '99');
@@ -141,7 +141,7 @@ export function initialiseTable(
 
 	$('#drftable_list, #detail').spin();
 
-	const isCollection = window.ds_list[0].ds_type == 'collections'; // i.e. *place* collection (not *dataset* collection or dataset)
+	const isCollection = window.datacollection.ds_type == 'collections'; // i.e. *place* collection (not *dataset* collection or dataset)
 
 	checked_rows = [];
 
@@ -227,20 +227,20 @@ export function initialiseTable(
 			check_column,
 		];
 
-		console.log('Determining column inclusion and initial sorting:', visParameters);
+		console.log('Determining column inclusion and initial sorting:', window.datacollection.metadata.visParameters);
 		// Determine columns to be hidden
 		hideColumns = columns.slice(0,2).reduce((result, column, index) => {
-			const tabulateValue = visParameters[column.data.split('.')[1]]?.tabulate;
+			const tabulateValue = window.datacollection.metadata.visParameters[column.data.split('.')[1]]?.tabulate;
 			if (tabulateValue !== undefined && tabulateValue === false) {
 				result.push(index);
 			}
 			return result;
 		}, []);
-		if (window.ds_list.length > 1) hideColumns.push(5);
+		// if (window.ds_list.length > 1) hideColumns.push(5);
 	
 		// Determine initial sort column
 		sortColumn = columns.slice(0,2).reduce((result, column, index) => {
-			const tabulateValue = visParameters[column.data.split('.')[1]]?.tabulate;
+			const tabulateValue = window.datacollection.metadata.visParameters[column.data.split('.')[1]]?.tabulate;
 			if (tabulateValue !== undefined && tabulateValue === 'initial') {
 				result.push(index);
 			}
@@ -293,10 +293,10 @@ export function initialiseTable(
 			visible: false,
 		}, ];
 
-		console.log('Determining column inclusion and initial sorting:', visParameters);
+		console.log('Determining column inclusion and initial sorting:', window.datacollection.metadata.visParameters);
 		// Determine columns to be hidden
 		hideColumns = columns.slice(0,3).reduce((result, column, index) => {
-			const tabulateValue = visParameters[column.data.split('.')[1]]?.tabulate;
+			const tabulateValue = window.datacollection.metadata.visParameters[column.data.split('.')[1]]?.tabulate;
 			if (tabulateValue !== undefined && tabulateValue === false) {
 				result.push(index);
 			}
@@ -305,7 +305,7 @@ export function initialiseTable(
 	
 		// Determine initial sort column
 		sortColumn = columns.slice(0,3).reduce((result, column, index) => {
-			const tabulateValue = visParameters[column.data.split('.')[1]]?.tabulate;
+			const tabulateValue = window.datacollection.metadata.visParameters[column.data.split('.')[1]]?.tabulate;
 			if (tabulateValue !== undefined && tabulateValue === 'initial') {
 				result.push(index);
 			}
@@ -410,13 +410,13 @@ export function initialiseTable(
 
 		// filter map
 		let ds_id = $(this).find(':selected').attr('data');
-		const dsItem = window.ds_list[0].datasets.find(ds => String(ds.id) === ds_id);
+		const dsItem = window.datacollection.datasets.find(ds => String(ds.id) === ds_id);
 		if (dsItem) {
 			window.mapBounds = dsItem.extent;
 		} else {
-			window.mapBounds = window.ds_list_stats.extent;
+			window.mapBounds = window.datacollection.metadata.extent;
 		}
-		//toggleMapLayers(mappy, ds_id); // Also recenters map on selected layer
+		//toggleMapLayers(whg_map, ds_id); // Also recenters map on selected layer
 		recenterMap('lazy');
 
 		$('#dataset_content').stopSpin();
@@ -475,7 +475,7 @@ export function initialiseTable(
 			ds_pid.pid,
 			$(this).data('cid'),
 			function(placedata) {
-				highlightFeature(ds_pid, features, mappy, placedata.extent);
+				highlightFeature(ds_pid, features, whg_map, placedata.extent);
 			}
 		);
 		

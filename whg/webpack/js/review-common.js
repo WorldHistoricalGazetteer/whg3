@@ -1,7 +1,7 @@
 
 import { base_urls } from './aliases.js';
 
-export let mappy = new whg_maplibre.Map({
+export let whg_map = new whg_maplibre.Map({
 	maxZoom: 14,
     style: [
 		'WHG',
@@ -39,7 +39,7 @@ export function initialiseMap() {
 			'geonames': 'blue',
 		} 
 	    Object.entries(groupedFeatures).forEach(([ds, features]) => {
-	        layersets[ds] = mappy
+	        layersets[ds] = whg_map
 	        	.newSource(ds, { type: 'FeatureCollection', features })
 	            .newLayerset(ds, null, null, markerColours[ds] || 'brown', ds == 'dataset' ? 'green' : null, ds !== 'dataset', ds == 'dataset' ? 1.3 : 1); // No numbering for `dataset` source marker
 	        if (ds=='geonames' && !!groupedFeatures['wikidata']) layersets[ds].toggleVisibility(false);
@@ -53,7 +53,7 @@ export function initialiseMap() {
 			'dataset': 'green',
 		} 
 	    Object.entries(groupedFeatures).forEach(([ds, features]) => {
-	        layersets[ds] = mappy
+	        layersets[ds] = whg_map
 	        	.newSource(ds, { type: 'FeatureCollection', features })
 	            .newLayerset(ds, null, null, markerColours[ds] || 'orange', ds == 'dataset' ? 'green' : null, false, ds == 'dataset' ? 1.3 : 1);
 	    });
@@ -63,13 +63,13 @@ export function initialiseMap() {
     console.log(groupedFeatures, layersets);
 	
 	if (featureCollection.features.length > 0) {
-		mappy.fitViewport( bbox( featureCollection ), defaultZoom );
+		whg_map.fitViewport( bbox( featureCollection ), defaultZoom );
 	}
 	else {
 		console.log('No features to map.')
 	}
 	
-	mappy.getContainer().style.opacity = 1;
+	whg_map.getContainer().style.opacity = 1;
 }
 
 export function addReviewListeners() {
@@ -85,12 +85,12 @@ export function addReviewListeners() {
 	let z = window.location.href
 	$('#passnum_dynamic').html('<b>' + z.slice(-6) + '</b>');
 				
-	mappy.on('click', function(e) { // Find match for map marker
+	whg_map.on('click', function(e) { // Find match for map marker
 		$('.highlight-row').removeClass('highlight-row');
-		const features = mappy.queryRenderedFeatures(e.point);
+		const features = whg_map.queryRenderedFeatures(e.point);
 		if (features.length > 0) {
 			features.forEach(feature => {
-				const isAddedFeature = !mappy.baseStyle.layers.includes(feature.layer.id);
+				const isAddedFeature = !whg_map.baseStyle.layers.includes(feature.layer.id);
 				if (isAddedFeature && !!feature.id) {
 					$('.hovermap').eq(feature.id - 1)
 					.addClass('highlight-row')
@@ -100,17 +100,17 @@ export function addReviewListeners() {
 		}
 	});	
 			
-	mappy.on('mousemove', function(e) { // Change cursor to pointer over map markers
-		const features = mappy.queryRenderedFeatures(e.point);
+	whg_map.on('mousemove', function(e) { // Change cursor to pointer over map markers
+		const features = whg_map.queryRenderedFeatures(e.point);
 		function clearHighlight() {
-			mappy.getCanvas().style.cursor = 'grab';
+			whg_map.getCanvas().style.cursor = 'grab';
 			$('.highlight-row').removeClass('highlight-row');
 		}
 		if (features.length > 0) {
 			const topFeature = features[0]; // Handle only the top-most feature
-			const isAddedFeature = !mappy.baseStyle.layers.includes(topFeature.layer.id);
+			const isAddedFeature = !whg_map.baseStyle.layers.includes(topFeature.layer.id);
 			if (isAddedFeature && !!topFeature.properties.id) {
-				mappy.getCanvas().style.cursor = 'pointer';
+				whg_map.getCanvas().style.cursor = 'pointer';
 				$('.hovermap').eq(topFeature.id - 1)
 				.addClass('highlight-row')
 				.closest('.review-item').scrollintoview();
@@ -123,7 +123,7 @@ export function addReviewListeners() {
 	$(".geolink")
 		.attr('title', 'Click to zoom to this location.')
 		.on('click', function(){
-			mappy.fitViewport( bbox(featureCollection.features.find(feature => feature.properties.id === $(this).data('id'))), defaultZoom );
+			whg_map.fitViewport( bbox(featureCollection.features.find(feature => feature.properties.id === $(this).data('id'))), defaultZoom );
 		});
 	
 	$(".hovermap").hover(
@@ -134,9 +134,9 @@ export function addReviewListeners() {
 	function toggleHighlight(highlight, element) {
 	    let matchingFeature = featureCollection.features.find(feature => feature.properties.id === $(element).data('id').toString());
 	    if (matchingFeature) {
-	        mappy.setFeatureState({ source: $(element).data('authority'), id: matchingFeature.id }, { highlight });
-	        if (mappy.getSource('dataset')) {
-	            mappy.setFeatureState({ source: 'dataset', id: 0 }, { highlight });
+	        whg_map.setFeatureState({ source: $(element).data('authority'), id: matchingFeature.id }, { highlight });
+	        if (whg_map.getSource('dataset')) {
+	            whg_map.setFeatureState({ source: 'dataset', id: 0 }, { highlight });
 	        }
 	    }
 	}

@@ -2,7 +2,7 @@
 import { CountryCacheFeatureCollection } from './countryCache';
 import '../css/areas.css';
 
-let mappy = new whg_maplibre.Map({
+let whg_map = new whg_maplibre.Map({
 	maxZoom: 10,
     drawingControl: {hide: true}
 });
@@ -16,18 +16,18 @@ var $drawControl;
 
 function waitMapLoad() {
 	return new Promise((resolve) => {
-		mappy.on('load', () => {
+		whg_map.on('load', () => {
 			console.log('Map loaded.');
 
 			addDrawingControl();
 			
 			// TODO: Removed river and watershed sources and layers, which should be controlled by a style switcher and not added separately
 			  
-			mappy
+			whg_map
 			.newSource('countries') // Add empty source
 			.newLayerset('countries', null, 'countries', 'countries');
 		
-		    mappy
+		    whg_map
 		    .newSource('hulls')
 			.newLayerset('hulls', 'hulls', 'hulls');
 
@@ -70,11 +70,11 @@ Promise.all([
 			$drawControl.show();
 		} else if (formType == 'ccodes') {
 			console.log('was ccodes-generated')
-			mappy.getSource('hulls').setData(areaFeatureCollection);
+			whg_map.getSource('hulls').setData(areaFeatureCollection);
 			// disable draw tab
 			$('a[href="#areas_draw"]').addClass('disabled').css("cursor", "default")
 		}
-		mappy.fitBounds(turf.bbox(areaFeatureCollection), {
+		whg_map.fitBounds(turf.bbox(areaFeatureCollection), {
 	        padding: 30,
 	        duration: 1000,
 	    });
@@ -146,12 +146,12 @@ Promise.all([
 
 function addDrawingControl() {
 	
-	draw = mappy._draw;
-	$drawControl = $(mappy._drawControl);
+	draw = whg_map._draw;
+	$drawControl = $(whg_map._drawControl);
 		
-	mappy.on('draw.create', updateDraw); // draw events fail to register if not done individually
-	mappy.on('draw.delete', updateDraw);
-	mappy.on('draw.update', updateDraw);
+	whg_map.on('draw.create', updateDraw); // draw events fail to register if not done individually
+	whg_map.on('draw.delete', updateDraw);
+	whg_map.on('draw.update', updateDraw);
 	function updateDraw() {
 		const featureCollection = draw.getAll();
 		$("textarea#geojson").val(featureCollection.features.length > 0 ? JSON.stringify( geometryFeatureCollection(featureCollection) ) : '');
@@ -186,7 +186,7 @@ function featureGeometryCollection(geometryCollection) {
 
 function map_clear() {
 	draw.deleteAll();
-	mappy.clearSource('countries').clearSource('hulls').reset();
+	whg_map.clearSource('countries').clearSource('hulls').reset();
 	if (action == "create") {
 		$("textarea#geojson").val('');
 	}
@@ -194,24 +194,24 @@ function map_clear() {
 
 function updateAreaMap() {
 
-	mappy
+	whg_map
 	.clearSource('countries')
 	.clearSource('hulls');
 	$("textarea#geojson").val('');
 
 	var data = $('#entrySelector').select2('data');
 	let cbuffer = $("select#buffer_km").val();
-	let hullCollection = mappy.nullCollection();
+	let hullCollection = whg_map.nullCollection();
 
 	function fitMap(features) {
 		try {
-			mappy.fitBounds(bbox(features), {
+			whg_map.fitBounds(bbox(features), {
 				padding: 30,
 				maxZoom: 7,
 				duration: 1000,
 			});
 		} catch {
-			mappy.reset();
+			whg_map.reset();
 		}
 	}
 
@@ -227,14 +227,14 @@ function updateAreaMap() {
 			});
 			if (cbuffer > 0) {
 				hullCollection = combine(dissolve(flatten(hullCollection)));
-				mappy.getSource('hulls').setData(hullCollection);
+				whg_map.getSource('hulls').setData(hullCollection);
 			}
-			mappy.getSource('countries').setData(filteredCountries);
+			whg_map.getSource('countries').setData(filteredCountries);
 			let primaryCollection = cbuffer > 0 ? hullCollection : filteredCountries;
 			$("textarea#geojson").val(JSON.stringify( geometryFeatureCollection(primaryCollection) ) || '');
 			fitMap(primaryCollection);
 		});
-	} else mappy.reset();
+	} else whg_map.reset();
 }
 
 /*
@@ -275,7 +275,7 @@ function random_rgba() {
 }
 
 function zoomTo(id) {
-	mappy.setView(idToFeature[id]._latlng, mappy.getZoom() + 2)
+	whg_map.setView(idToFeature[id]._latlng, whg_map.getZoom() + 2)
 }
 
 function cleanJson(text) {

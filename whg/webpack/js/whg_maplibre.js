@@ -52,6 +52,9 @@ maplibregl.Map.prototype.newSource = function(ds, fc = null) {
         });
     } else {
         if (!!ds.ds_id) { // Standard dataset or collection
+			// Check what keys are present in the dataset
+			const keys = Object.keys(ds);
+			console.log('mapdata keys', keys);
             map.addSource(ds.ds_id, {
                 'type': 'geojson',
                 'data': ds,

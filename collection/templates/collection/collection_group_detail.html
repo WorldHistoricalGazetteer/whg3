@@ -437,7 +437,7 @@
                 })  // jquery onload()
 
                 // gl map
-                {#mappy = new maplibregl.Map({#}
+                {#whg_map = new maplibregl.Map({#}
                 {#  container: 'map', // container id#}
                 {#  style:'mapbox://styles/mapbox/light-v10',#}
                 {#  accessToken: '{{ mbtoken }}',#}
@@ -448,33 +448,33 @@
                 {# });#}
                 {##}
                 {#//#}
-                {#mappy.on('load', function(){#}
+                {#whg_map.on('load', function(){#}
                 {#  hilited = null#}
                 {#  // initiate layers for z-index#}
-                {#  mappy.addSource('empty', {#}
+                {#  whg_map.addSource('empty', {#}
                 {#    type: 'geojson',#}
                 {#    data: { type: 'FeatureCollection', features: [] }#}
                 {#  });#}
                 {##}
-                {#	const zIndex4 = mappy.addLayer({#}
+                {#	const zIndex4 = whg_map.addLayer({#}
                 {#    id: 'z-index-4',#}
                 {#    type: 'symbol',#}
                 {#    source: 'empty'#}
                 {#  }); //top#}
                 {##}
-                {#  const zIndex3 = mappy.addLayer({#}
+                {#  const zIndex3 = whg_map.addLayer({#}
                 {#    id: 'z-index-3',#}
                 {#    type: 'symbol',#}
                 {#    source: 'empty'#}
                 {#  }, 'z-index-4'); // below zIndex4#}
                 {##}
-                {#  const zIndex2 = mappy.addLayer({#}
+                {#  const zIndex2 = whg_map.addLayer({#}
                 {#    id: 'z-index-2',#}
                 {#    type: 'symbol',#}
                 {#    source: 'empty'#}
                 {#  }, 'z-index-3');#}
                 {#  #}
-                {#  const zIndex1 = mappy.addLayer({#}
+                {#  const zIndex1 = whg_map.addLayer({#}
                 {#    id: 'z-index-1',#}
                 {#    type: 'symbol',#}
                 {#    source: 'empty'#}
@@ -491,16 +491,16 @@
                 {#  for (l in layer_list){#}
                 {#  // TODO: allow clicking on polygons, denied here#}
                 {#  if(layer_list[l].indexOf('point') != -1){#}
-                {#      mappy.on('mouseenter', layer_list[l], function () {#}
-                {#        mappy.getCanvas().style.cursor = 'pointer';#}
+                {#      whg_map.on('mouseenter', layer_list[l], function () {#}
+                {#        whg_map.getCanvas().style.cursor = 'pointer';#}
                 {#      });#}
                 {##}
                 {#      // Change it back to a pointer when it leaves.#}
-                {#      mappy.on('mouseleave', layer_list[l], function () {#}
-                {#        mappy.getCanvas().style.cursor = '';#}
+                {#      whg_map.on('mouseleave', layer_list[l], function () {#}
+                {#        whg_map.getCanvas().style.cursor = '';#}
                 {#      });#}
                 {##}
-                {#      mappy.on('click', layer_list[l], function (e) {#}
+                {#      whg_map.on('click', layer_list[l], function (e) {#}
                 {#        clicked=e.features#}
                 {#        console.log('e features', clicked)#}
                 {#				ftype = e.features[0].layer.type#}
@@ -545,14 +545,14 @@
                 {#            'start, end: '+minmax)#}
                 {#          .on('close', function(){#}
                 {#            $("#placetable_filter input").val('').keyup()#}
-                {#	          mappy.fitBounds(turf.bbox(fcoll), { padding: 20 });#}
+                {#	          whg_map.fitBounds(turf.bbox(fcoll), { padding: 20 });#}
                 {#          })#}
-                {#          .addTo(mappy);#}
+                {#          .addTo(whg_map);#}
                 {##}
                 {#				// TODO: fit bounds if not point#}
                 {#bbox=turf.envelope(geom).bbox#}
-                {#mappy.fitBounds(bbox, { padding: 30})#}
-                {#        mappy.setCenter(coordinates)#}
+                {#whg_map.fitBounds(bbox, { padding: 30})#}
+                {#        whg_map.setCenter(coordinates)#}
                 {#      })#}
                 {#    }#}
                 {##}

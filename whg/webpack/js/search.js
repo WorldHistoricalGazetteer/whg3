@@ -54,52 +54,52 @@ let mapParameters = {
         onClick: initiateSearch,
     },
 };
-let mappy = new whg_maplibre.Map(mapParameters);
+let whg_map = new whg_maplibre.Map(mapParameters);
 
 function waitMapLoad() {
     return new Promise((resolve) => {
-        mappy.on('load', () => {
+        whg_map.on('load', () => {
             console.log('Map loaded.');
 
             /* This codeblock commented-out because labels can now be switched off using the style-switcher
-            const style = mappy.getStyle();
+            const style = whg_map.getStyle();
             style.layers.forEach(layer => {
                 if (layer.id.includes('label')) {
-                    mappy.setLayoutProperty(layer.id, 'visibility', 'none');
+                    whg_map.setLayoutProperty(layer.id, 'visibility', 'none');
                 }
             });*/
 
             if (has_areas) {
-                mappy.newSource('userareas') // Add empty source
+                whg_map.newSource('userareas') // Add empty source
                     .newLayerset('userareas', 'userareas', 'userareas');
             }
 
-            mappy.newSource('countries') // Add empty source
+            whg_map.newSource('countries') // Add empty source
                 .newLayerset('countries', 'countries', 'countries');
 
-            mappy.newSource('places') // Add empty source
+            whg_map.newSource('places') // Add empty source
                 .newLayerset('places');
 
             function getFeatureId(e) {
-                const features = mappy.queryRenderedFeatures(e.point);
+                const features = whg_map.queryRenderedFeatures(e.point);
                 if (features.length > 0) {
                     if (features[0].layer.id.startsWith('places_')) { // Query only the top-most feature
-                        mappy.getCanvas().style.cursor = 'pointer';
+                        whg_map.getCanvas().style.cursor = 'pointer';
                         return features[0].id;
                     }
                 }
-                mappy.getCanvas().style.cursor = 'grab';
+                whg_map.getCanvas().style.cursor = 'grab';
                 return null;
             }
 
-            mappy.on('mousemove', function (e) {
-                if (!mappy._draw || mappy._draw.getMode() !== 'draw_polygon') {
+            whg_map.on('mousemove', function (e) {
+                if (!whg_map._draw || whg_map._draw.getMode() !== 'draw_polygon') {
                     getFeatureId(e);
                 }
             });
 
-            mappy.on('click', function (e) {
-                if (!mappy._draw || mappy._draw.getMode() !== 'draw_polygon') {
+            whg_map.on('click', function (e) {
+                if (!whg_map._draw || whg_map._draw.getMode() !== 'draw_polygon') {
                     $('.result')
                         .eq(getFeatureId(e))
                         .attr('data-map-clicked', 'true')
@@ -124,8 +124,8 @@ Promise.all([
     Promise.all(select2_CDN_fallbacks.map(loadResource))
 ]).then(() => {
 
-    draw = mappy._draw;
-    $drawControl = $(mappy._drawControl);
+    draw = whg_map._draw;
+    $drawControl = $(whg_map._drawControl);
 
     // Delegated event listener for Portal links
     $(document).on('click', '.portal-link', function (e) {
@@ -139,24 +139,24 @@ Promise.all([
         const $clickedResult = $(this);
         const index = $clickedResult.index('.result'); // Get index of clicked card
 
-        mappy.removeFeatureState({
+        whg_map.removeFeatureState({
             source: 'places',
         });
-        mappy.setFeatureState({
+        whg_map.setFeatureState({
             source: 'places',
             id: index,
         }, {
             highlight: true,
         });
 
-        const featureCollection = mappy.getSource('places')._data;
+        const featureCollection = whg_map.getSource('places')._data;
 
         if ($clickedResult.attr('data-map-clicked') === 'true') { // Scroll table
             $clickedResult.removeAttr('data-map-clicked');
             $clickedResult.scrollintoview({duration: 'slow'});
         } else if ($clickedResult.attr('data-map-initialising') === 'true') {
             $clickedResult.removeAttr('data-map-initialising');
-            mappy.fitViewport(bbox(featureCollection), defaultZoom);
+            whg_map.fitViewport(bbox(featureCollection), defaultZoom);
         } else {
 
 
@@ -164,7 +164,7 @@ Promise.all([
             console.log(featureCollection.features[index])
             console.log('bbox(featureCollection.features[index])', bbox(featureCollection.features[index]))
 
-            mappy.fitViewport(bbox(featureCollection.features[index]), defaultZoom);
+            whg_map.fitViewport(bbox(featureCollection.features[index]), defaultZoom);
         }
 
         $('.result').removeClass('selected');
@@ -174,17 +174,17 @@ Promise.all([
 
     function updateAreaMap() {
 
-        if (has_areas) mappy.clearSource('userareas');
-        mappy.clearSource('countries');
+        if (has_areas) whg_map.clearSource('userareas');
+        whg_map.clearSource('countries');
 
         var data = $('#entrySelector').select2('data');
 
         function fitMap(features) {
             if (!$('#search_content').hasClass('no-results')) return;
             try {
-                mappy.fitViewport(bbox(features), defaultZoom);
+                whg_map.fitViewport(bbox(features), defaultZoom);
             } catch {
-                mappy.reset();
+                whg_map.reset();
             }
         }
 
@@ -194,17 +194,17 @@ Promise.all([
                     type: 'FeatureCollection',
                     features: data.some(feature => feature.feature) ? data.map(feature => feature.feature) : [],
                 }
-                mappy.getSource('userareas').setData(userAreas);
+                whg_map.getSource('userareas').setData(userAreas);
                 fitMap(userAreas);
             } else {
                 const selectedCountries = data.length < 1 || data.some(feature => feature.feature) ? [] :
                     (data.some(region => region.ccodes) ? [].concat(...data.map(region => region.ccodes)) : data.map(country => country.id));
                 countryCache.filter(selectedCountries).then(filteredCountries => {
-                    mappy.getSource('countries').setData(filteredCountries);
+                    whg_map.getSource('countries').setData(filteredCountries);
                     fitMap(filteredCountries);
                 });
             }
-        } else if ($('#search_content').hasClass('no-results')) mappy.reset();
+        } else if ($('#search_content').hasClass('no-results')) whg_map.reset();
     }
 
     const debouncedUpdates = debounce(() => { // Uses imported lodash function
@@ -387,9 +387,9 @@ Promise.all([
             .trigger('change');
     });
 
-    mappy.on('draw.create', initiateSearch); // draw events fail to register if not done individually
-    mappy.on('draw.delete', initiateSearch);
-    mappy.on('draw.update', initiateSearch);
+    whg_map.on('draw.create', initiateSearch); // draw events fail to register if not done individually
+    whg_map.on('draw.delete', initiateSearch);
+    whg_map.on('draw.update', initiateSearch);
 
     $('#search_mode').change(function () {
         initiateSearch();
@@ -413,7 +413,7 @@ Promise.all([
         });
     });
 
-    console.log(mappy.getStyle());
+    console.log(whg_map.getStyle());
 
 }).catch(error => console.error('An error occurred:', error));
 
@@ -437,9 +437,9 @@ function clearResults() { // Reset all inputs to default values
         mapParameters.temporalControl.toValue,
         mapParameters.temporalControl.open);
     draw.deleteAll();
-    mappy.getSource('places').setData(mappy.nullCollection());
-    mappy.reset();
-    mappy.getSource('countries').setData(mappy.nullCollection());
+    whg_map.getSource('places').setData(whg_map.nullCollection());
+    whg_map.reset();
+    whg_map.getSource('countries').setData(whg_map.nullCollection());
     $('#search_content')
         .toggleClass('initial', true)
         .toggleClass('no-results', true)
@@ -607,14 +607,14 @@ function renderResults(data, fromStorage = false) {
         .toggleTruncate();
 
     // Update Map & Detail with first result (if any)
-    mappy.getSource('places').setData(featureCollection);
+    whg_map.getSource('places').setData(featureCollection);
     $drawControl.toggle(results.length > 0 || draw.getAll().features.length > 0); // Leave control to allow deletion of areas
 
     if (fromStorage || results.length > 0) {
         // Highlight first result and render its detail
         $('.result').first().attr('data-map-initialising', 'true').click();
     } else {
-        mappy.reset();
+        whg_map.reset();
         $('#detail').empty(); // Clear the detail view
     }
 
@@ -735,7 +735,7 @@ function buildResultFilters() {
             return hasCommonType && hasCommonCountry;
         });
 
-        mappy.getSource('places').setData({
+        whg_map.getSource('places').setData({
             type: 'FeatureCollection',
             features: filteredResults,
         });

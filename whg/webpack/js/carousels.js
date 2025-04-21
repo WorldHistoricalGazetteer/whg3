@@ -2,7 +2,7 @@
 
 import { fetchDataForHorse } from './localGeometryStorage';
 
-export function initialiseCarousels(galleries, carouselMetadata, startCarousels, mappy) {
+export function initialiseCarousels(galleries, carouselMetadata, startCarousels, whg_map) {
 
 	var timer;
 	const v3 = galleries.length == 1;
@@ -107,7 +107,7 @@ export function initialiseCarousels(galleries, carouselMetadata, startCarousels,
 
     carousels.on('slid.bs.carousel', function() {
         $('.carousel-container .border').removeClass('highlight-carousel');
-        fetchDataForHorse($(this).find('.carousel-item.active'), mappy);
+        fetchDataForHorse($(this).find('.carousel-item.active'), whg_map);
     }).trigger('slid.bs.carousel'); // Load first map
     $('.carousel-container').on('mouseenter', function() {
         if (startCarousels) carousels.first().carousel('pause');

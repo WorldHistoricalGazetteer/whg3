@@ -146,7 +146,7 @@ export function arrayColors(strings) {
     return result.reverse();
 }
 
-export function colorTable(arrayColors, target, labels = null, multiDataset = false, ds_id = null, mappy = null) {
+export function colorTable(arrayColors, target, labels = null, multiDataset = false, ds_id = null, whg_map = null) {
     const colorKeyTable = $('<table>').addClass('color-key-table expanded');
     const tableBody = $('<tbody>');
 
@@ -218,14 +218,14 @@ export function colorTable(arrayColors, target, labels = null, multiDataset = fa
 
         const filter = ['in', 'relation', ...visibleDatasets];
 
-        mappy.getStyle().layers
+        whg_map.getStyle().layers
             .filter(layer => layer.id.startsWith(ds_id))
             .forEach(layer => {
-                let existingFilter = mappy.getFilter(layer.id);
+                let existingFilter = whg_map.getFilter(layer.id);
                 if (existingFilter[0] === '==') {
                     existingFilter = ['all', existingFilter, filter];
                 } else existingFilter[existingFilter.length - 1] = filter; // Replace the dataset filter
-                mappy.setFilter(layer.id, existingFilter); // Update the filter
+                whg_map.setFilter(layer.id, existingFilter); // Update the filter
             });
 
     }).each(function () {
@@ -276,7 +276,7 @@ export function attributionString(data) {
     return attributionStringParts.join(' | ');
 }
 
-export function initUtils(mappy) {
+export function initUtils(whg_map) {
 
     // generic clipboard for modal and non-modal containers
     document.querySelectorAll('.clippy').forEach(element => {
@@ -353,11 +353,11 @@ export function initUtils(mappy) {
 
     $('clearlines').click(function () {//TODO: Is this redundant?
         try {
-            mappy.removeLayer('gl_active_poly');
+            whg_map.removeLayer('gl_active_poly');
         } catch (error) {
             console.log('Layer ID error.', error);
         }
-        //mappy.removeLayer('outline')
+        //whg_map.removeLayer('outline')
     });
 
     // for collection description only

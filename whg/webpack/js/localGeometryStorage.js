@@ -23,41 +23,41 @@ function fetchDataFromNetwork(url) {
 		});
 }
 
-export async function fetchDataForHorse(thisHorse, mappy, repositionMap = true) {
+export async function fetchDataForHorse(thisHorse, whg_map, repositionMap = true) {
     async function mapData(data) {
         return new Promise((resolve) => {
 			// console.log('thisHorse in fetchDataForHorse()', thisHorse);
 			const hasTilesets = !!data.tilesets && data.tilesets.length > 0;
 			
-			var layersToRemove = mappy.getStyle().layers.filter(layer => !!layer.source && layer.source == 'featured-data-source');
+			var layersToRemove = whg_map.getStyle().layers.filter(layer => !!layer.source && layer.source == 'featured-data-source');
 			layersToRemove.forEach(layer => {
-			    mappy.removeLayer(layer.id);
+			    whg_map.removeLayer(layer.id);
 			});
-			if (mappy.getSource('featured-data-source')) mappy.removeSource('featured-data-source');
-			mappy.newSource({...data, ds_id:'featured-data-source'});
+			if (whg_map.getSource('featured-data-source')) whg_map.removeSource('featured-data-source');
+			whg_map.newSource({...data, ds_id:'featured-data-source'});
 			
-			mappy.once('sourcedata', () => {
+			whg_map.once('sourcedata', () => {
 				featuredDataLayers[data.mode == 'heatmap' ? 'heatmap' : 'default'].forEach(layer => {
 					// data is a FeatureCollection here, no dataset or collection id
-				    mappy.addLayer({...layer, 'source-layer': hasTilesets ? 'features' : ''});
+				    whg_map.addLayer({...layer, 'source-layer': hasTilesets ? 'features' : ''});
 				});				
 				if (hasTilesets) {
-					mappy.fitViewport(mappy.tileBounds);
-					/*mappy.fitBounds(mappy.tileBounds, {
+					whg_map.fitViewport(whg_map.tileBounds);
+					/*whg_map.fitBounds(whg_map.tileBounds, {
                         padding: 100,
                         speed: 0.5,
                     });*/
 					resolve();
 				}
 				else {
-		            mappy.once('sourcedata', () => {
+		            whg_map.once('sourcedata', () => {
 		                if (repositionMap) {
 		                    const bounding_box = bbox(data);
 		                    if (bounding_box[0] == Infinity) {
-		                        mappy.reset();
+		                        whg_map.reset();
 		                    } else {	
-								mappy.fitViewport(bounding_box);				
-		                        /*mappy.fitBounds(bounding_box, {
+								whg_map.fitViewport(bounding_box);				
+		                        /*whg_map.fitBounds(bounding_box, {
 		                            padding: 100,
 		                            speed: 0.5,
 		                        });*/

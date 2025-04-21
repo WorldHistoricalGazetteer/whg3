@@ -37,13 +37,13 @@ function temporalFilter(baseFilter) {
 	else return baseFilter; // No modification - temporal filter is inactive
 }
 
-export function toggleFilters(on, mappy, table){
-	mappy.getStyle().layers.forEach(layer => {
-		if (mappy.layersets.includes(layer.source)) {
-			let filter = mappy.getFilter(layer.id); // Base filter is ['==', '$type', geometryType]
+export function toggleFilters(on, whg_map, table){
+	whg_map.getStyle().layers.forEach(layer => {
+		if (whg_map.layersets.includes(layer.source)) {
+			let filter = whg_map.getFilter(layer.id); // Base filter is ['==', '$type', geometryType]
 			let baseFilter = filter[0] == 'all' ? filter[1] : filter;
 			//console.log('Filter switch:', filter, on ? temporalFilter(baseFilter) : baseFilter);
-			mappy.setFilter(layer.id, on ? temporalFilter(baseFilter) : baseFilter);
+			whg_map.setFilter(layer.id, on ? temporalFilter(baseFilter) : baseFilter);
 		}
 	});
 	table.draw();
