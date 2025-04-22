@@ -34,8 +34,6 @@ function adjustPageLength() {
 	let estimatedRowsPerPage = Math.floor(availableHeight / (averageRowHeight));
 	// Ensure a minimum of 5 rows
 	estimatedRowsPerPage = Math.max(estimatedRowsPerPage, 5);
-	console.log(
-		`Changing table length to ${estimatedRowsPerPage} rows @${averageRowHeight} pixels.`);
 	const DataTable = $('#placetable').DataTable();
 	DataTable.page.len(estimatedRowsPerPage).draw();
 }
@@ -108,24 +106,25 @@ export function highlightFeature(ds_pid, features, whg_map, extent = false) {
 		var feature = features[featureIndex];
 		const geom = feature.geometry;
 		if (geom) {
-			window.highlightedFeatureIndex = {
-				source: ds_pid.ds_id,
-				sourceLayer: whg_map.getSource(ds_pid.ds_id).type == 'vector' ?
-					'features' : '',
-				id: featureIndex,
-			};
 			// zoom to feature
-			whg_map
-			.fitViewport(extent || bbox(geom), defaultZoom)
-			.setFeatureState(window.highlightedFeatureIndex, {
-				highlight: true,
+			whg_map.fitViewport(extent || bbox(geom), defaultZoom);
+
+			// highlight feature in multiple sources & layers
+			window.datacollection.metadata.layers.forEach(layerName => {
+				window.highlightedFeatureIndex = {
+					source: `${ds_pid.ds_id}_${layerName}`,
+					id: featureIndex,
+				};
+				whg_map.setFeatureState(window.highlightedFeatureIndex, {
+					highlight: true,
+				});
 			});
 
 		} else {
-			console.log('Feature in clicked row has no geometry.');
+			console.warn('Feature in clicked row has no geometry.');
 		}
 	} else {
-		console.log(`Feature ${ds_pid.pid} not found.`);
+		console.warn(`Feature ${ds_pid.pid} not found.`);
 	}
 
 }
@@ -227,7 +226,6 @@ export function initialiseTable(
 			check_column,
 		];
 
-		console.log('Determining column inclusion and initial sorting:', window.datacollection.metadata.visParameters);
 		// Determine columns to be hidden
 		hideColumns = columns.slice(0,2).reduce((result, column, index) => {
 			const tabulateValue = window.datacollection.metadata.visParameters[column.data.split('.')[1]]?.tabulate;
@@ -334,6 +332,7 @@ export function initialiseTable(
 	}
 
 	table = $('#placetable').DataTable({
+		deferRender: true,
 		dom: '<\'row small\'<\'col-sm-9\'f>' + '<\'col-sm-3\'>>' +
 			'<\'row\'<\'col-sm-12\'tr>>' +
 			'<\'row small\'<\'col-sm-12\'p>>',
@@ -344,24 +343,28 @@ export function initialiseTable(
 		data: features,
 		rowId: 'properties.pid',
 		createdRow: function(row, data, dataIndex) {
-			// Attach temporal min and max properties as data attributes
-			$(row).attr('data-min', data.properties.min);
-			$(row).attr('data-max', data.properties.max);
-			$(row).attr('dsid', data.properties.dsid);
-			$(row).attr('pid', data.properties.pid);
-			$(row).data('ds_pid', {
-				ds: data.properties.dsid,
-				pid: data.properties.pid,
-				ds_id: data.properties.ds_id,
-			});
-			$(row).data('cid', data.properties.cid);
-			$(row).data('placedata', data.properties);
-			if (!data.geometry) {
-				$(row).addClass('no-geometry');
-			}
-			if (data.properties.min === 'null' || data.properties.max === 'null') {
-				$(row).addClass('no-temporal');
-			}
+			const $row = $(row);
+			const props = data.properties;
+
+			$row
+				.attr({
+					'data-min': props.min,
+					'data-max': props.max,
+					'dsid': props.dsid,
+					'pid': props.pid
+				})
+				.data({
+					ds_pid: {
+						ds: props.dsid,
+						pid: props.pid,
+						ds_id: props.ds_id,
+					},
+					cid: props.cid,
+					placedata: props,
+				});
+
+			if (!data.geometry) $row.addClass('no-geometry');
+			if (props.min === 'null' || props.max === 'null') $row.addClass('no-temporal');
 		},
 		initComplete: function(settings, json) {
 			adjustPageLength();
@@ -369,12 +372,11 @@ export function initialiseTable(
 		drawCallback: function(settings) {
 			//console.log('table drawn')
 			$('#drftable_list').stopSpin();
-			// recheck inputs in checked_rows
 			if (checked_rows.length > 0) {
-				for (i in checked_rows) {
-					$('[data-id=' + checked_rows[i] + ']').prop('checked', true);
-				}
-				// make sure selection_status is visible
+				const currentPageRows = table.rows({ page: 'current' }).nodes();
+				checked_rows.forEach(id => {
+					$(currentPageRows).find(`[data-id="${id}"]`).prop('checked', true);
+				});
 				$('#selection_status').show();
 			}
 			highlightFirstRow();
@@ -461,7 +463,7 @@ export function initialiseTable(
 
 		// highlight this row, clear others
 		var selected = $(this).hasClass('highlight-row');
-		$('#placetable tr').removeClass('highlight-row');
+		$('#placetable tr').removeClass('highlight-row selected');
 
 		if (!selected)
 			$(this).removeClass('rowhover');

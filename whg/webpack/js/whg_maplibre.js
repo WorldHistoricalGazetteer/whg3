@@ -54,12 +54,19 @@ maplibregl.Map.prototype.newSource = function(ds, fc = null) {
         if (!!ds.ds_id) { // Standard dataset or collection
 			// Check what keys are present in the dataset
 			const keys = Object.keys(ds);
-			console.log('mapdata keys', keys);
             map.addSource(ds.ds_id, {
                 'type': 'geojson',
                 'data': ds,
                 'attribution': attributionString(ds),
             });
+        } else if (ds?.metadata?.layers) { // mapdata
+			ds.metadata.layers.forEach(layer => {
+				map.addSource(`${ds.metadata.ds_type}_${ds.metadata.id}_${layer}`, {
+					'type': 'geojson',
+					'data': ds[layer],
+					'attribution': ds.metadata.attribution,
+            	});
+			});
         } else if (fc) { // Name and FeatureCollection provided
             map.addSource(ds, { 'type': 'geojson', 'data': fc });
         } else { // Only name given, add an empty FeatureCollection

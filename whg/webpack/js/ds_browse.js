@@ -1,7 +1,11 @@
 // /whg/webpack/js/ds_browse.js
 
-import {getPlace} from './getPlace';
+// TODO: Much of this code is replicated in mapFunctions.js and elsewhere
+// Refactoring is not considered worthwhile because the page may be made redundant by planned backend upgrade
+
+import {getPlace, popupFeatureHTML} from './getPlace';
 import '../css/ds_browse.css';
+import {scrollToRowByProperty} from "./tableFunctions-extended";
 
 let whg_map = new whg_maplibre.Map({maxZoom: 10});
 let featureCollection;
@@ -27,13 +31,13 @@ async function init() {
 
         featureCollection = window.datacollection.table;
 
-        // whg_map
-        //     .newSource(window.datacollection.points)
-        //     .newLayerset(window.datacollection.metadata.ds_id);
+        whg_map
+            .newSource(window.datacollection)
+            .newLayerset(window.datacollection.metadata.ds_id, window.datacollection);
         whg_map.fitViewport(window.datacollection.metadata.extent, defaultZoom);
 
         initPlacetable(filter_col);
-        initMapInteractions();
+        initMapInteractions(table);
         whg_map.getContainer().style.opacity = 1;
 
     } catch (error) {
@@ -62,20 +66,25 @@ function initPlacetable(filter_col) {
     $('#drftable_list').spin();
 
 	const data = featureCollection.features.map(f => {
-		const props = f.properties || {};
-		return {
-			id: props.pid || props.id,
-			src_id: props.src_id || '',
-			title: props.title || '',
-			ccodes: props.ccodes || '',
-			geo: props.geo || '',
-			review_wd: props.review_wd || '',
-			review_tgn: props.review_tgn || '',
-			review_whg: props.review_whg || '',
-			revwd: props.review_wd ? props.review_wd : '<i>no hits</i>',
-			revtgn: props.review_tgn ? props.review_tgn : '<i>no hits</i>',
-			revwhg: props.review_whg ? props.review_whg : '<i>no hits</i>'
-		};
+		const props = f.properties ?? {};
+
+        const getReview = key => props[key] || '<i>no hits</i>';
+
+        return {
+            properties: {
+                id: props.pid ?? props.id,
+                src_id: props.src_id ?? '',
+                title: props.title ?? '',
+                ccodes: props.ccodes ?? '',
+                geo: props.geo ?? '',
+                review_wd: props.review_wd ?? '',
+                review_tgn: props.review_tgn ?? '',
+                review_whg: props.review_whg ?? '',
+                revwd: getReview('review_wd'),
+                revtgn: getReview('review_tgn'),
+                revwhg: getReview('review_whg')
+            }
+        };
 	});
 
     table = $('#placetable').DataTable({
@@ -88,17 +97,17 @@ function initPlacetable(filter_col) {
         select: true,
         order: [[2, 'asc']],
         columns: [
-            {"data": "id"},
-            {"data": "src_id"},
-            {"data": "title"},
-            {"data": "ccodes"},
-            {"data": "geo"},
-            {"data": "review_wd"},
-            {"data": "review_tgn"},
-            {"data": "review_whg"},
-            {"data": "revwd", "visible": !!wdtask, "orderable": false},
-            {"data": "revtgn", "visible": !!tgntask, "orderable": false},
-            {"data": "revwhg", "visible": !!whgtask, "orderable": false}
+            {"data": "properties.id"},
+            {"data": "properties.src_id"},
+            {"data": "properties.title"},
+            {"data": "properties.ccodes"},
+            {"data": "properties.geo"},
+            {"data": "properties.review_wd"},
+            {"data": "properties.review_tgn"},
+            {"data": "properties.review_whg"},
+            {"data": "properties.revwd", "visible": !!wdtask, "orderable": false},
+            {"data": "properties.revtgn", "visible": !!tgntask, "orderable": false},
+            {"data": "properties.revwhg", "visible": !!whgtask, "orderable": false}
         ],
         columnDefs: [
             {className: "browse-task-col", "targets": [8, 9, 10]},
@@ -106,6 +115,14 @@ function initPlacetable(filter_col) {
             {searchable: false, "targets": [0, 1, 3, 4, 8, 9, 10]},
             {visible: false, "targets": [5, 6, 7]}
         ],
+		createdRow: function(row, data, dataIndex) {
+			const $row = $(row);
+
+			$row
+				.data({
+					properties: data,
+				});
+		},
         drawCallback: () => {
             $("#status_filter").html(buildSelect());
             $("#status_select").val(localStorage.getItem('filter'));
@@ -117,14 +134,31 @@ function initPlacetable(filter_col) {
     });
 }
 
-function initMapInteractions() {
+function initMapInteractions(table) {
     whg_map.on('mouseleave', () => clearPopup());
 
-    whg_map.on('click', () => {
-        if (activePopup) {
-            getPlace(activePopup.pid);
+    // whg_map.on('click', () => {
+    //     if (activePopup) {
+    //         getPlace(activePopup.pid);
+    //         clearPopup();
+    //         $('.highlight-row, .selected').removeClass('highlight-row selected');
+    //     }
+    // });
+
+    // whg_map.on('click', function () {
+    //     if (activePopup && activePopup.id) {
+    //         getPlace(activePopup.id);
+    //         clearPopup();
+    //         $('.highlight-row, .selected').removeClass('highlight-row selected');
+    //     }
+    // });
+
+    whg_map.on('click', function () {
+        if (activePopup && activePopup.pid) {
+            let savedID = activePopup.pid; // Store the ID of the clicked feature before clearing the popup
             clearPopup();
-            $('.highlight-row, .selected').removeClass('highlight-row selected');
+            table.search('').draw();
+            scrollToRowByProperty(table, 'id', savedID);
         }
     });
 
@@ -133,33 +167,47 @@ function initMapInteractions() {
         if (!features.length) return clearPopup();
 
         const topFeature = features[0];
-        const isAddedFeature = !whg_map.baseStyle.layers.includes(topFeature.layer.id);
-        if (!isAddedFeature) return clearPopup();
+        if (whg_map.baseStyle.layers.includes(topFeature.layer.id)) return clearPopup();
 
         whg_map.getCanvas().style.cursor = 'pointer';
 
-        let props = topFeature.properties;
-        if (!!featureCollection.tilesets) {
-            props = featureCollection.features.find(f => f.properties?.pid === props.pid)?.properties;
+        const datasetFeature = window.datacollection.table.features.find(
+            f => f.properties.id === topFeature.id);
+        if (datasetFeature) {
+            topFeature.properties.title = datasetFeature.properties.title;
+            topFeature.properties.pid = datasetFeature.properties.pid;
+            topFeature.properties.min = datasetFeature.properties.min;
+            topFeature.properties.max = datasetFeature.properties.max;
+        }
+        else {
+            console.warn('Feature not found in dataset:', topFeature.id);
         }
 
-        if (!props) return clearPopup();
-
-        const coordinates = [(e.lngLat.lng + 540) % 360 - 180, e.lngLat.lat];
-        let html = `<b>${props.title}</b>`;
-        if (props.min && props.min !== 'null') {
-            html += `<br/>earliest: ${props.min}<br/>latest: ${props.max}`;
-        }
-        html += '<br/>[click to fetch details]';
-
-        if (!activePopup || activePopup.pid !== props.pid) {
-            clearPopup(true);
-            activePopup = new whg_maplibre.Popup({closeButton: false})
-                .setLngLat(coordinates)
-                .setHTML(html)
-                .addTo(whg_map);
-            activePopup.pid = props.pid;
+        if (!activePopup || activePopup.id !== topFeature.id) {
+            // If there is no activePopup or it's a different feature, create a new one ...
+            if (activePopup) {
+                clearPopup(true);
+            }
+            activePopup = new whg_maplibre.Popup({
+                closeButton: false,
+            }).setLngLat(e.lngLat).setHTML(popupFeatureHTML(topFeature)).addTo(whg_map);
+            activePopup.pid = topFeature.properties.pid;
+            activePopup.featureHighlight = {
+                source: topFeature.source,
+                id: topFeature.id,
+            };
+            if (!!window.highlightedFeatureIndex &&
+                window.highlightedFeatureIndex.id ===
+                activePopup.featureHighlight.id &&
+                window.highlightedFeatureIndex.source ===
+                activePopup.featureHighlight.source) {
+                activePopup.featureHighlight = false;
+            } else {
+                whg_map.setFeatureState(activePopup.featureHighlight,
+                    {highlight: true});
+            }
         } else {
+            // ... otherwise just update its position
             activePopup.setLngLat(e.lngLat);
         }
     });
@@ -175,10 +223,7 @@ function clearPopup(preserveCursor = false) {
     }
 }
 
-function highlightFeature(ds_pid, features, whg_map, extent = false) { //TODO: This has *similar* functionality to the same-named function in tableFunctions - refactor?
-
-    console.log('ds_pid', ds_pid);
-
+function highlightFeature(ds_pid, features, whg_map, extent = false) {
     var featureIndex = features.findIndex(f => f.properties.pid === parseInt(ds_pid.pid));
     if (featureIndex !== -1) {
         if (window.highlightedFeatureIndex !== undefined) whg_map.setFeatureState(window.highlightedFeatureIndex, {
@@ -187,24 +232,24 @@ function highlightFeature(ds_pid, features, whg_map, extent = false) { //TODO: T
         var feature = features[featureIndex];
         const geom = feature.geometry;
         if (geom) {
-            const coords = geom.coordinates;
-            window.highlightedFeatureIndex = {
-                source: ds_pid.ds_id,
-                sourceLayer: whg_map.getSource(ds_pid.ds_id).type == 'vector' ? 'features' : '',
-                id: featureIndex
-            };
-            whg_map
-                .fitViewport(extent || bbox(geom), defaultZoom)
-                .setFeatureState(window.highlightedFeatureIndex, {
-                    highlight: true
-                });
+            whg_map.fitViewport(extent || bbox(geom), defaultZoom);
+
+			// highlight feature in multiple sources & layers
+			window.datacollection.metadata.layers.forEach(layerName => {
+				window.highlightedFeatureIndex = {
+					source: `${ds_pid.ds_id}_${layerName}`,
+					id: featureIndex,
+				};
+				whg_map.setFeatureState(window.highlightedFeatureIndex, {
+					highlight: true,
+				});
+			});
         } else {
             console.log('Feature in clicked row has no geometry.');
         }
     } else {
         console.log(`Feature ${ds_pid.pid} not found.`);
     }
-
 }
 
 function setRowEvents() {
@@ -252,9 +297,9 @@ function setRowEvents() {
             console.log('placedata', placedata);
 
             const ds_pid = {
-                ds: featureCollection.ds,
+                ds: window.datacollection.metadata.id,
                 pid: pid,
-                ds_id: featureCollection.ds_id
+                ds_id: window.datacollection.metadata.ds_id
             }
 
             highlightFeature(ds_pid, featureCollection.features, whg_map, placedata.extent);

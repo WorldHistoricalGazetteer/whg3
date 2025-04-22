@@ -1,34 +1,39 @@
 // tableFunctions-extended.js
 
 export function scrollToRowByProperty(table, propertyName, value) {
-	console.log(`Scrolling to ${propertyName} ${value}...`);
-    // Search for the row within the sorted and filtered view
-    var pageInfo = table.page.info();
-    var rowPosition = -1;
-    var rows = table.rows({
-        search: 'applied',
-        order: 'current'
-    }).nodes();
-    let selectedRow;
-    for (var i = 0; i < rows.length; i++) {
-        var rowData = table.row(rows[i]).data();
-        rowPosition++;
-        if (rowData.properties[propertyName] == value) {
-            selectedRow = rows[i];
-            break; // Stop the loop when the row is found
-        }
-    }
+	const pageInfo = table.page.info();
+	const rowDataArray = table.rows({ search: 'applied', order: 'current' }).data().toArray();
 
-    if (rowPosition !== -1) {
-        // Calculate the page number based on the row's position
-        var pageNumber = Math.floor(rowPosition / pageInfo.length);
+	// Fast in-memory search
+	const rowIndex = rowDataArray.findIndex(row => row?.properties?.[propertyName] === value);
+	if (rowIndex === -1) {
+		console.warn(`No row found with ${propertyName} = ${value}`);
+		return;
+	}
 
-        // Check if the row is on the current page
-        if (pageInfo.page !== pageNumber) {
-            table.page(pageNumber).draw('page');
-        }
+	const targetPage = Math.floor(rowIndex / pageInfo.length);
 
-        selectedRow.scrollIntoView();
-        $(selectedRow).trigger('click');
-    }
+	const highlightRow = () => {
+		const visibleData = table.rows({ page: 'current' }).data().toArray();
+		const visibleNodes = table.rows({ page: 'current' }).nodes();
+
+		for (let i = 0; i < visibleData.length; i++) {
+			if (visibleData[i]?.properties?.[propertyName] === value) {
+				const rowNode = visibleNodes[i];
+				if (rowNode) {
+					rowNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					$(rowNode).trigger('click');
+				}
+				break;
+			}
+		}
+	};
+
+	// If already on the correct page, trigger immediately
+	if (pageInfo.page === targetPage) {
+		highlightRow();
+	} else {
+		table.one('draw', highlightRow);
+		table.page(targetPage).draw(false);
+	}
 }

@@ -58,7 +58,7 @@ function updateBounds() {
 }
 
 // Control positioning of map, clear of overlays
-export function recenterMap(duration) {
+export function recenterMap(duration, reveal) {
     duration = duration == 'lazy' ? 1000 : 0; // Set duration of movement
     window.blockBoundsUpdate = true;
     // whg_map.showPadding = true; // Used for debugging - draws coloured lines to indicate padding
@@ -76,6 +76,12 @@ export function recenterMap(duration) {
 
         if (Array.isArray(window.mapBounds) ||
             !window.mapBounds.hasOwnProperty('center')) { // mapBounds might be a coordinate pair object returned by whg_map.getBounds();
+            if (reveal) {
+                const mapContainer = whg_map.getContainer();
+                whg_map.once('moveend', () => {
+                    mapContainer.style.opacity = 1;
+                });
+            }
             whg_map.fitBounds(window.mapBounds, {
                 duration: duration,
             });
@@ -259,79 +265,63 @@ export function initPopups(table) {
 
     whg_map.on('mousemove', function (e) {
         const features = whg_map.queryRenderedFeatures(e.point);
+        if (!features.length) return clearPopup();
 
-        if (features.length > 0) {
-            const topFeature = features[0]; // Handle only the top-most feature
-            const topLayerId = topFeature.layer.id;
+        const topFeature = features[0]; // Handle only the top-most feature
+        const topLayerId = topFeature.layer.id;
 
-            /*			// Check if the top feature's layer id starts with the id of any layer in datasetLayers
-                  const isTopFeatureInDatasetLayer = // TODO: Remove this when finished upgrade of layersets
-                    datasetLayers.some(layer => topLayerId.startsWith(layer.id));
-                  if (isTopFeatureInDatasetLayer) { // TODO: Remove this when finished upgrade of layersets
-                    topFeature.sourceLayer = false;
-                  }*/
+        if (!whg_map.layersets.some(layer => topLayerId.startsWith(layer))) return clearPopup();
 
-            const featureInLayerset = whg_map.layersets.some(
-                layer => topLayerId.startsWith(layer));
-            if (featureInLayerset) {
-                const dataset = ds_list.find(ds => ds.ds_id === topFeature.source);
-                if (dataset) {
-                    const datasetFeature = dataset.features.find(
-                        f => f.properties.pid === topFeature.properties.pid);
-                    if (datasetFeature) {
-                        topFeature.properties.title = datasetFeature.properties.title;
-                        topFeature.properties.min = datasetFeature.properties.min;
-                        topFeature.properties.max = datasetFeature.properties.max;
-                    }
-                }
+        whg_map.getCanvas().style.cursor = 'pointer';
+
+        const datasetFeature = window.datacollection.table.features.find(
+            f => f.properties.id === topFeature.id);
+        if (datasetFeature) {
+            topFeature.properties.title = datasetFeature.properties.title;
+            topFeature.properties.min = datasetFeature.properties.min;
+            topFeature.properties.max = datasetFeature.properties.max;
+        }
+        else {
+            console.warn('Feature not found in dataset:', topFeature.id);
+        }
+
+        if (!activePopup || activePopup.id !== topFeature.id) {
+            // If there is no activePopup or it's a different feature, create a new one ...
+            if (activePopup) {
+                clearPopup(true);
             }
-
-            if (featureInLayerset) {
-                whg_map.getCanvas().style.cursor = 'pointer';
-
-                if (!activePopup || activePopup.pid !== topFeature.properties.pid) {
-                    // If there is no activePopup or it's a different feature, create a new one ...
-                    if (activePopup) {
-                        clearPopup(true);
-                    }
-                    activePopup = new whg_maplibre.Popup({
-                        closeButton: false,
-                    }).setLngLat(e.lngLat).setHTML(popupFeatureHTML(topFeature)).addTo(whg_map);
-                    activePopup.pid = topFeature.properties.pid;
-                    activePopup.featureHighlight = {
-                        source: topFeature.source,
-                        sourceLayer: topFeature.sourceLayer,
-                        id: topFeature.id,
-                    };
-                    if (!!window.highlightedFeatureIndex &&
-                        window.highlightedFeatureIndex.id ===
-                        activePopup.featureHighlight.id &&
-                        window.highlightedFeatureIndex.source ===
-                        activePopup.featureHighlight.source) {
-                        activePopup.featureHighlight = false;
-                    } else {
-                        whg_map.setFeatureState(activePopup.featureHighlight,
-                            {highlight: true});
-                    }
-                } else {
-                    // ... otherwise just update its position
-                    activePopup.setLngLat(e.lngLat);
-                }
-
+            activePopup = new whg_maplibre.Popup({
+                closeButton: false,
+            }).setLngLat(e.lngLat).setHTML(popupFeatureHTML(topFeature)).addTo(whg_map);
+            activePopup.id = topFeature.id;
+            activePopup.featureHighlight = {
+                source: topFeature.source,
+                sourceLayer: topFeature.sourceLayer,
+                id: topFeature.id,
+            };
+            if (!!window.highlightedFeatureIndex &&
+                window.highlightedFeatureIndex.id ===
+                activePopup.featureHighlight.id &&
+                window.highlightedFeatureIndex.source ===
+                activePopup.featureHighlight.source) {
+                activePopup.featureHighlight = false;
             } else {
-                clearPopup();
+                whg_map.setFeatureState(activePopup.featureHighlight,
+                    {highlight: true});
             }
         } else {
-            clearPopup();
+            // ... otherwise just update its position
+            activePopup.setLngLat(e.lngLat);
         }
+
     });
 
     whg_map.on('click', function () {
-        if (activePopup && activePopup.pid) {
-            let savedPID = activePopup.pid;
+        if (activePopup && activePopup.id) {
+            let savedID = activePopup.id; // Store the ID of the clicked feature before clearing the popup
             clearPopup();
             table.search('').draw();
-            scrollToRowByProperty(table, 'pid', savedPID);
+            scrollToRowByProperty(table, 'id', savedID);
         }
     });
 }

@@ -30,6 +30,9 @@ let whg_map;
 // Utility to load dataset
 async function loadDataset() {
     return new Promise((resolve, reject) => {
+        $('#dataset_content').spin({
+            label: `Fetching data...`
+        });
         $.get(mapdata_url, function (data) {
             window.datacollection = data;
             console.log(`Dataset "${data.metadata.title}" loaded.`, data);
@@ -119,36 +122,36 @@ function completeLoading() {
         circleColors = arrayColors(window.datacollection.metadata.relations);
         colorTable(circleColors, '.maplibregl-control-container');
     }
-    if (!!window.datacollection.metadata.datasets) {
+    if (window.datacollection.metadata.datasets?.length > 0) {
         circleColors = arrayColors(window.datacollection.metadata.datasets.map(d => d.id.toString()));
         colorTable(circleColors, '.maplibregl-control-container', window.datacollection.metadata.datasets.map(d => d.title), window.datacollection.metadata.multi_relations, window.datacollection.metadata.ds_id, whg_map);
     }
 
     let marker_reducer = !!window.datacollection.metadata.coordinate_density ? (window.datacollection.metadata.coordinate_density < 50 ? 1 : 50 / window.datacollection.metadata.coordinate_density) : 1
-    // whg_map
-    //     .newSource(window.datacollection.points)
-    //     .newLayerset(window.datacollection.metadata.ds_id, null, null, null, null, null, marker_reducer, circleColors); // Add standard layerset (defined in `layerset.js` and prototyped in `whg_maplibre.js`)
-
-    console.log('Added layerset(s).', whg_map.getStyle().layers);
-
-    // Initialise Data Table
-    const tableInit = initialiseTable(window.datacollection.table.features, checked_rows, whg_map);
-    table = tableInit.table;
-    checked_rows = tableInit.checked_rows;
-
-    window.mapBounds = window.datacollection.metadata.extent || [-180, -90, 180, 90];
-
-    // Initialise Map Popups
-    initPopups(table);
-
-    // Initialise resize observers
-    initObservers();
+    whg_map
+        .newSource(window.datacollection)
+        .newLayerset(window.datacollection.metadata.ds_id, window.datacollection, null, null, null, null, marker_reducer, circleColors); // Add standard layerset (defined in `layerset.js` and prototyped in `whg_maplibre.js`)
 
     // Initialise Map Controls
     const mapControlsInit = init_mapControls(whg_map, datelineContainer, toggleFilters, mapParameters, table);
     datelineContainer = mapControlsInit.datelineContainer;
     mapSequencer = mapControlsInit.mapSequencer;
     mapParameters = mapControlsInit.mapParameters;
+
+    window.mapBounds = window.datacollection.metadata.extent || [-180, -90, 180, 90];
+    recenterMap(false, true);
+
+    // Initialise Data Table
+    const tableInit = initialiseTable(window.datacollection.table.features, checked_rows, whg_map);
+    table = tableInit.table;
+    checked_rows = tableInit.checked_rows;
+
+
+    // Initialise Map Popups
+    initPopups(table);
+
+    // Initialise resize observers
+    initObservers();
 
     // Initialise Info Box state
     initInfoOverlay();
@@ -162,7 +165,6 @@ function completeLoading() {
             if (sequenceArcs) sequenceArcs = sequenceArcs.destroy();
             const facet = table.settings()[0].aoColumns[tableOrder[0]].mData.split('.')[1];
             const order = tableOrder[1];
-            console.log(`Re-sorted by facet: ${facet} ${order}`);
 
             if (!!window.datacollection.metadata.visParameters[facet]) {
                 toggleFilters(window.datacollection.metadata.visParameters[facet]['temporal_control'] === 'filter', whg_map, table);
@@ -186,12 +188,7 @@ function completeLoading() {
                 updateVisualisation(newTableOrder);
             }
         });
-    } else {
-        window.datacollection.table.features = null; // release memory
     }
-
-    recenterMap();
-    whg_map.getContainer().style.opacity = 1;
 
     initUtils(whg_map); // Tooltips, ClipboardJS, clearlines, help-matches
 

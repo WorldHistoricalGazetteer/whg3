@@ -135,56 +135,88 @@ class Layerset {
 		this._highlighter = ['case', ['boolean', ['feature-state', 'highlight'], false]]
 		this._layerIDs = [];
 		this._source = source_id || dc_id; // Use `dc_id` if `source_id` is not given
-		var source = this._map.getSource(this._source);
-		this._sourceLayer = (!!source.type && source.type == 'vector') ? 'features' : '';
-		
-		console.log('source',this._map.getSource(this._source));
-		
-		Object.keys(this._style).forEach((geometryType) => {
-			let paintGeometryStyle = this._style[geometryType];
-			const layerID = `${this._source}_${geometryType.toLowerCase()}`;
-			
-			Object.keys(paintGeometryStyle).forEach((attribute) => {
-				if ((!paintOption || paintOption == 'standard') && !['circle-radius','fill-antialias','line-width','line-dasharray'].includes(attribute)) {
-					paintGeometryStyle[attribute] = [...this._highlighter, ...paintGeometryStyle[attribute]];
-				}
-			});
-			
-			const layer = {
-			    'id': layerID,
-			    'type': Object.keys(paintGeometryStyle)[0].split('-')[0], // fill|line|circle
-			    'source': this._source,
-			    'source-layer': this._sourceLayer,
-			    'paint': paintGeometryStyle,
-			    'filter': ['==', '$type', geometryType.split('-')[0]],
-			};
-			console.log(layer);
-			mapInstance.addLayer(layer);
-			this._layerIDs.push(layerID);
-			
-		});
 
-		if (this.number) {
-			const layerID = `${this._source}_numbers`;
-			mapInstance.addLayer({
-	            'id': layerID,
-	            'type': 'symbol',
-	            'source': this._source,
-	            'layout': {
-	                'text-field': ['to-string', ['id']], // Uses index `id` property from feature root, not `properties.id`  
-	                'text-size': 12,
-	                'text-offset': [0, 0],
-	                'text-anchor': 'center',
-	            },
-	            'paint': {
-					'text-color': 'white',
-				},
-	        });
-	        this._layerIDs.push(layerID);
+		if (this._source?.metadata?.layers) { // mapdata source
+			const { ds_type, id, layers } = this._source.metadata;
+			const sourcePrefix = `${ds_type}_${id}`;
+			const ignoreAttrs = ['circle-radius', 'fill-antialias', 'line-width', 'line-dasharray'];
+
+			layers.forEach(layerName => {
+				Object.entries(this._style).forEach(([geometryType, paintStyle]) => {
+					const typeLower = geometryType.toLowerCase();
+					if (!typeLower.startsWith(layerName)) return;
+
+					const layerID = `${sourcePrefix}_${typeLower}`;
+
+					// Clone paintStyle because it is modified in place
+					const paint = Object.fromEntries(
+						Object.entries(paintStyle).map(([attr, val]) => [
+							attr,
+							(!paintOption || paintOption === 'standard') && !ignoreAttrs.includes(attr)
+								? [...this._highlighter, ...val]
+								: val
+						])
+					);
+
+					const layer = {
+						id: layerID,
+						type: Object.keys(paint)[0].split('-')[0], // fill|line|circle
+						source: `${sourcePrefix}_${layerName}`,
+						paint,
+					};
+
+					mapInstance.addLayer(layer);
+					this._layerIDs.push(layerID);
+				});
+			});
 		}
-		
+		else {
+			let source = this._map.getSource(this._source);
+			this._sourceLayer = (!!source.type && source.type == 'vector') ? 'features' : '';
+
+			Object.keys(this._style).forEach((geometryType) => {
+				let paintGeometryStyle = this._style[geometryType];
+				const layerID = `${this._source}_${geometryType.toLowerCase()}`;
+
+				Object.keys(paintGeometryStyle).forEach((attribute) => {
+					if ((!paintOption || paintOption == 'standard') && !['circle-radius','fill-antialias','line-width','line-dasharray'].includes(attribute)) {
+						paintGeometryStyle[attribute] = [...this._highlighter, ...paintGeometryStyle[attribute]];
+					}
+				});
+
+				const layer = {
+					'id': layerID,
+					'type': Object.keys(paintGeometryStyle)[0].split('-')[0], // fill|line|circle
+					'source': this._source,
+					'source-layer': this._sourceLayer,
+					'paint': paintGeometryStyle,
+					'filter': ['==', '$type', geometryType.split('-')[0]],
+				};
+				mapInstance.addLayer(layer);
+				this._layerIDs.push(layerID);
+			});
+
+			if (this.number) {
+				const layerID = `${this._source}_numbers`;
+				mapInstance.addLayer({
+					'id': layerID,
+					'type': 'symbol',
+					'source': this._source,
+					'layout': {
+						'text-field': ['to-string', ['id']], // Uses index `id` property from feature root, not `properties.id`
+						'text-size': 12,
+						'text-offset': [0, 0],
+						'text-anchor': 'center',
+					},
+					'paint': {
+						'text-color': 'white',
+					},
+				});
+				this._layerIDs.push(layerID);
+			}
+		}
+
 		return this;
-		
     }
     
     addFilter(filterOptions) {

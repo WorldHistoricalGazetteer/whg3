@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import time
 from collections import defaultdict
 from itertools import chain, islice
@@ -19,6 +18,7 @@ from django.db.models import Q, Prefetch
 from django.http import JsonResponse, HttpRequest
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from shapely.geometry.geo import shape, mapping
 
 from collection.models import Collection
 from collection.views import year_from_string
@@ -51,6 +51,16 @@ def compute_minmax(places_info):
     return [None, None]
 
 
+def round_coords(coords, precision=6):
+    """Recursively round coordinates to the specified precision."""
+    if isinstance(coords, (float, int)):
+        return round(coords, precision)
+    elif isinstance(coords, list):
+        return [round_coords(item, precision) for item in coords]
+    else:
+        return coords  # Return other data types as is
+
+
 @shared_task
 def mapdata_task(category, id, refresh=False):
     dummy_request = HttpRequest()
@@ -74,7 +84,7 @@ def mapdata(request, category, id, refresh='false'):
     maxNoCacheTime = 0.3  # Cache if generation time is greater than this
 
     refresh = str(refresh).lower() in ['refresh', 'true', '1', 'yes']
-    ds_id = f"{category}-{id}"
+    ds_id = f"{category}_{id}"
     logger.debug(f"Mapdata requested for {ds_id} (refresh={refresh}).")
 
     # Check if cached data exists and return it if found
@@ -111,14 +121,36 @@ def mapdata(request, category, id, refresh='false'):
     multi_relations = set()
     default_group = grouped["Point"]
 
-    # Properties to retain for Granular features
-    required_keys = {"min", "max"}
+    # Properties to retain for map features
+    required_keys = {"min", "max", "relation"}
 
     def trim_properties(f, index, g):
-        """Return a copy of feature with minimal properties and new geometry."""
+        """Return a copy of feature with minimal properties, rounded and validated geometry (or None if invalid)."""
+        geometry = None
+        if g:
+            try:
+                # Create a Shapely geometry from the rounded coordinates
+                rounded = {
+                    "type": g["type"],
+                    "coordinates": round_coords(g["coordinates"])
+                }
+
+                # Use Shapely to validate
+                shapely_geom = shape(rounded)
+                if shapely_geom.is_valid:
+                    geometry = mapping(shapely_geom)
+                    if "granularity" in g:
+                        geometry["granularity"] = g["granularity"]
+                else:
+                    print(f"Invalid geometry at index {index}; replacing with None.")
+
+            except Exception as e:
+                print(f"Error processing geometry at index {index}: {e}")
+                geometry = None
+
         return {
             "type": "Feature",
-            "geometry": g,
+            "geometry": geometry,
             "properties": {k: v for k, v in f.get("properties", {}).items() if k in required_keys},
             "id": index
         }
@@ -132,8 +164,7 @@ def mapdata(request, category, id, refresh='false'):
             "type": "Feature",
             "geometry": {"type": geom["type"]} if geom and "type" in geom else None,
             "properties": {**props, "dsid": id, "dslabel": mapdata["label"] if "label" in mapdata else None,
-                           "ds_id": ds_id},
-            "id": index
+                           "ds_id": ds_id, "id": index},
         })
 
         relation = str(props.get("relation", ""))
@@ -175,13 +206,14 @@ def mapdata(request, category, id, refresh='false'):
         })
         for key, features in {
             "table": grouped["Table"],
-            "points": grouped["Point"],
-            "lines": grouped["LineString"],
-            "polygons": grouped["Polygon"],
+            "point": grouped["Point"],
+            "line": grouped["LineString"],
+            "polygon": grouped["Polygon"],
             "granular": grouped["Granular"],
         }.items()
         if features
     }
+    layers = [key for key in mapdata_result.keys() if key != "table"]
 
     mapdata_result["metadata"] = {
         "id": id,
@@ -189,6 +221,8 @@ def mapdata(request, category, id, refresh='false'):
         "ds_id": ds_id,
         "label": mapdata.get("label", None),
         "title": mapdata.get("title", None),
+        "attribution": attribution_from_csl(json.loads(mapdata.get("citation", None))),
+        "layers": layers,
         "modified": mapdata.get("modified", None),
         "min": mapdata["minmax"][0],
         "max": mapdata["minmax"][1],
@@ -201,10 +235,10 @@ def mapdata(request, category, id, refresh='false'):
         "datasets": mapdata.get("datasets", None),
         "relations": mapdata.get("relations", None),
         "multi_relations": list(multi_relations) if multi_relations else [],
-         # Default values for visParameters:
-         # tabulate: 'initial'|true|false - include sortable table column, 'initial' indicating the initial sort column
-         # temporal_control: 'player'|'filter'|null - control to be displayed when sorting on this column
-         # trail: true|false - whether to include ant-trail motion indicators on map
+        # Default values for visParameters:
+        # tabulate: 'initial'|true|false - include sortable table column, 'initial' indicating the initial sort column
+        # temporal_control: 'player'|'filter'|null - control to be displayed when sorting on this column
+        # trail: true|false - whether to include ant-trail motion indicators on map
         "visParameters": mapdata.get("visParameters",
                                      "{'seq': {'tabulate': false, 'temporal_control': null, 'trail': true}, 'min': {'tabulate': false, 'temporal_control': null, 'trail': true}, 'max': {'tabulate': false, 'temporal_control': null, 'trail': false}}"),
     }
@@ -317,7 +351,7 @@ def mapdata_dataset(id, task_id=None, chunk_size=1000):
         "label": ds.label,
         "modified": ds.last_modified_text,
         "contributors": ds.contributors,
-        "citation": ds.citation,
+        "citation": ds.citation_csl,
         "creator": ds.creator,
         "minmax": ds.minmax,
         "bounds": ds.bbox,
@@ -341,6 +375,7 @@ def mapdata_collection(id):
         "extent": buffered_extent_from_bbox(collection.bbox),
         "coordinate_density": collection.coordinate_density,
         "visParameters": collection.vis_parameters,
+        "citation": collection.citation_csl
     }
 
     if collection.collection_class == 'place':
@@ -536,6 +571,46 @@ def mapdata_collection_dataset(collection, feature_collection):
     feature_collection["datasets"] = list(collection.datasets.values("id", "title"))
 
     return feature_collection
+
+
+def attribution_from_csl(citation, max_title_length=60):
+    """
+    Returns a condensed attribution string from a CSL citation dict.
+    Format: "Author(s), Year – Title"
+    """
+    authors = []
+    for author in citation.get("author", []):
+        if "literal" in author:
+            authors.append(author["literal"])
+        elif "family" in author:
+            initial = author.get("given", "")[:1]
+            name = author["family"]
+            if initial:
+                name += f" {initial}."
+            authors.append(name)
+
+    # Format author string
+    if not authors:
+        author_str = "Unknown"
+    elif len(authors) == 1:
+        author_str = authors[0]
+    elif len(authors) == 2:
+        author_str = f"{authors[0]} & {authors[1]}"
+    else:
+        author_str = f"{authors[0]} et al."
+
+    # Extract year
+    try:
+        year = citation["issued"]["date-parts"][0][0]
+    except (KeyError, IndexError, TypeError):
+        year = "n.d."  # no date
+
+    # Handle title
+    title = citation.get("title", "")
+    if len(title) > max_title_length:
+        title = title[: max_title_length - 1] + "…"
+
+    return f"{author_str}, {year} – {title}" if title else f"{author_str}, {year}"
 
 
 class MapdataFileBasedCache(FileBasedCache):
