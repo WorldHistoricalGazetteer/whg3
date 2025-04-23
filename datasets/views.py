@@ -2430,11 +2430,6 @@ class DatasetMetadataView(LoginRequiredMixin, UpdateView):
             ds.uri_base = data['uri_base']
             ds.save()
 
-        # # TODO: Should test `needs_tileset` first - see Issue #227
-        # if ds.public:
-        #     print(f"Updating mapdata cache (if required).")
-        #     task = mapdata_task.delay('datasets', ds.id, 'standard', 'refresh')
-
         return super().form_valid(form)
 
     def form_invalid(self, form):

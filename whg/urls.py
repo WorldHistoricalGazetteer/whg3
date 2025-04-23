@@ -13,7 +13,6 @@ from main import views
 from sitemap.views import StaticViewSitemap, ToponymSitemap
 from utils import mapdata
 from resources.views import TeachingPortalView
-from main.tasks import get_tileset_task_progress
 from utils.tasks import downloader
 import os
 
@@ -115,13 +114,6 @@ urlpatterns = [
                        name='announcement-update'),
                   path('announcements/', views.AnnouncementListView.as_view(), name='announcements-list'),
 
-                  path('tileset_management/', views.TilesetListView.as_view(), name='tools-tilesets'),
-                  path('tileset_generate/<str:category>/<int:id>/', views.tileset_generate_view,
-                       name='tileset_generate'),
-                  path('tileset_task_progress/', get_tileset_task_progress, name='tileset_task_progress'),
-
-                  path('mapdata/<str:category>/<int:id>/<str:variant>/<str:refresh>/', mapdata.mapdata, name="mapdata"),
-                  path('mapdata/<str:category>/<int:id>/<str:variant>/', mapdata.mapdata, name="mapdata"),
                   path('mapdata/<str:category>/<int:id>/', mapdata.mapdata, name="mapdata"),
 
                   path('comment/', views.handle_comment, name='comment-handle'),

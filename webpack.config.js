@@ -34,7 +34,6 @@ module.exports = {
 		search: '/app/whg/webpack/js/search.js',
 		search_functions: '/app/whg/webpack/js/search_resources.js',
 		tasks: '/app/whg/webpack/js/tasks.js',
-		'tileset-tools': '/app/whg/webpack/js/tileset-tools.js',
 		whg_maplibre: '/app/whg/webpack/js/whg_maplibre.js',
 		workbench: '/app/whg/webpack/js/workbench.js',
 	},

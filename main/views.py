@@ -29,7 +29,6 @@ from collection.models import Collection, CollectionGroup
 from datasets.models import Dataset
 from datasets.tasks import testAdd
 from main.decorators import uber_user_required
-from main.tasks import needs_tileset, request_tileset
 from .models import Announcement, Link, DownloadFile, Comment
 from places.models import Place
 from resources.models import Resource
@@ -136,123 +135,6 @@ class AnnouncementUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
         else:
             logger.debug(f'form.errors: {form.errors}')
             return self.form_invalid(form)
-
-
-@method_decorator(uber_user_required, name='dispatch')
-class TilesetListView(LoginRequiredMixin, TemplateView):
-    template_name = 'main/tools_tilesets.html'
-    login_url = '/accounts/login/'
-
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.username != "whgadmin":
-            return HttpResponseForbidden("You are not authorized to access this page.")
-        return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        # Fetch tilesets
-        tilesets_url = settings.TILER_URL
-        tilesets_data = {"getTilesetsAll": {}}
-        tilesets_response = requests.post(tilesets_url, headers={"Content-Type": "application/json"},
-                                          data=json.dumps(tilesets_data))
-        tilesets = sorted(list(tilesets_response.json()))
-
-        # Fetch datasets and collections
-        datasets = Dataset.objects.all().order_by('id')
-        collections = Collection.objects.filter(collection_class='place').order_by('id')
-
-        # Create dictionaries to store dataset and collection titles and public statuses
-        dataset_titles = {dataset.id: (dataset.title, dataset.public) for dataset in datasets}
-        collection_titles = {collection.id: (collection.title, collection.public) for collection in collections}
-
-        # Pass both sets of data to the template
-        context['data'] = {
-            'datasets': [],
-            'collections': []
-        }
-
-        # Track the tilesets that have matching datasets or collections
-        matched_tilesets = set()
-
-        # Enqueue a Celery task for each category and id
-        for category, items in {'datasets': datasets, 'collections': collections}.items():
-            for item in items:
-                # Check if the tileset exists for the current category and id
-                tileset_key = f"{category}-{item.id}"
-                has_tileset = tileset_key in tilesets
-                if has_tileset:
-                    matched_tilesets.add(tileset_key)
-                # Enqueue a Celery task for each category and id
-                task = needs_tileset.delay(category=category, id=item.id)
-                # Add the task id to the context for each category
-                context['data'][category].append({
-                    'category': category,
-                    'id': item.id,
-                    'title': item.title,
-                    'public': item.public,
-                    'has_tileset': has_tileset,
-                    'task_id': task.id
-                })
-
-        # Identify orphaned tilesets
-        orphaned_tilesets = set(tilesets) - matched_tilesets
-
-        # Add orphaned tilesets to the context
-        for orphan in orphaned_tilesets:
-            category, id = orphan.split('-')
-            if category in context['data']:
-                context['data'][category].append({
-                    'category': category,
-                    'id': id,
-                    'title': 'Orphaned Tileset',
-                    'public': None,  # Orphaned tilesets have no corresponding dataset or collection
-                    'has_tileset': True,
-                    'task_id': None
-                })
-
-        # Flatten the context data lists for rendering in the template
-        context['data'] = context['data']['datasets'] + context['data']['collections']
-
-        return context
-
-
-@login_required
-def tileset_generate_view(request, category, id):
-    # Ensure that only the user with username "whgadmin" can access this view
-    if request.user.is_superuser:  # TODO: change to whg_admins group?
-        if request.method == 'GET':
-            action = 'generate'
-        elif request.method == 'DELETE':
-            action = 'delete'
-        # task_result = request_tileset.delay(category, id, action)
-        # return JsonResponse({'task_id': task_result.id})
-        request_tileset(category, id, action)
-        return JsonResponse({'task_id': None})
-    else:
-        return JsonResponse({'error': 'Access forbidden'}, status=403)
-
-
-# class TilesetGenerateView(LoginRequiredMixin, View):
-#     def get(self, request, category, id):
-#         # Ensure that only the user with username "whgadmin" can access this view
-#         if request.user.username == "whgadmin":
-#             action = 'generate'
-#             # Perform the tileset generation request
-#             request_tileset(category, id, action)
-#             return JsonResponse({'task_id': None})
-#         else:
-#             return JsonResponse({'error': 'Access forbidden'}, status=403)
-#
-#     def delete(self, request, category, id):
-#         # Ensure that only the user with username "whgadmin" can access this view
-#         if request.user.username == "whgadmin":
-#             action = 'delete'
-#             # Perform the tileset deletion request
-#             result = request_tileset(category, id, action)
-#             return JsonResponse({'result': result})
-#         else:
-#             return JsonResponse({'error': 'Access forbidden'}, status=403)
 
 # Mixin for checking splash screen pass
 class SplashCheckMixin:

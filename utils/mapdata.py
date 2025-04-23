@@ -6,93 +6,137 @@ from itertools import chain, islice
 
 import networkx as nx
 import numpy as np
-import redis
 from celery import shared_task
-from django.conf import settings
-from django.contrib.auth.models import AnonymousUser
 from django.contrib.gis.db.models.aggregates import Union
 from django.contrib.gis.geos import GeometryCollection, Polygon
 from django.core.cache import cache
 from django.core.cache.backends.filebased import FileBasedCache
 from django.db.models import Q, Prefetch
-from django.http import JsonResponse, HttpRequest
+from django.db.models.signals import post_save, post_delete
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
+from django_redis import get_redis_connection
 from shapely.geometry.geo import shape, mapping
 
-from collection.models import Collection
+from collection.models import Collection, CollPlace, CollDataset
 from collection.views import year_from_string
 from datasets.models import Dataset
 from places.models import Place, PlaceGeom, CloseMatch
+from traces.models import TraceAnnotation
 
 logger = logging.getLogger('mapdata')
+PENDING_REFRESH_KEY = "mapdata:pending_refresh"
 
 
-def get_redis_client():
-    return redis.StrictRedis.from_url(settings.CELERY_BROKER_URL)
-
-
-def compute_minmax(places_info):
-    """
-    Computes the global min and max values from a list of place info dicts.
-    Expects each dict to have string 'min' and 'max' keys.
-    Returns a [min, max] list as strings, or [None, None] if unavailable.
-    """
+def mapdata(request, category, id, refresh=False):
     try:
-        arr = np.array([
-            (float(p["min"]), float(p["max"]))
-            for p in places_info
-            if p["min"] != "null" and p["max"] != "null"
-        ])
-        if arr.size > 0:
-            return [str(np.min(arr[:, 0])), str(np.max(arr[:, 1]))]
+        data = generate_mapdata(category, id, refresh)
+        return JsonResponse(data, safe=False, json_dumps_params={'ensure_ascii': False})
     except Exception as e:
-        logger.warning(f"Failed to compute minmax: {e}")
-    return [None, None]
+        logger.exception(f"Error generating mapdata for {category}:{id}")
+        return JsonResponse({'error': str(e)}, status=500)
 
 
-def round_coords(coords, precision=6):
-    """Recursively round coordinates to the specified precision."""
-    if isinstance(coords, (float, int)):
-        return round(coords, precision)
-    elif isinstance(coords, list):
-        return [round_coords(item, precision) for item in coords]
-    else:
-        return coords  # Return other data types as is
+class MapdataFileBasedCache(FileBasedCache):
+    def __init__(self, dir, params):
+        super().__init__(dir, params)
+
+    def _cull(self):
+        """Override to disable Django's culling mechanism entirely."""
+        pass
 
 
 @shared_task
-def mapdata_task(category, id, refresh=False):
-    dummy_request = HttpRequest()
-    dummy_request.user = AnonymousUser()
+def mark_mapdata_for_refresh(category, id, delay=10):
+    redis_client = get_redis_client()
+    cache_key = f"{category}_{id}"
 
-    result = mapdata(dummy_request, category, id, refresh=refresh)
-    if isinstance(result, JsonResponse):
-        return result.json()
+    if redis_client.sadd(PENDING_REFRESH_KEY, cache_key):
+        logger.info(f"Queued mapdata refresh for {cache_key}")
+        refresh_mapdata_cache.apply_async((category, id), countdown=delay * 60)
     else:
-        raise ValueError("`mapdata` function did not return a JsonResponse")
+        logger.debug(f"Refresh of mapdata already queued for {cache_key}")
 
 
-def reset_mapdata(category, id):
-    logger.debug(f"Resetting mapdata for {category}-{id}.")
-    mapdata_task.delay(category, id, refresh=True)
+@shared_task
+def refresh_mapdata_cache(category, id):
+    try:
+        redis_client = get_redis_client()
+        cache_key = f"{category}_{id}"
+        refresh_was_scheduled = redis_client.srem(PENDING_REFRESH_KEY, cache_key)
+        if refresh_was_scheduled:
+            generate_mapdata(category, id, refresh=True)
+            logger.info(f"Regenerated mapdata for {category}:{id}, and removed from queue")
+        else:
+            logger.info(f"Mapdata refresh for {category}:{id} was already processed or not scheduled.")
+        return {"status": "success", "category": category, "id": id}
+    except Exception as e:
+        logger.error(f"Error regenerating mapdata for {category}:{id} - {e}")
+        return {"status": "error", "category": category, "id": id, "error": str(e)}
 
 
-def mapdata(request, category, id, refresh='false'):
+@shared_task
+def delete_mapdata_cache(category, id, refresh=10):
+    """
+    Delete mapdata cache for a given category and ID, with optional refresh.
+
+    Args:
+        category (str): Either 'datasets' or 'collections'.
+        id (int): Identifier of the dataset or collection.
+        refresh (bool|int, optional): Whether and when to refresh mapdata:
+            - False: Delete only, no regeneration.
+            - True: Regenerate immediately.
+            - int: Delay regeneration by given number of minutes.
+            Defaults to 10 (delayed refresh after 10 minutes).
+
+    Returns:
+        dict: Status report including category, id, and any error message.
+    """
+    try:
+        cache_key = f"{category}_{id}"
+        had_cache = cache.get(cache_key) is not None
+        redis_client = get_redis_client()
+
+        if had_cache:
+            cache.delete(cache_key)
+            logger.info(f"Mapdata cache deleted for {category}:{id}")
+            if isinstance(refresh, int):
+                redis_client.sadd(PENDING_REFRESH_KEY, cache_key)
+                refresh_mapdata_cache.apply_async((category, id), countdown=refresh * 60)
+                logger.info(f"Scheduled mapdata refresh in {refresh} minutes for {category}:{id}")
+            elif refresh is True:
+                redis_client.sadd(PENDING_REFRESH_KEY, cache_key)
+                refresh_mapdata_cache.delay(category, id)
+                logger.info(f"Immediate mapdata refresh for {category}:{id}")
+            else:
+                logger.debug(f"No mapdata refresh requested for {category}:{id}")
+        else:
+            logger.debug(f"No existing cache to delete for {category}:{id}; no refresh scheduled.")
+
+        return {"status": "success", "category": category, "id": id, "had_cache": had_cache}
+    except Exception as e:
+        logger.error(f"Error deleting mapdata cache for {category}:{id} - {e}")
+        return {"status": "error", "category": category, "id": id, "error": str(e)}
+
+
+def generate_mapdata(category, id, refresh=False):
     # TODO: Fix use of <category>/<id>/refresh/full to bypass geometry reduction in PLACE branch
 
-    maxNoCacheTime = 0.3  # Cache if generation time is greater than this
+    maxNoCacheTime = 0.3  # Cache if generation time is greater than this (seconds)
 
-    refresh = str(refresh).lower() in ['refresh', 'true', '1', 'yes']
     ds_id = f"{category}_{id}"
     logger.debug(f"Mapdata requested for {ds_id} (refresh={refresh}).")
 
+    redis_client = get_redis_client()
+    refresh_was_scheduled = redis_client.srem(PENDING_REFRESH_KEY, ds_id)
+
     # Check if cached data exists and return it if found
-    if not refresh:
+    if not refresh and not refresh_was_scheduled:
         cached_data = cache.get(ds_id)
         if cached_data is not None:
             logger.debug("Found cached mapdata.")
-            return JsonResponse(cached_data, safe=False, json_dumps_params={'ensure_ascii': False})
+            return cached_data
 
     cache.delete(ds_id)
     start_time = time.time()
@@ -142,10 +186,10 @@ def mapdata(request, category, id, refresh='false'):
                     if "granularity" in g:
                         geometry["granularity"] = g["granularity"]
                 else:
-                    print(f"Invalid geometry at index {index}; replacing with None.")
+                    logger.warning(f"Invalid geometry at index {index}; replacing with None.")
 
             except Exception as e:
-                print(f"Error processing geometry at index {index}: {e}")
+                logger.warning(f"Error processing geometry at index {index}: {e}")
                 geometry = None
 
         return {
@@ -255,15 +299,7 @@ def mapdata(request, category, id, refresh='false'):
     else:
         logger.debug("No need to cache mapdata.")
 
-    return JsonResponse(mapdata_result, safe=False, json_dumps_params={'ensure_ascii': False})
-
-
-def buffer_extent(extent, buffer_distance=0.1):
-    return Polygon.from_bbox(extent).buffer(buffer_distance).extent if extent else None
-
-
-def buffered_extent_from_bbox(bbox, buffer_distance=0.1):
-    return bbox.buffer(buffer_distance).extent if isinstance(bbox, Polygon) else None
+    return mapdata_result
 
 
 def mapdata_dataset(id, task_id=None, chunk_size=1000):
@@ -573,6 +609,107 @@ def mapdata_collection_dataset(collection, feature_collection):
     return feature_collection
 
 
+"""
+Cache Management Functions
+"""
+
+# Signal registration
+models_to_watch = [Dataset, Collection, CollDataset, CollPlace, Place, PlaceGeom, TraceAnnotation]
+
+
+def get_mapdata_targets(instance):
+    """
+    Given a model instance, return a list of (category, id) tuples representing
+    the affected mapdata targets (datasets or collections).
+
+    This includes direct references as well as indirect relationships through
+    CollDataset and CollPlace links.
+    """
+    targets = set()
+
+    if isinstance(instance, Dataset):
+        targets.add(("datasets", instance.id))
+        coll_ids = CollDataset.objects.filter(dataset=instance).values_list('collection_id', flat=True)
+        targets.update([("collections", cid) for cid in coll_ids])
+
+    elif isinstance(instance, Collection):
+        targets.add(("collections", instance.id))
+
+    elif isinstance(instance, CollDataset):
+        if instance.collection:
+            targets.add(("collections", instance.collection.id))
+
+    elif isinstance(instance, CollPlace):
+        if instance.collection:
+            targets.add(("collections", instance.collection.id))
+
+    elif isinstance(instance, Place):
+        # Dataset that the place belongs to
+        targets.add(("datasets", instance.dataset.id))
+        # Collections that include this place directly
+        coll_ids_place = CollPlace.objects.filter(place=instance).values_list('collection_id', flat=True)
+        targets.update([("collections", cid) for cid in coll_ids_place])
+        # Collections that include the place's dataset (indirect)
+        coll_ids_dataset = CollDataset.objects.filter(dataset__label=instance.dataset.label).values_list(
+            'collection_id', flat=True)
+        targets.update([("collections", cid) for cid in coll_ids_dataset])
+
+    elif isinstance(instance, PlaceGeom):
+        if instance.place:
+            place = instance.place
+            # Add dataset related to the place
+            if place.dataset:
+                targets.add(("datasets", place.dataset.id))
+            # Add collections related to the place
+            for cp in place.collplace_set.all():
+                if cp.collection:
+                    targets.add(("collections", cp.collection.id))
+            # Add CollDatasets for the place's dataset
+            coll_ids = CollDataset.objects.filter(dataset=place.dataset).values_list('collection_id', flat=True)
+            targets.update([("collections", cid) for cid in coll_ids])
+
+    elif isinstance(instance, TraceAnnotation):
+        if instance.collection:
+            targets.add(("collections", instance.collection.id))
+
+    return list(targets)
+
+
+def handle_mapdata_change(instance, **kwargs):
+    """
+    Called on post_save and post_delete to queue cache deletion and refresh.
+    """
+    targets = get_mapdata_targets(instance)
+    redis_client = get_redis_client()
+
+    if kwargs.get('signal') == post_delete and isinstance(instance, (Dataset, Collection)):
+        for category, id in targets:
+            cache_key = f"{category}_{id}"
+            redis_client.srem(PENDING_REFRESH_KEY, cache_key)
+            delete_mapdata_cache.delay(category, id, refresh=False)
+            logger.info(f"Deleted mapdata cache without refresh for {category}:{id} and removed from refresh queue")
+    else:
+        for category, id in targets:
+            mark_mapdata_for_refresh.delay(category, id, delay=10)
+
+
+for model in models_to_watch:
+    post_save.connect(handle_mapdata_change, sender=model, dispatch_uid=f"{model.__name__}_post_save_mapdata")
+    post_delete.connect(handle_mapdata_change, sender=model, dispatch_uid=f"{model.__name__}_post_delete_mapdata")
+
+"""
+Helper Functions
+"""
+
+
+def buffer_extent(extent, buffer_distance=0.1):
+    return Polygon.from_bbox(extent).buffer(buffer_distance).extent if extent else None
+
+
+def buffered_extent_from_bbox(bbox, buffer_distance=0.1):
+    return bbox.buffer(buffer_distance).extent if isinstance(bbox, Polygon) else None
+
+
 def attribution_from_csl(citation, max_title_length=60):
     """
     Returns a condensed attribution string from a CSL citation dict.
@@ -613,29 +750,34 @@ def attribution_from_csl(citation, max_title_length=60):
     return f"{author_str}, {year} – {title}" if title else f"{author_str}, {year}"
 
 
-class MapdataFileBasedCache(FileBasedCache):
-    def __init__(self, dir, params):
-        super().__init__(dir, params)
+def get_redis_client():
+    return get_redis_connection("property_cache")
 
-    def _cull(self):
-        """Override to disable Django's culling mechanism entirely."""
-        pass
 
-    # def _cull(self):
-    #     """
-    #     Custom cull implementation: Remove the smallest cache entries if max_entries is reached.
-    #     """
-    #     filelist = self._list_cache_files()
-    #     num_entries = len(filelist)
-    #     if num_entries < self._max_entries:
-    #         return  # return early if no culling is required
-    #     if self._cull_frequency == 0:
-    #         return self.clear()  # Clear the cache when CULL_FREQUENCY = 0
-    #
-    #     # Sort filelist by file size
-    #     filelist.sort(key=lambda x: os.path.getsize(x))
-    #
-    #     # Delete the smallest entries
-    #     num_to_delete = int(num_entries / self._cull_frequency)
-    #     for fname in filelist[:num_to_delete]:
-    #         self._delete(fname)
+def compute_minmax(places_info):
+    """
+    Computes the global min and max values from a list of place info dicts.
+    Expects each dict to have string 'min' and 'max' keys.
+    Returns a [min, max] list as strings, or [None, None] if unavailable.
+    """
+    try:
+        arr = np.array([
+            (float(p["min"]), float(p["max"]))
+            for p in places_info
+            if p["min"] != "null" and p["max"] != "null"
+        ])
+        if arr.size > 0:
+            return [str(np.min(arr[:, 0])), str(np.max(arr[:, 1]))]
+    except Exception as e:
+        logger.warning(f"Failed to compute minmax: {e}")
+    return [None, None]
+
+
+def round_coords(coords, precision=6):
+    """Recursively round coordinates to the specified precision."""
+    if isinstance(coords, (float, int)):
+        return round(coords, precision)
+    elif isinstance(coords, list):
+        return [round_coords(item, precision) for item in coords]
+    else:
+        return coords  # Return other data types as is

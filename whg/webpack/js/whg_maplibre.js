@@ -34,45 +34,27 @@ maplibregl.Map.prototype.eraseSource = function(sourceId) {
 maplibregl.Map.prototype.tileBounds = null;
 maplibregl.Map.prototype.newSource = function(ds, fc = null) {
     var map = this;
-    if (!!ds.tilesets && ds.tilesets.length > 0) {
-        const tilejsonUrl = `${process.env.TILEBOSS}/data/${ds.tilesets[0]}.json`;
-        $.ajax({
-            url: tilejsonUrl,
-            dataType: 'json',
-            async: false, // Make the AJAX call synchronous
-            success: function(tilejson) {
-                console.log('tilejson', tilejson);
-                const sourceOptions = { ...tilejson, type: 'vector' };
-                map.tileBounds = tilejson.bounds;
-                map.addSource(ds.ds_id, sourceOptions);
-            },
-            error: function(xhr, status, error) {
-                console.error('Error prefetching TileJSON:', error);
-            }
-        });
-    } else {
-        if (!!ds.ds_id) { // Standard dataset or collection
-			// Check what keys are present in the dataset
-			const keys = Object.keys(ds);
-            map.addSource(ds.ds_id, {
-                'type': 'geojson',
-                'data': ds,
-                'attribution': attributionString(ds),
-            });
-        } else if (ds?.metadata?.layers) { // mapdata
-			ds.metadata.layers.forEach(layer => {
-				map.addSource(`${ds.metadata.ds_type}_${ds.metadata.id}_${layer}`, {
-					'type': 'geojson',
-					'data': ds[layer],
-					'attribution': ds.metadata.attribution,
-            	});
+	if (!!ds.ds_id) { // Standard dataset or collection
+		// Check what keys are present in the dataset
+		const keys = Object.keys(ds);
+		map.addSource(ds.ds_id, {
+			'type': 'geojson',
+			'data': ds,
+			'attribution': attributionString(ds),
+		});
+	} else if (ds?.metadata?.layers) { // mapdata
+		ds.metadata.layers.forEach(layer => {
+			map.addSource(`${ds.metadata.ds_type}_${ds.metadata.id}_${layer}`, {
+				'type': 'geojson',
+				'data': ds[layer],
+				'attribution': ds.metadata.attribution,
 			});
-        } else if (fc) { // Name and FeatureCollection provided
-            map.addSource(ds, { 'type': 'geojson', 'data': fc });
-        } else { // Only name given, add an empty FeatureCollection
-            map.addSource(ds, { 'type': 'geojson', 'data': this.nullCollection() });
-        }
-    }
+		});
+	} else if (fc) { // Name and FeatureCollection provided
+		map.addSource(ds, { 'type': 'geojson', 'data': fc });
+	} else { // Only name given, add an empty FeatureCollection
+		map.addSource(ds, { 'type': 'geojson', 'data': this.nullCollection() });
+	}
 	return map;
 };
 

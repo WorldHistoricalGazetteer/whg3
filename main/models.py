@@ -48,20 +48,6 @@ class Announcement(models.Model):
         return self.content[:50]  # Return first 50 characters to identify it in the admin panel.
 
 
-class Tileset(models.Model):
-    tiletype = models.CharField(max_length=20, null=True, blank=True, choices=TILESET_TYPES)
-    task_id = models.CharField(max_length=50, null=True, blank=True)
-    created = models.DateTimeField(null=True, auto_now_add=True)
-    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, null=True,
-                                blank=True, related_name='tilesets')
-    collection = models.ForeignKey(Collection, on_delete=models.CASCADE, null=True,
-                                   blank=True, related_name='tilesets')
-
-    class Meta:
-        managed = True
-        db_table = 'tilesets'
-
-
 # generic links table for collections, collection groups, datasets?, etc.
 class Link(models.Model):
     collection = models.ForeignKey(Collection, default=None,

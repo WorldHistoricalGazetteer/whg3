@@ -27,8 +27,6 @@ export async function fetchDataForHorse(thisHorse, whg_map, repositionMap = true
     async function mapData(data) {
         return new Promise((resolve) => {
 			// console.log('thisHorse in fetchDataForHorse()', thisHorse);
-			const hasTilesets = !!data.tilesets && data.tilesets.length > 0;
-			
 			var layersToRemove = whg_map.getStyle().layers.filter(layer => !!layer.source && layer.source == 'featured-data-source');
 			layersToRemove.forEach(layer => {
 			    whg_map.removeLayer(layer.id);
@@ -39,33 +37,23 @@ export async function fetchDataForHorse(thisHorse, whg_map, repositionMap = true
 			whg_map.once('sourcedata', () => {
 				featuredDataLayers[data.mode == 'heatmap' ? 'heatmap' : 'default'].forEach(layer => {
 					// data is a FeatureCollection here, no dataset or collection id
-				    whg_map.addLayer({...layer, 'source-layer': hasTilesets ? 'features' : ''});
-				});				
-				if (hasTilesets) {
-					whg_map.fitViewport(whg_map.tileBounds);
-					/*whg_map.fitBounds(whg_map.tileBounds, {
-                        padding: 100,
-                        speed: 0.5,
-                    });*/
+				    whg_map.addLayer({...layer, 'source-layer': ''});
+				});
+				whg_map.once('sourcedata', () => {
+					if (repositionMap) {
+						const bounding_box = bbox(data);
+						if (bounding_box[0] == Infinity) {
+							whg_map.reset();
+						} else {
+							whg_map.fitViewport(bounding_box);
+							/*whg_map.fitBounds(bounding_box, {
+								padding: 100,
+								speed: 0.5,
+							});*/
+						}
+					}
 					resolve();
-				}
-				else {
-		            whg_map.once('sourcedata', () => {
-		                if (repositionMap) {
-		                    const bounding_box = bbox(data);
-		                    if (bounding_box[0] == Infinity) {
-		                        whg_map.reset();
-		                    } else {	
-								whg_map.fitViewport(bounding_box);				
-		                        /*whg_map.fitBounds(bounding_box, {
-		                            padding: 100,
-		                            speed: 0.5,
-		                        });*/
-		                    }
-		                }
-		                resolve();
-		            });
-				}		
+				});
 			});
 		
 			

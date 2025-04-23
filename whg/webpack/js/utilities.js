@@ -429,7 +429,7 @@ export function get_ds_list_stats(allFeatures, allExtents = []) {
         'type': 'FeatureCollection',
         'features': [
             ...allFeatures.filter(
-                feature => feature.geometry && feature.geometry.coordinates), // Ignore the nullGeometry features returned for vector tilesets
+                feature => feature.geometry && feature.geometry.coordinates), // Ignore any nullGeometry features
             ...allExtents.map((extent) => ({
                 type: 'Feature',
                 geometry: {

@@ -13,7 +13,6 @@ from datasets.models import Dataset
 from places.models import Place, PlaceGeom
 from unittest.mock import patch
 import sys
-from main.tasks import needs_tileset
 import pdb
 
 User = get_user_model()
@@ -122,8 +121,6 @@ class ContactFormTestCase(TestCase):
       self.assertEqual(mail.outbox[1].subject, 'Message to WHG received')
       self.assertIn('We received your message',mail.outbox[1].body)
 
-
-from main.tasks import needs_tileset
 
 class DatasetSignalTestCase(TestCase):
     def setUp(self):
