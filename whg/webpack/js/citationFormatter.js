@@ -16,10 +16,8 @@ async function loadAndRegisterCSLTemplates() {
 
     for (const [templateName, loadTemplate] of Object.entries(templates)) {
         try {
-            console.log(`Loading and registering CSL template: ${templateName}`);
             const templateModule = await loadTemplate();
             config.templates.add(templateName, templateModule.default);
-            console.log(`Successfully registered CSL template: ${templateName}`);
         } catch (error) {
             console.error(`Error loading or registering CSL template ${templateName}:`, error);
         }
@@ -52,7 +50,6 @@ class CitationFormatter {
                     this.cslJson.URL = pageUrl;
                 }
 		    }
-            console.log('Parsed CSL JSON:', this.cslJson);
         } catch (error) {
             console.error('Error parsing CSL JSON:', error);
             this.cslJson = {};
@@ -192,7 +189,6 @@ class CitationFormatter {
             if (format === 'json') {
                 return JSON.stringify(this.cslJson, null, 2); // Pretty print JSON
             } else {
-                console.log(`Formatting citation: ${format}`);
                 return cite.format('bibliography', {
                     format: 'text',
                     template: format,

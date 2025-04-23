@@ -35,7 +35,7 @@ async function loadDataset() {
         });
         $.get(mapdata_url, function (data) {
             window.datacollection = data;
-            console.log(`Dataset "${data.metadata.title}" loaded.`, data);
+            console.debug(`Dataset "${data.metadata.title}" loaded.`, data);
 
             $('#dataset_content').spin({
                 label: `Loading ${data.metadata.num_places.toLocaleString('en-US')} places...`
