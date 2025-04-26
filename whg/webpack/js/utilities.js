@@ -216,16 +216,56 @@ export function colorTable(arrayColors, target, labels = null, multiDataset = fa
             .map((_, el) => $(el).data('dataset'))
             .get();
 
-        const filter = ['in', 'relation', ...visibleDatasets];
+        // const filter = ['in', 'relation', ...visibleDatasets];
+
+        // whg_map.getStyle().layers
+        //     .filter(layer => layer.id.startsWith(ds_id))
+        //     .forEach(layer => {
+        //         let existingFilter = whg_map.getFilter(layer.id);
+        //         // Does existingFilter have 'relation' in any element?
+        //
+        //
+        //
+        //         if (existingFilter[0] === '==') {
+        //             existingFilter = ['all', existingFilter, filter];
+        //         } else existingFilter[existingFilter.length - 1] = filter; // Replace the dataset filter
+        //         whg_map.setFilter(layer.id, existingFilter); // Update the filter
+        //     });
+
+        const relationFilter = ['in', 'relation', ...visibleDatasets];
 
         whg_map.getStyle().layers
             .filter(layer => layer.id.startsWith(ds_id))
             .forEach(layer => {
                 let existingFilter = whg_map.getFilter(layer.id);
-                if (existingFilter[0] === '==') {
-                    existingFilter = ['all', existingFilter, filter];
-                } else existingFilter[existingFilter.length - 1] = filter; // Replace the dataset filter
-                whg_map.setFilter(layer.id, existingFilter); // Update the filter
+
+                if (!existingFilter) {
+                    // No filter at all → just set the relation filter
+                    whg_map.setFilter(layer.id, relationFilter);
+                    return;
+                }
+
+                // Helper function to recursively replace a relation filter
+                function replaceRelationFilter(filter) {
+                    if (!Array.isArray(filter)) return filter;
+
+                    if (filter[0] === 'in' && filter[1] === 'relation') {
+                        return relationFilter;
+                    }
+
+                    return filter.map(subfilter => replaceRelationFilter(subfilter));
+                }
+
+                // Check if the existing filter already has a 'relation' filter
+                const hasRelation = JSON.stringify(existingFilter).includes('"relation"');
+
+                if (hasRelation) {
+                    const newFilter = replaceRelationFilter(existingFilter);
+                    whg_map.setFilter(layer.id, newFilter);
+                } else {
+                    const combinedFilter = ['all', existingFilter, relationFilter];
+                    whg_map.setFilter(layer.id, combinedFilter);
+                }
             });
 
     }).each(function () {

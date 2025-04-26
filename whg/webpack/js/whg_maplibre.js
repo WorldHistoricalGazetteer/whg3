@@ -1100,6 +1100,8 @@ maplibregl.Map = function (options = {}) {
 	    temporalControl: false,
 	    terrainControl: false, // If true, will force display of full navigation controls too
 	    scaleControl: false,
+        globeControl: false,
+		globeMode: false,
     };
 
     // replace defaultOptions with any passed options
@@ -1150,7 +1152,7 @@ maplibregl.Map = function (options = {}) {
 		}
 		if (chosenOptions.globeControl) {
 			mapInstance.addControl(new maplibregl.GlobeControl(), 'top-right');
-			mapInstance.setProjection({ type: 'globe' });
+			if (chosenOptions.globeMode) mapInstance.setProjection({ type: 'globe' });
 			// MapLibre adds a redundant `title` attribute to the globe control button after first click on it
 			const globeButton = mapInstance.getContainer().querySelector('.maplibregl-ctrl-globe');
 			if (globeButton) {

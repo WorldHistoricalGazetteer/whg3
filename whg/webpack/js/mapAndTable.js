@@ -56,6 +56,7 @@ function loadMapParameters() {
         downloadMapControl: true,
         fullscreenControl: true,
         globeControl: true,
+        globeMode: meta.globeMode,
     }
 
     if (
