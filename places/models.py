@@ -2,6 +2,7 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
 
+
 User = get_user_model()
 from django.contrib.gis.db import models as geomodels
 from django.contrib.gis.db.models import Extent
@@ -54,6 +55,15 @@ class Place(models.Model):
     @property
     def authids(self):
         return [i.jsonb['identifier'] for i in self.links.all()]
+
+    @property
+    def collections(self):
+        """
+        Return a queryset of collections that this Place belongs to
+        through the CollPlace model.
+        """
+        from collection.models import CollPlace
+        return CollPlace.objects.filter(place=self)
 
     @property
     def countries(self):

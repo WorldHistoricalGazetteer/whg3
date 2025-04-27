@@ -151,33 +151,35 @@ def generate_mapdata(category, id, refresh=False):
     ###############################################################################
     ###############################################################################
     # TODO: REMOVE THIS AFTER TESTING
-    for feature in mapdata["features"]:
-        if random.random() < 0.5:
-            continue
 
-        geom = feature.get("geometry", None)
+    if not id == 838:
+        for feature in mapdata["features"]:
+            if random.random() < 0.5:
+                continue
 
-        if geom is None:
-            print(f"Warning: Feature with no geometry: {feature}")
-            continue
+            geom = feature.get("geometry", None)
 
-        # Check if geometry is a GeometryCollection
-        if geom.get("type") == "GeometryCollection":
-            for subgeom in geom.get("geometries", []):
-                subgeom_type = subgeom.get("type")
+            if geom is None:
+                print(f"Warning: Feature with no geometry: {feature}")
+                continue
 
-                # Apply granularity for different geometry types within the collection
-                if subgeom_type == "Point" or subgeom_type == "MultiPoint":
-                    subgeom["granularity"] = random.randint(1, 5)
-                else:
-                    subgeom["granularity"] = random.randint(7, 40)
+            # Check if geometry is a GeometryCollection
+            if geom.get("type") == "GeometryCollection":
+                for subgeom in geom.get("geometries", []):
+                    subgeom_type = subgeom.get("type")
 
-        else:
-            # Handle regular Point, MultiPoint, and other geometries
-            if geom.get("type") == "Point" or geom.get("type") == "MultiPoint":
-                geom["granularity"] = random.randint(1, 5)
+                    # Apply granularity for different geometry types within the collection
+                    if subgeom_type == "Point" or subgeom_type == "MultiPoint":
+                        subgeom["granularity"] = random.randint(1, 5)
+                    else:
+                        subgeom["granularity"] = random.randint(7, 40)
+
             else:
-                geom["granularity"] = random.randint(7, 40)
+                # Handle regular Point, MultiPoint, and other geometries
+                if geom.get("type") == "Point" or geom.get("type") == "MultiPoint":
+                    geom["granularity"] = random.randint(1, 5)
+                else:
+                    geom["granularity"] = random.randint(7, 40)
     ###############################################################################
     ###############################################################################
 
@@ -193,13 +195,13 @@ def generate_mapdata(category, id, refresh=False):
         if geom.get("type") == "GeometryCollection":
             granularities = []
             for subgeom in geom.get("geometries", []):
-                if "granularity" in subgeom:
+                if "granularity" in subgeom and subgeom["granularity"] is not None:
                     granularities.append(subgeom["granularity"])
                     del subgeom["granularity"]
             if granularities:
                 granularity = max(granularities)
         else:
-            if "granularity" in geom:
+            if "granularity" in geom and geom["granularity"] is not None:
                 granularity = geom["granularity"]
                 del geom["granularity"]
 
@@ -733,10 +735,13 @@ def get_mapdata_targets(instance):
             # Add dataset related to the place
             if place.dataset:
                 targets.add(("datasets", place.dataset.id))
-            # Add collections related to the place
-            for cp in place.collplace_set.all():
+
+            # Get collections related to the place
+            collections = place.collections.all()  # Use the `collections` property
+            for cp in collections:
                 if cp.collection:
                     targets.add(("collections", cp.collection.id))
+
             # Add CollDatasets for the place's dataset
             coll_ids = CollDataset.objects.filter(dataset=place.dataset).values_list('collection_id', flat=True)
             targets.update([("collections", cid) for cid in coll_ids])

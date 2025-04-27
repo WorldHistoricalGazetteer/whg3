@@ -44,8 +44,32 @@ class Layerset {
                         .7
                     ],
                 },
-                'Granular': {}, // Placeholder for granular layer
-                'Granular-line': {}, // Placeholder for granular line layer
+                'Granular': { // To be replaced with fill-pattern by worker
+                    'fill-color': this.colour_options,
+                    'fill-opacity': [
+                        0.6,
+                        .4
+                    ],
+                    'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
+                },
+                'Granular-line': {
+                    'line-color': [
+                        this.colour_highlight,
+                        this.colour // fill-pattern cannot be appropriately coloured
+                    ],
+                    'line-width': [
+                        'interpolate', ['exponential', 2], ['zoom'],
+                        0, 1, // zoom level, line width
+                        5, 5,
+                        21, 1000, // zoom level, line width
+                    ],
+                    'line-opacity': [
+                        0.5,
+                        .7
+                    ],
+                    'line-dasharray': ["literal", [4, 2]],
+                    'line-blur': 0.6
+                },
                 'Point': {
                     'circle-color': this.colour_options,
                     'circle-opacity': [
@@ -129,15 +153,6 @@ class Layerset {
                 }
             }
         }
-
-        // Populate placeholder paint options for granular layer by cloning the Polygon options
-        Object.keys(paintOptions['standard'])
-            .filter(key => key.startsWith('Polygon'))
-            .forEach(key => {
-                paintOptions['standard'][key.replace('Polygon', 'Granular')] = structuredClone(paintOptions['standard'][key]);
-            });
-        paintOptions['standard']['Granular-line']['line-dasharray'] = ["literal", [4, 2]];
-        paintOptions['standard']['Granular-line']['line-blur'] = 0.6;
 
         this._style = JSON.parse(JSON.stringify(paintOptions[paintOption || 'standard'])); // Clone `standard` by default
 
