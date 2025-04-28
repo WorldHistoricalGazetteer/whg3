@@ -107,6 +107,7 @@ class Layerset {
                     ],
                     'circle-stroke-width': [
                         'interpolate', ['exponential', 2], ['zoom'],
+                        0, 1, // zoom level, line width
                         4, 2,
                         21, 100
                     ],
@@ -210,6 +211,7 @@ class Layerset {
                 layers.forEach(layerName => {
                     const typeLower = geometryType.toLowerCase();
                     if (!typeLower.startsWith(layerName)) return;
+                    if (relation_colors && typeLower === 'point-heatmap') return;
 
                     const layerID = `${sourcePrefix}_${typeLower}`;
 
@@ -234,7 +236,7 @@ class Layerset {
                         layer['minzoom'] = 0;
                         layer['maxzoom'] = 5;
                     }
-                    else if (typeLower === 'point') {
+                    else if (!relation_colors && typeLower === 'point') {
                         layer['minzoom'] = 5;
                     }
                     console.debug(`Adding layer "${layerName}" to map...`, layer);
