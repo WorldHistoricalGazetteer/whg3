@@ -102,12 +102,49 @@ class Layerset {
                     ],
                     'circle-stroke-color': [
                         this.colour_highlight,
-                        'rgba(0,0,0,0)'
+                        // 'rgba(0,0,0,0)'
+                        'rgba(255,255,0,0.8)'
                     ],
                     'circle-stroke-width': [
-                        7,
-                        0
+                        'interpolate', ['exponential', 2], ['zoom'],
+                        4, 2,
+                        21, 100
                     ],
+                },
+                'Point-heatmap': {
+                    'heatmap-weight': [
+                        'interpolate',
+                        ['linear'],
+                        ['get', 'granularity'],
+                        0, 0,
+                        6, 1
+                    ],
+                    'heatmap-intensity': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        0, 1,
+                        9, 3
+                    ],
+                    'heatmap-color': [
+                        'interpolate',
+                        ['linear'],
+                        ['heatmap-density'],
+                        0, 'rgba(0, 0, 255, 0)',
+                        0.2, 'royalblue',
+                        0.4, 'cyan',
+                        0.6, 'lime',
+                        0.8, 'yellow',
+                        1, 'red'
+                    ],
+                    'heatmap-radius': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        0, 2,
+                        9, 20
+                    ],
+                    'heatmap-opacity': 0.3
                 }
             },
             'nearby-places': {
@@ -164,7 +201,10 @@ class Layerset {
         if (this._source?.metadata?.layers) { // mapdata source
             const {ds_type, id, layers} = this._source.metadata;
             const sourcePrefix = `${ds_type}_${id}`;
-            const ignoreAttrs = ['circle-radius', 'circle-blur', 'fill-antialias', 'line-blur', 'line-width', 'line-dasharray'];
+            const ignoreAttrs = ['circle-radius', 'circle-blur', 'circle-stroke-width', 'fill-antialias',
+                'line-blur', 'line-width', 'line-dasharray',
+                'heatmap-weight', 'heatmap-intensity', 'heatmap-radius', 'heatmap-opacity', 'heatmap-color'
+            ];
 
             Object.entries(this._style).forEach(([geometryType, paintStyle]) => {
                 layers.forEach(layerName => {
@@ -189,6 +229,14 @@ class Layerset {
                         source: `${sourcePrefix}_${layerName}`,
                         paint,
                     };
+
+                    if (typeLower === 'point-heatmap') {
+                        layer['minzoom'] = 0;
+                        layer['maxzoom'] = 5;
+                    }
+                    else if (typeLower === 'point') {
+                        layer['minzoom'] = 5;
+                    }
                     console.debug(`Adding layer "${layerName}" to map...`, layer);
 
                     if (['polygon', 'granular'].includes(layerName) && layer.type === 'fill') {
