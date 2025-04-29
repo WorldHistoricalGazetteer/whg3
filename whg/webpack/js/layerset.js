@@ -23,6 +23,71 @@ class Layerset {
         this.relationFilter = null;  // Store relation filter
 
         const paintOptions = {
+            'plain': {
+				// A `feature-state`-based `highlighter` condition is applied dynamically to each of the expressions given below
+				'Polygon': {
+					'fill-color': this.colour_options,
+			        'fill-opacity': [
+						0.5,
+						.2
+			        ],
+					'fill-antialias': false, // Disables what would be a virtually-invisible 1px outline
+				},
+				'Polygon-line': { // Add extra layer to enable polygon outline styling
+					'line-color': [
+					    this.colour_highlight,
+					    this.colour_outline
+					],
+					'line-width': [
+			            'interpolate', ['exponential', 2], ['zoom'],
+			            0, 1, // zoom level, line width
+			            10, 5, // zoom level, line width
+			        ],
+			        'line-opacity': [
+						0.5,
+						.7
+			        ],
+			        'line-dasharray': ["literal", [4, 2]]
+				},
+				'LineString': {
+					'line-color': this.colour_options,
+					'line-width': [
+			            'interpolate', ['exponential', 2], ['zoom'],
+			            0, 4, // zoom level, line width
+			            10, 10, // zoom level, line width
+			        ],
+			        'line-opacity': [
+						0.5,
+						.4
+			        ]
+				},
+				'Point': {
+			        'circle-color': this.colour_options,
+			        'circle-opacity': [
+						0.2,
+						.85
+			        ],
+					'circle-radius': [
+			            'interpolate', ['exponential', 2], ['zoom'],
+			            0, Math.max(3, .5 * this.enlarger), // zoom level, radius
+			            10, Math.max(13, .5 * this.enlarger), // zoom level, radius
+			            18, 20 // zoom level, radius
+					],
+					'circle-stroke-color': [
+					    this.colour_highlight,
+					    this.colour_outline
+					],
+					'circle-stroke-opacity': [
+						.9,
+						['any', ['==', ['get', 'min'], 'null'], ['==', ['get', 'max'], 'null']], .3,
+						.7
+			        ],
+					'circle-stroke-width': [
+						7,
+						1
+					],
+				}
+            },
             'standard': {
                 'Polygon': {
                     'fill-color': this.colour_options,
@@ -210,6 +275,7 @@ class Layerset {
                 'line-blur', 'line-width', 'line-dasharray',
                 'heatmap-weight', 'heatmap-intensity', 'heatmap-radius', 'heatmap-opacity', 'heatmap-color'
             ];
+            console.debug(`Ignoring attributes:`, ignoreAttrs);
 
             Object.entries(this._style).forEach(([geometryType, paintStyle]) => {
                 layers.forEach(layerName => {
@@ -317,7 +383,7 @@ class Layerset {
                 const layerID = `${this._source}_${geometryType.toLowerCase()}`;
 
                 Object.keys(paintGeometryStyle).forEach((attribute) => {
-                    if ((!paintOption || paintOption == 'standard') && !['circle-radius', 'fill-antialias', 'line-width', 'line-dasharray'].includes(attribute)) {
+                    if ((!paintOption || paintOption == 'plain') && !['circle-radius', 'fill-antialias', 'line-width', 'line-dasharray'].includes(attribute)) {
                         paintGeometryStyle[attribute] = [...this._highlighter, ...paintGeometryStyle[attribute]];
                     }
                 });
