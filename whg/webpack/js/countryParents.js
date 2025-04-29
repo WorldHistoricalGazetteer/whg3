@@ -12,12 +12,10 @@ class CountryParents {
             let ccodeHashData = this.getCachedData(this.ccodeStorageKey);
             let regionsData = this.getCachedData(this.regionsStorageKey);
             if (ccodeHashData && regionsData) {
-                console.log('Using cached data:', { ccode_hash: ccodeHashData, regions: regionsData });
                 window.ccode_hash = ccodeHashData;
                 window.regions = regionsData;
             } else {
                 const data = await this.fetchData();
-                console.log('Fetched and cached data:', data);
                 window.ccode_hash = data.ccode_hash;
                 window.regions = data.regions;
             }

@@ -483,7 +483,7 @@ window.ccode_hash = {
     }
 }
 
-const regions = {
+window.regions = {
     "Antarctica": {"tgnlabel": "Antarctica"},
     "Atlantic Ocean": {"tgnlabel": "<Oceans>"},
     "Australasia": {"tgnlabel": "Oceania"},
