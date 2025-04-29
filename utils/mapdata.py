@@ -298,6 +298,8 @@ def generate_mapdata(category, id, refresh=False):
     height = north - south
     globeMode = width <= 180 and height <= 180
 
+    minmax = mapdata.get("minmax") or [None, None]
+
     mapdata_result["metadata"] = {
         "id": id,
         "ds_type": category,
@@ -307,8 +309,8 @@ def generate_mapdata(category, id, refresh=False):
         "attribution": attribution_from_csl(json.loads(mapdata.get("citation", None))),
         "layers": layers,
         "modified": mapdata.get("modified", None),
-        "min": mapdata["minmax"][0],
-        "max": mapdata["minmax"][1],
+        "min": minmax[0],
+        "max": minmax[1],
         "seqmin": mapdata.get("seqmin", None),
         "seqmax": mapdata.get("seqmax", None),
         "num_places": len(mapdata["features"]),
