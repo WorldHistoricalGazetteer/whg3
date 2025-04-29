@@ -55,7 +55,7 @@ function waitMapLoad() {
 
             whg_map
                 .newSource('places') // Add empty source
-                .newLayerset('places')
+                .newLayerset('places', null, 'plain')
                 .addFilter(['!=', 'outOfDateRange', true]);
 
             const dateRangeChanged = throttle((fromValue, toValue, includeUndated) => { // Uses imported lodash function

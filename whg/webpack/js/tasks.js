@@ -26,7 +26,7 @@ function waitMapLoad() {
 			
 			whg_map
 			.newSource('places') // Add empty source
-			.newLayerset('places');
+			.newLayerset('places', null, 'plain');
             
             resolve();
         });

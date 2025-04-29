@@ -78,7 +78,7 @@ function waitMapLoad() {
                 .newLayerset('countries', 'countries', 'countries');
 
             whg_map.newSource('places') // Add empty source
-                .newLayerset('places');
+                .newLayerset('places', null, 'plain');
 
             function getFeatureId(e) {
                 const features = whg_map.queryRenderedFeatures(e.point);

@@ -22,7 +22,7 @@ function waitMapLoad() {
             
 			whg_map
 			.newSource('places', featureCollection)
-			.newLayerset('places');
+			.newLayerset('places', null, 'plain');
 			
 			whg_map.setFeatureState({ source: 'places', id: 0 }, { highlight: true });
 			whg_map.fitBounds(bbox(featureCollection), {
