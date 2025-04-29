@@ -396,7 +396,6 @@ class Layerset {
                     'paint': paintGeometryStyle,
                     'filter': ['==', '$type', geometryType.split('-')[0]],
                 };
-                console.debug(`Layer`, layer);
                 mapInstance.addLayer(layer);
                 this._layerIDs.push(layerID);
             });
