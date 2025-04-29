@@ -1,11 +1,9 @@
 import json
 import logging
-import random
 import time
 from collections import defaultdict
 from itertools import chain, islice
 
-import geojson
 import networkx as nx
 import numpy as np
 from celery import shared_task
@@ -19,10 +17,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django_redis import get_redis_connection
-from pyproj import Proj, Transformer
 from shapely.geometry.geo import shape, mapping
-from shapely.geometry.multipolygon import MultiPolygon
-from shapely.ops import transform
 
 from collection.models import Collection, CollPlace, CollDataset
 from collection.views import year_from_string
@@ -34,9 +29,11 @@ logger = logging.getLogger('mapdata')
 PENDING_REFRESH_KEY = "mapdata:pending_refresh"
 
 
-def mapdata(request, category, id, refresh=False):
+def mapdata(request, category, id, refresh=False, carousel=False):
     try:
         data = generate_mapdata(category, id, refresh)
+        if carousel:
+            data.pop('table', None)
         return JsonResponse(data, safe=False, json_dumps_params={'ensure_ascii': False})
     except Exception as e:
         logger.exception(f"Error generating mapdata for {category}:{id}")
@@ -148,41 +145,6 @@ def generate_mapdata(category, id, refresh=False):
 
     mapdata = mapdata_dataset(id) if category == "datasets" else mapdata_collection(id)
 
-    ###############################################################################
-    ###############################################################################
-    # TODO: REMOVE THIS AFTER TESTING
-
-    if not id == 838:
-        for feature in mapdata["features"]:
-            if random.random() < 0.5:
-                continue
-
-            geom = feature.get("geometry", None)
-
-            if geom is None:
-                print(f"Warning: Feature with no geometry: {feature}")
-                continue
-
-            # Check if geometry is a GeometryCollection
-            if geom.get("type") == "GeometryCollection":
-                for subgeom in geom.get("geometries", []):
-                    subgeom_type = subgeom.get("type")
-
-                    # Apply granularity for different geometry types within the collection
-                    if subgeom_type == "Point" or subgeom_type == "MultiPoint":
-                        subgeom["granularity"] = random.randint(1, 5)
-                    else:
-                        subgeom["granularity"] = random.randint(7, 40)
-
-            else:
-                # Handle regular Point, MultiPoint, and other geometries
-                if geom.get("type") == "Point" or geom.get("type") == "MultiPoint":
-                    geom["granularity"] = random.randint(1, 5)
-                else:
-                    geom["granularity"] = random.randint(7, 40)
-    ###############################################################################
-    ###############################################################################
-
     # If a feature's geometry has `granularity`, or if the geometry is a GeometryCollection with any subgeometry
     # having `granularity`, copy the largest `granularity` value to the feature's properties.
     for feature in mapdata["features"]:
@@ -214,8 +176,8 @@ def generate_mapdata(category, id, refresh=False):
         "Table": [],
         "MultiDataset": [],
         "Point": [],
-        "Polygon": [], # Lines and Polygons without granularity
-        "Granular": [], # Lines and Polygons with granularity
+        "Polygon": [],  # Lines and Polygons without granularity
+        "Granular": [],  # Lines and Polygons with granularity
     }
     multi_relations = set()
     default_group = grouped["Point"]
@@ -282,7 +244,9 @@ def generate_mapdata(category, id, refresh=False):
                 subgroups[subtype].append(subgeom)
 
             for subtype, geoms in subgroups.items():
-                base_type = "Point" if subtype.removeprefix("Multi") == "Point" else "Granular" if "granularity" in feature["properties"] else "Polygon"
+                base_type = "Point" if subtype.removeprefix("Multi") == "Point" else "Granular" if "granularity" in \
+                                                                                                   feature[
+                                                                                                       "properties"] else "Polygon"
 
                 if subtype.startswith("Multi"):
                     # Already a multi-geometry, just collect their coordinates
@@ -308,7 +272,8 @@ def generate_mapdata(category, id, refresh=False):
                 grouped[base_type].append(trim_properties(feature, index, new_geom))
 
         else:
-            base_type = "Point" if gtype.removeprefix("Multi") == "Point" else "Granular" if "granularity" in feature["properties"] else "Polygon"
+            base_type = "Point" if gtype.removeprefix("Multi") == "Point" else "Granular" if "granularity" in feature[
+                "properties"] else "Polygon"
             trimmed = trim_properties(feature, index, geom)
             if base_type in grouped:
                 grouped[base_type].append(trimmed)

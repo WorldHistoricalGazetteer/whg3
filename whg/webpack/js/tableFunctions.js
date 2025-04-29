@@ -57,28 +57,6 @@ function clearFilters() {
 	$('#ds_select').val('-1');
 }
 
-// TODO: ? Remove this version, which was apparently redundant in ds_places ?
-/*export function filterColumn(i, v) {
-	// clear then search
-	table
-		.columns([1])
-		.search('')
-		.columns(i)
-		.search(v)
-		.draw();
-	$("#status_select").val(localStorage.getItem('filter'))
-}*/
-
-//  TODO: ? Remove this version, which was apparently redundant in ds_places ?
-/*export function clearFilters() {
-	// clear
-	table
-		.columns([1])
-		.search('')
-		.draw();
-	$("#status_select").val('99')
-}*/
-
 function toggleMapLayers(whg_map, val) {
 	if (val !== 'all') {
 		window.mapBounds = whg_map.getSource(val)._data.extent;
@@ -504,23 +482,28 @@ export function initialiseTable(
 		const toValue = window.dateline.toValue;
 		const includeUndated = window.dateline.includeUndated;
 
-		// Get the min and max values from the data attributes of the row
-		const row = $(settings.aoData[dataIndex].nTr);
-		const minData = row.attr('data-min');
-		const maxData = row.attr('data-max');
+		const rawRow = settings.aoData[dataIndex]._aData;
+		const props = rawRow.properties;
 
-		// Convert minData and maxData to numbers for comparison
-		const min = minData === 'null' ? 'null' : parseFloat(minData);
-		const max = maxData === 'null' ? 'null' : parseFloat(maxData);
+		const parseVal = (val) => {
+			if (val === 'null' || val === null || val === undefined || val === '') return null;
+			const parsed = parseFloat(val);
+			return isNaN(parsed) ? null : parsed;
+		};
 
-		// Filter logic
-		if (((!isNaN(fromValue) && !isNaN(toValue)) &&
-				(min !== 'null' && max !== 'null' && min <= toValue && max >=
-					fromValue)) ||
-			(includeUndated && (min === 'null' || max === 'null'))) {
-			return true; // Include row in the result
+		const min = parseVal(props.min);
+		const max = parseVal(props.max);
+
+		const isUndated = (min === null || max === null);
+
+		if (isUndated) {
+			return includeUndated;
 		}
-		return false; // Exclude row from the result
+
+		return (min !== null && min >= fromValue && min <= toValue) ||
+			(max !== null && max >= fromValue && max <= toValue) ||
+			(min !== null && max !== null && fromValue >= min && fromValue <= max);
+
 	});
 
 	return {

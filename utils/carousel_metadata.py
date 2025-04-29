@@ -1,7 +1,7 @@
 # carousel_metadata.py
 
 from django.urls import reverse
-import traceback
+
 
 def carousel_metadata(caller):
     # traceback.print_stack()
@@ -10,8 +10,6 @@ def carousel_metadata(caller):
     caller_class = caller_class.__name__
     # print('carousel_metadata caller:', caller)
     # print('carousel_metadata caller_class:', caller_class)
-    display_mode = getattr(caller, 'display_mode') or ''
-    # print('carousel_metadata display_mode:', display_mode)
     if caller_class == 'Dataset':
         url = reverse('datasets:ds_places', args=[caller.id])
         id_name = 'id'
@@ -34,11 +32,9 @@ def carousel_metadata(caller):
         "creator": caller.creator,
         "contributors": caller.contributors if caller_class == 'Dataset' else '',
         "owner": caller.owner.name,
-        "type": caller_class.lower(), 
+        "type": caller_class.lower(),
         "featured": caller.featured,
-        "ds_or_c_id": caller.id, 
-        "display_mode": display_mode,
+        "ds_or_c_id": caller.id,
         "webpage": caller.webpage,
         "url": url,
-        "geometry_url": f"/api/featureCollection/?{id_name}={caller.id}&mode={display_mode}",
     }

@@ -1,6 +1,6 @@
 // /whg/webpack/js/carousels.js
 
-import { fetchDataForHorse } from './localGeometryStorage';
+import { fetchDataForHorse } from './carousel-mapdata';
 
 export function initialiseCarousels(galleries, carouselMetadata, startCarousels, whg_map) {
 
@@ -76,8 +76,6 @@ export function initialiseCarousels(galleries, carouselMetadata, startCarousels,
                 `).data({
             id: datacollection.ds_or_c_id,
             type: datacollection.type,
-            mode: datacollection.display_mode,
-            geometry_url: datacollection.geometry_url,
         });
         target.append(carouselItem);
     });

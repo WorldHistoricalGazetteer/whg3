@@ -59,9 +59,12 @@ maplibregl.Map.prototype.newSource = function(ds, fc = null) {
 };
 
 maplibregl.Map.prototype.layersets = [];
+maplibregl.Map.prototype.layersetObjects = [];
 maplibregl.Map.prototype.newLayerset = function (dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger, relation_colors) {
 	this.layersets.push(dc_id);
-    return new Layerset(this, dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger, relation_colors);
+	const layerset = new Layerset(this, dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger, relation_colors);
+	this.layersetObjects.push(layerset);
+    return layerset;
 };
 
 maplibregl.Map.prototype.highlights = [];
@@ -1137,8 +1140,10 @@ maplibregl.Map = function (options = {}) {
 		// Set map container background colour to the value in the style metadata
         const backgroundColor = currentStyle.metadata['whg:backgroundcolour'];
         if (backgroundColor) {
-            mapInstance.getContainer().style.backgroundColor = backgroundColor;
+            // mapInstance.getContainer().style.backgroundColor = backgroundColor;
+			console.debug('Ignoring map background colour requested by style', backgroundColor);
         }
+		mapInstance.getContainer().style.backgroundColor = '#daecf1';
 
 		if (chosenOptions.scaleControl) mapInstance.addControl(new maplibregl.ScaleControl({maxWidth: 150, unit: 'metric'}), 'bottom-left');
 		

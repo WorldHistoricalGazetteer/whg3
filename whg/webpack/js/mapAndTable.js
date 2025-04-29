@@ -133,6 +133,11 @@ function completeLoading() {
         .newSource(window.datacollection)
         .newLayerset(window.datacollection.metadata.ds_id, window.datacollection, null, null, null, null, marker_reducer, circleColors); // Add standard layerset (defined in `layerset.js` and prototyped in `whg_maplibre.js`)
 
+    // Initialise Data Table
+    const tableInit = initialiseTable(window.datacollection.table.features, checked_rows, whg_map);
+    table = tableInit.table;
+    checked_rows = tableInit.checked_rows;
+
     // Initialise Map Controls
     const mapControlsInit = init_mapControls(whg_map, datelineContainer, toggleFilters, mapParameters, table);
     datelineContainer = mapControlsInit.datelineContainer;
@@ -141,12 +146,6 @@ function completeLoading() {
 
     window.mapBounds = window.datacollection.metadata.extent || [-180, -90, 180, 90];
     recenterMap(false, true);
-
-    // Initialise Data Table
-    const tableInit = initialiseTable(window.datacollection.table.features, checked_rows, whg_map);
-    table = tableInit.table;
-    checked_rows = tableInit.checked_rows;
-
 
     // Initialise Map Popups
     initPopups(table);

@@ -1,50 +1,35 @@
 // mapFilters.js
 
-function temporalFilter(baseFilter) {
-	if ($('.range_container.expanded').length > 0) { // Is dateline active?
-		if ($('#undated_checkbox').is(':checked')) {
-			return [ // Include features within the range AND undated features
-				'all',
-				baseFilter,
-				[
-					'any',
-					[
-						'all',
-						['!=', 'max', 'null'],
-						['!=', 'min', 'null'],
-						['>=', 'max', window.dateline.fromValue],
-						['<=', 'min', window.dateline.toValue],
-					],
-					[
-						'any',
-						['==', 'max', 'null'],
-						['==', 'min', 'null']
-					]
-				]
-			]
-		}
-		else {
-			return [ // Include features within the range WITHOUT undated features
-				'all',
-				baseFilter,
-				['has', 'max'],
-				['has', 'min'],
-				['>=', 'max', window.dateline.fromValue],
-				['<=', 'min', window.dateline.toValue],
-			]
-		}
-	}
-	else return baseFilter; // No modification - temporal filter is inactive
-}
-
-export function toggleFilters(on, whg_map, table){
-	whg_map.getStyle().layers.forEach(layer => {
-		if (whg_map.layersets.includes(layer.source)) {
-			let filter = whg_map.getFilter(layer.id); // Base filter is ['==', '$type', geometryType]
-			let baseFilter = filter[0] == 'all' ? filter[1] : filter;
-			//console.log('Filter switch:', filter, on ? temporalFilter(baseFilter) : baseFilter);
-			whg_map.setFilter(layer.id, on ? temporalFilter(baseFilter) : baseFilter);
-		}
-	});
-	table.draw();
+export function toggleFilters(on, whg_map, table) {
+    whg_map.layersetObjects.forEach(layerset => {
+        // Update the temporal filter for this layerset
+        if (on) {
+            layerset.setTemporalFilter($('#undated_checkbox').is(':checked') ?
+                [
+                    'any',
+                    [
+                        'all',
+                        ['!=', 'max', 'null'],
+                        ['!=', 'min', 'null'],
+                        ['>=', 'max', window.dateline.fromValue],
+                        ['<=', 'min', window.dateline.toValue],
+                    ],
+                    [
+                        'any',
+                        ['==', 'max', 'null'],
+                        ['==', 'min', 'null']
+                    ]
+                ] :
+                [
+                    'all',
+                    ['!=', 'max', 'null'],
+                    ['!=', 'min', 'null'],
+                    ['>=', 'max', window.dateline.fromValue],
+                    ['<=', 'min', window.dateline.toValue],
+                ]); // Store the updated temporal filter
+        } else {
+            layerset.setTemporalFilter(null);  // Reset the temporal filter
+        }
+    });
+    table.draw();
 }

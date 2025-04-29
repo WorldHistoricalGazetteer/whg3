@@ -115,6 +115,7 @@ urlpatterns = [
                   path('announcements/', views.AnnouncementListView.as_view(), name='announcements-list'),
 
                   path('mapdata/<str:category>/<int:id>/', mapdata.mapdata, name="mapdata"),
+                  path('mapdata/<str:category>/<int:id>/carousel/', mapdata.mapdata, {'carousel': True}, name="mapdata_carousel"),
 
                   path('comment/', views.handle_comment, name='comment-handle'),
                   # path('contact/', views.contact_view, name='contact'),

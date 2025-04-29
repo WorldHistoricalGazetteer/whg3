@@ -3,7 +3,7 @@
 import debounce from 'lodash/debounce';
 import {
     fetchDataForHorse,
-} from './localGeometryStorage';
+} from './carousel-mapdata';
 import {
     CountryCacheFeatureCollection,
 } from './countryCache';
@@ -107,8 +107,6 @@ function buildGallery(datacollections) {
                     id: dc.ds_or_c_id,
                     type: dc.type,
                     contributors: authors,
-                    mode: dc.display_mode,
-                    geometry_url: dc.geometry_url,
                     url: dc.url,
                 });
             dynamicGallery.append(dsCard);

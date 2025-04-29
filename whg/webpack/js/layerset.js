@@ -19,6 +19,9 @@ class Layerset {
                 : this.colour
         ]
 
+        this.temporalFilter = null;  // Store temporal filter
+        this.relationFilter = null;  // Store relation filter
+
         const paintOptions = {
             'standard': {
                 'Polygon': {
@@ -197,6 +200,7 @@ class Layerset {
         this._map = mapInstance;
         this._highlighter = ['case', ['boolean', ['feature-state', 'highlight'], false]]
         this._layerIDs = [];
+        this._sourceIDs = new Set();
         this._source = source_id || dc_id; // Use `dc_id` if `source_id` is not given
 
         if (this._source?.metadata?.layers) { // mapdata source
@@ -299,6 +303,7 @@ class Layerset {
                     }
                     mapInstance.addLayer(layer);
                     this._layerIDs.push(layerID);
+                    this._sourceIDs.add(`${sourcePrefix}_${layerName}`);
 
                 });
             });
@@ -356,6 +361,37 @@ class Layerset {
         this._layerIDs.forEach((layerID) => {
             let filter = this._map.getFilter(layerID);
             filter = filter[0] == 'all' ? filter.push(filterOptions) : ['all', filter, filterOptions];
+            this._map.setFilter(layerID, filter);
+        });
+    }
+
+    setTemporalFilter(filter) {
+        this.temporalFilter = filter;
+        this.updateFilter();
+    }
+
+    setRelationFilter(filter) {
+        this.relationFilter = filter;
+        this.updateFilter();
+    }
+
+    getCombinedFilter() {
+        let combinedFilter = [];
+
+        if (this.temporalFilter) {
+            combinedFilter.push(this.temporalFilter);
+        }
+
+        if (this.relationFilter) {
+            combinedFilter.push(this.relationFilter);
+        }
+
+        return combinedFilter.length > 0 ? ['all', ...combinedFilter] : null;
+    }
+
+    updateFilter() {
+        const filter = this.getCombinedFilter();
+        this._layerIDs.forEach((layerID) => {
             this._map.setFilter(layerID, filter);
         });
     }
