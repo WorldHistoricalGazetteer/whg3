@@ -31,6 +31,10 @@ class CountryParents {
             const script = document.createElement('script');
             script.src = '/static/js/parents.js';
             script.onload = () => {
+                console.log('After loading parents.js:', {
+                    ccode_hash: window.ccode_hash,
+                    regions: window.regions
+                });
                 if (window.ccode_hash && window.regions) {
                     this.cacheData(this.ccodeStorageKey, window.ccode_hash);
                     this.cacheData(this.regionsStorageKey, window.regions);
