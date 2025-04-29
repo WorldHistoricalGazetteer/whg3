@@ -170,11 +170,9 @@ window.loadResource = function(element) {
 			console.log(`Failed to load CDN resource (${element.cdnUrl}), falling back to local: ${element.localUrl}`);
 			
 			localResource.onload = function() {
-				console.log(`Loaded LOCAL resource ${element.localUrl}`);
 				resolve();
 			};
 			localResource.onerror = function() {
-				console.log(`FAILED to load local resource ${element.localUrl}`);
 				resolve();
 			};
 			

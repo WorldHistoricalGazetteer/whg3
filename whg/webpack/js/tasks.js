@@ -17,14 +17,14 @@ let mapParameters = {
         automate: null,
     },
 }
-let mappy = new whg_maplibre.Map(mapParameters);
+let whg_map = new whg_maplibre.Map(mapParameters);
 
 function waitMapLoad() {
     return new Promise((resolve) => {
-        mappy.on('load', () => {
+        whg_map.on('load', () => {
             console.log('Map loaded.');
 			
-			mappy
+			whg_map
 			.newSource('places') // Add empty source
 			.newLayerset('places');
             
@@ -135,10 +135,10 @@ function renderMap(featureCollection, tab) {
 		console.log('no features in renderMap() call')
 	} else {
 		
-		mappy.getSource('places').setData(featureCollection);
-		mappy.setFeatureState({ source: 'places', id: 0 }, { highlight: true });
+		whg_map.getSource('places').setData(featureCollection);
+		whg_map.setFeatureState({ source: 'places', id: 0 }, { highlight: true });
 	}
-	mappy.fitBounds(bbox(featureCollection), {
+	whg_map.fitBounds(bbox(featureCollection), {
         padding: 30,
         duration: 1000,
     });
@@ -160,7 +160,7 @@ function render_area(aid) {
 
 function reset_map() {
 	$("#area_name").html('Global');
-	mappy
+	whg_map
 	.clearSource('places')
 	.reset();
 }

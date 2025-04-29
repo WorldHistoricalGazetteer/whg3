@@ -388,25 +388,10 @@
         </div>
     </div>
 
-    {{ object.vis_parameters|json_script:"vis_parameters_data" }}
     <script type="text/javascript">
         const URL_FRONT = "{{ URL_FRONT }}";
-        const pageData = "{{ ds.id }}";
-        var visParameters = JSON.parse(document.getElementById('vis_parameters_data').innerHTML);
+        const mapdata_url = "/mapdata/datasets/{{ ds.id }}/";
         window.loggedin = "{{ loggedin }}";
-        window.dslabel = "{{ ds.label }}";
-        window.ds_list = [
-            {
-                bounds: {{ ds.bounds | safe }},
-                id: {{ ds.id }},
-                label: "{{ ds.label }}",
-                modified: "{{ ds.last_modified_text }}",
-                title: "{{ ds.title }}",
-                ds_type: "datasets",
-                num_places: {{ num_places }},
-                coordinate_density: parseFloat({{ coordinate_density }})
-                {#coordinate_density: {{ coordinate_density }}#}
-            }];
     </script>
 
 {% endblock %}

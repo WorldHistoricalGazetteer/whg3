@@ -1,7 +1,7 @@
 import {getPlace} from './getPlace';
 import {updatePadding, recenterMap} from './mapFunctions';
 import {mapSequencer} from './mapControls';
-import {mappy} from './mapAndTable';
+import {whg_map} from './mapAndTable';
 import {scrollToRowByProperty} from './tableFunctions-extended';
 
 let table;
@@ -34,8 +34,6 @@ function adjustPageLength() {
 	let estimatedRowsPerPage = Math.floor(availableHeight / (averageRowHeight));
 	// Ensure a minimum of 5 rows
 	estimatedRowsPerPage = Math.max(estimatedRowsPerPage, 5);
-	console.log(
-		`Changing table length to ${estimatedRowsPerPage} rows @${averageRowHeight} pixels.`);
 	const DataTable = $('#placetable').DataTable();
 	DataTable.page.len(estimatedRowsPerPage).draw();
 }
@@ -59,79 +57,58 @@ function clearFilters() {
 	$('#ds_select').val('-1');
 }
 
-// TODO: ? Remove this version, which was apparently redundant in ds_places ?
-/*export function filterColumn(i, v) {
-	// clear then search
-	table
-		.columns([1])
-		.search('')
-		.columns(i)
-		.search(v)
-		.draw();
-	$("#status_select").val(localStorage.getItem('filter'))
-}*/
-
-//  TODO: ? Remove this version, which was apparently redundant in ds_places ?
-/*export function clearFilters() {
-	// clear
-	table
-		.columns([1])
-		.search('')
-		.draw();
-	$("#status_select").val('99')
-}*/
-
-function toggleMapLayers(mappy, val) {
+function toggleMapLayers(whg_map, val) {
 	if (val !== 'all') {
-		window.mapBounds = mappy.getSource(val)._data.extent;
+		window.mapBounds = whg_map.getSource(val)._data.extent;
 		recenterMap('lazy');
 	}
-	mappy.getStyle().layers.forEach(layer => {
-		if (mappy.layersets.includes(layer.source)) {
-			mappy.setLayoutProperty(layer.id, 'visibility',
+	whg_map.getStyle().layers.forEach(layer => {
+		if (whg_map.layersets.includes(layer.source)) {
+			whg_map.setLayoutProperty(layer.id, 'visibility',
 				(val == 'all' || val == layer.source) ? 'visible' : 'none');
 		}
 	});
 }
 
-export function highlightFeature(ds_pid, features, mappy, extent = false) {
+export function highlightFeature(ds_pid, features, whg_map, extent = false) {
 
 	features = features.filter(f => f.properties.dsid === ds_pid.ds);
 
 	var featureIndex = features.findIndex(
 		f => String(f.properties.pid) === String(ds_pid.pid)); /* Usually an integer, but not in the case of aggregated places in Dataset Collections */
 	if (featureIndex !== -1) {
-		if (window.highlightedFeatureIndex !== undefined) mappy.setFeatureState(
+		if (window.highlightedFeatureIndex !== undefined) whg_map.setFeatureState(
 			window.highlightedFeatureIndex, {
 				highlight: false,
 			});
 		var feature = features[featureIndex];
 		const geom = feature.geometry;
 		if (geom) {
-			window.highlightedFeatureIndex = {
-				source: ds_pid.ds_id,
-				sourceLayer: mappy.getSource(ds_pid.ds_id).type == 'vector' ?
-					'features' : '',
-				id: featureIndex,
-			};
 			// zoom to feature
-			mappy
-			.fitViewport(extent || bbox(geom), defaultZoom)
-			.setFeatureState(window.highlightedFeatureIndex, {
-				highlight: true,
+			whg_map.fitViewport(extent || bbox(geom), defaultZoom);
+
+			// highlight feature in multiple sources & layers
+			window.datacollection.metadata.layers.forEach(layerName => {
+				window.highlightedFeatureIndex = {
+					source: `${ds_pid.ds_id}_${layerName}`,
+					id: featureIndex,
+				};
+				whg_map.setFeatureState(window.highlightedFeatureIndex, {
+					highlight: true,
+				});
 			});
 
 		} else {
-			console.log('Feature in clicked row has no geometry.');
+			console.warn('Feature in clicked row has no geometry.');
 		}
 	} else {
-		console.log(`Feature ${ds_pid.pid} not found.`);
+		console.warn(`Feature ${ds_pid.pid} not found.`);
 	}
 
 }
 
 export function initialiseTable(
-	features, checked_rows, mappy) {
+	features, checked_rows, whg_map) {
 
 	// TODO: remove these artifacts of table used for review
 	localStorage.setItem('filter', '99');
@@ -141,7 +118,7 @@ export function initialiseTable(
 
 	$('#drftable_list, #detail').spin();
 
-	const isCollection = window.ds_list[0].ds_type == 'collections'; // i.e. *place* collection (not *dataset* collection or dataset)
+	const isCollection = window.datacollection.ds_type == 'collections'; // i.e. *place* collection (not *dataset* collection or dataset)
 
 	checked_rows = [];
 
@@ -227,20 +204,19 @@ export function initialiseTable(
 			check_column,
 		];
 
-		console.log('Determining column inclusion and initial sorting:', visParameters);
 		// Determine columns to be hidden
 		hideColumns = columns.slice(0,2).reduce((result, column, index) => {
-			const tabulateValue = visParameters[column.data.split('.')[1]]?.tabulate;
+			const tabulateValue = window.datacollection.metadata.visParameters[column.data.split('.')[1]]?.tabulate;
 			if (tabulateValue !== undefined && tabulateValue === false) {
 				result.push(index);
 			}
 			return result;
 		}, []);
-		if (window.ds_list.length > 1) hideColumns.push(5);
+		// if (window.ds_list.length > 1) hideColumns.push(5);
 	
 		// Determine initial sort column
 		sortColumn = columns.slice(0,2).reduce((result, column, index) => {
-			const tabulateValue = visParameters[column.data.split('.')[1]]?.tabulate;
+			const tabulateValue = window.datacollection.metadata.visParameters[column.data.split('.')[1]]?.tabulate;
 			if (tabulateValue !== undefined && tabulateValue === 'initial') {
 				result.push(index);
 			}
@@ -293,10 +269,10 @@ export function initialiseTable(
 			visible: false,
 		}, ];
 
-		console.log('Determining column inclusion and initial sorting:', visParameters);
+		console.log('Determining column inclusion and initial sorting:', window.datacollection.metadata.visParameters);
 		// Determine columns to be hidden
 		hideColumns = columns.slice(0,3).reduce((result, column, index) => {
-			const tabulateValue = visParameters[column.data.split('.')[1]]?.tabulate;
+			const tabulateValue = window.datacollection.metadata.visParameters[column.data.split('.')[1]]?.tabulate;
 			if (tabulateValue !== undefined && tabulateValue === false) {
 				result.push(index);
 			}
@@ -305,7 +281,7 @@ export function initialiseTable(
 	
 		// Determine initial sort column
 		sortColumn = columns.slice(0,3).reduce((result, column, index) => {
-			const tabulateValue = visParameters[column.data.split('.')[1]]?.tabulate;
+			const tabulateValue = window.datacollection.metadata.visParameters[column.data.split('.')[1]]?.tabulate;
 			if (tabulateValue !== undefined && tabulateValue === 'initial') {
 				result.push(index);
 			}
@@ -334,6 +310,7 @@ export function initialiseTable(
 	}
 
 	table = $('#placetable').DataTable({
+		deferRender: true,
 		dom: '<\'row small\'<\'col-sm-9\'f>' + '<\'col-sm-3\'>>' +
 			'<\'row\'<\'col-sm-12\'tr>>' +
 			'<\'row small\'<\'col-sm-12\'p>>',
@@ -344,24 +321,28 @@ export function initialiseTable(
 		data: features,
 		rowId: 'properties.pid',
 		createdRow: function(row, data, dataIndex) {
-			// Attach temporal min and max properties as data attributes
-			$(row).attr('data-min', data.properties.min);
-			$(row).attr('data-max', data.properties.max);
-			$(row).attr('dsid', data.properties.dsid);
-			$(row).attr('pid', data.properties.pid);
-			$(row).data('ds_pid', {
-				ds: data.properties.dsid,
-				pid: data.properties.pid,
-				ds_id: data.properties.ds_id,
-			});
-			$(row).data('cid', data.properties.cid);
-			$(row).data('placedata', data.properties);
-			if (!data.geometry) {
-				$(row).addClass('no-geometry');
-			}
-			if (data.properties.min === 'null' || data.properties.max === 'null') {
-				$(row).addClass('no-temporal');
-			}
+			const $row = $(row);
+			const props = data.properties;
+
+			$row
+				.attr({
+					'data-min': props.min,
+					'data-max': props.max,
+					'dsid': props.dsid,
+					'pid': props.pid
+				})
+				.data({
+					ds_pid: {
+						ds: props.dsid,
+						pid: props.pid,
+						ds_id: props.ds_id,
+					},
+					cid: props.cid,
+					placedata: props,
+				});
+
+			if (!data.geometry) $row.addClass('no-geometry');
+			if (props.min === 'null' || props.max === 'null') $row.addClass('no-temporal');
 		},
 		initComplete: function(settings, json) {
 			adjustPageLength();
@@ -369,12 +350,11 @@ export function initialiseTable(
 		drawCallback: function(settings) {
 			//console.log('table drawn')
 			$('#drftable_list').stopSpin();
-			// recheck inputs in checked_rows
 			if (checked_rows.length > 0) {
-				for (i in checked_rows) {
-					$('[data-id=' + checked_rows[i] + ']').prop('checked', true);
-				}
-				// make sure selection_status is visible
+				const currentPageRows = table.rows({ page: 'current' }).nodes();
+				checked_rows.forEach(id => {
+					$(currentPageRows).find(`[data-id="${id}"]`).prop('checked', true);
+				});
 				$('#selection_status').show();
 			}
 			highlightFirstRow();
@@ -410,13 +390,13 @@ export function initialiseTable(
 
 		// filter map
 		let ds_id = $(this).find(':selected').attr('data');
-		const dsItem = window.ds_list[0].datasets.find(ds => String(ds.id) === ds_id);
+		const dsItem = window.datacollection.datasets.find(ds => String(ds.id) === ds_id);
 		if (dsItem) {
 			window.mapBounds = dsItem.extent;
 		} else {
-			window.mapBounds = window.ds_list_stats.extent;
+			window.mapBounds = window.datacollection.metadata.extent;
 		}
-		//toggleMapLayers(mappy, ds_id); // Also recenters map on selected layer
+		//toggleMapLayers(whg_map, ds_id); // Also recenters map on selected layer
 		recenterMap('lazy');
 
 		$('#dataset_content').stopSpin();
@@ -461,7 +441,7 @@ export function initialiseTable(
 
 		// highlight this row, clear others
 		var selected = $(this).hasClass('highlight-row');
-		$('#placetable tr').removeClass('highlight-row');
+		$('#placetable tr').removeClass('highlight-row selected');
 
 		if (!selected)
 			$(this).removeClass('rowhover');
@@ -475,7 +455,7 @@ export function initialiseTable(
 			ds_pid.pid,
 			$(this).data('cid'),
 			function(placedata) {
-				highlightFeature(ds_pid, features, mappy, placedata.extent);
+				highlightFeature(ds_pid, features, whg_map, placedata.extent);
 			}
 		);
 		
@@ -502,23 +482,28 @@ export function initialiseTable(
 		const toValue = window.dateline.toValue;
 		const includeUndated = window.dateline.includeUndated;
 
-		// Get the min and max values from the data attributes of the row
-		const row = $(settings.aoData[dataIndex].nTr);
-		const minData = row.attr('data-min');
-		const maxData = row.attr('data-max');
+		const rawRow = settings.aoData[dataIndex]._aData;
+		const props = rawRow.properties;
 
-		// Convert minData and maxData to numbers for comparison
-		const min = minData === 'null' ? 'null' : parseFloat(minData);
-		const max = maxData === 'null' ? 'null' : parseFloat(maxData);
+		const parseVal = (val) => {
+			if (val === 'null' || val === null || val === undefined || val === '') return null;
+			const parsed = parseFloat(val);
+			return isNaN(parsed) ? null : parsed;
+		};
 
-		// Filter logic
-		if (((!isNaN(fromValue) && !isNaN(toValue)) &&
-				(min !== 'null' && max !== 'null' && min <= toValue && max >=
-					fromValue)) ||
-			(includeUndated && (min === 'null' || max === 'null'))) {
-			return true; // Include row in the result
+		const min = parseVal(props.min);
+		const max = parseVal(props.max);
+
+		const isUndated = (min === null || max === null);
+
+		if (isUndated) {
+			return includeUndated;
 		}
-		return false; // Exclude row from the result
+
+		return (min !== null && min >= fromValue && min <= toValue) ||
+			(max !== null && max >= fromValue && max <= toValue) ||
+			(min !== null && max !== null && fromValue >= min && fromValue <= max);
+
 	});
 
 	return {

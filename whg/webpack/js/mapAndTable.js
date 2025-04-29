@@ -3,20 +3,15 @@
 import '../css/mapAndTable.css';
 import '../css/mapAndTableAdditional.css';
 
-import { init_mapControls } from './mapControls';
-import { recenterMap, initObservers, initOverlays, removeOverlays, initDownloadLinks, initPopups } from './mapFunctions';
-import { toggleFilters } from './mapFilters';
-import { initUtils, initInfoOverlay, get_ds_list_stats, deepCopy, arrayColors, colorTable } from './utilities';
-import { initialiseTable } from './tableFunctions';
-import { init_collection_listeners } from './collections';
-import SequenceArcs from './mapSequenceArcs';import './toggle-truncate.js';
+import {init_mapControls} from './mapControls';
+import {initDownloadLinks, initObservers, initOverlays, initPopups, recenterMap} from './mapFunctions';
+import {toggleFilters} from './mapFilters';
+import {arrayColors, colorTable, deepCopy, initInfoOverlay, initUtils} from './utilities';
+import {initialiseTable} from './tableFunctions';
+import {init_collection_listeners} from './collections';
+import SequenceArcs from './mapSequenceArcs';
+import './toggle-truncate.js';
 import './enlarge.js';
-
-let ds_listJSON = document.getElementById('ds_list_data') || false;
-if (ds_listJSON) {
-	window.ds_list = JSON.parse(ds_listJSON.textContent);
-}
-console.log('Dataset list:',window.ds_list);
 
 window.mapBounds;
 window.highlightedFeatureIndex;
@@ -29,206 +24,181 @@ let sequenceArcs;
 
 let table;
 let checked_rows;
+let mapParameters;
+let whg_map;
 
-$('#dataset_content').spin({ label: `Loading ${window.ds_list[0].num_places.toLocaleString('en-US')} places...` });
+// Utility to load dataset
+async function loadDataset() {
+    return new Promise((resolve, reject) => {
+        $('#dataset_content').spin({
+            label: `Fetching data...`
+        });
+        $.get(mapdata_url, function (data) {
+            window.datacollection = data;
+            console.debug(`Dataset "${data.metadata.title}" loaded.`, data);
 
-let mapParameters = { 
-	maxZoom: 20,
-	downloadMapControl: true,
-    fullscreenControl: true,
-}
+            $('#dataset_content').spin({
+                label: `Loading ${data.metadata.num_places.toLocaleString('en-US')} places...`
+            });
 
-console.log('visParameters',visParameters);
-
-if (window.ds_list[0].ds_type == 'collections') {
-	mapParameters = {
-		...mapParameters,
-		temporalControl: {
-	        fromValue: 1550,
-	        toValue: 1720,
-	        minValue: -2000,
-	        maxValue: 2100,
-	        open: false,
-	        includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
-	        epochs: null,
-	        automate: null,
-	    },
-	    sequencerControl: true,
-	    controls: {
-		    sequencer: true,
-		},
-	}
-}
-else if (visParameters.max.tabulate !== false && visParameters.min.tabulate !== false) { // for Datasets
-	mapParameters = {
-		...mapParameters,
-		temporalControl: {
-	        fromValue: 1550,
-	        toValue: 1720,
-	        minValue: -2000,
-	        maxValue: 2100,
-	        open: true,
-	        includeUndated: true, // null | false | true - 'false/true' determine state of select box input; 'null' excludes the button altogether
-	        epochs: null,
-	        automate: null,
-	    },
-	}	
-}
-
-let mappy = new whg_maplibre.Map(mapParameters);
-
-const mapLoadPromise = new Promise(function (resolve, reject) {
-    mappy.on('load', function () {
-        console.log('Map loaded.');
-        resolve();
+            loadMapParameters();
+            resolve();
+        }).fail(reject);
     });
-});
+}
 
-let dataLoadPromises = [];
-window.ds_list.forEach(function (ds) { // fetch data
-    const promise = new Promise(function (resolve, reject) {
-		
-		ds.ds_id = `${ds.ds_type || 'datasets'}_${ds.id}`;
-		$.get(`/mapdata/${ ds.ds_id.replace('_','/') }/`, function (data) { // ds_type may alternatively be 'collections'			
-		
-		    // Merge additional properties from data to ds
-		    for (const prop in data) {
-		        if (!ds.hasOwnProperty(prop)) {
-		            ds[prop] = data[prop];
-		        }
-		    }        
-        
-			console.log('data', data);
-            for (const prop in data) {
-                if (!ds.hasOwnProperty(prop)) {
-                    ds[prop] = data[prop];
-                }
-            }
-            console.log(`Dataset "${ds.title}" loaded.`);
+// Update mapParameters based on dataset
+function loadMapParameters() {
+    const meta = window.datacollection.metadata;
+
+    mapParameters = {
+        maxZoom: 20,
+        downloadMapControl: true,
+        fullscreenControl: true,
+        globeControl: true,
+        globeMode: meta.globeMode,
+    }
+
+    if (
+        meta.ds_type === 'collections' ||
+        (meta.visParameters.max.tabulate !== false && meta.visParameters.min.tabulate !== false)
+    ) {
+        mapParameters = {
+            ...mapParameters,
+            temporalControl: {
+                fromValue: 1550,
+                toValue: 1720,
+                minValue: -2000,
+                maxValue: 2100,
+                open: meta.ds_type !== 'collections',
+                includeUndated: true,
+                epochs: null,
+                automate: null,
+            },
+            ...(meta.ds_type === 'collections' && {
+                sequencerControl: true,
+                controls: {sequencer: true},
+            }),
+        };
+    }
+}
+
+// Load map once parameters are ready
+async function loadMap() {
+    return new Promise((resolve) => {
+        whg_map = new whg_maplibre.Map(mapParameters);
+        whg_map.on('load', () => {
+            console.log('Map loaded.');
             resolve();
         });
     });
-    dataLoadPromises.push(promise);
-});
+}
 
-Promise.all([mapLoadPromise, ...dataLoadPromises, Promise.all(datatables_CDN_fallbacks.map(loadResource))])
-.then(function () {
-	
-	initOverlays(mappy.getContainer());
-	initDownloadLinks();
-	
+// Load datatables CDN fallbacks
+async function loadCDNResources() {
+    return Promise.all(datatables_CDN_fallbacks.map(loadResource));
+}
+
+// Main orchestrator
+async function initialiseMapInterface() {
+    try {
+        await loadDataset();
+        await loadCDNResources();
+        await loadMap();
+        completeLoading();
+    } catch (error) {
+        console.error('Error during initialisation:', error);
+    }
+}
+
+function completeLoading() {
+
+    initOverlays(whg_map.getContainer());
+    initDownloadLinks();
+
     $('.thumbnail').enlarge();
-	
-	let allFeatures = [];
-	let allExtents = [];
-	let multiDataset = [];
-	
-	/* TODO: This loop is redundant since the aggregation of Dataset Collections - there is only one dataset */
-	window.ds_list.forEach(function(ds) {
-		ds.features.forEach(feature => {
-		    feature.properties = feature.properties || {};
-		    feature.properties.dsid = ds.id;
-		    feature.properties.dslabel = ds.label;
-		    feature.properties.ds_id = ds.ds_id; // Required for table->map linkage
-			if (feature.properties?.relation?.includes('-')) {
-				multiDataset.push(feature.properties.relation); // Determines properties for additional line in colour table
-			}
-		});
-		allFeatures.push(...ds.features);
-		
-		let circleColors;
-		if (!!ds.relations) {
-			circleColors = arrayColors(ds.relations);
-			colorTable(circleColors, '.maplibregl-control-container');
-		}
-		if (!!ds.datasets) {
-			circleColors = arrayColors(ds.datasets.map(d => d.id.toString()));
-			colorTable(circleColors, '.maplibregl-control-container', ds.datasets.map(d => d.title), multiDataset, ds.ds_id, mappy);
-		}
-		
-		if ((!!ds.tilesets && ds.tilesets.length > 0) || !!ds.extent) {
-			allExtents.push(ds.extent);
-		}
-		let marker_reducer = !!ds.coordinate_density ? (ds.coordinate_density < 50 ? 1 : 50 / ds.coordinate_density) : 1
-		mappy
-		.newSource(ds) // Add source - includes detection of tileset availability
-		.newLayerset(ds.ds_id, null, null, null, null, null, marker_reducer, circleColors); // Add standard layerset (defined in `layerset.js` and prototyped in `whg_maplibre.js`)
-		
-	});
-	console.log('Added layerset(s).', mappy.getStyle().layers);
-	
-	/* TODO: This call to get_ds_list_stats is redundant since the aggregation of Dataset Collections */
-	window.ds_list_stats = get_ds_list_stats(allFeatures, allExtents);
-	console.log('window.ds_list_stats', window.ds_list_stats);
-		
-	// Initialise Data Table
-	const tableInit = initialiseTable(allFeatures, checked_rows, mappy);
-	table = tableInit.table;
-	checked_rows = tableInit.checked_rows;
 
-	window.mapBounds = window.ds_list_stats.extent || [-180, -90, 180, 90];
-	
-	// Initialise Map Popups
-	initPopups(table);
-	
-	// Initialise resize observers
-	initObservers();
-	
-	// Initialise Map Controls
-	const mapControlsInit = init_mapControls(mappy, datelineContainer, toggleFilters, mapParameters, table);
-	datelineContainer = mapControlsInit.datelineContainer;
-	mapSequencer = mapControlsInit.mapSequencer;
-	mapParameters = mapControlsInit.mapParameters;
-	
-	// Initialise Info Box state
-	initInfoOverlay();
-	
-	if (window.ds_list[0].ds_type == 'collections') {
-		let tableOrder = null;
-		function updateVisualisation(newTableOrder) {
-			tableOrder = deepCopy(newTableOrder);
-						
-			if (sequenceArcs) sequenceArcs = sequenceArcs.destroy();
-		    const facet = table.settings()[0].aoColumns[tableOrder[0]].mData.split('.')[1];
-		    const order = tableOrder[1];
-		    console.log(`Re-sorted by facet: ${facet} ${order}`);
-		    
-		    if (!!visParameters[facet]) {
-				toggleFilters(visParameters[facet]['temporal_control'] == 'filter', mappy, table);			
-			    dateline.toggle(visParameters[facet]['temporal_control'] == 'filter');
-			    mapSequencer.toggle(visParameters[facet]['temporal_control'] == 'player');
-			    const featureCollection = {type:'FeatureCollection',features:allFeatures}
-			    if(visParameters[facet]['trail']) {
-			    	sequenceArcs = new SequenceArcs(mappy, featureCollection, { facet: facet, order: order });
-				}
-			}
-			else {
-				toggleFilters(false, mappy, table);
-				dateline.toggle(false);
-				mapSequencer.toggle(false);
-			}		    
-		}
-		updateVisualisation(table.order()[0]); // Initialise
-		$('#placetable').on('order.dt', function () { // Also fired by table.draw(), so need to track the order
-			const newTableOrder = deepCopy(table.order()[0]);
-			if (newTableOrder[0] !== tableOrder[0] || newTableOrder[1] !== tableOrder[1]) {
-		    	updateVisualisation(newTableOrder);
-			}
-		});		
-	}
-	else {
-		allFeatures = null; // release memory
-	}
-	
-	recenterMap();	
-	mappy.getContainer().style.opacity = 1;
-	
-	initUtils(mappy); // Tooltips, ClipboardJS, clearlines, help-matches
-	
-	init_collection_listeners(checked_rows);
-	
-	$('#dataset_content').stopSpin();
-		
-});
+    let circleColors;
+    if (!!window.datacollection.metadata.relations) {
+        circleColors = arrayColors(window.datacollection.metadata.relations);
+        colorTable(circleColors, '.maplibregl-control-container');
+    }
+    if (window.datacollection.metadata.datasets?.length > 0) {
+        circleColors = arrayColors(window.datacollection.metadata.datasets.map(d => d.id.toString()));
+        colorTable(circleColors, '.maplibregl-control-container', window.datacollection.metadata.datasets.map(d => d.title), window.datacollection.metadata.multi_relations, window.datacollection.metadata.ds_id, whg_map);
+    }
 
-export { mappy };
+    let marker_reducer = !!window.datacollection.metadata.coordinate_density ? (window.datacollection.metadata.coordinate_density < 50 ? 1 : 50 / window.datacollection.metadata.coordinate_density) : 1
+    whg_map
+        .newSource(window.datacollection)
+        .newLayerset(window.datacollection.metadata.ds_id, window.datacollection, null, null, null, null, marker_reducer, circleColors); // Add standard layerset (defined in `layerset.js` and prototyped in `whg_maplibre.js`)
+
+    // Initialise Data Table
+    const tableInit = initialiseTable(window.datacollection.table.features, checked_rows, whg_map);
+    table = tableInit.table;
+    checked_rows = tableInit.checked_rows;
+
+    // Initialise Map Controls
+    const mapControlsInit = init_mapControls(whg_map, datelineContainer, toggleFilters, mapParameters, table);
+    datelineContainer = mapControlsInit.datelineContainer;
+    mapSequencer = mapControlsInit.mapSequencer;
+    mapParameters = mapControlsInit.mapParameters;
+
+    window.mapBounds = window.datacollection.metadata.extent || [-180, -90, 180, 90];
+    recenterMap(false, true);
+
+    // Initialise Map Popups
+    initPopups(table);
+
+    // Initialise resize observers
+    initObservers();
+
+    // Initialise Info Box state
+    initInfoOverlay();
+
+    if (window.datacollection.metadata.ds_type === 'collections') {
+        let tableOrder = null;
+
+        function updateVisualisation(newTableOrder) {
+            tableOrder = deepCopy(newTableOrder);
+
+            if (sequenceArcs) sequenceArcs = sequenceArcs.destroy();
+            const facet = table.settings()[0].aoColumns[tableOrder[0]].mData.split('.')[1];
+            const order = tableOrder[1];
+
+            if (!!window.datacollection.metadata.visParameters[facet]) {
+                toggleFilters(window.datacollection.metadata.visParameters[facet]['temporal_control'] === 'filter', whg_map, table);
+                dateline.toggle(window.datacollection.metadata.visParameters[facet]['temporal_control'] === 'filter');
+                mapSequencer.toggle(window.datacollection.metadata.visParameters[facet]['temporal_control'] === 'player');
+                const featureCollection = {type: 'FeatureCollection', features: window.datacollection.table.features}
+                if (window.datacollection.metadata.visParameters[facet]['trail']) {
+                    sequenceArcs = new SequenceArcs(whg_map, featureCollection, {facet: facet, order: order});
+                }
+            } else {
+                toggleFilters(false, whg_map, table);
+                dateline.toggle(false);
+                mapSequencer.toggle(false);
+            }
+        }
+
+        updateVisualisation(table.order()[0]); // Initialise
+        $('#placetable').on('order.dt', function () { // Also fired by table.draw(), so need to track the order
+            const newTableOrder = deepCopy(table.order()[0]);
+            if (newTableOrder[0] !== tableOrder[0] || newTableOrder[1] !== tableOrder[1]) {
+                updateVisualisation(newTableOrder);
+            }
+        });
+    }
+
+    initUtils(whg_map); // Tooltips, ClipboardJS, clearlines, help-matches
+
+    init_collection_listeners(checked_rows);
+
+    $('#dataset_content').stopSpin();
+
+}
+
+// Initialise the whole map/data interface
+initialiseMapInterface();
+
+export {whg_map};

@@ -50,9 +50,6 @@
         <ul>
           <li><a href="{% url 'announcements-list' %}">Announcements</a></li>
           <li><a href="/admin">Django admin interface</a></li>
-          {% if user.username == 'whgadmin' %}
-          <li><a href="{% url 'tools-tilesets' %}">Tileset Management</a></li>
-          {% endif %}
         </ul>
         </div>
       </div>

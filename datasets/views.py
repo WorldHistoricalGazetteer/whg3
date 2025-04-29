@@ -2430,11 +2430,6 @@ class DatasetMetadataView(LoginRequiredMixin, UpdateView):
             ds.uri_base = data['uri_base']
             ds.save()
 
-        # # TODO: Should test `needs_tileset` first - see Issue #227
-        # if ds.public:
-        #     print(f"Updating mapdata cache (if required).")
-        #     task = mapdata_task.delay('datasets', ds.id, 'standard', 'refresh')
-
         return super().form_valid(form)
 
     def form_invalid(self, form):
@@ -2584,20 +2579,8 @@ class DatasetPlacesView(DetailView):
             {
                 "URL_FRONT": settings.URL_FRONT,
                 "ds": ds,
-                "num_places": ds.num_places,
                 "is_admin": me.groups.filter(name__in=["whg_admins"]).exists(),
                 "loggedin": "true" if not me.is_anonymous else "false",
-                "coordinate_density": "{:.15f}".format(ds.coordinate_density_value),
-                "visParameters": ds.vis_parameters
-                                 or (
-                                     # Populate with default values:
-                                     # tabulate: 'initial'|true|false - include sortable table column, 'initial' indicating the initial sort column
-                                     # temporal_control: 'player'|'filter'|null - control to be displayed when sorting on this column
-                                     # trail: true|false - whether to include ant-trail motion indicators on map
-                                     "{'seq': {'tabulate': false, 'temporal_control': null, 'trail': true},"
-                                     "'min': {'tabulate': false, 'temporal_control': null, 'trail': true},"
-                                     "'max': {'tabulate': false, 'temporal_control': null, 'trail': false}}"
-                                 ),
                 "my_collections": Collection.objects.filter(
                     collection_class="place",
                     **(

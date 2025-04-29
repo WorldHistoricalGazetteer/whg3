@@ -1,31 +1,26 @@
-import os
 import json
+import logging
+import os
 import re
-import sys
 import shutil
-from time import sleep
+import sys
 
 import ijson
-import logging
+import redis
 from django.conf import settings
-
 from django.contrib.gis.geos import GEOSGeometry
-from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.db import transaction, IntegrityError, DataError
 from django.db.models import Max
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
-from django.db import transaction, IntegrityError, DataError
-import redis
 
 from datasets.models import Dataset, DatasetFile
 from datasets.utils import aliasIt, ccodesFromGeom
 from main.models import Log
-
 from places.models import PlaceGeom, PlaceWhen, PlaceLink, PlaceRelated, PlaceDescription, PlaceDepiction, PlaceName, \
     PlaceType, Place, Type
-from utils.mapdata import mapdata_dataset
 from whgmail.messaging import slack_notification
 
 logger = logging.getLogger('validation')
@@ -181,9 +176,6 @@ def save_dataset(task_id):
         # Define paths and filenames
         username = dataset_metadata.get('username', 'unknown_user')
         user_folder = os.path.join(settings.MEDIA_ROOT, f"user_{username}")
-
-        # Cache mapdata
-        cache.set(f"datasets-{dataset.id}-standard", mapdata_dataset(dataset.id, task_id))
 
         # Ensure that the user folder exists
         os.makedirs(user_folder, exist_ok=True)

@@ -250,7 +250,7 @@
 	    });
 	}
 	
-	let mappy = new whg_maplibre.Map({
+	let whg_map = new whg_maplibre.Map({
 	    style: ['whg-basic-light'],
 		maxZoom: 13,
 		navigationControl: false,
@@ -258,8 +258,8 @@
 
 	function waitMapLoad() {
 	  return new Promise((resolve) => {
-	    mappy.on('load', () => {
-	      mappy.newSource('un_regions') // Add empty source
+	    whg_map.on('load', () => {
+	      whg_map.newSource('un_regions') // Add empty source
 	          .newLayerset('un_regions', 'un_regions');
 	      console.log('Map loaded.');
 	      resolve();
@@ -303,10 +303,10 @@
 	                };
 	            })
 	        }
-			mappy
+			whg_map
 			.getSource('un_regions')
 			.setData(regionsCollection);
-	        mappy.fitBounds(bbox(regionsCollection));
+	        whg_map.fitBounds(bbox(regionsCollection));
 	        
 		    $('#entrySelector')
 		    .select2({
@@ -329,15 +329,15 @@
 		        evt.stopPropagation();
 		    })
 
-			mappy.on('mousemove', function(e) {			    
-			    const anyUnRegions = mappy.queryRenderedFeatures(e.point).some(feature => {
+			whg_map.on('mousemove', function(e) {			    
+			    const anyUnRegions = whg_map.queryRenderedFeatures(e.point).some(feature => {
 			        return feature.layer.id === 'un_regions_polygon';
 			    });
-			    mappy.getCanvas().style.cursor = anyUnRegions ? 'pointer' : 'default';
+			    whg_map.getCanvas().style.cursor = anyUnRegions ? 'pointer' : 'default';
 			});
 			
-			mappy.on('click', function(e) {
-			    const features = mappy.queryRenderedFeatures(e.point);
+			whg_map.on('click', function(e) {
+			    const features = whg_map.queryRenderedFeatures(e.point);
 			    
 			    const unRegionIds = features.reduce((ids, feature) => {
 			        if (feature.layer.id === 'un_regions_polygon') {
@@ -376,7 +376,7 @@
 	        });
             if ($('#resourceCount:visible').length > 0) $('#resourceCount').text($('.resource-card:visible').length);
 	        regionsCollection.features.forEach(function(feature) {
-	        	mappy.setFeatureState({ source: 'un_regions', id: feature.id }, { highlight: selectedRegions.includes(String(feature.id)) });
+	        	whg_map.setFeatureState({ source: 'un_regions', id: feature.id }, { highlight: selectedRegions.includes(String(feature.id)) });
 	        });
 	    }
 	    

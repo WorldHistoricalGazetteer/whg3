@@ -1,8 +1,8 @@
 // /whg/webpack/js/carousels.js
 
-import { fetchDataForHorse } from './localGeometryStorage';
+import { fetchDataForHorse } from './carousel-mapdata';
 
-export function initialiseCarousels(galleries, carouselMetadata, startCarousels, mappy) {
+export function initialiseCarousels(galleries, carouselMetadata, startCarousels, whg_map) {
 
 	var timer;
 	const v3 = galleries.length == 1;
@@ -76,8 +76,6 @@ export function initialiseCarousels(galleries, carouselMetadata, startCarousels,
                 `).data({
             id: datacollection.ds_or_c_id,
             type: datacollection.type,
-            mode: datacollection.display_mode,
-            geometry_url: datacollection.geometry_url,
         });
         target.append(carouselItem);
     });
@@ -107,7 +105,7 @@ export function initialiseCarousels(galleries, carouselMetadata, startCarousels,
 
     carousels.on('slid.bs.carousel', function() {
         $('.carousel-container .border').removeClass('highlight-carousel');
-        fetchDataForHorse($(this).find('.carousel-item.active'), mappy);
+        fetchDataForHorse($(this).find('.carousel-item.active'), whg_map);
     }).trigger('slid.bs.carousel'); // Load first map
     $('.carousel-container').on('mouseenter', function() {
         if (startCarousels) carousels.first().carousel('pause');

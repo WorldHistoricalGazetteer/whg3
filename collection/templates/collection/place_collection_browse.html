@@ -241,14 +241,7 @@
 
 	{{ object.vis_parameters|json_script:"vis_parameters_data" }}
 	<script type="text/javascript">
-        const pageData = "{{ object.id }}";
-        var visParameters = JSON.parse(document.getElementById('vis_parameters_data').innerHTML);
-        window.ds_list = [{
-            ds_type: "collections",
-            id: {{ object.id }},
-            title: "{{ object.title }}",
-            num_places: {{ num_places }}
-        }];
+        const mapdata_url = "/mapdata/collections/{{ object.id }}/";
 	</script>
 
 {% endblock %}

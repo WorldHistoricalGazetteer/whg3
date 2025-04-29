@@ -1,7 +1,8 @@
 # datasets.signals.py
 # when created; when public; when indexed
-import requests
+import logging
 
+import requests
 from django.conf import settings
 from django.contrib.gis.db.models import Extent
 from django.contrib.gis.geos import Polygon
@@ -12,11 +13,8 @@ from django.dispatch import receiver
 
 from places.models import PlaceGeom
 from utils.doi import doi
-from .models import Dataset, DatasetFile
-from utils.mapdata import mapdata_task
 from whgmail.messaging import WHGmail
-
-import logging
+from .models import Dataset, DatasetFile
 
 logger = logging.getLogger(__name__)
 
@@ -52,17 +50,6 @@ def format_time(seconds):
     return f"{minutes} minutes {seconds} seconds"
 
 
-def test_complexity(dsid):
-    import time
-    start = time.time()
-    from main.tasks import needs_tileset
-    # Call the function directly
-    object_needs_tileset, total_coords, total_geometries = needs_tileset('datasets', dsid)
-    end = time.time()
-    # Print the result
-    duration = format_time(end - start)
-
-
 def handle_dataset_bbox(sender, instance, **kwargs):
     # Get the extent of the associated geometries
     dsgeoms = PlaceGeom.objects.filter(place__dataset=instance.label)
@@ -91,9 +78,6 @@ def check_featured_field_change(sender, instance, **kwargs):
 @receiver(pre_save, sender=Dataset)
 def handle_public_flag(sender, instance, **kwargs):
     from .tasks import index_to_pub, unindex_from_pub
-    from main.tasks import process_tileset_request, needs_tileset
-
-    task_timeout = 60 * 5  # 5 minutes
 
     if instance.id:  # Check if it's an existing instance, not new
         old_instance = sender.objects.get(pk=instance.pk)
@@ -113,16 +97,6 @@ def handle_public_flag(sender, instance, **kwargs):
 
                 # Changed from False to True, index the records
                 transaction.on_commit(lambda: index_to_pub.delay(instance.id))
-
-                # Calculate the complexity of the geometries
-                needs_tileset_task = needs_tileset.apply_async(args=['datasets', instance.id], expires=task_timeout)
-                object_needs_tileset, _, _, _ = needs_tileset_task.get(timeout=task_timeout)
-
-                # Changed from False to True, create a tileset if the geometry or coordinate counts exceeds the thresholds
-                if object_needs_tileset:
-                    transaction.on_commit(lambda: process_tileset_request.delay('datasets', instance.id, 'generate'))
-                else:
-                    transaction.on_commit(lambda: mapdata_task.delay('datasets', instance.id, 'standard', refresh=True))
 
                 # remove from volunteers needed page
                 # if instance.volunteers:

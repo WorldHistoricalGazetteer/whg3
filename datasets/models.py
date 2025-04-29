@@ -266,33 +266,6 @@ class Dataset(models.Model):
 
         return density
 
-    @property
-    def display_mode(self):
-        # determine heatmap suitability
-
-        if self.places.count() < 500:
-            return None
-
-        if self.coordinate_density_value > 250:
-            return None
-
-        # Annotate each place with a flag indicating if any non-point geometries exist
-        class GeometryType(Func):
-            function = "GeometryType"
-            output_field = CharField()
-
-        places_with_non_point_geoms = self.places.annotate(
-            has_non_point_geoms=Exists(
-                PlaceGeom.objects.filter(place=OuterRef("pk"))
-                .annotate(geom_type=GeometryType("geom"))
-                .exclude(geom_type__in=["POINT", "MULTIPOINT"])
-            )
-        )
-        if places_with_non_point_geoms.filter(has_non_point_geoms=True).exists():
-            return None
-
-        return "heatmap"
-
     # download time estimate
     @property
     def dl_est(self):

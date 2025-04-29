@@ -34,42 +34,37 @@ maplibregl.Map.prototype.eraseSource = function(sourceId) {
 maplibregl.Map.prototype.tileBounds = null;
 maplibregl.Map.prototype.newSource = function(ds, fc = null) {
     var map = this;
-    if (!!ds.tilesets && ds.tilesets.length > 0) {
-        const tilejsonUrl = `${process.env.TILEBOSS}/data/${ds.tilesets[0]}.json`;
-        $.ajax({
-            url: tilejsonUrl,
-            dataType: 'json',
-            async: false, // Make the AJAX call synchronous
-            success: function(tilejson) {
-                console.log('tilejson', tilejson);
-                const sourceOptions = { ...tilejson, type: 'vector' };
-                map.tileBounds = tilejson.bounds;
-                map.addSource(ds.ds_id, sourceOptions);
-            },
-            error: function(xhr, status, error) {
-                console.error('Error prefetching TileJSON:', error);
-            }
-        });
-    } else {
-        if (!!ds.ds_id) { // Standard dataset or collection
-            map.addSource(ds.ds_id, {
-                'type': 'geojson',
-                'data': ds,
-                'attribution': attributionString(ds),
-            });
-        } else if (fc) { // Name and FeatureCollection provided
-            map.addSource(ds, { 'type': 'geojson', 'data': fc });
-        } else { // Only name given, add an empty FeatureCollection
-            map.addSource(ds, { 'type': 'geojson', 'data': this.nullCollection() });
-        }
-    }
+	if (!!ds.ds_id) { // Standard dataset or collection
+		// Check what keys are present in the dataset
+		const keys = Object.keys(ds);
+		map.addSource(ds.ds_id, {
+			'type': 'geojson',
+			'data': ds,
+			'attribution': attributionString(ds),
+		});
+	} else if (ds?.metadata?.layers) { // mapdata
+		ds.metadata.layers.forEach(layer => {
+			map.addSource(`${ds.metadata.ds_type}_${ds.metadata.id}_${layer}`, {
+				'type': 'geojson',
+				'data': ds[layer],
+				'attribution': ds.metadata.attribution,
+			});
+		});
+	} else if (fc) { // Name and FeatureCollection provided
+		map.addSource(ds, { 'type': 'geojson', 'data': fc });
+	} else { // Only name given, add an empty FeatureCollection
+		map.addSource(ds, { 'type': 'geojson', 'data': this.nullCollection() });
+	}
 	return map;
 };
 
 maplibregl.Map.prototype.layersets = [];
+maplibregl.Map.prototype.layersetObjects = [];
 maplibregl.Map.prototype.newLayerset = function (dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger, relation_colors) {
 	this.layersets.push(dc_id);
-    return new Layerset(this, dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger, relation_colors);
+	const layerset = new Layerset(this, dc_id, source_id, paintOption, colour, colour_highlight, number, enlarger, relation_colors);
+	this.layersetObjects.push(layerset);
+    return layerset;
 };
 
 maplibregl.Map.prototype.highlights = [];
@@ -1108,6 +1103,8 @@ maplibregl.Map = function (options = {}) {
 	    temporalControl: false,
 	    terrainControl: false, // If true, will force display of full navigation controls too
 	    scaleControl: false,
+        globeControl: false,
+		globeMode: false,
     };
 
     // replace defaultOptions with any passed options
@@ -1143,8 +1140,10 @@ maplibregl.Map = function (options = {}) {
 		// Set map container background colour to the value in the style metadata
         const backgroundColor = currentStyle.metadata['whg:backgroundcolour'];
         if (backgroundColor) {
-            mapInstance.getContainer().style.backgroundColor = backgroundColor;
+            // mapInstance.getContainer().style.backgroundColor = backgroundColor;
+			console.debug('Ignoring map background colour requested by style', backgroundColor);
         }
+		mapInstance.getContainer().style.backgroundColor = '#daecf1';
 
 		if (chosenOptions.scaleControl) mapInstance.addControl(new maplibregl.ScaleControl({maxWidth: 150, unit: 'metric'}), 'bottom-left');
 		
@@ -1155,6 +1154,20 @@ maplibregl.Map = function (options = {}) {
 		if (chosenOptions.basemaps.length + chosenOptions.styles.length > 1) {
 			mapInstance.styleControl = new acmeStyleControl( mapInstance );
 			mapInstance.addControl(mapInstance.styleControl, 'top-right');
+		}
+		if (chosenOptions.globeControl) {
+			mapInstance.addControl(new maplibregl.GlobeControl(), 'top-right');
+			if (chosenOptions.globeMode) mapInstance.setProjection({ type: 'globe' });
+			// MapLibre adds a redundant `title` attribute to the globe control button after first click on it
+			const globeButton = mapInstance.getContainer().querySelector('.maplibregl-ctrl-globe');
+			if (globeButton) {
+				globeButton.removeAttribute('title');
+				globeButton.setAttribute('data-bs-title', 'Toggle Globe');
+				// Add a click listener to the globe button to remove the title attribute
+				globeButton.addEventListener('click', function() {
+					this.removeAttribute('title');
+				});
+			}
 		}
 		if (chosenOptions.terrainControl) mapInstance.addControl(new CustomTerrainControl({source: 'terrarium-aws'}), 'top-right');
 		if (chosenOptions.navigationControl) mapInstance.addControl(new maplibregl.NavigationControl(chosenOptions.navigationControl), chosenOptions.navigationControl.position);

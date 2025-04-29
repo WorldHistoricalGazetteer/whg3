@@ -103,6 +103,7 @@ pycparser==2.21
 Pygments==2.14.0
 pyld==2.0.4
 PyJWT==2.6.0
+pyproj==3.7.1
 pyrsistent==0.19.3
 python-dateutil==2.8.2
 python-slugify==7.0.0

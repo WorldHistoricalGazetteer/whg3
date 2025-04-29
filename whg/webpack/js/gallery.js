@@ -3,7 +3,7 @@
 import debounce from 'lodash/debounce';
 import {
     fetchDataForHorse,
-} from './localGeometryStorage';
+} from './carousel-mapdata';
 import {
     CountryCacheFeatureCollection,
 } from './countryCache';
@@ -12,7 +12,7 @@ import {formatAuthors} from './authors';
 
 import '../css/gallery.scss';
 
-let mappy = new whg_maplibre.Map({
+let whg_map = new whg_maplibre.Map({
     style: ['whg-basic-light'],
     maxZoom: 13,
     navigationControl: false,
@@ -26,9 +26,9 @@ let $select;
 
 function waitMapLoad() {
     return new Promise((resolve) => {
-        mappy.on('load', () => {
+        whg_map.on('load', () => {
 
-            mappy.newSource('countries') // Add empty source
+            whg_map.newSource('countries') // Add empty source
                 .newLayerset('countries', 'countries', 'countries');
 
             console.log('Map loaded.');
@@ -72,12 +72,12 @@ function buildGallery(datacollections) {
             'Try adjusting the filters.'}</p>
         `);
         dynamicGallery.append(noResultsMessage);
-        var layersToRemove = mappy.getStyle().layers.filter(layer => !!layer.source && layer.source == 'featured-data-source');
+        var layersToRemove = whg_map.getStyle().layers.filter(layer => !!layer.source && layer.source == 'featured-data-source');
         layersToRemove.forEach(layer => {
-            mappy.removeLayer(layer.id);
+            whg_map.removeLayer(layer.id);
         });
-        if (mappy.getSource('featured-data-source')) mappy.removeSource('featured-data-source');
-        mappy.reset();
+        if (whg_map.getSource('featured-data-source')) whg_map.removeSource('featured-data-source');
+        whg_map.reset();
     } else {
         datacollections.forEach(dc => {
             const truncatedDescription = truncateAfterSpace(dc.description, 250);
@@ -107,8 +107,6 @@ function buildGallery(datacollections) {
                     id: dc.ds_or_c_id,
                     type: dc.type,
                     contributors: authors,
-                    mode: dc.display_mode,
-                    geometry_url: dc.geometry_url,
                     url: dc.url,
                 });
             dynamicGallery.append(dsCard);
@@ -353,16 +351,16 @@ Promise.all([
                 [].concat(...spatialSelections.map(region => region.ccodes)) :
                 spatialSelections.map(country => country.id));
         countryCache.filter(countries).then(filteredCountries => {
-            mappy.getSource('countries').setData(filteredCountries);
+            whg_map.getSource('countries').setData(filteredCountries);
 
             try {
-                mappy.fitBounds(bbox(filteredCountries), {
+                whg_map.fitBounds(bbox(filteredCountries), {
                     padding: 30,
                     maxZoom: 7,
                     duration: 1000,
                 });
             } catch {
-                mappy.reset();
+                whg_map.reset();
             }
         });
     }
@@ -396,11 +394,11 @@ Promise.all([
 
     // Observe the map container for size changes: maintain aspect ratio to accommodate all possible bounds
     const mapResizeObserver = new ResizeObserver(entries => {
-        mappy._container.style.height = `${Math.round(
+        whg_map._container.style.height = `${Math.round(
             entries[0].contentRect.width * .8)}px`;
-        mappy.resize();
+        whg_map.resize();
     });
-    mapResizeObserver.observe(mappy._container);
+    mapResizeObserver.observe(whg_map._container);
 
     // Force country filter to track width of search filter
     const resizeObserver = new ResizeObserver(entries => {
@@ -415,7 +413,7 @@ Promise.all([
         })
         .on('click', '.previewButton', (e) => {
             e.stopPropagation();
-            fetchDataForHorse($(e.target).closest('.ds-card-container'), mappy);
+            fetchDataForHorse($(e.target).closest('.ds-card-container'), whg_map);
             $('#dynamic-gallery .previewButton').removeClass('active');
             $('#dynamic-gallery .ds-card-gallery').removeClass('active'); // Remove the active class from all .ds-card-gallery elements
             $(e.target)

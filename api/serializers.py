@@ -65,7 +65,6 @@ class GallerySerializer(serializers.HyperlinkedModelSerializer):
     label = serializers.SerializerMethodField()
     ds_or_c_id = serializers.SerializerMethodField()
     url = serializers.SerializerMethodField()
-    geometry_url = serializers.SerializerMethodField()
 
     def __init__(self, *args, **kwargs):
         model = kwargs.pop('model', None)
@@ -109,12 +108,6 @@ class GallerySerializer(serializers.HyperlinkedModelSerializer):
         else:
             return reverse('datasets:ds_places', args=[obj.id])
 
-    def get_geometry_url(self, obj):
-        if self.Meta.model == Collection:
-            return f"/api/featureCollection/?coll={obj.id}&mode={obj.display_mode or ''}"
-        else:
-            return f"/api/featureCollection/?id={obj.id}&mode={obj.display_mode or ''}"
-
     class Meta:
         model = Dataset  # May be overridden by __init__ and changed to Collection
         fields = (
@@ -127,10 +120,8 @@ class GallerySerializer(serializers.HyperlinkedModelSerializer):
             'label',
             'featured',
             'ds_or_c_id',
-            'display_mode',
             'webpage',
             'url',
-            'geometry_url',
             'citation_csl',
         )
 
