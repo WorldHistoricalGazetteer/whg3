@@ -293,10 +293,14 @@ def generate_mapdata(category, id, refresh=False):
 
     layers = [key for key in mapdata_result.keys() if key != "table"]
 
-    west, south, east, north = mapdata["extent"]
-    width = (east - west) if (east >= west) else (360 + east - west)
-    height = north - south
-    globeMode = width <= 180 and height <= 180
+    extent = mapdata.get("extent")
+    if extent:
+        west, south, east, north = extent
+        width = (east - west) if (east >= west) else (360 + east - west)
+        height = north - south
+        globeMode = width <= 180 and height <= 180
+    else:
+        globeMode = False
 
     minmax = mapdata.get("minmax") or [None, None]
 
