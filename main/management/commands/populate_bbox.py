@@ -1,34 +1,44 @@
-# myapp/management/commands/populate_bbox.py
 from django.core.management.base import BaseCommand
-from django.db.models.signals import pre_save
-
-from collection.models import Collection
 from datasets.models import Dataset
+from datasets.signals import handle_dataset_bbox
+from collection.models import Collection
+from collection.signals import handle_collection_bbox
 
 class Command(BaseCommand):
-    help = 'Pre-populate bbox fields for all datasets and collections'
+    help = 'Update bbox for datasets and collections missing it'
 
-    def handle(self, *args, **kwargs):
-        # Pre-populate bbox for all datasets
-        self.stdout.write('Populating bbox fields for all datasets...')
-        self.populate_dataset_bbox()
+    def handle(self, *args, **options):
+        updated_datasets = self.update_datasets()
+        updated_collections = self.update_collections()
 
-        # Pre-populate bbox for all collections
-        self.stdout.write('Populating bbox fields for all collections...')
-        self.populate_collection_bbox()
+        self.stdout.write(self.style.SUCCESS(
+            f"Updated {updated_datasets} datasets and {updated_collections} collections with new bbox values."
+        ))
 
-    def populate_dataset_bbox(self):
-        datasets = Dataset.objects.all()
+    def update_datasets(self):
+        missing_bbox = Dataset.objects.filter(bbox__isnull=True)
+        total = missing_bbox.count()
+        self.stdout.write(f"Found {total} datasets without a bbox...")
 
-        for dataset in datasets:
-            pre_save.send(sender=Dataset, instance=dataset)
-            dataset.save(update_fields=['bbox'])
-            self.stdout.write(f'BBox populated for dataset {dataset.id}')
+        updated = 0
+        for ds in missing_bbox:
+            handle_dataset_bbox(Dataset, ds)
+            if ds.bbox:
+                ds.save(update_fields=['bbox'])
+                self.stdout.write(f"✓ Dataset {ds.title} updated")
+                updated += 1
+        return updated
 
-    def populate_collection_bbox(self):
-        collections = Collection.objects.all()
+    def update_collections(self):
+        missing_bbox = Collection.objects.filter(bbox__isnull=True)
+        total = missing_bbox.count()
+        self.stdout.write(f"Found {total} collections without a bbox...")
 
-        for collection in collections:
-            pre_save.send(sender=Collection, instance=collection)
-            collection.save(update_fields=['bbox'])
-            self.stdout.write(f'BBox populated for collection {collection.id}')
+        updated = 0
+        for coll in missing_bbox:
+            handle_collection_bbox(Collection, coll)
+            if coll.bbox:
+                coll.save(update_fields=['bbox'])
+                self.stdout.write(f"✓ Collection {coll.title} updated")
+                updated += 1
+        return updated
