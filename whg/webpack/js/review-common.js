@@ -41,7 +41,7 @@ export function initialiseMap() {
 	    Object.entries(groupedFeatures).forEach(([ds, features]) => {
 	        layersets[ds] = whg_map
 	        	.newSource(ds, { type: 'FeatureCollection', features })
-	            .newLayerset(ds, null, null, markerColours[ds] || 'brown', ds == 'dataset' ? 'green' : null, ds !== 'dataset', ds == 'dataset' ? 1.3 : 1); // No numbering for `dataset` source marker
+	            .newLayerset(ds, null, 'plain', markerColours[ds] || 'brown', ds == 'dataset' ? 'green' : null, ds !== 'dataset', ds == 'dataset' ? 1.3 : 1); // No numbering for `dataset` source marker
 	        if (ds=='geonames' && !!groupedFeatures['wikidata']) layersets[ds].toggleVisibility(false);
 	    });
 		
@@ -55,7 +55,7 @@ export function initialiseMap() {
 	    Object.entries(groupedFeatures).forEach(([ds, features]) => {
 	        layersets[ds] = whg_map
 	        	.newSource(ds, { type: 'FeatureCollection', features })
-	            .newLayerset(ds, null, null, markerColours[ds] || 'orange', ds == 'dataset' ? 'green' : null, false, ds == 'dataset' ? 1.3 : 1);
+	            .newLayerset(ds, null, 'plain', markerColours[ds] || 'orange', ds == 'dataset' ? 'green' : null, false, ds == 'dataset' ? 1.3 : 1);
 	    });
 		
 	}
