@@ -164,4 +164,12 @@ tLPF_mappings = {
         'lpf': 'descriptions.0.value',
         'converter': lambda x: str_x(x)
     },
+    'approximation': {
+        'lpf': 'geometry.approximation',
+        'converter': lambda x: (
+            {'type': 'gvp:approximateLocation', 'tolerance': safe_float_conversion(x)}
+            if safe_float_conversion(x) is not None
+            else {'type': str_x(x)} if str_x(x) else None
+        )
+    }
 }

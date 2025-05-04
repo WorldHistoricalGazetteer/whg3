@@ -377,6 +377,35 @@
                 "minProperties": 1
             }
         },
+        "approximation": {
+            "oneOf": [
+              {
+                "type": "object",
+                "required": ["type", "tolerance"],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": ["gvp:approximateLocation"]
+                  },
+                  "tolerance": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "required": ["type"],
+                "properties": {
+                  "type": {
+                    "$ref": "#/definitions/patterns/definitions/validURLorNamespaceTerm"
+                  }
+                },
+                "additionalProperties": false
+              }
+            ]
+        },
         "citations": {
             "type": "array",
             "items": {
@@ -723,14 +752,17 @@
         "optionalProperties": {
             "type": "object",
             "properties": {
-                "when": {
-                    "$ref": "#/definitions/time/definitions/when"
+                "approximation": {
+                    "$ref": "#/definitions/approximation"
+                },
+                "certainty": {
+                    "$ref": "#/definitions/certainty"
                 },
                 "citations": {
                     "$ref": "#/definitions/citations"
                 },
-                "certainty": {
-                    "$ref": "#/definitions/certainty"
+                "when": {
+                    "$ref": "#/definitions/time/definitions/when"
                 }
             }
         },
