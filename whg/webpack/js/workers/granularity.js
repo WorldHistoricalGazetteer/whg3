@@ -93,7 +93,7 @@ async function bufferFeatureCollection(featureCollection, colours, patternSize) 
     async function bufferIfGranular(feature) {
         const { geometry } = feature;
 
-        if (feature?.properties?.granularity) {
+        if (feature?.properties?.granularity) { // False if granularity is zero (or undefined or null)
             anyGranular = true;
             const buffered = turf.buffer(geometry, feature.properties.granularity, { units: 'kilometers' });
             return buffered.geometry;

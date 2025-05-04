@@ -145,6 +145,12 @@ def generate_mapdata(category, id, refresh=False):
 
     mapdata = mapdata_dataset(id) if category == "datasets" else mapdata_collection(id)
 
+    # As a concept, `granularity` is a measure of the precision of the geometry. In LPF this is represented as
+    # `approximation` with a `type` of either:
+    # a) `gvp:approximateLocation` with a `tolerance` value in kilometres, or
+    # b) `gvp:containedWithin` (for Polygons) without a `tolerance` value.
+    # WHG cannot at present handle different `granularity` values for different geometries in a GeometryCollection:
+    # instead, the largest `granularity` value is used for the entire GeometryCollection.
     # If a feature's geometry has `granularity`, or if the geometry is a GeometryCollection with any subgeometry
     # having `granularity`, copy the largest `granularity` value to the feature's properties.
     for feature in mapdata["features"]:
@@ -154,23 +160,31 @@ def generate_mapdata(category, id, refresh=False):
 
         granularity = None
 
+        def extract_granularity(g):
+            approx = g.get("approximation")
+            if not approx or not isinstance(approx, dict):
+                return None
+            if approx.get("type") == "gvp:approximateLocation":
+                return approx.get("tolerance", 0)
+            elif approx.get("type") == "gvp:containedWithin" and g.get("type") in ("Polygon", "MultiPolygon"):
+                return 0
+            return None
+
         if geom.get("type") == "GeometryCollection":
             granularities = []
             for subgeom in geom.get("geometries", []):
-                if "granularity" in subgeom and subgeom["granularity"] is not None:
-                    granularities.append(subgeom["granularity"])
-                    del subgeom["granularity"]
+                g = extract_granularity(subgeom)
+                if g is not None:
+                    granularities.append(g)
+                subgeom.pop("approximation", None)
             if granularities:
                 granularity = max(granularities)
         else:
-            if "granularity" in geom and geom["granularity"] is not None:
-                granularity = geom["granularity"]
-                del geom["granularity"]
+            granularity = extract_granularity(geom)
+            geom.pop("approximation", None)
 
         if granularity is not None:
-            if "properties" not in feature:
-                feature["properties"] = {}
-            feature["properties"]["granularity"] = granularity
+            feature.setdefault("properties", {})["granularity"] = granularity
 
     grouped = {
         "Table": [],

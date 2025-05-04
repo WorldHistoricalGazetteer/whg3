@@ -1,4 +1,3 @@
-# Implement distributed lock to enqueue tileset generation requests
 import redis
 from celery.utils.log import get_task_logger
 

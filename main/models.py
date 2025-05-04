@@ -13,7 +13,7 @@ from places.models import Place
 from traces.models import TraceAnnotation
 
 from main.choices import (COMMENT_TAGS, COMMENT_TAGS_REVIEW, LOG_CATEGORIES, LOG_TYPES,
-                          LINKTYPES, TILESET_TYPES)
+                          LINKTYPES)
 
 
 # cross-app models
