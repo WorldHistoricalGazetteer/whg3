@@ -147,8 +147,8 @@ def generate_mapdata(category, id, refresh=False):
 
     # As a concept, `granularity` is a measure of the precision of the geometry. In LPF this is represented as
     # `approximation` with a `type` of either:
-    # a) `gvp:approximateLocation` with a `tolerance` value in kilometres, or
-    # b) `gvp:containedWithin` (for Polygons) without a `tolerance` value.
+    # a) `geo:hasSpatialAccuracy` with a `tolerance` value in kilometres, or
+    # b) `geo:sfWithin` (for Polygons) without a `tolerance` value.
     # WHG cannot at present handle different `granularity` values for different geometries in a GeometryCollection:
     # instead, the largest `granularity` value is used for the entire GeometryCollection.
     # If a feature's geometry has `granularity`, or if the geometry is a GeometryCollection with any subgeometry
@@ -164,9 +164,9 @@ def generate_mapdata(category, id, refresh=False):
             approx = g.get("approximation")
             if not approx or not isinstance(approx, dict):
                 return None
-            if approx.get("type") == "gvp:approximateLocation":
+            if approx.get("type") == "geo:hasSpatialAccuracy":
                 return approx.get("tolerance", 0)
-            elif approx.get("type") == "gvp:containedWithin" and g.get("type") in ("Polygon", "MultiPolygon"):
+            elif approx.get("type") == "geo:sfWithin" and g.get("type") in ("Polygon", "MultiPolygon"):
                 return 0
             return None
 

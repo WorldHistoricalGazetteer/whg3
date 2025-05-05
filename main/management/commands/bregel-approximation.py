@@ -60,7 +60,7 @@ class Command(BaseCommand):
             pid = pg.place.id
             tolerance = 30 if pid in SPECIAL_PIDS else 5
             approximation_obj = {
-                "type": "gvp:approximateLocation",
+                "type": "geo:hasSpatialAccuracy",
                 "tolerance": tolerance
             }
 

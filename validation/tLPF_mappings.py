@@ -167,7 +167,7 @@ tLPF_mappings = {
     'approximation': {
         'lpf': 'geometry.approximation',
         'converter': lambda x: (
-            {'type': 'gvp:approximateLocation', 'tolerance': safe_float_conversion(x)}
+            {'type': 'geo:hasSpatialAccuracy', 'tolerance': safe_float_conversion(x)}
             if safe_float_conversion(x) is not None
             else {'type': str_x(x)} if str_x(x) else None
         )
