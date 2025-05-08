@@ -209,7 +209,7 @@ def get_objects_for_user(model, user, filter_criteria, is_admin=False, extra_fil
             collaborator_objects = Collection.objects.filter(collabs__user_id=user.id)
 
         # Combine the querysets
-        objects = owned_objects | collaborator_objects
+        objects = (owned_objects | collaborator_objects).distinct()
 
     if model == Area:
         objects = objects.filter(type__in=['ccodes', 'copied', 'drawn']).order_by('-created')
