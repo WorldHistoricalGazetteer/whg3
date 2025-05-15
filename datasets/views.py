@@ -92,7 +92,7 @@ from .insert import (
     ds_insert_delim,
     failed_insert_notification
 )
-from .models import Dataset, Hit, DatasetFile
+from .models import Dataset, Hit, DatasetFile, DatasetUser
 from .static.hashes import mimetypes_plus as mthash_plus
 from .static.hashes.parents import ccodes as cchash
 from .tasks import align_wdlocal, align_idx, maxID

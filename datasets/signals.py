@@ -4,17 +4,15 @@ import logging
 
 import requests
 from django.conf import settings
-from django.contrib.gis.db.models import Extent
-from django.contrib.gis.geos import Polygon
 from django.core.cache import caches
 from django.db import transaction
 from django.db.models.signals import pre_delete, pre_save, post_save
 from django.dispatch import receiver
 
-from places.models import PlaceGeom
 from utils.doi import doi
 from whgmail.messaging import WHGmail
 from .models import Dataset, DatasetFile
+from .utils import compute_dataset_bbox
 
 logger = logging.getLogger(__name__)
 
@@ -51,12 +49,9 @@ def format_time(seconds):
 
 
 def handle_dataset_bbox(sender, instance, **kwargs):
-    # Get the extent of the associated geometries
-    dsgeoms = PlaceGeom.objects.filter(place__dataset=instance.label)
-    extent = dsgeoms.aggregate(Extent("geom"))["geom__extent"]
-
-    if extent:
-        instance.bbox = Polygon.from_bbox(extent)
+    bbox = compute_dataset_bbox(instance.label)
+    if bbox:
+        instance.bbox = bbox
 
 
 @receiver(pre_save, sender=Dataset)
@@ -120,7 +115,8 @@ def handle_public_flag(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Dataset)
 def handle_dataset_post_save(sender, instance, created, **kwargs):
-    handle_dataset_bbox(sender, instance, **kwargs)
+    if not kwargs.get('skip_bbox_signal'):
+        handle_dataset_bbox(sender, instance, **kwargs)
     doi(instance._meta.model_name, instance.id)
 
 

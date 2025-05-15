@@ -20,24 +20,15 @@ from django_redis import get_redis_connection
 from shapely.geometry.geo import shape, mapping
 
 from collection.models import Collection, CollPlace, CollDataset
+from collection.utils import compute_collection_bbox
 from collection.views import year_from_string
 from datasets.models import Dataset
+from datasets.utils import compute_dataset_bbox
 from places.models import Place, PlaceGeom, CloseMatch
 from traces.models import TraceAnnotation
 
 logger = logging.getLogger('mapdata')
 PENDING_REFRESH_KEY = "mapdata:pending_refresh"
-
-WORLD_BOUNDS = {
-    "type": "Polygon",
-    "coordinates": [[
-        [-180.0, -90.0],
-        [180.0, -90.0],
-        [180.0, 90.0],
-        [-180.0, 90.0],
-        [-180.0, -90.0]
-    ]]
-}
 
 
 def mapdata(request, category, id, refresh=False, carousel=False):
@@ -318,12 +309,6 @@ def generate_mapdata(category, id, refresh=False):
 
     layers = [key for key in mapdata_result.keys() if key != "table"]
 
-    bounds_geom = mapdata.get("bounds", None)
-    if bounds_geom is not None:
-        bounds_geojson = json.loads(bounds_geom.geojson)
-    else:
-        bounds_geojson = WORLD_BOUNDS
-
     extent = mapdata.get("extent")
     if extent:
         west, south, east, north = extent
@@ -349,7 +334,7 @@ def generate_mapdata(category, id, refresh=False):
         "seqmin": mapdata.get("seqmin", None),
         "seqmax": mapdata.get("seqmax", None),
         "num_places": len(mapdata["features"]),
-        "bounds": bounds_geojson,
+        "bounds": json.loads(mapdata["bounds"].geojson),
         "extent": mapdata["extent"],  # Buffered bounds
         "globeMode": globeMode,
         "coordinate_density": mapdata.get("coordinate_density", None),
@@ -391,8 +376,10 @@ def mapdata_dataset(id, task_id=None, chunk_size=1000):
     redis_batch_size = 100
     index = 0
 
+    bbox = ds.bbox or compute_dataset_bbox(ds.label)
+
     # Get the extent directly from the dataset's bbox
-    buffered_extent = buffered_extent_from_bbox(ds.bbox)
+    buffered_extent = buffered_extent_from_bbox(bbox)
 
     # Prefetch related geometries using Prefetch object
     places_qs = ds.places.prefetch_related(
@@ -467,7 +454,7 @@ def mapdata_dataset(id, task_id=None, chunk_size=1000):
         "citation": ds.citation_csl,
         "creator": ds.creator,
         "minmax": ds.minmax,
-        "bounds": ds.bbox,
+        "bounds": bbox,
         "extent": buffered_extent,
         "coordinate_density": ds.coordinate_density,
         "visParameters": ds.vis_parameters,
@@ -479,13 +466,15 @@ def mapdata_dataset(id, task_id=None, chunk_size=1000):
 def mapdata_collection(id):
     collection = get_object_or_404(Collection, id=id)
 
+    bbox = collection.bbox or compute_collection_bbox(collection)
+
     feature_collection = {
         "title": collection.title,
         "creator": collection.creator,
         "type": "FeatureCollection",
         "features": [],
-        "bounds": collection.bbox,
-        "extent": buffered_extent_from_bbox(collection.bbox),
+        "bounds": bbox,
+        "extent": buffered_extent_from_bbox(bbox),
         "coordinate_density": collection.coordinate_density,
         "visParameters": collection.vis_parameters,
         "citation": collection.citation_csl
