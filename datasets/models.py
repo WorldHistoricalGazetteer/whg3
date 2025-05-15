@@ -318,7 +318,8 @@ class Dataset(models.Model):
 
     @property
     def format(self):
-        return self.files.first().format
+        first_file = self.files.first()
+        return first_file.format if first_file else None
 
     # list of dataset geometries
     @property
