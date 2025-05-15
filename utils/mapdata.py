@@ -28,6 +28,17 @@ from traces.models import TraceAnnotation
 logger = logging.getLogger('mapdata')
 PENDING_REFRESH_KEY = "mapdata:pending_refresh"
 
+WORLD_BOUNDS = {
+    "type": "Polygon",
+    "coordinates": [[
+        [-180.0, -90.0],
+        [180.0, -90.0],
+        [180.0, 90.0],
+        [-180.0, 90.0],
+        [-180.0, -90.0]
+    ]]
+}
+
 
 def mapdata(request, category, id, refresh=False, carousel=False):
     try:
@@ -307,6 +318,12 @@ def generate_mapdata(category, id, refresh=False):
 
     layers = [key for key in mapdata_result.keys() if key != "table"]
 
+    bounds_geom = mapdata.get("bounds", None)
+    if bounds_geom is not None:
+        bounds_geojson = json.loads(bounds_geom.geojson)
+    else:
+        bounds_geojson = WORLD_BOUNDS
+
     extent = mapdata.get("extent")
     if extent:
         west, south, east, north = extent
@@ -332,7 +349,7 @@ def generate_mapdata(category, id, refresh=False):
         "seqmin": mapdata.get("seqmin", None),
         "seqmax": mapdata.get("seqmax", None),
         "num_places": len(mapdata["features"]),
-        "bounds": json.loads(mapdata["bounds"].geojson),
+        "bounds": bounds_geojson,
         "extent": mapdata["extent"],  # Buffered bounds
         "globeMode": globeMode,
         "coordinate_density": mapdata.get("coordinate_density", None),
