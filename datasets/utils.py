@@ -33,14 +33,7 @@ def compute_dataset_bbox(label):
     dsgeoms = PlaceGeom.objects.filter(place__dataset=label)
     extent = dsgeoms.aggregate(Extent("geom"))["geom__extent"]
     if extent:
-        bbox_poly = Polygon.from_bbox(extent)
-        try:
-            ds = Dataset.objects.get(label=label)
-            ds.bbox = bbox_poly
-            ds.save(update_fields=["bbox"], skip_bbox_signal=True)
-        except Dataset.DoesNotExist:
-            pass
-        return bbox_poly
+        return Polygon.from_bbox(extent)
     return None
 
 

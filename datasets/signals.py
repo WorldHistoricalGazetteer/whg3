@@ -115,8 +115,7 @@ def handle_public_flag(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Dataset)
 def handle_dataset_post_save(sender, instance, created, **kwargs):
-    if not kwargs.get('skip_bbox_signal'):
-        handle_dataset_bbox(sender, instance, **kwargs)
+    handle_dataset_bbox(sender, instance, **kwargs)
     doi(instance._meta.model_name, instance.id)
 
 

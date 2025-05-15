@@ -15,9 +15,6 @@ def compute_collection_bbox(collection):
 
     if bboxes:
         combined_bbox = MultiPolygon(bboxes)
-        bbox_poly = Polygon.from_bbox(combined_bbox.extent)
-        collection.bbox = bbox_poly
-        collection.save(update_fields=["bbox"], skip_bbox_signal=True)
-        return bbox_poly
+        return Polygon.from_bbox(combined_bbox.extent)
     else:
         return None

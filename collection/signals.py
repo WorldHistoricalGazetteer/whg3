@@ -36,8 +36,7 @@ def check_featured_field_change(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Collection)
 def handle_collection_post_save(sender, instance, created, **kwargs):
-    if not kwargs.get('skip_bbox_signal'):
-        handle_collection_bbox(sender, instance, **kwargs)
+    handle_collection_bbox(sender, instance, **kwargs)
     doi(instance._meta.model_name, instance.id)
 
 
