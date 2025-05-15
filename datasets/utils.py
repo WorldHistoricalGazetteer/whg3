@@ -1,33 +1,23 @@
 # /datasets/utils.py
-import requests
+import datetime
 import logging
+import pprint
+import re
+import time
 
-from django.conf import settings
-from django.contrib.gis.geos import GEOSGeometry
-from django.contrib.gis.db.models import Extent
-from django.core.cache import cache
-from django.core.exceptions import ValidationError
-from django.db.models import Prefetch
-from django.http import FileResponse, JsonResponse, HttpResponse, Http404
-from django.shortcuts import get_object_or_404, render  # , redirect
-from django.views.generic import View
-
-import codecs, csv, datetime, sys, openpyxl, os, pprint, re, time
-import pandas as pd
 import simplejson as json
-from chardet import detect
-from dateutil.parser import parse
-from django_celery_results.models import TaskResult
-from frictionless import validate as fvalidate
-from goodtables import validate as gvalidate
-from jsonschema import draft7_format_checker, validate
-from shapely import wkt
+from django.conf import settings
+from django.contrib.gis.db.models import Extent
+from django.contrib.gis.geos import GEOSGeometry, Polygon
+from django.http import FileResponse, JsonResponse, HttpResponse, Http404
+from django.shortcuts import get_object_or_404  # , redirect
+from django.views.generic import View
 from shapely.geometry import mapping
 from shapely.wkt import loads as wkt_loads
 
 from areas.models import Country
-from datasets.models import Dataset, DatasetUser, Hit, DatasetFile
-from datasets.static.hashes import aat, parents, aat_q
+from datasets.models import Dataset, Hit, DatasetFile
+from datasets.static.hashes import aat_q
 from datasets.static.hashes import aliases as al
 # from datasets.tasks import make_download
 from main.models import Log
@@ -37,6 +27,14 @@ pp = pprint.PrettyPrinter(indent=1)
 from whgmail.messaging import WHGmail
 
 logger = logging.getLogger(__name__)
+
+
+def compute_dataset_bbox(label):
+    dsgeoms = PlaceGeom.objects.filter(place__dataset=label)
+    extent = dsgeoms.aggregate(Extent("geom"))["geom__extent"]
+    if extent:
+        return Polygon.from_bbox(extent)
+    return None
 
 
 def volunteer_offer(request, ds):

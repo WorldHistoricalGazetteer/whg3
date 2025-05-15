@@ -7,23 +7,13 @@ from django.dispatch import receiver
 
 from utils.doi import doi
 from .models import Collection
+from .utils import compute_collection_bbox
 
 
 def handle_collection_bbox(sender, instance, **kwargs):
-    if instance.collection_class == "place":
-        # Collect bounding boxes from places and convert them to Polygons
-        bboxes = [
-            Polygon.from_bbox(place.extent) for place in instance.places.all() if place.extent
-        ]
-    else:  # collection_class == "dataset"
-        # Collect bounding boxes from datasets and convert them to Polygons
-        bboxes = [dataset.bbox for dataset in instance.datasets.all() if dataset.bbox]
-
-    if bboxes:
-        # Combine all bounding boxes into a MultiPolygon
-        combined_bbox = MultiPolygon(bboxes)
-        instance.bbox = Polygon.from_bbox(combined_bbox.extent)
-
+    bbox = compute_collection_bbox(instance)
+    if bbox:
+        instance.bbox = bbox
     else:
         instance.bbox = None
 
