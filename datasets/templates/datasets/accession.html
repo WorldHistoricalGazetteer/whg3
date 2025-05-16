@@ -77,7 +77,7 @@
      					</div>
      					<div class="row mt-2">
 				        <div id="review_record" class="col-sm-4 ps-0 small">
-				          	<div class="bg-secondary font-weight-bold ps-2 text-light">{{ dataset_label }}</div>
+				          	<div class="bg-secondary font-weight-bold ps-2 text-light">{{ ds_label }}</div>
 				          	<div id="place_record" class="mb-2">
 					            <div>
 					              	<input type="hidden" name="place_id" value="{{ record.id }}" />
@@ -192,7 +192,11 @@
 									                {% if src.variants|length > 0 %}<i>variants</i>: <b>{{ src.variants|join:", " }}</b>{% endif %}
 									                {% if src.types|length > 0 %}; <i>type(s)</i>: <b>{{ src.types|join:","}}</b>{% endif %}
 													{# index has some nulls in minmax #}
-						                			{% if src.minmax and src.minmax.first != None %}; <i>earliest/latest</i>:<b> {{ src.minmax|join:"/"}}</b>{% endif %}
+						                			{% if src.minmax %}
+													  {% if src.minmax|length > 0 and src.minmax.0 != None %}
+														; <i>earliest/latest</i>:<b> {{ src.minmax|join:"/"}}</b>
+													  {% endif %}
+													{% endif %}
 						                			<i class="text-muted">{{ src.pass }}</i>
 									                {% if src.related|length > 0 %}<br/><i class="ms-3">relation(s)</i>: <b>{{ src.related|join:","}}</b>{% endif %}
 							                	</p>

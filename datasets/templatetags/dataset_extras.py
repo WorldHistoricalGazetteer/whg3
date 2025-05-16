@@ -196,4 +196,13 @@ def url_it(val):
     return val.replace(reg.group(1),'<a href="'+reg.group(1)+
         '" target="_blank">link</a>  <i class="fas fa-external-link-alt linky"></i>') if reg else val
 
+@register.filter
+def dict_item(dictionary, key):
+    return dictionary.get(key)
 
+@register.filter
+def dict_key(value, key):
+    """Safely get a dictionary value by key."""
+    if isinstance(value, dict):
+        return value.get(key, '')
+    return ''

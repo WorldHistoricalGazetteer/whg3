@@ -1,14 +1,22 @@
 
 import { base_urls } from './aliases.js';
 
-export let whg_map = new whg_maplibre.Map({
-	maxZoom: 14,
-    style: [
-		'WHG',
-		'Satellite'
-	],
-    scaleControl: true,
-});
+let whg_map = null; // Initialize as null
+const mapElement = document.getElementById('map');
+if (mapElement) {
+    whg_map = new whg_maplibre.Map({
+        container: 'map', // Specify the container ID here
+        maxZoom: 14,
+        style: [
+            'WHG',
+            'Satellite'
+        ],
+        scaleControl: true,
+    });
+} else {
+    console.warn("Map container element with id 'map' not found.");
+}
+export { whg_map };
 
 let featureCollection;
 
@@ -123,7 +131,8 @@ export function addReviewListeners() {
 	$(".geolink")
 		.attr('title', 'Click to zoom to this location.')
 		.on('click', function(){
-			whg_map.fitViewport( bbox(featureCollection.features.find(feature => feature.properties.id === $(this).data('id'))), defaultZoom );
+			console.debug(`Clicked ID: ${$(this).data('id')}`, $(this));
+			whg_map.fitViewport( bbox(featureCollection.features.find(feature => feature.properties.record_id === $(this).data('id'))), defaultZoom );
 		});
 	
 	$(".hovermap").hover(
@@ -132,7 +141,8 @@ export function addReviewListeners() {
 	);
 	
 	function toggleHighlight(highlight, element) {
-	    let matchingFeature = featureCollection.features.find(feature => feature.properties.id === $(element).data('id').toString());
+	    let matchingFeature = featureCollection.features.find(feature => feature.properties.record_id === $(element).data('id'));
+		console.debug(`${highlight} to:`, element, matchingFeature);
 	    if (matchingFeature) {
 	        whg_map.setFeatureState({ source: $(element).data('authority'), id: matchingFeature.id }, { highlight });
 	        if (whg_map.getSource('dataset')) {

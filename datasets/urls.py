@@ -6,7 +6,9 @@ from django.conf import settings
 
 from . import views
 from datasets.utils import download_file, download_dataset, UpdateCountsView, toggle_volunteers
-  # fetch_geojson_flat, fetch_geojson_ds, download_augmented, downloadLP7,
+from .services import write_wd_pass0
+
+# fetch_geojson_flat, fetch_geojson_ds, download_augmented, downloadLP7,
 
 # dataset actions
 app_name='datasets'
@@ -78,7 +80,7 @@ urlpatterns = [
   path('<int:pk>/review/<str:tid>/<str:pid>', views.review, name="review"),
 
   # accept any unreviewed wikidata pass0 hits from given task
-  path('wd_pass0/<str:tid>', views.write_wd_pass0, name="wd_pass0"),
+  path('wd_pass0/<str:tid>', write_wd_pass0, name="wd_pass0"),
 
   # delete TaskResult & associated hits
   path('task-delete/<str:tid>/<str:scope>', views.task_delete, name="task-delete"),

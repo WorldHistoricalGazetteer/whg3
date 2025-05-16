@@ -4,7 +4,7 @@
 {% load dataset_extras %}
 
 {% block maplibre %}
-  <script type="text/javascript">
+<script type="text/javascript" xmlns:ds.recon_status>
     const loadMaplibre = true;
   </script>
   <link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet"/>
@@ -92,7 +92,7 @@
                     {% endfor %}
                     <hr/>
                   {% endif %}
-                  {% if ds.recon_status.idx %}
+                  {% if ds.recon_status|dict_item:'idx' %}
                     <p>Accessioning has begun for this dataset. Initiating another reconciliation task could disrupt
                       the workflow in progress. If you would like to stop the accessioning step and roll back the
                       workflow,
@@ -103,8 +103,7 @@
                     <label class="form-check-label" for="r_wdlocal">
                       <input type="radio" class="form-check-input r_recon" id="r_wdlocal"
                              name="recon" value="wdlocal"
-                             {% if not ds.recon_status.idx %} checked{% else %} disabled{% endif %}>
-{#                             {% if not ds.recon_status.idx %} disabled{% endif %}>#}
+                             {% if not ds.recon_status|dict_item:'idx' %} checked{% else %} disabled{% endif %}>
                       Wikidata + GeoNames
                       <span class="ms-2 font-italic small">(estimated time: {{ numrows|time_estimate }})</span>
                     </label>
@@ -122,7 +121,7 @@
                       </div>
                     {% endif %}
                   </div>
-                    {% if not ds.recon_status.idx and not ds.recon_status.idx == 0 %}
+                    {% if not ds.recon_status|dict_item:'idx' and not ds.recon_status|dict_item:'idx' == 0 %}
                   <div id="addtask_lower">
                     <hr/>
                       <div class="row">
