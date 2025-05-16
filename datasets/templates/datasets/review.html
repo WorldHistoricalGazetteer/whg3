@@ -303,7 +303,10 @@
                     <p class="mb-0"><strong>Description(s)</strong>:</p>
                     <div class="attest-element abbrev small">
                       {% for d in form.json.value|get:"descriptions" %}
-                        ({{ d.lang }}) {{ d.text }}{% endfor %}
+                        {% if d %}
+                          ({{ d.lang }}) {{ d.text }}
+                        {% endif %}
+                      {% endfor %}
                     </div>
                   {% endif %}
                 </div>

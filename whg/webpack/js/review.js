@@ -8,10 +8,14 @@ import '../css/review.css';
 
 function waitMapLoad() {
     return new Promise((resolve) => {
-        whg_map.on('load', () => {
-			initialiseMap();
-			resolve();
-        });
+        if (whg_map) {
+            whg_map.on('load', () => {
+                initialiseMap();
+                resolve();
+            });
+        } else {
+            resolve();
+        }
     });
 }
 
@@ -102,7 +106,7 @@ Promise.all([waitMapLoad(), waitDocumentReady()])
 		
 	}
 	
-	addReviewListeners();	
+	if (whg_map) addReviewListeners();
 	
 })
 .catch(error => console.error("An error occurred:", error));

@@ -2,52 +2,32 @@
 
 # Standard library imports
 import ast
-import chardet
-import charset_normalizer as cn
-import codecs
 import json
-import logging
-import math
-import mimetypes
 import os
-import re
 import shutil
 import sys
 import tempfile
-from copy import deepcopy
+from collections import Counter
 from pathlib import Path
 from shutil import copyfile
 
 # Third-party imports
 import numpy as np
+import pandas as pd
 from celery import current_app as celapp
-from deepdiff import DeepDiff as diff
-from django.utils.datastructures import MultiValueDictKeyError
-from shapely import wkt
-
-from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.models import Group
-from django.contrib.gis.geos import GEOSGeometry
 from django.core.paginator import Paginator
-from django.core.serializers import serialize
-from django.db import transaction
-from django.db.models import Q, F, CharField, JSONField
-from django.db.models.functions import Cast
-from django.db.utils import DataError
+from django.db.models import Count
 from django.forms import modelformset_factory
 from django.http import (
-    HttpResponse,
     HttpResponseRedirect,
-    HttpResponseServerError,
-    JsonResponse, HttpResponseNotFound
+    HttpResponseNotFound
 )
-from django.shortcuts import redirect, get_object_or_404, render
+from django.shortcuts import redirect, render
 from django.test import Client
-from django.urls import reverse, reverse_lazy
-from django.utils import timezone
+from django.urls import reverse
+from django.utils.datastructures import MultiValueDictKeyError
 from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -58,45 +38,31 @@ from django.views.generic import (
     DeleteView,
     DetailView
 )
-from django_celery_results.models import TaskResult
+from shapely import wkt
 
 # from accounts.views import logger
 # Local application imports
-from areas.models import Area, Country
-from collection.models import Collection, CollectionGroup
+from areas.models import Area
+from collection.models import Collection
 from elastic.es_utils import (
-    makeDoc,
     removePlacesFromIndex,
-    replaceInIndex,
     removeDatasetFromIndex
 )
-from main.models import Log, Comment
+from main.models import Comment
 from places.models import *
 from utils.regions_countries import get_regions_countries
 from validation.views import validate_file
-from validation.tasks import get_task_status
-
-from .exceptions import (
-    LPFValidationError,
-    DelimValidationError,
-    DelimInsertError,
-    DataAlreadyProcessedError
-)
 from .forms import (
     HitModelForm,
     DatasetDetailModelForm,
     DatasetUploadForm,
     DatasetCreateEmptyModelForm
 )
-from .insert import (
-    ds_insert_delim,
-    failed_insert_notification
-)
-from .models import Dataset, Hit, DatasetFile, DatasetUser
-from .static.hashes import mimetypes_plus as mthash_plus
-from .static.hashes.parents import ccodes as cchash
-from .tasks import align_wdlocal, align_idx, maxID
-from .helpers import *
+from .models import DatasetUser
+from .services import _get_task_details, _get_hit_counts, _filter_unreviewed_places, _get_review_page_and_field, \
+    _get_place_and_hits, _build_dataset_details, _extract_passes, _get_country_names, _build_feature_collection, \
+    _process_matching_decisions
+from .tasks import *
 from .utils import *
 
 es = settings.ES_CONN
@@ -319,423 +285,83 @@ def celeryUp():
     return len(response) > 0
 
 
-def indexMatch(pid, hit_pid=None, user=None, task=None):
-    """
-    Indexes a db record upon a single hit match in align_idx review.
-    If the place is already indexed, it is related as a child to an existing parent.
-    """
-    logger = logging.getLogger('accession')
-
-    logger.debug(f'indexMatch(): user: {user}; task: {str(hit_pid)}')
-    logger.debug(f'indexMatch(): pid {str(pid)}; hit_pid: {str(hit_pid)}')
-
-    es = settings.ES_CONN
-    idx = settings.ES_WHG
-
-    # Ensure valid Place object
-    try:
-        place = get_object_or_404(Place, id=int(pid))
-    except ValueError:
-        logger.error(f"Invalid 'pid': {pid} is not a valid integer.")
-        return
-    except Exception as e:
-        logger.error(f"Error fetching Place with id={pid}: {e}")
-        return
-
-    # Query Elasticsearch for place_id
-    try:
-        q_place = {"query": {"bool": {"must": [{"match": {"place_id": pid}}]}}}
-        res = es.search(index=idx, body=q_place)
-        logger.debug(f'Elasticsearch query for place_id={pid}: {res}')
-    except Exception as e:
-        logger.error(f"Elasticsearch query failed for place_id={pid}: {e}")
-        return
-
-    is_already_indexed = res['hits']['total']['value'] > 0
-
-    if not is_already_indexed:
-        # If the place is not indexed, create it as a new parent
-        logger.debug(f'Place {pid} not found in index. Creating as parent.')
-        try:
-            new_doc = makeDoc(place)
-            new_doc['relation'] = {"name": "parent"}
-            new_doc['whg_id'] = maxID(es, idx) + 1
-
-            es.index(index=idx, id=str(new_doc['whg_id']), body=json.dumps(new_doc))
-            place.indexed = True
-            place.save()
-            logger.info(f'Place {pid} indexed as new parent.')
-        except Exception as e:
-            logger.error(f"Failed to index Place {pid} as parent: {e}")
-        return
-
-    # If already indexed, handle relationship logic
-    try:
-        parent_record = res['hits']['hits'][0]
-        parent_id = parent_record['_id']
-        logger.debug(f'Place {pid} found in index. Parent ID: {parent_id}')
-
-        # Handle hit_pid logic
-        if hit_pid:
-            q_hit = {"query": {"bool": {"must": [{"match": {"place_id": hit_pid}}]}}}
-            res_hit = es.search(index=idx, body=q_hit)
-            if not res_hit['hits']['hits']:
-                logger.warning(f"No hits found for hit_pid={hit_pid}.")
-                return
-
-            hit = res_hit['hits']['hits'][0]
-            parent_whgid = hit['_id'] if hit['_source']['relation']['name'] != 'child' else hit['_source']['relation']['parent']
-
-            new_doc = makeDoc(place)
-            new_doc['relation'] = {"name": "child", "parent": parent_whgid}
-
-            es.index(index=idx, id=place.id, body=json.dumps(new_doc))
-            logger.info(f"Place {pid} added as child of parent {parent_whgid}.")
-        else:
-            logger.debug(f"No hit_pid provided for Place {pid}. No child-parent relationship created.")
-    except Exception as e:
-        logger.error(f"Error processing relationship for Place {pid}: {e}")
-
-
-@transaction.atomic
-# ensuring unique CloseMatch records
-def update_close_matches(new_child_id, parent_place_id, user, task):
-    # Normalize the tuple
-    place_a_id, place_b_id = sorted([new_child_id, parent_place_id])
-    try:
-        # Ensure that the user and task are valid instances
-        assert isinstance(user, User), f'user is not a User instance: {type(user)}'
-        assert isinstance(task, TaskResult), f'task is not a TaskResult instance: {type(task)}'
-
-        # Check if a CloseMatch record already exists
-        if not CloseMatch.objects.filter(
-                Q(place_a_id=place_a_id) & Q(place_b_id=place_b_id)
-        ).exists():
-            logger.debug(f'User: {user} (ID: {user.id}), Task: {task} (ID: {task.id})')
-
-            # Create the CloseMatch record
-            CloseMatch.objects.create(
-                place_a_id=place_a_id,
-                place_b_id=place_b_id,
-                created_by=user,
-                task=task,
-                basis='reviewed'
-            )
-        else:
-            logger.debug(f'CloseMatch record already exists for {parent_place_id} and {new_child_id}')
-    except Exception as e:
-        logger.exception(f'Error creating CloseMatch record: {e}; new_child_id={new_child_id}, parent_place_id={parent_place_id}, user={user}, task={task}')
-
-
-# hotfix 17 June 2024
-def indexMultiMatch(pid, matchlist, user, task):
-    """
-      from datasets.views.review()
-      indexes a db record given multiple hit matches in align_idx review
-      a LOT has to happen (see _notes/accession-pseudocode.txt):
-        - pick a single 'winner' among the matched hits (max score)
-        - make new record its child
-        - demote all non-winners in index from parent to child
-          - whg_id and children[] ids (if any) added to winner
-          - name variants added to winner's searchy[] and suggest.item[] lists
-    """
-    from elasticsearch8 import RequestError
-    es = settings.ES_CONN
-    idx = settings.ES_WHG
-    place = Place.objects.get(id=pid)
-    from elastic.es_utils import makeDoc
-    new_obj = makeDoc(place)
-
-    # bins for new values going to winner
-    addnames = []
-    addkids = [str(pid)]  # pid will also be the new record's _id
-
-    # max score is winner
-    winner = max(matchlist, key=lambda x: x['score'])  # 14158663
-    winner_place_id = winner['pid']  # This is the place_id of the winner
-    # this is multimatch so there is at least one demoted (list of whg_ids)
-    demoted = [str(i['whg_id']) for i in matchlist if not (i['whg_id'] == winner['whg_id'])]  # ['14090523']
-
-    # complete doc for new record
-    new_obj['relation'] = {"name": "child", "parent": winner['whg_id']}
-    # copy its toponyms into addnames[] for adding to winner later
-    for n in new_obj['names']:
-        addnames.append(n['toponym'])
-    if place.title not in addnames:
-        addnames.append(place.title)
-
-    # New relationships for CloseMatch records
-    new_relationships = [(pid, winner_place_id)]  # Add the initial relationship
-
-    # generate script used to update winner w/kids and names
-    # from new record and any kids of 'other' matched parents
-    def q_updatewinner(addkids, addnames):
-        return {"script": {
-            "source": """ctx._source.children.addAll(params.newkids);
-          ctx._source.searchy.addAll(params.names);
-          """,
-            "lang": "painless",
-            "params": {
-                "newkids": addkids,
-                "names": addnames}
-        }}
-
-    # index the new record as child of winner
-    try:
-        es.index(index=idx, id=str(pid), routing=1, body=json.dumps(new_obj))
-    except RequestError as rq:
-        logger. exception(f'Error indexing new record {pid} as child of {winner["whg_id"]}: {rq.error} {rq.info}')
-
-    # demote others
-    for _id in demoted:
-        # get index record stuff, to be altered then re-indexed
-        # ES won't allow altering parent/child relations directly
-        q_demote = {"query": {"bool": {"must": [{"match": {"whg_id": _id}}]}}}
-        res = es.search(body=q_demote, index=idx)
-        srcd = res['hits']['hits'][0]['_source']
-        # add names in suggest to names[]
-        sugs = srcd['searchy']
-        for sug in sugs:
-            addnames.append(sug)
-        addnames = list(set(addnames))
-        # _id of demoted (a whg_id) belongs in winner's children[]
-        addkids.append(str(srcd['place_id']))
-
-        haskids = len(srcd['children']) > 0
-        # if demoted record has kids, add to addkids[] list
-        # for 'adoption' by topdog later
-        if haskids:
-            morekids = srcd['children']
-            for kid in morekids:
-                addkids.append(str(kid))
-
-        # update the 'winner' parent
-        q = q_updatewinner(list(set(addkids)), list(set(addnames)))  # ensure only unique
-        try:
-            es.update(index=idx, id=winner['whg_id'], body=q)
-        except RequestError as rq:
-            logger.exception(f'Error updating winner {winner["whg_id"]}: {rq.error} {rq.info}')
-
-        from copy import deepcopy
-        newsrcd = deepcopy(srcd)
-        # update it to reflect demotion
-        newsrcd['relation'] = {"name": "child", "parent": winner['whg_id']}
-        newsrcd['children'] = []
-        if 'whg_id' in newsrcd:
-            newsrcd.pop('whg_id')
-
-        # zap the demoted, reindex with same _id and modified doc (newsrcd)
-        try:
-            es.delete(index=idx, id=_id)
-            es.index(index=idx, id=_id, body=newsrcd, routing=1)
-        except RequestError as rq:
-            logger.exception(f'Error reindexing demoted record {_id}: {rq.error} {rq.info}')
-
-        # re-assign parent for kids of all/any demoted parents
-        if len(addkids) > 0:
-            for kid in addkids:
-                q_adopt = {"script": {
-                    "source": "ctx._source.relation.parent = params.new_parent; ",
-                    "lang": "painless",
-                    "params": {"new_parent": winner['whg_id']}
-                },
-                    "query": {"match": {"place_id": kid}}}
-                es.update_by_query(index=idx, body=q_adopt, conflicts='proceed')
-
-                # Add new relationships for CloseMatch
-                kid_place_id = kid  # Since addkids contains place_id values
-                new_relationships.append((int(kid_place_id), int(winner_place_id)))
-
-    # Create new CloseMatch records
-    for place_a, place_b in new_relationships:
-        update_close_matches(place_a, place_b, user, task)
-
-
 def review(request, dsid, tid, passnum):
     """
       GET   returns review.html for Wikidata, or accession.html for accessioning
       POST  for each record that got hits, process user matching decisions
       NB.   'passnum' is always a string: ['pass*' | 'def' | '0and1' (for idx)]
     """
-    pid = None
-    if "pid" in request.GET:
-        pid = request.GET["pid"]
+    pid = request.GET.get("pid")
     ds = get_object_or_404(Dataset, id=dsid)
-
-    # get the task & its kwargs
-    task = get_object_or_404(TaskResult, task_id=tid)
-    auth = task.task_name[6:].replace("local", "")
-    authname = "Wikidata" if auth == "wd" else "WHG"
-    try:
-        kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
-    except (SyntaxError, ValueError):
-        kwargs = {}
-    test = kwargs["test"] if "test" in kwargs else "off"
-
-    # beta = "beta" in list(request.user.groups.all().values_list("name", flat=True))
-    def get_pass_count(task_id, reviewed, query_pass):
-        return Hit.objects.values("place_id").filter(task_id=task_id, reviewed=reviewed, query_pass=query_pass).count()
-
-    # task_id='6e81ccdc-5bcc-403e-bda1-afac433d558c'
-    # reviewed = False
-    # query_pass = 'def'
-    # foo=get_pass_count(task_id, reviewed, query_pass)
-
-    # filter place records by passnum for those with unreviewed hits on this task
-    # if request passnum is complete, increment
-    # hit count for this pass
-    cnt_pass = get_pass_count(tid, False, passnum)
-    # hit counts for all numbered passes
-    cnt_pass0 = get_pass_count(tid, False, "pass0")
-    cnt_pass1 = get_pass_count(tid, False, "pass1")
-    cnt_pass2 = get_pass_count(tid, False, "pass2")
-    cnt_pass3 = get_pass_count(tid, False, "pass3")
-
-    # calling link passnum may be 'pass*', 'def', or '0and1' (for idx)
-    # if 'pass*', get place_ids for just that pass
-    if passnum.startswith("pass"):
-        try:
-            pass_int = int(passnum[4])
-        except (IndexError, ValueError):
-            pass_int = 10
-        # if no unreviewed left, go to next pass
-        passnum = passnum if cnt_pass > 0 else "pass" + str(pass_int + 1)
-        hitplaces = Hit.objects.values("place_id").filter(
-            task_id=tid, reviewed=False, query_pass=passnum
-        )
-    else:
-        # all unreviewed
-        hitplaces = Hit.objects.values("place_id").filter(task_id=tid, reviewed=False)
-
-    # set review page returned
-    if auth in ["whg", "idx"]:
-        review_page = "accession.html"
-    else:
-        review_page = "review.html"
-
-    #
-    review_field = (
-        "review_whg"
-        if auth in ["whg", "idx"]
-        else "review_wd"
-        if auth.startswith("wd")
-        else "review_tgn"
-    )
-    lookup = "__".join([review_field, "in"])
-    """
-    2 = deferred; 1 = reviewed, 0 = unreviewed; NULL = no hits
-    status = [2] if passnum == 'def' else [0,2]
-    by default, don't return deferred
-  """
-    status = [2] if passnum == "def" else [0]
-
-    # unreviewed place objects from place_ids (a single pass or all)
-    record_list = ds.places.order_by("id").filter(**{lookup: status}, pk__in=hitplaces)
+    task, auth, authname, kwargs, test = _get_task_details(tid)
+    cnt_pass_def, cnt_pass0, cnt_pass1, cnt_pass2, cnt_pass3 = _get_hit_counts(tid)
+    record_list, current_passnum = _filter_unreviewed_places(ds, tid, passnum, auth)
+    review_page, review_field = _get_review_page_and_field(auth)
 
     nohit_context = {
         "nohits": True,
         "ds_id": dsid,
+        "ds_label": ds.label,
+        "dataset_details": {},
         "task_id": tid,
-        "passnum": passnum,
+        "authority": task.task_name[6:8] if auth == "wdlocal" else task.task_name[6:],
+        "deferred": True if current_passnum == "def" else False,
+        "passnum": current_passnum,
+        "mbtoken": False,
+        "already": False,
+        "test": test,
+        "feature_collection": {},
+        "hit_list": None,
+        "passes": None,
+        "records": None,
+        "countries": None,
+        "page": None,
+        "aug_geoms": kwargs["aug_geoms"],
+        "count_pass0": cnt_pass0,
+        "count_pass1": cnt_pass1,
+        "count_pass2": cnt_pass2,
+        "count_pass3": cnt_pass3,
+        "formset": None,
     }
 
-    if not record_list.exists() or len(record_list) == 0:
-        # no records left for pass (or in deferred queue)
-        return render(request, "datasets/" + review_page, context=nohit_context)
+    if not record_list.exists():
+        return render(request, f"datasets/{review_page}", context=nohit_context)
 
-    # manage pagination & urls
-    # gets next place record as records[0]
-    # TODO: manage concurrent reviewers; i.e. 2 people have same page 1
-    paginator = Paginator(record_list, 1)
-    # handle request for singleton (e.g. deferred from browse table)
-    # if 'pid' in request.GET, bypass per-pass sequential loading
     if pid:
-        # get its index and add 1 to get page
         try:
             place_obj = Place.objects.get(id=pid)
             page = list(record_list).index(place_obj) + 1
         except (Place.DoesNotExist, ValueError):
-            return render(request, "datasets/" + review_page, context=nohit_context)
+            return render(request, f"datasets/{review_page}", context=nohit_context)
     else:
-        # default action, sequence of all pages for the pass
-        page = 1 if not request.GET.get("page") else request.GET.get("page")
+        page = request.GET.get("page", 1)
+
+    paginator = Paginator(record_list, 1)
     records = paginator.get_page(page)
-    count = len(record_list)
 
     if not records:
-        return render(request, "datasets/" + review_page, context=nohit_context)
+        return render(request, f"datasets/{review_page}", context=nohit_context)
 
-    # get hits for this record
     try:
-        placeid = records[0].id
+        place = records[0]
     except IndexError:
-        return render(request, "datasets/" + review_page, context=nohit_context)
-    place = get_object_or_404(Place, id=placeid)
-    dataset_details = {}  # needed for context in either case
-    # if auth not in ["whg", "idx"]:
-    if passnum.startswith("pass") and auth not in ["whg", "idx"]:
-        # ***this is wdgn review*** raw_hits are only numered pass
-        raw_hits = Hit.objects.filter(
-            place_id=placeid, task_id=tid, query_pass=passnum).order_by("-authority", "-score")
-    elif passnum == "def":
-        raw_hits = Hit.objects.filter(
-            place_id=placeid, task_id=tid).order_by("-authority", "-score")
-    else:
-        # ***this is accessioning*** -> get all regardless of pass
-        raw_hits = Hit.objects.filter(place_id=placeid, task_id=tid).order_by("-score")
+        return render(request, f"datasets/{review_page}", context=nohit_context)
 
-        # Get details of datasets for popovers
-        # in dev, some datasets referenced in hits by index labels may not exist in database
-        for hit in raw_hits:
-            for source in hit.json["sources"]:
-                try:
-                    dataset = Dataset.objects.get(label=source["dslabel"])
-                    dataset_details[dataset.label] = {
-                        "title": dataset.title or "N/A",
-                        "description": dataset.description or "N/A",
-                        "owner": dataset.owner.name or "N/A",
-                        "creator": dataset.creator or "N/A"
-                    }
-                except Dataset.DoesNotExist:
-                    dataset_details[source["dslabel"]] = {
-                        "title": "Dataset not found",
-                        "description": "The dataset with label {} does not exist.".format(source["dslabel"]),
-                        "owner": "N/A",
-                        "creator": "N/A"
-                    }
-        # print('dataset_details', dataset_details)
+    place_for_hits, raw_hits = _get_place_and_hits(place.id, tid, auth, current_passnum)
+    logger.debug(f"Raw hits 1: {raw_hits}")
+    dataset_details = _build_dataset_details(raw_hits)
+    passes = _extract_passes(raw_hits, auth)
+    countries = _get_country_names(place)
+    feature_collection = _build_feature_collection(records, raw_hits)
 
-    # ??why? get pass contents for all of a place's hits
-    passes = (
-        list(
-            set(
-                [
-                    item
-                    for sublist in [
-                    [s["pass"] for s in h.json["sources"]] for h in raw_hits
-                ]
-                    for item in sublist
-                ]
-            )
-        )
-        if auth in ["whg", "idx"]
-        else None
+    HitFormset = modelformset_factory(
+        Hit,
+        fields=("id", "authority", "authrecord_id", "query_pass", "score", "json", "match"),
+        form=HitModelForm,
+        extra=0,
     )
+    formset = HitFormset(request.POST or None, queryset=raw_hits)
 
-    # convert ccodes to names
-    countries = []
-    for r in place.ccodes:
-        try:
-            countries.append(
-                cchash[0][r.upper()]["gnlabel"]
-                + " ("
-                + cchash[0][r.upper()]["tgnlabel"]
-                + ")"
-            )
-        except:
-            pass
-
-    # prep some context
     context = {
         "ds_id": dsid,
         "ds_label": ds.label,
@@ -755,71 +381,17 @@ def review(request, dsid, tid, passnum):
         "count_pass3": cnt_pass3,
         "deferred": True if passnum == "def" else False,
         "test": test,
+        "formset": formset,
+        "feature_collection": feature_collection,
+        "already": False,
+        "mbtoken": False,
+        "nohits": False,
     }
 
-    # print('raw_hits at formset', [h.json['titles'] for h in raw_hits])
-    # build formset from hits, add to context
-    HitFormset = modelformset_factory(
-        Hit,
-        fields=("id", "authority", "authrecord_id", "query_pass", "score", "json"),
-        form=HitModelForm,
-        extra=0,
-    )
-    formset = HitFormset(request.POST or None, queryset=raw_hits)
-    context["formset"] = formset
-    # print('hit.json in review()', [h.json for h in raw_hits])
-    # Create FeatureCollection for mapping
-    index_offset = sum(1 for record in records for geom in
-                       record.geoms.all().values('jsonb')) or 1  # Handle case where no geometries yet exist
-    feature_collection = {
-        "type": "FeatureCollection",
-        "features": [
-                        {
-                            "type": "Feature",
-                            "properties": {
-                                "record_id": record.id,
-                                "ds": "dataset",
-                                # "green": True,
-                            },
-                            "geometry": {"type": geom['jsonb']["type"],
-                                         "coordinates": geom['jsonb'].get("coordinates")},
-                            "id": idx
-                        }
-                        for idx, (record, geom) in
-                        enumerate((record, geom) for record in records for geom in record.geoms.all().values('jsonb'))
-                    ] +
-                    [
-                        {
-                            "type": "Feature",
-                            "properties": {
-                                **{key: value for key, value in geom.items() if key not in ["coordinates", "type"]},
-                                # "green": False,  # Set to True for green markers - following 2 lines are redundant v2 code
-                                # (review_page=="accession.html" and geom["ds"]==ds.label) or
-                                # (review_page=="review.html" and not geom["ds"] in ['tgn', 'wd', 'whg'])
-                            },
-                            "geometry": {"type": geom["type"], "coordinates": geom.get("coordinates")},
-                            "id": idx + index_offset
-                        }
-                        for idx, (hit, geom) in
-                        enumerate((hit, geom) for hit in raw_hits if 'geoms' in hit.json for geom in hit.json['geoms'])
-                    ]
-    }
-    context["feature_collection"] = json.dumps(feature_collection)
-
-    method = request.method
-
-    '''
-      POST processes closeMatch/no match/defer choices made by save in review or accession page
-      Two very different cases:
-       - For wikidata review, act on each hit considered (new place_geom and place_link records if matched)
-       - For accession, act on index 'clusters'  
-    '''
-    if method == "POST":
-
-        place_post = get_object_or_404(Place, pk=placeid)
+    if request.method == "POST":
+        place_post = get_object_or_404(Place, pk=place.id)
         review_status = getattr(place_post, review_field)
-        # proceed with POST only if place is unreviewed or deferred; else return to a GET (and next place)
-        # NB. other reviewer(s) are *not* notified
+
         if review_status == 1:
             context["already"] = True
             messages.success(
@@ -829,345 +401,14 @@ def review(request, dsid, tid, passnum):
                 "/datasets/" + str(dsid) + "/review/" + task.task_id + "/" + passnum
             )
         elif formset.is_valid():
-            hits = formset.cleaned_data
-            # print('formset valid', hits)
-            matches = 0
-            matched_for_idx = []  # for accession
-            # are any of the listed hits matches?
-            for x in range(len(hits)):
-                hit = hits[x]["id"]
-                # print("dataset", hits[x]["json"]["dataset"])
-                # is this hit a match?
-                if hits[x]["match"] not in ["none"]:
-                    # print('json of matched hit/cluster (in review())', hits[x]['json'])
-                    matches += 1
-                    # if wd or tgn, write place_geom, place_link record(s) now
-                    # IF someone didn't just review it!
-                    if task.task_name[6:] in ["wdlocal", "wd", "tgn"]:
-                        # print('task.task_name', task.task_name)
-                        hasGeom = (
-                                "geoms" in hits[x]["json"]
-                                and len(hits[x]["json"]["geoms"]) > 0
-                        )
-                        hasNames = (
-                                ("variants" in hits[x]["json"] and len(hits[x]["json"]["variants"]) > 0)
-                                or
-                                ("names" in hits[x]["json"] and len(hits[x]["json"]["names"]) > 0)
-                        )
-                        # GEOMS
-                        # create place_geom records if 'accept geometries' was checked
-                        if (
-                                kwargs["aug_geoms"] == 'on'
-                                and hasGeom
-                                and tid not in place_post.geoms.all().values_list("task_id", flat=True)
-                        ):
-                            gtype = hits[x]["json"]["geoms"][0]["type"]
-                            coords = hits[x]["json"]["geoms"][0]["coordinates"]
-                            # TODO: build real postgis geom values
-                            gobj = GEOSGeometry(
-                                json.dumps({"type": gtype, "coordinates": coords})
-                            )
-                            PlaceGeom.objects.create(
-                                place=place_post,
-                                task_id=tid,
-                                src_id=place.src_id,
-                                geom=gobj,
-                                reviewer=request.user,
-                                jsonb={
-                                    "type": gtype,
-                                    "citation": {
-                                        "id": auth + ":" + hits[x]["authrecord_id"],
-                                        "label": authname,
-                                    },
-                                    "coordinates": coords,
-                                },
-                            )
-                        # NAMES
-                        if ('aug_names' in kwargs and kwargs['aug_names'] == 'on'
-                                and hasNames
-                                and tid not in place_post.names.all().values_list('task_id', flat=True)
-                        ):
-                            for n in hits[x]["json"]["variants"]:
-                                # handle different name formats
-                                # print('n has type', type(n))
-                                if hits[x]["json"]['dataset'] == 'wikidata':
-                                    name = n.split('@')[0]
-                                elif hits[x]["json"]['dataset'] == 'geonames':
-                                    name = n
-                                else:
-                                    continue  # Skip if n is not in the expected format
-                                # exclude duplicates
-                                if name not in place_post.names.all().values_list("toponym", flat=True):
-                                    PlaceName.objects.create(
-                                        place=place_post,
-                                        task_id=tid,
-                                        src_id=place.src_id,
-                                        toponym=name,
-                                        # reviewer=request.user,
-                                        jsonb={
-                                            "toponym": n,
-                                            "citations": [{
-                                                "id": auth + ":" + hits[x]["authrecord_id"],
-                                                "label": authname,
-                                            }],
-                                        },
-                                    )
-
-                        # LINKS
-                        # create single PlaceLink for matched wikidata record
-                        if tid not in place_post.links.all().values_list(
-                                "task_id", flat=True
-                        ):
-                            link = PlaceLink.objects.create(
-                                place=place_post,
-                                task_id=tid,
-                                src_id=place.src_id,
-                                reviewer=request.user,
-                                jsonb={
-                                    "type": hits[x]["match"],
-                                    "identifier": link_uri(
-                                        task.task_name,
-                                        hits[x]["authrecord_id"]
-                                        if hits[x]["authority"] != "whg"
-                                        else hits[x]["json"]["place_id"],
-                                    ),
-                                },
-                            )
-
-                        # create multiple PlaceLink records (e.g. Wikidata)
-                        # TODO: filter duplicates
-                        if "links" in hits[x]["json"]:
-                            for l in hits[x]["json"]["links"]:
-                                authid = re.search(": ?(.*?)$", l).group(1)
-                                # print('authid, authids',authid, place.authids)
-                                if l not in place.authids:
-                                    # if authid not in place.authids:
-                                    link = PlaceLink.objects.create(
-                                        place=place_post,
-                                        task_id=tid,
-                                        src_id=place.src_id,
-                                        jsonb={
-                                            "type": hits[x]["match"],
-                                            # "identifier": authid.strip()
-                                            "identifier": l.strip(),
-                                        },
-                                        reviewer=request.user,
-                                    )
-                                    # print('PlaceLink record created',link.jsonb)
-                                    # update totals
-                                    ds.numlinked = (
-                                        ds.numlinked + 1 if ds.numlinked else 1
-                                    )
-                                    ds.total_links = (
-                                        ds.total_links + 1 if ds.total_links else 1
-                                    )
-                                    # ds.total_links = ds.total_links + 1
-                                    ds.save()
-                    # this is accessioning to whg index, add to matched[]
-                    elif task.task_name == "align_idx":
-                        if "links" in hits[x]["json"]:
-                            links_count = len(hits[x]["json"])
-                        matched_for_idx.append(
-                            {
-                                "whg_id": hits[x]["json"]["whg_id"],
-                                "pid": hits[x]["json"]["pid"],
-                                "score": hits[x]["json"]["score"],
-                                "links": links_count,
-                            }
-                        )
-                    # TODO: informational lookup on whg index?
-                    # elif task.task_name == 'align_whg':
-                    #   print('align_whg (non-accessioning) DOING NOTHING (YET)')
-                # in any case, flag hit as reviewed...
-                hitobj = get_object_or_404(Hit, id=hit.id)
-                hitobj.reviewed = True
-                hitobj.save()
-
-            # handle accessioning match results
-            if len(matched_for_idx) == 0 and task.task_name == "align_idx":
-                # 0 matches during accession, indexMatch() makes it s seed (parent)
-                logger.debug(f'review()->parent. user: {request.user}, place_post: {place_post.id}, task: {task}')
-                indexMatch(str(pid), user=request.user, task=task)
-
-                place_post.indexed = True
-                place_post.save()
-            elif len(matched_for_idx) == 1:
-                # 1 match - indexMatch() makes it a child of the match
-                # mod 18 Jun 2024
-                parent_id = matched_for_idx[0]["pid"]
-                indexMatch(str(place_post.id), hit_pid=parent_id, user=request.user, task=task)
-
-                place_post.indexed = True
-                place_post.save()
-            elif len(matched_for_idx) > 1:
-                indexMultiMatch(place_post.id, matched_for_idx, user=request.user, task=task)
-                place_post.indexed = True
-                place_post.save()
-
-            if ds.unindexed == 0:
-                setattr(ds, "ds_status", "indexed")
-                ds.save()
-
-            # if none are left for this task, change status & email staff
-            if auth in ["wd"] and ds.recon_status["wdlocal"] == 0:
-                recon_complete(ds)
-                # ds.ds_status = "wd-complete"
-                # ds.save()
-                # status_emailer(ds, "wd")
-                # print("sent status email")
-            # handled by signal now
-            # elif auth == "idx" and ds.recon_status["idx"] == 0:
-            #   ds.ds_status = "indexed"
-            #   ds.save()
-            #   status_emailer(ds, "idx")
-            #   print("sent status email")
-
-            setattr(place_post, review_field, 1)
-            place_post.save()
-
+            _process_matching_decisions(request, place_post, formset, task, auth, authname, kwargs, review_field, ds)
             return redirect(
-                "/datasets/"
-                + str(dsid)
-                + "/review/"
-                + tid
-                + "/"
-                + passnum
-                + "?page="
-                + str(int(page))
+                f"/datasets/{dsid}/review/{tid}/{current_passnum}?page={int(page)}"
             )
         else:
             logger.debug(f'formset is NOT valid. errors: {formset.errors} data: {formset.data}')
-    # print('context', context)
-
-    context["mbtoken"] = context.get("mbtoken", False)
-    context["already"] = context.get("already", False)
-    context["nohits"] = context.get("nohits", False)
 
     return render(request, "datasets/" + review_page, context=context)
-
-
-def recon_complete(ds):
-    ds.ds_status = "wd-complete"
-    ds.save()
-    # status_emailer(ds, "wd")
-    # print("sent status email")
-
-
-# kwargs = json.loads(task.task_kwargs.replace("'", '"'))
-def write_wd_pass0(request, tid):
-    """
-      write_wd_pass0(taskid)
-      called from dataset_detail>status tab
-      accepts all pass0 wikidata matches, writes geoms and links
-    """
-    task = get_object_or_404(TaskResult, task_id=tid)
-    try:
-        kwargs = ast.literal_eval(task.task_kwargs.strip('"'))
-    except (ValueError, SyntaxError) as e:
-        logger.exception(f"Error evaluating task_kwargs: {e}")
-        # return  # Handle the error appropriately
-
-    # kwargs_str = task.task_kwargs.replace("'", '"')
-    # kwargs = json.loads(kwargs_str)
-    # kwargs = ast.literal_eval(task.task_kwargs)
-    referer = request.META.get('HTTP_REFERER') + '#reconciliation'
-    auth = task.task_name[6:].replace('local', '')
-    # ds = get_object_or_404(Dataset, pk=kwargs['ds'])
-    ds = Dataset.objects.get(id=kwargs['ds'])
-
-    referer = request.META.get('HTTP_REFERER') + '#reconciliation'
-    auth = task.task_name[6:].replace('local', '')
-
-    # get unreviewed pass0 hits
-    hits = Hit.objects.filter(
-        task_id=tid,
-        query_pass='pass0',
-        reviewed=False
-    )
-    # print('writing '+str(len(hits))+' pass0 matched records for', ds.label)
-    for h in hits:
-        hasGeom = 'geoms' in h.json and len(h.json['geoms']) > 0
-        hasLinks = 'links' in h.json and len(h.json['links']) > 0
-        place = h.place  # object
-        # existing for the place
-        authids = place.links.all().values_list('jsonb__identifier', flat=True)
-        authname = 'Wikidata' if h.authority == 'wd' else 'GeoNames'
-        # GEOMS
-        # confirm another user hasn't just done this...
-        if hasGeom and kwargs['aug_geoms'] == 'on' \
-                and tid not in place.geoms.all().values_list('task_id', flat=True):
-            for g in h.json['geoms']:
-                pg = PlaceGeom.objects.create(
-                    place=place,
-                    task_id=tid,
-                    src_id=place.src_id,
-                    geom=GEOSGeometry(json.dumps({"type": g['type'], "coordinates": g['coordinates']})),
-                    reviewer=request.user,
-                    jsonb={
-                        "type": g['type'],
-                        "citation": {"id": auth + ':' + h.authrecord_id, "label": authname},
-                        "coordinates": g['coordinates']
-                    }
-                )
-
-        # LINKS
-        link_counter = 0
-        # add PlaceLink record for wikidata hit if not already there
-        if 'wd:' + h.authrecord_id not in authids:
-            link_counter += 1
-            link = PlaceLink.objects.create(
-                place=place,
-                task_id=tid,
-                src_id=place.src_id,
-                reviewer=request.user,
-                jsonb={
-                    "type": "closeMatch",
-                    "identifier": link_uri(task.task_name, h.authrecord_id)
-                }
-            )
-
-        # create link for each wikidata concordance, if any
-        if hasLinks:
-            # authids=place.links.all().values_list(
-            # 'jsonb__identifier',flat=True)
-            for l in h.json['links']:
-                link_counter += 1
-                authid = re.search(":?(.*?)$", l).group(1)
-                # TODO: same no-dupe logic in review()
-                # don't write duplicates
-                if authid not in authids:
-                    link = PlaceLink.objects.create(
-                        place=place,
-                        task_id=tid,
-                        src_id=place.src_id,
-                        reviewer=request.user,
-                        jsonb={
-                            "type": "closeMatch",
-                            "identifier": authid
-                        }
-                    )
-
-        # only matters if autocomplete was the last review action
-        if auth in ["wd"] and ds.recon_status["wdlocal"] == 0:
-            recon_complete(ds)
-
-        # update dataset totals for metadata page
-        ds.numlinked = len(set(PlaceLink.objects.filter(place_id__in=ds.placeids).values_list('place_id', flat=True)))
-        if ds.total_links is None:
-            ds.total_links = link_counter
-        else:
-            ds.total_links += link_counter
-        ds.save()
-
-        # flag hit as reviewed
-        h.reviewed = True
-        h.save()
-
-        # flag place as reviewed
-        place.review_wd = 1
-        place.save()
-
-    return HttpResponseRedirect(referer)
 
 
 def ds_recon(request, pk):
@@ -2236,114 +1477,108 @@ class DatasetStatusView(LoginRequiredMixin, UpdateView):
     """
     login_url = '/accounts/login/'
     redirect_field_name = 'redirect_to'
-
     form_class = DatasetDetailModelForm
-
     template_name = 'datasets/ds_status.html'
 
     def get_object(self):
-        id_ = self.kwargs.get("id")
-        return get_object_or_404(Dataset, id=id_)
+        return get_object_or_404(Dataset, id=self.kwargs.get("id"))
 
     def get_context_data(self, *args, **kwargs):
-        context = super(DatasetStatusView, self).get_context_data(*args, **kwargs)
+        context = super().get_context_data(*args, **kwargs)
 
-        id_ = self.kwargs.get("id")
-        ds = get_object_or_404(Dataset, id=id_)
-        place_count = ds.places.count()
-        wdgn_status = {
-            "rows": place_count,
-            "got_hits": ds.places.exclude(review_wd=None).count(),
-            "reviewed": ds.places.filter(review_wd=1).count(),
-            "remain": ds.places.filter(review_wd=0).count() + ds.places.filter(review_wd=2).count(),
-            "deferred": ds.places.filter(review_wd=2).count(),
-        }
+        ds = self.get_object()
+        place_qs = ds.places.all()
+        place_ids = list(place_qs.values_list('id', flat=True))
+        place_count = len(place_ids)
 
-        idx_status = {
-            "rows": place_count,
-            "got_hits": ds.places.exclude(review_whg=None).count(),
-            "reviewed": ds.places.filter(review_whg=1).count(),
-            "remain": ds.places.filter(review_whg=0).count(),
-            "deferred": ds.places.filter(review_whg=2).count() or 'none',
-        }
+        def count_review_fields(field_name):
+            return {
+                "rows": place_count,
+                "got_hits": place_qs.exclude(**{f"{field_name}__isnull": True}).count(),
+                "reviewed": place_qs.filter(**{field_name: 1}).count(),
+                "deferred": place_qs.filter(**{field_name: 2}).count(),
+                "remain": place_qs.filter(**{f"{field_name}__in": [0, 2]}).count(),
+            }
 
-        context['wdgn_status'] = wdgn_status
-        context['idx_status'] = idx_status
+        context['wdgn_status'] = count_review_fields("review_wd")
+        context['idx_status'] = count_review_fields("review_whg")
 
-        def placecounter(th):
-            pcounts = {}
-            count0 = th.filter(query_pass='pass0').values('place_id').distinct().count()
-            count1 = th.filter(query_pass='pass1').values('place_id').distinct().count()
-            count2 = th.filter(query_pass='pass2').values('place_id').distinct().count()
-            count0and1 = th.filter(query_pass='pass1, pass0').values('place_id').distinct().count()
-
-            pcounts['p0'] = count0
-            pcounts['p1'] = count1
-            pcounts['p2'] = count2
-            pcounts['p0and1'] = count0and1
-            return pcounts
-
-        # omits FAILURE and ARCHIVED
-        ds_tasks = ds.tasks.exclude(status='FAILURE').exclude(status='ARCHIVED')
+        # Fetch dataset tasks excluding irrelevant ones
+        ds_tasks = ds.tasks.exclude(status__in=['FAILURE', 'ARCHIVED'])
         context['tasks'] = ds_tasks
-        # most recent successful, non-archived task for each type
+
         task_wdgn = ds_tasks.filter(task_name__startswith='align_wd').order_by('-date_done').first()
-        context['task_wdgn'] = task_wdgn
         task_idx = ds_tasks.filter(task_name__startswith='align_idx').order_by('-date_done').first()
+
+        context['task_wdgn'] = task_wdgn
         context['task_idx'] = task_idx
 
-        # remaining_wdgn = Hit.objects.filter(task_id=task_wdgn.task_id, reviewed=False)
-        if task_wdgn is not None:
-            remaining_wdgn = Hit.objects.filter(task_id=task_wdgn.task_id, reviewed=False)
-            context['wdgn_passes'] = placecounter(remaining_wdgn)
+        def placecounter(queryset):
+            values = queryset.values_list('query_pass', 'place_id').distinct()
+            seen = set()
+            counter = Counter()
+            for qpass, pid in values:
+                if (qpass, pid) not in seen:
+                    counter[qpass] += 1
+                    seen.add((qpass, pid))
+            return {
+                'p0': counter.get('pass0', 0),
+                'p1': counter.get('pass1', 0),
+                'p2': counter.get('pass2', 0),
+                'p0and1': counter.get('pass0', 0) + counter.get('pass1', 0),
+            }
+
+        if task_wdgn:
+            hits_wdgn = Hit.objects.filter(task_id=task_wdgn.task_id, reviewed=False)
+            context['wdgn_passes'] = placecounter(hits_wdgn)
         else:
             context['wdgn_passes'] = {}
 
-        if task_idx is not None:
-            remaining_idx = Hit.objects.filter(task_id=task_idx.task_id, reviewed=False)
-            context['idx_passes'] = placecounter(remaining_idx)
+        if task_idx:
+            hits_idx = Hit.objects.filter(task_id=task_idx.task_id, reviewed=False)
+            context['idx_passes'] = placecounter(hits_idx)
         else:
             context['idx_passes'] = {}
 
-        me = self.request.user
-        placeset = ds.places.all()
+        user = self.request.user
+        user_groups = set(user.groups.values_list('name', flat=True))
 
-        context['updates'] = {}
-        context['ds'] = ds
-        context['is_collaborator'] = ds.collaborators.filter(id=me.id).exists()
-        context['is_owner'] = ds.owners.filter(id=me.id).exists()
-        context['is_admin'] = me.groups.filter(name='whg_admins').exists()
-        context['is_editorial'] = me.groups.filter(name='editorial').exists()
+        context.update({
+            'ds': ds,
+            'updates': {},
+            'is_owner': ds.owners.filter(id=user.id).exists(),
+            'is_collaborator': ds.collaborators.filter(id=user.id).exists(),
+            'is_admin': 'whg_admins' in user_groups,
+            'is_editorial': 'editorial' in user_groups,
+            'beta_or_better': bool(user_groups & {'beta', 'admins'}),
+        })
 
-        # initial (non-task)
-        context['num_names'] = PlaceName.objects.filter(place_id__in=placeset).count()
-        context['num_links'] = PlaceLink.objects.filter(
-            place_id__in=placeset, task_id=None).count()
-        context['num_geoms'] = PlaceGeom.objects.filter(
-            place_id__in=placeset, task_id=None).count()
-        context['numrows'] = ds.places.count()
+        # Aggregated counts across related models
+        context['numrows'] = place_count
 
-        # augmentations (has task_id)
-        context['links_added'] = PlaceLink.objects.filter(
-            place_id__in=placeset, task_id__contains='-').count()
-        context['geoms_added'] = PlaceGeom.objects.filter(
-            place_id__in=placeset, task_id__contains='-').count()
-        context['names_added'] = PlaceName.objects.filter(
-            place_id__in=placeset, task_id__contains='-').count()
+        def agg_counts(model):
+            return model.objects.filter(place_id__in=place_ids).aggregate(
+                base=Count('id', filter=Q(task_id=None)),
+                added=Count('id', filter=~Q(task_id=None))
+            )
 
-        context['beta_or_better'] = True if self.request.user.groups.filter(
-            name__in=['beta', 'admins']).exists() else False
+        name_counts = agg_counts(PlaceName)
+        link_counts = agg_counts(PlaceLink)
+        geom_counts = agg_counts(PlaceGeom)
 
-        vis_parameters = ds.vis_parameters
-        # if vis_parameters is None:
-        if not vis_parameters:
-            vis_parameters = {
-                'seq': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
-                'min': {'tabulate': False, 'temporal_control': 'none', 'trail': False},
-                'max': {'tabulate': False, 'temporal_control': 'none', 'trail': False}
-            }
-        # context['visParameters'] = json.dumps(vis_parameters)
-        context['vis_parameters_dict'] = vis_parameters
+        context.update({
+            'num_names': name_counts['base'],
+            'names_added': name_counts['added'],
+            'num_links': link_counts['base'],
+            'links_added': link_counts['added'],
+            'num_geoms': geom_counts['base'],
+            'geoms_added': geom_counts['added'],
+        })
+
+        context['vis_parameters_dict'] = ds.vis_parameters or {
+            key: {'tabulate': False, 'temporal_control': 'none', 'trail': False}
+            for key in ('seq', 'min', 'max')
+        }
 
         return context
 
@@ -2616,46 +1851,63 @@ class DatasetReconcileView(LoginRequiredMixin, DetailView):
         id_ = self.kwargs.get("id")
         return get_object_or_404(Dataset, id=id_)
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(DatasetReconcileView, self).get_context_data(*args, **kwargs)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        ds = self.object
+        place_qs = ds.places.all()
 
-        id_ = self.kwargs.get("id")
-        ds = get_object_or_404(Dataset, id=id_)
+        def review_status(field_name):
+            if field_name == 'review_whg':
+                got_hits_qs = place_qs.exclude(review_whg=None)
+                logger.debug(f"🚨 Got hits count: {got_hits_qs.count()}")
 
-        id_ = self.kwargs.get("id")
-        ds = get_object_or_404(Dataset, id=id_)
-        place_count = ds.places.count()
-        wdgn_status = {
-            "rows": place_count,
-            "got_hits": ds.places.exclude(review_wd=None).count(),
-            "reviewed": ds.places.filter(review_wd=1).count(),
-            "deferred": ds.places.filter(review_wd=2).count(),
-            "remain": ds.places.filter(review_wd=0).count() + ds.places.filter(review_wd=2).count(),
-        }
+                distinct_values = got_hits_qs.values_list('review_whg', flat=True).distinct()
+                logger.debug(f"🚨 Distinct review_whg values in got_hits: {list(distinct_values)}")
 
-        idx_status = {
-            "rows": place_count,
-            "got_hits": ds.places.exclude(review_whg=None).count(),
-            "reviewed": ds.places.filter(review_whg=1).count(),
-            "remain": ds.places.filter(review_whg=0).count(),
-            "deferred": ds.places.filter(review_whg=2).count() or 'none',
-        }
+                all_values = list(got_hits_qs.values_list('review_whg', flat=True))
+                logger.debug(f"🚨 All review_whg values in got_hits: {all_values[:100]}")
 
-        context['wdgn_status'] = wdgn_status
-        context['idx_status'] = idx_status
-        context['is_admin'] = True if self.request.user.groups.filter(name__in=['whg_admins']).exists() else False
+                # --- Additional detailed debug for unreviewed places with no unreviewed hits ---
+                unreviewed_places = place_qs.filter(review_whg=0)
+                # Use current task_id and passnum if available (pass as args or set here)
+                # For now, let's assume you want to check all unreviewed hits for all tasks:
+                task_ids = ds.tasks.values_list('task_id', flat=True)
+                places_with_unreviewed_hits = Hit.objects.values_list("place_id", flat=True).filter(
+                    place__dataset=ds,
+                    reviewed=False,
+                    task_id__in=task_ids
+                ).distinct()
+                places_without_hits = unreviewed_places.exclude(pk__in=places_with_unreviewed_hits)
+                logger.debug(f"🚨 Unreviewed places without unreviewed hits: {[p.id for p in places_without_hits]}")
 
-        # build context for rendering dataset.html
-        me = self.request.user
+            return {
+                "rows": place_qs.count(),
+                "got_hits": place_qs.exclude(**{field_name: None}).count(),
+                "reviewed": place_qs.filter(**{field_name: 1}).count(),
+                "deferred": place_qs.filter(**{field_name: 2}).count(),
+                "remain": place_qs.filter(**{f"{field_name}__in": [0, 2]}).count(),
+            }
 
-        # omits FAILURE and ARCHIVED
-        ds_tasks = ds.tasks.filter(status='SUCCESS')
+        context["wdgn_status"] = review_status("review_wd")
+        context["idx_status"] = review_status("review_whg")
 
-        context['ds'] = ds
-        context['tasks'] = ds_tasks
+        context["is_admin"] = self.request.user.groups.filter(name="whg_admins").exists()
+        context["beta_or_better"] = self.request.user.groups.filter(name__in=["beta", "whg_admins"]).exists()
 
-        context['beta_or_better'] = True if self.request.user.groups.filter(
-            name__in=['beta', 'whg_admins']).exists() else False
+        context["ds"] = ds
+        tasks = ds.tasks.filter(status="SUCCESS")
+
+        for task in tasks: # These are structured differently between align and reconcile
+            task.result = json.loads(task.result) if task.result else {}
+            if 'summary' in task.result: # align tasks
+                task.result = task.result['summary']
+                task.result['total_hits'] = Hit.objects.filter(place__dataset=ds, task_id=task.task_id).count()
+                task.result['elapsed'] = task.result['elapsed_min']
+                del task.result['elapsed_min']
+            # Convert back to JSON
+            task.result = json.dumps(task.result, indent=2, ensure_ascii=False)
+
+        context["tasks"] = tasks
 
         return context
 

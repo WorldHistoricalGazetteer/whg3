@@ -875,8 +875,6 @@ def align_wdlocal(*args, **kwargs):
 # from align_idx(), returns result_obj
 
 """
-
-
 def es_lookup_idx(qobj, *args, **kwargs):
     # print('kwargs from es_lookup_idx',kwargs)
     global whg_id
@@ -1235,7 +1233,7 @@ def process_hits(place, result_obj, task_id, dataset, places_to_review, tracking
         logger.info(f"Children: {children}")
         for parent in parents:
             merged_hit = merge_parent_child(parent, children)
-            # hit_summary['hits'].append(merged_hit)
+            hit_summary['hits'].append(merged_hit)
             save_hit_record(merged_hit, place, dataset, task_id, logger)
             logger.info(f"Saved hit record: {merged_hit}")
     except Exception as e:
@@ -1244,9 +1242,15 @@ def process_hits(place, result_obj, task_id, dataset, places_to_review, tracking
 
 
 def classify_hits(hits):
-    """Classifies hits into parents and children."""
-    parents = [profileHit(h) for h in hits if h['_source']['relation']['name'] == 'parent']
-    children = [profileHit(h) for h in hits if h['_source']['relation']['name'] == 'child']
+    """Classifies hits into parents and children in a single pass."""
+    parents, children = [], []
+    for h in hits:
+        relation = h['_source']['relation']['name']
+        profiled = profileHit(h)
+        if relation == 'parent':
+            parents.append(profiled)
+        elif relation == 'child':
+            children.append(profiled)
     return parents, children
 
 
