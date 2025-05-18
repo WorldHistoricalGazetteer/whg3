@@ -151,7 +151,9 @@ export function addReviewListeners() {
 	function toggleHighlight(highlight, element) {
 		let matchingFeature = findMatchingFeature(element);
 	    if (matchingFeature) {
-	        whg_map.setFeatureState({ source: $(element).data('authority'), id: matchingFeature.id }, { highlight });
+			if ($(element).data('authority') && whg_map.getSource($(element).data('authority'))) {
+	        	whg_map.setFeatureState({ source: $(element).data('authority'), id: matchingFeature.id }, { highlight });
+			}
 	        if (whg_map.getSource('dataset')) {
 	            whg_map.setFeatureState({ source: 'dataset', id: 0 }, { highlight });
 	        }
