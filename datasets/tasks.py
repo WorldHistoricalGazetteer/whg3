@@ -1229,13 +1229,16 @@ def process_hits(place, result_obj, task_id, dataset, places_to_review, tracking
         places_to_review.append(place.id)
 
         parents, children = classify_hits(result_obj['hits'])
-        logger.info(f"Parents: {parents}")
-        logger.info(f"Children: {children}")
+        # Log if no parents found
+        if not parents:
+            logger.info(f"Parents: {parents}")
+            logger.info(f"Children: {children}")
+            logger.debug(f"🚨 No parents found for place {place.id} - {place.title}")
         for parent in parents:
             merged_hit = merge_parent_child(parent, children)
             hit_summary['hits'].append(merged_hit)
             save_hit_record(merged_hit, place, dataset, task_id, logger)
-            logger.info(f"Saved hit record: {merged_hit}")
+            # logger.info(f"Saved hit record: {merged_hit}")
     except Exception as e:
         logger.error(f"Error processing hits for place {place.id}: {e}", exc_info=True)
         raise e
@@ -1255,17 +1258,42 @@ def classify_hits(hits):
 
 
 def merge_parent_child(parent, children):
-    """Merges parent and child records into a single hit object."""
+    """Merges parent and child records into a single hit object, safely handling missing fields."""
+    def safe_list(val):
+        return val if isinstance(val, list) else []
+
+    def safe_val(obj, key, default=None):
+        return obj.get(key, default)
+
+    def safe_score(obj):
+        return obj.get('score', 0) or 0
+
+    def safe_title(obj):
+        return obj.get('title', '')
+
+    def safe_country(obj):
+        return obj.get('countries', [])
+
+    def safe_links(obj):
+        return obj.get('links') or []
+
+    def safe_geoms(obj):
+        return obj.get('geoms') or []
+
     merged = {
-        'whg_id': parent['_id'],
-        'pid': parent['pid'],
-        'score': parent['score'] + sum(c['score'] for c in children) if children else parent['score'],
-        'titles': [parent['title']] + [c['title'] for c in children],
-        'countries': parent['countries'] + [c['countries'] for c in children],
-        'geoms': list(uniq_geom(parent['geoms'])),
-        'links': parent['links'] + list(chain.from_iterable([c['links'] for c in children])),
+        'whg_id': parent.get('_id'),
+        'pid': parent.get('pid'),
+        'score': safe_score(parent) + sum(safe_score(c) for c in children),
+        'titles': [safe_title(parent)] + [safe_title(c) for c in children],
+        'countries': safe_country(parent) + list(chain.from_iterable(
+            [safe_country(c) for c in children]
+        )),
+        'geoms': list(uniq_geom(safe_geoms(parent))),
+        'links': safe_links(parent) + list(chain.from_iterable(
+            [safe_links(c) for c in children]
+        )),
         'sources': build_sources(parent, children),
-        'passes': list(set([s['pass'] for s in build_sources(parent, children)])),
+        'passes': list(set([s.get('pass') for s in build_sources(parent, children) if 'pass' in s])),
     }
     return merged
 

@@ -143,9 +143,9 @@ def save_dataset(task_id):
 
             # Create Dataset object
             dataset = Dataset.objects.create(
-                title=dataset_metadata['title'] or f"-- placeholder ({dataset_metadata['label']}) --",
+                title=dataset_metadata['title'] or f"[-Title yet to be added to metadata-] ({dataset_metadata['label']})",
                 label=dataset_metadata['label'],
-                description=dataset_metadata['description'] or '-- placeholder --',
+                description=dataset_metadata['description'] or '[-Description yet to be added to metadata-]',
                 numrows=dataset_metadata['feature_count'],
                 creator=dataset_metadata['creator'],
                 source=dataset_metadata['source'],
