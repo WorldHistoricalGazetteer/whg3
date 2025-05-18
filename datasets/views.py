@@ -1,5 +1,4 @@
 # datasets.views
-
 # Standard library imports
 import ast
 import json
@@ -26,7 +25,7 @@ from django.http import (
 )
 from django.shortcuts import redirect, render
 from django.test import Client
-from django.urls import reverse
+from django.urls import reverse as django_reverse
 from django.utils.datastructures import MultiValueDictKeyError
 from django.utils.text import slugify
 from django.views.decorators.csrf import csrf_exempt
@@ -1392,36 +1391,63 @@ class DatasetPublicView(DetailView):
 
 
 # TODO: delete other stuff: disk files; archive??
+# class DatasetDeleteView(DeleteView):
+#     """
+#       loads page for confirm ok on delete
+#         - delete dataset, with CASCADE to DatasetFile, places, place_name, etc
+#         - also deletes from index if indexed (fails silently if not)
+#         - also removes dataset_file records
+#     """
+#     template_name = 'datasets/dataset_delete.html'
+#
+#     def delete_complete(self):
+#         ds = get_object_or_404(Dataset, pk=self.kwargs.get("id"))
+#         dataset_file_delete(ds)
+#         if ds.ds_status == 'indexed':
+#             pids = list(ds.placeids)
+#             removePlacesFromIndex(es, 'whg', pids)
+#
+#     def get_object(self):
+#         id_ = self.kwargs.get("id")
+#         ds = get_object_or_404(Dataset, id=id_)
+#         return (ds)
+#
+#     def get_context_data(self, **kwargs):
+#         context = super(DatasetDeleteView, self).get_context_data(**kwargs)
+#         ds = get_object_or_404(Dataset, id=self.kwargs.get("id"))
+#         context['owners'] = ds.owners
+#         return context
+#
+#     def get_success_url(self):
+#         self.delete_complete()
+#         return reverse('dashboard')
 class DatasetDeleteView(DeleteView):
-    """
-      loads page for confirm ok on delete
-        - delete dataset, with CASCADE to DatasetFile, places, place_name, etc
-        - also deletes from index if indexed (fails silently if not)
-        - also removes dataset_file records
-    """
     template_name = 'datasets/dataset_delete.html'
+    model = Dataset
 
-    def delete_complete(self):
-        ds = get_object_or_404(Dataset, pk=self.kwargs.get("id"))
-        dataset_file_delete(ds)
-        if ds.ds_status == 'indexed':
-            pids = list(ds.placeids)
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+
+        # Custom deletion logic
+        dataset_file_delete(self.object)
+        if self.object.ds_status == 'indexed':
+            pids = list(self.object.placeids)
             removePlacesFromIndex(es, 'whg', pids)
 
-    def get_object(self):
-        id_ = self.kwargs.get("id")
-        ds = get_object_or_404(Dataset, id=id_)
-        return (ds)
+        # Deletes the object
+        self.object.delete()
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
-        context = super(DatasetDeleteView, self).get_context_data(**kwargs)
-        ds = get_object_or_404(Dataset, id=self.kwargs.get("id"))
-        context['owners'] = ds.owners
+        context = super().get_context_data(**kwargs)
+        context['owners'] = self.get_object().owners
         return context
 
     def get_success_url(self):
-        self.delete_complete()
-        return reverse('dashboard')
+        url = django_reverse('dashboard')
+        assert isinstance(url, str), f"Expected string, got {type(url)}: {url}"
+        return url
 
 
 def ds_list(request, label):

@@ -172,9 +172,26 @@ def _build_feature_collection(records, raw_hits):
                 "id": len(features)
             })
 
-    # These (orange) are the geometries from the accession suggestions
+    # These (orange) are the geometries from the reconciliation or accession suggestions
     for idx, hit in enumerate(raw_hits):
         # Fetch full geometries for each source in the hit
+        # logger.debug(f"🚨 Raw hits JSON: {hit.json}")
+
+        # Reconciliation: hits have `geoms` in the JSON
+        for geom in hit.json.get('geoms', []):
+            features.append({
+                "type": "Feature",
+                "properties": {
+                    **{key: value for key, value in geom.items() if key not in ["coordinates", "type"]},
+                    # "green": False,  # Set to True for green markers - following 2 lines are redundant v2 code
+                    # (review_page=="accession.html" and geom["ds"]==ds.label) or
+                    # (review_page=="review.html" and not geom["ds"] in ['tgn', 'wd', 'whg'])
+                },
+                "geometry": {"type": geom["type"], "coordinates": geom.get("coordinates")},
+                "id": len(features)
+            })
+
+        # Accession: hits have `sources` in the JSON
         for source in hit.json.get('sources', []):
             source_pid = source.get('pid')
             if source_pid:

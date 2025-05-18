@@ -127,12 +127,20 @@ export function addReviewListeners() {
 		}
 		else clearHighlight();
 	});
+
+	function findMatchingFeature(element) {
+		let matchingFeature = featureCollection.features.find(feature => {
+			let props = feature.properties;
+			return (props.record_id || props.id) === $(element).data('id');
+		});
+		return matchingFeature;
+	}
 	
 	$(".geolink")
 		.attr('title', 'Click to zoom to this location.')
 		.on('click', function(){
-			console.debug(`Clicked ID: ${$(this).data('id')}`, $(this));
-			whg_map.fitViewport( bbox(featureCollection.features.find(feature => feature.properties.record_id === $(this).data('id'))), defaultZoom );
+			let matchingFeature = findMatchingFeature(this);
+			whg_map.fitViewport( bbox(matchingFeature), defaultZoom );
 		});
 	
 	$(".hovermap").hover(
@@ -141,8 +149,7 @@ export function addReviewListeners() {
 	);
 	
 	function toggleHighlight(highlight, element) {
-	    let matchingFeature = featureCollection.features.find(feature => feature.properties.record_id === $(element).data('id'));
-		console.debug(`${highlight} to:`, element, matchingFeature);
+		let matchingFeature = findMatchingFeature(element);
 	    if (matchingFeature) {
 	        whg_map.setFeatureState({ source: $(element).data('authority'), id: matchingFeature.id }, { highlight });
 	        if (whg_map.getSource('dataset')) {

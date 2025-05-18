@@ -20,7 +20,7 @@ urlpatterns = [
   path('validate/', views.DatasetValidate.as_view(), name='dataset-validate'),
 
   path('create_empty/', views.DatasetCreateEmptyView.as_view(), name='dataset-create-empty'),
-  path('<int:id>/delete', views.DatasetDeleteView.as_view(), name='dataset-delete'),
+  path('<int:pk>/delete', views.DatasetDeleteView.as_view(), name='dataset-delete'),
 
   # public datasets & collections
   path('gallery/', views.DatasetGalleryView.as_view(), name='dataset-gallery'),
