@@ -1,4 +1,5 @@
 # main.views
+from celery.backends.base import DisabledBackend
 from django.apps import apps
 from django.conf import settings
 from django.contrib import messages
@@ -78,12 +79,16 @@ def OpenAPIView(request):
 
 def get_task_progress(request, taskid):
     task = AsyncResult(taskid)
+
+    if isinstance(task.backend, DisabledBackend):
+        return JsonResponse({
+            'state': 'DISABLED',
+            'progress': {'current': 0, 'total': 0}
+        })
+
     response_data = {
         'state': task.state,
-        'progress': {
-            'current': 0,
-            'total': 0
-        }
+        'progress': {'current': 0, 'total': 0}
     }
 
     if isinstance(task.result, dict):
