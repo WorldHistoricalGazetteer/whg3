@@ -885,7 +885,99 @@ class IndexAPIView(View):
 """
 
 
+from django.http import JsonResponse, HttpResponse
+from rest_framework.renderers import JSONRenderer
+from rest_framework import generics, filters, status
+from django.db.models import Q
+from places.models import Place
+from .serializers import LPFSerializer
+import re
+
 class SearchAPIView(generics.ListAPIView):
+    renderer_classes = [JSONRenderer]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['@title']
+
+    def get(self, request, format=None, *args, **kwargs):
+        params = request.query_params
+
+        # Validate and parse parameters
+        try:
+            id_ = params.get('id', None)
+            if id_:
+                id_list = [int(x) for x in id_.split(',')] if ',' in id_ else [int(id_)]
+
+            name = params.get('name')
+            name_contains = params.get('name_contains')
+
+            ccode_param = params.get('ccode')
+            cc = [code.strip().upper() for code in ccode_param.split(',')] if ccode_param else None
+            if cc and not all(re.match(r'^[A-Z]{2}$', code) for code in cc):
+                raise ValueError("Each 'ccode' must be a 2-letter uppercase ISO code.")
+
+            ds = params.get('dataset')
+            fc = params.get('fc')
+            fclasses = list(set(x.strip().upper() for x in fc.split(','))) if fc else None
+
+            year = params.get('year')
+            if year:
+                year = int(year)
+
+            pagesize = int(params.get('pagesize', 20))
+            if not (1 <= pagesize <= 200):
+                raise ValueError("'pagesize' must be between 1 and 200.")
+
+            context = params.get('context')
+        except ValueError as e:
+            return JsonResponse(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Ensure required parameters are present
+        if all(v is None for v in [name, name_contains, id_]):
+            return HttpResponse(content=b'<h3>Needs either a "name", a "name_contains", or "id" parameter at \
+                minimum <br/>(e.g. ?name=myplacename or ?name_contains=astring or ?id=integer)</h3>')
+
+        # Begin queryset
+        qs = Place.objects.filter(Q(dataset__public=True) | Q(dataset__core=True))
+        err_note = None
+
+        # Filtering
+        if id_:
+            qs = qs.filter(id__in=id_list)
+            if len(params.keys()) > 1:
+                err_note = 'id given, other parameters ignored'
+        else:
+            if year:
+                qs = qs.filter(minmax__0__lte=year, minmax__1__gte=year)
+            if fclasses:
+                qs = qs.filter(fclasses__overlap=fclasses)
+            if name_contains:
+                qs = qs.filter(title__icontains=name_contains)
+            elif name:
+                qs = qs.filter(names__jsonb__toponym__icontains=name)
+            if ds:
+                qs = qs.filter(dataset=ds)
+            if cc:
+                qs = qs.filter(ccodes__overlap=cc)
+
+        filtered = qs[:pagesize]
+
+        serializer = LPFSerializer(filtered, many=True, context={'request': self.request})
+        result = {
+            "count": qs.count(),
+            "pagesize": len(filtered),
+            "parameters": params,
+            "note": err_note,
+            "type": "FeatureCollection",
+            "features": serializer.data
+        }
+        return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
+
+
+
+class SearchAPIView_DEPRECATED(generics.ListAPIView):
     renderer_classes = [JSONRenderer]
     filter_backends = [filters.SearchFilter]
     search_fields = ['@title']
