@@ -22,6 +22,8 @@ from itertools import chain
 import pandas as pd
 import simplejson as json
 
+from ratelimit import limits, sleep_and_retry
+
 from areas.models import Area
 from collection.models import Collection
 from datasets.models import Dataset, Hit
@@ -38,6 +40,8 @@ import logging
 import ssl
 from elasticsearch8 import Elasticsearch, exceptions
 from django.conf import settings
+
+CALLS_PER_SECOND = 3
 
 logger = get_task_logger(__name__)
 es = settings.ES_CONN
@@ -1095,6 +1099,12 @@ def es_lookup_idx(qobj, *args, **kwargs):
     return result_obj
 
 
+@sleep_and_retry
+@limits(calls=CALLS_PER_SECOND, period=1)
+def throttled_lookup(es, qobj, bounds):
+    return es_lookup_idx(qobj, bounds=bounds)
+
+
 @shared_task(name="align_idx")
 def align_idx(*args, **kwargs):
     """
@@ -1144,7 +1154,8 @@ def align_idx(*args, **kwargs):
         for place in places:
             try:
                 logger.info(f'Processing place: {place.id} - {place.title}')
-                result_obj = es_lookup_idx(build_qobj(place), bounds=kwargs['bounds'])
+                qobj = build_qobj(place)
+                result_obj = throttled_lookup(es, qobj, bounds=kwargs['bounds'])
 
                 if not result_obj['hits']:
                     new_doc = process_no_hits(place, whg_id, test_mode, es, new_seeds, logger)
