@@ -16,7 +16,7 @@ class Command(BaseCommand):
         dsid = options['dsid']
         logger.info(f'Starting removal of dataset {dsid}')
         try:
-            msg = removeDatasetFromIndex(dsid)
+            msg = removeDatasetFromIndex(dsid=dsid)
             self.stdout.write(self.style.SUCCESS(f'Success: {msg}'))
         except Exception as e:
             logger.error(f'Error removing dataset {dsid}: {e}', exc_info=True)
