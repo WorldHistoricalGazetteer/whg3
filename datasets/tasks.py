@@ -17,7 +17,7 @@ from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
 import codecs, csv, datetime, itertools, os, re, sys, zipfile
 from copy import deepcopy
-from elasticsearch8.helpers import streaming_bulk
+from elasticsearch8.helpers import streaming_bulk, bulk
 from itertools import chain
 import pandas as pd
 import simplejson as json
@@ -1161,9 +1161,9 @@ def align_idx(*args, **kwargs):
                     # new_doc = process_no_hits(place, whg_id, test_mode, es, new_seeds, logger)
                     # Server is overwhelmed with large datasets, so run as a task instead
                     new_seeds.append(place.id)
-                    new_doc = index_place_no_hits.delay(place.id, whg_id, test_mode)
-                    logger.info(f'new_doc: {new_doc}')
-                    whg_id += 1
+                    # new_doc = index_place_no_hits.delay(place.id, whg_id, test_mode)
+                    # logger.info(f'new_doc: {new_doc}')
+                    # whg_id += 1
                 else:
                     logger.info(f'Processing {len(result_obj["hits"])} hits found for place {place.id}')
                     process_hits(place, result_obj, task_id, ds, places_to_review, tracking_vars, hit_summary, logger)
@@ -1171,6 +1171,8 @@ def align_idx(*args, **kwargs):
             except Exception as e:
                 logger.error(f"Error processing place {place.id}: {e}", exc_info=True)
                 tracking_vars['count_fail'] += 1
+
+        batch_new_seeds.delay(new_seeds, test_mode, start_id=whg_id)
 
         hit_summary = finalise_summary(hit_summary, places.count(), tracking_vars, new_seeds, start)
         logger.info(f'hit_summary: {hit_summary}')
@@ -1213,56 +1215,54 @@ def get_place_queryset(dataset, scope):
     return dataset.places.filter(indexed=False)
 
 
-# Deprecated due to overwhelming the server with large datasets
-# def process_no_hits(place, whg_id, test_mode, es, new_seeds, logger):
-#     """Handles the case where no hits are found for a place and indexes it as a new parent."""
-#     try:
-#         new_doc = makeDoc(place)
-#         new_doc['relation']['name'] = 'parent'
-#         new_doc['whg_id'] = whg_id
-#         new_doc['searchy'] = [n.toponym for n in place.names.all()]
-#
-#         new_seeds.append(place.id)
-#
-#         if test_mode == 'off':
-#             es.index(index=settings.ES_WHG, id=str(whg_id), document=json.dumps(new_doc))
-#             place.indexed = True
-#             place.save()
-#
-#         return new_doc
-#     except Exception as e:
-#         logger.error(f"Error processing no-hit place {place.id}: {e}", exc_info=True)
-#         raise e
+@shared_task
+def batch_new_seeds(new_seeds, test_mode, start_id):
+    logger = logging.getLogger('accession')
 
+    BATCH_SIZE = 500  # Define the batch size for bulk indexing
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=5)
-def index_place_no_hits(self, place_id, whg_id, test_mode='off'):
-    """
-    Celery task to index a Place as a new parent when no hits are found.
-    """
-    try:
-        place = Place.objects.get(pk=place_id)
+    index_actions = []
+    unindex_actions = []
+    places_to_update = []
 
-        # Build new document
-        new_doc = makeDoc(place)
-        new_doc['relation']['name'] = 'parent'
-        new_doc['whg_id'] = whg_id
-        new_doc['searchy'] = [n.toponym for n in place.names.all()]
+    for index, new_seed in enumerate(new_seeds):
+        try:
+            place = Place.objects.get(pk=new_seed)
+            places_to_update.append(place)
 
-        if test_mode == 'off':
-            es = settings.ES_CONN
-            es.index(index=settings.ES_WHG, id=str(whg_id), document=json.dumps(new_doc))
-            place.indexed = True
-            place.save()
+            new_doc = makeDoc(place)
+            new_doc['relation']['name'] = 'parent'
+            new_doc['whg_id'] = start_id + index
+            new_doc['searchy'] = [n.toponym for n in place.names.all()]
 
-        logger.info(f"Indexed place {place_id} as new parent.")
-        return new_doc
+            index_action = {
+                "_op_type": "index",
+                "_index": settings.ES_WHG,
+                "_id": str(start_id + index),
+                "_source": new_doc
+            }
+            index_actions.append(json.dumps(index_action))
 
-    except Place.DoesNotExist:
-        logger.error(f"Place with ID {place_id} does not exist.")
-    except Exception as e:
-        logger.error(f"Error indexing no-hit place {place_id}: {e}", exc_info=True)
-        self.retry(exc=e)  # Will retry up to 3 times
+            unindex_action = {
+                "_op_type": "delete",
+                "_index": settings.ES_PUB,
+                "_id": str(place.id)
+            }
+            unindex_actions.append(json.dumps(unindex_action))
+
+            if len(index_actions) >= BATCH_SIZE or index == len(new_seeds) - 1:
+                if test_mode == 'off':
+                    bulk(es, index_actions)
+                    bulk(es, unindex_actions)
+                    Place.objects.filter(pk__in=[p.id for p in places_to_update]).update(indexed=True, idx_pub=False)
+
+                logger.info(f"Indexed {len(index_actions)} new places in batch starting from ID {start_id + index - len(index_actions) + 1}.")
+                index_actions = []
+
+        except Place.DoesNotExist:
+            logger.error(f"Place with ID {new_seed} does not exist.")
+        except Exception as e:
+            logger.error(f"Error preparing place {new_seed} for bulk indexing: {e}", exc_info=True)
 
 
 def process_hits(place, result_obj, task_id, dataset, places_to_review, tracking_vars, hit_summary, logger):
