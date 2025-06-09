@@ -11,7 +11,6 @@ from django.conf import settings
 
 es = settings.ES_CONN
 from django.http import JsonResponse
-from elasticsearch8.helpers import bulk
 from places.models import Place
 # from datasets.models import Dataset
 from datasets.static.hashes.parents import ccodes as cchash
@@ -394,7 +393,6 @@ def profileHit(hit):
 # index dataset to builder given ds.id list
 # ***
 #
-from elasticsearch8.helpers import bulk
 
 
 # from places.models import Place
@@ -570,9 +568,22 @@ def removeDatasetFromIndex(request=None, *args, **kwargs):
     es = settings.ES_CONN
     idx = settings.ES_WHG
     q_pids = {"match": {"dataset": ds.label}}
-    res = es.search(index=idx, query=q_pids, _source=["title", "place_id"], size=ds.places.count())
-    pids = [h['_source']['place_id'] for h in res['hits']['hits']]
-    removePlacesFromIndex(es, idx, pids)
+
+    # Have to use scroll for large datasets
+    page_size = 1000
+    resp = es.search(index=idx, query=q_pids, _source=["title", "place_id"], size=page_size, scroll='2m')
+    scroll_id = resp['_scroll_id']
+    hits = resp['hits']['hits']
+    all_pids = [h['_source']['place_id'] for h in hits]
+
+    while len(hits) > 0:
+        resp = es.scroll(scroll_id=scroll_id, scroll='2m')
+        scroll_id = resp['_scroll_id']
+        hits = resp['hits']['hits']
+        all_pids.extend(h['_source']['place_id'] for h in hits)
+
+    removePlacesFromIndex(es, idx, all_pids)
+
     ds.ds_status = 'wd-complete'
     ds.save()
     # remove indexed flag in places
@@ -585,124 +596,168 @@ def removeDatasetFromIndex(request=None, *args, **kwargs):
 
     # for browser console
     return JsonResponse({'msg': 'pids passed to removePlacesFromIndex(' + str(ds.id) + ')',
-                         'ids': pids})
+                         'ids': all_pids})
 
 
-#
-# delete docs in given pid list
-# if parent, promotes a child if any
-# if child, removes references to it in parent (children[], suggest.input[])
-# called from ds_update() and removeDatasetFromIndex() above
-# TODO: why populate delthese[]? pids to delete are provided
+def chunked(iterable, size=1000):
+    for i in range(0, len(iterable), size):
+        yield iterable[i:i + size]
+
+
 def removePlacesFromIndex(es, idx, pids):
+    """
+    Remove place documents from an Elasticsearch index based on a list of place IDs,
+    handling parent-child relationships and updating index and database records accordingly.
+
+    This function processes each place ID (`pid`) provided:
+    - If the place is a **parent**:
+      - Checks if it has children.
+      - If children exist, promotes one eligible child to become the new parent.
+      - Transfers parent status, including updating `whg_id`, `children` list, and `searchy` fields.
+      - Marks the original parent for deletion.
+      - If no eligible children remain, marks the parent directly for deletion.
+    - If the place is a **child**:
+      - Attempts to remove the child reference from its parent's `children` array.
+      - Marks the child for deletion.
+      - Skips if the parent is also slated for deletion (a "zombie").
+
+    After processing roles:
+    - Updates the corresponding Place database records by setting `indexed` to False,
+      removing related `whg` authority hits, and resetting `review_whg` to None.
+    - Deletes all documents marked for removal from Elasticsearch in batches.
+
+    Args:
+        es (Elasticsearch): Elasticsearch client instance.
+        idx (str): Name of the Elasticsearch index to operate on.
+        pids (list[int]): List of place IDs to be removed or processed.
+
+    Returns:
+        JsonResponse: A JSON response containing a message summarizing how many documents
+                      were deleted and their IDs.
+
+    Notes:
+        - To optimise performance, this function batches Elasticsearch queries and deletions.
+        - Painless scripting is used to safely update Elasticsearch documents atomically.
+        - Places not found in the Elasticsearch index are skipped with a debug log.
+        - The function assumes that the `Place` Django model and related hit set exist.
+        - TODO: Improve logic for selecting which child to promote when a parent is removed.
+
+    Raises:
+        Exception: On unrecoverable Elasticsearch update errors, the exception is raised to
+                   allow higher-level error handling.
+    """
+
     delthese = []
+
+    # Fetch all documents matching pids in batches to avoid per-pid queries
+    all_docs = []
+    for batch in chunked(pids, 500):
+        q_batch = {"terms": {"place_id": batch}}
+        res = es.search(index=idx, query=q_batch, size=len(batch))
+        all_docs.extend(res['hits']['hits'])
+
+    # Map pid to doc source for quick lookup
+    pid_to_doc = {doc['_source']['place_id']: doc['_source'] for doc in all_docs}
+
     for pid in pids:
-        # get index document
-        res = es.search(index=idx, query=esq_pid(pid))
-        hits = res['hits']['hits']
-        # confirm it's in the index
-        if len(hits) > 0:
-            doc = hits[0]
-            src = doc['_source']
-            role = src['relation']['name']
-            # searchy[] for children is typically empty
-            searchy = list(set([item for item in src['searchy'] if type(item) != list]))
-            # role-dependent action
-            if role == 'parent':
-                # has children?
-                kids = [int(x) for x in src['children']]
-                # get new parent possibilities
-                eligible = list(set(kids) - set(pids))  # not slated for deletion
-                if len(eligible) == 0:
-                    # add to array for deletion
-                    delthese.append(pid)
-                else:
-                    # > 0 eligible children? pick winner from confirmed children
-                    qeligible = {"bool": {
+        src = pid_to_doc.get(pid)
+        if not src:
+            # Not found in index
+            logger.debug(f'{pid} not in index, skipping')
+            continue
+
+        role = src['relation']['name']
+        searchy = list(set(item for item in src.get('searchy', []) if not isinstance(item, list)))
+
+        if role == 'parent':
+            kids = [int(x) for x in src.get('children', [])]
+            eligible = list(set(kids) - set(pids))
+
+            if not eligible:
+                delthese.append(pid)
+            else:
+                qeligible = {
+                    "bool": {
                         "must": [{"terms": {"place_id": kids}}],
                         "should": {"exists": {"field": "links"}}
-                    }}
-                    # only kids confirmed to exist
-                    res = es.search(index=idx, body=qeligible)
-                    # of those with any links...
-                    linked = [h['_source'] for h in res['hits']['hits'] if 'links' in h['_source']]
-                    # which has most?
-                    linked_len = [{'pid': h['place_id'], 'len': len(h['links'])} for h in linked if 'links' in h]
-                    # coalesce to 1st eligible if no kid have links
-                    winner = max(linked_len, key=lambda x: x['len'])['pid'] if len(linked_len) > 0 \
-                        else eligible[0]
-                    # TODO: better logical choice of winner?
-                    newparent = winner
-                    newkids = eligible.pop(eligible.index(winner))
-                    # update winner
-                    # make it a parent: give it a whg_id; update children with newkids; update searchy[]
-                    q_update = {"script": {"source": "ctx._source.whg_id = params._id; \
-              ctx._source.relation.name = 'parent'; \
-              ctx._source.relation.remove('parent'); \
-              ctx._source.children.addAll(params.newkids); \
-              ctx._source.searchy.addAll(params.searchy);",
-                                           "lang": "painless",
-                                           "params": {"_id": newparent, "newkids": newkids, "searchy": searchy}
-                                           },
-                                "query": {"match": {"place_id": newparent}}}
-                    try:
-                        es.update_by_query(index=idx, body=q_update)
-                        delthese.append(pid)
-                    except Exception as e:
-                        logger.critical('An unrecoverable error occurred in update of new parent', exc_info=True)
-                        sys.exit(1)
-                    # parent status transfered to 'eligible' child, add to list
-            elif role == 'child':
-                # get its parent and remove its id from parent's children
-                # parent's searchy can't be reliably edited
-                parent = src['relation']['parent']
-                qget = {"bool": {"must": [{"match": {"_id": parent}}]}}
-                res = es.search(index=idx, query=qget)
-                # parent _source, suggest, searchy
-                psrc = res['hits']['hits'][0]['_source']
-                # is parent slated for deletion? (walking dead)
-                zombie = psrc['place_id'] in pids
-                # skip zombies; picked up above with if role == 'parent':
-                # sometimes docs named as parent don't have the id of the child
-                # in that case, don't look for the child id, it'll break ES
-                if not zombie and len(psrc['children']) > 0:
-                    # remove this id from parent's children
-                    q_update = {"script": {
+                    }
+                }
+                res = es.search(index=idx, query=qeligible)
+                linked = [h['_source'] for h in res['hits']['hits'] if 'links' in h['_source']]
+                linked_len = [{'pid': h['place_id'], 'len': len(h['links'])} for h in linked]
+                winner = max(linked_len, key=lambda x: x['len'])['pid'] if linked_len else eligible[0]
+                newparent = winner
+                newkids = [k for k in eligible if k != winner]
+
+                q_update = {
+                    "script": {
+                        "source": (
+                            "ctx._source.whg_id = params._id; "
+                            "ctx._source.relation.name = 'parent'; "
+                            "ctx._source.children = params.newkids; "
+                            "ctx._source.searchy.addAll(params.searchy);"
+                        ),
                         "lang": "painless",
-                        "source": "ctx._source.children.remove(ctx._source.children.indexOf(params.val))",
+                        "params": {"_id": newparent, "newkids": newkids, "searchy": searchy}
+                    },
+                    "query": {"term": {"place_id": newparent}}
+                }
+                try:
+                    es.update_by_query(index=idx, body=q_update)
+                    delthese.append(pid)
+                except Exception as e:
+                    logger.critical('Error updating new parent', exc_info=True)
+                    raise
+
+        elif role == 'child':
+            parent = src['relation'].get('parent')
+            if not parent:
+                delthese.append(pid)
+                continue
+
+            qget = {"term": {"place_id": parent}}
+            res = es.search(index=idx, query=qget)
+            if not res['hits']['hits']:
+                delthese.append(pid)
+                continue
+            psrc = res['hits']['hits'][0]['_source']
+
+            zombie = psrc['place_id'] in pids
+
+            if not zombie and psrc.get('children'):
+                q_update = {
+                    "script": {
+                        "lang": "painless",
+                        "source": "ctx._source.children.removeIf(c -> c == params.val)",
                         "params": {"val": str(pid)}
                     },
-                        "query": {"match": {"_id": parent}}
-                    }
-                    try:
-                        es.update_by_query(index=idx, body=q_update)
-                        # child id removed, add to delthese[]
-                        delthese.append(pid)
-                    except Exception as e:
-                        logger.critical('An unrecoverable error occurred in update of parent losing child', exc_info=True)
-                        sys.exit(1)
-                    # TODO: should excise names from searchy, but can't yet
-                else:
-                    # child thought this was parent but parent.children[] doesn't have it
+                    "query": {"term": {"place_id": parent}}
+                }
+                try:
+                    es.update_by_query(index=idx, body=q_update)
                     delthese.append(pid)
-            # DB ACTIONS
-            try:
-                # get database record if it wasn't just deleted
-                place = Place.objects.get(id=pid)
-                place.indexed = False
-                # delete previous hits from whg task
-                place.hit_set.filter(authority='whg').delete()
-                # reset review_whg status to null
-                place.review_whg = None
-                place.save()
-            except:
-                pass
-        else:
-            logger.debug(f'{pid} not in index for some reason, passed')
+                except Exception as e:
+                    logger.critical('Error removing child from parent', exc_info=True)
+                    raise
+            else:
+                delthese.append(pid)
+
+        # DB side actions, optionally batch if large
+        try:
+            place = Place.objects.get(id=pid)
+            place.indexed = False
+            place.hit_set.filter(authority='whg').delete()
+            place.review_whg = None
+            place.save()
+        except Place.DoesNotExist:
             pass
-    es.delete_by_query(index=idx, body={"query": {"terms": {"place_id": delthese}}})
-    msg = 'deleted ' + str(len(delthese)) + ': ' + str(delthese)
-    return JsonResponse(msg, safe=False)
+
+    # Delete all collected docs in batches
+    for batch in chunked(delthese, 500):
+        es.delete_by_query(index=idx, body={"query": {"terms": {"place_id": batch}}})
+
+    msg = f'deleted {len(delthese)}: {delthese}'
+    return JsonResponse({'msg': msg})
 
 
 # ***
