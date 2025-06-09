@@ -41,7 +41,7 @@ import ssl
 from elasticsearch8 import Elasticsearch, exceptions
 from django.conf import settings
 
-CALLS_PER_SECOND = 3
+CALLS_PER_SECOND = 6
 
 logger = get_task_logger(__name__)
 es = settings.ES_CONN
@@ -1158,7 +1158,10 @@ def align_idx(*args, **kwargs):
                 result_obj = throttled_lookup(es, qobj, bounds=kwargs['bounds'])
 
                 if not result_obj['hits']:
-                    new_doc = process_no_hits(place, whg_id, test_mode, es, new_seeds, logger)
+                    # new_doc = process_no_hits(place, whg_id, test_mode, es, new_seeds, logger)
+                    # Server is overwhelmed with large datasets, so run as a task instead
+                    new_seeds.append(place.id)
+                    new_doc = index_place_no_hits.delay(place.id, whg_id, test_mode)
                     logger.info(f'new_doc: {new_doc}')
                     whg_id += 1
                 else:
@@ -1210,25 +1213,56 @@ def get_place_queryset(dataset, scope):
     return dataset.places.filter(indexed=False)
 
 
-def process_no_hits(place, whg_id, test_mode, es, new_seeds, logger):
-    """Handles the case where no hits are found for a place and indexes it as a new parent."""
+# Deprecated due to overwhelming the server with large datasets
+# def process_no_hits(place, whg_id, test_mode, es, new_seeds, logger):
+#     """Handles the case where no hits are found for a place and indexes it as a new parent."""
+#     try:
+#         new_doc = makeDoc(place)
+#         new_doc['relation']['name'] = 'parent'
+#         new_doc['whg_id'] = whg_id
+#         new_doc['searchy'] = [n.toponym for n in place.names.all()]
+#
+#         new_seeds.append(place.id)
+#
+#         if test_mode == 'off':
+#             es.index(index=settings.ES_WHG, id=str(whg_id), document=json.dumps(new_doc))
+#             place.indexed = True
+#             place.save()
+#
+#         return new_doc
+#     except Exception as e:
+#         logger.error(f"Error processing no-hit place {place.id}: {e}", exc_info=True)
+#         raise e
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=5)
+def index_place_no_hits(self, place_id, whg_id, test_mode='off'):
+    """
+    Celery task to index a Place as a new parent when no hits are found.
+    """
     try:
+        place = Place.objects.get(pk=place_id)
+
+        # Build new document
         new_doc = makeDoc(place)
         new_doc['relation']['name'] = 'parent'
         new_doc['whg_id'] = whg_id
         new_doc['searchy'] = [n.toponym for n in place.names.all()]
 
-        new_seeds.append(place.id)
-
         if test_mode == 'off':
+            es = settings.ES_CONN
             es.index(index=settings.ES_WHG, id=str(whg_id), document=json.dumps(new_doc))
             place.indexed = True
             place.save()
 
+        logger.info(f"Indexed place {place_id} as new parent.")
         return new_doc
+
+    except Place.DoesNotExist:
+        logger.error(f"Place with ID {place_id} does not exist.")
     except Exception as e:
-        logger.error(f"Error processing no-hit place {place.id}: {e}", exc_info=True)
-        raise e
+        logger.error(f"Error indexing no-hit place {place_id}: {e}", exc_info=True)
+        self.retry(exc=e)  # Will retry up to 3 times
 
 
 def process_hits(place, result_obj, task_id, dataset, places_to_review, tracking_vars, hit_summary, logger):
