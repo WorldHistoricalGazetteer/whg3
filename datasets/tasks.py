@@ -41,7 +41,7 @@ import ssl
 from elasticsearch8 import Elasticsearch, exceptions
 from django.conf import settings
 
-CALLS_PER_SECOND = 6
+CALLS_PER_SECOND = 30
 
 logger = get_task_logger(__name__)
 es = settings.ES_CONN
@@ -1238,14 +1238,14 @@ def batch_new_seeds(new_seeds, test_mode, start_id):
                 "_id": str(start_id + index),
                 "_source": new_doc
             }
-            index_actions.append(json.dumps(index_action))
+            index_actions.append(index_action)
 
             unindex_action = {
                 "_op_type": "delete",
                 "_index": settings.ES_PUB,
                 "_id": str(place.id)
             }
-            unindex_actions.append(json.dumps(unindex_action))
+            unindex_actions.append(unindex_action)
 
             if len(index_actions) >= BATCH_SIZE or index == len(new_seeds) - 1:
                 if test_mode == 'off':
