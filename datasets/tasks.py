@@ -1158,21 +1158,18 @@ def align_idx(*args, **kwargs):
                 result_obj = throttled_lookup(es, qobj, bounds=kwargs['bounds'])
 
                 if not result_obj['hits']:
-                    # new_doc = process_no_hits(place, whg_id, test_mode, es, new_seeds, logger)
-                    # Server is overwhelmed with large datasets, so run as a task instead
                     new_seeds.append(place.id)
-                    # new_doc = index_place_no_hits.delay(place.id, whg_id, test_mode)
-                    # logger.info(f'new_doc: {new_doc}')
-                    # whg_id += 1
                 else:
                     logger.info(f'Processing {len(result_obj["hits"])} hits found for place {place.id}')
-                    process_hits(place, result_obj, task_id, ds, places_to_review, tracking_vars, hit_summary, logger)
+                    places_to_review.append(place.id)
+                    process_hits(place, result_obj, task_id, ds, tracking_vars, hit_summary, logger)
 
             except Exception as e:
                 logger.error(f"Error processing place {place.id}: {e}", exc_info=True)
                 tracking_vars['count_fail'] += 1
 
         batch_new_seeds.delay(new_seeds, test_mode, start_id=whg_id)
+        Place.objects.filter(pk__in=[p.id for p in places_to_review]).update(review_whg=0)
 
         hit_summary = finalise_summary(hit_summary, places.count(), tracking_vars, new_seeds, start)
         logger.info(f'hit_summary: {hit_summary}')
@@ -1258,6 +1255,7 @@ def batch_new_seeds(new_seeds, test_mode, start_id):
 
                 logger.info(f"Indexed {len(index_actions)} new places in batch starting from ID {start_id + index - len(index_actions) + 1}.")
                 index_actions = []
+                unindex_actions = []
 
         except Place.DoesNotExist:
             logger.error(f"Place with ID {new_seed} does not exist.")
@@ -1265,13 +1263,10 @@ def batch_new_seeds(new_seeds, test_mode, start_id):
             logger.error(f"Error preparing place {new_seed} for bulk indexing: {e}", exc_info=True)
 
 
-def process_hits(place, result_obj, task_id, dataset, places_to_review, tracking_vars, hit_summary, logger):
+def process_hits(place, result_obj, task_id, dataset, tracking_vars, hit_summary, logger):
     """Handles the case where hits are found, and prepares them for review."""
     try:
         tracking_vars['count_hit'] += 1
-        place.review_whg = 0
-        place.save()
-        places_to_review.append(place.id)
 
         parents, children = classify_hits(result_obj['hits'])
         # Log if no parents found
