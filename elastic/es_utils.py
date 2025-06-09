@@ -564,7 +564,7 @@ def replaceInIndex(es, idx, pids):
 # wrapper for removePlacesFromIndex()
 # delete all docs for dataset from the whg index,
 # whether record is in database or not
-def removeDatasetFromIndex(request, *args, **kwargs):
+def removeDatasetFromIndex(request=None, *args, **kwargs):
     from datasets.models import Dataset
     ds = Dataset.objects.get(id=args[0] if args else kwargs['dsid'])
     es = settings.ES_CONN

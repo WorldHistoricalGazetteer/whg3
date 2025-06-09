@@ -282,6 +282,21 @@ LOGGING = {
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'propagate': False,  # Ensure logs do not propagate to root logger
         },
+        'celery': {
+            'handlers': ['celery_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'celery.task': {
+            'handlers': ['celery_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'celery.app.trace': {
+            'handlers': ['celery_file', 'console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
         'tasks': {
             'handlers': ['celery_file', 'console'],
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
