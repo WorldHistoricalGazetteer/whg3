@@ -1168,9 +1168,9 @@ def align_idx(*args, **kwargs):
                 logger.error(f"Error processing place {place.id}: {e}", exc_info=True)
                 tracking_vars['count_fail'] += 1
 
-            if index == 600: # break after 600 places to avoid long-running tasks TODO: remove for production
-                logger.info('Reached 600 places, breaking the loop for testing purposes.')
-                break
+            # if index == 600: # break after 600 places to avoid long-running tasks TODO: remove for production
+            #     logger.info('Reached 600 places, breaking the loop for testing purposes.')
+            #     break
 
         batch_new_seeds.delay(new_seeds, test_mode, start_id=whg_id)
         updated = Place.objects.filter(pk__in=places_to_review).update(review_whg=0)
