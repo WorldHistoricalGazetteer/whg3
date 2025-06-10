@@ -4,6 +4,8 @@
 
 from django.contrib.auth import get_user_model
 
+from datasets.models import Hit
+
 # from main.views import logger
 
 User = get_user_model()
@@ -584,11 +586,10 @@ def removeDatasetFromIndex(request=None, *args, **kwargs):
 
     removePlacesFromIndex(es, idx, all_pids)
 
-    ds.ds_status = 'wd-complete'
-    ds.save()
-    # remove indexed flag in places
+    Dataset.objects.filter(id=ds.id).update(ds_status='wd-complete')
+    Hit.objects.filter(authority="whg", dataset_id=ds.id).delete()
 
-    # delete latest idx task (its hits were removed already)
+    # delete latest idx task
     tasks = ds.tasks.filter(task_name='align_idx', status="SUCCESS").order_by('-date_done')
     if tasks.exists():
         latest = tasks[0]
