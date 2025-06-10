@@ -1159,8 +1159,8 @@ def align_idx(*args, **kwargs):
                 # logger.info(f'Processing place: {place.id} - {place.title}')
 
                 # TODO: Comment out the following 2 lines for production (pushes all places directly to index)
-                new_seeds.append(place.id)
-                continue
+                # new_seeds.append(place.id)
+                # continue
 
                 qobj = build_qobj(place)
                 result_obj = throttled_lookup(es, qobj, bounds=kwargs['bounds'])
