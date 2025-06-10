@@ -1,6 +1,9 @@
 # celery tasks for reconciliation and downloads
 # align_tgn(), align_wdlocal(), align_idx(), align_whg, make_download
 from __future__ import absolute_import, unicode_literals
+
+import time
+
 from django_celery_results.models import TaskResult
 from django.conf import settings
 from django.core import serializers
@@ -1217,9 +1220,31 @@ def get_place_queryset(dataset, scope):
     return dataset.places.filter(indexed=False)
 
 
+def wait_until_es_ready(timeout=60, sleep_interval=2):
+    logger = logging.getLogger('accession')
+    start = time.time()
+    while True:
+        try:
+            if es.ping():
+                health = es.cluster.health()
+                if health.get("status") in ("yellow", "green"):
+                    logger.info("Elasticsearch is ready.")
+                    return True
+        except Exception as e:
+            logger.warning(f"Waiting for Elasticsearch: {e}")
+
+        if time.time() - start > timeout:
+            logger.error("Timed out waiting for Elasticsearch to be ready.")
+            return False
+        time.sleep(sleep_interval)
+
+
 @shared_task
 def batch_new_seeds(new_seeds, test_mode, start_id):
     logger = logging.getLogger('accession')
+
+    if not wait_until_es_ready():
+        return
 
     if not es.indices.exists(index=settings.ES_WHG):
         logger.error(f"Index {settings.ES_WHG} does not exist. Cannot batch index new seeds.")
@@ -1261,6 +1286,11 @@ def batch_new_seeds(new_seeds, test_mode, start_id):
                 failure_count = 0
                 try:
                     if test_mode == 'off':
+
+                        if not wait_until_es_ready():
+                            logger.error("Elasticsearch is not ready for bulk indexing.")
+                            raise Exception("Elasticsearch not ready")
+
                         for success, info in streaming_bulk(es, actions, raise_on_error=False):
                             if success:
                                 success_count += 1
