@@ -17,7 +17,7 @@ from celery.result import AsyncResult
 from celery.utils.log import get_task_logger
 import codecs, csv, datetime, itertools, os, re, sys, zipfile
 from copy import deepcopy
-from elasticsearch8.helpers import streaming_bulk, bulk
+from elasticsearch8.helpers import streaming_bulk, bulk, BulkIndexError
 from itertools import chain
 import pandas as pd
 import simplejson as json
@@ -1151,7 +1151,7 @@ def align_idx(*args, **kwargs):
         logger.info(f'places count: {places.count()}')
 
         # Process each place
-        for place in places:
+        for index, place in enumerate(places):
             try:
                 logger.info(f'Processing place: {place.id} - {place.title}')
                 qobj = build_qobj(place)
@@ -1168,13 +1168,17 @@ def align_idx(*args, **kwargs):
                 logger.error(f"Error processing place {place.id}: {e}", exc_info=True)
                 tracking_vars['count_fail'] += 1
 
+            if index == 600: # break after 600 places to avoid long-running tasks TODO: remove for production
+                logger.info('Reached 600 places, breaking the loop for testing purposes.')
+                break
+
         batch_new_seeds.delay(new_seeds, test_mode, start_id=whg_id)
         Place.objects.filter(pk__in=[p.id for p in places_to_review]).update(review_whg=0)
 
         hit_summary = finalise_summary(hit_summary, places.count(), tracking_vars, new_seeds, start)
         logger.info(f'hit_summary: {hit_summary}')
 
-        # Finalize: Update dataset status, send email, and log results
+        # Finalise: Update dataset status, send email, and log results
         try:
             finalise_task(ds, user, test_mode, hit_summary, logger)
         except Exception as e:
@@ -1216,10 +1220,16 @@ def get_place_queryset(dataset, scope):
 def batch_new_seeds(new_seeds, test_mode, start_id):
     logger = logging.getLogger('accession')
 
+    if not es.indices.exists(index=settings.ES_WHG):
+        logger.error(f"Index {settings.ES_WHG} does not exist. Cannot batch index new seeds.")
+        return
+    if not es.indices.exists(index=settings.ES_PUB):
+        logger.error(f"Index {settings.ES_PUB} does not exist. Cannot batch delete places.")
+        return
+
     BATCH_SIZE = 500  # Define the batch size for bulk indexing
 
-    index_actions = []
-    unindex_actions = []
+    actions = []
     places_to_update = []
 
     for index, new_seed in enumerate(new_seeds):
@@ -1232,30 +1242,40 @@ def batch_new_seeds(new_seeds, test_mode, start_id):
             new_doc['whg_id'] = start_id + index
             new_doc['searchy'] = [n.toponym for n in place.names.all()]
 
-            index_action = {
+            actions.append({
                 "_op_type": "index",
                 "_index": settings.ES_WHG,
                 "_id": str(start_id + index),
                 "_source": new_doc
-            }
-            index_actions.append(index_action)
+            })
 
-            unindex_action = {
+            actions.append({
                 "_op_type": "delete",
                 "_index": settings.ES_PUB,
                 "_id": str(place.id)
-            }
-            unindex_actions.append(unindex_action)
+            })
 
-            if len(index_actions) >= BATCH_SIZE or index == len(new_seeds) - 1:
-                if test_mode == 'off':
-                    bulk(es, index_actions)
-                    bulk(es, unindex_actions)
-                    Place.objects.filter(pk__in=[p.id for p in places_to_update]).update(indexed=True, idx_pub=False)
+            if len(actions) >= BATCH_SIZE or index == len(new_seeds) - 1:
+                try:
+                    if test_mode == 'off':
+                        results = bulk(es, actions, raise_on_error=False)
+                        for success, info in results:
+                            if not success:
+                                logger.warning(f"Failed action: {info}")
 
-                logger.info(f"Indexed {len(index_actions)} new places in batch starting from ID {start_id + index - len(index_actions) + 1}.")
-                index_actions = []
-                unindex_actions = []
+                        Place.objects.filter(pk__in=[p.id for p in places_to_update]).update(indexed=True, idx_pub=False)
+
+                    logger.info(f"Indexed new places in batch starting from ID {start_id + index - len(actions) + 1}.")
+
+                except BulkIndexError as e:
+                    logger.error(f"Bulk indexing failed: {e}", exc_info=True)
+                    for fail in e.errors[:5]:  # only log the first 5 for readability
+                        logger.error(json.dumps(fail, indent=2))
+                except Exception as e:
+                    logger.error(f"Error during bulk indexing: {e}", exc_info=True)
+
+                actions = []
+                places_to_update = []
 
         except Place.DoesNotExist:
             logger.error(f"Place with ID {new_seed} does not exist.")
