@@ -584,14 +584,11 @@ def removeDatasetFromIndex(request=None, *args, **kwargs):
 
     removePlacesFromIndex(es, idx, all_pids)
 
-    ds.ds_status = 'wd-complete'
-    ds.save()
-    # remove indexed flag in places
+    Dataset.objects.filter(id=ds.id).update(ds_status='wd-complete')
+    from datasets.models import Hit
+    Hit.objects.filter(authority="whg", dataset_id=ds.id).delete()
 
-    # Dataset.objects.filter(id=ds.id).update(ds_status='wd-complete')
-    # Hit.objects.filter(authority="whg", dataset_id=ds.id).delete()
-
-    # delete latest idx task (its hits were removed already)
+    # delete latest idx task
     tasks = ds.tasks.filter(task_name='align_idx', status="SUCCESS").order_by('-date_done')
     if tasks.exists():
         latest = tasks[0]
