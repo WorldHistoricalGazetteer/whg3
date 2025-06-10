@@ -1156,7 +1156,12 @@ def align_idx(*args, **kwargs):
         # Process each place
         for index, place in enumerate(places):
             try:
-                logger.info(f'Processing place: {place.id} - {place.title}')
+                # logger.info(f'Processing place: {place.id} - {place.title}')
+
+                # TODO: Comment out the following 2 lines for production (pushes all places directly to index)
+                new_seeds.append(place.id)
+                continue
+
                 qobj = build_qobj(place)
                 result_obj = throttled_lookup(es, qobj, bounds=kwargs['bounds'])
 
@@ -1171,13 +1176,16 @@ def align_idx(*args, **kwargs):
                 logger.error(f"Error processing place {place.id}: {e}", exc_info=True)
                 tracking_vars['count_fail'] += 1
 
-            # if index == 600: # break after 600 places to avoid long-running tasks TODO: remove for production
+            # if index == 600: # break after 600 places to avoid long-running tasks TODO: comment out for production
             #     logger.info('Reached 600 places, breaking the loop for testing purposes.')
             #     break
 
-        batch_new_seeds.delay(new_seeds, test_mode, start_id=whg_id)
-        updated = Place.objects.filter(pk__in=places_to_review).update(review_whg=0)
-        logger.info(f"Marked {updated} places for review.")
+        if new_seeds:
+            batch_new_seeds.delay(new_seeds, test_mode, start_id=whg_id)
+
+        if places_to_review:
+            updated = Place.objects.filter(pk__in=places_to_review).update(review_whg=0)
+            logger.info(f"Marked {updated} places for review.")
 
         hit_summary = finalise_summary(hit_summary, places.count(), tracking_vars, new_seeds, start)
         logger.info(f'hit_summary: {hit_summary}')
