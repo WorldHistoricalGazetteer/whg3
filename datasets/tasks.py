@@ -1173,7 +1173,8 @@ def align_idx(*args, **kwargs):
                 break
 
         batch_new_seeds.delay(new_seeds, test_mode, start_id=whg_id)
-        Place.objects.filter(pk__in=[p.id for p in places_to_review]).update(review_whg=0)
+        updated = Place.objects.filter(pk__in=places_to_review).update(review_whg=0)
+        logger.info(f"Marked {updated} places for review.")
 
         hit_summary = finalise_summary(hit_summary, places.count(), tracking_vars, new_seeds, start)
         logger.info(f'hit_summary: {hit_summary}')
@@ -1255,22 +1256,30 @@ def batch_new_seeds(new_seeds, test_mode, start_id):
                 "_id": str(place.id)
             })
 
-            if len(actions) >= BATCH_SIZE or index == len(new_seeds) - 1:
+            if len(places_to_update) >= BATCH_SIZE or index == len(new_seeds) - 1:
+                success_count = 0
+                failure_count = 0
                 try:
                     if test_mode == 'off':
-                        results = bulk(es, actions, raise_on_error=False)
-                        for success, info in results:
-                            if not success:
-                                logger.warning(f"Failed action: {info}")
+                        for success, info in streaming_bulk(es, actions, raise_on_error=False):
+                            if success:
+                                success_count += 1
+                            else:
+                                failure_count += 1
+
+                                action_type = list(info.keys())[0]
+                                action_info = info[action_type]
+
+                                logger.warning(
+                                    f"Failed {action_type} action: ID={action_info.get('_id')}, "
+                                    f"Error={action_info.get('error', {}).get('type')} - "
+                                    f"{action_info.get('error', {}).get('reason')}"
+                                )
 
                         Place.objects.filter(pk__in=[p.id for p in places_to_update]).update(indexed=True, idx_pub=False)
 
-                    logger.info(f"Indexed new places in batch starting from ID {start_id + index - len(actions) + 1}.")
+                    logger.info(f"Batch bulk indexing complete: {success_count} succeeded, {failure_count} failed.")
 
-                except BulkIndexError as e:
-                    logger.error(f"Bulk indexing failed: {e}", exc_info=True)
-                    for fail in e.errors[:5]:  # only log the first 5 for readability
-                        logger.error(json.dumps(fail, indent=2))
                 except Exception as e:
                     logger.error(f"Error during bulk indexing: {e}", exc_info=True)
 
