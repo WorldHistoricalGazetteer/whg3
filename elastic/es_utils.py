@@ -284,9 +284,12 @@ def findPortalPlaces(whg_id):
     # idx = 'whg'
     idx = settings.ES_WHG
 
-    # Construct Elasticsearch query to find the document by whg_id
-    res = es.search(index=idx, query=esq_id(whg_id))
-    hits = res['hits']['hits']
+    try:
+        res = es.search(index=idx, query=esq_id(whg_id))
+        hits = res['hits']['hits']
+    except ConnectionError as e:
+        logging.error(f"Elasticsearch connection error for whg_id {whg_id}: {e}")
+        return []
 
     # Check if the document exists in the index
     if hits:
