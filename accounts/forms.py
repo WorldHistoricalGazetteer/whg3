@@ -14,7 +14,8 @@ URL_PATTERN = re.compile(r'https?://|www\.|tinyurl\.com|bit\.ly|\/')
 
 def validate_no_urls(value):
     if URL_PATTERN.search(value):
-        raise ValidationError('Please do not include URLs or links in this field.')
+        if value and URL_PATTERN.search(value):
+            raise ValidationError('Please do not include URLs or links in this field.')
 
 
 class LoginForm(forms.Form):
@@ -78,11 +79,6 @@ class UserModelForm(forms.ModelForm):
         surname = self.cleaned_data.get('surname', '')
         validate_no_urls(surname)
         return surname
-
-    def clean_affiliation(self):
-        affiliation = self.cleaned_data.get('affiliation', '')
-        validate_no_urls(affiliation)
-        return affiliation
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
