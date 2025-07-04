@@ -1,3 +1,5 @@
+import re
+
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth import get_user_model
@@ -6,6 +8,15 @@ from django.core.validators import validate_email
 
 User = get_user_model()
 # from accounts.models import Profile
+
+URL_PATTERN = re.compile(r'https?://|www\.|tinyurl\.com|bit\.ly|\/')
+
+
+def validate_no_urls(value):
+    if URL_PATTERN.search(value):
+        if value and URL_PATTERN.search(value):
+            raise ValidationError('Please do not include URLs or links in this field.')
+
 
 class LoginForm(forms.Form):
     username = forms.CharField(max_length=100, required=True)
@@ -31,6 +42,7 @@ class LoginForm(forms.Form):
         # user = authenticate(email=email, password=password)
         return user
 
+
 # used to edit
 class UserModelForm(forms.ModelForm):
     class Meta:
@@ -51,6 +63,22 @@ class UserModelForm(forms.ModelForm):
             'web_page': forms.TextInput(attrs={'size': 50}),
             'image_file': forms.FileInput(attrs={'class': 'fileinput'}),
         }
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username', '')
+        # Check for obvious URL patterns in usernames
+        validate_no_urls(username)
+        return username
+
+    def clean_given_name(self):
+        given_name = self.cleaned_data.get('given_name', '')
+        validate_no_urls(given_name)
+        return given_name
+
+    def clean_surname(self):
+        surname = self.cleaned_data.get('surname', '')
+        validate_no_urls(surname)
+        return surname
 
     def clean_email(self):
         email = self.cleaned_data.get('email')
