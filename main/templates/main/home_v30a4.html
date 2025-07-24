@@ -31,7 +31,7 @@
 
 {% block content %}
 
-<main class="container mt-1">
+<main class="homemain container mt-1">
     <div class="row">
         <!-- Full-width row at the top -->
         <div class="row mb-2">
@@ -102,7 +102,7 @@
                     <h2 class="accordion-header" id="headingAccess">
                         <button aria-controls="collapseAccess" aria-expanded="false" class="accordion-button collapsed"
                                 data-bs-target="#collapseAccess" data-bs-toggle="collapse" type="button">
-                            <i class="fas fa-exchange-alt me-2 text-primary"></i> Access Methods
+                            <i class="fas fa-magnifying-glass-location me-2 text-primary"></i> Access Methods
                         </button>
                     </h2>
                     <div aria-labelledby="headingAccess" class="accordion-collapse collapse"
@@ -139,7 +139,7 @@
                                 data-bs-target="#collapseWorkbench" data-bs-toggle="collapse"
                                 type="button">
                             <i class="fas fa-tools me-2 text-primary"></i>
-                            <strong>Build and publish</strong>&nbsp;collections of places
+                            Build and publish collections of places
                         </button>
                     </h2>
                     <div aria-labelledby="headingWorkbench" class="accordion-collapse collapse"
@@ -164,7 +164,7 @@
                                 data-bs-target="#collapseTeaching" data-bs-toggle="collapse"
                                 type="button">
                             <i class="fas fa-chalkboard-teacher me-2 text-primary"></i>
-                            <strong>Teach</strong>&nbsp;about places
+                            Teach about places
                         </button>
                     </h2>
                     <div aria-labelledby="headingTeaching" class="accordion-collapse collapse"
@@ -188,23 +188,28 @@
                 login</a> to get started.
             </p>
             {% endif %}
-            <div class="border p-2 mt-2 mb-0 small" style="border-style:
-            dashed !important;; border-width: 0.1rem !important;">
-                <p class="mb-0 red-head">NEWS & ANNOUNCEMENTS <span class="ms-3"><a
-                        href="{%  url 'announcements-list' %}">view all</a></span></p>
-                <div class="mb-0" id="announcement-container">
-                    {% for announcement in announcements|slice:":3" %}
-                    <div %}
-                         %}style="display: none;" class="announcement constrained" endif forloop.first if not {% {%>
+            <div id="news_announcement_wrapper" class="mt-2 small">
+                <h6 class="news-header mb-2">
+                    <i class="fa-solid fa-bullhorn mx-2 text-primary"></i>News & Announcements
+                </h6>
+                <div id="announcement-container" class="border rounded">
+                    {% for announcement in announcements %}
+                    <div class="announcement mb-2">
                         <a href="{{ announcement.link }}" target="_blank">
                             <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
                         </a>
-                        <span class="ms-2">{{ announcement.content }}</span>
+                        <div class="ms-3 small text-muted">
+                            {{ announcement.content }}
+                        </div>
+                        <div class="ms-3 small text-secondary">
+                            <i class="fas fa-calendar-alt me-1"></i> {{ announcement.created_at|date:"j M Y" }}
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
             </div>
         </div>
+
         <!-- Right Column -->
         <div class="col-md-6 mb-0 mb-md-0 ps-md-1 pe-md-0" id="right_column">
             <div class="d-flex flex-column h-100" id="home_center">
