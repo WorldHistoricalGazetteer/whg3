@@ -1,199 +1,312 @@
 {% extends "main/base_webpack.html" %}
 {% load static %}
+{% load humanize %}
 
 {% block title %}
-  <title>WHG v3.0 beta</title>
+<title>WHG v3.0 beta</title>
 {% endblock %}
 
 {% block maplibre %}
-  <script type="text/javascript">
+<script type="text/javascript">
     const loadMaplibre = true;
-  </script>
-  <link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet"/>
+</script>
+<link href="{% static 'webpack/whg_maplibre.bundle.css' %}" rel="stylesheet"/>
 {% endblock %}
 
 {% block extra_head %}
-  <link href="{% static 'webpack/home.bundle.css' %}" rel="stylesheet"/>
-  <style>
+<link href="{% static 'webpack/home.bundle.css' %}" rel="stylesheet"/>
+<style>
     .modal-dialog {
-      display: flex;
-      align-items: center;
-      min-height: calc(100% - 1rem);
+        display: flex;
+        align-items: center;
+        min-height: calc(100% - 1rem);
     }
+
     .modal-content {
-      height: fit-content;
-      margin: auto;
+        height: fit-content;
+        margin: auto;
     }
-  </style>
+</style>
 {% endblock %}
 
 {% block content %}
 
-  <main class="container mt-1">
+<main class="container mt-1">
     <div class="row">
-      <!-- Full-width row at the top -->
-      <div class="row mb-2">
-        <div class="col text-center mb-2">
-          <div class="d-flex justify-content-center align-items-center mb-2">
-            <img src="{% static 'images/whg_logo.svg' %}"
-                 class="logo_responsive d-none d-lg-inline-block align-bottom me-2" width="80" alt=""/>
-            <h1 class="title_responsive d-lg-inline-block mb-0">World Historical Gazetteer</h1>
-          </div>
-          <p id="tagline_responsive" class="mb-0 mb-lg-2">linking knowledge about the past via place</p>
+        <!-- Full-width row at the top -->
+        <div class="row mb-2">
+            <div class="col text-center mb-2">
+                <div class="d-flex justify-content-center align-items-center mb-2">
+                    <img alt=""
+                         class="logo_responsive d-none d-lg-inline-block align-bottom me-2"
+                         src="{% static 'images/whg_logo.svg' %}" width="80"/>
+                    <h1 class="title_responsive d-lg-inline-block mb-0">World Historical Gazetteer</h1>
+                </div>
+                <p class="mb-0 mb-lg-2" id="tagline_responsive">linking knowledge about the past via place</p>
+            </div>
         </div>
-      </div>
-      <!-- Left Column -->
-      <div id="left_column" class="col-md-6 mb-2 mb-md-0 ps-md-0 pe-md-1">
-        <p class="mb-2">The World Historical Gazetteer is a platform for linking records about historical places, allowing people to make spatial connections across time and language. You can learn more about gazetteers, which are directories of named places, <a href="https://programminghistorian.org/en/lessons/space-place-gazetteers" target="_blank">here <i class="fas fa-external-link-alt small"></i></a>.</p>
-        {% if not user.is_authenticated %}
-          <p class="mb-2 text-center">
-            <a href="{% url 'accounts:register' %}">Register</a> or <a href="{% url 'accounts:login' %}">
-            login</a> to get started.
-          </p>
-        {% endif %}
-        <div id="home_buttons">
-          <div class="border p-2 mb-2 ms-0 home-button d-inline-block w-100">
-            <img src="{% static 'images/001-binoculars.png' %}" class="mx-2" height="60" width="60" alt=""/>
-            <div class="d-inline-block align-middle">
-              <h5>
-                <span class="home-button-hilite">Search</span>
-                <span class="red-head">{{ count_places}}</span> places
-              </h5>
-              <a href="{% url 'search-page' %}">
-                <span class="link-spanner"></span>
-              </a>
+        <!-- Left Column -->
+        <div class="col-md-6 mb-2 mb-md-0 ps-md-0 pe-md-1" id="left_column">
+            <p class="mb-2">The World Historical Gazetteer is a platform for linking records about historical places,
+                allowing people to make spatial connections across time and language. You can learn more about
+                gazetteers, which are directories of named places, <a
+                        href="https://programminghistorian.org/en/lessons/space-place-gazetteers" target="_blank">here
+                    <i class="fas fa-external-link-alt small"></i></a>.</p>
+            <div class="accordion mb-3" id="whgAccordion">
+
+                <!-- Features Accordion Item -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingFeatures">
+                        <button aria-controls="collapseFeatures" aria-expanded="false"
+                                class="accordion-button collapsed"
+                                data-bs-target="#collapseFeatures" data-bs-toggle="collapse"
+                                type="button">
+                            <i class="fas fa-map-marked-alt me-2 text-primary"></i> Features
+                        </button>
+                    </h2>
+                    <div aria-labelledby="headingFeatures" class="accordion-collapse collapse"
+                         data-bs-parent="#whgAccordion"
+                         id="collapseFeatures">
+                        <div class="accordion-body">
+                            <ul class="ps-3 mb-0 list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-map-marker-alt me-2 text-danger"></i>
+                                    Place records, most with coordinates, historical metadata, and linked toponyms
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-location-arrow me-2 text-info"></i>
+                                    Geocoding services (forward and reverse)
+                                </li>
+                                <li>
+                                    <i class="fas fa-layer-group me-2 text-secondary"></i>
+                                    Supplementary data layers, including:
+                                    <ul class="ps-4 mt-1 mb-0 list-unstyled">
+                                        <li class="mb-1">
+                                            <i class="fas fa-leaf me-2 text-success"></i>
+                                            Ecological classifications
+                                        </li>
+                                        <li>
+                                            <i class="fas fa-landmark me-2 text-warning"></i>
+                                            Historical cultural territories (e.g., Indigenous homelands)
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Access Methods Accordion Item -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingAccess">
+                        <button aria-controls="collapseAccess" aria-expanded="false" class="accordion-button collapsed"
+                                data-bs-target="#collapseAccess" data-bs-toggle="collapse" type="button">
+                            <i class="fas fa-exchange-alt me-2 text-primary"></i> Access Methods
+                        </button>
+                    </h2>
+                    <div aria-labelledby="headingAccess" class="accordion-collapse collapse"
+                         data-bs-parent="#whgAccordion"
+                         id="collapseAccess">
+                        <div class="accordion-body">
+                            <p class="mb-1">The WHG Index can be queried in two distinct ways:</p>
+                            <ul class="ps-3 mb-0 list-unstyled">
+                                <li class="mb-2">
+                                    <i class="fas fa-globe me-2 text-success"></i>
+                                    <strong>Web Site</strong>: An interactive web platform for <a
+                                        href="{% url 'search-page' %}">searching</a> by
+                                    name or location, viewing metadata on a map, and exploring datasets using
+                                    visualisation tools.
+                                </li>
+                                <li>
+                                    <i class="fas fa-code me-2 text-info"></i>
+                                    <strong>API (Application Programming Interface)</strong>: A programmatic interface
+                                    for querying WHG data, performing spatial queries, and accessing geocoding services
+                                    from external applications. Read more <a
+                                        href="https://docs.whgazetteer.org/content/400-Technical.html#api"
+                                        target="_blank">here <i class="fas fa-external-link-alt small"></i></a>.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workbench Accordion Item -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingWorkbench">
+                        <button aria-controls="collapseWorkbench" aria-expanded="false"
+                                class="accordion-button collapsed"
+                                data-bs-target="#collapseWorkbench" data-bs-toggle="collapse"
+                                type="button">
+                            <i class="fas fa-tools me-2 text-primary"></i>
+                            <strong>Build and publish</strong>&nbsp;collections of places
+                        </button>
+                    </h2>
+                    <div aria-labelledby="headingWorkbench" class="accordion-collapse collapse"
+                         data-bs-parent="#whgAccordion"
+                         id="collapseWorkbench">
+                        <div class="accordion-body">
+                            WHG offers three pathways for using its tools and services to augment and publish historical
+                            place data.
+                            <div class="mt-2">
+                                <a class="btn btn-sm btn-outline-primary" href="{% url 'workbench' %}">Explore
+                                    Workbench</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Teaching Accordion Item -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingTeaching">
+                        <button aria-controls="collapseTeaching" aria-expanded="false"
+                                class="accordion-button collapsed"
+                                data-bs-target="#collapseTeaching" data-bs-toggle="collapse"
+                                type="button">
+                            <i class="fas fa-chalkboard-teacher me-2 text-primary"></i>
+                            <strong>Teach</strong>&nbsp;about places
+                        </button>
+                    </h2>
+                    <div aria-labelledby="headingTeaching" class="accordion-collapse collapse"
+                         data-bs-parent="#whgAccordion"
+                         id="collapseTeaching">
+                        <div class="accordion-body">
+                            Explore tools and example lesson plans for incorporating historical geography into your
+                            teaching. WHG supports place-based learning across humanities disciplines.
+                            <div class="mt-2">
+                                <a class="btn btn-sm btn-outline-primary" href="{% url 'teaching' %}">Explore Teaching
+                                    Resources</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-          </div>
-          <div class="border p-2 mb-2 ms-0 home-button d-inline-block w-100">
-            <img src="{% static 'images/noun-workbench-6022067.svg' %}" class="mx-2" height="60" width="60" alt=""/>
-            <div class="d-inline-block align-middle">
-              <h5>
-                <span class="home-button-hilite">Build and publish </span> collections of places
-              </h5>
-              <a href="{% url 'workbench' %}">
-                <span class="link-spanner"></span>
-              </a>
-            </div>
-          </div>
-          <div class="border p-2 mb-0 ms-0 home-button d-inline-block w-100">
-            <img src="{% static 'images/011-teaching.png' %}" class="mx-2" height="60" width="60" alt=""/>
-            <div class="d-inline-block align-middle">
-              <h5>
-                <span class="home-button-hilite">Teach</span> about places
-              </h5>
-              <a href="{% url 'teaching' %}">
-                <span class="link-spanner"></span>
-              </a>
-            </div>
-          </div>
-        </div>
-        <div class="border p-2 mt-2 mb-0 small" style="border-style:
+            {% if not user.is_authenticated %}
+            <p class="mb-2 text-center">
+                <a href="{% url 'accounts:register' %}">Register</a> or <a href="{% url 'accounts:login' %}">
+                login</a> to get started.
+            </p>
+            {% endif %}
+            <div class="border p-2 mt-2 mb-0 small" style="border-style:
             dashed !important;; border-width: 0.1rem !important;">
-          <p class="mb-0 red-head">NEWS & ANNOUNCEMENTS <span class="ms-3"><a href="{%  url 'announcements-list' %}">view all</a></span></p>
-          <div id="announcement-container" class="mb-0">
-            {% for announcement in announcements|slice:":3" %}
-              <div class="announcement constrained"
-                   {% if not forloop.first %}style="display: none;" {% endif %}>
-                <a href="{{ announcement.link }}" target="_blank">
-                  <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
-                </a>
-                <span class="ms-2">{{ announcement.content }}</span>
-              </div> {% endfor %} </div>
-        </div>
-      </div>
-      <!-- Right Column -->
-      <div id="right_column" class="col-md-6 mb-0 mb-md-0 ps-md-1 pe-md-0">
-        <div id="home_center" class="d-flex flex-column h-100">
-          <div id="search_bar" class="mb-2">
-            <div id="input" class="input-group mx-auto">
-              <!-- Label only for Large Screens -->
-              <label class="input-group-text" for="search_input">Search</label>
-              <!-- Search Input -->
-              <input id="search_input" class="form-control typeahead" data-provide="typeahead" type="text"
-                     placeholder="Enter place name" aria-label="Search" aria-describedby="search-addon"
-                     autocomplete="off" spellcheck="false">
-              <!-- Search Button -->
-              <button id="initiate_search" data-title="Initiate search|Cannot search without a place name"
-                      class="btn btn-outline-secondary btn-success" type="button">
-                <i class="fas fa-search"></i>
-              </button>
+                <p class="mb-0 red-head">NEWS & ANNOUNCEMENTS <span class="ms-3"><a
+                        href="{%  url 'announcements-list' %}">view all</a></span></p>
+                <div class="mb-0" id="announcement-container">
+                    {% for announcement in announcements|slice:":3" %}
+                    <div %}
+                         %}style="display: none;" class="announcement constrained" endif forloop.first if not {% {%>
+                        <a href="{{ announcement.link }}" target="_blank">
+                            <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
+                        </a>
+                        <span class="ms-2">{{ announcement.content }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
             </div>
-          </div>
-          <div class="map_container" class="flex-grow-1">
-            <div id="map"></div>
-            <div id="carousel-outer-container" class="mx-0">
-              <!-- Populated dynamically in JavaScript -->
-            </div>
-          </div>
         </div>
-      </div>
+        <!-- Right Column -->
+        <div class="col-md-6 mb-0 mb-md-0 ps-md-1 pe-md-0" id="right_column">
+            <div class="d-flex flex-column h-100" id="home_center">
+                <div class="mb-2" id="search_bar">
+                    <div class="input-group mx-auto" id="input">
+                        <!-- Label only for Large Screens -->
+                        <label class="input-group-text" for="search_input">Search {{count_places|intcomma}}
+                            Places</label>
+                        <!-- Search Input -->
+                        <input aria-describedby="search-addon" aria-label="Search" autocomplete="off"
+                               class="form-control typeahead"
+                               data-provide="typeahead" id="search_input" placeholder="Enter place name"
+                               spellcheck="false" type="text">
+                        <!-- Search Button -->
+                        <button class="btn btn-outline-secondary btn-success"
+                                data-title="Initiate search|Cannot search without a place name"
+                                id="initiate_search" type="button">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="map_container" class="flex-grow-1">
+                    <div id="map"></div>
+                    <div class="mx-0" id="carousel-outer-container">
+                        <!-- Populated dynamically in JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     <!-- Modal -->
-    <div class="modal fade" id="homeModal" tabindex="-1" aria-labelledby="homeModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="homeModalLabel">{ per-button title }</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body" style="overflow-y: scroll;"></div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="welcomeModalLabel">
-              <span><img src="{% static 'images/whg_logo.svg' %}" height="35"/></span> Welcome to WHG v3!
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-{#            <p>Welcome to World Historical Gazetteer, Version 3!</p>#}
-            <p>This beta release of Version 3 includes many enhancements and new features!</p>
-            <p><a href="{% url 'v3-new' %}" class="btn btn-link ps-0">See what's new</a></p>
-            <p>Registered users will be prompted to reset their password when logging in. All existing data and
-              user accounts have been migrated, but normal security practice prevented transfer of passwords.</p>
-            <div class="form-check">
-              <input class="form-check-input" type="checkbox" value="" id="dontShowAgain">
-              <label class="form-check-label small" for="dontShowAgain">Don't show this again</label>
+    <div aria-hidden="true" aria-labelledby="homeModalLabel" class="modal fade" id="homeModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="homeModalLabel">{ per-button title }</h5>
+                    <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                </div>
+                <div class="modal-body" style="overflow-y: scroll;"></div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Close</button>
+                </div>
             </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
-          </div>
         </div>
-      </div>
+    </div>
+    <div aria-hidden="true" aria-labelledby="welcomeModalLabel" class="modal fade" id="welcomeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="welcomeModalLabel">
+                        <span><img height="35" src="{% static 'images/whg_logo.svg' %}"/></span> Welcome to WHG v3!
+                    </h5>
+                    <button aria-label="Close" class="btn-close" data-bs-dismiss="modal" type="button"></button>
+                </div>
+                <div class="modal-body">
+                    {# <p>Welcome to World Historical Gazetteer, Version 3!</p>#}
+                    <p>This beta release of Version 3 includes many enhancements and new features!</p>
+                    <p><a class="btn btn-link ps-0" href="{% url 'v3-new' %}">See what's new</a></p>
+                    <p>Registered users will be prompted to reset their password when logging in. All existing data and
+                        user accounts have been migrated, but normal security practice prevented transfer of
+                        passwords.</p>
+                    <div class="form-check">
+                        <input class="form-check-input" id="dontShowAgain" type="checkbox" value="">
+                        <label class="form-check-label small" for="dontShowAgain">Don't show this again</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" data-bs-dismiss="modal" type="button">Close</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-  </main>
-  <script type="text/javascript">
+</main>
+<script type="text/javascript">
     var eswhg = "{{ es_whg|escapejs }}";
     let galleries = [
-      ['Selected Data Publications', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"],
+        ['Selected Data Publications', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"],
     ];
-    let carouselMetadata = {{ carousel_metadata | safe }};
+    let carouselMetadata = {
+    {
+        carousel_metadata | safe
+    }
+    }
+    ;
     let startCarousels = true; // Determines whether galleries are to be auto-cycled
     let repositionMap = true; // Determines whether map should fly to loaded datacollection
-  </script>
+</script>
 
 {% endblock %}
 
 {% block deferredScripts %}
 
-  var scripts = [
-  {
-  src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
-  type: 'text/javascript',
-  },
-  {
-  src: '{% static 'webpack/home.bundle.js' %}',
-  type: 'module',
-  },
-  ]
+var scripts = [
+{
+src: '{% static 'webpack/whg_maplibre.bundle.js' %}',
+type: 'text/javascript',
+},
+{
+src: '{% static 'webpack/home.bundle.js' %}',
+type: 'module',
+},
+]
 
 {% endblock %}
