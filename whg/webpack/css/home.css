@@ -161,6 +161,11 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
     padding: 0;
 }
 
+#whgAccordion .accordion-button:focus {
+  box-shadow: none;
+  border-color: var(--bs-accordion-border-color) !important; /* reset to default */
+}
+
 /*.home-button {*/
 /*    position: relative;*/
 /*    font-family: "Archivo Black", sans-serif;*/
