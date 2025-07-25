@@ -1,0 +1,47 @@
+# .github/workflows/notify-pitt.yml
+name: Notify External Service
+
+on:
+  push:
+    branches: ["main", "staging"]  # `staging` is used only when this script is run in the Django repository
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed directories (with branch suffix if not main)
+        id: dirs
+        run: |
+          branch_name="${GITHUB_REF##*/}"
+          changed_dirs=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} \
+            | grep / \
+            | cut -d/ -f1 \
+            | sort -u)
+
+          if [ "$branch_name" = "main" ]; then
+            json=$(echo "$changed_dirs" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          else
+            json=$(echo "$changed_dirs" | jq -R --arg b "$branch_name" -s -c 'split("\n") | map(select(length > 0) | . + "-" + $b)')
+          fi
+
+          echo "changed_dirs=$json" >> "$GITHUB_OUTPUT"
+
+      - name: Notify external service
+        run: |
+          echo "Notifying https://admin.whgazetteer.org/deploy..."
+          if ! curl -s -f -X POST https://admin.whgazetteer.org/deploy \
+            -H "Authorization: Bearer ${{ secrets.NOTIFY_PITT_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "repository": "${{ github.repository }}",
+              "commit": "${{ github.sha }}",
+              "changed_directories": ${{ steps.dirs.outputs.changed_dirs }}
+            }'; then
+              echo "::warning ::Notification failed (host unreachable or other error), continuing workflow."
+          fi
