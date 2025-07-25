@@ -47,12 +47,39 @@
         </div>
         <!-- Left Column -->
         <div class="col-md-6 mb-2 mb-md-0 ps-md-0 pe-md-1" id="left_column">
-            <p class="mb-2">The World Historical Gazetteer is a platform for linking records about historical places,
-                allowing people to make spatial connections across time and language. You can learn more about
-                gazetteers, which are directories of named places, <a
-                        href="https://programminghistorian.org/en/lessons/space-place-gazetteers" target="_blank">here
-                    <i class="fas fa-external-link-alt small"></i></a>.</p>
-            <div class="accordion mb-3" id="whgAccordion">
+            <h5 class="mb-2">
+              The World Historical
+              <a tabindex="0"
+                 role="button"
+                 class="text-decoration-none align-baseline"
+                 data-bs-toggle="popover"
+                 data-bs-trigger="hover focus"
+                 data-bs-placement="top"
+                 data-bs-html="true"
+                 title="What is a Gazetteer?"
+                 data-bs-content='
+                  <p class="mb-1">
+                    A <em>gazetteer</em> is a structured directory of named geographic places. Entries often include coordinates, variant names, historical context, and spatial relationships.
+                  </p>
+                  <p class="mb-0 mt-1">
+                    <i class="fas fa-arrow-right me-1 text-muted"></i>
+                    <strong>Click to read a short introduction on <em>The Programming Historian</em>.</strong>
+                  </p>'
+                 href="https://programminghistorian.org/en/lessons/space-place-gazetteers"
+                 target="_blank">
+                Gazetteer<sup><i class="fas fa-question-circle text-primary"></i></sup>
+              </a>
+              is a platform for linking historical place records and making spatial connections across time and language.
+            </h5>
+
+            {% if not user.is_authenticated %}
+            <p class="mb-2 text-center">
+                <a href="{% url 'accounts:register' %}">Register</a> or <a href="{% url 'accounts:login' %}">
+                login</a> to get started.
+            </p>
+            {% endif %}
+
+            <div class="accordion" id="whgAccordion">
 
                 <!-- Features Accordion Item -->
                 <div class="accordion-item">
@@ -183,33 +210,80 @@
                     </div>
                 </div>
 
-            </div>
-            {% if not user.is_authenticated %}
-            <p class="mb-2 text-center">
-                <a href="{% url 'accounts:register' %}">Register</a> or <a href="{% url 'accounts:login' %}">
-                login</a> to get started.
-            </p>
-            {% endif %}
-            <div id="news_announcement_wrapper" class="mt-2 small">
-                <h6 class="news-header mb-3">
-                    <i class="fa-solid fa-bullhorn mx-2 text-primary"></i>
-                    News & Announcements
-                </h6>
-                <div id="announcement-container" class="border rounded">
-                    {% for announcement in announcements %}
-                    <div class="announcement mb-2">
-                        <a href="{{ announcement.link }}" target="_blank">
-                            <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
-                        </a>
-                        <div class="ms-3 small text-muted">
-                            {{ announcement.content }}
-                        </div>
-                        <div class="ms-3 small text-secondary">
-                            <i class="fas fa-calendar-alt me-1"></i> {{ announcement.created_at|date:"j M Y" }}
+                <!-- Documentation Accordion Item -->
+                <div class="accordion-item">
+                  <h2 class="accordion-header" id="headingDocumentation">
+                    <button aria-controls="collapseDocumentation"
+                            aria-expanded="false"
+                            class="accordion-button collapsed"
+                            data-bs-target="#collapseDocumentation"
+                            data-bs-toggle="collapse"
+                            type="button">
+                      <i class="fas fa-book me-2 text-primary"></i>
+                      Documentation
+                    </button>
+                  </h2>
+                  <div id="collapseDocumentation"
+                       class="accordion-collapse collapse"
+                       aria-labelledby="headingDocumentation"
+                       data-bs-parent="#whgAccordion">
+                    <div class="accordion-body">
+                      <p>
+                        The World Historical Gazetteer documentation offers detailed guidance for contributors and developers:
+                        how to submit datasets, understand the WHG data model, use the API, and run the platform locally.
+                      </p>
+                      <p>
+                        Whether you're exploring as a researcher or building on WHG as a developer, the documentation provides the
+                        technical and procedural support you need.
+                      </p>
+                      <a class="btn btn-sm btn-outline-primary"
+                         href="https://docs.whgazetteer.org/"
+                         rel="noopener"
+                         target="_blank">
+                        Visit Documentation
+                        <i class="fas fa-external-link-alt ms-1"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- News & Announcements Accordion Item -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingNews">
+                        <button
+                            class="accordion-button"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#collapseNews"
+                            aria-expanded="true"
+                            aria-controls="collapseNews">
+                            <i class="fa-solid fa-bullhorn me-2 text-primary"></i>
+                            News & Announcements
+                        </button>
+                    </h2>
+                    <div
+                        id="collapseNews"
+                        class="accordion-collapse collapse show"
+                        aria-labelledby="headingNews"
+                        data-bs-parent="#whgAccordion">
+                        <div class="accordion-body small">
+                            <div id="announcement-container" class="border p-2">
+                                {% for announcement in announcements %}
+                                <div class="announcement mb-2">
+                                    <a href="{{ announcement.link }}" target="_blank" class="text-decoration-none">
+                                        <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
+                                    </a>
+                                    <div class="ms-3 text-muted">{{ announcement.content }}</div>
+                                    <div class="ms-3 text-secondary small">
+                                        <i class="fas fa-calendar-alt me-1"></i> {{ announcement.created_at|date:"j M Y" }}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
+
             </div>
         </div>
 

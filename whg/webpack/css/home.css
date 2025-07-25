@@ -23,7 +23,6 @@
     }
 
     #announcement-container {
-        overflow-y: auto;
         flex-grow: 1;
         padding: 0.5rem;
         border-top: 1px solid #eee;
@@ -142,13 +141,6 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
     transform: scale(1.01); /* Slightly increase size on hover */
 }
 
-.news-header {
-    /*text-transform: uppercase;*/
-    /*font-weight: 600;*/
-    /*font-size: 1rem;*/
-    /*letter-spacing: 0.5px;*/
-}
-
 .announcement.constrained {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -157,11 +149,16 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 
 #announcement-container {
     overflow-y: auto;
+    max-height: 300px;
 }
 
 #announcement-container .announcement {
     border-bottom: 1px solid #ddd;
     padding: 0.25rem 0;
+}
+
+#collapseNews .accordion-body {
+    padding: 0;
 }
 
 /*.home-button {*/
