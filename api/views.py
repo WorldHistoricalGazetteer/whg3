@@ -1532,6 +1532,9 @@ class GeoJSONAPIView(generics.ListAPIView):
             coll = Collection.objects.get(id=cid)
             collPlaceIds = [p.id for p in coll.places.all()]
             qs = PlaceGeom.objects.filter(place_id__in=collPlaceIds, jsonb__type='Point')
+
+        else:
+            raise ValidationError({'detail': 'Query is missing a required parameter'})
         # print('qs',qs)
         return qs
 
