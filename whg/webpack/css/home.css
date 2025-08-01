@@ -1,3 +1,11 @@
+#home_banner img.logo_responsive {
+    filter: drop-shadow(2px 2px 3px grey);
+}
+
+.text-shadow, .accordion-item h2 button {
+    text-shadow: 2px 2px 3px grey;
+}
+
 .homemain.row {
     display: flex;
     flex-wrap: wrap;
