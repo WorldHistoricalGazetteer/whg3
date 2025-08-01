@@ -177,11 +177,11 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 .accordion-item h2 button {
     font-size: 1.2rem !important;
     font-weight: bold;
+    color: #044382 !important;
 }
 
 .accordion-item h2 i.fas {
     font-size: 2.5rem !important;
-    color: #044382 !important;
 }
 
 .ds-header {
