@@ -6,6 +6,10 @@
     text-shadow: 2px 2px 3px grey;
 }
 
+.accordion-item h2 button:hover {
+    background-color: #fffe003d;
+}
+
 .homemain.row {
     display: flex;
     flex-wrap: wrap;
