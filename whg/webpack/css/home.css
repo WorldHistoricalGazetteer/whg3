@@ -15,6 +15,10 @@
     flex-wrap: wrap;
 }
 
+.homemain .accordion-item {
+    border: none;
+}
+
 /* Match heights for columns only on medium+ screens */
 @media (min-width: 768px) {
     #left_column, #right_column {
@@ -186,15 +190,16 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
     font-size: 1.1rem !important;
 }
 
-.accordion-item h2 button {
-    font-size: 1.2rem !important;
+.homemain .accordion-item h2 button {
+    font-size: 1.2rem;
     font-weight: bold;
-    color: #044382 !important;
+    color: #044382;
+    padding: 1rem 0.4rem;
 }
 
-.accordion-item h2 i.fas {
-    font-size: 2.5rem !important;
-    color: #044382 !important;
+.homemain .accordion-item h2 i.fas {
+    font-size: 2.5rem;
+    color: #044382;
 }
 
 .ds-header {
