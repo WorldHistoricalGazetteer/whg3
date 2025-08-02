@@ -194,12 +194,12 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
     font-size: 1.2rem;
     font-weight: bold;
     color: #044382;
-    padding: 1rem 0.4rem;
+    padding: 1rem 1rem 1rem 0.4rem;
 }
 
 .homemain .accordion-item h2 i.fas {
     font-size: 2.5rem;
-    color: #044382;
+    color: #044382 !important;
 }
 
 .ds-header {
