@@ -9,9 +9,7 @@ class BlockUserAgentsMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        # Must be after UserAgentMiddleware
-        if hasattr(request, 'user_agent'):
-            agent_string = request.user_agent.string or ""
-            if any(sub in agent_string for sub in BLOCKED_USER_AGENT_SUBSTRINGS):
-                return HttpResponseForbidden("Forbidden: Bot access denied.")
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        if any(blocked in user_agent for blocked in BLOCKED_USER_AGENT_SUBSTRINGS):
+            return HttpResponseForbidden("Forbidden: Bot access denied.")
         return self.get_response(request)
