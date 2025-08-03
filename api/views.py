@@ -11,9 +11,9 @@ from django.contrib.auth.models import AnonymousUser
 from django.contrib.gis.geos import Polygon, Point
 # from django.contrib.postgres import search
 from django.contrib.gis.measure import D
-from django.db.models import Case, When, Min, Max, Q, Subquery, OuterRef, Count, \
+from django.db.models import Case, When, Min, Max, Subquery, OuterRef, Count, \
     IntegerField
-from django.http import JsonResponse, HttpResponse, Http404
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django.views.generic import View
 from django.utils.decorators import method_decorator
@@ -21,7 +21,6 @@ from django.utils.decorators import method_decorator
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes, \
     OpenApiExample
 
-from rest_framework import filters
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework import viewsets
@@ -47,7 +46,7 @@ from datasets.models import Dataset
 from main.choices import FEATURE_CLASSES
 from main.models import Log
 from datasets.tasks import get_bounds_filter
-from places.models import Place, PlaceGeom
+from places.models import PlaceGeom
 import json
 import os, requests
 
@@ -884,7 +883,6 @@ class IndexAPIView(View):
   return lpf results from database search
 """
 
-
 from django.http import JsonResponse, HttpResponse
 from rest_framework.renderers import JSONRenderer
 from rest_framework import generics, filters, status
@@ -892,6 +890,7 @@ from django.db.models import Q
 from places.models import Place
 from .serializers import LPFSerializer
 import re
+
 
 class SearchAPIView(generics.ListAPIView):
     renderer_classes = [JSONRenderer]
@@ -974,7 +973,6 @@ class SearchAPIView(generics.ListAPIView):
             "features": serializer.data
         }
         return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
-
 
 
 class SearchAPIView_DEPRECATED(generics.ListAPIView):
@@ -1337,14 +1335,20 @@ class PlacesDetailAPIView(View):
 
         def add_urls(data):
             return [
-                {**item,
-                 'url': identifier.join(':') if identifier[0].startswith("http") else base_urls.get(identifier[0], '') +
-                                                                                      identifier[1]}
-                if identifier and (base_url := base_urls.get(identifier[0])) is not None
+                {
+                    **item,
+                    "url": (
+                        id_parts[0] + ":" + id_parts[1]
+                        if id_parts[0].startswith("http")
+                        else base_url + id_parts[1]
+                    ),
+                }
+                if (identifier := item.get("identifier"))
+                   and (id_parts := identifier.split(":"))  # safe because identifier is not None
+                   and len(id_parts) == 2
+                   and (base_url := base_urls.get(id_parts[0])) is not None
                 else item
                 for item in data
-                for identifier in [item.get('identifier', '').split(':')]
-                if len(identifier) == 2 or not item.get('identifier')
             ]
 
         # Serialize the Place records
@@ -1532,6 +1536,9 @@ class GeoJSONAPIView(generics.ListAPIView):
             coll = Collection.objects.get(id=cid)
             collPlaceIds = [p.id for p in coll.places.all()]
             qs = PlaceGeom.objects.filter(place_id__in=collPlaceIds, jsonb__type='Point')
+
+        else:
+            raise ValidationError({'detail': 'Query is missing a required parameter'})
         # print('qs',qs)
         return qs
 

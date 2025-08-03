@@ -184,25 +184,25 @@ Promise.all([
 		$('#image_modal').modal('show');
 	});
 
-	// announcements (w/fade)
-	let currentIndex = 0;
-	const announcements = $('#announcement-container .announcement');
-	const totalAnnouncements = announcements.length;
-
-	function rotateAnnouncements() {
-		const currentAnnouncement = $(announcements[currentIndex]);
-		const nextIndex = (currentIndex + 1) % totalAnnouncements;
-		const nextAnnouncement = $(announcements[nextIndex]);
-
-		// Fade out the current announcement and fade in the next
-		currentAnnouncement.fadeOut(1000, function() {
-			nextAnnouncement.fadeIn(1000);
-		});
-
-		currentIndex = nextIndex;
-	}
-
-	// Start rotating announcements every 3 seconds, plus the fade time to ensure one fades out before the next fades in
-	setInterval(rotateAnnouncements, 5000); // Adjust time as needed
+	// // announcements (w/fade)
+	// let currentIndex = 0;
+	// const announcements = $('#announcement-container .announcement');
+	// const totalAnnouncements = announcements.length;
+	//
+	// function rotateAnnouncements() {
+	// 	const currentAnnouncement = $(announcements[currentIndex]);
+	// 	const nextIndex = (currentIndex + 1) % totalAnnouncements;
+	// 	const nextAnnouncement = $(announcements[nextIndex]);
+	//
+	// 	// Fade out the current announcement and fade in the next
+	// 	currentAnnouncement.fadeOut(1000, function() {
+	// 		nextAnnouncement.fadeIn(1000);
+	// 	});
+	//
+	// 	currentIndex = nextIndex;
+	// }
+	//
+	// // Start rotating announcements every 3 seconds, plus the fade time to ensure one fades out before the next fades in
+	// setInterval(rotateAnnouncements, 5000); // Adjust time as needed
 
 });

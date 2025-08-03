@@ -1,12 +1,10 @@
 # whg/settings.py
 
-import os, sys
 import base64
+import os
+import sys
 
-from celery.schedules import crontab
 from django.contrib.messages import constants as messages
-from django.core.cache.backends.filebased import FileBasedCache
-from logging.handlers import RotatingFileHandler
 
 try:
     from .local_settings_autocontext import *
@@ -35,6 +33,7 @@ INSTALLED_APPS = [
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.gis',
+    'django.contrib.humanize',
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.sites',
@@ -87,6 +86,47 @@ INSTALLED_APPS = [
 
 AUTH_USER_MODEL = 'users.User'
 
+BLOCKED_USER_AGENT_SUBSTRINGS = [
+    # Messaging / social preview bots
+    "Slackbot-LinkExpanding",       # Slack link unfurling
+    "meta-externalagent",           # Facebook crawler
+    "Twitterbot",                   # Twitter card preview
+    "Discordbot",                   # Discord link preview
+    "WhatsApp",                     # WhatsApp preview
+    "TelegramBot",                  # Telegram preview
+    "SkypeUriPreview",              # Skype link preview
+
+    # AI / LLM crawlers
+    "GPTBot",                       # OpenAI web crawler
+    "ChatGPT",                      # General ChatGPT user-agents
+    "ClaudeBot",                    # Anthropic's Claude
+    "Bard",                         # Google Bard
+    "CCBot",                        # Common Crawl
+    "Amazonbot",                    # Amazon AI crawler
+    "ai-crawler",                   # General AI crawlers
+
+    # SEO and scraping bots
+    "AhrefsBot",                    # SEO crawler
+    "SemrushBot",                   # SEO tool
+    "MJ12bot",                      # Majestic-12 crawler
+    "DotBot",                       # Dotbot (SEO)
+    "BLEXBot",                      # SEO / performance bot
+    "Bytespider",                   # TikTok/ByteDance crawler
+    "YandexBot",                    # Russian search engine
+    "Baidu",                        # Chinese search engine
+    "PetalBot",                     # Huawei crawler
+    "DuckDuckBot",                  # DuckDuckGo
+
+    # Misc / suspicious
+    "python-requests",             # Basic scraping lib
+    "curl",                        # Command-line HTTP tool
+    "Go-http-client",              # GoLang scrapers
+    "libwww-perl",                 # Old Perl web tools
+    "Wget",                        # Another CLI downloader
+    "Scrapy",                      # Python scraping framework
+    "node-fetch",                  # JS server-side fetch
+]
+
 MIDDLEWARE = [
     'django.middleware.gzip.GZipMiddleware',
     # uncomment for debug toolbar
@@ -100,7 +140,7 @@ MIDDLEWARE = [
     'django.middleware.locale.LocaleMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django_user_agents.middleware.UserAgentMiddleware',
-
+    'main.block_user_agents.BlockUserAgentsMiddleware',
 ]
 
 ROOT_URLCONF = 'whg.urls'
@@ -409,7 +449,7 @@ CACHES = {
     'property_cache': {
         'BACKEND': 'django_redis.cache.RedisCache',
         'LOCATION': 'redis://redis:6379/1',  # 0 is used by Celery
-        'TIMEOUT': 604800, # Default cache timeout (1 week)
+        'TIMEOUT': 604800,  # Default cache timeout (1 week)
         'OPTIONS': {
             'CLIENT_CLASS': 'django_redis.client.DefaultClient',
         },
@@ -445,7 +485,7 @@ DATASETS_PLACES_LIMIT = 100000
 
 # Remote Dataset Configurations
 REMOTE_DATASET_CONFIGS = [
-    { # 2024: 37k+ places
+    {  # 2024: 37k+ places
         'dataset_name': 'Pleiades',
         'namespace': 'pleiades',
         'api_item': 'https://pleiades.stoa.org/places/<id>/json',
@@ -458,7 +498,7 @@ REMOTE_DATASET_CONFIGS = [
             }
         ],
     },
-    { # 2024: 12m+ places
+    {  # 2024: 12m+ places
         'dataset_name': 'GeoNames',
         'namespace': 'gn',
         'api_item': 'http://api.geonames.org/getJSON?formatted=true&geonameId=<id>&username=<username>&style=full',
@@ -487,7 +527,7 @@ REMOTE_DATASET_CONFIGS = [
             },
         ],
     },
-    { # 2024: 3m+ places
+    {  # 2024: 3m+ places
         'dataset_name': 'TGN',
         'namespace': 'tgn',
         'api_item': 'https://vocab.getty.edu/tgn/<id>.jsonld',
@@ -497,21 +537,30 @@ REMOTE_DATASET_CONFIGS = [
                 'url': 'http://tgndownloads.getty.edu/VocabData/full.zip',
                 'file_name': 'TGNOut_Full.nt',
                 'file_type': 'nt',
-                'filter': [ # Filter to only include records with these predicates (examples of each given below)
-                    '<http://vocab.getty.edu/ontology#parentString>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#parentString> "Siena, Tuscany, Italy, Europe, World"
-                    '<http://vocab.getty.edu/ontology#prefLabelGVP>', # '<http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#prefLabelGVP> <http://vocab.getty.edu/tgn/term/47413-en>
-                    '<http://www.w3.org/2008/05/skos-xl#prefLabel>', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#prefLabel> <http://vocab.getty.edu/tgn/term/47413-en>
-                    '<http://www.w3.org/2008/05/skos-xl#altLabel>', # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#altLabel> <http://vocab.getty.edu/tgn/term/140808-en>
-                    '<http://vocab.getty.edu/ontology#term>', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#term> "Siena"@en
-                    '<http://vocab.getty.edu/ontology#estStart>', # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#estStart> "1200"^^<http://www.w3.org/2001/XMLSchema#gYear>
-                    '<http://schema.org/longitude>', # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/longitude> "11.33"^^<http://www.w3.org/2001/XMLSchema#decimal>
-                    '<http://schema.org/latitude>', # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/latitude> "43.318"^^<http://www.w3.org/2001/XMLSchema#decimal>
-                    '<http://vocab.getty.edu/ontology#placeType>', # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#placeType> <http://vocab.getty.edu/aat/300387236>
+                'filter': [  # Filter to only include records with these predicates (examples of each given below)
+                    '<http://vocab.getty.edu/ontology#parentString>',
+                    # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#parentString> "Siena, Tuscany, Italy, Europe, World"
+                    '<http://vocab.getty.edu/ontology#prefLabelGVP>',
+                    # '<http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#prefLabelGVP> <http://vocab.getty.edu/tgn/term/47413-en>
+                    '<http://www.w3.org/2008/05/skos-xl#prefLabel>',
+                    # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#prefLabel> <http://vocab.getty.edu/tgn/term/47413-en>
+                    '<http://www.w3.org/2008/05/skos-xl#altLabel>',
+                    # <http://vocab.getty.edu/tgn/7011179> <http://www.w3.org/2008/05/skos-xl#altLabel> <http://vocab.getty.edu/tgn/term/140808-en>
+                    '<http://vocab.getty.edu/ontology#term>',
+                    # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#term> "Siena"@en
+                    '<http://vocab.getty.edu/ontology#estStart>',
+                    # <http://vocab.getty.edu/tgn/term/47413-en> <http://vocab.getty.edu/ontology#estStart> "1200"^^<http://www.w3.org/2001/XMLSchema#gYear>
+                    '<http://schema.org/longitude>',
+                    # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/longitude> "11.33"^^<http://www.w3.org/2001/XMLSchema#decimal>
+                    '<http://schema.org/latitude>',
+                    # <http://vocab.getty.edu/tgn/7011179-geometry> <http://schema.org/latitude> "43.318"^^<http://www.w3.org/2001/XMLSchema#decimal>
+                    '<http://vocab.getty.edu/ontology#placeType>',
+                    # <http://vocab.getty.edu/tgn/7011179> <http://vocab.getty.edu/ontology#placeType> <http://vocab.getty.edu/aat/300387236>
                 ],
             },
         ],
     },
-    { # 2024: 8m+ items classified as places
+    {  # 2024: 8m+ items classified as places
         'dataset_name': 'Wikidata',
         'namespace': 'wd',
         'api_item': 'https://www.wikidata.org/wiki/Special:EntityData/<id>.json',
@@ -524,7 +573,7 @@ REMOTE_DATASET_CONFIGS = [
             },
         ],
     },
-    { # 2024: 6m+ nodes tagged as places
+    {  # 2024: 6m+ nodes tagged as places
         'dataset_name': 'OSM',
         'namespace': 'osm',
         'api_item': 'https://nominatim.openstreetmap.org/details.php?osmtype=R&osmid=<id>&format=json',
@@ -561,7 +610,7 @@ REMOTE_DATASET_CONFIGS = [
             }
         ],
     },
-    { #  24,000 place names
+    {  # 24,000 place names
         'dataset_name': 'IndexVillaris',
         'namespace': 'IV1680',
         'api_item': '',

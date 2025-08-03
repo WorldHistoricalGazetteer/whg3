@@ -1,3 +1,72 @@
+#home_banner img.logo_responsive {
+    filter: drop-shadow(2px 2px 3px grey);
+}
+
+.text-shadow, .accordion-item h2 button {
+    text-shadow: 2px 2px 3px grey;
+}
+
+.accordion-item h2 button:hover {
+    background-color: #fffe003d;
+}
+
+.homemain.row {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.homemain .accordion-item {
+    border: none;
+}
+
+/* Match heights for columns only on medium+ screens */
+@media (min-width: 768px) {
+    #left_column, #right_column {
+        display: flex;
+        flex-direction: column;
+    }
+
+    #whgAccordion {
+        flex-shrink: 0;
+    }
+
+    #news_announcement_wrapper {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        max-height: 300px; /* You can adjust this */
+        overflow: hidden; /* Prevent the wrapper from expanding too much */
+    }
+
+    #announcement-container {
+        flex-grow: 1;
+        padding: 0.5rem;
+        border-top: 1px solid #eee;
+    }
+
+    .announcement {
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .announcement:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+
+    #right_column .map_container {
+        flex-grow: 1;
+        min-height: 400px; /* Set your minimum height */
+    }
+
+    /* Optional: ensure map fills its container */
+    #map {
+        flex-grow: 1;
+        min-height: 400px;
+    }
+}
+
 .maplibregl-map {
     position: relative;
     width: 100%;
@@ -22,7 +91,7 @@
 #controlWrapper {
     display: flex;
     flex-direction: column;
-    height: 100%;	
+    height: 100%;
 }
 
 #controlWrapper > div {
@@ -30,7 +99,7 @@
 }
 
 #controlWrapper .maplibregl-control-container {
-	height: 100%
+    height: 100%
 }
 
 #controlWrapper .home-carousel {
@@ -54,8 +123,7 @@
     opacity: 1;
 }
 
-a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
-{
+a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
     /* Hide obtrusive logo" */
     display: none !important;
 }
@@ -65,14 +133,17 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     height: 15vh;
     min-height: 60px;
 }
+
 #intro {
     font-size: 0.9rem;
     min-height: 360px;
 }
+
 #home_left p {
     font-size: 0.9rem !important;
     line-height: 1.4rem;
 }
+
 .home-button {
     position: relative;
     font-family: "Archivo Black", sans-serif;
@@ -86,10 +157,29 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     transform: scale(1.01); /* Slightly increase size on hover */
 }
 
-#announcement-container, .announcement.constrained {
+.announcement.constrained {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#announcement-container {
     overflow-y: auto;
-    min-height: 50px;
-    max-height: 50px;
+    max-height: 300px;
+}
+
+#announcement-container .announcement {
+    border-bottom: 1px solid #ddd;
+    padding: 0.25rem 0;
+}
+
+#collapseNews .accordion-body {
+    padding: 0;
+}
+
+#whgAccordion .accordion-button:focus {
+    box-shadow: none;
+    border-color: var(--bs-accordion-border-color) !important; /* reset to default */
 }
 
 /*.home-button {*/
@@ -99,23 +189,40 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
 .home-button h5 {
     font-size: 1.1rem !important;
 }
+
+.homemain .accordion-item h2 button {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #044382;
+    padding: 1rem 1rem 1rem 0.4rem;
+}
+
+.homemain .accordion-item h2 i.fas {
+    font-size: 2.5rem;
+    color: #044382 !important;
+}
+
 .ds-header {
     background-color: #ececec;
     /*color: grey;*/
     margin-bottom: .2rem !important;
     font-size: 0.9rem;
 }
+
 .coll-header {
     background-color: #54a1da;
     color: #fff;
     font-size: 0.9rem;
 }
+
 .map-container {
-	position: relative;
-    /*height: 450px;*/
-    height: 400px;
-    min-height: 240px;
+    position: relative;
+    flex-grow: 1;
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
 }
+
 #search_map {
     position: absolute;
     top: 5px;
@@ -132,6 +239,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     padding-top: 30px;
     padding-bottom: 0.5rem;
 }
+
 .advanced-search-link {
     font-size: 0.8rem;
     position: absolute;
@@ -142,21 +250,26 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     opacity: 75%;
     border-radius: 4px;
 }
+
 .advanced-search-link a {
     color: #336699 !important;
 }
+
 .categories {
     font-variant: small-caps;
     font-size: 0.8rem;
     color: #993333;
 }
+
 #adv_checkboxes p {
     font-size: 0.8rem;
     margin: 0;
 }
+
 #adv_checkboxes label {
     margin-left: 2px;
 }
+
 #input_area {
     width: 95%;
     font-size: 0.9rem;
@@ -168,6 +281,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     /*min-height: 180px;*/
     height: 120px;
 }
+
 .carousel-inner, .carousel-item {
     height: 100%;
 }
@@ -189,15 +303,18 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
 }
 
 .highlight-carousel {
-	border-color: red!important;
+    border-color: red !important;
 }
+
 .carousel-item p {
     font-size: 0.8rem;
     padding-right: 0.5rem;
 }
+
 .carousel-item h6 {
     margin-bottom: 0;
 }
+
 .carousel button {
     position: absolute;
     width: 20px;
@@ -205,12 +322,15 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     opacity: 40%;
     bottom: auto !important;
 }
+
 #datasetsCarousel button {
     top: 30%;
 }
+
 #collectionsCarousel button {
     top: 50px;
 }
+
 .image-div {
     height: 100%;
     background-size: cover;
@@ -218,10 +338,12 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     position: relative;
     cursor: pointer;
 }
+
 .image-div:hover {
-    border-color: #993333!important;
+    border-color: #993333 !important;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
+
 .image-div span {
     position: absolute;
     top: 50%;
@@ -231,8 +353,9 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"]
     color: #993333;
     text-align: center;
 }
+
 @media screen and (max-width: 1200px) {
-  .hide-on-narrow {
-    display: none;
-  }
+    .hide-on-narrow {
+        display: none;
+    }
 }
