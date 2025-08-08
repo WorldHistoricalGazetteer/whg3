@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, EmailValidator
+from encrypted_model_fields.fields import EncryptedTextField
+
 from main.choices import USER_ROLE
 
 # src/users/model.py
@@ -61,6 +63,7 @@ class User(AbstractUser, PermissionsMixin):
     given_name = models.CharField(max_length=255, null=True)
     surname = models.CharField(max_length=255, null=True)
     email = models.EmailField(_("email address"), unique=True)
+    # email = EncryptedTextField(validators=[EmailValidator()], null=True, blank=True)  # 🔐 encrypted email
     affiliation = models.CharField(max_length=255, null=True)
     web_page = models.URLField(max_length=255, null=True, blank=True)
     role = models.CharField(max_length=24, choices=USER_ROLE, default="normal")
