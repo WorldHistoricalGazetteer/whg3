@@ -311,6 +311,11 @@ LOGGING = {
             'backupCount': 5,
             'formatter': 'verbose',
         },
+        "email_access_file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, 'whg/logs/email_access.log'),
+        },
         'console': {
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'class': 'logging.StreamHandler',
@@ -367,6 +372,11 @@ LOGGING = {
             'handlers': ['accession_file', 'console'],
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'propagate': False,
+        },
+        "email_access": {
+            "handlers": ["email_access_file"],
+            "level": "INFO",
+            "propagate": False,
         },
         '': {  # Root logger
             'handlers': ['root_file', 'console'],
