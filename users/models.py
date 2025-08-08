@@ -1,14 +1,14 @@
-from django.db import models
-from django.contrib.auth.models import AbstractUser, PermissionsMixin
-from django.core.validators import RegexValidator
-from main.choices import USER_ROLE
-
 # src/users/model.py
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import PermissionsMixin
+from django.core.validators import EmailValidator, RegexValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_resized import ResizedImageField
+from encrypted_model_fields.fields import EncryptedTextField
+
+from main.choices import USER_ROLE
 
 
 def user_directory_path(instance, filename):
@@ -21,7 +21,7 @@ class UserManager(BaseUserManager):
     """
 
     def create_user(
-        self, username, email, password, given_name, surname, **extra_fields
+            self, username, email, password, given_name, surname, **extra_fields
     ):
         """
         Create and save a User with the given username, email and password.
@@ -56,20 +56,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser, PermissionsMixin):
-    username = models.CharField(max_length=100, unique=True)
-    name = models.CharField(max_length=255)
-    given_name = models.CharField(max_length=255, null=True)
-    surname = models.CharField(max_length=255, null=True)
-    email = models.EmailField(_("email address"), unique=True)
-    affiliation = models.CharField(max_length=255, null=True)
-    web_page = models.URLField(max_length=255, null=True, blank=True)
-    role = models.CharField(max_length=24, choices=USER_ROLE, default="normal")
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    image_file = ResizedImageField(
-        size=[800, 600], upload_to=user_directory_path, blank=True, null=True
-    )
-    orcid = models.CharField(
+    orcid = models.CharField(  # Original ORCiD field, to be replaced with URLField
         max_length=19,
         validators=[
             RegexValidator(
@@ -80,13 +67,34 @@ class User(AbstractUser, PermissionsMixin):
         null=True,
         blank=True,
     )
+    # orcid = models.URLField(max_length=255, unique=True, null=True, blank=True)
+    # orcid_access_token = EncryptedTextField(null=True, blank=True)
+    # orcid_refresh_token = EncryptedTextField(null=True, blank=True)
+    # orcid_token_scope = models.TextField(null=True, blank=True)
+    # orcid_token_expires_at = models.DateTimeField(null=True, blank=True)
 
+    # TODO: Repopulate these existing fields from ORCiD
+    # email = models.EmailField(_("email address"), unique=True)  # Insecure field to be upgraded
+    email = EncryptedTextField(validators=[EmailValidator()], null=True, blank=True)  # 🔐 encrypted email
+    given_name = models.CharField(max_length=255, null=True)
+    surname = models.CharField(max_length=255, null=True)
+    affiliation = models.CharField(max_length=255, null=True)
+    web_page = models.URLField(max_length=255, null=True, blank=True)
+    name = models.CharField(max_length=255)
+
+    # TODO: For new users, generate a unique username based on names, ORCiD, or other criteria
+    username = models.CharField(max_length=100, unique=True)
+
+    role = models.CharField(max_length=24, choices=USER_ROLE, default="normal")
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    image_file = ResizedImageField(
+        size=[800, 600], upload_to=user_directory_path, blank=True, null=True
+    )
+
+    # TODO: Remove following migration to ORCiD authentication
     email_confirmed = models.BooleanField(default=False)
     must_reset_password = models.BooleanField(default=False)
-
-    # drop these
-    first_name = None
-    last_name = None
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email", "name"]
