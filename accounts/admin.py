@@ -6,7 +6,7 @@ from django.utils.timezone import now
 
 User = get_user_model()
 
-logger = logging.getLogger("user_email_access")
+logger = logging.getLogger("email_access")
 
 
 class UserAdmin(admin.ModelAdmin):
@@ -20,7 +20,7 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ('username', 'name')
 
     def changelist_view(self, request, extra_context=None):
-        logger.info(f"[ADMIN] User list viewed by {request.user} at {now()}")
+        logger.info(f"[ADMIN] User list viewed by {request.user}.")
         return super().changelist_view(request, extra_context=extra_context)
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
@@ -29,7 +29,7 @@ class UserAdmin(admin.ModelAdmin):
             logger.info(
                 f"[ADMIN] User '{request.user.username}' "
                 f"viewed decrypted email for user '{user.username}' "
-                f"(ID: {user.id}) at {now().isoformat()}"
+                f"(ID: {user.id})."
             )
         return super().change_view(request, object_id, form_url, extra_context)
 

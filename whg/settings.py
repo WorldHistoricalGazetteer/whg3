@@ -313,8 +313,11 @@ LOGGING = {
         },
         "email_access_file": {
             "level": "INFO",
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.RotatingFileHandler",
             "filename": os.path.join(BASE_DIR, 'whg/logs/email_access.log'),
+            "maxBytes": 10485760,
+            "backupCount": 5,
+            "formatter": "verbose",
         },
         'console': {
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
