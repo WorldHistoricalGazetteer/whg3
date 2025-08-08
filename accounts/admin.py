@@ -2,7 +2,6 @@ import logging
 
 from django.contrib import admin
 from django.contrib.auth import get_user_model
-from django.utils.timezone import now
 
 User = get_user_model()
 
@@ -20,7 +19,7 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ('username', 'name')
 
     def changelist_view(self, request, extra_context=None):
-        logger.info(f"[ADMIN] User list viewed by {request.user}.")
+        logger.info(f"[ADMIN] User list containing decrypted email addresses viewed by user '{request.user}'.")
         return super().changelist_view(request, extra_context=extra_context)
 
     def change_view(self, request, object_id, form_url='', extra_context=None):
