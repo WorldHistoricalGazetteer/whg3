@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     'django_tables2',
     'django_user_agents',
     'djgeojson',
+    'encrypted_model_fields',
     'guardian',
     'leaflet',
     'mathfilters',
