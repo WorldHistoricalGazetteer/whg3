@@ -57,7 +57,7 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser, PermissionsMixin):
-    from encrypted_model_fields.fields import EncryptedTextField
+    # from encrypted_model_fields.fields import EncryptedTextField
 
     username = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=255)
