@@ -59,38 +59,34 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser, PermissionsMixin):
 
-    username = models.CharField(max_length=100, unique=True)
-    name = models.CharField(max_length=255)
+    # TODO: Uncomment these fields when implementing ORCiD authentication
+    # orcid = models.URLField(max_length=255, unique=True, null=True, blank=True)
+    # orcid_access_token = EncryptedTextField(null=True, blank=True)
+    # orcid_refresh_token = EncryptedTextField(null=True, blank=True)
+    # orcid_token_scope = models.TextField(null=True, blank=True)
+    # orcid_token_expires_at = models.DateTimeField(null=True, blank=True)
+
+    # TODO: Repopulate these existing fields from ORCiD data
+    email = EncryptedTextField(validators=[EmailValidator()], null=True, blank=True)  # 🔐 encrypted email
     given_name = models.CharField(max_length=255, null=True)
     surname = models.CharField(max_length=255, null=True)
-    # email = models.EmailField(_("email address"), unique=True)
-    email = EncryptedTextField(validators=[EmailValidator()], null=True, blank=True)  # 🔐 encrypted email
     affiliation = models.CharField(max_length=255, null=True)
     web_page = models.URLField(max_length=255, null=True, blank=True)
+    name = models.CharField(max_length=255)  # TODO: Currently generated from given_name + surname; could use `Publication Name` from ORCiD
+
+    # TODO: For new users, generate a unique username based on names, ORCiD, or other criteria (see `save` method below)
+    username = models.CharField(max_length=100, unique=True)
+
     role = models.CharField(max_length=24, choices=USER_ROLE, default="normal")
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     image_file = ResizedImageField(
         size=[800, 600], upload_to=user_directory_path, blank=True, null=True
     )
-    orcid = models.CharField(
-        max_length=19,
-        validators=[
-            RegexValidator(
-                regex=r"^\d{4}-\d{4}-\d{4}-\d{4}$",
-                message=_("Invalid ORCiD. Format should be: 0000-0000-0000-0000"),
-            )
-        ],
-        null=True,
-        blank=True,
-    )
 
+    # TODO: Remove following migration to ORCiD authentication
     email_confirmed = models.BooleanField(default=False)
     must_reset_password = models.BooleanField(default=False)
-
-    # drop these
-    first_name = None
-    last_name = None
 
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email", "name"]
@@ -108,73 +104,7 @@ class User(AbstractUser, PermissionsMixin):
         return self.username
 
     @property
-    def display_name(self):
+    def display_name(self):  # TODO: This redundantly reproduces the logic used to generate `name` in `save` above
         if self.given_name and self.surname:
             return f"{self.given_name} {self.surname}"
         return self.name if self.name else self.username
-
-
-
-
-
-# class User(AbstractUser, PermissionsMixin):
-#     orcid = models.CharField(  # Original ORCiD field, to be replaced with URLField
-#         max_length=19,
-#         validators=[
-#             RegexValidator(
-#                 regex=r"^\d{4}-\d{4}-\d{4}-\d{4}$",
-#                 message=_("Invalid ORCiD. Format should be: 0000-0000-0000-0000"),
-#             )
-#         ],
-#         null=True,
-#         blank=True,
-#     )
-#     # orcid = models.URLField(max_length=255, unique=True, null=True, blank=True)
-#     # orcid_access_token = EncryptedTextField(null=True, blank=True)
-#     # orcid_refresh_token = EncryptedTextField(null=True, blank=True)
-#     # orcid_token_scope = models.TextField(null=True, blank=True)
-#     # orcid_token_expires_at = models.DateTimeField(null=True, blank=True)
-#
-#     # TODO: Repopulate these existing fields from ORCiD
-#     email = models.EmailField(_("email address"), unique=True)  # Insecure field to be upgraded
-#     # email = EncryptedTextField(validators=[EmailValidator()], null=True, blank=True)  # 🔐 encrypted email
-#     given_name = models.CharField(max_length=255, null=True)
-#     surname = models.CharField(max_length=255, null=True)
-#     affiliation = models.CharField(max_length=255, null=True)
-#     web_page = models.URLField(max_length=255, null=True, blank=True)
-#     name = models.CharField(max_length=255)
-#
-#     # TODO: For new users, generate a unique username based on names, ORCiD, or other criteria
-#     username = models.CharField(max_length=100, unique=True)
-#
-#     role = models.CharField(max_length=24, choices=USER_ROLE, default="normal")
-#     is_active = models.BooleanField(default=True)
-#     is_staff = models.BooleanField(default=False)
-#     image_file = ResizedImageField(
-#         size=[800, 600], upload_to=user_directory_path, blank=True, null=True
-#     )
-#
-#     # TODO: Remove following migration to ORCiD authentication
-#     email_confirmed = models.BooleanField(default=False)
-#     must_reset_password = models.BooleanField(default=False)
-#
-#     USERNAME_FIELD = "username"
-#     REQUIRED_FIELDS = ["email", "name"]
-#
-#     objects = UserManager()
-#
-#     class Meta:
-#         db_table = "auth_users"
-#
-#     def save(self, *args, **kwargs):
-#         self.name = f"{self.given_name} {self.surname}"
-#         super().save(*args, **kwargs)
-#
-#     def __str__(self):
-#         return self.username
-#
-#     @property
-#     def display_name(self):
-#         if self.given_name and self.surname:
-#             return f"{self.given_name} {self.surname}"
-#         return self.name if self.name else self.username
