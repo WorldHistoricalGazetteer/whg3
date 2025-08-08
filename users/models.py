@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, PermissionsMixin
 from django.core.validators import RegexValidator, EmailValidator
-from encrypted_model_fields.fields import EncryptedTextField
 
 from main.choices import USER_ROLE
 
@@ -58,6 +57,8 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractUser, PermissionsMixin):
+    from encrypted_model_fields.fields import EncryptedTextField
+
     username = models.CharField(max_length=100, unique=True)
     name = models.CharField(max_length=255)
     given_name = models.CharField(max_length=255, null=True)
