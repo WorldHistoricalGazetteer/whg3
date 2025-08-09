@@ -59,12 +59,11 @@ class UserManager(BaseUserManager):
 
 class User(AbstractUser, PermissionsMixin):
 
-    # TODO: Uncomment these fields when implementing ORCiD authentication
-    # orcid = models.URLField(max_length=255, unique=True, null=True, blank=True)
-    # orcid_access_token = EncryptedTextField(null=True, blank=True)
-    # orcid_refresh_token = EncryptedTextField(null=True, blank=True)
-    # orcid_token_scope = models.TextField(null=True, blank=True)
-    # orcid_token_expires_at = models.DateTimeField(null=True, blank=True)
+    orcid = models.URLField(max_length=255, unique=True, null=True, blank=True)
+    orcid_access_token = EncryptedTextField(null=True, blank=True)
+    orcid_refresh_token = EncryptedTextField(null=True, blank=True)
+    orcid_token_scope = models.TextField(null=True, blank=True)
+    orcid_token_expires_at = models.DateTimeField(null=True, blank=True)
 
     # TODO: Repopulate these existing fields from ORCiD data
     email = EncryptedTextField(validators=[EmailValidator()], null=True, blank=True)  # 🔐 encrypted email address

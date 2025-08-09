@@ -240,10 +240,7 @@
                 </li>
                 <!-- user --> {% else %}
                 <li class="nav-item">
-                    <a class="nav-link ms-3" href="{% url 'accounts:register' %}"><i class="fas fa-user" style="color:#198754;"></i> Register</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'accounts:login' %}"><i class="fas fa-user" style="color:#336699;"></i> Login</a>
+                    <a class="nav-link" href="{% url 'accounts:login' %}"><i class="fas fa-user" style="color:#336699;"></i> Login/Register</a>
                 </li>
                 {% endif %}
                 </ul>
