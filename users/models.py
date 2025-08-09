@@ -67,7 +67,7 @@ class User(AbstractUser, PermissionsMixin):
     # orcid_token_expires_at = models.DateTimeField(null=True, blank=True)
 
     # TODO: Repopulate these existing fields from ORCiD data
-    email = EncryptedTextField(validators=[EmailValidator()], null=True, blank=True)  # 🔐 encrypted email
+    email = EncryptedTextField(validators=[EmailValidator()], null=True, blank=True)  # 🔐 encrypted email address
     given_name = models.CharField(max_length=255, null=True)
     surname = models.CharField(max_length=255, null=True)
     affiliation = models.CharField(max_length=255, null=True)
