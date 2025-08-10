@@ -411,12 +411,7 @@
     let galleries = [
         ['Selected Data Publications', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"],
     ];
-    let carouselMetadata = {
-    {
-        carousel_metadata | safe
-    }
-    }
-    ;
+    let carouselMetadata = {{ carousel_metadata | safe }};
     let startCarousels = true; // Determines whether galleries are to be auto-cycled
     let repositionMap = true; // Determines whether map should fly to loaded datacollection
 </script>
