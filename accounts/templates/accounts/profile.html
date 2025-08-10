@@ -81,7 +81,7 @@
         <form method="post" action="{% url 'accounts:profile-delete' %}" onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone.')" class="d-inline">
           {% csrf_token %}
           <button type="submit" class="btn btn-danger" title="This action is permanent and cannot be undone">
-            <i class="fa fa-trash"></i> Delete my Account
+            <i class="fa fa-trash"></i> Delete my WHG Account
           </button>
         </form>
         <p class="small text-muted mt-2">
