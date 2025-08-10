@@ -165,7 +165,7 @@ a[href="https://www.maptiler.com/"], a[href="https://maplibre.org/"] {
 
 #announcement-container {
     overflow-y: auto;
-    max-height: 300px;
+    max-height: 180px;
 }
 
 #announcement-container .announcement {

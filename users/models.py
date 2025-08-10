@@ -87,6 +87,10 @@ class User(AbstractUser, PermissionsMixin):
     email_confirmed = models.BooleanField(default=False)
     must_reset_password = models.BooleanField(default=False)
 
+    # Keep these lines, which nullify the default fields from AbstractUser
+    first_name = None
+    last_name = None
+
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["email", "name"]
 
