@@ -1,101 +1,5 @@
 {% extends "main/base_webpack.html" %}
 
-{% block extra_head %}
-<style>
-  #container {
-    min-height: calc(100vh - 90px);
-  }
-
-  .page-title-container {
-    display: flex;
-    position: relative;
-    margin-bottom: .5rem;
-  }
-
-  .page-title {
-    margin: 0 auto;
-  }
-
-  .header-link {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    align-items: center;
-  }
-
-  .header-link i {
-    margin-right: 5px;
-  }
-
-  .profile-placeholder {
-    width: 100px;
-    height: 100px;
-    background-color: aliceblue;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 50px;
-    font-weight: bold;
-    line-height: 1;
-    vertical-align: middle;
-    margin-bottom: 1rem;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .profile-info {
-    {#border: 1px solid #f2f2f2;#}
-    {#border-radius: 10px;#}
-    {#padding: 1rem;#}
-  }
-
-  .table.profile-table {
-    width: 60%; /* Adjust this width as needed */
-    margin: 0 auto;
-    table-layout: fixed; /* Forces columns to respect the width given */
-  }
-
-  .table.profile-table td {
-    width: 50%; /* Makes both columns equal width */
-  }
-
-  .table.profile-table td:first-child {
-    text-align: right;
-    padding-right: 20px;
-  }
-
-  .table.profile-table td:nth-child(2) {
-    text-align: left;
-  }
-
-  {#.btn-primary, .change-password-link {#}
-  .btn-primary {
-    display: block;
-    margin: 20px auto;
-  }
-
-  .profile-table tr {
-    border-color: white;
-    border-style: none !important;
-  }
-  .profile-table td {
-    padding-top: .2rem !important;
-    padding-bottom: 0 !important;
-  }
-  .current-file {
-    font-size: .8rem;
-  }
-  .edit-field {
-    width: fit-content;
-  }
-
-</style>
-
-{% endblock %}
-
 {% block content %}
 <div id="container" class="container mt-1">
   <div class="page-title-container mt-3">
@@ -104,190 +8,114 @@
       {% if is_admin %}Admin {% else %}My {% endif %}Dashboard<i class="fas fa-columns ms-2"></i>
     </a>
   </div>
+
   <div class="row mt-4">
     <div class="col-md-2"></div>
-    <div class="col-md-8">
-      <div class="text-center">
-        {% if user.image_file %}
-          <img src="{{ user.image_file.url }}" class="profile-placeholder" alt="{{ user.name }}">
-        {% else %}
-          <div class="profile-placeholder">{{ user.name|first }}</div>
-        {% endif %}
-        <h5>{{ user.given_name }} {{ user.surname }}<small> ({{ user.username }})</small>
-          <a href="#" class="edit-link small" onclick="toggleEdit(); return false;">edit
-          <i class="fas fa-edit ms-1"></i></a>
-        </h5>
+
+    <!-- Left Column: ORCiD Data -->
+    <div class="col-md-5">
+      <div class="text-center mb-3">
+        <div class="profile-placeholder">{{ user.name|first }}</div>
+        <h5>{{ user.given_name }} {{ user.surname }}<small> ({{ user.username }})</small></h5>
       </div>
-      <div class="profile-info">
-        <form method="post" action="{% url 'profile-edit' %}" enctype="multipart/form-data">
-          {% csrf_token %}
-          <table class="table profile-table">
-            {% for field in form %}
-            <tr>
-              <td>{% if field.label == 'Name' %}Display name{% else %}{{ field.label }}{% endif %}</td>
-              <td>
-                <div id="static_{{ field.name }}" class="static-field">{{ field.value|default:"None" }}</div>
-                <div id="edit_{{ field.name }}" class="edit-field" style="display:none;">
-                  {{ field }}
-                  {% if field.name == 'image_file' and user.image_file %}
-                    <!-- Reminder of the current file during edit -->
-                    <br/><span class="current-file">Current file: {{ user.image_file.name }}</span>
-                  {% endif %}
-                </div>
-              </td>
-            </tr>
-            {% endfor %}
-          </table>
-          <div class="form-buttons text-center" style="display: none;">
-            <button type="button" class="btn btn-secondary" onclick="toggleEdit()">Cancel</button>
-            <button type="submit" class="btn btn-primary">Save Changes</button>
-          </div>
-        </form>
 
-        <p class="text-center mt-2">
-          <a href="{% url 'accounts:password_change' %}" class="change-password-link">change password</a>
-        </p>
+      {% if newly_created %}
+      <div class="alert alert-success">
+        Welcome, {{ user.get_full_name|default:user.username }}!
+        Your account has been created via ORCiD.
       </div>
-    </div>
-    <div class="col-md-2"></div>
-  </div>
-</div>
-<script>
+      {% endif %}
 
-function toggleEdit() {
-  const fieldsToEdit = ['given_name', 'surname', 'email', 'affiliation', 'web_page', 'name', 'image_file']; // List editable fields
-  const editing = document.querySelector('.form-buttons').style.display === 'none'; // Check if we are currently editing
-
-  // Toggle visibility based on whether we are currently editing or not
-  fieldsToEdit.forEach(field => {
-    var staticField = document.getElementById('static_' + field);
-    var editField = document.getElementById('edit_' + field);
-    if (editing) {
-      staticField.style.display = 'none';
-      editField.style.display = '';
-    } else {
-      staticField.style.display = '';
-      editField.style.display = 'none';
-    }
-  });
-
-  // Toggle form buttons visibility
-  document.querySelector('.form-buttons').style.display = editing ? '' : 'none';
-}
-</script>
-
-{#function toggleEdit() {#}
-{#  const fieldsToEdit = ['given_name', 'surname', 'email', 'affiliation', 'web_page', 'name', 'image_file']; // List editable fields#}
-{#  fieldsToEdit.forEach(field => {#}
-{#    var staticField = document.getElementById('static_' + field);#}
-{#    var editField = document.getElementById('edit_' + field);#}
-{#    staticField.style.display = 'none';#}
-{#    editField.style.display = '';#}
-{#  });#}
-{#  document.querySelector('.btn-primary').style.display = 'block'; // Show save button#}
-{# }#}
-
-</script>
-{% endblock %}
-
-{% comment %}
-{% block content %}
-  <div id="container" class="container mt-1">
-    <div class="page-title-container mt-3">
-      <h4 class="page-title">My Profile</h4>
-      <a href="{% url 'dashboard' %}" class="header-link">
-        {% if is_admin %}Admin {% else %}My {% endif %}Dashboard<i class="fas  fa-columns ms-2"></i>
-      </a>
-    </div>
-    <div class="row mt-4">
-      <div class="col-md-2"></div>
-      <div class="col-md-8">
-        <div class="profile-info text-center position-relative">
-          <p class="edit-button small position-absolute top-0 end-0" onclick="toggleEditForm()">
-            Edit <i class="fas fa-edit linky"></i></p>
-            {% if user.image_file %}
-                <img src="{{ user.image_file.url }}" class="profile-placeholder"
-                     alt="{{ user.name }}">
-            {% else %}
-                <div class="profile-placeholder">{{ user.name|first }}</div>
-            {% endif %}
-          <h5>{{ user.given_name }} {{ user.surname }}<small> ({{ user.username }})</small></h5>
-          <p class="mb-1">Affiliation: {% if user.affiliation %}{{ user.affiliation }}
-          {% else %} <i>none yet</i>{% endif %}</p>
-          <p>Web page: {% if user.web_page %}{{ user.web_page }}
-          {% else %} <i>none</i>{% endif %}
-          </p>
-          <p class="mt-3">
-            <a href="{% url 'accounts:password_change' %}">change password</a>
-          </p>
-          <!-- Edit form (initially hidden) -->
-          <form method="post" action="{% url 'profile-edit' %}" enctype="multipart/form-data">
+      <table class="table profile-table">
+        <tr><td>Given name</td><td>{{ user.given_name }}</td></tr>
+        <tr><td>Surname</td><td>{{ user.surname }}</td></tr>
+        <tr><td>Email</td><td>{{ user.email }}</td></tr>
+        <tr><td>Affiliation</td><td>{{ user.affiliation }}</td></tr>
+        <tr><td>Web page</td><td><a href="{{ user.web_page }}" target="_blank" rel="noopener noreferrer">{{ user.web_page }}</a></td></tr>
+        <tr><td>ORCiD iD</td><td><a href="https://orcid.org/{{ user.orcid }}" target="_blank" rel="noopener noreferrer">{{ user.orcid }}</a></td></tr>
+        <tr><td>Newsletters</td><td>
+          <form id="news-form" method="post" action="{% url 'profile-edit' %}">
             {% csrf_token %}
-            <div id="editForm" style="display:none;">
-              {% if form.errors %}
-                <div class="alert alert-danger">
-                  <ul>
-                    {% for field, errors in form.errors.items %}
-                      {% for error in errors %}
-                        <li>{{ field }}: {{ error }}</li>
-                      {% endfor %}
-                    {% endfor %}
-                  </ul>
-                </div>
-              {% endif %}
-              <input type="hidden" name="username" value="{{ user.username }}">
-              <div class="mb-3">
-                <label for="name" class="form-label">Given name</label>
-                <input type="text" class="form-control" id="given_name" name="given_name" value="{{ user.given_name }}">
-              </div>
-              <div class="mb-3">
-                <label for="name" class="form-label">Surname</label>
-                <input type="text" class="form-control" id="surname" name="surname" value="{{ user.surname }}">
-              </div>
-              <div class="mb-3">
-                <label for="image" class="form-label">Profile image
-                </label>
-                <input type="file" class="form-control" id="image_file" name="image_file" value="{{ user.image_file }}">
-                {% if user.image_file %}
-                  <p>Current file: {{ user.image_file.name }}</p>
-                {% endif %}
-              </div>
-              <div class="mb-3">
-                <label for="name" class="form-label">Full Name</label>
-                <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}">
-              </div>
-              <div class="mb-3">
-                <label for="affiliation" class="form-label">Email</label>
-                <input type="text" class="form-control" id="email" name="email" value="{{ user.email }}">
-              </div>
-              <div class="mb-3">
-                <label for="affiliation" class="form-label">Web page</label>
-                <input type="text" class="form-control" id="web_page" name="web_page"
-                       value="{{ user.web_page }}">
-              </div>
-              <div class="mb-3">
-                <label for="affiliation" class="form-label">Affiliation</label>
-                <input type="text" class="form-control" id="affiliation" name="affiliation"
-                       value="{{ user.affiliation }}">
-              </div>
-              <button type="submit" class="btn btn-primary">Save Changes</button>
+            <div class="form-check mb-3">
+              {{ form.news_permitted }}
             </div>
           </form>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-2"></div>
+        </td></tr>
+      </table>
+      <a href="{% url 'accounts:profile-download' %}" class="btn btn-outline-secondary">
+        Download my data
+      </a>
     </div>
+
+    <!-- Right Column: Options -->
+    <div class="col-md-3 offset-md-1">
+
+      <h6>Datasets Owned</h6>
+      <div style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 0.5rem; margin-bottom: 1rem;">
+        {% if datasets_owned %}
+          <ul class="list-unstyled mb-0">
+            {% for ds in datasets_owned %}
+              <li>
+                <a href="{% url 'datasets:detail' ds.0 %}">{{ ds.1 }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p><em>No datasets owned.</em></p>
+        {% endif %}
+      </div>
+
+      <h6>Collections Owned</h6>
+      <div style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 0.5rem;">
+        {% if collections_owned %}
+          <ul class="list-unstyled mb-0">
+            {% for coll in collections_owned %}
+              <li>
+                <a href="{% url 'collections:detail' coll.0 %}">{{ coll.1 }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p><em>No collections owned.</em></p>
+        {% endif %}
+      </div>
+
+      <div class="d-grid gap-2 mt-3">
+        <form method="post" action="{% url 'accounts:profile-delete' %}" onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone.')">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Delete my Account</button>
+        </form>
+      </div>
+    </div>
+
   </div>
-  <script>
-    function toggleEditForm() {
-      var editForm = document.getElementById('editForm');
-      if (editForm.style.display === 'none') {
-        editForm.style.display = 'block';
-      } else {
-        editForm.style.display = 'none';
-      }
+</div>
+
+<script>
+  // Auto-save news_permitted toggle on change (AJAX)
+  document.addEventListener('DOMContentLoaded', function() {
+    const newsCheckbox = document.getElementById('id_news_permitted');
+    if(newsCheckbox){
+      newsCheckbox.addEventListener('change', function() {
+        const formData = new FormData();
+        formData.append('news_permitted', newsCheckbox.checked ? 'on' : '');
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        fetch("{% url 'accounts:profile-news-toggle' %}", {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+          },
+          body: formData
+        }).then(response => {
+          if (!response.ok) {
+            alert('Failed to save news preferences.');
+          }
+        }).catch(() => {
+          alert('Failed to save news preferences.');
+        });
+      });
     }
-  </script>
+  });
+</script>
 {% endblock %}
-{% endcomment %}

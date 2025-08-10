@@ -1,6 +1,11 @@
+import json
+import secrets
+
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.contrib.auth import views as auth_views
+from django.http import HttpResponse, JsonResponse
+from django.views.decorators.http import require_POST
 
 User = get_user_model()
 from django.conf import settings
@@ -16,37 +21,38 @@ import logging
 
 logger = logging.getLogger(__name__)
 import traceback
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlencode
 from whgmail.messaging import WHGmail
 
 
-def register(request):
-    if request.method == 'POST':
-        form = UserModelForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
-            user.set_password(request.POST['password1'])
-            user.save()
-
-            signer = Signer()
-            token = signer.sign(user.pk)
-
-            WHGmail(request, {
-                'template': 'register_confirm',
-                'subject': 'Confirm your registration at World Historical Gazetteer',
-                'confirm_url': urljoin(settings.URL_FRONT, reverse('accounts:confirm-email', args=[token])),
-                'user': user,
-            })
-
-            return redirect('accounts:confirmation-sent')
-        else:
-            return render(request, 'register/register.html', {'form': form})
-    else:
-        form = UserModelForm()
-        return render(request, 'register/register.html', {'form': form})
+# def register(request):
+#     if request.method == 'POST':
+#         form = UserModelForm(request.POST)
+#         if form.is_valid():
+#             user = form.save(commit=False)
+#             user.set_password(request.POST['password1'])
+#             user.save()
+#
+#             signer = Signer()
+#             token = signer.sign(user.pk)
+#
+#             WHGmail(request, {
+#                 'template': 'register_confirm',
+#                 'subject': 'Confirm your registration at World Historical Gazetteer',
+#                 'confirm_url': urljoin(settings.URL_FRONT, reverse('accounts:confirm-email', args=[token])),
+#                 'user': user,
+#             })
+#
+#             return redirect('accounts:confirmation-sent')
+#         else:
+#             return render(request, 'register/register.html', {'form': form})
+#     else:
+#         form = UserModelForm()
+#         return render(request, 'register/register.html', {'form': form})
 
 
 def login(request):
+
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
@@ -78,7 +84,27 @@ def login(request):
             messages.error(request, "Invalid username.")
             return redirect('accounts:login')  # Or render with an error message
     else:
-        return render(request, 'accounts/login.html')
+        # Generate secure random state and nonce tokens
+        state = secrets.token_urlsafe(32)
+        nonce = secrets.token_urlsafe(32)
+
+        # Store them in the session
+        request.session['oidc_state'] = state
+        request.session['oidc_nonce'] = nonce
+
+        # Construct ORCiD authorization URL
+        orcid_base_authorize_url = "https://orcid.org/oauth/authorize"
+        params = {
+            "client_id": settings.ORCID_CLIENT_ID,
+            "response_type": "code",
+            "scope": "/authenticate email",
+            "redirect_uri": request.build_absolute_uri("/orcid-callback/"),
+            "state": state,
+            "nonce": nonce,
+        }
+        orcid_auth_url = f"{orcid_base_authorize_url}?{urlencode(params)}"
+
+        return render(request, 'accounts/login.html', context={"orcid_auth_url": orcid_auth_url})
 
 
 def logout(request):
@@ -212,51 +238,100 @@ def profile_edit(request):
     else:
         form = UserModelForm(instance=request.user)
 
+    newly_created = request.session.pop("just_created_account", False)
     is_admin = request.user.groups.filter(name='whg_admins').exists()
-    context = {'is_admin': is_admin, 'form': form}
+
+    datasets_owned = [[ds.id, ds.title] for ds in Dataset.objects.filter(owner=request.user).order_by('title')]
+    collections_owned = [[coll.id, coll.title] for coll in Collection.objects.filter(owner=request.user).order_by('title')]
+
+    context = {
+        'is_admin': is_admin,
+        'newly_created': newly_created,
+        'form': form,
+        'datasets_owned': datasets_owned,
+        'collections_owned': collections_owned,
+    }
     return render(request, 'accounts/profile.html', context=context)
 
 
+# @login_required
+# @transaction.atomic
+# def update_profile(request):
+#     context = {}
+#     if request.method == 'POST':
+#         user_form = UserModelForm(request.POST, instance=request.user)
+#         # profile_form = ProfileModelForm(request.POST, instance=request.user.profile)
+#         if user_form.is_valid():
+#             # if user_form.is_valid() and profile_form.is_valid():
+#             user_form.save()
+#             # profile_form.save()
+#             messages.success(request, ('Your profile was successfully updated!'))
+#             return redirect('accounts:profile')
+#         else:
+#             messages.error(request, ('Please correct the error below.'))
+#     else:
+#         user_form = UserModelForm(instance=request.user)
+#         # profile_form = ProfileModelForm(instance=request.user.profile)
+#         id_ = request.user.id
+#         u = get_object_or_404(User, id=id_)
+#         ds_owned = [[ds.id, ds.title, 'owner'] for ds in Dataset.objects.filter(owner=u).order_by('title')]
+#         ds_collabs = [[dc.dataset_id.id, dc.dataset_id.title, dc.role] for dc in
+#                       DatasetUser.objects.filter(user_id_id=id_)]
+#         # groups = u.groups.values_list('name', flat=True)
+#         groups_owned = u.groups.all()
+#         group_leader = 'group_leaders' in u.groups.values_list('name', flat=True)  # True or False
+#
+#         context['ds_owned'] = ds_owned
+#         context['ds_collabs'] = ds_collabs
+#         # TODO: context object for collections - place or dataset, owned or collaborated on
+#         context['coll_owned'] = Collection.objects.filter(owner=u, collection_class='place')
+#         context['coll_collab'] = CollectionUser.objects.filter(user=u)
+#         # context['collections'] = Collection.objects.filter(owner=u)
+#         context['groups_owned'] = groups_owned
+#         context['mygroups'] = [g.collectiongroup for g in CollectionGroupUser.objects.filter(user=u)]
+#         context['group_leader'] = group_leader
+#         context['comments'] = 'get comments associated with projects I own'
+#
+#         return render(request, 'accounts/profile.html', {
+#             'user_form': user_form,
+#             # 'profile_form': profile_form,
+#             'context': context
+#         })
+
 @login_required
-@transaction.atomic
-def update_profile(request):
-    context = {}
+def profile_download(request):
+    user = request.user
+    data = {
+        'username': user.username,
+        'email': user.email,
+        'given_name': getattr(user, 'given_name', ''),
+        'surname': getattr(user, 'surname', ''),
+        'orcid': getattr(user, 'orcid', ''),
+        'affiliation': getattr(user, 'affiliation', ''),
+        'web_page': getattr(user, 'web_page', ''),
+        'news_permitted': getattr(user, 'news_permitted', False),
+    }
+    response = JsonResponse(data)
+    response['Content-Disposition'] = 'attachment; filename="user_data.json"'
+    return response
+
+
+@login_required
+@require_POST
+def profile_news_toggle(request):
+    user = request.user
+    news_permitted = request.POST.get('news_permitted') == 'on'
+    user.news_permitted = news_permitted
+    user.save()
+    return JsonResponse({'status': 'success', 'news_permitted': news_permitted})
+
+
+@login_required
+def profile_delete(request):
     if request.method == 'POST':
-        user_form = UserModelForm(request.POST, instance=request.user)
-        # profile_form = ProfileModelForm(request.POST, instance=request.user.profile)
-        if user_form.is_valid():
-            # if user_form.is_valid() and profile_form.is_valid():
-            user_form.save()
-            # profile_form.save()
-            messages.success(request, ('Your profile was successfully updated!'))
-            return redirect('accounts:profile')
-        else:
-            messages.error(request, ('Please correct the error below.'))
+        user = request.user
+        user.delete()
+        messages.success(request, "Your account has been deleted.")
+        return redirect('homepage')
     else:
-        user_form = UserModelForm(instance=request.user)
-        # profile_form = ProfileModelForm(instance=request.user.profile)
-        id_ = request.user.id
-        u = get_object_or_404(User, id=id_)
-        ds_owned = [[ds.id, ds.title, 'owner'] for ds in Dataset.objects.filter(owner=u).order_by('title')]
-        ds_collabs = [[dc.dataset_id.id, dc.dataset_id.title, dc.role] for dc in
-                      DatasetUser.objects.filter(user_id_id=id_)]
-        # groups = u.groups.values_list('name', flat=True)
-        groups_owned = u.groups.all()
-        group_leader = 'group_leaders' in u.groups.values_list('name', flat=True)  # True or False
-
-        context['ds_owned'] = ds_owned
-        context['ds_collabs'] = ds_collabs
-        # TODO: context object for collections - place or dataset, owned or collaborated on
-        context['coll_owned'] = Collection.objects.filter(owner=u, collection_class='place')
-        context['coll_collab'] = CollectionUser.objects.filter(user=u)
-        # context['collections'] = Collection.objects.filter(owner=u)
-        context['groups_owned'] = groups_owned
-        context['mygroups'] = [g.collectiongroup for g in CollectionGroupUser.objects.filter(user=u)]
-        context['group_leader'] = group_leader
-        context['comments'] = 'get comments associated with projects I own'
-
-        return render(request, 'accounts/profile.html', {
-            'user_form': user_form,
-            # 'profile_form': profile_form,
-            'context': context
-        })
+        return redirect('profile')
