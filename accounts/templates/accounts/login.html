@@ -78,9 +78,8 @@
                          data-bs-parent="#orcIDFaqAccordion">
                         <div class="accordion-body">
                             Signing up for an ORCiD iD is free and straightforward. It requires minimal information and
-                            can be
-                            completed in just a few minutes. ORCiD helps you establish a persistent digital identity
-                            that is widely recognised in the research community.
+                            can be completed in just a few minutes. ORCiD helps you establish a persistent digital
+                            identity that is widely recognised in the research community.
                         </div>
                     </div>
                 </div>
@@ -90,7 +89,7 @@
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
                                 data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
                             <i class="fas fa-shield-alt me-2"></i>
-                            How does ORCiD benefit WHG and its users?
+                            How does ORCiD benefit WHG and its Community of users?
                         </button>
                     </h2>
                     <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour"
@@ -99,7 +98,7 @@
                             ORCiD provides a persistent, unique identifier that links your contributions to your
                             academic profile, ensuring proper attribution and enhancing transparency.
                             It also improves platform security by allowing two-factor authentication and reduces
-                            fraudulent or automated sign-ups, maintaining the integrity of the WHG community.
+                            fraudulent or automated sign-ups, maintaining the integrity of the WHG Community.
                         </div>
                     </div>
                 </div>
@@ -122,20 +121,45 @@
 
     <div class="row justify-content-center">
         <div class="col-md-7 pe-md-4 border-end">
-            <h3>
-                <i class="fas fa-user-check me-2"></i>Existing User?
-            </h3>
             <a href="{{ orcid_auth_url }}"
-               class="btn btn-light rounded d-inline-flex align-items-center pe-4 py-2 shadow-sm my-4"
+               class="btn btn-light rounded d-inline-flex align-items-center pe-4 py-2 shadow-sm mb-4"
                style="border: 1px solid #ced4da; color: #333; font-size: 1.2rem; font-weight: 500;">
                 <i class="fab fa-orcid me-3" style="color: #a6ce39; font-size: 2.5rem;"></i>
                 Sign in with ORCiD
             </a>
             <p>
-                <i class="fas fa-exclamation-triangle text-danger me-1"></i>If you have not yet upgraded your legacy WHG
-                account, please sign in below.
+                <strong>
+                    <i class="fas fa-info-circle text-primary me-1"></i>No ORCiD account? <i>No problem!</i>
+                </strong>
+                You can create one during sign-in. When you register (or the first time you sign in) with ORCiD, we will ask for your
+                permission to:
             </p>
-            <hr>
+            <div class="alert alert-info small mb-3" role="alert">
+                <ul class="mb-0 ps-3">
+                    <li>Access your public ORCiD record (name, ORCiD iD, and affiliation) — this information will already
+                        be visible on your ORCiD profile.
+                    </li>
+                    <li>Read your registered email address so we can contact you about your WHG account when strictly
+                        necessary.
+                    </li>
+                    <li>Store this information securely in your WHG profile.</li>
+                    <li>After your WHG account is created, we will ask separately for your consent to receive our
+                        optional newsletters.
+                    </li>
+                </ul>
+            </div>
+
+            <p>
+                <strong>
+                    <i class="fas fa-exclamation-circle text-danger me-1"></i>Warning:
+                </strong> If you already have a Legacy WHG account, you must use the Legacy WHG Login and Link ORCiD
+                button
+                so that your account and existing data can be linked. You will not be able to link your old account
+                later.
+            </p>
+        </div>
+
+        <div class="col-md-5 ps-md-4">
             <h4 class="text-muted">
                 <i class="fas fa-sign-in-alt me-2"></i>Legacy WHG Login
             </h4>
@@ -179,25 +203,6 @@
                     </button>
                 </div>
             </form>
-        </div>
-
-        <div class="col-md-5 ps-md-4">
-            <h3>
-                <i class="fas fa-user-plus me-2"></i>New to WHG?
-            </h3>
-            <!--            TODO: Perhaps get consent here for capture and storage of email address, affiliation, etc. and for mailing-->
-            <a href="{{ orcid_auth_url }}"
-               class="btn btn-light rounded d-inline-flex align-items-center pe-4 py-2 shadow-sm my-4"
-               style="border: 1px solid #ced4da; color: #333; font-size: 1.2rem; font-weight: 500;">
-                <i class="fab fa-orcid me-3" style="color: #a6ce39; font-size: 2.5rem;"></i>
-                Create or connect your ORCiD
-            </a>
-            <p>
-                <strong>
-                    <i class="fas fa-exclamation-circle text-danger me-1"></i>Warning:
-                </strong> If you already have a WHG account, you must use the Legacy WHG Login and Link ORCiD button (see left) so that your
-                account and existing data can be linked. You will not be able to link your old account later.
-            </p>
         </div>
     </div>
 </div>
