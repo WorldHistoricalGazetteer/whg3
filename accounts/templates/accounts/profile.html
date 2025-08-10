@@ -1,23 +1,13 @@
 {% extends "main/base_webpack.html" %}
 
-{% block content %}
-<div id="container" class="container mt-1">
-  <div class="page-title-container mt-3">
-    <h4 class="page-title">My Profile</h4>
-    <a href="{% url 'dashboard' %}" class="header-link">
-      {% if is_admin %}Admin {% else %}My {% endif %}Dashboard<i class="fas fa-columns ms-2"></i>
-    </a>
-  </div>
-
+{% block content %}<div id="container" class="container mt-1">
   <div class="row mt-4">
     <div class="col-md-2"></div>
+    <div class="col-md-8">
 
-    <!-- Left Column: ORCiD Data -->
-    <div class="col-md-5">
-      <div class="text-center mb-3">
-        <div class="profile-placeholder">{{ user.name|first }}</div>
-        <h5>{{ user.given_name }} {{ user.surname }}<small> ({{ user.username }})</small></h5>
-      </div>
+      <h3 class="mb-4">
+        <i class="fas fa-user-circle me-2"></i> Personal Data
+      </h3>
 
       {% if newly_created %}
       <div class="alert alert-success">
@@ -26,68 +16,81 @@
       </div>
       {% endif %}
 
-      <table class="table profile-table">
-        <tr><td>Given name</td><td>{{ user.given_name }}</td></tr>
-        <tr><td>Surname</td><td>{{ user.surname }}</td></tr>
-        <tr><td>Email</td><td>{{ user.email }}</td></tr>
-        <tr><td>Affiliation</td><td>{{ user.affiliation }}</td></tr>
-        <tr><td>Web page</td><td><a href="{{ user.web_page }}" target="_blank" rel="noopener noreferrer">{{ user.web_page }}</a></td></tr>
-        <tr><td>ORCiD iD</td><td><a href="https://orcid.org/{{ user.orcid }}" target="_blank" rel="noopener noreferrer">{{ user.orcid }}</a></td></tr>
-        <tr><td>Newsletters</td><td>
-          <form id="news-form" method="post" action="{% url 'profile-edit' %}">
-            {% csrf_token %}
-            <div class="form-check mb-3">
-              {{ form.news_permitted }}
-            </div>
-          </form>
-        </td></tr>
-      </table>
-      <a href="{% url 'accounts:profile-download' %}" class="btn btn-outline-secondary">
-        Download my data
-      </a>
-    </div>
+      <!-- ORCiD Data Section -->
+      <section class="mb-4">
+        <h5 class="mb-3 fw-semibold d-flex align-items-center">
+          <i class="fab fa-orcid me-2" style="color:#A6CE39;"></i>
+          ORCiD Data
+          <a href="{% url 'accounts:profile-download' %}" title="Download your personal data. This facility satisfies your right to access personal data in certain jurisdictions." class="btn btn-outline-secondary btn-sm ms-3">
+            <i class="fa fa-download"></i> Download
+          </a>
+        </h5>
+        <p class="small fst-italic text-muted mb-3">
+          These details are maintained by ORCiD. Please edit them via your <a href="https://orcid.org" target="_blank" rel="noopener noreferrer">ORCiD profile</a>.
+        </p>
+        <div class="d-flex mb-2">
+          <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">ORCiD iD</div>
+          <div class="flex-grow-1 ps-3">
+            <a href="https://orcid.org/{{ user.orcid }}" target="_blank" rel="noopener noreferrer">{{ user.orcid }}</a>
+          </div>
+        </div>
+        <div class="d-flex mb-2">
+          <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Given Name</div>
+          <div class="flex-grow-1 ps-3">{{ user.given_name }}</div>
+        </div>
+        <div class="d-flex mb-2">
+          <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Family Name</div>
+          <div class="flex-grow-1 ps-3">{{ user.surname }}</div>
+        </div>
+        <div class="d-flex mb-2">
+          <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Email</div>
+          <div class="flex-grow-1 ps-3">{{ user.email }}</div>
+        </div>
+        <div class="d-flex mb-2">
+          <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Affiliation</div>
+          <div class="flex-grow-1 ps-3">{{ user.affiliation }}</div>
+        </div>
+        <div class="d-flex mb-2">
+          <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Web page</div>
+          <div class="flex-grow-1 ps-3">
+            <a href="{{ user.web_page }}" target="_blank" rel="noopener noreferrer">{{ user.web_page }}</a>
+          </div>
+        </div>
+      </section>
 
-    <!-- Right Column: Options -->
-    <div class="col-md-3 offset-md-1">
+      <hr>
 
-      <h6>Datasets Owned</h6>
-      <div style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 0.5rem; margin-bottom: 1rem;">
-        {% if datasets_owned %}
-          <ul class="list-unstyled mb-0">
-            {% for ds in datasets_owned %}
-              <li>
-                <a href="{% url 'datasets:detail' ds.0 %}">{{ ds.1 }}</a>
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <p><em>No datasets owned.</em></p>
-        {% endif %}
-      </div>
-
-      <h6>Collections Owned</h6>
-      <div style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 0.5rem;">
-        {% if collections_owned %}
-          <ul class="list-unstyled mb-0">
-            {% for coll in collections_owned %}
-              <li>
-                <a href="{% url 'collections:detail' coll.0 %}">{{ coll.1 }}</a>
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <p><em>No collections owned.</em></p>
-        {% endif %}
-      </div>
-
-      <div class="d-grid gap-2 mt-3">
-        <form method="post" action="{% url 'accounts:profile-delete' %}" onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone.')">
+      <!-- Preferences Section -->
+      <section>
+        <h5 class="mb-3 fw-semibold"><i class="fas fa-cog me-2"></i> Preferences</h5>
+        <form id="news-form" method="post" action="{% url 'profile-edit' %}">
           {% csrf_token %}
-          <button type="submit" class="btn btn-danger">Delete my Account</button>
+          <div class="form-check d-flex align-items-center mb-2">
+            {{ form.news_permitted }}
+            <label class="form-check-label ms-2 mb-0" for="{{ form.news_permitted.id_for_label }}" style="margin-bottom: -5px !important;">
+              Receive News and Updates
+            </label>
+          </div>
         </form>
-      </div>
-    </div>
+      </section>
 
+      <hr>
+
+      <!-- Account Deletion -->
+      <div class="mt-4 text-end">
+        <form method="post" action="{% url 'accounts:profile-delete' %}" onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone.')" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger" title="This action is permanent and cannot be undone">
+            <i class="fa fa-trash"></i> Delete my Account
+          </button>
+        </form>
+        <p class="small text-muted mt-2">
+          Deleting your account will remove all personal data and cannot be undone.
+        </p>
+      </div>
+
+    </div>
+    <div class="col-md-2"></div>
   </div>
 </div>
 

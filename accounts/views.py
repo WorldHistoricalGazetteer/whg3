@@ -241,62 +241,12 @@ def profile_edit(request):
     newly_created = request.session.pop("just_created_account", False)
     is_admin = request.user.groups.filter(name='whg_admins').exists()
 
-    datasets_owned = [[ds.id, ds.title] for ds in Dataset.objects.filter(owner=request.user).order_by('title')]
-    collections_owned = [[coll.id, coll.title] for coll in Collection.objects.filter(owner=request.user).order_by('title')]
-
     context = {
         'is_admin': is_admin,
         'newly_created': newly_created,
         'form': form,
-        'datasets_owned': datasets_owned,
-        'collections_owned': collections_owned,
     }
     return render(request, 'accounts/profile.html', context=context)
-
-
-# @login_required
-# @transaction.atomic
-# def update_profile(request):
-#     context = {}
-#     if request.method == 'POST':
-#         user_form = UserModelForm(request.POST, instance=request.user)
-#         # profile_form = ProfileModelForm(request.POST, instance=request.user.profile)
-#         if user_form.is_valid():
-#             # if user_form.is_valid() and profile_form.is_valid():
-#             user_form.save()
-#             # profile_form.save()
-#             messages.success(request, ('Your profile was successfully updated!'))
-#             return redirect('accounts:profile')
-#         else:
-#             messages.error(request, ('Please correct the error below.'))
-#     else:
-#         user_form = UserModelForm(instance=request.user)
-#         # profile_form = ProfileModelForm(instance=request.user.profile)
-#         id_ = request.user.id
-#         u = get_object_or_404(User, id=id_)
-#         ds_owned = [[ds.id, ds.title, 'owner'] for ds in Dataset.objects.filter(owner=u).order_by('title')]
-#         ds_collabs = [[dc.dataset_id.id, dc.dataset_id.title, dc.role] for dc in
-#                       DatasetUser.objects.filter(user_id_id=id_)]
-#         # groups = u.groups.values_list('name', flat=True)
-#         groups_owned = u.groups.all()
-#         group_leader = 'group_leaders' in u.groups.values_list('name', flat=True)  # True or False
-#
-#         context['ds_owned'] = ds_owned
-#         context['ds_collabs'] = ds_collabs
-#         # TODO: context object for collections - place or dataset, owned or collaborated on
-#         context['coll_owned'] = Collection.objects.filter(owner=u, collection_class='place')
-#         context['coll_collab'] = CollectionUser.objects.filter(user=u)
-#         # context['collections'] = Collection.objects.filter(owner=u)
-#         context['groups_owned'] = groups_owned
-#         context['mygroups'] = [g.collectiongroup for g in CollectionGroupUser.objects.filter(user=u)]
-#         context['group_leader'] = group_leader
-#         context['comments'] = 'get comments associated with projects I own'
-#
-#         return render(request, 'accounts/profile.html', {
-#             'user_form': user_form,
-#             # 'profile_form': profile_form,
-#             'context': context
-#         })
 
 @login_required
 def profile_download(request):
