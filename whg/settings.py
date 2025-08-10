@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'guardian',
     'leaflet',
     'mathfilters',
+    "mozilla_django_oidc",
     'multiselectfield',
     'rest_framework',
     'rest_framework.authtoken',
@@ -395,14 +396,24 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
 GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
 
-LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL = '/accounts/login/'
-LOGOUT_REDIRECT_URL = '/'
-
 AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',  # default
+    'django.contrib.auth.backends.ModelBackend',  # TODO: Remove this after ORCiD migration
     'guardian.backends.ObjectPermissionBackend',
+    'accounts.orcid.OIDCBackend',
 )
+
+OIDC_RP_SCOPES = "openid"  # ORCiD base url and credentials must be set in `env_template.py`
+ORCID_BASE_URL = os.environ.get("ORCID_BASE")
+OIDC_RP_CLIENT_ID = os.environ.get("ORCID_CLIENT_ID")
+OIDC_RP_CLIENT_SECRET = os.environ.get("ORCID_CLIENT_SECRET")
+OIDC_OP_DISCOVERY_ENDPOINT = f"{ORCID_BASE_URL}/.well-known/openid-configuration"
+OIDC_OP_AUTHORIZATION_ENDPOINT = f"{ORCID_BASE_URL}/oauth/authorize"
+OIDC_OP_TOKEN_ENDPOINT = f"{ORCID_BASE_URL}/oauth/token"
+OIDC_OP_USER_ENDPOINT = f"{ORCID_BASE_URL}/oauth/userinfo"
+
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
