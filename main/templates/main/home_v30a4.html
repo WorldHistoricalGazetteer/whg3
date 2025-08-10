@@ -310,13 +310,11 @@
                                         <div class="order-2 order-sm-1 flex-grow-1">
                                             <a href="{{ announcement.link }}" target="_blank"
                                                class="text-decoration-none">
-                                                <i class="fas fa-external-link-alt small"></i> {{ announcement.headline
-                                                }}
+                                                <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
                                             </a>
                                         </div>
                                         <div class="order-1 order-sm-2 text-secondary small ms-sm-2 text-sm-end">
-                                            <i class="fas fa-calendar-alt me-1"></i> {{ announcement.created_at|date:"j
-                                            M Y" }}
+                                            <i class="fas fa-calendar-alt me-1"></i> {{ announcement.created_at|date:"j M Y" }}
                                         </div>
                                     </div>
                                     <div class="ms-3 text-muted small">
@@ -411,12 +409,7 @@
     let galleries = [
         ['Selected Data Publications', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"],
     ];
-    let carouselMetadata = {
-    {
-        carousel_metadata | safe
-    }
-    }
-    ;
+    let carouselMetadata = {{ carousel_metadata | safe }};
     let startCarousels = true; // Determines whether galleries are to be auto-cycled
     let repositionMap = true; // Determines whether map should fly to loaded datacollection
 </script>
