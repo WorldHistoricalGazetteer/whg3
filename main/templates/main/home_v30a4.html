@@ -48,16 +48,16 @@
         <!-- Left Column -->
         <div class="col-md-6 mb-2 mb-md-0 ps-md-0 pe-md-1" id="left_column">
             <h5 class="mb-2">
-              The World Historical
-              <a tabindex="0"
-                 role="button"
-                 class="text-decoration-none align-baseline"
-                 data-bs-toggle="popover"
-                 data-bs-trigger="hover focus"
-                 data-bs-placement="top"
-                 data-bs-html="true"
-                 title="What is a Gazetteer?"
-                 data-bs-content='
+                The World Historical
+                <a tabindex="0"
+                   role="button"
+                   class="text-decoration-none align-baseline"
+                   data-bs-toggle="popover"
+                   data-bs-trigger="hover focus"
+                   data-bs-placement="top"
+                   data-bs-html="true"
+                   title="What is a Gazetteer?"
+                   data-bs-content='
                   <p class="mb-1">
                     A <em>gazetteer</em> is a structured directory of named geographic places. Entries often include coordinates, variant names, historical context, and spatial relationships.
                   </p>
@@ -65,19 +65,13 @@
                     <i class="fas fa-arrow-right me-1 text-muted"></i>
                     <strong>Click to read a short introduction on <em>The Programming Historian</em>.</strong>
                   </p>'
-                 href="https://programminghistorian.org/en/lessons/space-place-gazetteers"
-                 target="_blank">
-                Gazetteer<sup><i class="fas fa-question-circle text-primary"></i></sup>
-              </a>
-              is a platform for linking historical place records and making spatial connections across time and language.
+                   href="https://programminghistorian.org/en/lessons/space-place-gazetteers"
+                   target="_blank">
+                    Gazetteer<sup><i class="fas fa-question-circle text-primary"></i></sup>
+                </a>
+                is a platform for linking historical place records and making spatial connections across time and
+                language.
             </h5>
-
-            {% if not user.is_authenticated %}
-            <p class="mb-2 text-center">
-                <a href="{% url 'accounts:register' %}">Register</a> or <a href="{% url 'accounts:login' %}">
-                login</a> to get started.
-            </p>
-            {% endif %}
 
             <div class="accordion" id="whgAccordion">
 
@@ -122,8 +116,47 @@
                             </ul>
                         </div>
                     </div>
-
                 </div>
+
+
+                {% if not user.is_authenticated %}
+                <!-- WHG Community Accordion Item -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingUserAccess">
+                        <button
+                                class="accordion-button collapsed"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#collapseUserAccess"
+                                aria-expanded="false"
+                                aria-controls="collapseUserAccess">
+                            <i class="fas fa-users me-2 text-primary"></i>
+                            The WHG Community
+                        </button>
+                    </h2>
+                    <div
+                            id="collapseUserAccess"
+                            class="accordion-collapse collapse"
+                            aria-labelledby="headingUserAccess"
+                            data-bs-parent="#whgAccordion">
+                        <div class="accordion-body">
+                            <p>
+                                <i class="fas fa-user-plus me-2"></i>
+                                <strong>You can explore World Historical Gazetteer without a User
+                                    Account!</strong> But do please <a
+                                    href="{% url 'accounts:register' %}">sign up</a> to stay up to date with WHG news
+                                and
+                                announcements. You will need to sign up if you want to create datasets or collections.
+                            </p>
+                            <p class="mb-0">
+                                <i class="fas fa-user-check me-2"></i>
+                                <strong>Existing users:</strong> Please <a href="{% url 'accounts:login' %}">log in</a>
+                                to access your datasets, collections, and personalised features.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
 
                 <!-- Access Methods Accordion Item -->
                 <div class="accordion-item">
@@ -212,51 +245,54 @@
 
                 <!-- Documentation Accordion Item -->
                 <div class="accordion-item">
-                  <h2 class="accordion-header" id="headingDocumentation">
-                    <button aria-controls="collapseDocumentation"
-                            aria-expanded="false"
-                            class="accordion-button collapsed"
-                            data-bs-target="#collapseDocumentation"
-                            data-bs-toggle="collapse"
-                            type="button">
-                      <i class="fas fa-book me-2 text-primary"></i>
-                      Documentation
-                    </button>
-                  </h2>
-                  <div id="collapseDocumentation"
-                       class="accordion-collapse collapse"
-                       aria-labelledby="headingDocumentation"
-                       data-bs-parent="#whgAccordion">
-                    <div class="accordion-body">
-                      <p>
-                        The World Historical Gazetteer documentation offers detailed guidance for contributors and developers:
-                        how to submit datasets, understand the WHG data model, use the API, and run the platform locally.
-                      </p>
-                      <p>
-                        Whether you're exploring as a researcher or building on WHG as a developer, the documentation provides the
-                        technical and procedural support you need.
-                      </p>
-                      <a class="btn btn-sm btn-outline-primary"
-                         href="https://docs.whgazetteer.org/"
-                         rel="noopener"
-                         target="_blank">
-                        Visit Documentation
-                        <i class="fas fa-external-link-alt ms-1"></i>
-                      </a>
+                    <h2 class="accordion-header" id="headingDocumentation">
+                        <button aria-controls="collapseDocumentation"
+                                aria-expanded="false"
+                                class="accordion-button collapsed"
+                                data-bs-target="#collapseDocumentation"
+                                data-bs-toggle="collapse"
+                                type="button">
+                            <i class="fas fa-book me-2 text-primary"></i>
+                            Documentation
+                        </button>
+                    </h2>
+                    <div id="collapseDocumentation"
+                         class="accordion-collapse collapse"
+                         aria-labelledby="headingDocumentation"
+                         data-bs-parent="#whgAccordion">
+                        <div class="accordion-body">
+                            <p>
+                                The World Historical Gazetteer documentation offers detailed guidance for contributors
+                                and developers:
+                                how to submit datasets, understand the WHG data model, use the API, and run the platform
+                                locally.
+                            </p>
+                            <p>
+                                Whether you're exploring as a researcher or building on WHG as a developer, the
+                                documentation provides the
+                                technical and procedural support you need.
+                            </p>
+                            <a class="btn btn-sm btn-outline-primary"
+                               href="https://docs.whgazetteer.org/"
+                               rel="noopener"
+                               target="_blank">
+                                Visit Documentation
+                                <i class="fas fa-external-link-alt ms-1"></i>
+                            </a>
+                        </div>
                     </div>
-                  </div>
                 </div>
 
                 <!-- News & Announcements Accordion Item -->
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingNews">
                         <button
-                            class="accordion-button"
-                            type="button"
-                            data-bs-toggle="collapse"
-                            data-bs-target="#collapseNews"
-                            aria-expanded="true"
-                            aria-controls="collapseNews">
+                                class="accordion-button"
+                                type="button"
+                                data-bs-toggle="collapse"
+                                data-bs-target="#collapseNews"
+                                aria-expanded="true"
+                                aria-controls="collapseNews">
                             <i class="fas fa-bullhorn me-2 text-primary"></i>
                             News & Announcements
                         </button>
@@ -270,19 +306,22 @@
                             <div class="border p-2" id="announcement-container">
                                 {% for announcement in announcements %}
                                 <div class="announcement mb-2">
-                                  <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start">
-                                    <div class="order-2 order-sm-1 flex-grow-1">
-                                      <a href="{{ announcement.link }}" target="_blank" class="text-decoration-none">
-                                        <i class="fas fa-external-link-alt small"></i> {{ announcement.headline }}
-                                      </a>
+                                    <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start">
+                                        <div class="order-2 order-sm-1 flex-grow-1">
+                                            <a href="{{ announcement.link }}" target="_blank"
+                                               class="text-decoration-none">
+                                                <i class="fas fa-external-link-alt small"></i> {{ announcement.headline
+                                                }}
+                                            </a>
+                                        </div>
+                                        <div class="order-1 order-sm-2 text-secondary small ms-sm-2 text-sm-end">
+                                            <i class="fas fa-calendar-alt me-1"></i> {{ announcement.created_at|date:"j
+                                            M Y" }}
+                                        </div>
                                     </div>
-                                    <div class="order-1 order-sm-2 text-secondary small ms-sm-2 text-sm-end">
-                                      <i class="fas fa-calendar-alt me-1"></i> {{ announcement.created_at|date:"j M Y" }}
+                                    <div class="ms-3 text-muted small">
+                                        {{ announcement.content }}
                                     </div>
-                                  </div>
-                                  <div class="ms-3 text-muted small">
-                                    {{ announcement.content }}
-                                  </div>
                                 </div>
                                 {% endfor %}
                             </div>
@@ -372,7 +411,12 @@
     let galleries = [
         ['Selected Data Publications', "{% url 'datasets:dataset-gallery-type' gallery_type='datasets' %}"],
     ];
-    let carouselMetadata = {{ carousel_metadata | safe }};
+    let carouselMetadata = {
+    {
+        carousel_metadata | safe
+    }
+    }
+    ;
     let startCarousels = true; // Determines whether galleries are to be auto-cycled
     let repositionMap = true; // Determines whether map should fly to loaded datacollection
 </script>
