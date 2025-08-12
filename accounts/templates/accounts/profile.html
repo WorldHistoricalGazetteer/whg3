@@ -1,96 +1,115 @@
 {% extends "main/base_webpack.html" %}
 
 {% block content %}<div id="container" class="container mt-1">
-  <div class="row mt-4">
-    <div class="col-md-2"></div>
-    <div class="col-md-8">
+  <div class="my-4">
 
-      <h3 class="mb-4">
-        <i class="fas fa-user-circle me-2"></i> Personal Data
-      </h3>
+    <h3 class="mb-4">
+      <i class="fas fa-user-circle me-2"></i> Personal Data
+    </h3>
 
-      {% if newly_created %}
-      <div class="alert alert-success">
-        Welcome, {{ user.get_full_name|default:user.username }}!
-        Your account has been created via ORCiD.
-      </div>
-      {% endif %}
-
-      <!-- ORCiD Data Section -->
-      <section class="mb-4">
-        <h5 class="mb-3 fw-semibold d-flex align-items-center">
-          <i class="fab fa-orcid me-2" style="color:#A6CE39;"></i>
-          ORCiD Data
-          <a href="{% url 'accounts:profile-download' %}" title="Download your personal data. This facility satisfies your right to access personal data in certain jurisdictions." class="btn btn-outline-secondary btn-sm ms-3">
-            <i class="fa fa-download"></i> Download
-          </a>
-        </h5>
-        <p class="small fst-italic text-muted mb-3">
-          These details are maintained by ORCiD. Please edit them via your <a href="https://orcid.org" target="_blank" rel="noopener noreferrer">ORCiD profile</a>.
-        </p>
-        <div class="d-flex mb-2">
-          <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">ORCiD iD</div>
-          <div class="flex-grow-1 ps-3">
-            <a href="https://orcid.org/{{ user.orcid }}" target="_blank" rel="noopener noreferrer">{{ user.orcid }}</a>
-          </div>
-        </div>
-        <div class="d-flex mb-2">
-          <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Given Name</div>
-          <div class="flex-grow-1 ps-3">{{ user.given_name }}</div>
-        </div>
-        <div class="d-flex mb-2">
-          <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Family Name</div>
-          <div class="flex-grow-1 ps-3">{{ user.surname }}</div>
-        </div>
-        <div class="d-flex mb-2">
-          <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Email</div>
-          <div class="flex-grow-1 ps-3">{{ user.email }}</div>
-        </div>
-        <div class="d-flex mb-2">
-          <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Affiliation</div>
-          <div class="flex-grow-1 ps-3">{{ user.affiliation }}</div>
-        </div>
-        <div class="d-flex mb-2">
-          <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Web page</div>
-          <div class="flex-grow-1 ps-3">
-            <a href="{{ user.web_page }}" target="_blank" rel="noopener noreferrer">{{ user.web_page }}</a>
-          </div>
-        </div>
-      </section>
-
-      <hr>
-
-      <!-- Preferences Section -->
-      <section>
-        <h5 class="mb-3 fw-semibold"><i class="fas fa-cog me-2"></i> Preferences</h5>
-        <form id="news-form" method="post" action="{% url 'profile-edit' %}">
-          {% csrf_token %}
-          <div class="form-check d-flex align-items-center mb-2">
-            {{ form.news_permitted }}
-            <label class="form-check-label ms-2 mb-0" for="{{ form.news_permitted.id_for_label }}" style="margin-bottom: -5px !important;">
-              Receive News and Updates
-            </label>
-          </div>
-        </form>
-      </section>
-
-      <hr>
-
-      <!-- Account Deletion -->
-      <div class="mt-4 text-end">
-        <form method="post" action="{% url 'accounts:profile-delete' %}" onsubmit="return confirm('Are you sure you want to delete your account? This action cannot be undone.')" class="d-inline">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-danger" title="This action is permanent and cannot be undone">
-            <i class="fa fa-trash"></i> Delete my WHG Account
-          </button>
-        </form>
-        <p class="small text-muted mt-2">
-          Deleting your account will remove all personal data and cannot be undone.
-        </p>
-      </div>
-
+    {% if newly_created %}
+    <div class="alert alert-success">
+      Welcome, {{ user.get_full_name|default:user.username }}!
+      Your account has been created via ORCiD.
     </div>
-    <div class="col-md-2"></div>
+    {% endif %}
+
+    <!-- ORCiD Data Section -->
+    <section class="mb-4">
+      <h5 class="mb-3 fw-semibold d-flex align-items-center">
+        <i class="fab fa-orcid me-2" style="color:#A6CE39;"></i>
+        ORCiD Data
+        <a href="{% url 'accounts:profile-download' %}"
+           data-bs-toggle="tooltip"
+           data-bs-title="<i class='fas fa-download nocolour'></i> <strong>Download your personal data.</strong><br><br><i>This facility satisfies your <strong>right to access personal data</strong> in certain jurisdictions.</i>"
+           class="btn btn-outline-secondary btn-sm ms-3">
+          <i class="fa fa-download nocolour"></i> Download
+        </a>
+      </h5>
+      <p class="small fst-italic text-muted mb-3">
+        These details are maintained by ORCiD. Please edit them via your <a href="https://orcid.org" target="_blank" rel="noopener noreferrer">ORCiD profile</a>.
+      </p>
+      <div class="d-flex mb-2">
+        <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">ORCiD iD</div>
+        <div class="flex-grow-1 ps-3">
+          <a href="https://orcid.org/{{ user.orcid }}" target="_blank" rel="noopener noreferrer">{{ user.orcid }}</a>
+        </div>
+      </div>
+      <div class="d-flex mb-2">
+        <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Given Name</div>
+        <div class="flex-grow-1 ps-3">{{ user.given_name }}</div>
+      </div>
+      <div class="d-flex mb-2">
+        <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Family Name</div>
+        <div class="flex-grow-1 ps-3">{{ user.surname }}</div>
+      </div>
+      <div class="d-flex mb-2">
+        <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Email</div>
+        <div class="flex-grow-1 ps-3">{{ user.email }}</div>
+      </div>
+      <div class="d-flex mb-2">
+        <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Affiliation</div>
+        <div class="flex-grow-1 ps-3">{{ user.affiliation }}</div>
+      </div>
+      <div class="d-flex mb-2">
+        <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Web page</div>
+        <div class="flex-grow-1 ps-3">
+          <a href="{{ user.web_page }}" target="_blank" rel="noopener noreferrer">{{ user.web_page }}</a>
+        </div>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- Preferences Section -->
+    <section>
+      <h5 class="mb-3 fw-semibold"><i class="fas fa-cog me-2"></i> Preferences</h5>
+      <form id="news-form" method="post" action="{% url 'profile-edit' %}">
+        {% csrf_token %}
+        <div class="form-check d-flex align-items-center mb-2">
+          {{ form.news_permitted }}
+          <label class="form-check-label ms-2 mb-0" for="{{ form.news_permitted.id_for_label }}" style="margin-bottom: -5px !important;">
+            Receive News and Updates
+          </label>
+        </div>
+      </form>
+    </section>
+
+    <hr>
+
+    <!-- Account Deletion -->
+    <section>
+      <h5 class="mb-3 fw-semibold text-muted">
+        <i class="fas fa-trash me-2"></i> Account Deletion
+      </h5>
+
+      <form method="post"
+            action="{% url 'accounts:profile-delete' %}"
+            onsubmit="return confirm('Please confirm once more that you wish to delete your account. This action cannot be undone.')"
+            class="d-inline-flex align-items-center gap-3">
+        {% csrf_token %}
+
+        <div class="form-check m-0">
+          <input class="form-check-input" type="checkbox" id="confirmDelete" name="confirmDelete" required
+              style="cursor:pointer;"
+              data-bs-toggle="tooltip"
+              data-bs-title="Checking this box confirms that you understand the consequences of deleting your account."
+          >
+          <label class="form-check-label mb-0" for="confirmDelete" style="cursor:pointer;">
+            I understand that deleting my WHG account is <strong>permanent</strong> and cannot be undone.
+          </label>
+        </div>
+
+        <button type="submit"
+                class="btn btn-danger btn-sm align-self-center"
+                style="line-height: normal;"
+                data-bs-toggle="tooltip"
+                data-bs-title="<i class='fas fa-triangle-exclamation'></i> This action is permanent and cannot be undone">
+          <i class="fa fa-trash"></i> Delete Account
+        </button>
+      </form>
+    </section>
+
   </div>
 </div>
 

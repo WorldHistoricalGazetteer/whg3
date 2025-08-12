@@ -227,16 +227,7 @@ def add_to_group(cg, member):
 
 @login_required
 def profile_edit(request):
-    if request.method == 'POST':
-        form = UserModelForm(request.POST, request.FILES, instance=request.user)
-        if form.is_valid():
-            form.save()
-            return redirect('profile-edit')
-        else:
-            logger.debug(f"Form Errors: {form.errors}")
-            logger.debug(f"Cleansed Data: {form.cleaned_data}")
-    else:
-        form = UserModelForm(instance=request.user)
+    form = UserModelForm(instance=request.user)
 
     newly_created = request.session.pop("just_created_account", False)
     is_admin = request.user.groups.filter(name='whg_admins').exists()
