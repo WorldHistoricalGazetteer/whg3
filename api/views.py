@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
+from elasticsearch8 import BadRequestError
 from rest_framework.request import Request
 
 User = get_user_model()
@@ -738,12 +739,14 @@ class IndexAPIView(View):
                     # q['query']['bool']["filter"] = get_bounds_filter(bounds, 'whg')
                     q['query']['bool']["filter"] = get_bounds_filter(bounds, settings.ES_WHG)
 
-                # print('the api query was:', json.dumps(q, indent=2))
-                # run query
-                # response = collector(q, 'whg')
-                response = collector(q, settings.ES_WHG)
-                # print('response in IndexAPIView()', response)
-                # ex = response['items'][1]
+                try:
+                    response = collector(q, settings.ES_WHG)
+                except BadRequestError as e:
+                    return JsonResponse({
+                        'error': 'BadRequestError',
+                        'message': str(e)
+                    }, status=400)
+
                 union_records = []
                 for item in response['items']:
                     parent = responseItem(item)
