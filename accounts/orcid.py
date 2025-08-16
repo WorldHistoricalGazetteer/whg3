@@ -15,6 +15,21 @@ User = get_user_model()
 logger = logging.getLogger('authentication')
 
 
+def get_best_email(orcid_record: dict) -> str | None:
+    emails = orcid_record.get("person", {}).get("emails", {}).get("email", []) or []
+    if not emails:
+        return None
+
+    # Keep only verified emails
+    verified = [e for e in emails if e.get("verified")]
+    if not verified:
+        return None
+
+    # Prefer the primary if it exists, else the first verified
+    primary = next((e.get("email") for e in verified if e.get("primary")), None)
+    return primary or verified[0].get("email")
+
+
 class OIDCBackend(BaseBackend):
     """
     Custom authentication backend to authenticate users via ORCiD OpenID Connect.
@@ -27,16 +42,15 @@ class OIDCBackend(BaseBackend):
     - 'affiliation' or 'employments' (may be nested - you can extend to parse)
     """
 
-    def authenticate(self, request, claims=None, userinfo=None, record=None, **kwargs):
+    def authenticate(self, request, claims=None, record=None, **kwargs):
         """
         Authenticate or create user based on ORCiD OIDC claims.
         """
-        if not claims:
-            logger.error("No claims provided for ORCiD authentication.")
-            return None  # No claims provided
+        if not record:
+            logger.error("No record provided for ORCiD authentication.")
+            return None
         else:
             logger.debug(f"Claims received: {claims}")
-            logger.debug(f"UserInfo received: {userinfo}")
             logger.debug(f"ORCiD record received: {record}")
 
         # ORCiD is in 'sub' claim, a URI like https://orcid.org/0000-0002-1825-0097
@@ -52,17 +66,7 @@ class OIDCBackend(BaseBackend):
         family_name = claims.get("family_name") or ""
 
         # Extract verified email(s)
-        email = None
-        emails = claims.get("emails") or []
-        # ORCiD returns a list of emails with 'value' and 'verified' flags
-        for e in emails:
-            if e.get("verified") and e.get("value"):
-                email = e["value"]
-                break
-
-        # As fallback, try 'email' claim if it exists and is verified
-        if not email and claims.get("email") and claims.get("email_verified"):
-            email = claims["email"]
+        email = get_best_email(record) if record else None
 
         if not email:
             logger.warning(f"No verified email found for ORCiD user {orcid_identifier}")
@@ -210,18 +214,6 @@ def orcid_callback(request):
         logger.error("Nonce mismatch. Possible replay attack.")
         return redirect("accounts:login")
 
-    # --- Fetch userinfo (OIDC standard endpoint) ---
-    try:
-        userinfo_response = requests.get(
-            f"{settings.ORCID_BASE}/oauth/userinfo",
-            headers={"Authorization": f"Bearer {access_token}"}
-        )
-        userinfo_response.raise_for_status()
-        userinfo = userinfo_response.json()
-    except requests.RequestException as e:
-        logger.warning(f"Failed to fetch user info: {e}")
-        userinfo = {}
-
     # --- Fetch full ORCID record (member API) ---
     record = {}
     orcid_id = claims.get("sub")
@@ -238,14 +230,8 @@ def orcid_callback(request):
         except requests.RequestException as e:
             logger.warning(f"Failed to fetch ORCID full record: {e}")
 
-    logger.debug("ORCID claims: %s", claims)
-    logger.debug("ORCID userinfo: %s", userinfo)
-    logger.debug("ORCID full record: %s", record)
-
-    # Merge userinfo + record for downstream use
     combined_info = {
         "claims": claims,
-        "userinfo": userinfo,
         "record": record,
     }
 
