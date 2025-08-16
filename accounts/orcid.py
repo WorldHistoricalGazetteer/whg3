@@ -185,7 +185,7 @@ class OIDCBackend(BaseBackend):
             request.session["orcid_id"] = orcid_id
             request.session["orcid_given_name"] = user.given_name
             if created:
-                request.session["just_created_account"] = True
+                user._just_created = True
 
         return user
 
@@ -259,7 +259,8 @@ def orcid_callback(request):
     user = auth.authenticate(request, orcid_id=orcid_id, record=record, token_json=token_json)
     if user:
         auth.login(request, user)
-        if request.session.get("just_created_account", False):
+        if getattr(user, "_just_created", False):
+            request.session["just_created_account"] = True
             return redirect("profile-edit")
         return redirect("home")
 
