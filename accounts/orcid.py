@@ -147,12 +147,22 @@ def decode_orcid_id_token(id_token):
 
 
 def orcid_callback(request):
+    # Fetch but do not immediately remove state/nonce
     session_state = request.session.get("oidc_state")
+    session_nonce = request.session.get("oidc_nonce")
+
     state = request.GET.get("state")
-    if not state or state != session_state:
-        logger.error("Invalid state parameter. Possible CSRF attack.")
+    if not state:
+        logger.error("Missing state parameter in ORCiD callback.")
+        return redirect("accounts:login")
+    if state != session_state:
+        logger.error(
+            "State mismatch. Possible CSRF attack. "
+            f"Session: {session_state}, Callback: {state}"
+        )
         return redirect("accounts:login")
 
+    # Now safe to pop them to prevent reuse
     request.session.pop("oidc_state", None)
     request.session.pop("oidc_nonce", None)
 
