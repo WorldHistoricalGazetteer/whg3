@@ -168,7 +168,7 @@ def orcid_callback(request):
     if user:
         auth.login(request, user)
         if request.session.get("just_created_account", False):
-            return redirect("accounts:profile")
+            return redirect("profile")
         return redirect("home")
 
     messages.error(request, "ORCID authentication failed.")
