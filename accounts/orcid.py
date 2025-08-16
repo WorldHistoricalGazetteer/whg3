@@ -147,7 +147,7 @@ def decode_orcid_id_token(id_token):
 
 
 def orcid_callback(request):
-    logger.debug("Full request URL: %s", request.get_raw_uri())
+    logger.debug("Full request URL: %s", request.build_absolute_uri())
     logger.debug("GET params: %s", request.GET)
 
     # Fetch but do not immediately remove state/nonce
