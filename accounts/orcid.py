@@ -168,7 +168,7 @@ def orcid_callback(request):
     user = auth.authenticate(request, id_token=id_token, userinfo=userinfo)
     if user:
         auth.login(request, user)
-        if request.session("just_created_account", False):
+        if request.session.get("just_created_account", False):
             return redirect("accounts:profile")
         return redirect("home")
     else:
