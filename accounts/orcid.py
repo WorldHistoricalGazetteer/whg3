@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import BaseBackend
 from django.db import transaction
 from django.shortcuts import redirect
+from jwt.algorithms import RSAAlgorithm
 
 User = get_user_model()
 logger = logging.getLogger('authentication')
@@ -25,22 +26,17 @@ class OIDCBackend(BaseBackend):
     - 'affiliation' or 'employments' (may be nested - you can extend to parse)
     """
 
-    def authenticate(self, request, id_token=None, userinfo=None, **kwargs):
+    def authenticate(self, request, claims=None, userinfo=None, **kwargs):
         """
         Authenticate or create user based on ORCiD OIDC claims.
         """
+        if not claims:
+            logger.error("No claims provided for ORCiD authentication.")
+            return None  # No claims provided
+        else:
+            logger.debug(f"Claims received: {claims}")
 
-        if not id_token and not userinfo:
-            logger.warning("No id_token or userinfo provided for ORCiD authentication.")
-            return None
-
-        logger.debug("Received id_token: %s", id_token)
-        logger.debug("Received userinfo: %s", userinfo)
-
-        # Prefer userinfo dict, fallback to decoded id_token claims
-        claims = userinfo or id_token
-
-        # ORCiD iD is usually in 'sub' claim, a URI like https://orcid.org/0000-0002-1825-0097
+        # ORCiD is in 'sub' claim, a URI like https://orcid.org/0000-0002-1825-0097
         orcid_id = claims.get("sub")
         if not orcid_id:
             logger.error("ORCiD 'sub' claim missing.")
@@ -49,7 +45,6 @@ class OIDCBackend(BaseBackend):
         # Extract ORCiD identifier string (last part of the URI)
         orcid_identifier = orcid_id.rsplit('/', 1)[-1]
 
-        # Extract name fields
         given_name = claims.get("given_name") or ""
         family_name = claims.get("family_name") or ""
 
@@ -68,7 +63,8 @@ class OIDCBackend(BaseBackend):
 
         if not email:
             logger.warning(f"No verified email found for ORCiD user {orcid_identifier}")
-            messages.error(request, "No verified email found in ORCiD profile. You must have a verified email in your ORCiD profile to log in.")
+            messages.error(request,
+                           "No verified email found in ORCiD profile. You must have a verified email in your ORCiD profile to log in.")
             return None
 
         try:
@@ -103,6 +99,49 @@ class OIDCBackend(BaseBackend):
             return User.objects.get(pk=user_id)
         except User.DoesNotExist:
             return None
+
+
+def get_orcid_jwks():
+    """Fetch ORCiD JWKS."""
+    jwks_url = f"{settings.ORCID_BASE}/oauth/jwks"
+    try:
+        resp = requests.get(jwks_url)
+        resp.raise_for_status()
+        return resp.json()
+    except requests.RequestException as e:
+        logger.error(f"Failed to fetch ORCiD JWKS: {e}")
+        return None
+
+
+def decode_orcid_id_token(id_token):
+    """Verify ID token signature and return claims."""
+    jwks = get_orcid_jwks()
+    if not jwks:
+        return None
+
+    unverified_header = jwt.get_unverified_header(id_token)
+    kid = unverified_header.get("kid")
+    if not kid:
+        logger.error("ID token missing 'kid' header")
+        return None
+
+    key_data = next((k for k in jwks["keys"] if k["kid"] == kid), None)
+    if not key_data:
+        logger.error("No matching JWK for token")
+        return None
+
+    public_key = RSAAlgorithm.from_jwk(key_data)
+    try:
+        claims = jwt.decode(
+            id_token,
+            key=public_key,
+            algorithms=[key_data["alg"]],
+            audience=settings.ORCID_CLIENT_ID,
+        )
+        return claims
+    except jwt.PyJWTError as e:
+        logger.error(f"Failed to verify ID token: {e}")
+        return None
 
 
 def orcid_callback(request):
@@ -146,18 +185,17 @@ def orcid_callback(request):
         logger.error(f"ORCID did not return expected tokens: {token_json}")
         return redirect("accounts:login")
 
-    # Verify nonce inside ID token
-    try:
-        claims = jwt.decode(id_token, options={"verify_signature": False})
-    except jwt.DecodeError:
-        logger.error("Invalid ID token received from ORCID.")
+    # Verify ID token
+    claims = decode_orcid_id_token(id_token)
+    if not claims:
         return redirect("accounts:login")
 
+    # Check nonce
     if claims.get("nonce") != session_nonce:
         logger.error("Nonce mismatch. Possible replay attack.")
         return redirect("accounts:login")
 
-    # Get userinfo (optional, since ID token already has claims)
+    # Fetch userinfo as fallback
     try:
         userinfo_response = requests.get(
             f"{settings.ORCID_BASE}/oauth/userinfo",
@@ -166,11 +204,11 @@ def orcid_callback(request):
         userinfo_response.raise_for_status()
         userinfo = userinfo_response.json()
     except requests.RequestException as e:
-        logger.error(f"Failed to fetch user info: {e}")
-        return redirect("accounts:login")
+        logger.warning(f"Failed to fetch user info: {e}")
+        userinfo = {}
 
-    # Authenticate user via custom backend
-    user = auth.authenticate(request, id_token=id_token, userinfo=userinfo)
+    # Authenticate via backend with verified claims
+    user = auth.authenticate(request, claims=claims, userinfo=userinfo)
     if user:
         auth.login(request, user)
         if request.session.get("just_created_account", False):
