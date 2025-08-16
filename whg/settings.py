@@ -396,6 +396,8 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
 GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
 
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Needs to be set for proper request.build_absolute_uri handling
+
 AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',  # TODO: Remove this after ORCiD migration
     'guardian.backends.ObjectPermissionBackend',
