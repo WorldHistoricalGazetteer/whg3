@@ -1,4 +1,5 @@
 import logging
+from datetime import timedelta
 
 import jwt
 import requests
@@ -29,6 +30,33 @@ def get_best_email(orcid_record: dict) -> str | None:
     # Prefer the primary if it exists, else the first verified
     primary = next((e.get("email") for e in verified if e.get("primary")), None)
     return primary or verified[0].get("email")
+
+
+def get_affiliation(orcid_record: dict) -> str | None:
+    """Return the first affiliation summary label, if available."""
+    activities = orcid_record.get("activities-summary", {})
+    employments = activities.get("employments", {}).get("employment-summary", [])
+    educations = activities.get("educations", {}).get("education-summary", [])
+
+    # Pick the first non-empty entry from employment or education
+    for group in (employments, educations):
+        if group:
+            first = group[0]
+            org = first.get("organization", {})
+            name = org.get("name")
+            city = org.get("address", {}).get("city")
+            country = org.get("address", {}).get("country")
+            return ", ".join(filter(None, [name, city, country]))
+    return None
+
+
+def get_web_page(orcid_record: dict) -> str | None:
+    """Return the first researcher URL, if available."""
+    urls = orcid_record.get("person", {}).get("researcher-urls", {}).get("researcher-url", [])
+    if not urls:
+        return None
+    first = urls[0].get("url", {})
+    return first.get("value")
 
 
 class OIDCBackend(BaseBackend):
@@ -77,8 +105,12 @@ class OIDCBackend(BaseBackend):
         user.email = email
         user.given_name = given_name
         user.surname = family_name
+        user.affiliation = get_affiliation(record) or ""
+        user.web_page = get_web_page(record) or ""
         user.refresh_token = token_json.get("refresh_token")
-        user.token_expires_at = now() + token_json.get("expires_in")
+        expires_in = token_json.get("expires_in")
+        if expires_in is not None:
+            user.token_expires_at = now() + timedelta(seconds=expires_in)
 
         # Save user
         with transaction.atomic():
