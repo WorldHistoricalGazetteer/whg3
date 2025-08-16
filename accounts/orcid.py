@@ -128,31 +128,30 @@ def orcid_callback(request):
     try:
         token_response = requests.post(token_url, data=data, headers=headers)
         token_response.raise_for_status()
+        token_json = token_response.json()
     except requests.RequestException as e:
         messages.error(request, f"Token request failed: {e}")
         return redirect("accounts:login")
 
-    token_json = token_response.json()
+    # Required tokens
     id_token = token_json.get("id_token")
     access_token = token_json.get("access_token")
-
     if not id_token or not access_token:
-        messages.error(request, f"Missing tokens in ORCiD response: {token_json}")
+        messages.error(request, f"ORCID did not return expected tokens: {token_json}")
         return redirect("accounts:login")
 
-    # Verify the ID token's nonce claim matches the session nonce
+    # Verify nonce inside ID token
     try:
-        unverified_claims = jwt.decode(id_token, options={"verify_signature": False})
+        claims = jwt.decode(id_token, options={"verify_signature": False})
     except jwt.DecodeError:
-        messages.error(request, "Invalid ID token.")
+        messages.error(request, "Invalid ID token received from ORCID.")
         return redirect("accounts:login")
 
-    token_nonce = unverified_claims.get("nonce")
-    if session_nonce != token_nonce:
-        messages.error(request, "Invalid nonce in ID token. Possible replay attack.")
+    if claims.get("nonce") != session_nonce:
+        messages.error(request, "Nonce mismatch. Possible replay attack.")
         return redirect("accounts:login")
 
-    # Get userinfo from ORCiD userinfo endpoint
+    # Get userinfo (optional, since ID token already has claims)
     try:
         userinfo_response = requests.get(
             f"{settings.ORCID_BASE}/oauth/userinfo",
@@ -164,13 +163,13 @@ def orcid_callback(request):
         messages.error(request, f"Failed to fetch user info: {e}")
         return redirect("accounts:login")
 
-    # Authenticate user with custom backend
+    # Authenticate user via custom backend
     user = auth.authenticate(request, id_token=id_token, userinfo=userinfo)
     if user:
         auth.login(request, user)
         if request.session.get("just_created_account", False):
             return redirect("accounts:profile")
         return redirect("home")
-    else:
-        messages.error(request, "ORCiD authentication failed.")
-        return redirect("accounts:login")
+
+    messages.error(request, "ORCID authentication failed.")
+    return redirect("accounts:login")

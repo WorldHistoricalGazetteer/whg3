@@ -1,28 +1,24 @@
-import json
 import secrets
 
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth import get_user_model
 from django.contrib.auth import views as auth_views
-from django.http import HttpResponse, JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
 User = get_user_model()
 from django.conf import settings
 from django.contrib import auth, messages
 from django.core.signing import Signer, BadSignature
-from django.db import transaction
-from django.shortcuts import render, redirect, reverse, get_object_or_404
+from django.shortcuts import render, redirect, reverse
 
 from accounts.forms import UserModelForm
-from collection.models import Collection, CollectionGroupUser, CollectionUser  # CollectionGroup,
-from datasets.models import Dataset, DatasetUser
+from collection.models import CollectionGroupUser  # CollectionGroup,
 import logging
 
 logger = logging.getLogger(__name__)
 import traceback
-from urllib.parse import urljoin, urlencode
-from whgmail.messaging import WHGmail
+from urllib.parse import urlencode
 
 
 # def register(request):
@@ -51,8 +47,25 @@ from whgmail.messaging import WHGmail
 #         return render(request, 'register/register.html', {'form': form})
 
 
-def login(request):
+def build_orcid_authorize_url(request):
+    state = secrets.token_urlsafe(24)
+    nonce = secrets.token_urlsafe(24)
 
+    request.session["oidc_state"] = state
+    request.session["oidc_nonce"] = nonce
+
+    params = {
+        "client_id": settings.ORCID_CLIENT_ID,
+        "response_type": "code",
+        "scope": "openid email",
+        "redirect_uri": request.build_absolute_uri(reverse("accounts:orcid-callback")),
+        "state": state,
+        "nonce": nonce,
+    }
+    return f"{settings.ORCID_BASE}/oauth/authorize?{urlencode(params)}"
+
+
+def login(request):
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
@@ -95,27 +108,12 @@ def login(request):
             messages.error(request, "Invalid username.")
             return redirect('accounts:login')  # Or render with an error message
     else:
-        # Generate secure random state and nonce tokens
-        state = secrets.token_urlsafe(32)
-        nonce = secrets.token_urlsafe(32)
-
-        # Store them in the session
-        request.session['oidc_state'] = state
-        request.session['oidc_nonce'] = nonce
-
-        # Construct ORCiD authorization URL
-        orcid_base_authorize_url = f"{settings.ORCID_BASE}/oauth/authorize"
-        params = {
-            "client_id": settings.ORCID_CLIENT_ID,
-            "response_type": "code",
-            "scope": "/authenticate email",
-            "redirect_uri": request.build_absolute_uri("/orcid-callback/"),
-            "state": state,
-            "nonce": nonce,
-        }
-        orcid_auth_url = f"{orcid_base_authorize_url}?{urlencode(params)}"
-
-        return render(request, 'accounts/login.html', context={"orcid_auth_url": orcid_auth_url})
+        # GET request, render the login page with ORCiD auth URL
+        return render(
+            request,
+            'accounts/login.html',
+            context={"orcid_auth_url": build_orcid_authorize_url(request)}
+        )
 
 
 def logout(request):
@@ -249,6 +247,7 @@ def profile_edit(request):
         'form': form,
     }
     return render(request, 'accounts/profile.html', context=context)
+
 
 @login_required
 def profile_download(request):
