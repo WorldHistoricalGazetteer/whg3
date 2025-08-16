@@ -1,7 +1,7 @@
 import logging
 from datetime import timedelta
+from typing import Optional
 
-import jwt
 import requests
 from django.conf import settings
 from django.contrib import auth, messages
@@ -11,7 +11,6 @@ from django.db import transaction
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.timezone import now
-from jwt.algorithms import RSAAlgorithm
 
 User = get_user_model()
 logger = logging.getLogger('authentication')
@@ -32,21 +31,85 @@ def get_best_email(orcid_record: dict) -> str | None:
     return primary or verified[0].get("email")
 
 
-def get_affiliation(orcid_record: dict) -> str | None:
-    """Return the first affiliation summary label, if available."""
-    activities = orcid_record.get("activities-summary", {})
-    employments = activities.get("employments", {}).get("employment-summary", [])
-    educations = activities.get("educations", {}).get("education-summary", [])
+def _date_tuple(d: dict | None) -> tuple[int, int, int]:
+    """Convert ORCID date dict to sortable (Y,M,D). Missing -> (0,0,0)."""
+    if not d:
+        return (0, 0, 0)
 
-    # Pick the first non-empty entry from employment or education
-    for group in (employments, educations):
-        if group:
-            first = group[0]
-            org = first.get("organization", {})
-            name = org.get("name")
-            city = org.get("address", {}).get("city")
-            country = org.get("address", {}).get("country")
-            return ", ".join(filter(None, [name, city, country]))
+    def to_int(x):
+        try:
+            return int(x.get("value")) if x else 0
+        except:
+            return 0
+
+    return (to_int(d.get("year")), to_int(d.get("month")), to_int(d.get("day")))
+
+
+def _summaries_from(record: dict, block: str, summary_key: str) -> list[dict]:
+    """
+    Collect summary dicts from activities-summary block, e.g.
+    block='employments', summary_key='employment-summary'
+    """
+    groups = record.get("activities-summary", {}).get(block, {}).get("affiliation-group", [])
+    items = []
+    for g in groups:
+        for s in g.get("summaries", []):
+            if summary_key in s:
+                items.append(s[summary_key])
+    return items
+
+
+def _format_org(summary: dict) -> str:
+    org = summary.get("organization", {}) or {}
+    name = org.get("name")
+    addr = org.get("address", {}) or {}
+    city = addr.get("city")
+    region = addr.get("region")
+    country = addr.get("country")
+    parts = [name, city, region, country]
+    return ", ".join([p for p in parts if p])
+
+
+def _pick_best_affiliation(summaries: list[dict]) -> Optional[dict]:
+    if not summaries:
+        return None
+    # Prefer current (no end-date); if multiple, pick the one with latest start-date or last-modified.
+    current = [s for s in summaries if not s.get("end-date")]
+
+    def sort_key(s: dict):
+        # For ordering: end-date, then start-date, then last-modified
+        end_t = _date_tuple(s.get("end-date"))
+        start_t = _date_tuple(s.get("start-date"))
+        lmd = s.get("last-modified-date", {}) or {}
+        lmd_val = int(lmd.get("value", 0)) if isinstance(lmd.get("value"), (int, str)) else 0
+        return (end_t, start_t, lmd_val)
+
+    if current:
+        # Among current, prefer most recently modified or most recent start
+        current.sort(key=sort_key, reverse=True)
+        return current[0]
+    # Otherwise pick the most recent past
+    summaries.sort(key=sort_key, reverse=True)
+    return summaries[0]
+
+
+def get_affiliation(record: dict) -> Optional[str]:
+    """
+    Best-guess single affiliation string. Prefers current employment,
+    else most recent employment; falls back to education if no employment.
+    """
+    # 1) Try employments
+    emp_summaries = _summaries_from(record, "employments", "employment-summary")
+    best = _pick_best_affiliation(emp_summaries)
+    if best:
+        return _format_org(best)
+
+    # 2) Fallback to educations
+    edu_summaries = _summaries_from(record, "educations", "education-summary")
+    best = _pick_best_affiliation(edu_summaries)
+    if best:
+        return _format_org(best)
+
     return None
 
 
@@ -98,7 +161,8 @@ class OIDCBackend(BaseBackend):
             user = User.objects.get(orcid=orcid_id)
             created = False
         except User.DoesNotExist:
-            user = User(orcid=orcid_id, username=f"{given_name.replace(' ', '_')}-{family_name.replace(' ', '_')}-{orcid_identifier}")
+            user = User(orcid=orcid_id,
+                        username=f"{given_name.replace(' ', '_')}-{family_name.replace(' ', '_')}-{orcid_identifier}")
             created = True
 
         # Update user fields
@@ -107,10 +171,10 @@ class OIDCBackend(BaseBackend):
         user.surname = family_name
         user.affiliation = get_affiliation(record) or ""
         user.web_page = get_web_page(record) or ""
-        user.refresh_token = token_json.get("refresh_token")
+        user.orcid_refresh_token = token_json.get("refresh_token")
         expires_in = token_json.get("expires_in")
         if expires_in is not None:
-            user.token_expires_at = now() + timedelta(seconds=expires_in)
+            user.orcid_token_expires_at = now() + timedelta(seconds=expires_in)
 
         # Save user
         with transaction.atomic():
