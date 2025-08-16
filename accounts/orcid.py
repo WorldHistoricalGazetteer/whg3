@@ -8,6 +8,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import BaseBackend
 from django.db import transaction
 from django.shortcuts import redirect
+from django.urls import reverse
 from jwt.algorithms import RSAAlgorithm
 
 User = get_user_model()
@@ -146,15 +147,14 @@ def decode_orcid_id_token(id_token):
 
 
 def orcid_callback(request):
-    # Remove 'state' and 'nonce' from session immediately to prevent reuse
-    session_state = request.session.pop("oidc_state", None)
-    session_nonce = request.session.pop("oidc_nonce", None)
-
-    # Validate state parameter
+    session_state = request.session.get("oidc_state")
     state = request.GET.get("state")
     if not state or state != session_state:
         logger.error("Invalid state parameter. Possible CSRF attack.")
         return redirect("accounts:login")
+
+    request.session.pop("oidc_state", None)
+    request.session.pop("oidc_nonce", None)
 
     code = request.GET.get("code")
     if not code:
@@ -167,7 +167,7 @@ def orcid_callback(request):
         "client_secret": settings.ORCID_CLIENT_SECRET,
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": request.build_absolute_uri("/orcid-callback/"),
+        "redirect_uri": request.build_absolute_uri(reverse("orcid-callback")),
     }
     headers = {"Accept": "application/json"}
 
