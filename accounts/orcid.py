@@ -69,7 +69,7 @@ class OIDCBackend(BaseBackend):
             user = User.objects.get(orcid=orcid_id)
             created = False
         except User.DoesNotExist:
-            user = User(orcid=orcid_id, username=orcid_identifier)
+            user = User(orcid=orcid_id)
             created = True
 
         # Update user fields
@@ -79,7 +79,7 @@ class OIDCBackend(BaseBackend):
         with transaction.atomic():
             user.save()  # assigns user.id for new users
             if not user.username:
-                user.username = f"{given_name}-{family_name}-{user.id}"
+                user.username = f"{given_name.replace(' ', '-')}-{family_name.replace(' ', '-')}-{user.id}"
                 user.save(update_fields=["username"])
 
         # Save user
