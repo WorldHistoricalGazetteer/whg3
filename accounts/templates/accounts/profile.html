@@ -8,8 +8,8 @@
     </h3>
 
     {% if newly_created %}
-    <div class="alert alert-success">
-      Welcome, {{ user.get_full_name|default:user.username }}!
+    <div class="alert alert-warning">
+      Welcome, {{ user.name }}!
       Your account has been created via ORCiD.
     </div>
     {% endif %}
@@ -64,6 +64,12 @@
     <!-- Preferences Section -->
     <section>
       <h5 class="mb-3 fw-semibold"><i class="fas fa-cog me-2"></i> Preferences</h5>
+      {% if newly_created %}
+      <div class="alert alert-warning">
+        Please consider signing up for our occasional news and updates.
+        You can change your mind at any time by returning to this Profile page.
+      </div>
+      {% endif %}
       <form id="news-form" method="post" action="{% url 'profile-edit' %}">
         {% csrf_token %}
         <div class="form-check d-flex align-items-center mb-2">
