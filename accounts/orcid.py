@@ -137,7 +137,7 @@ def orcid_callback(request):
     access_token = token_json.get("access_token")
 
     if not id_token or not access_token:
-        messages.error(request, "Missing tokens in ORCiD response.")
+        messages.error(request, f"Missing tokens in ORCiD response: {token_json}")
         return redirect("accounts:login")
 
     # Verify the ID token's nonce claim matches the session nonce

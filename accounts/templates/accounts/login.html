@@ -106,14 +106,13 @@
             </div>
 
             {% if messages %}
-            {% for message in messages %}
-            {% if not message.tags == 'success' %}
-            <hr>
-            <div class="alert alert-{{ message.tags }}">
-                {{ message }}
-            </div>
-            {% endif %}
-            {% endfor %}
+                {% for message in messages %}
+                    {% if not message.tags == 'success' %}
+                        <div class="alert {{ message.tags }}">
+                            {{ message }}
+                        </div>
+                    {% endif %}
+                {% endfor %}
             {% endif %}
 
         </div>
