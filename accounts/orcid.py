@@ -147,6 +147,9 @@ def decode_orcid_id_token(id_token):
 
 
 def orcid_callback(request):
+    logger.debug("Full request URL: %s", request.get_raw_uri())
+    logger.debug("GET params: %s", request.GET)
+
     # Fetch but do not immediately remove state/nonce
     session_state = request.session.get("oidc_state")
     session_nonce = request.session.get("oidc_nonce")
