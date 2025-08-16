@@ -35,6 +35,7 @@ class OIDCBackend(BaseBackend):
             return None  # No claims provided
         else:
             logger.debug(f"Claims received: {claims}")
+            logger.debug(f"Userinfo received: {userinfo}")
 
         # ORCiD is in 'sub' claim, a URI like https://orcid.org/0000-0002-1825-0097
         orcid_id = claims.get("sub")
