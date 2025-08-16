@@ -31,49 +31,40 @@ def get_best_email(orcid_record: dict) -> str | None:
 
 
 class OIDCBackend(BaseBackend):
-    """
-    Custom authentication backend to authenticate users via ORCiD OpenID Connect.
 
-    Expects ORCiD claims including:
-    - 'sub': the ORCiD iD URI (e.g. https://orcid.org/0000-0002-1825-0097)
-    - 'name': user's full name
-    - 'given_name', 'family_name' (optional)
-    - 'emails': list of emails with 'value' and 'verified' flags
-    - 'affiliation' or 'employments' (may be nested - you can extend to parse)
-    """
-
-    def authenticate(self, request, claims=None, record=None, **kwargs):
+    def authenticate(self, request, orcid_id=None, record=None, **kwargs):
         """
-        Authenticate or create user based on ORCiD OIDC claims.
+        Authenticate or create user based on ORCiD record.
         """
-        if not record:
-            logger.error("No record provided for ORCiD authentication.")
-            return None
-        else:
-            logger.debug(f"Claims received: {claims}")
-            logger.debug(f"ORCiD record received: {record}")
-
-        # ORCiD is in 'sub' claim, a URI like https://orcid.org/0000-0002-1825-0097
-        orcid_id = claims.get("sub")
-        if not orcid_id:
-            logger.error("ORCiD 'sub' claim missing.")
+        if not orcid_id or not record:
+            logger.error("Missing ORCiD ID or record during authentication.")
             return None
 
-        # Extract ORCiD identifier string (last part of the URI)
-        orcid_identifier = orcid_id.rsplit('/', 1)[-1]
+        logger.debug(f"Authenticating ORCiD user: {orcid_id}")
+        logger.debug(f"ORCiD record received: {record}")
 
-        given_name = claims.get("given_name") or ""
-        family_name = claims.get("family_name") or ""
+        # ORCiD identifier string is just the last part (e.g. 0000-0002-1825-0097)
+        orcid_identifier = orcid_id.rsplit('/', 1)[-1] if "/" in orcid_id else orcid_id
+
+        # Extract names from record (fallback empty)
+        person = record.get("person", {})
+        name_obj = person.get("name", {}) if person else {}
+        given_name = name_obj.get("given-names", {}).get("value") or ""
+        family_name = name_obj.get("family-name", {}).get("value") or ""
 
         # Extract verified email(s)
-        email = get_best_email(record) if record else None
-
+        email = get_best_email(record)
         if not email:
             logger.warning(f"No verified email found for ORCiD user {orcid_identifier}")
-            messages.error(request,
-                           "No verified email found in ORCiD profile. You must have a verified email in your ORCiD profile to log in.")
+            if request:
+                messages.error(
+                    request,
+                    "No verified email found in your ORCiD profile. "
+                    "You must have a verified email in ORCiD to log in."
+                )
             return None
 
+        # Lookup or create user
         try:
             user = User.objects.get(orcid=orcid_id)
             created = False
@@ -81,19 +72,19 @@ class OIDCBackend(BaseBackend):
             user = User(orcid=orcid_id, username=orcid_identifier)
             created = True
 
-        # Update user info fields
-        user.email = email or ""
-        user.given_name = given_name or ""
-        user.surname = family_name or ""
-        user.username = user.username or orcid_identifier
+        # Update user fields
+        user.email = email
+        user.given_name = given_name
+        user.surname = family_name
+        if not user.username:
+            user.username = orcid_identifier
 
         # Save user
         with transaction.atomic():
-            # Note: users.signals.py.welcome_email is triggered here if user is newly-created
             user.save()
 
-        # Store ORCiD ID in session
-        if request is not None:
+        # Store session values
+        if request:
             request.session["orcid_id"] = orcid_id
             request.session["orcid_given_name"] = user.given_name
             if created:
@@ -152,33 +143,25 @@ def decode_orcid_id_token(id_token):
 
 
 def orcid_callback(request):
-    logger.debug("Full request URL: %s", request.build_absolute_uri())
-    logger.debug("GET params: %s", request.GET)
-
-    # Fetch but do not immediately remove state/nonce
+    # --- CSRF protection: check state ---
     session_state = request.session.get("oidc_state")
-    session_nonce = request.session.get("oidc_nonce")
-
     state = request.GET.get("state")
-    if not state:
-        logger.error("Missing state parameter in ORCiD callback.")
-        return redirect("accounts:login")
-    if state != session_state:
+    if not state or state != session_state:
         logger.error(
-            "State mismatch. Possible CSRF attack. "
+            "State mismatch or missing state. "
             f"Session: {session_state}, Callback: {state}"
         )
         return redirect("accounts:login")
 
-    # Now safe to pop them to prevent reuse
+    # clear it so it can't be reused
     request.session.pop("oidc_state", None)
-    request.session.pop("oidc_nonce", None)
 
     code = request.GET.get("code")
     if not code:
-        logger.error("No authorization code provided by ORCiD.")
+        logger.error("No authorization code provided by ORCID.")
         return redirect("accounts:login")
 
+    # --- Exchange code for token ---
     token_url = f"{settings.ORCID_BASE}/oauth/token"
     data = {
         "client_id": settings.ORCID_CLIENT_ID,
@@ -197,46 +180,29 @@ def orcid_callback(request):
         logger.error(f"Token request failed: {e}")
         return redirect("accounts:login")
 
-    # Required tokens
-    id_token = token_json.get("id_token")
     access_token = token_json.get("access_token")
-    if not id_token or not access_token:
-        logger.error(f"ORCID did not return expected tokens: {token_json}")
+    orcid_id = token_json.get("orcid")
+    if not access_token or not orcid_id:
+        logger.error(f"ORCID did not return the required token.")
         return redirect("accounts:login")
 
-    # Verify ID token
-    claims = decode_orcid_id_token(id_token)
-    if not claims:
-        return redirect("accounts:login")
-
-    # Check nonce
-    if claims.get("nonce") != session_nonce:
-        logger.error("Nonce mismatch. Possible replay attack.")
-        return redirect("accounts:login")
-
-    # --- Fetch full ORCID record (member API) ---
+    # --- Fetch full ORCID record ---
     record = {}
-    orcid_id = claims.get("sub")
-    if orcid_id:
-        api_base = settings.ORCID_BASE.replace("//", "//api.")  # e.g. sandbox → api.sandbox
-        record_url = f"{api_base}/v3.0/{orcid_id}"
-        try:
-            record_response = requests.get(
-                record_url,
-                headers={"Authorization": f"Bearer {access_token}", "Accept": "application/json"}
-            )
-            record_response.raise_for_status()
-            record = record_response.json()
-        except requests.RequestException as e:
-            logger.warning(f"Failed to fetch ORCID full record: {e}")
+    api_base = settings.ORCID_BASE.replace("//", "//api.")  # e.g. sandbox → api.sandbox
+    record_url = f"{api_base}/v3.0/{orcid_id}/record"
 
-    combined_info = {
-        "claims": claims,
-        "record": record,
-    }
+    try:
+        record_response = requests.get(
+            record_url,
+            headers={"Authorization": f"Bearer {access_token}", "Accept": "application/json"},
+        )
+        record_response.raise_for_status()
+        record = record_response.json()
+    except requests.RequestException as e:
+        logger.warning(f"Failed to fetch ORCID record: {e}")
 
-    # Authenticate via backend with verified claims
-    user = auth.authenticate(request, **combined_info)
+    # --- Authenticate user in Django ---
+    user = auth.authenticate(request, orcid_id=orcid_id, record=record)
     if user:
         auth.login(request, user)
         if request.session.get("just_created_account", False):
