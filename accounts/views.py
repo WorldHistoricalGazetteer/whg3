@@ -16,35 +16,9 @@ from accounts.forms import UserModelForm
 from collection.models import CollectionGroupUser  # CollectionGroup,
 import logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('authentication')
 import traceback
 from urllib.parse import urlencode
-
-
-# def register(request):
-#     if request.method == 'POST':
-#         form = UserModelForm(request.POST)
-#         if form.is_valid():
-#             user = form.save(commit=False)
-#             user.set_password(request.POST['password1'])
-#             user.save()
-#
-#             signer = Signer()
-#             token = signer.sign(user.pk)
-#
-#             WHGmail(request, {
-#                 'template': 'register_confirm',
-#                 'subject': 'Confirm your registration at World Historical Gazetteer',
-#                 'confirm_url': urljoin(settings.URL_FRONT, reverse('accounts:confirm-email', args=[token])),
-#                 'user': user,
-#             })
-#
-#             return redirect('accounts:confirmation-sent')
-#         else:
-#             return render(request, 'register/register.html', {'form': form})
-#     else:
-#         form = UserModelForm()
-#         return render(request, 'register/register.html', {'form': form})
 
 
 def build_orcid_authorize_url(request):
@@ -94,7 +68,7 @@ def login(request):
                         if orcid_auth_url.startswith(settings.ORCID_BASE):
                             return redirect(orcid_auth_url)
                         else:
-                            messages.error(request, "Invalid ORCiD authorisation URL.")
+                            logger.error("Invalid ORCiD authorisation URL.")
                             return redirect('accounts:login')
                     else:
                         # No ORCiD URL provided, redirect to home

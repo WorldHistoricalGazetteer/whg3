@@ -10,7 +10,7 @@ from django.db import transaction
 from django.shortcuts import redirect
 
 User = get_user_model()
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('authentication')
 
 
 class OIDCBackend(BaseBackend):
@@ -107,12 +107,12 @@ def orcid_callback(request):
     # Validate state parameter
     state = request.GET.get("state")
     if not state or state != session_state:
-        messages.error(request, "Invalid state parameter. Possible CSRF attack.")
+        logger.error("Invalid state parameter. Possible CSRF attack.")
         return redirect("accounts:login")
 
     code = request.GET.get("code")
     if not code:
-        messages.error(request, "No authorization code provided by ORCiD.")
+        logger.error("No authorization code provided by ORCiD.")
         return redirect("accounts:login")
 
     token_url = f"{settings.ORCID_BASE}/oauth/token"
@@ -130,25 +130,25 @@ def orcid_callback(request):
         token_response.raise_for_status()
         token_json = token_response.json()
     except requests.RequestException as e:
-        messages.error(request, f"Token request failed: {e}")
+        logger.error(f"Token request failed: {e}")
         return redirect("accounts:login")
 
     # Required tokens
     id_token = token_json.get("id_token")
     access_token = token_json.get("access_token")
     if not id_token or not access_token:
-        messages.error(request, f"ORCID did not return expected tokens: {token_json}")
+        logger.error(f"ORCID did not return expected tokens: {token_json}")
         return redirect("accounts:login")
 
     # Verify nonce inside ID token
     try:
         claims = jwt.decode(id_token, options={"verify_signature": False})
     except jwt.DecodeError:
-        messages.error(request, "Invalid ID token received from ORCID.")
+        logger.error("Invalid ID token received from ORCID.")
         return redirect("accounts:login")
 
     if claims.get("nonce") != session_nonce:
-        messages.error(request, "Nonce mismatch. Possible replay attack.")
+        logger.error("Nonce mismatch. Possible replay attack.")
         return redirect("accounts:login")
 
     # Get userinfo (optional, since ID token already has claims)
@@ -160,7 +160,7 @@ def orcid_callback(request):
         userinfo_response.raise_for_status()
         userinfo = userinfo_response.json()
     except requests.RequestException as e:
-        messages.error(request, f"Failed to fetch user info: {e}")
+        logger.error(f"Failed to fetch user info: {e}")
         return redirect("accounts:login")
 
     # Authenticate user via custom backend
@@ -171,5 +171,5 @@ def orcid_callback(request):
             return redirect("profile")
         return redirect("home")
 
-    messages.error(request, "ORCID authentication failed.")
+    logger.error("ORCID authentication failed.")
     return redirect("accounts:login")

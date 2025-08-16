@@ -280,6 +280,14 @@ LOGGING = {
             'backupCount': 5,  # Number of backup files to keep
             'formatter': 'verbose',
         },
+        'authentication_file': {
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'whg/logs/authentication.log'),
+            'maxBytes': 10485760,  # 10 MB
+            'backupCount': 5,  # Number of backup files to keep
+            'formatter': 'verbose',
+        },
         'mapdata_file': {
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'class': 'logging.handlers.RotatingFileHandler',
@@ -354,6 +362,11 @@ LOGGING = {
         },
         'messaging': {
             'handlers': ['messaging_file', 'console'],
+            'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
+            'propagate': False,  # Ensure logs do not propagate to root logger
+        },
+        'authentication': {
+            'handlers': ['authentication_file', 'console'],
             'level': LOGGING_LEVELS.get(ENV_CONTEXT, 'DEBUG'),
             'propagate': False,  # Ensure logs do not propagate to root logger
         },
