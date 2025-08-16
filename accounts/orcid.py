@@ -27,7 +27,7 @@ class OIDCBackend(BaseBackend):
     - 'affiliation' or 'employments' (may be nested - you can extend to parse)
     """
 
-    def authenticate(self, request, claims=None, userinfo=None, **kwargs):
+    def authenticate(self, request, claims=None, userinfo=None, record=None, **kwargs):
         """
         Authenticate or create user based on ORCiD OIDC claims.
         """
@@ -36,7 +36,8 @@ class OIDCBackend(BaseBackend):
             return None  # No claims provided
         else:
             logger.debug(f"Claims received: {claims}")
-            logger.debug(f"Userinfo received: {userinfo}")
+            logger.debug(f"UserInfo received: {userinfo}")
+            logger.debug(f"ORCiD record received: {record}")
 
         # ORCiD is in 'sub' claim, a URI like https://orcid.org/0000-0002-1825-0097
         orcid_id = claims.get("sub")
@@ -209,7 +210,7 @@ def orcid_callback(request):
         logger.error("Nonce mismatch. Possible replay attack.")
         return redirect("accounts:login")
 
-    # Fetch userinfo as fallback
+    # --- Fetch userinfo (OIDC standard endpoint) ---
     try:
         userinfo_response = requests.get(
             f"{settings.ORCID_BASE}/oauth/userinfo",
@@ -221,35 +222,35 @@ def orcid_callback(request):
         logger.warning(f"Failed to fetch user info: {e}")
         userinfo = {}
 
-    # --- Fetch verified email(s) via ORCiD API ---
-    orcid_id = claims.get("sub") or userinfo.get("sub")
-    verified_emails = []
-    if orcid_id and access_token:
+    # --- Fetch full ORCID record (member API) ---
+    record = {}
+    orcid_id = claims.get("sub")
+    if orcid_id:
+        api_base = settings.ORCID_BASE.replace("//", "//api.")  # e.g. sandbox → api.sandbox
+        record_url = f"{api_base}/v3.0/{orcid_id}"
         try:
-            email_resp = requests.get(
-                f"{settings.ORCID_BASE.replace('//', '//api.')}/v3.0/{orcid_id}/email",
-                headers={
-                    "Authorization": f"Bearer {access_token}",
-                    "Accept": "application/json",
-                },
+            record_response = requests.get(
+                record_url,
+                headers={"Authorization": f"Bearer {access_token}", "Accept": "application/json"}
             )
-            email_resp.raise_for_status()
-            email_data = email_resp.json()
-            verified_emails = [
-                e.get("email")
-                for e in email_data.get("email", [])
-                if e.get("verified", False)
-            ]
+            record_response.raise_for_status()
+            record = record_response.json()
         except requests.RequestException as e:
-            logger.warning(f"Failed to fetch ORCiD emails: {e}")
+            logger.warning(f"Failed to fetch ORCID full record: {e}")
 
-    if verified_emails:
-        userinfo["email"] = verified_emails[0]  # pick first verified
-    else:
-        logger.warning(f"No verified email found for ORCiD user {orcid_id}")
+    logger.debug("ORCID claims: %s", claims)
+    logger.debug("ORCID userinfo: %s", userinfo)
+    logger.debug("ORCID full record: %s", record)
+
+    # Merge userinfo + record for downstream use
+    combined_info = {
+        "claims": claims,
+        "userinfo": userinfo,
+        "record": record,
+    }
 
     # Authenticate via backend with verified claims
-    user = auth.authenticate(request, claims=claims, userinfo=userinfo)
+    user = auth.authenticate(request, **combined_info)
     if user:
         auth.login(request, user)
         if request.session.get("just_created_account", False):
