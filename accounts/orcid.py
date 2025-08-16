@@ -76,8 +76,11 @@ class OIDCBackend(BaseBackend):
         user.email = email
         user.given_name = given_name
         user.surname = family_name
-        if not user.username:
-            user.username = orcid_identifier
+        with transaction.atomic():
+            user.save()  # assigns user.id for new users
+            if not user.username:
+                user.username = f"{given_name}-{family_name}-{user.id}"
+                user.save(update_fields=["username"])
 
         # Save user
         with transaction.atomic():
@@ -97,49 +100,6 @@ class OIDCBackend(BaseBackend):
             return User.objects.get(pk=user_id)
         except User.DoesNotExist:
             return None
-
-
-def get_orcid_jwks():
-    """Fetch ORCiD JWKS."""
-    jwks_url = f"{settings.ORCID_BASE}/oauth/jwks"
-    try:
-        resp = requests.get(jwks_url)
-        resp.raise_for_status()
-        return resp.json()
-    except requests.RequestException as e:
-        logger.error(f"Failed to fetch ORCiD JWKS: {e}")
-        return None
-
-
-def decode_orcid_id_token(id_token):
-    """Verify ID token signature and return claims."""
-    jwks = get_orcid_jwks()
-    if not jwks:
-        return None
-
-    unverified_header = jwt.get_unverified_header(id_token)
-    kid = unverified_header.get("kid")
-    if not kid:
-        logger.error("ID token missing 'kid' header")
-        return None
-
-    key_data = next((k for k in jwks["keys"] if k["kid"] == kid), None)
-    if not key_data:
-        logger.error("No matching JWK for token")
-        return None
-
-    public_key = RSAAlgorithm.from_jwk(key_data)
-    try:
-        claims = jwt.decode(
-            id_token,
-            key=public_key,
-            algorithms=["RS256"],
-            audience=settings.ORCID_CLIENT_ID,
-        )
-        return claims
-    except jwt.PyJWTError as e:
-        logger.error(f"Failed to verify ID token: {e}")
-        return None
 
 
 def orcid_callback(request):
@@ -206,7 +166,7 @@ def orcid_callback(request):
     if user:
         auth.login(request, user)
         if request.session.get("just_created_account", False):
-            return redirect("profile")
+            return redirect("profile-edit")
         return redirect("home")
 
     logger.error("ORCID authentication failed.")
