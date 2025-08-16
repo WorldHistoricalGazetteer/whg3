@@ -257,6 +257,6 @@ def profile_delete(request):
         user = request.user
         user.delete()
         messages.success(request, "Your account has been deleted.")
-        return redirect('homepage')
+        return redirect('home')
     else:
-        return redirect('profile')
+        return redirect('profile-edit')
