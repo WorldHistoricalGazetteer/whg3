@@ -7,6 +7,8 @@ from django.shortcuts import redirect
 from django.urls import path, re_path, include, get_resolver
 from django.views.decorators.cache import cache_page
 from django.views.generic.base import TemplateView
+
+from accounts import orcid
 from accounts.views import profile_edit
 from datasets.views import PublicListsView  # , DataListsView
 from main import views
@@ -74,7 +76,8 @@ urlpatterns = [
 
                   path('public_data/', PublicListsView.as_view(), name='public-lists'),
 
-                  # profile and settings
+                  # orcid authentication, profile and settings
+                  path('orcid-callback/', orcid.orcid_callback, name='orcid-callback'),
                   path('profile/', profile_edit, name="profile-edit"),
 
                   path('dashboard/', views.dashboard_redirect, name="dashboard"),  # redirect to user or admin
