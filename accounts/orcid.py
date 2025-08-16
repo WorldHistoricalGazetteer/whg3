@@ -9,6 +9,7 @@ from django.contrib.auth.backends import BaseBackend
 from django.db import transaction
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.utils.timezone import now
 from jwt.algorithms import RSAAlgorithm
 
 User = get_user_model()
@@ -32,7 +33,7 @@ def get_best_email(orcid_record: dict) -> str | None:
 
 class OIDCBackend(BaseBackend):
 
-    def authenticate(self, request, orcid_id=None, record=None, **kwargs):
+    def authenticate(self, request, orcid_id=None, record=None, token_json=None, **kwargs):
         """
         Authenticate or create user based on ORCiD record.
         """
@@ -69,18 +70,15 @@ class OIDCBackend(BaseBackend):
             user = User.objects.get(orcid=orcid_id)
             created = False
         except User.DoesNotExist:
-            user = User(orcid=orcid_id)
+            user = User(orcid=orcid_id, username=f"{given_name.replace(' ', '_')}-{family_name.replace(' ', '_')}-{orcid_identifier}")
             created = True
 
         # Update user fields
         user.email = email
         user.given_name = given_name
         user.surname = family_name
-        with transaction.atomic():
-            user.save()  # assigns user.id for new users
-            if not user.username:
-                user.username = f"{given_name.replace(' ', '-')}-{family_name.replace(' ', '-')}-{user.id}"
-                user.save(update_fields=["username"])
+        user.refresh_token = token_json.get("refresh_token")
+        user.token_expires_at = now() + token_json.get("expires_in")
 
         # Save user
         with transaction.atomic():
@@ -162,7 +160,7 @@ def orcid_callback(request):
         logger.warning(f"Failed to fetch ORCID record: {e}")
 
     # --- Authenticate user in Django ---
-    user = auth.authenticate(request, orcid_id=orcid_id, record=record)
+    user = auth.authenticate(request, orcid_id=orcid_id, record=record, token_json=token_json)
     if user:
         auth.login(request, user)
         if request.session.get("just_created_account", False):
