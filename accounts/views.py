@@ -58,7 +58,7 @@ def build_orcid_authorize_url(request):
         "client_id": settings.ORCID_CLIENT_ID,
         "response_type": "code",
         "scope": "openid email",
-        "redirect_uri": request.build_absolute_uri(reverse("accounts:orcid-callback")),
+        "redirect_uri": request.build_absolute_uri(reverse("orcid-callback")),
         "state": state,
         "nonce": nonce,
     }
@@ -74,7 +74,7 @@ def login(request):
         # Check for missing fields
         if not username or not password:
             messages.error(request, "Both Username and Password are required.")
-            return render(request, 'accounts/login.html')
+            return redirect("accounts:login")
 
         try:
             # Check if user exists
