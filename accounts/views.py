@@ -219,6 +219,7 @@ def profile_edit(request):
         'is_admin': is_admin,
         'newly_created': newly_created,
         'form': form,
+        'ORCID_BASE': settings.ORCID_BASE,
     }
     return render(request, 'accounts/profile.html', context=context)
 
