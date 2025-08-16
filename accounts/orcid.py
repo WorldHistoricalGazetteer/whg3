@@ -34,6 +34,9 @@ class OIDCBackend(BaseBackend):
             logger.warning("No id_token or userinfo provided for ORCiD authentication.")
             return None
 
+        logger.debug("Received id_token: %s", id_token)
+        logger.debug("Received userinfo: %s", userinfo)
+
         # Prefer userinfo dict, fallback to decoded id_token claims
         claims = userinfo or id_token
 
