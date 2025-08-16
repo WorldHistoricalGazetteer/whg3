@@ -135,7 +135,7 @@ def decode_orcid_id_token(id_token):
         claims = jwt.decode(
             id_token,
             key=public_key,
-            algorithms=[key_data["alg"]],
+            algorithms=["RS256"],
             audience=settings.ORCID_CLIENT_ID,
         )
         return claims
