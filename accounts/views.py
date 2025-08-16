@@ -31,7 +31,7 @@ def build_orcid_authorize_url(request):
     params = {
         "client_id": settings.ORCID_CLIENT_ID,
         "response_type": "code",
-        "scope": "openid email",
+        "scope": "openid /orcid-profile /orcid-email",
         "redirect_uri": request.build_absolute_uri(reverse("orcid-callback")),
         "state": state,
         "nonce": nonce,
