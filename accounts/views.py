@@ -215,6 +215,8 @@ def profile_edit(request):
     newly_created = request.session.pop("just_created_account", False)
     is_admin = request.user.groups.filter(name='whg_admins').exists()
 
+    logger.debug(f"User {request.user.username} is admin: {is_admin}, newly created: {newly_created}")
+
     context = {
         'is_admin': is_admin,
         'newly_created': newly_created,
