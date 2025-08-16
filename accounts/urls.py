@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, orcid
 from django.contrib.auth.views import * 
 
 app_name = "accounts"
@@ -8,6 +8,7 @@ urlpatterns = [
     # path('register/', views.register, name='register'),
     path('login/', views.login, name='login'),
     path('logout/', views.logout, name='logout'),
+    path('orcid-callback/', orcid.orcid_callback, name='orcid-callback'),
     # path('profile/', views.update_profile, name='profile'),
     path('confirm_email/<str:token>/', views.confirm_email, name='confirm-email'),
     path('confirmation_sent/', views.confirmation_sent, name='confirmation-sent'),

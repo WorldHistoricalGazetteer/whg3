@@ -115,13 +115,13 @@ def orcid_callback(request):
         messages.error(request, "No authorization code provided by ORCiD.")
         return redirect("accounts:login")
 
-    token_url = "https://orcid.org/oauth/token"
+    token_url = f"{settings.ORCID_BASE}/oauth/token"
     data = {
         "client_id": settings.ORCID_CLIENT_ID,
         "client_secret": settings.ORCID_CLIENT_SECRET,
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": request.build_absolute_uri("/accounts/orcid/callback/"),
+        "redirect_uri": request.build_absolute_uri("/orcid-callback/"),
     }
     headers = {"Accept": "application/json"}
 
@@ -155,7 +155,7 @@ def orcid_callback(request):
     # Get userinfo from ORCiD userinfo endpoint
     try:
         userinfo_response = requests.get(
-            "https://orcid.org/oauth/userinfo",
+            f"{settings.ORCID_BASE}/oauth/userinfo",
             headers={"Authorization": f"Bearer {access_token}"}
         )
         userinfo_response.raise_for_status()

@@ -165,6 +165,7 @@
             </h4>
             <form method="post" action="{% url 'accounts:login' %}">
                 {% csrf_token %}
+                <input type="hidden" name="orcid_auth_url" value="{{ orcid_auth_url }}">
                 <div class="mb-3">
                     <input
                             type="text"

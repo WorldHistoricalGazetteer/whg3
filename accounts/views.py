@@ -56,6 +56,7 @@ def login(request):
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
+        orcid_auth_url = request.POST.get('orcid_auth_url', '')
 
         # Check for missing fields
         if not username or not password:
@@ -74,7 +75,17 @@ def login(request):
                 user = auth.authenticate(request, username=username, password=password)
                 if user is not None:
                     auth.login(request, user)
-                    return redirect('home')
+                    # Redirect to the ORCiD authorisation URL if provided
+                    if orcid_auth_url:
+                        # Ensure the ORCiD URL is valid
+                        if orcid_auth_url.startswith(settings.ORCID_BASE):
+                            return redirect(orcid_auth_url)
+                        else:
+                            messages.error(request, "Invalid ORCiD authorisation URL.")
+                            return redirect('accounts:login')
+                    else:
+                        # No ORCiD URL provided, redirect to home
+                        return redirect('home')
                 else:
                     # Authentication fails
                     messages.error(request, "Invalid password.")
@@ -93,7 +104,7 @@ def login(request):
         request.session['oidc_nonce'] = nonce
 
         # Construct ORCiD authorization URL
-        orcid_base_authorize_url = "https://orcid.org/oauth/authorize"
+        orcid_base_authorize_url = f"{settings.ORCID_BASE}/oauth/authorize"
         params = {
             "client_id": settings.ORCID_CLIENT_ID,
             "response_type": "code",
