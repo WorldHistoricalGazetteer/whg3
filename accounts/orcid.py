@@ -221,6 +221,33 @@ def orcid_callback(request):
         logger.warning(f"Failed to fetch user info: {e}")
         userinfo = {}
 
+    # --- Fetch verified email(s) via ORCiD API ---
+    orcid_id = claims.get("sub") or userinfo.get("sub")
+    verified_emails = []
+    if orcid_id and access_token:
+        try:
+            email_resp = requests.get(
+                f"{settings.ORCID_API_BASE}/v3.0/{orcid_id}/email",
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Accept": "application/json",
+                },
+            )
+            email_resp.raise_for_status()
+            email_data = email_resp.json()
+            verified_emails = [
+                e.get("email")
+                for e in email_data.get("email", [])
+                if e.get("verified", False)
+            ]
+        except requests.RequestException as e:
+            logger.warning(f"Failed to fetch ORCiD emails: {e}")
+
+    if verified_emails:
+        userinfo["email"] = verified_emails[0]  # pick first verified
+    else:
+        logger.warning(f"No verified email found for ORCiD user {orcid_id}")
+
     # Authenticate via backend with verified claims
     user = auth.authenticate(request, claims=claims, userinfo=userinfo)
     if user:
