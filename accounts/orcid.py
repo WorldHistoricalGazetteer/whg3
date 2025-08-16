@@ -65,18 +65,21 @@ class OIDCBackend(BaseBackend):
 
         if not email:
             logger.warning(f"No verified email found for ORCiD user {orcid_identifier}")
+            messages.error(request, "No verified email found in ORCiD profile. You must have a verified email in your ORCiD profile to log in.")
+            return None
 
         try:
             user = User.objects.get(orcid=orcid_id)
             created = False
         except User.DoesNotExist:
-            user = User(orcid=orcid_id)
+            user = User(orcid=orcid_id, username=orcid_identifier)
             created = True
 
         # Update user info fields
         user.email = email or ""
         user.given_name = given_name or ""
         user.surname = family_name or ""
+        user.username = user.username or orcid_identifier
 
         # Save user
         with transaction.atomic():

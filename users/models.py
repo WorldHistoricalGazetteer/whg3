@@ -73,7 +73,7 @@ class User(AbstractUser, PermissionsMixin):
     web_page = models.URLField(max_length=255, null=True, blank=True)
     name = models.CharField(max_length=255)  # TODO: Currently generated from given_name + surname; could use `Publication Name` from ORCiD
 
-    # TODO: For new users, generate a unique username based on names, ORCiD, or other criteria (see `save` method below)
+    # For new users, the unique username is the plain ORCiD (without https://orcid.org/)
     username = models.CharField(max_length=100, unique=True)
 
     role = models.CharField(max_length=24, choices=USER_ROLE, default="normal")
