@@ -227,7 +227,7 @@ def orcid_callback(request):
     if orcid_id and access_token:
         try:
             email_resp = requests.get(
-                f"{settings.ORCID_API_BASE}/v3.0/{orcid_id}/email",
+                f"{settings.ORCID_BASE.replace('//', '//api.')}/v3.0/{orcid_id}/email",
                 headers={
                     "Authorization": f"Bearer {access_token}",
                     "Accept": "application/json",
