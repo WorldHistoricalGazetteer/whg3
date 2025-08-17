@@ -77,9 +77,6 @@ class User(AbstractUser, PermissionsMixin):
     role = models.CharField(max_length=24, choices=USER_ROLE, default="normal")
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    image_file = ResizedImageField(
-        size=[800, 600], upload_to=user_directory_path, blank=True, null=True
-    )
     news_permitted = models.BooleanField(default=False)
 
     # TODO: Remove following migration to ORCiD authentication

@@ -8,9 +8,6 @@ urlpatterns = [
     # path('register/', views.register, name='register'),
     path('login/', views.login, name='login'),
     path('logout/', views.logout, name='logout'),
-    path('confirm_email/<str:token>/', views.confirm_email, name='confirm-email'),
-    path('confirmation_sent/', views.confirmation_sent, name='confirmation-sent'),
-    path('confirmation_success/', views.confirmation_success, name='confirmation-success'),
 
     path('profile/news-toggle/', views.profile_news_toggle, name='profile-news-toggle'),
     path('profile/download/', views.profile_download, name='profile-download'),

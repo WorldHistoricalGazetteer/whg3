@@ -102,41 +102,6 @@ def logout(request):
         return redirect('home')
 
 
-def confirm_email(request, token):
-    signer = Signer()
-    try:
-        user_id = signer.unsign(token)
-        user = User.objects.get(pk=user_id)
-        user.email_confirmed = True
-        user.save()
-
-        # Redirect to a success page
-        return redirect('accounts:confirmation-success')
-    except BadSignature:
-        # Handle invalid token
-        logger.error(f"Invalid token: {token}")
-        traceback.print_exc()
-        return render(request, 'register/invalid_token.html', {'error': 'Invalid token.'})
-    except User.DoesNotExist:
-        # Handle non-existent user
-        logger.error(f"User does not exist for token: {token}")
-        traceback.print_exc()
-        return render(request, 'register/invalid_token.html', {'error': 'User does not exist.'})
-    except Exception as e:
-        # Handle any other exceptions
-        logger.error(f"Exception while confirming email for token {token}: {str(e)}")
-        traceback.print_exc()
-        return render(request, 'register/invalid_token.html', {'error': str(e)})
-
-
-def confirmation_sent(request):
-    return render(request, 'register/confirmation_sent.html')
-
-
-def confirmation_success(request):
-    return render(request, 'register/confirmation_success.html')
-
-
 class CustomPasswordResetView(auth_views.PasswordResetView):
     template_name = 'register/password_reset_form.html'
 
