@@ -85,8 +85,8 @@ footer {
   font-family: 'Raleway', sans-serif;
 }
 
-.alert.padded {
-    padding: 1rem;
+#login-orcid-explainer .alert.padded {
+    padding: 1rem 1rem 0 1rem !important;
 }
 
 @keyframes pulse {
