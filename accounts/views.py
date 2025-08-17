@@ -217,7 +217,9 @@ def add_to_group(cg, member):
 def profile_edit(request):
     form = UserModelForm(instance=request.user)
 
-    needs_news_check = request.user.pop("_needs_news_check", False)
+    needs_news_check = getattr(request.user, "_needs_news_check", False)
+    if needs_news_check:
+        delattr(request.user, "_needs_news_check")
     is_admin = request.user.groups.filter(name='whg_admins').exists()
 
     logger.debug(f"User {request.user.username} is admin: {is_admin}, newly created: {needs_news_check}")
