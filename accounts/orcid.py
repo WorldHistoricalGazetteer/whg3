@@ -195,7 +195,7 @@ class OIDCBackend(BaseBackend):
             request.session["orcid_id"] = orcid_id
             request.session["orcid_given_name"] = user.given_name
             if needs_news_check:
-                user._needs_news_check = True
+                request.session["_needs_news_check"] = True
 
         return user
 
