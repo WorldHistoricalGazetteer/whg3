@@ -82,6 +82,10 @@ def login(request):
             messages.error(request, "Invalid username.")
             return redirect('accounts:login')  # Or render with an error message
     else:
+        # Prevent login page view if user is already authenticated
+        if request.user.is_authenticated:
+            return redirect('home')
+
         # GET request, render the login page with ORCiD auth URL
         return render(
             request,
