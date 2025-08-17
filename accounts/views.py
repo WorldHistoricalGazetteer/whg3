@@ -217,14 +217,9 @@ def add_to_group(cg, member):
 def profile_edit(request):
     form = UserModelForm(instance=request.user)
 
-    needs_news_check = request.session.pop("_needs_news_check", False)
-    is_admin = request.user.groups.filter(name='whg_admins').exists()
-
-    logger.debug(f"User {request.user.username} is admin: {is_admin}, newly created: {needs_news_check}")
-
     context = {
-        'is_admin': is_admin,
-        'needs_news_check': needs_news_check,
+        'is_admin': request.user.groups.filter(name='whg_admins').exists(),
+        'needs_news_check': request.session.pop("_needs_news_check", False),
         'form': form,
         'ORCID_BASE': settings.ORCID_BASE,
     }
