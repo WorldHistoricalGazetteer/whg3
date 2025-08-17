@@ -149,11 +149,11 @@ class OIDCBackend(BaseBackend):
         if not email:
             logger.warning(f"No verified email found for ORCiD user {orcid_identifier}")
             if request:
-                messages.error(
-                    request,
-                    "No verified email found in your ORCiD profile. "
-                    "You must have a verified email in ORCiD to log in."
-                )
+                messages.error(request,
+                               "<h4><i class='fas fa-triangle-exclamation'></i> Your email address cannot be read.</h4>" +
+                               "<p>As detailed below, It is a requirement of WHG registration that you have at least one verified email address with visibility set to 'Trusted parties'.</p>" +
+                               f"<p>Please check your <a href='{settings.ORCID_BASE}/my-orcid' target='_blank' rel='noopener noreferrer'>ORCiD profile</a> and then try again.</p>"
+                               )
             return None
 
         # Lookup or create user

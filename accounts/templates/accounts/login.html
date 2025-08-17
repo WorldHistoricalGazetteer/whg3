@@ -106,13 +106,13 @@
             </div>
 
             {% if messages %}
-                {% for message in messages %}
-                    {% if not message.tags == 'success' %}
-                        <div class="alert {{ message.tags }} padded mt-3 mb-0 pulsing">
-                            {{ message|safe }}
-                        </div>
-                    {% endif %}
-                {% endfor %}
+            {% for message in messages %}
+            {% if not message.tags == 'success' %}
+            <div class="alert {{ message.tags }} padded mt-3 mb-0 pulsing">
+                {{ message|safe }}
+            </div>
+            {% endif %}
+            {% endfor %}
             {% endif %}
 
         </div>
@@ -130,16 +130,20 @@
                 <strong>
                     <i class="fas fa-info-circle text-primary me-1"></i>No ORCiD account? <i>No problem!</i>
                 </strong>
-                You can create one during sign-in. When you register (or the first time you sign in) with ORCiD, we will ask for your
+                You can create one during sign-in. When you register (or the first time you sign in) with ORCiD, we will
+                ask for your
                 permission to:
             </p>
             <div class="alert alert-info small mb-3" role="alert">
                 <ul class="mb-0 ps-3">
-                    <li>Access your public ORCiD record (name, ORCiD iD, and affiliation) — this information will already
+                    <li>Access your public ORCiD record (name, ORCiD iD, and affiliation) — this information will
+                        already
                         be visible on your ORCiD profile.
                     </li>
-                    <li>Read your registered email address so we can contact you about your WHG account when strictly
-                        necessary.
+                    <li>
+                        Read any of your information which has visibility set to "Trusted parties". <b>It is a
+                        requirement of WHG registration that you have at least one verified email address with
+                        visibility set to "Trusted parties".</b>
                     </li>
                     <li>Store this information securely in your WHG profile.</li>
                     <li>After your WHG account is created, we will ask separately for your consent to receive our
