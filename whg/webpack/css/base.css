@@ -85,6 +85,19 @@ footer {
   font-family: 'Raleway', sans-serif;
 }
 
+.alert.padded {
+    padding: 1rem;
+}
+
+@keyframes pulse {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+.pulsing {
+  animation: pulse 1s ease-in-out 3;
+}
+
 #input button.disabledButton {
 	opacity: .6;
 }
