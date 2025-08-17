@@ -80,7 +80,7 @@ def login(request):
                     return redirect('accounts:login')
         except User.DoesNotExist:
             # User not found
-            messages.error(request, "<h3><i class='fas fa-triangle-exclamation'></i> Invalid WHG username.</h3><p>Please correct this and try again.</p>")
+            messages.error(request, "<h4><i class='fas fa-triangle-exclamation'></i> Invalid WHG username.</h4><p>Please correct this and try again.</p>")
             return redirect('accounts:login')
     else:
         # Prevent login page view if user is already authenticated

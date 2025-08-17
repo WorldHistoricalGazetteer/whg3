@@ -108,7 +108,7 @@
             {% if messages %}
                 {% for message in messages %}
                     {% if not message.tags == 'success' %}
-                        <div class="alert {{ message.tags }} padded mt-3 pulsing">
+                        <div class="alert {{ message.tags }} padded mt-3 mb-0 pulsing">
                             {{ message|safe }}
                         </div>
                     {% endif %}
