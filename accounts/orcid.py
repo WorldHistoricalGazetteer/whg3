@@ -269,7 +269,7 @@ def orcid_callback(request):
     user = auth.authenticate(request, orcid_id=orcid_id, record=record, token_json=token_json, backend=OIDCBackend)
     if user:
         auth.login(request, user)
-        if getattr(user, "_needs_news_check", False):
+        if request.session.get("_needs_news_check", False):
             return redirect("profile-edit")
         return redirect("home")
 
