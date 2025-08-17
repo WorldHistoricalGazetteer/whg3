@@ -190,12 +190,7 @@ class OIDCBackend(BaseBackend):
         with transaction.atomic():
             user.save()
 
-        # Store session values
-        if request:
-            request.session["orcid_id"] = orcid_id
-            request.session["orcid_given_name"] = user.given_name
-            if needs_news_check:
-                request.session["_needs_news_check"] = True
+        user._needs_news_check = needs_news_check
 
         return user
 
@@ -269,7 +264,8 @@ def orcid_callback(request):
     user = auth.authenticate(request, orcid_id=orcid_id, record=record, token_json=token_json, backend=OIDCBackend)
     if user:
         auth.login(request, user)
-        if request.session.get("_needs_news_check", False):
+        if getattr(user, "_needs_news_check", False):
+            request.session["_needs_news_check"] = True
             return redirect("profile-edit")
         return redirect("home")
 
