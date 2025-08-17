@@ -41,6 +41,7 @@ def build_orcid_authorize_url(request):
 
 def login(request):
     if request.method == 'POST':
+        # Legacy WHG Login -> ORCiD
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '').strip()
         orcid_auth_url = request.POST.get('orcid_auth_url', '')
@@ -79,8 +80,8 @@ def login(request):
                     return redirect('accounts:login')
         except User.DoesNotExist:
             # User not found
-            messages.error(request, "Invalid username.")
-            return redirect('accounts:login')  # Or render with an error message
+            messages.error(request, "<h3>Invalid WHG username.</h3><p>Please correct this and try again.</p>")
+            return redirect('accounts:login')
     else:
         # Prevent login page view if user is already authenticated
         if request.user.is_authenticated:
