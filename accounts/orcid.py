@@ -157,6 +157,8 @@ class OIDCBackend(BaseBackend):
                                )
             return None
 
+        needs_news_check = False
+
         if request and request.user.is_authenticated and not request.user.orcid:
             # Existing legacy user, now linking ORCiD
             if User.objects.filter(orcid=orcid_id).exclude(pk=request.user.pk).exists():
