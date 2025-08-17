@@ -223,6 +223,9 @@ def profile_edit(request):
         'form': form,
         'ORCID_BASE': settings.ORCID_BASE,
     }
+
+    logger.debug(context)
+
     return render(request, 'accounts/profile.html', context=context)
 
 
