@@ -95,7 +95,7 @@ footer {
   100% { opacity: 1; }
 }
 .pulsing {
-  animation: pulse 1s ease-in-out 3;
+  animation: pulse 1s ease-in-out 6;
 }
 
 #input button.disabledButton {

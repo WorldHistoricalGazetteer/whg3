@@ -143,6 +143,7 @@ class OIDCBackend(BaseBackend):
         name_obj = person.get("name", {}) if person else {}
         given_name = name_obj.get("given-names", {}).get("value") or ""
         family_name = name_obj.get("family-name", {}).get("value") or ""
+        new_username = f"{given_name.replace(' ', '_')}-{family_name.replace(' ', '_')}-{orcid_identifier}"
 
         # Extract verified email(s)
         email = get_best_email(record)
@@ -156,23 +157,23 @@ class OIDCBackend(BaseBackend):
                                )
             return None
 
-        # Is user already logged in under legacy authentication?
         if request and request.user.is_authenticated and not request.user.orcid:
+            # Existing legacy user, now linking ORCiD
             if User.objects.filter(orcid=orcid_id).exclude(pk=request.user.pk).exists():
                 messages.error(request, "This ORCiD is already linked to another account.")
                 return None
-            # User is logged in but not linked to ORCiD, update their ORCiD ID
+            # User is logged in but not linked to ORCiD, update their ORCiD ID and username
             user = request.user
             user.orcid = orcid_id
+            user.username = new_username
             needs_news_check = True
         else:
-            # If not, lookup or create user
-            try:
-                user = User.objects.get(orcid=orcid_id)
-                needs_news_check = False
-            except User.DoesNotExist:
-                user = User(orcid=orcid_id,
-                            username=f"{given_name.replace(' ', '_')}-{family_name.replace(' ', '_')}-{orcid_identifier}")
+            # Lookup or create by ORCiD
+            user, created = User.objects.get_or_create(
+                orcid=orcid_id,
+                defaults={"username": new_username},
+            )
+            if created:
                 needs_news_check = True
 
         # Update user fields
