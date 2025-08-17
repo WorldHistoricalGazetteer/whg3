@@ -156,14 +156,24 @@ class OIDCBackend(BaseBackend):
                                )
             return None
 
-        # Lookup or create user
-        try:
-            user = User.objects.get(orcid=orcid_id)
-            created = False
-        except User.DoesNotExist:
-            user = User(orcid=orcid_id,
-                        username=f"{given_name.replace(' ', '_')}-{family_name.replace(' ', '_')}-{orcid_identifier}")
-            created = True
+        # Is user already logged in under legacy authentication?
+        if request and request.user.is_authenticated and not request.user.orcid:
+            if User.objects.filter(orcid=orcid_id).exclude(pk=request.user.pk).exists():
+                messages.error(request, "This ORCiD is already linked to another account.")
+                return None
+            # User is logged in but not linked to ORCiD, update their ORCiD ID
+            user = request.user
+            user.orcid = orcid_id
+            needs_news_check = True
+        else:
+            # If not, lookup or create user
+            try:
+                user = User.objects.get(orcid=orcid_id)
+                needs_news_check = False
+            except User.DoesNotExist:
+                user = User(orcid=orcid_id,
+                            username=f"{given_name.replace(' ', '_')}-{family_name.replace(' ', '_')}-{orcid_identifier}")
+                needs_news_check = True
 
         # Update user fields
         user.email = email
@@ -184,8 +194,8 @@ class OIDCBackend(BaseBackend):
         if request:
             request.session["orcid_id"] = orcid_id
             request.session["orcid_given_name"] = user.given_name
-            if created:
-                user._just_created = True
+            if needs_news_check:
+                user._needs_news_check = True
 
         return user
 
@@ -256,11 +266,10 @@ def orcid_callback(request):
         logger.warning(f"Failed to fetch ORCID record: {e}")
 
     # --- Authenticate user in Django ---
-    user = auth.authenticate(request, orcid_id=orcid_id, record=record, token_json=token_json)
+    user = auth.authenticate(request, orcid_id=orcid_id, record=record, token_json=token_json, backend=OIDCBackend)
     if user:
         auth.login(request, user)
-        if getattr(user, "_just_created", False):
-            request.session["just_created_account"] = True
+        if getattr(user, "_needs_news_check", False):
             return redirect("profile-edit")
         return redirect("home")
 

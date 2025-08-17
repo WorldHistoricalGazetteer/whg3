@@ -59,8 +59,8 @@ def login(request):
                 request.session['username_for_reset'] = username
                 return redirect('accounts:password_reset')
             else:
-                # Attempt to authenticate only if no password reset is required
-                user = auth.authenticate(request, username=username, password=password)
+                # Attempt to authenticate using legacy backend only if no password reset is required
+                user = auth.authenticate(request, username=username, password=password, backend='django.contrib.auth.backends.ModelBackend')
                 if user is not None:
                     auth.login(request, user)
                     # Redirect to the ORCiD authorisation URL if provided
@@ -217,14 +217,14 @@ def add_to_group(cg, member):
 def profile_edit(request):
     form = UserModelForm(instance=request.user)
 
-    newly_created = request.session.pop("just_created_account", False)
+    needs_news_check = request.user.pop("_needs_news_check", False)
     is_admin = request.user.groups.filter(name='whg_admins').exists()
 
-    logger.debug(f"User {request.user.username} is admin: {is_admin}, newly created: {newly_created}")
+    logger.debug(f"User {request.user.username} is admin: {is_admin}, newly created: {needs_news_check}")
 
     context = {
         'is_admin': is_admin,
-        'newly_created': newly_created,
+        'needs_news_check': needs_news_check,
         'form': form,
         'ORCID_BASE': settings.ORCID_BASE,
     }

@@ -7,7 +7,7 @@
       <i class="fas fa-user-circle me-2"></i> Personal Data
     </h3>
 
-    {% if newly_created %}
+    {% if needs_news_check %}
     <div class="alert alert-warning">
       Welcome, {{ user.name }}!
       Your account has been created via ORCiD.
@@ -64,7 +64,7 @@
     <!-- Preferences Section -->
     <section>
       <h5 class="mb-3 fw-semibold"><i class="fas fa-cog me-2"></i> Preferences</h5>
-      {% if newly_created %}
+      {% if needs_news_check %}
       <div class="alert alert-warning">
         Please consider signing up for our occasional news and updates.
         You can change your mind at any time by returning to this Profile page.
