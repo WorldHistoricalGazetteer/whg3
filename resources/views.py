@@ -1,13 +1,13 @@
 import logging
 
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.cache import cache
-from django.db.models import ExpressionWrapper, BooleanField, Q
+from django.db.models import ExpressionWrapper, BooleanField
 from django.db.models.functions import Random
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.views.generic import (FormView, UpdateView, DetailView, DeleteView)
-from django.views.generic.list import ListView
+from django.views.decorators.http import require_GET
+from django.views.generic import (FormView, UpdateView, DetailView, DeleteView, TemplateView)
 
 from collection.models import Collection
 from main.models import Log
@@ -16,50 +16,87 @@ from .models import *
 
 logger = logging.getLogger(__name__)
 
-#
-# TeachingPortalView()
-# displays essay and gallery of resources
-class TeachingPortalView(ListView):
-    redirect_field_name = 'redirect_to'
-    context_object_name = 'resource_list'
-    template_name = 'resources/teaching.html'
-    model = Resource
 
-    def get_queryset(self):
-        return (
-            super()
-            .get_queryset()
-            .filter(public=True)
-            .annotate(
-                is_featured=ExpressionWrapper(
-                    Q(featured__isnull=False),
-                    output_field=BooleanField()
-                )
+@require_GET
+def teaching_json(request):
+    # Main queryset
+    resources_qs = (
+        Resource.objects.filter(public=True)
+        .annotate(
+            is_featured=ExpressionWrapper(
+                Q(featured__isnull=False),
+                output_field=BooleanField()
             )
-            .order_by('-is_featured', Random())
         )
+        .order_by("-is_featured", Random())
+        .prefetch_related("regions")
+    )
 
-    def get_context_data(self, *args, **kwargs):
-        context = super(TeachingPortalView, self).get_context_data(*args, **kwargs)
-        resources = context['resource_list']
+    # Resources serialised
+    resources = [
+        {
+            "id": r.id,
+            "title": r.title,
+            "type": r.type,
+            "description": r.description,
+            "is_featured": r.is_featured,
+            "regions": [area.id for area in r.regions.all()],
+        }
+        for r in resources_qs
+    ]
 
-        # group membership check
-        context['beta_or_better'] = self.request.user.groups.filter(
-            name__in=['beta', 'admins']
-        ).exists()
+    # Unique region IDs across all resources
+    region_ids = sorted({rid for r in resources for rid in r["regions"]})
 
-        context['regions'] = sorted({area.id for r in resources for area in r.regions.all()})
-
-        # nominated collections
-        context['nominated'] = (
-            Collection.objects
-            .filter(status='nominated', collection_class='place', public=True)
-            .order_by('title')
+    # Nominated collections
+    nominated = list(
+        Collection.objects.filter(
+            status="nominated", collection_class="place", public=True
         )
+        .order_by("title")
+        .values("id", "title", "owner__name", "description")
+    )
 
-        context['total_resources'] = resources.count()
+    # Area features (GeoJSON)
+    qs = Area.objects.filter(
+        type="predefined",
+        description="UN Statistical Division Sub-Region",
+        id__in=region_ids,
+    ).values("id", "title", "type", "description", "geojson")
 
-        return context
+    area_geojson = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "id": a["id"],
+                "properties": {
+                    "title": a["title"],
+                    "type": a["type"],
+                    "description": a["description"],
+                },
+                "geometry": a["geojson"],
+            }
+            for a in qs
+        ],
+    }
+
+    data = {
+        "resources": resources,
+        "regions": region_ids,
+        "nominated": nominated,
+        "total_resources": len(resources),
+        "areas": area_geojson,
+    }
+
+    return JsonResponse(data, safe=False, json_dumps_params={"ensure_ascii": False})
+
+
+class TeachingPortalView(TemplateView):
+    """
+    Renders the teaching portal page with a gallery of resources.
+    """
+    template_name = "resources/teaching.html"
 
 
 def handle_resource_file(f):

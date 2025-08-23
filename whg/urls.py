@@ -7,6 +7,8 @@ from django.shortcuts import redirect
 from django.urls import path, re_path, include, get_resolver
 from django.views.decorators.cache import cache_page
 from django.views.generic.base import TemplateView
+
+import resources.views
 from accounts.views import profile_edit
 from datasets.views import PublicListsView  # , DataListsView
 from main import views
@@ -71,6 +73,7 @@ urlpatterns = [
                   path('whgmail/', include('whgmail.urls')),
 
                   path('teaching/', TeachingPortalView.as_view(), name="teaching"),
+                  path("api/teaching/", resources.views.teaching_json, name="teaching_json"),
 
                   path('public_data/', PublicListsView.as_view(), name='public-lists'),
 
