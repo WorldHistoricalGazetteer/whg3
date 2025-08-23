@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.cache import cache
 from django.db.models import ExpressionWrapper, BooleanField, Q
 from django.db.models.functions import Random
 from django.shortcuts import get_object_or_404, redirect
@@ -40,20 +41,18 @@ class TeachingPortalView(ListView):
 
     def get_context_data(self, *args, **kwargs):
         context = super(TeachingPortalView, self).get_context_data(*args, **kwargs)
+        resources = context['resource_list']
 
         # group membership check
         context['beta_or_better'] = self.request.user.groups.filter(
             name__in=['beta', 'admins']
         ).exists()
 
-        # regions:
-        regions_qs = (
-            Area.objects.filter(resources__public=True)
-            .values_list('id', flat=True)
-            .distinct()
-            .order_by('id')
-        )
-        context['regions'] = list(regions_qs)
+        region_ids = cache.get('teaching_regions')
+        if not region_ids:
+            region_ids = sorted({area.id for r in resources for area in r.regions.all()})
+            cache.set('teaching_regions', region_ids, 60*60)  # 1 hour cache
+        context['regions'] = region_ids
 
         # nominated collections
         context['nominated'] = (
@@ -62,9 +61,7 @@ class TeachingPortalView(ListView):
             .order_by('title')
         )
 
-        # counts: avoid materialising querysets
-        qs = context['resource_list']
-        context['total_resources'] = qs.count()
+        context['total_resources'] = resources.count()
 
         return context
 
