@@ -36,6 +36,19 @@ docker logs -f web_dev-whgazetteer-org_staging
 docker logs -f celery-worker_dev-whgazetteer-org_staging
 ```
 
+#### Monitor Django Logs
+```
+# For example, `validation` log on `staging` branch:
+docker exec -it web_dev-whgazetteer-org_staging bash -c "tail -f ./whg/logs/validation.log"
+
+```
+
+```
+# For example, `authentication` log on `orcid-integration` branch:
+docker exec -it web_dev-whgazetteer-org_orcid-integration bash -c "tail -f ./whg/logs/authentication.log"
+
+```
+
 ## Deploy to Main from Staging
 
 Firstly, merge `staging` into `main`:
