@@ -13,7 +13,7 @@ git pull origin staging && sudo python3 ./server-admin/load_env.py
 - _Or, to switch to a different branch_
 ```bash
 git fetch origin
-git reset --hard origin/staging  # Replace "staging" with the desired branch name
+git checkout staging  # Replace "staging" with the desired branch name
 ```
 - If all is OK, restart network:
 ```bash
