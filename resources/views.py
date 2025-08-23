@@ -48,11 +48,7 @@ class TeachingPortalView(ListView):
             name__in=['beta', 'admins']
         ).exists()
 
-        region_ids = cache.get('teaching_regions')
-        if not region_ids:
-            region_ids = sorted({area.id for r in resources for area in r.regions.all()})
-            cache.set('teaching_regions', region_ids, 60*60)  # 1 hour cache
-        context['regions'] = region_ids
+        context['regions'] = sorted({area.id for r in resources for area in r.regions.all()})
 
         # nominated collections
         context['nominated'] = (
