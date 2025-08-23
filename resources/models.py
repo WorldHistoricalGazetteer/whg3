@@ -58,36 +58,6 @@ class Resource(models.Model):
     def title_length(self):
         return -len(self.title)
 
-    # @property
-    # def region_ids(self):
-    #     # Ensure `regions` is converted to a list of integers, handling potential comma-separated strings.
-    #     if isinstance(self.regions, str):
-    #         return [int(region_id.strip()) for region_id in self.regions.split(',') if region_id.strip().isdigit()]
-    #     elif isinstance(self.regions, list):
-    #         return [int(region_id) for region_id in self.regions if isinstance(region_id, int)]
-    #     return []
-
-    @cached_property
-    def region_ids(self):
-        # Use prefetched regions if available
-        if hasattr(self, '_prefetched_objects_cache') and 'regions' in self._prefetched_objects_cache:
-            return [area.id for area in self._prefetched_objects_cache['regions']]
-        return list(self.regions.values_list('id', flat=True))
-
-    @cached_property
-    def region_ids_csv(self):
-        ids = self.region_ids
-        if not ids:
-            # cached predefined areas
-            predefined_ids = cache.get('predefined_area_ids')
-            if predefined_ids is None:
-                predefined_ids = list(
-                    Area.objects.filter(type="predefined").values_list('id', flat=True)
-                )
-                cache.set('predefined_area_ids', predefined_ids, 3600)  # 1 hour cache
-            ids = predefined_ids
-        return ','.join(map(str, ids))
-
     @property
     def region_titles_csv(self):
         region_titles = [area.title for area in self.regions.all() if area is not None]
