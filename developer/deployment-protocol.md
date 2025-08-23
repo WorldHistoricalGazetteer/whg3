@@ -10,6 +10,11 @@ cat ~/sites/env_template.py
 cd ~/sites/dev-whgazetteer-org
 git pull origin staging && sudo python3 ./server-admin/load_env.py
 ```
+- _Or, to switch to a different branch_
+```bash
+git fetch origin
+git reset --hard origin/staging  # Replace "staging" with the desired branch name
+```
 - If all is OK, restart network:
 ```bash
 docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env down && \
