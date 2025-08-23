@@ -1,133 +1,159 @@
-from django.conf import settings
+import logging
+
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import JsonResponse, HttpResponseRedirect
-from django.shortcuts import get_object_or_404, redirect, render
+from django.db.models import ExpressionWrapper, BooleanField, Q
+from django.db.models.functions import Random
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import (FormView, UpdateView, DetailView, DeleteView)
 from django.views.generic.list import ListView
 
-from .forms import ResourceModelForm
-from .models import *
 from collection.models import Collection
 from main.models import Log
+from .forms import ResourceModelForm
+from .models import *
 
-import logging
 logger = logging.getLogger(__name__)
 
 #
 # TeachingPortalView()
 # displays essay and gallery of resources
 class TeachingPortalView(ListView):
-  redirect_field_name = 'redirect_to'
-  context_object_name = 'resource_list'
-  template_name = 'resources/teaching.html'
-  model = Resource
+    redirect_field_name = 'redirect_to'
+    context_object_name = 'resource_list'
+    template_name = 'resources/teaching.html'
+    model = Resource
 
-  def get_queryset(self):
-    # original qs
-    qs = super().get_queryset()
-    # return qs.filter(public=True).order_by('pub_date', 'title')
-    return qs.filter(public=True, featured__isnull=True).order_by('?')
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(public=True)
+            .annotate(
+                is_featured=ExpressionWrapper(
+                    Q(featured__isnull=False),
+                    output_field=BooleanField()
+                )
+            )
+            .order_by('-is_featured', Random())
+        )
 
-  def get_context_data(self, *args, **kwargs):
-    context = super(TeachingPortalView, self).get_context_data(*args, **kwargs)
-    context['beta_or_better'] = True if self.request.user.groups.filter(
-        name__in=['beta', 'admins']).exists() else False
-    nominated = Collection.objects.filter(status='nominated', collection_class='place', public=True).order_by('title')
-    context['regions'] = sorted(set(
-      region.id for resource in Resource.objects.all() for region in resource.regions.all()
-    ))
-    context['featured'] = Resource.objects.filter(featured__isnull=False).order_by('featured')
-    context['nominated'] = nominated
-    context['total_resources'] = len(context['featured']) + len(context['resource_list'])
-    return context
+    def get_context_data(self, *args, **kwargs):
+        context = super(TeachingPortalView, self).get_context_data(*args, **kwargs)
+
+        # group membership check
+        context['beta_or_better'] = self.request.user.groups.filter(
+            name__in=['beta', 'admins']
+        ).exists()
+
+        # regions:
+        regions_qs = (
+            Area.objects.filter(resources__public=True)
+            .values_list('id', flat=True)
+            .distinct()
+            .order_by('id')
+        )
+        context['regions'] = list(regions_qs)
+
+        # nominated collections
+        context['nominated'] = (
+            Collection.objects
+            .filter(status='nominated', collection_class='place', public=True)
+            .order_by('title')
+        )
+
+        # counts: avoid materialising querysets
+        qs = context['resource_list']
+        context['total_resources'] = qs.count()
+
+        return context
 
 
 def handle_resource_file(f):
-  with open('media/resources/'+f._name, 'wb+') as destination:
-    for chunk in f.chunks():
-      destination.write(chunk)
+    with open('media/resources/' + f._name, 'wb+') as destination:
+        for chunk in f.chunks():
+            destination.write(chunk)
+
 
 #
 # create
 #
 class ResourceCreateView(LoginRequiredMixin, FormView):
-  form_class = ResourceModelForm
-  template_name = 'resources/resource_create.html'
+    form_class = ResourceModelForm
+    template_name = 'resources/resource_create.html'
 
-  def get_success_url(self):
-    Log.objects.create(
-        category='resource',
-        logtype='create',
-        user_id=self.request.user.id
-    )
-    return reverse('data-resources')
-  #
-  def get_form_kwargs(self, **kwargs):
-    kwargs = super(ResourceCreateView, self).get_form_kwargs()
-    return kwargs
+    def get_success_url(self):
+        Log.objects.create(
+            category='resource',
+            logtype='create',
+            user_id=self.request.user.id
+        )
+        return reverse('data-resources')
 
-  def form_invalid(self, form):
-    logger.debug(f'form invalid, errors: {form.errors.as_data()}')
-    logger.debug(f'form invalid, cleaned_data: {form.cleaned_data}')
-    context = {'form': form}
-    return self.render_to_response(context=context)
+    #
+    def get_form_kwargs(self, **kwargs):
+        kwargs = super(ResourceCreateView, self).get_form_kwargs()
+        return kwargs
 
-  def form_valid(self, form):
-    context = {}
-    if form.is_valid():
-      form.save(commit=True)
-    else:
-      logger.debug(f'form not valid, errors: {form.errors.as_data()}')
-      context['errors'] = form.errors
-    return super().form_valid(form)
+    def form_invalid(self, form):
+        logger.debug(f'form invalid, errors: {form.errors.as_data()}')
+        logger.debug(f'form invalid, cleaned_data: {form.cleaned_data}')
+        context = {'form': form}
+        return self.render_to_response(context=context)
 
-  # def form_valid(self, form):
-  #   data = form.cleaned_data
-  #   print('data from resource create form', data)
-  #   context = {}
-  #   user = self.request.user
-  #   files = self.request.FILES.getlist('files')
-  #   images = self.request.FILES.getlist('images')
-  #   print('resources FILES[files]', files)
-  #   print('resources FILES[images]', images)
+    def form_valid(self, form):
+        context = {}
+        if form.is_valid():
+            form.save(commit=True)
+        else:
+            logger.debug(f'form not valid, errors: {form.errors.as_data()}')
+            context['errors'] = form.errors
+        return super().form_valid(form)
 
-    # save to media/resources
-    for f in files:
-      # handle_resource_file(f)
-      ResourceFile.objects.create(
-        file = f
-      )
-      
-    for i in images:
-      # handle_resource_file(i)o something with each file.
-      ResourceImage.objects.create(
-        file=f
-      )
+        # def form_valid(self, form):
+        #   data = form.cleaned_data
+        #   print('data from resource create form', data)
+        #   context = {}
+        #   user = self.request.user
+        #   files = self.request.FILES.getlist('files')
+        #   images = self.request.FILES.getlist('images')
+        #   print('resources FILES[files]', files)
+        #   print('resources FILES[images]', images)
 
-    form.save(commit=True)
+        # save to media/resources
+        for f in files:
+            # handle_resource_file(f)
+            ResourceFile.objects.create(
+                file=f
+            )
 
-    return redirect('/myresources')
+        for i in images:
+            # handle_resource_file(i)o something with each file.
+            ResourceImage.objects.create(
+                file=f
+            )
 
-    # create 
+        form.save(commit=True)
 
-  # def post(self, request, *args, **kwargs):
-  #   print('ResourceCreate() request', request)
-  #   form_class = self.get_form_class()
-  #   form = self.get_form(form_class)
-  #   files = request.FILES.getlist('files')
-  #   images = request.FILES.getlist('images')
-  #   if form.is_valid():
-  #     for f in files:
-  #       print('file', f)  # Do something with each file.
-  #     for i in images:
-  #       print('image', i)  # Do something with each file.
-  #     return self.form_valid(form)
-  #   else:
-  #     print('invalid form', form)
-  #     return self.form_invalid(form)
+        return redirect('/myresources')
 
+        # create
 
+    # def post(self, request, *args, **kwargs):
+    #   print('ResourceCreate() request', request)
+    #   form_class = self.get_form_class()
+    #   form = self.get_form(form_class)
+    #   files = request.FILES.getlist('files')
+    #   images = request.FILES.getlist('images')
+    #   if form.is_valid():
+    #     for f in files:
+    #       print('file', f)  # Do something with each file.
+    #     for i in images:
+    #       print('image', i)  # Do something with each file.
+    #     return self.form_valid(form)
+    #   else:
+    #     print('invalid form', form)
+    #     return self.form_invalid(form)
 
     # return self.form_valid(form)
     # return reverse('dashboard')
@@ -145,82 +171,85 @@ class ResourceCreateView(LoginRequiredMixin, FormView):
     #   context['errors'] = form.errors
     # return super().form_valid(form)
 
-  # def get_context_data(self, *args, **kwargs):
-  #   context = super(ResourceCreateView,
-  #                   self).get_context_data(*args, **kwargs)
-  #   user = self.request.user
-  #   #_id = self.kwargs.get("id")
-  #   print('ResourceCreate() user', user)
+    # def get_context_data(self, *args, **kwargs):
+    #   context = super(ResourceCreateView,
+    #                   self).get_context_data(*args, **kwargs)
+    #   user = self.request.user
+    #   #_id = self.kwargs.get("id")
+    #   print('ResourceCreate() user', user)
 
-  #   context['action'] = 'create'
-  #   return context
+    #   context['action'] = 'create'
+    #   return context
+
 
 #
 # update (edit)
 #
 class ResourceUpdateView(UpdateView):
-  form_class = ResourceModelForm
-  template_name = 'resources/resource_create.html'
-  success_url = '/myresources'
+    form_class = ResourceModelForm
+    template_name = 'resources/resource_create.html'
+    success_url = '/myresources'
 
-  def get_object(self):
-    id_ = self.kwargs.get("id")
-    return get_object_or_404(Resource, id=id_)
+    def get_object(self):
+        id_ = self.kwargs.get("id")
+        return get_object_or_404(Resource, id=id_)
 
-  def form_valid(self, form):
-    if form.is_valid():
-      obj = form.save(commit=False)
-      obj.save()
-      Log.objects.create(
-          # category, logtype, "timestamp", subtype, note, dataset_id, user_id
-          category='resource',
-          logtype='update',
-          note='resource id: ' + str(obj.id) + \
-          ' by ' + self.request.user.name,
-          user_id=self.request.user.id
-      )
-    else:
-      logger.debug(f'form not valid, errors: {form.errors.as_data()}')
-    return super().form_valid(form)
+    def form_valid(self, form):
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.save()
+            Log.objects.create(
+                # category, logtype, "timestamp", subtype, note, dataset_id, user_id
+                category='resource',
+                logtype='update',
+                note='resource id: ' + str(obj.id) + \
+                     ' by ' + self.request.user.name,
+                user_id=self.request.user.id
+            )
+        else:
+            logger.debug(f'form not valid, errors: {form.errors.as_data()}')
+        return super().form_valid(form)
 
-  def get_context_data(self, *args, **kwargs):
-    context = super(ResourceUpdateView,
-                    self).get_context_data(*args, **kwargs)
-    user = self.request.user
-    _id = self.kwargs.get("id")
+    def get_context_data(self, *args, **kwargs):
+        context = super(ResourceUpdateView,
+                        self).get_context_data(*args, **kwargs)
+        user = self.request.user
+        _id = self.kwargs.get("id")
 
-    context['action'] = 'update'
-    context['create_date'] = self.object.create_date.strftime("%Y-%m-%d")
-    return context
+        context['action'] = 'update'
+        context['create_date'] = self.object.create_date.strftime("%Y-%m-%d")
+        return context
+
 
 #
 # detail (public view, no edit)
 #
 class ResourceDetailView(DetailView):
-  template_name = 'resources/resource_detail.html'
+    template_name = 'resources/resource_detail.html'
 
-  model = Resource
+    model = Resource
 
-  def get_context_data(self, **kwargs):
-    context = super(ResourceDetailView, self).get_context_data(**kwargs)
-    id_ = self.kwargs.get("pk")
+    def get_context_data(self, **kwargs):
+        context = super(ResourceDetailView, self).get_context_data(**kwargs)
+        id_ = self.kwargs.get("pk")
 
-    context['primary'] = ResourceFile.objects.filter(resource_id = id_, filetype = 'primary')
-    context['supporting'] = ResourceFile.objects.filter(
-        resource_id=id_, filetype = 'supporting')
-    context['images'] = ResourceImage.objects.filter(resource_id = id_)
+        context['primary'] = ResourceFile.objects.filter(resource_id=id_, filetype='primary')
+        context['supporting'] = ResourceFile.objects.filter(
+            resource_id=id_, filetype='supporting')
+        context['images'] = ResourceImage.objects.filter(resource_id=id_)
 
-    return context
+        return context
+
 
 #
 # delete (cascade)
 #
 class ResourceDeleteView(DeleteView):
-  template_name = 'resources/resource_delete.html'
+    template_name = 'resources/resource_delete.html'
 
-  def get_object(self):
-    id_ = self.kwargs.get("id")
-    return get_object_or_404(Resource, id=id_)
+    def get_object(self):
+        id_ = self.kwargs.get("id")
+        return get_object_or_404(Resource, id=id_)
 
-  def get_success_url(self):
-    return reverse('myresources')
+    def get_success_url(self):
+        return reverse('myresources')

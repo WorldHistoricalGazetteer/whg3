@@ -182,17 +182,6 @@
               </div>
 {#              <div class="header bg-warning">Header</div>#}
               <div class="scrolling-div" style="overflow: auto;">
-                {% for r in featured %}
-                  <div class="resource-card mt-1" data-regions="{{r.region_ids_csv}}">
-                    <div class="resource-card-header ps-2 small ">{{ r.type }}</div>
-                    <div class="resource-card-content px-2 pt-1" data-id={{r.id}}>
-                      {% with remainder=190|add:r.title_length %}
-                      <h6><a href="{% url 'resources:resource-detail' r.id %}">{{ r.title }}</a></h6>
-                      <p class="resource-card-blurb my-1">{{ r.description|trunc_it:remainder }} </p>
-                      {%endwith%}
-                    </div>
-                  </div>
-                {% endfor %}
                 {% for r in resource_list %}
                   <div class="resource-card mt-1" data-regions="{{r.region_ids_csv}}">
                     <div class="resource-card-header ps-2 small ">{{ r.type }}
@@ -260,7 +249,7 @@
 	  return new Promise((resolve) => {
 	    whg_map.on('load', () => {
 	      whg_map.newSource('un_regions') // Add empty source
-	          .newLayerset('un_regions', 'un_regions');
+	          .newLayerset('un_regions', 'un_regions', 'plain');
 	      console.log('Map loaded.');
 	      resolve();
 	    });
