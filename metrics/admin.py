@@ -21,7 +21,8 @@ class RequestCountAdmin(admin.ModelAdmin):
         urls = super().get_urls()
         custom_urls = [
             path("metrics-dashboard/", self.admin_site.admin_view(self.metrics_dashboard), name="metrics-dashboard"),
-            path("download-all-data/", self.admin_site.admin_view(self.download_all_data), name="download-all-data"),
+            path("download-visitor-data/", self.admin_site.admin_view(self.download_visitor_data), name="download-visitor-data"),
+            path("download-url-data/", self.admin_site.admin_view(self.download_url_data), name="download-url-data"),
         ]
         return custom_urls + urls
 
@@ -66,6 +67,7 @@ class RequestCountAdmin(admin.ModelAdmin):
                 new_row[f"{period_name}_anon_pct"] = round((anon_count / total * pct) if total else 0, 2)
                 new_row[f"{period_name}_label"] = row[f"{period_name}_label"]
             url_data.append(new_row)
+        url_data.sort(key=lambda x: x["url"])
 
         # --- Helper functions ---
         def build_hourly_series(start, end):
@@ -131,7 +133,7 @@ class RequestCountAdmin(admin.ModelAdmin):
         return render(request, "admin/metrics_dashboard.html",
                       {"url_data": url_data, "aggregate_data": aggregate_data, "periods": list(periods.keys())})
 
-    def download_all_data(self, request):
+    def download_url_data(self, request):
         response = HttpResponse(content_type='text/csv; charset=utf-8')
         response['Content-Disposition'] = 'attachment; filename="metrics.csv"'
 
@@ -145,6 +147,25 @@ class RequestCountAdmin(admin.ModelAdmin):
                 row.url,
                 row.user_type,
                 row.count,
+            ])
+
+        return response
+
+    def download_visitor_data(self, request):
+        response = HttpResponse(content_type='text/csv; charset=utf-8')
+        response['Content-Disposition'] = 'attachment; filename="visitors.csv"'
+
+        writer = csv.writer(response)
+
+        writer.writerow(['date', 'url', 'user_type', 'visitor_hash', 'timestamp'])
+
+        for row in DailyVisitor.objects.select_related('request_count').all().order_by('timestamp'):
+            writer.writerow([
+                row.request_count.date,
+                row.request_count.url,
+                row.request_count.user_type,
+                row.visitor_hash,
+                row.timestamp,
             ])
 
         return response
