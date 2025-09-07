@@ -5,19 +5,14 @@
 {% block title %}Metrics Dashboard{% endblock %}
 
 {% block content %}
-<div class="header-container">
-    <h1>Metrics Dashboard</h1>
-    <div class="button-container">
-        <a href="{% url 'admin:download-all-data' %}" class="button">Download CSV</a>
-    </div>
-</div>
+<h1>Metrics Dashboard</h1>
 
 <style>
 .header-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 8px;
 }
 .admin-table {
     border-collapse: collapse;
@@ -86,7 +81,12 @@
 }
 </style>
 
-<h2>Site-wide Visitor Totals</h2>
+<div class="header-container">
+    <h2>Site-wide Visitor Totals</h2>
+    <div class="button-container">
+        <a href="{% url 'admin:download-visitor-data' %}" class="button">Download CSV</a>
+    </div>
+</div>
 <div class="metric-panel-container">
     {% for row in aggregate_data %}
     <div class="metric-card">
@@ -107,7 +107,12 @@
     {% endfor %}
 </div>
 
-<h2>URL Performance</h2>
+<div class="header-container">
+    <h2>URL Performance</h2>
+    <div class="button-container">
+        <a href="{% url 'admin:download-url-data' %}" class="button">Download CSV</a>
+    </div>
+</div>
 <table class="admin-table">
     <thead>
         <tr>
