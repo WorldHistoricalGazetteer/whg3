@@ -87,18 +87,3 @@ WHG is an open-source project and welcomes contributions of content and code. Pl
 - _Undo last reconciliation match._ When moving quickly through prospective matches in the reconciliation review task, it is possible to inadvertently save a match; we've added a single step undo of the last action.
 
 - _Dataset management functions consolidated._ Single page with tabs for Metadata, Browse, Reconciliation, Collaboration functionality.
-
-### Software libraries and packages
-
-- Django 2.2.10
-- Python 3.7.4
-- PostgreSQL 10
-- Elasticsearch 7.17
-- Nginx 1.14.0
-- Gunicorn 19.9.0
-- Celery 4.2.1
-- Bootstrap 4
-- JQuery 3.3.1
-- MapLibre.js
-- Leaflet 1.3.1
-
