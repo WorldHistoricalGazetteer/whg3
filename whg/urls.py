@@ -1,35 +1,35 @@
-from django.conf.urls.static import static
+import os
+from pathlib import Path
+
 from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.sitemaps import views as sitemapviews
 from django.core.cache import caches
-from django.shortcuts import redirect
-from django.urls import path, re_path, include, get_resolver
+from django.http import HttpResponseForbidden
+from django.urls import path, re_path, include
 from django.views.decorators.cache import cache_page
 from django.views.generic.base import TemplateView
+# For CDNfallbacks
+from django.views.static import serve
+
+import resources.views
 
 from accounts import orcid
 from accounts.views import profile_edit
 from datasets.views import PublicListsView  # , DataListsView
 from main import views
+from metrics.admin import RequestCountAdmin
+from resources.views import TeachingPortalView
 from sitemap.views import StaticViewSitemap, ToponymSitemap
 from utils import mapdata
-from resources.views import TeachingPortalView
 from utils.tasks import downloader
-import os
-
-# For CDNfallbacks
-from django.views.static import serve
-from django.http import HttpResponseForbidden
-from pathlib import Path
 
 sitemap_cache = caches['sitemap_cache']
 sitemaps = {
     'static': StaticViewSitemap,
     'toponyms': ToponymSitemap,
 }
-
-from django.conf.urls import handler404, handler500
 
 handler404 = 'main.views.custom_404'
 handler500 = 'main.views.server_error_view'
@@ -73,11 +73,11 @@ urlpatterns = [
                   path('whgmail/', include('whgmail.urls')),
 
                   path('teaching/', TeachingPortalView.as_view(), name="teaching"),
+                  path("api/teaching/", resources.views.teaching_json, name="teaching_json"),
 
                   path('public_data/', PublicListsView.as_view(), name='public-lists'),
 
-                  # orcid authentication, profile and settings
-                  path('orcid-callback/', orcid.orcid_callback, name='orcid-callback'),
+                  # profile and settings
                   path('profile/', profile_edit, name="profile-edit"),
 
                   path('dashboard/', views.dashboard_redirect, name="dashboard"),  # redirect to user or admin
@@ -90,7 +90,8 @@ urlpatterns = [
 
                   path('people_overview/', TemplateView.as_view(template_name="main/people_overview.html"),
                        name="credits"),
-                  path('licensing/', TemplateView.as_view(template_name="main/licensing.html.DEPRECATED"), name="licensing"),
+                  path('licensing/', TemplateView.as_view(template_name="main/licensing.html.DEPRECATED"),
+                       name="licensing"),
                   # path('system/', TemplateView.as_view(template_name="main/../_local/_older/system.html"), name="system"),
 
                   path('publications/', TemplateView.as_view(template_name="main/publications.html"),
@@ -118,7 +119,8 @@ urlpatterns = [
                   path('announcements/', views.AnnouncementListView.as_view(), name='announcements-list'),
 
                   path('mapdata/<str:category>/<int:id>/', mapdata.mapdata, name="mapdata"),
-                  path('mapdata/<str:category>/<int:id>/carousel/', mapdata.mapdata, {'carousel': True}, name="mapdata_carousel"),
+                  path('mapdata/<str:category>/<int:id>/carousel/', mapdata.mapdata, {'carousel': True},
+                       name="mapdata_carousel"),
 
                   path('comment/', views.handle_comment, name='comment-handle'),
                   # path('contact/', views.contact_view, name='contact'),

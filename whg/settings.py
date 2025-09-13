@@ -20,6 +20,8 @@ except ImportError:
 
 ENV_CONTEXT = os.environ.get('ENV_CONTEXT', 'dev-whgazetteer-org')  # Default if ENV_CONTEXT is not set
 
+DATABASES['default']['CONN_MAX_AGE'] = 600  # 10 minutes
+
 if 'test' in sys.argv:
     CELERY_ALWAYS_EAGER = True
 else:
@@ -76,6 +78,7 @@ INSTALLED_APPS = [
     'elastic.apps.ElasticConfig',
     'ingestion.apps.IngestionConfig',
     'main.apps.MainConfig',
+    'metrics.apps.MetricsConfig',
     'persons.apps.PersonsConfig',
     'places.apps.PlacesConfig',
     'remote.apps.RemoteConfig',
@@ -137,6 +140,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "metrics.middleware.MetricsMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.middleware.locale.LocaleMiddleware',
@@ -512,6 +516,9 @@ SPECTACULAR_SETTINGS = {
         'drf_spectacular.hooks.preprocess_exclude_path_format',
     ],
 }
+
+# Anonymising salt does not need to be secret, just consistent
+METRICS_VISITOR_SALT = "a9f3b8e2-1c4d-4e6f-8b2d-3e5f7a9b0c1d"
 
 # Settings for DataCite API (DOI registration)
 DOI_USER_ID = os.environ.get("DOI_USER_ID")

@@ -10,6 +10,11 @@ cat ~/sites/env_template.py
 cd ~/sites/dev-whgazetteer-org
 git pull origin staging && sudo python3 ./server-admin/load_env.py
 ```
+- _Or, to switch to a different branch_
+```bash
+git fetch origin
+git checkout staging  # Replace "staging" with the desired branch name
+```
 - If all is OK, restart network:
 ```bash
 docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env down && \
@@ -34,6 +39,19 @@ docker logs -f web_dev-whgazetteer-org_staging
 ```
 ```bash
 docker logs -f celery-worker_dev-whgazetteer-org_staging
+```
+
+#### Monitor Django Logs
+```
+# For example, `validation` log on `staging` branch:
+docker exec -it web_dev-whgazetteer-org_staging bash -c "tail -f ./whg/logs/validation.log"
+
+```
+
+```
+# For example, `authentication` log on `orcid-integration` branch:
+docker exec -it web_dev-whgazetteer-org_orcid-integration bash -c "tail -f ./whg/logs/authentication.log"
+
 ```
 
 ## Deploy to Main from Staging

@@ -3,10 +3,13 @@ from functools import reduce
 
 from django.contrib.gis.db.models import Extent
 from django.contrib.gis.geos import GEOSGeometry, Polygon
+from django.core.cache import cache
 from django.core.validators import MaxValueValidator
 from django.db import models
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.db.models import Q
+from django.utils.functional import cached_property
 
 from areas.models import Area
 
@@ -55,27 +58,6 @@ class Resource(models.Model):
     def title_length(self):
         return -len(self.title)
 
-    # @property
-    # def region_ids(self):
-    #     # Ensure `regions` is converted to a list of integers, handling potential comma-separated strings.
-    #     if isinstance(self.regions, str):
-    #         return [int(region_id.strip()) for region_id in self.regions.split(',') if region_id.strip().isdigit()]
-    #     elif isinstance(self.regions, list):
-    #         return [int(region_id) for region_id in self.regions if isinstance(region_id, int)]
-    #     return []
-
-    @property
-    def region_ids(self):
-        return [area.id for area in self.regions.all() if area is not None]
-
-    @property
-    def region_ids_csv(self):
-        # Check if region_ids is empty or None, and if so, return a CSV of all predefined Area ids
-        if not self.region_ids:  # Checks if region_ids is empty or None
-            predefined_areas = Area.objects.filter(type="predefined")
-            return ','.join(map(str, predefined_areas.values_list('id', flat=True)))
-        return ','.join(map(str, self.region_ids))
-
     @property
     def region_titles_csv(self):
         region_titles = [area.title for area in self.regions.all() if area is not None]
@@ -84,13 +66,6 @@ class Resource(models.Model):
     @property
     def citation_csl(self):
         return csl_citation(self)
-
-    # @property
-    # def bbox(self):
-    #     # Fetch bounding boxes for the regions associated with this resource
-    #     extent = Area.objects.filter(id__in=self.region_ids).aggregate(Extent("bbox"))["bbox__extent"]
-    #
-    #     return Polygon.from_bbox(extent) if extent else None
 
     @property
     def bbox(self):
@@ -102,6 +77,10 @@ class Resource(models.Model):
     class Meta:
         managed = True
         db_table = 'resources'
+        indexes = [
+            models.Index(fields=['public'], name='resources_public_idx'),
+            models.Index(fields=['featured'], name='resources_featured_idx', condition=Q(featured__isnull=False)),
+        ]
 
 
 class ResourceFile(models.Model):

@@ -177,59 +177,16 @@
 			</div>
             <div class="resource-gallery">
               <div class="gallery-banner ps-2 small w-100";>
-                TEACHING RESOURCES (showing <span id="resourceCount">{{ total_resources }}</span> of {{ total_resources }})
+                TEACHING RESOURCES (showing <span id="resourceCount">-</span> of <span id="resourceCountTotal">-</span>)
                 <span id="regions_reset" class="reset-link me-2" style="cursor:pointer;">reset filter</span>
               </div>
 {#              <div class="header bg-warning">Header</div>#}
-              <div class="scrolling-div" style="overflow: auto;">
-                {% for r in featured %}
-                  <div class="resource-card mt-1" data-regions="{{r.region_ids_csv}}">
-                    <div class="resource-card-header ps-2 small ">{{ r.type }}</div>
-                    <div class="resource-card-content px-2 pt-1" data-id={{r.id}}>
-                      {% with remainder=190|add:r.title_length %}
-                      <h6><a href="{% url 'resources:resource-detail' r.id %}">{{ r.title }}</a></h6>
-                      <p class="resource-card-blurb my-1">{{ r.description|trunc_it:remainder }} </p>
-                      {%endwith%}
-                    </div>
-                  </div>
-                {% endfor %}
-                {% for r in resource_list %}
-                  <div class="resource-card mt-1" data-regions="{{r.region_ids_csv}}">
-                    <div class="resource-card-header ps-2 small ">{{ r.type }}
-                    </div>
-                    <div class="resource-card-content px-2 pt-1" data-id={{r.id}}>
-                      {% with remainder=190|add:r.title_length %}
-                      <h6><a href="{% url 'resources:resource-detail' r.id %}">{{ r.title }}</a></h6>
-                      <p class="resource-card-blurb my-1">{{ r.description|trunc_it:remainder }} </p>
-                      {%endwith%}
-                    </div>
-                  </div>
-                {% endfor %}
+              <div id="resources-container" class="scrolling-div" style="overflow: auto;">
               </div>
             </div>
           </div>
           <div id="gallery" class="tab-pane">
-            <div class="row pt-2">
-              {% if nominated.count > 0 %}
-                {% for coll in nominated %}
-                <div class="col-sm-6">
-                  <div class="gallery-card">
-                    <div class="card-header bg-text-primary px-2">
-                      <a href="{% url 'collection:place-collection-browse' coll.id %}">{{ coll.title }}</a>
-                    </div>
-                    <div class="card-body p-2">
-                      <p class="my-0">{{ coll.owner.name }}</p>
-                      <p class="card-text small">{{ coll.description|truncatechars:300 }}</p>
-                    </div>
-                  </div>
-                </div>
-                {% endfor %}
-              {% else %}
-              <div class="col-sm-12">
-                <p>No student collections yet - coming soon!</p>
-              </div>
-              {% endif %}
-              <!-- Repeat the above div for each card you want to display -->
+            <div id="nominated-container" class="row pt-2">
             </div>
           </div>
         </div>
@@ -238,170 +195,191 @@
 {% endblock %}
 
 {% block inlineScripts %}
-	<script type="text/javascript">
-	
-	const regions = {{ regions|safe }}
-	
-	function fetchRegionFeatures() {
-	    return $.ajax({
-	        url: `/api/area_features/?filter=un&regions=${regions.join(',')}`,
-	        method: 'GET',
-	        dataType: 'json'
-	    });
-	}
-	
-	let whg_map = new whg_maplibre.Map({
-	    style: ['whg-basic-light'],
-		maxZoom: 13,
-		navigationControl: false,
-	});
+<script type="text/javascript">
 
-	function waitMapLoad() {
-	  return new Promise((resolve) => {
-	    whg_map.on('load', () => {
-	      whg_map.newSource('un_regions') // Add empty source
-	          .newLayerset('un_regions', 'un_regions');
-	      console.log('Map loaded.');
-	      resolve();
-	    });
-	  });
-	}
+  let whg_map = new whg_maplibre.Map({
+    style: ['whg-basic-light'],
+    maxZoom: 13,
+    navigationControl: false,
+  });
 
-	function waitDocumentReady() {
-	  return new Promise((resolve) => {
-	    $(document).ready(() => {
-	      console.log('Document ready.');
-	      resolve();
-	    });
-	  });
-	}
+  function waitMapLoad() {
+    return new Promise((resolve) => {
+      whg_map.on('load', () => {
+        whg_map.newSource('un_regions') // Add empty source
+                .newLayerset('un_regions', 'un_regions', 'plain');
+        console.log('Map loaded.');
+        resolve();
+      });
+    });
+  }
 
-	Promise.all([
-	  waitMapLoad(),
-	  waitDocumentReady(),
-	  Promise.all(select2_CDN_fallbacks.map(loadResource)),
-	]).then(() => {		
+  function waitDocumentReady() {
+    return new Promise((resolve) => {
+      $(document).ready(() => {
+        console.log('Document ready.');
+        resolve();
+      });
+    });
+  }
 
-		let regionsCollection;
-		fetchRegionFeatures().done(function(regionFeatures) {
-			// TODO: Add features to map with highlighting - transform to FeatureCollection, with moved ids
-			// Update resource count in header
-			// Add map click events
-			
-			regionsCollection = {
-	            type: "FeatureCollection",
-	            features: regionFeatures.map(function(feature) {
-	                return {
-	                    type: "Feature",
-	                    id: feature.properties.id,
-	                    properties: {
-	                        title: feature.properties.title,
-	                        type: feature.properties.type,
-	                        description: feature.properties.description
-	                    },
-	                    geometry: feature.geometry
-	                };
-	            })
-	        }
-			whg_map
-			.getSource('un_regions')
-			.setData(regionsCollection);
-	        whg_map.fitBounds(bbox(regionsCollection));
-	        
-		    $('#entrySelector')
-		    .select2({
-		        data: regionFeatures.map(function(feature) {
-		            return {
-		                id: feature.properties.id,
-		                text: feature.properties.title
-		            };
-		        }),
-		        width: 'element',
-		        allowClear: false,
-		    })
-		    .on('change', function() {
-		        toggleHighlightsCards($(this).val());
-		    })
-		    .val(regions).trigger('change');
-		    
+  Promise.all([
+    waitMapLoad(),
+    waitDocumentReady(),
+    Promise.all(select2_CDN_fallbacks.map(loadResource)),
+  ]).then(() => {
+    $('#lessonplans, #gallery').spin();
+    fetch("{% url 'teaching_json' %}")
+            .then(response => response.json())
+            .then(data => {
+              const container = document.getElementById("resources-container");
+              data.resources.forEach(r => {
+                const div = document.createElement("div");
+                div.className = "resource-card mt-1";
+                div.setAttribute("data-regions", r.regions);
+                div.innerHTML = `
+                    <div class="resource-card-header ps-2 small">${r.type}</div>
+                    <div class="resource-card-content px-2 pt-1" data-id="${r.id}">
+                    <h6><a href="/resources/${r.id}/detail">${r.title}</a></h6>
+                    <p class="resource-card-blurb my-1">${r.description}</p>
+                    </div>
+                `;
+                container.appendChild(div);
+                document.getElementById("resourceCountTotal").textContent = data.total_resources;
+                document.getElementById("resourceCount").textContent = data.total_resources;
+              });
 
-		    $('.select2-selection').on('click', '.select2-selection__choice__remove', function(evt) {
-		        evt.stopPropagation();
-		    })
+              whg_map
+                      .getSource('un_regions')
+                      .setData(data.areas);
+              whg_map.fitBounds(bbox(data.areas));
 
-			whg_map.on('mousemove', function(e) {			    
-			    const anyUnRegions = whg_map.queryRenderedFeatures(e.point).some(feature => {
-			        return feature.layer.id === 'un_regions_polygon';
-			    });
-			    whg_map.getCanvas().style.cursor = anyUnRegions ? 'pointer' : 'default';
-			});
-			
-			whg_map.on('click', function(e) {
-			    const features = whg_map.queryRenderedFeatures(e.point);
-			    
-			    const unRegionIds = features.reduce((ids, feature) => {
-			        if (feature.layer.id === 'un_regions_polygon') {
-			            ids.push(feature.id);
-			        }
-			        return ids;
-			    }, []);
-			    
-			    let currentValues = $('#entrySelector').val() || [];
-			    unRegionIds.forEach(regionId => {
-			        const index = currentValues.indexOf(regionId.toString());
-			        if (index === -1) {
-			            currentValues.push(regionId.toString());
-			        } else {
-			            currentValues.splice(index, 1);
-			        }
-			    });
-			    $('#entrySelector').val(currentValues).trigger('change');
-			});
+              $('#entrySelector')
+                      .select2({
+                        data: data.areas.features.map(function (feature) {
+                          return {
+                            id: feature.id,
+                            text: feature.properties.title
+                          };
+                        }),
+                        width: 'element',
+                        allowClear: false,
+                      })
+                      .on('change', function () {
+                        toggleHighlightsCards($(this).val());
+                      })
+                      .val(data.regions).trigger('change');
 
-		
-		}).fail(function(error) {
-		    console.error('Failed to fetch area features:', error);
-		});
 
-	    $('#clearButton')
-	    .on('click', function() {
-	    	$('#entrySelector').val(null).trigger('change');
-	    });
+              $('.select2-selection').on('click', '.select2-selection__choice__remove', function (evt) {
+                evt.stopPropagation();
+              })
 
-	    function toggleHighlightsCards(selectedRegions) {
-	        $('.resource-card').each(function() {
-	            const card = $(this);
-	            const cardRegions = String(card.data('regions')).split(',').map(String);
-	            card.toggle(cardRegions.some(region => selectedRegions.includes(region)));
-	        });
-            if ($('#resourceCount:visible').length > 0) $('#resourceCount').text($('.resource-card:visible').length);
-	        regionsCollection.features.forEach(function(feature) {
-	        	whg_map.setFeatureState({ source: 'un_regions', id: feature.id }, { highlight: selectedRegions.includes(String(feature.id)) });
-	        });
-	    }
-	    
-		let hash = window.location.hash;
-		window.location.hash = ""; // Clear the hash to prevent automatic scrolling
+              whg_map.on('mousemove', function (e) {
+                const anyUnRegions = whg_map.queryRenderedFeatures(e.point).some(feature => {
+                  return feature.layer.id === 'un_regions_polygon';
+                });
+                whg_map.getCanvas().style.cursor = anyUnRegions ? 'pointer' : 'default';
+              });
 
-		if (hash) {
-			let tabTriggerEl = document.querySelector('button[data-bs-target="' + hash + '"]');
-			if (tabTriggerEl) {
-				console.log('Tab trigger element found:', tabTriggerEl);
-				tabTriggerEl.click();
-			} else {
-				console.log('No tab trigger found for hash:', hash);
-			}
-		}
-		
-		// resources
-		$(".resource-card-content").click(function() {
-			rid = $(this).data('id');
-			window.location.href = "/resources/" + rid + "/detail";
-		});		
-		
-	});
+              whg_map.on('click', function (e) {
+                const features = whg_map.queryRenderedFeatures(e.point);
 
-	</script>
+                const unRegionIds = features.reduce((ids, feature) => {
+                  if (feature.layer.id === 'un_regions_polygon') {
+                    ids.push(feature.id);
+                  }
+                  return ids;
+                }, []);
+
+                let currentValues = $('#entrySelector').val() || [];
+                unRegionIds.forEach(regionId => {
+                  const index = currentValues.indexOf(regionId.toString());
+                  if (index === -1) {
+                    currentValues.push(regionId.toString());
+                  } else {
+                    currentValues.splice(index, 1);
+                  }
+                });
+                $('#entrySelector').val(currentValues).trigger('change');
+              });
+
+              $('#clearButton')
+                      .on('click', function () {
+                        $('#entrySelector').val(null).trigger('change');
+                      });
+
+              function toggleHighlightsCards(selectedRegions) {
+                $('.resource-card').each(function () {
+                  const card = $(this);
+                  const cardRegions = String(card.data('regions')).split(',').map(String);
+                  card.toggle(cardRegions.some(region => selectedRegions.includes(region)));
+                });
+                if ($('#resourceCount:visible').length > 0) $('#resourceCount').text($('.resource-card:visible').length);
+                data.areas.features.forEach(function (feature) {
+                  whg_map.setFeatureState({
+                    source: 'un_regions',
+                    id: feature.id
+                  }, {highlight: selectedRegions.includes(String(feature.id))});
+                });
+              }
+
+              const nominatedContainer = document.getElementById("nominated-container");
+              if (data.nominated.length === 0) {
+                const div = document.createElement("div");
+                div.className = "col-sm-12";
+                div.innerHTML = `<p>No student collections yet - coming soon!</p>`;
+                nominatedContainer.appendChild(div);
+              } else {
+                data.nominated.forEach(coll => {
+                  const div = document.createElement("div");
+                  div.className = "col-sm-6";
+                  div.innerHTML = `
+                    <div class="gallery-card mb-2">
+                      <div class="card-header bg-text-primary px-2">
+                        <a href="/collections/${coll.id}/browse/">${coll.title}</a>
+                      </div>
+                      <div class="card-body p-2">
+                        <p class="my-0">${coll.owner_name}</p>
+                        <p class="card-text small">${coll.description}</p>
+                      </div>
+                    </div>
+                  `;
+                  nominatedContainer.appendChild(div);
+                });
+              }
+
+            })
+            .catch(error => {
+              console.error('Error fetching teaching resources:', error);
+              alert('Error loading teaching resources. Please try again later.');
+            })
+            .finally(() => {
+              $('#lessonplans, #gallery').stopSpin();
+            });
+
+    let hash = window.location.hash;
+    window.location.hash = ""; // Clear the hash to prevent automatic scrolling
+
+    if (hash) {
+      let tabTriggerEl = document.querySelector('button[data-bs-target="' + hash + '"]');
+      if (tabTriggerEl) {
+        console.log('Tab trigger element found:', tabTriggerEl);
+        tabTriggerEl.click();
+      } else {
+        console.log('No tab trigger found for hash:', hash);
+      }
+    }
+
+    // resources
+    $(".resource-card-content").click(function () {
+      rid = $(this).data('id');
+      window.location.href = "/resources/" + rid + "/detail";
+    });
+
+  });
+
+</script>
 {% endblock %}
 
 {% block deferredScripts %}
