@@ -1,6 +1,18 @@
 {% extends "main/base_webpack.html" %}
+{% load static %}
+{% load l10n %}
 
-{% block content %}<div id="container" class="container mt-1">
+{% block extra_css %}
+    #api-token-section.has-token #no-token {
+      display: none;
+    }
+    #api-token-section:not(.has-token) #has-token {
+      display: none;
+    }
+{% endblock %}
+
+{% block content %}
+<div id="container" class="container mt-1" xmlns="http://www.w3.org/1999/html">
   <div class="my-4">
 
     <h3 class="mb-4">
@@ -83,6 +95,46 @@
 
     <hr>
 
+    <!-- API Token Section -->
+    <section>
+      <h5 class="mb-3 fw-semibold d-flex align-items-baseline">
+        <i class="fas fa-key me-2"></i>
+        <span>API Token</span>
+        <a target="_blank"
+           href="https://docs.whgazetteer.org/content/400-Technical.html#api"
+           class="ms-2 smaller fw-normal lh-1">
+          see documentation <i class="fas fa-external-link-alt ms-1" aria-hidden="true"></i>
+        </a>
+      </h5>
+      <div id="api-token-section" class="mb-2 {% if user.api_token %}has-token{% endif %}">
+        <div id="has-token">
+          <p>
+            <strong>Your API Token:</strong>
+            <code id="api-token" class="clippable">{{ api_token_key }}</code>
+          </p>
+          <p>
+            <strong>Remaining Daily Quota:</strong>
+            <span id="api-token-quota">{{ api_token_quota_remaining|localize }}</span> requests
+            <i class="fas fa-info-circle text-muted smaller" data-bs-toggle="tooltip"
+               data-bs-title="The API token allows you to make up to {{ api_token_quota }} requests per day. This quota resets at midnight UTC. Refresh this page to update the remaining quota."></i>
+          </p>
+          <button class="generate-token btn btn-outline-primary btn-sm me-2">
+            <i class="fas fa-sync-alt me-1"></i> Regenerate Token
+          </button>
+          <button class="delete-token btn btn-outline-danger btn-sm">
+            <i class="fas fa-trash me-1"></i> Delete Token
+          </button>
+        </div>
+        <div id="no-token">
+          <button class="generate-token btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i> Generate API Token
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <hr>
+
     <!-- Account Deletion -->
     <section>
       <h5 class="mb-3 fw-semibold text-muted">
@@ -119,31 +171,22 @@
   </div>
 </div>
 
-<script>
-  // Auto-save news_permitted toggle on change (AJAX)
-  document.addEventListener('DOMContentLoaded', function() {
-    const newsCheckbox = document.getElementById('id_news_permitted');
-    if(newsCheckbox){
-      newsCheckbox.addEventListener('change', function() {
-        const formData = new FormData();
-        formData.append('news_permitted', newsCheckbox.checked ? 'on' : '');
-        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-
-        fetch("{% url 'accounts:profile-news-toggle' %}", {
-          method: 'POST',
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-          },
-          body: formData
-        }).then(response => {
-          if (!response.ok) {
-            alert('Failed to save news preferences.');
-          }
-        }).catch(() => {
-          alert('Failed to save news preferences.');
-        });
-      });
-    }
-  });
+<script type="text/javascript">
+  window.profileConfig = {
+    apiTokenUrl: "{% url 'accounts:profile-api-token' %}",
+    newsToggleUrl: "{% url 'accounts:profile-news-toggle' %}",
+    csrfToken: "{{ csrf_token }}"
+  };
 </script>
+{% endblock %}
+
+{% block deferredScripts %}
+
+	var scripts = [
+	{
+	src: '{% static 'webpack/profile.bundle.js' %}',
+	type: 'module',
+	},
+	]
+
 {% endblock %}

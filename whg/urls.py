@@ -133,6 +133,7 @@ urlpatterns = [
                   path('create_link/', views.create_link, name="create-link"),
 
                   # backend stuff
+                  path("", include("api.urls_root")),  # reconcile/suggest API
                   path('api/', include('api.urls')),
                   path('remote/', include('remote.urls')),
                   path('accounts/', include('accounts.urls')),

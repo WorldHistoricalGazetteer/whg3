@@ -3,13 +3,16 @@ import secrets
 from django.contrib.auth import get_user_model
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
+from django.views import View
 from django.views.decorators.http import require_POST
+
+from api.models import UserAPIProfile, APIToken
 
 User = get_user_model()
 from django.conf import settings
 from django.contrib import auth, messages
-from django.core.signing import Signer, BadSignature
 from django.shortcuts import render, redirect, reverse
 
 from accounts.forms import UserModelForm
@@ -17,7 +20,6 @@ from collection.models import CollectionGroupUser  # CollectionGroup,
 import logging
 
 logger = logging.getLogger('authentication')
-import traceback
 from urllib.parse import urlencode
 
 
@@ -60,7 +62,8 @@ def login(request):
                 return redirect('accounts:password_reset')
             else:
                 # Attempt to authenticate using legacy backend only if no password reset is required
-                user = auth.authenticate(request, username=username, password=password, backend='django.contrib.auth.backends.ModelBackend')
+                user = auth.authenticate(request, username=username, password=password,
+                                         backend='django.contrib.auth.backends.ModelBackend')
                 if user is not None:
                     auth.login(request, user)
                     # Redirect to the ORCiD authorisation URL if provided
@@ -80,7 +83,8 @@ def login(request):
                     return redirect('accounts:login')
         except User.DoesNotExist:
             # User not found
-            messages.error(request, "<h4><i class='fas fa-triangle-exclamation'></i> Invalid WHG username.</h4><p>Please correct this and try again.</p>")
+            messages.error(request,
+                           "<h4><i class='fas fa-triangle-exclamation'></i> Invalid WHG username.</h4><p>Please correct this and try again.</p>")
             return redirect('accounts:login')
     else:
         # Prevent login page view if user is already authenticated
@@ -181,15 +185,25 @@ def add_to_group(cg, member):
 @login_required
 def profile_edit(request):
     form = UserModelForm(instance=request.user)
+    api_token = getattr(request.user, "api_token", None)
+
+    # Ensure profile exists
+    api_profile, _ = UserAPIProfile.objects.get_or_create(user=request.user)
+
+    remaining_quota = max(api_profile.daily_limit - api_profile.daily_count, 0)
+    total_quota = api_profile.daily_limit
 
     context = {
         'is_admin': request.user.groups.filter(name='whg_admins').exists(),
         'needs_news_check': request.session.pop("_needs_news_check", False),
         'form': form,
         'ORCID_BASE': settings.ORCID_BASE,
+        "api_token_key": getattr(api_token, "key", ""),
+        "api_token_quota_remaining": remaining_quota,
+        "api_token_quota": total_quota,
     }
 
-    logger.debug(context)
+    # logger.debug(context)
 
     return render(request, 'accounts/profile.html', context=context)
 
@@ -231,3 +245,42 @@ def profile_delete(request):
         return redirect('home')
     else:
         return redirect('profile-edit')
+
+
+class ProfileAPITokenView(LoginRequiredMixin, View):
+    """
+    Handles generating/regenerating and deleting a user's API token.
+    """
+
+    def post(self, request, *args, **kwargs):
+        """
+        Handles AJAX POST requests.
+        Requires a POST parameter 'action' with value 'generate' or 'delete'.
+        """
+        action = request.POST.get('action')
+        if action == "generate":
+            return self._generate_or_regenerate(request)
+        elif action == "delete":
+            return self._delete(request)
+        else:
+            return JsonResponse({"error": "Invalid action."}, status=400)
+
+    def _generate_or_regenerate(self, request):
+        # Ensure the user has a profile
+        UserAPIProfile.objects.get_or_create(user=request.user)
+
+        token, created = APIToken.objects.get_or_create(
+            user=request.user,
+            defaults={"key": secrets.token_urlsafe(32)}
+        )
+        if not created:
+            token.regenerate()
+        return JsonResponse({"token": token.key})
+
+    def _delete(self, request):
+        try:
+            token = request.user.api_token
+            token.delete()
+            return JsonResponse({"success": True})
+        except APIToken.DoesNotExist:
+            return JsonResponse({"error": "No API token exists for this user."}, status=400)
