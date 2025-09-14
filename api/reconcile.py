@@ -10,7 +10,7 @@ Also includes /reconcile/extend/propose for suggesting additional properties and
 property values (currently not implemented). Authentication is via API token or session/CSRF.
 Batch requests are supported, and geometries are always included to aid visual disambiguation.
 
-See documentation: https://docs.whgazetteer.org/content/400-Technical.html#api
+See documentation: https://docs.whgazetteer.org/content/400-Technical.html#reconciliation-api
 """
 
 import json
@@ -22,17 +22,17 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
-from whg import settings
 from .models import APIToken, UserAPIProfile
+from .reconcile_helpers import make_candidate, format_extend_row, es_search, geoms_to_geojson
 
 DOMAIN = os.environ.get('URL_FRONT', 'https://whgazetteer.org').rstrip('/')
-DOCS_URL = "https://docs.whgazetteer.org/content/400-Technical.html#api"
+DOCS_URL = "https://docs.whgazetteer.org/content/400-Technical.html#reconciliation-api"
 
-# TODO: Correct the following placeholder metadata
 SERVICE_METADATA = {
     "versions": ["0.2"],
     "name": "WHG Place Reconciliation",
     "identifierSpace": f"{DOMAIN}/place/",
+    # TODO: Change the following two parameters to use custom WHG schema
     "schemaSpace": "https://schema.org/",
     "defaultTypes": [
         {"id": "https://schema.org/Place", "name": "Place"}
@@ -54,14 +54,13 @@ SERVICE_METADATA = {
         "note": "Preview functionality is not yet supported"
     },
     "suggest": {
-        # TODO: Implement suggest endpoints
         "entity": {
             "service_url": f"{DOMAIN}",
             "service_path": "/suggest/entity",
-            "status": "not implemented",
-            "note": "Entity suggestion is not yet supported"
+            "status": "implemented",
         },
         "property": {
+            # TODO: Implement suggest/property endpoint
             "service_url": f"{DOMAIN}",
             "service_path": "/suggest/property",
             "status": "not implemented",
@@ -81,9 +80,6 @@ SERVICE_METADATA = {
         "in": "header",
     }
 }
-
-# TODO: Replace ElasticSearch with Vespa backend when ready
-es = settings.ES_CONN
 
 
 def json_error(message, status=400):
@@ -169,23 +165,18 @@ class ReconciliationView(View):
         results = {}
         for key, q in queries.items():
             query_text = q.get("query")
+            query_size = q.get("size", 100)
             if not query_text:
                 results[key] = {"result": []}  # empty result if no query
                 continue
 
-            results[key] = {
-                "result": reconcile_place_es(query_text)
-            }
+            results[key] = reconcile_place_es(query_text, params=q, size=query_size)
 
         return JsonResponse(results)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
 class ExtendProposeView(View):
-    """
-    Endpoint for /reconcile/extend/propose
-    Returns a list of suggested properties or enhancements for a set of candidate places.
-    """
 
     def post(self, request, *args, **kwargs):
         allowed, auth_error = authenticate_request(request)
@@ -210,16 +201,6 @@ class ExtendProposeView(View):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class ExtendView(View):
-    """
-    Endpoint for /reconcile/extend
-    Returns property values for a set of candidate place IDs.
-    Expects POST JSON payload:
-    {
-        "ids": ["2487384", "12345"],
-        "properties": ["whg:geometry", "whg:alt_names", "whg:temporalRange"]
-    }
-    """
-
     def post(self, request, *args, **kwargs):
         allowed, auth_error = authenticate_request(request)
         if not allowed:
@@ -235,49 +216,20 @@ class ExtendView(View):
         if not candidate_ids:
             return JsonResponse({"rows": []})
 
-        # Query Elastic for all candidate IDs
-        body = {
-            "query": {
-                "ids": {"values": candidate_ids}
-            },
-            "_source": True,
-            "size": len(candidate_ids)
-        }
-        resp = es.search(index="whg,pub", body=body)
-        hits = resp.get("hits", {}).get("hits", [])
+        hits = es_search(index="whg,pub", ids=candidate_ids)
 
         rows = []
+        features = []
 
         for hit in hits:
-            src = hit["_source"]
-            cells = {}
+            row = format_extend_row(hit, requested_props, features)
+            rows.append(row)
 
-            if "whg:alt_names" in requested_props:
-                alt_names = []
-                if src.get("names"):
-                    alt_names = [n["toponym"] for n in src["names"]]
-                alt_names += [s for s in src.get("searchy", []) if s not in alt_names]
-                cells["whg:alt_names"] = {"type": "string[]", "value": alt_names}
+        response = {"rows": rows}
+        if "whg:geometry" in requested_props and features:
+            response["geojson"] = {"type": "FeatureCollection", "features": features}
 
-            if "whg:temporalRange" in requested_props:
-                start, end = None, None
-                if "minmax" in src:
-                    start = src["minmax"].get("gte")
-                    end = src["minmax"].get("lte")
-                cells["whg:temporalRange"] = {"type": "range", "value": {"start": start, "end": end}}
-
-            if "whg:dataset" in requested_props:
-                cells["whg:dataset"] = {"type": "string", "value": src.get("dataset")}
-
-            if "whg:ccodes" in requested_props:
-                cells["whg:ccodes"] = {"type": "string[]", "value": src.get("ccodes", [])}
-
-            rows.append({
-                "id": hit.get("whg_id") or str(src.get("place_id") or hit["_id"]),
-                "cells": cells
-            })
-
-        return JsonResponse({"rows": rows})
+        return JsonResponse(response)
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({
@@ -288,9 +240,29 @@ class ExtendView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class SuggestView(View):
     def post(self, request, *args, **kwargs):
-        return JsonResponse({
-            "error": "Suggest functionality is not yet implemented. See documentation: " + DOCS_URL
-        }, status=501)
+        allowed, auth_error = authenticate_request(request)
+        if not allowed:
+            return json_error(auth_error.get("error", "Authentication failed"), status=401)
+
+        try:
+            payload = json.loads(request.body)
+            query_text = payload.get("query", "")
+            limit = int(payload.get("limit", 10))
+        except (json.JSONDecodeError, ValueError, TypeError):
+            return json_error("Invalid JSON payload or parameters")
+
+        if not query_text:
+            return JsonResponse({"result": []})
+
+        # Execute search and build candidates using existing helpers
+        hits = es_search(index="whg,pub", query_text=query_text, size=limit)
+        if not hits:
+            return JsonResponse({"result": []})
+
+        max_score = hits[0]["_score"]
+        candidates = [make_candidate(hit, query_text, max_score) for hit in hits]
+
+        return JsonResponse({"result": candidates})
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({
@@ -298,88 +270,24 @@ class SuggestView(View):
         }, status=405)
 
 
-def reconcile_place_es(query_text, index="whg,pub", size=10):
-    """
-    Reconcile a place name using ElasticSearch only.
-    Returns a list of dicts: id, name, score, match, alt_names.
-    """
-    if not query_text:
-        return []
-
-    # Elastic query combining exact match boost + fuzzy
-    body = {
-        "size": size,
-        "query": {
-            "bool": {
-                "should": [
-                    {"match_phrase": {"title.keyword": {"query": query_text, "boost": 3}}},
-                    {"match": {"searchy": {"query": query_text, "fuzziness": "AUTO"}}}
-                ]
-            }
-        }
-    }
-
-    resp = es.search(index=index, body=body)
-    hits = resp.get("hits", {}).get("hits", [])
-
+def reconcile_place_es(query_text, index="whg,pub", size=100, params=None):
+    hits = es_search(index=index, query_text=query_text, size=size, params=params)
     if not hits:
-        return []
+        return {"result": [], "geojson": None}
 
-    max_score = hits[0]["_score"] if hits else 1.0  # prevent division by zero
+    max_score = hits[0]["_score"]
     results = []
+    features = []
 
     for hit in hits:
-        src = hit["_source"]
+        candidate = make_candidate(hit, query_text, max_score)
+        results.append(candidate)
 
-        # Canonical name
-        if src.get("title"):
-            name = src["title"]
-        elif src.get("names"):
-            name = src["names"][0]["toponym"]
-        elif src.get("searchy"):
-            name = src["searchy"][0]
-        else:
-            name = f"Unknown ({hit['_id']})"
+        geojson = geoms_to_geojson(hit["_source"])
+        if geojson:
+            features.extend(geojson["features"])
 
-        # Alternative names
-        alt_names = []
-        if src.get("names"):
-            alt_names = [n["toponym"] for n in src["names"] if n.get("toponym") and n["toponym"] != name]
-        # Include searchy entries that are not already in alt_names or canonical name
-        alt_names += [s for s in src.get("searchy", []) if s not in alt_names and s != name]
-
-        is_exact = name.lower() == query_text.lower()
-
-        # normalize score 0-100 relative to top hit
-        raw_score = hit["_score"]
-        score = int((raw_score / max_score) * 100)
-
-        # Convert geoms to GeoJSON FeatureCollection
-        features = []
-        for geom in src.get("geoms", []):
-            if "location" in geom:
-                features.append({
-                    "type": "Feature",
-                    "geometry": geom["location"],
-                    "properties": {}
-                })
-            else:
-                # If it's a polygon or other geometry
-                features.append({
-                    "type": "Feature",
-                    "geometry": geom,  # assume already GeoJSON-compliant
-                    "properties": {}
-                })
-
-        geojson = {"type": "FeatureCollection", "features": features} if features else None
-
-        results.append({
-            "id": hit.get("whg_id") or str(src.get("place_id") or hit["_id"]),
-            "name": name,
-            "score": score,
-            "match": is_exact,
-            "geojson": geojson,
-            "alt_names": alt_names
-        })
-
-    return results
+    return {
+        "result": results,
+        "geojson": {"type": "FeatureCollection", "features": features} if features else None
+    }
