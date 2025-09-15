@@ -68,14 +68,41 @@ def build_es_query(params, size=100):
     fields = ["title^3", "names.toponym", "searchy"]
 
     # Search mode handling (default, starts, in, fuzzy)
-    search_mode = params.get("mode", "default")
-    if search_mode == "starts":
+    search_mode = params.get("mode", "fuzzy")
+
+    # Handle "prefix|fuzziness" mode
+    if "|" in search_mode:
+        mode_parts = search_mode.split("|")
+        if len(mode_parts) != 2:
+            raise ValueError(f"Invalid fuzzy mode: {search_mode}. Expected format 'prefix|fuzziness'.")
+        prefix_length, fuzziness = mode_parts
+        if prefix_length.isdigit() and (fuzziness == "AUTO" or (fuzziness.isdigit() and int(fuzziness) >= 0 and int(fuzziness) <= 2)):
+            search_query = {
+                "multi_match": {
+                    "query": qstr,
+                    "fields": fields,
+                    "type": "best_fields",
+                    "fuzziness": fuzziness if fuzziness == "AUTO" else int(fuzziness),
+                    "prefix_length": int(prefix_length)
+                }
+            }
+        else:
+            raise ValueError(f"Invalid fuzzy mode: {search_mode}")
+    elif search_mode == "starts":
         search_query = {"bool": {"should": [{"prefix": {field: qstr}} for field in fields]}}
     elif search_mode == "in":
         search_query = {"bool": {"should": [{"wildcard": {field: f"*{qstr}*"}} for field in fields]}}
     elif search_mode == "fuzzy":
-        search_query = {"multi_match": {"query": qstr, "fields": fields, "fuzziness": 2}}
-    else:
+        search_query = {
+            "multi_match": {
+                "query": qstr,
+                "fields": fields,
+                "type": "best_fields",
+                "fuzziness": "AUTO",
+                "prefix_length": 2
+            }
+        }
+    else:  # "exact" or any other
         search_query = {"multi_match": {"query": qstr, "fields": fields}}
 
     q = {
@@ -160,16 +187,26 @@ def build_es_query(params, size=100):
     return q
 
 
-def es_search(index="whg,pub", query_text=None, ids=None, size=100, params=None):
-    if not query_text and not ids:
-        return []
+def es_search(index="whg,pub", query=None, ids=None):
+    """
+    Execute an Elasticsearch search.
+
+    query: dict from normalise_query_params
+    ids: optional list of document IDs to fetch directly
+    """
 
     if ids:
-        body = {"query": {"ids": {"values": ids}}, "_source": True, "size": len(ids)}
+        body = {
+            "query": {"ids": {"values": ids}},
+            "_source": True,
+            "size": len(ids),
+        }
+    elif query:
+        params = dict(query["raw"])  # shallow copy
+        params["qstr"] = query["query_text"]
+        body = build_es_query(params, size=query["size"])
     else:
-        params = params or {}
-        params["qstr"] = query_text
-        body = build_es_query(params, size=size)
+        return []
 
     resp = es.search(index=index, body=body)
     return resp.get("hits", {}).get("hits", [])
