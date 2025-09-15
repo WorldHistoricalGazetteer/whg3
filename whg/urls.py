@@ -77,7 +77,8 @@ urlpatterns = [
 
                   path('public_data/', PublicListsView.as_view(), name='public-lists'),
 
-                  # profile and settings
+                  # orcid authentication, profile and settings
+                  path('orcid-callback/', orcid.orcid_callback, name='orcid-callback'),
                   path('profile/', profile_edit, name="profile-edit"),
 
                   path('dashboard/', views.dashboard_redirect, name="dashboard"),  # redirect to user or admin
