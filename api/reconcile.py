@@ -54,23 +54,18 @@ SERVICE_METADATA = {
         "url": f"{DOMAIN}/feature/{{id}}"
     },
     "preview": {
-        # TODO: This might use the tileserver image endpoint
-        "url": f"{DOMAIN}/preview/{{id}}?bbox={{bbox}}",
-        "width": 430,
-        "height": 300,
-        "status": "not implemented",
-        "note": "Preview functionality is not yet supported"
+        "url": f"{DOMAIN}/preview/",
+        "width": 400,
+        "height": 400,
     },
     "suggest": {
         "entity": {
             "service_url": f"{DOMAIN}",
             "service_path": "/suggest/entity",
-            "status": "implemented",
         },
         "property": {
             "service_url": f"{DOMAIN}",
             "service_path": "/suggest/property",
-            "status": "implemented",
         }
     },
     "extend": {

@@ -3,7 +3,10 @@
 <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
 
 <div class="container">
-    <div id="map" style="height: 500px; width: 500px;"></div>
+    <div id="map" style="height: 100%; width: 100%;"></div>
 </div>
 
+<script>
+window.geojson = {{ geojson|safe }};
+</script>
 <script defer src="{% static 'webpack/preview.bundle.js' %}"></script>

@@ -1,15 +1,34 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const params = new URLSearchParams(window.location.search);
-    const geojsonStr = params.get("data");
-    const geojson = geojsonStr
-        ? JSON.parse(decodeURIComponent(geojsonStr))
-        : {type: "FeatureCollection", features: []};
+    const geojson = window.geojson
+
+    function extendBounds(bounds, coords) {
+        if (typeof coords[0] === "number") {
+            // [lng, lat]
+            bounds.extend(coords);
+        } else {
+            coords.forEach(c => extendBounds(bounds, c));
+        }
+        return bounds;
+    }
+
+    let center = [0, 0];
+    let zoom = 2;
+
+    let bounds = null;
+    if (geojson.features.length) {
+        const initialCoords = geojson.features[0].geometry.coordinates;
+        const bounds = geojson.features.reduce((b, f) => {
+            return extendBounds(b, f.geometry.coordinates);
+        }, new maplibregl.LngLatBounds(initialCoords, initialCoords));
+
+        center = bounds.getCenter().toArray();
+    }
 
     const map = new maplibregl.Map({
         container: "map",
         style: "https://tiles.whgazetteer.org/styles/WHG/style.json",
-        center: [0, 0],
-        zoom: 2
+        center: center,
+        zoom: zoom,
     });
 
     map.on("load", () => {
@@ -17,7 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
         map.addControl(new maplibregl.NavigationControl(), "top-right")
         .addControl(new maplibregl.GlobeControl(), 'top-right')
         .setProjection({ type: 'globe' })
-            .addSource("places", { // ADD WHG ATTRIBUTION
+            .addSource("places", {
             type: "geojson",
             data: geojson,
                 attribution: 'Map data &copy; <a href="https://www.whgazetteer.org">World Historical Gazetteer</a> contributors'
@@ -59,15 +78,8 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
-        if (geojson.features.length) {
-            const bounds = geojson.features.reduce(
-                (b, f) => b.extend(f.geometry.coordinates),
-                new maplibregl.LngLatBounds(
-                    geojson.features[0].geometry.coordinates,
-                    geojson.features[0].geometry.coordinates
-                )
-            );
-            map.fitBounds(bounds, {padding: 20});
+        if (bounds) {
+            map.fitBounds(bounds, { padding: 20 });
         }
     });
 });
