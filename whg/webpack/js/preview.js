@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let bounds = null;
     if (geojson.features.length) {
         const initialCoords = geojson.features[0].geometry.coordinates;
-        const bounds = geojson.features.reduce((b, f) => {
+        bounds = geojson.features.reduce((b, f) => {
             return extendBounds(b, f.geometry.coordinates);
         }, new maplibregl.LngLatBounds(initialCoords, initialCoords));
 
@@ -41,6 +41,9 @@ document.addEventListener("DOMContentLoaded", () => {
             data: geojson,
                 attribution: 'Map data &copy; <a href="https://www.whgazetteer.org">World Historical Gazetteer</a> contributors'
         });
+
+        // Close attribution control
+        document.querySelector('.maplibregl-ctrl-attrib.maplibregl-compact-show .maplibregl-ctrl-attrib-button').click();
 
         // Point layer
         map.addLayer({
@@ -78,6 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
 
+        console.debug(bounds);
         if (bounds) {
             map.fitBounds(bounds, { padding: 20 });
         }
