@@ -30,6 +30,7 @@ module.exports = {
 		mapAndTable: '/app/whg/webpack/js/mapAndTable.js',
 		places: '/app/whg/webpack/js/places.js',
 		portal: '/app/whg/webpack/js/portal.js',
+		preview: '/app/whg/webpack/js/preview.js',
 		profile: '/app/whg/webpack/js/profile.js',
 		review: '/app/whg/webpack/js/review.js',
 		search: '/app/whg/webpack/js/search.js',

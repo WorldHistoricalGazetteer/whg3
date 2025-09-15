@@ -1,0 +1,9 @@
+{% load static %}
+<link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet"/>
+<script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
+
+<div class="container">
+    <div id="map" style="height: 500px; width: 500px;"></div>
+</div>
+
+<script defer src="{% static 'webpack/preview.bundle.js' %}"></script>

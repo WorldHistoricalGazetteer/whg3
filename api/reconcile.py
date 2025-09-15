@@ -30,6 +30,7 @@ from .reconcile_helpers import make_candidate, format_extend_row, es_search, geo
 
 DOMAIN = os.environ.get('URL_FRONT', 'https://whgazetteer.org').rstrip('/')
 DOCS_URL = "https://docs.whgazetteer.org/content/400-Technical.html#reconciliation-api"
+TILESERVER_URL = os.environ.get('TILEBOSS', 'https://tiles.whgazetteer.org').rstrip('/')
 MAX_EARTH_RADIUS_KM = math.pi * 6371  # ~20015 km
 VALID_FCODES = {fc for fc, _ in FEATURE_CLASSES}
 
@@ -37,10 +38,12 @@ SERVICE_METADATA = {
     "versions": ["0.2"],
     "name": "WHG Place Reconciliation",
     "identifierSpace": f"{DOMAIN}/place/",
-    # TODO: Change the following two parameters to use custom WHG schema
-    "schemaSpace": "https://schema.org/",
+    "schemaSpace": f"{DOMAIN}/static/whg_place_schema.jsonld",
     "defaultTypes": [
-        {"id": "https://schema.org/Place", "name": "Place"}
+        {
+            "id": f"{DOMAIN}/static/whg_place_schema.jsonld#Place",
+            "name": "Place"
+        }
     ],
     "documentation": DOCS_URL,
     "logo": f"{DOMAIN}/static/images/whg_logo_square.svg",
@@ -65,11 +68,9 @@ SERVICE_METADATA = {
             "status": "implemented",
         },
         "property": {
-            # TODO: Implement suggest/property endpoint
             "service_url": f"{DOMAIN}",
             "service_path": "/suggest/property",
-            "status": "not implemented",
-            "note": "Property suggestion is not yet supported"
+            "status": "implemented",
         }
     },
     "extend": {
@@ -91,6 +92,7 @@ def json_error(message, status=400):
     return JsonResponse({"error": f"{message} See documentation: {DOCS_URL}"}, status=status)
 
 
+# TODO: Consider using this function to replace part of the current bot-blocking middleware at main.block_user_agents.BlockUserAgentsMiddleware
 def authenticate_request(request):
     """
     Authenticate either via:
@@ -220,6 +222,7 @@ class ReconciliationView(View):
     }
     ```
     """
+
     def get(self, request, *args, **kwargs):
         return JsonResponse(SERVICE_METADATA)
 
@@ -348,6 +351,7 @@ class SuggestView(View):
     }
     ```
     """
+
     def post(self, request, *args, **kwargs):
         allowed, auth_error = authenticate_request(request)
         if not allowed:
@@ -372,6 +376,53 @@ class SuggestView(View):
         candidates = [make_candidate(hit, query["query_text"], max_score) for hit in hits]
 
         return JsonResponse({"result": candidates})
+
+    def http_method_not_allowed(self, request, *args, **kwargs):
+        return JsonResponse({
+            "error": "Method not allowed. This endpoint only accepts POST. See documentation: " + DOCS_URL
+        }, status=405)
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class SuggestPropertyView(View):
+    """
+    /suggest/property
+    Returns suggested property names for entities.
+    """
+
+    def get_allowed_fields(self):
+        # Define all fields that can be suggested
+        return [
+            "title",
+            "whg_id",
+            "fclasses",
+            "ccodes",
+            "timespans",
+            "geom",
+            "dataset",
+            "names",
+        ]
+
+    def post(self, request, *args, **kwargs):
+        allowed, auth_error = authenticate_request(request)
+        if not allowed:
+            return json_error(auth_error.get("error", "Authentication failed"), status=401)
+
+        try:
+            payload = json.loads(request.body)
+            query_text = (payload.get("query") or "").strip().lower()
+            limit = int(payload.get("limit", 10))
+        except (json.JSONDecodeError, ValueError, TypeError):
+            return json_error("Invalid JSON payload or parameters")
+
+        fields = self.get_allowed_fields()
+        # Filter fields by query_text if provided
+        if query_text:
+            matches = [f for f in fields if query_text in f.lower()]
+        else:
+            matches = fields
+
+        return JsonResponse({"result": matches[:limit]})
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({

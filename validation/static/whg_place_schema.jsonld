@@ -1,0 +1,91 @@
+{
+  "@context": {
+    "whg": "https://whgazetteer.org/schema/whg#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "geo": "http://www.opengis.net/ont/geosparql#",
+    "xsd": "http://www.w3.org/2001/XMLSchema#"
+  },
+  "@graph": [
+    {
+      "@id": "whg:Place",
+      "@type": "rdfs:Class",
+      "rdfs:label": "Place",
+      "rdfs:comment": "A named geographic entity with spatial, temporal, and administrative properties."
+    },
+    {
+      "@id": "whg:identifier",
+      "@type": "rdf:Property",
+      "rdfs:label": "Persistent Identifier",
+      "rdfs:domain": "whg:Place",
+      "rdfs:range": "xsd:anyURI",
+      "rdfs:comment": "Persistent URI identifying this place record.",
+      "whg:example": "https://whgazetteer.org/place/12345"
+    },
+    {
+      "@id": "whg:name",
+      "@type": "rdf:Property",
+      "rdfs:label": "Name",
+      "rdfs:domain": "whg:Place",
+      "rdfs:range": "xsd:string",
+      "rdfs:comment": "Canonical name of the place.",
+      "whg:example": "London"
+    },
+    {
+      "@id": "whg:alternateName",
+      "@type": "rdf:Property",
+      "rdfs:label": "Alternate Name",
+      "rdfs:domain": "whg:Place",
+      "rdfs:range": "xsd:string",
+      "rdfs:comment": "Alternative names or historical variants.",
+      "whg:example": "Londinium"
+    },
+    {
+      "@id": "whg:fclass",
+      "@type": "rdf:Property",
+      "rdfs:label": "Feature Class",
+      "rdfs:domain": "whg:Place",
+      "rdfs:range": "xsd:string",
+      "rdfs:comment": "The WHG feature class of the place. Must be one of the GeoNames feature classes.",
+      "whg:allowedValues": [
+        "A","H","L","P","R","S","T","U","V","X"
+      ],
+      "whg:reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html"
+    },
+    {
+      "@id": "whg:geometry",
+      "@type": "rdf:Property",
+      "rdfs:label": "Geometry",
+      "rdfs:domain": "whg:Place",
+      "rdfs:range": "geo:Geometry",
+      "rdfs:comment": "Spatial representation of the place.",
+      "whg:example": {"type":"Point","coordinates":[-0.1278,51.5074]}
+    },
+    {
+      "@id": "whg:timespans",
+      "@type": "rdf:Property",
+      "rdfs:label": "Timespans",
+      "rdfs:domain": "whg:Place",
+      "rdfs:range": "xsd:string",
+      "rdfs:comment": "Temporal coverage or existence of the place (ISO dates or year ranges).",
+      "whg:example": "1200-1600"
+    },
+    {
+      "@id": "whg:ccodes",
+      "@type": "rdf:Property",
+      "rdfs:label": "Country Codes",
+      "rdfs:domain": "whg:Place",
+      "rdfs:range": "xsd:string",
+      "rdfs:comment": "ISO 2-letter country codes where the place is located.",
+      "whg:reference": "https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2",
+      "whg:example": "GB"
+    },
+    {
+      "@id": "whg:source",
+      "@type": "rdf:Property",
+      "rdfs:label": "Source Dataset",
+      "rdfs:domain": "whg:Place",
+      "rdfs:range": "xsd:string",
+      "rdfs:comment": "Original dataset providing this place record."
+    }
+  ]
+}
