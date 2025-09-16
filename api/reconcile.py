@@ -60,7 +60,7 @@ SERVICE_METADATA = {
     "preview": {
         "url": f"{DOMAIN}/preview/" + "?id={{id}}",
         "width": 400,
-        "height": 400,
+        "height": 200,
     },
     "suggest": {
         "entity": {
