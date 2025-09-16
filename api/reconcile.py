@@ -7,8 +7,8 @@ Provides endpoints for place reconciliation and property extension according to 
 Supports POST requests to /reconcile/ to retrieve candidate places with canonical names, alternative names,
 normalized match scores, exact match flags, and full GeoJSON geometries.
 Also includes /reconcile/extend/propose for suggesting additional properties and /reconcile/extend for computing
-property values (currently not implemented). Authentication is via API token or session/CSRF.
-Batch requests are supported, and geometries are always included to aid visual disambiguation.
+property values. Authentication is via API token or session/CSRF.
+Batch requests are supported.
 
 See documentation: https://docs.whgazetteer.org/content/400-Technical.html#reconciliation-api
 """
@@ -28,7 +28,7 @@ from geopy.distance import geodesic
 
 from main.choices import FEATURE_CLASSES
 from .models import APIToken, UserAPIProfile
-from .reconcile_helpers import make_candidate, format_extend_row, es_search, geoms_to_geojson
+from .reconcile_helpers import make_candidate, format_extend_row, es_search
 
 logger = logging.getLogger('reconciliation')
 
@@ -286,6 +286,10 @@ class ReconciliationView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class ExtendProposeView(View):
 
+    # TODO: This needs to accept GET requests
+    # Current metadata configuration causes OpenRefine to produce URLs like:
+    # https://dev.whgazetteer.org/reconcile/extend/propose?token=W3oIbPL8kMmQaVYq1anTzyrRkB3GngdZVEugDKQLJ2Y?type=https://dev.whgazetteer.org/static/whg_place_schema.jsonld
+
     def post(self, request, *args, **kwargs):
         allowed, auth_error = authenticate_request(request)
         if not allowed:
@@ -390,6 +394,8 @@ class SuggestPropertyView(View):
     /suggest/property
     Returns suggested property names for entities.
     """
+
+    # TODO: This needs to accept GET requests, as for /suggest/entity
 
     def get_allowed_fields(self):
         # Define all fields that can be suggested
@@ -571,19 +577,14 @@ def reconcile_place_es(query, index="whg,pub"):
         return {"result": [], "geojson": None}
 
     max_score = hits[0]["_score"]
-    results, features = [], []
+    results = []
 
     for hit in hits:
         candidate = make_candidate(hit, query["query_text"], max_score)
         results.append(candidate)
 
-        geojson = geoms_to_geojson(hit["_source"])
-        if geojson:
-            features.extend(geojson["features"])
-
     return {
-        "result": results,
-        "geojson": {"type": "FeatureCollection", "features": features} if features else None
+        "result": results
     }
 
 
