@@ -1,15 +1,12 @@
-import json
 import logging
 
-from django.http import JsonResponse, HttpResponseBadRequest
-from django.shortcuts import render
+from django.http import JsonResponse, HttpResponseBadRequest, Http404, HttpResponse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
 
-from api.reconcile import DOCS_URL
-from places.models import Place
+from places.models import Place, PlaceGeom
 
 logger = logging.getLogger('reconciliation')
 
@@ -25,46 +22,47 @@ class PreviewView(View):
         if not place_id:
             return HttpResponseBadRequest("Missing id parameter")
 
-        # Look up Place
         try:
             place = Place.objects.get(pk=place_id)
         except Place.DoesNotExist:
-            return HttpResponseBadRequest(f"No Place found with id={place_id}")
+            raise Http404(f"Place {place_id} not found")
 
-        # Build GeoJSON FeatureCollection from related PlaceGeom objects
-        features = []
-        for geom in place.geoms.all():
-            if geom.geom:
-                features.append({
-                    "type": "Feature",
-                    "geometry": json.loads(geom.geom.geojson),
-                    "properties": {
-                        "src_id": geom.src_id,
-                        "geom_src": geom.geom_src.src_id if geom.geom_src else None,
-                        "task_id": geom.task_id,
-                    },
-                })
-            elif geom.jsonb:
-                features.append({
-                    "type": "Feature",
-                    "geometry": geom.jsonb.get("geometry"),
-                    "properties": geom.jsonb.get("properties", {}),
-                })
+        # Build record using existing logic
+        record = self._build_record(place)
 
-        feature_collection = {
-            "type": "FeatureCollection",
-            "features": features,
+        # Render HTML snippet
+        html = f"""
+        <div style="font-family:sans-serif; font-size:14px; padding:5px;">
+            <strong>{record['title']}</strong><br>
+            {'; '.join([n['label'] for n in record['names']])}<br>
+            Types: {', '.join([t['label'] for t in record['types']])}<br>
+            Timespans: {', '.join([str(t) for t in record['timespans']])}<br>
+            Centroid: {self._centroid(place)}<br>
+            Dataset: {record['dataset']['title']}
+        </div>
+        """
+
+        return HttpResponse(html, content_type="text/html")
+
+    def _build_record(self, place):
+        # Minimal version of your _build_record for preview purposes
+        names = [{"label": n.name} for n in place.names.all()]
+        types = [{"label": t.label} for t in place.types.all()]
+        return {
+            "title": place.title,
+            "names": names,
+            "types": types,
+            "timespans": [t[0] for t in place.timespans] if place.timespans else [],
+            "dataset": {
+                "title": place.dataset.title if place.dataset else "unknown"
+            }
         }
 
-        # If JSON explicitly requested
-        if request.headers.get("Accept") == "application/json":
-            return JsonResponse(feature_collection)
-
-        # Otherwise, render into Leaflet map
-        return render(request, "preview_map.html", {
-            "geojson": json.dumps(feature_collection),
-            "place": place,  # TODO: Note yet used in template
-        })
+    def _centroid(self, place):
+        geom = PlaceGeom.objects.filter(place=place).first()
+        if geom and geom.geom:
+            return f"{geom.geom.centroid.y:.5f}, {geom.geom.centroid.x:.5f}"
+        return "n/a"
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({
