@@ -16,6 +16,7 @@ See documentation: https://docs.whgazetteer.org/content/400-Technical.html#recon
 import json
 import math
 import os
+from urllib.parse import urlencode
 
 from django.http import JsonResponse
 from django.utils import timezone
@@ -227,7 +228,38 @@ class ReconciliationView(View):
     """
 
     def get(self, request, *args, **kwargs):
-        return JsonResponse(SERVICE_METADATA)
+        token = request.GET.get("token")
+        openRefine = bool(request.headers.get("User-Agent", "").startswith("OpenRefine"))
+
+        # Shallow copy so you don't mutate the global SERVICE_METADATA
+        metadata = SERVICE_METADATA.copy()
+
+        if token and openRefine:
+            # Inject token into the preview + suggest + extend URLs
+            def with_token(url):
+                separator = "&" if "?" in url else "?"
+                return f"{url}{separator}{urlencode({'token': token})}"
+
+            metadata["preview"]["url"] = with_token(metadata["preview"]["url"])
+            metadata["view"]["url"] = with_token(metadata["view"]["url"])
+            metadata["feature_view"]["url"] = with_token(metadata["feature_view"]["url"])
+
+            if "suggest" in metadata:
+                for _, svc in metadata["suggest"].items():
+                    svc["service_url"] = with_token(svc["service_url"])
+
+            if "extend" in metadata and "propose_properties" in metadata["extend"]:
+                svc = metadata["extend"]["propose_properties"]
+                svc["service_url"] = with_token(svc["service_url"])
+
+            # Overwrite authentication block so OpenRefine knows it's query param style
+            metadata["authentication"] = {
+                "type": "api_token",
+                "name": "token",
+                "in": "query"
+            }
+
+        return JsonResponse(metadata)
 
     def post(self, request, *args, **kwargs):
         allowed, auth_error = authenticate_request(request)
