@@ -58,7 +58,7 @@ SERVICE_METADATA = {
         "url": f"{DOMAIN}/feature/{{id}}"
     },
     "preview": {
-        "url": f"{DOMAIN}/preview/{{id}}",
+        "url": f"{DOMAIN}/preview/?id={{id}}",
         "width": 400,
         "height": 400,
     },
