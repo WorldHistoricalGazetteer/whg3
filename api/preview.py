@@ -76,7 +76,7 @@ class PreviewView(View):
         </head>
         <body>
             <div class="record-container">
-                <div class="record-title">{record['title']}</div>
+                <div class="record-title">{record['title']} <span class="record-note">Map previews are not yet available.</span></div>
                 <div class="record-info">
                     <span class="record-field">Alternative Names:</span> {_format_list(record.get('names', []))}<br>
                     <span class="record-field">Types:</span> {_format_list(record.get('types', []))}<br>
@@ -84,8 +84,7 @@ class PreviewView(View):
                     <span class="record-field">Feature Classes:</span> {_format_list(record.get('fclasses', []))}<br>
                     <span class="record-field">Timespans:</span> {_format_list(record.get('timespans', []))}<br>
                     <span class="record-field">Dataset:</span> {record['dataset']['title']}
-                </div>
-                <span class="record-note">Map previews are not yet available.</span>
+                </div>                
             </div>
         </body>
         </html>

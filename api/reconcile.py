@@ -60,7 +60,7 @@ SERVICE_METADATA = {
     "preview": {
         "url": DOMAIN + "/preview/?id={{id}}",
         "width": 400,
-        "height": 200,
+        "height": 300,
     },
     "suggest": {
         "entity": {
@@ -270,8 +270,8 @@ class ReconciliationView(View):
         logger.debug("Reconcile POST request body: %s", request.body.decode('utf-8'))
 
         allowed, auth_error = authenticate_request(request)
-        # if not allowed:
-        #     return json_error(auth_error.get("error", "Authentication failed"), status=401)
+        if not allowed:
+            return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
         payload = {}
 
