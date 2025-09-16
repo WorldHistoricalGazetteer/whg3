@@ -52,7 +52,7 @@ SERVICE_METADATA = {
     "documentation": DOCS_URL,
     "logo": DOMAIN + "/static/images/whg_logo_80.png",
     "view": {
-        "url": DOMAIN + "/places/{{id}}/portal/"
+        "url": DOMAIN + "/places/portal/{{id}}/"
     },
     "feature_view": {
         "url": DOMAIN + "/feature/{{id}}"
