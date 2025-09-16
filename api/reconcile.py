@@ -41,40 +41,40 @@ VALID_FCODES = {fc for fc, _ in FEATURE_CLASSES}
 SERVICE_METADATA = {
     "versions": ["0.2"],
     "name": "World Historical Gazetteer Place Reconciliation Service",
-    "identifierSpace": f"{DOMAIN}/place/",
-    "schemaSpace": f"{DOMAIN}/static/whg_place_schema.jsonld",
+    "identifierSpace": DOMAIN + "/place/",
+    "schemaSpace": DOMAIN + "/static/whg_place_schema.jsonld",
     "defaultTypes": [
         {
-            "id": f"{DOMAIN}/static/whg_place_schema.jsonld#Place",
+            "id": DOMAIN + "/static/whg_place_schema.jsonld#Place",
             "name": "Place"
         }
     ],
     "documentation": DOCS_URL,
-    "logo": f"{DOMAIN}/static/images/whg_logo_80.png",
+    "logo": DOMAIN + "/static/images/whg_logo_80.png",
     "view": {
-        "url": f"{DOMAIN}/place/{{id}}/detail"
+        "url": DOMAIN + "/place/{{id}}/detail"
     },
     "feature_view": {
-        "url": f"{DOMAIN}/feature/{{id}}"
+        "url": DOMAIN + "/feature/{{id}}"
     },
     "preview": {
-        "url": f"{DOMAIN}/preview/" + "?id={{id}}",
+        "url": DOMAIN + "/preview/?id={{id}}",
         "width": 400,
         "height": 200,
     },
     "suggest": {
         "entity": {
-            "service_url": f"{DOMAIN}",
+            "service_url": DOMAIN,
             "service_path": "/suggest/entity",
         },
         "property": {
-            "service_url": f"{DOMAIN}",
+            "service_url": DOMAIN,
             "service_path": "/suggest/property",
         }
     },
     "extend": {
         "propose_properties": {
-            "service_url": f"{DOMAIN}",
+            "service_url": DOMAIN,
             "service_path": "/reconcile/extend/propose"
         }
     },

@@ -41,50 +41,57 @@ class PreviewView(View):
 
         # Render HTML snippet
         html = f"""
-        <style>
-            .record-container {{
-                font-family: sans-serif;
-                font-size: 14px;
-                padding: 10px;
-                line-height: 1.5;
-                background-color: #f9f9f9;
-                border-left: 3px solid #007BFF;
-                margin-bottom: 10px;
-            }}
-            .record-title {{
-                font-size: 16px;
-                font-weight: bold;
-                color: #333;
-            }}
-            .record-field {{
-                font-weight: bold;
-            }}
-            .record-info {{
-                margin-top: 5px;
-            }}
-            .record-note {{
-                font-size: 10px;
-                color: #888;
-                margin-top: 10px;
-                display: block;
-            }}
-        </style>
-        
-        <div class="record-container">
-            <div class="record-title">{record['title']}</div>
-            <div class="record-info">
-                <span class="record-field">Alternative Names:</span> {_format_list(record.get('names', []))}<br>
-                <span class="record-field">Types:</span> {_format_list(record.get('types', []))}<br>
-                <span class="record-field">Country Codes:</span> {_format_list(record.get('ccodes', []))}<br>
-                <span class="record-field">Feature Classes:</span> {_format_list(record.get('fclasses', []))}<br>
-                <span class="record-field">Timespans:</span> {_format_list(record.get('timespans', []))}<br>
-                <span class="record-field">Dataset:</span> {record['dataset']['title']}
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <style>
+                .record-container {{
+                    font-family: sans-serif;
+                    font-size: 14px;
+                    padding: 10px;
+                    line-height: 1.5;
+                    background-color: #f9f9f9;
+                    border-left: 3px solid #007BFF;
+                    margin-bottom: 10px;
+                }}
+                .record-title {{
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #333;
+                }}
+                .record-field {{
+                    font-weight: bold;
+                }}
+                .record-info {{
+                    margin-top: 5px;
+                }}
+                .record-note {{
+                    font-size: 10px;
+                    color: #888;
+                    margin-top: 10px;
+                    display: block;
+                }}
+            </style>
+        </head>
+        <body>
+            <div class="record-container">
+                <div class="record-title">{record['title']}</div>
+                <div class="record-info">
+                    <span class="record-field">Alternative Names:</span> {_format_list(record.get('names', []))}<br>
+                    <span class="record-field">Types:</span> {_format_list(record.get('types', []))}<br>
+                    <span class="record-field">Country Codes:</span> {_format_list(record.get('ccodes', []))}<br>
+                    <span class="record-field">Feature Classes:</span> {_format_list(record.get('fclasses', []))}<br>
+                    <span class="record-field">Timespans:</span> {_format_list(record.get('timespans', []))}<br>
+                    <span class="record-field">Dataset:</span> {record['dataset']['title']}
+                </div>
+                <span class="record-note">Map previews are not yet available.</span>
             </div>
-            <span class="record-note">Map previews are not yet available.</span>
-        </div>
+        </body>
+        </html>
         """
 
-        return HttpResponse(html, content_type="text/html")
+        return HttpResponse(html, content_type="text/html; charset=UTF-8")
 
     def _build_record(self, place):
         names = attribListFromSet('names', place.names.all(), exclude_title=place.title)
