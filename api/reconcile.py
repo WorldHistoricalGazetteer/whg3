@@ -231,9 +231,9 @@ class ReconciliationView(View):
     """
 
     def get(self, request, *args, **kwargs):
-        logger.debug("Preview GET request params: %s", request.GET)
+        logger.debug("Reconcile GET request params: %s", request.GET)
         token = request.GET.get("token")
-        logger.debug("Preview token: %s", token)
+        logger.debug("Reconcile token: %s", token)
 
         # Shallow copy so you don't mutate the global SERVICE_METADATA
         metadata = SERVICE_METADATA.copy()

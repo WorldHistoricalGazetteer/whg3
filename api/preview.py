@@ -1,4 +1,5 @@
 import json
+import logging
 
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render
@@ -7,6 +8,8 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
 from api.reconcile import DOCS_URL
+
+logger = logging.getLogger('reconciliation')
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -37,6 +40,8 @@ class PreviewView(View):
     ## GET method is not currently used, but could be enabled if needed for testing in a browser.
     ## It would accept a "data" query parameter containing GeoJSON to display.
     def get(self, request):
+        logger.debug("Preview GET request params: %s", request.GET)
+
         data = request.GET.get("data")
         if not data:
             return render(request, "preview_map.html", {"geojson": "{}"})
