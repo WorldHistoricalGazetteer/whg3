@@ -49,13 +49,11 @@ class PreviewView(View):
     def _build_record(self, place):
         names = attribListFromSet('names', place.names.all(), exclude_title=place.title)
         types = attribListFromSet('types', place.types.all())
-        ccodes = attribListFromSet('ccodes', place.ccodes.all())
-        fclasses = attribListFromSet('fclasses', place.fclasses.all())
         return {
             "title": place.title,
             "names": names,
-            "ccodes": ccodes,
-            "fclasses": fclasses,
+            "ccodes": place.ccodes,
+            "fclasses": place.fclasses,
             "types": types,
             "timespans": [t[0] for t in place.timespans] if place.timespans else [],
             "dataset": {
