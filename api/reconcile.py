@@ -64,8 +64,8 @@ SERVICE_METADATA = {
     },
     "suggest": {
         "entity": {
-            "service_url": DOMAIN,
-            "service_path": "/suggest/entity",
+            "service_url": DOMAIN + "/suggest/entity",
+            "service_path": "",
         },
         "property": {
             "service_url": DOMAIN,
