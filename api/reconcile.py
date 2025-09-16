@@ -50,7 +50,7 @@ SERVICE_METADATA = {
         }
     ],
     "documentation": DOCS_URL,
-    "logo": f"{DOMAIN}/static/images/whg_logo_square.svg",
+    "logo": f"{DOMAIN}/static/images/whg_logo_80.png",
     "view": {
         "url": f"{DOMAIN}/place/{{id}}"
     },

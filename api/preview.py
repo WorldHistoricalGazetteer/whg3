@@ -36,15 +36,15 @@ class PreviewView(View):
 
     ## GET method is not currently used, but could be enabled if needed for testing in a browser.
     ## It would accept a "data" query parameter containing GeoJSON to display.
-    # def get(self, request):
-    #     data = request.GET.get("data")
-    #     if not data:
-    #         return render(request, "preview_map.html", {"geojson": "{}"})
-    #     try:
-    #         geojson = json.loads(data)
-    #     except json.JSONDecodeError:
-    #         geojson = {}
-    #     return render(request, "preview_map.html", {"geojson": json.dumps(geojson)})
+    def get(self, request):
+        data = request.GET.get("data")
+        if not data:
+            return render(request, "preview_map.html", {"geojson": "{}"})
+        try:
+            geojson = json.loads(data)
+        except json.JSONDecodeError:
+            geojson = {}
+        return render(request, "preview_map.html", {"geojson": json.dumps(geojson)})
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({
