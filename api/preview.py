@@ -69,8 +69,7 @@ class PreviewView(View):
                 .record-note {{
                     font-size: 10px;
                     color: #888;
-                    margin-top: 10px;
-                    display: block;
+                    display: inline-block;
                 }}
             </style>
         </head>
