@@ -273,11 +273,30 @@ class ReconciliationView(View):
         # if not allowed:
         #     return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
-        try:
-            payload = json.loads(request.body)
-            queries = payload.get("queries", {})
-        except (json.JSONDecodeError, AttributeError):
-            return json_error("Invalid JSON payload")
+        payload = {}
+
+        # TODO: Handle form-encoded with "queries" param in other views too?
+        # Case 1: OpenRefine style (form-encoded with "queries" param)
+        if request.content_type.startswith("application/x-www-form-urlencoded"):
+            queries_param = request.POST.get("queries")
+            if not queries_param:
+                return json_error("Missing 'queries' parameter")
+            try:
+                payload = {"queries": json.loads(queries_param)}
+            except json.JSONDecodeError:
+                return json_error("Invalid JSON in 'queries' parameter")
+
+        # Case 2: raw JSON body
+        elif request.content_type.startswith("application/json"):
+            try:
+                payload = json.loads(request.body)
+            except json.JSONDecodeError:
+                return json_error("Invalid JSON body")
+
+        else:
+            return json_error("Unsupported Content-Type")
+
+        queries = payload.get("queries", {})
 
         if not queries:
             return json_error("Missing 'queries' parameter")
