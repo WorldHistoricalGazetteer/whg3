@@ -6,7 +6,7 @@ from django.views import View
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
 
-from places.models import Place, PlaceGeom
+from places.models import Place
 from places.utils import attribListFromSet
 
 logger = logging.getLogger('reconciliation')
@@ -30,17 +30,57 @@ class PreviewView(View):
 
         record = self._build_record(place)
 
+        def _format_list(data_list, separator=', '):
+            if data_list:
+                # Assuming list of dictionaries with 'label' key, handle simple lists gracefully
+                if isinstance(data_list[0], dict):
+                    return separator.join([item.get('label', 'N/A') for item in data_list])
+                else:
+                    return separator.join(str(item) for item in data_list)
+            return "N/A"
+
         # Render HTML snippet
         html = f"""
-        <div style="font-family:sans-serif; font-size:14px; padding:5px;">
-            <strong>{record['title']}</strong><br>
-            <strong>Alternative Names:</strong> {'; '.join([n['label'] for n in record['names']])}<br>
-            <strong>Types:</strong> {', '.join([t['label'] for t in record['types']])}<br>
-            <strong>Country Codes:</strong> {record['ccodes']}<br>
-            <strong>Feature Classes:</strong> {record['fclasses']}<br>
-            <strong>Timespans:</strong> {', '.join([str(t) for t in record['timespans']])}<br>
-            <strong>Dataset:</strong> {record['dataset']['title']}
-            <span style="font-size:10px; color:#888;">Map previews are not yet available.</span>
+        <style>
+            .record-container {{
+                font-family: sans-serif;
+                font-size: 14px;
+                padding: 10px;
+                line-height: 1.5;
+                background-color: #f9f9f9;
+                border-left: 3px solid #007BFF;
+                margin-bottom: 10px;
+            }}
+            .record-title {{
+                font-size: 16px;
+                font-weight: bold;
+                color: #333;
+            }}
+            .record-field {{
+                font-weight: bold;
+            }}
+            .record-info {{
+                margin-top: 5px;
+            }}
+            .record-note {{
+                font-size: 10px;
+                color: #888;
+                margin-top: 10px;
+                display: block;
+            }}
+        </style>
+        
+        <div class="record-container">
+            <div class="record-title">{record['title']}</div>
+            <div class="record-info">
+                <span class="record-field">Alternative Names:</span> {_format_list(record.get('names', []))}<br>
+                <span class="record-field">Types:</span> {_format_list(record.get('types', []))}<br>
+                <span class="record-field">Country Codes:</span> {_format_list(record.get('ccodes', []))}<br>
+                <span class="record-field">Feature Classes:</span> {_format_list(record.get('fclasses', []))}<br>
+                <span class="record-field">Timespans:</span> {_format_list(record.get('timespans', []))}<br>
+                <span class="record-field">Dataset:</span> {record['dataset']['title']}
+            </div>
+            <span class="record-note">Map previews are not yet available.</span>
         </div>
         """
 
