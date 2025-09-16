@@ -68,14 +68,14 @@ SERVICE_METADATA = {
             "service_path": "",
         },
         "property": {
-            "service_url": DOMAIN,
-            "service_path": "/suggest/property",
+            "service_url": DOMAIN + "/suggest/property",
+            "service_path": "",
         }
     },
     "extend": {
         "propose_properties": {
-            "service_url": DOMAIN,
-            "service_path": "/reconcile/extend/propose"
+            "service_url": DOMAIN + "/reconcile/extend/propose",
+            "service_path": ""
         }
     },
     "batch_size": 50,
@@ -344,66 +344,30 @@ class ExtendView(View):
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-class SuggestView(View):
-    """
-    Suggest API endpoint for free-text place search.
-
-    **Endpoint:** `POST /suggest/`
-
-    Accepts a single free-text query and returns candidate matches from the Elastic index.
-
-    **POST payload format:**
-    ```json
-    {
-        "query": "London",
-        "limit": 10,
-        "mode": "fuzzy"
-    }
-    ```
-
-    **Parameters:**
-    | Parameter | Type    | Description |
-    |-----------|---------|-------------|
-    | `query`   | string  | Free-text search string (required). |
-    | `limit`   | integer | Maximum number of results to return (default 10). |
-    | `mode`    | string  | Search mode. Options are `"exact"` (multi-match), `"fuzzy"` (default, `"AUTO"` fuzziness, prefix_length=2), `"starts"` (prefix match), or `"in"` (substring/wildcard match). You may also specify a custom fuzzy mode as `"prefix_length|fuzziness"` (e.g., `"2|1"`), where `prefix_length` is the number of initial characters that must match exactly and `fuzziness` is `"AUTO"` or an integer ≤ 2.
-
-    **Behavior:**
-    - Performs a search on the fields: `title^3`, `names.toponym`, `searchy`.
-    - Returns candidate matches sorted by relevance score.
-    - Each candidate includes canonical name, alternative names, match score (0–100), and exact match flag.
-
-    **Response format:**
-    ```json
-    {
-        "result": [
-            {
-                "id": "whg:123",
-                "name": "London",
-                "alt": ["Londinium"],
-                "score": 100,
-                "exact": true
-            }
-        ]
-    }
-    ```
-    """
-
-    def post(self, request, *args, **kwargs):
+class SuggestEntityView(View):
+    def get(self, request, *args, **kwargs):
         allowed, auth_error = authenticate_request(request)
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
-        try:
-            payload = parse_request_payload(request)
-            raw_params = {
-                "query": payload.get("query", ""),
-                "size": int(payload.get("limit", 10)),
-                "mode": payload.get("mode", "fuzzy"),
-            }
-            query = normalise_query_params(raw_params)
-        except (ValueError, TypeError) as e:
-            return json_error(f"Invalid payload or parameters: {e}")
+        prefix = request.GET.get("prefix", "").strip()
+        exact = request.GET.get("exact", "false").lower() == "true"
+
+        # These parameters are passed by OpenRefine but not implemented here as it is unclear how they should affect suggestions
+        # spell = request.GET.get("spell", "always")
+        # prefixed = request.GET.get("prefixed", "false").lower() == "true"
+
+        if not prefix:
+            return JsonResponse({"result": []})
+
+        # Construct search parameters
+        raw_params = {
+            "query": prefix,
+            "size": int(request.GET.get("limit", 10)),
+        }
+        query = normalise_query_params(raw_params)
+
+        query["mode"] = "starts" if exact else "fuzzy"
 
         hits = es_search(query=query)
         if not hits:
@@ -416,7 +380,7 @@ class SuggestView(View):
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({
-            "error": "Method not allowed. This endpoint only accepts POST. See documentation: " + DOCS_URL
+            "error": "Method not allowed. This endpoint only accepts GET. See documentation: " + DOCS_URL
         }, status=405)
 
 
