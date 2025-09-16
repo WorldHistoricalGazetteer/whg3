@@ -110,7 +110,7 @@
         <div id="has-token">
           <p>
             <strong>Your API Token:</strong>
-            <code id="api-token" class="clippable">{{ api_token_key }}</code>
+            <code id="api-token" class="clippable openrefine">{{ api_token_key }}</code>
           </p>
           <p>
             <strong>Remaining Daily Quota:</strong>
@@ -175,7 +175,8 @@
   window.profileConfig = {
     apiTokenUrl: "{% url 'accounts:profile-api-token' %}",
     newsToggleUrl: "{% url 'accounts:profile-news-toggle' %}",
-    csrfToken: "{{ csrf_token }}"
+    csrfToken: "{{ csrf_token }}",
+    domain: "{{ request.get_host }}",
   };
 </script>
 {% endblock %}

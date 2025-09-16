@@ -1,6 +1,6 @@
 // profile.js
 
-import { initClipboard } from './utilities'
+import {initClipboard} from './utilities'
 
 const {apiTokenUrl, newsToggleUrl, csrfToken} = window.profileConfig;
 const tokenSection = document.getElementById('api-token-section');
@@ -22,6 +22,72 @@ function requestToken(action) {
 }
 
 initClipboard();
+
+document.querySelectorAll(".openrefine").forEach((el, idx) => {
+    const btn = document.createElement("i");
+    btn.className = "fas fa-diamond ms-2 text-primary";
+    btn.style.cursor = "pointer";
+
+    // give the source element an id if it doesn't have one
+    if (!el.id) {
+        el.id = `clippable-${idx}`;
+    }
+    btn.setAttribute("data-clipboard-target", `#${el.id}`);
+
+    // tooltip title: use element attr or default
+    const title = el.dataset.clippableTitle || "Copy OpenRefine Service URL to clipboard";
+    btn.setAttribute("data-bs-toggle", "tooltip");
+    btn.setAttribute("data-bs-placement", "top");
+    btn.setAttribute("title", title);
+
+    // insert after the element
+    el.insertAdjacentElement("afterend", btn);
+});
+
+// init ClipboardJS
+const clipboard = new ClipboardJS(".fa-diamond", {
+    text: function (trigger) {
+        // "trigger" is the <i> button that was clicked
+        const targetSelector = trigger.getAttribute("data-clipboard-target");
+        const target = document.querySelector(targetSelector);
+
+        if (!target) return "";
+        let text = target.textContent;
+        return domain + '/reconcile/?token=' + text.trim();
+    }
+});
+
+clipboard.on("success", function (e) {
+    const icon = e.trigger;
+    const tooltip = bootstrap.Tooltip.getInstance(icon);
+    if (!tooltip) return;
+
+    // clear highlight
+    e.clearSelection();
+
+    // flash colour
+    icon.classList.remove("text-secondary");
+    icon.classList.add("text-success");
+
+    // change tooltip content
+    icon.setAttribute("data-bs-original-title", "Copied!");
+    tooltip.show();
+
+    // reset after 2s
+    setTimeout(() => {
+        const original = icon.dataset.clippableTitle || "Copy OpenRefine Service URL to clipboard";
+        icon.setAttribute("data-bs-original-title", original);
+
+        icon.classList.remove("text-success");
+        icon.classList.add("text-primary");
+
+        tooltip.hide();
+    }, 2000);
+});
+
+clipboard.on("error", function () {
+    alert("Failed to copy.");
+});
 
 tokenSection.querySelectorAll('#has-token button').forEach(button => {
     button.setAttribute('data-bs-title', 'This will immediately invalidate the existing token');
