@@ -2,7 +2,7 @@
 
 import {initClipboard} from './utilities'
 
-const {apiTokenUrl, newsToggleUrl, csrfToken} = window.profileConfig;
+const {apiTokenUrl, newsToggleUrl, csrfToken, domain} = window.profileConfig;
 const tokenSection = document.getElementById('api-token-section');
 const tokenCode = document.getElementById('api-token');
 
