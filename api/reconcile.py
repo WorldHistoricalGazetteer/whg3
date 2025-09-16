@@ -14,6 +14,7 @@ See documentation: https://docs.whgazetteer.org/content/400-Technical.html#recon
 """
 
 import json
+import logging
 import math
 import os
 from urllib.parse import urlencode
@@ -28,6 +29,8 @@ from geopy.distance import geodesic
 from main.choices import FEATURE_CLASSES
 from .models import APIToken, UserAPIProfile
 from .reconcile_helpers import make_candidate, format_extend_row, es_search, geoms_to_geojson
+
+logger = logging.getLogger('reconciliation')
 
 DOMAIN = os.environ.get('URL_FRONT', 'https://whgazetteer.org').rstrip('/')
 DOCS_URL = "https://docs.whgazetteer.org/content/400-Technical.html#reconciliation-api"
@@ -261,6 +264,9 @@ class ReconciliationView(View):
         return JsonResponse(metadata)
 
     def post(self, request, *args, **kwargs):
+        logger.debug("Reconcile POST request headers: %s", request.headers)
+        logger.debug("Reconcile POST request body: %s", request.body.decode('utf-8'))
+
         allowed, auth_error = authenticate_request(request)
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
@@ -275,6 +281,7 @@ class ReconciliationView(View):
             return json_error("Missing 'queries' parameter")
 
         results = process_queries(queries, batch_size=SERVICE_METADATA.get("batch_size", 50))
+        logger.debug("Reconcile POST response: %s", results)
         return JsonResponse(results)
 
 
