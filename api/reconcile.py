@@ -273,31 +273,12 @@ class ReconciliationView(View):
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
-        payload = {}
+        payload, error = get_json_payload(request)
+        if error:
+            return json_error(error)
 
-        # TODO: Handle form-encoded with "queries" param in other views too?
-        # Case 1: OpenRefine style (form-encoded with "queries" param)
-        if request.content_type.startswith("application/x-www-form-urlencoded"):
-            queries_param = request.POST.get("queries")
-            if not queries_param:
-                return json_error("Missing 'queries' parameter")
-            try:
-                payload = {"queries": json.loads(queries_param)}
-            except json.JSONDecodeError:
-                return json_error("Invalid JSON in 'queries' parameter")
-
-        # Case 2: raw JSON body
-        elif request.content_type.startswith("application/json"):
-            try:
-                payload = json.loads(request.body)
-            except json.JSONDecodeError:
-                return json_error("Invalid JSON body")
-
-        else:
-            return json_error("Unsupported Content-Type")
-
+        # Now, check for the 'queries' key in the parsed payload
         queries = payload.get("queries", {})
-
         if not queries:
             return json_error("Missing 'queries' parameter")
 
@@ -490,6 +471,27 @@ class SuggestPropertyView(View):
         return JsonResponse({
             "error": "Method not allowed. This endpoint only accepts POST. See documentation: " + DOCS_URL
         }, status=405)
+
+
+def get_json_payload(request):
+    """
+    Parses a request body, handling both JSON and form-encoded formats.
+    Returns a tuple: (payload_dict, error_message).
+    """
+    error_message = None
+    payload = {}
+
+    if request.content_type.startswith("application/x-www-form-urlencoded"):
+        payload = request.POST
+    elif request.content_type.startswith("application/json"):
+        try:
+            payload = json.loads(request.body)
+        except json.JSONDecodeError:
+            error_message = "Invalid JSON body."
+    else:
+        error_message = "Unsupported Content-Type. Expected 'application/json' or 'application/x-www-form-urlencoded'."
+
+    return payload, error_message
 
 
 def process_queries(queries, batch_size=50):
