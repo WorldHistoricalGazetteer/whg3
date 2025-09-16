@@ -52,7 +52,7 @@ const clipboard = new ClipboardJS(".fa-gem", {
 
         if (!target) return "";
         let text = target.textContent;
-        return domain + '/reconcile/?token=' + text.trim();
+        return `https://${domain}/reconcile/?token=${text.trim()}`;
     }
 });
 
