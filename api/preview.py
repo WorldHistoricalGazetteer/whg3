@@ -5,6 +5,7 @@ from django.http import JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views import View
+from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
 
 from api.reconcile import DOCS_URL
@@ -14,6 +15,7 @@ logger = logging.getLogger('reconciliation')
 
 
 @method_decorator(csrf_exempt, name='dispatch')
+@method_decorator(xframe_options_exempt, name="dispatch")
 class PreviewView(View):
 
     def get(self, request):
