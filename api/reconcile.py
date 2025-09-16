@@ -275,7 +275,7 @@ class ReconciliationView(View):
             return json_error("Missing 'queries' parameter")
 
         results = process_queries(queries, batch_size=SERVICE_METADATA.get("batch_size", 50))
-        return JsonResponse({"results": results})
+        return JsonResponse(results)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
