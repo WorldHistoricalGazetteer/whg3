@@ -229,12 +229,11 @@ class ReconciliationView(View):
 
     def get(self, request, *args, **kwargs):
         token = request.GET.get("token")
-        openRefine = bool(request.headers.get("User-Agent", "").startswith("OpenRefine"))
 
         # Shallow copy so you don't mutate the global SERVICE_METADATA
         metadata = SERVICE_METADATA.copy()
 
-        if token and openRefine:
+        if token:
             # Inject token into the preview + suggest + extend URLs
             def with_token(url):
                 separator = "&" if "?" in url else "?"
