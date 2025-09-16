@@ -266,24 +266,20 @@ class ReconciliationView(View):
         return JsonResponse(metadata)
 
     def post(self, request, *args, **kwargs):
-        logger.debug("Reconcile POST request headers: %s", request.headers)
-        logger.debug("Reconcile POST request body: %s", request.body.decode('utf-8'))
-
         allowed, auth_error = authenticate_request(request)
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
-        payload, error = get_json_payload(request)
-        if error:
-            return json_error(error)
+        try:
+            payload = parse_request_payload(request, expect_queries=True)
+        except ValueError as e:
+            return json_error(str(e))
 
-        # Now, check for the 'queries' key in the parsed payload
         queries = payload.get("queries", {})
         if not queries:
             return json_error("Missing 'queries' parameter")
 
         results = process_queries(queries, batch_size=SERVICE_METADATA.get("batch_size", 50))
-        logger.debug("Reconcile POST response: %s", results)
         return JsonResponse(results)
 
 
@@ -319,20 +315,18 @@ class ExtendView(View):
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
         try:
-            payload = json.loads(request.body)
+            payload = parse_request_payload(request)
             candidate_ids = payload.get("ids", [])
             requested_props = payload.get("properties", [])
-        except Exception:
-            return json_error("Invalid JSON payload")
+        except ValueError as e:
+            return json_error(str(e))
 
         if not candidate_ids:
             return JsonResponse({"rows": []})
 
         hits = es_search_by_ids(candidate_ids)
 
-        rows = []
-        features = []
-
+        rows, features = [], []
         for hit in hits:
             row = format_extend_row(hit, requested_props, features)
             rows.append(row)
@@ -401,15 +395,15 @@ class SuggestView(View):
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
         try:
-            payload = json.loads(request.body)
+            payload = parse_request_payload(request)
             raw_params = {
                 "query": payload.get("query", ""),
                 "size": int(payload.get("limit", 10)),
                 "mode": payload.get("mode", "fuzzy"),
             }
             query = normalise_query_params(raw_params)
-        except (json.JSONDecodeError, ValueError, TypeError) as e:
-            return json_error(f"Invalid JSON payload or parameters: {e}")
+        except (ValueError, TypeError) as e:
+            return json_error(f"Invalid payload or parameters: {e}")
 
         hits = es_search(query=query)
         if not hits:
@@ -473,25 +467,33 @@ class SuggestPropertyView(View):
         }, status=405)
 
 
-def get_json_payload(request):
+def parse_request_payload(request, expect_queries: bool = False):
     """
-    Parses a request body, handling both JSON and form-encoded formats.
-    Returns a tuple: (payload_dict, error_message).
+    Parse request body based on Content-Type.
+    - Supports form-encoded 'queries' (OpenRefine style).
+    - Supports raw JSON body.
+    Returns: dict payload
+    Raises: ValueError with a message if parsing fails.
     """
-    error_message = None
-    payload = {}
-
     if request.content_type.startswith("application/x-www-form-urlencoded"):
-        payload = request.POST
+        if not expect_queries:
+            raise ValueError("Form-encoded payload only supported with 'queries'")
+        queries_param = request.POST.get("queries")
+        if not queries_param:
+            raise ValueError("Missing 'queries' parameter")
+        try:
+            return {"queries": json.loads(queries_param)}
+        except json.JSONDecodeError:
+            raise ValueError("Invalid JSON in 'queries' parameter")
+
     elif request.content_type.startswith("application/json"):
         try:
-            payload = json.loads(request.body)
+            return json.loads(request.body)
         except json.JSONDecodeError:
-            error_message = "Invalid JSON body."
-    else:
-        error_message = "Unsupported Content-Type. Expected 'application/json' or 'application/x-www-form-urlencoded'."
+            raise ValueError("Invalid JSON body")
 
-    return payload, error_message
+    else:
+        raise ValueError(f"Unsupported Content-Type: {request.content_type}")
 
 
 def process_queries(queries, batch_size=50):
