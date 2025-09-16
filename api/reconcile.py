@@ -36,7 +36,7 @@ VALID_FCODES = {fc for fc, _ in FEATURE_CLASSES}
 
 SERVICE_METADATA = {
     "versions": ["0.2"],
-    "name": "WHG Place Reconciliation",
+    "name": "World Historical Gazetteer Place Reconciliation Service",
     "identifierSpace": f"{DOMAIN}/place/",
     "schemaSpace": f"{DOMAIN}/static/whg_place_schema.jsonld",
     "defaultTypes": [
@@ -92,15 +92,23 @@ def authenticate_request(request):
     """
     Authenticate either via:
     1. Authorization: Bearer <token>
-    2. CSRF/session (browser-originated)
-
-    Returns:
-        (bool, dict|None) -- True and None if authenticated,
-                              False and error dict if denied.
+    2. token=<token> query parameter (only if User-Agent starts with 'OpenRefine')
+    3. CSRF/session (browser-originated)
     """
+    key = None
+
+    # 1. Check Authorization header
     auth = request.headers.get("Authorization", "")
     if auth.startswith("Bearer "):
         key = auth.split(" ", 1)[1]
+
+    # 2. Check query parameter (OpenRefine-only)
+    if not key:
+        ua = request.headers.get("User-Agent", "")
+        if ua.startswith("OpenRefine"):
+            key = request.GET.get("token")
+
+    if key:
         try:
             token = APIToken.objects.select_related("user").get(key=key)
             request.user = token.user
