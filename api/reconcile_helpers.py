@@ -55,7 +55,8 @@ def make_candidate(hit, query_text, max_score):
     score = normalize_score(hit["_score"], max_score)
     is_exact = name.lower() == query_text.lower()
     return {
-        "id": hit.get("whg_id") or str(src.get("place_id") or hit["_id"]),
+        # "id": hit.get("whg_id") or str(src.get("place_id") or hit["_id"]),
+        "id": str(src.get("place_id") or hit.get("_id") or hit["whg_id"]),
         "name": name,
         "score": score,
         "match": is_exact,
