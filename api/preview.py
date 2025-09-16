@@ -36,8 +36,8 @@ class PreviewView(View):
             <strong>{record['title']}</strong><br>
             <strong>Alternative Names:</strong> {'; '.join([n['label'] for n in record['names']])}<br>
             <strong>Types:</strong> {', '.join([t['label'] for t in record['types']])}<br>
-            <strong>Country Codes:</strong> {', '.join([c['label'] for c in record['ccodes']])}<br>
-            <strong>Feature Classes:</strong> {', '.join([f['label'] for f in record['fclasses']])}<br>
+            <strong>Country Codes:</strong> {record['ccodes']}<br>
+            <strong>Feature Classes:</strong> {record['fclasses']}<br>
             <strong>Timespans:</strong> {', '.join([str(t) for t in record['timespans']])}<br>
             <strong>Dataset:</strong> {record['dataset']['title']}
             <span style="font-size:10px; color:#888;">Map previews are not yet available.</span>
