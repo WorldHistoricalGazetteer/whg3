@@ -21,11 +21,9 @@ function requestToken(action) {
     }).then(r => r.json());
 }
 
-initClipboard();
-
 document.querySelectorAll(".openrefine").forEach((el, idx) => {
     const btn = document.createElement("i");
-    btn.className = "fas fa-diamond ms-2 text-primary";
+    btn.className = "fas fa-gem ms-2 text-primary";
     btn.style.cursor = "pointer";
 
     // give the source element an id if it doesn't have one
@@ -45,11 +43,12 @@ document.querySelectorAll(".openrefine").forEach((el, idx) => {
 });
 
 // init ClipboardJS
-const clipboard = new ClipboardJS(".fa-diamond", {
+const clipboard = new ClipboardJS(".fa-gem", {
     text: function (trigger) {
         // "trigger" is the <i> button that was clicked
         const targetSelector = trigger.getAttribute("data-clipboard-target");
         const target = document.querySelector(targetSelector);
+        console.debug("targetSelector", target);
 
         if (!target) return "";
         let text = target.textContent;
@@ -88,6 +87,8 @@ clipboard.on("success", function (e) {
 clipboard.on("error", function () {
     alert("Failed to copy.");
 });
+
+initClipboard();
 
 tokenSection.querySelectorAll('#has-token button').forEach(button => {
     button.setAttribute('data-bs-title', 'This will immediately invalidate the existing token');
