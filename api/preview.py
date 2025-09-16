@@ -7,6 +7,7 @@ from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
 
 from places.models import Place, PlaceGeom
+from places.utils import attribListFromSet
 
 logger = logging.getLogger('reconciliation')
 
@@ -37,7 +38,6 @@ class PreviewView(View):
             {'; '.join([n['label'] for n in record['names']])}<br>
             Types: {', '.join([t['label'] for t in record['types']])}<br>
             Timespans: {', '.join([str(t) for t in record['timespans']])}<br>
-            Centroid: {self._centroid(place)}<br>
             Dataset: {record['dataset']['title']}
         </div>
         """
@@ -45,9 +45,8 @@ class PreviewView(View):
         return HttpResponse(html, content_type="text/html")
 
     def _build_record(self, place):
-        # Minimal version of your _build_record for preview purposes
-        names = [{"label": n.name} for n in place.names.all()]
-        types = [{"label": t.label} for t in place.types.all()]
+        names = attribListFromSet('names', place.names.all(), exclude_title=place.title)
+        types = attribListFromSet('types', place.types.all())
         return {
             "title": place.title,
             "names": names,
@@ -57,12 +56,6 @@ class PreviewView(View):
                 "title": place.dataset.title if place.dataset else "unknown"
             }
         }
-
-    def _centroid(self, place):
-        geom = PlaceGeom.objects.filter(place=place).first()
-        if geom and geom.geom:
-            return f"{geom.geom.centroid.y:.5f}, {geom.geom.centroid.x:.5f}"
-        return "n/a"
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({
