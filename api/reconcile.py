@@ -52,13 +52,13 @@ SERVICE_METADATA = {
     "documentation": DOCS_URL,
     "logo": f"{DOMAIN}/static/images/whg_logo_80.png",
     "view": {
-        "url": f"{DOMAIN}/place/{{id}}"
+        "url": f"{DOMAIN}/place/{{id}}/detail"
     },
     "feature_view": {
         "url": f"{DOMAIN}/feature/{{id}}"
     },
     "preview": {
-        "url": f"{DOMAIN}/preview/",
+        "url": f"{DOMAIN}/preview/{{id}}",
         "width": 400,
         "height": 400,
     },

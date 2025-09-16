@@ -8,6 +8,7 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
 from api.reconcile import DOCS_URL
+from places.models import Place
 
 logger = logging.getLogger('reconciliation')
 
@@ -15,43 +16,55 @@ logger = logging.getLogger('reconciliation')
 @method_decorator(csrf_exempt, name='dispatch')
 class PreviewView(View):
 
-    def post(self, request):
-        # Accept JSON payload (e.g., from Reconciliation API)
-        try:
-            payload = json.loads(request.body)
-            results = payload.get("results", {})
-        except Exception:
-            return HttpResponseBadRequest("Invalid JSON payload")
-
-        # Combine all geojsons into a single FeatureCollection
-        combined = {"type": "FeatureCollection", "features": []}
-        for q in results.values():
-            gj = q.get("geojson")
-            if gj and "features" in gj:
-                combined["features"].extend(gj["features"])
-
-        # If client explicitly wants JSON, return JSON
-        if request.headers.get("Accept") == "application/json":
-            return JsonResponse(combined)
-
-        # Otherwise render the HTML template directly with combined GeoJSON
-        return render(request, "preview_map.html", {"geojson": json.dumps(combined)})
-
-    ## GET method is not currently used, but could be enabled if needed for testing in a browser.
-    ## It would accept a "data" query parameter containing GeoJSON to display.
     def get(self, request):
-        logger.debug("Preview GET request params: %s", request.GET)
+        place_id = request.GET.get("id")
+        logger.debug("Preview GET request id=%s", place_id)
 
-        data = request.GET.get("data")
-        if not data:
-            return render(request, "preview_map.html", {"geojson": "{}"})
+        if not place_id:
+            return HttpResponseBadRequest("Missing id parameter")
+
+        # Look up Place
         try:
-            geojson = json.loads(data)
-        except json.JSONDecodeError:
-            geojson = {}
-        return render(request, "preview_map.html", {"geojson": json.dumps(geojson)})
+            place = Place.objects.get(pk=place_id)
+        except Place.DoesNotExist:
+            return HttpResponseBadRequest(f"No Place found with id={place_id}")
+
+        # Build GeoJSON FeatureCollection from related PlaceGeom objects
+        features = []
+        for geom in place.geoms.all():
+            if geom.geom:
+                features.append({
+                    "type": "Feature",
+                    "geometry": json.loads(geom.geom.geojson),
+                    "properties": {
+                        "src_id": geom.src_id,
+                        "geom_src": geom.geom_src.src_id if geom.geom_src else None,
+                        "task_id": geom.task_id,
+                    },
+                })
+            elif geom.jsonb:
+                features.append({
+                    "type": "Feature",
+                    "geometry": geom.jsonb.get("geometry"),
+                    "properties": geom.jsonb.get("properties", {}),
+                })
+
+        feature_collection = {
+            "type": "FeatureCollection",
+            "features": features,
+        }
+
+        # If JSON explicitly requested
+        if request.headers.get("Accept") == "application/json":
+            return JsonResponse(feature_collection)
+
+        # Otherwise, render into Leaflet map
+        return render(request, "preview_map.html", {
+            "geojson": json.dumps(feature_collection),
+            "place": place,  # TODO: Note yet used in template
+        })
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({
-            "error": "Method not allowed. This endpoint only accepts POST. See documentation: " + DOCS_URL
+            "error": "Method not allowed. Use GET with ?id=."
         }, status=405)
