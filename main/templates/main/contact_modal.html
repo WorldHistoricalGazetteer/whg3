@@ -31,9 +31,9 @@
                         </td>
                     </tr>
                 {% else %}
-                    {{ form.name }}       {# hidden #}
-                    {{ form.from_email }} {# hidden #}
-                    {{ form.username }}   {# hidden #}
+                    {{ form.name.as_hidden }}
+                    {{ form.from_email.as_hidden }}
+                    {{ form.username }}
                 {% endif %}
 
                 <tr>
@@ -53,7 +53,7 @@
             </table>
 
             {% if not user.is_authenticated %}
-                <div class="d-flex justify-content-end mt-3">
+                <div class="d-flex justify-content-end mt-2 me-2">
                     <div class="cf-turnstile" data-sitekey="{{ TURNSTILE_SITE_KEY }}"></div>
                 </div>
             {% endif %}

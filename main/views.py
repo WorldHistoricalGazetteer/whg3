@@ -780,7 +780,8 @@ def contact_modal_view(request):
     initial_data = {}
     if request.user.is_authenticated:
         initial_data['from_email'] = request.user.email
-        initial_data['name'] = request.user.username
+        initial_data['name'] = request.user.name
+        initial_data['username'] = request.user.username
         initial_data['subject'] = request.GET.get('subject')
 
     form = ContactForm(request.POST or None, initial=initial_data)
