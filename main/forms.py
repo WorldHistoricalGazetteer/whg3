@@ -1,3 +1,4 @@
+from captcha.fields import CaptchaField
 from django import forms
 from django.conf import settings
 from django.db import models
@@ -34,6 +35,7 @@ class ContactForm(forms.Form):
         required=True)
     message = forms.CharField(widget=forms.Textarea(attrs={'cols': 50, 'rows': 5}), required=True)
     username = forms.CharField(widget=forms.HiddenInput(), required=False)
+    captcha = CaptchaField()
     dataset_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
 
     def __init__(self, *args, **kwargs):
