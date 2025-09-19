@@ -777,65 +777,65 @@ def volunteer_view(request):
 
 
 
+# def contact_modal_view(request):
+#     if request.method == 'GET':
+#         initial_data = {}
+#         if request.user.is_authenticated:
+#             initial_data['from_email'] = request.user.email
+#             initial_data['name'] = request.user.username
+#             initial_data['subject'] = request.GET['subject'] if 'subject' in request.GET else None
+#         form = ContactForm(initial=initial_data)
+#     else:
+#         form = ContactForm(request.POST)
+#         if form.is_valid():
+#             name = form.cleaned_data['name']
+#             username = form.cleaned_data.get('username', None)
+#             user_subject = form.cleaned_data['subject']
+#             user_email = form.cleaned_data['from_email']
+#             user_message = form.cleaned_data['message']
+#             page_url = request.POST.get('page_url', 'No page URL provided')
+#
+#             # URL-encode the subject and body for the mailto link
+#             encoded_subject = urllib.parse.quote(user_subject)
+#             encoded_body = urllib.parse.quote(
+#                 f"\n\n\nOriginal message:\nSent on: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n{user_message}"
+#             )
+#             mailto_link = f"mailto:{user_email}?subject={encoded_subject}&body={encoded_body}"
+#
+#             try:
+#
+#                 slack_message = (
+#                     f"*Subject:* {user_subject}\n"
+#                     f"*From:* {name} (username: {username or '(none)'})\n"
+#                     f"*Email Address:* <{mailto_link}|{user_email}>\n"
+#                     f"*Message:* ```{user_message}```\n"
+#                     f"*Page URL:* {'Home Page' if page_url == '/' else page_url}\n"
+#                     f"----------------------------------------"
+#                 )
+#                 response = requests.post(settings.SLACK_CONTACT_WEBHOOK, json={"text": slack_message})
+#                 if not response.status_code == 200:
+#                     logger.debug(f"Failed to send message to Slack: {response.status_code}, {response.text}")
+#
+#                 messages.success(request, "Your message has been sent successfully.")
+#                 return JsonResponse({'success': True})
+#
+#             except BadHeaderError:
+#                 return HttpResponse('Invalid header found.')
+#
+#             except Exception as e:
+#                 logger.error("An error occurred while processing the contact form: %s", e)
+#                 messages.error(request, "There was an error sending your message. Please try again later.")
+#                 return JsonResponse({'success': False, 'error': str(e)})
+#         else:
+#             logger.debug(f'form.errors: {form.errors}')
+#             # Form is not valid, render the form again with errors
+#             return render(request, 'main/contact_modal.html', {'form': form})
+#
+#     context = {'form': form}
+#     return render(request, 'main/contact_modal.html', context)
+
+
 def contact_modal_view(request):
-    if request.method == 'GET':
-        initial_data = {}
-        if request.user.is_authenticated:
-            initial_data['from_email'] = request.user.email
-            initial_data['name'] = request.user.username
-            initial_data['subject'] = request.GET['subject'] if 'subject' in request.GET else None
-        form = ContactForm(initial=initial_data)
-    else:
-        form = ContactForm(request.POST)
-        if form.is_valid():
-            name = form.cleaned_data['name']
-            username = form.cleaned_data.get('username', None)
-            user_subject = form.cleaned_data['subject']
-            user_email = form.cleaned_data['from_email']
-            user_message = form.cleaned_data['message']
-            page_url = request.POST.get('page_url', 'No page URL provided')
-
-            # URL-encode the subject and body for the mailto link
-            encoded_subject = urllib.parse.quote(user_subject)
-            encoded_body = urllib.parse.quote(
-                f"\n\n\nOriginal message:\nSent on: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n{user_message}"
-            )
-            mailto_link = f"mailto:{user_email}?subject={encoded_subject}&body={encoded_body}"
-
-            try:
-
-                slack_message = (
-                    f"*Subject:* {user_subject}\n"
-                    f"*From:* {name} (username: {username or '(none)'})\n"
-                    f"*Email Address:* <{mailto_link}|{user_email}>\n"
-                    f"*Message:* ```{user_message}```\n"
-                    f"*Page URL:* {'Home Page' if page_url == '/' else page_url}\n"
-                    f"----------------------------------------"
-                )
-                response = requests.post(settings.SLACK_CONTACT_WEBHOOK, json={"text": slack_message})
-                if not response.status_code == 200:
-                    logger.debug(f"Failed to send message to Slack: {response.status_code}, {response.text}")
-
-                messages.success(request, "Your message has been sent successfully.")
-                return JsonResponse({'success': True})
-
-            except BadHeaderError:
-                return HttpResponse('Invalid header found.')
-
-            except Exception as e:
-                logger.error("An error occurred while processing the contact form: %s", e)
-                messages.error(request, "There was an error sending your message. Please try again later.")
-                return JsonResponse({'success': False, 'error': str(e)})
-        else:
-            logger.debug(f'form.errors: {form.errors}')
-            # Form is not valid, render the form again with errors
-            return render(request, 'main/contact_modal.html', {'form': form})
-
-    context = {'form': form}
-    return render(request, 'main/contact_modal.html', context)
-
-
-def contact_modal_view_NEW(request):
     # Prepare initial form data
     initial_data = {}
     if request.user.is_authenticated:
