@@ -24,6 +24,27 @@ class AnnouncementForm(forms.ModelForm):
 class ContactForm(forms.Form):
     name = forms.CharField(
         widget=forms.TextInput(attrs={'size': 50}),
+        required=True)
+    from_email = forms.EmailField(
+        widget=forms.EmailInput(attrs={'size': 50}),
+        required=True,
+        label="Your email address ")
+    subject = forms.CharField(
+        widget=forms.TextInput(attrs={'size': 50}),
+        required=True)
+    message = forms.CharField(widget=forms.Textarea(attrs={'cols': 50, 'rows': 5}), required=True)
+    username = forms.CharField(widget=forms.HiddenInput(), required=False)
+    dataset_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
+
+    def __init__(self, *args, **kwargs):
+        initial_subject = kwargs.pop('initial_subject', None)
+        super(ContactForm, self).__init__(*args, **kwargs)
+        if initial_subject:
+            self.fields['subject'].initial = initial_subject
+
+class ContactFormNew(forms.Form):
+    name = forms.CharField(
+        widget=forms.TextInput(attrs={'size': 50}),
         required=True,
         label="Your name"
     )
