@@ -97,16 +97,12 @@ function initWHGModal() {
             event.stopPropagation();
 
             const turnstileContainer = $form.find('.turnstile-container');
+            const feedback = turnstileContainer.find('.invalid-feedback');
+
             if (!turnstileValid) {
-                if (turnstileContainer.find('.invalid-feedback').length === 0) {
-                    turnstileContainer.append(
-                        '<div class="invalid-feedback d-block">Please verify that you are human.</div>'
-                    );
-                } else {
-                    turnstileContainer.find('.invalid-feedback').addClass('d-block');
-                }
+                feedback.text('Please verify that you are human.').addClass('d-block');
             } else {
-                turnstileContainer.find('.invalid-feedback').removeClass('d-block');
+                feedback.text('').removeClass('d-block');
             }
         } else {
             event.preventDefault(); // Prevent default form submission
