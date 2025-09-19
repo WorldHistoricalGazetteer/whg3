@@ -895,7 +895,7 @@ def contact_modal_view(request):
             try:
                 slack_message = (
                     f"*Subject:* {user_subject}\n"
-                    f"*From:* {name} (username: {username or '(none)'})\n"
+                    f"*From:* {name} (username: {username or 'N/A - Unauthenticated User'})\n"
                     f"*Email Address:* <{mailto_link}|{user_email}>\n"
                     f"*Message:* ```{user_message}```\n"
                     f"*Page URL:* {'Home Page' if page_url == '/' else page_url}\n"
