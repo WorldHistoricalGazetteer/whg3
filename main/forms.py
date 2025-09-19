@@ -25,30 +25,37 @@ class AnnouncementForm(forms.ModelForm):
 class ContactForm(forms.Form):
     name = forms.CharField(
         widget=forms.TextInput(attrs={'size': 50}),
-        required=True)
+        required=True,
+        label="Your name"
+    )
     from_email = forms.EmailField(
         widget=forms.EmailInput(attrs={'size': 50}),
         required=True,
-        label="Your email address ")
+        label="Your email address"
+    )
     subject = forms.CharField(
         widget=forms.TextInput(attrs={'size': 50}),
-        required=True)
-    message = forms.CharField(widget=forms.Textarea(attrs={'cols': 50, 'rows': 5}), required=True)
-    username = forms.CharField(widget=forms.HiddenInput(), required=False)
-    captcha = CaptchaField()
-    dataset_id = forms.IntegerField(widget=forms.HiddenInput(), required=False)
+        required=True
+    )
+    message = forms.CharField(
+        widget=forms.Textarea(attrs={'cols': 50, 'rows': 5}),
+        required=True
+    )
+    username = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=False
+    )
+    dataset_id = forms.IntegerField(
+        widget=forms.HiddenInput(),
+        required=False
+    )
 
     def __init__(self, *args, **kwargs):
+        # Allow passing an initial subject directly
         initial_subject = kwargs.pop('initial_subject', None)
-        super(ContactForm, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         if initial_subject:
             self.fields['subject'].initial = initial_subject
-
-    # def clean_captcha(self):
-    #     print('in clean_captcha')
-    #     if settings.TESTING:
-    #         # Bypass CAPTCHA validation
-    #         return self.cleaned_data.get('captcha')
 
 class VolunteerForm(ContactForm):
     subject = forms.CharField(initial='WHG Volunteer for Review')
