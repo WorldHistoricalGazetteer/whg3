@@ -110,7 +110,11 @@ function initWHGModal() {
     // Enable Bootstrap form validation using jQuery
     $('body').on('submit', '#whgModal form', function (event) { // Must delegate from body to account for form refresh on fail
         const $form = $(this);
-        const turnstileValid = validateTurnstile();
+
+        // Only require Turnstile if widget exists (i.e. unauthenticated users)
+        const hasTurnstile = $form.find('.cf-turnstile').length > 0;
+        const turnstileValid = !hasTurnstile || validateTurnstile();
+
         if (!this.checkValidity() || !turnstileValid) {
             event.preventDefault();
             event.stopPropagation();
