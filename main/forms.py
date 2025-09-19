@@ -22,7 +22,7 @@ class AnnouncementForm(forms.ModelForm):
             'link': forms.TextInput(attrs={'class': 'form-control', 'size': '50'}),
         }
 
-class ContactForm(forms.Form):
+class ContactFormOLD(forms.Form):
     name = forms.CharField(
         widget=forms.TextInput(attrs={'size': 50}),
         required=True)
@@ -44,7 +44,7 @@ class ContactForm(forms.Form):
         if initial_subject:
             self.fields['subject'].initial = initial_subject
 
-class ContactFormNew(forms.Form):
+class ContactForm(forms.Form):
     name = forms.CharField(
         widget=forms.TextInput(attrs={'size': 50}),
         required=True,
