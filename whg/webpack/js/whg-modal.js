@@ -21,7 +21,19 @@ function initWHGModal() {
 
     $('#whgModal')
         .on('hidden.bs.modal', function (e) {
-            $('#whgModal .modal-content').html('');
+            const $content = $('#whgModal .modal-content');
+
+            // Clean up any Turnstile widgets
+            $content.find('.cf-turnstile').each(function () {
+                const widgetId = $(this).data('widget-id');
+                if (widgetId && window.turnstile) {
+                    turnstile.remove(widgetId);
+                }
+                $(this).removeData('widget-id').removeData('initialized');
+            });
+
+            // Clear modal content
+            $content.html('');
         })
         .on('show.bs.modal', function (e) {
             loadModalContent($(e.relatedTarget));
@@ -63,7 +75,7 @@ function initWHGModal() {
                         loadModalContent($(this));
                     });
 
-                // Initialize Turnstile if present
+                // Initialise Turnstile once content is ready
                 initTurnstile();
 
                 // Show the modal
@@ -76,18 +88,17 @@ function initWHGModal() {
     }
 
     function initTurnstile() {
-        if (!window.turnstile) return;
-
-        $('.cf-turnstile').each(function () {
-            const $widget = $(this);
-            if (!$widget.data('initialized')) {
-                const widgetId = turnstile.render(this, {
-                    sitekey: $widget.data('sitekey')
-                });
-                $widget.data('initialized', true);
-                $widget.data('widget-id', widgetId);
-            }
-        });
+        if (window.turnstile) {
+            $('.cf-turnstile').each(function () {
+                if (!$(this).data('widget-id')) {
+                    const widgetId = turnstile.render(this, {
+                        sitekey: $(this).data('sitekey')
+                    });
+                    $(this).data('widget-id', widgetId)
+                           .data('initialized', true);
+                }
+            });
+        }
     }
 
     function validateTurnstile() {
@@ -139,7 +150,6 @@ function initWHGModal() {
                         // If the response is HTML, update the modal content
                         $form.remove();
                         $('#whgModal .modal-content').html(response);
-                        initTurnstile(); // Re-initialize if form reloads HTML
                     }
                 },
                 error: function (xhr, status, error) {
