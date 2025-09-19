@@ -25,18 +25,6 @@ function initWHGModal() {
         })
         .on('show.bs.modal', function (e) {
             loadModalContent($(e.relatedTarget));
-            // Give Turnstile a tick to mount
-            setTimeout(() => {
-                if (window.turnstile) {
-                    $('.cf-turnstile').each(function() {
-                        const widget = $(this);
-                        if (!widget.data('initialized')) {
-                            turnstile.render(this, { sitekey: widget.data('sitekey') });
-                            widget.data('initialized', true);
-                        }
-                    });
-                }
-            }, 100);
         });
 
     function loadModalContent(target) {
@@ -75,6 +63,9 @@ function initWHGModal() {
                         loadModalContent($(this));
                     });
 
+                // Initialize Turnstile if present
+                initTurnstile();
+
                 // Show the modal
                 $('#whgModal').modal('show');
             },
@@ -84,20 +75,25 @@ function initWHGModal() {
         });
     }
 
+    function initTurnstile() {
+        if (!window.turnstile) return;
+
+        $('.cf-turnstile').each(function () {
+            const $widget = $(this);
+            if (!$widget.data('initialized')) {
+                const widgetId = turnstile.render(this, {
+                    sitekey: $widget.data('sitekey')
+                });
+                $widget.data('initialized', true);
+                $widget.data('widget-id', widgetId);
+            }
+        });
+    }
+
     function validateTurnstile() {
         const responseField = document.querySelector('#whgModal [name="cf-turnstile-response"]');
         return responseField && responseField.value.trim().length > 0;
     }
-
-
-    // Initialize any CAPTCHA refresh functionality within the modal
-    $('body').on('click', '#whgModal form .captcha', function (e) { // Must delegate from body to account for form refresh on fail
-        e.preventDefault();
-        $.getJSON("/captcha/refresh/", function (result) {
-            $('#id_captcha_0').val(result.key)
-                .prev('img.captcha').attr('src', result.image_url);
-        });
-    });
 
 
     // Enable Bootstrap form validation using jQuery
@@ -143,6 +139,7 @@ function initWHGModal() {
                         // If the response is HTML, update the modal content
                         $form.remove();
                         $('#whgModal .modal-content').html(response);
+                        initTurnstile(); // Re-initialize if form reloads HTML
                     }
                 },
                 error: function (xhr, status, error) {
@@ -152,24 +149,6 @@ function initWHGModal() {
         }
         $(this).addClass('was-validated');
     });
-
-    // Custom validation function for captcha
-    function validateCaptcha() {
-        var captchaInput = $('#whgModal .captcha-container input[type="text"]');
-        var captchaFeedback = $('#whgModal .captcha-container .invalid-feedback');
-        if (captchaInput.val().length !== 6) {
-            captchaInput.addClass('is-invalid');
-            captchaFeedback.show();
-            captchaInput[0].setCustomValidity('Invalid length');
-            captchaInput[0].reportValidity();
-            return false;
-        } else {
-            captchaInput.removeClass('is-invalid');
-            captchaFeedback.hide();
-            captchaInput[0].setCustomValidity('');
-            return true;
-        }
-    }
 
 }
 
