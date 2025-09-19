@@ -6,7 +6,6 @@ from django.utils.safestring import mark_safe
 from main.models import Comment
 from main.choices import COMMENT_TAGS, COMMENT_TAGS_REVIEW
 from bootstrap_modal_forms.forms import BSModalForm
-from captcha.fields import CaptchaField
 import sys
 
 from django import forms
