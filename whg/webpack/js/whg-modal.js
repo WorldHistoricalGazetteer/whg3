@@ -25,6 +25,18 @@ function initWHGModal() {
         })
         .on('show.bs.modal', function (e) {
             loadModalContent($(e.relatedTarget));
+            // Give Turnstile a tick to mount
+            setTimeout(() => {
+                if (window.turnstile) {
+                    $('.cf-turnstile').each(function() {
+                        const widget = $(this);
+                        if (!widget.data('initialized')) {
+                            turnstile.render(this, { sitekey: widget.data('sitekey') });
+                            widget.data('initialized', true);
+                        }
+                    });
+                }
+            }, 100);
         });
 
     function loadModalContent(target) {
