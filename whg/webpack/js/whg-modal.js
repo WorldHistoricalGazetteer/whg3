@@ -95,6 +95,19 @@ function initWHGModal() {
         if (!this.checkValidity() || !turnstileValid) {
             event.preventDefault();
             event.stopPropagation();
+
+            const turnstileContainer = $form.find('.turnstile-container');
+            if (!turnstileValid) {
+                if (turnstileContainer.find('.invalid-feedback').length === 0) {
+                    turnstileContainer.append(
+                        '<div class="invalid-feedback d-block">Please verify that you are human.</div>'
+                    );
+                } else {
+                    turnstileContainer.find('.invalid-feedback').addClass('d-block');
+                }
+            } else {
+                turnstileContainer.find('.invalid-feedback').removeClass('d-block');
+            }
         } else {
             event.preventDefault(); // Prevent default form submission
 

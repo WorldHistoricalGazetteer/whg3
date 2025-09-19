@@ -53,9 +53,16 @@
             </table>
 
             {% if not user.is_authenticated %}
-                <div class="d-flex justify-content-end mt-2 me-2">
+                <div class="turnstile-container d-flex justify-content-end mt-2 me-2">
                     <div class="cf-turnstile" data-sitekey="{{ TURNSTILE_SITE_KEY }}"></div>
                 </div>
+                {% if form.non_field_errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.non_field_errors %}
+                        {{ error }}
+                      {% endfor %}
+                    </div>
+                  {% endif %}
             {% endif %}
         </div>
 

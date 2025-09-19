@@ -855,22 +855,28 @@ def contact_modal_view(request):
         if not request.user.is_authenticated:
             token = request.POST.get("cf-turnstile-response")
             if not token:
-                messages.error(request, "Turnstile verification failed. Please try again.")
+                form.add_error(None, "Please verify that you are human.")
                 return render(request, 'main/contact_modal.html', context)
 
-            resp = requests.post(
-                "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-                data={
-                    "secret": settings.TURNSTILE_SECRET_KEY,
-                    "response": token,
-                    "remoteip": request.META.get("REMOTE_ADDR", ""),
-                },
-                timeout=5,
-            )
-            result = resp.json()
+            try:
+                resp = requests.post(
+                    "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+                    data={
+                        "secret": settings.TURNSTILE_SECRET_KEY,
+                        "response": token,
+                        "remoteip": request.META.get("REMOTE_ADDR", ""),
+                    },
+                    timeout=5,
+                )
+                result = resp.json()
+            except Exception as e:
+                logger.error("Error contacting Turnstile API: %s", e)
+                form.add_error(None, "Unable to verify CAPTCHA. Please try again.")
+                return render(request, "main/contact_modal.html", context)
+
             if not result.get("success"):
-                messages.error(request, "Turnstile verification failed. Please try again.")
-                return render(request, 'main/contact_modal.html', context)
+                form.add_error(None, "CAPTCHA verification failed. Please try again.")
+                return render(request, "main/contact_modal.html", context)
 
         if form.is_valid():
             name = form.cleaned_data['name']
