@@ -420,6 +420,29 @@ class SuggestPropertyView(View):
         }, status=405)
 
 
+@method_decorator(csrf_exempt, name="dispatch")
+class DummyView(View):
+    """
+    Dummy endpoint for OpenRefine's legacy search calls.
+    Always returns an empty result set.
+    """
+
+    def get(self, request, *args, **kwargs):
+        return JsonResponse({
+            "result": []
+        })
+
+    def post(self, request, *args, **kwargs):
+        return JsonResponse({
+            "result": []
+        })
+
+    def http_method_not_allowed(self, request, *args, **kwargs):
+        return JsonResponse({
+            "error": "Method not allowed. This endpoint only accepts GET or POST."
+        }, status=405)
+
+
 def parse_request_payload(request, expect_queries: bool = False):
     """
     Parse request body based on Content-Type.

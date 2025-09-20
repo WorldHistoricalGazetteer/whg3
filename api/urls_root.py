@@ -3,7 +3,8 @@
 from django.urls import path
 
 from .preview import PreviewView
-from .reconcile import ReconciliationView, SuggestEntityView, ExtendProposeView, ExtendView, SuggestPropertyView
+from .reconcile import ReconciliationView, SuggestEntityView, ExtendProposeView, ExtendView, SuggestPropertyView, \
+    DummyView
 
 urlpatterns = [
     path("<str:token>/reconcile/", ReconciliationView.as_view(), name="reconcile"),
@@ -12,4 +13,6 @@ urlpatterns = [
     path("<str:token>/suggest/entity", SuggestEntityView.as_view(), name="suggest_entity"),
     path("<str:token>/suggest/property", SuggestPropertyView.as_view(), name="suggest_property"),
     path("<str:token>/preview/", PreviewView.as_view(), name="preview"),
+    # Dummy endpoint for OpenRefine's legacy search calls
+    path('<str:token>/search/', DummyView.as_view(), name='dummy_search'),
 ]
