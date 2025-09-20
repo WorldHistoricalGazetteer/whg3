@@ -239,7 +239,7 @@ def format_extend_row(source, properties, from_db=False):
     if from_db:
         place = source
         norm = {
-            "id": str(place.place_id),
+            "id": str(place.id),
             "title": place.title,
             "dataset": place.dataset.label if place.dataset else None,
             "geometry": [g.geom.geojson for g in place.geoms.all()],

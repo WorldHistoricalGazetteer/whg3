@@ -314,7 +314,7 @@ class ReconciliationView(View):
                 return JsonResponse({"rows": {}})
 
             # Fetch data from the Django DB instead of ES
-            qs = Place.objects.filter(place_id__in=ids).prefetch_related("names", "geoms", "links")
+            qs = Place.objects.filter(id__in=ids).prefetch_related("names", "geoms", "links")
             rows = {str(p.place_id): format_extend_row(p, properties, from_db=True) for p in qs}
 
             logger.debug(f"Found {qs.count()} DB hits")
