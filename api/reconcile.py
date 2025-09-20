@@ -59,28 +59,28 @@ SERVICE_METADATA = {
         "url": DOMAIN + "/feature/{{id}}"
     },
     "preview": {
-        "url": DOMAIN + "/preview/?token={{token}}&id={{id}}",
+        "url": DOMAIN + "/preview?token={{token}}&id={{id}}",
         "width": 400,
         "height": 300,
     },
     "suggest": {
         "entity": {
             "service_url": DOMAIN,
-            "service_path": "/suggest/entity/?token={{token}}",
+            "service_path": "/suggest/entity?token={{token}}",
         },
         "property": {
             "service_url": DOMAIN,
-            "service_path": "/suggest/property/?token={{token}}",
+            "service_path": "/suggest/property?token={{token}}",
         }
     },
     "extend": {
         "propose_properties": {
             "service_url": DOMAIN,
-            "service_path": "/reconcile/properties/"
+            "service_path": "/reconcile/properties"
         },
         "property_values": {
             "service_url": DOMAIN,
-            "service_path": "/reconcile/extend/?token={{token}}"
+            "service_path": "/reconcile/extend?token={{token}}"
         },
         "property_settings": [
             {
@@ -138,11 +138,10 @@ def json_error(message, status=400):
 
 
 # TODO: Consider using this function to replace part of the current bot-blocking middleware at main.block_user_agents.BlockUserAgentsMiddleware
-def authenticate_request(request, token_from_path=None):
+def authenticate_request(request):
     """
     Authenticate either via:
     1. Authorization: Bearer <token>
-    2. token extracted from URL path
     3. token from URL query param
     4. CSRF/session (browser-originated)
     """
@@ -153,11 +152,7 @@ def authenticate_request(request, token_from_path=None):
     if auth.startswith("Bearer "):
         key = auth.split(" ", 1)[1]
 
-    # 2. Check token from URL path
-    if not key and token_from_path:
-        key = token_from_path
-
-    # 3. Check token from URL query param
+    # 2. Check token from URL query param
     if not key:
         key = request.GET.get("token")
 
@@ -182,7 +177,7 @@ def authenticate_request(request, token_from_path=None):
         except APIToken.DoesNotExist:
             return False, {"error": "Invalid API token"}
 
-    # 4. CSRF/session mode
+    # 3. CSRF/session mode
     if request.user.is_authenticated or request.user.is_anonymous:
         from django.middleware.csrf import get_token
         try:
@@ -293,8 +288,7 @@ class ReconciliationView(View):
         return JsonResponse(metadata)
 
     def post(self, request, *args, **kwargs):
-        token = kwargs.get("token")
-        allowed, auth_error = authenticate_request(request, token_from_path=token)
+        allowed, auth_error = authenticate_request(request)
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
@@ -315,8 +309,7 @@ class ReconciliationView(View):
 class ExtendProposeView(View):
 
     def get(self, request, *args, **kwargs):
-        token = kwargs.get("token")
-        allowed, auth_error = authenticate_request(request, token_from_path=token)
+        allowed, auth_error = authenticate_request(request)
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
@@ -334,8 +327,7 @@ class ExtendProposeView(View):
 class ExtendView(View):
 
     def post(self, request, *args, **kwargs):
-        token = kwargs.get("token")
-        allowed, auth_error = authenticate_request(request, token_from_path=token)
+        allowed, auth_error = authenticate_request(request)
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=403)
 
@@ -382,8 +374,7 @@ class ExtendView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class SuggestEntityView(View):
     def get(self, request, *args, **kwargs):
-        token = kwargs.get("token")
-        allowed, auth_error = authenticate_request(request, token_from_path=token)
+        allowed, auth_error = authenticate_request(request)
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
@@ -440,8 +431,7 @@ class SuggestPropertyView(View):
     """
 
     def get(self, request, *args, **kwargs):
-        token = kwargs.get("token")
-        allowed, auth_error = authenticate_request(request, token_from_path=token)
+        allowed, auth_error = authenticate_request(request)
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
