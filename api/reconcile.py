@@ -313,7 +313,7 @@ class ReconciliationView(View):
                 return JsonResponse({"rows": {}})
 
             # Fetch data
-            hits = es_search_by_ids(ids)
+            hits = es_search(index="whg,pub", ids=ids)
             rows = []
             for hit in hits:
                 row = format_extend_row(hit, properties)
@@ -605,12 +605,6 @@ def normalise_query_params(params):
     }
 
 
-def es_search_by_ids(ids, index="whg,pub"):
-    if not ids:
-        return []
-    return es_search(index=index, ids=ids)
-
-
 def reconcile_place_es(query, index="whg,pub"):
     """
     Execute a reconciliation query against Elasticsearch.
@@ -620,6 +614,8 @@ def reconcile_place_es(query, index="whg,pub"):
     hits = es_search(query=query, index=index)
     if not hits:
         return {"result": [], "geojson": None}
+
+    logger.debug("Hits: " + json.dumps(hits))
 
     max_score = hits[0]["_score"]
     results = []
