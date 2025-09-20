@@ -6,6 +6,8 @@ from datetime import datetime
 from areas.models import Area
 from whg import settings
 
+ELASTIC_INDICES = "whg,pub,wdgn" # or options from "whg,pub,wdgn"
+
 # TODO: Replace ElasticSearch with Vespa backend when ready
 es = settings.ES_CONN
 
@@ -57,7 +59,7 @@ def make_candidate(hit, query_text, max_score, schema_space):
     score = normalize_score(hit["_score"], max_score)
     is_exact = name.lower() == query_text.lower()
     return {
-        "id": hit.get("whg_id") or str(src.get("place_id") or hit["_id"]),
+        "id": str(src.get("place_id")), # or hit.get("whg_id") or hit["_id"]),
         "name": name,
         "score": score,
         "match": is_exact,
@@ -196,7 +198,7 @@ def build_es_query(params, size=100):
     return q
 
 
-def es_search(index="whg,pub", query=None, ids=None):
+def es_search(index=ELASTIC_INDICES, query=None, ids=None):
     """
     Execute an Elasticsearch search.
 

@@ -313,7 +313,7 @@ class ReconciliationView(View):
                 return JsonResponse({"rows": {}})
 
             # Fetch data
-            hits = es_search(index="whg,pub", ids=ids)
+            hits = es_search(ids=ids)
             rows = []
             for hit in hits:
                 row = format_extend_row(hit, properties)
@@ -605,13 +605,13 @@ def normalise_query_params(params):
     }
 
 
-def reconcile_place_es(query, index="whg,pub"):
+def reconcile_place_es(query):
     """
     Execute a reconciliation query against Elasticsearch.
 
     query: dict from normalise_query_params
     """
-    hits = es_search(query=query, index=index)
+    hits = es_search(query=query)
     if not hits:
         return {"result": [], "geojson": None}
 
