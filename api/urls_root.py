@@ -16,7 +16,7 @@ urlpatterns = [
     # Dummy endpoint for OpenRefine's legacy search calls
     path('search/', DummyView.as_view(), name='dummy_search'),
 
-    # Facilitate OpenRefine calls with token in URL path
+    # Facilitate calls with token in URL path (fails for OpenRefine `reconcile/extend` calls)
     path("<str:token>/reconcile/", ReconciliationView.as_view(), name="reconcile-token"),
     path('<str:token>/reconcile/properties', ExtendProposeView.as_view(), name='extend-propose-token'),
     path('<str:token>/reconcile/extend', ExtendView.as_view(), name='extend-token'),

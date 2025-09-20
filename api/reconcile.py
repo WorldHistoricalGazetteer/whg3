@@ -59,28 +59,28 @@ SERVICE_METADATA = {
         "url": DOMAIN + "/feature/{{id}}"
     },
     "preview": {
-        "url": DOMAIN + "/{{token}}/preview/?id={{id}}",
+        "url": DOMAIN + "/preview/?token={{token}}&id={{id}}",
         "width": 400,
         "height": 300,
     },
     "suggest": {
         "entity": {
-            "service_url": DOMAIN + "/{{token}}",
-            "service_path": "/suggest/entity",
+            "service_url": DOMAIN,
+            "service_path": "/suggest/entity/?token={{token}}",
         },
         "property": {
-            "service_url": DOMAIN + "/{{token}}",
-            "service_path": "/suggest/property",
+            "service_url": DOMAIN,
+            "service_path": "/suggest/property/?token={{token}}",
         }
     },
     "extend": {
         "propose_properties": {
             "service_url": DOMAIN,
-            "service_path": "/reconcile/properties"
+            "service_path": "/reconcile/properties/?token={{token}}"
         },
         "property_values": {
             "service_url": DOMAIN,
-            "service_path": "/reconcile/extend/"
+            "service_path": "/reconcile/extend/?token={{token}}"
         },
         "property_settings": [
             {
@@ -112,8 +112,8 @@ SERVICE_METADATA = {
     "batch_size": 50,
     "authentication": {
         "type": "apiKey",
-        "name": "Authorization",
-        "in": "header",
+        "name": "token",
+        "in": "query",
     }
 }
 
@@ -143,7 +143,8 @@ def authenticate_request(request, token_from_path=None):
     Authenticate either via:
     1. Authorization: Bearer <token>
     2. token extracted from URL path
-    3. CSRF/session (browser-originated)
+    3. token from URL query param
+    4. CSRF/session (browser-originated)
     """
     key = None
 
@@ -155,6 +156,10 @@ def authenticate_request(request, token_from_path=None):
     # 2. Check token from URL path
     if not key and token_from_path:
         key = token_from_path
+
+    # 3. Check token from URL query param
+    if not key:
+        key = request.GET.get("token")
 
     if key:
         try:
@@ -177,7 +182,7 @@ def authenticate_request(request, token_from_path=None):
         except APIToken.DoesNotExist:
             return False, {"error": "Invalid API token"}
 
-    # 3. CSRF/session mode
+    # 4. CSRF/session mode
     if request.user.is_authenticated or request.user.is_anonymous:
         from django.middleware.csrf import get_token
         try:
