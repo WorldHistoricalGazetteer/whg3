@@ -26,7 +26,6 @@ from django.views.decorators.csrf import csrf_exempt
 from geopy.distance import geodesic
 
 from main.choices import FEATURE_CLASSES
-from whg import settings
 from .models import APIToken, UserAPIProfile
 from .reconcile_helpers import make_candidate, format_extend_row, es_search
 
@@ -77,10 +76,6 @@ SERVICE_METADATA = {
         "propose_properties": {
             "service_url": DOMAIN,
             "service_path": "/reconcile/properties"
-        },
-        "property_values": {
-            "service_url": DOMAIN,
-            "service_path": "/reconcile/extend?token={{token}}"
         },
         "property_settings": [
             {
@@ -273,6 +268,9 @@ class ReconciliationView(View):
     """
 
     def get(self, request, *args, **kwargs):
+
+        logger.debug(f"Request URL (GET): {request.build_absolute_uri()}")
+
         token = request.GET.get("token")
 
         metadata = json.loads(json.dumps(SERVICE_METADATA))
@@ -291,6 +289,10 @@ class ReconciliationView(View):
         return JsonResponse(metadata)
 
     def post(self, request, *args, **kwargs):
+
+        logger.debug(f"Request URL (POST): {request.build_absolute_uri()}")
+        logger.debug(f"Request body: {request.body.decode('utf-8') if request.body else 'No body'}")
+
         allowed, auth_error = authenticate_request(request)
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
@@ -299,6 +301,31 @@ class ReconciliationView(View):
             payload = parse_request_payload(request, expect_queries=True)
         except ValueError as e:
             return json_error(str(e))
+
+        if 'extend' in request.POST:  # x-www-form-urlencoded from OpenRefine
+            try:
+                payload = json.loads(request.POST['extend'])
+                ids = payload.get("ids", [])
+                properties = payload.get("properties", [])
+                logger.debug(f"Extend request for {len(ids)} ids and {len(properties)} properties")
+                logger.debug("Payload: " + json.dumps(payload))
+            except Exception as e:
+                return json_error({"error": f"Invalid extend payload: {e}"}, status=400)
+
+            if not ids:
+                return JsonResponse({"rows": {}})
+
+            # Fetch data
+            hits = es_search_by_ids(ids)
+            rows = []
+            for hit in hits:
+                row = format_extend_row(hit, properties)
+                rows.append(row)
+
+            logger.debug(f"Found {len(hits)} hits")
+            logger.debug("Rows: " + json.dumps(rows))
+
+            return JsonResponse({"rows": rows})
 
         queries = payload.get("queries", {})
         if not queries:
@@ -323,54 +350,6 @@ class ExtendProposeView(View):
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({
             "error": "Method not allowed. This endpoint only accepts GET. See documentation: " + DOCS_URL
-        }, status=405)
-
-
-@method_decorator(csrf_exempt, name="dispatch")
-class ExtendView(View):
-
-    def post(self, request, *args, **kwargs):
-        allowed, auth_error = authenticate_request(request)
-        if not allowed:
-            return json_error(auth_error.get("error", "Authentication failed"), status=403)
-
-        try:
-            # OpenRefine sends form data: extend=<json>
-            extend_param = request.POST.get("extend")
-            if not extend_param:
-                return JsonResponse({"error": "Missing 'extend' parameter"}, status=400)
-            payload = json.loads(extend_param)
-            ids = payload.get("ids", [])
-            properties = payload.get("properties", [])
-        except Exception as e:
-            return JsonResponse({"error": f"Invalid payload: {e}"}, status=400)
-
-        if not ids:
-            return JsonResponse({"rows": {}})
-
-        # Fetch matching records
-        es = settings.ES_CONN
-        response = es.mget(index="whg,pub", body={"ids": ids})
-
-        rows = {}
-        for doc in response["docs"]:
-            entity_id = doc["_id"]
-            source = doc.get("_source", {})
-            rows[entity_id] = format_extend_row(source, properties)
-
-        return JsonResponse({"rows": rows})
-
-    def get(self, request, *args, **kwargs):
-        """Optional GET support with ?extend=<json>"""
-        extend_param = request.GET.get("extend")
-        if not extend_param:
-            return JsonResponse({"error": "Missing 'extend' parameter"}, status=400)
-        request.POST = {"extend": extend_param}
-        return self.post(request, *args, **kwargs)
-
-    def http_method_not_allowed(self, request, *args, **kwargs):
-        return JsonResponse({
-            "error": "Method not allowed. This endpoint only accepts POST. See documentation: " + DOCS_URL
         }, status=405)
 
 
