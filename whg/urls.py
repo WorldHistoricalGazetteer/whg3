@@ -139,7 +139,6 @@ urlpatterns = [
                   path('remote/', include('remote.urls')),
                   path('accounts/', include('accounts.urls')),
                   path('admin/', admin.site.urls),
-                  path('captcha/', include('captcha.urls')),
                   path('health', views.health_check, name='health_check'),
                   # for celery tasks
                   # initiate downloads of augmented datasets via celery task (called from ajax)

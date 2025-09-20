@@ -21,6 +21,9 @@
                         <td>
                             {{ form.name }}
                             <div class="invalid-feedback">Please enter your name.</div>
+                            <small class="form-text text-muted">
+                                Already registered? <a href="{% url 'accounts:login' %}">Log in</a> to skip entering your details.
+                            </small>
                         </td>
                     </tr>
                     <tr>

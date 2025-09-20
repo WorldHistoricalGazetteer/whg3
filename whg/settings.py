@@ -44,7 +44,6 @@ INSTALLED_APPS = [
 
     # 3rd party
     'bootstrap_modal_forms',
-    'captcha',
     'celery_progress',
     # uncomment for debug toolbar
     # 'debug_toolbar',
@@ -174,11 +173,6 @@ CELERY_TASK_EAGER_PROPAGATES = True
 CELERY_RESULT_EXTENDED = True
 CELERY_RESULT_EXPIRES = None
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
-
-CAPTCHA_NOISE_FUNCTIONS = (
-    'captcha.helpers.noise_arcs',
-    'captcha.helpers.noise_dots',)
-CAPTCHA_LENGTH = 6
 
 DJANGORESIZED_DEFAULT_SIZE = [1000, 800]
 DJANGORESIZED_DEFAULT_QUALITY = 75
