@@ -228,13 +228,13 @@ def es_search(index=ELASTIC_INDICES, query=None, ids=None):
     return resp.get("hits", {}).get("hits", [])
 
 
-def format_extend_row(place, properties):
+def format_extend_row(place, properties, request=None):
     """
     Build the property values dict for an OpenRefine extend row.
     - place: Place instance.
     - properties: list of property dicts or strings.
     """
-    serializer = PlaceSerializer(place, context={})
+    serializer = PlaceSerializer(place, context={"request": request})
     data = serializer.data
 
     row = {}

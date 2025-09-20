@@ -313,7 +313,7 @@ class ReconciliationView(View):
 
             qs = Place.objects.filter(id__in=ids).prefetch_related("names", "geoms", "links")
 
-            rows = {str(p.id): format_extend_row(p, properties) for p in qs}
+            rows = {str(p.id): format_extend_row(p, properties, request=request) for p in qs}
 
             # Meta block required by OpenRefine
             meta = [

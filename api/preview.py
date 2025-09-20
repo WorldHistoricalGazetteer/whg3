@@ -33,7 +33,7 @@ class PreviewView(View):
         except Place.DoesNotExist:
             raise Http404(f"Place {place_id} not found")
 
-        serializer = PlaceSerializer(place, context={})
+        serializer = PlaceSerializer(place, context={"request": request})
         record = serializer.data
 
         def _format_list(data_list, separator=', '):
