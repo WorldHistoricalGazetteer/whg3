@@ -88,7 +88,7 @@ class PreviewView(View):
                     <span class="record-field">Country Codes:</span> {_format_list(record.get('ccodes', []))}<br>
                     <span class="record-field">Feature Classes:</span> {_format_list(record.get('fclasses', []))}<br>
                     <span class="record-field">Timespans:</span> {_format_list(record.get('timespans', []))}<br>
-                    <span class="record-field">Dataset:</span> {record['dataset']['title']}
+                    <span class="record-field">Dataset:</span> {record['dataset']}
                 </div>                
             </div>
         </body>
