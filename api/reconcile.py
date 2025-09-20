@@ -96,7 +96,7 @@ def authenticate_request(request, token_from_path=None):
     """
     Authenticate either via:
     1. Authorization: Bearer <token>
-    2. token=<token> query parameter (OpenRefine-only) # TODO: Deprecate this?
+    # 2. token=<token> query parameter (OpenRefine-only) # TODO: Deprecate this?
     3. token extracted from URL path
     4. CSRF/session (browser-originated)
     """
@@ -107,11 +107,11 @@ def authenticate_request(request, token_from_path=None):
     if auth.startswith("Bearer "):
         key = auth.split(" ", 1)[1]
 
-    # 2. Check query parameter (OpenRefine-only)
-    if not key:
-        ua = request.headers.get("User-Agent", "")
-        if ua.startswith("OpenRefine"):
-            key = request.GET.get("token")
+    # # 2. Check query parameter (OpenRefine-only)
+    # if not key:
+    #     ua = request.headers.get("User-Agent", "")
+    #     if ua.startswith("OpenRefine"):
+    #         key = request.GET.get("token")
 
     # 3. Check token from URL path
     if not key and token_from_path:
@@ -335,7 +335,8 @@ class ExtendView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class SuggestEntityView(View):
     def get(self, request, *args, **kwargs):
-        allowed, auth_error = authenticate_request(request)
+        token = kwargs.get("token")
+        allowed, auth_error = authenticate_request(request, token_from_path=token)
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
