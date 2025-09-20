@@ -378,8 +378,6 @@ class SuggestPropertyView(View):
     Returns suggested property names for entities.
     """
 
-    # TODO: This needs to accept GET requests, as for /suggest/entity
-
     def get_allowed_fields(self):
         # Define all fields that can be suggested
         return [
@@ -394,16 +392,16 @@ class SuggestPropertyView(View):
         ]
 
     def post(self, request, *args, **kwargs):
-        allowed, auth_error = authenticate_request(request)
+        token = kwargs.get("token")
+        allowed, auth_error = authenticate_request(request, token_from_path=token)
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
         try:
-            payload = json.loads(request.body)
-            query_text = (payload.get("query") or "").strip().lower()
-            limit = int(payload.get("limit", 10))
-        except (json.JSONDecodeError, ValueError, TypeError):
-            return json_error("Invalid JSON payload or parameters")
+            query_text = (request.GET.get("query") or "").strip().lower()
+            limit = int(request.GET.get("limit", 10))
+        except (ValueError, TypeError):
+            return json_error("Invalid query parameters")
 
         fields = self.get_allowed_fields()
         # Filter fields by query_text if provided
@@ -416,7 +414,7 @@ class SuggestPropertyView(View):
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({
-            "error": "Method not allowed. This endpoint only accepts POST. See documentation: " + DOCS_URL
+            "error": "Method not allowed. This endpoint only accepts GET. See documentation: " + DOCS_URL
         }, status=405)
 
 
