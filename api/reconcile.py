@@ -294,7 +294,8 @@ class ExtendProposeView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class ExtendView(View):
     def post(self, request, *args, **kwargs):
-        allowed, auth_error = authenticate_request(request)
+        token = kwargs.get("token")
+        allowed, auth_error = authenticate_request(request, token_from_path=token)
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
