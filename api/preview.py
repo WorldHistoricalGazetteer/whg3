@@ -6,6 +6,7 @@ from django.views import View
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
 
+from api.reconcile import authenticate_request
 from places.models import Place
 from places.utils import attribListFromSet
 
@@ -16,12 +17,17 @@ logger = logging.getLogger('reconciliation')
 @method_decorator(xframe_options_exempt, name="dispatch")
 class PreviewView(View):
 
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
+        token = kwargs.get("token")
         place_id = request.GET.get("id")
-        logger.debug("Preview GET request id=%s", place_id)
+        logger.debug("Preview GET request token=%s id=%s", token, place_id)
 
         if not place_id:
             return HttpResponseBadRequest("Missing id parameter")
+
+        allowed, auth_error = authenticate_request(request, token_from_path=token)
+        if not allowed:
+            return HttpResponse("Invalid API token", status=403)
 
         try:
             place = Place.objects.get(pk=place_id)

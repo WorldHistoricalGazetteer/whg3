@@ -92,12 +92,13 @@ def json_error(message, status=400):
 
 
 # TODO: Consider using this function to replace part of the current bot-blocking middleware at main.block_user_agents.BlockUserAgentsMiddleware
-def authenticate_request(request):
+def authenticate_request(request, token_from_path=None):
     """
     Authenticate either via:
     1. Authorization: Bearer <token>
-    2. token=<token> query parameter (only if User-Agent starts with 'OpenRefine')
-    3. CSRF/session (browser-originated)
+    2. token=<token> query parameter (OpenRefine-only) # TODO: Deprecate this?
+    3. token extracted from URL path
+    4. CSRF/session (browser-originated)
     """
     key = None
 
@@ -112,6 +113,10 @@ def authenticate_request(request):
         if ua.startswith("OpenRefine"):
             key = request.GET.get("token")
 
+    # 3. Check token from URL path
+    if not key and token_from_path:
+        key = token_from_path
+
     if key:
         try:
             token = APIToken.objects.select_related("user").get(key=key)
@@ -119,20 +124,15 @@ def authenticate_request(request):
 
             # Ensure UserAPIProfile exists
             profile, _ = UserAPIProfile.objects.get_or_create(user=token.user)
-
-            # Increment usage
             profile.increment_usage()
 
-            # Check daily limit
             if profile.daily_limit and profile.daily_count > profile.daily_limit:
                 return False, {
                     "error": f"Daily API limit ({profile.daily_limit} calls) exceeded",
                 }
 
-            # Update token last_used
             token.last_used = timezone.now()
             token.save(update_fields=['last_used'])
-
             return True, None
 
         except APIToken.DoesNotExist:
@@ -142,7 +142,7 @@ def authenticate_request(request):
     if request.user.is_authenticated or request.user.is_anonymous:
         from django.middleware.csrf import get_token
         try:
-            get_token(request)  # validate CSRF
+            get_token(request)
             return True, None
         except Exception:
             return False, {"error": "Invalid CSRF token"}
@@ -250,7 +250,8 @@ class ReconciliationView(View):
         return JsonResponse(metadata)
 
     def post(self, request, *args, **kwargs):
-        allowed, auth_error = authenticate_request(request)
+        token = kwargs.get("token")
+        allowed, auth_error = authenticate_request(request, token_from_path=token)
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
