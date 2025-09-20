@@ -427,15 +427,16 @@ class DummyView(View):
     Always returns an empty result set.
     """
 
+    _response = JsonResponse({
+        "result": [],
+        "message": "OpenRefine legacy search call: no results. Use /suggest/entity endpoint instead. See documentation: " + DOCS_URL
+    })
+
     def get(self, request, *args, **kwargs):
-        return JsonResponse({
-            "result": []
-        })
+        return self._response
 
     def post(self, request, *args, **kwargs):
-        return JsonResponse({
-            "result": []
-        })
+        return self._response
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({
