@@ -80,9 +80,9 @@ SERVICE_METADATA = {
     },
     "batch_size": 50,
     "authentication": {
-        "type": "api_token",
+        "type": "apiKey",
         "name": "Authorization",
-        "in": "path",
+        "in": "header",
     }
 }
 
@@ -271,12 +271,9 @@ class ReconciliationView(View):
 @method_decorator(csrf_exempt, name="dispatch")
 class ExtendProposeView(View):
 
-    # TODO: This needs to accept GET requests
-    # Current metadata configuration causes OpenRefine to produce URLs like:
-    # https://dev.whgazetteer.org/reconcile/extend/propose?token=W3oIbPL8kMmQaVYq1anTzyrRkB3GngdZVEugDKQLJ2Y?type=https://dev.whgazetteer.org/static/whg_place_schema.jsonld
-
-    def post(self, request, *args, **kwargs):
-        allowed, auth_error = authenticate_request(request)
+    def get(self, request, *args, **kwargs):
+        token = kwargs.get("token")
+        allowed, auth_error = authenticate_request(request, token_from_path=token)
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
