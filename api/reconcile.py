@@ -96,9 +96,8 @@ def authenticate_request(request, token_from_path=None):
     """
     Authenticate either via:
     1. Authorization: Bearer <token>
-    # 2. token=<token> query parameter (OpenRefine-only) # TODO: Deprecate this?
-    3. token extracted from URL path
-    4. CSRF/session (browser-originated)
+    2. token extracted from URL path
+    3. CSRF/session (browser-originated)
     """
     key = None
 
@@ -107,13 +106,7 @@ def authenticate_request(request, token_from_path=None):
     if auth.startswith("Bearer "):
         key = auth.split(" ", 1)[1]
 
-    # # 2. Check query parameter (OpenRefine-only)
-    # if not key:
-    #     ua = request.headers.get("User-Agent", "")
-    #     if ua.startswith("OpenRefine"):
-    #         key = request.GET.get("token")
-
-    # 3. Check token from URL path
+    # 2. Check token from URL path
     if not key and token_from_path:
         key = token_from_path
 
@@ -138,7 +131,7 @@ def authenticate_request(request, token_from_path=None):
         except APIToken.DoesNotExist:
             return False, {"error": "Invalid API token"}
 
-    # CSRF/session mode
+    # 3. CSRF/session mode
     if request.user.is_authenticated or request.user.is_anonymous:
         from django.middleware.csrf import get_token
         try:
@@ -284,6 +277,8 @@ class ExtendProposeView(View):
                 {"id": "whg:temporalRange", "name": "Temporal range (years)"},
                 {"id": "whg:dataset", "name": "Source dataset"},
                 {"id": "whg:ccodes", "name": "Country codes"},
+                {"id": "whg:fclasses", "name": "Feature classes"},
+                {"id": "whg:types", "name": "Types"},
             ]
         })
 
@@ -380,6 +375,7 @@ class SuggestPropertyView(View):
 
     def get_allowed_fields(self):
         # Define all fields that can be suggested
+        # TODO: Bind these to values in ExtendProposeView
         return [
             "title",
             "whg_id",
@@ -391,15 +387,23 @@ class SuggestPropertyView(View):
             "names",
         ]
 
-    def post(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         token = kwargs.get("token")
         allowed, auth_error = authenticate_request(request, token_from_path=token)
         if not allowed:
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
         try:
-            query_text = (request.GET.get("query") or "").strip().lower()
+            # Use 'prefix' for the query, falling back to 'query'
+            query_text = (request.GET.get("prefix") or request.GET.get("query") or "").strip().lower()
             limit = int(request.GET.get("limit", 10))
+
+            # These are OpenRefine-specific parameters, not used in this view but handled to avoid errors.
+            spell = request.GET.get("spell", "")
+            exact = request.GET.get("exact", "")
+            scoring = request.GET.get("scoring", "")
+            prefixed = request.GET.get("prefixed", "")
+
         except (ValueError, TypeError):
             return json_error("Invalid query parameters")
 
