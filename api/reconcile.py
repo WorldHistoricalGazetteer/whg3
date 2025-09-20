@@ -87,6 +87,17 @@ SERVICE_METADATA = {
 }
 
 
+PROPOSE_PROPERTIES = [
+    {"id": "whg:geometry", "name": "Geometry (GeoJSON)", "description": "The geometrical location (GeoJSON) of the place"},
+    {"id": "whg:alt_names", "name": "Alternative names", "description": "Alternative names or aliases for the place"},
+    {"id": "whg:temporalRange", "name": "Temporal range (years)", "description": "The temporal range(s) associated with the place record"},
+    {"id": "whg:dataset", "name": "Source dataset", "description": "The source dataset from which the place record originates"},
+    {"id": "whg:ccodes", "name": "Country codes", "description": "The ISO 2-letter country codes associated with the place"},
+    {"id": "whg:fclasses", "name": "Feature classes", "description": "The feature classes (e.g., 'A' for administrative regions, 'P' for populated places)"},
+    {"id": "whg:types", "name": "Types", "description": "The types or categories associated with the place"},
+]
+
+
 def json_error(message, status=400):
     return JsonResponse({"error": f"{message} See documentation: {DOCS_URL}"}, status=status)
 
@@ -271,15 +282,7 @@ class ExtendProposeView(View):
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
         return JsonResponse({
-            "properties": [
-                {"id": "whg:geometry", "name": "Geometry (GeoJSON)"},
-                {"id": "whg:alt_names", "name": "Alternative names"},
-                {"id": "whg:temporalRange", "name": "Temporal range (years)"},
-                {"id": "whg:dataset", "name": "Source dataset"},
-                {"id": "whg:ccodes", "name": "Country codes"},
-                {"id": "whg:fclasses", "name": "Feature classes"},
-                {"id": "whg:types", "name": "Types"},
-            ]
+            "properties": PROPOSE_PROPERTIES
         })
 
     def http_method_not_allowed(self, request, *args, **kwargs):
@@ -374,18 +377,7 @@ class SuggestPropertyView(View):
     """
 
     def get_allowed_fields(self):
-        # Define all fields that can be suggested
-        # TODO: Bind these to values in ExtendProposeView
-        return [
-            "title",
-            "whg_id",
-            "fclasses",
-            "ccodes",
-            "timespans",
-            "geom",
-            "dataset",
-            "names",
-        ]
+        return PROPOSE_PROPERTIES
 
     def get(self, request, *args, **kwargs):
         token = kwargs.get("token")
@@ -394,26 +386,21 @@ class SuggestPropertyView(View):
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
         try:
-            # Use 'prefix' for the query, falling back to 'query'
             query_text = (request.GET.get("prefix") or request.GET.get("query") or "").strip().lower()
             limit = int(request.GET.get("limit", 10))
-
-            # These are OpenRefine-specific parameters, not used in this view but handled to avoid errors.
-            spell = request.GET.get("spell", "")
-            exact = request.GET.get("exact", "")
-            scoring = request.GET.get("scoring", "")
-            prefixed = request.GET.get("prefixed", "")
 
         except (ValueError, TypeError):
             return json_error("Invalid query parameters")
 
         fields = self.get_allowed_fields()
-        # Filter fields by query_text if provided
+
+        # Filter the list of dictionaries by the 'name' key
         if query_text:
-            matches = [f for f in fields if query_text in f.lower()]
+            matches = [f for f in fields if query_text in f['name'].lower()]
         else:
             matches = fields
 
+        # Return the full dictionaries, correctly formatted
         return JsonResponse({"result": matches[:limit]})
 
     def http_method_not_allowed(self, request, *args, **kwargs):
