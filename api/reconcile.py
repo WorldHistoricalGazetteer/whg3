@@ -377,9 +377,6 @@ class SuggestPropertyView(View):
     Returns suggested property names for entities.
     """
 
-    def get_allowed_fields(self):
-        return PROPOSE_PROPERTIES
-
     def get(self, request, *args, **kwargs):
         token = kwargs.get("token")
         allowed, auth_error = authenticate_request(request, token_from_path=token)
@@ -389,19 +386,15 @@ class SuggestPropertyView(View):
         try:
             query_text = (request.GET.get("prefix") or request.GET.get("query") or "").strip().lower()
             limit = int(request.GET.get("limit", 10))
-
         except (ValueError, TypeError):
             return json_error("Invalid query parameters")
 
-        fields = self.get_allowed_fields()
-
-        # Filter the list of dictionaries by the 'name' key
+        # Filter the global constant PROPOSE_PROPERTIES
         if query_text:
-            matches = [f for f in fields if query_text in f['name'].lower()]
+            matches = [prop for prop in PROPOSE_PROPERTIES if query_text in prop['name'].lower()]
         else:
-            matches = fields
+            matches = PROPOSE_PROPERTIES
 
-        # Return the full dictionaries, correctly formatted
         return JsonResponse({"result": matches[:limit]})
 
     def http_method_not_allowed(self, request, *args, **kwargs):
