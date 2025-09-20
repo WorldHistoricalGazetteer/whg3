@@ -120,7 +120,8 @@ SERVICE_METADATA = {
 PROPOSE_PROPERTIES = [
     {"id": "whg:geometry", "name": "Geometry (GeoJSON)",
      "description": "The geometrical location (GeoJSON) of the place", "type": "string"},
-    {"id": "whg:alt_names", "name": "Alternative names", "description": "Alternative names or aliases for the place", "type": "string"},
+    {"id": "whg:alt_names", "name": "Alternative names", "description": "Alternative names or aliases for the place",
+     "type": "string"},
     {"id": "whg:temporalRange", "name": "Temporal range (years)",
      "description": "The temporal range(s) associated with the place record", "type": "string"},
     {"id": "whg:dataset", "name": "Source dataset",
@@ -128,8 +129,10 @@ PROPOSE_PROPERTIES = [
     {"id": "whg:ccodes", "name": "Country codes",
      "description": "The ISO 2-letter country codes associated with the place", "type": "string"},
     {"id": "whg:fclasses", "name": "Feature classes",
-     "description": "The feature classes (e.g., 'A' for administrative regions, 'P' for populated places)", "type": "string"},
-    {"id": "whg:types", "name": "Types", "description": "The types or categories associated with the place", "type": "string"},
+     "description": "The feature classes (e.g., 'A' for administrative regions, 'P' for populated places)",
+     "type": "string"},
+    {"id": "whg:types", "name": "Types", "description": "The types or categories associated with the place",
+     "type": "string"},
 ]
 
 
@@ -445,7 +448,12 @@ class SuggestPropertyView(View):
 
         # Filter the global constant PROPOSE_PROPERTIES
         if query_text:
-            matches = [prop for prop in PROPOSE_PROPERTIES if prop['name'].lower().startswith(query_text)]
+            matches = [prop for prop in PROPOSE_PROPERTIES if
+                       prop['name'].lower().startswith(query_text)
+                       # If prop['id'] contains a colon, check the part after the colon
+                       or (':' in prop['id'] and prop['id'].split(':', 1)[1].lower().startswith(query_text))
+                       # Also check the full id
+                       or prop['id'].lower().startswith(query_text)]
         else:
             matches = PROPOSE_PROPERTIES
 
