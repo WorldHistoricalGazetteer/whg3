@@ -227,91 +227,52 @@ def es_search(index=ELASTIC_INDICES, query=None, ids=None):
     return resp.get("hits", {}).get("hits", [])
 
 
-def format_extend_row(source, properties):
+def format_extend_row(source, properties, from_db=False):
     """
-    Formats entity data for /extend response.
-    Returns dict keyed by property id, with list-of-object values.
+    Build an extend row for OpenRefine.
+    - source: dict (ES _source) or Place instance (from_db=True).
+    - properties: list of property dicts or strings.
+    - from_db: set True if source is a Django ORM instance.
     """
-    row = {}
+
+    # Normalise source into a dict
+    if from_db:
+        place = source
+        norm = {
+            "id": str(place.place_id),
+            "title": place.title,
+            "dataset": place.dataset.label if place.dataset else None,
+            "geometry": [g.geom.geojson for g in place.geoms.all()],
+            "alt_names": [n.toponym for n in place.names.all()],
+            "ccodes": place.ccodes or [],
+            "timespans": place.timespans or [],
+        }
+    else:
+        norm = source.copy()
+        # ES docs may only have place_id, normalise it
+        norm["id"] = str(norm.get("place_id"))
+        norm["title"] = norm.get("title")
+
+    row = {
+        "id": norm.get("id"),
+        "name": norm.get("title"),
+        "properties": {}
+    }
+
     for prop in properties:
-        pid = prop.get("id")
-        if not pid:
-            continue
+        pid = prop.get("id") if isinstance(prop, dict) else prop
 
-        values = source.get(pid)
-
-        # Handle special pseudo-properties
-        if pid == "name":
-            values = [source.get("title", "")]
-        elif pid == "type":
-            values = ["Place"]
-        elif pid == "geojson":
-            values = [json.dumps(source.get("geometry", {}))]
-
-        # Normalise to list
-        if values is None:
-            row[pid] = []
-            continue
-        if not isinstance(values, list):
-            values = [values]
-
-        formatted = []
-        for v in values:
-            if isinstance(v, dict) and "id" in v and "name" in v:
-                # Already entity-like in ES, promote to id+str
-                formatted.append({"id": v["id"], "str": v["name"]})
-            elif isinstance(v, dict) and "id" in v:
-                formatted.append({"id": v["id"], "str": v.get("label", str(v["id"]))})
-            else:
-                # Default to plain string
-                formatted.append({"str": str(v)})
-        row[pid] = formatted
+        if pid == "whg:geometry":
+            row["properties"][pid] = norm.get("geometry", [])
+        elif pid == "whg:alt_names":
+            row["properties"][pid] = norm.get("alt_names", [])
+        elif pid == "whg:ccodes":
+            row["properties"][pid] = norm.get("ccodes", [])
+        elif pid == "whg:dataset":
+            row["properties"][pid] = norm.get("dataset")
+        elif pid == "whg:temporalRange":
+            row["properties"][pid] = norm.get("timespans", [])
+        else:
+            row["properties"][pid] = None
 
     return row
-
-
-# def extract_alt_names(src):
-#     canonical = get_canonical_name(src, fallback_id=src.get("place_id", "unknown"))
-#     return get_alternative_names(src, canonical)
-#
-#
-# def extract_temporal_range(src):
-#     start, end = None, None
-#     if "minmax" in src:
-#         start = src["minmax"].get("gte")
-#         end = src["minmax"].get("lte")
-#     return {"start": start, "end": end}
-#
-#
-# def extract_dataset(src):
-#     return src.get("dataset")
-#
-#
-# def extract_ccodes(src):
-#     return src.get("ccodes", [])
-#
-
-# def format_extend_row(hit, requested_props, features=None):
-#     src = hit["_source"]
-#     cells = {}
-#
-#     for prop in requested_props:
-#         if prop == "whg:alt_names":
-#             cells[prop] = {"type": "string[]", "value": extract_alt_names(src)}
-#         elif prop == "whg:temporalRange":
-#             cells[prop] = {"type": "range", "value": extract_temporal_range(src)}
-#         elif prop == "whg:dataset":
-#             cells[prop] = {"type": "string", "value": extract_dataset(src)}
-#         elif prop == "whg:ccodes":
-#             cells[prop] = {"type": "string[]", "value": extract_ccodes(src)}
-#         elif prop == "whg:geometry" and features is not None:
-#             geojson = geoms_to_geojson(src)
-#             if geojson:
-#                 features.extend(geojson["features"])
-#             # Optionally: still add per-row geometry reference if desired
-#             cells[prop] = {"type": "geojson-ref", "value": True}
-#
-#     return {
-#         "id": hit.get("whg_id") or str(src.get("place_id") or hit["_id"]),
-#         "cells": cells
-#     }

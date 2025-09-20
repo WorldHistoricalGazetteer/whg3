@@ -27,6 +27,7 @@ from django.views.decorators.csrf import csrf_exempt
 from geopy.distance import geodesic
 
 from main.choices import FEATURE_CLASSES
+from places.models import Place
 from .models import APIToken, UserAPIProfile
 from .reconcile_helpers import make_candidate, format_extend_row, es_search
 
@@ -312,14 +313,11 @@ class ReconciliationView(View):
             if not ids:
                 return JsonResponse({"rows": {}})
 
-            # Fetch data
-            hits = es_search(ids=ids)
-            rows = []
-            for hit in hits:
-                row = format_extend_row(hit, properties)
-                rows.append(row)
+            # Fetch data from the Django DB instead of ES
+            qs = Place.objects.filter(place_id__in=ids).prefetch_related("names", "geoms", "links")
+            rows = {str(p.place_id): format_extend_row(p, properties, from_db=True) for p in qs}
 
-            logger.debug(f"Found {len(hits)} hits")
+            logger.debug(f"Found {qs.count()} DB hits")
             logger.debug("Rows: " + json.dumps(rows))
 
             return JsonResponse({"rows": rows})
