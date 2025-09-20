@@ -78,8 +78,8 @@ SERVICE_METADATA = {
             "service_path": "/reconcile/properties"
         },
         "property_values": {
-            "service_url": DOMAIN + "/{{token}}",
-            "service_path": "/reconcile/extend/"
+            "service_url": DOMAIN + "/{{token}}/",
+            "service_path": "reconcile/extend/"
         },
         "property_settings": [
             {
