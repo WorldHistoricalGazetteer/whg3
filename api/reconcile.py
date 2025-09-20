@@ -368,6 +368,12 @@ class SuggestEntityView(View):
         prefix = request.GET.get("prefix", "").strip()
         exact = request.GET.get("exact", "false").lower() == "true"
 
+        # Implement the cursor
+        try:
+            cursor = int(request.GET.get("cursor", 0))
+        except (ValueError, TypeError):
+            return json_error("Invalid 'cursor' parameter. It must be an integer.")
+
         # These parameters are passed by OpenRefine but not implemented here as it is unclear how they should affect suggestions
         # spell = request.GET.get("spell", "always")
         # prefixed = request.GET.get("prefixed", "false").lower() == "true"
@@ -381,11 +387,16 @@ class SuggestEntityView(View):
             "size": int(request.GET.get("limit", 10)),
         }
         query = normalise_query_params(raw_params)
-
         query["mode"] = "starts" if exact else "fuzzy"
 
         hits = es_search(query=query)
         if not hits:
+            return JsonResponse({"result": []})
+
+        # Apply the cursor to skip the specified number of results
+        hits_to_process = hits[cursor:]
+
+        if not hits_to_process:
             return JsonResponse({"result": []})
 
         max_score = hits[0].get("_score", 1.0)
@@ -415,6 +426,8 @@ class SuggestPropertyView(View):
         try:
             query_text = (request.GET.get("prefix") or request.GET.get("query") or "").strip().lower()
             limit = int(request.GET.get("limit", 10))
+            # Get cursor value, defaulting to 0 if not provided
+            cursor = int(request.GET.get("cursor", 0))
         except (ValueError, TypeError):
             return json_error("Invalid query parameters")
 
@@ -424,7 +437,12 @@ class SuggestPropertyView(View):
         else:
             matches = PROPOSE_PROPERTIES
 
-        return JsonResponse({"result": matches[:limit]})
+        # Apply cursor and limit to the list of matches
+        start_index = cursor
+        end_index = cursor + limit
+        paginated_matches = matches[start_index:end_index]
+
+        return JsonResponse({"result": paginated_matches})
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({
