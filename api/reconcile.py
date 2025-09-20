@@ -76,6 +76,10 @@ SERVICE_METADATA = {
             "service_url": DOMAIN + "/{{token}}",
             "service_path": "/reconcile/properties"
         },
+        "property_values": {
+            "service_url": DOMAIN + "/{{token}}",
+            "service_path": "/reconcile/extend/"
+        },
         "property_settings": [
             {
                 "name": "limit",
@@ -433,7 +437,7 @@ class SuggestPropertyView(View):
 
         # Filter the global constant PROPOSE_PROPERTIES
         if query_text:
-            matches = [prop for prop in PROPOSE_PROPERTIES if query_text in prop['name'].lower()]
+            matches = [prop for prop in PROPOSE_PROPERTIES if prop['name'].lower().startswith(query_text)]
         else:
             matches = PROPOSE_PROPERTIES
 
