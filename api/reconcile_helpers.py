@@ -1,3 +1,5 @@
+# /api/reconcile_helpers.py
+
 import json
 from datetime import datetime
 
@@ -219,48 +221,77 @@ def es_search(index="whg,pub", query=None, ids=None):
     return resp.get("hits", {}).get("hits", [])
 
 
-def extract_alt_names(src):
-    canonical = get_canonical_name(src, fallback_id=src.get("place_id", "unknown"))
-    return get_alternative_names(src, canonical)
+def format_extend_row(source, properties):
+    """
+    Formats entity data for /extend response.
+    Returns dict keyed by property id, with list-of-object values.
+    """
+    row = {}
+    for prop in properties:
+        pid = prop.get("id")
+        if not pid:
+            continue
+
+        if pid == "name":
+            row[pid] = [{"str": source.get("title", "")}]
+        elif pid == "type":
+            row[pid] = [{"str": "Place"}]
+        elif pid == "geojson":
+            row[pid] = [{"str": json.dumps(source.get("geometry", {}))}]
+        else:
+            value = source.get(pid)
+            if value is None:
+                row[pid] = []
+            elif isinstance(value, list):
+                row[pid] = [{"str": str(v)} for v in value]
+            else:
+                row[pid] = [{"str": str(value)}]
+
+    return row
 
 
-def extract_temporal_range(src):
-    start, end = None, None
-    if "minmax" in src:
-        start = src["minmax"].get("gte")
-        end = src["minmax"].get("lte")
-    return {"start": start, "end": end}
+# def extract_alt_names(src):
+#     canonical = get_canonical_name(src, fallback_id=src.get("place_id", "unknown"))
+#     return get_alternative_names(src, canonical)
+#
+#
+# def extract_temporal_range(src):
+#     start, end = None, None
+#     if "minmax" in src:
+#         start = src["minmax"].get("gte")
+#         end = src["minmax"].get("lte")
+#     return {"start": start, "end": end}
+#
+#
+# def extract_dataset(src):
+#     return src.get("dataset")
+#
+#
+# def extract_ccodes(src):
+#     return src.get("ccodes", [])
+#
 
-
-def extract_dataset(src):
-    return src.get("dataset")
-
-
-def extract_ccodes(src):
-    return src.get("ccodes", [])
-
-
-def format_extend_row(hit, requested_props, features=None):
-    src = hit["_source"]
-    cells = {}
-
-    for prop in requested_props:
-        if prop == "whg:alt_names":
-            cells[prop] = {"type": "string[]", "value": extract_alt_names(src)}
-        elif prop == "whg:temporalRange":
-            cells[prop] = {"type": "range", "value": extract_temporal_range(src)}
-        elif prop == "whg:dataset":
-            cells[prop] = {"type": "string", "value": extract_dataset(src)}
-        elif prop == "whg:ccodes":
-            cells[prop] = {"type": "string[]", "value": extract_ccodes(src)}
-        elif prop == "whg:geometry" and features is not None:
-            geojson = geoms_to_geojson(src)
-            if geojson:
-                features.extend(geojson["features"])
-            # Optionally: still add per-row geometry reference if desired
-            cells[prop] = {"type": "geojson-ref", "value": True}
-
-    return {
-        "id": hit.get("whg_id") or str(src.get("place_id") or hit["_id"]),
-        "cells": cells
-    }
+# def format_extend_row(hit, requested_props, features=None):
+#     src = hit["_source"]
+#     cells = {}
+#
+#     for prop in requested_props:
+#         if prop == "whg:alt_names":
+#             cells[prop] = {"type": "string[]", "value": extract_alt_names(src)}
+#         elif prop == "whg:temporalRange":
+#             cells[prop] = {"type": "range", "value": extract_temporal_range(src)}
+#         elif prop == "whg:dataset":
+#             cells[prop] = {"type": "string", "value": extract_dataset(src)}
+#         elif prop == "whg:ccodes":
+#             cells[prop] = {"type": "string[]", "value": extract_ccodes(src)}
+#         elif prop == "whg:geometry" and features is not None:
+#             geojson = geoms_to_geojson(src)
+#             if geojson:
+#                 features.extend(geojson["features"])
+#             # Optionally: still add per-row geometry reference if desired
+#             cells[prop] = {"type": "geojson-ref", "value": True}
+#
+#     return {
+#         "id": hit.get("whg_id") or str(src.get("place_id") or hit["_id"]),
+#         "cells": cells
+#     }

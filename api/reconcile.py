@@ -26,6 +26,7 @@ from django.views.decorators.csrf import csrf_exempt
 from geopy.distance import geodesic
 
 from main.choices import FEATURE_CLASSES
+from whg import settings
 from .models import APIToken, UserAPIProfile
 from .reconcile_helpers import make_candidate, format_extend_row, es_search
 
@@ -78,8 +79,8 @@ SERVICE_METADATA = {
             "service_path": "/reconcile/properties"
         },
         "property_values": {
-            "service_url": DOMAIN + "/{{token}}/",
-            "service_path": "reconcile/extend/"
+            "service_url": DOMAIN + "/{{token}}",
+            "service_path": "/reconcile/extend/"
         },
         "property_settings": [
             {
@@ -321,40 +322,65 @@ class ExtendProposeView(View):
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({
-            "error": "Method not allowed. This endpoint only accepts POST. See documentation: " + DOCS_URL
+            "error": "Method not allowed. This endpoint only accepts GET. See documentation: " + DOCS_URL
         }, status=405)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
 class ExtendView(View):
+    # def post(self, request, *args, **kwargs):
+    #     token = kwargs.get("token")
+    #     allowed, auth_error = authenticate_request(request, token_from_path=token)
+    #     if not allowed:
+    #         return json_error(auth_error.get("error", "Authentication failed"), status=401)
+    #
+    #     try:
+    #         payload = parse_request_payload(request)
+    #         candidate_ids = payload.get("ids", [])
+    #         requested_props = payload.get("properties", [])
+    #     except ValueError as e:
+    #         return json_error(str(e))
+    #
+    #     if not candidate_ids:
+    #         return JsonResponse({"rows": []})
+    #
+    #     hits = es_search_by_ids(candidate_ids)
+    #
+    #     rows, features = [], []
+    #     for hit in hits:
+    #         row = format_extend_row(hit, requested_props, features)
+    #         rows.append(row)
+    #
+    #     response = {"rows": rows}
+    #     if "whg:geometry" in requested_props and features:
+    #         response["geojson"] = {"type": "FeatureCollection", "features": features}
+    #
+    #     return JsonResponse(response)
+
     def post(self, request, *args, **kwargs):
         token = kwargs.get("token")
         allowed, auth_error = authenticate_request(request, token_from_path=token)
         if not allowed:
-            return json_error(auth_error.get("error", "Authentication failed"), status=401)
+            return json_error(auth_error.get("error", "Authentication failed"), status=403)
 
         try:
-            payload = parse_request_payload(request)
-            candidate_ids = payload.get("ids", [])
-            requested_props = payload.get("properties", [])
-        except ValueError as e:
-            return json_error(str(e))
+            payload = json.loads(request.body.decode("utf-8"))
+            ids = payload.get("ids", [])
+            properties = payload.get("properties", [])
+        except Exception as e:
+            return JsonResponse({"error": f"Invalid payload: {e}"}, status=400)
 
-        if not candidate_ids:
-            return JsonResponse({"rows": []})
+        # Fetch matching records
+        es = settings.ES_CONN
+        response = es.mget(index="whg,pub", body={"ids": ids})
 
-        hits = es_search_by_ids(candidate_ids)
+        rows = {}
+        for doc in response["docs"]:
+            entity_id = doc["_id"]
+            source = doc.get("_source", {})
+            rows[entity_id] = format_extend_row(source, properties)
 
-        rows, features = [], []
-        for hit in hits:
-            row = format_extend_row(hit, requested_props, features)
-            rows.append(row)
-
-        response = {"rows": rows}
-        if "whg:geometry" in requested_props and features:
-            response["geojson"] = {"type": "FeatureCollection", "features": features}
-
-        return JsonResponse(response)
+        return JsonResponse({"rows": rows})
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({
