@@ -64,18 +64,18 @@ SERVICE_METADATA = {
     },
     "suggest": {
         "entity": {
-            "service_url": DOMAIN + "/{{token}}/",
-            "service_path": "suggest/entity",
+            "service_url": DOMAIN + "/{{token}}",
+            "service_path": "/suggest/entity",
         },
         "property": {
-            "service_url": DOMAIN + "/{{token}}/",
-            "service_path": "suggest/property",
+            "service_url": DOMAIN + "/{{token}}",
+            "service_path": "/suggest/property",
         }
     },
     "extend": {
         "propose_properties": {
-            "service_url": DOMAIN + "/{{token}}/",
-            "service_path": "reconcile/extend/propose"
+            "service_url": DOMAIN + "/{{token}}",
+            "service_path": "/reconcile/extend/propose"
         }
     },
     "batch_size": 50,
