@@ -275,8 +275,7 @@ class ReconciliationView(View):
     """
 
     def get(self, request, *args, **kwargs):
-        token = kwargs.get("token")
-        logger.debug("Reconcile token (path): %s", token)
+        token = request.GET.get("token")
 
         metadata = json.loads(json.dumps(SERVICE_METADATA))
 
