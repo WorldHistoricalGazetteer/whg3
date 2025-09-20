@@ -308,26 +308,24 @@ class ReconciliationView(View):
         if extend:
             ids = extend.get("ids", [])
             properties = extend.get("properties", [])
-            logger.debug(f"Extend request for {len(ids)} ids and {len(properties)} properties")
-            logger.debug("Payload: " + json.dumps(extend))
             if not ids:
-                return JsonResponse({"rows": {}})
+                return JsonResponse({"rows": {}, "meta": []})
 
-            # Fetch data from the Django DB instead of ES
             qs = Place.objects.filter(id__in=ids).prefetch_related("names", "geoms", "links")
-            rows = {str(p.id): format_extend_row(p, properties, from_db=True) for p in qs}
 
-            logger.debug(f"Found {qs.count()} DB hits")
-            logger.debug("Rows: " + json.dumps(rows))
+            rows = {str(p.id): format_extend_row(p, properties) for p in qs}
 
-            return JsonResponse({"rows": rows})
+            # Meta block required by OpenRefine
+            meta = [
+                {"id": prop.get("id") if isinstance(prop, dict) else prop,
+                 "name": prop.get("id") if isinstance(prop, dict) else prop}
+                for prop in properties
+            ]
 
-        queries = payload.get("queries", {})
-        if not queries:
-            return json_error("Missing 'queries' parameter")
+            return JsonResponse({"meta": meta, "rows": rows})
 
-        results = process_queries(queries, batch_size=SERVICE_METADATA.get("batch_size", 50))
-        return JsonResponse(results)
+        else:
+            return json_error("Missing 'extend' parameter in request")
 
 
 @method_decorator(csrf_exempt, name="dispatch")

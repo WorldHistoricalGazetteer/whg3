@@ -227,52 +227,35 @@ def es_search(index=ELASTIC_INDICES, query=None, ids=None):
     return resp.get("hits", {}).get("hits", [])
 
 
-def format_extend_row(source, properties, from_db=False):
+def format_extend_row(place, properties):
     """
-    Build an extend row for OpenRefine.
-    - source: dict (ES _source) or Place instance (from_db=True).
+    Build the property values dict for an OpenRefine extend row.
+    - place: Place instance.
     - properties: list of property dicts or strings.
-    - from_db: set True if source is a Django ORM instance.
     """
-
-    # Normalise source into a dict
-    if from_db:
-        place = source
-        norm = {
-            "id": str(place.id),
-            "title": place.title,
-            "dataset": place.dataset.label if place.dataset else None,
-            "geometry": [g.geom.geojson for g in place.geoms.all()],
-            "alt_names": [n.toponym for n in place.names.all()],
-            "ccodes": place.ccodes or [],
-            "timespans": place.timespans or [],
-        }
-    else:
-        norm = source.copy()
-        # ES docs may only have place_id, normalise it
-        norm["id"] = str(norm.get("place_id"))
-        norm["title"] = norm.get("title")
-
-    row = {
-        "id": norm.get("id"),
-        "name": norm.get("title"),
-        "properties": {}
+    norm = {
+        "geometry": [g.geom.geojson for g in place.geoms.all()],
+        "alt_names": [n.toponym for n in place.names.all()],
+        "ccodes": place.ccodes or [],
+        "dataset": place.dataset.label if place.dataset else None,
+        "timespans": place.timespans or [],
     }
 
+    row = {}
     for prop in properties:
         pid = prop.get("id") if isinstance(prop, dict) else prop
 
         if pid == "whg:geometry":
-            row["properties"][pid] = norm.get("geometry", [])
+            row[pid] = norm["geometry"]
         elif pid == "whg:alt_names":
-            row["properties"][pid] = norm.get("alt_names", [])
+            row[pid] = norm["alt_names"]
         elif pid == "whg:ccodes":
-            row["properties"][pid] = norm.get("ccodes", [])
+            row[pid] = norm["ccodes"]
         elif pid == "whg:dataset":
-            row["properties"][pid] = norm.get("dataset")
+            row[pid] = norm["dataset"]
         elif pid == "whg:temporalRange":
-            row["properties"][pid] = norm.get("timespans", [])
+            row[pid] = norm["timespans"]
         else:
-            row["properties"][pid] = None
+            row[pid] = None
 
     return row
