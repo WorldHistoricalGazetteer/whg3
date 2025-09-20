@@ -232,20 +232,34 @@ def format_extend_row(source, properties):
         if not pid:
             continue
 
+        values = source.get(pid)
+
+        # Handle special pseudo-properties
         if pid == "name":
-            row[pid] = [{"str": source.get("title", "")}]
+            values = [source.get("title", "")]
         elif pid == "type":
-            row[pid] = [{"str": "Place"}]
+            values = ["Place"]
         elif pid == "geojson":
-            row[pid] = [{"str": json.dumps(source.get("geometry", {}))}]
-        else:
-            value = source.get(pid)
-            if value is None:
-                row[pid] = []
-            elif isinstance(value, list):
-                row[pid] = [{"str": str(v)} for v in value]
+            values = [json.dumps(source.get("geometry", {}))]
+
+        # Normalise to list
+        if values is None:
+            row[pid] = []
+            continue
+        if not isinstance(values, list):
+            values = [values]
+
+        formatted = []
+        for v in values:
+            if isinstance(v, dict) and "id" in v and "name" in v:
+                # Already entity-like in ES, promote to id+str
+                formatted.append({"id": v["id"], "str": v["name"]})
+            elif isinstance(v, dict) and "id" in v:
+                formatted.append({"id": v["id"], "str": v.get("label", str(v["id"]))})
             else:
-                row[pid] = [{"str": str(value)}]
+                # Default to plain string
+                formatted.append({"str": str(v)})
+        row[pid] = formatted
 
     return row
 
