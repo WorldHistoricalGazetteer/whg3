@@ -58,31 +58,31 @@ SERVICE_METADATA = {
         "url": DOMAIN + "/feature/{{id}}"
     },
     "preview": {
-        "url": DOMAIN + "/preview/?id={{id}}",
+        "url": DOMAIN + "/{{token}}/preview/?id={{id}}",
         "width": 400,
         "height": 300,
     },
     "suggest": {
         "entity": {
-            "service_url": DOMAIN + "/suggest/entity",
-            "service_path": "",
+            "service_url": DOMAIN + "/{{token}}/",
+            "service_path": "suggest/entity",
         },
         "property": {
-            "service_url": DOMAIN + "/suggest/property",
-            "service_path": "",
+            "service_url": DOMAIN + "/{{token}}/",
+            "service_path": "suggest/property",
         }
     },
     "extend": {
         "propose_properties": {
-            "service_url": DOMAIN + "/reconcile/extend/propose",
-            "service_path": ""
+            "service_url": DOMAIN + "/{{token}}/",
+            "service_path": "reconcile/extend/propose"
         }
     },
     "batch_size": 50,
     "authentication": {
         "type": "api_token",
         "name": "Authorization",
-        "in": "header",
+        "in": "path",
     }
 }
 
@@ -200,7 +200,7 @@ class ReconciliationView(View):
     - `bounds` (object): GeoJSON Polygon to restrict results spatially.
     - `userareas` (array): IDs of server-side stored areas.
     - `lat`/`lng`/`radius` (float): Circle filter for nearby search.
-    - `dataset` (int): Restrict to a dataset.
+    - `dataset` (int): Restrict to a dataset. # TODO: Allow multiple named datasets such as GeoNames or OSM for either inclusion or exclusion, for example "dataset=geonames,osm" or "dataset=-geonames,-osm".
     - `size` (int): Maximum results per query.
 
     **Response format:**
@@ -231,37 +231,21 @@ class ReconciliationView(View):
     """
 
     def get(self, request, *args, **kwargs):
-        logger.debug("Reconcile GET request params: %s", request.GET)
-        token = request.GET.get("token")
-        logger.debug("Reconcile token: %s", token)
+        token = kwargs.get("token")
+        logger.debug("Reconcile token (path): %s", token)
 
-        # Shallow copy so as not to mutate the global SERVICE_METADATA
-        metadata = SERVICE_METADATA.copy()
+        metadata = json.loads(json.dumps(SERVICE_METADATA))
 
         if token:
-            # Inject token into the preview + suggest + extend URLs
-            def with_token(url):
-                separator = "&" if "?" in url else "?"
-                return f"{url}{separator}{urlencode({'token': token})}"
+            def inject_token(obj):
+                if isinstance(obj, dict):
+                    return {k: inject_token(v) for k, v in obj.items()}
+                elif isinstance(obj, str):
+                    return obj.replace("{{token}}", token)
+                else:
+                    return obj
 
-            metadata["preview"]["url"] = with_token(metadata["preview"]["url"])
-            metadata["view"]["url"] = with_token(metadata["view"]["url"])
-            metadata["feature_view"]["url"] = with_token(metadata["feature_view"]["url"])
-
-            if "suggest" in metadata:
-                for _, svc in metadata["suggest"].items():
-                    svc["service_url"] = with_token(svc["service_url"])
-
-            if "extend" in metadata and "propose_properties" in metadata["extend"]:
-                svc = metadata["extend"]["propose_properties"]
-                svc["service_url"] = with_token(svc["service_url"])
-
-            # Overwrite authentication block so OpenRefine knows it's query param style
-            metadata["authentication"] = {
-                "type": "api_token",
-                "name": "token",
-                "in": "query"
-            }
+            metadata = inject_token(metadata)
 
         return JsonResponse(metadata)
 
