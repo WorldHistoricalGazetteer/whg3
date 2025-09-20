@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 
+from api.reconcile import SCHEMA_SPACE
 from areas.models import Area
 from whg import settings
 
@@ -59,7 +60,13 @@ def make_candidate(hit, query_text, max_score):
         "name": name,
         "score": score,
         "match": is_exact,
-        "alt_names": alt_names
+        "alt_names": alt_names,
+        "type": [
+            {
+                "id": SCHEMA_SPACE + "#Place",
+                "name": "Place"
+            }
+        ]
     }
 
 
@@ -76,7 +83,8 @@ def build_es_query(params, size=100):
         if len(mode_parts) != 2:
             raise ValueError(f"Invalid fuzzy mode: {search_mode}. Expected format 'prefix|fuzziness'.")
         prefix_length, fuzziness = mode_parts
-        if prefix_length.isdigit() and (fuzziness == "AUTO" or (fuzziness.isdigit() and int(fuzziness) >= 0 and int(fuzziness) <= 2)):
+        if prefix_length.isdigit() and (
+                fuzziness == "AUTO" or (fuzziness.isdigit() and int(fuzziness) >= 0 and int(fuzziness) <= 2)):
             search_query = {
                 "multi_match": {
                     "query": qstr,

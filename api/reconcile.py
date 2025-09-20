@@ -36,15 +36,16 @@ DOCS_URL = "https://docs.whgazetteer.org/content/400-Technical.html#reconciliati
 TILESERVER_URL = os.environ.get('TILEBOSS', 'https://tiles.whgazetteer.org').rstrip('/')
 MAX_EARTH_RADIUS_KM = math.pi * 6371  # ~20015 km
 VALID_FCODES = {fc for fc, _ in FEATURE_CLASSES}
+SCHEMA_SPACE = DOMAIN + "/static/whg_place_schema.jsonld"
 
 SERVICE_METADATA = {
     "versions": ["0.2"],
     "name": "World Historical Gazetteer Place Reconciliation Service",
     "identifierSpace": DOMAIN + "/place/",
-    "schemaSpace": DOMAIN + "/static/whg_place_schema.jsonld",
+    "schemaSpace": SCHEMA_SPACE,
     "defaultTypes": [
         {
-            "id": DOMAIN + "/static/whg_place_schema.jsonld#Place",
+            "id": SCHEMA_SPACE + "#Place",
             "name": "Place"
         }
     ],
