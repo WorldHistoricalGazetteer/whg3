@@ -18,14 +18,12 @@ logger = logging.getLogger('reconciliation')
 class PreviewView(View):
 
     def get(self, request, *args, **kwargs):
-        token = kwargs.get("token")
         place_id = request.GET.get("id")
-        logger.debug("Preview GET request token=%s id=%s", token, place_id)
 
         if not place_id:
             return HttpResponseBadRequest("Missing id parameter")
 
-        allowed, auth_error = authenticate_request(request, token_from_path=token)
+        allowed, auth_error = authenticate_request(request)
         if not allowed:
             return HttpResponse("Invalid API token", status=403)
 
