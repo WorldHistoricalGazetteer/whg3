@@ -17,7 +17,6 @@ import json
 import logging
 import math
 import os
-from urllib.parse import urlencode
 
 from django.http import JsonResponse
 from django.utils import timezone
@@ -75,8 +74,34 @@ SERVICE_METADATA = {
     "extend": {
         "propose_properties": {
             "service_url": DOMAIN + "/{{token}}",
-            "service_path": "/reconcile/extend/propose"
-        }
+            "service_path": "/reconcile/properties"
+        },
+        "property_settings": [
+            {
+                "name": "limit",
+                "label": "Limit",
+                "type": "number",
+                "default": 0,
+                "help_text": "Maximum number of values to return per row (0 for no limit)"
+            },
+            {
+                "name": "content",
+                "label": "Content",
+                "type": "select",
+                "default": "literal",
+                "help_text": "Content type: ID or literal",
+                "choices": [
+                    {
+                        "value": "id",
+                        "name": "ID"
+                    },
+                    {
+                        "value": "literal",
+                        "name": "Literal"
+                    }
+                ]
+            }
+        ]
     },
     "batch_size": 50,
     "authentication": {
@@ -86,14 +111,18 @@ SERVICE_METADATA = {
     }
 }
 
-
 PROPOSE_PROPERTIES = [
-    {"id": "whg:geometry", "name": "Geometry (GeoJSON)", "description": "The geometrical location (GeoJSON) of the place"},
+    {"id": "whg:geometry", "name": "Geometry (GeoJSON)",
+     "description": "The geometrical location (GeoJSON) of the place"},
     {"id": "whg:alt_names", "name": "Alternative names", "description": "Alternative names or aliases for the place"},
-    {"id": "whg:temporalRange", "name": "Temporal range (years)", "description": "The temporal range(s) associated with the place record"},
-    {"id": "whg:dataset", "name": "Source dataset", "description": "The source dataset from which the place record originates"},
-    {"id": "whg:ccodes", "name": "Country codes", "description": "The ISO 2-letter country codes associated with the place"},
-    {"id": "whg:fclasses", "name": "Feature classes", "description": "The feature classes (e.g., 'A' for administrative regions, 'P' for populated places)"},
+    {"id": "whg:temporalRange", "name": "Temporal range (years)",
+     "description": "The temporal range(s) associated with the place record"},
+    {"id": "whg:dataset", "name": "Source dataset",
+     "description": "The source dataset from which the place record originates"},
+    {"id": "whg:ccodes", "name": "Country codes",
+     "description": "The ISO 2-letter country codes associated with the place"},
+    {"id": "whg:fclasses", "name": "Feature classes",
+     "description": "The feature classes (e.g., 'A' for administrative regions, 'P' for populated places)"},
     {"id": "whg:types", "name": "Types", "description": "The types or categories associated with the place"},
 ]
 
