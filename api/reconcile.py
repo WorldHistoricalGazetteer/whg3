@@ -405,7 +405,7 @@ class SuggestEntityView(View):
             return JsonResponse({"result": []})
 
         max_score = hits[0].get("_score", 1.0)
-        candidates = [make_candidate(hit, query["query_text"], max_score) for hit in hits]
+        candidates = [make_candidate(hit, query["query_text"], max_score, SCHEMA_SPACE) for hit in hits]
 
         return JsonResponse({"result": candidates})
 
@@ -622,7 +622,7 @@ def reconcile_place_es(query, index="whg,pub"):
     results = []
 
     for hit in hits:
-        candidate = make_candidate(hit, query["query_text"], max_score)
+        candidate = make_candidate(hit, query["query_text"], max_score, SCHEMA_SPACE)
         results.append(candidate)
 
     return {

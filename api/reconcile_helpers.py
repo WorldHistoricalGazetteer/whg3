@@ -1,7 +1,6 @@
 import json
 from datetime import datetime
 
-from api.reconcile import SCHEMA_SPACE
 from areas.models import Area
 from whg import settings
 
@@ -49,7 +48,7 @@ def geoms_to_geojson(src):
     return {"type": "FeatureCollection", "features": features} if features else None
 
 
-def make_candidate(hit, query_text, max_score):
+def make_candidate(hit, query_text, max_score, schema_space):
     src = hit["_source"]
     name = get_canonical_name(src, hit["_id"])
     alt_names = get_alternative_names(src, name)
@@ -63,7 +62,7 @@ def make_candidate(hit, query_text, max_score):
         "alt_names": alt_names,
         "type": [
             {
-                "id": SCHEMA_SPACE + "#Place",
+                "id": schema_space + "#Place",
                 "name": "Place"
             }
         ]
