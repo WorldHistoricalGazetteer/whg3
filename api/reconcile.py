@@ -17,6 +17,7 @@ import json
 import logging
 import math
 import os
+import urllib
 
 from django.http import JsonResponse
 from django.utils import timezone
@@ -298,20 +299,16 @@ class ReconciliationView(View):
             return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
         try:
-            payload = parse_request_payload(request, expect_queries=True)
+            payload = parse_request_payload(request)
         except ValueError as e:
             return json_error(str(e))
 
-        if 'extend' in request.POST:  # x-www-form-urlencoded from OpenRefine
-            try:
-                payload = json.loads(request.POST['extend'])
-                ids = payload.get("ids", [])
-                properties = payload.get("properties", [])
-                logger.debug(f"Extend request for {len(ids)} ids and {len(properties)} properties")
-                logger.debug("Payload: " + json.dumps(payload))
-            except Exception as e:
-                return json_error({"error": f"Invalid extend payload: {e}"}, status=400)
-
+        extend = payload.get("extend", {})
+        if extend:
+            ids = extend.get("ids", [])
+            properties = extend.get("properties", [])
+            logger.debug(f"Extend request for {len(ids)} ids and {len(properties)} properties")
+            logger.debug("Payload: " + json.dumps(extend))
             if not ids:
                 return JsonResponse({"rows": {}})
 
@@ -473,33 +470,45 @@ class DummyView(View):
         }, status=405)
 
 
-def parse_request_payload(request, expect_queries: bool = False):
+def parse_request_payload(request):
     """
     Parse request body based on Content-Type.
-    - Supports form-encoded 'queries' (OpenRefine style).
+    - Supports form-encoded 'queries' (OpenRefine style) or 'extend' (OpenRefine data extension).
     - Supports raw JSON body.
     Returns: dict payload
     Raises: ValueError with a message if parsing fails.
     """
-    if request.content_type.startswith("application/x-www-form-urlencoded"):
-        if not expect_queries:
-            raise ValueError("Form-encoded payload only supported with 'queries'")
-        queries_param = request.POST.get("queries")
-        if not queries_param:
-            raise ValueError("Missing 'queries' parameter")
-        try:
-            return {"queries": json.loads(queries_param)}
-        except json.JSONDecodeError:
-            raise ValueError("Invalid JSON in 'queries' parameter")
+    content_type = request.content_type or ""
 
-    elif request.content_type.startswith("application/json"):
+    # Form-encoded (application/x-www-form-urlencoded)
+    if content_type.startswith("application/x-www-form-urlencoded"):
+        if "queries" in request.POST:
+            queries_param = request.POST["queries"]
+            try:
+                return {"queries": json.loads(queries_param)}
+            except json.JSONDecodeError:
+                raise ValueError("Invalid JSON in 'queries' parameter")
+
+        elif "extend" in request.POST:
+            extend_raw = request.POST["extend"]
+            try:
+                extend_json = urllib.parse.unquote_plus(extend_raw)
+                return {"extend": json.loads(extend_json)}
+            except json.JSONDecodeError:
+                raise ValueError("Invalid JSON in 'extend' parameter")
+
+        else:
+            raise ValueError("Missing 'queries' or 'extend' parameter in form-encoded request")
+
+    # JSON body
+    elif content_type.startswith("application/json"):
         try:
             return json.loads(request.body)
         except json.JSONDecodeError:
             raise ValueError("Invalid JSON body")
 
     else:
-        raise ValueError(f"Unsupported Content-Type: {request.content_type}")
+        raise ValueError(f"Unsupported Content-Type: {content_type}")
 
 
 def process_queries(queries, batch_size=50):
