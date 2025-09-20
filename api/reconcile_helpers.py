@@ -3,6 +3,7 @@
 import json
 from datetime import datetime
 
+from api.serializers import PlaceSerializer
 from areas.models import Area
 from whg import settings
 
@@ -233,28 +234,23 @@ def format_extend_row(place, properties):
     - place: Place instance.
     - properties: list of property dicts or strings.
     """
-    norm = {
-        "geometry": [g.geom.geojson for g in place.geoms.all()],
-        "alt_names": [n.toponym for n in place.names.all()],
-        "ccodes": place.ccodes or [],
-        "dataset": place.dataset.label if place.dataset else None,
-        "timespans": place.timespans or [],
-    }
+    serializer = PlaceSerializer(place, context={})
+    data = serializer.data
 
     row = {}
     for prop in properties:
         pid = prop.get("id") if isinstance(prop, dict) else prop
 
         if pid == "whg:geometry":
-            row[pid] = norm["geometry"]
+            row[pid] = [g["geom"] for g in data.get("geoms", [])]
         elif pid == "whg:alt_names":
-            row[pid] = norm["alt_names"]
+            row[pid] = [n["toponym"] for n in data.get("names", [])]
         elif pid == "whg:ccodes":
-            row[pid] = norm["ccodes"]
+            row[pid] = data.get("ccodes", [])
         elif pid == "whg:dataset":
-            row[pid] = norm["dataset"]
+            row[pid] = data.get("dataset")
         elif pid == "whg:temporalRange":
-            row[pid] = norm["timespans"]
+            row[pid] = data.get("whens", [])
         else:
             row[pid] = None
 

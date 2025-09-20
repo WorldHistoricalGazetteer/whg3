@@ -7,6 +7,7 @@ from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
 
 from api.reconcile import authenticate_request
+from api.serializers import PlaceSerializer
 from places.models import Place
 from places.utils import attribListFromSet
 
@@ -32,7 +33,8 @@ class PreviewView(View):
         except Place.DoesNotExist:
             raise Http404(f"Place {place_id} not found")
 
-        record = self._build_record(place)
+        serializer = PlaceSerializer(place, context={})
+        record = serializer.data
 
         def _format_list(data_list, separator=', '):
             if data_list:
@@ -94,21 +96,6 @@ class PreviewView(View):
         """
 
         return HttpResponse(html, content_type="text/html; charset=UTF-8")
-
-    def _build_record(self, place):
-        names = attribListFromSet('names', place.names.all(), exclude_title=place.title)
-        types = attribListFromSet('types', place.types.all())
-        return {
-            "title": place.title,
-            "names": names,
-            "ccodes": place.ccodes,
-            "fclasses": place.fclasses,
-            "types": types,
-            "timespans": [t[0] for t in place.timespans] if place.timespans else [],
-            "dataset": {
-                "title": place.dataset.title if place.dataset else "unknown"
-            }
-        }
 
     def http_method_not_allowed(self, request, *args, **kwargs):
         return JsonResponse({
