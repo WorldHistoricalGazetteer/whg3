@@ -208,7 +208,7 @@ def es_search(index=ELASTIC_INDICES, query=None, ids=None):
 
     if ids:
         body = {
-            "query": {"ids": {"values": ids}},
+            "query": {"place_id": {"values": ids}},
             "_source": True,
             "size": len(ids),
         }
