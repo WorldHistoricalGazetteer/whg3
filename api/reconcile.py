@@ -138,20 +138,20 @@ QUERY_PARAMETERS = (
     "| Parameter | Type | Description |\n"
     "| --- | --- | --- |\n"
     "| `query` | string | Free-text search string. Required if no spatial or dataset filters are provided. |\n"
-    "| `mode` | string | Search mode: `exact`, `fuzzy`***** (default), `starts`, or `in`. **Coming soon**: `phonetic`|\n"
+    "| `mode` | string | Search mode: `exact`, `fuzzy`* (default), `starts`, or `in`. **Coming soon**: `phonetic`|\n"
     "| `fclasses` | array | Restrict to specific feature classes (e.g. `[\"A\",\"L\"]`). `X` (unknown) is always included. |\n"
     "| `start` | integer | Start year for temporal filtering. |\n"
     "| `end` | integer | End year for temporal filtering (defaults to current year). |\n"
     "| `undated` | boolean | Include results with no temporal metadata. |\n"
     "| `countries` | array | Restrict results to country codes (ISO 2-letter). |\n"
-    "| `bounds` | object | GeoJSON geometry collection for spatial restriction. |\n"
+    "| `bounds` | object | GeoJSON geometry collection for spatial restriction (ignored if `radius` and coordinates are given). |\n"
     "| `lat` | float | Latitude for circular search (with `lng` and `radius`). |\n"
     "| `lng` | float | Longitude for circular search (with `lat` and `radius`). |\n"
     "| `radius` | float | Radius in km for circular search (with `lat` and `lng`). |\n"
     "| `userareas` | array | IDs of user-defined stored areas for spatial filtering. |\n"
     "| `dataset` | integer | Restrict results to specific dataset ID. |\n"
     "| `size` | integer | Maximum results per query (default: 100). |\n\n"
-    "*****Can also be specified as `prefix_length|fuzziness` (e.g., `2|1`). "
+    "*Can also be specified as `prefix_length|fuzziness` (e.g., `2|1`). "
 )
 
 
@@ -759,16 +759,7 @@ def normalise_query_params(params):
     query_text = params.get("query", "").strip() or None
     size = int(params.get("size", 100))
 
-    # Bounds (GeoJSON-style polygon)
     bounds = None
-    if "bounds" in params:
-        try:
-            geom = params["bounds"].get("geometries", [])[0]
-            if geom["type"] != "Polygon":
-                raise ValueError("Bounds geometry must be a Polygon")
-            bounds = {"type": "Polygon", "coordinates": geom["coordinates"]}
-        except Exception as e:
-            raise ValueError(f"Invalid bounds: {e}")
 
     # Nearby (circle)
     lat = lng = radius = None
@@ -792,6 +783,16 @@ def normalise_query_params(params):
 
     if has_nearby:
         bounds = circle_to_polygon(lat, lng, radius)
+    else:
+        # Bounds (GeoJSON-style polygon)
+        if "bounds" in params:
+            try:
+                geom = params["bounds"].get("geometries", [])[0]
+                if geom["type"] != "Polygon":
+                    raise ValueError("Bounds geometry must be a Polygon")
+                bounds = {"type": "Polygon", "coordinates": geom["coordinates"]}
+            except Exception as e:
+                raise ValueError(f"Invalid bounds: {e}")
 
     has_dataset = "dataset" in params
 

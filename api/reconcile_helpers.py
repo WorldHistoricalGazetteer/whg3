@@ -280,13 +280,13 @@ def format_extend_row(place, properties, request=None):
                 "queries": {
                     "q0": {
                         "query": "London",
-                        "mode": "exact",
+                        "mode": "3|2",  # prefix length 3, fuzziness 2
                         "countries": ["GB"],
                         "start": 1800,
                         "end": 1900,
                         "lat": 51.5074,
                         "lng": -0.1278,
-                        "radius": 10,
+                        "radius": 10,  # km
                         "fclasses": ["P"],
                         "size": 10
                     }
