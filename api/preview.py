@@ -57,7 +57,7 @@ logger = logging.getLogger('reconciliation')
     </div>
 </div></body></html>
 ```""",
-            response=str
+            # response=str
         ),
             400: OpenApiResponse(
                 description="Missing id parameter",
