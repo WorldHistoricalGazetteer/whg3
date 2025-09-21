@@ -19,18 +19,16 @@ from django.shortcuts import get_object_or_404
 from django.views.generic import View, TemplateView
 from django.utils.decorators import method_decorator
 
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes, \
-    OpenApiExample
+from drf_spectacular.utils import extend_schema
 
 from rest_framework import generics
 from rest_framework import permissions
 from rest_framework import viewsets
 from rest_framework import status
-from rest_framework.authentication import SessionAuthentication, TokenAuthentication
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import APIException
 from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.reverse import reverse
 from rest_framework.generics import ListAPIView
@@ -71,6 +69,7 @@ class BadRequestException(APIException):
         self.detail = {"error": detail}
 
 
+@extend_schema(exclude=True)
 class GalleryView(ListAPIView):
     pagination_class = PageNumberPagination
     pagination_class.page_size = 6
@@ -221,6 +220,7 @@ class StandardResultsSetPagination(PageNumberPagination):
     max_page_size = 20000
 
 
+@extend_schema(exclude=True)
 class SpatialAPIView(generics.ListAPIView):
     """
     This endpoint will return a Feature Collection (in Linked Places Format) containing places either within a given bounding
@@ -236,107 +236,6 @@ class SpatialAPIView(generics.ListAPIView):
     # filter_backends = [filters.SearchFilter]
     # search_fields = ['@title']
 
-    @extend_schema(
-        parameters=[
-            OpenApiParameter(
-                name="type",
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="Type of spatial search, either 'nearby' or 'bbox'.",
-            ),
-            OpenApiParameter(
-                name="lon",
-                type=OpenApiTypes.FLOAT,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="Nearby search: center-point longitude coordinate, between -180 and 180 degrees.",
-            ),
-            OpenApiParameter(
-                name="lat",
-                type=OpenApiTypes.FLOAT,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="Nearby search: center-point latitude coordinate, between -90 and 90 degrees.",
-            ),
-            OpenApiParameter(
-                name="km",
-                type=OpenApiTypes.FLOAT,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="Nearby search: radius (in km).",
-            ),
-            OpenApiParameter(
-                name="sw",
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="Bounding box search: southwest corner coordinates (comma-separated lon,lat values).",
-                examples=[
-                    OpenApiExample(
-                        name="Example sw",
-                        summary="Example of southwest corner coordinates",
-                        # description="This is an example of southwest corner coordinates.",
-                        value="-150.123456,-52.345678"
-                    )
-                ],
-            ),
-            OpenApiParameter(
-                name="ne",
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="Bounding box search: northeast corner coordinates (comma-separated lon,lat values).",
-                examples=[
-                    OpenApiExample(
-                        name="Example ne",
-                        summary="Example of northeast corner coordinates",
-                        # description="This is an example of northeast corner coordinates.",
-                        value="150.123456,52.345678"
-                    )
-                ],
-            ),
-            OpenApiParameter(
-                name="fc",
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="Comma-separated list of feature classes to filter by."
-            ),
-            OpenApiParameter(
-                name="dataset",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="Filter by dataset ID."
-            ),
-            OpenApiParameter(
-                name="collection",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="Filter by collection ID."
-            ),
-            OpenApiParameter(
-                name="pagesize",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="Number of results per page."
-            ),
-            OpenApiParameter(
-                name="page",
-                type=OpenApiTypes.INT,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="A page number within a paginated result set."
-            ),
-        ],
-        responses={
-            200: LPFSerializer(many=True),
-            400: ErrorResponseSerializer,
-        }
-    )
     def get(self, *args, **kwargs):
         params = self.request.query_params
         logger.info("SpatialAPIView received params: %s", params)
@@ -570,6 +469,7 @@ def bundler(q, whgid, idx):
 """
 
 
+@extend_schema(exclude=True)
 class IndexAPIView(View):
     def get(self, request):
         params = request.GET
@@ -808,6 +708,7 @@ from .serializers import LPFSerializer
 import re
 
 
+@extend_schema(exclude=True)
 class SearchAPIView(generics.ListAPIView):
     renderer_classes = [JSONRenderer]
     filter_backends = [filters.SearchFilter]
@@ -891,6 +792,7 @@ class SearchAPIView(generics.ListAPIView):
         return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False, 'indent': 2})
 
 
+@extend_schema(exclude=True)
 class SearchAPIView_DEPRECATED(generics.ListAPIView):
     renderer_classes = [JSONRenderer]
     filter_backends = [filters.SearchFilter]
@@ -968,6 +870,7 @@ class SearchAPIView_DEPRECATED(generics.ListAPIView):
 """
 
 
+@extend_schema(exclude=True)
 class PlaceAPIView(generics.ListAPIView):
     serializer_class = PlaceSerializer
     pagination_class = StandardResultsSetPagination
@@ -989,6 +892,7 @@ class PlaceAPIView(generics.ListAPIView):
 """
 
 
+@extend_schema(exclude=True)
 class DownloadDatasetAPIView(generics.ListAPIView):
     """  Dataset as LPF FeatureCollection  """
 
@@ -1055,6 +959,7 @@ class DownloadDatasetAPIView(generics.ListAPIView):
 from rest_framework.response import Response
 
 
+@extend_schema(exclude=True)
 class DatasetAPIView(generics.ListAPIView):
     """List public datasets"""
     serializer_class = DatasetSerializer
@@ -1090,6 +995,7 @@ class DatasetAPIView(generics.ListAPIView):
 
 
 # geojson feature for api
+@extend_schema(exclude=True)
 class AreaFeaturesView(generics.ListAPIView):
     # @staticmethod
 
@@ -1134,6 +1040,7 @@ class AreaFeaturesView(generics.ListAPIView):
 
 # geojson feature for api
 @method_decorator(login_required, name='dispatch')
+@extend_schema(exclude=True)
 class UserAreaFeaturesView(APIView):
 
     def get(self, request, format=None, *args, **kwargs):
@@ -1155,11 +1062,13 @@ class UserAreaFeaturesView(APIView):
         return Response(areas, status=status.HTTP_200_OK)
 
 
+@extend_schema(exclude=True)
 class UserList(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
 
+@extend_schema(exclude=True)
 class UserDetail(generics.RetrieveAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -1211,6 +1120,7 @@ class PrettyJsonRenderer(JSONRenderer):
 #     context["query_params"] = self.request.query_params
 #     return context
 
+@extend_schema(exclude=True)
 class PlacesDetailAPIView(View):
     """  returns serialized multiple database place records by id  """
 
@@ -1355,6 +1265,7 @@ class PlacesDetailAPIView(View):
 """
 
 
+@extend_schema(exclude=True)
 class PlaceCompareAPIView(generics.RetrieveAPIView):
     """  returns single serialized database place record by id  """
     queryset = Place.objects.all()
@@ -1371,6 +1282,7 @@ class PlaceCompareAPIView(generics.RetrieveAPIView):
 """
 
 
+@extend_schema(exclude=True)
 class PlaceDetailSourceAPIView(generics.RetrieveAPIView):
     """  single database place record by src_id  """
     queryset = Place.objects.all()
@@ -1434,6 +1346,7 @@ class GeomViewSet(viewsets.ModelViewSet):
 
 
 # class GeoJSONViewSet(viewsets.ModelViewSet):
+@extend_schema(exclude=True)
 class GeoJSONAPIView(generics.ListAPIView):
     # use: api/geojson
     # queryset = PlaceGeom.objects.all()
@@ -1464,6 +1377,7 @@ class GeoJSONAPIView(generics.ListAPIView):
 """
 
 
+@extend_schema(exclude=True)
 class featureCollectionAPIView(generics.ListAPIView):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
 
@@ -1652,10 +1566,8 @@ class RegionViewSet(View):
 
 
 # Country Geometries from ccode list
+@extend_schema(exclude=True)
 class CountryFeaturesAPIView(View):
-    @extend_schema(  # Not intended as a public API
-        exclude=True,
-    )
     def get(self, request, *args, **kwargs):
         country_codes_param = self.request.GET.get('country_codes', '')
         country_codes = [code.strip().upper() for code in country_codes_param.split(',') if code.strip()]
@@ -1680,10 +1592,8 @@ class CountryFeaturesAPIView(View):
 
 
 # Fetch Watershed GeoJSON from remote URL
+@extend_schema(exclude=True)
 class WatershedAPIView(APIView):
-    @extend_schema(  # Not intended as a public API
-        exclude=True,
-    )
     def get(self, request, *args, **kwargs):
         lat = request.query_params.get('lat', None)
         lng = request.query_params.get('lng', None)
