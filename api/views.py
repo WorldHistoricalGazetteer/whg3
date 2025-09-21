@@ -1302,6 +1302,7 @@ class PlaceDetailSourceAPIView(generics.RetrieveAPIView):
 """
 
 
+@extend_schema(exclude=True)
 class GeomViewSet(viewsets.ModelViewSet):
     queryset = PlaceGeom.objects.all()
     serializer_class = PlaceGeomSerializer
@@ -1424,6 +1425,7 @@ class featureCollectionAPIView(generics.ListAPIView):
 """
 
 
+@extend_schema(exclude=True)
 class PlaceTableViewSet(viewsets.ModelViewSet):
     # print('hit PlaceTableViewSet()')
     serializer_class = PlaceTableSerializer
@@ -1460,6 +1462,7 @@ class PlaceTableViewSet(viewsets.ModelViewSet):
 """
 
 
+@extend_schema(exclude=True)
 class PlaceTableCollViewSet(viewsets.ModelViewSet):
     serializer_class = PlaceTableSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly)
@@ -1548,6 +1551,7 @@ class AreaListAllView(View):
 """
 
 
+@extend_schema(exclude=True)
 class AreaViewSet(viewsets.ModelViewSet):
     queryset = Area.objects.all().order_by('title')
     serializer_class = AreaSerializer
