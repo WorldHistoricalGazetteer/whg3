@@ -46,7 +46,31 @@ logger = logging.getLogger('reconciliation')
             ),
         ],
         responses={
-            200: HTMLResponseSerializer,
+            200: {
+                "description": "Successful HTML preview snippet",
+                "content": {
+                    "text/html": {
+                        "schema": {"type": "string"},
+                        "examples": {
+                            "preview_html": {
+                                "summary": "Preview HTML",
+                                "value": (
+                                    "<!DOCTYPE html><html><body>"
+                                    "<div class='record-container'>"
+                                    "<div class='record-title'>Edinburgh "
+                                    "<span class='record-note'>Map previews are not yet available.</span>"
+                                    "</div>"
+                                    "</div></body></html>"
+                                )
+                            },
+                            "error_html": {
+                                "summary": "Error HTML",
+                                "value": "<html><body><div>Error: Record not found</div></body></html>"
+                            }
+                        }
+                    }
+                }
+            },
             400: OpenApiResponse(
                 description="Missing id parameter",
                 examples=[
