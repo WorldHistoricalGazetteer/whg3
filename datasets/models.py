@@ -573,7 +573,6 @@ class Dataset(models.Model):
 
 
 # TODO: FK to dataset, not dataset_id
-# TODO: all new datasets need a file but some are new/empty & created remotely
 class DatasetFile(models.Model):
     dataset_id = models.ForeignKey(
         Dataset, related_name="files", default=-1, on_delete=models.CASCADE

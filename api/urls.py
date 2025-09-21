@@ -15,8 +15,6 @@ urlpatterns = [
     path('db/', views.SearchAPIView.as_view(), name='api-search'),
     # index docs
     path('index/', views.IndexAPIView.as_view(), name='api-index-search'),
-    # index docs for remote
-    path('remote/', views.RemoteIndexAPIView.as_view(), name='api-remote-search'),
     # spatial (nearby or bbox)
     path('spatial/', views.SpatialAPIView.as_view(), name='api-spatial'),
 

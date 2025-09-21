@@ -80,7 +80,6 @@ INSTALLED_APPS = [
     'metrics.apps.MetricsConfig',
     'persons.apps.PersonsConfig',
     'places.apps.PlacesConfig',
-    'remote.apps.RemoteConfig',
     'resources.apps.ResourcesConfig',  # for teaching
     'search.apps.SearchConfig',
     'sitemap.apps.SitemapConfig',
