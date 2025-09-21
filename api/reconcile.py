@@ -27,12 +27,13 @@ from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample, OpenApiResponse
 from geopy.distance import geodesic
+from rest_framework.views import APIView
 
 from main.choices import FEATURE_CLASSES
 from places.models import Place
 from .models import APIToken, UserAPIProfile
 from .reconcile_helpers import make_candidate, format_extend_row, es_search, ReconcileQueryResultSerializer, \
-    ExtendResponseSerializer
+    ExtendResponseSerializer, ExtendPropertySerializer, ReconcileCandidateSerializer
 
 logger = logging.getLogger('reconciliation')
 
@@ -193,7 +194,7 @@ def authenticate_request(request):
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-class ReconciliationView(View):
+class ReconciliationView(APIView):
 
     @extend_schema(
         tags=["Reconciliation API"],
@@ -348,7 +349,31 @@ class ReconciliationView(View):
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-class ExtendProposeView(View):
+class ExtendProposeView(APIView):
+
+    @extend_schema(
+        tags=["Reconciliation API"],
+        summary="Discover extensible properties",
+        description="Returns a list of properties that can be extended, as required by the OpenRefine API.",
+        responses={
+            200: OpenApiResponse(
+                response=ExtendPropertySerializer(many=True),
+                description="A list of available properties.",
+                examples=[
+                    OpenApiExample(
+                        "Example properties response",
+                        value={
+                            "properties": [
+                                {"id": "whg:geometry", "name": "Geometry (GeoJSON)", "type": "string"},
+                                {"id": "whg:alt_names", "name": "Alternative names", "type": "string"},
+                            ]
+                        },
+                    )
+                ],
+            ),
+            401: OpenApiResponse(description="Authentication failed"),
+        },
+    )
 
     def get(self, request, *args, **kwargs):
         allowed, auth_error = authenticate_request(request)
@@ -366,7 +391,58 @@ class ExtendProposeView(View):
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-class SuggestEntityView(View):
+class SuggestEntityView(APIView):
+
+    @extend_schema(
+        tags=["Reconciliation API"],
+        summary="Suggest entities based on a prefix",
+        description="Returns a list of suggested entities that match a given prefix.",
+        parameters=[
+            OpenApiParameter(
+                name="prefix",
+                type=OpenApiTypes.STR,
+                description="The string to match against entity names.",
+                required=True,
+            ),
+            OpenApiParameter(
+                name="limit",
+                type=OpenApiTypes.INT,
+                description="The maximum number of suggestions to return.",
+                default=10,
+            ),
+            OpenApiParameter(
+                name="cursor",
+                type=OpenApiTypes.INT,
+                description="The number of suggestions to skip for pagination.",
+                default=0,
+            ),
+            OpenApiParameter(
+                name="exact",
+                type=OpenApiTypes.BOOL,
+                description="Whether to return exact matches only.",
+                default=False,
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(
+                response=ReconcileCandidateSerializer(many=True),
+                description="A list of matching entity suggestions.",
+                examples=[
+                    OpenApiExample(
+                        "Example entity suggestions",
+                        value={
+                            "result": [
+                                {"id": "5426666", "name": "Edinburgh", "score": 95, "match": True},
+                                {"id": "5426667", "name": "Edinburg", "score": 85, "match": False},
+                            ]
+                        },
+                    )
+                ],
+            ),
+            401: OpenApiResponse(description="Authentication failed"),
+        },
+    )
+
     def get(self, request, *args, **kwargs):
         allowed, auth_error = authenticate_request(request)
         if not allowed:
@@ -418,11 +494,51 @@ class SuggestEntityView(View):
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-class SuggestPropertyView(View):
-    """
-    /suggest/property
-    Returns suggested property names for entities.
-    """
+class SuggestPropertyView(APIView):
+
+    @extend_schema(
+        tags=["Reconciliation API"],
+        summary="Suggest properties based on a prefix",
+        description="Returns a list of properties that match a given prefix.",
+        parameters=[
+            OpenApiParameter(
+                name="prefix",
+                type=OpenApiTypes.STR,
+                description="The string to match against property names.",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="limit",
+                type=OpenApiTypes.INT,
+                description="The maximum number of suggestions to return.",
+                default=10,
+            ),
+            OpenApiParameter(
+                name="cursor",
+                type=OpenApiTypes.INT,
+                description="The number of suggestions to skip for pagination.",
+                default=0,
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(
+                response=ExtendPropertySerializer(many=True),
+                description="A list of matching property suggestions.",
+                examples=[
+                    OpenApiExample(
+                        "Example property suggestions",
+                        value={
+                            "result": [
+                                {"id": "whg:ccodes", "name": "Country codes"},
+                                {"id": "whg:fclasses", "name": "Feature classes"},
+                            ]
+                        },
+                    )
+                ],
+            ),
+            401: OpenApiResponse(description="Authentication failed"),
+        },
+    )
 
     def get(self, request, *args, **kwargs):
         allowed, auth_error = authenticate_request(request)
@@ -462,27 +578,37 @@ class SuggestPropertyView(View):
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-class DummyView(View):
-    """
-    Dummy endpoint for OpenRefine's legacy search calls.
-    Always returns an empty result set.
-    """
-
-    _response = JsonResponse({
-        "result": [],
-        "message": "OpenRefine legacy search call: no results. Use /suggest/entity endpoint instead. See documentation: " + DOCS_URL
-    })
-
+class DummyView(APIView):
+    @extend_schema(
+        tags=["Reconciliation API"],
+        summary="Dummy legacy search endpoint",
+        description=(
+            "A dummy endpoint to prevent 404 errors from OpenRefine's legacy search calls. "
+            "It always returns an empty result."
+        ),
+        responses={
+            200: OpenApiResponse(
+                description="Empty result set with a message.",
+                examples=[
+                    OpenApiExample(
+                        "Dummy response",
+                        value={
+                            "result": [],
+                            "message": "OpenRefine legacy search call: no results. Use /suggest/entity endpoint instead."
+                        },
+                    )
+                ],
+            )
+        },
+    )
     def get(self, request, *args, **kwargs):
-        return self._response
+        return JsonResponse({
+            "result": [],
+            "message": "OpenRefine legacy search call: no results. Use /suggest/entity endpoint instead. See documentation: " + DOCS_URL
+        })
 
     def post(self, request, *args, **kwargs):
-        return self._response
-
-    def http_method_not_allowed(self, request, *args, **kwargs):
-        return JsonResponse({
-            "error": "Method not allowed. This endpoint only accepts GET or POST."
-        }, status=405)
+        return self.get(request, *args, **kwargs)
 
 
 def parse_request_payload(request):
