@@ -32,8 +32,7 @@ from rest_framework.views import APIView
 from main.choices import FEATURE_CLASSES
 from places.models import Place
 from .models import APIToken, UserAPIProfile
-from .reconcile_helpers import make_candidate, format_extend_row, es_search, ReconcileQueryResultSerializer, \
-    ExtendResponseSerializer, ExtendPropertySerializer, ReconcileCandidateSerializer
+from .reconcile_helpers import make_candidate, format_extend_row, es_search
 
 logger = logging.getLogger('reconciliation')
 
@@ -236,12 +235,11 @@ class ReconciliationView(APIView):
         responses={
             200: OpenApiResponse(
                 response={
-                    "application/json": {
-                        "oneOf": [
-                            ReconcileQueryResultSerializer,
-                            ExtendResponseSerializer,
-                        ]
-                    }
+                    "type": "object",
+                    "oneOf": [
+                        {"type": "object", "properties": {"q0": {"type": "object"}}},
+                        {"type": "object", "properties": {"rows": {"type": "object"}, "meta": {"type": "array"}}},
+                    ],
                 },
                 description="Successful reconciliation (queries) or extension (extend)",
                 examples=[
@@ -357,7 +355,23 @@ class ExtendProposeView(APIView):
         description="Returns a list of properties that can be extended, as required by the OpenRefine API.",
         responses={
             200: OpenApiResponse(
-                response=ExtendPropertySerializer(many=True),
+                response={
+                    "type": "object",
+                    "properties": {
+                        "properties": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {"type": "string"},
+                                    "name": {"type": "string"},
+                                    "description": {"type": "string"},
+                                    "type": {"type": "string"},
+                                },
+                            },
+                        }
+                    },
+                },
                 description="A list of available properties.",
                 examples=[
                     OpenApiExample(
@@ -425,7 +439,23 @@ class SuggestEntityView(APIView):
         ],
         responses={
             200: OpenApiResponse(
-                response=ReconcileCandidateSerializer(many=True),
+                response={
+                    "type": "object",
+                    "properties": {
+                        "result": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {"type": "string"},
+                                    "name": {"type": "string"},
+                                    "score": {"type": "number"},
+                                    "match": {"type": "boolean"},
+                                },
+                            },
+                        }
+                    },
+                },
                 description="A list of matching entity suggestions.",
                 examples=[
                     OpenApiExample(
@@ -522,7 +552,23 @@ class SuggestPropertyView(APIView):
         ],
         responses={
             200: OpenApiResponse(
-                response=ExtendPropertySerializer(many=True),
+                response={
+                    "type": "object",
+                    "properties": {
+                        "result": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {"type": "string"},
+                                    "name": {"type": "string"},
+                                    "description": {"type": "string"},
+                                    "type": {"type": "string"},
+                                },
+                            },
+                        }
+                    },
+                },
                 description="A list of matching property suggestions.",
                 examples=[
                     OpenApiExample(
