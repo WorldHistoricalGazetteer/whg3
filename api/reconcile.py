@@ -654,28 +654,8 @@ class SuggestPropertyView(APIView):
 
 @method_decorator(csrf_exempt, name="dispatch")
 @extend_schema_view(
-    get=extend_schema(
-        tags=["Reconciliation Service API v0.2"],
-        summary="Legacy search endpoint for OpenRefine (do not use)",
-        description=(
-                "A dummy endpoint to prevent 404 errors from OpenRefine's legacy search calls. "
-                "It always returns an empty result."
-        ),
-        responses={
-            200: OpenApiResponse(
-                description="Empty result set with a message.",
-                examples=[
-                    OpenApiExample(
-                        "Dummy response",
-                        value={
-                            "result": [],
-                            "message": "OpenRefine legacy search call: no results. Use /suggest/entity endpoint instead."
-                        },
-                    )
-                ],
-            )
-        },
-    )
+    get=extend_schema(exclude=True),
+    post=extend_schema(exclude=True),
 )
 class DummyView(APIView):
     def get(self, request, *args, **kwargs):
