@@ -47,11 +47,6 @@ logger = logging.getLogger('reconciliation')
         responses={
             200: OpenApiResponse(
                 description="Successful HTML preview snippet",
-                content={
-                    "text/html": {
-                        "schema": {"type": "string"}
-                    }
-                },
                 examples=[
                     OpenApiExample(
                         name="Preview HTML",
