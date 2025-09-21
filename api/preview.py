@@ -50,23 +50,17 @@ logger = logging.getLogger('reconciliation')
                 "description": "Successful HTML preview snippet",
                 "content": {
                     "text/html": {
-                        "schema": {"type": "string"},
-                        "examples": {
-                            "preview_html": {
-                                "summary": "Preview HTML",
-                                "value": (
-                                    "<!DOCTYPE html><html><body>"
-                                    "<div class='record-container'>"
-                                    "<div class='record-title'>Edinburgh "
-                                    "<span class='record-note'>Map previews are not yet available.</span>"
-                                    "</div>"
-                                    "</div></body></html>"
-                                )
-                            },
-                            "error_html": {
-                                "summary": "Error HTML",
-                                "value": "<html><body><div>Error: Record not found</div></body></html>"
-                            }
+                        "schema": {
+                            "type": "string",
+                            "format": "html",  # This hint helps some UI tools
+                            "example": (
+                                "<!DOCTYPE html><html><body>"
+                                "<div class='record-container'>"
+                                "<div class='record-title'>Edinburgh "
+                                "<span class='record-note'>Map previews are not yet available.</span>"
+                                "</div>"
+                                "</div></body></html>"
+                            )
                         }
                     }
                 }
