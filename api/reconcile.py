@@ -243,18 +243,30 @@ def authenticate_request(request):
                 description="JSON object with extension request (ids + properties)"
             ),
         ],
-        request=ReconcileQuerySerializer,
-        examples=[
-            OpenApiExample(
+        request={
+            "application/json": OpenApiExample(
                 "Reconciliation example",
                 value={
                     "queries": {
                         "q0": {"query": "Edinburgh", "type": "Place"},
                         "q1": {"query": "Leeds"}
                     }
-                }
+                },
+                serializer=ReconcileQuerySerializer
             )
-        ],
+        },
+        # request=ReconcileQuerySerializer,
+        # request_examples=[
+        #     OpenApiExample(
+        #         "Reconciliation example",
+        #         value={
+        #             "queries": {
+        #                 "q0": {"query": "Edinburgh", "type": "Place"},
+        #                 "q1": {"query": "Leeds"}
+        #             }
+        #         }
+        #     )
+        # ],
         responses={
             200: OpenApiResponse(
                 response={
