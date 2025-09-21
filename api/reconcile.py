@@ -32,7 +32,7 @@ from rest_framework.views import APIView
 from main.choices import FEATURE_CLASSES
 from places.models import Place
 from .models import APIToken, UserAPIProfile
-from .reconcile_helpers import make_candidate, format_extend_row, es_search
+from .reconcile_helpers import make_candidate, format_extend_row, es_search, ReconciliationRequestSerializer
 
 logger = logging.getLogger('reconciliation')
 
@@ -243,40 +243,7 @@ def authenticate_request(request):
                 description="JSON object with extension request (ids + properties)"
             ),
         ],
-        request={
-            "application/json": {
-                "type": "object",
-                "properties": {
-                    "queries": {"type": "object"},
-                    "extend": {"type": "object"}
-                }
-            }
-        },
-        examples=[
-            OpenApiExample(
-                name="Reconciliation Request",
-                description="Example of reconciling place names",
-                value={
-                    "queries": {
-                        "q0": {"query": "Edinburgh", "type": "Place"},
-                        "q1": {"query": "Leeds", "type": "Place"}
-                    }
-                }
-            ),
-            OpenApiExample(
-                name="Extend Request",
-                description="Example of extending places with additional properties",
-                value={
-                    "extend": {
-                        "ids": ["Q23436", "Q39121"],
-                        "properties": [
-                            {"id": "P1082", "name": "population"},
-                            {"id": "P625", "name": "coordinate location"}
-                        ]
-                    }
-                }
-            ),
-        ],
+        request=ReconciliationRequestSerializer,
         responses={
             200: OpenApiResponse(
                 response={

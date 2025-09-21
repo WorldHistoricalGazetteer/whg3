@@ -3,6 +3,7 @@
 import json
 from datetime import datetime
 
+from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 from rest_framework import serializers
 
 from api.serializers import PlaceSerializer
@@ -258,3 +259,35 @@ def format_extend_row(place, properties, request=None):
 
     return row
 
+
+
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            name="Reconciliation Request",
+            description="Example of reconciling place names",
+            value={
+                "queries": {
+                    "q0": {"query": "Edinburgh", "type": "Place"},
+                    "q1": {"query": "Leeds", "type": "Place"}
+                }
+            }
+        ),
+        OpenApiExample(
+            name="Extend Request",
+            description="Example of extending places with additional properties",
+            value={
+                "extend": {
+                    "ids": ["Q23436", "Q39121"],
+                    "properties": [
+                        {"id": "P1082", "name": "population"},
+                        {"id": "P625", "name": "coordinate location"}
+                    ]
+                }
+            }
+        ),
+    ]
+)
+class ReconciliationRequestSerializer(serializers.Serializer):
+    queries = serializers.JSONField(required=False, help_text="Reconciliation queries")
+    extend = serializers.JSONField(required=False, help_text="Extension request")
