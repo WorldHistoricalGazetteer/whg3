@@ -1,13 +1,16 @@
 {% extends "main/base_webpack.html" %}
 
-{% block title %}WHG API Docs{% endblock %}
-
 {% block extra_head %}
   <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css">
+  <style >
+    pre {
+      background-color: unset;
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
-  <div id="swagger-ui"></div>
+  <div id="swagger-ui" class="container"></div>
 
   <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
   <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-standalone-preset.js"></script>
