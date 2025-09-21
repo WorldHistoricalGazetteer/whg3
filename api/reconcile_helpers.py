@@ -291,29 +291,3 @@ def format_extend_row(place, properties, request=None):
 class ReconciliationRequestSerializer(serializers.Serializer):
     queries = serializers.JSONField(required=False, help_text="Reconciliation queries")
     extend = serializers.JSONField(required=False, help_text="Extension request")
-
-
-@extend_schema_serializer(
-    examples=[
-        OpenApiExample(
-            name="Preview HTML",
-            description="HTML snippet for record preview",
-            value=(
-                    "<!DOCTYPE html><html><body>"
-                    "<div class='record-container'>"
-                    "<div class='record-title'>Edinburgh "
-                    "<span class='record-note'>Map previews are not yet available.</span>"
-                    "</div>"
-                    "</div></body></html>"
-            ),
-            media_type="text/html"
-        )
-    ]
-)
-class HTMLResponseSerializer(serializers.Serializer):
-    class Meta:
-        # This tells drf-spectacular it's a plain text/HTML response
-        ref_name = None
-
-    def to_representation(self, instance):
-        return str(instance)

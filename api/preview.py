@@ -11,7 +11,6 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiRespon
 from rest_framework.views import APIView
 
 from api.reconcile import authenticate_request
-from api.reconcile_helpers import HTMLResponseSerializer
 from api.serializers import PlaceSerializer
 from places.models import Place
 
