@@ -502,7 +502,21 @@ GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'WHG API',
-    'DESCRIPTION': 'World Historical Gazetteer API',
+    'DESCRIPTION': (
+        "The World Historical Gazetteer (WHG) API provides programmatic access to place data, "
+        "supporting discovery, reconciliation, and integration of historical geographic information. "
+        "It implements both general REST endpoints for querying WHG resources and a full "
+        "[Reconciliation Service API v0.2](https://www.w3.org/community/reports/reconciliation/CG-FINAL-specs-0.2-20230410/) "
+        "for linking external datasets against WHG identifiers.\n\n"
+        "Main features include:\n"
+        "- **Place Search & Retrieval**: access detailed information about places, their names, "
+        "types, geometries, temporal coverage, and datasets of origin.\n"
+        "- **Reconciliation API**: match external place names against WHG to obtain stable IDs, "
+        "canonical labels, and metadata.\n"
+        "- **Extension Service**: enrich external records with WHG properties (e.g. country codes, "
+        "feature classes, geometries, and temporal ranges).\n\n"
+        "Most endpoints require a valid API token for authentication. See the [documentation](https://docs.whgazetteer.org/content/400-Technical.html#api-tokens) for details."
+    ),
     'VERSION': '1.0.0',
     'SWAGGER_UI_SETTINGS': {
         'deepLinking': True,
