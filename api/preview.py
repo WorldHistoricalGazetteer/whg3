@@ -24,7 +24,7 @@ logger = logging.getLogger('reconciliation')
         tags=["Reconciliation API"],
         summary="Reconciliation Preview",
         description=(
-                "Returns an HTML snippet for embedding in OpenRefine’s preview pane.\n\n"
+                "Returns an HTML snippet which can (for example) be embedded in OpenRefine’s preview pane.\n\n"
                 "You must provide a valid `id` parameter (Place ID). "
                 "Requires a valid API token via `?token=...`."
         ),
