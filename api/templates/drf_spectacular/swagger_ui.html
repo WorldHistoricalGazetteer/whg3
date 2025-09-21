@@ -1,0 +1,28 @@
+{% extends "main/base_webpack.html" %}
+
+{% block title %}WHG API Docs{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css">
+{% endblock %}
+
+{% block content %}
+  <div id="swagger-ui"></div>
+
+  <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+  <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-standalone-preset.js"></script>
+
+  <script>
+    SwaggerUIBundle({
+      url: "/api/schema/?format=openapi-json",
+      dom_id: "#swagger-ui",
+      presets: [
+        SwaggerUIBundle.presets.apis,
+        SwaggerUIStandalonePreset
+      ],
+      layout: "BaseLayout",
+      deepLinking: true,
+      persistAuthorization: true
+    });
+  </script>
+{% endblock %}
