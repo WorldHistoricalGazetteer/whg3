@@ -11,6 +11,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiRespon
 from rest_framework.views import APIView
 
 from api.reconcile import authenticate_request
+from api.reconcile_helpers import HTMLResponseSerializer
 from api.serializers import PlaceSerializer
 from places.models import Place
 
@@ -45,24 +46,7 @@ logger = logging.getLogger('reconciliation')
             ),
         ],
         responses={
-            200: OpenApiResponse(
-                description="Successful HTML preview snippet",
-                examples=[
-                    OpenApiExample(
-                        name="Preview HTML",
-                        description="HTML snippet for record preview",
-                        value=(
-                            "<!DOCTYPE html><html><body>"
-                            "<div class='record-container'>"
-                            "<div class='record-title'>Edinburgh "
-                            "<span class='record-note'>Map previews are not yet available.</span>"
-                            "</div>"
-                            "</div></body></html>"
-                        ),
-                        media_type="text/html"
-                    )
-                ]
-            ),
+            200: HTMLResponseSerializer,
             400: OpenApiResponse(
                 description="Missing id parameter",
                 examples=[
