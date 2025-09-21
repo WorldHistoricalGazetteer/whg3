@@ -1,12 +1,10 @@
 import logging
 from collections import OrderedDict
 
-from django.http import JsonResponse, HttpResponseBadRequest, Http404, HttpResponse
+from django.http import HttpResponseBadRequest, Http404, HttpResponse
 from django.utils.decorators import method_decorator
-from django.views import View
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
-from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiExample, extend_schema_view
 from rest_framework.views import APIView
 
@@ -50,12 +48,52 @@ logger = logging.getLogger('reconciliation')
 
 **Example:**
 ```html
-<!DOCTYPE html><html><body>
-<div class='record-container'>
-    <div class='record-title'>Edinburgh 
-        <span class='record-note'>Map previews are not yet available.</span>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        .record-container {
+            font-family: sans-serif;
+            font-size: 14px;
+            padding: 10px;
+            line-height: 1.5;
+            background-color: #f9f9f9;
+            border-left: 3px solid #007BFF;
+            margin-bottom: 10px;
+        }
+        .record-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+        .record-field {
+            font-weight: bold;
+        }
+        .record-info {
+            margin-top: 5px;
+        }
+        .record-note {
+            font-size: 10px;
+            color: #888;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="record-container">
+        <div class="record-title">Edinburgh <span class="record-note">Map previews are not yet available.</span></div>
+        <div class="record-info">
+            <span class="record-field">Alternative Names:</span> Edenburg, Edinburgh<br>
+            <span class="record-field">Types:</span> inhabited places<br>
+            <span class="record-field">Country Codes:</span> US<br>
+            <span class="record-field">Feature Classes:</span> P<br>
+            <span class="record-field">Timespans:</span> N/A<br>
+            <span class="record-field">Dataset:</span> Getty TGN (partial)
+        </div>                
     </div>
-</div></body></html>
+</body>
+</html>
 ```""",
             # response=str
         ),
