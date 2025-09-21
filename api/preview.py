@@ -6,7 +6,7 @@ from django.views import View
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiExample
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiExample, extend_schema_view
 from rest_framework.views import APIView
 
 from api.reconcile import authenticate_request
@@ -18,9 +18,8 @@ logger = logging.getLogger('reconciliation')
 
 @method_decorator(csrf_exempt, name='dispatch')
 @method_decorator(xframe_options_exempt, name="dispatch")
-class PreviewView(APIView):
-
-    @extend_schema(
+@extend_schema_view(
+    get=extend_schema(
         tags=["Reconciliation API"],
         summary="Reconciliation Preview",
         description=(
@@ -95,6 +94,9 @@ class PreviewView(APIView):
             ),
         },
     )
+)
+class PreviewView(APIView):
+
     def get(self, request, *args, **kwargs):
         place_id = request.GET.get("id")
 
@@ -114,13 +116,16 @@ class PreviewView(APIView):
         record = serializer.data
 
         def _format_list(data_list, separator=', '):
-            if data_list:
-                # Assuming list of dictionaries with 'label' key, handle simple lists gracefully
-                if isinstance(data_list[0], dict):
-                    return separator.join([item.get('label', 'N/A') for item in data_list])
+            if not data_list:
+                return "N/A"
+            formatted = []
+            for item in data_list:
+                if isinstance(item, dict):
+                    # try 'label' first, then 'name', fallback to str(item)
+                    formatted.append(item.get('label') or item.get('name') or str(item))
                 else:
-                    return separator.join(str(item) for item in data_list)
-            return "N/A"
+                    formatted.append(str(item))
+            return separator.join(formatted)
 
         # Render HTML snippet
         html = f"""
@@ -173,8 +178,3 @@ class PreviewView(APIView):
         """
 
         return HttpResponse(html, content_type="text/html; charset=UTF-8")
-
-    def http_method_not_allowed(self, request, *args, **kwargs):
-        return JsonResponse({
-            "error": "Method not allowed. Use GET with ?id=."
-        }, status=405)

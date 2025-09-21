@@ -25,7 +25,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample, OpenApiResponse
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample, OpenApiResponse, extend_schema_view
 from geopy.distance import geodesic
 from rest_framework.views import APIView
 
@@ -193,9 +193,31 @@ def authenticate_request(request):
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-class ReconciliationView(APIView):
-
-    @extend_schema(
+@extend_schema_view(
+    get=extend_schema(
+        tags=["Reconciliation API"],
+        summary="Retrieve Reconciliation Service metadata",
+        description=(
+            "Returns service metadata, including URLs, default types, and preview configuration. "
+            "Supports optional token injection via query parameter."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="token",
+                required=False,
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="API token to inject into preview URLs",
+            )
+        ],
+        responses={
+            200: OpenApiResponse(
+                description="Service metadata JSON",
+                response=OpenApiTypes.OBJECT,
+            )
+        },
+    ),
+    post=extend_schema(
         tags=["Reconciliation API"],
         summary="OpenRefine Reconciliation API",
         description=(
@@ -282,7 +304,8 @@ class ReconciliationView(APIView):
             400: OpenApiResponse(description="Invalid payload"),
         },
     )
-
+)
+class ReconciliationView(APIView):
     def get(self, request, *args, **kwargs):
 
         logger.debug(f"Request URL (GET): {request.build_absolute_uri()}")
@@ -347,9 +370,8 @@ class ReconciliationView(APIView):
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-class ExtendProposeView(APIView):
-
-    @extend_schema(
+@extend_schema_view(
+    get=extend_schema(
         tags=["Reconciliation API"],
         summary="Discover extensible properties",
         description="Returns a list of properties that can be extended, as required by the OpenRefine API.",
@@ -388,6 +410,8 @@ class ExtendProposeView(APIView):
             401: OpenApiResponse(description="Authentication failed"),
         },
     )
+)
+class ExtendProposeView(APIView):
 
     def get(self, request, *args, **kwargs):
         allowed, auth_error = authenticate_request(request)
@@ -398,16 +422,10 @@ class ExtendProposeView(APIView):
             "properties": PROPOSE_PROPERTIES
         })
 
-    def http_method_not_allowed(self, request, *args, **kwargs):
-        return JsonResponse({
-            "error": "Method not allowed. This endpoint only accepts GET. See documentation: " + DOCS_URL
-        }, status=405)
-
 
 @method_decorator(csrf_exempt, name="dispatch")
-class SuggestEntityView(APIView):
-
-    @extend_schema(
+@extend_schema_view(
+    get=extend_schema(
         tags=["Reconciliation API"],
         summary="Suggest entities based on a prefix",
         description="Returns a list of suggested entities that match a given prefix.",
@@ -472,6 +490,8 @@ class SuggestEntityView(APIView):
             401: OpenApiResponse(description="Authentication failed"),
         },
     )
+)
+class SuggestEntityView(APIView):
 
     def get(self, request, *args, **kwargs):
         allowed, auth_error = authenticate_request(request)
@@ -517,16 +537,10 @@ class SuggestEntityView(APIView):
 
         return JsonResponse({"result": candidates})
 
-    def http_method_not_allowed(self, request, *args, **kwargs):
-        return JsonResponse({
-            "error": "Method not allowed. This endpoint only accepts GET. See documentation: " + DOCS_URL
-        }, status=405)
-
 
 @method_decorator(csrf_exempt, name="dispatch")
-class SuggestPropertyView(APIView):
-
-    @extend_schema(
+@extend_schema_view(
+    get=extend_schema(
         tags=["Reconciliation API"],
         summary="Suggest properties based on a prefix",
         description="Returns a list of properties that match a given prefix.",
@@ -585,6 +599,8 @@ class SuggestPropertyView(APIView):
             401: OpenApiResponse(description="Authentication failed"),
         },
     )
+)
+class SuggestPropertyView(APIView):
 
     def get(self, request, *args, **kwargs):
         allowed, auth_error = authenticate_request(request)
@@ -617,15 +633,10 @@ class SuggestPropertyView(APIView):
 
         return JsonResponse({"result": paginated_matches})
 
-    def http_method_not_allowed(self, request, *args, **kwargs):
-        return JsonResponse({
-            "error": "Method not allowed. This endpoint only accepts GET. See documentation: " + DOCS_URL
-        }, status=405)
-
 
 @method_decorator(csrf_exempt, name="dispatch")
-class DummyView(APIView):
-    @extend_schema(
+@extend_schema_view(
+    get=extend_schema(
         tags=["Reconciliation API"],
         summary="Dummy legacy search endpoint",
         description=(
@@ -647,6 +658,8 @@ class DummyView(APIView):
             )
         },
     )
+)
+class DummyView(APIView):
     def get(self, request, *args, **kwargs):
         return JsonResponse({
             "result": [],
