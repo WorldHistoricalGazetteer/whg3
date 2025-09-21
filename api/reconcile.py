@@ -244,17 +244,32 @@ def authenticate_request(request):
             ),
         ],
         request={
-            "application/json": OpenApiExample(
-                "Reconciliation example",
-                value={
+            "application/json": {
+                "type": "object",
+                "properties": {
+                    "queries": {"type": "object"},
+                    "extend": {"type": "object"}
+                },
+                "example": {
                     "queries": {
                         "q0": {"query": "Edinburgh", "type": "Place"},
                         "q1": {"query": "Leeds"}
                     }
-                },
-                # serializer=ReconcileQuerySerializer
-            )
+                }
+            }
         },
+        # request={
+        #     "application/json": OpenApiExample(
+        #         "Reconciliation example",
+        #         value={
+        #             "queries": {
+        #                 "q0": {"query": "Edinburgh", "type": "Place"},
+        #                 "q1": {"query": "Leeds"}
+        #             }
+        #         },
+        #         # serializer=ReconcileQuerySerializer
+        #     )
+        # },
         # request=ReconcileQuerySerializer,
         # request_examples=[
         #     OpenApiExample(
