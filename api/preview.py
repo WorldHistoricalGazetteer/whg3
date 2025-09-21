@@ -46,25 +46,20 @@ logger = logging.getLogger('reconciliation')
             ),
         ],
         responses={
-            200: {
-                "description": "Successful HTML preview snippet",
-                "content": {
-                    "text/html": {
-                        "schema": {
-                            "type": "string",
-                            "format": "html",  # This hint helps some UI tools
-                            "example": (
-                                "<!DOCTYPE html><html><body>"
-                                "<div class='record-container'>"
-                                "<div class='record-title'>Edinburgh "
-                                "<span class='record-note'>Map previews are not yet available.</span>"
-                                "</div>"
-                                "</div></body></html>"
-                            )
-                        }
-                    }
-                }
-            },
+            200: OpenApiResponse(
+                description="""Successful HTML preview snippet
+        
+                Example response:
+                ```html
+                <!DOCTYPE html><html><body>
+                <div class='record-container'>
+                <div class='record-title'>Edinburgh 
+                <span class='record-note'>Map previews are not yet available.</span>
+                </div>
+                </div></body></html>
+                ```""",
+                response=str
+            ),
             400: OpenApiResponse(
                 description="Missing id parameter",
                 examples=[
