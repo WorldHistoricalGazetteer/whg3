@@ -22,7 +22,6 @@ import urllib
 from django.http import JsonResponse
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample, OpenApiResponse, extend_schema_view
@@ -135,6 +134,25 @@ PROPOSE_PROPERTIES = [
      "type": "string"},
 ]
 
+QUERY_PARAMETERS = (
+    "| Parameter | Type | Description |\n"
+    "| --- | --- | --- |\n"
+    "| `query` | string | Free-text search string. Required if no spatial or dataset filters are provided. |\n"
+    "| `mode` | string | Search mode: `exact`, `fuzzy` (default), `starts`, or `in`. Can also specify `prefix_length&#124;fuzziness` (e.g., `2&#124;1`). **Coming soon**: `phonetic`|\n"
+    "| `fclasses` | array | Restrict to specific feature classes (e.g. `[\"A\",\"L\"]`). `X` (unknown) is always included. |\n"
+    "| `start` | integer | Start year for temporal filtering. |\n"
+    "| `end` | integer | End year for temporal filtering (defaults to current year). |\n"
+    "| `undated` | boolean | Include results with no temporal metadata. |\n"
+    "| `countries` | array | Restrict results to country codes (ISO 2-letter). |\n"
+    "| `bounds` | object | GeoJSON geometry collection for spatial restriction. |\n"
+    "| `lat` | float | Latitude for circular search (with `lng` and `radius`). |\n"
+    "| `lng` | float | Longitude for circular search (with `lat` and `radius`). |\n"
+    "| `radius` | float | Radius in km for circular search (with `lat` and `lng`). |\n"
+    "| `userareas` | array | IDs of user-defined stored areas for spatial filtering. |\n"
+    "| `dataset` | integer | Restrict results to specific dataset ID. |\n"
+    "| `size` | integer | Maximum results per query (default: 100). |\n\n"
+)
+
 
 def json_error(message, status=400):
     return JsonResponse({"error": f"{message} See documentation: {DOCS_URL}"}, status=status)
@@ -198,8 +216,8 @@ def authenticate_request(request):
         tags=["Reconciliation Service API v0.2"],
         summary="Retrieve Reconciliation Service metadata",
         description=(
-            "Returns service metadata, including URLs, default types, and preview configuration. "
-            "Supports optional token injection via query parameter."
+                "Returns service metadata, including URLs, default types, and preview configuration. "
+                "Supports optional token injection via query parameter."
         ),
         parameters=[
             OpenApiParameter(
@@ -220,29 +238,14 @@ def authenticate_request(request):
         tags=["Reconciliation Service API v0.2"],
         summary="Reconciliation Queries and Data Extension",
         description=(
-            "Implements the [Reconciliation Service API v0.2](https://www.w3.org/community/reports/reconciliation/CG-FINAL-specs-0.2-20230410/).\n\n"
-            "Supports two request types:\n"
-            "- **Reconciliation**: pass a `queries` object with search terms.\n"
-            "- **Extend**: pass an `extend` object with place IDs and requested property IDs.\n\n\n"
-            "### Query Parameters\n\n"
-            "Each query object in a `queries` payload supports the following parameters:\n\n"
-            "| Parameter | Type | Description |\n"
-            "| --- | --- | --- |\n"
-            "| `query` | string | Free-text search string. Required if no spatial or dataset filters are provided. |\n"
-            "| `mode` | string | Search mode: `exact`, `fuzzy` (default), `starts`, or `in`. Can also specify `prefix_length\|fuzziness` (e.g., `2\|1`). **Coming soon**: `phonetic`|\n"
-            "| `fclasses` | array | Restrict to specific feature classes (e.g. `[\"A\",\"L\"]`). `X` (unknown) is always included. |\n"
-            "| `start` | integer | Start year for temporal filtering. |\n"
-            "| `end` | integer | End year for temporal filtering (defaults to current year). |\n"
-            "| `undated` | boolean | Include results with no temporal metadata. |\n"
-            "| `countries` | array | Restrict results to country codes (ISO 2-letter). |\n"
-            "| `bounds` | object | GeoJSON geometry collection for spatial restriction. |\n"
-            "| `lat` | float | Latitude for circular search (with `lng` and `radius`). |\n"
-            "| `lng` | float | Longitude for circular search (with `lat` and `radius`). |\n"
-            "| `radius` | float | Radius in km for circular search (with `lat` and `lng`). |\n"
-            "| `userareas` | array | IDs of user-defined stored areas for spatial filtering. |\n"
-            "| `dataset` | integer | Restrict results to specific dataset ID. |\n"
-            "| `size` | integer | Maximum results per query (default: 100). |\n\n"
-            "Authentication is required via API token."
+                "Implements the [Reconciliation Service API v0.2](https://www.w3.org/community/reports/reconciliation/CG-FINAL-specs-0.2-20230410/).\n\n"
+                "Supports two request types:\n"
+                "- **Reconciliation**: pass a `queries` object with search terms.\n"
+                "- **Extend**: pass an `extend` object with place IDs and requested property IDs.\n\n\n"
+                "### Query Parameters\n\n"
+                "Each query object in a `queries` payload supports the following parameters:\n\n"
+                f"{QUERY_PARAMETERS}"
+                "Authentication is required via API token."
         ),
         parameters=[
             OpenApiParameter(
@@ -647,8 +650,8 @@ class SuggestPropertyView(APIView):
         tags=["Reconciliation Service API v0.2"],
         summary="Legacy search endpoint for OpenRefine (do not use)",
         description=(
-            "A dummy endpoint to prevent 404 errors from OpenRefine's legacy search calls. "
-            "It always returns an empty result."
+                "A dummy endpoint to prevent 404 errors from OpenRefine's legacy search calls. "
+                "It always returns an empty result."
         ),
         responses={
             200: OpenApiResponse(
