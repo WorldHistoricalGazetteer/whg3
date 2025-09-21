@@ -5,6 +5,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 from rest_framework.urlpatterns import format_suffix_patterns
 
 from . import views
+from .views import CustomSwaggerUIView
 
 # app_name = 'api'
 # naming this app BREAKS DATATABLES IN DATASET BROWSE
@@ -89,7 +90,7 @@ urlpatterns = [
     # OpenAPI schema
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     # Swagger UI
-    path("schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("schema/swagger-ui/", CustomSwaggerUIView.as_view(url_name="schema"), name="swagger-ui"),
     # Redoc
     path("schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 

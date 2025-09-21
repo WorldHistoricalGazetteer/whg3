@@ -16,7 +16,7 @@ from django.db.models import Case, When, Min, Max, Subquery, OuterRef, Count, \
     IntegerField
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from django.views.generic import View
+from django.views.generic import View, TemplateView
 from django.utils.decorators import method_decorator
 
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes, \
@@ -54,6 +54,10 @@ import os, requests
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class CustomSwaggerUIView(TemplateView):
+    template_name = "swagger_ui.html"
 
 
 class BadRequestException(APIException):
