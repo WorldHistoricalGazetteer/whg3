@@ -32,7 +32,7 @@ from rest_framework.views import APIView
 from main.choices import FEATURE_CLASSES
 from places.models import Place
 from .models import APIToken, UserAPIProfile
-from .reconcile_helpers import make_candidate, format_extend_row, es_search
+from .reconcile_helpers import make_candidate, format_extend_row, es_search, ReconcileQuerySerializer
 
 logger = logging.getLogger('reconciliation')
 
@@ -243,8 +243,9 @@ def authenticate_request(request):
                 description="JSON object with extension request (ids + properties)"
             ),
         ],
-        request={
-            "application/json": OpenApiExample(
+        request=ReconcileQuerySerializer,
+        examples=[
+            OpenApiExample(
                 "Reconciliation example",
                 value={
                     "queries": {
@@ -253,7 +254,7 @@ def authenticate_request(request):
                     }
                 }
             )
-        },
+        ],
         responses={
             200: OpenApiResponse(
                 response={

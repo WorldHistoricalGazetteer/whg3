@@ -1,4 +1,5 @@
 import logging
+from collections import OrderedDict
 
 from django.http import JsonResponse, HttpResponseBadRequest, Http404, HttpResponse
 from django.utils.decorators import method_decorator
@@ -120,9 +121,14 @@ class PreviewView(APIView):
                 return "N/A"
             formatted = []
             for item in data_list:
-                if isinstance(item, dict):
-                    # try 'label' first, then 'name', fallback to str(item)
-                    formatted.append(item.get('label') or item.get('name') or str(item))
+                if isinstance(item, dict) or isinstance(item, OrderedDict):
+                    # Prefer 'toponym', fallback to 'label' or 'name', else str(item)
+                    formatted.append(
+                        item.get('toponym') or
+                        item.get('label') or
+                        item.get('name') or
+                        str(item)
+                    )
                 else:
                     formatted.append(str(item))
             return separator.join(formatted)
