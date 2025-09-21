@@ -213,7 +213,6 @@ def authenticate_request(request):
         responses={
             200: OpenApiResponse(
                 description="Service metadata JSON",
-                response=OpenApiTypes.OBJECT,
             )
         },
     ),
@@ -628,7 +627,7 @@ class SuggestPropertyView(APIView):
 @extend_schema_view(
     get=extend_schema(
         tags=["Reconciliation Service API v0.2"],
-        summary="Dummy legacy search endpoint",
+        summary="Legacy search endpoint for OpenRefine (do not use)",
         description=(
             "A dummy endpoint to prevent 404 errors from OpenRefine's legacy search calls. "
             "It always returns an empty result."
