@@ -249,34 +249,34 @@ def authenticate_request(request):
                 "properties": {
                     "queries": {"type": "object"},
                     "extend": {"type": "object"}
-                },
-                "examples": {
-                    "reconciliation_example": {
-                        "summary": "Reconciliation Request",
-                        "description": "Example of reconciling place names",
-                        "value": {
-                            "queries": {
-                                "q0": {"query": "Edinburgh", "type": "Place"},
-                                "q1": {"query": "Leeds", "type": "Place"}
-                            }
-                        }
-                    },
-                    "extend_example": {
-                        "summary": "Extend Request",
-                        "description": "Example of extending places with additional properties",
-                        "value": {
-                            "extend": {
-                                "ids": ["Q23436", "Q39121"],
-                                "properties": [
-                                    {"id": "P1082", "name": "population"},
-                                    {"id": "P625", "name": "coordinate location"}
-                                ]
-                            }
-                        }
-                    },
                 }
             }
         },
+        examples=[
+            OpenApiExample(
+                name="Reconciliation Request",
+                description="Example of reconciling place names",
+                value={
+                    "queries": {
+                        "q0": {"query": "Edinburgh", "type": "Place"},
+                        "q1": {"query": "Leeds", "type": "Place"}
+                    }
+                }
+            ),
+            OpenApiExample(
+                name="Extend Request",
+                description="Example of extending places with additional properties",
+                value={
+                    "extend": {
+                        "ids": ["Q23436", "Q39121"],
+                        "properties": [
+                            {"id": "P1082", "name": "population"},
+                            {"id": "P625", "name": "coordinate location"}
+                        ]
+                    }
+                }
+            ),
+        ],
         responses={
             200: OpenApiResponse(
                 response={
