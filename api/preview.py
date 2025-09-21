@@ -95,7 +95,6 @@ logger = logging.getLogger('reconciliation')
 </body>
 </html>
 ```""",
-            # response=str
         ),
             400: OpenApiResponse(
                 description="Missing id parameter",
