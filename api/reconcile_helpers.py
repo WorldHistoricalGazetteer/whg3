@@ -264,12 +264,32 @@ def format_extend_row(place, properties, request=None):
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            name="Reconciliation Request",
+            name="Basic Reconciliation Request",
             description="Example of reconciling place names",
             value={
                 "queries": {
                     "q0": {"query": "Edinburgh", "type": "Place"},
                     "q1": {"query": "Leeds", "type": "Place"}
+                }
+            }
+        ),
+        OpenApiExample(
+            name="Advanced Spatial Query",
+            description="Search with geographic and temporal constraints",
+            value={
+                "queries": {
+                    "q0": {
+                        "query": "London",
+                        "mode": "exact",
+                        "countries": ["GB"],
+                        "start": 1800,
+                        "end": 1900,
+                        "lat": 51.5074,
+                        "lng": -0.1278,
+                        "radius": 10,
+                        "fclasses": ["P"],
+                        "size": 10
+                    }
                 }
             }
         ),
@@ -289,5 +309,17 @@ def format_extend_row(place, properties, request=None):
     ]
 )
 class ReconciliationRequestSerializer(serializers.Serializer):
-    queries = serializers.JSONField(required=False, help_text="Reconciliation queries")
-    extend = serializers.JSONField(required=False, help_text="Extension request")
+    queries = serializers.DictField(
+        required=False,
+        help_text=(
+            "Dictionary of query objects. Each query supports parameters like: "
+            "query (string), mode (exact|fuzzy|starts|in), fclasses (array), "
+            "start/end (integers), countries (array), bounds/lat/lng/radius (spatial), "
+            "dataset (integer), size (integer)."
+        ),
+        child=serializers.DictField()
+    )
+    extend = serializers.DictField(
+        required=False,
+        help_text="Extension request with 'ids' array and 'properties' array"
+    )
