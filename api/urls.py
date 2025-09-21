@@ -87,11 +87,11 @@ urlpatterns = [
     # url('union/', views.indexAPIView.as_view(), name='union_api')
 
     # OpenAPI schema
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("schema/", SpectacularAPIView.as_view(), name="schema"),
     # Swagger UI
-    path("api/schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
     # Redoc
-    path("api/schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
+    path("schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 
     #
     # *** External Data ***
