@@ -252,7 +252,7 @@ def authenticate_request(request):
                         "q1": {"query": "Leeds"}
                     }
                 },
-                serializer=ReconcileQuerySerializer
+                # serializer=ReconcileQuerySerializer
             )
         },
         # request=ReconcileQuerySerializer,
