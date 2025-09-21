@@ -7,6 +7,7 @@ from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiExample
+from rest_framework.views import APIView
 
 from api.reconcile import authenticate_request
 from api.serializers import PlaceSerializer
@@ -17,7 +18,7 @@ logger = logging.getLogger('reconciliation')
 
 @method_decorator(csrf_exempt, name='dispatch')
 @method_decorator(xframe_options_exempt, name="dispatch")
-class PreviewView(View):
+class PreviewView(APIView):
 
     @extend_schema(
         tags=["Reconciliation API"],
