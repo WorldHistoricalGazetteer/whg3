@@ -136,7 +136,6 @@ urlpatterns = [
                   # backend stuff
                   path("", include("api.urls_root")),  # reconcile/suggest API
                   path('api/', include('api.urls')),
-                  path('remote/', include('remote.urls')),
                   path('accounts/', include('accounts.urls')),
                   path('admin/', admin.site.urls),
                   path('health', views.health_check, name='health_check'),
