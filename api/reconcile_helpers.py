@@ -275,18 +275,18 @@ def format_extend_row(place, properties, request=None):
         ),
         OpenApiExample(
             name="Advanced Spatial Query",
-            description="Search with geographic and temporal constraints",
+            description="Search with custom fuzziness and with geographic and temporal constraints",
             value={
                 "queries": {
                     "q0": {
                         "query": "London",
-                        "mode": "3|2",  # prefix length 3, fuzziness 2
+                        "mode": "3|2",
                         "countries": ["GB"],
                         "start": 1800,
                         "end": 1900,
                         "lat": 51.5074,
                         "lng": -0.1278,
-                        "radius": 10,  # km
+                        "radius": 10,
                         "fclasses": ["P"],
                         "size": 10
                     }

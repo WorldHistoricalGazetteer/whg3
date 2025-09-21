@@ -501,10 +501,14 @@ GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
 GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
 
 SPECTACULAR_SETTINGS = {
+    'TITLE': 'WHG API',
+    'DESCRIPTION': 'World Historical Gazetteer API',
+    'VERSION': '1.0.0',
     'SWAGGER_UI_SETTINGS': {
         'deepLinking': True,
         'persistAuthorization': True,
     },
+    "SWAGGER_UI_FAVICON_HREF": "/static/images/favicon.ico",
     'SORT_OPERATION_PARAMETERS': False,
     'PREPROCESSING_HOOKS': [
         'drf_spectacular.hooks.preprocess_exclude_path_format',
