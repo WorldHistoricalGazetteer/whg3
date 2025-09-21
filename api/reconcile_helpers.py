@@ -258,17 +258,3 @@ def format_extend_row(place, properties, request=None):
 
     return row
 
-
-class ReconcileQuerySerializer(serializers.Serializer):
-    queries = serializers.DictField(
-        child=serializers.DictField(
-            child=serializers.CharField(),
-            required=False
-        ),
-        required=False
-    )
-    extend = serializers.DictField(
-        child=serializers.ListField(child=serializers.CharField()),
-        required=False
-    )
-

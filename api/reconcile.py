@@ -32,7 +32,7 @@ from rest_framework.views import APIView
 from main.choices import FEATURE_CLASSES
 from places.models import Place
 from .models import APIToken, UserAPIProfile
-from .reconcile_helpers import make_candidate, format_extend_row, es_search, ReconcileQuerySerializer
+from .reconcile_helpers import make_candidate, format_extend_row, es_search
 
 logger = logging.getLogger('reconciliation')
 
@@ -219,9 +219,9 @@ def authenticate_request(request):
     ),
     post=extend_schema(
         tags=["Reconciliation API"],
-        summary="OpenRefine Reconciliation API",
+        summary="Reconciliation Service API v0.2",
         description=(
-            "Implements the [OpenRefine Reconciliation API](https://reconciliation-api.github.io/specs/latest/).\n\n"
+            "Implements the [Reconciliation Service API v0.2](https://www.w3.org/community/reports/reconciliation/CG-FINAL-specs-0.2-20230410/).\n\n"
             "Supports two request types:\n"
             "- **Reconciliation**: pass a `queries` object with search terms.\n"
             "- **Extend**: pass an `extend` object with place IDs and requested property IDs.\n\n"
@@ -250,38 +250,33 @@ def authenticate_request(request):
                     "queries": {"type": "object"},
                     "extend": {"type": "object"}
                 },
-                "example": {
-                    "queries": {
-                        "q0": {"query": "Edinburgh", "type": "Place"},
-                        "q1": {"query": "Leeds"}
-                    }
+                "examples": {
+                    "reconciliation_example": {
+                        "summary": "Reconciliation Request",
+                        "description": "Example of reconciling place names",
+                        "value": {
+                            "queries": {
+                                "q0": {"query": "Edinburgh", "type": "Place"},
+                                "q1": {"query": "Leeds", "type": "Place"}
+                            }
+                        }
+                    },
+                    "extend_example": {
+                        "summary": "Extend Request",
+                        "description": "Example of extending places with additional properties",
+                        "value": {
+                            "extend": {
+                                "ids": ["Q23436", "Q39121"],
+                                "properties": [
+                                    {"id": "P1082", "name": "population"},
+                                    {"id": "P625", "name": "coordinate location"}
+                                ]
+                            }
+                        }
+                    },
                 }
             }
         },
-        # request={
-        #     "application/json": OpenApiExample(
-        #         "Reconciliation example",
-        #         value={
-        #             "queries": {
-        #                 "q0": {"query": "Edinburgh", "type": "Place"},
-        #                 "q1": {"query": "Leeds"}
-        #             }
-        #         },
-        #         # serializer=ReconcileQuerySerializer
-        #     )
-        # },
-        # request=ReconcileQuerySerializer,
-        # request_examples=[
-        #     OpenApiExample(
-        #         "Reconciliation example",
-        #         value={
-        #             "queries": {
-        #                 "q0": {"query": "Edinburgh", "type": "Place"},
-        #                 "q1": {"query": "Leeds"}
-        #             }
-        #         }
-        #     )
-        # ],
         responses={
             200: OpenApiResponse(
                 response={
@@ -402,7 +397,7 @@ class ReconciliationView(APIView):
     get=extend_schema(
         tags=["Reconciliation API"],
         summary="Discover extensible properties",
-        description="Returns a list of properties that can be extended, as required by the OpenRefine API.",
+        description="Returns a list of properties that can be extended, as required by the Reconciliation Service API.",
         responses={
             200: OpenApiResponse(
                 response={
