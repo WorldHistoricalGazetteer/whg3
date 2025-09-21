@@ -138,7 +138,7 @@ QUERY_PARAMETERS = (
     "| Parameter | Type | Description |\n"
     "| --- | --- | --- |\n"
     "| `query` | string | Free-text search string. Required if no spatial or dataset filters are provided. |\n"
-    "| `mode` | string | Search mode: `exact`, `fuzzy` (default), `starts`, or `in`. Can also specify `prefix_length&#124;fuzziness` (e.g., `2&#124;1`). **Coming soon**: `phonetic`|\n"
+    "| `mode` | string | Search mode: `exact`, `fuzzy`***** (default), `starts`, or `in`. **Coming soon**: `phonetic`|\n"
     "| `fclasses` | array | Restrict to specific feature classes (e.g. `[\"A\",\"L\"]`). `X` (unknown) is always included. |\n"
     "| `start` | integer | Start year for temporal filtering. |\n"
     "| `end` | integer | End year for temporal filtering (defaults to current year). |\n"
@@ -151,6 +151,7 @@ QUERY_PARAMETERS = (
     "| `userareas` | array | IDs of user-defined stored areas for spatial filtering. |\n"
     "| `dataset` | integer | Restrict results to specific dataset ID. |\n"
     "| `size` | integer | Maximum results per query (default: 100). |\n\n"
+    "*****Can also be specified as `prefix_length|fuzziness` (e.g., `2|1`). "
 )
 
 
@@ -239,13 +240,20 @@ def authenticate_request(request):
         summary="Reconciliation Queries and Data Extension",
         description=(
                 "Implements the [Reconciliation Service API v0.2](https://www.w3.org/community/reports/reconciliation/CG-FINAL-specs-0.2-20230410/).\n\n"
-                "Supports two request types:\n"
+                "## Prerequisites\n\n"
+                "### Authentication (Required)\n"
+                "See the [documentation](https://docs.whgazetteer.org/content/400-Technical.html#reconciliation-api) for instructions on obtaining an API token.\n\n"
+                "Provide your API token using either method:\n"
+                "- **URL**: `?token=your_token_here`\n"
+                "- **Header**: `Authorization: Bearer your_token_here`\n\n"
+                "### Additional Header (Required)\n"
+                "- `User-Agent: notbot` (to bypass bot protection)\n\n"
+                "## Request Types\n\n"
                 "- **Reconciliation**: pass a `queries` object with search terms.\n"
                 "- **Extend**: pass an `extend` object with place IDs and requested property IDs.\n\n\n"
                 "### Query Parameters\n\n"
                 "Each query object in a `queries` payload supports the following parameters:\n\n"
                 f"{QUERY_PARAMETERS}"
-                "Authentication is required via API token."
         ),
         parameters=[
             OpenApiParameter(
