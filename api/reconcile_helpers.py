@@ -3,11 +3,13 @@
 import json
 from datetime import datetime
 
+from rest_framework import serializers
+
 from api.serializers import PlaceSerializer
 from areas.models import Area
 from whg import settings
 
-ELASTIC_INDICES = "whg,pub,wdgn" # or options from "whg,pub,wdgn"
+ELASTIC_INDICES = "whg,pub,wdgn"  # or options from "whg,pub,wdgn"
 
 # TODO: Replace ElasticSearch with Vespa backend when ready
 es = settings.ES_CONN
@@ -60,7 +62,7 @@ def make_candidate(hit, query_text, max_score, schema_space):
     score = normalize_score(hit["_score"], max_score)
     is_exact = name.lower() == query_text.lower()
     return {
-        "id": str(src.get("place_id")), # or hit.get("whg_id") or hit["_id"]),
+        "id": str(src.get("place_id")),  # or hit.get("whg_id") or hit["_id"]),
         "name": name,
         "score": score,
         "match": is_exact,
@@ -255,3 +257,42 @@ def format_extend_row(place, properties, request=None):
             row[pid] = None
 
     return row
+
+
+# --- Component Schemas ---
+
+class ReconcileCandidateSerializer(serializers.Serializer):
+    id = serializers.CharField(help_text="WHG Place ID")
+    name = serializers.CharField(help_text="Canonical label/title")
+    score = serializers.FloatField(help_text="Confidence score (0–100)")
+    match = serializers.BooleanField(help_text="Whether this is a definite match")
+
+
+class ReconcileResultSerializer(serializers.Serializer):
+    result = ReconcileCandidateSerializer(many=True)
+
+
+class ReconcileQueryResultSerializer(serializers.Serializer):
+    q0 = ReconcileResultSerializer()
+    # OpenRefine can submit multiple queries at once, so keys may vary (q0, q1, ...)
+
+
+class ExtendPropertySerializer(serializers.Serializer):
+    id = serializers.CharField(help_text="Property identifier (e.g. dataset, ccodes)")
+    name = serializers.CharField(help_text="Human-readable property name")
+
+
+class ExtendRowSerializer(serializers.Serializer):
+    # Map from property ID to list of values
+    values = serializers.DictField(
+        child=serializers.ListField(
+            child=serializers.DictField(help_text="Property value object")
+        )
+    )
+
+
+class ExtendResponseSerializer(serializers.Serializer):
+    meta = ExtendPropertySerializer(many=True)
+    rows = serializers.DictField(
+        child=ExtendRowSerializer()
+    )

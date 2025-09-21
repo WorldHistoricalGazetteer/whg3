@@ -5,11 +5,12 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse, OpenApiExample
 
 from api.reconcile import authenticate_request
 from api.serializers import PlaceSerializer
 from places.models import Place
-from places.utils import attribListFromSet
 
 logger = logging.getLogger('reconciliation')
 
@@ -18,6 +19,81 @@ logger = logging.getLogger('reconciliation')
 @method_decorator(xframe_options_exempt, name="dispatch")
 class PreviewView(View):
 
+    @extend_schema(
+        tags=["Reconciliation API"],
+        summary="Reconciliation Preview",
+        description=(
+                "Returns an HTML snippet for embedding in OpenRefine’s preview pane.\n\n"
+                "You must provide a valid `id` parameter (Place ID). "
+                "Requires a valid API token via `?token=...`."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="id",
+                required=True,
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Place ID to preview",
+            ),
+            OpenApiParameter(
+                name="token",
+                required=True,
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="API token for authentication",
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(
+                response=OpenApiTypes.STR,
+                description="Successful HTML preview snippet",
+                examples=[
+                    OpenApiExample(
+                        "Preview HTML",
+                        value=(
+                                "<!DOCTYPE html><html><body>"
+                                "<div class='record-container'>"
+                                "<div class='record-title'>Edinburgh "
+                                "<span class='record-note'>Map previews are not yet available.</span>"
+                                "</div>"
+                                "</div></body></html>"
+                        ),
+                        media_type="text/html",
+                    )
+                ],
+            ),
+            400: OpenApiResponse(
+                description="Missing id parameter",
+                examples=[
+                    OpenApiExample(
+                        "Missing ID",
+                        value={"error": "Missing id parameter"},
+                        response_only=True,
+                    )
+                ],
+            ),
+            403: OpenApiResponse(
+                description="Invalid API token",
+                examples=[
+                    OpenApiExample(
+                        "Invalid token",
+                        value={"error": "Invalid API token"},
+                        response_only=True,
+                    )
+                ],
+            ),
+            404: OpenApiResponse(
+                description="Place not found",
+                examples=[
+                    OpenApiExample(
+                        "Not found",
+                        value={"error": "Place 5426666 not found"},
+                        response_only=True,
+                    )
+                ],
+            ),
+        },
+    )
     def get(self, request, *args, **kwargs):
         place_id = request.GET.get("id")
 

@@ -1,7 +1,7 @@
 # api.urls
 
 from django.urls import path
-from drf_spectacular.views import SpectacularAPIView
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from rest_framework.urlpatterns import format_suffix_patterns
 
 from . import views
@@ -86,9 +86,12 @@ urlpatterns = [
     # TODO: build from place_id
     # url('union/', views.indexAPIView.as_view(), name='union_api')
 
-    path('schema/', SpectacularAPIView.as_view(), name='schema'),
-    # path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-docs'),
-    # path('schema/redoc/', SpectacularRedocView.as_view(), name='redoc'),
+    # OpenAPI schema
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    # Swagger UI
+    path("api/schema/swagger-ui/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    # Redoc
+    path("api/schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 
     #
     # *** External Data ***

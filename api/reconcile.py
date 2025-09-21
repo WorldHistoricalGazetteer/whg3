@@ -24,12 +24,15 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample, OpenApiResponse
 from geopy.distance import geodesic
 
 from main.choices import FEATURE_CLASSES
 from places.models import Place
 from .models import APIToken, UserAPIProfile
-from .reconcile_helpers import make_candidate, format_extend_row, es_search
+from .reconcile_helpers import make_candidate, format_extend_row, es_search, ReconcileQueryResultSerializer, \
+    ExtendResponseSerializer
 
 logger = logging.getLogger('reconciliation')
 
@@ -191,83 +194,95 @@ def authenticate_request(request):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class ReconciliationView(View):
-    """
-    Reconciliation API endpoint for place name queries.
 
-    **Endpoints:**
-    - `GET /reconcile/` : Returns service metadata.
-    - `POST /reconcile/` : Accepts one or more queries and returns candidate matches.
-
-    **POST payload format:**
-    ```json
-    {
-        "queries": {
-            "q1": {
-                "query": "London",
-                "mode": "fuzzy",
-                "fclasses": ["P"],
-                "start": 1200,
-                "end": 1600,
-                "undated": true,
-                "countries": ["GB","US"],
-                "bounds": {
-                    "geometries": [{
-                        "type": "Polygon",
-                        "coordinates": [[
-                            [-1.0,51.0],
-                            [-1.0,52.0],
-                            [0.5,52.0],
-                            [0.5,51.0],
-                            [-1.0,51.0]
-                        ]]
-                    }]
-                },
-                "userareas": [1,2],
-                "size": 100
-            }
-        }
-    }
-    ```
-
-    **Query parameters:**
-    - `query` (string): Text search string. Required unless `bounds`, `lat/lng/radius`, or `dataset` filters are present.
-    - `mode` (string): Search mode. Options are `"exact"` (multi-match), `"fuzzy"` (default, `"AUTO"` fuzziness, prefix_length=2), `"starts"` (prefix match), or `"in"` (substring/wildcard match). You may also specify a custom fuzzy mode as `"prefix_length|fuzziness"` (e.g., `"2|1"`), where `prefix_length` is the number of initial characters that must match exactly and `fuzziness` is `"AUTO"` or an integer ≤ 2.
-    - `fclasses` (array): Feature classes to restrict results.
-    - `start`/`end` (int): Temporal filtering years.
-    - `undated` (boolean): Include undated results.
-    - `countries` (array): ISO 2-letter country codes.
-    - `bounds` (object): GeoJSON Polygon to restrict results spatially.
-    - `userareas` (array): IDs of server-side stored areas.
-    - `lat`/`lng`/`radius` (float): Circle filter for nearby search.
-    - `dataset` (int): Restrict to a dataset. # TODO: Allow multiple named datasets such as GeoNames or OSM for either inclusion or exclusion, for example "dataset=geonames,osm" or "dataset=-geonames,-osm".
-    - `size` (int): Maximum results per query.
-
-    **Response format:**
-    ```json
-    {
-        "results": {
-            "q1": {
-                "result": [
-                    {
-                        "id": "whg:123",
-                        "name": "London",
-                        "alt": ["Londinium"],
-                        "score": 100,
-                        "exact": true
+    @extend_schema(
+        tags=["Reconciliation API"],
+        summary="OpenRefine Reconciliation API",
+        description=(
+            "Implements the [OpenRefine Reconciliation API](https://reconciliation-api.github.io/specs/latest/).\n\n"
+            "Supports two request types:\n"
+            "- **Reconciliation**: pass a `queries` object with search terms.\n"
+            "- **Extend**: pass an `extend` object with place IDs and requested property IDs.\n\n"
+            "Authentication is required via API token."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="queries",
+                type=OpenApiTypes.STR,
+                required=False,
+                location=OpenApiParameter.QUERY,
+                description="JSON object with reconciliation queries"
+            ),
+            OpenApiParameter(
+                name="extend",
+                type=OpenApiTypes.STR,
+                required=False,
+                location=OpenApiParameter.QUERY,
+                description="JSON object with extension request (ids + properties)"
+            ),
+        ],
+        request={
+            "application/json": OpenApiExample(
+                "Reconciliation example",
+                value={
+                    "queries": {
+                        "q0": {"query": "Edinburgh", "type": "Place"},
+                        "q1": {"query": "Leeds"}
                     }
-                ],
-                "geojson": {
-                    "type": "FeatureCollection",
-                    "features": [...]
                 }
-            },
-            "messages": [
-                "Batch size limit exceeded; processing first 50 queries."
-            ]
-        }
-    }
-    ```
-    """
+            )
+        },
+        responses={
+            200: OpenApiResponse(
+                response={
+                    "application/json": {
+                        "oneOf": [
+                            ReconcileQueryResultSerializer,
+                            ExtendResponseSerializer,
+                        ]
+                    }
+                },
+                description="Successful reconciliation (queries) or extension (extend)",
+                examples=[
+                    OpenApiExample(
+                        "Reconciliation response",
+                        value={
+                            "q0": {
+                                "result": [
+                                    {"id": "5426666", "name": "Edinburgh", "score": 95, "match": True}
+                                ]
+                            }
+                        },
+                    ),
+                    OpenApiExample(
+                        "Extend response",
+                        value={
+                            "meta": [
+                                {"id": "whg:ccodes", "name": "Country Codes"},
+                                {"id": "whg:geometry", "name": "Geometry"},
+                                {"id": "whg:temporalRange", "name": "Temporal Range"},
+                            ],
+                            "rows": {
+                                "5426666": {
+                                    "id": "5426666",
+                                    "name": "Edinburgh",
+                                    "properties": {
+                                        "whg:ccodes": ["GB"],
+                                        "whg:geometry": [
+                                            '{ "type": "Point", "coordinates": [ -3.2, 55.95 ] }'
+                                        ],
+                                        "whg:temporalRange": [],
+                                    },
+                                }
+                            },
+                        },
+                    ),
+                ],
+            ),
+            401: OpenApiResponse(description="Authentication failed"),
+            400: OpenApiResponse(description="Invalid payload"),
+        },
+    )
 
     def get(self, request, *args, **kwargs):
 
