@@ -90,7 +90,7 @@ urlpatterns = [
     # OpenAPI schema
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     # Swagger UI
-    path("schema/swagger-ui/", CustomSwaggerUIView.as_view(url_name="schema"), name="swagger-ui"),
+    path("schema/swagger-ui/", CustomSwaggerUIView.as_view(), name="swagger-ui"),
     # Redoc
     path("schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 
