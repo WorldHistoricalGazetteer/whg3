@@ -195,7 +195,7 @@ def authenticate_request(request):
 @method_decorator(csrf_exempt, name="dispatch")
 @extend_schema_view(
     get=extend_schema(
-        tags=["Reconciliation API"],
+        tags=["Reconciliation Service API v0.2"],
         summary="Retrieve Reconciliation Service metadata",
         description=(
             "Returns service metadata, including URLs, default types, and preview configuration. "
@@ -218,8 +218,8 @@ def authenticate_request(request):
         },
     ),
     post=extend_schema(
-        tags=["Reconciliation API"],
-        summary="Reconciliation Service API v0.2",
+        tags=["Reconciliation Service API v0.2"],
+        summary="Reconciliation Queries and Data Extension",
         description=(
             "Implements the [Reconciliation Service API v0.2](https://www.w3.org/community/reports/reconciliation/CG-FINAL-specs-0.2-20230410/).\n\n"
             "Supports two request types:\n"
@@ -362,7 +362,7 @@ class ReconciliationView(APIView):
 @method_decorator(csrf_exempt, name="dispatch")
 @extend_schema_view(
     get=extend_schema(
-        tags=["Reconciliation API"],
+        tags=["Reconciliation Service API v0.2"],
         summary="Discover extensible properties",
         description="Returns a list of properties that can be extended, as required by the Reconciliation Service API.",
         responses={
@@ -416,7 +416,7 @@ class ExtendProposeView(APIView):
 @method_decorator(csrf_exempt, name="dispatch")
 @extend_schema_view(
     get=extend_schema(
-        tags=["Reconciliation API"],
+        tags=["Reconciliation Service API v0.2"],
         summary="Suggest entities based on a prefix",
         description="Returns a list of suggested entities that match a given prefix.",
         parameters=[
@@ -531,7 +531,7 @@ class SuggestEntityView(APIView):
 @method_decorator(csrf_exempt, name="dispatch")
 @extend_schema_view(
     get=extend_schema(
-        tags=["Reconciliation API"],
+        tags=["Reconciliation Service API v0.2"],
         summary="Suggest properties based on a prefix",
         description="Returns a list of properties that match a given prefix.",
         parameters=[
@@ -627,7 +627,7 @@ class SuggestPropertyView(APIView):
 @method_decorator(csrf_exempt, name="dispatch")
 @extend_schema_view(
     get=extend_schema(
-        tags=["Reconciliation API"],
+        tags=["Reconciliation Service API v0.2"],
         summary="Dummy legacy search endpoint",
         description=(
             "A dummy endpoint to prevent 404 errors from OpenRefine's legacy search calls. "

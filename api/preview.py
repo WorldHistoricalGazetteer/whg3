@@ -21,7 +21,7 @@ logger = logging.getLogger('reconciliation')
 @method_decorator(xframe_options_exempt, name="dispatch")
 @extend_schema_view(
     get=extend_schema(
-        tags=["Reconciliation API"],
+        tags=["Reconciliation Service API v0.2"],
         summary="Reconciliation Preview",
         description=(
                 "Returns an HTML snippet which can (for example) be embedded in OpenRefine’s preview pane.\n\n"
@@ -46,22 +46,27 @@ logger = logging.getLogger('reconciliation')
         ],
         responses={
             200: OpenApiResponse(
-                response=OpenApiTypes.STR,
                 description="Successful HTML preview snippet",
+                content={
+                    "text/html": {
+                        "schema": {"type": "string"}
+                    }
+                },
                 examples=[
                     OpenApiExample(
-                        "Preview HTML",
+                        name="Preview HTML",
+                        description="HTML snippet for record preview",
                         value=(
-                                "<!DOCTYPE html><html><body>"
-                                "<div class='record-container'>"
-                                "<div class='record-title'>Edinburgh "
-                                "<span class='record-note'>Map previews are not yet available.</span>"
-                                "</div>"
-                                "</div></body></html>"
+                            "<!DOCTYPE html><html><body>"
+                            "<div class='record-container'>"
+                            "<div class='record-title'>Edinburgh "
+                            "<span class='record-note'>Map previews are not yet available.</span>"
+                            "</div>"
+                            "</div></body></html>"
                         ),
-                        media_type="text/html",
+                        media_type="text/html"
                     )
-                ],
+                ]
             ),
             400: OpenApiResponse(
                 description="Missing id parameter",
