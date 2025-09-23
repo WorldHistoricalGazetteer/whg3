@@ -63,51 +63,65 @@ VIEW_CLASSES = {
 }
 
 QUERY_PARAMETERS = """
-## Search Parameters
+#### Search Parameters
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `query` | string | Free-text search string. Required if no spatial or dataset filters are provided. |
-| `mode` | string | Search mode: `exact`, `fuzzy`* (default), `starts`, or `in`. **Coming soon**: `phonetic`, and eventually `ner` for LLM-based entity recognition. |
-| `fclasses` | array | Restrict to specific feature classes. Valid values: `A` (Administrative), `H` (Hydrographic), `L` (Landscape), `P` (Populated places), `R` (Roads/routes), `S` (Sites), `T` (Topographic), `X` (unknown - always included). Format: `["A","L"]`. |
-*Fuzzy mode can also be specified as `prefix_length|fuzziness` (e.g., `2|1`).
+**`query`** *(string)*  
+Free-text search string. Required if no spatial or dataset filters are provided.
 
-## Temporal Filtering
+**`mode`** *(string)*  
+Search mode: `exact`, `fuzzy`* (default), `starts`, or `in`. **Coming soon**: `phonetic`, and eventually `ner` for LLM-based entity recognition.
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `start` | integer | Start year for temporal filtering. Must be a valid year. |
-| `end` | integer | End year for temporal filtering (default: current year). Must be ≥ `start` year (if given). |
+**`fclasses`** *(array)*  
+Restrict to specific feature classes. Valid values: `A` (Administrative), `H` (Hydrographic), `L` (Landscape), `P` (Populated places), `R` (Roads/routes), `S` (Sites), `T` (Topographic), `X` (unknown - always included). Format: `["A","L"]` or `A,L`.
 
-## Spatial Filtering
+*Fuzzy mode can also be specified as `prefix_length|fuzziness` (e.g., `2|1`).*
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `countries` | array | Restrict results to ISO 3166-1 alpha-2 country codes. Format: `["US","GB"]`. |
-| `bounds` | object | GeoJSON geometry collection for spatial restriction. Ignored if circular search parameters are provided. Example: `{"type":"Polygon","coordinates":[[[lon,lat],[lon,lat],...]]}` |
-| `lat` | float | Latitude for circular search (-90 to 90). Must be used with `lng` and `radius`. |
-| `lng` | float | Longitude for circular search (-180 to 180). Must be used with `lat` and `radius`. |
-| `radius` | float | Radius in kilometers for circular search. Must be used with `lat` and `lng`. |
-| `userareas` | array | IDs of user-defined stored areas for spatial filtering. Format: `[123,456]`. |
+#### Temporal Filtering
+
+**`start`** *(integer)*  
+Start year for temporal filtering. Must be a valid 4-digit year.
+
+**`end`** *(integer)*  
+End year for temporal filtering (default: current year). Must be ≥ `start` year.
+
+#### Spatial Filtering
+
+**`countries`** *(array)*  
+Restrict results to ISO 3166-1 alpha-2 country codes. Format: `["US","GB"]` or `US,GB`.
+
+**`bounds`** *(object)*  
+GeoJSON geometry collection for spatial restriction. Ignored if circular search parameters are provided.  
+Example: `{"type":"Polygon","coordinates":[[[lon,lat],[lon,lat],...]]})`
+
+**`lat`** *(float)*  
+Latitude for circular search (-90 to 90). Must be used with `lng` and `radius`.
+
+**`lng`** *(float)*  
+Longitude for circular search (-180 to 180). Must be used with `lat` and `radius`.
+
+**`radius`** *(float)*  
+Radius in kilometers for circular search (max: 1000km). Must be used with `lat` and `lng`.
+
+**`userareas`** *(array)*  
+IDs of user-defined stored areas for spatial filtering. Format: `[123,456]` or `123,456`.
 
 ## Dataset Filtering
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `dataset` | integer | Restrict results to specific dataset ID. Must be a valid dataset ID to which the the user has access. |
+**`dataset`** *(integer)*  
+Restrict results to specific dataset ID. Must be a valid dataset ID that the user has access to.
 
-## Data Completeness
+#### Data Completeness
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `unlocated` | boolean | Include results with no spatial metadata (default: true). |
-| `undated` | boolean | Include results with no temporal metadata (default: true). |
+**`unlocated`** *(boolean)*  
+Include results with no spatial metadata (default: true).
 
-## Response Control
+**`undated`** *(boolean)*  
+Include results with no temporal metadata (default: true).
 
-| Parameter | Type | Description |
-| --- | --- | --- |
-| `size` | integer | Maximum results per query (default: 100, max: 1000). |
+#### Response Control
+
+**`size`** *(integer)*  
+Maximum results per query (default: 100, max: 1000).
 """
 
 
