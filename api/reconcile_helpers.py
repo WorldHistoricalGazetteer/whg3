@@ -251,7 +251,7 @@ def format_extend_row(place, properties, request=None):
         elif pid == "whg:ccodes":
             row[pid] = [{"str": c} for c in data.get("ccodes", [])]
         elif pid == "whg:dataset":
-            row[pid] = [{"id": str(data.get("dataset_id")), "name": data.get("dataset")}] if data.get("dataset") else []
+            row[pid] = [{"str": data.get("dataset")}] if data.get("dataset") else []
         elif pid == "whg:temporalRange":
             row[pid] = [{"str": json.dumps(w)} for w in data.get("whens", [])]
         else:
