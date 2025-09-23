@@ -516,6 +516,11 @@ SPECTACULAR_SETTINGS = {
         "feature classes, geometries, and temporal ranges).\n\n"
         "Most endpoints require a valid API token for authentication. See the [documentation](https://docs.whgazetteer.org/content/400-Technical.html#api-tokens) for details."
     ),
+    'TAGS': [
+        {"name": "Schema", "description": "API schema and documentation"},
+        {"name": "Entity API", "description": "Query or modify places, datasets, collections, and areas"},
+        {"name": "Place Reconciliation API", "description": "Reconciliation Service API v0.2"},
+    ],
     'VERSION': '1.0.0',
     'SWAGGER_UI_SETTINGS': {
         'deepLinking': True,
@@ -526,6 +531,8 @@ SPECTACULAR_SETTINGS = {
     'PREPROCESSING_HOOKS': [
         'drf_spectacular.hooks.preprocess_exclude_path_format',
     ],
+    'AUTHENTICATION_WHITELIST': [],
+    'SECURITY': [],
 }
 
 # Anonymising salt does not need to be secret, just consistent

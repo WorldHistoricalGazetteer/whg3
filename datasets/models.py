@@ -113,7 +113,7 @@ class Dataset(models.Model):
     citation = models.CharField(max_length=2044, null=True, blank=True)  # user-added; if absent, generated in browser
 
     # Fields to be deprecated following their migration to CSL
-    creator = models.CharField(max_length=500, null=True, blank=True)
+    creator = models.CharField(max_length=500, null=True, blank=True)  # NB: Used in API serializer
     contributors = models.CharField(max_length=500, null=True, blank=True)
 
     # People associated with Dataset creation

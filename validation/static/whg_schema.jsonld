@@ -3,7 +3,8 @@
     "whg": "https://whgazetteer.org/schema/whg#",
     "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
     "geo": "http://www.opengis.net/ont/geosparql#",
-    "xsd": "http://www.w3.org/2001/XMLSchema#"
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   },
   "@graph": [
     {
@@ -13,21 +14,40 @@
       "rdfs:comment": "A named geographic entity with spatial, temporal, and administrative properties."
     },
     {
+      "@id": "whg:Dataset",
+      "@type": "rdfs:Class",
+      "rdfs:label": "Dataset",
+      "rdfs:comment": "A dataset contributed to WHG, containing places and metadata."
+    },
+    {
+      "@id": "whg:Collection",
+      "@type": "rdfs:Class",
+      "rdfs:label": "Collection",
+      "rdfs:comment": "A collection of Datasets and/or Places grouped thematically or by project."
+    },
+    {
+      "@id": "whg:Area",
+      "@type": "rdfs:Class",
+      "rdfs:label": "Area",
+      "rdfs:comment": "A defined geographic area of interest, often used for filtering or grouping places."
+    },
+
+    {
       "@id": "whg:identifier",
       "@type": "rdf:Property",
       "rdfs:label": "Persistent Identifier",
-      "rdfs:domain": "whg:Place",
+      "rdfs:domain": "rdfs:Resource",
       "rdfs:range": "xsd:anyURI",
-      "rdfs:comment": "Persistent URI identifying this place record.",
+      "rdfs:comment": "Persistent URI identifying a WHG entity.",
       "whg:example": "https://whgazetteer.org/place/12345"
     },
     {
       "@id": "whg:name",
       "@type": "rdf:Property",
       "rdfs:label": "Name",
-      "rdfs:domain": "whg:Place",
+      "rdfs:domain": "rdfs:Resource",
       "rdfs:range": "xsd:string",
-      "rdfs:comment": "Canonical name of the place.",
+      "rdfs:comment": "Canonical name of the entity.",
       "whg:example": "London"
     },
     {
@@ -46,9 +66,7 @@
       "rdfs:domain": "whg:Place",
       "rdfs:range": "xsd:string",
       "rdfs:comment": "The WHG feature class of the place. Must be one of the GeoNames feature classes.",
-      "whg:allowedValues": [
-        "A","H","L","P","R","S","T","U","V","X"
-      ],
+      "whg:allowedValues": ["A","H","L","P","R","S","T","U","V","X"],
       "whg:reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html"
     },
     {
@@ -79,13 +97,38 @@
       "whg:reference": "https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2",
       "whg:example": "GB"
     },
+
     {
-      "@id": "whg:source",
+      "@id": "whg:dataset",
       "@type": "rdf:Property",
-      "rdfs:label": "Source Dataset",
+      "rdfs:label": "Dataset",
       "rdfs:domain": "whg:Place",
-      "rdfs:range": "xsd:string",
-      "rdfs:comment": "Original dataset providing this place record."
+      "rdfs:range": "whg:Dataset",
+      "rdfs:comment": "Dataset in which this place appears."
+    },
+    {
+      "@id": "whg:collection",
+      "@type": "rdf:Property",
+      "rdfs:label": "Collection",
+      "rdfs:domain": "whg:Dataset",
+      "rdfs:range": "whg:Collection",
+      "rdfs:comment": "Collection to which this dataset belongs."
+    },
+    {
+      "@id": "whg:hasMember",
+      "@type": "rdf:Property",
+      "rdfs:label": "Has Member",
+      "rdfs:domain": "whg:Collection",
+      "rdfs:range": "rdfs:Resource",
+      "rdfs:comment": "Member entity of this collection (can be a Dataset or a Place)."
+    },
+    {
+      "@id": "whg:withinArea",
+      "@type": "rdf:Property",
+      "rdfs:label": "Within Area",
+      "rdfs:domain": "whg:Place",
+      "rdfs:range": "whg:Area",
+      "rdfs:comment": "The geographic area within which this place is located."
     }
   ]
 }

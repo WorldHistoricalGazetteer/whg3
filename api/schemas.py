@@ -1,0 +1,301 @@
+# api/schemas.py
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiResponse, OpenApiExample
+
+from api.reconcile_helpers import ReconciliationRequestSerializer
+
+OBJECT_TYPES = ["place", "dataset", "collection", "area"]
+
+# Define view metadata including per-method overrides
+VIEW_CLASSES = {
+    "detail": {
+        "methods": {
+            "get": {
+                "summary": "Retrieve full object details",
+                "description": "Returns the full details of a single object, including all fields and related metadata.",
+            },
+        },
+    },
+    "feature": {
+        "methods": {
+            "get": {
+                "summary": "Retrieve object as structured API feature",
+                "description": "Returns the object in a structured API format (e.g., GeoJSON or JSON feature) suitable for programmatic access.",
+            },
+        },
+    },
+    "preview": {
+        "methods": {
+            "get": {
+                "summary": "Preview object HTML snippet",
+                "description": "Returns an HTML snippet for previewing an object record.",
+            },
+        },
+    },
+    "create": {
+        "methods": {
+            "post": {
+                "summary": "Create a new object",
+                "description": "Creates a new object record with the provided data and returns the created object.",
+            },
+        },
+    },
+    "update": {
+        "methods": {
+            "put": {
+                "summary": "Replace an existing object",
+                "description": "Replaces an existing object record entirely with new data, updating all fields.",
+            },
+            "patch": {
+                "summary": "Update an existing object",
+                "description": "Partially updates fields of an existing object record.",
+            },
+        },
+    },
+    "delete": {
+        "methods": {
+            "delete": {
+                "summary": "Delete an existing object",
+                "description": "Deletes an existing object record permanently from the system.",
+            },
+        },
+    },
+}
+
+QUERY_PARAMETERS = (
+    "| Parameter | Type | Description |\n"
+    "| --- | --- | --- |\n"
+    "| `query` | string | Free-text search string. Required if no spatial or dataset filters are provided. |\n"
+    "| `mode` | string | Search mode: `exact`, `fuzzy`* (default), `starts`, or `in`. **Coming soon**: `phonetic`, and eventually `ner` for LLM-based entity recognition.|\n"
+    "| `fclasses` | array | Restrict to specific feature classes (e.g. `[\"A\",\"L\"]`). `X` (unknown) is always included. |\n"
+    "| `start` | integer | Start year for temporal filtering. |\n"
+    "| `end` | integer | End year for temporal filtering (defaults to current year). |\n"
+    "| `undated` | boolean | Include results with no temporal metadata. |\n"
+    "| `countries` | array | Restrict results to country codes (ISO 2-letter). |\n"
+    "| `bounds` | object | GeoJSON geometry collection for spatial restriction (ignored if `radius` and coordinates are given). |\n"
+    "| `lat` | float | Latitude for circular search (with `lng` and `radius`). |\n"
+    "| `lng` | float | Longitude for circular search (with `lat` and `radius`). |\n"
+    "| `radius` | float | Radius in km for circular search (with `lat` and `lng`). |\n"
+    "| `userareas` | array | IDs of user-defined stored areas for spatial filtering. |\n"
+    "| `dataset` | integer | Restrict results to specific dataset ID. |\n"
+    "| `size` | integer | Maximum results per query (default: 100). |\n\n"
+    "*Can also be specified as `prefix_length|fuzziness` (e.g., `2|1`). "
+)
+
+
+def generic_schema(view_class: str):
+    """
+    Dynamically builds extend_schema_view for a given view class.
+    Supports multiple HTTP methods with per-method summary/description.
+    """
+    view_config = VIEW_CLASSES.get(view_class, {})
+    methods_config = view_config.get("methods", {})
+    schema_dict = {}
+
+    # Base parameters applied to all methods
+    base_parameters = [
+        OpenApiParameter(
+            name="token",
+            required=True,
+            type=str,
+            location=OpenApiParameter.QUERY,
+            description="API token for authentication",
+        ),
+        OpenApiParameter(
+            name="obj_type",
+            required=True,
+            type=str,
+            location=OpenApiParameter.PATH,
+            description="The object type to query",
+            enum=OBJECT_TYPES,
+            default="place",
+        ),
+    ]
+
+    # Base responses applied to all methods
+    base_responses = {
+        400: OpenApiResponse(description="Missing or invalid parameters"),
+        403: OpenApiResponse(description="Invalid API token"),
+        404: OpenApiResponse(description="Object not found"),
+    }
+
+    for method, meta in methods_config.items():
+        summary = meta.get("summary", "")
+        description = meta.get("description", "")
+
+        # Set standard 200/201/204 response depending on method
+        if method in ["post", "put", "patch"]:
+            responses = {201: OpenApiResponse(description=description), **base_responses}
+        elif method == "delete":
+            responses = {204: OpenApiResponse(description="Deleted successfully"), **base_responses}
+        else:
+            responses = {200: OpenApiResponse(description=description), **base_responses}
+
+        schema_dict[method] = extend_schema(
+            tags=["Entity API"],
+            summary=summary,
+            description=description,
+            parameters=base_parameters,
+            responses=responses,
+        )
+
+    return extend_schema_view(**schema_dict)
+
+
+def build_schema_view(
+        *,
+        methods: dict,
+        tags: list[str],
+        summary: str = "",
+        description: str = "",
+        parameters: list[OpenApiParameter] = None,
+        responses: dict = None,
+        request=None,
+        examples: list[OpenApiExample] = None
+):
+    """
+    DRY wrapper for extend_schema_view.
+    `methods`: dict mapping HTTP method names to True
+    """
+    schema_dict = {}
+    for method in methods.keys():
+        schema_dict[method] = extend_schema(
+            tags=tags,
+            summary=summary,
+            description=description,
+            parameters=parameters or [],
+            responses=responses or {},
+            request=request,
+            examples=examples or [],
+        )
+    return extend_schema_view(**schema_dict)
+
+
+def reconcile_schema():
+    """Schema for the Reconciliation API root endpoint"""
+    return build_schema_view(
+        methods={"get": True, "post": True},
+        tags=["Place Reconciliation API"],
+        summary="Reconciliation Service metadata & queries",
+        description=(
+            "Retrieve service metadata including URLs, default types, and preview configuration. "
+            "Supports token injection via query parameter and implements the Reconciliation Service API v0.2."
+        ),
+        parameters=[
+            OpenApiParameter(
+                name="token",
+                required=False,
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="API token to inject into preview URLs",
+            ),
+            OpenApiParameter(
+                name="queries",
+                type=OpenApiTypes.STR,
+                required=False,
+                location=OpenApiParameter.QUERY,
+                description="JSON object with reconciliation queries",
+            ),
+            OpenApiParameter(
+                name="extend",
+                type=OpenApiTypes.STR,
+                required=False,
+                location=OpenApiParameter.QUERY,
+                description="JSON object with extension request (ids + properties)",
+            ),
+        ],
+        request=ReconciliationRequestSerializer,
+        responses={
+            200: OpenApiResponse(description="Successful reconciliation (queries) or extension (extend)"),
+            400: OpenApiResponse(description="Invalid payload"),
+            401: OpenApiResponse(description="Authentication failed"),
+        },
+    )
+
+
+def propose_properties_schema():
+    """Schema for /reconcile/properties endpoint"""
+    return build_schema_view(
+        methods={"get": True},
+        tags=["Place Reconciliation API"],
+        summary="Discover extensible properties",
+        description="Returns a list of properties that can be extended, as required by the Reconciliation Service API.",
+        responses={
+            200: OpenApiResponse(description="A list of available properties."),
+            401: OpenApiResponse(description="Authentication failed"),
+        },
+    )
+
+
+def suggest_entity_schema():
+    """Schema for /reconcile/suggest endpoint"""
+    return build_schema_view(
+        methods={"get": True},
+        tags=["Place Reconciliation API"],
+        summary="Suggest entities by prefix",
+        description="Returns a list of suggested entities that match a given prefix.",
+        parameters=[
+            OpenApiParameter(
+                name="prefix",
+                type=OpenApiTypes.STR,
+                description="The string to match against entity names",
+                required=True,
+            ),
+            OpenApiParameter(
+                name="limit",
+                type=OpenApiTypes.INT,
+                description="Maximum number of suggestions to return",
+                default=10,
+            ),
+            OpenApiParameter(
+                name="cursor",
+                type=OpenApiTypes.INT,
+                description="Number of suggestions to skip for pagination",
+                default=0,
+            ),
+            OpenApiParameter(
+                name="exact",
+                type=OpenApiTypes.BOOL,
+                description="Whether to return exact matches only",
+                default=False,
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(description="A list of matching entity suggestions."),
+            401: OpenApiResponse(description="Authentication failed"),
+        },
+    )
+
+
+def suggest_property_schema():
+    """Schema for /reconcile/suggest/properties endpoint"""
+    return build_schema_view(
+        methods={"get": True},
+        tags=["Place Reconciliation API"],
+        summary="Suggest properties by prefix",
+        description="Returns a list of properties that match a given prefix.",
+        parameters=[
+            OpenApiParameter(
+                name="prefix",
+                type=OpenApiTypes.STR,
+                description="The string to match against property names",
+                required=False,
+            ),
+            OpenApiParameter(
+                name="limit",
+                type=OpenApiTypes.INT,
+                description="Maximum number of suggestions to return",
+                default=10,
+            ),
+            OpenApiParameter(
+                name="cursor",
+                type=OpenApiTypes.INT,
+                description="Number of suggestions to skip for pagination",
+                default=0,
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(description="A list of matching property suggestions."),
+            401: OpenApiResponse(description="Authentication failed"),
+        },
+    )

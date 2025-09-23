@@ -72,6 +72,10 @@ urlpatterns = [
                   ),
                   path('whgmail/', include('whgmail.urls')),
 
+
+
+
+
                   path('teaching/', TeachingPortalView.as_view(), name="teaching"),
                   path("api/teaching/", resources.views.teaching_json, name="teaching_json"),
 

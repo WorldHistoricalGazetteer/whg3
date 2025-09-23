@@ -1,11 +1,9 @@
 # api.urls
 
 from django.urls import path
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from rest_framework.urlpatterns import format_suffix_patterns
 
 from . import views
-from .views import CustomSwaggerUIView
 
 # app_name = 'api'
 # naming this app BREAKS DATATABLES IN DATASET BROWSE
@@ -84,13 +82,6 @@ urlpatterns = [
     # use: single union record in usingapi.html ?idx=whg&_id={whg_id}
     # TODO: build from place_id
     # url('union/', views.indexAPIView.as_view(), name='union_api')
-
-    # OpenAPI schema
-    path("schema/", SpectacularAPIView.as_view(), name="schema"),
-    # Swagger UI
-    path("schema/swagger-ui/", CustomSwaggerUIView.as_view(), name="swagger-ui"),
-    # Redoc
-    path("schema/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 
     #
     # *** External Data ***

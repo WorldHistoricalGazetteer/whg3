@@ -20,18 +20,21 @@ import os
 import urllib
 
 from django.http import JsonResponse
-from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample, OpenApiResponse, extend_schema_view
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from geopy.distance import geodesic
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.decorators import authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.renderers import JSONRenderer
 from rest_framework.views import APIView
 
 from main.choices import FEATURE_CLASSES
 from places.models import Place
-from .models import APIToken, UserAPIProfile
-from .reconcile_helpers import make_candidate, format_extend_row, es_search, ReconciliationRequestSerializer
+from .authentication import AuthenticatedAPIView, TokenQueryOrBearerAuthentication
+from .reconcile_helpers import make_candidate, format_extend_row, es_search
+from .schemas import reconcile_schema, propose_properties_schema, suggest_entity_schema, suggest_property_schema
 
 logger = logging.getLogger('reconciliation')
 
@@ -40,31 +43,30 @@ DOCS_URL = "https://docs.whgazetteer.org/content/400-Technical.html#reconciliati
 TILESERVER_URL = os.environ.get('TILEBOSS', 'https://tiles.whgazetteer.org').rstrip('/')
 MAX_EARTH_RADIUS_KM = math.pi * 6371  # ~20015 km
 VALID_FCODES = {fc for fc, _ in FEATURE_CLASSES}
-SCHEMA_SPACE = DOMAIN + "/static/whg_place_schema.jsonld"
+SCHEMA_SPACE = DOMAIN + "/static/whg_schema.jsonld"
 
 SERVICE_METADATA = {
     "versions": ["0.2"],
     "name": "World Historical Gazetteer Place Reconciliation Service",
-    "identifierSpace": DOMAIN + "/place/",
+    "identifierSpace": DOMAIN + "/",
     "schemaSpace": SCHEMA_SPACE,
     "defaultTypes": [
-        {
-            "id": SCHEMA_SPACE + "#Place",
-            "name": "Place"
-        }
+        {"id": SCHEMA_SPACE + "#Place", "name": "Place"},
     ],
     "documentation": DOCS_URL,
     "logo": DOMAIN + "/static/images/whg_logo_80.png",
-    "view": {
-        "url": DOMAIN + "/places/portal/{{id}}/"
+    "view": {  # human-readable page
+        "whg:Place": {"url": DOMAIN + "/place/{{id}}/"},
     },
-    "feature_view": {
-        "url": DOMAIN + "/feature/{{id}}"
+    "feature_view": {  # machine-readable place representation
+        "whg:Place": {"url": DOMAIN + "/place/api/{{id}}/"},
     },
-    "preview": {
-        "url": DOMAIN + "/preview?token={{token}}&id={{id}}",
-        "width": 400,
-        "height": 300,
+    "preview": {  # HTML preview snippet
+        "whg:Place": {
+            "url": DOMAIN + "place/preview/{{id}}/?token={{token}}",
+            "width": 400,
+            "height": 300,
+        },
     },
     "suggest": {
         "entity": {
@@ -134,195 +136,13 @@ PROPOSE_PROPERTIES = [
      "type": "string"},
 ]
 
-QUERY_PARAMETERS = (
-    "| Parameter | Type | Description |\n"
-    "| --- | --- | --- |\n"
-    "| `query` | string | Free-text search string. Required if no spatial or dataset filters are provided. |\n"
-    "| `mode` | string | Search mode: `exact`, `fuzzy`* (default), `starts`, or `in`. **Coming soon**: `phonetic`|\n"
-    "| `fclasses` | array | Restrict to specific feature classes (e.g. `[\"A\",\"L\"]`). `X` (unknown) is always included. |\n"
-    "| `start` | integer | Start year for temporal filtering. |\n"
-    "| `end` | integer | End year for temporal filtering (defaults to current year). |\n"
-    "| `undated` | boolean | Include results with no temporal metadata. |\n"
-    "| `countries` | array | Restrict results to country codes (ISO 2-letter). |\n"
-    "| `bounds` | object | GeoJSON geometry collection for spatial restriction (ignored if `radius` and coordinates are given). |\n"
-    "| `lat` | float | Latitude for circular search (with `lng` and `radius`). |\n"
-    "| `lng` | float | Longitude for circular search (with `lat` and `radius`). |\n"
-    "| `radius` | float | Radius in km for circular search (with `lat` and `lng`). |\n"
-    "| `userareas` | array | IDs of user-defined stored areas for spatial filtering. |\n"
-    "| `dataset` | integer | Restrict results to specific dataset ID. |\n"
-    "| `size` | integer | Maximum results per query (default: 100). |\n\n"
-    "*Can also be specified as `prefix_length|fuzziness` (e.g., `2|1`). "
-)
-
 
 def json_error(message, status=400):
     return JsonResponse({"error": f"{message} See documentation: {DOCS_URL}"}, status=status)
 
 
-# TODO: Consider using this function to replace part of the current bot-blocking middleware at main.block_user_agents.BlockUserAgentsMiddleware
-def authenticate_request(request):
-    """
-    Authenticate either via:
-    1. Authorization: Bearer <token>
-    3. token from URL query param
-    4. CSRF/session (browser-originated)
-    """
-    key = None
-
-    # 1. Check Authorization header
-    auth = request.headers.get("Authorization", "")
-    if auth.startswith("Bearer "):
-        key = auth.split(" ", 1)[1]
-
-    # 2. Check token from URL query param
-    if not key:
-        key = request.GET.get("token")
-
-    if key:
-        try:
-            token = APIToken.objects.select_related("user").get(key=key)
-            request.user = token.user
-
-            # Ensure UserAPIProfile exists
-            profile, _ = UserAPIProfile.objects.get_or_create(user=token.user)
-            profile.increment_usage()
-
-            if profile.daily_limit and profile.daily_count > profile.daily_limit:
-                return False, {
-                    "error": f"Daily API limit ({profile.daily_limit} calls) exceeded",
-                }
-
-            token.last_used = timezone.now()
-            token.save(update_fields=['last_used'])
-            return True, None
-
-        except APIToken.DoesNotExist:
-            return False, {"error": "Invalid API token"}
-
-    # 3. CSRF/session mode
-    if request.user.is_authenticated or request.user.is_anonymous:
-        from django.middleware.csrf import get_token
-        try:
-            get_token(request)
-            return True, None
-        except Exception:
-            return False, {"error": "Invalid CSRF token"}
-
-    return False, {"error": "Authentication required"}
-
-
 @method_decorator(csrf_exempt, name="dispatch")
-@extend_schema_view(
-    get=extend_schema(
-        tags=["Reconciliation Service API v0.2"],
-        summary="Retrieve Reconciliation Service metadata",
-        description=(
-                "Returns service metadata, including URLs, default types, and preview configuration. "
-                "Supports optional token injection via query parameter."
-        ),
-        parameters=[
-            OpenApiParameter(
-                name="token",
-                required=False,
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.QUERY,
-                description="API token to inject into preview URLs",
-            )
-        ],
-        responses={
-            200: OpenApiResponse(
-                description="Service metadata JSON",
-            )
-        },
-    ),
-    post=extend_schema(
-        tags=["Reconciliation Service API v0.2"],
-        summary="Reconciliation Queries and Data Extension",
-        description=(
-                "Implements the [Reconciliation Service API v0.2](https://www.w3.org/community/reports/reconciliation/CG-FINAL-specs-0.2-20230410/).\n\n"
-                "## Prerequisites\n\n"
-                "### Authentication (Required)\n"
-                "See the [documentation](https://docs.whgazetteer.org/content/400-Technical.html#reconciliation-api) for instructions on obtaining an API token.\n\n"
-                "Provide your API token using either method:\n"
-                "- **URL**: `?token=your_token_here`\n"
-                "- **Header**: `Authorization: Bearer your_token_here`\n\n"
-                "### Additional Header (Required)\n"
-                "- `User-Agent: notbot` (to bypass bot protection)\n\n"
-                "## Request Types\n\n"
-                "- **Reconciliation**: pass a `queries` object with search terms.\n"
-                "- **Extend**: pass an `extend` object with place IDs and requested property IDs.\n\n\n"
-                "### Query Parameters\n\n"
-                "Each query object in a `queries` payload supports the following parameters:\n\n"
-                f"{QUERY_PARAMETERS}"
-        ),
-        parameters=[
-            OpenApiParameter(
-                name="queries",
-                type=OpenApiTypes.STR,
-                required=False,
-                location=OpenApiParameter.QUERY,
-                description="JSON object with reconciliation queries"
-            ),
-            OpenApiParameter(
-                name="extend",
-                type=OpenApiTypes.STR,
-                required=False,
-                location=OpenApiParameter.QUERY,
-                description="JSON object with extension request (ids + properties)"
-            ),
-        ],
-        request=ReconciliationRequestSerializer,
-        responses={
-            200: OpenApiResponse(
-                response={
-                    "type": "object",
-                    "oneOf": [
-                        {"type": "object", "properties": {"q0": {"type": "object"}}},
-                        {"type": "object", "properties": {"rows": {"type": "object"}, "meta": {"type": "array"}}},
-                    ],
-                },
-                description="Successful reconciliation (queries) or extension (extend)",
-                examples=[
-                    OpenApiExample(
-                        "Reconciliation response",
-                        value={
-                            "q0": {
-                                "result": [
-                                    {"id": "5426666", "name": "Edinburgh", "score": 95, "match": True}
-                                ]
-                            }
-                        },
-                    ),
-                    OpenApiExample(
-                        "Extend response",
-                        value={
-                            "meta": [
-                                {"id": "whg:ccodes", "name": "Country Codes"},
-                                {"id": "whg:geometry", "name": "Geometry"},
-                                {"id": "whg:temporalRange", "name": "Temporal Range"},
-                            ],
-                            "rows": {
-                                "5426666": {
-                                    "id": "5426666",
-                                    "name": "Edinburgh",
-                                    "properties": {
-                                        "whg:ccodes": ["GB"],
-                                        "whg:geometry": [
-                                            '{ "type": "Point", "coordinates": [ -3.2, 55.95 ] }'
-                                        ],
-                                        "whg:temporalRange": [],
-                                    },
-                                }
-                            },
-                        },
-                    ),
-                ],
-            ),
-            401: OpenApiResponse(description="Authentication failed"),
-            400: OpenApiResponse(description="Invalid payload"),
-        },
-    )
-)
+@reconcile_schema()
 class ReconciliationView(APIView):
     def get(self, request, *args, **kwargs):
 
@@ -345,14 +165,12 @@ class ReconciliationView(APIView):
 
         return JsonResponse(metadata)
 
+    @authentication_classes([TokenQueryOrBearerAuthentication, SessionAuthentication])
+    @permission_classes([IsAuthenticated])
     def post(self, request, *args, **kwargs):
 
         logger.debug(f"Request URL (POST): {request.build_absolute_uri()}")
         logger.debug(f"Request body: {request.body.decode('utf-8') if request.body else 'No body'}")
-
-        allowed, auth_error = authenticate_request(request)
-        if not allowed:
-            return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
         try:
             payload = parse_request_payload(request)
@@ -388,133 +206,20 @@ class ReconciliationView(APIView):
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-@extend_schema_view(
-    get=extend_schema(
-        tags=["Reconciliation Service API v0.2"],
-        summary="Discover extensible properties",
-        description="Returns a list of properties that can be extended, as required by the Reconciliation Service API.",
-        responses={
-            200: OpenApiResponse(
-                response={
-                    "type": "object",
-                    "properties": {
-                        "properties": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "id": {"type": "string"},
-                                    "name": {"type": "string"},
-                                    "description": {"type": "string"},
-                                    "type": {"type": "string"},
-                                },
-                            },
-                        }
-                    },
-                },
-                description="A list of available properties.",
-                examples=[
-                    OpenApiExample(
-                        "Example properties response",
-                        value={
-                            "properties": [
-                                {"id": "whg:geometry", "name": "Geometry (GeoJSON)", "type": "string"},
-                                {"id": "whg:alt_names", "name": "Alternative names", "type": "string"},
-                            ]
-                        },
-                    )
-                ],
-            ),
-            401: OpenApiResponse(description="Authentication failed"),
-        },
-    )
-)
-class ExtendProposeView(APIView):
+@propose_properties_schema()
+class ExtendProposeView(AuthenticatedAPIView):
 
     def get(self, request, *args, **kwargs):
-        allowed, auth_error = authenticate_request(request)
-        if not allowed:
-            return json_error(auth_error.get("error", "Authentication failed"), status=401)
-
         return JsonResponse({
             "properties": PROPOSE_PROPERTIES
         })
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-@extend_schema_view(
-    get=extend_schema(
-        tags=["Reconciliation Service API v0.2"],
-        summary="Suggest entities based on a prefix",
-        description="Returns a list of suggested entities that match a given prefix.",
-        parameters=[
-            OpenApiParameter(
-                name="prefix",
-                type=OpenApiTypes.STR,
-                description="The string to match against entity names.",
-                required=True,
-            ),
-            OpenApiParameter(
-                name="limit",
-                type=OpenApiTypes.INT,
-                description="The maximum number of suggestions to return.",
-                default=10,
-            ),
-            OpenApiParameter(
-                name="cursor",
-                type=OpenApiTypes.INT,
-                description="The number of suggestions to skip for pagination.",
-                default=0,
-            ),
-            OpenApiParameter(
-                name="exact",
-                type=OpenApiTypes.BOOL,
-                description="Whether to return exact matches only.",
-                default=False,
-            ),
-        ],
-        responses={
-            200: OpenApiResponse(
-                response={
-                    "type": "object",
-                    "properties": {
-                        "result": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "id": {"type": "string"},
-                                    "name": {"type": "string"},
-                                    "score": {"type": "number"},
-                                    "match": {"type": "boolean"},
-                                },
-                            },
-                        }
-                    },
-                },
-                description="A list of matching entity suggestions.",
-                examples=[
-                    OpenApiExample(
-                        "Example entity suggestions",
-                        value={
-                            "result": [
-                                {"id": "5426666", "name": "Edinburgh", "score": 95, "match": True},
-                                {"id": "5426667", "name": "Edinburg", "score": 85, "match": False},
-                            ]
-                        },
-                    )
-                ],
-            ),
-            401: OpenApiResponse(description="Authentication failed"),
-        },
-    )
-)
-class SuggestEntityView(APIView):
+@suggest_entity_schema()
+class SuggestEntityView(AuthenticatedAPIView):
 
     def get(self, request, *args, **kwargs):
-        allowed, auth_error = authenticate_request(request)
-        if not allowed:
-            return json_error(auth_error.get("error", "Authentication failed"), status=401)
 
         prefix = request.GET.get("prefix", "").strip()
         exact = request.GET.get("exact", "false").lower() == "true"
@@ -557,74 +262,10 @@ class SuggestEntityView(APIView):
 
 
 @method_decorator(csrf_exempt, name="dispatch")
-@extend_schema_view(
-    get=extend_schema(
-        tags=["Reconciliation Service API v0.2"],
-        summary="Suggest properties based on a prefix",
-        description="Returns a list of properties that match a given prefix.",
-        parameters=[
-            OpenApiParameter(
-                name="prefix",
-                type=OpenApiTypes.STR,
-                description="The string to match against property names.",
-                required=False,
-            ),
-            OpenApiParameter(
-                name="limit",
-                type=OpenApiTypes.INT,
-                description="The maximum number of suggestions to return.",
-                default=10,
-            ),
-            OpenApiParameter(
-                name="cursor",
-                type=OpenApiTypes.INT,
-                description="The number of suggestions to skip for pagination.",
-                default=0,
-            ),
-        ],
-        responses={
-            200: OpenApiResponse(
-                response={
-                    "type": "object",
-                    "properties": {
-                        "result": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "id": {"type": "string"},
-                                    "name": {"type": "string"},
-                                    "description": {"type": "string"},
-                                    "type": {"type": "string"},
-                                },
-                            },
-                        }
-                    },
-                },
-                description="A list of matching property suggestions.",
-                examples=[
-                    OpenApiExample(
-                        "Example property suggestions",
-                        value={
-                            "result": [
-                                {"id": "whg:ccodes", "name": "Country codes"},
-                                {"id": "whg:fclasses", "name": "Feature classes"},
-                            ]
-                        },
-                    )
-                ],
-            ),
-            401: OpenApiResponse(description="Authentication failed"),
-        },
-    )
-)
-class SuggestPropertyView(APIView):
+@suggest_property_schema()
+class SuggestPropertyView(AuthenticatedAPIView):
 
     def get(self, request, *args, **kwargs):
-        allowed, auth_error = authenticate_request(request)
-        if not allowed:
-            return json_error(auth_error.get("error", "Authentication failed"), status=401)
-
         try:
             query_text = (request.GET.get("prefix") or request.GET.get("query") or "").strip().lower()
             limit = int(request.GET.get("limit", 10))
