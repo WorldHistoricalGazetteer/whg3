@@ -245,7 +245,7 @@ def format_extend_row(place, properties, request=None):
         pid = prop.get("id") if isinstance(prop, dict) else prop
 
         if pid == "whg:geometry":
-            row[pid] = [g["geom"] for g in data.get("geoms", [])]
+            row[pid] = [g.get("geowkt") for g in data.get("geoms", [])]
         elif pid == "whg:alt_names":
             row[pid] = [n["toponym"] for n in data.get("names", [])]
         elif pid == "whg:ccodes":
