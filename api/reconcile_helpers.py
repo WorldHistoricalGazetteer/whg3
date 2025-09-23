@@ -264,15 +264,8 @@ def format_extend_row(place, properties, request=None):
 class ReconciliationRequestSerializer(serializers.Serializer):
     queries = serializers.DictField(
         required=False,
-        help_text=(
-            "Dictionary of query objects. Each query supports parameters like: "
-            "query (string), mode (exact|fuzzy|starts|in), fclasses (array), "
-            "start/end (integers), countries (array), bounds/lat/lng/radius (spatial), "
-            "dataset (integer), size (integer)."
-        ),
         child=serializers.DictField()
     )
     extend = serializers.DictField(
         required=False,
-        help_text="Extension request with 'ids' array and 'properties' array"
     )
