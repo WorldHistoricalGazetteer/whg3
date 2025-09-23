@@ -184,6 +184,78 @@ def generic_schema(view_class: str):
     return extend_schema_view(**schema_dict)
 
 
+# def build_schema_view(
+#         *,
+#         methods: dict,
+#         tags: list[str],
+#         summary: str = "",
+#         description: str = "",
+#         parameters: list[OpenApiParameter] = None,
+#         responses: dict = None,
+#         request=None,
+#         examples: list[OpenApiExample] = None
+# ):
+#     """
+#     DRY wrapper for extend_schema_view.
+#     `methods`: dict mapping HTTP method names to True
+#     """
+#     schema_dict = {}
+#     for method in methods.keys():
+#         schema_dict[method] = extend_schema(
+#             tags=tags,
+#             summary=summary,
+#             description=description,
+#             parameters=parameters or [],
+#             responses=responses or {},
+#             request=request,
+#             examples=examples or [],
+#         )
+#     return extend_schema_view(**schema_dict)
+#
+#
+# def reconcile_schema():
+#     """Schema for the Reconciliation API root endpoint"""
+#     return build_schema_view(
+#         methods={"get": True, "post": True},
+#         tags=["Place Reconciliation API"],
+#         summary="Reconciliation Service metadata & queries",
+#         description=(
+#             "Retrieve service metadata including URLs, default types, and preview configuration. "
+#             "Supports token injection via query parameter and implements the Reconciliation Service API v0.2."
+#             f"\n\n{QUERY_PARAMETERS}"
+#         ),
+#         parameters=[
+#             OpenApiParameter(
+#                 name="token",
+#                 required=False,
+#                 type=OpenApiTypes.STR,
+#                 location=OpenApiParameter.QUERY,
+#                 description="API token to inject into preview URLs",
+#             ),
+#             OpenApiParameter(
+#                 name="queries",
+#                 type=OpenApiTypes.STR,
+#                 required=False,
+#                 location=OpenApiParameter.QUERY,
+#                 description="JSON object with reconciliation queries",
+#             ),
+#             OpenApiParameter(
+#                 name="extend",
+#                 type=OpenApiTypes.STR,
+#                 required=False,
+#                 location=OpenApiParameter.QUERY,
+#                 description="JSON object with extension request (ids + properties)",
+#             ),
+#         ],
+#         request=ReconciliationRequestSerializer,
+#         responses={
+#             200: OpenApiResponse(description="Successful reconciliation (queries) or extension (extend)"),
+#             400: OpenApiResponse(description="Invalid payload"),
+#             401: OpenApiResponse(description="Authentication failed"),
+#         },
+#     )
+
+
 def build_schema_view(
         *,
         methods: dict,
@@ -197,57 +269,102 @@ def build_schema_view(
 ):
     """
     DRY wrapper for extend_schema_view.
-    `methods`: dict mapping HTTP method names to True
+
+    `methods` can be:
+    - Simple format: {"get": True, "post": True} (uses shared summary/description)
+    - Detailed format: {"get": {"summary": "...", "description": "..."}, "post": {...}}
     """
     schema_dict = {}
-    for method in methods.keys():
+
+    for method, config in methods.items():
+        # Handle simple boolean format (backward compatibility)
+        if isinstance(config, bool) and config:
+            method_summary = summary
+            method_description = description
+            method_parameters = parameters or []
+            method_responses = responses or {}
+            method_request = request
+            method_examples = examples or []
+
+        # Handle detailed configuration format
+        elif isinstance(config, dict):
+            method_summary = config.get("summary", summary)
+            method_description = config.get("description", description)
+            method_parameters = config.get("parameters", parameters or [])
+            method_responses = config.get("responses", responses or {})
+            method_request = config.get("request", request)
+            method_examples = config.get("examples", examples or [])
+
+        else:
+            continue  # Skip if config is False or invalid
+
         schema_dict[method] = extend_schema(
             tags=tags,
-            summary=summary,
-            description=description,
-            parameters=parameters or [],
-            responses=responses or {},
-            request=request,
-            examples=examples or [],
+            summary=method_summary,
+            description=method_description,
+            parameters=method_parameters,
+            responses=method_responses,
+            request=method_request,
+            examples=method_examples,
         )
+
     return extend_schema_view(**schema_dict)
 
 
 def reconcile_schema():
     """Schema for the Reconciliation API root endpoint"""
     return build_schema_view(
-        methods={"get": True, "post": True},
+        methods={
+            "get": {
+                "summary": "Get Reconciliation Service metadata",
+                "description": (
+                    "Retrieve service metadata including URLs, default types, and preview configuration. "
+                    "Returns the service manifest as per Reconciliation Service API v0.2."
+                ),
+                "parameters": [
+                    OpenApiParameter(
+                        name="token",
+                        required=False,
+                        type=OpenApiTypes.STR,
+                        location=OpenApiParameter.QUERY,
+                        description="API token to inject into preview URLs",
+                    ),
+                ],
+            },
+            "post": {
+                "summary": "Submit Reconciliation queries",
+                "description": (
+                    "Submit reconciliation queries to match place names against the WHG database. "
+                    "Supports batch queries and implements the Reconciliation Service API v0.2."
+                    f"\n\n{QUERY_PARAMETERS}"
+                ),
+                "parameters": [
+                    OpenApiParameter(
+                        name="token",
+                        required=False,
+                        type=OpenApiTypes.STR,
+                        location=OpenApiParameter.QUERY,
+                        description="API token for authentication",
+                    ),
+                    OpenApiParameter(
+                        name="queries",
+                        type=OpenApiTypes.STR,
+                        required=False,
+                        location=OpenApiParameter.QUERY,
+                        description="JSON object with reconciliation queries",
+                    ),
+                    OpenApiParameter(
+                        name="extend",
+                        type=OpenApiTypes.STR,
+                        required=False,
+                        location=OpenApiParameter.QUERY,
+                        description="JSON object with extension request (ids + properties)",
+                    ),
+                ],
+                "request": ReconciliationRequestSerializer,
+            }
+        },
         tags=["Place Reconciliation API"],
-        summary="Reconciliation Service metadata & queries",
-        description=(
-            "Retrieve service metadata including URLs, default types, and preview configuration. "
-            "Supports token injection via query parameter and implements the Reconciliation Service API v0.2."
-            f"\n\n{QUERY_PARAMETERS}"
-        ),
-        parameters=[
-            OpenApiParameter(
-                name="token",
-                required=False,
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.QUERY,
-                description="API token to inject into preview URLs",
-            ),
-            OpenApiParameter(
-                name="queries",
-                type=OpenApiTypes.STR,
-                required=False,
-                location=OpenApiParameter.QUERY,
-                description="JSON object with reconciliation queries",
-            ),
-            OpenApiParameter(
-                name="extend",
-                type=OpenApiTypes.STR,
-                required=False,
-                location=OpenApiParameter.QUERY,
-                description="JSON object with extension request (ids + properties)",
-            ),
-        ],
-        request=ReconciliationRequestSerializer,
         responses={
             200: OpenApiResponse(description="Successful reconciliation (queries) or extension (extend)"),
             400: OpenApiResponse(description="Invalid payload"),
