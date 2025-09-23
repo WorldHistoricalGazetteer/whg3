@@ -63,7 +63,7 @@ VIEW_CLASSES = {
 }
 
 QUERY_PARAMETERS = """
-#### Search Parameters
+### Query Parameters
 
 **`query`** *(string)*  
 Free-text search string. Required if no spatial or dataset filters are provided.
@@ -76,7 +76,7 @@ Restrict to specific feature classes. Valid values: `A` (Administrative), `H` (H
 
 *Fuzzy mode can also be specified as `prefix_length|fuzziness` (e.g., `2|1`).*
 
-#### Temporal Filtering
+### Temporal Filtering
 
 **`start`** *(integer)*  
 Start year for temporal filtering. Must be a valid year.
@@ -84,7 +84,7 @@ Start year for temporal filtering. Must be a valid year.
 **`end`** *(integer)*  
 End year for temporal filtering (default: current year). Must be ≥ `start` year (if provided).
 
-#### Spatial Filtering
+### Spatial Filtering
 
 **`countries`** *(array)*  
 Restrict results to ISO 3166-1 alpha-2 country codes. Format: `["US","GB"]`.
@@ -105,12 +105,12 @@ Radius in kilometers for circular search. Must be used with `lat` and `lng`.
 **`userareas`** *(array)*  
 IDs of user-defined stored areas for spatial filtering. Format: `[123,456]`.
 
-## Dataset Filtering
+### Dataset Filtering
 
 **`dataset`** *(integer)*  
 Restrict results to specific dataset ID. Must be a valid dataset ID to which the user has access.
 
-#### Data Completeness
+### Data Completeness
 
 **`unlocated`** *(boolean)*  
 Include results with no spatial metadata (default: true).
@@ -118,7 +118,7 @@ Include results with no spatial metadata (default: true).
 **`undated`** *(boolean)*  
 Include results with no temporal metadata (default: true).
 
-#### Response Control
+### Response Control
 
 **`size`** *(integer)*  
 Maximum results per query (default: 100, max: 1000).

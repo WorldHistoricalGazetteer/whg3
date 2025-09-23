@@ -267,13 +267,13 @@ def format_extend_row(place, properties, request=None):
             description="Example of reconciling place names",
             value={
                 "queries": {
-                    "q0": {"query": "Edinburgh", "type": "Place"},
-                    "q1": {"query": "Leeds", "type": "Place"}
+                    "q0": {"query": "Edinburgh"},
+                    "q1": {"query": "Leeds"}
                 }
             }
         ),
         OpenApiExample(
-            name="Advanced Spatial Query",
+            name="Advanced Reconciliation Request",
             description="Search with custom fuzziness and with geographic and temporal constraints",
             value={
                 "queries": {
