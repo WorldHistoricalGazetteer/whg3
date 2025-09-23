@@ -117,9 +117,51 @@ SERVICE_METADATA = {
 
 PROPOSE_PROPERTIES = [
     {
-        "id": "whg:geometry",
+        "id": "whg:lpf_feature",
+        "name": "Linked Places Format Feature",
+        "description": "Complete place record as a Linked Places Format GeoJSON Feature with full properties, names, geometry, and links",
+        "type": "string"
+    },
+    {
+        "id": "whg:geo_wkt",
         "name": "Geometry (WKT)",
         "description": "The geometrical location of the place, as a JSON array of WKT strings",
+        "type": "string"
+    },
+    {
+        "id": "whg:geo_geojson",
+        "name": "Geometry (GeoJSON)",
+        "description": "The geometrical location of the place as GeoJSON geometry objects",
+        "type": "string"
+    },
+    {
+        "id": "whg:geo_centroid_wkt",
+        "name": "Geometry (Centroid WKT)",
+        "description": "Representative point of the place geometry as WKT POINT",
+        "type": "string"
+    },
+    {
+        "id": "whg:geo_centroid_geojson",
+        "name": "Geometry (Centroid GeoJSON)",
+        "description": "Representative point of the place geometry as GeoJSON Point",
+        "type": "string"
+    },
+    {
+        "id": "whg:geo_centroid_lat",
+        "name": "Geometry (Centroid Lat)",
+        "description": "Latitude of representative point",
+        "type": "string"
+    },
+    {
+        "id": "whg:geo_centroid_lng",
+        "name": "Geometry (Centroid Lng)",
+        "description": "Longitude of representative point",
+        "type": "string"
+    },
+    {
+        "id": "whg:geo_bbox",
+        "name": "Geometry (Bounding Box)",
+        "description": "Bounding box of the place geometry as [minLng, minLat, maxLng, maxLat]",
         "type": "string"
     },
     {
