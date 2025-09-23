@@ -247,6 +247,9 @@ def reconcile_schema():
                     "Retrieve service metadata including URLs, default types, and preview configuration. "
                     "Returns the service manifest as per Reconciliation Service API v0.2."
                 ),
+                "responses": {
+                    200: OpenApiResponse(description="Service metadata including manifest, default types, and preview configuration"),
+                },
             },
             "post": {
                 "summary": "Submit Reconciliation queries",
@@ -279,14 +282,15 @@ def reconcile_schema():
                     ),
                 ],
                 "request": ReconciliationRequestSerializer,
+                "responses": {
+                    200: OpenApiResponse(
+                        description="Reconciliation results with candidate matches and scores, or extension data with requested properties"),
+                    400: OpenApiResponse(description="Invalid query format or missing required parameters"),
+                    401: OpenApiResponse(description="Authentication failed"),
+                },
             }
         },
         tags=["Place Reconciliation API"],
-        responses={
-            200: OpenApiResponse(description="Successful reconciliation (queries) or extension (extend)"),
-            400: OpenApiResponse(description="Invalid payload"),
-            401: OpenApiResponse(description="Authentication failed"),
-        },
     )
 
 
