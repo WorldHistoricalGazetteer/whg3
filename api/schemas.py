@@ -69,47 +69,45 @@ QUERY_PARAMETERS = """
 | --- | --- | --- |
 | `query` | string | Free-text search string. Required if no spatial or dataset filters are provided. |
 | `mode` | string | Search mode: `exact`, `fuzzy`* (default), `starts`, or `in`. **Coming soon**: `phonetic`, and eventually `ner` for LLM-based entity recognition. |
-| `fclasses` | array | Restrict to specific feature classes (e.g. `["A","L"]`). `X` (unknown) is always included. |
-*Can also be specified as `prefix_length|fuzziness` (e.g., `2|1`).
+| `fclasses` | array | Restrict to specific feature classes. Valid values: `A` (Administrative), `H` (Hydrographic), `L` (Landscape), `P` (Populated places), `R` (Roads/routes), `S` (Sites), `T` (Topographic), `X` (unknown - always included). Format: `["A","L"]`. |
+*Fuzzy mode can also be specified as `prefix_length|fuzziness` (e.g., `2|1`).
 
 ## Temporal Filtering
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `start` | integer | Start year for temporal filtering. |
-| `end` | integer | End year for temporal filtering (defaults to current year). |
+| `start` | integer | Start year for temporal filtering. Must be a valid year. |
+| `end` | integer | End year for temporal filtering (default: current year). Must be ≥ `start` year (if given). |
 
 ## Spatial Filtering
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `countries` | array | Restrict results to country codes (ISO 2-letter). |
-| `bounds` | object | GeoJSON geometry collection for spatial restriction (ignored if `radius` and coordinates are given). |
-| `lat` | float | Latitude for circular search (with `lng` and `radius`). |
-| `lng` | float | Longitude for circular search (with `lat` and `radius`). |
-| `radius` | float | Radius in km for circular search (with `lat` and `lng`). |
-| `userareas` | array | IDs of user-defined stored areas for spatial filtering. |
+| `countries` | array | Restrict results to ISO 3166-1 alpha-2 country codes. Format: `["US","GB"]`. |
+| `bounds` | object | GeoJSON geometry collection for spatial restriction. Ignored if circular search parameters are provided. Example: `{"type":"Polygon","coordinates":[[[lon,lat],[lon,lat],...]]}` |
+| `lat` | float | Latitude for circular search (-90 to 90). Must be used with `lng` and `radius`. |
+| `lng` | float | Longitude for circular search (-180 to 180). Must be used with `lat` and `radius`. |
+| `radius` | float | Radius in kilometers for circular search. Must be used with `lat` and `lng`. |
+| `userareas` | array | IDs of user-defined stored areas for spatial filtering. Format: `[123,456]`. |
 
 ## Dataset Filtering
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `dataset` | integer | Restrict results to specific dataset ID. |
+| `dataset` | integer | Restrict results to specific dataset ID. Must be a valid dataset ID to which the the user has access. |
 
 ## Data Completeness
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `unlocated` | boolean | Include results with no spatial metadata. |
-| `undated` | boolean | Include results with no temporal metadata. |
+| `unlocated` | boolean | Include results with no spatial metadata (default: true). |
+| `undated` | boolean | Include results with no temporal metadata (default: true). |
 
 ## Response Control
 
 | Parameter | Type | Description |
 | --- | --- | --- |
-| `size` | integer | Maximum results per query (default: 100). |
-
----
+| `size` | integer | Maximum results per query (default: 100, max: 1000). |
 """
 
 
