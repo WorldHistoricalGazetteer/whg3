@@ -213,6 +213,7 @@ class PlaceGeomSerializer(serializers.ModelSerializer):
     # json: type, geowkt, coordinates, when{}
     # title = serializers.ReadOnlyField(source='title')
     ds = serializers.SerializerMethodField()
+    geom = serializers.ReadOnlyField(source="jsonb")  # pass through as-is
 
     def get_ds(self, obj):
         return obj.place.dataset.id
@@ -232,7 +233,7 @@ class PlaceGeomSerializer(serializers.ModelSerializer):
         model = PlaceGeom
         fields = ('place_id', 'src_id', 'type', 'geowkt', 'coordinates',
                   'geom_src', 'citation', 'when', 'title', 'ds',
-                  'certainty')
+                  'certainty', 'geom')
 
 
 # return list of normalized coordinates for a place

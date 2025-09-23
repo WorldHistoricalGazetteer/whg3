@@ -298,10 +298,10 @@ def format_extend_row(place, properties, request=None):
             description="Example of extending places with additional properties",
             value={
                 "extend": {
-                    "ids": ["Q23436", "Q39121"],
+                    "ids": ["6469500", "6469512"],
                     "properties": [
-                        {"id": "P1082", "name": "population"},
-                        {"id": "P625", "name": "coordinate location"}
+                        {"id": "whg:ccodes", "name": "Country codes"},
+                        {"id": "whg:geometry", "name": "Geometry (GeoJSON)"}
                     ]
                 }
             }
