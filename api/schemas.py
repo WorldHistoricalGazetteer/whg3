@@ -222,7 +222,6 @@ def propose_properties_schema():
         description="Returns a list of properties that can be extended, as required by the Reconciliation Service API.",
         responses={
             200: OpenApiResponse(description="A list of available properties."),
-            401: OpenApiResponse(description="Authentication failed"),
         },
     )
 

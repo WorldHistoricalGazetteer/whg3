@@ -78,7 +78,7 @@ SERVICE_METADATA = {
     "extend": {
         "propose_properties": {
             "service_url": DOMAIN,
-            "service_path": "/reconcile/properties?token={{token}}"
+            "service_path": "/reconcile/properties"
         },
         "property_settings": [
             {
@@ -204,7 +204,7 @@ class ReconciliationView(APIView):
 
 @method_decorator(csrf_exempt, name="dispatch")
 @propose_properties_schema()
-class ExtendProposeView(AuthenticatedAPIView):
+class ExtendProposeView(APIView):
 
     def get(self, request, *args, **kwargs):
         return JsonResponse({
