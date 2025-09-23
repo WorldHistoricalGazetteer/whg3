@@ -55,17 +55,15 @@ SERVICE_METADATA = {
     "documentation": DOCS_URL,
     "logo": DOMAIN + "/static/images/whg_logo_80.png",
     "view": {  # human-readable page
-        "whg:Place": {"url": DOMAIN + "/place/{{id}}/"},
+        "url": DOMAIN + "/places/portal/{{id}}/",
     },
     "feature_view": {  # machine-readable place representation
-        "whg:Place": {"url": DOMAIN + "/place/api/{{id}}/"},
+        "url": DOMAIN + "/feature/{{id}}",
     },
     "preview": {  # HTML preview snippet
-        "whg:Place": {
-            "url": DOMAIN + "/place/preview/{{id}}/?token={{token}}",
-            "width": 400,
-            "height": 300,
-        },
+        "url": DOMAIN + "/place/preview/{{id}}/?token={{token}}",
+        "width": 400,
+        "height": 300,
     },
     "suggest": {
         "entity": {
