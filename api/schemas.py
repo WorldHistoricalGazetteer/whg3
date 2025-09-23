@@ -208,7 +208,7 @@ def reconcile_schema():
         description=(
             "Retrieve service metadata including URLs, default types, and preview configuration. "
             "Supports token injection via query parameter and implements the Reconciliation Service API v0.2."
-            "\n\n{QUERY_PARAMETERS}"
+            f"\n\n{QUERY_PARAMETERS}"
         ),
         parameters=[
             OpenApiParameter(
