@@ -62,25 +62,55 @@ VIEW_CLASSES = {
     },
 }
 
-QUERY_PARAMETERS = (
-    "| Parameter | Type | Description |\n"
-    "| --- | --- | --- |\n"
-    "| `query` | string | Free-text search string. Required if no spatial or dataset filters are provided. |\n"
-    "| `mode` | string | Search mode: `exact`, `fuzzy`* (default), `starts`, or `in`. **Coming soon**: `phonetic`, and eventually `ner` for LLM-based entity recognition.|\n"
-    "| `fclasses` | array | Restrict to specific feature classes (e.g. `[\"A\",\"L\"]`). `X` (unknown) is always included. |\n"
-    "| `start` | integer | Start year for temporal filtering. |\n"
-    "| `end` | integer | End year for temporal filtering (defaults to current year). |\n"
-    "| `undated` | boolean | Include results with no temporal metadata. |\n"
-    "| `countries` | array | Restrict results to country codes (ISO 2-letter). |\n"
-    "| `bounds` | object | GeoJSON geometry collection for spatial restriction (ignored if `radius` and coordinates are given). |\n"
-    "| `lat` | float | Latitude for circular search (with `lng` and `radius`). |\n"
-    "| `lng` | float | Longitude for circular search (with `lat` and `radius`). |\n"
-    "| `radius` | float | Radius in km for circular search (with `lat` and `lng`). |\n"
-    "| `userareas` | array | IDs of user-defined stored areas for spatial filtering. |\n"
-    "| `dataset` | integer | Restrict results to specific dataset ID. |\n"
-    "| `size` | integer | Maximum results per query (default: 100). |\n\n"
-    "*Can also be specified as `prefix_length|fuzziness` (e.g., `2|1`). "
-)
+QUERY_PARAMETERS = """
+## Search Parameters
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `query` | string | Free-text search string. Required if no spatial or dataset filters are provided. |
+| `mode` | string | Search mode: `exact`, `fuzzy`* (default), `starts`, or `in`. **Coming soon**: `phonetic`, and eventually `ner` for LLM-based entity recognition. |
+| `fclasses` | array | Restrict to specific feature classes (e.g. `["A","L"]`). `X` (unknown) is always included. |
+*Can also be specified as `prefix_length|fuzziness` (e.g., `2|1`).
+
+## Temporal Filtering
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `start` | integer | Start year for temporal filtering. |
+| `end` | integer | End year for temporal filtering (defaults to current year). |
+
+## Spatial Filtering
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `countries` | array | Restrict results to country codes (ISO 2-letter). |
+| `bounds` | object | GeoJSON geometry collection for spatial restriction (ignored if `radius` and coordinates are given). |
+| `lat` | float | Latitude for circular search (with `lng` and `radius`). |
+| `lng` | float | Longitude for circular search (with `lat` and `radius`). |
+| `radius` | float | Radius in km for circular search (with `lat` and `lng`). |
+| `userareas` | array | IDs of user-defined stored areas for spatial filtering. |
+
+## Dataset Filtering
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `dataset` | integer | Restrict results to specific dataset ID. |
+
+## Data Completeness
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `unlocated` | boolean | Include results with no spatial metadata. |
+| `undated` | boolean | Include results with no temporal metadata. |
+
+## Response Control
+
+| Parameter | Type | Description |
+| --- | --- | --- |
+| `size` | integer | Maximum results per query (default: 100). |
+
+---
+"""
 
 
 def generic_schema(view_class: str):
@@ -180,6 +210,7 @@ def reconcile_schema():
         description=(
             "Retrieve service metadata including URLs, default types, and preview configuration. "
             "Supports token injection via query parameter and implements the Reconciliation Service API v0.2."
+            "\n\n{QUERY_PARAMETERS}"
         ),
         parameters=[
             OpenApiParameter(
