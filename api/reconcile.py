@@ -119,43 +119,43 @@ PROPOSE_PROPERTIES = [
     {
         "id": "whg:geometry",
         "name": "Geometry (WKT)",
-        "description": "The geometrical location of the place",
+        "description": "The geometrical location of the place, as a JSON array of WKT strings",
         "type": "string"
     },
     {
         "id": "whg:alt_names",
         "name": "Alternative names",
-        "description": "Alternative names or aliases for the place",
+        "description": "Alternative names or aliases for the place, as a JSON array of strings",
         "type": "string"
     },
     {
         "id": "whg:temporalRange",
         "name": "Temporal range (years)",
-        "description": "The temporal range(s) associated with the place record",
+        "description": "The temporal range(s) associated with the place record, as a JSON array",
         "type": "string"
     },
     {
         "id": "whg:dataset",
         "name": "Source dataset",
-        "description": "The source dataset from which the place record originates",
-        "type": {"id": "Dataset", "name": "Dataset"}
+        "description": "The source dataset from which the place record originates, as a JSON array of {id, name}",
+        "type": "string"
     },
     {
         "id": "whg:ccodes",
         "name": "Country codes",
-        "description": "The ISO 2-letter country codes associated with the place",
+        "description": "The ISO 2-letter country codes associated with the place, as a JSON array of strings",
         "type": "string"
     },
     {
         "id": "whg:fclasses",
         "name": "Feature classes",
-        "description": "The feature classes (e.g., 'A' for administrative regions, 'P' for populated places)",
+        "description": "The feature classes (e.g., 'A' for administrative regions, 'P' for populated places), as a JSON array of strings",
         "type": "string"
     },
     {
         "id": "whg:types",
         "name": "Types",
-        "description": "The types or categories associated with the place",
+        "description": "The types or categories associated with the place, as a JSON array of strings",
         "type": "string"
     },
 ]

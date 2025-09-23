@@ -245,25 +245,17 @@ def format_extend_row(place, properties, request=None):
         pid = prop.get("id") if isinstance(prop, dict) else prop
 
         if pid == "whg:geometry":
-            # Return JSON string of geometries
-            row[pid] = json.dumps([g.get("geowkt") for g in data.get("geoms", [])])
+            row[pid] = json.dumps([{"str": g.get("geowkt")} for g in data.get("geoms", []) if g.get("geowkt")])
         elif pid == "whg:alt_names":
-            row[pid] = json.dumps([n["toponym"] for n in data.get("names", [])])
+            row[pid] = json.dumps([{"str": n["toponym"]} for n in data.get("names", [])])
         elif pid == "whg:ccodes":
-            row[pid] = json.dumps(data.get("ccodes", []))
+            row[pid] = json.dumps([{"str": c} for c in data.get("ccodes", [])])
         elif pid == "whg:dataset":
-            dataset = data.get("dataset")
-            dataset_id = data.get("dataset_id")
-            # Return JSON string with id + name
-            row[pid] = json.dumps([{"id": dataset_id, "name": dataset}] if dataset else [])
+            row[pid] = json.dumps([{"id": str(data.get("dataset_id")), "name": data.get("dataset")}] if data.get("dataset") else [])
         elif pid == "whg:temporalRange":
-            row[pid] = json.dumps(data.get("whens", []))
-        elif pid == "whg:fclasses":
-            row[pid] = json.dumps(data.get("fclasses", []))
-        elif pid == "whg:types":
-            row[pid] = json.dumps([t["label"] for t in data.get("types", [])])
+            row[pid] = json.dumps([{"str": json.dumps(w)} for w in data.get("whens", [])])
         else:
-            row[pid] = None
+            row[pid] = json.dumps([])  # Empty array for unsupported properties
 
     return row
 
