@@ -123,7 +123,7 @@ class PlacePreviewSerializer(serializers.ModelSerializer):
     whens = PlaceWhenSerializer(many=True, read_only=True)
     class Meta:
         model = Place
-        fields = ["id", "names", "types", "ccodes", "fclasses", "whens", "dataset"]
+        fields = ["id", "title", "names", "types", "ccodes", "fclasses", "whens", "dataset"]
 
 
 class PlaceFeatureSerializer(serializers.ModelSerializer):
