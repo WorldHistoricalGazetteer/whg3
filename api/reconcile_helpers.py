@@ -245,17 +245,17 @@ def format_extend_row(place, properties, request=None):
         pid = prop.get("id") if isinstance(prop, dict) else prop
 
         if pid == "whg:geometry":
-            row[pid] = [g.get("geowkt") for g in data.get("geoms", [])]
+            row[pid] = [{"str": g.get("geowkt")} for g in data.get("geoms", []) if g.get("geowkt")]
         elif pid == "whg:alt_names":
-            row[pid] = [n["toponym"] for n in data.get("names", [])]
+            row[pid] = [{"str": n["toponym"]} for n in data.get("names", [])]
         elif pid == "whg:ccodes":
-            row[pid] = data.get("ccodes", [])
+            row[pid] = [{"str": c} for c in data.get("ccodes", [])]
         elif pid == "whg:dataset":
-            row[pid] = data.get("dataset")
+            row[pid] = [{"id": str(data.get("dataset_id")), "name": data.get("dataset")}] if data.get("dataset") else []
         elif pid == "whg:temporalRange":
-            row[pid] = data.get("whens", [])
+            row[pid] = [{"str": json.dumps(w)} for w in data.get("whens", [])]
         else:
-            row[pid] = None
+            row[pid] = []
 
     return row
 
