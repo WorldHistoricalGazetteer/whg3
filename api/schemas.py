@@ -118,6 +118,19 @@ Include results with no temporal metadata (default: true).
 
 ### Response Control
 
+**`geo_detail`** *(string)*  
+Geometry detail level: `full` (default), `centroid`, `bbox`, or `none`.
+- `full`: Complete geometry in specified format
+- `centroid`: Single point representing geometry center  
+- `bbox`: Bounding box as `[minLng, minLat, maxLng, maxLat]`
+- `none`: No geometry included in response
+
+**`geo_format`** *(string)*  
+Geometry output format: `wkt` (default), `geojson`, or `latlng`.
+- `wkt`: Well-Known Text format (e.g., `POINT(-0.1278 51.5074)`)
+- `geojson`: GeoJSON format (e.g., `{"type":"Point","coordinates":[-0.1278,51.5074]}`)
+- `latlng`: Separate latitude/longitude fields (based on centroid)
+
 **`size`** *(integer)*  
 Maximum results per query (default: 100, max: 1000).
 """
