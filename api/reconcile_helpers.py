@@ -199,6 +199,11 @@ def build_es_query(params, size=100):
     if geometry_filters:
         q["query"]["bool"]["must"].append({"bool": {"should": geometry_filters, "minimum_should_match": 1}})
 
+    # handle unlocated (default: true)
+    unlocated = params.get("unlocated")
+    if unlocated in [False, "false", "False", "0"]:  # explicitly false
+        q["query"]["bool"]["must"].append({"exists": {"field": "geoms.location"}})
+
     return q
 
 
