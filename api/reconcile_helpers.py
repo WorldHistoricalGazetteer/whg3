@@ -260,6 +260,7 @@ def format_extend_row(place, properties, request=None):
     return row
 
 
+@extend_schema_serializer(component_name=None)
 class ReconciliationRequestSerializer(serializers.Serializer):
     queries = serializers.DictField(
         required=False,
