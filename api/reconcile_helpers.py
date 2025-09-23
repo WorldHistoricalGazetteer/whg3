@@ -260,53 +260,6 @@ def format_extend_row(place, properties, request=None):
     return row
 
 
-@extend_schema_serializer(
-    examples=[
-        OpenApiExample(
-            name="Basic Reconciliation Request",
-            description="Example of reconciling place names",
-            value={
-                "queries": {
-                    "q0": {"query": "Edinburgh"},
-                    "q1": {"query": "Leeds"}
-                }
-            }
-        ),
-        OpenApiExample(
-            name="Advanced Reconciliation Request",
-            description="Search with custom fuzziness and with geographic and temporal constraints",
-            value={
-                "queries": {
-                    "q0": {
-                        "query": "London",
-                        "mode": "3|2",
-                        "countries": ["GB"],
-                        "start": 1800,
-                        "end": 1900,
-                        "lat": 51.5074,
-                        "lng": -0.1278,
-                        "radius": 10,
-                        "fclasses": ["P"],
-                        "size": 10
-                    }
-                }
-            }
-        ),
-        OpenApiExample(
-            name="Extend Request",
-            description="Example of extending places with additional properties",
-            value={
-                "extend": {
-                    "ids": ["6469500", "6469512"],
-                    "properties": [
-                        {"id": "whg:ccodes", "name": "Country codes"},
-                        {"id": "whg:geometry", "name": "Geometry (GeoJSON)"}
-                    ]
-                }
-            }
-        ),
-    ]
-)
 class ReconciliationRequestSerializer(serializers.Serializer):
     queries = serializers.DictField(
         required=False,
