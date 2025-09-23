@@ -27,7 +27,6 @@ from geopy.distance import geodesic
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.renderers import JSONRenderer
 from rest_framework.views import APIView
 
 from main.choices import FEATURE_CLASSES
@@ -63,7 +62,7 @@ SERVICE_METADATA = {
     },
     "preview": {  # HTML preview snippet
         "whg:Place": {
-            "url": DOMAIN + "place/preview/{{id}}/?token={{token}}",
+            "url": DOMAIN + "/place/preview/{{id}}/?token={{token}}",
             "width": 400,
             "height": 300,
         },
