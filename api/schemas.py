@@ -72,22 +72,22 @@ Free-text search string. Required if no spatial or dataset filters are provided.
 Search mode: `exact`, `fuzzy`* (default), `starts`, or `in`. **Coming soon**: `phonetic`, and eventually `ner` for LLM-based entity recognition.
 
 **`fclasses`** *(array)*  
-Restrict to specific feature classes. Valid values: `A` (Administrative), `H` (Hydrographic), `L` (Landscape), `P` (Populated places), `R` (Roads/routes), `S` (Sites), `T` (Topographic), `X` (unknown - always included). Format: `["A","L"]` or `A,L`.
+Restrict to specific feature classes. Valid values: `A` (Administrative), `H` (Hydrographic), `L` (Landscape), `P` (Populated places), `R` (Roads/routes), `S` (Sites), `T` (Topographic), `X` (unknown - always included). Format: `["A","L"]`.
 
 *Fuzzy mode can also be specified as `prefix_length|fuzziness` (e.g., `2|1`).*
 
 #### Temporal Filtering
 
 **`start`** *(integer)*  
-Start year for temporal filtering. Must be a valid 4-digit year.
+Start year for temporal filtering. Must be a valid year.
 
 **`end`** *(integer)*  
-End year for temporal filtering (default: current year). Must be ≥ `start` year.
+End year for temporal filtering (default: current year). Must be ≥ `start` year (if provided).
 
 #### Spatial Filtering
 
 **`countries`** *(array)*  
-Restrict results to ISO 3166-1 alpha-2 country codes. Format: `["US","GB"]` or `US,GB`.
+Restrict results to ISO 3166-1 alpha-2 country codes. Format: `["US","GB"]`.
 
 **`bounds`** *(object)*  
 GeoJSON geometry collection for spatial restriction. Ignored if circular search parameters are provided.  
@@ -100,15 +100,15 @@ Latitude for circular search (-90 to 90). Must be used with `lng` and `radius`.
 Longitude for circular search (-180 to 180). Must be used with `lat` and `radius`.
 
 **`radius`** *(float)*  
-Radius in kilometers for circular search (max: 1000km). Must be used with `lat` and `lng`.
+Radius in kilometers for circular search. Must be used with `lat` and `lng`.
 
 **`userareas`** *(array)*  
-IDs of user-defined stored areas for spatial filtering. Format: `[123,456]` or `123,456`.
+IDs of user-defined stored areas for spatial filtering. Format: `[123,456]`.
 
 ## Dataset Filtering
 
 **`dataset`** *(integer)*  
-Restrict results to specific dataset ID. Must be a valid dataset ID that the user has access to.
+Restrict results to specific dataset ID. Must be a valid dataset ID to which the user has access.
 
 #### Data Completeness
 
