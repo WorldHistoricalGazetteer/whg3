@@ -69,12 +69,10 @@ QUERY_PARAMETERS = """
 Free-text search string. Required if no spatial or dataset filters are provided.
 
 **`mode`** *(string)*  
-Search mode: `exact`, `fuzzy`* (default), `starts`, or `in`. **Coming soon**: `phonetic`, and eventually `ner` for LLM-based entity recognition.
+Search mode: `exact`, `fuzzy`* (default), `starts`, or `in`. Fuzzy mode can also be specified as `prefix_length|fuzziness` (e.g., `2|1`). **Coming soon**: `phonetic`, and eventually `ner` for LLM-based entity recognition.
 
 **`fclasses`** *(array)*  
 Restrict to specific feature classes. Valid values: `A` (Administrative), `H` (Hydrographic), `L` (Landscape), `P` (Populated places), `R` (Roads/routes), `S` (Sites), `T` (Topographic), `X` (unknown - always included). Format: `["A","L"]`.
-
-*Fuzzy mode can also be specified as `prefix_length|fuzziness` (e.g., `2|1`).*
 
 ### Temporal Filtering
 
@@ -184,78 +182,6 @@ def generic_schema(view_class: str):
     return extend_schema_view(**schema_dict)
 
 
-# def build_schema_view(
-#         *,
-#         methods: dict,
-#         tags: list[str],
-#         summary: str = "",
-#         description: str = "",
-#         parameters: list[OpenApiParameter] = None,
-#         responses: dict = None,
-#         request=None,
-#         examples: list[OpenApiExample] = None
-# ):
-#     """
-#     DRY wrapper for extend_schema_view.
-#     `methods`: dict mapping HTTP method names to True
-#     """
-#     schema_dict = {}
-#     for method in methods.keys():
-#         schema_dict[method] = extend_schema(
-#             tags=tags,
-#             summary=summary,
-#             description=description,
-#             parameters=parameters or [],
-#             responses=responses or {},
-#             request=request,
-#             examples=examples or [],
-#         )
-#     return extend_schema_view(**schema_dict)
-#
-#
-# def reconcile_schema():
-#     """Schema for the Reconciliation API root endpoint"""
-#     return build_schema_view(
-#         methods={"get": True, "post": True},
-#         tags=["Place Reconciliation API"],
-#         summary="Reconciliation Service metadata & queries",
-#         description=(
-#             "Retrieve service metadata including URLs, default types, and preview configuration. "
-#             "Supports token injection via query parameter and implements the Reconciliation Service API v0.2."
-#             f"\n\n{QUERY_PARAMETERS}"
-#         ),
-#         parameters=[
-#             OpenApiParameter(
-#                 name="token",
-#                 required=False,
-#                 type=OpenApiTypes.STR,
-#                 location=OpenApiParameter.QUERY,
-#                 description="API token to inject into preview URLs",
-#             ),
-#             OpenApiParameter(
-#                 name="queries",
-#                 type=OpenApiTypes.STR,
-#                 required=False,
-#                 location=OpenApiParameter.QUERY,
-#                 description="JSON object with reconciliation queries",
-#             ),
-#             OpenApiParameter(
-#                 name="extend",
-#                 type=OpenApiTypes.STR,
-#                 required=False,
-#                 location=OpenApiParameter.QUERY,
-#                 description="JSON object with extension request (ids + properties)",
-#             ),
-#         ],
-#         request=ReconciliationRequestSerializer,
-#         responses={
-#             200: OpenApiResponse(description="Successful reconciliation (queries) or extension (extend)"),
-#             400: OpenApiResponse(description="Invalid payload"),
-#             401: OpenApiResponse(description="Authentication failed"),
-#         },
-#     )
-
-
 def build_schema_view(
         *,
         methods: dict,
@@ -321,15 +247,6 @@ def reconcile_schema():
                     "Retrieve service metadata including URLs, default types, and preview configuration. "
                     "Returns the service manifest as per Reconciliation Service API v0.2."
                 ),
-                "parameters": [
-                    OpenApiParameter(
-                        name="token",
-                        required=False,
-                        type=OpenApiTypes.STR,
-                        location=OpenApiParameter.QUERY,
-                        description="API token to inject into preview URLs",
-                    ),
-                ],
             },
             "post": {
                 "summary": "Submit Reconciliation queries",
