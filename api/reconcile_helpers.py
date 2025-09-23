@@ -244,37 +244,20 @@ def format_extend_row(place, properties, request=None):
     for prop in properties:
         pid = prop.get("id") if isinstance(prop, dict) else prop
 
-        # Get raw value first
         if pid == "whg:geometry":
-            value = [g.get("geowkt") for g in data.get("geoms", [])]
+            row[pid] = [{"str": g.get("geowkt")} for g in data.get("geoms", []) if g.get("geowkt")]
         elif pid == "whg:alt_names":
-            value = [n["toponym"] for n in data.get("names", [])]
+            row[pid] = [{"str": n["toponym"]} for n in data.get("names", [])]
         elif pid == "whg:ccodes":
-            value = data.get("ccodes", [])
+            row[pid] = [{"str": c} for c in data.get("ccodes", [])]
         elif pid == "whg:dataset":
-            value = data.get("dataset")
+            row[pid] = [{"id": str(data.get("dataset_id")), "name": data.get("dataset")}] if data.get("dataset") else []
         elif pid == "whg:temporalRange":
-            value = data.get("whens", [])
-        elif pid == "whg:fclasses":
-            value = data.get("fclasses", [])
-        elif pid == "whg:types":
-            value = data.get("types", [])
+            row[pid] = [{"str": json.dumps(w)} for w in data.get("whens", [])]
         else:
-            value = None
-
-        # Format arrays as string only if >1 item, single item as string, empty as ""
-        if isinstance(value, (list, tuple)):
-            if len(value) == 0:
-                row[pid] = ""
-            elif len(value) == 1:
-                row[pid] = str(value[0])
-            else:
-                row[pid] = "[" + ", ".join(str(x) for x in value) + "]"
-        else:
-            row[pid] = value if value is not None else ""
+            row[pid] = []
 
     return row
-
 
 
 @extend_schema_serializer(
