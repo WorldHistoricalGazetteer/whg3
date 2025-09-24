@@ -7,7 +7,107 @@ from api.serializers import PlaceNameSerializer, PlaceTypeSerializer, PlaceGeomS
 from areas.models import Area
 from collection.models import Collection
 from datasets.models import Dataset
-from places.models import Place
+from places.models import Place, PlaceGeom
+
+from rest_framework import serializers
+from shapely.geometry import shape, mapping
+from shapely.ops import transform
+from pyproj import CRS, Transformer
+
+class APIPlaceGeomSerializer(serializers.ModelSerializer):
+    """
+    PlaceGeom serializer with computed geometry helpers:
+    - geojson: full geometry object from jsonb
+    - geowkt: WKT string derived from jsonb
+    - bbox: [minLng, minLat, maxLng, maxLat]
+    - centroid: [lng, lat] in WGS84
+    """
+
+    ds = serializers.SerializerMethodField()
+    geom = serializers.ReadOnlyField(source="jsonb")
+
+    type = serializers.ReadOnlyField(source="jsonb.type")
+    coordinates = serializers.ReadOnlyField(source="jsonb.coordinates")
+    citation = serializers.ReadOnlyField(source="jsonb.citation")
+    when = serializers.ReadOnlyField(source="jsonb.when")
+    certainty = serializers.ReadOnlyField(source="jsonb.certainty")
+
+    geojson = serializers.SerializerMethodField()
+    geowkt = serializers.SerializerMethodField()
+    bbox = serializers.SerializerMethodField()
+    centroid = serializers.SerializerMethodField()
+
+    def get_ds(self, obj):
+        return obj.place.dataset.id
+
+    def _shapely_geom(self, obj):
+        jb = getattr(obj, "jsonb", None)
+        if not jb:
+            return None
+        try:
+            return shape(jb)
+        except Exception:
+            return None
+
+    def get_geojson(self, obj):
+        return getattr(obj, "jsonb", None)
+
+    def get_geowkt(self, obj):
+        g = self._shapely_geom(obj)
+        return g.wkt if g else None
+
+    def get_bbox(self, obj):
+        g = self._shapely_geom(obj)
+        if not g:
+            return None
+        minx, miny, maxx, maxy = g.bounds
+        return [minx, miny, maxx, maxy]
+
+    def get_centroid(self, obj):
+        g = self._shapely_geom(obj)
+        if not g:
+            return None
+        try:
+            # pick a local equal-area projection centred on bbox midpoint
+            minx, miny, maxx, maxy = g.bounds
+            cx = (minx + maxx) / 2
+            cy = (miny + maxy) / 2
+            crs_wgs84 = CRS.from_epsg(4326)
+            local_crs = CRS.from_proj4(
+                f"+proj=aea +lat_0={cy} +lon_0={cx} "
+                "+lat_1={0} +lat_2={1}".format(cy - 10, cy + 10)
+            )
+            transformer_to_local = Transformer.from_crs(crs_wgs84, local_crs, always_xy=True).transform
+            transformer_to_wgs = Transformer.from_crs(local_crs, crs_wgs84, always_xy=True).transform
+
+            g_local = transform(transformer_to_local, g)
+            c_local = g_local.centroid
+            c_wgs = transform(transformer_to_wgs, c_local)
+            return [c_wgs.x, c_wgs.y]
+        except Exception:
+            # fallback: shapely centroid in WGS84
+            c = g.centroid
+            return [c.x, c.y]
+
+    class Meta:
+        model = PlaceGeom
+        fields = (
+            "place_id",
+            "src_id",
+            "type",
+            "geowkt",
+            "coordinates",
+            "geom_src",
+            "citation",
+            "when",
+            "title",
+            "ds",
+            "certainty",
+            "geom",
+            "geojson",
+            "bbox",
+            "centroid",
+        )
 
 
 class AreaFeatureSerializer(serializers.ModelSerializer):
@@ -139,7 +239,7 @@ class PlaceFeatureSerializer(serializers.ModelSerializer):
 
     names = PlaceNameSerializer(many=True, read_only=True)
     types = PlaceTypeSerializer(many=True, read_only=True)
-    geoms = PlaceGeomSerializer(many=True, read_only=True)
+    geoms = APIPlaceGeomSerializer(many=True, read_only=True)
     extent = serializers.ReadOnlyField()
     links = PlaceLinkSerializer(many=True, read_only=True)
     related = PlaceRelatedSerializer(many=True, read_only=True)

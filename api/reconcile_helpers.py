@@ -250,6 +250,11 @@ def format_extend_row(place, properties, request=None):
     data = serializer.data
     row = {}
 
+    def prepend_if_missing(names_list, title):
+        if title and not any(n.get("toponym") == title for n in names_list):
+            return [{"toponym": title, "jsonb": {"status": "preferred"}}] + names_list
+        return names_list
+
     for prop in properties:
         pid = prop.get("id") if isinstance(prop, dict) else prop
 
@@ -263,25 +268,25 @@ def format_extend_row(place, properties, request=None):
             })}]
 
         elif pid == "whg:names_canonical":
-            # Get preferred name or first name
-            names = data.get("names", [])
-            canonical = next((n["toponym"] for n in names if n.get("status") == "preferred"),
-                             names[0]["toponym"] if names else data.get("title", ""))
-            row[pid] = [{"str": canonical}] if canonical else []
+            row[pid] = [{"str": data.get("title")}] if data.get("title") else []
 
         elif pid == "whg:names_array":
-            row[pid] = [{"str": json.dumps(data.get("names", []))}]
+            names = data.get("names", [])
+            names = prepend_if_missing(names, data.get("title"))
+            row[pid] = [{"str": json.dumps(names)}] if names else []
 
         elif pid == "whg:names_summary":
-            row[pid] = [{"str": n["toponym"]} for n in data.get("names", [])]
+            names = data.get("names", [])
+            names = prepend_if_missing(names, data.get("title"))
+            row[pid] = [{"str": n["toponym"]} for n in names] if names else []
 
         elif pid == "whg:geometry_wkt":
             row[pid] = [{"str": g.get("geowkt")} for g in data.get("geoms", []) if g.get("geowkt")]
 
-        elif pid == "whg:geometry_geojson":
+        elif pid == "whg:geometry_geojson": # TODO
             row[pid] = [{"str": json.dumps(g.get("geojson"))} for g in data.get("geoms", []) if g.get("geojson")]
 
-        elif pid == "whg:geometry_centroid":
+        elif pid == "whg:geometry_centroid": # TODO
             geoms = data.get("geoms", [])
             if geoms and geoms[0].get("centroid"):
                 centroid = geoms[0]["centroid"]
@@ -289,14 +294,14 @@ def format_extend_row(place, properties, request=None):
             else:
                 row[pid] = []
 
-        elif pid == "whg:geometry_bbox":
+        elif pid == "whg:geometry_bbox": # TODO
             geoms = data.get("geoms", [])
             if geoms and geoms[0].get("bbox"):
                 row[pid] = [{"str": json.dumps(geoms[0]["bbox"])}]
             else:
                 row[pid] = []
 
-        elif pid == "whg:temporal":
+        elif pid == "whg:temporal": # TODO - Not sure that this is working.
             # Modern timespan objects
             timespans = []
             for when in data.get("whens", []):
@@ -311,7 +316,7 @@ def format_extend_row(place, properties, request=None):
                     timespans.append(timespan)
             row[pid] = [{"str": json.dumps(timespans)}] if timespans else []
 
-        elif pid == "whg:temporal_legacy":
+        elif pid == "whg:temporal_legacy": # TODO: Is this really legacy, or still useful? Not sure that it's working in any case.
             # Simple string ranges for backwards compatibility
             legacy_ranges = []
             for when in data.get("whens", []):
@@ -364,14 +369,14 @@ def format_extend_row(place, properties, request=None):
         elif pid == "whg:types_objects":
             row[pid] = [{"str": json.dumps(data.get("types", []))}]
 
-        elif pid == "whg:dataset":
+        elif pid == "whg:dataset": # TODO - add facet to schema to return as an object with API URI
             dataset_info = data.get("dataset")
             if dataset_info:
                 row[pid] = [{"str": json.dumps(dataset_info)}]
             else:
                 row[pid] = []
 
-        elif pid == "whg:lpf_feature":
+        elif pid == "whg:lpf_feature": # TODO - loads into OpenRefine, but needs to be expanded
             lpf_feature = build_lpf_feature(place, data)
             row[pid] = [{"str": json.dumps(lpf_feature)}] if lpf_feature else []
 
