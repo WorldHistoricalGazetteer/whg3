@@ -248,25 +248,176 @@ def format_extend_row(place, properties, request=None):
     """
     serializer = PlaceSerializer(place, context={"request": request})
     data = serializer.data
-
     row = {}
+
     for prop in properties:
         pid = prop.get("id") if isinstance(prop, dict) else prop
 
-        if pid == "whg:geometry":
-            row[pid] = [{"str": g.get("geowkt")} for g in data.get("geoms", []) if g.get("geowkt")]
-        elif pid == "whg:alt_names":
+        if pid == "whg:id_short":
+            row[pid] = [{"str": f"https://whgazetteer.org/place/{place.id}"}]
+
+        elif pid == "whg:id_object":
+            row[pid] = [{"str": json.dumps({
+                "id": f"https://whgazetteer.org/place/{place.id}",
+                "label": data.get("title", "")
+            })}]
+
+        elif pid == "whg:names_canonical":
+            # Get preferred name or first name
+            names = data.get("names", [])
+            canonical = next((n["toponym"] for n in names if n.get("status") == "preferred"),
+                             names[0]["toponym"] if names else data.get("title", ""))
+            row[pid] = [{"str": canonical}] if canonical else []
+
+        elif pid == "whg:names_array":
+            row[pid] = [{"str": json.dumps(data.get("names", []))}]
+
+        elif pid == "whg:names_summary":
             row[pid] = [{"str": n["toponym"]} for n in data.get("names", [])]
-        elif pid == "whg:ccodes":
+
+        elif pid == "whg:geometry_wkt":
+            row[pid] = [{"str": g.get("geowkt")} for g in data.get("geoms", []) if g.get("geowkt")]
+
+        elif pid == "whg:geometry_geojson":
+            row[pid] = [{"str": json.dumps(g.get("geojson"))} for g in data.get("geoms", []) if g.get("geojson")]
+
+        elif pid == "whg:geometry_centroid":
+            geoms = data.get("geoms", [])
+            if geoms and geoms[0].get("centroid"):
+                centroid = geoms[0]["centroid"]
+                row[pid] = [{"str": json.dumps({"lat": centroid[1], "lng": centroid[0]})}]
+            else:
+                row[pid] = []
+
+        elif pid == "whg:geometry_bbox":
+            geoms = data.get("geoms", [])
+            if geoms and geoms[0].get("bbox"):
+                row[pid] = [{"str": json.dumps(geoms[0]["bbox"])}]
+            else:
+                row[pid] = []
+
+        elif pid == "whg:temporal":
+            # Modern timespan objects
+            timespans = []
+            for when in data.get("whens", []):
+                timespan = {}
+                if when.get("begin"):
+                    timespan["begin"] = when["begin"]
+                if when.get("end"):
+                    timespan["end"] = when["end"]
+                if when.get("note"):
+                    timespan["note"] = when["note"]
+                if timespan:
+                    timespans.append(timespan)
+            row[pid] = [{"str": json.dumps(timespans)}] if timespans else []
+
+        elif pid == "whg:temporal_legacy":
+            # Simple string ranges for backwards compatibility
+            legacy_ranges = []
+            for when in data.get("whens", []):
+                if when.get("minmax"):
+                    legacy_ranges.append(f"{when['minmax'][0]}-{when['minmax'][1]}")
+            row[pid] = [{"str": r} for r in legacy_ranges]
+
+        elif pid == "whg:countries_codes":
             row[pid] = [{"str": c} for c in data.get("ccodes", [])]
+
+        elif pid == "whg:countries_objects":
+            countries = []
+            for code in data.get("ccodes", []):
+                countries.append({
+                    "code": code,
+                    "uri": f"http://id.loc.gov/vocabulary/iso3166/{code.lower()}",
+                    "label": code  # You might want to map this to full country names
+                })
+            row[pid] = [{"str": json.dumps(countries)}] if countries else []
+
+        elif pid == "whg:classes_codes":
+            row[pid] = [{"str": fc} for fc in data.get("fclasses", [])]
+
+        elif pid == "whg:classes_objects":
+            # Map feature class codes to objects with labels
+            fclass_map = {
+                "A": {"code": "A", "label": "Administrative boundary",
+                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#A"},
+                "H": {"code": "H", "label": "Hydrographic",
+                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#H"},
+                "L": {"code": "L", "label": "Area",
+                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#L"},
+                "P": {"code": "P", "label": "Populated place",
+                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#P"},
+                "R": {"code": "R", "label": "Road / Railroad",
+                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#R"},
+                "S": {"code": "S", "label": "Spot / Building / Farm",
+                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#S"},
+                "T": {"code": "T", "label": "Hypsographic",
+                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#T"},
+                "U": {"code": "U", "label": "Undersea",
+                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#U"},
+                "V": {"code": "V", "label": "Vegetation",
+                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#V"}
+            }
+            classes = [fclass_map.get(fc, {"code": fc, "label": "Unknown", "reference": ""})
+                       for fc in data.get("fclasses", []) if fc in fclass_map]
+            row[pid] = [{"str": json.dumps(classes)}] if classes else []
+
+        elif pid == "whg:types_objects":
+            row[pid] = [{"str": json.dumps(data.get("types", []))}]
+
         elif pid == "whg:dataset":
-            row[pid] = [{"str": data.get("dataset")}] if data.get("dataset") else []
-        elif pid == "whg:temporalRange":
-            row[pid] = [{"str": json.dumps(w)} for w in data.get("whens", [])]
+            dataset_info = data.get("dataset")
+            if dataset_info:
+                row[pid] = [{"str": json.dumps(dataset_info)}]
+            else:
+                row[pid] = []
+
+        elif pid == "whg:lpf_feature":
+            lpf_feature = build_lpf_feature(place, data)
+            row[pid] = [{"str": json.dumps(lpf_feature)}] if lpf_feature else []
+
         else:
+            # Unknown property ID
             row[pid] = []
 
     return row
+
+
+def build_lpf_feature(place, serialized_data):
+    """
+    Build a complete Linked Places Format GeoJSON Feature
+    TODO: This is a placeholder - augment according to exact LPF structure
+    """
+    lpf_feature = {
+        "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
+        "type": "Feature",
+        "properties": {
+            "id": str(place.id),
+            "title": serialized_data.get("title", ""),
+            "ccodes": serialized_data.get("ccodes", [])
+        }
+    }
+
+    # Add geometry if available
+    geoms = serialized_data.get("geoms", [])
+    if geoms and geoms[0].get("geojson"):
+        lpf_feature["geometry"] = geoms[0]["geojson"]
+
+    # Add names
+    names = serialized_data.get("names", [])
+    if names:
+        lpf_feature["properties"]["names"] = names
+
+    # Add temporal data
+    whens = serialized_data.get("whens", [])
+    if whens:
+        lpf_feature["properties"]["when"] = whens
+
+    # Add types
+    types = serialized_data.get("types", [])
+    if types:
+        lpf_feature["properties"]["types"] = types
+
+    return lpf_feature
 
 
 @extend_schema_serializer(component_name=None)
