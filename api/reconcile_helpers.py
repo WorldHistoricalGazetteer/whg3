@@ -8,7 +8,7 @@ from datetime import datetime
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
-from api.serializers import PlaceSerializer
+from api.serializers_api import PlaceFeatureSerializer
 from areas.models import Area
 from whg import settings
 
@@ -248,7 +248,7 @@ def format_extend_row(place, properties, request=None):
     """
 
     # TODO: Optimize by avoiding full serialization if only a few fields are needed.
-    serializer = PlaceSerializer(place, context={"request": request})
+    serializer = PlaceFeatureSerializer(place, context={"request": request})
     data = serializer.data
     row = {}
 
@@ -297,7 +297,7 @@ def format_extend_row(place, properties, request=None):
         elif pid == "whg:geometry_bbox":
             row[pid] = [{"str": ", ".join(map(str, g["bbox"]))} for g in data.get("geoms", []) if g.get("bbox")]
 
-        elif pid == "whg:temporal": # TODO - Not sure that this is working.
+        elif pid == "whg:temporal":  # TODO - Not sure that this is working.
             # Modern timespan objects
             timespans = []
             for when in data.get("whens", []):
@@ -312,7 +312,7 @@ def format_extend_row(place, properties, request=None):
                     timespans.append(timespan)
             row[pid] = [{"str": json.dumps(timespans)}] if timespans else []
 
-        elif pid == "whg:temporal_legacy": # TODO: Is this really legacy, or still useful? Not sure that it's working in any case.
+        elif pid == "whg:temporal_legacy":  # TODO: Is this really legacy, or still useful? Not sure that it's working in any case.
             # Simple string ranges for backwards compatibility
             legacy_ranges = []
             for when in data.get("whens", []):
@@ -365,14 +365,14 @@ def format_extend_row(place, properties, request=None):
         elif pid == "whg:types_objects":
             row[pid] = [{"str": json.dumps(data.get("types", []))}]
 
-        elif pid == "whg:dataset": # TODO - add facet to schema to return as an object with API URI
+        elif pid == "whg:dataset":  # TODO - add facet to schema to return as an object with API URI
             dataset_info = data.get("dataset")
             if dataset_info:
                 row[pid] = [{"str": json.dumps(dataset_info)}]
             else:
                 row[pid] = []
 
-        elif pid == "whg:lpf_feature": # TODO - loads into OpenRefine, but needs to be expanded
+        elif pid == "whg:lpf_feature":  # TODO - loads into OpenRefine, but needs to be expanded
             lpf_feature = build_lpf_feature(place, data)
             row[pid] = [{"str": json.dumps(lpf_feature)}] if lpf_feature else []
 
