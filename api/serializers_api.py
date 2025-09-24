@@ -50,11 +50,16 @@ class APIPlaceGeomSerializer(serializers.ModelSerializer):
             return None
 
     def get_geojson(self, obj):
-        return getattr(obj, "jsonb", None)
+        geojson = getattr(obj, "jsonb", None)
+        if not geojson:
+            return None
+        return {k: v for k, v in geojson.items() if k != "geowkt"}
 
     def get_geowkt(self, obj):
-        g = self._shapely_geom(obj)
-        return g.wkt if g else None
+        geojson = getattr(obj, "jsonb", None)
+        if not geojson:
+            return None
+        return geojson.get("geowkt")
 
     def get_bbox(self, obj):
         g = self._shapely_geom(obj)
