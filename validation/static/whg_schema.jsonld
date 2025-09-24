@@ -191,7 +191,7 @@
       "whg:example": "31.1989,29.9174,31.2013,29.9200",
       "whg:apiView": {
         "id": "whg:geometry_bbox",
-        "name": "Bounding box",
+        "name": "Geometry (bounding box)",
         "description": "Bounding box [minLng, minLat, maxLng, maxLat]."
       }
     },

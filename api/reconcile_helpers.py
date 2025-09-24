@@ -246,9 +246,13 @@ def format_extend_row(place, properties, request=None):
     - place: Place instance.
     - properties: list of property dicts or strings.
     """
+
+    # TODO: Optimize by avoiding full serialization if only a few fields are needed.
     serializer = PlaceSerializer(place, context={"request": request})
     data = serializer.data
     row = {}
+
+    logger.debug(f"Serializing place ID {place.id} with data: {data}")
 
     def prepend_if_missing(names_list, title):
         if title and not any(n.get("toponym") == title for n in names_list):
@@ -287,10 +291,11 @@ def format_extend_row(place, properties, request=None):
             row[pid] = [{"str": json.dumps(g.get("geojson"))} for g in data.get("geoms", []) if g.get("geojson")]
 
         elif pid == "whg:geometry_centroid":
-            row[pid] = [{"str": json.dumps(g.get("centroid"))} for g in data.get("geoms", []) if g.get("centroid")]
+            row[pid] = [{"str": f"{g['centroid'][1]}, {g['centroid'][0]}"} for g in data.get("geoms", []) if
+                        g.get("centroid")]
 
         elif pid == "whg:geometry_bbox":
-            row[pid] = [{"str": json.dumps(g.get("bbox"))} for g in data.get("geoms", []) if g.get("bbox")]
+            row[pid] = [{"str": ", ".join(map(str, g["bbox"]))} for g in data.get("geoms", []) if g.get("bbox")]
 
         elif pid == "whg:temporal": # TODO - Not sure that this is working.
             # Modern timespan objects
