@@ -203,27 +203,29 @@
       "rdfs:comment": "Structured temporal coverage. LPF-compatible 'timespan' objects are recommended (begin, end, circa, note). A simple string range YYYY-YYYY is allowed for legacy records.",
       "rdfs:domain": "whg:Place",
       "rdfs:range": "lpf:Timespan",
-      "whg:example": {
-        "timespans": [
-          {
-            "begin": "1200-01-01",
-            "end": "1600-12-31",
-            "precision": "year",
-            "note": "Primary attested range in historical sources."
-          }
-        ],
-        "legacy": "1200-1600"
-      },
+      "whg:example": [
+        {
+          "timespans": [
+            {
+              "begin": "1200-01-01",
+              "end": "1600-12-31",
+              "precision": "year",
+              "note": "Primary attested range in historical sources."
+            }
+          ]
+        },
+        "1200-1600"
+      ],
       "whg:apiView": [
         {
-          "id": "whg:temporal",
-          "name": "Temporal range (timespans)",
+          "id": "whg:temporal_objects",
+          "name": "Temporal (objects)",
           "description": "Array of timespan objects."
         },
         {
-          "id": "whg:temporal_legacy",
-          "name": "Temporal (legacy)",
-          "description": "Simple legacy string ranges for backwards compatibility."
+          "id": "whg:temporal_years",
+          "name": "Temporal (years)",
+          "description": "Year range as {start, end}."
         }
       ]
     },
