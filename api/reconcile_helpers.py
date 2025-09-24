@@ -283,23 +283,14 @@ def format_extend_row(place, properties, request=None):
         elif pid == "whg:geometry_wkt":
             row[pid] = [{"str": g.get("geowkt")} for g in data.get("geoms", []) if g.get("geowkt")]
 
-        elif pid == "whg:geometry_geojson": # TODO
+        elif pid == "whg:geometry_geojson":
             row[pid] = [{"str": json.dumps(g.get("geojson"))} for g in data.get("geoms", []) if g.get("geojson")]
 
-        elif pid == "whg:geometry_centroid": # TODO
-            geoms = data.get("geoms", [])
-            if geoms and geoms[0].get("centroid"):
-                centroid = geoms[0]["centroid"]
-                row[pid] = [{"str": json.dumps({"lat": centroid[1], "lng": centroid[0]})}]
-            else:
-                row[pid] = []
+        elif pid == "whg:geometry_centroid":
+            row[pid] = [{"str": json.dumps(g.get("centroid"))} for g in data.get("geoms", []) if g.get("centroid")]
 
-        elif pid == "whg:geometry_bbox": # TODO
-            geoms = data.get("geoms", [])
-            if geoms and geoms[0].get("bbox"):
-                row[pid] = [{"str": json.dumps(geoms[0]["bbox"])}]
-            else:
-                row[pid] = []
+        elif pid == "whg:geometry_bbox":
+            row[pid] = [{"str": json.dumps(g.get("bbox"))} for g in data.get("geoms", []) if g.get("bbox")]
 
         elif pid == "whg:temporal": # TODO - Not sure that this is working.
             # Modern timespan objects
