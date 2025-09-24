@@ -1,14 +1,18 @@
 # /api/reconcile_helpers.py
 
 import json
+import logging
+import os
 from datetime import datetime
 
-from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
+from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
 from api.serializers import PlaceSerializer
 from areas.models import Area
 from whg import settings
+
+logger = logging.getLogger('reconciliation')
 
 ELASTIC_INDICES = "whg,pub,wdgn"  # or options from "whg,pub,wdgn"
 
@@ -274,3 +278,59 @@ class ReconciliationRequestSerializer(serializers.Serializer):
     extend = serializers.DictField(
         required=False,
     )
+
+
+def get_propose_properties(schema_file):
+    """
+    Parses a WHG schema from a local file and constructs the PROPOSE_PROPERTIES list.
+
+    Args:
+        schema_file (str): The local file path to the WHG schema.
+
+    Returns:
+        list: A list of dictionaries for reconciliation API properties.
+    """
+    import json
+
+    if not os.path.exists(schema_file):
+        logger.error(f"Schema file not found at: {schema_file}")
+        return []
+
+    try:
+        with open(schema_file, 'r', encoding='utf-8') as f:
+            schema = json.load(f)
+    except Exception as e:
+        logger.error(f"Error loading JSON from {schema_file}: {e}")
+        return []
+
+    propose_properties = []
+
+    # Iterate through the @graph array
+    for item in schema.get('@graph', []):
+        if item.get('@type') == 'rdf:Property':
+            # Check for whg:apiView
+            api_views = item.get('whg:apiView', [])
+
+            # Handle both single object and array of objects
+            if isinstance(api_views, dict):
+                api_views = [api_views]
+
+            for view in api_views:
+                if isinstance(view, dict) and all(k in view for k in ['id', 'name', 'description']):
+                    propose_properties.append({
+                        "id": view['id'],
+                        "name": view['name'],
+                        "description": view['description'],
+                        "type": "string"
+                    })
+
+    # Add special properties
+    propose_properties.append({
+        "id": "whg:lpf_feature",
+        "name": "Linked Places Format Feature",
+        "description": "Complete place record as a Linked Places Format GeoJSON Feature with full properties, names, geometry, and links",
+        "type": "string"
+    })
+
+    logger.debug(f"Generated {len(propose_properties)} propose properties via JSON parsing")
+    return propose_properties

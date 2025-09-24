@@ -32,7 +32,7 @@ from rest_framework.views import APIView
 from main.choices import FEATURE_CLASSES
 from places.models import Place
 from .authentication import AuthenticatedAPIView, TokenQueryOrBearerAuthentication
-from .reconcile_helpers import make_candidate, format_extend_row, es_search
+from .reconcile_helpers import make_candidate, format_extend_row, es_search, get_propose_properties
 from .schemas import reconcile_schema, propose_properties_schema, suggest_entity_schema, suggest_property_schema
 
 logger = logging.getLogger('reconciliation')
@@ -42,7 +42,13 @@ DOCS_URL = "https://docs.whgazetteer.org/content/400-Technical.html#reconciliati
 TILESERVER_URL = os.environ.get('TILEBOSS', 'https://tiles.whgazetteer.org').rstrip('/')
 MAX_EARTH_RADIUS_KM = math.pi * 6371  # ~20015 km
 VALID_FCODES = {fc for fc, _ in FEATURE_CLASSES}
-SCHEMA_SPACE = DOMAIN + "/static/whg_schema.jsonld"
+SCHEMA_FILE = "/static/whg_schema.jsonld"
+SCHEMA_SPACE = DOMAIN + SCHEMA_FILE
+PROPOSE_PROPERTIES = get_propose_properties(f"validation{SCHEMA_FILE}")
+
+logger.debug(
+    f"Reconciliation service initialized with SCHEMA_SPACE: {SCHEMA_SPACE} and PROPOSE_PROPERTIES:\n{json.dumps(PROPOSE_PROPERTIES, indent=2)}"
+)
 
 SERVICE_METADATA = {
     "versions": ["0.2"],
@@ -114,93 +120,6 @@ SERVICE_METADATA = {
         "in": "query",
     }
 }
-
-PROPOSE_PROPERTIES = [
-    {
-        "id": "whg:lpf_feature",
-        "name": "Linked Places Format Feature",
-        "description": "Complete place record as a Linked Places Format GeoJSON Feature with full properties, names, geometry, and links",
-        "type": "string"
-    },
-    {
-        "id": "whg:geo_wkt",
-        "name": "Geometry (WKT)",
-        "description": "The geometrical location of the place, as a JSON array of WKT strings",
-        "type": "string"
-    },
-    {
-        "id": "whg:geo_geojson",
-        "name": "Geometry (GeoJSON)",
-        "description": "The geometrical location of the place as GeoJSON geometry objects",
-        "type": "string"
-    },
-    {
-        "id": "whg:geo_centroid_wkt",
-        "name": "Geometry (Centroid WKT)",
-        "description": "Representative point of the place geometry as WKT POINT",
-        "type": "string"
-    },
-    {
-        "id": "whg:geo_centroid_geojson",
-        "name": "Geometry (Centroid GeoJSON)",
-        "description": "Representative point of the place geometry as GeoJSON Point",
-        "type": "string"
-    },
-    {
-        "id": "whg:geo_centroid_lat",
-        "name": "Geometry (Centroid Lat)",
-        "description": "Latitude of representative point",
-        "type": "string"
-    },
-    {
-        "id": "whg:geo_centroid_lng",
-        "name": "Geometry (Centroid Lng)",
-        "description": "Longitude of representative point",
-        "type": "string"
-    },
-    {
-        "id": "whg:geo_bbox",
-        "name": "Geometry (Bounding Box)",
-        "description": "Bounding box of the place geometry as [minLng, minLat, maxLng, maxLat]",
-        "type": "string"
-    },
-    {
-        "id": "whg:alt_names",
-        "name": "Alternative names",
-        "description": "Alternative names or aliases for the place, as a JSON array of strings",
-        "type": "string"
-    },
-    {
-        "id": "whg:temporalRange",
-        "name": "Temporal range (years)",
-        "description": "The temporal range(s) associated with the place record, as a JSON array",
-        "type": "string"
-    },
-    {
-        "id": "whg:dataset",
-        "name": "Source dataset",
-        "description": "The source dataset from which the place record originates, as a JSON array of {id, name}",
-        "type": "string"
-    },
-    {
-        "id": "whg:ccodes",
-        "name": "Country codes",
-        "description": "The ISO 2-letter country codes associated with the place, as a JSON array of strings",
-        "type": "string"
-    },
-    {
-        "id": "whg:fclasses",
-        "name": "Feature classes",
-        "description": "The feature classes (e.g., 'A' for administrative regions, 'P' for populated places), as a JSON array of strings",
-        "type": "string"
-    },
-    {
-        "id": "whg:types",
-        "name": "Types",
-        "description": "The types or categories associated with the place, as a JSON array of strings",
-        "type": "string"
-    },
-]
 
 
 def json_error(message, status=400):
