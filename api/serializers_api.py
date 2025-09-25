@@ -5,8 +5,8 @@ from rest_framework import serializers
 from shapely.geometry import shape
 from shapely.ops import transform
 
-from api.reconcile_helpers import OptimizedPlaceSerializer
-from api.serializers import PlaceNameSerializer, PlaceTypeSerializer, PlaceWhenSerializer
+from api.serializers import PlaceNameSerializer, PlaceTypeSerializer, PlaceWhenSerializer, PlaceLinkSerializer, \
+    PlaceRelatedSerializer, PlaceDescriptionSerializer, PlaceDepictionSerializer
 from areas.models import Area
 from collection.models import Collection
 from datasets.models import Dataset
@@ -229,6 +229,44 @@ class PlacePreviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Place
         fields = ["id", "title", "names", "types", "ccodes", "fclasses", "whens", "dataset"]
+
+
+class OptimizedPlaceSerializer(serializers.ModelSerializer):
+    """
+    Optimized serializer that only includes requested fields.
+    """
+    dataset = serializers.ReadOnlyField(source="dataset.title")
+    dataset_id = serializers.ReadOnlyField(source="dataset.id")
+
+    names = PlaceNameSerializer(many=True, read_only=True)
+    types = PlaceTypeSerializer(many=True, read_only=True)
+    geoms = APIPlaceGeomSerializer(many=True, read_only=True)
+    whens = PlaceWhenSerializer(many=True, read_only=True)
+    links = PlaceLinkSerializer(many=True, read_only=True)
+    related = PlaceRelatedSerializer(many=True, read_only=True)
+    descriptions = PlaceDescriptionSerializer(many=True, read_only=True)
+    depictions = PlaceDepictionSerializer(many=True, read_only=True)
+
+    def __init__(self, *args, **kwargs):
+        # Remove fields parameter from kwargs if it exists
+        fields = kwargs.pop('fields', None)
+        super().__init__(*args, **kwargs)
+
+        if fields is not None:
+            # Drop any fields that are not specified in the `fields` argument
+            allowed = set(fields)
+            existing = set(self.fields)
+            for field_name in existing - allowed:
+                self.fields.pop(field_name)
+
+    class Meta:
+        model = Place
+        fields = (
+            "id", "title", "ccodes", "fclasses",
+            "names", "types", "geoms", "extent", "whens",
+            "links", "related", "descriptions", "depictions",
+            "dataset", "dataset_id"
+        )
 
 
 class PlaceFeatureSerializer(OptimizedPlaceSerializer):

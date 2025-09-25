@@ -8,11 +8,7 @@ from datetime import datetime
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
-from api.serializers import PlaceNameSerializer, PlaceTypeSerializer, PlaceWhenSerializer, PlaceLinkSerializer, \
-    PlaceRelatedSerializer, PlaceDescriptionSerializer, PlaceDepictionSerializer
-from api.serializers_api import APIPlaceGeomSerializer
 from areas.models import Area
-from places.models import Place
 from whg import settings
 
 logger = logging.getLogger('reconciliation')
@@ -264,44 +260,6 @@ def es_search(index=ELASTIC_INDICES, query=None, ids=None):
 
     resp = es.search(index=index, body=body)
     return resp.get("hits", {}).get("hits", [])
-
-
-class OptimizedPlaceSerializer(serializers.ModelSerializer):
-    """
-    Optimized serializer that only includes requested fields.
-    """
-    dataset = serializers.ReadOnlyField(source="dataset.title")
-    dataset_id = serializers.ReadOnlyField(source="dataset.id")
-
-    names = PlaceNameSerializer(many=True, read_only=True)
-    types = PlaceTypeSerializer(many=True, read_only=True)
-    geoms = APIPlaceGeomSerializer(many=True, read_only=True)
-    whens = PlaceWhenSerializer(many=True, read_only=True)
-    links = PlaceLinkSerializer(many=True, read_only=True)
-    related = PlaceRelatedSerializer(many=True, read_only=True)
-    descriptions = PlaceDescriptionSerializer(many=True, read_only=True)
-    depictions = PlaceDepictionSerializer(many=True, read_only=True)
-
-    def __init__(self, *args, **kwargs):
-        # Remove fields parameter from kwargs if it exists
-        fields = kwargs.pop('fields', None)
-        super().__init__(*args, **kwargs)
-
-        if fields is not None:
-            # Drop any fields that are not specified in the `fields` argument
-            allowed = set(fields)
-            existing = set(self.fields)
-            for field_name in existing - allowed:
-                self.fields.pop(field_name)
-
-    class Meta:
-        model = Place
-        fields = (
-            "id", "title", "ccodes", "fclasses",
-            "names", "types", "geoms", "extent", "whens",
-            "links", "related", "descriptions", "depictions",
-            "dataset", "dataset_id"
-        )
 
 
 def get_required_fields(properties):
