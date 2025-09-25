@@ -1,4 +1,5 @@
 # api/views_generic.py
+import logging
 
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
@@ -23,6 +24,8 @@ from collection.models import Collection
 from datasets.models import Dataset
 from places.models import Place
 from places.views import PlacePortalView
+
+logger = logging.getLogger('reconciliation')
 
 TYPE_MAP = {
     "area": {
@@ -122,6 +125,8 @@ class GenericPreviewView(AuthenticatedAPIView):
 
         serializer_class = config["preview_serializer"]
         serializer = serializer_class(obj, context={"request": request})
+
+        logger.debug(f"Serializer data: {serializer.data}")
 
         html = render_to_string(
             f"preview/{obj_type}.html",
