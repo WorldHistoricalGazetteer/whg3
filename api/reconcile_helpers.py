@@ -8,8 +8,11 @@ from datetime import datetime
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
-from api.serializers_api import PlaceFeatureSerializer
+from api.serializers import PlaceNameSerializer, PlaceTypeSerializer, PlaceWhenSerializer, PlaceLinkSerializer, \
+    PlaceRelatedSerializer, PlaceDescriptionSerializer, PlaceDepictionSerializer
+from api.serializers_api import APIPlaceGeomSerializer
 from areas.models import Area
+from places.models import Place
 from whg import settings
 
 logger = logging.getLogger('reconciliation')
@@ -18,6 +21,29 @@ ELASTIC_INDICES = "whg,pub,wdgn"  # or options from "whg,pub,wdgn"
 
 # TODO: Replace ElasticSearch with Vespa backend when ready
 es = settings.ES_CONN
+
+# Property ID to required serializer fields mapping
+PROPERTY_FIELD_MAP = {
+    "whg:id_short": ["id"],
+    "whg:id_object": ["id", "title"],
+    "whg:names_canonical": ["title"],
+    "whg:names_array": ["names", "title"],
+    "whg:names_summary": ["names", "title"],
+    "whg:geometry_wkt": ["geoms"],
+    "whg:geometry_geojson": ["geoms"],
+    "whg:geometry_centroid": ["geoms"],
+    "whg:geometry_bbox": ["geoms"],
+    "whg:temporal_objects": ["whens"],
+    "whg:temporal_years": ["whens"],
+    "whg:countries_codes": ["ccodes"],
+    "whg:countries_objects": ["ccodes"],
+    "whg:classes_codes": ["fclasses"],
+    "whg:classes_objects": ["fclasses"],
+    "whg:types_objects": ["types"],
+    "whg:dataset": ["dataset", "dataset_id"],
+    "whg:lpf_feature": ["id", "title", "names", "geoms", "extent", "whens", "types", "ccodes", "fclasses", "dataset",
+                        "dataset_id", "links", "related", "descriptions", "depictions"],
+}
 
 
 def get_canonical_name(src, fallback_id):
@@ -240,19 +266,76 @@ def es_search(index=ELASTIC_INDICES, query=None, ids=None):
     return resp.get("hits", {}).get("hits", [])
 
 
+class OptimizedPlaceSerializer(serializers.ModelSerializer):
+    """
+    Optimized serializer that only includes requested fields.
+    """
+    dataset = serializers.ReadOnlyField(source="dataset.title")
+    dataset_id = serializers.ReadOnlyField(source="dataset.id")
+
+    names = PlaceNameSerializer(many=True, read_only=True)
+    types = PlaceTypeSerializer(many=True, read_only=True)
+    geoms = APIPlaceGeomSerializer(many=True, read_only=True)
+    whens = PlaceWhenSerializer(many=True, read_only=True)
+    links = PlaceLinkSerializer(many=True, read_only=True)
+    related = PlaceRelatedSerializer(many=True, read_only=True)
+    descriptions = PlaceDescriptionSerializer(many=True, read_only=True)
+    depictions = PlaceDepictionSerializer(many=True, read_only=True)
+
+    def __init__(self, *args, **kwargs):
+        # Remove fields parameter from kwargs if it exists
+        fields = kwargs.pop('fields', None)
+        super().__init__(*args, **kwargs)
+
+        if fields is not None:
+            # Drop any fields that are not specified in the `fields` argument
+            allowed = set(fields)
+            existing = set(self.fields)
+            for field_name in existing - allowed:
+                self.fields.pop(field_name)
+
+    class Meta:
+        model = Place
+        fields = (
+            "id", "title", "ccodes", "fclasses",
+            "names", "types", "geoms", "extent", "whens",
+            "links", "related", "descriptions", "depictions",
+            "dataset", "dataset_id"
+        )
+
+
+def get_required_fields(properties):
+    """
+    Determine which serializer fields are needed for the given properties.
+    """
+    required_fields = set()
+    for prop in properties:
+        pid = prop.get("id") if isinstance(prop, dict) else prop
+        fields = PROPERTY_FIELD_MAP.get(pid, [])
+        required_fields.update(fields)
+    return list(required_fields)
+
+
 def format_extend_row(place, properties, request=None):
     """
     Build the property values dict for an OpenRefine extend row.
+    Optimized to only serialize the fields actually needed.
     - place: Place instance.
     - properties: list of property dicts or strings.
     """
+    # Determine which fields we actually need
+    required_fields = get_required_fields(properties)
 
-    # TODO: Optimize by avoiding full serialization if only a few fields are needed.
-    serializer = PlaceFeatureSerializer(place, context={"request": request})
+    # Use optimized serializer with only required fields
+    serializer = OptimizedPlaceSerializer(
+        place,
+        context={"request": request},
+        fields=required_fields
+    )
     data = serializer.data
     row = {}
 
-    logger.debug(f"Serializing place ID {place.id} with data: {data}")
+    logger.debug(f"Serializing place ID {place.id} with fields: {required_fields}")
 
     def prepend_if_missing(names_list, title):
         if title and not any(n.get("toponym") == title for n in names_list):
@@ -297,7 +380,7 @@ def format_extend_row(place, properties, request=None):
         elif pid == "whg:geometry_bbox":
             row[pid] = [{"str": ", ".join(map(str, g["bbox"]))} for g in data.get("geoms", []) if g.get("bbox")]
 
-        elif pid == "whg:temporal":  # TODO - Not sure that this is working.
+        elif pid == "whg:temporal_objects":
             # Modern timespan objects
             timespans = []
             for when in data.get("whens", []):
@@ -312,8 +395,8 @@ def format_extend_row(place, properties, request=None):
                     timespans.append(timespan)
             row[pid] = [{"str": json.dumps(timespans)}] if timespans else []
 
-        elif pid == "whg:temporal_legacy":  # TODO: Is this really legacy, or still useful? Not sure that it's working in any case.
-            # Simple string ranges for backwards compatibility
+        elif pid == "whg:temporal_years":
+            # Simple string ranges
             legacy_ranges = []
             for when in data.get("whens", []):
                 if when.get("minmax"):
@@ -329,7 +412,7 @@ def format_extend_row(place, properties, request=None):
                 countries.append({
                     "code": code,
                     "uri": f"http://id.loc.gov/vocabulary/iso3166/{code.lower()}",
-                    "label": code  # You might want to map this to full country names
+                    "label": code
                 })
             row[pid] = [{"str": json.dumps(countries)}] if countries else []
 
@@ -365,14 +448,14 @@ def format_extend_row(place, properties, request=None):
         elif pid == "whg:types_objects":
             row[pid] = [{"str": json.dumps(data.get("types", []))}]
 
-        elif pid == "whg:dataset":  # TODO - add facet to schema to return as an object with API URI
+        elif pid == "whg:dataset":
             dataset_info = data.get("dataset")
             if dataset_info:
-                row[pid] = [{"str": json.dumps(dataset_info)}]
+                row[pid] = [{"str": json.dumps({"name": dataset_info, "id": data.get("dataset_id")})}]
             else:
                 row[pid] = []
 
-        elif pid == "whg:lpf_feature":  # TODO - loads into OpenRefine, but needs to be expanded
+        elif pid == "whg:lpf_feature":
             lpf_feature = build_lpf_feature(place, data)
             row[pid] = [{"str": json.dumps(lpf_feature)}] if lpf_feature else []
 
@@ -386,7 +469,7 @@ def format_extend_row(place, properties, request=None):
 def build_lpf_feature(place, serialized_data):
     """
     Build a complete Linked Places Format GeoJSON Feature
-    TODO: This is a placeholder - augment according to exact LPF structure
+    Based on LPF v1.1 specification and existing WHG serializer patterns
     """
     lpf_feature = {
         "@context": "https://raw.githubusercontent.com/LinkedPasts/linked-places/master/linkedplaces-context-v1.1.jsonld",
@@ -398,25 +481,189 @@ def build_lpf_feature(place, serialized_data):
         }
     }
 
-    # Add geometry if available
+    # Add geometry - handle multiple geometries as GeometryCollection
     geoms = serialized_data.get("geoms", [])
-    if geoms and geoms[0].get("geojson"):
-        lpf_feature["geometry"] = geoms[0]["geojson"]
+    if geoms:
+        if len(geoms) == 1:
+            # Single geometry
+            geom_data = geoms[0]
+            if geom_data.get("geojson"):
+                lpf_feature["geometry"] = geom_data["geojson"]
+        else:
+            # Multiple geometries - create GeometryCollection
+            geometries = []
+            for geom in geoms:
+                if geom.get("geojson"):
+                    geometries.append(geom["geojson"])
+            if geometries:
+                lpf_feature["geometry"] = {
+                    "type": "GeometryCollection",
+                    "geometries": geometries
+                }
 
-    # Add names
+    # Add names array - LPF format
     names = serialized_data.get("names", [])
     if names:
-        lpf_feature["properties"]["names"] = names
+        lpf_names = []
+        for name in names:
+            lpf_name = {"toponym": name.get("toponym", "")}
 
-    # Add temporal data
-    whens = serialized_data.get("whens", [])
-    if whens:
-        lpf_feature["properties"]["when"] = whens
+            # Add language info if available
+            if name.get("lang"):
+                lpf_name["lang"] = name["lang"]
 
-    # Add types
+            # Add citations/attestations if available
+            if name.get("jsonb", {}).get("citation"):
+                lpf_name["citation"] = name["jsonb"]["citation"]
+
+            # Add when info if available
+            if name.get("jsonb", {}).get("when"):
+                lpf_name["when"] = name["jsonb"]["when"]
+
+            lpf_names.append(lpf_name)
+
+        lpf_feature["properties"]["names"] = lpf_names
+
+    # Add types array - LPF format
     types = serialized_data.get("types", [])
     if types:
-        lpf_feature["properties"]["types"] = types
+        lpf_types = []
+        for ptype in types:
+            lpf_type = {
+                "identifier": ptype.get("identifier", ""),
+                "label": ptype.get("label", "")
+            }
+
+            # Add source label if different from label
+            if ptype.get("src_label") and ptype["src_label"] != ptype.get("label"):
+                lpf_type["sourceLabel"] = ptype["src_label"]
+
+            # Add AAT ID if available
+            if ptype.get("aat_id"):
+                lpf_type["aat_id"] = ptype["aat_id"]
+
+            lpf_types.append(lpf_type)
+
+        lpf_feature["properties"]["types"] = lpf_types
+
+    # Add when/temporal data - LPF format
+    whens = serialized_data.get("whens", [])
+    if whens:
+        lpf_when = []
+        for when in whens:
+            when_obj = {}
+
+            # Handle timespans
+            timespans = when.get("timespans", [])
+            if timespans:
+                when_obj["timespans"] = []
+                for ts in timespans:
+                    timespan = {}
+                    if ts.get("start"):
+                        timespan["start"] = ts["start"]
+                    if ts.get("end"):
+                        timespan["end"] = ts["end"]
+                    when_obj["timespans"].append(timespan)
+
+            # Handle periods
+            periods = when.get("periods", [])
+            if periods:
+                when_obj["periods"] = periods
+
+            # Add label and duration if available
+            if when.get("label"):
+                when_obj["label"] = when["label"]
+            if when.get("duration"):
+                when_obj["duration"] = when["duration"]
+
+            if when_obj:  # Only add if not empty
+                lpf_when.append(when_obj)
+
+        if lpf_when:
+            lpf_feature["properties"]["when"] = lpf_when
+
+    # Add links - LPF format
+    links = serialized_data.get("links", [])
+    if links:
+        lpf_links = []
+        for link in links:
+            lpf_link = {
+                "type": link.get("type", ""),
+                "identifier": link.get("identifier", "")
+            }
+
+            # Add label if available
+            if link.get("label"):
+                lpf_link["label"] = link["label"]
+
+            lpf_links.append(lpf_link)
+
+        lpf_feature["properties"]["links"] = lpf_links
+
+    # Add relations - LPF format
+    related = serialized_data.get("related", [])
+    if related:
+        lpf_relations = []
+        for rel in related:
+            lpf_relation = {
+                "relationType": rel.get("relation_type", ""),
+                "relationTo": rel.get("relation_to", ""),
+                "label": rel.get("label", "")
+            }
+
+            # Add when info if available
+            if rel.get("when"):
+                lpf_relation["when"] = rel["when"]
+
+            lpf_relations.append(lpf_relation)
+
+        lpf_feature["properties"]["relations"] = lpf_relations
+
+    # Add descriptions - LPF format
+    descriptions = serialized_data.get("descriptions", [])
+    if descriptions:
+        lpf_descriptions = []
+        for desc in descriptions:
+            lpf_desc = {
+                "value": desc.get("value", "")
+            }
+
+            # Add identifier if available
+            if desc.get("identifier"):
+                lpf_desc["@id"] = desc["identifier"]
+
+            # Add language if available
+            if desc.get("lang"):
+                lpf_desc["lang"] = desc["lang"]
+
+            lpf_descriptions.append(lpf_desc)
+
+        lpf_feature["properties"]["descriptions"] = lpf_descriptions
+
+    # Add depictions - LPF format
+    depictions = serialized_data.get("depictions", [])
+    if depictions:
+        lpf_depictions = []
+        for dep in depictions:
+            lpf_depiction = {
+                "@id": dep.get("identifier", ""),
+                "title": dep.get("title", ""),
+                "license": dep.get("license", "")
+            }
+            lpf_depictions.append(lpf_depiction)
+
+        lpf_feature["properties"]["depictions"] = lpf_depictions
+
+    # Add dataset information
+    if serialized_data.get("dataset"):
+        lpf_feature["properties"]["dataset"] = {
+            "id": serialized_data.get("dataset_id"),
+            "label": serialized_data.get("dataset")
+        }
+
+    # Add extent if available (not standard LPF but useful)
+    if serialized_data.get("extent"):
+        lpf_feature["properties"]["extent"] = serialized_data["extent"]
 
     return lpf_feature
 

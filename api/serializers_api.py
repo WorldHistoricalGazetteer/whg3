@@ -1,18 +1,17 @@
 # api/serializers_api.py
 
+from pyproj import CRS, Transformer
 from rest_framework import serializers
+from shapely.geometry import shape
+from shapely.ops import transform
 
-from api.serializers import PlaceNameSerializer, PlaceTypeSerializer, PlaceGeomSerializer, PlaceLinkSerializer, \
-    PlaceRelatedSerializer, PlaceWhenSerializer, PlaceDescriptionSerializer, PlaceDepictionSerializer
+from api.reconcile_helpers import OptimizedPlaceSerializer
+from api.serializers import PlaceNameSerializer, PlaceTypeSerializer, PlaceWhenSerializer
 from areas.models import Area
 from collection.models import Collection
 from datasets.models import Dataset
 from places.models import Place, PlaceGeom
 
-from rest_framework import serializers
-from shapely.geometry import shape, mapping
-from shapely.ops import transform
-from pyproj import CRS, Transformer
 
 class APIPlaceGeomSerializer(serializers.ModelSerializer):
     """
@@ -226,33 +225,26 @@ class PlacePreviewSerializer(serializers.ModelSerializer):
     names = PlaceNameSerializer(many=True, read_only=True)
     types = PlaceTypeSerializer(many=True, read_only=True)
     whens = PlaceWhenSerializer(many=True, read_only=True)
+
     class Meta:
         model = Place
         fields = ["id", "title", "names", "types", "ccodes", "fclasses", "whens", "dataset"]
 
 
-class PlaceFeatureSerializer(serializers.ModelSerializer):
+class PlaceFeatureSerializer(OptimizedPlaceSerializer):
     """
     Full serializer for place feature representations.
     Includes identifiers, dataset metadata, names, types,
     geometries, temporal extents, relationships, and media.
     Suitable for machine-readable exchange.
+
+    This is a wrapper around OptimizedPlaceSerializer that includes all fields.
     """
 
-    dataset = serializers.ReadOnlyField(source="dataset.title")
-    dataset_id = serializers.ReadOnlyField(source="dataset.id")
-
-    names = PlaceNameSerializer(many=True, read_only=True)
-    types = PlaceTypeSerializer(many=True, read_only=True)
-    geoms = APIPlaceGeomSerializer(many=True, read_only=True)
-    extent = serializers.ReadOnlyField()
-    links = PlaceLinkSerializer(many=True, read_only=True)
-    related = PlaceRelatedSerializer(many=True, read_only=True)
-    whens = PlaceWhenSerializer(many=True, read_only=True)
-    descriptions = PlaceDescriptionSerializer(many=True, read_only=True)
-    depictions = PlaceDepictionSerializer(many=True, read_only=True)
-
-    traces = serializers.SerializerMethodField()
+    def __init__(self, *args, **kwargs):
+        # Don't pass fields parameter - we want all fields for this serializer
+        kwargs.pop('fields', None)
+        super().__init__(*args, **kwargs)
 
     class Meta:
         model = Place
@@ -277,7 +269,3 @@ class PlaceFeatureSerializer(serializers.ModelSerializer):
             "minmax",
             "traces",
         )
-
-    def get_traces(self, obj):
-        """Stub for traces until implemented."""
-        return None
