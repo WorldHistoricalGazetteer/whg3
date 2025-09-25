@@ -19,6 +19,7 @@ def format_list(data_list, separator=', '):
             formatted.append(
                 item.get('toponym')
                 or item.get('label')
+                or item.get('sourceLabel')
                 or item.get('name')
                 or str(item)
             )
