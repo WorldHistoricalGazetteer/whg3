@@ -232,7 +232,7 @@ class PlacePreviewSerializer(serializers.ModelSerializer):
 
     def get_year_ranges(self, obj):
         ranges = []
-        for when in getattr(obj, "whens", []):
+        for when in obj.whens.all():
             for ts in getattr(when, "timespans", []):
                 start = getattr(ts.get("start"), "get", lambda _: None)("earliest") if ts.get("start") else None
                 end = getattr(ts.get("end"), "get", lambda _: None)("latest") if ts.get("end") else None
