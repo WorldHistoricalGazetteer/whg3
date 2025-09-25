@@ -4,6 +4,7 @@ import json
 import logging
 import os
 from datetime import datetime
+from pathlib import Path
 
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
@@ -51,6 +52,18 @@ FCLASS_MAP = {
     }
     for code, label in FEATURE_CLASSES
 }
+
+with open(Path("media/data/regions_countries.json"), "r", encoding="utf-8") as f:
+    COUNTRY_LABELS = {}
+    for section in json.load(f):
+        for item in section.get("children", []):
+            if "ccodes" in item:
+                # region with multiple codes
+                for c in item["ccodes"]:
+                    COUNTRY_LABELS[c] = item["text"]
+            else:
+                # single country
+                COUNTRY_LABELS[item["id"]] = item["text"]
 
 
 def get_canonical_name(src, fallback_id):
@@ -401,10 +414,13 @@ def format_extend_row(place, properties, request=None):
             row[pid] = [{"str": c} for c in data.get("ccodes", [])]
 
         elif pid == "whg:countries_objects":
-            countries = [{"code": c,
-                          "uri": f"http://id.loc.gov/vocabulary/iso3166/{c.lower()}",
-                          "label": c} for c in data.get("ccodes", [])]
-            row[pid] = wrap(countries)
+            countries = []
+            for code in data.get("ccodes", []):
+                countries.append({
+                    "code": code,
+                    "label": COUNTRY_LABELS.get(code, code)  # fallback to code if missing
+                })
+            row[pid] = [{"str": json.dumps(countries)}] if countries else []
 
         # Feature classes
         elif pid == "whg:classes_codes":
@@ -698,8 +714,8 @@ def get_propose_properties(schema_file):
     # Add special properties
     propose_properties.append({
         "id": "whg:lpf_feature",
-        "name": "Linked Places Format Feature",
-        "description": "Complete place record as a Linked Places Format GeoJSON Feature with full properties, names, geometry, and links",
+        "name": "LPF Feature (object)",
+        "description": "Complete place record as a Linked Places Format GeoJSON Feature, including full properties, names, geometry, and links",
         "type": "string"
     })
 
