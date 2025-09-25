@@ -8,6 +8,7 @@ from datetime import datetime
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
+from api.serializers_api import OptimizedPlaceSerializer
 from areas.models import Area
 from whg import settings
 
