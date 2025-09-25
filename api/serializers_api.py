@@ -224,11 +224,21 @@ class PlacePreviewSerializer(serializers.ModelSerializer):
     """
     names = PlaceNameSerializer(many=True, read_only=True)
     types = PlaceTypeSerializer(many=True, read_only=True)
-    whens = PlaceWhenSerializer(many=True, read_only=True)
+    year_ranges = serializers.SerializerMethodField()
 
     class Meta:
         model = Place
-        fields = ["id", "title", "names", "types", "ccodes", "fclasses", "whens", "dataset"]
+        fields = ["id", "title", "names", "types", "ccodes", "fclasses", "year_ranges", "dataset"]
+
+    def get_year_ranges(self, obj):
+        ranges = []
+        for when in getattr(obj, "whens", []):
+            for ts in getattr(when, "timespans", []):
+                start = getattr(ts.get("start"), "get", lambda _: None)("earliest") if ts.get("start") else None
+                end = getattr(ts.get("end"), "get", lambda _: None)("latest") if ts.get("end") else None
+                if start and end:
+                    ranges.append(f"{start}-{end}")
+        return ranges
 
 
 class OptimizedPlaceSerializer(serializers.ModelSerializer):
