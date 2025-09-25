@@ -1,4 +1,5 @@
 # api/serializers_api.py
+import logging
 
 from pyproj import CRS, Transformer
 from rest_framework import serializers
@@ -11,6 +12,8 @@ from areas.models import Area
 from collection.models import Collection
 from datasets.models import Dataset
 from places.models import Place, PlaceGeom
+
+logger = logging.getLogger('reconciliation')
 
 
 def normalize_timespans(data):
@@ -256,7 +259,9 @@ class PlacePreviewSerializer(serializers.ModelSerializer):
 
     def get_year_ranges(self, obj):
         ranges = []
+        logger.debug(f"getting year ranges for place {obj.id} with {obj.whens.count()} whens")
         for when in obj.whens.all():
+            logger.debug(f"getting year ranges for {when}")
             timespans = getattr(when, "timespans", []) or []
             # decode JSONField if it’s a string
             if isinstance(timespans, str):
