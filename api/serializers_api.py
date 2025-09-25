@@ -264,8 +264,11 @@ class PlacePreviewSerializer(serializers.ModelSerializer):
             timespans = data.get("timespans", [])
 
             for ts in timespans:
-                start = (ts.get("start") or {}).get("earliest")
-                end = (ts.get("end") or {}).get("latest")
+                start_data = ts.get("start", {})
+                end_data = ts.get("end", {})
+
+                start = start_data.get("earliest") or start_data.get("latest")
+                end = end_data.get("latest") or end_data.get("earliest")
 
                 if start and end:
                     ranges.append(f"{start}-{end}")
