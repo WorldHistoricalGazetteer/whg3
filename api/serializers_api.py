@@ -259,18 +259,9 @@ class PlacePreviewSerializer(serializers.ModelSerializer):
 
     def get_year_ranges(self, obj):
         ranges = []
-        logger.debug(f"getting year ranges for place {obj.id} with {obj.whens.count()} whens")
         for when in obj.whens.all():
-            logger.debug(f"getting year ranges for {when}")
-            timespans = getattr(when, "timespans", []) or []
-            logger.debug(f"timespans: {timespans}")
-            # decode JSONField if it’s a string
-            if isinstance(timespans, str):
-                try:
-                    import json
-                    timespans = json.loads(timespans)
-                except Exception:
-                    timespans = []
+            data = getattr(when, "jsonb", {}) or {}
+            timespans = data.get("timespans", [])
 
             for ts in timespans:
                 start = (ts.get("start") or {}).get("earliest")
@@ -278,9 +269,9 @@ class PlacePreviewSerializer(serializers.ModelSerializer):
 
                 if start and end:
                     ranges.append(f"{start}-{end}")
-                elif start:  # open-ended
+                elif start:
                     ranges.append(f"{start}-")
-                elif end:  # open-ended
+                elif end:
                     ranges.append(f"-{end}")
 
         return ranges
