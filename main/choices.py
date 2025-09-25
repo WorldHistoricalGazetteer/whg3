@@ -70,15 +70,15 @@ ERAS = [
 
 # geonames classes for api filter
 FEATURE_CLASSES = [
-    ('A','Administrative divisions'),
-    ('H','Hydrological features'),
-    ('L','Landscape, regions'),
-    ('P','Populated places (settlements)'),
-    ('R','Roads, routes, transportation'),
-    ('S','Sites (various)'),
-    ('T','Topographical features'),
-    ('U','Undersea features'),
-    ('V','Vegetation landcover'),
+    ('A','Administrative Boundary'),
+    ('H','Hydrographic'),
+    ('L','Area'),
+    ('P','Populated Place'),
+    ('R','Road / Railroad'),
+    ('S','Spot (small feature/building/farm)'),
+    ('T','Hypsographic (terrain/elevation)'),
+    ('U','Undersea'),
+    ('V','Vegetation'),
 ]
 
 #A: country, state, region,...

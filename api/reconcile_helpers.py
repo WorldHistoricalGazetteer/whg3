@@ -10,6 +10,7 @@ from rest_framework import serializers
 
 from api.serializers_api import OptimizedPlaceSerializer
 from areas.models import Area
+from main.choices import FEATURE_CLASSES
 from whg import settings
 
 logger = logging.getLogger('reconciliation')
@@ -40,6 +41,15 @@ PROPERTY_FIELD_MAP = {
     "whg:dataset": ["dataset", "dataset_id"],
     "whg:lpf_feature": ["id", "title", "names", "geoms", "extent", "whens", "types", "ccodes", "fclasses", "dataset",
                         "dataset_id", "links", "related", "descriptions", "depictions"],
+}
+
+FCLASS_MAP = {
+    code: {
+        "code": code,
+        "label": label,
+        "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#{}".format(code)
+    }
+    for code, label in FEATURE_CLASSES
 }
 
 
@@ -279,13 +289,8 @@ def format_extend_row(place, properties, request=None):
     """
     Build the property values dict for an OpenRefine extend row.
     Optimized to only serialize the fields actually needed.
-    - place: Place instance.
-    - properties: list of property dicts or strings.
     """
-    # Determine which fields we actually need
     required_fields = get_required_fields(properties)
-
-    # Use optimized serializer with only required fields
     serializer = OptimizedPlaceSerializer(
         place,
         context={"request": request},
@@ -301,125 +306,133 @@ def format_extend_row(place, properties, request=None):
             return [{"toponym": title, "jsonb": {"status": "preferred"}}] + names_list
         return names_list
 
+    # Helper for JSON string wrapping
+    def wrap(obj):
+        return [{"str": json.dumps(obj)}] if obj else []
+
+    # Geometry helpers
+    def geom_wkt_list():
+        return [g.get("geowkt") for g in data.get("geoms", []) if g.get("geowkt")]
+
+    def geom_geojson_list():
+        return [g.get("geojson") for g in data.get("geoms", []) if g.get("geojson")]
+
+    def geom_centroid_list():
+        return [f"{g['centroid'][1]}, {g['centroid'][0]}" for g in data.get("geoms", []) if g.get("centroid")]
+
+    def geom_bbox_list():
+        return [", ".join(map(str, g["bbox"])) for g in data.get("geoms", []) if g.get("bbox")]
+
+    # Temporal helpers
+    def temporal_objects():
+        timespans_list = []
+        for when in data.get("when", []):
+            for ts in when.get("timespans", []):
+                timespan = {}
+                start = ts.get("start", {})
+                end = ts.get("end", {})
+                if start:
+                    timespan["begin"] = start.get("earliest") or start.get("latest")
+                if end:
+                    timespan["end"] = end.get("latest") or end.get("earliest")
+                if ts.get("circa"):
+                    timespan["circa"] = ts["circa"]
+                if ts.get("note"):
+                    timespan["note"] = ts["note"]
+                if timespan:
+                    timespans_list.append(timespan)
+        return timespans_list
+
+    def temporal_years():
+        ranges = []
+        for when in data.get("when", []):
+            for ts in when.get("timespans", []):
+                start = ts.get("start", {}).get("earliest")
+                end = ts.get("end", {}).get("latest")
+                if start and end:
+                    ranges.append(f"{start}-{end}")
+        return ranges
+
     for prop in properties:
         pid = prop.get("id") if isinstance(prop, dict) else prop
 
-        if pid == "whg:id_short":
-            row[pid] = [{"str": f"https://whgazetteer.org/place/{place.id}"}]
-
-        elif pid == "whg:id_object":
-            row[pid] = [{"str": json.dumps({
-                "id": f"https://whgazetteer.org/place/{place.id}",
-                "label": data.get("title", "")
-            })}]
-
-        elif pid == "whg:names_canonical":
+        # Names
+        if pid == "whg:names_canonical":
             row[pid] = [{"str": data.get("title")}] if data.get("title") else []
 
         elif pid == "whg:names_array":
-            names = data.get("names", [])
-            names = prepend_if_missing(names, data.get("title"))
-            row[pid] = [{"str": json.dumps(names)}] if names else []
+            names = prepend_if_missing(data.get("names", []), data.get("title"))
+            row[pid] = wrap(names)
 
         elif pid == "whg:names_summary":
-            names = data.get("names", [])
-            names = prepend_if_missing(names, data.get("title"))
+            names = prepend_if_missing(data.get("names", []), data.get("title"))
             row[pid] = [{"str": n["toponym"]} for n in names] if names else []
 
+        # Identifiers
+        elif pid == "whg:id_short":
+            row[pid] = [{"str": f"https://whgazetteer.org/place/{place.id}"}]
+
+        elif pid == "whg:id_object":
+            row[pid] = wrap({"id": f"https://whgazetteer.org/place/{place.id}",
+                             "label": data.get("title", "")})
+
+        # Geometry
         elif pid == "whg:geometry_wkt":
-            row[pid] = [{"str": g.get("geowkt")} for g in data.get("geoms", []) if g.get("geowkt")]
+            row[pid] = [{"str": s} for s in geom_wkt_list()]
 
         elif pid == "whg:geometry_geojson":
-            row[pid] = [{"str": json.dumps(g.get("geojson"))} for g in data.get("geoms", []) if g.get("geojson")]
+            row[pid] = wrap(geom_geojson_list())
 
         elif pid == "whg:geometry_centroid":
-            row[pid] = [{"str": f"{g['centroid'][1]}, {g['centroid'][0]}"} for g in data.get("geoms", []) if
-                        g.get("centroid")]
+            row[pid] = [{"str": s} for s in geom_centroid_list()]
 
         elif pid == "whg:geometry_bbox":
-            row[pid] = [{"str": ", ".join(map(str, g["bbox"]))} for g in data.get("geoms", []) if g.get("bbox")]
+            row[pid] = [{"str": s} for s in geom_bbox_list()]
 
+        # Temporal
         elif pid == "whg:temporal_objects":
-            # Modern timespan objects
-            timespans = []
-            for when in data.get("whens", []):
-                timespan = {}
-                if when.get("begin"):
-                    timespan["begin"] = when["begin"]
-                if when.get("end"):
-                    timespan["end"] = when["end"]
-                if when.get("note"):
-                    timespan["note"] = when["note"]
-                if timespan:
-                    timespans.append(timespan)
-            row[pid] = [{"str": json.dumps(timespans)}] if timespans else []
+            row[pid] = wrap(temporal_objects())
 
         elif pid == "whg:temporal_years":
-            # Simple string ranges
-            legacy_ranges = []
-            for when in data.get("whens", []):
-                if when.get("minmax"):
-                    legacy_ranges.append(f"{when['minmax'][0]}-{when['minmax'][1]}")
-            row[pid] = [{"str": r} for r in legacy_ranges]
+            row[pid] = [{"str": r} for r in temporal_years()]
 
+        # Countries
         elif pid == "whg:countries_codes":
             row[pid] = [{"str": c} for c in data.get("ccodes", [])]
 
         elif pid == "whg:countries_objects":
-            countries = []
-            for code in data.get("ccodes", []):
-                countries.append({
-                    "code": code,
-                    "uri": f"http://id.loc.gov/vocabulary/iso3166/{code.lower()}",
-                    "label": code
-                })
-            row[pid] = [{"str": json.dumps(countries)}] if countries else []
+            countries = [{"code": c,
+                          "uri": f"http://id.loc.gov/vocabulary/iso3166/{c.lower()}",
+                          "label": c} for c in data.get("ccodes", [])]
+            row[pid] = wrap(countries)
 
+        # Feature classes
         elif pid == "whg:classes_codes":
             row[pid] = [{"str": fc} for fc in data.get("fclasses", [])]
 
         elif pid == "whg:classes_objects":
-            # Map feature class codes to objects with labels
-            fclass_map = {
-                "A": {"code": "A", "label": "Administrative boundary",
-                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#A"},
-                "H": {"code": "H", "label": "Hydrographic",
-                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#H"},
-                "L": {"code": "L", "label": "Area",
-                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#L"},
-                "P": {"code": "P", "label": "Populated place",
-                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#P"},
-                "R": {"code": "R", "label": "Road / Railroad",
-                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#R"},
-                "S": {"code": "S", "label": "Spot / Building / Farm",
-                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#S"},
-                "T": {"code": "T", "label": "Hypsographic",
-                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#T"},
-                "U": {"code": "U", "label": "Undersea",
-                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#U"},
-                "V": {"code": "V", "label": "Vegetation",
-                      "reference": "https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html#V"}
-            }
-            classes = [fclass_map.get(fc, {"code": fc, "label": "Unknown", "reference": ""})
-                       for fc in data.get("fclasses", []) if fc in fclass_map]
-            row[pid] = [{"str": json.dumps(classes)}] if classes else []
+            classes = [FCLASS_MAP.get(fc, {"code": fc, "label": "Unknown", "reference": ""})
+                       for fc in data.get("fclasses", [])]
+            row[pid] = wrap(classes)
 
+        # Types
         elif pid == "whg:types_objects":
-            row[pid] = [{"str": json.dumps(data.get("types", []))}]
+            row[pid] = wrap(data.get("types", []))
 
+        # Dataset
         elif pid == "whg:dataset":
-            dataset_info = data.get("dataset")
-            if dataset_info:
-                row[pid] = [{"str": json.dumps({"name": dataset_info, "id": data.get("dataset_id")})}]
+            ds = data.get("dataset")
+            if ds:
+                row[pid] = wrap({"name": ds, "id": data.get("dataset_id")})
             else:
                 row[pid] = []
 
+        # LPF feature
         elif pid == "whg:lpf_feature":
             lpf_feature = build_lpf_feature(place, data)
-            row[pid] = [{"str": json.dumps(lpf_feature)}] if lpf_feature else []
+            row[pid] = wrap(lpf_feature)
 
         else:
-            # Unknown property ID
             row[pid] = []
 
     return row
