@@ -13,6 +13,30 @@ from datasets.models import Dataset
 from places.models import Place, PlaceGeom
 
 
+def normalize_timespans(data):
+    """
+    Iterate through when/timespans and normalise into dicts:
+    {begin, end, circa, note}.
+    """
+    timespans = []
+    for when in data.get("when", []):  # or "whens" if that's your serializer field
+        for ts in when.get("timespans", []):
+            start = ts.get("start") or {}
+            end = ts.get("end") or {}
+
+            timespan = {
+                "begin": start.get("earliest") or start.get("latest"),
+                "end": end.get("latest") or end.get("earliest"),
+                "circa": ts.get("circa"),
+                "note": ts.get("note"),
+            }
+            # drop empty keys
+            timespan = {k: v for k, v in timespan.items() if v is not None}
+            if timespan:
+                timespans.append(timespan)
+    return timespans
+
+
 class APIPlaceGeomSerializer(serializers.ModelSerializer):
     """
     PlaceGeom serializer with computed geometry helpers:
@@ -233,11 +257,26 @@ class PlacePreviewSerializer(serializers.ModelSerializer):
     def get_year_ranges(self, obj):
         ranges = []
         for when in obj.whens.all():
-            for ts in getattr(when, "timespans", []):
-                start = getattr(ts.get("start"), "get", lambda _: None)("earliest") if ts.get("start") else None
-                end = getattr(ts.get("end"), "get", lambda _: None)("latest") if ts.get("end") else None
+            timespans = getattr(when, "timespans", []) or []
+            # decode JSONField if it’s a string
+            if isinstance(timespans, str):
+                try:
+                    import json
+                    timespans = json.loads(timespans)
+                except Exception:
+                    timespans = []
+
+            for ts in timespans:
+                start = (ts.get("start") or {}).get("earliest")
+                end = (ts.get("end") or {}).get("latest")
+
                 if start and end:
                     ranges.append(f"{start}-{end}")
+                elif start:  # open-ended
+                    ranges.append(f"{start}-")
+                elif end:  # open-ended
+                    ranges.append(f"-{end}")
+
         return ranges
 
 
