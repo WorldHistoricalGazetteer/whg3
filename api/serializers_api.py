@@ -263,6 +263,7 @@ class PlacePreviewSerializer(serializers.ModelSerializer):
         for when in obj.whens.all():
             logger.debug(f"getting year ranges for {when}")
             timespans = getattr(when, "timespans", []) or []
+            logger.debug(f"timespans: {timespans}")
             # decode JSONField if it’s a string
             if isinstance(timespans, str):
                 try:
