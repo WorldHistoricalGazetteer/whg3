@@ -348,5 +348,4 @@ class PlaceFeatureSerializer(OptimizedPlaceSerializer):
             "descriptions",
             "depictions",
             "minmax",
-            "traces",
         )
