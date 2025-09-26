@@ -312,8 +312,6 @@ def format_extend_row(place, properties, request=None):
     data = serializer.data
     row = {}
 
-    logger.debug(f"Serializing place ID {place.id} with fields: {required_fields}")
-
     def prepend_if_missing(names_list, title):
         if title and not any(n.get("toponym") == title for n in names_list):
             return [{"toponym": title, "jsonb": {"status": "preferred"}}] + names_list
@@ -719,5 +717,4 @@ def get_propose_properties(schema_file):
         "type": "string"
     })
 
-    logger.debug(f"Generated {len(propose_properties)} propose properties via JSON parsing")
     return propose_properties

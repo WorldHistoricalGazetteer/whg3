@@ -2,17 +2,61 @@
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiResponse, OpenApiExample
 
+from api.querysets import area_owner_queryset, collection_owner_or_public_queryset, dataset_owner_or_public_queryset, \
+    place_feature_queryset, place_preview_queryset
 from api.reconcile_helpers import ReconciliationRequestSerializer
+from api.serializers_api import AreaFeatureSerializer, AreaPreviewSerializer, CollectionPreviewSerializer, \
+    DatasetPreviewSerializer, PlaceFeatureSerializer, PlacePreviewSerializer
+from areas.models import Area
+from collection.models import Collection
+from datasets.models import Dataset
+from places.models import Place
 
 OBJECT_TYPES = ["place", "dataset", "collection", "area"]
+
+TYPE_MAP = {
+    "area": {
+        "model": Area,
+        "detail_url": "areas:area-update",
+        "detail_queryset": area_owner_queryset,
+        "feature_serializer": AreaFeatureSerializer,
+        "feature_queryset": area_owner_queryset,
+        "preview_serializer": AreaPreviewSerializer,
+        "preview_queryset": area_owner_queryset,
+    },
+    "collection": {
+        "model": Collection,
+        "detail_url": True,  # special case: choose between "ds-collection-browse" and "place-collection-browse"
+        "preview_serializer": CollectionPreviewSerializer,
+        "preview_queryset": collection_owner_or_public_queryset,
+    },
+    "dataset": {
+        "model": Dataset,
+        "detail_url": "datasets:ds_places",
+        "preview_serializer": DatasetPreviewSerializer,
+        "preview_queryset": dataset_owner_or_public_queryset,
+    },
+    "place": {
+        "model": Place,
+        "detail_url": "places:place-portal",
+        "feature_serializer": PlaceFeatureSerializer,
+        "feature_queryset": place_feature_queryset,
+        "preview_serializer": PlacePreviewSerializer,
+        "preview_queryset": place_preview_queryset,
+    },
+}
 
 # Define view metadata including per-method overrides
 VIEW_CLASSES = {
     "detail": {
         "methods": {
             "get": {
-                "summary": "Retrieve full object details",
-                "description": "Returns the full details of a single object, including all fields and related metadata.",
+                "summary": "Render object detail page",
+                "description": (
+                    "Returns a human-readable detail page for the requested object type. "
+                    "Intended for use in the main web application, not as a machine-readable API. "
+                    "For structured object data, use the 'feature' endpoint."
+                ),
             },
         },
     },

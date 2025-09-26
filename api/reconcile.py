@@ -46,10 +46,6 @@ SCHEMA_FILE = "/static/whg_schema.jsonld"
 SCHEMA_SPACE = DOMAIN + SCHEMA_FILE
 PROPOSE_PROPERTIES = get_propose_properties(f"validation{SCHEMA_FILE}")
 
-logger.debug(
-    f"Reconciliation service initialized with SCHEMA_SPACE: {SCHEMA_SPACE} and PROPOSE_PROPERTIES:\n{json.dumps(PROPOSE_PROPERTIES, indent=2)}"
-)
-
 SERVICE_METADATA = {
     "versions": ["0.2"],
     "name": "World Historical Gazetteer Place Reconciliation Service",
@@ -131,8 +127,6 @@ def json_error(message, status=400):
 class ReconciliationView(APIView):
     def get(self, request, *args, **kwargs):
 
-        logger.debug(f"Request URL (GET): {request.build_absolute_uri()}")
-
         token = request.GET.get("token")
 
         metadata = json.loads(json.dumps(SERVICE_METADATA))
@@ -153,9 +147,6 @@ class ReconciliationView(APIView):
     @authentication_classes([TokenQueryOrBearerAuthentication, SessionAuthentication])
     @permission_classes([IsAuthenticated])
     def post(self, request, *args, **kwargs):
-
-        logger.debug(f"Request URL (POST): {request.build_absolute_uri()}")
-        logger.debug(f"Request body: {request.body.decode('utf-8') if request.body else 'No body'}")
 
         try:
             payload = parse_request_payload(request)
@@ -439,8 +430,6 @@ def reconcile_place_es(query):
     hits = es_search(query=query)
     if not hits:
         return {"result": [], "geojson": None}
-
-    logger.debug("Hits: " + json.dumps(hits))
 
     max_score = hits[0]["_score"]
     results = []

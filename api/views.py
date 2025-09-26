@@ -234,7 +234,6 @@ class SpatialAPIView(generics.ListAPIView):
 
     def get(self, *args, **kwargs):
         params = self.request.query_params
-        logger.info("SpatialAPIView received params: %s", params)
 
         qtype = params.get('type')
         lon, lat, dist = params.get('lon'), params.get('lat'), params.get('km')

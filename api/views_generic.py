@@ -1,9 +1,12 @@
 # api/views_generic.py
 import logging
+import os
+from urllib.parse import quote as urlquote
 
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseRedirect, StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
+from django.urls import reverse
 from django.utils.decorators import method_decorator
 from django.views.decorators.clickjacking import xframe_options_exempt
 from django.views.decorators.csrf import csrf_exempt
@@ -13,51 +16,10 @@ from rest_framework import status
 from rest_framework.response import Response
 
 from api.authentication import AuthenticatedAPIView
-from api.querysets import place_preview_queryset, place_feature_queryset, area_owner_queryset, \
-    dataset_owner_or_public_queryset, collection_owner_or_public_queryset
-from api.schemas import generic_schema
-from api.serializers_api import PlaceFeatureSerializer, PlacePreviewSerializer, DatasetFeatureSerializer, \
-    DatasetPreviewSerializer, CollectionFeatureSerializer, CollectionPreviewSerializer, AreaFeatureSerializer, \
-    AreaPreviewSerializer
-from areas.models import Area
-from collection.models import Collection
-from datasets.models import Dataset
-from places.models import Place
-from places.views import PlacePortalView
+from api.download_lpf import LPFCache, lpf_stream_from_file, lpf_stream_live, redis_client
+from api.schemas import generic_schema, TYPE_MAP
 
 logger = logging.getLogger('reconciliation')
-
-TYPE_MAP = {
-    "area": {
-        "model": Area,
-        "feature_serializer": AreaFeatureSerializer,
-        "feature_queryset": area_owner_queryset,
-        "preview_serializer": AreaPreviewSerializer,
-        "preview_queryset": area_owner_queryset,
-    },
-    "collection": {
-        "model": Collection,
-        "feature_serializer": CollectionFeatureSerializer,
-        "feature_queryset": collection_owner_or_public_queryset,
-        "preview_serializer": CollectionPreviewSerializer,
-        "preview_queryset": collection_owner_or_public_queryset,
-    },
-    "dataset": {
-        "model": Dataset,
-        "feature_serializer": DatasetFeatureSerializer,
-        "feature_queryset": dataset_owner_or_public_queryset,
-        "preview_serializer": DatasetPreviewSerializer,
-        "preview_queryset": dataset_owner_or_public_queryset,
-    },
-    "place": {
-        "model": Place,
-        "detail_view": PlacePortalView,
-        "feature_serializer": PlaceFeatureSerializer,
-        "feature_queryset": place_feature_queryset,
-        "preview_serializer": PlacePreviewSerializer,
-        "preview_queryset": place_preview_queryset,
-    },
-}
 
 
 @extend_schema(tags=["Schema"])
@@ -69,7 +31,8 @@ class CustomSwaggerUIView(TemplateView):
 @generic_schema('detail')
 class GenericDetailView(AuthenticatedAPIView):
     """
-    Human-readable detail page for any object type.
+    Human-readable detail page for any object type, typically within the main web app.
+    /{obj_type}/{id}/
     """
 
     def get(self, request, obj_type, id, *args, **kwargs):
@@ -77,18 +40,36 @@ class GenericDetailView(AuthenticatedAPIView):
         if not config:
             raise Http404(f"Unsupported object type: {obj_type}")
 
-        detail_view = config.get("detail_view")
-        if detail_view:
-            return detail_view.as_view()(request, pk=id, *args, **kwargs)
+        # Use the appropriate queryset function, defaulting to all objects
+        qs_fn = config.get("detail_queryset") or config.get("preview_queryset") or (
+            lambda user: config["model"].objects)
+        obj = get_object_or_404(qs_fn(request.user), pk=id)
 
-        raise Http404(f"No detail view defined for object type '{obj_type}'. Please define one in TYPE_MAP.")
+        # special case: collections branch on collection_class
+        if obj_type == "collection":
+            if obj.collection_class == "dataset":
+                url_name = "collection:ds-collection-browse"
+            elif obj.collection_class == "place":
+                url_name = "collection:place-collection-browse"
+            else:
+                raise Http404(f"Unknown collection_class '{obj.collection_class}'")
+        else:
+            url_name = config.get("detail_url")
+
+        if not url_name:
+            raise Http404(f"No detail_url defined for {obj_type}")
+
+        url = reverse(url_name, kwargs={"id": obj.pk})
+
+        return HttpResponseRedirect(url)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
 @generic_schema('feature')
 class GenericFeatureView(AuthenticatedAPIView):
     """
-    Returns a machine-readable feature representation (e.g. GeoJSON).
+    Returns a machine-readable LPF representation (Linked Places Format).
+    /{obj_type}/api/{id}/
     """
 
     def get(self, request, obj_type, id, *args, **kwargs):
@@ -100,10 +81,66 @@ class GenericFeatureView(AuthenticatedAPIView):
         qs = queryset_fn(request.user)
         obj = get_object_or_404(qs, pk=id)
 
-        serializer_class = config["feature_serializer"]
-        serializer = serializer_class(obj, context={"request": request})
+        # Handle non-streaming serializers
+        serializer_class = config.get("feature_serializer", None)
+        if serializer_class:
+            serializer = serializer_class(obj, context={"request": request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        filename = f"whg_{obj_type}_{id}.lpf.geojson"
+        cache_path = LPFCache.get_cache_path(obj_type, id)
+
+        # Log all LPFCache properties for debugging
+        logger.debug(f"Cache file exists: {os.path.exists(cache_path)}")
+        logger.debug(f"Cache file size: {os.path.getsize(cache_path) if os.path.exists(cache_path) else 'N/A'}")
+        logger.debug(f"Build lock key: {LPFCache.get_build_lock_key(obj_type, id)}")
+        logger.debug(f"Redis lock TTL: {redis_client.ttl(LPFCache.get_build_lock_key(obj_type, id))}")
+        logger.debug(f"LPFCache status for {obj_type} id={id}: is_cached={LPFCache.is_cached(obj_type, id)}, "
+                     f"is_building={LPFCache.is_building(obj_type, id)}")
+
+        # Strategy: Stream from cache if available, otherwise stream live and build cache
+        if LPFCache.is_cached(obj_type, id):
+            logger.debug(f"Serving cached LPF for {obj_type} id={id}")
+            # Stream from cached file
+            response = StreamingHttpResponse(
+                lpf_stream_from_file(cache_path),
+                content_type="application/geo+json"
+            )
+        else:
+            # Check if another request is already building the cache
+            if not LPFCache.is_building(obj_type, id):
+                # Try to acquire lock to build cache
+                if LPFCache.acquire_build_lock(obj_type, id):
+                    logger.debug(f"Acquired build lock for {obj_type} id={id}")
+                    # We got the lock - stream live while building cache
+                    response = StreamingHttpResponse(
+                        lpf_stream_live(obj_type, obj, request, cache_path),
+                        content_type="application/geo+json"
+                    )
+                else:
+                    logger.debug(f"Failed to acquire build lock for {obj_type} id={id}")
+                    # Someone else got the lock just before us - stream live without caching
+                    response = StreamingHttpResponse(
+                        lpf_stream_live(obj_type, obj, request),
+                        content_type="application/geo+json"
+                    )
+            else:
+                logger.debug(f"Cache is being built for {obj_type} id={id}, streaming live")
+                # Cache is being built by another request - stream live without caching
+                response = StreamingHttpResponse(
+                    lpf_stream_live(obj_type, obj, request),
+                    content_type="application/geo+json"
+                )
+
+        response['Content-Disposition'] = f'attachment; filename="{urlquote(filename)}"'
+        response['Content-Encoding'] = 'gzip'
+
+        # Keep headers for API consumers, but filename is the key for persistence
+        response['X-Format'] = 'Linked Places Format (LPF)'
+        response['X-Format-Version'] = 'v1.1'
+        response['X-Compatible-With'] = 'GeoJSON'
+
+        return response
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -112,6 +149,7 @@ class GenericFeatureView(AuthenticatedAPIView):
 class GenericPreviewView(AuthenticatedAPIView):
     """
     Returns a preview snippet for reconciliation API or human browsing.
+    /{obj_type}/preview/{id}/
     """
 
     def get(self, request, obj_type, id, *args, **kwargs):
@@ -125,8 +163,6 @@ class GenericPreviewView(AuthenticatedAPIView):
 
         serializer_class = config["preview_serializer"]
         serializer = serializer_class(obj, context={"request": request})
-
-        logger.debug(f"Serializer data: {serializer.data}")
 
         html = render_to_string(
             f"preview/{obj_type}.html",

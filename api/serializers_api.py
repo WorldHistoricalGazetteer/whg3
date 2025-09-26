@@ -141,22 +141,6 @@ class APIPlaceGeomSerializer(serializers.ModelSerializer):
         )
 
 
-class AreaFeatureSerializer(serializers.ModelSerializer):
-    """
-    Minimal serializer for an Area, intended for feature (machine-readable) views.
-    Expand with geometry, metadata, etc. as needed.
-    """
-
-    class Meta:
-        model = Area
-        fields = [
-            "id",
-            "name",
-            "description",  # assuming your model has this
-            "geometry",  # GeoJSONField or similar
-        ]
-
-
 class AreaPreviewSerializer(serializers.ModelSerializer):
     """
     Lightweight serializer for an Area preview snippet.
@@ -168,27 +152,48 @@ class AreaPreviewSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
+            "type",
             "description",
             "created",
             "ccodes",
         ]
 
 
-class CollectionFeatureSerializer(serializers.ModelSerializer):
+class AreaFeatureSerializer(serializers.ModelSerializer):
     """
-    Minimal serializer for a Collection, intended for feature (machine-readable) views.
-    Can later embed datasets or places if required.
+    Serializer that returns an Area as a single GeoJSON Feature.
     """
 
     class Meta:
-        model = Collection
+        model = Area
         fields = [
             "id",
+            "type",
             "title",
-            "collection_class",
             "description",
-            "create_date",
+            "ccodes",
+            "geojson",
+            "created",
         ]
+
+    def to_representation(self, instance):
+        # Use geojson if present, otherwise bbox as fallback
+        geometry = instance.geojson or (
+            instance.bbox.geojson if instance.bbox else None
+        )
+
+        return {
+            "type": "Feature",
+            "geometry": geometry,
+            "properties": {
+                "id": instance.id,
+                "type": instance.type,
+                "title": instance.title,
+                "description": instance.description,
+                "ccodes": instance.ccodes,
+                "created": instance.created.isoformat() if instance.created else None,
+            },
+        }
 
 
 class CollectionPreviewSerializer(serializers.ModelSerializer):
@@ -213,17 +218,6 @@ class CollectionPreviewSerializer(serializers.ModelSerializer):
             "description",
             "create_date",
         ]
-
-
-class DatasetFeatureSerializer(serializers.ModelSerializer):
-    download_url = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Dataset
-        fields = ["id", "title", "description", "download_url"]
-
-    def get_download_url(self, obj):
-        return self.context["request"].build_absolute_uri(f"/dataset/download/{obj.id}/")
 
 
 class DatasetPreviewSerializer(serializers.ModelSerializer):
