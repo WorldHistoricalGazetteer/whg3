@@ -11,11 +11,11 @@ Management command to extend SpatialEntity with geospatial data from GitHub gaze
 """
 
 import json
-import requests
 from typing import Dict, List, Optional
 
-from django.core.management.base import BaseCommand
+import requests
 from django.contrib.gis.geos import GEOSGeometry, Polygon
+from django.core.management.base import BaseCommand
 from django.db import transaction
 
 
@@ -251,8 +251,9 @@ class Command(BaseCommand):
         """Compute bounding boxes for periods based on their spatial entities"""
         self.stdout.write("Computing bounding boxes for periods...")
 
-        # Get all periods that have spatial coverage with geometries
         from periods.models import Period
+
+        # Get all periods that have spatial coverage with geometries
         periods_with_spatial = Period.objects.filter(
             spatialCoverage__geometry__isnull=False
         ).distinct()
@@ -279,54 +280,49 @@ class Command(BaseCommand):
 
             with transaction.atomic():
                 for period in batch_periods:
-                    # Get all geometries for this period's spatial entities
                     spatial_entities = period.spatialCoverage.filter(geometry__isnull=False)
-
                     if not spatial_entities.exists():
                         continue
 
-                    try:
-                        # Collect all geometries
-                        geometries = []
-                        for entity in spatial_entities:
-                            if entity.geometry:
-                                geometries.append(entity.geometry)
+                    geometries_cleaned = []
+                    for entity in spatial_entities:
+                        geom = entity.geometry
+                        if not geom:
+                            continue
+                        if not geom.valid:
+                            try:
+                                geom = geom.buffer(0)
+                            except Exception:
+                                self.stderr.write(
+                                    f"Skipping invalid geometry for entity {entity.uri} in period {period.id}"
+                                )
+                                continue
+                        geometries_cleaned.append(geom)
 
-                        if not geometries:
+                    if not geometries_cleaned:
+                        continue
+
+                    # Union all geometries
+                    combined_geom = geometries_cleaned[0]
+                    for geom in geometries_cleaned[1:]:
+                        try:
+                            combined_geom = combined_geom.union(geom)
+                        except Exception as e:
+                            self.stderr.write(
+                                f"Warning: Could not union geometry for period {period.id} with entity {entity.uri}: {e}"
+                            )
                             continue
 
-                        # Create union of all geometries to get combined extent
-                        if len(geometries) == 1:
-                            combined_geom = geometries[0]
+                    # Create bounding box polygon from unioned geometry
+                    bbox_polygon = self.create_bbox_polygon(combined_geom)
+                    if bbox_polygon:
+                        if hasattr(period, 'bbox'):
+                            period.bbox = bbox_polygon
+                            period.save()
+                            batch_updated += 1
                         else:
-                            # Union all geometries
-                            combined_geom = geometries[0]
-                            for geom in geometries[1:]:
-                                try:
-                                    if not geom.valid:
-                                        geom = geom.buffer(0)
-                                    combined_geom = combined_geom.union(geom)
-                                except Exception as e:
-                                    # If union fails, skip this geometry
-                                    self.stderr.write(f"Warning: Could not union geometry for period {period.id}: {e}")
-                                    continue
-
-                        # Create bounding box polygon from combined extent
-                        bbox_polygon = self.create_bbox_polygon(combined_geom)
-
-                        if bbox_polygon:
-                            # Check if Period model has bbox field
-                            if hasattr(period, 'bbox'):
-                                period.bbox = bbox_polygon
-                                period.save()
-                                batch_updated += 1
-                            else:
-                                self.stderr.write("Period model does not have bbox field. Add it to the model first.")
-                                return
-
-                    except Exception as e:
-                        self.stderr.write(f"Error computing bbox for period {period.id}: {e}")
-                        continue
+                            self.stderr.write("Period model does not have bbox field. Add it to the model first.")
+                            return
 
             updated_periods += batch_updated
             self.stdout.write(f"Period batch {batch_num} complete: {batch_updated} periods updated")
