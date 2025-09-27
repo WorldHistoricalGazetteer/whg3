@@ -65,13 +65,13 @@ def build_chrononym_schema_view(
 
 
 def chrononym_reconcile_schema():
-    """Schema for the Chrononym Reconciliation API endpoint"""
+    """Schema for the WHG Chrononym Reconciliation API endpoint"""
     return build_chrononym_schema_view(
         methods={
             "get": {
                 "summary": "Get Chrononym Reconciliation Service metadata",
                 "description": (
-                    "Retrieve service metadata for the PeriodO Chrononyms reconciliation service. "
+                    "Retrieve service metadata for the PeriodO-based WHG Chrononyms reconciliation service. "
                     "Returns the service manifest as per Reconciliation Service API v0.2, "
                     "including URLs, default types, and preview configuration."
                 ),
@@ -149,7 +149,7 @@ def chrononym_reconcile_schema():
                 },
             }
         },
-        tags=["Chrononym Reconciliation API"],
+        tags=["WHG Chrononym Reconciliation API"],
     )
 
 
@@ -157,7 +157,7 @@ def chrononym_suggest_schema():
     """Schema for chrononym suggestion endpoint"""
     return build_chrononym_schema_view(
         methods={"get": True},
-        tags=["Chrononym Reconciliation API"],
+        tags=["WHG Chrononym Reconciliation API"],
         summary="Suggest chrononyms by prefix",
         description=(
             "Returns a list of chrononym suggestions that match a given prefix. "
@@ -203,7 +203,7 @@ def chrononym_preview_schema():
     """Schema for chrononym preview endpoint"""
     return build_chrononym_schema_view(
         methods={"get": True},
-        tags=["Chrononym Reconciliation API"],
+        tags=["WHG Chrononym Reconciliation API"],
         summary="Preview chrononym details",
         description=(
             "Returns detailed information about a specific chrononym, including "
