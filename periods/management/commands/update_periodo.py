@@ -17,10 +17,13 @@ OPTIMIZED VERSION:
 import json
 import logging
 import os
+import sys
 
+import requests
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+DATASET_URL = "https://n2t.net/ark:/99152/p0dataset.json"
 CACHE_FILE = "p0dataset.json"
 BATCH_SIZE = 50  # Process authorities in batches
 
@@ -48,12 +51,28 @@ class Command(BaseCommand):
         Chrononym.objects.all().delete()
         self.stdout.write("Existing tables cleared.")
 
-        if not os.path.exists(CACHE_FILE):
-            self.stderr.write(f"Cached dataset {CACHE_FILE} not found. Please download first.")
-            return
+        # --- Ensure dataset file exists ---
+        if not CACHE_FILE.exists():
+            self.stdout.write(f"Cached dataset not found. Downloading from {DATASET_URL}...")
+            try:
+                response = requests.get(DATASET_URL, timeout=30)
+                response.raise_for_status()
+                CACHE_FILE.write_bytes(response.content)
+                self.stdout.write("Download complete.")
+            except requests.exceptions.RequestException as e:
+                self.stderr.write(f"❌ Failed to download dataset: {e}")
+                sys.exit(1)
 
-        with open(CACHE_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        # --- Load dataset safely ---
+        try:
+            with CACHE_FILE.open("r", encoding="utf-8") as f:
+                data = json.load(f)
+        except json.JSONDecodeError as e:
+            self.stderr.write(f"❌ Failed to parse JSON in {CACHE_FILE}: {e}")
+            sys.exit(1)
+        except OSError as e:
+            self.stderr.write(f"❌ Could not read {CACHE_FILE}: {e}")
+            sys.exit(1)
 
         # --- Optional test slice of authorities ---
         TEST_SLICE = None  # Set to None to process all
