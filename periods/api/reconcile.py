@@ -1,8 +1,8 @@
 # periods/api/reconcile.py
 
-
 import json
 import logging
+import os
 
 from django.contrib.postgres.search import TrigramSimilarity
 from django.http import JsonResponse
@@ -19,7 +19,7 @@ from .schemas import get_chrononym_reconcile_schema, get_chrononym_suggest_schem
 
 logger = logging.getLogger('reconciliation')
 
-DOMAIN = "https://whgazetteer.org"  # Use your actual domain
+DOMAIN = os.environ.get('URL_FRONT', 'https://whgazetteer.org').rstrip('/')
 SCHEMA_SPACE = f"{DOMAIN}/schema/chrononym"
 DOCS_URL = "https://docs.whgazetteer.org/content/400-Technical.html#reconciliation-api"
 
