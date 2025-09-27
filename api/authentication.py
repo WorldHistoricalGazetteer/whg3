@@ -8,6 +8,10 @@ from rest_framework.views import APIView
 
 from .models import APIToken, UserAPIProfile
 
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    def enforce_csrf(self, request):
+        return
+
 class TokenQueryOrBearerAuthentication(BaseAuthentication):
     """
     Token authentication via URL parameter (?token=...) or Bearer header
