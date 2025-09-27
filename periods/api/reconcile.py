@@ -60,7 +60,6 @@ def json_error(message, status=400):
     return JsonResponse({"error": message}, status=status)
 
 
-@method_decorator(csrf_exempt, name="dispatch")
 @get_chrononym_reconcile_schema()
 class ChrononymReconciliationView(APIView):
     """Reconciliation service for PeriodO chrononyms"""
@@ -87,6 +86,7 @@ class ChrononymReconciliationView(APIView):
 
     @authentication_classes([TokenQueryOrBearerAuthentication, SessionAuthentication])
     @permission_classes([IsAuthenticated])
+    @method_decorator(csrf_exempt, name="dispatch")
     def post(self, request, *args, **kwargs):
         """Handle reconciliation queries"""
         try:
