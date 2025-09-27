@@ -18,13 +18,14 @@ import json
 import logging
 import os
 import sys
+from pathlib import Path
 
 import requests
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 DATASET_URL = "https://n2t.net/ark:/99152/p0dataset.json"
-CACHE_FILE = "p0dataset.json"
+CACHE_FILE = Path("p0dataset.json")
 BATCH_SIZE = 50  # Process authorities in batches
 
 
