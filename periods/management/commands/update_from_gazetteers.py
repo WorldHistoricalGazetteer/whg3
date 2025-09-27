@@ -292,9 +292,14 @@ class Command(BaseCommand):
                         if not geom.valid:
                             try:
                                 geom = geom.buffer(0)
-                            except Exception:
+                                if not geom.valid:
+                                    raise ValueError("Geometry still invalid after buffer(0)")
+                            except Exception as e:
+                                props = getattr(entity, "properties", {})
+                                title = props.get("title", "") if props else ""
                                 self.stderr.write(
-                                    f"Skipping invalid geometry for entity {entity.uri} in period {period.id}"
+                                    f"Skipping invalid geometry for entity {entity.uri} "
+                                    f"(title='{title}') in period {period.id}: {e}"
                                 )
                                 continue
                         geometries_cleaned.append(geom)
