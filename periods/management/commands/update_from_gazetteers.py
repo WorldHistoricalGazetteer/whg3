@@ -299,12 +299,12 @@ class Command(BaseCommand):
                         if len(geometries) == 1:
                             combined_geom = geometries[0]
                         else:
-                            if not geom.valid:
-                                geom = geom.buffer(0)
                             # Union all geometries
                             combined_geom = geometries[0]
                             for geom in geometries[1:]:
                                 try:
+                                    if not geom.valid:
+                                        geom = geom.buffer(0)
                                     combined_geom = combined_geom.union(geom)
                                 except Exception as e:
                                     # If union fails, skip this geometry
