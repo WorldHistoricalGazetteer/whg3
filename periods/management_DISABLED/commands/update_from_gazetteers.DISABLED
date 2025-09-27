@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
+# update_from_gazetteers.py
 """
-update_from_gazetteers.py
 
 Management command to extend SpatialEntity with geospatial data from GitHub gazetteers.
 

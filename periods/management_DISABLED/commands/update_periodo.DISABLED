@@ -1,6 +1,5 @@
-#!/usr/bin/env python3
+# update_periodo.py
 """
-update_periodo.py
 
 Populate the periods database from the cached PeriodO JSON.
 
