@@ -21,6 +21,7 @@ logger = logging.getLogger('reconciliation')
 
 DOMAIN = "https://whgazetteer.org"  # Use your actual domain
 SCHEMA_SPACE = f"{DOMAIN}/schema/chrononym"
+DOCS_URL = "https://docs.whgazetteer.org/content/400-Technical.html#reconciliation-api"
 
 CHRONONYM_SERVICE_METADATA = {
     "versions": ["0.2"],
@@ -30,7 +31,8 @@ CHRONONYM_SERVICE_METADATA = {
     "defaultTypes": [
         {"id": f"{SCHEMA_SPACE}#Chrononym", "name": "Chrononym"},
     ],
-    "documentation": f"{DOMAIN}/api/docs/chrononym-reconciliation",
+    "documentation": DOCS_URL,
+    "logo": DOMAIN + "/static/images/whg_logo_80.png",
     "view": {
         "url": f"{DOMAIN}/chrononym/{{{{id}}}}/",
     },
@@ -42,7 +44,7 @@ CHRONONYM_SERVICE_METADATA = {
     "suggest": {
         "entity": {
             "service_url": DOMAIN,
-            "service_path": "/chrononym/suggest?token={{token}}",
+            "service_path": "/chrononym/suggest/?token={{token}}",
         }
     },
     "batch_size": 50,
