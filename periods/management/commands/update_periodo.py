@@ -22,14 +22,6 @@ import os
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from periods.models import (
-    Authority,
-    Period,
-    TemporalBound,
-    SpatialEntity,
-    Chrononym,
-)
-
 CACHE_FILE = "p0dataset.json"
 BATCH_SIZE = 50  # Process authorities in batches
 
@@ -39,6 +31,14 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         logging.getLogger('django.db.backends').setLevel(logging.WARNING)
+
+        from periods.models import (
+            Authority,
+            Period,
+            TemporalBound,
+            SpatialEntity,
+            Chrononym,
+        )
 
         # Clear existing data
         self.stdout.write("Erasing existing periods tables...")

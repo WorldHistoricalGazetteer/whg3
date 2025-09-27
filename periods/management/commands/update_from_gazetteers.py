@@ -19,8 +19,6 @@ from django.core.management.base import BaseCommand
 from django.contrib.gis.geos import GEOSGeometry, Polygon
 from django.db import transaction
 
-from periods.models import SpatialEntity, GazetteerTracker, Period
-
 
 class Command(BaseCommand):
     help = "Update SpatialEntity with geospatial data from periodo-places gazetteers."
@@ -105,6 +103,7 @@ class Command(BaseCommand):
 
         # Check if we need to process this file
         try:
+            from periods.models import GazetteerTracker
             tracker = GazetteerTracker.objects.get(filename=filename)
             if not force and tracker.commit_hash == current_sha:
                 self.stdout.write(f"Skipping {filename} (no changes)")
@@ -137,6 +136,7 @@ class Command(BaseCommand):
 
         # Pre-load existing SpatialEntities for efficiency
         feature_ids = [f.get('id') for f in features if f.get('id')]
+        from periods.models import SpatialEntity
         existing_entities = {se.uri: se for se in SpatialEntity.objects.filter(uri__in=feature_ids)}
         self.stdout.write(f"Found {len(existing_entities)} matching spatial entities")
 
@@ -253,6 +253,7 @@ class Command(BaseCommand):
         self.stdout.write("Computing bounding boxes for periods...")
 
         # Get all periods that have spatial coverage with geometries
+        from periods.models import Period
         periods_with_spatial = Period.objects.filter(
             spatialCoverage__geometry__isnull=False
         ).distinct()
