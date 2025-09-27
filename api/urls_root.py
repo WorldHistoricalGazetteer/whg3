@@ -5,6 +5,7 @@ from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiResp
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
 from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
 
+from periods.api.reconcile import ChrononymReconciliationView, ChrononymSuggestView, ChrononymPreviewView
 from .reconcile import ReconciliationView, SuggestEntityView, ExtendProposeView, SuggestPropertyView, \
     DummyView
 from .views_generic import CustomSwaggerUIView, GenericFeatureView, GenericDetailView, GenericPreviewView, \
@@ -37,6 +38,11 @@ urlpatterns = [
     path('reconcile/properties', ExtendProposeView.as_view(), name='extend-propose'),
     path("suggest/entity", SuggestEntityView.as_view(), name="suggest_entity"),
     path("suggest/property", SuggestPropertyView.as_view(), name="suggest_property"),
+
+    ## Chrononym Reconciliation API endpoints (new)
+    path("chrononym/reconcile/", ChrononymReconciliationView.as_view(), name="chrononym-reconcile"),
+    path("chrononym/suggest/", ChrononymSuggestView.as_view(), name="chrononym-suggest"),
+    path("chrononym/preview/<int:chrononym_id>/", ChrononymPreviewView.as_view(), name="chrononym-preview"),
 
     # Generic endpoints for multiple object types
     path("<str:obj_type>/<int:id>/", GenericDetailView.as_view(), name="generic-detail"),
