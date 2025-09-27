@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     'ingestion.apps.IngestionConfig',
     'main.apps.MainConfig',
     'metrics.apps.MetricsConfig',
+    'periods.apps.PeriodsConfig',
     'persons.apps.PersonsConfig',
     'places.apps.PlacesConfig',
     'resources.apps.ResourcesConfig',  # for teaching
