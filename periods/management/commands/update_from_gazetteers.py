@@ -299,6 +299,8 @@ class Command(BaseCommand):
                         if len(geometries) == 1:
                             combined_geom = geometries[0]
                         else:
+                            if not geom.valid:
+                                geom = geom.buffer(0)
                             # Union all geometries
                             combined_geom = geometries[0]
                             for geom in geometries[1:]:
