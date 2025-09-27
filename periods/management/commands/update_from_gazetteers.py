@@ -308,15 +308,16 @@ class Command(BaseCommand):
                         continue
 
                     # Union all geometries
-                    combined_geom = geometries_cleaned[0]
-                    for geom in geometries_cleaned[1:]:
-                        try:
+                    try:
+                        combined_geom = geometries_cleaned[0]
+                        for geom in geometries_cleaned[1:]:
                             combined_geom = combined_geom.union(geom)
-                        except Exception as e:
-                            self.stderr.write(
-                                f"Warning: Could not union geometry for period {period.id} with entity {entity.uri}: {e}"
-                            )
-                            continue
+                    except Exception as e:
+                        self.stderr.write(
+                            f"Warning: Could not union geometries for period {period.id} "
+                            f"entity {entity.uri} (title='{getattr(entity, 'label', '')}'): {e}"
+                        )
+                        continue
 
                     # Create bounding box polygon from unioned geometry
                     bbox_polygon = self.create_bbox_polygon(combined_geom)
