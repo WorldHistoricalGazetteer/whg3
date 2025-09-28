@@ -301,8 +301,11 @@ class ReconciliationView(APIView):
 
     def format_result(self, chrononym, score=50, match=False):
         """Format chrononym as reconciliation result"""
+        period = chrononym.periods.first()
+        if not period:
+            return None
         return {
-            "id": str(chrononym.id),
+            "id": str(period.id),
             "name": chrononym.label,
             "type": [{
                 "id": f"{SCHEMA_SPACE}#Chrononym",
