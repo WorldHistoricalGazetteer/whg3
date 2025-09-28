@@ -63,7 +63,7 @@ class GenericDetailView(AuthenticatedAPIView):
         if not url_name:
             raise Http404(f"No detail_url defined for {obj_type}")
 
-        url = reverse(url_name, kwargs={"id": obj.pk})
+        url = reverse(url_name, kwargs={"pid" if obj_type == "place" else "id": obj.pk})
 
         return HttpResponseRedirect(url)
 

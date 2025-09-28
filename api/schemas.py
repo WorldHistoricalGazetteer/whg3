@@ -48,7 +48,7 @@ TYPE_MAP = {
     },
     "place": {
         "model": Place,
-        "detail_url": "places:place-portal",
+        "detail_url": "places:place-portal-pid",
         "feature_serializer": PlaceFeatureSerializer,
         "feature_queryset": place_feature_queryset,
         "preview_serializer": PlacePreviewSerializer,
