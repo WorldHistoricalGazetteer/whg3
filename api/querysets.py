@@ -1,9 +1,10 @@
 # api/querysets.py
+from django.db.models import Prefetch
 
 from areas.models import Area
 from collection.models import Collection
 from datasets.models import Dataset
-from periods.models import Period
+from periods.models import Period, TemporalBound
 from places.models import Place
 
 
@@ -30,10 +31,17 @@ def dataset_owner_or_public_queryset(authenticated_user):
 
 def period_public_queryset(user):
     """
-    Return periods queryset. All periods are public for now.
-    Could be extended to include user-specific filtering if needed.
+    Return periods queryset. All periods are public.
     """
-    return Period.objects.select_related('authority').prefetch_related('chrononyms', 'spatialCoverage')
+    return (
+        Period.objects
+        .select_related('authority')
+        .prefetch_related(
+            'chrononyms',
+            'spatialCoverage',
+            Prefetch('bounds', queryset=TemporalBound.objects.order_by('kind', 'earliestYear'))
+        )
+    )
 
 
 def place_feature_queryset(authenticated_user):

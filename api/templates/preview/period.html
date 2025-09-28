@@ -2,14 +2,23 @@
 {% load preview_extras %}
 
 {% block title %}{{ object.chrononym|default:"Untitled Period" }}{% endblock %}
-{% block note %}{{ object.authority_label }}{% endblock %}
+{% block note %}Authority: {{ object.authority_label }}{% endblock %}
 
 {% block fields %}
     <span class="record-field">Language:</span> {{ object.languageTag|default:"N/A" }}<br>
     <span class="record-field">Date Range:</span> {{ object.date_range }}<br>
-    <span class="record-field">Alternative Names:</span> {{ object.chrononym_count }}<br>
-    <span class="record-field">Geographic Coverage:</span> {{ object.spatial_count }} locations<br>
+
+    {% if object.chrononyms_preview %}
+        <span class="record-field">Alternative Names:</span>
+        {{ object.chrononyms_preview|join:", " }}{% if object.chrononym_count > 3 %} …{% endif %}<br>
+    {% endif %}
+
+    {% if object.spatial_preview %}
+        <span class="record-field">Geographic Coverage:</span>
+        {{ object.spatial_preview|join:", " }}{% if object.spatial_count > 3 %} …{% endif %}<br>
+    {% endif %}
+
     {% if object.note %}
-    <span class="record-field">Note:</span> {{ object.note|truncatewords:20 }}<br>
+        <span class="record-field">Note:</span> {{ object.note|truncatewords:20 }}<br>
     {% endif %}
 {% endblock %}
