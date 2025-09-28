@@ -10,11 +10,11 @@
         {{ object.chrononyms_preview|join:", " }}{% if object.chrononym_count > 3 %} …{% endif %}<br>
     {% endif %}
 
-    {% if object.begin %}
-        <span class="record-field">Start:</span> {{ object.begin }}<br>
+    {% if object.start %}
+        <span class="record-field">Start:</span> {{ object.start }}<br>
     {% endif %}
-    {% if object.end %}
-        <span class="record-field">End:</span> {{ object.end }}<br>
+    {% if object.stop %}
+        <span class="record-field">Stop:</span> {{ object.stop }}<br>
     {% endif %}
 
     {% if object.spatial_preview %}

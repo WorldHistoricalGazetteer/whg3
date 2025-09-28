@@ -377,11 +377,11 @@ class PeriodPreviewSerializer(serializers.ModelSerializer):
             if not b:
                 continue
             if b.earliestYear == b.latestYear:
-                result[kind if kind == "stop" else "begin"] = self.format_year(b.earliestYear)
+                result[kind] = self.format_year(b.earliestYear)
             else:
-                result[kind if kind == "stop" else "begin"] = f"{self.format_year(b.earliestYear)} / {self.format_year(b.latestYear)}"
+                result[kind] = f"{self.format_year(b.earliestYear)} / {self.format_year(b.latestYear)}"
 
-        return result if result else "Unknown"
+        return result
 
 
 class PlacePreviewSerializer(serializers.ModelSerializer):
