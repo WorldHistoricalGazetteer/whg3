@@ -224,6 +224,7 @@ class ReconciliationView(APIView):
 
             # Place reconciliation
             results = process_queries(queries, batch_size=batch_size)
+            logger.debug("Reconciliation results: {}".format(results))
             return JsonResponse(results)
 
         return json_error("Missing 'queries' or 'extend' parameter")
