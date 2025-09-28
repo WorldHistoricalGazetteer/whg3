@@ -341,6 +341,7 @@ class PeriodPreviewSerializer(serializers.ModelSerializer):
     authority_label = serializers.SerializerMethodField()
     chrononyms_preview = serializers.SerializerMethodField()
     spatial_preview = serializers.SerializerMethodField()
+    date_range = serializers.SerializerMethodField()
     start = serializers.SerializerMethodField()
     stop = serializers.SerializerMethodField()
 
