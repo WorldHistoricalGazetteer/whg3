@@ -361,6 +361,7 @@ class PeriodPreviewSerializer(serializers.ModelSerializer):
         spatial = list(obj.spatialCoverage.all()[:3])
         return [se.label or se.uri for se in spatial]
 
+    @staticmethod
     def format_year(year: int) -> str:
         """Convert a numeric year to a readable BCE/CE string."""
         if year is None:
