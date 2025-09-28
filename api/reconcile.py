@@ -423,12 +423,12 @@ class SuggestEntityView(AuthenticatedAPIView):
             place_candidates.append(candidate)
 
         # --- 3. Search for Periods (Database - Chrononym) ---
-        period_limit = 100  # Limit the database query size
+        period_limit = 60  # Limit the database query size
 
         # Use an iqueryset to allow for case-insensitive startswith
         suggestions = Chrononym.objects.filter(
             label__istartswith=prefix
-        ).order_by('label')[:period_limit]
+        )
 
         # Collect all related period IDs
         period_qs = Period.objects.filter(
@@ -436,7 +436,9 @@ class SuggestEntityView(AuthenticatedAPIView):
         ).distinct().prefetch_related(
             'chrononyms',
             'spatialCoverage',
-        )
+        ).order_by('chrononym')
+
+        period_qs = period_qs[:period_limit]
 
         PERIOD_SCHEMA_ID = SCHEMA_SPACE + "#Period"
         period_candidates = []
