@@ -344,6 +344,9 @@ class ReconciliationView(APIView):
 
         # Sort by score and return top results
         results = sorted(results, key=lambda x: x['score'], reverse=True)
+
+        logger.debug(f"Reconciled {len(results)} periods for query '{query_text}'")
+        logger.debug(f"Results: {results}")
         return {"result": results[:limit]}
 
     def calculate_prefix_score(self, query, label):
