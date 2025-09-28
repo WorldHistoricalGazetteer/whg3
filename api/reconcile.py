@@ -234,8 +234,7 @@ class ReconciliationView(APIView):
         if not query_text:
             return {"result": []}
 
-        # Type filtering - only accept chrononym type
-        if type_filter and "chrononym" not in type_filter.lower():
+        if type_filter and "period" not in type_filter.lower():
             return {"result": []}
 
         # Multi-tier matching strategy
