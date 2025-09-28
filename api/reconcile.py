@@ -36,6 +36,7 @@ from .authentication import AuthenticatedAPIView, TokenQueryOrBearerAuthenticati
 from .reconcile_helpers import make_candidate, format_extend_row, es_search, extract_entity_type, \
     create_type_guessing_dummies, parse_schema
 from .schemas import reconcile_schema, propose_properties_schema, suggest_entity_schema, suggest_property_schema
+from .serializers_api import PeriodPreviewSerializer
 
 logger = logging.getLogger('reconciliation')
 
@@ -429,17 +430,47 @@ class SuggestEntityView(AuthenticatedAPIView):
             label__istartswith=prefix
         ).order_by('label')[:period_limit]
 
-        period_candidates = []
-        PERIOD_SCHEMA_ID = SCHEMA_SPACE + "#Period"
+        # Collect all related period IDs
+        period_qs = Period.objects.filter(
+            chrononyms__in=suggestions
+        ).distinct().prefetch_related(
+            'chrononyms',                 # prefetch all related chrononyms
+            'spatialCoverage',            # prefetch all related spatial entities
+        )
 
-        for chrononym in suggestions:
+        PERIOD_SCHEMA_ID = SCHEMA_SPACE + "#Period"
+        period_candidates = []
+
+        for period in period_qs:
+            # Aggregate all chrononyms
+            chron_labels = [f"{c.label} ({c.languageTag})" for c in period.chrononyms.all()]
+
+            # Spatial coverage description
+            spatial_desc = period.spatialCoverageDescription or ""
+
+            # Format start/stop bounds using serializer helpers
+            serializer = PeriodPreviewSerializer(period)
+            start = serializer.get_start(period) or "Unknown"
+            stop = serializer.get_stop(period) or "Unknown"
+            bounds_str = f"{start} – {stop}" if start or stop else ""
+
+            # Compose description
+            description_parts = []
+            if chron_labels:
+                description_parts.append(", ".join(chron_labels))
+            if spatial_desc:
+                description_parts.append(spatial_desc)
+            if bounds_str:
+                description_parts.append(bounds_str)
+            description = "; ".join(description_parts)
+
             period_candidates.append({
-                "id": f"period:{chrononym.id}",
-                "name": chrononym.label,
-                "score": 100,  # Assign max score for visibility/sorting
+                "id": f"period:{period.id}",
+                "name": period.chrononym or period.id,
+                "score": 100,
                 "match": True,
-                "description": f"Language: {chrononym.languageTag}" if chrononym.languageTag else "",
-                "type": [{"id": PERIOD_SCHEMA_ID, "name": "Period"}]
+                "description": description,
+                "type": [{"id": PERIOD_SCHEMA_ID, "name": "Period"}],
             })
 
         # --- 4. Combine and Sort Results ---
