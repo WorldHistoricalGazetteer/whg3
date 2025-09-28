@@ -30,9 +30,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from main.choices import FEATURE_CLASSES
+from periods.models import Period
 from places.models import Place
 from .authentication import AuthenticatedAPIView, TokenQueryOrBearerAuthentication
-from .reconcile_helpers import make_candidate, format_extend_row, es_search, get_propose_properties
+from .reconcile_helpers import make_candidate, format_extend_row, es_search, get_propose_properties, extract_entity_type
 from .schemas import reconcile_schema, propose_properties_schema, suggest_entity_schema, suggest_property_schema
 
 logger = logging.getLogger('reconciliation')
@@ -157,14 +158,26 @@ class ReconciliationView(APIView):
         # Data extension requests
         extend = payload.get("extend", {})
         if extend:
-            ids = extend.get("ids", [])
-            properties = extend.get("properties", [])
-            if not ids:
+            entity_ids = extend.get("ids", [])
+            if not entity_ids:
                 return JsonResponse({"rows": {}, "meta": []})
 
-            qs = Place.objects.filter(id__in=ids).prefetch_related("names", "geoms", "links")
+            try:
+                entity_type, ids = extract_entity_type(entity_ids)
+            except ValueError as e:
+                return json_error(str(e))
 
-            rows = {str(p.id): format_extend_row(p, properties, request=request) for p in qs}
+            properties = extend.get("properties", [])
+
+            if entity_type == "place":
+                qs = Place.objects.filter(id__in=ids).prefetch_related("names", "geoms", "links")
+            else:  # period
+                qs = Period.objects.filter(id__in=ids)  # TODO: add prefetch
+
+            rows = {
+                f"{entity_type}:{p.id}": format_extend_row(p, properties, request=request)
+                for p in qs
+            }
 
             # Meta block required by OpenRefine
             meta = [
@@ -180,19 +193,10 @@ class ReconciliationView(APIView):
         if not queries:
             return json_error("Missing 'queries' parameter")
 
-        # Extract and validate entity type
-        types = {
-            urllib.parse.unquote(q["type"]).split("#")[-1].lower()
-            for q in queries.values()
-            if isinstance(q.get("type"), str)
-        }
-        if not types:
-            return json_error("Each query must specify a valid 'type' (e.g. '#Place' or '#Period')")
-        if not types.issubset({"place", "period"}):
-            return json_error(f"Unsupported entity type(s): {', '.join(sorted(types))}")
-        if len(types) > 1:
-            return json_error("All queries in a batch must be for the same entity type")
-        entity_type = types.pop()
+        try:
+            entity_type, _ = extract_entity_type(queries, from_queries=True)
+        except ValueError as e:
+            return json_error(str(e))
 
         # Period reconciliation
         if entity_type == "period":

@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import urllib
 from datetime import datetime
 from pathlib import Path
 
@@ -20,6 +21,8 @@ ELASTIC_INDICES = "whg,pub,wdgn"  # or options from "whg,pub,wdgn"
 
 # TODO: Replace ElasticSearch with Vespa backend when ready
 es = settings.ES_CONN
+
+ALLOWED_TYPES = {"place", "period"}
 
 # Property ID to required serializer fields mapping
 PROPERTY_FIELD_MAP = {
@@ -718,3 +721,47 @@ def get_propose_properties(schema_file):
     })
 
     return propose_properties
+
+
+def extract_entity_type(source, from_queries=False):
+    """
+    Extract and validate entity type + ids from either:
+      - extend ids: ["place:123", "place:456"]
+      - queries: {"q1": {"type": "...#Place"}, ...}
+
+    Returns (entity_type, ids) where ids may be [] for queries.
+    """
+    if from_queries:
+        types = {
+            urllib.parse.unquote(q["type"]).split("#")[-1].lower()
+            for q in source.values()
+            if isinstance(q.get("type"), str)
+        }
+        if not types:
+            raise ValueError("Each query must specify a valid 'type' (e.g. '#Place' or '#Period')")
+        if not types.issubset(ALLOWED_TYPES):
+            raise ValueError(f"Unsupported entity type(s): {', '.join(sorted(types))}")
+        if len(types) > 1:
+            raise ValueError("All queries in a batch must be for the same entity type")
+        return types.pop(), []
+
+    else:
+        parsed = []
+        obj_types = set()
+        for full_id in source:
+            try:
+                obj_type, raw_id = full_id.split(":", 1)
+            except ValueError:
+                raise ValueError(f"Invalid id format: {full_id}. Expected format 'type:id'")
+            if obj_type not in ALLOWED_TYPES:
+                raise ValueError(
+                    f"Unsupported type in id: {full_id}. "
+                    f"Supported types are {', '.join(sorted(ALLOWED_TYPES))}"
+                )
+            parsed.append(raw_id)
+            obj_types.add(obj_type)
+
+        if len(obj_types) > 1:
+            raise ValueError("All ids must be of the same type")
+
+        return obj_types.pop(), parsed
