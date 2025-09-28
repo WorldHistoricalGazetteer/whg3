@@ -66,7 +66,7 @@ SERVICE_METADATA = {
         "url": DOMAIN + "/entity/{{id}}/api",
     },
     "preview": {  # HTML preview snippet
-        "url": DOMAIN + "/entity/{{id}}/preview/?token={{token}}",
+        "url": DOMAIN + "/entity/{{id}}/preview?token={{token}}",
         "width": 400,
         "height": 300,
     },
