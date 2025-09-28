@@ -385,12 +385,10 @@ class PeriodPreviewSerializer(serializers.ModelSerializer):
         return result
 
     def get_start(self, obj):
-        dr = self.get_date_range(obj)
-        return dr.get("begin") if dr else None
+        return self.get_date_range(obj).get("start")
 
     def get_stop(self, obj):
-        dr = self.get_date_range(obj)
-        return dr.get("end") if dr else None
+        return self.get_date_range(obj).get("stop")
 
 
 class PlacePreviewSerializer(serializers.ModelSerializer):
