@@ -58,13 +58,13 @@ SERVICE_METADATA = {
     "documentation": DOCS_URL,
     "logo": DOMAIN + "/static/images/whg_logo_80.png",
     "view": {  # human-readable page
-        "url": DOMAIN + "/{{obj_type}}/{{id}}/",
+        "url": DOMAIN + "/entity/{{id}}/",
     },
     "feature_view": {  # machine-readable place representation
-        "url": DOMAIN + "/{{obj_type}}/api/{{id}}",
+        "url": DOMAIN + "/entity/{{id}}/api",
     },
     "preview": {  # HTML preview snippet
-        "url": DOMAIN + "/{{obj_type}}/preview/{{id}}/?token={{token}}",
+        "url": DOMAIN + "/entity/{{id}}/preview/?token={{token}}",
         "width": 400,
         "height": 300,
     },

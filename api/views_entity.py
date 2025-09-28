@@ -1,4 +1,4 @@
-# api/views_generic.py
+# api/views_entity.py
 import logging
 import os
 from urllib.parse import quote as urlquote
@@ -17,7 +17,7 @@ from rest_framework.response import Response
 
 from api.authentication import AuthenticatedAPIView
 from api.download_lpf import LPFCache, lpf_stream_from_file, lpf_stream_live, redis_client
-from api.schemas import generic_schema, TYPE_MAP
+from api.schemas import entity_schema, TYPE_MAP
 
 logger = logging.getLogger('reconciliation')
 
@@ -28,14 +28,20 @@ class CustomSwaggerUIView(TemplateView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-@generic_schema('detail')
-class GenericDetailView(AuthenticatedAPIView):
+@entity_schema('detail')
+class EntityDetailView(AuthenticatedAPIView):
     """
     Human-readable detail page for any object type, typically within the main web app.
-    /{obj_type}/{id}/
+    /{entity_id}/
     """
 
-    def get(self, request, obj_type, id, *args, **kwargs):
+    def get(self, request, entity_id, *args, **kwargs):
+
+        try:
+            obj_type, id = entity_id.split(":", 1)
+        except ValueError:
+            raise Http404(f"Invalid entity_id format: {entity_id}")
+
         config = TYPE_MAP.get(obj_type)
         if not config:
             raise Http404(f"Unsupported object type: {obj_type}")
@@ -69,14 +75,20 @@ class GenericDetailView(AuthenticatedAPIView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-@generic_schema('feature')
-class GenericFeatureView(AuthenticatedAPIView):
+@entity_schema('feature')
+class EntityFeatureView(AuthenticatedAPIView):
     """
     Returns a machine-readable LPF representation (Linked Places Format).
     /{obj_type}/api/{id}/
     """
 
-    def get(self, request, obj_type, id, *args, **kwargs):
+    def get(self, request, entity_id, *args, **kwargs):
+
+        try:
+            obj_type, id = entity_id.split(":", 1)
+        except ValueError:
+            raise Http404(f"Invalid entity_id format: {entity_id}")
+
         config = TYPE_MAP.get(obj_type)
         if not config:
             raise Http404(f"Unsupported object type: {obj_type}")
@@ -149,14 +161,20 @@ class GenericFeatureView(AuthenticatedAPIView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 @method_decorator(xframe_options_exempt, name="dispatch")
-@generic_schema('preview')
-class GenericPreviewView(AuthenticatedAPIView):
+@entity_schema('preview')
+class EntityPreviewView(AuthenticatedAPIView):
     """
     Returns a preview snippet for reconciliation API or human browsing.
     /{obj_type}/preview/{id}/
     """
 
-    def get(self, request, obj_type, id, *args, **kwargs):
+    def get(self, request, entity_id, *args, **kwargs):
+
+        try:
+            obj_type, id = entity_id.split(":", 1)
+        except ValueError:
+            raise Http404(f"Invalid entity_id format: {entity_id}")
+
         config = TYPE_MAP.get(obj_type)
         if not config:
             return HttpResponse(f"Unsupported object type: {obj_type}", status=404)
@@ -177,28 +195,34 @@ class GenericPreviewView(AuthenticatedAPIView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-@generic_schema('create')
-class GenericCreateView(AuthenticatedAPIView):
+@entity_schema('create')
+class EntityCreateView(AuthenticatedAPIView):
     """
     Create a new object.
     """
 
-    def post(self, request, obj_type, *args, **kwargs):
+    def post(self, request, entity_id, *args, **kwargs):
         # TODO: use forms or DRF serializers depending on workflow
         return Response(
-            {"message": f"Create not implemented for {obj_type}"},
+            {"message": f"Create not implemented for {entity_id}"},
             status=status.HTTP_501_NOT_IMPLEMENTED,
         )
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-@generic_schema('update')
-class GenericUpdateView(AuthenticatedAPIView):
+@entity_schema('update')
+class EntityUpdateView(AuthenticatedAPIView):
     """
     Replace (overwrite) an object with new data.
     """
 
-    def put(self, request, obj_type, id, *args, **kwargs):
+    def put(self, request, entity_id, *args, **kwargs):
+
+        try:
+            obj_type, id = entity_id.split(":", 1)
+        except ValueError:
+            raise Http404(f"Invalid entity_id format: {entity_id}")
+
         return Response(
             {"message": f"Replace not implemented for {obj_type} id={id}"},
             status=status.HTTP_501_NOT_IMPLEMENTED,
@@ -213,13 +237,19 @@ class GenericUpdateView(AuthenticatedAPIView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-@generic_schema('delete')
-class GenericDeleteView(AuthenticatedAPIView):
+@entity_schema('delete')
+class EntityDeleteView(AuthenticatedAPIView):
     """
     Delete an object.
     """
 
-    def delete(self, request, obj_type, id, *args, **kwargs):  # <-- change from post to delete
+    def delete(self, request, entity_id, *args, **kwargs):  # <-- change from post to delete
+
+        try:
+            obj_type, id = entity_id.split(":", 1)
+        except ValueError:
+            raise Http404(f"Invalid entity_id format: {entity_id}")
+
         config = TYPE_MAP.get(obj_type)
         if not config:
             raise Http404(f"Unsupported object type: {obj_type}")

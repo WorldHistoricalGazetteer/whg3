@@ -5,11 +5,10 @@ from drf_spectacular.utils import extend_schema_view, extend_schema, OpenApiResp
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView
 from rest_framework.renderers import JSONRenderer, BrowsableAPIRenderer
 
-from periods.api.reconcile import ChrononymReconciliationView, ChrononymSuggestView, ChrononymPreviewView
 from .reconcile import ReconciliationView, SuggestEntityView, ExtendProposeView, SuggestPropertyView, \
     DummyView
-from .views_generic import CustomSwaggerUIView, GenericFeatureView, GenericDetailView, GenericPreviewView, \
-    GenericUpdateView, GenericDeleteView, GenericCreateView
+from .views_entity import CustomSwaggerUIView, EntityDetailView, EntityFeatureView, EntityPreviewView, \
+    EntityUpdateView, EntityDeleteView, EntityCreateView
 
 
 @extend_schema_view(
@@ -39,13 +38,13 @@ urlpatterns = [
     path("suggest/entity", SuggestEntityView.as_view(), name="suggest_entity"),
     path("suggest/property", SuggestPropertyView.as_view(), name="suggest_property"),
 
-    # Generic endpoints for multiple object types
-    path("<str:obj_type>/<str:id>/", GenericDetailView.as_view(), name="generic-detail"),
-    path("<str:obj_type>/api/<str:id>/", GenericFeatureView.as_view(), name="generic-api"),
-    path("<str:obj_type>/preview/<str:id>/", GenericPreviewView.as_view(), name="generic-preview"),
-    path("<str:obj_type>/update/<str:id>/", GenericUpdateView.as_view(), name="generic-replace"),
-    path("<str:obj_type>/delete/<str:id>/", GenericDeleteView.as_view(), name="generic-delete"),
-    path("<str:obj_type>/create/", GenericCreateView.as_view(), name="generic-create"),
+    # Entity API endpoints
+    path("entity/<str:entity_id>/", EntityDetailView.as_view(), name="entity-detail"),
+    path("entity/<str:entity_id>/api", EntityFeatureView.as_view(), name="entity-api"),
+    path("entity/<str:entity_id>/preview", EntityPreviewView.as_view(), name="entity-preview"),
+    path("entity/<str:entity_id>/update", EntityUpdateView.as_view(), name="entity-replace"),
+    path("entity/<str:entity_id>/delete", EntityDeleteView.as_view(), name="entity-delete"),
+    path("entity/<str:entity_id>/create", EntityCreateView.as_view(), name="entity-create"),
 
     # Dummy endpoint: serves both as a placeholder and as an inert handler for OpenRefine's legacy search calls
     path('search/', DummyView.as_view(), name='dummy_search'),

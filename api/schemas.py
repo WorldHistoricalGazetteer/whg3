@@ -177,7 +177,7 @@ Maximum results per query (default: 100, max: 1000).
 """
 
 
-def generic_schema(view_class: str):
+def entity_schema(view_class: str):
     """
     Dynamically builds extend_schema_view for a given view class.
     Supports multiple HTTP methods with per-method summary/description.
@@ -196,22 +196,26 @@ def generic_schema(view_class: str):
             description="API token for authentication",
         ),
         OpenApiParameter(
-            name="id",
+            name="entity_id",
             required=True,
             type=str,
             location=OpenApiParameter.PATH,
-            description="The unique identifier of the object"
-        ),
-        OpenApiParameter(
-            name="obj_type",
-            required=True,
-            type=str,
-            location=OpenApiParameter.PATH,
-            description="The object type to query",
-            enum=OBJECT_TYPES,
-            default="place",
+            description=f"The unique identifier of the object, formatted as **\<type\>:\<id\>**. Valid types are {', '.join(OBJECT_TYPES)}. ",
         ),
     ]
+
+    if view_class == "create":
+        base_parameters = [param for param in base_parameters if param.name != "entity_id"]
+
+    if view_class in ["create", "update"]:
+        base_parameters.append(
+            OpenApiParameter(
+                name="body",
+                required=True,
+                type=OpenApiTypes.OBJECT,
+                description="The object data in JSON format.",
+            )
+    )
 
     # Base responses applied to all methods
     base_responses = {
