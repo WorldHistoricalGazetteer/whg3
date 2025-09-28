@@ -145,7 +145,6 @@ class ReconciliationView(APIView):
 
         # --- Helper Function to Inject Type and Token ---
         def inject_variables(obj):
-            global token, obj_type
             if isinstance(obj, dict):
                 return {k: inject_variables(v) for k, v in obj.items()}
             elif isinstance(obj, str):
