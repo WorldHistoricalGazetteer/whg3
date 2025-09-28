@@ -52,40 +52,22 @@ SERVICE_METADATA = {
     "identifierSpace": DOMAIN + "/",
     "schemaSpace": SCHEMA_SPACE,
     "defaultTypes": [
-        {
-            "id": SCHEMA_SPACE + "#Place",
-            "logo": DOMAIN + "/static/images/whg_logo_80.png",
-            "name": "Place",
-            "view": {  # human-readable page
-                "url": DOMAIN + "/place/{{id}}/",
-            },
-            "feature_view": {  # machine-readable place representation
-                "url": DOMAIN + "/place/api/{{id}}",
-            },
-            "preview": {  # HTML preview snippet
-                "url": DOMAIN + "/place/preview/{{id}}/?token={{token}}",
-                "width": 400,
-                "height": 300,
-            },
-        },
-        {
-            "id": SCHEMA_SPACE + "#Period",
-            "logo": DOMAIN + "/static/images/periodo.png",
-            "name": "Period",
-            "view": {  # human-readable page
-                "url": DOMAIN + "/period/{{id}}/",
-            },
-            "feature_view": {  # machine-readable place representation
-                "url": DOMAIN + "/period/api/{{id}}",
-            },
-            "preview": {  # HTML preview snippet
-                "url": DOMAIN + "/period/preview/{{id}}/?token={{token}}",
-                "width": 400,
-                "height": 300,
-            },
-        },
+        {"id": SCHEMA_SPACE + "#Place", "name": "Place"},
+        {"id": SCHEMA_SPACE + "#Period", "name": "Period"},
     ],
     "documentation": DOCS_URL,
+    "logo": DOMAIN + "/static/images/whg_logo_80.png",
+    "view": {  # human-readable page
+        "url": DOMAIN + "/{{obj_type}}/{{id}}/",
+    },
+    "feature_view": {  # machine-readable place representation
+        "url": DOMAIN + "/{{obj_type}}/api/{{id}}",
+    },
+    "preview": {  # HTML preview snippet
+        "url": DOMAIN + "/{{obj_type}}/preview/{{id}}/?token={{token}}",
+        "width": 400,
+        "height": 300,
+    },
     "suggest": {
         "entity": {
             "service_url": DOMAIN,
