@@ -190,22 +190,23 @@ class ReconciliationView(APIView):
 
         # Reconciliation queries
         queries = payload.get("queries", {})
-        if not queries:
-            return json_error("Missing 'queries' parameter")
+        if queries:
+            try:
+                entity_type, _ = extract_entity_type(queries, from_queries=True)
+            except ValueError as e:
+                return json_error(str(e))
 
-        try:
-            entity_type, _ = extract_entity_type(queries, from_queries=True)
-        except ValueError as e:
-            return json_error(str(e))
+            # Period reconciliation
+            if entity_type == "period":
+                # TODO
+                return json_error("Period reconciliation is not supported at this time", status=501)
 
-        # Period reconciliation
-        if entity_type == "period":
-            # TODO
-            return json_error("Period reconciliation is not supported at this time", status=501)
+            # Place reconciliation
+            results = process_queries(queries, batch_size=SERVICE_METADATA.get("batch_size", 50))
+            return JsonResponse(results)
 
-        # Place reconciliation
-        results = process_queries(queries, batch_size=SERVICE_METADATA.get("batch_size", 50))
-        return JsonResponse(results)
+        # Neither 'queries' nor 'extend' provided: call GET and return metadata
+        return self.get(request, *args, **kwargs)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
