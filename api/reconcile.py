@@ -192,28 +192,19 @@ class ReconciliationView(APIView):
         # Reconciliation queries
         queries = payload.get("queries", {})
         if queries:
-
-            # 1. Check if this is likely a type-guessing query (small batch, simple query)
-            is_type_guessing = len(queries) < 5 and all(
-                "query" in q and len(q.get("query", "")) < 30
-                for q in queries.values()
-            )
-
-            # If it looks like type guessing, return the dummies directly
-            if is_type_guessing:
-                # We return the dummies keyed by the first query ID
-                first_query_id = next(iter(queries))
-                dummy_results = create_type_guessing_dummies(SCHEMA_SPACE)
-
-                # Re-key the dummy results to match the first query ID OpenRefine sent
-                results = {first_query_id: dummy_results["q0"]}
-                return JsonResponse(results)
-
-
             try:
                 entity_type, _ = extract_entity_type(queries, from_queries=True)
             except ValueError as e:
                 return json_error(str(e))
+
+            if not entity_type:
+                # If it looks like type guessing, return dummies to force all default types
+                all_candidates = create_type_guessing_dummies(SERVICE_METADATA)
+                first_query_id = next(iter(queries))
+                results = {
+                    first_query_id: {"result": all_candidates}
+                }
+                return JsonResponse(results)
 
             # Period reconciliation
             if entity_type == "period":

@@ -738,7 +738,7 @@ def extract_entity_type(source, from_queries=False):
             if isinstance(q.get("type"), str)
         }
         if not types:
-            raise ValueError("Each query must specify a valid 'type' (e.g. '#Place' or '#Period')")
+            return None, None
         if not types.issubset(ALLOWED_TYPES):
             raise ValueError(f"Unsupported entity type(s): {', '.join(sorted(types))}")
         if len(types) > 1:
@@ -766,32 +766,33 @@ def extract_entity_type(source, from_queries=False):
 
         return obj_types.pop(), parsed
 
-def create_type_guessing_dummies(schema_space):
-    """Returns a dictionary of high-score, dummy candidates for all default types."""
 
-    # These must be actual, non-colliding IDs you reserve for this purpose
-    # And they must match the type structure OpenRefine expects
+def create_type_guessing_dummies(SERVICE_METADATA):
+    """
+    Returns a dictionary of high-score, dummy candidates for all default types
+    defined in SERVICE_METADATA.
+    """
 
-    place_type = {"id": schema_space + "#Place", "name": "Place"}
-    period_type = {"id": schema_space + "#Period", "name": "Period"}
+    # List to hold candidates for all types
+    all_candidates = []
 
-    place_candidate = {
-        "id": "dummy:place_1",
-        "name": "General Place",
-        "score": 100,
-        "match": True,
-        "type": [place_type]
-    }
+    # Iterate over the defaultTypes list from the SERVICE_METADATA constant
+    for type_obj in SERVICE_METADATA.get("defaultTypes", []):
+        type_id = type_obj.get("id")
+        type_name = type_obj.get("name")
+        type_slug = type_name.lower()
 
-    period_candidate = {
-        "id": "dummy:period_1",
-        "name": "General Period",
-        "score": 100,
-        "match": True,
-        "type": [period_type]
-    }
+        if type_id and type_name:
+            candidate_type_list = [{"id": type_id, "name": type_name}]
 
-    # OpenRefine expects results keyed by the query ID (e.g., 'q0')
-    return {
-        "q0": {"result": [place_candidate, period_candidate]}
-    }
+            candidate = {
+                # Prepend 'dummy:' to avoid collision with real IDs
+                "id": f"dummy:{type_slug}_1",
+                "name": f"Guessing Result: {type_name}",
+                "score": 100,
+                "match": True,
+                "type": candidate_type_list
+            }
+            all_candidates.append(candidate)
+
+    return all_candidates
