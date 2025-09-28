@@ -242,27 +242,47 @@ class Command(BaseCommand):
                             bound_obj = pobj.get(kind)
                             if not isinstance(bound_obj, dict):
                                 continue
-                            year_raw = bound_obj.get("year")
+
+                            year_raw = None
                             earliest = latest = None
-                            if isinstance(year_raw, str) and "-" in year_raw[1:]:
-                                # Range string
-                                parts = year_raw.split("-")
-                                try:
-                                    earliest = int(parts[0])
-                                    latest = int(parts[1])
-                                except Exception:
-                                    pass
-                            else:
-                                try:
-                                    if isinstance(year_raw, str):
-                                        s = year_raw.strip()
-                                        if s.startswith("-") and len(s) > 1 and s[1] == "0":
-                                            s = "-" + s[2:]
-                                        earliest = latest = int(s)
-                                    elif isinstance(year_raw, int):
-                                        earliest = latest = year_raw
-                                except Exception:
-                                    pass
+
+                            # 1. Check for explicit 'year' field
+                            if "year" in bound_obj:
+                                year_raw = bound_obj["year"]
+
+                                if isinstance(year_raw, str) and "-" in year_raw[1:]:
+                                    # Range string like "0040-0050"
+                                    parts = year_raw.split("-")
+                                    try:
+                                        earliest = int(parts[0])
+                                        latest = int(parts[1])
+                                    except Exception:
+                                        pass
+                                else:
+                                    try:
+                                        if isinstance(year_raw, str):
+                                            s = year_raw.strip()
+                                            earliest = latest = int(s)
+                                        elif isinstance(year_raw, int):
+                                            earliest = latest = year_raw
+                                    except Exception:
+                                        pass
+
+                            # 2. Check for 'in' object with earliest/latest
+                            elif "in" in bound_obj and isinstance(bound_obj["in"], dict):
+                                year_in = bound_obj["in"]
+                                year_raw = year_in
+                                earliest = year_in.get("earliestYear")
+                                latest = year_in.get("latestYear")
+
+                                # If only 'year' is provided inside 'in', treat as single-year bound
+                                if earliest is None and latest is None and "year" in year_in:
+                                    try:
+                                        y = year_in["year"]
+                                        earliest = latest = int(y)
+                                    except Exception:
+                                        pass
+
                             tb = TemporalBound(
                                 period=period,
                                 kind=kind,

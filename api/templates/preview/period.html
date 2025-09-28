@@ -5,13 +5,11 @@
 {% block note %}Authority: {{ object.authority_label }}{% endblock %}
 
 {% block fields %}
-    <span class="record-field">Language:</span> {{ object.languageTag|default:"N/A" }}<br>
-    <span class="record-field">Date Range:</span> {{ object.date_range }}<br>
-
     {% if object.chrononyms_preview %}
         <span class="record-field">Alternative Names:</span>
         {{ object.chrononyms_preview|join:", " }}{% if object.chrononym_count > 3 %} …{% endif %}<br>
     {% endif %}
+    <span class="record-field">Date Range:</span> {{ object.date_range }}<br>
 
     {% if object.spatial_preview %}
         <span class="record-field">Geographic Coverage:</span>
