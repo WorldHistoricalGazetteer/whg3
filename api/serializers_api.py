@@ -361,16 +361,26 @@ class PeriodPreviewSerializer(serializers.ModelSerializer):
         spatial = list(obj.spatialCoverage.all()[:3])
         return [se.label or se.uri for se in spatial]
 
+    def format_year(year: int) -> str:
+        """Convert a numeric year to a readable BCE/CE string."""
+        if year is None:
+            return "Unknown"
+        return f"{abs(year)} BCE" if year < 0 else f"{year} CE"
+
     def get_date_range(self, obj):
-        start = obj.bounds.filter(kind='start').first()
-        stop = obj.bounds.filter(kind='stop').first()
-        if start and stop:
-            return f"{start.earliestYear or 'Unknown'} – {stop.latestYear or 'Unknown'}"
-        elif start:
-            return f"From {start.earliestYear or 'Unknown'}"
-        elif stop:
-            return f"Until {stop.latestYear or 'Unknown'}"
-        return "Unknown"
+        bounds = {b.kind: b for b in obj.bounds.all()}
+        result = {}
+
+        for kind in ("start", "stop"):
+            b = bounds.get(kind)
+            if not b:
+                continue
+            if b.earliestYear == b.latestYear:
+                result[kind if kind == "stop" else "begin"] = self.format_year(b.earliestYear)
+            else:
+                result[kind if kind == "stop" else "begin"] = f"{self.format_year(b.earliestYear)} / {self.format_year(b.latestYear)}"
+
+        return result if result else "Unknown"
 
 
 class PlacePreviewSerializer(serializers.ModelSerializer):

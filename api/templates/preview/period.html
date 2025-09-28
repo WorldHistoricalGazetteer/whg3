@@ -9,7 +9,13 @@
         <span class="record-field">Alternative Names:</span>
         {{ object.chrononyms_preview|join:", " }}{% if object.chrononym_count > 3 %} …{% endif %}<br>
     {% endif %}
-    <span class="record-field">Date Range:</span> {{ object.date_range }}<br>
+
+    {% if object.begin %}
+        <span class="record-field">Start:</span> {{ object.begin }}<br>
+    {% endif %}
+    {% if object.end %}
+        <span class="record-field">End:</span> {{ object.end }}<br>
+    {% endif %}
 
     {% if object.spatial_preview %}
         <span class="record-field">Geographic Coverage:</span>
