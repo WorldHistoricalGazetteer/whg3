@@ -341,7 +341,8 @@ class PeriodPreviewSerializer(serializers.ModelSerializer):
     authority_label = serializers.SerializerMethodField()
     chrononyms_preview = serializers.SerializerMethodField()
     spatial_preview = serializers.SerializerMethodField()
-    date_range = serializers.SerializerMethodField()
+    start = serializers.SerializerMethodField()
+    stop = serializers.SerializerMethodField()
 
     class Meta:
         model = Period
@@ -382,6 +383,14 @@ class PeriodPreviewSerializer(serializers.ModelSerializer):
                 result[kind] = f"{self.format_year(b.earliestYear)} / {self.format_year(b.latestYear)}"
 
         return result
+
+    def get_start(self, obj):
+        dr = self.get_date_range(obj)
+        return dr.get("begin") if dr else None
+
+    def get_stop(self, obj):
+        dr = self.get_date_range(obj)
+        return dr.get("end") if dr else None
 
 
 class PlacePreviewSerializer(serializers.ModelSerializer):
