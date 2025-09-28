@@ -30,7 +30,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from main.choices import FEATURE_CLASSES
-from periods.models import Period
+from periods.models import Period, Chrononym
 from places.models import Place
 from .authentication import AuthenticatedAPIView, TokenQueryOrBearerAuthentication
 from .reconcile_helpers import make_candidate, format_extend_row, es_search, get_propose_properties, \
@@ -233,45 +233,76 @@ class ExtendProposeView(APIView):
 class SuggestEntityView(AuthenticatedAPIView):
 
     def get(self, request, *args, **kwargs):
-
         prefix = request.GET.get("prefix", "").strip()
-        exact = request.GET.get("exact", "false").lower() == "true"
-
-        # Implement the cursor
-        try:
-            cursor = int(request.GET.get("cursor", 0))
-        except (ValueError, TypeError):
-            return json_error("Invalid 'cursor' parameter. It must be an integer.")
-
-        # These parameters are passed by OpenRefine but not implemented here as it is unclear how they should affect suggestions
-        # spell = request.GET.get("spell", "always")
-        # prefixed = request.GET.get("prefixed", "false").lower() == "true"
 
         if not prefix:
             return JsonResponse({"result": []})
 
-        # Construct search parameters
-        raw_params = {
-            "query": prefix,
-            "size": int(request.GET.get("limit", 10)),
-        }
+        # --- 1. Get Parameters ---
+        exact = request.GET.get("exact", "false").lower() == "true"
+
+        try:
+            limit = int(request.GET.get("limit", 10))
+            cursor = int(request.GET.get("cursor", 0))
+        except (ValueError, TypeError):
+            return json_error("Invalid 'limit' or 'cursor' parameter. They must be integers.")
+
+        # --- 2. Search for Places (Elasticsearch) ---
+        raw_params = {"query": prefix, "size": 50} # Search a large size for combining
         query = normalise_query_params(raw_params)
         query["mode"] = "starts" if exact else "fuzzy"
 
-        hits = es_search(query=query)
-        if not hits:
-            return JsonResponse({"result": []})
+        place_hits = es_search(query=query)
 
-        # Apply the cursor to skip the specified number of results
-        hits_to_process = hits[cursor:]
+        # Max score is used for normalizing subsequent scores
+        max_score = place_hits[0].get("_score", 1.0) if place_hits else 1.0
 
-        if not hits_to_process:
-            return JsonResponse({"result": []})
+        place_candidates = []
+        for hit in place_hits:
+            candidate = make_candidate(hit, query["query_text"], max_score, SCHEMA_SPACE)
+            place_candidates.append(candidate)
 
-        max_score = hits[0].get("_score", 1.0)
-        candidates = [make_candidate(hit, query["query_text"], max_score, SCHEMA_SPACE) for hit in hits]
+        # --- 3. Search for Periods (Database - Chrononym) ---
+        period_limit = 20 # Limit the database query size
 
-        return JsonResponse({"result": candidates})
+       # Use an iqueryset to allow for case-insensitive startswith
+        suggestions = Chrononym.objects.filter(
+            label__istartswith=prefix
+        ).order_by('label')[:period_limit]
+
+        period_candidates = []
+        PERIOD_SCHEMA_ID = SCHEMA_SPACE + "#Period"
+
+        for chrononym in suggestions:
+            period_candidates.append({
+                "id": f"period:{chrononym.id}",
+                "name": chrononym.label,
+                "score": 100, # Assign max score for visibility/sorting
+                "match": True,
+                "description": f"Language: {chrononym.languageTag}" if chrononym.languageTag else "",
+                "type": [{"id": PERIOD_SCHEMA_ID, "name": "Period"}]
+            })
+
+        # --- 4. Combine and Sort Results ---
+        combined_candidates = place_candidates + period_candidates
+
+        # Sort primarily by score (descending), then alphabetically by name (ascending)
+        combined_candidates.sort(key=lambda x: (x.get('score', 0), x.get('name', '')), reverse=True)
+
+        # --- 5. Apply Cursor and Limit (Pagination) ---
+        start_index = cursor
+        end_index = cursor + limit
+        final_candidates = combined_candidates[start_index:end_index]
+
+        # --- 6. Handle JSONP (If present) ---
+        callback = request.GET.get('callback')
+        results = {"result": final_candidates}
+
+        if callback:
+            response_data = f"{callback}({json.dumps(results)})"
+            return JsonResponse(response_data, safe=False, content_type='application/javascript')
+
+        return JsonResponse(results)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
