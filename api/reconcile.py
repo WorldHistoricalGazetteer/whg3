@@ -322,12 +322,19 @@ class ReconciliationView(APIView):
         for period_data in period_scores.values():
             period = period_data['period']
 
-            # Create description with period ID and matching chrononyms
-            chrononym_list = ", ".join([
-                f"{c['label']}" + (f" ({c['languageTag']})" if c['languageTag'] else "")
-                for c in period_data['matching_chrononyms']
-            ])
-            description = f"Period {period.id}: {chrononym_list}"
+            # Filter out the canonical chrononym from aliases
+            canonical = period.chrononym or ""
+            aliases = []
+            for c in period_data['matching_chrononyms']:
+                if c['label'] != canonical:
+                    lang_suffix = f" ({c['languageTag']})" if c['languageTag'] else ""
+                    aliases.append(f"{c['label']}{lang_suffix}")
+
+            # Create description with period ID and aliases
+            if aliases:
+                description = f"Period {period.id}. Aliases: {', '.join(aliases)}"
+            else:
+                description = f"Period {period.id}"
 
             result = {
                 "id": f"period:{period.id}",  # Prefix to distinguish from places
@@ -346,7 +353,7 @@ class ReconciliationView(APIView):
         results = sorted(results, key=lambda x: x['score'], reverse=True)
 
         logger.debug(f"Reconciled {len(results)} periods for query '{query_text}'")
-        logger.debug(f"Results: {results}")
+        logger.debug(f"Results: {results[:limit]}")
         return {"result": results[:limit]}
 
     def calculate_prefix_score(self, query, label):
