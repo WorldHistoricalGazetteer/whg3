@@ -218,6 +218,8 @@ class ReconciliationView(APIView):
                 for key, params in queries.items():
                     results[key] = self.reconcile_chrononym_to_period(params)
 
+                logger.debug("Reconciliation results: {}".format({ "result": results }))
+
                 return JsonResponse({ "result": results })
 
             # Place reconciliation
