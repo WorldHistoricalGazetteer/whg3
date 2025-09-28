@@ -20,7 +20,6 @@ import os
 import urllib
 
 from django.contrib.postgres.search import TrigramSimilarity
-from django.db.models import OuterRef, Subquery
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -238,22 +237,11 @@ class ReconciliationView(APIView):
         if type_filter and "period" not in type_filter.lower():
             return {"result": []}
 
-        # --- Annotate the first related Period ID ---
-        # Subquery to find the ID of the first related Period for each Chrononym
-        first_period_sq = Period.objects.filter(
-            chrononyms=OuterRef('pk')
-        ).values('id')[:1]
-
-        # Create a base queryset with the annotated period_id
-        base_qs = Chrononym.objects.annotate(
-            period_id=Subquery(first_period_sq)
-        ).filter(period_id__isnull=False) # Exclude chrononyms without a period
-
         # Multi-tier matching strategy
         results = []
 
         # 1. Exact matches (score: 100)
-        exact_matches = base_qs.filter(label__iexact=query_text)[:limit]
+        exact_matches = Chrononym.objects.filter(label__iexact=query_text)[:limit]
         for chrononym in exact_matches:
             results.append(self.format_result(chrononym, score=100, match=True))
 
@@ -262,12 +250,10 @@ class ReconciliationView(APIView):
 
         # 2. Prefix matches (score: 70-95)
         remaining = limit - len(results)
-        prefix_matches = base_qs.filter(
+        prefix_matches = Chrononym.objects.filter(
             label__istartswith=query_text
         ).exclude(
             label__iexact=query_text
-        ).exclude(
-            id__in=[r['id'].split(':')[1] for r in results] # Filter out results already found
         )[:remaining * 2]
 
         for chrononym in prefix_matches:
@@ -280,10 +266,9 @@ class ReconciliationView(APIView):
 
         # 3. Trigram similarity (score: 30-85)
         remaining = limit - len(results)
-        existing_ids = [r['id'].split(':')[1] for r in results] # IDs are now prefixed, need to strip
+        existing_ids = [r['id'] for r in results]
 
-        # Apply annotation to the similarity query as well
-        similarity_matches = base_qs.annotate(
+        similarity_matches = Chrononym.objects.annotate(
             similarity=TrigramSimilarity('label', query_text)
         ).filter(
             similarity__gt=0.3
@@ -316,11 +301,8 @@ class ReconciliationView(APIView):
 
     def format_result(self, chrononym, score=50, match=False):
         """Format chrononym as reconciliation result"""
-        period_id = getattr(chrononym, 'period_id', None)
-        if not period_id:
-            return None
         return {
-            "id": f"period:{str(period_id)}",
+            "id": str(chrononym.id),
             "name": chrononym.label,
             "type": [{
                 "id": f"{SCHEMA_SPACE}#Chrononym",
@@ -330,6 +312,111 @@ class ReconciliationView(APIView):
             "match": match,
             "description": f"Language: {chrononym.languageTag}" if chrononym.languageTag else "",
         }
+
+    # def reconcile_chrononym(self, params):
+    #     """Reconcile a single chrononym query"""
+    #     query_text = params.get("query", "").strip()
+    #     limit = min(int(params.get("limit", 5)), 20)
+    #     type_filter = params.get("type")
+    #
+    #     if not query_text:
+    #         return {"result": []}
+    #
+    #     if type_filter and "period" not in type_filter.lower():
+    #         return {"result": []}
+    #
+    #     # --- Annotate the first related Period ID ---
+    #     # Subquery to find the ID of the first related Period for each Chrononym
+    #     first_period_sq = Period.objects.filter(
+    #         chrononyms=OuterRef('pk')
+    #     ).values('id')[:1]
+    #
+    #     # Create a base queryset with the annotated period_id
+    #     base_qs = Chrononym.objects.annotate(
+    #         period_id=Subquery(first_period_sq)
+    #     ).filter(period_id__isnull=False) # Exclude chrononyms without a period
+    #
+    #     # Multi-tier matching strategy
+    #     results = []
+    #
+    #     # 1. Exact matches (score: 100)
+    #     exact_matches = base_qs.filter(label__iexact=query_text)[:limit]
+    #     for chrononym in exact_matches:
+    #         results.append(self.format_result(chrononym, score=100, match=True))
+    #
+    #     if len(results) >= limit:
+    #         return {"result": results[:limit]}
+    #
+    #     # 2. Prefix matches (score: 70-95)
+    #     remaining = limit - len(results)
+    #     prefix_matches = base_qs.filter(
+    #         label__istartswith=query_text
+    #     ).exclude(
+    #         label__iexact=query_text
+    #     ).exclude(
+    #         id__in=[r['id'].split(':')[1] for r in results] # Filter out results already found
+    #     )[:remaining * 2]
+    #
+    #     for chrononym in prefix_matches:
+    #         score = self.calculate_prefix_score(query_text, chrononym.label)
+    #         results.append(self.format_result(chrononym, score=score))
+    #
+    #     if len(results) >= limit:
+    #         results = sorted(results, key=lambda x: x['score'], reverse=True)
+    #         return {"result": results[:limit]}
+    #
+    #     # 3. Trigram similarity (score: 30-85)
+    #     remaining = limit - len(results)
+    #     existing_ids = [r['id'].split(':')[1] for r in results] # IDs are now prefixed, need to strip
+    #
+    #     # Apply annotation to the similarity query as well
+    #     similarity_matches = base_qs.annotate(
+    #         similarity=TrigramSimilarity('label', query_text)
+    #     ).filter(
+    #         similarity__gt=0.3
+    #     ).exclude(
+    #         id__in=existing_ids
+    #     ).order_by('-similarity')[:remaining]
+    #
+    #     for chrononym in similarity_matches:
+    #         similarity_score = getattr(chrononym, 'similarity', 0)
+    #         score = min(int(similarity_score * 85), 85)
+    #         results.append(self.format_result(chrononym, score=score))
+    #
+    #     # Sort and return top results
+    #     results = sorted(results, key=lambda x: x['score'], reverse=True)
+    #     return {"result": results[:limit]}
+    #
+    # def calculate_prefix_score(self, query, label):
+    #     """Calculate score for prefix matches"""
+    #     query_len = len(query)
+    #     label_len = len(label)
+    #
+    #     if query_len == label_len:
+    #         return 95
+    #     elif query_len > label_len * 0.8:
+    #         return 90
+    #     elif query_len > label_len * 0.5:
+    #         return 80
+    #     else:
+    #         return 70
+    #
+    # def format_result(self, chrononym, score=50, match=False):
+    #     """Format chrononym as reconciliation result"""
+    #     period_id = getattr(chrononym, 'period_id', None)
+    #     if not period_id:
+    #         return None
+    #     return {
+    #         "id": f"period:{str(period_id)}",
+    #         "name": chrononym.label,
+    #         "type": [{
+    #             "id": f"{SCHEMA_SPACE}#Chrononym",
+    #             "name": "Chrononym"
+    #         }],
+    #         "score": score,
+    #         "match": match,
+    #         "description": f"Language: {chrononym.languageTag}" if chrononym.languageTag else "",
+    #     }
 
 
 @method_decorator(csrf_exempt, name="dispatch")
