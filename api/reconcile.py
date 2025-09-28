@@ -196,8 +196,11 @@ class ReconciliationView(APIView):
             except ValueError as e:
                 return json_error(str(e))
 
+            logger.debug(f"Reconciliation request for type: {entity_type} with {len(queries)} queries")
+            logger.debug(f"Queries: {queries}")
+
             if not entity_type:
-                # If it looks like type guessing, return dummies to force all default types
+                # If it looks like OpenRefine type guessing, return dummies to force display of all default types
                 all_candidates = create_type_guessing_dummies(SERVICE_METADATA)
                 first_query_id = next(iter(queries))
                 results = {
