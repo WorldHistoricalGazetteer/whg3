@@ -167,6 +167,9 @@ class ReconciliationView(APIView):
             except ValueError as e:
                 return json_error(str(e))
 
+            logger.debug(f"Data extension request for type: {entity_type} with {len(ids)} ids")
+            logger.debug(f"IDs: {entity_ids}")
+
             properties = extend.get("properties", [])
 
             if entity_type == "place":
