@@ -33,7 +33,8 @@ from main.choices import FEATURE_CLASSES
 from periods.models import Period
 from places.models import Place
 from .authentication import AuthenticatedAPIView, TokenQueryOrBearerAuthentication
-from .reconcile_helpers import make_candidate, format_extend_row, es_search, get_propose_properties, extract_entity_type
+from .reconcile_helpers import make_candidate, format_extend_row, es_search, get_propose_properties, \
+    extract_entity_type, create_type_guessing_dummies
 from .schemas import reconcile_schema, propose_properties_schema, suggest_entity_schema, suggest_property_schema
 
 logger = logging.getLogger('reconciliation')
@@ -191,6 +192,24 @@ class ReconciliationView(APIView):
         # Reconciliation queries
         queries = payload.get("queries", {})
         if queries:
+
+            # 1. Check if this is likely a type-guessing query (small batch, simple query)
+            is_type_guessing = len(queries) < 5 and all(
+                "query" in q and len(q.get("query", "")) < 30
+                for q in queries.values()
+            )
+
+            # If it looks like type guessing, return the dummies directly
+            if is_type_guessing:
+                # We return the dummies keyed by the first query ID
+                first_query_id = next(iter(queries))
+                dummy_results = create_type_guessing_dummies(SCHEMA_SPACE)
+
+                # Re-key the dummy results to match the first query ID OpenRefine sent
+                results = {first_query_id: dummy_results["q0"]}
+                return JsonResponse(results)
+
+
             try:
                 entity_type, _ = extract_entity_type(queries, from_queries=True)
             except ValueError as e:
@@ -205,8 +224,7 @@ class ReconciliationView(APIView):
             results = process_queries(queries, batch_size=SERVICE_METADATA.get("batch_size", 50))
             return JsonResponse(results)
 
-        # Neither 'queries' nor 'extend' provided: call GET and return metadata
-        return self.get(request, *args, **kwargs)
+        return json_error("Missing 'queries' or 'extend' parameter")
 
 
 @method_decorator(csrf_exempt, name="dispatch")

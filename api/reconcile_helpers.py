@@ -765,3 +765,33 @@ def extract_entity_type(source, from_queries=False):
             raise ValueError("All ids must be of the same type")
 
         return obj_types.pop(), parsed
+
+def create_type_guessing_dummies(schema_space):
+    """Returns a dictionary of high-score, dummy candidates for all default types."""
+
+    # These must be actual, non-colliding IDs you reserve for this purpose
+    # And they must match the type structure OpenRefine expects
+
+    place_type = {"id": schema_space + "#Place", "name": "Place"}
+    period_type = {"id": schema_space + "#Period", "name": "Period"}
+
+    place_candidate = {
+        "id": "dummy:place_1",
+        "name": "General Place",
+        "score": 100,
+        "match": True,
+        "type": [place_type]
+    }
+
+    period_candidate = {
+        "id": "dummy:period_1",
+        "name": "General Period",
+        "score": 100,
+        "match": True,
+        "type": [period_type]
+    }
+
+    # OpenRefine expects results keyed by the query ID (e.g., 'q0')
+    return {
+        "q0": {"result": [place_candidate, period_candidate]}
+    }
