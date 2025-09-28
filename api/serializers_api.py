@@ -341,7 +341,6 @@ class PeriodPreviewSerializer(serializers.ModelSerializer):
     authority_label = serializers.SerializerMethodField()
     chrononyms_preview = serializers.SerializerMethodField()
     spatial_preview = serializers.SerializerMethodField()
-    date_range = serializers.SerializerMethodField()
     start = serializers.SerializerMethodField()
     stop = serializers.SerializerMethodField()
 
@@ -349,7 +348,7 @@ class PeriodPreviewSerializer(serializers.ModelSerializer):
         model = Period
         fields = [
             'id', 'chrononym', 'languageTag', 'editorialNote', 'note',
-            'authority_label', 'chrononyms_preview', 'spatial_preview', 'date_range'
+            'authority_label', 'chrononyms_preview', 'spatial_preview', 'start', 'stop'
         ]
 
     def get_authority_label(self, obj):
