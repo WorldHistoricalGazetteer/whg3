@@ -48,19 +48,20 @@ PROPOSE_PROPERTIES = get_propose_properties(f"validation{SCHEMA_FILE}")
 
 SERVICE_METADATA = {
     "versions": ["0.2"],
-    "name": "World Historical Gazetteer Place Reconciliation Service",
+    "name": "World Historical Gazetteer Reconciliation Service",
     "identifierSpace": DOMAIN + "/",
     "schemaSpace": SCHEMA_SPACE,
     "defaultTypes": [
         {"id": SCHEMA_SPACE + "#Place", "name": "Place"},
+        {"id": SCHEMA_SPACE + "#Period", "name": "Period"},
     ],
     "documentation": DOCS_URL,
     "logo": DOMAIN + "/static/images/whg_logo_80.png",
     "view": {  # human-readable page
-        "url": DOMAIN + "/places/portal/{{id}}/",
+        "url": DOMAIN + "/place/{{id}}/",
     },
     "feature_view": {  # machine-readable place representation
-        "url": DOMAIN + "/feature/{{id}}",
+        "url": DOMAIN + "/place/api/{{id}}",
     },
     "preview": {  # HTML preview snippet
         "url": DOMAIN + "/place/preview/{{id}}/?token={{token}}",

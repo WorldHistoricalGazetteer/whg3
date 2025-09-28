@@ -509,11 +509,10 @@ SPECTACULAR_SETTINGS = {
         "[Reconciliation Service API v0.2](https://www.w3.org/community/reports/reconciliation/CG-FINAL-specs-0.2-20230410/) "
         "for linking external datasets against WHG identifiers.\n\n"
         "Main features include:\n"
-        "- **Place Search & Retrieval**: access detailed information about places, their names, "
+        "- **Place & Period Search & Retrieval**: access detailed information about places or periods, their names, "
         "types, geometries, temporal coverage, and datasets of origin.\n"
-        "- **Reconciliation API**: match external place names against WHG to obtain stable IDs, "
-        "canonical labels, and metadata.\n"
-        "- **Extension Service**: enrich external records with WHG properties (e.g. country codes, "
+        "- **Reconciliation API**: resolve place and period names to WHG or [PeriodO](https://perio.do/) identifiers, with canonical labels and metadata.\n"
+        "- **Extension Service**: enrich external records with WHG or PeriodO properties (e.g. country codes, "
         "feature classes, geometries, and temporal ranges).\n\n"
         "Most endpoints require a valid API token for authentication, which can be submitted either "
         "as a URL query parameter or in an Authorization header. "
@@ -521,8 +520,8 @@ SPECTACULAR_SETTINGS = {
     ),
     'TAGS': [
         {"name": "Schema", "description": "API schema and documentation"},
-        {"name": "Entity API", "description": "Query or modify places, datasets, collections, and areas"},
-        {"name": "Place Reconciliation API", "description": "Reconciliation Service API v0.2"},
+        {"name": "Entity API", "description": "Query (_in some cases modify_) **Places**, **Periods**, **Datasets**, **Collections**, or **Areas**"},
+        {"name": "Reconciliation API", "description": "for **Places** and **Periods** ([Reconciliation Service API v0.2](https://www.w3.org/community/reports/reconciliation/CG-FINAL-specs-0.2-20230410/))"},
     ],
     'VERSION': '1.0.0',
     'SWAGGER_UI_SETTINGS': {

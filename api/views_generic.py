@@ -45,6 +45,10 @@ class GenericDetailView(AuthenticatedAPIView):
             lambda user: config["model"].objects)
         obj = get_object_or_404(qs_fn(request.user), pk=id)
 
+        # Special case: periods redirect to PeriodO website
+        if obj_type == "period":
+            return HttpResponseRedirect(f"http://n2t.net/ark:/99152/{obj.id}")
+
         # special case: collections branch on collection_class
         if obj_type == "collection":
             if obj.collection_class == "dataset":

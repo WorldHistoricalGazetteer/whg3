@@ -13,7 +13,7 @@ from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
-from api.authentication import TokenQueryOrBearerAuthentication, CsrfExemptSessionAuthentication
+from api.authentication import TokenQueryOrBearerAuthentication
 from periods.models import Chrononym
 from .schemas import get_chrononym_reconcile_schema, get_chrononym_suggest_schema, get_chrononym_preview_schema
 
@@ -84,7 +84,7 @@ class ChrononymReconciliationView(APIView):
 
         return JsonResponse(metadata)
 
-    @authentication_classes([TokenQueryOrBearerAuthentication, CsrfExemptSessionAuthentication])
+    @authentication_classes([TokenQueryOrBearerAuthentication, SessionAuthentication])
     @permission_classes([IsAuthenticated])
     @method_decorator(csrf_exempt, name="dispatch")
     def post(self, request, *args, **kwargs):

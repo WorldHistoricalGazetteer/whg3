@@ -11,6 +11,7 @@ from api.serializers import PlaceNameSerializer, PlaceTypeSerializer, PlaceWhenS
 from areas.models import Area
 from collection.models import Collection
 from datasets.models import Dataset
+from periods.models import Period
 from places.models import Place, PlaceGeom
 
 logger = logging.getLogger('reconciliation')
@@ -236,6 +237,116 @@ class DatasetPreviewSerializer(serializers.ModelSerializer):
             "numrows",
             "create_date",
         ]
+
+
+class PeriodFeatureSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Period objects in LPF-compatible format
+    """
+    authority = serializers.SerializerMethodField()
+    chrononyms = serializers.SerializerMethodField()
+    spatial_coverage = serializers.SerializerMethodField()
+    temporal_bounds = serializers.SerializerMethodField()
+    bbox_geometry = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Period
+        fields = [
+            'id', 'chrononym', 'type', 'language', 'languageTag',
+            'authority', 'chrononyms', 'spatial_coverage', 'temporal_bounds',
+            'editorialNote', 'note', 'broader', 'narrower',
+            'sameAs', 'url', 'script', 'derivedFrom', 'bbox_geometry'
+        ]
+
+    def get_authority(self, obj):
+        if obj.authority:
+            return {
+                'id': obj.authority.id,
+                'type': obj.authority.type,
+                'editorialNote': obj.authority.editorialNote,
+                'sameAs': obj.authority.sameAs,
+                'source': obj.authority.source
+            }
+        return None
+
+    def get_chrononyms(self, obj):
+        return [
+            {
+                'label': c.label,
+                'languageTag': c.languageTag
+            }
+            for c in obj.chrononyms.all()
+        ]
+
+    def get_spatial_coverage(self, obj):
+        return [
+            {
+                'uri': se.uri,
+                'label': se.label,
+                'gazetteer_source': se.gazetteer_source
+            }
+            for se in obj.spatialCoverage.all()
+        ]
+
+    def get_temporal_bounds(self, obj):
+        bounds = {}
+        for tb in obj.bounds.all():
+            bounds[tb.kind] = {
+                'label': tb.label,
+                'year': tb.year,
+                'earliestYear': tb.earliestYear,
+                'latestYear': tb.latestYear
+            }
+        return bounds
+
+    def get_bbox_geometry(self, obj):
+        """Return computed bounding box if available"""
+        if hasattr(obj, 'bbox') and obj.bbox:
+            # Convert PostGIS bbox polygon to GeoJSON
+            return obj.bbox.geojson
+        return None
+
+
+class PeriodPreviewSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Period preview (lighter version for HTML preview)
+    """
+    authority_label = serializers.SerializerMethodField()
+    chrononym_count = serializers.SerializerMethodField()
+    spatial_count = serializers.SerializerMethodField()
+    date_range = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Period
+        fields = [
+            'id', 'chrononym', 'languageTag', 'editorialNote', 'note',
+            'authority_label', 'chrononym_count', 'spatial_count', 'date_range'
+        ]
+
+    def get_authority_label(self, obj):
+        return obj.authority.id if obj.authority else 'Unknown'
+
+    def get_chrononym_count(self, obj):
+        return obj.chrononyms.count()
+
+    def get_spatial_count(self, obj):
+        return obj.spatialCoverage.count()
+
+    def get_date_range(self, obj):
+        """Compute a simple date range string"""
+        bounds = obj.bounds.all()
+        start_bound = bounds.filter(kind='start').first()
+        stop_bound = bounds.filter(kind='stop').first()
+
+        if start_bound and stop_bound:
+            start = start_bound.earliestYear or 'Unknown'
+            end = stop_bound.latestYear or 'Unknown'
+            return f"{start} - {end}"
+        elif start_bound:
+            return f"From {start_bound.earliestYear or 'Unknown'}"
+        elif stop_bound:
+            return f"Until {stop_bound.latestYear or 'Unknown'}"
+        return "Date range unknown"
 
 
 class PlacePreviewSerializer(serializers.ModelSerializer):

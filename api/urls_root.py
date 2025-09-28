@@ -39,17 +39,12 @@ urlpatterns = [
     path("suggest/entity", SuggestEntityView.as_view(), name="suggest_entity"),
     path("suggest/property", SuggestPropertyView.as_view(), name="suggest_property"),
 
-    ## Chrononym Reconciliation API endpoints (new)
-    path("chrononym/reconcile/", ChrononymReconciliationView.as_view(), name="chrononym-reconcile"),
-    path("chrononym/suggest/", ChrononymSuggestView.as_view(), name="chrononym-suggest"),
-    path("chrononym/preview/<int:chrononym_id>/", ChrononymPreviewView.as_view(), name="chrononym-preview"),
-
     # Generic endpoints for multiple object types
-    path("<str:obj_type>/<int:id>/", GenericDetailView.as_view(), name="generic-detail"),
-    path("<str:obj_type>/api/<int:id>/", GenericFeatureView.as_view(), name="generic-api"),
-    path("<str:obj_type>/preview/<int:id>/", GenericPreviewView.as_view(), name="generic-preview"),
-    path("<str:obj_type>/update/<int:id>/", GenericUpdateView.as_view(), name="generic-replace"),
-    path("<str:obj_type>/delete/<int:id>/", GenericDeleteView.as_view(), name="generic-delete"),
+    path("<str:obj_type>/<str:id>/", GenericDetailView.as_view(), name="generic-detail"),
+    path("<str:obj_type>/api/<str:id>/", GenericFeatureView.as_view(), name="generic-api"),
+    path("<str:obj_type>/preview/<str:id>/", GenericPreviewView.as_view(), name="generic-preview"),
+    path("<str:obj_type>/update/<str:id>/", GenericUpdateView.as_view(), name="generic-replace"),
+    path("<str:obj_type>/delete/<str:id>/", GenericDeleteView.as_view(), name="generic-delete"),
     path("<str:obj_type>/create/", GenericCreateView.as_view(), name="generic-create"),
 
     # Dummy endpoint: serves both as a placeholder and as an inert handler for OpenRefine's legacy search calls

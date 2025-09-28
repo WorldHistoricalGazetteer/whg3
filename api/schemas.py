@@ -3,16 +3,18 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiResponse, OpenApiExample
 
 from api.querysets import area_owner_queryset, collection_owner_or_public_queryset, dataset_owner_or_public_queryset, \
-    place_feature_queryset, place_preview_queryset
+    place_feature_queryset, place_preview_queryset, period_public_queryset
 from api.reconcile_helpers import ReconciliationRequestSerializer
 from api.serializers_api import AreaFeatureSerializer, AreaPreviewSerializer, CollectionPreviewSerializer, \
-    DatasetPreviewSerializer, PlaceFeatureSerializer, PlacePreviewSerializer
+    DatasetPreviewSerializer, PlaceFeatureSerializer, PlacePreviewSerializer, PeriodFeatureSerializer, \
+    PeriodPreviewSerializer
 from areas.models import Area
 from collection.models import Collection
 from datasets.models import Dataset
+from periods.models import Period
 from places.models import Place
 
-OBJECT_TYPES = ["place", "dataset", "collection", "area"]
+OBJECT_TYPES = ["place", "dataset", "collection", "area", "period"]
 
 TYPE_MAP = {
     "area": {
@@ -35,6 +37,14 @@ TYPE_MAP = {
         "detail_url": "datasets:ds_places",
         "preview_serializer": DatasetPreviewSerializer,
         "preview_queryset": dataset_owner_or_public_queryset,
+    },
+    "period": {
+        "model": Period,
+        "detail_url": None,  # Will redirect to PeriodO website
+        "feature_serializer": PeriodFeatureSerializer,
+        "feature_queryset": period_public_queryset,
+        "preview_serializer": PeriodPreviewSerializer,
+        "preview_queryset": period_public_queryset,
     },
     "place": {
         "model": Place,
@@ -184,6 +194,13 @@ def generic_schema(view_class: str):
             type=str,
             location=OpenApiParameter.QUERY,
             description="API token for authentication",
+        ),
+        OpenApiParameter(
+            name="id",
+            required=True,
+            type=str,
+            location=OpenApiParameter.PATH,
+            description="The unique identifier of the object"
         ),
         OpenApiParameter(
             name="obj_type",
@@ -379,7 +396,7 @@ def reconcile_schema():
                 },
             }
         },
-        tags=["Place Reconciliation API"],
+        tags=["Reconciliation API"],
     )
 
 
@@ -387,7 +404,7 @@ def propose_properties_schema():
     """Schema for /reconcile/properties endpoint"""
     return build_schema_view(
         methods={"get": True},
-        tags=["Place Reconciliation API"],
+        tags=["Reconciliation API"],
         summary="Discover extensible properties",
         description="Returns a list of properties that can be extended, as required by the Reconciliation Service API.",
         responses={
@@ -400,7 +417,7 @@ def suggest_entity_schema():
     """Schema for /reconcile/suggest endpoint"""
     return build_schema_view(
         methods={"get": True},
-        tags=["Place Reconciliation API"],
+        tags=["Reconciliation API"],
         summary="Suggest entities by prefix",
         description="Returns a list of suggested entities that match a given prefix.",
         parameters=[
@@ -440,7 +457,7 @@ def suggest_property_schema():
     """Schema for /reconcile/suggest/properties endpoint"""
     return build_schema_view(
         methods={"get": True},
-        tags=["Place Reconciliation API"],
+        tags=["Reconciliation API"],
         summary="Suggest properties by prefix",
         description="Returns a list of properties that match a given prefix.",
         parameters=[

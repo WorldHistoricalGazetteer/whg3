@@ -14,7 +14,8 @@
     "skos": "http://www.w3.org/2004/02/skos/core#",
     "aat": "http://vocab.getty.edu/aat/",
     "gn": "https://sws.geonames.org/",
-    "wd": "http://www.wikidata.org/entity/"
+    "wd": "http://www.wikidata.org/entity/",
+    "periodo": "http://n2t.net/ark:/99152/"
   },
   "@graph": [
     {
@@ -40,6 +41,12 @@
       "@type": "rdfs:Class",
       "rdfs:label": "Area",
       "rdfs:comment": "A defined geographic area used for filtering, bounding or grouping places."
+    },
+    {
+      "@id": "whg:Period",
+      "@type": "rdfs:Class",
+      "rdfs:label": "Period",
+      "rdfs:comment": "A temporal period or chrononym from PeriodO or other chronological authorities, representing named spans of time used in historical and archaeological contexts."
     },
 
     {
@@ -382,6 +389,185 @@
           "id": "whg:dataset",
           "name": "Source dataset",
           "description": "Object containing dataset id and display name."
+        }
+      ]
+    },
+
+    {
+      "@id": "whg:chrononym",
+      "@type": "rdf:Property",
+      "rdfs:label": "Chrononym",
+      "rdfs:comment": "The primary label or name for a temporal period. This is the canonical name by which the period is known.",
+      "rdfs:domain": "whg:Period",
+      "rdfs:range": "xsd:string",
+      "whg:example": "Roman Empire",
+      "whg:apiView": [
+        {
+          "id": "whg:chrononym_canonical",
+          "name": "Chrononym (canonical)",
+          "description": "Primary chrononym label as a string."
+        }
+      ]
+    },
+
+    {
+      "@id": "whg:chrononym_variants",
+      "@type": "rdf:Property",
+      "rdfs:label": "Chrononym variants",
+      "rdfs:comment": "Alternative names or labels for the period in different languages or scholarly traditions. Each variant includes the label and language tag.",
+      "rdfs:domain": "whg:Period",
+      "rdfs:range": "rdf:Seq",
+      "whg:example": [
+        {
+          "label": "Roman Empire",
+          "lang": "en"
+        },
+        {
+          "label": "Empire romain",
+          "lang": "fr"
+        },
+        {
+          "label": "Römisches Reich",
+          "lang": "de"
+        }
+      ],
+      "whg:languageMetadata": {
+        "bcp47": "bcp47",
+        "standards": {
+          "language": "iso639"
+        }
+      },
+      "whg:apiView": [
+        {
+          "id": "whg:chrononym_variants_array",
+          "name": "Chrononym variants (array)",
+          "description": "Array of chrononym variant objects with label and language."
+        },
+        {
+          "id": "whg:chrononym_variants_summary",
+          "name": "Chrononym variants (summary)",
+          "description": "Flat array of variant label strings."
+        }
+      ]
+    },
+
+    {
+      "@id": "whg:period_authority",
+      "@type": "rdf:Property",
+      "rdfs:label": "Period authority",
+      "rdfs:comment": "The scholarly authority or source that defined this period. References the bibliographic source or dataset from which the period definition derives.",
+      "rdfs:domain": "whg:Period",
+      "rdfs:range": "rdfs:Resource",
+      "whg:example": {
+        "id": "http://n2t.net/ark:/99152/p0ndpcq",
+        "label": "Gassner, Verena; Jilek, Sonja; Ladstätter, Sabine (2002–2003): Am Rande des Reiches"
+      },
+      "whg:apiView": [
+        {
+          "id": "whg:period_authority_object",
+          "name": "Period authority",
+          "description": "Authority object with id and label."
+        }
+      ]
+    },
+
+    {
+      "@id": "whg:temporal_bounds",
+      "@type": "rdf:Property",
+      "rdfs:label": "Temporal bounds",
+      "rdfs:comment": "Start and end temporal bounds for the period. Includes both human-readable labels and computed numeric years for temporal queries.",
+      "rdfs:domain": "whg:Period",
+      "rdfs:range": "lpf:Timespan",
+      "whg:example": {
+        "start": {
+          "label": "c. 50 BC",
+          "year": "-0049",
+          "earliestYear": -50,
+          "latestYear": -49
+        },
+        "stop": {
+          "label": "noch vor der Mitte des 1. Jahrhunderts n. Chr.",
+          "year": "0040-0050",
+          "earliestYear": 40,
+          "latestYear": 50
+        }
+      },
+      "whg:apiView": [
+        {
+          "id": "whg:temporal_bounds_objects",
+          "name": "Temporal bounds (objects)",
+          "description": "Structured start/stop objects with labels and computed years."
+        },
+        {
+          "id": "whg:temporal_bounds_years",
+          "name": "Temporal bounds (years)",
+          "description": "Numeric year range as {start, end} for computational use."
+        }
+      ]
+    },
+
+    {
+      "@id": "whg:spatial_coverage",
+      "@type": "rdf:Property",
+      "rdfs:label": "Spatial coverage",
+      "rdfs:comment": "Geographic entities or places associated with this period. Links to WHG places or external gazetteer identifiers.",
+      "rdfs:domain": "whg:Period",
+      "rdfs:range": "whg:Place",
+      "whg:example": [
+        {
+          "id": "http://www.wikidata.org/entity/Q40",
+          "label": "Austria"
+        },
+        {
+          "id": "https://whgazetteer.org/place/12345",
+          "label": "Vienna"
+        }
+      ],
+      "whg:apiView": [
+        {
+          "id": "whg:spatial_coverage_objects",
+          "name": "Spatial coverage (objects)",
+          "description": "Array of linked place objects with id and label."
+        },
+        {
+          "id": "whg:spatial_coverage_geometry",
+          "name": "Spatial coverage (geometry)",
+          "description": "Computed bounding geometry for all associated places."
+        }
+      ]
+    },
+
+    {
+      "@id": "whg:periodo_identifier",
+      "@type": "rdf:Property",
+      "rdfs:label": "PeriodO identifier",
+      "rdfs:comment": "Original PeriodO ARK identifier for periods sourced from the PeriodO dataset.",
+      "rdfs:domain": "whg:Period",
+      "rdfs:range": "xsd:anyURI",
+      "whg:example": "http://n2t.net/ark:/99152/p0ndpcqmz45",
+      "whg:reference": "periodo",
+      "whg:apiView": [
+        {
+          "id": "whg:periodo_identifier",
+          "name": "PeriodO identifier",
+          "description": "ARK identifier from PeriodO as URI string."
+        }
+      ]
+    },
+
+    {
+      "@id": "whg:period_notes",
+      "@type": "rdf:Property",
+      "rdfs:label": "Period notes",
+      "rdfs:comment": "Editorial notes, broader/narrower relationships, and additional contextual information about the period definition.",
+      "rdfs:domain": "whg:Period",
+      "rdfs:range": "xsd:string",
+      "whg:example": "The settlement on the Magdalensberg belongs to several pre-Roman and Roman phases...",
+      "whg:apiView": [
+        {
+          "id": "whg:period_notes_editorial",
+          "name": "Editorial notes",
+          "description": "Editorial and contextual notes as text."
         }
       ]
     }

@@ -3,6 +3,7 @@
 from areas.models import Area
 from collection.models import Collection
 from datasets.models import Dataset
+from periods.models import Period
 from places.models import Place
 
 
@@ -25,6 +26,14 @@ def dataset_owner_or_public_queryset(authenticated_user):
     Returns the queryset of Datasets visible to a particular user.
     """
     return Dataset.objects.filter(public=True) | Dataset.objects.filter(owner=authenticated_user)
+
+
+def period_public_queryset(user):
+    """
+    Return periods queryset. All periods are public for now.
+    Could be extended to include user-specific filtering if needed.
+    """
+    return Period.objects.select_related('authority').prefetch_related('chrononyms', 'spatialCoverage')
 
 
 def place_feature_queryset(authenticated_user):
