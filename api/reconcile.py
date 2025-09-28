@@ -154,6 +154,7 @@ class ReconciliationView(APIView):
         except ValueError as e:
             return json_error(str(e))
 
+        # Data extension requests
         extend = payload.get("extend", {})
         if extend:
             ids = extend.get("ids", [])
@@ -174,10 +175,31 @@ class ReconciliationView(APIView):
 
             return JsonResponse({"meta": meta, "rows": rows})
 
+        # Reconciliation queries
         queries = payload.get("queries", {})
         if not queries:
             return json_error("Missing 'queries' parameter")
 
+        # Extract and validate entity type
+        types = {
+            urllib.parse.unquote(q["type"]).split("#")[-1].lower()
+            for q in queries.values()
+            if isinstance(q.get("type"), str)
+        }
+        if not types:
+            return json_error("Each query must specify a valid 'type' (e.g. '#Place' or '#Period')")
+        if not types.issubset({"place", "period"}):
+            return json_error(f"Unsupported entity type(s): {', '.join(sorted(types))}")
+        if len(types) > 1:
+            return json_error("All queries in a batch must be for the same entity type")
+        entity_type = types.pop()
+
+        # Period reconciliation
+        if entity_type == "period":
+            # TODO
+            return json_error("Period reconciliation is not supported at this time", status=501)
+
+        # Place reconciliation
         results = process_queries(queries, batch_size=SERVICE_METADATA.get("batch_size", 50))
         return JsonResponse(results)
 

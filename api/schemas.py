@@ -319,7 +319,7 @@ def reconcile_schema():
             "post": {
                 "summary": "Submit Reconciliation queries",
                 "description": (
-                    "Submit reconciliation queries to match place names against the WHG database. "
+                    "Submit reconciliation queries to match place or period names against the WHG+PeriodO database. "
                     "Supports batch queries and implements the Reconciliation Service API v0.2."
                     f"\n\n{QUERY_PARAMETERS}"
                 ),
@@ -352,10 +352,16 @@ def reconcile_schema():
                         name="Basic Reconciliation Request",
                         description="Example of reconciling place names",
                         value={
-                            "queries": {
-                                "q0": {"query": "Edinburgh"},
-                                "q1": {"query": "Leeds"}
+                          "queries": {
+                            "q0": {
+                              "query": "Edinburgh",
+                              "type": "https://whgazetteer.org/static/whg_schema.jsonld#Place"
+                            },
+                            "q1": {
+                              "query": "Leeds",
+                              "type": "https://whgazetteer.org/static/whg_schema.jsonld#Place"
                             }
+                          }
                         }
                     ),
                     OpenApiExample(
@@ -365,6 +371,7 @@ def reconcile_schema():
                             "queries": {
                                 "q0": {
                                     "query": "London",
+                                    "type": "https://whgazetteer.org/static/whg_schema.jsonld#Place",
                                     "mode": "3|2",
                                     "countries": ["GB"],
                                     "start": 1800,
@@ -374,7 +381,7 @@ def reconcile_schema():
                                     "radius": 10,
                                     "fclasses": ["P"],
                                     "size": 10
-                                }
+                                },
                             }
                         }
                     ),
@@ -383,7 +390,8 @@ def reconcile_schema():
                         description="Example of extending places with additional properties",
                         value={
                             "extend": {
-                                "ids": ["6469500", "6469512"],
+                                "ids": ["place:6469500", "place:6469512"],
+                                "type": "https://whgazetteer.org/static/whg_schema.jsonld#Place",
                                 "properties": [
                                     {"id": "whg:ccodes", "name": "Country codes"},
                                     {"id": "whg:geometry", "name": "Geometry (GeoJSON)"}
