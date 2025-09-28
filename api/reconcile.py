@@ -58,13 +58,13 @@ SERVICE_METADATA = {
     "documentation": DOCS_URL,
     "logo": DOMAIN + "/static/images/whg_logo_80.png",
     "view": {  # human-readable page
-        "url": DOMAIN + "/place/{{id}}/",
+        "url": DOMAIN + "/{{obj_type}}/{{id}}/",
     },
     "feature_view": {  # machine-readable place representation
-        "url": DOMAIN + "/place/api/{{id}}",
+        "url": DOMAIN + "/{{obj_type}}/api/{{id}}",
     },
     "preview": {  # HTML preview snippet
-        "url": DOMAIN + "/place/preview/{{id}}/?token={{token}}",
+        "url": DOMAIN + "/{{obj_type}}/preview/{{id}}/?token={{token}}",
         "width": 400,
         "height": 300,
     },
@@ -130,18 +130,37 @@ class ReconciliationView(APIView):
 
         token = request.GET.get("token")
 
+        # 1. Determine the object type for URL construction
+        # Get the full type URL (e.g., "...#Place" or "...#Period")
+        full_type_url = request.GET.get("type", None)
+
+        # Extract the object type string (e.g., 'Place' or 'Period')
+        # Default to 'place' if type is not found or is malformed.
+        if full_type_url and '#' in full_type_url:
+            obj_type = full_type_url.split('#')[-1].lower() # e.g., 'place' or 'period'
+        else:
+            obj_type = "period" # Default
+
         metadata = json.loads(json.dumps(SERVICE_METADATA))
 
-        if token:
-            def inject_token(obj):
-                if isinstance(obj, dict):
-                    return {k: inject_token(v) for k, v in obj.items()}
-                elif isinstance(obj, str):
-                    return obj.replace("{{token}}", token)
-                else:
-                    return obj
+        # --- Helper Function to Inject Type and Token ---
+        def inject_variables(obj):
+            global token, obj_type
+            if isinstance(obj, dict):
+                return {k: inject_variables(v) for k, v in obj.items()}
+            elif isinstance(obj, str):
+                # 1. Replace the object type placeholder
+                s = obj.replace("{{obj_type}}", obj_type)
+                # 2. Replace the token placeholder (if available)
+                if token:
+                    s = s.replace("{{token}}", token)
+                return s
+            else:
+                return obj
+        # --------------------------------------------------
 
-            metadata = inject_token(metadata)
+        # 2. Inject all variables recursively
+        metadata = inject_variables(metadata)
 
         return JsonResponse(metadata)
 
