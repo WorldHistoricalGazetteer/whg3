@@ -115,12 +115,14 @@ def make_candidate(hit, query_text, max_score, schema_space):
     alt_names = get_alternative_names(src, name)
     score = normalize_score(hit["_score"], max_score)
     is_exact = name.lower() == query_text.lower()
+    ccodes = src.get("ccodes", [])
     return {
         "id": "place:" + str(src.get("place_id")),  # or hit.get("whg_id") or hit["_id"]),
         "name": name,
         "score": score,
         "match": is_exact,
         "alt_names": alt_names,
+        "description": f"Country: {', '.join(ccodes)}",
         "type": [
             {
                 "id": schema_space + "#Place",
