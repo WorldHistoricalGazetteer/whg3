@@ -19,6 +19,7 @@ import math
 import os
 import urllib
 
+from django.contrib.postgres.search import TrigramSimilarity
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -207,15 +208,111 @@ class ReconciliationView(APIView):
                 return JsonResponse(results)
 
             # Period reconciliation
+            batch_size = SERVICE_METADATA.get("batch_size", 50)
             if entity_type == "period":
-                # TODO
-                return json_error("Period reconciliation is not supported at this time", status=501)
+                if len(queries) > batch_size:
+                    queries = dict(list(queries.items())[:batch_size])
+
+                results = {}
+                for key, params in queries.items():
+                    results[key] = self.reconcile_chrononym(params)
+
+                return JsonResponse(results)
 
             # Place reconciliation
-            results = process_queries(queries, batch_size=SERVICE_METADATA.get("batch_size", 50))
+            results = process_queries(queries, batch_size=batch_size)
             return JsonResponse(results)
 
         return json_error("Missing 'queries' or 'extend' parameter")
+
+    def reconcile_chrononym(self, params):
+        """Reconcile a single chrononym query"""
+        query_text = params.get("query", "").strip()
+        limit = min(int(params.get("limit", 5)), 20)
+        type_filter = params.get("type")
+
+        if not query_text:
+            return {"result": []}
+
+        # Type filtering - only accept chrononym type
+        if type_filter and "chrononym" not in type_filter.lower():
+            return {"result": []}
+
+        # Multi-tier matching strategy
+        results = []
+
+        # 1. Exact matches (score: 100)
+        exact_matches = Chrononym.objects.filter(label__iexact=query_text)[:limit]
+        for chrononym in exact_matches:
+            results.append(self.format_result(chrononym, score=100, match=True))
+
+        if len(results) >= limit:
+            return {"result": results[:limit]}
+
+        # 2. Prefix matches (score: 70-95)
+        remaining = limit - len(results)
+        prefix_matches = Chrononym.objects.filter(
+            label__istartswith=query_text
+        ).exclude(
+            label__iexact=query_text
+        )[:remaining * 2]
+
+        for chrononym in prefix_matches:
+            score = self.calculate_prefix_score(query_text, chrononym.label)
+            results.append(self.format_result(chrononym, score=score))
+
+        if len(results) >= limit:
+            results = sorted(results, key=lambda x: x['score'], reverse=True)
+            return {"result": results[:limit]}
+
+        # 3. Trigram similarity (score: 30-85)
+        remaining = limit - len(results)
+        existing_ids = [r['id'] for r in results]
+
+        similarity_matches = Chrononym.objects.annotate(
+            similarity=TrigramSimilarity('label', query_text)
+        ).filter(
+            similarity__gt=0.3
+        ).exclude(
+            id__in=existing_ids
+        ).order_by('-similarity')[:remaining]
+
+        for chrononym in similarity_matches:
+            similarity_score = getattr(chrononym, 'similarity', 0)
+            score = min(int(similarity_score * 85), 85)
+            results.append(self.format_result(chrononym, score=score))
+
+        # Sort and return top results
+        results = sorted(results, key=lambda x: x['score'], reverse=True)
+        return {"result": results[:limit]}
+
+    def calculate_prefix_score(self, query, label):
+        """Calculate score for prefix matches"""
+        query_len = len(query)
+        label_len = len(label)
+
+        if query_len == label_len:
+            return 95
+        elif query_len > label_len * 0.8:
+            return 90
+        elif query_len > label_len * 0.5:
+            return 80
+        else:
+            return 70
+
+    def format_result(self, chrononym, score=50, match=False):
+        """Format chrononym as reconciliation result"""
+        return {
+            "id": str(chrononym.id),
+            "name": chrononym.label,
+            "type": [{
+                "id": f"{SCHEMA_SPACE}#Chrononym",
+                "name": "Chrononym"
+            }],
+            "score": score,
+            "match": match,
+            "description": f"Language: {chrononym.languageTag}" if chrononym.languageTag else "",
+        }
 
 
 @method_decorator(csrf_exempt, name="dispatch")
