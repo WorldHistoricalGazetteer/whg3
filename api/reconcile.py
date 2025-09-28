@@ -30,12 +30,11 @@ from rest_framework.decorators import authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
-from main.choices import FEATURE_CLASSES
 from periods.models import Period, Chrononym
 from places.models import Place
 from .authentication import AuthenticatedAPIView, TokenQueryOrBearerAuthentication
-from .reconcile_helpers import make_candidate, format_extend_row, es_search, get_propose_properties, \
-    extract_entity_type, create_type_guessing_dummies
+from .reconcile_helpers import make_candidate, format_extend_row, es_search, extract_entity_type, \
+    create_type_guessing_dummies, parse_schema
 from .schemas import reconcile_schema, propose_properties_schema, suggest_entity_schema, suggest_property_schema
 
 logger = logging.getLogger('reconciliation')
@@ -44,10 +43,9 @@ DOMAIN = os.environ.get('URL_FRONT', 'https://whgazetteer.org').rstrip('/')
 DOCS_URL = "https://docs.whgazetteer.org/content/400-Technical.html#reconciliation-api"
 TILESERVER_URL = os.environ.get('TILEBOSS', 'https://tiles.whgazetteer.org').rstrip('/')
 MAX_EARTH_RADIUS_KM = math.pi * 6371  # ~20015 km
-VALID_FCODES = {fc for fc, _ in FEATURE_CLASSES}
 SCHEMA_FILE = "/static/whg_schema.jsonld"
 SCHEMA_SPACE = DOMAIN + SCHEMA_FILE
-PROPOSE_PROPERTIES = get_propose_properties(f"validation{SCHEMA_FILE}")
+PROPOSE_PROPERTIES, VALID_FCLASSES = parse_schema(f"validation{SCHEMA_FILE}")
 
 SERVICE_METADATA = {
     "versions": ["0.2"],
@@ -215,7 +213,7 @@ class ReconciliationView(APIView):
 
                 results = {}
                 for key, params in queries.items():
-                    results[key] = self.reconcile_chrononym(params)
+                    results[key] = self.reconcile_chrononym_to_period(params)
 
                 return JsonResponse(results)
 
@@ -225,8 +223,8 @@ class ReconciliationView(APIView):
 
         return json_error("Missing 'queries' or 'extend' parameter")
 
-    def reconcile_chrononym(self, params):
-        """Reconcile a single chrononym query"""
+    def reconcile_chrononym_to_period(self, params):
+        """Reconcile a single chrononym query to periods"""
         query_text = params.get("query", "").strip()
         limit = min(int(params.get("limit", 5)), 20)
         type_filter = params.get("type")
@@ -234,54 +232,114 @@ class ReconciliationView(APIView):
         if not query_text:
             return {"result": []}
 
-        if type_filter and "chrononym" not in type_filter.lower():
+        if type_filter and "period" not in type_filter.lower():
             return {"result": []}
 
-        # Multi-tier matching strategy
-        results = []
+        # Step 1: Find matching chrononyms using the same multi-tier strategy
+        matching_chrononyms = []
 
-        # 1. Exact matches (score: 100)
-        exact_matches = Chrononym.objects.filter(label__iexact=query_text)[:limit]
+        # 1. Exact matches (highest priority)
+        exact_matches = Chrononym.objects.filter(label__iexact=query_text)
         for chrononym in exact_matches:
-            results.append(self.format_result(chrononym, score=100, match=True))
+            matching_chrononyms.append((chrononym, 100, True))
 
-        if len(results) >= limit:
-            return {"result": results[:limit]}
+        # 2. Prefix matches
+        if len(matching_chrononyms) < limit * 3:  # Get more candidates than final limit
+            prefix_matches = Chrononym.objects.filter(
+                label__istartswith=query_text
+            ).exclude(
+                label__iexact=query_text
+            )[:limit * 3]
 
-        # 2. Prefix matches (score: 70-95)
-        remaining = limit - len(results)
-        prefix_matches = Chrononym.objects.filter(
-            label__istartswith=query_text
-        ).exclude(
-            label__iexact=query_text
-        )[:remaining * 2]
+            for chrononym in prefix_matches:
+                score = self.calculate_prefix_score(query_text, chrononym.label)
+                matching_chrononyms.append((chrononym, score, False))
 
-        for chrononym in prefix_matches:
-            score = self.calculate_prefix_score(query_text, chrononym.label)
-            results.append(self.format_result(chrononym, score=score))
+        # 3. Trigram similarity matches
+        if len(matching_chrononyms) < limit * 3:
+            existing_ids = [c[0].id for c in matching_chrononyms]
 
-        if len(results) >= limit:
-            results = sorted(results, key=lambda x: x['score'], reverse=True)
-            return {"result": results[:limit]}
+            similarity_matches = Chrononym.objects.annotate(
+                similarity=TrigramSimilarity('label', query_text)
+            ).filter(
+                similarity__gt=0.3
+            ).exclude(
+                id__in=existing_ids
+            ).order_by('-similarity')[:limit * 2]
 
-        # 3. Trigram similarity (score: 30-85)
-        remaining = limit - len(results)
-        existing_ids = [r['id'] for r in results]
+            for chrononym in similarity_matches:
+                similarity_score = getattr(chrononym, 'similarity', 0)
+                score = min(int(similarity_score * 85), 85)
+                matching_chrononyms.append((chrononym, score, False))
 
-        similarity_matches = Chrononym.objects.annotate(
-            similarity=TrigramSimilarity('label', query_text)
-        ).filter(
-            similarity__gt=0.3
-        ).exclude(
-            id__in=existing_ids
-        ).order_by('-similarity')[:remaining]
+        # Step 2: Get unique periods from matching chrononyms
+        period_scores = {}  # period_id -> (period_obj, best_score, is_match, matching_chrononyms)
 
-        for chrononym in similarity_matches:
-            similarity_score = getattr(chrononym, 'similarity', 0)
-            score = min(int(similarity_score * 85), 85)
-            results.append(self.format_result(chrononym, score=score))
+        # Pre-fetch periods with their chrononyms to avoid N+1 queries
+        chrononym_ids = [c[0].id for c in matching_chrononyms]
+        periods_with_chrononyms = Period.objects.filter(
+            chrononyms__id__in=chrononym_ids
+        ).prefetch_related('chrononyms').distinct()
 
-        # Sort and return top results
+        # Build lookup from chrononym to periods
+        chrononym_to_periods = {}
+        for period in periods_with_chrononyms:
+            for chrononym in period.chrononyms.all():
+                if chrononym.id not in chrononym_to_periods:
+                    chrononym_to_periods[chrononym.id] = []
+                chrononym_to_periods[chrononym.id].append(period)
+
+        # Process matching chrononyms and aggregate by period
+        for chrononym, score, is_match in matching_chrononyms:
+            periods = chrononym_to_periods.get(chrononym.id, [])
+
+            for period in periods:
+                if period.id not in period_scores:
+                    period_scores[period.id] = {
+                        'period': period,
+                        'best_score': score,
+                        'is_match': is_match,
+                        'matching_chrononyms': []
+                    }
+                else:
+                    # Update with better score if found
+                    if score > period_scores[period.id]['best_score']:
+                        period_scores[period.id]['best_score'] = score
+                        period_scores[period.id]['is_match'] = is_match
+
+                # Add this chrononym to the matching list
+                period_scores[period.id]['matching_chrononyms'].append({
+                    'label': chrononym.label,
+                    'languageTag': chrononym.languageTag,
+                    'score': score
+                })
+
+        # Step 3: Format results and sort by score
+        results = []
+        for period_data in period_scores.values():
+            period = period_data['period']
+
+            # Create description with period ID and matching chrononyms
+            chrononym_list = ", ".join([
+                f"{c['label']}" + (f" ({c['languageTag']})" if c['languageTag'] else "")
+                for c in period_data['matching_chrononyms']
+            ])
+            description = f"Period {period.id}: {chrononym_list}"
+
+            result = {
+                "id": f"period:{period.id}",  # Prefix to distinguish from places
+                "name": period.chrononym or period_data['matching_chrononyms'][0]['label'],
+                "type": [{
+                    "id": f"{SCHEMA_SPACE}#Period",
+                    "name": "Period"
+                }],
+                "score": period_data['best_score'],
+                "match": period_data['is_match'],
+                "description": description,
+            }
+            results.append(result)
+
+        # Sort by score and return top results
         results = sorted(results, key=lambda x: x['score'], reverse=True)
         return {"result": results[:limit]}
 
@@ -298,125 +356,6 @@ class ReconciliationView(APIView):
             return 80
         else:
             return 70
-
-    def format_result(self, chrononym, score=50, match=False):
-        """Format chrononym as reconciliation result"""
-        return {
-            "id": str(chrononym.id),
-            "name": chrononym.label,
-            "type": [{
-                "id": f"{SCHEMA_SPACE}#Chrononym",
-                "name": "Chrononym"
-            }],
-            "score": score,
-            "match": match,
-            "description": f"Language: {chrononym.languageTag}" if chrononym.languageTag else "",
-        }
-
-    # def reconcile_chrononym(self, params):
-    #     """Reconcile a single chrononym query"""
-    #     query_text = params.get("query", "").strip()
-    #     limit = min(int(params.get("limit", 5)), 20)
-    #     type_filter = params.get("type")
-    #
-    #     if not query_text:
-    #         return {"result": []}
-    #
-    #     if type_filter and "period" not in type_filter.lower():
-    #         return {"result": []}
-    #
-    #     # --- Annotate the first related Period ID ---
-    #     # Subquery to find the ID of the first related Period for each Chrononym
-    #     first_period_sq = Period.objects.filter(
-    #         chrononyms=OuterRef('pk')
-    #     ).values('id')[:1]
-    #
-    #     # Create a base queryset with the annotated period_id
-    #     base_qs = Chrononym.objects.annotate(
-    #         period_id=Subquery(first_period_sq)
-    #     ).filter(period_id__isnull=False) # Exclude chrononyms without a period
-    #
-    #     # Multi-tier matching strategy
-    #     results = []
-    #
-    #     # 1. Exact matches (score: 100)
-    #     exact_matches = base_qs.filter(label__iexact=query_text)[:limit]
-    #     for chrononym in exact_matches:
-    #         results.append(self.format_result(chrononym, score=100, match=True))
-    #
-    #     if len(results) >= limit:
-    #         return {"result": results[:limit]}
-    #
-    #     # 2. Prefix matches (score: 70-95)
-    #     remaining = limit - len(results)
-    #     prefix_matches = base_qs.filter(
-    #         label__istartswith=query_text
-    #     ).exclude(
-    #         label__iexact=query_text
-    #     ).exclude(
-    #         id__in=[r['id'].split(':')[1] for r in results] # Filter out results already found
-    #     )[:remaining * 2]
-    #
-    #     for chrononym in prefix_matches:
-    #         score = self.calculate_prefix_score(query_text, chrononym.label)
-    #         results.append(self.format_result(chrononym, score=score))
-    #
-    #     if len(results) >= limit:
-    #         results = sorted(results, key=lambda x: x['score'], reverse=True)
-    #         return {"result": results[:limit]}
-    #
-    #     # 3. Trigram similarity (score: 30-85)
-    #     remaining = limit - len(results)
-    #     existing_ids = [r['id'].split(':')[1] for r in results] # IDs are now prefixed, need to strip
-    #
-    #     # Apply annotation to the similarity query as well
-    #     similarity_matches = base_qs.annotate(
-    #         similarity=TrigramSimilarity('label', query_text)
-    #     ).filter(
-    #         similarity__gt=0.3
-    #     ).exclude(
-    #         id__in=existing_ids
-    #     ).order_by('-similarity')[:remaining]
-    #
-    #     for chrononym in similarity_matches:
-    #         similarity_score = getattr(chrononym, 'similarity', 0)
-    #         score = min(int(similarity_score * 85), 85)
-    #         results.append(self.format_result(chrononym, score=score))
-    #
-    #     # Sort and return top results
-    #     results = sorted(results, key=lambda x: x['score'], reverse=True)
-    #     return {"result": results[:limit]}
-    #
-    # def calculate_prefix_score(self, query, label):
-    #     """Calculate score for prefix matches"""
-    #     query_len = len(query)
-    #     label_len = len(label)
-    #
-    #     if query_len == label_len:
-    #         return 95
-    #     elif query_len > label_len * 0.8:
-    #         return 90
-    #     elif query_len > label_len * 0.5:
-    #         return 80
-    #     else:
-    #         return 70
-    #
-    # def format_result(self, chrononym, score=50, match=False):
-    #     """Format chrononym as reconciliation result"""
-    #     period_id = getattr(chrononym, 'period_id', None)
-    #     if not period_id:
-    #         return None
-    #     return {
-    #         "id": f"period:{str(period_id)}",
-    #         "name": chrononym.label,
-    #         "type": [{
-    #             "id": f"{SCHEMA_SPACE}#Chrononym",
-    #             "name": "Chrononym"
-    #         }],
-    #         "score": score,
-    #         "match": match,
-    #         "description": f"Language: {chrononym.languageTag}" if chrononym.languageTag else "",
-    #     }
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -449,7 +388,7 @@ class SuggestEntityView(AuthenticatedAPIView):
             return json_error("Invalid 'limit' or 'cursor' parameter. They must be integers.")
 
         # --- 2. Search for Places (Elasticsearch) ---
-        raw_params = {"query": prefix, "size": 50} # Search a large size for combining
+        raw_params = {"query": prefix, "size": 50}  # Search a large size for combining
         query = normalise_query_params(raw_params)
         query["mode"] = "starts" if exact else "fuzzy"
 
@@ -464,9 +403,9 @@ class SuggestEntityView(AuthenticatedAPIView):
             place_candidates.append(candidate)
 
         # --- 3. Search for Periods (Database - Chrononym) ---
-        period_limit = 20 # Limit the database query size
+        period_limit = 20  # Limit the database query size
 
-       # Use an iqueryset to allow for case-insensitive startswith
+        # Use an iqueryset to allow for case-insensitive startswith
         suggestions = Chrononym.objects.filter(
             label__istartswith=prefix
         ).order_by('label')[:period_limit]
@@ -478,7 +417,7 @@ class SuggestEntityView(AuthenticatedAPIView):
             period_candidates.append({
                 "id": f"period:{chrononym.id}",
                 "name": chrononym.label,
-                "score": 100, # Assign max score for visibility/sorting
+                "score": 100,  # Assign max score for visibility/sorting
                 "match": True,
                 "description": f"Language: {chrononym.languageTag}" if chrononym.languageTag else "",
                 "type": [{"id": PERIOD_SCHEMA_ID, "name": "Period"}]
@@ -668,11 +607,11 @@ def normalise_query_params(params):
     fclasses = None
     if "fclasses" in params:
         fclasses = [x.strip().upper() for x in params["fclasses"] if x.strip()]
-        invalid = [x for x in fclasses if x not in VALID_FCODES]
+        invalid = [x for x in fclasses if x not in VALID_FCLASSES]
         if invalid:
             raise ValueError(
                 f"Invalid feature class(es): {', '.join(invalid)}. "
-                f"Allowed values are: {', '.join(sorted(VALID_FCODES))}. "
+                f"Allowed values are: {', '.join(sorted(VALID_FCLASSES))}. "
                 f"See https://www.geonames.org/source-code/javadoc/org/geonames/FeatureClass.html"
             )
 

@@ -670,15 +670,9 @@ class ReconciliationRequestSerializer(serializers.Serializer):
     )
 
 
-def get_propose_properties(schema_file):
+def parse_schema(schema_file):
     """
-    Parses a WHG schema from a local file and constructs the PROPOSE_PROPERTIES list.
-
-    Args:
-        schema_file (str): The local file path to the WHG schema.
-
-    Returns:
-        list: A list of dictionaries for reconciliation API properties.
+    Parses a WHG schema from a local file and constructs the PROPOSE_PROPERTIES list and VALID_FCLASSES.
     """
     import json
 
@@ -694,6 +688,7 @@ def get_propose_properties(schema_file):
         return []
 
     propose_properties = []
+    valid_fclasses = []
 
     # Iterate through the @graph array
     for item in schema.get('@graph', []):
@@ -714,6 +709,9 @@ def get_propose_properties(schema_file):
                         "type": "string"
                     })
 
+        if item.get('@id') == 'whg:classes':
+            valid_fclasses = [val.get('code') for val in item.get('whg:allowedValues', [])]
+
     # Add special properties
     propose_properties.append({
         "id": "whg:lpf_feature",
@@ -722,7 +720,7 @@ def get_propose_properties(schema_file):
         "type": "string"
     })
 
-    return propose_properties
+    return propose_properties, valid_fclasses
 
 
 def extract_entity_type(source, from_queries=False):
