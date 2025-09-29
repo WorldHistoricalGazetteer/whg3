@@ -390,6 +390,7 @@ class SuggestEntityView(AuthenticatedAPIView):
 
         # --- 1. Get Parameters ---
         exact = request.GET.get("exact", "false").lower() == "true"
+        mode = request.GET.get("mode", "all").lower()
 
         try:
             limit = int(request.GET.get("limit", 10))
@@ -415,20 +416,18 @@ class SuggestEntityView(AuthenticatedAPIView):
         # --- 3. Search for Periods (Database - Chrononym) ---
         period_limit = 60  # Limit the database query size
 
-        # Use an iqueryset to allow for case-insensitive startswith
-        suggestions = Chrononym.objects.filter(
-            label__istartswith=prefix
-        )
+        # Search by prefix or substring using trigram similarity
+        similarity_threshold = 0.3  # tweak between 0 (any match) and 1 (exact)
+        chrononyms = Chrononym.objects.annotate(
+            similarity=TrigramSimilarity('label', prefix)
+        ).filter(similarity__gte=similarity_threshold).order_by('-similarity') # Collect all related period IDs
 
-        # Collect all related period IDs
         period_qs = Period.objects.filter(
-            chrononyms__in=suggestions
-        ).distinct().prefetch_related(
-            'chrononyms',
-            'spatialCoverage',
-        ).order_by('chrononym')
+            chrononyms__in=chrononyms
+        ).distinct().prefetch_related( 'chrononyms', 'spatialCoverage', )
 
-        period_qs = period_qs[:period_limit]
+        if not mode == "nosort":
+            period_qs = period_qs.order_by('chrononym')[:period_limit]
 
         PERIOD_SCHEMA_ID = SCHEMA_SPACE + "#Period"
         period_candidates = []

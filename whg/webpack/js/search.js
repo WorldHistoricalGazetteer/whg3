@@ -4,9 +4,7 @@ import {errorModal} from './error-modal.js';
 import Dateline from './dateline';
 import throttle from 'lodash/throttle';
 import debounce from 'lodash/debounce';
-import {
-    geomsGeoJSON,
-} from './utilities';
+import {geomsGeoJSON,} from './utilities';
 import CountryParents from './countryParents';
 import {CountryCacheFeatureCollection} from './countryCache';
 import './toggle-truncate.js';
@@ -326,6 +324,76 @@ Promise.all([
         .on('change', function () {
             initialiseSuggestions();
         });
+
+    function initialiseChrononymSuggestions() {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        const chrononyms = new Bloodhound({
+            datumTokenizer: Bloodhound.tokenizers.whitespace,
+            queryTokenizer: Bloodhound.tokenizers.whitespace,
+            limit: 50,
+            remote: {
+                url: '/suggest/entity?limit=60&mode=nosort&prefix=%QUERY',
+                wildcard: '%QUERY',
+                rateLimitBy: 'debounce',
+                rateLimitWait: 200,
+                transport: function (opts, onSuccess, onError) {
+                    $.ajax({
+                        url: opts.url,
+                        type: 'GET',
+                        headers: {
+                            'X-CSRF-Token': csrfToken,
+                        },
+                        success: function (data) {
+                            // Map API response to array of suggestions
+                            const suggestions = data.result
+                                .filter(r => r.type.some(t => t.name === "Period"))
+                                .map(r => ({
+                                    id: r.id,
+                                    name: r.name,
+                                    description: r.description,
+                                }));
+                            onSuccess(suggestions);
+                        },
+                        error: onError,
+                    });
+                },
+            },
+        });
+
+        $('#chrononym_input').typeahead('destroy').typeahead({
+            highlight: true,
+            hint: true,
+            minLength: 2,
+        }, {
+            name: 'Chrononyms',
+            display: 'name',  // what goes into the input when selected
+            source: chrononyms.ttAdapter(),
+            limit: 50,
+            templates: {
+                suggestion: function (data) {
+                    return `
+          <div>
+            <strong>${data.name}</strong><br>
+            <small>${data.description}</small>
+          </div>
+        `;
+                },
+            },
+        }).on('typeahead:select', function (e, item) {
+            // keep the ID available for your search call
+            $(this).data('chrononym-id', item.id);
+            initiateSearch();
+        });
+
+        $('#clear_chrononym').on('click', function () {
+            $('#chrononym_input').typeahead('val', '');
+            $('#chrononym_input').removeData('chrononym-id');
+            initiateSearch();
+        });
+    }
+
+    initialiseChrononymSuggestions();
 
     // Initialise mechanism to prevent reappearance of tooltip on `#search_input`
     const tooltipKey = 'searchTooltipHidden';

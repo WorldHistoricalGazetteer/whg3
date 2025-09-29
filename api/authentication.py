@@ -1,5 +1,6 @@
 # api/authentication.py
-
+from django.contrib.auth.models import AnonymousUser
+from django.middleware.csrf import CsrfViewMiddleware
 from django.utils import timezone
 from rest_framework.authentication import BaseAuthentication, SessionAuthentication
 from rest_framework.exceptions import AuthenticationFailed
@@ -7,6 +8,21 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from .models import APIToken, UserAPIProfile
+
+class CSRFUser(AnonymousUser):
+    @property
+    def is_authenticated(self):
+        return True
+
+def enforce_csrf(request):
+    """
+    Run Django's CSRF validation against the incoming request.
+    Raise AuthenticationFailed if invalid.
+    """
+    check = CsrfViewMiddleware(lambda req: None)  # dummy get_response
+    reason = check.process_view(request, None, (), {})
+    if reason:  # if not None, validation failed
+        raise AuthenticationFailed(f"CSRF Failed: {reason}")
 
 class TokenQueryOrBearerAuthentication(BaseAuthentication):
     """
@@ -29,37 +45,35 @@ class TokenQueryOrBearerAuthentication(BaseAuthentication):
         if not key:
             key = request.GET.get("token")
 
-        # 3. Fall back to session/CSRF auth
-        if not key:
-            return None
+        if key:
+            try:
+                token = APIToken.objects.select_related("user").get(key=key)
+            except APIToken.DoesNotExist:
+                raise AuthenticationFailed("Invalid API token")
 
-        try:
-            token = APIToken.objects.select_related("user").get(key=key)
-        except APIToken.DoesNotExist:
-            raise AuthenticationFailed("Invalid API token")
+            user = token.user
+            profile, _ = UserAPIProfile.objects.get_or_create(user=user)
+            if profile.daily_limit and profile.daily_count >= profile.daily_limit:
+                raise AuthenticationFailed(
+                    f"Daily API limit ({profile.daily_limit} calls) exceeded"
+                )
+            profile.increment_usage()
 
-        user = token.user
+            now = timezone.now()
+            if not token.last_used or (now - token.last_used).total_seconds() > 60:
+                token.last_used = now
+                token.save(update_fields=["last_used"])
 
-        # Ensure UserAPIProfile exists
-        profile, _ = UserAPIProfile.objects.get_or_create(user=user)
+            return (user, key)
 
-        # Check daily limit before increment
-        if profile.daily_limit and profile.daily_count >= profile.daily_limit:
-            raise AuthenticationFailed(
-                f"Daily API limit ({profile.daily_limit} calls) exceeded"
-            )
+        # 3. If no token but CSRF header present, accept request as "public user"
+        csrf_token = request.headers.get("X-CSRFToken") or request.headers.get("X-CSRF-Token")
+        if csrf_token:
+            enforce_csrf(request)
+            return (CSRFUser(), None)
 
-        # Increment usage after validation
-        profile.increment_usage()
-
-        # Update token last used (lightweight throttling: only if >60s since last)
-        now = timezone.now()
-        if not token.last_used or (now - token.last_used).total_seconds() > 60:
-            token.last_used = now
-            token.save(update_fields=["last_used"])
-
-        # Return user and token key (not the full object)
-        return (user, key)
+        # Otherwise, no credentials
+        return None
 
     def authenticate_header(self, request):
         """
