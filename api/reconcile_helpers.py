@@ -473,76 +473,95 @@ WHG_TO_SERIALIZER_FIELD = {
     "whg:temporal_bounds_years": "temporal_bounds",
 }
 
+
 def format_extend_row_period(period, properties, request=None):
     """
-    Build OpenRefine row dict for a Period, using DRY property mapping
-    and correctly selecting serializer fields.
+    Build OpenRefine row dict for a Period using DRY property mapping.
     """
-    # Convert whg:* IDs to serializer field names
-    serializer_fields = set(
+    # Get required serializer fields
+    serializer_fields = {
         WHG_TO_SERIALIZER_FIELD.get(prop.get("id") if isinstance(prop, dict) else prop)
         for prop in properties
-        if WHG_TO_SERIALIZER_FIELD.get(prop.get("id") if isinstance(prop, dict) else prop)
-    )
+    }
+    serializer_fields.discard(None)  # Remove None values
 
-    # Create serializer with correct fields
+    if not serializer_fields:
+        return {}
+
+    # Serialize with only needed fields
     serializer = OptimizedPeriodSerializer(
         period,
         context={"request": request},
         fields=list(serializer_fields)
     )
     data = serializer.data
-    row = {}
 
-    def wrap(obj):
-        if obj is None:
-            return []
-        if isinstance(obj, list):
-            return [{"str": json.dumps(obj)}]
-        if isinstance(obj, dict):
-            return [{"str": json.dumps(obj)}]
-        return [{"str": str(obj)}]
-
-    # Build each property from serializer data
-    property_builders = {
-        # Chrononyms
+    # Property value extractors - return raw values, not wrapped
+    extractors = {
         "whg:chrononym_canonical": lambda d: d.get("canonical_label"),
         "whg:chrononym_variants_array": lambda d: d.get("chrononyms", []),
         "whg:chrononym_variants_summary": lambda d: [c.get("label") for c in d.get("chrononyms", [])],
-
-        # Notes / editorial
         "whg:period_notes_editorial": lambda d: d.get("editorialNote"),
-
-        # Authority
         "whg:period_authority_object": lambda d: d.get("authority"),
-
-        # Identifier
         "whg:periodo_identifier": lambda d: d.get("id"),
-
-        # Spatial coverage
-        "whg:spatial_coverage_geometry": lambda d: [sc.get("geometry") for sc in d.get("spatial_coverage", []) if sc.get("geometry")],
+        "whg:spatial_coverage_geometry": lambda d: [
+            sc.get("geometry") for sc in d.get("spatial_coverage", [])
+            if sc.get("geometry")
+        ],
         "whg:spatial_coverage_objects": lambda d: d.get("spatial_coverage", []),
-
-        # Temporal bounds
         "whg:temporal_bounds_objects": lambda d: d.get("temporal_bounds", {}),
         "whg:temporal_bounds_years": lambda d: [
-            f"{tb['earliestYear']} / {tb['latestYear']}" if tb.get("earliestYear") != tb.get("latestYear")
-            else str(tb.get("earliestYear"))
-            for tb in d.get("temporal_bounds", {}).values()
+            format_year_range(tb) for tb in d.get("temporal_bounds", {}).values()
             if tb.get("earliestYear") or tb.get("latestYear")
         ],
     }
 
+    # Build row - wrap each value according to OpenRefine format
+    row = {}
     for prop in properties:
         pid = prop.get("id") if isinstance(prop, dict) else prop
-        builder = property_builders.get(pid)
-        row[pid] = wrap(builder(data)) if builder else []
+        extractor = extractors.get(pid)
 
-    # Optional: debug logging
-    logger.debug("Period data for %s: %s", period.id, data)
-    logger.debug("Extend row for period %s: %s", period.id, row)
+        if extractor:
+            value = extractor(data)
+            row[pid] = wrap_value(value)
+        else:
+            row[pid] = []
 
     return row
+
+
+def format_year_range(temporal_bound):
+    """Format a temporal bound into a readable year range string."""
+    earliest = temporal_bound.get("earliestYear")
+    latest = temporal_bound.get("latestYear")
+
+    if earliest == latest and earliest is not None:
+        return str(earliest)
+    elif earliest and latest:
+        return f"{earliest} / {latest}"
+    elif earliest:
+        return f"From {earliest}"
+    elif latest:
+        return f"Until {latest}"
+    return ""
+
+
+def wrap_value(value):
+    """
+    Wrap values in OpenRefine's expected format.
+    Returns list of objects with 'str' key containing JSON or string values.
+    """
+    if value is None:
+        return []
+
+    if isinstance(value, str):
+        return [{"str": value}]
+
+    if isinstance(value, (list, dict)):
+        return [{"str": json.dumps(value)}]
+
+    return [{"str": str(value)}]
 
 
 def build_lpf_feature(place, serialized_data):
