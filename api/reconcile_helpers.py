@@ -677,35 +677,46 @@ def parse_schema(schema_file):
     import json
 
     if not os.path.exists(schema_file):
-        logger.error(f"Schema file not found at: {schema_file}")
-        return []
+        logger.error("Schema file not found: %s", schema_file)
+        return [], []
 
     try:
-        with open(schema_file, 'r', encoding='utf-8') as f:
+        with open(schema_file, encoding="utf-8") as f:
             schema = json.load(f)
     except Exception as e:
-        logger.error(f"Error loading JSON from {schema_file}: {e}")
-        return []
+        logger.error("Error loading schema JSON: %s", e)
+        return [], []
 
-    propose_properties = []
-    valid_fclasses = []
+    def valid_domain(domains):
+        """Return 'Place' or 'Period' if present in rdfs:domain, else None."""
+        if isinstance(domains, str):
+            domains = [domains]
+        for d in domains or []:
+            if d.endswith("#Place"):
+                return "Place"
+            if d.endswith("#Period"):
+                return "Period"
+        return None
+
+    propose_properties, valid_fclasses = [], []
 
     # Iterate through the @graph array
     for item in schema.get('@graph', []):
-        if item.get('@type') == 'rdf:Property':
-            # Check for whg:apiView
-            api_views = item.get('whg:apiView', [])
+        if item.get("@type") == "rdf:Property":
+            domain = valid_domain(item.get("rdfs:domain"))
+            if not domain:
+                continue
 
-            # Handle both single object and array of objects
+            api_views = item.get("whg:apiView", [])
             if isinstance(api_views, dict):
                 api_views = [api_views]
 
             for view in api_views:
-                if isinstance(view, dict) and all(k in view for k in ['id', 'name', 'description']):
+                if isinstance(view, dict) and {"id", "name", "description"} <= view.keys():
                     propose_properties.append({
-                        "id": view['id'],
-                        "name": view['name'],
-                        "description": view['description'],
+                        "id": view["id"],
+                        "name": f"{domain}: {view['name']}",
+                        "description": view["description"],
                         "type": "string"
                     })
 
