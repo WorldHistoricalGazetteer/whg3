@@ -498,7 +498,7 @@ def format_extend_row_period(period, properties, request=None):
         if obj is None:
             return []
         if isinstance(obj, list):
-            return [{"str": json.dumps(v) if isinstance(v, (dict, list)) else str(v)} for v in obj]
+            return [{"str": json.dumps(obj)}]
         if isinstance(obj, dict):
             return [{"str": json.dumps(obj)}]
         return [{"str": str(obj)}]
