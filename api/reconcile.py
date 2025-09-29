@@ -168,9 +168,6 @@ class ReconciliationView(APIView):
             except ValueError as e:
                 return json_error(str(e))
 
-            logger.debug(f"Data extension request for type: {entity_type} with {len(ids)} ids")
-            logger.debug(f"IDs: {entity_ids}")
-
             properties = extend.get("properties", [])
 
             if entity_type == "place":
@@ -200,9 +197,6 @@ class ReconciliationView(APIView):
             except ValueError as e:
                 return json_error(str(e))
 
-            logger.debug(f"Reconciliation request for type: {entity_type} with {len(queries)} queries")
-            logger.debug(f"Queries: {queries}")
-
             if not entity_type:
                 # If it looks like OpenRefine type guessing, return dummies to force display of all default types
                 all_candidates = create_type_guessing_dummies(SERVICE_METADATA)
@@ -222,13 +216,10 @@ class ReconciliationView(APIView):
                 for key, params in queries.items():
                     results[key] = self.reconcile_chrononym_to_period(params)
 
-                logger.debug("Reconciliation results: {}".format(results))
-
                 return JsonResponse(results)
 
             # Place reconciliation
             results = process_queries(queries, batch_size=batch_size)
-            logger.debug("Reconciliation results: {}".format(results))
             return JsonResponse(results)
 
         return json_error("Missing 'queries' or 'extend' parameter")
@@ -359,8 +350,6 @@ class ReconciliationView(APIView):
         # Sort by score and return top results
         results = sorted(results, key=lambda x: x['score'], reverse=True)
 
-        logger.debug(f"Reconciled {len(results)} periods for query '{query_text}'")
-        logger.debug(f"Results: {results[:limit]}")
         return {"result": results[:limit]}
 
     def calculate_prefix_score(self, query, label):
@@ -383,6 +372,28 @@ class ReconciliationView(APIView):
 class ExtendProposeView(APIView):
 
     def get(self, request, *args, **kwargs):
+        # Try to decode body as JSON for inspection
+        try:
+            body_str = request.body.decode("utf-8")
+            body_json = json.loads(body_str) if body_str else None
+        except Exception:
+            body_str = request.body.decode("utf-8", errors="replace")
+            body_json = None
+
+        # Collect headers
+        headers = {
+            k: v for k, v in request.META.items()
+            if k.startswith("HTTP_") or k in ["CONTENT_TYPE", "CONTENT_LENGTH"]
+        }
+
+        logger.debug("ExtendProposeView called")
+        logger.debug("GET params: %s", dict(request.GET))
+        logger.debug("POST params: %s", dict(request.POST))
+        logger.debug("Body (raw): %s", body_str)
+        logger.debug("Body (json): %s", body_json)
+        logger.debug("Content-Type: %s", request.content_type)
+        logger.debug("Headers: %s", headers)
+
         return JsonResponse({
             "properties": PROPOSE_PROPERTIES
         })
