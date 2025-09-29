@@ -692,9 +692,9 @@ def parse_schema(schema_file):
         if isinstance(domains, str):
             domains = [domains]
         for d in domains or []:
-            if d.endswith("#Place"):
+            if d.endswith("Place"):
                 return "Place"
-            if d.endswith("#Period"):
+            if d.endswith("Period"):
                 return "Period"
         return None
 
