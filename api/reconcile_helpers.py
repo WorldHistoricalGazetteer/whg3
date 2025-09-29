@@ -513,6 +513,8 @@ def format_extend_row_period(period, properties, request=None):
         builder = property_builders.get(pid)
         row[pid] = wrap(builder(data)) if builder else []
 
+    # Log data
+    logger.debug("Period data for %s: %s", period.id, data)
     logger.debug("Extend row for period %s: %s", period.id, row)
 
     return row
