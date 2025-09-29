@@ -463,9 +463,35 @@ def format_extend_row_period(period, properties, request=None):
     """
     Build OpenRefine row dict for a Period, using DRY property mapping.
     """
-    required_fields = get_required_fields(properties)
-    serializer = OptimizedPeriodSerializer(period, context={"request": request}, fields=required_fields)
-    data = serializer.data
+
+    # Map whg property IDs to OptimizedPeriodSerializer field names
+    WHG_TO_SERIALIZER_FIELD = {
+        "whg:chrononym_canonical": "canonical_label",
+        "whg:chrononym_variants_array": "chrononyms",
+        "whg:chrononym_variants_summary": "chrononyms",
+        "whg:period_notes_editorial": "editorialNote",
+        "whg:period_authority_object": "authority",
+        "whg:periodo_identifier": "id",
+        "whg:spatial_coverage_geometry": "spatial_coverage",
+        "whg:spatial_coverage_objects": "spatial_coverage",
+        "whg:temporal_bounds_objects": "temporal_bounds",
+        "whg:temporal_bounds_years": "temporal_bounds",
+    }
+
+    # Determine which serializer fields are actually needed
+    serializer_fields = [
+        WHG_TO_SERIALIZER_FIELD.get(pid)
+        for pid in get_required_fields(properties)
+    ]
+    serializer_fields = [f for f in serializer_fields if f]
+
+    # Serialize only the requested fields
+    serializer = OptimizedPeriodSerializer(
+        period,
+        context={"request": request},
+        fields=serializer_fields
+    )
+    data = serializer.data or {}
     row = {}
 
     # Helper to wrap value(s) as [{"str": ...}]
@@ -478,7 +504,7 @@ def format_extend_row_period(period, properties, request=None):
             return [{"str": json.dumps(obj)}]
         return [{"str": str(obj)}]
 
-    # Mapping from property ID to a function that builds the value from `data`
+    # Build each whg property from serializer data
     property_builders = {
         # Chrononyms
         "whg:chrononym_canonical": lambda d: d.get("canonical_label"),
@@ -508,12 +534,13 @@ def format_extend_row_period(period, properties, request=None):
         ],
     }
 
+    # Build the row
     for prop in properties:
         pid = prop.get("id") if isinstance(prop, dict) else prop
         builder = property_builders.get(pid)
         row[pid] = wrap(builder(data)) if builder else []
 
-    # Log data
+    # Optional: debug logging
     logger.debug("Period data for %s: %s", period.id, data)
     logger.debug("Extend row for period %s: %s", period.id, row)
 
