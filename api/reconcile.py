@@ -35,7 +35,7 @@ from places.models import Place
 from .authentication import AuthenticatedAPIView, TokenQueryOrBearerAuthentication
 from .querysets import place_feature_queryset, period_public_queryset
 from .reconcile_helpers import make_candidate, format_extend_row, es_search, extract_entity_type, \
-    create_type_guessing_dummies, parse_schema, format_extend_row_period
+    create_type_guessing_dummies, parse_schema
 from .schemas import reconcile_schema, propose_properties_schema, suggest_entity_schema, suggest_property_schema
 from .serializers_api import PeriodPreviewSerializer
 

@@ -353,7 +353,6 @@ def format_extend_row(entity, properties, request=None):
         else:
             row[pid] = []
 
-    logger.debug("Extend row for %s %s: %s", entity_type, entity.id, row)
     return row
 
 
