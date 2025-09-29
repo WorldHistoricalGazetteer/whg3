@@ -329,23 +329,184 @@ class OptimizedPeriodSerializer(serializers.ModelSerializer):
         return union_geom.geojson
 
 
-class PeriodFeatureSerializer(OptimizedPeriodSerializer):
+class PeriodFeatureSerializer(serializers.ModelSerializer):
     """
-    Full serializer for Periods, always includes all fields.
-    Wraps as a GeoJSON Feature for LPF.
+    LPF-compliant serializer for Period objects as GeoJSON Features.
+    Follows Linked Places Format v2.0 specification.
     """
-
-    def __init__(self, *args, **kwargs):
-        kwargs.pop('fields', None)  # Always include all fields
-        super().__init__(*args, **kwargs)
 
     def to_representation(self, obj):
-        feature = super().to_representation(obj)
-        return {
+        # Build LPF Feature structure
+        feature = {
+            "@context": "https://whgazetteer.org/schema/lpo_v2.0.jsonld",
             "type": "Feature",
-            "geometry": feature.pop('geometry', None),
-            "properties": feature
+            "@id": f"https://whgazetteer.org/period/{obj.id}",
+            "properties": {
+                "title": obj.chrononym or "Untitled Period",
+                "ccodes": self.get_country_codes(obj),
+                "fclasses": ["L"]  # Area
+            },
+            "names": self.get_names(obj),
+            "geometry": self.get_geometry(obj),
+            "when": self.get_when(obj),
+            "links": self.get_links(obj),
+            "descriptions": self.get_descriptions(obj),
         }
+
+        # Remove empty optional fields
+        return {k: v for k, v in feature.items() if v is not None}
+
+    def get_names(self, obj):
+        """Build LPF names array from chrononyms"""
+        names = []
+
+        # Add canonical chrononym as preferred name
+        if obj.chrononym:
+            names.append({
+                "toponym": obj.chrononym,
+                "lang": obj.languageTag if obj.languageTag else None
+            })
+
+        # Add variant chrononyms
+        for chrononym in obj.chrononyms.all():
+            # Skip if it's the same as canonical
+            if chrononym.label != obj.chrononym:
+                name_obj = {
+                    "toponym": chrononym.label,
+                    "lang": chrononym.languageTag if chrononym.languageTag else None
+                }
+                names.append(name_obj)
+
+        # Remove None values from lang fields
+        for name in names:
+            if name.get("lang") is None:
+                del name["lang"]
+
+        return names if names else [{"toponym": "Untitled Period"}]
+
+    def get_geometry(self, obj):
+        """Get geometry from computed bbox or spatial coverage"""
+        if hasattr(obj, 'bbox') and obj.bbox:
+            # Convert PostGIS bbox polygon to GeoJSON
+            return obj.bbox.geojson
+
+        # Try to create geometry from spatial coverage
+        spatial_entities = obj.spatialCoverage.filter(geometry__isnull=False)
+        if spatial_entities.exists():
+            geometries = []
+            for entity in spatial_entities:
+                if entity.geometry:
+                    geometries.append(entity.geometry.geojson)
+
+            if len(geometries) == 1:
+                return geometries[0]
+            elif len(geometries) > 1:
+                return {
+                    "type": "GeometryCollection",
+                    "geometries": geometries
+                }
+
+        return None
+
+    def get_when(self, obj):
+        """Build LPF when object from temporal bounds"""
+        bounds = obj.bounds.all()
+        start_bound = bounds.filter(kind='start').first()
+        stop_bound = bounds.filter(kind='stop').first()
+
+        if not (start_bound or stop_bound):
+            return None
+
+        when_obj = {
+            "timespans": []
+        }
+
+        # Create timespan from bounds
+        timespan = {}
+
+        if start_bound:
+            start_obj = {}
+            if start_bound.earliestYear == start_bound.latestYear:
+                start_obj["in"] = str(start_bound.earliestYear)
+            else:
+                if start_bound.earliestYear:
+                    start_obj["earliest"] = str(start_bound.earliestYear)
+                if start_bound.latestYear:
+                    start_obj["latest"] = str(start_bound.latestYear)
+
+            if start_obj:
+                timespan["start"] = start_obj
+
+        if stop_bound:
+            end_obj = {}
+            if stop_bound.earliestYear == stop_bound.latestYear:
+                end_obj["in"] = str(stop_bound.earliestYear)
+            else:
+                if stop_bound.earliestYear:
+                    end_obj["earliest"] = str(stop_bound.earliestYear)
+                if stop_bound.latestYear:
+                    end_obj["latest"] = str(stop_bound.latestYear)
+
+            if end_obj:
+                timespan["end"] = end_obj
+
+        if timespan:
+            when_obj["timespans"].append(timespan)
+
+            # Add label if available
+            if start_bound and start_bound.label:
+                when_obj["label"] = start_bound.label
+            elif stop_bound and stop_bound.label:
+                when_obj["label"] = stop_bound.label
+
+            return when_obj
+
+        return None
+
+    def get_links(self, obj):
+        """Build LPF links array"""
+        links = []
+
+        # Add PeriodO reference if available
+        if obj.sameAs:
+            links.append({
+                "type": "exactMatch",
+                "identifier": obj.sameAs
+            })
+
+        # Add broader/narrower relationships
+        if obj.broader:
+            links.append({
+                "type": "seeAlso",
+                "identifier": f"https://whgazetteer.org/period/{obj.broader}"
+            })
+
+        return links if links else None
+
+    def get_descriptions(self, obj):
+        """Build LPF descriptions array"""
+        descriptions = []
+
+        if obj.editorialNote:
+            descriptions.append({
+                "value": obj.editorialNote
+            })
+
+        if obj.note:
+            descriptions.append({
+                "value": obj.note
+            })
+
+        return descriptions if descriptions else None
+
+    def get_country_codes(self, obj):
+        """Extract country codes from spatial coverage"""
+        # TODO: This would need to be implemented based on the spatial entities
+        return []
+
+    class Meta:
+        model = Period
+        fields = []  # All data comes from to_representation
 
 
 class PeriodPreviewSerializer(serializers.ModelSerializer):
