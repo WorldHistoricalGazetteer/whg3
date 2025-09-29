@@ -10,7 +10,7 @@ from pathlib import Path
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
-from api.serializers_api import OptimizedPlaceSerializer
+from api.serializers_api import OptimizedPlaceSerializer, OptimizedPeriodSerializer
 from areas.models import Area
 from main.choices import FEATURE_CLASSES
 from whg import settings
@@ -455,6 +455,39 @@ def format_extend_row(place, properties, request=None):
             row[pid] = []
 
     return row
+
+
+def format_extend_row_period(period, properties, request=None):
+    """
+    Build property values dict for a Period in OpenRefine extend.
+    """
+    required_fields = get_required_fields(properties)
+    serializer = OptimizedPeriodSerializer(
+        period,
+        context={"request": request},
+        fields=required_fields
+    )
+    data = serializer.data
+    row = {}
+    def wrap(obj):
+        if obj is None:
+            return []
+        if isinstance(obj, list):
+            return [{"str": json.dumps(v) if isinstance(v, (dict, list)) else str(v)} for v in obj]
+        if isinstance(obj, dict):
+            return [{"str": json.dumps(obj)}]
+        return [{"str": str(obj)}]
+
+    for prop in properties:
+        pid = prop.get("id") if isinstance(prop, dict) else prop
+        # Direct mapping from serialized data
+        if pid in data:
+            row[pid] = wrap(data[pid])
+        else:
+            row[pid] = []
+
+    return row
+
 
 
 def build_lpf_feature(place, serialized_data):

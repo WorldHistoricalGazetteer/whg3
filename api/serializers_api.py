@@ -240,10 +240,9 @@ class DatasetPreviewSerializer(serializers.ModelSerializer):
         ]
 
 
-class PeriodFeatureSerializer(serializers.ModelSerializer):
+class OptimizedPeriodSerializer(serializers.ModelSerializer):
     """
-    Serialize a Period as a GeoJSON Feature for LPF-compatible mapping.
-    Geometry is taken from bbox or merged spatialCoverage geometries.
+    Optimized serializer for Periods, only includes requested fields.
     """
     authority = serializers.SerializerMethodField()
     chrononyms = serializers.SerializerMethodField()
@@ -260,6 +259,14 @@ class PeriodFeatureSerializer(serializers.ModelSerializer):
             'editorialNote', 'note', 'broader', 'narrower', 'sameAs', 'url',
             'script', 'derivedFrom', 'geometry'
         ]
+
+    def __init__(self, *args, **kwargs):
+        fields = kwargs.pop('fields', None)
+        super().__init__(*args, **kwargs)
+        if fields is not None:
+            allowed = set(fields)
+            for field_name in set(self.fields) - allowed:
+                self.fields.pop(field_name)
 
     def get_canonical_label(self, obj):
         return obj.chrononym or (obj.chrononyms.first().label if obj.chrononyms.exists() else None)
@@ -312,20 +319,27 @@ class PeriodFeatureSerializer(serializers.ModelSerializer):
         return bounds
 
     def get_geometry(self, obj):
-        # Prefer bbox; if missing, union all spatialCoverage geometries
+        # Prefer bbox; else union all spatialCoverage geometries
         if obj.bbox:
             return obj.bbox.geojson
-
         geoms = [se.geometry for se in obj.spatialCoverage.all() if se.geometry]
         if not geoms:
             return None
-
-        # Use union of geometries if multiple
         union_geom = reduce(lambda a, b: a.union(b), geoms)
         return union_geom.geojson
 
+
+class PeriodFeatureSerializer(OptimizedPeriodSerializer):
+    """
+    Full serializer for Periods, always includes all fields.
+    Wraps as a GeoJSON Feature for LPF.
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('fields', None)  # Always include all fields
+        super().__init__(*args, **kwargs)
+
     def to_representation(self, obj):
-        """Wrap as GeoJSON Feature"""
         feature = super().to_representation(obj)
         return {
             "type": "Feature",

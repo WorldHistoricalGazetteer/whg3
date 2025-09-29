@@ -35,7 +35,7 @@ from places.models import Place
 from .authentication import AuthenticatedAPIView, TokenQueryOrBearerAuthentication
 from .querysets import place_feature_queryset, period_public_queryset
 from .reconcile_helpers import make_candidate, format_extend_row, es_search, extract_entity_type, \
-    create_type_guessing_dummies, parse_schema
+    create_type_guessing_dummies, parse_schema, format_extend_row_period
 from .schemas import reconcile_schema, propose_properties_schema, suggest_entity_schema, suggest_property_schema
 from .serializers_api import PeriodPreviewSerializer
 
@@ -171,14 +171,23 @@ class ReconciliationView(APIView):
 
             properties = extend.get("properties", [])
 
-            if entity_type == "place":
-                qs = place_feature_queryset(request.user).filter(id__in=ids)
-            else:  # period
-                qs = period_public_queryset(request.user).filter(id__in=ids)
+            handler = {
+                "place": {
+                    "queryset_fn": lambda user, ids: place_feature_queryset(user).filter(id__in=ids),
+                    "row_fn": format_extend_row,
+                },
+                "period": {
+                    "queryset_fn": lambda user, ids: period_public_queryset(user).filter(id__in=ids),
+                    "row_fn": format_extend_row_period,
+                },
+            }.get(entity_type)
+            if not handler:
+                return JsonResponse({"rows": {}, "meta": []})
 
+            qs = handler["queryset_fn"](request.user, ids)
             rows = {
-                f"{entity_type}:{p.id}": format_extend_row(p, properties, request=request)
-                for p in qs
+                f"{entity_type}:{obj.id}": handler["row_fn"](obj, properties, request=request)
+                for obj in qs
             }
 
             # Meta block required by OpenRefine
