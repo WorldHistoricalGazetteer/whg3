@@ -454,6 +454,8 @@ def format_extend_row(place, properties, request=None):
         else:
             row[pid] = []
 
+    logger.debug("Extend row for place %s: %s", place.id, row)
+
     return row
 
 
@@ -485,6 +487,8 @@ def format_extend_row_period(period, properties, request=None):
             row[pid] = wrap(data[pid])
         else:
             row[pid] = []
+
+    logger.debug("Extend row for period %s: %s", period.id, row)
 
     return row
 
