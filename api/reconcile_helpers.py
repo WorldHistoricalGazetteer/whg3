@@ -459,42 +459,41 @@ def format_extend_row(place, properties, request=None):
     return row
 
 
+# Mapping from OpenRefine property IDs to serializer field names
+WHG_TO_SERIALIZER_FIELD = {
+    "whg:chrononym_canonical": "canonical_label",
+    "whg:chrononym_variants_array": "chrononyms",
+    "whg:chrononym_variants_summary": "chrononyms",
+    "whg:period_notes_editorial": "editorialNote",
+    "whg:period_authority_object": "authority",
+    "whg:periodo_identifier": "id",
+    "whg:spatial_coverage_geometry": "spatial_coverage",
+    "whg:spatial_coverage_objects": "spatial_coverage",
+    "whg:temporal_bounds_objects": "temporal_bounds",
+    "whg:temporal_bounds_years": "temporal_bounds",
+}
+
 def format_extend_row_period(period, properties, request=None):
     """
-    Build OpenRefine row dict for a Period, using DRY property mapping.
+    Build OpenRefine row dict for a Period, using DRY property mapping
+    and correctly selecting serializer fields.
     """
+    # Convert whg:* IDs to serializer field names
+    serializer_fields = set(
+        WHG_TO_SERIALIZER_FIELD.get(prop.get("id") if isinstance(prop, dict) else prop)
+        for prop in properties
+        if WHG_TO_SERIALIZER_FIELD.get(prop.get("id") if isinstance(prop, dict) else prop)
+    )
 
-    # Map whg property IDs to OptimizedPeriodSerializer field names
-    WHG_TO_SERIALIZER_FIELD = {
-        "whg:chrononym_canonical": "canonical_label",
-        "whg:chrononym_variants_array": "chrononyms",
-        "whg:chrononym_variants_summary": "chrononyms",
-        "whg:period_notes_editorial": "editorialNote",
-        "whg:period_authority_object": "authority",
-        "whg:periodo_identifier": "id",
-        "whg:spatial_coverage_geometry": "spatial_coverage",
-        "whg:spatial_coverage_objects": "spatial_coverage",
-        "whg:temporal_bounds_objects": "temporal_bounds",
-        "whg:temporal_bounds_years": "temporal_bounds",
-    }
-
-    # Determine which serializer fields are actually needed
-    serializer_fields = [
-        WHG_TO_SERIALIZER_FIELD.get(pid)
-        for pid in get_required_fields(properties)
-    ]
-    serializer_fields = [f for f in serializer_fields if f]
-
-    # Serialize only the requested fields
+    # Create serializer with correct fields
     serializer = OptimizedPeriodSerializer(
         period,
         context={"request": request},
-        fields=serializer_fields
+        fields=list(serializer_fields)
     )
-    data = serializer.data or {}
+    data = serializer.data
     row = {}
 
-    # Helper to wrap value(s) as [{"str": ...}]
     def wrap(obj):
         if obj is None:
             return []
@@ -504,7 +503,7 @@ def format_extend_row_period(period, properties, request=None):
             return [{"str": json.dumps(obj)}]
         return [{"str": str(obj)}]
 
-    # Build each whg property from serializer data
+    # Build each property from serializer data
     property_builders = {
         # Chrononyms
         "whg:chrononym_canonical": lambda d: d.get("canonical_label"),
@@ -534,7 +533,6 @@ def format_extend_row_period(period, properties, request=None):
         ],
     }
 
-    # Build the row
     for prop in properties:
         pid = prop.get("id") if isinstance(prop, dict) else prop
         builder = property_builders.get(pid)
@@ -545,7 +543,6 @@ def format_extend_row_period(period, properties, request=None):
     logger.debug("Extend row for period %s: %s", period.id, row)
 
     return row
-
 
 
 def build_lpf_feature(place, serialized_data):
