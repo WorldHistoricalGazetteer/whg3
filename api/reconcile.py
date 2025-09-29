@@ -33,6 +33,7 @@ from rest_framework.views import APIView
 from periods.models import Period, Chrononym
 from places.models import Place
 from .authentication import AuthenticatedAPIView, TokenQueryOrBearerAuthentication
+from .querysets import place_feature_queryset, period_public_queryset
 from .reconcile_helpers import make_candidate, format_extend_row, es_search, extract_entity_type, \
     create_type_guessing_dummies, parse_schema
 from .schemas import reconcile_schema, propose_properties_schema, suggest_entity_schema, suggest_property_schema
@@ -171,9 +172,9 @@ class ReconciliationView(APIView):
             properties = extend.get("properties", [])
 
             if entity_type == "place":
-                qs = Place.objects.filter(id__in=ids).prefetch_related("names", "geoms", "links")
+                qs = place_feature_queryset(request.user).filter(id__in=ids)
             else:  # period
-                qs = Period.objects.filter(id__in=ids)  # TODO: add prefetch
+                qs = period_public_queryset(request.user).filter(id__in=ids)
 
             rows = {
                 f"{entity_type}:{p.id}": format_extend_row(p, properties, request=request)
@@ -372,28 +373,6 @@ class ReconciliationView(APIView):
 class ExtendProposeView(APIView):
 
     def get(self, request, *args, **kwargs):
-        # Try to decode body as JSON for inspection
-        try:
-            body_str = request.body.decode("utf-8")
-            body_json = json.loads(body_str) if body_str else None
-        except Exception:
-            body_str = request.body.decode("utf-8", errors="replace")
-            body_json = None
-
-        # Collect headers
-        headers = {
-            k: v for k, v in request.META.items()
-            if k.startswith("HTTP_") or k in ["CONTENT_TYPE", "CONTENT_LENGTH"]
-        }
-
-        logger.debug("ExtendProposeView called")
-        logger.debug("GET params: %s", dict(request.GET))
-        logger.debug("POST params: %s", dict(request.POST))
-        logger.debug("Body (raw): %s", body_str)
-        logger.debug("Body (json): %s", body_json)
-        logger.debug("Content-Type: %s", request.content_type)
-        logger.debug("Headers: %s", headers)
-
         return JsonResponse({
             "properties": PROPOSE_PROPERTIES
         })

@@ -726,7 +726,7 @@ def parse_schema(schema_file):
     # Add special properties
     propose_properties.append({
         "id": "whg:lpf_feature",
-        "name": "LPF Feature (object)",
+        "name": "Place: LPF Feature (object)",
         "description": "Complete place record as a Linked Places Format GeoJSON Feature, including full properties, names, geometry, and links",
         "type": "string"
     })
