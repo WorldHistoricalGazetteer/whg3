@@ -461,16 +461,14 @@ def format_extend_row(place, properties, request=None):
 
 def format_extend_row_period(period, properties, request=None):
     """
-    Build property values dict for a Period in OpenRefine extend.
+    Build OpenRefine row dict for a Period, using DRY property mapping.
     """
     required_fields = get_required_fields(properties)
-    serializer = OptimizedPeriodSerializer(
-        period,
-        context={"request": request},
-        fields=required_fields
-    )
+    serializer = OptimizedPeriodSerializer(period, context={"request": request}, fields=required_fields)
     data = serializer.data
     row = {}
+
+    # Helper to wrap value(s) as [{"str": ...}]
     def wrap(obj):
         if obj is None:
             return []
@@ -480,13 +478,40 @@ def format_extend_row_period(period, properties, request=None):
             return [{"str": json.dumps(obj)}]
         return [{"str": str(obj)}]
 
+    # Mapping from property ID to a function that builds the value from `data`
+    property_builders = {
+        # Chrononyms
+        "whg:chrononym_canonical": lambda d: d.get("canonical_label"),
+        "whg:chrononym_variants_array": lambda d: d.get("chrononyms", []),
+        "whg:chrononym_variants_summary": lambda d: [c.get("label") for c in d.get("chrononyms", [])],
+
+        # Notes / editorial
+        "whg:period_notes_editorial": lambda d: d.get("editorialNote"),
+
+        # Authority
+        "whg:period_authority_object": lambda d: d.get("authority"),
+
+        # Identifier
+        "whg:periodo_identifier": lambda d: d.get("id"),
+
+        # Spatial coverage
+        "whg:spatial_coverage_geometry": lambda d: [sc.get("geometry") for sc in d.get("spatial_coverage", []) if sc.get("geometry")],
+        "whg:spatial_coverage_objects": lambda d: d.get("spatial_coverage", []),
+
+        # Temporal bounds
+        "whg:temporal_bounds_objects": lambda d: d.get("temporal_bounds", {}),
+        "whg:temporal_bounds_years": lambda d: [
+            f"{tb['earliestYear']} / {tb['latestYear']}" if tb.get("earliestYear") != tb.get("latestYear")
+            else str(tb.get("earliestYear"))
+            for tb in d.get("temporal_bounds", {}).values()
+            if tb.get("earliestYear") or tb.get("latestYear")
+        ],
+    }
+
     for prop in properties:
         pid = prop.get("id") if isinstance(prop, dict) else prop
-        # Direct mapping from serialized data
-        if pid in data:
-            row[pid] = wrap(data[pid])
-        else:
-            row[pid] = []
+        builder = property_builders.get(pid)
+        row[pid] = wrap(builder(data)) if builder else []
 
     logger.debug("Extend row for period %s: %s", period.id, row)
 
