@@ -10,7 +10,7 @@ from pathlib import Path
 from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 
-from api.serializers_api import OptimizedPlaceSerializer, OptimizedPeriodSerializer
+from api.serializers_api import OptimizedPlaceSerializer, OptimizedPeriodSerializer, PeriodFeatureSerializer
 from areas.models import Area
 from main.choices import FEATURE_CLASSES
 from whg import settings
@@ -58,6 +58,7 @@ PROPERTY_FIELD_MAP = {
     "whg:spatial_coverage_objects": ["spatial_coverage"],
     "whg:temporal_bounds_objects": ["temporal_bounds"],
     "whg:temporal_bounds_years": ["temporal_bounds"],
+    "whg:lpf_period_feature": ["all"],
 }
 
 FCLASS_MAP = {
@@ -321,9 +322,50 @@ def format_extend_row(entity, properties, request=None):
     """
     # Determine entity type
     entity_type = "period" if hasattr(entity, 'chrononym') else "place"
-    required_fields = get_required_fields(properties)
+
+    # Check if we need full LPF serialization for periods
+    needs_lpf_period = any(
+        (prop.get("id") if isinstance(prop, dict) else prop) == "whg:lpf_period_feature"
+        for prop in properties
+    )
+
+    if entity_type == "period" and needs_lpf_period:
+        # Use full LPF serializer for period
+        lpf_serializer = PeriodFeatureSerializer(entity, context={"request": request})
+        lpf_data = lpf_serializer.data
+
+        # Also get regular serialized data for other properties
+        required_fields = get_required_fields(properties)
+        regular_serializer = OptimizedPeriodSerializer(
+            entity, context={"request": request}, fields=required_fields
+        )
+        regular_data = regular_serializer.data
+
+        # Build row with both LPF and regular extractors
+        extractors = get_period_extractors()
+        row = {}
+
+        for prop in properties:
+            pid = prop.get("id") if isinstance(prop, dict) else prop
+
+            if pid == "whg:lpf_period_feature":
+                row[pid] = wrap_value(lpf_data)
+            else:
+                extractor = extractors.get(pid)
+                if extractor:
+                    try:
+                        value = extractor(regular_data, entity)
+                        row[pid] = wrap_value(value)
+                    except Exception as e:
+                        logger.warning(f"Error extracting {pid} for period {entity.id}: {e}")
+                        row[pid] = []
+                else:
+                    row[pid] = []
+
+        return row
 
     # Get appropriate serializer and field mapping
+    required_fields = get_required_fields(properties)
     if entity_type == "place":
         serializer = OptimizedPlaceSerializer(
             entity, context={"request": request}, fields=required_fields
@@ -781,12 +823,20 @@ def parse_schema(schema_file):
             valid_fclasses = [val.get('code') for val in item.get('whg:allowedValues', [])]
 
     # Add special properties
-    propose_properties.append({
-        "id": "whg:lpf_feature",
-        "name": "Place: LPF Feature (object)",
-        "description": "Complete place record as a Linked Places Format GeoJSON Feature, including full properties, names, geometry, and links",
-        "type": "string"
-    })
+    propose_properties.extend([
+        {
+            "id": "whg:lpf_feature",
+            "name": "Place: LPF Feature (object)",
+            "description": "Complete place record as a Linked Places Format GeoJSON Feature, including full properties, names, geometry, and links",
+            "type": "string"
+        },
+        {
+            "id": "whg:lpf_period_feature",
+            "name": "Period: LPF Feature (object)",
+            "description": "Complete period record as a Linked Places Format GeoJSON Feature, including chrononyms, temporal bounds, and spatial coverage",
+            "type": "string"
+        }
+    ])
 
     return propose_properties, valid_fclasses
 

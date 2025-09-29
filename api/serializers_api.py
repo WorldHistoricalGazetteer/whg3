@@ -501,7 +501,7 @@ class PeriodFeatureSerializer(serializers.ModelSerializer):
 
     def get_country_codes(self, obj):
         """Extract country codes from spatial coverage"""
-        # TODO: This would need to be implemented based on the spatial entities
+        # TODO: This would need to be implemented based on the spatial entities, during ingestion - see periods/management/commands/update_from_gazetteers.py
         return []
 
     class Meta:
