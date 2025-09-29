@@ -171,22 +171,13 @@ class ReconciliationView(APIView):
 
             properties = extend.get("properties", [])
 
-            handler = {
-                "place": {
-                    "queryset_fn": lambda user, ids: place_feature_queryset(user).filter(id__in=ids),
-                    "row_fn": format_extend_row,
-                },
-                "period": {
-                    "queryset_fn": lambda user, ids: period_public_queryset(user).filter(id__in=ids),
-                    "row_fn": format_extend_row_period,
-                },
-            }.get(entity_type)
-            if not handler:
-                return JsonResponse({"rows": {}, "meta": []})
+            if entity_type == "place":
+                qs = place_feature_queryset(request.user).filter(id__in=ids)
+            else:  # period
+                qs = period_public_queryset(request.user).filter(id__in=ids)
 
-            qs = handler["queryset_fn"](request.user, ids)
             rows = {
-                f"{entity_type}:{obj.id}": handler["row_fn"](obj, properties, request=request)
+                f"{entity_type}:{obj.id}": format_extend_row(obj, properties, request=request)
                 for obj in qs
             }
 

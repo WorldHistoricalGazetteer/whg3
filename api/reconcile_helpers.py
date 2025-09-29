@@ -303,44 +303,96 @@ def get_required_fields(properties):
     return list(required_fields)
 
 
-def format_extend_row(place, properties, request=None):
+def format_extend_row(entity, properties, request=None):
     """
     Build the property values dict for an OpenRefine extend row.
-    Optimized to only serialize the fields actually needed.
+    Handles both Place and Period entities with type-specific logic.
     """
-    required_fields = get_required_fields(properties)
-    serializer = OptimizedPlaceSerializer(
-        place,
-        context={"request": request},
-        fields=required_fields
-    )
+    # Determine entity type
+    entity_type = "period" if hasattr(entity, 'chrononym') else "place"
+
+    # Get appropriate serializer and field mapping
+    if entity_type == "place":
+        required_fields = get_required_fields(properties)
+        serializer = OptimizedPlaceSerializer(
+            entity, context={"request": request}, fields=required_fields
+        )
+        extractors = get_place_extractors()
+    else:  # period
+        required_fields = get_required_period_fields(properties)
+        serializer = OptimizedPeriodSerializer(
+            entity, context={"request": request}, fields=required_fields
+        )
+        extractors = get_period_extractors()
+
     data = serializer.data
     row = {}
+
+    # Process each property
+    for prop in properties:
+        pid = prop.get("id") if isinstance(prop, dict) else prop
+        extractor = extractors.get(pid)
+
+        if extractor:
+            try:
+                value = extractor(data, entity)
+                row[pid] = wrap_value(value)
+            except Exception as e:
+                logger.warning(f"Error extracting {pid} for {entity_type} {entity.id}: {e}")
+                row[pid] = []
+        else:
+            row[pid] = []
+
+    logger.debug("Extend row for %s %s: %s", entity_type, entity.id, row)
+    return row
+
+
+def get_required_period_fields(properties):
+    """Get required serializer fields for period properties."""
+    field_mapping = {
+        "whg:chrononym_canonical": "canonical_label",
+        "whg:chrononym_variants_array": "chrononyms",
+        "whg:chrononym_variants_summary": "chrononyms",
+        "whg:period_notes_editorial": "editorialNote",
+        "whg:period_authority_object": "authority",
+        "whg:periodo_identifier": "id",
+        "whg:spatial_coverage_geometry": "spatial_coverage",
+        "whg:spatial_coverage_objects": "spatial_coverage",
+        "whg:temporal_bounds_objects": "temporal_bounds",
+        "whg:temporal_bounds_years": "temporal_bounds",
+    }
+
+    fields = set()
+    for prop in properties:
+        pid = prop.get("id") if isinstance(prop, dict) else prop
+        field = field_mapping.get(pid)
+        if field:
+            fields.add(field)
+
+    return list(fields)
+
+
+def get_place_extractors():
+    """Get property extractors for place entities."""
 
     def prepend_if_missing(names_list, title):
         if title and not any(n.get("toponym") == title for n in names_list):
             return [{"toponym": title, "jsonb": {"status": "preferred"}}] + names_list
         return names_list
 
-    # Helper for JSON string wrapping
-    def wrap(obj):
-        return [{"str": json.dumps(obj)}] if obj else []
-
-    # Geometry helpers
-    def geom_wkt_list():
+    def geom_wkt_list(data):
         return [g.get("geowkt") for g in data.get("geoms", []) if g.get("geowkt")]
 
-    def geom_geojson_list():
+    def geom_geojson_list(data):
         return [g.get("geojson") for g in data.get("geoms", []) if g.get("geojson")]
 
-    def geom_centroid_list():
+    def geom_centroid_list(data):
         return [f"{g['centroid'][1]}, {g['centroid'][0]}" for g in data.get("geoms", []) if g.get("centroid")]
 
-    def geom_bbox_list():
+    def geom_bbox_list(data):
         return [", ".join(map(str, g["bbox"])) for g in data.get("geoms", []) if g.get("bbox")]
 
-    # Temporal helpers
-    def temporal_objects():
+    def temporal_objects(data):
         timespans_list = []
         for when in data.get("when", []):
             for ts in when.get("timespans", []):
@@ -359,7 +411,7 @@ def format_extend_row(place, properties, request=None):
                     timespans_list.append(timespan)
         return timespans_list
 
-    def temporal_years():
+    def temporal_years(data):
         ranges = []
         for when in data.get("when", []):
             for ts in when.get("timespans", []):
@@ -369,188 +421,95 @@ def format_extend_row(place, properties, request=None):
                     ranges.append(f"{start}-{end}")
         return ranges
 
-    for prop in properties:
-        pid = prop.get("id") if isinstance(prop, dict) else prop
-
+    return {
         # Names
-        if pid == "whg:names_canonical":
-            row[pid] = [{"str": data.get("title")}] if data.get("title") else []
-
-        elif pid == "whg:names_array":
-            names = prepend_if_missing(data.get("names", []), data.get("title"))
-            row[pid] = wrap(names)
-
-        elif pid == "whg:names_summary":
-            names = prepend_if_missing(data.get("names", []), data.get("title"))
-            row[pid] = [{"str": n["toponym"]} for n in names] if names else []
+        "whg:names_canonical": lambda data, entity: data.get("title"),
+        "whg:names_array": lambda data, entity: prepend_if_missing(data.get("names", []), data.get("title")),
+        "whg:names_summary": lambda data, entity: [n["toponym"] for n in
+                                                   prepend_if_missing(data.get("names", []), data.get("title"))],
 
         # Identifiers
-        elif pid == "whg:id_short":
-            row[pid] = [{"str": f"https://whgazetteer.org/place/{place.id}"}]
-
-        elif pid == "whg:id_object":
-            row[pid] = wrap({"id": f"https://whgazetteer.org/place/{place.id}",
-                             "label": data.get("title", "")})
+        "whg:id_short": lambda data, entity: f"https://whgazetteer.org/place/{entity.id}",
+        "whg:id_object": lambda data, entity: {"id": f"https://whgazetteer.org/place/{entity.id}",
+                                               "label": data.get("title", "")},
 
         # Geometry
-        elif pid == "whg:geometry_wkt":
-            row[pid] = [{"str": s} for s in geom_wkt_list()]
-
-        elif pid == "whg:geometry_geojson":
-            row[pid] = wrap(geom_geojson_list())
-
-        elif pid == "whg:geometry_centroid":
-            row[pid] = [{"str": s} for s in geom_centroid_list()]
-
-        elif pid == "whg:geometry_bbox":
-            row[pid] = [{"str": s} for s in geom_bbox_list()]
+        "whg:geometry_wkt": lambda data, entity: geom_wkt_list(data),
+        "whg:geometry_geojson": lambda data, entity: geom_geojson_list(data),
+        "whg:geometry_centroid": lambda data, entity: geom_centroid_list(data),
+        "whg:geometry_bbox": lambda data, entity: geom_bbox_list(data),
 
         # Temporal
-        elif pid == "whg:temporal_objects":
-            row[pid] = wrap(temporal_objects())
-
-        elif pid == "whg:temporal_years":
-            row[pid] = [{"str": r} for r in temporal_years()]
+        "whg:temporal_objects": lambda data, entity: temporal_objects(data),
+        "whg:temporal_years": lambda data, entity: temporal_years(data),
 
         # Countries
-        elif pid == "whg:countries_codes":
-            row[pid] = [{"str": c} for c in data.get("ccodes", [])]
-
-        elif pid == "whg:countries_objects":
-            countries = []
-            for code in data.get("ccodes", []):
-                countries.append({
-                    "code": code,
-                    "label": COUNTRY_LABELS.get(code, code)  # fallback to code if missing
-                })
-            row[pid] = [{"str": json.dumps(countries)}] if countries else []
+        "whg:countries_codes": lambda data, entity: data.get("ccodes", []),
+        "whg:countries_objects": lambda data, entity: [
+            {"code": code, "label": COUNTRY_LABELS.get(code, code)}
+            for code in data.get("ccodes", [])
+        ],
 
         # Feature classes
-        elif pid == "whg:classes_codes":
-            row[pid] = [{"str": fc} for fc in data.get("fclasses", [])]
-
-        elif pid == "whg:classes_objects":
-            classes = [FCLASS_MAP.get(fc, {"code": fc, "label": "Unknown", "reference": ""})
-                       for fc in data.get("fclasses", [])]
-            row[pid] = wrap(classes)
+        "whg:classes_codes": lambda data, entity: data.get("fclasses", []),
+        "whg:classes_objects": lambda data, entity: [
+            FCLASS_MAP.get(fc, {"code": fc, "label": "Unknown", "reference": ""})
+            for fc in data.get("fclasses", [])
+        ],
 
         # Types
-        elif pid == "whg:types_objects":
-            row[pid] = wrap(data.get("types", []))
+        "whg:types_objects": lambda data, entity: data.get("types", []),
 
         # Dataset
-        elif pid == "whg:dataset":
-            ds = data.get("dataset")
-            if ds:
-                row[pid] = wrap({"name": ds, "id": data.get("dataset_id")})
-            else:
-                row[pid] = []
+        "whg:dataset": lambda data, entity: {"name": data.get("dataset"), "id": data.get("dataset_id")} if data.get(
+            "dataset") else None,
 
         # LPF feature
-        elif pid == "whg:lpf_feature":
-            lpf_feature = build_lpf_feature(place, data)
-            row[pid] = wrap(lpf_feature)
-
-        else:
-            row[pid] = []
-
-    logger.debug("Extend row for place %s: %s", place.id, row)
-
-    return row
-
-
-# Mapping from OpenRefine property IDs to serializer field names
-WHG_TO_SERIALIZER_FIELD = {
-    "whg:chrononym_canonical": "canonical_label",
-    "whg:chrononym_variants_array": "chrononyms",
-    "whg:chrononym_variants_summary": "chrononyms",
-    "whg:period_notes_editorial": "editorialNote",
-    "whg:period_authority_object": "authority",
-    "whg:periodo_identifier": "id",
-    "whg:spatial_coverage_geometry": "spatial_coverage",
-    "whg:spatial_coverage_objects": "spatial_coverage",
-    "whg:temporal_bounds_objects": "temporal_bounds",
-    "whg:temporal_bounds_years": "temporal_bounds",
-}
-
-
-def format_extend_row_period(period, properties, request=None):
-    """
-    Build OpenRefine row dict for a Period using DRY property mapping.
-    """
-    # Get required serializer fields
-    serializer_fields = {
-        WHG_TO_SERIALIZER_FIELD.get(prop.get("id") if isinstance(prop, dict) else prop)
-        for prop in properties
+        "whg:lpf_feature": lambda data, entity: build_lpf_feature(entity, data),
     }
-    serializer_fields.discard(None)  # Remove None values
 
-    if not serializer_fields:
-        return {}
 
-    # Serialize with only needed fields
-    serializer = OptimizedPeriodSerializer(
-        period,
-        context={"request": request},
-        fields=list(serializer_fields)
-    )
-    data = serializer.data
+def get_period_extractors():
+    """Get property extractors for period entities."""
 
-    # Property value extractors - return raw values, not wrapped
-    extractors = {
-        "whg:chrononym_canonical": lambda d: d.get("canonical_label"),
-        "whg:chrononym_variants_array": lambda d: d.get("chrononyms", []),
-        "whg:chrononym_variants_summary": lambda d: [c.get("label") for c in d.get("chrononyms", [])],
-        "whg:period_notes_editorial": lambda d: d.get("editorialNote"),
-        "whg:period_authority_object": lambda d: d.get("authority"),
-        "whg:periodo_identifier": lambda d: d.get("id"),
-        "whg:spatial_coverage_geometry": lambda d: [
-            sc.get("geometry") for sc in d.get("spatial_coverage", [])
+    def format_year_range(temporal_bound):
+        earliest = temporal_bound.get("earliestYear")
+        latest = temporal_bound.get("latestYear")
+
+        if earliest == latest and earliest is not None:
+            return str(earliest)
+        elif earliest and latest:
+            return f"{earliest} / {latest}"
+        elif earliest:
+            return f"From {earliest}"
+        elif latest:
+            return f"Until {latest}"
+        return ""
+
+    return {
+        "whg:chrononym_canonical": lambda data, entity: data.get("canonical_label"),
+        "whg:chrononym_variants_array": lambda data, entity: data.get("chrononyms", []),
+        "whg:chrononym_variants_summary": lambda data, entity: [c.get("label") for c in data.get("chrononyms", [])],
+        "whg:period_notes_editorial": lambda data, entity: data.get("editorialNote"),
+        "whg:period_authority_object": lambda data, entity: data.get("authority"),
+        "whg:periodo_identifier": lambda data, entity: data.get("id"),
+        "whg:spatial_coverage_geometry": lambda data, entity: [
+            sc.get("geometry") for sc in data.get("spatial_coverage", [])
             if sc.get("geometry")
         ],
-        "whg:spatial_coverage_objects": lambda d: d.get("spatial_coverage", []),
-        "whg:temporal_bounds_objects": lambda d: d.get("temporal_bounds", {}),
-        "whg:temporal_bounds_years": lambda d: [
-            format_year_range(tb) for tb in d.get("temporal_bounds", {}).values()
+        "whg:spatial_coverage_objects": lambda data, entity: data.get("spatial_coverage", []),
+        "whg:temporal_bounds_objects": lambda data, entity: data.get("temporal_bounds", {}),
+        "whg:temporal_bounds_years": lambda data, entity: [
+            format_year_range(tb) for tb in data.get("temporal_bounds", {}).values()
             if tb.get("earliestYear") or tb.get("latestYear")
         ],
     }
-
-    # Build row - wrap each value according to OpenRefine format
-    row = {}
-    for prop in properties:
-        pid = prop.get("id") if isinstance(prop, dict) else prop
-        extractor = extractors.get(pid)
-
-        if extractor:
-            value = extractor(data)
-            row[pid] = wrap_value(value)
-        else:
-            row[pid] = []
-
-    return row
-
-
-def format_year_range(temporal_bound):
-    """Format a temporal bound into a readable year range string."""
-    earliest = temporal_bound.get("earliestYear")
-    latest = temporal_bound.get("latestYear")
-
-    if earliest == latest and earliest is not None:
-        return str(earliest)
-    elif earliest and latest:
-        return f"{earliest} / {latest}"
-    elif earliest:
-        return f"From {earliest}"
-    elif latest:
-        return f"Until {latest}"
-    return ""
 
 
 def wrap_value(value):
     """
     Wrap values in OpenRefine's expected format.
-    Returns list of objects with 'str' key containing JSON or string values.
+    Handles strings, lists, objects, and None values.
     """
     if value is None:
         return []
@@ -558,7 +517,14 @@ def wrap_value(value):
     if isinstance(value, str):
         return [{"str": value}]
 
-    if isinstance(value, (list, dict)):
+    if isinstance(value, list):
+        # Handle list of strings vs list of objects differently
+        if value and isinstance(value[0], str):
+            return [{"str": item} for item in value]
+        else:
+            return [{"str": json.dumps(value)}] if value else []
+
+    if isinstance(value, dict):
         return [{"str": json.dumps(value)}]
 
     return [{"str": str(value)}]
