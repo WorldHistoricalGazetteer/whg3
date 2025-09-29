@@ -26,6 +26,7 @@ ALLOWED_TYPES = {"place", "period"}
 
 # Property ID to required serializer fields mapping
 PROPERTY_FIELD_MAP = {
+    # Place properties
     "whg:id_short": ["id"],
     "whg:id_object": ["id", "title"],
     "whg:names_canonical": ["title"],
@@ -45,6 +46,18 @@ PROPERTY_FIELD_MAP = {
     "whg:dataset": ["dataset", "dataset_id"],
     "whg:lpf_feature": ["id", "title", "names", "geoms", "extent", "whens", "types", "ccodes", "fclasses", "dataset",
                         "dataset_id", "links", "related", "descriptions", "depictions"],
+
+    # Period properties
+    "whg:chrononym_canonical": ["canonical_label"],
+    "whg:chrononym_variants_array": ["chrononyms"],
+    "whg:chrononym_variants_summary": ["chrononyms"],
+    "whg:period_notes_editorial": ["editorialNote"],
+    "whg:period_authority_object": ["authority"],
+    "whg:periodo_identifier": ["id"],
+    "whg:spatial_coverage_geometry": ["spatial_coverage"],
+    "whg:spatial_coverage_objects": ["spatial_coverage"],
+    "whg:temporal_bounds_objects": ["temporal_bounds"],
+    "whg:temporal_bounds_years": ["temporal_bounds"],
 }
 
 FCLASS_MAP = {
@@ -292,9 +305,7 @@ def es_search(index=ELASTIC_INDICES, query=None, ids=None):
 
 
 def get_required_fields(properties):
-    """
-    Determine which serializer fields are needed for the given properties.
-    """
+    """Get required serializer fields for any entity type."""
     required_fields = set()
     for prop in properties:
         pid = prop.get("id") if isinstance(prop, dict) else prop
@@ -310,16 +321,15 @@ def format_extend_row(entity, properties, request=None):
     """
     # Determine entity type
     entity_type = "period" if hasattr(entity, 'chrononym') else "place"
+    required_fields = get_required_fields(properties)
 
     # Get appropriate serializer and field mapping
     if entity_type == "place":
-        required_fields = get_required_fields(properties)
         serializer = OptimizedPlaceSerializer(
             entity, context={"request": request}, fields=required_fields
         )
         extractors = get_place_extractors()
     else:  # period
-        required_fields = get_required_period_fields(properties)
         serializer = OptimizedPeriodSerializer(
             entity, context={"request": request}, fields=required_fields
         )
@@ -345,31 +355,6 @@ def format_extend_row(entity, properties, request=None):
 
     logger.debug("Extend row for %s %s: %s", entity_type, entity.id, row)
     return row
-
-
-def get_required_period_fields(properties):
-    """Get required serializer fields for period properties."""
-    field_mapping = {
-        "whg:chrononym_canonical": "canonical_label",
-        "whg:chrononym_variants_array": "chrononyms",
-        "whg:chrononym_variants_summary": "chrononyms",
-        "whg:period_notes_editorial": "editorialNote",
-        "whg:period_authority_object": "authority",
-        "whg:periodo_identifier": "id",
-        "whg:spatial_coverage_geometry": "spatial_coverage",
-        "whg:spatial_coverage_objects": "spatial_coverage",
-        "whg:temporal_bounds_objects": "temporal_bounds",
-        "whg:temporal_bounds_years": "temporal_bounds",
-    }
-
-    fields = set()
-    for prop in properties:
-        pid = prop.get("id") if isinstance(prop, dict) else prop
-        field = field_mapping.get(pid)
-        if field:
-            fields.add(field)
-
-    return list(fields)
 
 
 def get_place_extractors():
