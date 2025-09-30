@@ -391,6 +391,7 @@ class SuggestEntityView(AuthenticatedAPIView):
         # --- 1. Get Parameters ---
         exact = request.GET.get("exact", "false").lower() == "true"
         mode = request.GET.get("mode", "all").lower()
+        type = request.GET.get("type", "all").lower()
 
         try:
             limit = int(request.GET.get("limit", 10))
@@ -399,70 +400,72 @@ class SuggestEntityView(AuthenticatedAPIView):
             return json_error("Invalid 'limit' or 'cursor' parameter. They must be integers.")
 
         # --- 2. Search for Places (Elasticsearch) ---
-        raw_params = {"query": prefix, "size": 50}  # Search a large size for combining
-        query = normalise_query_params(raw_params)
-        query["mode"] = "starts" if exact else "fuzzy"
-
-        place_hits = es_search(query=query)
-
-        # Max score is used for normalizing subsequent scores
-        max_score = place_hits[0].get("_score", 1.0) if place_hits else 1.0
-
         place_candidates = []
-        for hit in place_hits:
-            candidate = make_candidate(hit, query["query_text"], max_score, SCHEMA_SPACE)
-            place_candidates.append(candidate)
+        if type in ("all", "place"):
+            raw_params = {"query": prefix, "size": 50}  # Search a large size for combining
+            query = normalise_query_params(raw_params)
+            query["mode"] = "starts" if exact else "fuzzy"
+
+            place_hits = es_search(query=query)
+
+            # Max score is used for normalizing subsequent scores
+            max_score = place_hits[0].get("_score", 1.0) if place_hits else 1.0
+
+            for hit in place_hits:
+                candidate = make_candidate(hit, query["query_text"], max_score, SCHEMA_SPACE)
+                place_candidates.append(candidate)
 
         # --- 3. Search for Periods (Database - Chrononym) ---
-        period_limit = 60  # Limit the database query size
-
-        # Search by prefix or substring using trigram similarity
-        similarity_threshold = 0.3  # tweak between 0 (any match) and 1 (exact)
-        chrononyms = Chrononym.objects.annotate(
-            similarity=TrigramSimilarity('label', prefix)
-        ).filter(similarity__gte=similarity_threshold).order_by('-similarity') # Collect all related period IDs
-
-        period_qs = Period.objects.filter(
-            chrononyms__in=chrononyms
-        ).distinct().prefetch_related( 'chrononyms', 'spatialCoverage', )
-
-        if not mode == "nosort":
-            period_qs = period_qs.order_by('chrononym')[:period_limit]
-
-        PERIOD_SCHEMA_ID = SCHEMA_SPACE + "#Period"
         period_candidates = []
+        if type in ("all", "period"):
+            period_limit = 60  # Limit the database query size
 
-        for period in period_qs:
-            # Aggregate all chrononyms
-            chron_labels = [f"{c.label} ({c.languageTag})" for c in period.chrononyms.all()]
+            # Search by prefix or substring using trigram similarity
+            similarity_threshold = 0.3  # tweak between 0 (any match) and 1 (exact)
+            chrononyms = Chrononym.objects.annotate(
+                similarity=TrigramSimilarity('label', prefix)
+            ).filter(similarity__gte=similarity_threshold).order_by('-similarity') # Collect all related period IDs
 
-            # Spatial coverage description
-            spatial_desc = period.spatialCoverageDescription or ""
+            period_qs = Period.objects.filter(
+                chrononyms__in=chrononyms
+            ).distinct().prefetch_related( 'chrononyms', 'spatialCoverage', )
 
-            # Format start/stop bounds using serializer helpers
-            serializer = PeriodPreviewSerializer(period)
-            start = serializer.get_start(period) or "Unknown"
-            stop = serializer.get_stop(period) or "Unknown"
-            bounds_str = f"{start} – {stop}" if start or stop else ""
+            if not mode == "nosort":
+                period_qs = period_qs.order_by('chrononym')[:period_limit]
 
-            # Compose description
-            description_parts = []
-            if chron_labels:
-                description_parts.append(", ".join(chron_labels))
-            if spatial_desc:
-                description_parts.append(spatial_desc)
-            if bounds_str:
-                description_parts.append(bounds_str)
-            description = "; ".join(description_parts)
+            PERIOD_SCHEMA_ID = SCHEMA_SPACE + "#Period"
 
-            period_candidates.append({
-                "id": f"period:{period.id}",
-                "name": period.chrononym or period.id,
-                "score": 100,
-                "match": True,
-                "description": description,
-                "type": [{"id": PERIOD_SCHEMA_ID, "name": "Period"}],
-            })
+            for period in period_qs:
+                # Aggregate all chrononyms
+                chron_labels = [f"{c.label} ({c.languageTag})" for c in period.chrononyms.all()]
+
+                # Spatial coverage description
+                spatial_desc = period.spatialCoverageDescription or ""
+
+                # Format start/stop bounds using serializer helpers
+                serializer = PeriodPreviewSerializer(period)
+                start = serializer.get_start(period) or "Unknown"
+                stop = serializer.get_stop(period) or "Unknown"
+                bounds_str = f"{start} – {stop}" if start or stop else ""
+
+                # Compose description
+                description_parts = []
+                if chron_labels:
+                    description_parts.append(", ".join(chron_labels))
+                if spatial_desc:
+                    description_parts.append(spatial_desc)
+                if bounds_str:
+                    description_parts.append(bounds_str)
+                description = "; ".join(description_parts)
+
+                period_candidates.append({
+                    "id": f"period:{period.id}",
+                    "name": period.chrononym or period.id,
+                    "score": 100,
+                    "match": True,
+                    "description": description,
+                    "type": [{"id": PERIOD_SCHEMA_ID, "name": "Period"}],
+                })
 
         # --- 4. Combine and Sort Results ---
         combined_candidates = place_candidates + period_candidates

@@ -325,6 +325,38 @@ Promise.all([
             initialiseSuggestions();
         });
 
+    function deriveOuterBounds(period) {
+        if (!period.when || !Array.isArray(period.when.timespans) || period.when.timespans.length === 0) {
+            return {outerStart: null, outerEnd: null};
+        }
+
+        let minStart = Infinity;
+        let maxEnd = -Infinity;
+
+        for (const span of period.when.timespans) {
+            const start = span.start || {};
+            const end = span.end || {};
+
+            const s = start.in ?? start.earliest;
+            const e = end.in ?? end.latest;
+
+            if (s !== undefined && s !== null) {
+                const val = Number(s);
+                if (!isNaN(val)) minStart = Math.min(minStart, val);
+            }
+
+            if (e !== undefined && e !== null) {
+                const val = Number(e);
+                if (!isNaN(val)) maxEnd = Math.max(maxEnd, val);
+            }
+        }
+
+        return {
+            outerStart: minStart === Infinity ? null : minStart,
+            outerEnd: maxEnd === -Infinity ? null : maxEnd,
+        };
+    }
+
     function initialiseChrononymSuggestions() {
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
@@ -333,7 +365,7 @@ Promise.all([
             queryTokenizer: Bloodhound.tokenizers.whitespace,
             limit: 50,
             remote: {
-                url: '/suggest/entity?limit=60&mode=nosort&prefix=%QUERY',
+                url: '/suggest/entity?limit=60&type=period&mode=nosort&prefix=%QUERY',
                 wildcard: '%QUERY',
                 rateLimitBy: 'debounce',
                 rateLimitWait: 200,
@@ -347,7 +379,6 @@ Promise.all([
                         success: function (data) {
                             // Map API response to array of suggestions
                             const suggestions = data.result
-                                .filter(r => r.type.some(t => t.name === "Period"))
                                 .map(r => ({
                                     id: r.id,
                                     name: r.name,
@@ -373,17 +404,40 @@ Promise.all([
             templates: {
                 suggestion: function (data) {
                     return `
-          <div>
-            <strong>${data.name}</strong><br>
-            <small>${data.description}</small>
-          </div>
-        `;
+                      <div>
+                        <strong>${data.name}</strong><br>
+                        <small>${data.description}</small>
+                      </div>
+                    `;
                 },
+                empty: `
+                  <div class="tt-empty-message">
+                    <i>No matching chrononyms found</i>
+                  </div>
+                `
             },
         }).on('typeahead:select', function (e, item) {
-            // keep the ID available for your search call
-            $(this).data('chrononym-id', item.id);
-            initiateSearch();
+            const url = `/entity/${item.id}/api`;
+
+            $.ajax({
+                url: url,
+                type: 'GET',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                success: function (period) {
+                    console.debug('Entity API response:', period);
+                    const {outerStart, outerEnd} = deriveOuterBounds(period);
+                    console.log(`Period bounds: ${outerStart} – ${outerEnd}`);
+                    if (outerStart !== null && outerEnd !== null) {
+                        dateline.reconfigure(outerStart, outerEnd, outerStart, outerEnd, true);
+                    }
+                },
+                error: function (xhr) {
+                    console.error('Error fetching entity:', xhr.responseText);
+                }
+            });
+            // initiateSearch();
         });
 
         $('#clear_chrononym').on('click', function () {

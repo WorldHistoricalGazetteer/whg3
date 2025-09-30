@@ -25,7 +25,7 @@
 #input span.twitter-typeahead input {
 	border-radius: 0; /* Override typeahead default */
 }
-#input #clear_search, #spatial_selector .clearButton {
+#input #clear_search, #spatial_selector .clearButton, button#clear_chrononym {
 	background-color: #e6e5b69e;
 	border-color: #ced4da;
 }
@@ -245,10 +245,6 @@ span.select2-selection {
     box-sizing: border-box;
 }
 
-button#clear_chrononym {
-    border-color: #ced4da;
-}
-
 .tt-dataset-Chrononyms {
     max-height: 500px;
     overflow-y: auto;
@@ -257,5 +253,15 @@ button#clear_chrononym {
 
 .tt-dataset-Chrononyms .tt-suggestion {
     white-space: unset !important;
+}
+
+.tt-suggestion:hover {
     cursor: pointer;
+    background-color: #c3f3c89e;
+}
+
+.tt-empty-message {
+  padding: 0.5rem 1rem;
+  color: #6c757d;      /* Bootstrap muted text */
+  font-style: italic;
 }
