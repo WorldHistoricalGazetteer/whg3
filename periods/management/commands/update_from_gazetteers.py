@@ -57,34 +57,34 @@ class Command(BaseCommand):
         self.BATCH_SIZE = options['batch_size']
         self.stdout.write("Starting spatial entities update...")
 
-        # Load country geometries
-        self.stdout.write("Loading country geometries...")
-        if not self.load_country_geometries():
-            self.stderr.write(self.style.ERROR("Failed to load country geometries. Continuing without ccodes."))
-            pass
-
-        # Get list of gazetteer files
-        gazetteer_files = self.get_gazetteer_files()
-        if not gazetteer_files:
-            self.stderr.write("No gazetteer files found.")
-            return
-
-        # Filter files if specific ones requested
-        if options['files']:
-            gazetteer_files = [f for f in gazetteer_files if f['name'] in options['files']]
-
-        self.stdout.write(f"Found {len(gazetteer_files)} gazetteer files.")
-
-        # Process each gazetteer file
-        total_updated = 0
-        for i, file_info in enumerate(gazetteer_files, 1):
-            self.stdout.write(f"Processing file {i}/{len(gazetteer_files)}: {file_info['name']}")
-            updated = self.process_gazetteer_file(file_info, options['force'])
-            total_updated += updated
-
-        self.stdout.write(
-            self.style.SUCCESS(f"Successfully updated {total_updated} spatial entities.")
-        )
+        # # Load country geometries
+        # self.stdout.write("Loading country geometries...")
+        # if not self.load_country_geometries():
+        #     self.stderr.write(self.style.ERROR("Failed to load country geometries. Continuing without ccodes."))
+        #     pass
+        #
+        # # Get list of gazetteer files
+        # gazetteer_files = self.get_gazetteer_files()
+        # if not gazetteer_files:
+        #     self.stderr.write("No gazetteer files found.")
+        #     return
+        #
+        # # Filter files if specific ones requested
+        # if options['files']:
+        #     gazetteer_files = [f for f in gazetteer_files if f['name'] in options['files']]
+        #
+        # self.stdout.write(f"Found {len(gazetteer_files)} gazetteer files.")
+        #
+        # # Process each gazetteer file
+        # total_updated = 0
+        # for i, file_info in enumerate(gazetteer_files, 1):
+        #     self.stdout.write(f"Processing file {i}/{len(gazetteer_files)}: {file_info['name']}")
+        #     updated = self.process_gazetteer_file(file_info, options['force'])
+        #     total_updated += updated
+        #
+        # self.stdout.write(
+        #     self.style.SUCCESS(f"Successfully updated {total_updated} spatial entities.")
+        # )
 
         # Now compute bounding boxes for periods
         self.compute_period_bboxes()
@@ -407,108 +407,69 @@ class Command(BaseCommand):
 
         from periods.models import Period
 
-        # Get all periods that have spatial coverage with geometries
-        periods_with_spatial = Period.objects.filter(
-            spatialCoverage__geometry__isnull=False
-        ).distinct()
+        # Fetch all periods, not just those with geometry
+        all_periods = Period.objects.prefetch_related('bounds').all()
+        total_periods = all_periods.count()
+        self.stdout.write(f"Processing {total_periods} periods...")
 
-        total_periods = periods_with_spatial.count()
-        if total_periods == 0:
-            self.stdout.write("No periods with spatial geometries found.")
-            return
-
-        self.stdout.write(f"Processing {total_periods} periods with spatial coverage...")
-
-        updated_periods = 0
         batch_size = 100
+        updated_periods = 0
 
         for batch_start in range(0, total_periods, batch_size):
             batch_end = min(batch_start + batch_size, total_periods)
-            batch_periods = periods_with_spatial[batch_start:batch_end]
+            batch_periods = all_periods[batch_start:batch_end]
             batch_num = (batch_start // batch_size) + 1
             total_batches = (total_periods + batch_size - 1) // batch_size
 
             self.stdout.write(f"Processing period batch {batch_num}/{total_batches}...")
-
             batch_updated = 0
 
             with transaction.atomic():
                 for period in batch_periods:
-                    # Get all linked SpatialEntities with non-empty ccodes
+                    # Compute outerBounds from TemporalBounds
+                    sb = period.bounds.filter(kind="start").first()
+                    eb = period.bounds.filter(kind="stop").first()
+                    period.outerBounds = [
+                        sb.earliestYear if sb and sb.earliestYear not in (None, 0) else None,
+                        eb.latestYear if eb and eb.latestYear not in (None, 0) else None
+                    ]
+
+                    # Aggregate ccodes from related SpatialEntities (if any)
                     spatial_entities = period.spatialCoverage.filter(ccodes__len__gt=0)
-
-                    # Use a set to automatically merge and enforce uniqueness
                     all_ccodes = set()
-
                     for entity in spatial_entities:
-                        # If ccodes is an ArrayField, it returns a Python list; extend the set.
-                        # If you stuck with CharField, you'd use: all_ccodes.update(entity.ccodes.split(','))
                         if entity.ccodes:
                             all_ccodes.update(entity.ccodes)
-
-                    # Convert the set back to a sorted list for consistent storage
                     period.ccodes = sorted(list(all_ccodes))
 
-                    if self.debug:
-                        self.stdout.write(f"Period {period.id}: Aggregated ccodes: {period.ccodes}")
+                    update_fields = ['ccodes', 'outerBounds']
 
-                    spatial_entities = period.spatialCoverage.filter(geometry__isnull=False)
-                    if not spatial_entities.exists():
-                        continue
-
+                    # Then process geometry if it exists
+                    spatial_entities_with_geom = period.spatialCoverage.filter(geometry__isnull=False)
                     clean_multipolygons = []
-                    for entity in spatial_entities:
+                    for entity in spatial_entities_with_geom:
                         geom = entity.geometry
-                        if not geom:
-                            continue
+                        if geom:
+                            clean_mp = self.extract_and_validate_polygons(geom)
+                            if clean_mp:
+                                clean_multipolygons.append(clean_mp)
 
-                        if self.debug:
-                            self.stdout.write(
-                                f"Period {period.id}, Entity {entity.uri}: geometry type = {geom.geom_type}")
+                    if clean_multipolygons:
+                        try:
+                            combined_geom = clean_multipolygons[0]
+                            for mp in clean_multipolygons[1:]:
+                                combined_geom = combined_geom.union(mp)
+                            combined_geom = self.extract_and_validate_polygons(combined_geom)
+                            if combined_geom:
+                                period.bbox = self.create_bbox_polygon(combined_geom)
+                                update_fields.append('bbox')
+                        except Exception as e:
+                            self.stderr.write(f"Warning: Could not union geometries for period {period.id}: {e}")
 
-                        # Extract, validate, and convert to clean MultiPolygon
-                        clean_mp = self.extract_and_validate_polygons(geom)
-                        if not clean_mp:
-                            continue
-
-                        clean_multipolygons.append(clean_mp)
-
-                    if not clean_multipolygons:
-                        continue
-
-                    # Union all geometries
-                    try:
-                        combined_geom = clean_multipolygons[0]
-                        for mp in clean_multipolygons[1:]:
-                            combined_geom = combined_geom.union(mp)
-                    except Exception as e:
-                        self.stderr.write(
-                            f"Warning: Could not union geometries for period {period.id}: {e}"
-                        )
-                        continue
-
-                    if self.debug:
-                        self.stdout.write(f"Period {period.id}: Union result type = {combined_geom.geom_type}")
-
-                    # Extract, validate, and convert to clean MultiPolygon
-                    combined_geom = self.extract_and_validate_polygons(combined_geom)
-
-                    if not combined_geom:
-                        self.stderr.write(f"No valid polygon geometry after union for period {period.id}")
-                        continue
-
-                    if self.debug:
-                        self.stdout.write(
-                            f"Period {period.id}: Final clean geometry type = {combined_geom.geom_type}, num polygons = {len(combined_geom)}")
-
-                    # Create bounding box polygon from unioned geometry
-                    period.bbox = self.create_bbox_polygon(combined_geom)
-                    period.save(update_fields=['bbox', 'ccodes'])
+                    period.save(update_fields=update_fields)
                     batch_updated += 1
 
             updated_periods += batch_updated
             self.stdout.write(f"Period batch {batch_num} complete: {batch_updated} periods updated")
 
-        self.stdout.write(
-            self.style.SUCCESS(f"Successfully computed bounding boxes for {updated_periods} periods.")
-        )
+        self.stdout.write(self.style.SUCCESS(f"Successfully processed {updated_periods} periods."))

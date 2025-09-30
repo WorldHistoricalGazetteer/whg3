@@ -111,6 +111,13 @@ class Period(models.Model):
         blank=True,
         help_text="2-letter ISO country codes aggregated from linked SpatialEntities."
     )
+    outerBounds = ArrayField(
+        base_field=models.BigIntegerField(null=True, blank=True),
+        size=2,
+        null=True,
+        blank=True,
+        help_text="Earliest start and latest stop years as [start, stop]"
+    )
     chrononyms = models.ManyToManyField(Chrononym, related_name='periods')  # PeriodO localizedLabels
 
     class Meta:
