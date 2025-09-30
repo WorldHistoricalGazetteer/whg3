@@ -428,10 +428,13 @@ Promise.all([
                 success: function (period) {
                     console.debug('Entity API response:', period);
                     const {outerStart, outerEnd} = deriveOuterBounds(period);
-                    console.log(`Period bounds: ${outerStart} – ${outerEnd}`);
                     if (outerStart !== null && outerEnd !== null) {
                         dateline.reconfigure(outerStart, outerEnd, outerStart, outerEnd, true);
                     }
+                    draw.deleteAll();
+                    draw.add(period);
+                    whg_map.fitViewport(bbox(period));
+                    $drawControl.show();
                 },
                 error: function (xhr) {
                     console.error('Error fetching entity:', xhr.responseText);

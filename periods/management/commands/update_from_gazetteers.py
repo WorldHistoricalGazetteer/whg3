@@ -1,4 +1,3 @@
-# update_from_gazetteers.py
 """
 
 Management command to extend SpatialEntity with geospatial data from GitHub gazetteers.
@@ -7,14 +6,14 @@ Management command to extend SpatialEntity with geospatial data from GitHub gaze
 - Tracks GitHub commit hashes to avoid reprocessing unchanged files
 - Processes GeoJSON features and matches them to existing SpatialEntity records by URI
 - Stores PostGIS geometry and bounding box polygon for efficient spatial queries
-- Optimized version without tqdm but with progress reporting and batching
+- Ensures all geometries are stored as Polygon or MultiPolygon (no GeometryCollections)
 """
 
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import requests
-from django.contrib.gis.geos import GEOSGeometry, Polygon
+from django.contrib.gis.geos import GEOSGeometry, Polygon, MultiPolygon, GeometryCollection
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -43,8 +42,14 @@ class Command(BaseCommand):
             default=500,
             help='Number of features to process per batch (default: 500)',
         )
+        parser.add_argument(
+            '--debug',
+            action='store_true',
+            help='Print detailed debugging information about geometry types',
+        )
 
     def handle(self, *args, **options):
+        self.debug = options.get('debug', False)
         self.BATCH_SIZE = options['batch_size']
         self.stdout.write("Starting spatial entities update...")
 
@@ -96,6 +101,8 @@ class Command(BaseCommand):
             return []
 
     def process_gazetteer_file(self, file_info: Dict, force: bool = False) -> int:
+        """Process a single gazetteer file"""
+        self.force = force  # Store force flag for use in process_feature
         """Process a single gazetteer file"""
         filename = file_info['name']
         current_sha = file_info['sha']
@@ -176,6 +183,66 @@ class Command(BaseCommand):
         self.stdout.write(f"Finished {filename}: {total_updated} entities updated")
         return total_updated
 
+    def extract_and_validate_polygons(self, geometry: GEOSGeometry) -> Optional[MultiPolygon]:
+        """
+        Extract all polygons from any geometry type, validate them, and return as MultiPolygon.
+        Handles nested GeometryCollections, makes geometries valid, and always returns
+        a clean MultiPolygon with no nesting.
+        """
+        valid_polygons = []
+
+        def extract_polygons(geom):
+            """Recursively extract and validate all Polygon objects"""
+            if geom.geom_type == 'Polygon':
+                # Make valid if necessary
+                if not geom.valid:
+                    try:
+                        geom = geom.buffer(0)
+                        if not geom.valid:
+                            if self.debug:
+                                self.stderr.write(f"Could not make Polygon valid")
+                            return
+                    except Exception as e:
+                        if self.debug:
+                            self.stderr.write(f"Error validating Polygon: {e}")
+                        return
+
+                # After buffer(0), might get MultiPolygon or GeometryCollection
+                if geom.geom_type == 'Polygon':
+                    valid_polygons.append(geom)
+                else:
+                    # Recursively process the result
+                    extract_polygons(geom)
+
+            elif geom.geom_type == 'MultiPolygon':
+                # Extract and validate each individual polygon
+                for poly in geom:
+                    extract_polygons(poly)
+
+            elif geom.geom_type == 'GeometryCollection':
+                # Recursively process each geometry in the collection
+                for sub_geom in geom:
+                    extract_polygons(sub_geom)
+            else:
+                # Skip points, lines, etc.
+                if self.debug:
+                    self.stdout.write(f"Skipping geometry type: {geom.geom_type}")
+
+        # Extract all polygons
+        extract_polygons(geometry)
+
+        if not valid_polygons:
+            return None
+
+        # Create a fresh MultiPolygon from scratch using WKT to avoid any nesting issues
+        # This ensures we get a clean MultiPolygon structure
+        if len(valid_polygons) == 1:
+            # Single polygon - create MultiPolygon with one polygon
+            return MultiPolygon([valid_polygons[0]])
+        else:
+            # Multiple polygons - create MultiPolygon
+            return MultiPolygon(valid_polygons)
+
     def process_feature(self, feature: Dict, source_filename: str, existing_entities: Dict) -> str:
         """
         Process a single GeoJSON feature
@@ -193,7 +260,7 @@ class Command(BaseCommand):
                 return 'skipped'
 
             # Skip if already processed from this source (unless forcing)
-            if spatial_entity.gazetteer_source == source_filename and spatial_entity.geometry:
+            if not self.force and spatial_entity.gazetteer_source == source_filename and spatial_entity.geometry:
                 return 'skipped'
 
             # Extract geometry
@@ -203,15 +270,36 @@ class Command(BaseCommand):
 
             # Convert to Django GEOSGeometry
             try:
-                geometry = GEOSGeometry(json.dumps(geometry_data))
-                spatial_entity.geometry = geometry
+                raw_geometry = GEOSGeometry(json.dumps(geometry_data))
+
+                if self.debug:
+                    self.stdout.write(f"Feature {feature_id}: Raw geometry type = {raw_geometry.geom_type}")
+
+                # Extract, validate, and convert to clean MultiPolygon
+                clean_geometry = self.extract_and_validate_polygons(raw_geometry)
+
+                if not clean_geometry:
+                    self.stderr.write(f"No valid polygon geometries found for {feature_id}")
+                    return 'skipped'
+
+                if self.debug:
+                    self.stdout.write(f"Feature {feature_id}: Clean geometry type = {clean_geometry.geom_type}, num polygons = {len(clean_geometry)}")
+
+                # Final validation check
+                if not clean_geometry.valid:
+                    self.stderr.write(f"Geometry still invalid for {feature_id} after processing")
+                    return 'error'
+
+                # Set the geometry
+                spatial_entity.geometry = clean_geometry
                 spatial_entity.gazetteer_source = source_filename
+
             except Exception as e:
                 self.stderr.write(f"Error processing geometry for {feature_id}: {e}")
                 return 'error'
 
             # Calculate and store bounding box as polygon
-            bbox_polygon = self.create_bbox_polygon(geometry)
+            bbox_polygon = self.create_bbox_polygon(clean_geometry)
             if bbox_polygon:
                 spatial_entity.bbox = bbox_polygon
 
@@ -221,6 +309,12 @@ class Command(BaseCommand):
                 spatial_entity.label = properties['name']
 
             spatial_entity.save()
+
+            # Verify what was actually saved
+            if self.debug:
+                spatial_entity.refresh_from_db()
+                self.stdout.write(f"Feature {feature_id}: Saved geometry type = {spatial_entity.geometry.geom_type if spatial_entity.geometry else 'None'}")
+
             return 'updated'
 
         except Exception as e:
@@ -284,40 +378,48 @@ class Command(BaseCommand):
                     if not spatial_entities.exists():
                         continue
 
-                    geometries_cleaned = []
+                    clean_multipolygons = []
                     for entity in spatial_entities:
                         geom = entity.geometry
                         if not geom:
                             continue
-                        if not geom.valid:
-                            try:
-                                geom = geom.buffer(0)
-                                if not geom.valid:
-                                    raise ValueError("Geometry still invalid after buffer(0)")
-                            except Exception as e:
-                                props = getattr(entity, "properties", {})
-                                title = props.get("title", "") if props else ""
-                                self.stderr.write(
-                                    f"Skipping invalid geometry for entity {entity.uri} "
-                                    f"(title='{title}') in period {period.id}: {e}"
-                                )
-                                continue
-                        geometries_cleaned.append(geom)
 
-                    if not geometries_cleaned:
+                        if self.debug:
+                            self.stdout.write(f"Period {period.id}, Entity {entity.uri}: geometry type = {geom.geom_type}")
+
+                        # Extract, validate, and convert to clean MultiPolygon
+                        clean_mp = self.extract_and_validate_polygons(geom)
+                        if not clean_mp:
+                            continue
+
+                        clean_multipolygons.append(clean_mp)
+
+                    if not clean_multipolygons:
                         continue
 
                     # Union all geometries
                     try:
-                        combined_geom = geometries_cleaned[0]
-                        for geom in geometries_cleaned[1:]:
-                            combined_geom = combined_geom.union(geom)
+                        combined_geom = clean_multipolygons[0]
+                        for mp in clean_multipolygons[1:]:
+                            combined_geom = combined_geom.union(mp)
                     except Exception as e:
                         self.stderr.write(
-                            f"Warning: Could not union geometries for period {period.id} "
-                            f"entity {entity.uri} (title='{getattr(entity, 'label', '')}'): {e}"
+                            f"Warning: Could not union geometries for period {period.id}: {e}"
                         )
                         continue
+
+                    if self.debug:
+                        self.stdout.write(f"Period {period.id}: Union result type = {combined_geom.geom_type}")
+
+                    # Extract, validate, and convert to clean MultiPolygon
+                    combined_geom = self.extract_and_validate_polygons(combined_geom)
+
+                    if not combined_geom:
+                        self.stderr.write(f"No valid polygon geometry after union for period {period.id}")
+                        continue
+
+                    if self.debug:
+                        self.stdout.write(f"Period {period.id}: Final clean geometry type = {combined_geom.geom_type}, num polygons = {len(combined_geom)}")
 
                     # Create bounding box polygon from unioned geometry
                     bbox_polygon = self.create_bbox_polygon(combined_geom)

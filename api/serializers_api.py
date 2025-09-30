@@ -1,4 +1,5 @@
 # api/serializers_api.py
+import json
 import logging
 from functools import reduce
 
@@ -386,27 +387,32 @@ class PeriodFeatureSerializer(serializers.ModelSerializer):
 
     def get_geometry(self, obj):
         """Get geometry from computed bbox or spatial coverage"""
-        if hasattr(obj, 'bbox') and obj.bbox:
-            # Convert PostGIS bbox polygon to GeoJSON
-            return obj.bbox.geojson
+        # if hasattr(obj, 'bbox') and obj.bbox:
+        #     # Convert PostGIS bbox polygon to GeoJSON
+        #     return json.loads(obj.bbox.geojson)
 
-        # Try to create geometry from spatial coverage
+        # Otherwise gather spatial coverage geometries
         spatial_entities = obj.spatialCoverage.filter(geometry__isnull=False)
-        if spatial_entities.exists():
-            geometries = []
-            for entity in spatial_entities:
-                if entity.geometry:
-                    geometries.append(entity.geometry.geojson)
+        geometries = []
+        for entity in spatial_entities:
+            if entity.geometry:
+                geom = entity.geometry.geojson
+                # Make sure it's a dict
+                if isinstance(geom, str):
+                    geom = json.loads(geom)
+                geometries.append(geom)
 
-            if len(geometries) == 1:
-                return geometries[0]
-            elif len(geometries) > 1:
-                return {
-                    "type": "GeometryCollection",
-                    "geometries": geometries
-                }
+        if not geometries:
+            return None
 
-        return None
+        # If only one geometry, return as-is; otherwise wrap in GeometryCollection
+        if len(geometries) == 1:
+            return geometries[0]
+
+        return {
+            "type": "GeometryCollection",
+            "geometries": geometries
+        }
 
     def get_when(self, obj):
         """Build LPF when object from temporal bounds"""
