@@ -95,8 +95,6 @@ urlpatterns = [
 
                   path('people_overview/', TemplateView.as_view(template_name="main/people_overview.html"),
                        name="credits"),
-                  path('licensing/', TemplateView.as_view(template_name="main/licensing.html.DEPRECATED"),
-                       name="licensing"),
                   # path('system/', TemplateView.as_view(template_name="main/../_local/_older/system.html"), name="system"),
 
                   path('publications/', TemplateView.as_view(template_name="main/publications.html"),
