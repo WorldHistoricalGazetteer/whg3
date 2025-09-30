@@ -437,10 +437,13 @@ class SuggestEntityView(AuthenticatedAPIView):
 
             for period in period_qs:
                 # Aggregate all chrononyms
-                chron_labels = [f"{c.label} ({c.languageTag})" for c in period.chrononyms.all()]
+                chron_labels = [f"{c.label} (<i>{c.languageTag}</i>)" for c in period.chrononyms.all()]
 
                 # Spatial coverage description
                 spatial_desc = period.spatialCoverageDescription or ""
+
+                # Spatial coverage countries
+                ccodes = sorted(set(period.ccodes or []))
 
                 # Format start/stop bounds using serializer helpers
                 serializer = PeriodPreviewSerializer(period)
@@ -454,8 +457,10 @@ class SuggestEntityView(AuthenticatedAPIView):
                     description_parts.append(", ".join(chron_labels))
                 if spatial_desc:
                     description_parts.append(spatial_desc)
+                if ccodes:
+                    description_parts.append("<em>" + "</em>, <em>".join(ccodes) + "</em>")
                 if bounds_str:
-                    description_parts.append(bounds_str)
+                    description_parts.append(f'<span class="text-primary">{bounds_str}</span>')
                 description = "; ".join(description_parts)
 
                 period_candidates.append({

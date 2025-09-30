@@ -10,16 +10,15 @@ Management command to extend SpatialEntity with geospatial data from GitHub gaze
 """
 
 import json
-from typing import Dict, List, Optional, Union
+import os
+from typing import Dict, List, Optional, Tuple
 
 import requests
-from django.contrib.gis.geos import GEOSGeometry, Polygon, MultiPolygon, GeometryCollection
+from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
+from django.contrib.gis.geos import Polygon
 from django.core.management.base import BaseCommand
 from django.db import transaction
-
-from shapely.geometry import shape, Polygon as ShapelyPolygon, MultiPolygon as ShapelyMultiPolygon
-from shapely.ops import unary_union
-from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
+from django.conf import settings
 
 
 class Command(BaseCommand):
@@ -28,6 +27,7 @@ class Command(BaseCommand):
     GITHUB_API_BASE = "https://api.github.com/repos/periodo/periodo-places"
     GITHUB_RAW_BASE = "https://raw.githubusercontent.com/periodo/periodo-places/master/gazetteers"
     BATCH_SIZE = 500  # Process features in batches
+    country_geometries: Optional[List[Tuple[str, GEOSGeometry]]] = None
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -57,6 +57,12 @@ class Command(BaseCommand):
         self.BATCH_SIZE = options['batch_size']
         self.stdout.write("Starting spatial entities update...")
 
+        # Load country geometries
+        self.stdout.write("Loading country geometries...")
+        if not self.load_country_geometries():
+            self.stderr.write(self.style.ERROR("Failed to load country geometries. Continuing without ccodes."))
+            pass
+
         # Get list of gazetteer files
         gazetteer_files = self.get_gazetteer_files()
         if not gazetteer_files:
@@ -82,6 +88,35 @@ class Command(BaseCommand):
 
         # Now compute bounding boxes for periods
         self.compute_period_bboxes()
+
+    def load_country_geometries(self) -> bool:
+        """Loads country geometries from the GeoJSON file into a list of (ISO code, GEOSGeometry) tuples."""
+        # Note: The path is provided as 'media/media/data/countries_simplified.json'
+        # which is assumed to be relative to Django's MEDIA_ROOT.
+        country_file_path = os.path.join(settings.MEDIA_ROOT, 'media', 'data', 'countries_simplified.json')
+
+        try:
+            with open(country_file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            self.country_geometries = []
+
+            for feature in data.get('features', []):
+                properties = feature.get('properties', {})
+                iso_code = properties.get('iso')
+                geometry_data = feature.get('geometry')
+
+                if iso_code and geometry_data:
+                    geom = GEOSGeometry(json.dumps(geometry_data))
+                    self.country_geometries.append((iso_code, geom))
+
+            self.stdout.write(f"Loaded {len(self.country_geometries)} country geometries.")
+            return True
+
+        except Exception as e:
+            self.stderr.write(f"Error loading country geometries from {country_file_path}: {e}")
+            self.country_geometries = []
+            return False
 
     def get_gazetteer_files(self) -> List[Dict]:
         """Get list of JSON files in the gazetteers directory"""
@@ -291,7 +326,8 @@ class Command(BaseCommand):
                     return 'skipped'
 
                 if self.debug:
-                    self.stdout.write(f"Feature {feature_id}: Clean geometry type = {clean_geometry.geom_type}, num polygons = {len(clean_geometry)}")
+                    self.stdout.write(
+                        f"Feature {feature_id}: Clean geometry type = {clean_geometry.geom_type}, num polygons = {len(clean_geometry)}")
 
                 # Final validation check
                 if not clean_geometry.valid:
@@ -305,6 +341,21 @@ class Command(BaseCommand):
             except Exception as e:
                 self.stderr.write(f"Error processing geometry for {feature_id}: {e}")
                 return 'error'
+
+            # Determine intersecting country codes if country geometries are loaded
+            if self.country_geometries is not None:
+                intersecting_ccodes = []
+
+                # Check for intersection only if we have country geometries loaded
+                for iso_code, country_geom in self.country_geometries:
+                    if clean_geometry.intersects(country_geom):
+                        intersecting_ccodes.append(iso_code)
+
+                # Store the *list* of codes directly to the ArrayField
+                spatial_entity.ccodes = sorted(intersecting_ccodes) # Store the sorted list
+
+                if self.debug:
+                    self.stdout.write(f"Feature {feature_id}: Intersects with ccodes: {spatial_entity.ccodes or 'None'}")
 
             # Calculate and store bounding box as polygon
             bbox_polygon = self.create_bbox_polygon(clean_geometry)
@@ -321,7 +372,8 @@ class Command(BaseCommand):
             # Verify what was actually saved
             if self.debug:
                 spatial_entity.refresh_from_db()
-                self.stdout.write(f"Feature {feature_id}: Saved geometry type = {spatial_entity.geometry.geom_type if spatial_entity.geometry else 'None'}")
+                self.stdout.write(
+                    f"Feature {feature_id}: Saved geometry type = {spatial_entity.geometry.geom_type if spatial_entity.geometry else 'None'}")
 
             return 'updated'
 
@@ -382,6 +434,24 @@ class Command(BaseCommand):
 
             with transaction.atomic():
                 for period in batch_periods:
+                    # Get all linked SpatialEntities with non-empty ccodes
+                    spatial_entities = period.spatialCoverage.filter(ccodes__len__gt=0)
+
+                    # Use a set to automatically merge and enforce uniqueness
+                    all_ccodes = set()
+
+                    for entity in spatial_entities:
+                        # If ccodes is an ArrayField, it returns a Python list; extend the set.
+                        # If you stuck with CharField, you'd use: all_ccodes.update(entity.ccodes.split(','))
+                        if entity.ccodes:
+                            all_ccodes.update(entity.ccodes)
+
+                    # Convert the set back to a sorted list for consistent storage
+                    period.ccodes = sorted(list(all_ccodes))
+
+                    if self.debug:
+                        self.stdout.write(f"Period {period.id}: Aggregated ccodes: {period.ccodes}")
+
                     spatial_entities = period.spatialCoverage.filter(geometry__isnull=False)
                     if not spatial_entities.exists():
                         continue
@@ -393,7 +463,8 @@ class Command(BaseCommand):
                             continue
 
                         if self.debug:
-                            self.stdout.write(f"Period {period.id}, Entity {entity.uri}: geometry type = {geom.geom_type}")
+                            self.stdout.write(
+                                f"Period {period.id}, Entity {entity.uri}: geometry type = {geom.geom_type}")
 
                         # Extract, validate, and convert to clean MultiPolygon
                         clean_mp = self.extract_and_validate_polygons(geom)
@@ -427,18 +498,13 @@ class Command(BaseCommand):
                         continue
 
                     if self.debug:
-                        self.stdout.write(f"Period {period.id}: Final clean geometry type = {combined_geom.geom_type}, num polygons = {len(combined_geom)}")
+                        self.stdout.write(
+                            f"Period {period.id}: Final clean geometry type = {combined_geom.geom_type}, num polygons = {len(combined_geom)}")
 
                     # Create bounding box polygon from unioned geometry
-                    bbox_polygon = self.create_bbox_polygon(combined_geom)
-                    if bbox_polygon:
-                        if hasattr(period, 'bbox'):
-                            period.bbox = bbox_polygon
-                            period.save()
-                            batch_updated += 1
-                        else:
-                            self.stderr.write("Period model does not have bbox field. Add it to the model first.")
-                            return
+                    period.bbox = self.create_bbox_polygon(combined_geom)
+                    period.save(update_fields=['bbox', 'ccodes'])
+                    batch_updated += 1
 
             updated_periods += batch_updated
             self.stdout.write(f"Period batch {batch_num} complete: {batch_updated} periods updated")

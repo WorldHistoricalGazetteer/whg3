@@ -1,6 +1,7 @@
 # periods/models.py
 
 from django.contrib.gis.db import models as gis_models
+from django.contrib.postgres.fields import ArrayField
 from django.contrib.postgres.indexes import GinIndex
 from django.db import models
 
@@ -10,6 +11,12 @@ class SpatialEntity(models.Model):
     label = models.CharField(max_length=255, blank=True)
     geometry = gis_models.GeometryField(null=True, blank=True, srid=4326)
     bbox = gis_models.PolygonField(null=True, blank=True, srid=4326)  # Bounding box as polygon
+    ccodes = ArrayField(
+        models.CharField(max_length=2),
+        default=list,  # Store an empty list instead of NULL when no codes
+        blank=True,
+        help_text="2-letter ISO country codes intersecting the geometry."
+    )
     gazetteer_source = gis_models.CharField(max_length=255, blank=True)
 
     class Meta:
@@ -98,6 +105,12 @@ class Period(models.Model):
     derivedFrom = models.JSONField(blank=True, null=True)
     spatialCoverage = models.ManyToManyField(SpatialEntity, related_name='periods')
     bbox = gis_models.PolygonField(null=True, blank=True, srid=4326)  # Computed from spatial coverage
+    ccodes = ArrayField(  # Aggregate of all linked SpatialEntity ccodes
+        models.CharField(max_length=2),
+        default=list,
+        blank=True,
+        help_text="2-letter ISO country codes aggregated from linked SpatialEntities."
+    )
     chrononyms = models.ManyToManyField(Chrononym, related_name='periods')  # PeriodO localizedLabels
 
     class Meta:

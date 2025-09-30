@@ -262,7 +262,7 @@ class OptimizedPeriodSerializer(serializers.ModelSerializer):
             'id', 'chrononym', 'canonical_label', 'type', 'language', 'languageTag',
             'authority', 'chrononyms', 'spatial_coverage', 'temporal_bounds',
             'editorialNote', 'note', 'broader', 'narrower', 'sameAs', 'url',
-            'script', 'derivedFrom', 'geometry'
+            'script', 'derivedFrom', 'geometry', 'ccodes', 'bbox', 'source'
         ]
 
     def __init__(self, *args, **kwargs):
@@ -529,9 +529,7 @@ class PeriodFeatureSerializer(serializers.ModelSerializer):
         return descriptions if descriptions else None
 
     def get_country_codes(self, obj):
-        """Extract country codes from spatial coverage"""
-        # TODO: This would need to be implemented based on the spatial entities, during ingestion - see periods/management/commands/update_from_gazetteers.py
-        return []
+        return obj.ccodes
 
     class Meta:
         model = Period
@@ -552,7 +550,7 @@ class PeriodPreviewSerializer(serializers.ModelSerializer):
         model = Period
         fields = [
             'id', 'chrononym', 'languageTag', 'editorialNote', 'note',
-            'authority_label', 'chrononyms_preview', 'spatial_preview', 'start', 'stop'
+            'authority_label', 'chrononyms_preview', 'spatial_preview', 'start', 'stop', 'ccodes'
         ]
 
     def get_authority_label(self, obj):
