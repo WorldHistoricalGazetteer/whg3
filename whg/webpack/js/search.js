@@ -432,9 +432,11 @@ Promise.all([
                         dateline.reconfigure(outerStart, outerEnd, outerStart, outerEnd, true);
                     }
                     draw.deleteAll();
-                    draw.add(period);
-                    whg_map.fitViewport(bbox(period));
-                    $drawControl.show();
+                    if (period.geometry) {
+                        draw.add(period);
+                        whg_map.fitViewport(bbox(period));
+                        $drawControl.show();
+                    }
                 },
                 error: function (xhr) {
                     console.error('Error fetching entity:', xhr.responseText);

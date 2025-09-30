@@ -355,7 +355,7 @@ class PeriodFeatureSerializer(serializers.ModelSerializer):
         }
 
         # Remove empty optional fields
-        return {k: v for k, v in feature.items() if v is not None}
+        return {k: v for k, v in feature.items() if v is not None and k is not "geometry"}
 
     def get_names(self, obj):
         """Build LPF names array from chrononyms"""
