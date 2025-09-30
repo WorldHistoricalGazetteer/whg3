@@ -6,7 +6,11 @@ from functools import reduce
 from pyproj import CRS, Transformer
 from rest_framework import serializers
 from shapely.geometry import shape
-from shapely.ops import transform
+from shapely.geometry.collection import GeometryCollection
+from shapely.geometry.geo import mapping
+from shapely.geometry.multipolygon import MultiPolygon
+from shapely.geometry.polygon import Polygon
+from shapely.ops import transform, unary_union
 
 from api.serializers import PlaceNameSerializer, PlaceTypeSerializer, PlaceWhenSerializer, PlaceLinkSerializer, \
     PlaceRelatedSerializer, PlaceDescriptionSerializer, PlaceDepictionSerializer
@@ -355,7 +359,7 @@ class PeriodFeatureSerializer(serializers.ModelSerializer):
         }
 
         # Remove empty optional fields
-        return {k: v for k, v in feature.items() if v is not None and k is not "geometry"}
+        return {k: v for k, v in feature.items() if (v is not None or k == "geometry")}
 
     def get_names(self, obj):
         """Build LPF names array from chrononyms"""
@@ -386,33 +390,52 @@ class PeriodFeatureSerializer(serializers.ModelSerializer):
         return names if names else [{"toponym": "Untitled Period"}]
 
     def get_geometry(self, obj):
-        """Get geometry from computed bbox or spatial coverage"""
-        # if hasattr(obj, 'bbox') and obj.bbox:
-        #     # Convert PostGIS bbox polygon to GeoJSON
-        #     return json.loads(obj.bbox.geojson)
+        """Get geometry from computed bbox or spatial coverage, merged as a single MultiPolygon"""
 
-        # Otherwise gather spatial coverage geometries
+        # Gather geometries
         spatial_entities = obj.spatialCoverage.filter(geometry__isnull=False)
-        geometries = []
+        polygons = []
+
         for entity in spatial_entities:
             if entity.geometry:
                 geom = entity.geometry.geojson
-                # Make sure it's a dict
                 if isinstance(geom, str):
                     geom = json.loads(geom)
-                geometries.append(geom)
+                shapely_geom = shape(geom)
 
-        if not geometries:
+                # Extract polygons recursively
+                def extract_polygons(g):
+                    if isinstance(g, Polygon):
+                        polygons.append(g)
+                    elif isinstance(g, MultiPolygon):
+                        for p in g.geoms:
+                            polygons.append(p)
+                    elif isinstance(g, GeometryCollection):
+                        for sub in g.geoms:
+                            extract_polygons(sub)
+
+                extract_polygons(shapely_geom)
+
+        if not polygons:
             return None
 
-        # If only one geometry, return as-is; otherwise wrap in GeometryCollection
-        if len(geometries) == 1:
-            return geometries[0]
+        # Merge all polygons into a single MultiPolygon
+        merged = unary_union(polygons)
 
-        return {
-            "type": "GeometryCollection",
-            "geometries": geometries
-        }
+        # Ensure result is Polygon or MultiPolygon
+        if isinstance(merged, Polygon):
+            merged = MultiPolygon([merged])
+        elif isinstance(merged, GeometryCollection):
+            # Flatten any leftover collections
+            flat_polygons = []
+            for g in merged.geoms:
+                if isinstance(g, Polygon):
+                    flat_polygons.append(g)
+                elif isinstance(g, MultiPolygon):
+                    flat_polygons.extend(list(g.geoms))
+            merged = MultiPolygon(flat_polygons)
+
+        return mapping(merged)
 
     def get_when(self, obj):
         """Build LPF when object from temporal bounds"""

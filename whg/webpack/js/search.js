@@ -432,10 +432,24 @@ Promise.all([
                         dateline.reconfigure(outerStart, outerEnd, outerStart, outerEnd, true);
                     }
                     draw.deleteAll();
-                    if (period.geometry) {
-                        draw.add(period);
+                    if (!!period.geometry) {
+                        if (period.geometry.type === "GeometryCollection") {
+                            // Split collection and add each geometry separately
+                            period.geometry.geometries.forEach(geom => {
+                                const feature = {
+                                    type: "Feature",
+                                    properties: period.properties || {},
+                                    geometry: geom
+                                };
+                                draw.add(feature);
+                            });
+                        } else {
+                            draw.add(period);
+                        }
                         whg_map.fitViewport(bbox(period));
                         $drawControl.show();
+                    } else {
+                        whg_map.reset();
                     }
                 },
                 error: function (xhr) {

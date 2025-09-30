@@ -17,6 +17,10 @@ from django.contrib.gis.geos import GEOSGeometry, Polygon, MultiPolygon, Geometr
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from shapely.geometry import shape, Polygon as ShapelyPolygon, MultiPolygon as ShapelyMultiPolygon
+from shapely.ops import unary_union
+from django.contrib.gis.geos import GEOSGeometry, MultiPolygon
+
 
 class Command(BaseCommand):
     help = "Update SpatialEntity with geospatial data from periodo-places gazetteers."
@@ -185,63 +189,67 @@ class Command(BaseCommand):
 
     def extract_and_validate_polygons(self, geometry: GEOSGeometry) -> Optional[MultiPolygon]:
         """
-        Extract all polygons from any geometry type, validate them, and return as MultiPolygon.
-        Handles nested GeometryCollections, makes geometries valid, and always returns
-        a clean MultiPolygon with no nesting.
+        Extract all polygons from any geometry type, validate them, and return as a clean MultiPolygon.
+        Overlapping polygons will be merged (dissolved).
         """
-        valid_polygons = []
+        polygons = []
 
         def extract_polygons(geom):
-            """Recursively extract and validate all Polygon objects"""
+            # Check for Points and Lines even though input is claimed not to have them,
+            # for robustness against unexpected data.
             if geom.geom_type == 'Polygon':
-                # Make valid if necessary
+                # Attempt to repair invalid polygons by buffering by zero
                 if not geom.valid:
-                    try:
-                        geom = geom.buffer(0)
-                        if not geom.valid:
-                            if self.debug:
-                                self.stderr.write(f"Could not make Polygon valid")
-                            return
-                    except Exception as e:
-                        if self.debug:
-                            self.stderr.write(f"Error validating Polygon: {e}")
-                        return
-
-                # After buffer(0), might get MultiPolygon or GeometryCollection
-                if geom.geom_type == 'Polygon':
-                    valid_polygons.append(geom)
-                else:
-                    # Recursively process the result
-                    extract_polygons(geom)
-
+                    geom = geom.buffer(0)
+                if geom and geom.valid:
+                    polygons.append(geom)
             elif geom.geom_type == 'MultiPolygon':
-                # Extract and validate each individual polygon
                 for poly in geom:
                     extract_polygons(poly)
-
             elif geom.geom_type == 'GeometryCollection':
-                # Recursively process each geometry in the collection
-                for sub_geom in geom:
-                    extract_polygons(sub_geom)
-            else:
-                # Skip points, lines, etc.
-                if self.debug:
-                    self.stdout.write(f"Skipping geometry type: {geom.geom_type}")
+                for sub in geom:
+                    extract_polygons(sub)
+            # Lines and Points are not appended, so they are filtered out implicitly
+            # The 'else' block from the original code is no longer needed here as the goal
+            # is just to extract Polygons.
 
-        # Extract all polygons
         extract_polygons(geometry)
 
-        if not valid_polygons:
+        if not polygons:
             return None
 
-        # Create a fresh MultiPolygon from scratch using WKT to avoid any nesting issues
-        # This ensures we get a clean MultiPolygon structure
-        if len(valid_polygons) == 1:
-            # Single polygon - create MultiPolygon with one polygon
-            return MultiPolygon([valid_polygons[0]])
+        # Use the GEOS union operator for merging (dissolving) the polygons.
+        # Starting with the first polygon.
+        try:
+            merged = polygons[0]
+            for poly in polygons[1:]:
+                # Use the GEOS .union() method for merging
+                merged = merged.union(poly)
+        except Exception as e:
+            if self.debug:
+                self.stderr.write(f"Union failed: {e}")
+            return None
+
+        # Check the result type explicitly to ensure only Polygon or MultiPolygon is returned
+        # and GeometryCollection is never stored.
+        merged_type = merged.geom_type
+
+        if merged_type == "Polygon":
+            # A single Polygon result is wrapped into a MultiPolygon
+            return MultiPolygon([merged])
+        elif merged_type == "MultiPolygon":
+            return merged
+        elif merged_type == "GeometryCollection":
+            # This is the explicit fix for the reported issue: if union returns a GC,
+            # we reject it and return None, as we only want Polygons/MultiPolygons.
+            if self.debug:
+                self.stderr.write("Union returned a GeometryCollection. Rejecting.")
+            return None
         else:
-            # Multiple polygons - create MultiPolygon
-            return MultiPolygon(valid_polygons)
+            # Handle other unexpected types like Point, LineString, etc. (though unlikely after union of Polygons)
+            if self.debug:
+                self.stderr.write(f"Unexpected result type from union: {merged_type}")
+            return None
 
     def process_feature(self, feature: Dict, source_filename: str, existing_entities: Dict) -> str:
         """
