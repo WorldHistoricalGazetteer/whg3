@@ -39,6 +39,13 @@ function initWHGModal() {
             loadModalContent($(e.relatedTarget));
         });
 
+    const $trigger = $('#orcidDeniedTrigger');
+    if ($trigger.length) {
+        setTimeout(function() {
+            $trigger[0].click(); // Native click
+        }, 1000);
+    }
+
     function loadModalContent(target) {
         const url = target.data('whg-modal');
         const modalSubject = target.data('subject');
