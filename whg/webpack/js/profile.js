@@ -141,3 +141,11 @@ if (newsCheckbox) {
         });
     });
 }
+
+const orcidDenied = document.getElementById('orcidDeniedTrigger');
+if (orcidDenied) {
+    orcidDenied.addEventListener('click', function () {
+        console.debug(`[ORCID] ORCID denied`);
+        $('#orcidDeniedTrigger').trigger('click');
+    })
+}

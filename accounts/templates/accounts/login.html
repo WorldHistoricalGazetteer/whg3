@@ -215,13 +215,17 @@
 
 {% if request.GET.orcid_denied %}
 <a id="orcidDeniedTrigger" data-whg-modal="{% url 'accounts:orcid_denied_modal' %}" style="display:none;"></a>
-
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-      console.debug(`[ORCID] ORCID denied`);
-      $('#orcidDeniedTrigger').trigger('click');
-  });
-</script>
 {% endif %}
+
+{% endblock %}
+
+{% block deferredScripts %}
+
+	var scripts = [
+	{
+	src: '{% static 'webpack/profile.bundle.js' %}',
+	type: 'module',
+	},
+	]
 
 {% endblock %}
