@@ -214,13 +214,6 @@
 </div>
 
 {% if request.GET.orcid_denied %}
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-    var denyModal = new bootstrap.Modal(document.getElementById('orcidDeniedModal'));
-    denyModal.show();
-  });
-</script>
-
 <div class="modal fade" id="orcidDeniedModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content shadow rounded-3">
@@ -247,6 +240,14 @@
     </div>
   </div>
 </div>
+
+<script type="text/javascript">
+  document.addEventListener("DOMContentLoaded", function() {
+    console.debug("ORCiD access was denied. Prompting user to reconnect.");
+    var denyModal = new bootstrap.Modal(document.getElementById('orcidDeniedModal'));
+    denyModal.show();
+  });
+</script>
 {% endif %}
 
 {% endblock %}
