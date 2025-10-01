@@ -193,11 +193,28 @@ class OIDCBackend(BaseBackend):
                     "affiliation": get_affiliation(record) or "",
                     "web_page": get_web_page(record) or "",
                     "orcid_refresh_token": token_json.get("refresh_token"),
-                    "orcid_token_expires_at": now() + timedelta(seconds=expires_in) if expires_in is not None else None,
+                    "orcid_token_expires_at": (
+                        now() + timedelta(seconds=expires_in) if expires_in else None
+                    ),
                 },
             )
             if created:
                 user._needs_news_check = True
+            else:
+                # Update existing user’s fields
+                user.username = new_username
+                user.email = email
+                user.given_name = given_name
+                user.surname = family_name
+                user.affiliation = get_affiliation(record) or ""
+                user.web_page = get_web_page(record) or ""
+                user.orcid_refresh_token = token_json.get("refresh_token")
+                expires_in = token_json.get("expires_in")
+                user.orcid_token_expires_at = (
+                    now() + timedelta(seconds=expires_in) if expires_in else None
+                )
+                with transaction.atomic():
+                    user.save()
 
         return user
 
@@ -278,3 +295,24 @@ def orcid_callback(request):
 
     logger.error("ORCID authentication failed.")
     return redirect("accounts:login")
+
+
+def revoke_orcid_token(refresh_token: str) -> bool:
+    """
+    Revoke ORCID refresh token via the OAuth revoke endpoint.
+    Returns True if successful.
+    """
+    url = f"{settings.ORCID_BASE}/oauth/revoke"
+    data = {
+        "client_id": settings.ORCID_CLIENT_ID,
+        "client_secret": settings.ORCID_CLIENT_SECRET,
+        "token": refresh_token,
+    }
+    try:
+        resp = requests.post(url, data=data, timeout=5)
+        resp.raise_for_status()
+        logger.info("Revoked ORCID token successfully")
+        return True
+    except requests.RequestException as e:
+        logger.error(f"Failed to revoke ORCID token: {e}")
+        return False

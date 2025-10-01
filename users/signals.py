@@ -1,18 +1,20 @@
 # users.signals.py
 
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from whgmail.messaging import WHGmail
-import requests
 import logging
 
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
+from accounts.orcid import revoke_orcid_token
+from whgmail.messaging import WHGmail
+
 logger = logging.getLogger('messaging')
 User = get_user_model()
+
 
 @receiver(post_save, sender=User)
 def welcome_email(sender, instance, created, **kwargs):
@@ -21,8 +23,9 @@ def welcome_email(sender, instance, created, **kwargs):
     if not created:
         return  # only act on first save (registration)
 
-    logger.debug(f"New user created: {instance.id} | {instance.username} | {instance.name}, sending welcome email to {instance.email}")
-              
+    logger.debug(
+        f"New user created: {instance.id} | {instance.username} | {instance.name}, sending welcome email to {instance.email}")
+
     WHGmail(context={
         'template': 'welcome',
         'subject': 'Welcome to WHG',
@@ -55,3 +58,9 @@ def welcome_email(sender, instance, created, **kwargs):
         logger.error(f"Slack API error: {e.response['error']}")
     except Exception as e:
         logger.exception("Error occurred while sending Slack notification for new user registration")
+
+
+@receiver(post_delete, sender=User)
+def revoke_orcid_on_delete(sender, instance, **kwargs):
+    if instance.orcid_refresh_token:
+        revoke_orcid_token(instance.orcid_refresh_token)
