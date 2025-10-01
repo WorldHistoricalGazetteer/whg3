@@ -214,38 +214,11 @@
 </div>
 
 {% if request.GET.orcid_denied %}
-<div class="modal fade" id="orcidDeniedModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content shadow rounded-3">
-      <div class="modal-header">
-        <h5 class="modal-title">Connect your ORCiD</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <p><strong>Did you click "Deny" by mistake?</strong></p>
-        <p>Connecting your ORCiD helps link your contributions, ensures proper credit, and allows WHG to maintain connections to your scholarly work.</p>
-        <div class="text-center mt-3">
-          <button type="button" class="btn btn-success" onclick="document.getElementById('signin-button').click();">
-            Reconnect your ORCiD
-          </button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            Continue without Registration
-          </button>
-        </div>
-        <p class="small text-muted mt-3">
-          You are always in control of your ORCiD record.
-          <a href="https://orcid.org/about/trust/control" target="_blank">Learn more</a>.
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
+<a id="orcidDeniedTrigger" data-whg-modal="{% url 'accounts:orcid_denied_modal' %}" style="display:none;"></a>
 
-<script type="text/javascript">
+<script>
   document.addEventListener("DOMContentLoaded", function() {
-    console.debug("ORCiD access was denied. Prompting user to reconnect.");
-    var denyModal = new bootstrap.Modal(document.getElementById('orcidDeniedModal'));
-    denyModal.show();
+      document.getElementById('orcidDeniedTrigger').click();
   });
 </script>
 {% endif %}

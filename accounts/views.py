@@ -23,6 +23,10 @@ logger = logging.getLogger('authentication')
 from urllib.parse import urlencode
 
 
+def orcid_denied_modal(request):
+    return render(request, "accounts/orcid_denied_modal.html", {})
+
+
 def build_orcid_authorize_url(request):
     state = secrets.token_urlsafe(24)
     nonce = secrets.token_urlsafe(24)
