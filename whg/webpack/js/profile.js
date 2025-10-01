@@ -144,10 +144,4 @@ if (window.profileConfig !== undefined) {
     }
 }
 
-const orcidDenied = document.getElementById('orcidDeniedTrigger');
-if (orcidDenied) {
-    orcidDenied.addEventListener('click', function () {
-        console.debug(`[ORCID] ORCID denied`);
-        $('#orcidDeniedTrigger').trigger('click');
-    })
-}
+$('#orcidDeniedTrigger').trigger('click');  // If the element is present on login page, this will show the modal
