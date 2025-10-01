@@ -121,7 +121,7 @@
 
     <div class="row justify-content-center">
         <div class="col-md-7 pe-md-4 border-end">
-            <a href="{{ orcid_auth_url }}"
+            <a id="signin-button" href="{{ orcid_auth_url }}"
                class="btn btn-light rounded d-inline-flex align-items-center pe-4 py-2 shadow-sm mb-4"
                style="border: 1px solid #ced4da; color: #333; font-size: 1.2rem; font-weight: 500;">
                 <i class="fab fa-orcid me-3" style="color: #a6ce39; font-size: 2.5rem;"></i>
@@ -232,9 +232,9 @@
         <p><strong>Did you click "Deny" by mistake?</strong></p>
         <p>Connecting your ORCiD helps link your contributions, ensures proper credit, and allows WHG to maintain connections to your scholarly work.</p>
         <div class="text-center mt-3">
-          <a href="{% url 'orcid_connect' %}" class="btn btn-success me-2">
+          <button type="button" class="btn btn-success" onclick="document.getElementById('signin-button').click();">
             Reconnect your ORCiD
-          </a>
+          </button>
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
             Continue without Registration
           </button>
