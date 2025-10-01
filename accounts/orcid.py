@@ -152,8 +152,8 @@ class OIDCBackend(BaseBackend):
             if request:
                 messages.error(request,
                                "<h4><i class='fas fa-triangle-exclamation'></i> Your email address cannot be read.</h4>" +
-                               "<p>As detailed below, It is a requirement of WHG registration that you have at least one verified email address with visibility set set to either 'Trusted parties' or 'Everyone'.</p>" +
-                               f"<p>Please check your <a href='{settings.ORCID_BASE}/my-orcid' target='_blank' rel='noopener noreferrer'>ORCiD profile</a> and then try again.</p>"
+                               "<p>As detailed below, it is a requirement of WHG registration that you have at least one verified email address with visibility set set to either 'Trusted parties' or 'Everyone'.</p>" +
+                               f"<p>Please check your <a href='{settings.ORCID_BASE}/my-orcid' target='_blank' rel='noopener noreferrer'>ORCiD profile</a> and then try again. <i>If you have only just signed up with ORCiD, you will need to verify your email address and adjust its visibility before proceeding.</i></p>"
                                )
             return None
 
