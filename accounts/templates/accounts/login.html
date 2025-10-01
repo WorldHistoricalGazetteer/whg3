@@ -214,18 +214,8 @@
 </div>
 
 {% if request.GET.orcid_denied %}
+<!-- Link to be fired on loading: see whg-modal.js -->
 <a id="orcidDeniedTrigger" data-whg-modal="{% url 'accounts:orcid_denied_modal' %}" style="display:none;"></a>
 {% endif %}
-
-{% endblock %}
-
-{% block deferredScripts %}
-
-	var scripts = [
-	{
-	src: '{% static 'webpack/profile.bundle.js' %}',
-	type: 'module',
-	},
-	]
 
 {% endblock %}
