@@ -34,7 +34,7 @@ def welcome_email(sender, instance, created, **kwargs):
         slack_message = (
             f"*Subject:* New User Registered\n"
             f"*Username:* {instance.username}\n"
-            f"*Name:* {instance.name}\n"
+            f"*Name:* {instance.display_name}\n"
             f"*User ID:* {instance.id}\n"
             f"----------------------------------------"
         )
