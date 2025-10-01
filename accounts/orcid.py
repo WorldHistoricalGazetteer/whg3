@@ -157,43 +157,47 @@ class OIDCBackend(BaseBackend):
                                )
             return None
 
-        needs_news_check = False
-
         if request and request.user.is_authenticated and not request.user.orcid:
-            # Existing legacy user, now linking ORCiD
+            # Existing legacy user, now linking ORCiD - TODO: remove this block after FULL migration
             if User.objects.filter(orcid=orcid_id).exclude(pk=request.user.pk).exists():
                 messages.error(request, "This ORCiD is already linked to another account.")
                 return None
-            # User is logged in but not linked to ORCiD, update their ORCiD ID and username
+            # User is logged in but not linked to ORCiD, update their ORCiD ID and other fields
             user = request.user
             user.orcid = orcid_id
             user.username = new_username
-            needs_news_check = True
+            user.email = email
+            user.given_name = given_name
+            user.surname = family_name
+            user.affiliation = get_affiliation(record) or ""
+            user.web_page = get_web_page(record) or ""
+            user.orcid_refresh_token = token_json.get("refresh_token")
+            expires_in = token_json.get("expires_in")
+            if expires_in is not None:
+                user.orcid_token_expires_at = now() + timedelta(seconds=expires_in)
+
+            # Save user
+            with transaction.atomic():
+                user.save()
+            user._needs_news_check = True
         else:
             # Lookup or create by ORCiD
+            expires_in = token_json.get("expires_in")
             user, created = User.objects.get_or_create(
                 orcid=orcid_id,
-                defaults={"username": new_username},
+                defaults={
+                    "username": new_username,
+                    "email": email,
+                    "given_name": given_name,
+                    "surname": family_name,
+                    "affiliation": get_affiliation(record) or "",
+                    "web_page": get_web_page(record) or "",
+                    "orcid_refresh_token": token_json.get("refresh_token"),
+                    "orcid_token_expires_at": now() + timedelta(seconds=expires_in) if expires_in is not None else None,
+                },
             )
             if created:
-                needs_news_check = True
-
-        # Update user fields
-        user.email = email
-        user.given_name = given_name
-        user.surname = family_name
-        user.affiliation = get_affiliation(record) or ""
-        user.web_page = get_web_page(record) or ""
-        user.orcid_refresh_token = token_json.get("refresh_token")
-        expires_in = token_json.get("expires_in")
-        if expires_in is not None:
-            user.orcid_token_expires_at = now() + timedelta(seconds=expires_in)
-
-        # Save user
-        with transaction.atomic():
-            user.save()
-
-        user._needs_news_check = needs_news_check
+                user._needs_news_check = True
 
         return user
 
