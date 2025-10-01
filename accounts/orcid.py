@@ -226,6 +226,11 @@ class OIDCBackend(BaseBackend):
 
 
 def orcid_callback(request):
+    # Handle denial
+    if request.GET.get("error") == "access_denied":
+        # Pass a flag to trigger the modal on the login page
+        return redirect(f"{reverse('accounts:login')}?orcid_denied=1")
+
     # --- CSRF protection: check state ---
     session_state = request.session.get("oidc_state")
     state = request.GET.get("state")
