@@ -426,13 +426,6 @@ class Command(BaseCommand):
 
             with transaction.atomic():
                 for period in batch_periods:
-                    # Compute outerBounds from TemporalBounds
-                    sb = period.bounds.filter(kind="start").first()
-                    eb = period.bounds.filter(kind="stop").first()
-                    period.outerBounds = [
-                        sb.earliestYear if sb and sb.earliestYear not in (None, 0) else None,
-                        eb.latestYear if eb and eb.latestYear not in (None, 0) else None
-                    ]
 
                     # Aggregate ccodes from related SpatialEntities (if any)
                     spatial_entities = period.spatialCoverage.filter(ccodes__len__gt=0)
@@ -442,7 +435,7 @@ class Command(BaseCommand):
                             all_ccodes.update(entity.ccodes)
                     period.ccodes = sorted(list(all_ccodes))
 
-                    update_fields = ['ccodes', 'outerBounds']
+                    update_fields = ['ccodes']
 
                     # Then process geometry if it exists
                     spatial_entities_with_geom = period.spatialCoverage.filter(geometry__isnull=False)
