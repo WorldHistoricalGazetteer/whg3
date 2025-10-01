@@ -43,6 +43,7 @@ function initWHGModal() {
     if ($trigger.length) {
         setTimeout(function() {
             $trigger[0].click(); // Native click
+            console.log('ORCID denied modal triggered');
         }, 1000);
     }
 
