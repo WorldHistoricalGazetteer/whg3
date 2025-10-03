@@ -37,8 +37,6 @@
             "mainEntityOfPage": "https://whgazetteer.org/"
         }
     </script>
-    <script defer data-domain="whgazetteer.org" src="https://analytics.whgazetteer.org/js/script.file-downloads.hash.outbound-links.pageview-props.tagged-events.js"></script>
-    <script>window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }</script>
     {% endblock %}
 
     <script defer src="{% static 'webpack/base.bundle.js' %}"></script>
@@ -101,6 +99,8 @@
             loadNextScript(scripts.length == 0 ? -1 : 0);
         }
     </script>
+    <script defer data-domain="whgazetteer.org" src="https://analytics.whgazetteer.org/js/script.file-downloads.hash.outbound-links.pageview-props.tagged-events.js"></script>
+    <script>window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }</script>
 </head>
 
 <div id="inline-scripts" style="display: none;">
