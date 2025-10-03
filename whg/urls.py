@@ -19,7 +19,6 @@ from accounts import orcid
 from accounts.views import profile_edit
 from datasets.views import PublicListsView  # , DataListsView
 from main import views
-from metrics.admin import RequestCountAdmin
 from resources.views import TeachingPortalView
 from sitemap.views import StaticViewSitemap, ToponymSitemap
 from utils import mapdata
