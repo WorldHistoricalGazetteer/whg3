@@ -1,0 +1,43 @@
+{% extends "phonetics/_base.html" %}
+{% block page_title %}Rows that are clearly broken{% endblock %}
+{% block phonetics_content %}
+<h5>Rows that are clearly broken</h5>
+<p class="text-muted">
+  {{ total }} row{{ total|pluralize }} in {{ files }} language{{ files|pluralize }} have a fault a computer
+  can find on its own — for example a letter typed with the wrong character.
+</p>
+<p class="text-muted">
+  <strong>You do not need to answer these.</strong> They are not questions about any language.
+  We list them here so they get fixed, and keep them out of your way.
+</p>
+
+<div class="mb-3">
+  <a class="btn btn-sm btn-{% if not selected %}primary{% else %}outline-secondary{% endif %}" href="{% url 'phonetics:lint' %}">All</a>
+  {% for t in tally %}
+    <a class="btn btn-sm btn-{% if selected == t.code %}primary{% else %}outline-secondary{% endif %}"
+       href="?code={{ t.code }}" title="{{ t.why }}">{{ t.label }} ({{ t.count }})</a>
+  {% endfor %}
+</div>
+
+{% for t in tally %}{% if not selected or selected == t.code %}
+  <p class="small text-muted"><strong>{{ t.label }}:</strong> {{ t.why }}</p>
+{% endif %}{% endfor %}
+
+<div class="table-responsive">
+<table class="table table-sm align-middle">
+  <thead><tr><th>Language</th><th>Letter</th><th>Sound now</th><th>Codepoints</th><th>Fault</th><th></th></tr></thead>
+  <tbody>
+  {% for rule in rules %}
+  <tr>
+    <td class="small"><code>{{ rule.ruleset.code }}</code></td>
+    <td class="grapheme-sm" lang="{{ rule.ruleset.language_code }}">{{ rule.orth }}</td>
+    <td class="ipa-inline">{{ rule.current_ipa }}</td>
+    <td class="small font-monospace text-muted">{{ rule.ipa_codepoints }}</td>
+    <td class="small">{% for d in rule.lint_details %}<span class="badge text-bg-danger" title="{{ d.why }}">{{ d.label }}</span> {% endfor %}</td>
+    <td class="text-end"><a class="small" href="{% url 'phonetics:rule' rule.pk %}">open</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

@@ -76,6 +76,7 @@ urlpatterns = [
                   path('datasets/', include('datasets.urls')),
                   path('elastic/', include('elastic.urls')),
                   path('main/', include('main.urls')),  # utility urls/views
+                  path('phonetics/', include('phonetics.urls')),
                   path('places/', include('places.urls')),
                   path('resources/', include('resources.urls')),
                   path('search/', include('search.urls')),

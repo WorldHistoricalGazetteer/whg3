@@ -1,0 +1,103 @@
+{% comment %}
+  Contribution terms, as a modal fragment (SG, 2026-09-07).
+
+  A bare fragment: no `extends`, and it supplies its own .modal-header, because
+  whg-modal.js only prepends the default header when the response has none.
+
+  ⚠ The form posts NORMALLY to the full-page terms view rather than over AJAX.
+  That is deliberate. Agreeing is a once-per-contributor act that must be
+  recorded before anything else happens, and a normal POST means the redirect,
+  the `next` round trip and the "you agreed on …" state all work with no
+  JavaScript involved. An AJAX submit here would add a second code path through
+  the one gate the app must never get wrong.
+
+  The standalone page at /phonetics/terms/ stays, and is what this posts to. It
+  is also the fallback whg-modal.js offers ("open it in a new tab") if the
+  fetch fails.
+{% endcomment %}
+<div class="modal-header">
+  <h5 class="modal-title">
+    <img alt="WHG" height="38" src="/static/images/whg_logo.svg" width="50">
+    Before you start
+  </h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<div class="modal-body phonetics">
+{% if not terms %}
+  <div class="alert alert-warning py-3 px-3 mb-0">
+    <p class="mb-1"><strong>Suggestions are closed just now.</strong> We cannot accept
+      suggestions at the moment, because the terms you would be agreeing to have not been
+      settled yet.</p>
+    <p class="mb-0 small">We would rather wait than ask you to give your work under wording
+      nobody has agreed. You can still read everything here.</p>
+  </div>
+{% else %}
+  <p>Thank you for helping. Before you add anything, here is what happens to your work.
+    It is short, and there are no surprises in it.</p>
+
+  <div class="row g-2 mb-3">
+    <div class="col-md-6"><div class="card h-100 border-success"><div class="card-body py-2">
+      <h6 class="mb-1"><i class="fas fa-user-pen text-success me-1"></i>Your name stays with your work</h6>
+      <p class="small mb-0">You choose whether to be named, and how. You can also help without
+        being named. Either is fine, and you can change your mind later.</p>
+    </div></div></div>
+    <div class="col-md-6"><div class="card h-100 border-success"><div class="card-body py-2">
+      <h6 class="mb-1"><i class="fas fa-scale-balanced text-success me-1"></i>Free for anyone to use, with no strings</h6>
+      <p class="small mb-0">You place your suggestions in the public domain
+        ({% if terms.licence %}<a href="{{ terms.licence.url }}" target="_blank" rel="noopener">{{ terms.licence.label }}</a>{% else %}{{ terms.licence_spdx }}{% endif %}),
+        giving up whatever rights you might have in them. We credit you by name because we
+        think it right, not because the licence makes anyone — including us — do it.</p>
+    </div></div></div>
+    <div class="col-md-6"><div class="card h-100"><div class="card-body py-2">
+      <h6 class="mb-1"><i class="fas fa-hand text-secondary me-1"></i>Nothing changes automatically</h6>
+      <p class="small mb-0">What you send is a <strong>suggestion</strong>. A person reads the
+        suggestions and decides. Your answer never goes straight into WHG.</p>
+    </div></div></div>
+    <div class="col-md-6"><div class="card h-100"><div class="card-body py-2">
+      <h6 class="mb-1"><i class="fas fa-people-arrows text-secondary me-1"></i>Disagreeing is welcome</h6>
+      <p class="small mb-0">If two people give different answers, we keep both. Nobody's answer
+        is deleted or overruled.</p>
+    </div></div></div>
+  </div>
+
+  {% if not terms.signed_off %}
+    <p class="small text-muted"><i class="fas fa-triangle-exclamation me-1"></i>These terms are
+      still a draft, so this is open to testers only for now.</p>
+  {% endif %}
+
+  <details class="mb-3">
+    <summary class="small">Read the full wording ({{ terms.title }}, version {{ terms.version }})</summary>
+    <div class="terms-body small border rounded p-3 mt-2">{{ terms.body|linebreaks }}</div>
+  </details>
+
+  {% if agreement %}
+    <div class="alert alert-success py-2 px-3 mb-0">
+      You agreed on {{ agreement.accepted_at|date:"j M Y" }}.
+      {% if agreement.credit_public and agreement.credit_name %}
+        You are credited as <strong>{{ agreement.credit_name }}</strong>.
+      {% else %}You asked not to be named.{% endif %}
+      <a href="{% url 'phonetics:terms' %}" class="ms-1">Change how you are credited</a>.
+    </div>
+  {% elif needs_login %}
+    <p class="mb-0">
+      <a href="{% url 'accounts:login' %}?next={{ next|urlencode }}">Sign in</a> to agree and
+      start suggesting. You can read everything on this site without an account — signing in
+      is only so your work carries your name and so we know what you agreed to.
+    </p>
+  {% elif needs_login %}
+    <p class="mb-0">
+      <a href="{% url 'accounts:login' %}?next={{ next|urlencode }}">Sign in</a> to agree and
+      start suggesting. You can read everything here without an account — signing in is only
+      so your work carries your name and so we know what you agreed to.
+    </p>
+  {% else %}
+    <form method="post" action="{% url 'phonetics:terms' %}?next={{ next|urlencode }}">
+      {% csrf_token %}
+      {% include "phonetics/_agreement_fields.html" %}
+      <button class="btn btn-primary">Agree and start</button>
+      <a class="btn btn-link btn-sm" href="{% url 'phonetics:terms' %}">Open as a full page</a>
+    </form>
+  {% endif %}
+{% endif %}
+</div>

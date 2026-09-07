@@ -1,0 +1,257 @@
+{% extends "phonetics/_base.html" %}
+{% load static %}
+{% block page_title %}{{ rule.ruleset.slug }} · {{ rule.orth }}{% endblock %}
+{% block phonetics_content %}
+
+<div class="d-flex flex-wrap align-items-baseline gap-2 mb-1">
+  <a href="{% url 'phonetics:ruleset' rule.ruleset.slug %}" class="small">{{ rule.ruleset.label }}</a>
+  <code class="small text-muted">{{ rule.ruleset.code }}</code>
+  {% include "phonetics/_posture.html" with ruleset=rule.ruleset %}
+  {% include "phonetics/_status.html" with rule=rule %}
+</div>
+
+{% if rule.ruleset.posture == 'proposed' %}
+<div class="alert alert-info py-2 px-3">
+  <strong>This is a suggestion, not in use yet.</strong> WHG wrote it. Nobody has checked it.
+  <br>The question is: <em>is this sound right?</em>
+</div>
+{% else %}
+<div class="alert alert-secondary py-2 px-3">
+  <strong>WHG uses this sound right now.</strong> Nobody has checked it — it is in use only
+  because nobody has said it is wrong.
+  <br>The question is: <em>is this sound wrong?</em> Please answer “right” only if you have
+  really looked.
+</div>
+{% endif %}
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="row align-items-center g-3">
+      <div class="col-auto text-center">
+        <div class="grapheme">{{ rule.orth }}</div>
+        <div class="small text-muted font-monospace">{{ rule.orth_codepoints }}</div>
+      </div>
+      <div class="col-auto display-6 text-muted">&rarr;</div>
+      <div class="col-auto text-center">
+        <div class="ipa">{% if rule.current_ipa %}{{ rule.current_ipa }}{% else %}<span class="text-muted fst-italic">(blank — produces nothing)</span>{% endif %}</div>
+        <div class="small text-muted font-monospace">{{ rule.ipa_codepoints }}</div>
+      </div>
+      <div class="col">
+        <div class="small text-muted">
+          {% if rule.corpus_frequency is not None %}
+            This letter appears in <strong>{{ rule.corpus_frequency }}</strong> place name{{ rule.corpus_frequency|pluralize }}.
+          {% else %}
+            <span title="We have not counted this yet. It does not mean zero.">We have not counted how many place names use this letter.</span>
+          {% endif %}
+        </div>
+        {% if rule.lint_details %}
+          <div class="mt-2">
+          {% for defect in rule.lint_details %}
+            <div class="alert alert-danger py-1 px-2 small mb-1">
+              <strong>This row is broken: {{ defect.label }}.</strong> {{ defect.why }}
+              <br>You do not need to answer this one — it is a technical fault, not a question
+              about the language.
+            </div>
+          {% endfor %}
+          </div>
+        {% endif %}
+
+        {% if rule.truncated_to is not None %}
+          {% comment %}
+            A row whose value cannot take effect must say so on its face. This is
+            not a fault in the row — the value is well-formed — it is a limit of
+            what the consumer can carry, and it means the distinction the value
+            draws never reaches the matching model. A Burmese speaker who spots
+            ဃ → ɡʰ in a language with no voiced aspirates is RIGHT that it looks
+            wrong, and would be spending their judgement on something the
+            pipeline erases first.
+          {% endcomment %}
+          <div class="alert alert-warning py-2 px-2 small mt-2 mb-1">
+            <strong>Only part of this sound survives.</strong> WHG keeps
+            <code class="ipa-inline">{{ rule.truncated_to|default:"nothing" }}</code>
+            and discards the rest, so anything you change about the discarded part
+            <strong>cannot make any difference</strong> to how names are matched.
+            <br>Correcting the part that <em>does</em> survive is still worth doing.
+          </div>
+        {% endif %}
+
+        {% if not rule.lint_details and rule.truncated_to is None %}
+          {% comment %}
+            A clean machine check must not read as reassurance. The clearest case
+            we have found is Burmese ha-hto: ှ → ʰ passes every automatic test,
+            because a lone modifier is a legitimate value — and it is wrong, since
+            ha-hto on a sonorant marks devoicing rather than aspiration. It affects
+            9,647 names. The row that most needed a human was the row the machine
+            passed, so the page says so rather than leaving silence to be read as
+            approval.
+          {% endcomment %}
+          <div class="small text-muted mt-2">
+            Our automatic checks found nothing wrong with this row.
+            <strong>That does not mean the sound is right</strong> — a computer can only see
+            that the value is usable, not whether it is correct for this letter.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if rule.draft_note %}
+<div class="card border-info mb-3"><div class="card-body py-2">
+  <h6 class="mb-1">Why this value was drafted</h6>
+  <p class="small mb-0">{{ rule.draft_note }}</p>
+  <p class="small text-muted mb-0 mt-1">
+    These are the notes of the person who wrote it. If they sound unsure, that is exactly
+    where your help is worth most.
+  </p>
+</div></div>
+{% endif %}
+
+{% if counterpart_rule %}
+<div class="alert alert-secondary py-2 px-3 small">
+  <strong>What this would replace.</strong> The
+  {% if rule.ruleset.posture == 'proposed' %}version WHG uses today{% else %}WHG draft{% endif %}
+  gives this letter
+  {% if counterpart_rule.current_ipa %}<code class="ipa-inline">{{ counterpart_rule.current_ipa }}</code>{% else %}<em>a blank value</em>{% endif %}
+  (<a href="{% url 'phonetics:rule' counterpart_rule.pk %}">see it</a>).
+  {% if counterpart_rule.current_ipa == rule.current_ipa %}
+    The two agree, so this row is not a change.
+  {% else %}
+    So you are judging a <strong>change</strong>, not just a sound.
+  {% endif %}
+</div>
+{% endif %}
+
+{% if rule.examples %}
+<h6>Real place names that use this letter</h6>
+<table class="table table-sm small">
+  <thead><tr><th>Place name</th><th>What WHG hears today</th></tr></thead>
+  <tbody>
+  {% for ex in rule.examples %}
+    <tr><td lang="{{ rule.ruleset.language_code }}">{{ ex.name }}</td>
+        <td class="font-monospace">{{ ex.output }}
+          {% if ex.complete is False %}<span class="badge text-bg-warning">incomplete</span>{% endif %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p class="text-muted">We have no examples for this letter yet.
+  <a href="{% url 'phonetics:sandbox' rule.ruleset.slug %}">Try a place name yourself</a>.</p>
+{% endif %}
+
+{% if others %}
+<h6 class="mt-4">What other people said</h6>
+<p class="text-muted">We keep every answer, including ones that disagree. Nothing is deleted
+  or overruled.</p>
+<ul class="list-unstyled">
+  {% for r in others %}
+  <li class="border-start ps-2 mb-2">
+    <span class="badge text-bg-{% if r.verdict == 'accept' %}success{% elif r.verdict == 'correct' %}warning{% else %}info{% endif %}">{{ r.get_verdict_display }}</span>
+    {% if r.proposed_ipa %}<code class="ipa-inline">{{ r.proposed_ipa }}</code>{% endif %}
+    <span class="small text-muted">
+      {% if r.agreement and r.agreement.credit_public and r.agreement.credit_name %}{{ r.agreement.credit_name }}{% else %}a reviewer{% endif %}{% if r.competence_level %}, self-declared {{ r.competence_level }}{% endif %},
+      {{ r.confidence }} confidence, {{ r.created|date:"j M Y" }}
+    </span>
+    {% if r.is_stale %}<span class="badge text-bg-dark" title="Made against “{{ r.reviewed_ipa }}”, which is not what the rule says now.">about a superseded value</span>{% endif %}
+    {% if r.adopted_upstream_at %}<span class="badge text-bg-success">adopted upstream</span>{% endif %}
+    {% if r.comment %}<div class="small">{{ r.comment }}</div>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if not can_contribute %}
+  <div class="alert alert-secondary py-2 px-3 small">
+    {% if needs_login %}
+      <a href="{% url 'accounts:login' %}?next={{ request.path }}">Sign in</a> to suggest a change.
+      You can read everything above without signing in.
+    {% else %}
+      <a data-whg-modal="/phonetics/terms/modal/?next={{ request.get_full_path|urlencode }}" href="#">Read and agree the contribution terms</a>
+      before recording a review.
+    {% endif %}
+  </div>
+{% else %}
+<h6 class="mt-4">{% if mine %}Change your answer{% else %}Your answer{% endif %}</h6>
+{% if mine %}
+<p class="small text-muted">You answered on {{ mine.created|date:"j M Y" }}:
+  <strong>{{ mine.get_verdict_display|lower }}</strong>{% if mine.proposed_ipa %}
+  (<code>{{ mine.proposed_ipa }}</code>){% endif %}.
+  Answering again saves a new answer and keeps the old one.</p>
+{% endif %}
+
+<form method="post" id="review-form" novalidate>
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ request.GET.next }}">
+  {% if form.non_field_errors %}<div class="alert alert-danger py-2 px-3 small">{{ form.non_field_errors }}</div>{% endif %}
+
+  <div class="btn-group mb-3" role="group">
+    {% for value, label in form.fields.verdict.choices %}
+      <input type="radio" class="btn-check" name="verdict" id="v-{{ value }}" value="{{ value }}"
+             {% if form.verdict.value == value %}checked{% endif %} required>
+      <label class="btn btn-outline-{% if value == 'accept' %}success{% elif value == 'correct' %}warning{% else %}info{% endif %}" for="v-{{ value }}">{{ label }}</label>
+    {% endfor %}
+  </div>
+
+  <div id="correction-box" class="mb-3" hidden>
+    <label class="form-label small mb-1" for="id_proposed_ipa">The correct sound (IPA)</label>
+    <input type="text" class="form-control ipa-input" name="proposed_ipa" id="id_proposed_ipa"
+           value="{{ form.proposed_ipa.value|default:'' }}" autocomplete="off"
+           data-current="{{ rule.current_ipa }}">
+    <div class="form-text">
+      Leave this empty if the letter makes no sound of its own. That is a normal answer.
+      We check what you type as you go, so you cannot save something WHG cannot read.
+    </div>
+    {% for e in form.proposed_ipa.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+    <div id="ipa-feedback" class="small mt-1"></div>
+    <div id="ipa-preview" class="small mt-2"></div>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label small mb-1" for="id_confidence">How sure are you?</label>
+    <select class="form-select form-select-sm w-auto" name="confidence" id="id_confidence">
+      {% for value, label in form.fields.confidence.choices %}
+        <option value="{{ value }}" {% if value == 'medium' %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label small mb-1" for="id_comment">Comment (optional)</label>
+    <textarea class="form-control" name="comment" id="id_comment" rows="3">{{ form.comment.value|default:'' }}</textarea>
+  </div>
+
+  <button class="btn btn-primary" type="submit">Record</button>
+  {% if next_rule %}
+    <a class="btn btn-link" href="{% url 'phonetics:rule' next_rule.pk %}">Skip this row &rarr;</a>
+  {% else %}
+    <a class="btn btn-link" href="{% url 'phonetics:queue' %}">Skip this row &rarr;</a>
+  {% endif %}
+  <span class="small text-muted ms-2">Skipping saves nothing. We never treat it as agreement.</span>
+</form>
+{% endif %}
+
+{% if questions %}
+<div class="alert alert-light border mt-4 py-2 px-3 small">
+  <strong>There is a bigger question about this language:</strong>
+  {% for q in questions %}<a href="{% url 'phonetics:question' q.slug %}">{{ q.title }}</a>{% if not forloop.last %}; {% endif %}{% endfor %}
+</div>
+{% endif %}
+
+{% if history %}
+<details class="mt-4"><summary class="small text-muted">Earlier answers on this letter ({{ history|length }})</summary>
+  <ul class="small mt-2">
+    {% for r in history %}<li>{{ r.created|date:"j M Y" }} — {{ r.get_verdict_display|lower }}
+      {% if r.proposed_ipa %}<code>{{ r.proposed_ipa }}</code>{% endif %} (superseded by a later review)</li>{% endfor %}
+  </ul>
+</details>
+{% endif %}
+
+<script id="phonetics-context" type="application/json">
+  {"ruleset": "{{ rule.ruleset.slug }}", "orth": "{{ rule.orth|escapejs }}",
+   "lang": "{{ rule.ruleset.language_code }}",
+   "examples": {{ rule.examples|safe|default:"[]" }},
+   "validateUrl": "{% url 'phonetics:api-validate' %}",
+   "transcribeUrl": "{% url 'phonetics:api-transcribe' %}"}
+</script>
+{% endblock %}

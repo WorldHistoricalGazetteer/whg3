@@ -1,0 +1,88 @@
+{% extends "phonetics/_base.html" %}
+{% block page_title %}Before you start{% endblock %}
+{% block phonetics_content %}
+
+{% if not terms %}
+  <h5>Suggestions are closed just now</h5>
+  <div class="alert alert-warning py-3 px-3">
+    <p class="mb-1">We are not able to accept suggestions at the moment, because the
+      terms you would be agreeing to have not been settled yet.</p>
+    <p class="mb-0 small">We would rather wait than ask you to give your work under wording
+      nobody has agreed. You can still read everything here.</p>
+  </div>
+{% else %}
+
+<h5>Thank you for helping</h5>
+<p>
+  Before you add anything, here is what happens to your work. It is short, and there are
+  no surprises in it.
+</p>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-6"><div class="card h-100 border-success"><div class="card-body py-3">
+    <h6 class="mb-1"><i class="fas fa-user-pen text-success me-1"></i>Your name stays with your work</h6>
+    <p class="small mb-0">You choose whether to be named, and how. You can also help without
+      being named. Either is fine, and you can change your mind later.</p>
+  </div></div></div>
+
+  <div class="col-md-6"><div class="card h-100 border-success"><div class="card-body py-3">
+    <h6 class="mb-1"><i class="fas fa-scale-balanced text-success me-1"></i>Free for anyone to use, with no strings</h6>
+    <p class="small mb-0">You place your suggestions in the public domain
+      ({% if terms.licence %}<a href="{{ terms.licence.url }}" target="_blank" rel="noopener">{{ terms.licence.label }}</a>{% else %}{{ terms.licence_spdx }}{% endif %},
+      <code>{{ terms.licence_spdx }}</code>), giving up whatever rights you might have in them.
+      We credit you by name because we think it right, not because the licence makes
+      anyone — including us — do it.</p>
+  </div></div></div>
+
+  <div class="col-md-6"><div class="card h-100"><div class="card-body py-3">
+    <h6 class="mb-1"><i class="fas fa-hand text-secondary me-1"></i>Nothing changes automatically</h6>
+    <p class="small mb-0">What you send is a <strong>suggestion</strong>. A person reads the
+      suggestions and decides. Your answer never goes straight into WHG.</p>
+  </div></div></div>
+
+  <div class="col-md-6"><div class="card h-100"><div class="card-body py-3">
+    <h6 class="mb-1"><i class="fas fa-people-arrows text-secondary me-1"></i>Disagreeing is welcome</h6>
+    <p class="small mb-0">If two people give different answers, we keep both. Nobody's answer
+      is deleted or overruled.</p>
+  </div></div></div>
+</div>
+
+{% if not terms.signed_off %}
+  <p class="small text-muted">
+    <i class="fas fa-triangle-exclamation me-1"></i>These terms are still a draft, so this
+    page is open to testers only for now.
+  </p>
+{% endif %}
+
+<details class="mb-4">
+  <summary class="small">Read the full wording ({{ terms.title }}, version {{ terms.version }})</summary>
+  <div class="terms-body small border rounded p-3 mt-2">{{ terms.body|linebreaks }}</div>
+</details>
+
+{% if agreement %}
+  <div class="alert alert-success py-2 px-3">
+    You agreed on {{ agreement.accepted_at|date:"j M Y" }}.
+    {% if agreement.credit_public and agreement.credit_name %}
+      You are credited as <strong>{{ agreement.credit_name }}</strong>{% if agreement.orcid %},
+      <a href="{{ agreement.orcid }}">{{ agreement.orcid }}</a>{% endif %}.
+    {% else %}You asked not to be named.{% endif %}
+  </div>
+  <a class="btn btn-primary" href="{% url 'phonetics:queue' %}">Start</a>
+  <details class="mt-3"><summary class="small">Change how you are credited</summary>
+    <form method="post" class="mt-2 col-md-8">
+      {% csrf_token %}
+      {% include "phonetics/_agreement_fields.html" %}
+      <button class="btn btn-sm btn-outline-primary">Save</button>
+    </form>
+  </details>
+{% else %}
+  <div class="card"><div class="card-body">
+    <form method="post" class="col-md-8">
+      {% csrf_token %}
+      {% include "phonetics/_agreement_fields.html" %}
+      <button class="btn btn-primary">Agree and start</button>
+    </form>
+  </div></div>
+{% endif %}
+{% endif %}
+{% endblock %}

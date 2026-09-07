@@ -1,0 +1,63 @@
+/* Grapheme review UI (place#252).
+   The one non-cosmetic rule here is the size of .grapheme: a reviewer is being
+   asked to distinguish characters that differ by a combining mark, and at body
+   size some of those differences are simply not visible. */
+.phonetics .grapheme { font-size: 3.5rem; line-height: 1.1; }
+.phonetics .grapheme-sm { font-size: 1.4rem; line-height: 1.2; }
+.phonetics .ipa { font-size: 2.2rem; line-height: 1.2; }
+.phonetics .ipa-inline,
+.phonetics .ipa-input {
+  font-family: "Charis SIL", "Doulos SIL", "Gentium Plus", "DejaVu Sans", serif;
+  font-size: 1.15rem;
+}
+.phonetics .grapheme-input { font-size: 1.6rem; line-height: 1.3; }
+.phonetics .residue { color: #b02a37; font-weight: 600; }
+.phonetics .terms-body { max-height: 22rem; overflow-y: auto; }
+.phonetics .columns-3 { column-count: 3; column-gap: 1.5rem; }
+@media (max-width: 767px) { .phonetics .columns-3 { column-count: 1; } }
+.phonetics .seg { display: inline-block; padding: 0 .25rem; margin-right: .15rem;
+                  border: 1px solid var(--bs-border-color); border-radius: .2rem; }
+.phonetics .score-bar { height: .6rem; background: var(--bs-secondary-bg); border-radius: .3rem; overflow: hidden; }
+.phonetics .score-bar > span { display: block; height: 100%; background: var(--bs-primary); }
+
+/* Progressive disclosure on the contribution-agreement form (place#252).
+ *
+ * CSS rather than JavaScript on purpose: the terms modal fetches its fragment
+ * over AJAX long after DOMContentLoaded, so a script bound at page load never
+ * sees these fields. A `:has()` rule needs no binding at all and works the
+ * moment the markup exists, in the modal and on the page alike.
+ *
+ * ⚠ The whole thing sits inside @supports, so a browser without `:has()` skips
+ * it and shows every field. That is the safe direction to fail: a visible field
+ * someone can answer, rather than a hidden one they cannot. The server
+ * normalises the answers regardless (AgreementForm.clean), so nothing here is
+ * load-bearing for correctness — only for how much is asked at once.
+ */
+/* The credit decision is its own step, separated from agreeing to the terms so
+ * that "who am I to you" and "do I accept this" do not read as one question. */
+.phonetics .credit-panel { background: var(--bs-tertiary-bg, #f8f9fa); }
+.phonetics .credit-panel-title { font-weight: 600; }
+
+/* Looks disabled, still receives clicks — see phonetics.js for why. */
+.phonetics button.looks-disabled { opacity: .55; cursor: not-allowed; }
+
+/* Bootstrap sizes a <legend> up to ~1.5rem, which made the credit question the
+ * largest text in the dialog — larger than the four cards above it, which carry
+ * more weight. It is a question, not a section title. */
+.phonetics .credit-question legend { font-size: 1rem; font-weight: 600; }
+
+@supports selector(:has(*)) {
+  .phonetics .credit-details { display: none; }
+  .phonetics form:has(input[name="wants_credit"][value="yes"]:checked) .credit-details {
+    display: block;
+  }
+
+  /* "Show my name publicly" appears only once a name has actually been typed.
+   * `:placeholder-shown` is true while the input is empty, which is why
+   * credit_name carries a placeholder — it is functional, not decoration. */
+  .phonetics .credit-public-row { display: none; }
+  .phonetics form:has(input[name="wants_credit"][value="yes"]:checked)
+    .credit-details:has(input[name="credit_name"]:not(:placeholder-shown)) .credit-public-row {
+    display: block;
+  }
+}

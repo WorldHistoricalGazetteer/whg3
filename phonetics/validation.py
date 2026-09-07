@@ -1,0 +1,268 @@
+"""Validation of proposed grapheme→IPA values, against the consumer.
+
+The rule sets reviewed here are consumed by Epitran/PanPhon in the indexing
+pipeline. A value that PanPhon cannot use is worthless however good the
+linguistic judgement behind it, so every proposal is checked against PanPhon
+*before* it is recorded — collecting expert time on a value the pipeline will
+silently discard is the worst outcome available (place#252, non-negotiable 2).
+
+Three things here are not obvious and each of them has already bitten this
+project (place#251):
+
+1. **Parsing successfully is not enough.** PanPhon accepts ``ⁿɡ`` and hands
+   back ``['ɡ']``; ``dʒʰ`` comes back as ``['d', 'ʒ']``. No error is raised —
+   the prenasalisation and the aspiration are simply gone. So the check is not
+   "did it parse?" but "do the parsed segments still spell what was submitted?"
+   See :func:`validate_ipa`.
+
+2. **Normalisation decides the answer, in both directions.** PanPhon segments
+   ``ẽ`` when it is decomposed (U+0065 U+0303) and drops the tilde when it is
+   composed (U+1EBD) — the same glyph, opposite outcomes. Meanwhile a
+   duplicate-grapheme check has to compare NFD because Unicode's composition
+   exclusions mean NFC will *not* merge Gurmukhi ``ਸ਼`` written precomposed
+   (U+0A36) with the same letter written decomposed (U+0A38 U+0A3C); a rule set
+   carrying both fails to load. Everything here is therefore normalised to NFD
+   before it is compared or stored.
+
+3. **Confusables render identically.** ASCII ``g`` (U+0067) is not IPA ``ɡ``
+   (U+0261) and PanPhon rejects it, but no reviewer will see the difference in
+   a form field. They are named explicitly rather than left to the generic
+   "unparseable" message, which would tell the reviewer nothing actionable.
+"""
+
+import functools
+import hashlib
+import logging
+import os
+import threading
+import unicodedata
+
+logger = logging.getLogger(__name__)
+
+# The literal EMPTY SET glyph. Epitran's own 139 native rule sets use it zero
+# times; the convention for "this grapheme produces nothing" is an empty field.
+# Left in a Phon value it is likely emitted straight into the output.
+EMPTY_SET = '∅'
+
+# Characters that render as (or are routinely mistaken for) an IPA symbol but
+# are a different codepoint. Keyed by the wrong character → (right character,
+# human explanation). Deliberately short: every entry is a defect actually
+# observed in the shipped rule sets or in review, not a speculative catalogue.
+CONFUSABLES = {
+    'g': ('ɡ', "ASCII 'g' (U+0067) is not the IPA voiced velar plosive "
+                         "'ɡ' (U+0261). They render alike; PanPhon rejects the ASCII one."),
+    ':': ('ː', "ASCII colon ':' (U+003A) is not the IPA length mark "
+                         "'ː' (U+02D0)."),
+    "'": ('ʼ', 'ASCII apostrophe (U+0027) is not the IPA ejective/modifier '
+               'letter apostrophe "ʼ" (U+02BC).'),
+    '?': ('ʔ', "ASCII question mark '?' (U+003F) is not the IPA glottal stop "
+                         "'ʔ' (U+0294)."),
+}
+
+# The affricate ligatures the IPA withdrew in 1989. They look exactly like what
+# they mean and the consumer rejects every one of them, so left as a generic
+# "not recognised" they tell a reviewer nothing they can act on. Two shipped rows
+# use 'ʤ' where 'dʒ' is wanted.
+LIGATURES = {
+    'ʤ': 'dʒ', 'ʧ': 'tʃ', 'ʥ': 'dʑ', 'ʨ': 'tɕ', 'ʣ': 'dz', 'ʦ': 'ts',
+}
+
+
+# Unicode general categories for characters that MODIFY a neighbouring sound
+# rather than being one: modifier letters (ʰ ʲ ʷ ː), non-spacing marks (the
+# nasal tilde), and modifier symbols.
+MODIFIER_CATEGORIES = {'Lm', 'Mn', 'Sk', 'Me'}
+
+
+def is_modifier_only(value):
+    """True if every character modifies a neighbouring segment instead of being one.
+
+    ⚠ This is the difference between a defect and a correct rule, and getting it
+    wrong costs reviewer attention rather than saving it. PanPhon finds no
+    segment in ``ː`` or ``̃`` on its own, because on its own it is not a segment —
+    it lengthens or nasalises whatever the previous rule emitted. 22 rows across
+    the shipped rule sets are exactly this (Sinhala anusvara → ``̃``, Tatar soft
+    sign → ``ʲ``, Burmese visarga → ``ː``), and calling them broken would send 22
+    non-questions to people who read the language.
+
+    Applies only when the WHOLE value is modifiers. ``zʰ`` is a base segment plus
+    an aspiration PanPhon then discards, which is a real defect and stays one.
+    """
+    value = nfd(value)
+    return bool(value) and all(
+        unicodedata.category(ch) in MODIFIER_CATEGORIES for ch in value)
+
+
+def nfd(value):
+    """Canonical decomposition — the one normal form used throughout this app.
+
+    NFC is wrong here: composition exclusions leave some letters unmergeable
+    under NFC, so two spellings of one grapheme survive as distinct keys and
+    the rule set will not load. NFD collapses them.
+    """
+    return unicodedata.normalize('NFD', value or '')
+
+
+def codepoints(value):
+    """``'ka'`` → ``'U+006B U+0061'``. Shown next to every grapheme in the UI so
+    that a confusable or a stray combining mark is visible rather than implied."""
+    return ' '.join('U+%04X' % ord(ch) for ch in value or '')
+
+
+@functools.lru_cache(maxsize=1)
+def feature_table():
+    """The PanPhon FeatureTable, built once.
+
+    Construction reads a 350KB CSV and compiles a large alternation regex, so
+    it must not happen per request.
+    """
+    import panphon
+    return panphon.FeatureTable()
+
+
+@functools.lru_cache(maxsize=1)
+def panphon_provenance():
+    """Which PanPhon a verdict was validated against.
+
+    Recorded on every Review. The rules are consumed on a different host by a
+    different install, so "it validated" is only meaningful alongside *what*
+    validated it — and the segment inventory lives in ``ipa_all.csv``, whose
+    digest identifies it far more precisely than a release number does. See
+    ``tests.py::PanphonPinTests`` for the pin this app targets.
+    """
+    import panphon
+    from importlib.metadata import version, PackageNotFoundError
+    try:
+        release = version('panphon')
+    except PackageNotFoundError:  # pragma: no cover - packaging accident only
+        release = 'unknown'
+    path = os.path.join(os.path.dirname(panphon.__file__), 'data', 'ipa_all.csv')
+    with open(path, 'rb') as fh:
+        digest = hashlib.sha256(fh.read()).hexdigest()
+    return {'panphon_version': release, 'ipa_all_sha256': digest}
+
+
+_warming = threading.Lock()
+
+
+def warm():
+    """Build the PanPhon table in the background, before anyone waits on it.
+
+    Measured on dev: the first validation call takes **4.1s**, the second 1.8s
+    (a second gunicorn worker), and every one after that 0.2s. That cost is
+    PanPhon reading a 350KB CSV and compiling a large alternation regex, once per
+    worker process — and it lands on a reviewer who has just typed the first
+    character of their first correction and sees nothing happen.
+
+    Called from the pages that lead to a validation, so the work happens while
+    the reviewer is reading the row. Non-blocking: the page never waits for it,
+    and if it fails the next real call simply builds the table itself.
+
+    Not done in ``AppConfig.ready()`` on purpose — that would add the same
+    seconds to every management command, ``migrate`` included.
+    """
+    if _warming.locked():
+        return
+    def _build():
+        try:
+            with _warming:
+                feature_table()
+        except Exception:  # noqa: BLE001 - warming is best-effort by definition
+            logger.debug('phonetics: PanPhon warm-up failed; the next call will retry')
+    threading.Thread(target=_build, daemon=True, name='panphon-warm').start()
+
+
+def segment(value):
+    """PanPhon's segmentation of ``value``, after NFD normalisation.
+
+    Returns ``(normalised_value, segments)``. Normalising first is not a
+    tidiness measure: without it a composed ``ẽ`` is reported as lossy when it
+    is perfectly good.
+    """
+    value = nfd(value)
+    if not value:
+        return value, []
+    return value, feature_table().ipa_segs(value)
+
+
+def validate_ipa(value, allow_empty=True):
+    """Check a proposed IPA value the way its consumer will.
+
+    Returns ``(normalised_value, errors, segments)`` where ``errors`` is a list
+    of ``{'code', 'message'}`` dicts — empty means the value is usable. The
+    caller must refuse to store anything with errors.
+
+    An empty value is legitimate: it is how Epitran spells "this grapheme
+    contributes nothing", and 37 rows across 24 shipped rule sets rely on it.
+    ``allow_empty=False`` is for callers who know the row must produce output.
+    """
+    value = nfd(value)
+    errors = []
+
+    if not value:
+        if not allow_empty:
+            errors.append({'code': 'empty',
+                           'message': 'A value is required for this row.'})
+        return value, errors, []
+
+    if EMPTY_SET in value:
+        errors.append({
+            'code': 'empty_set_glyph',
+            'message': "Contains the EMPTY SET glyph '∅' (U+2205). To mean "
+                       "'produces nothing', leave the value blank — Epitran's own "
+                       "rule sets never use this character, and it is likely to be "
+                       "emitted into the transcription.",
+        })
+
+    for wrong, (right, explanation) in CONFUSABLES.items():
+        if wrong in value:
+            errors.append({'code': 'confusable',
+                           'message': f'{explanation} Did you mean “'
+                                      f'{value.replace(wrong, right)}”?'})
+
+    for ligature, expansion in LIGATURES.items():
+        if ligature in value:
+            errors.append({
+                'code': 'ligature',
+                'message': f'“{ligature}” is a tie-bar ligature the IPA withdrew in 1989 '
+                           f'and the consumer does not recognise it. Write it as two '
+                           f'characters: “{value.replace(ligature, expansion)}”.',
+            })
+
+    if errors:
+        # A confusable or a stray '∅' fully explains the failure and names the
+        # fix. Appending "PanPhon recognises no IPA segment here" on top of that
+        # would be true, redundant, and would bury the actionable message.
+        return value, errors, []
+
+    try:
+        segments = feature_table().ipa_segs(value)
+    except Exception as exc:  # pragma: no cover - PanPhon does not normally raise
+        return value, errors + [{'code': 'parse_error',
+                                 'message': f'PanPhon could not parse this value: {exc}'}], []
+
+    rebuilt = ''.join(segments)
+    if rebuilt != value:
+        if not segments:
+            if is_modifier_only(value):
+                # Not a defect: it attaches to the sound before it. Reported as
+                # information so the reviewer knows what they have written.
+                return value, errors, segments
+            errors.append({
+                'code': 'unparseable',
+                'message': 'PanPhon recognises no IPA segment in this value, so the '
+                           'row would contribute nothing to matching.',
+            })
+        else:
+            # The silent-truncation case. Naming the surviving segments is the
+            # point: "invalid" would leave the reviewer guessing which contrast
+            # was the one that failed to survive.
+            errors.append({
+                'code': 'lossy',
+                'message': 'PanPhon parses this without complaint but keeps only '
+                           f'“{rebuilt}” ({" + ".join(segments)}). The rest is '
+                           'discarded silently, so the distinction you are drawing would '
+                           'not reach the matching model.',
+            })
+
+    return value, errors, segments

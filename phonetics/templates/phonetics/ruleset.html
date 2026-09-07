@@ -1,0 +1,119 @@
+{% extends "phonetics/_base.html" %}
+{% block page_title %}{{ ruleset.label }}{% if ruleset.is_proposed %} (suggested){% endif %}{% endblock %}
+{% block phonetics_content %}
+
+<div class="d-flex flex-wrap align-items-baseline gap-2">
+  <h5 class="mb-0">{{ ruleset.label }}</h5>
+  <code class="small">{{ ruleset.code }}</code>
+  {% include "phonetics/_posture.html" with ruleset=ruleset %}
+</div>
+{% if ruleset.conversion_rate is not None %}
+<p class="mb-2">WHG can currently read <strong>{{ ruleset.conversion_rate }}%</strong> of place
+  names written this way, all the way through.</p>
+{% endif %}
+<details class="small text-muted mb-3">
+  <summary>Where this list comes from</summary>
+  <div class="mt-1">
+    {{ ruleset.source_repo }} · <code>{{ ruleset.source_path }}</code> @ {{ ruleset.source_ref }}
+    {% if version %}<br>Last fetched {{ version.fetched_at|date:"j M Y H:i" }} ·
+    version <code>{{ version.blob_sha|slice:":8" }}</code>{% endif %}
+  </div>
+</details>
+
+{% if ruleset.posture == 'proposed' %}
+<div class="alert alert-info py-2 px-3"><strong>WHG wrote these and is not using them yet.</strong>
+  They are waiting for someone who reads the language to check them.</div>
+{% else %}
+<div class="alert alert-secondary py-2 px-3"><strong>WHG uses these now.</strong>
+  Nobody has checked them — they are in use only because nobody has said they are wrong.</div>
+{% endif %}
+
+{% if counterpart %}
+<p class="small">
+  {% if ruleset.posture == 'proposed' %}
+    This draft proposes to replace the rule set now in production:
+  {% else %}
+    A WHG draft proposes to replace this rule set:
+  {% endif %}
+  <a href="{% url 'phonetics:ruleset' counterpart.slug %}">{{ counterpart.slug }}</a>.
+  Answers are kept separately for each, because we are asking a different question about each.
+</p>
+{% elif ruleset.posture == 'proposed' %}
+<p class="text-muted">
+  WHG has no rules for this language yet, so these would be entirely new.
+</p>
+{% endif %}
+
+<div class="d-flex flex-wrap gap-3 small border-top border-bottom py-2 mb-3">
+  <span><strong>{{ progress.total }}</strong> letters</span>
+  <span class="text-muted"><strong>{{ progress.unreviewed }}</strong> nobody has looked</span>
+  <span class="text-success"><strong>{{ progress.accepted }}</strong> look right</span>
+  <span class="text-warning"><strong>{{ progress.corrected }}</strong> change suggested</span>
+  <span class="text-danger"><strong>{{ progress.disputed }}</strong> people disagree</span>
+  <span class="text-info"><strong>{{ progress.unsure }}</strong> not sure</span>
+  {% if progress.lint %}<span class="text-danger"><strong>{{ progress.lint }}</strong> clearly broken</span>{% endif %}
+</div>
+
+<p>
+  <a class="btn btn-sm btn-primary" href="{% url 'phonetics:queue' %}?ruleset={{ ruleset.slug }}">Check these letters</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'phonetics:sandbox' ruleset.slug %}">Test on real names</a>
+  <a class="btn btn-sm btn-outline-warning" href="{% url 'phonetics:propose-rule' ruleset.slug %}">Add a missing letter</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'phonetics:export-csv' ruleset.slug %}">Download</a>
+</p>
+<p class="small text-muted">
+  The download shows what the rules <em>would</em> look like with everyone's suggestions applied.
+  Letters nobody has checked are left as they are. So are letters people disagree about — we do
+  not pick a winner for you.
+</p>
+
+{% if questions %}
+<div class="alert alert-light border py-2 px-3 small">
+  <strong>Bigger questions about this language:</strong>
+  {% for q in questions %}<a href="{% url 'phonetics:question' q.slug %}">{{ q.title }}</a>{% if not forloop.last %}; {% endif %}{% endfor %}
+</div>
+{% endif %}
+
+{% if user.is_authenticated and not my_competence %}
+<p class="text-muted">You have not told us that you read this language.
+  <a href="{% url 'phonetics:competence' %}">Add it</a> and we will send you this work.</p>
+{% endif %}
+
+{% if new_rule_proposals %}
+<h6 class="mt-4">Letters people want to add</h6>
+<ul class="small">
+  {% for p in new_rule_proposals %}
+  <li><span class="grapheme-sm" lang="{{ ruleset.language_code }}">{{ p.orth }}</span>
+      &rarr; <code class="ipa-inline">{{ p.proposed_ipa|default:"(no sound)" }}</code>
+      <span class="text-muted">{{ p.orth_codepoints }}</span>
+      {% if p.adopted_upstream_at %}<span class="badge text-bg-success">added</span>{% endif %}</li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if progress.lint %}
+<p class="small text-muted"><span class="badge text-bg-danger">&nbsp;</span>
+  Rows shaded red have a technical fault. You do not need to answer those.</p>
+{% endif %}
+
+<div class="table-responsive">
+<table class="table table-sm align-middle">
+  <thead><tr><th>#</th><th>Letter</th><th>Codepoints</th><th>Sound</th>
+    {% if show_frequency %}<th class="text-end">Place names</th>{% endif %}
+    <th>State</th><th></th></tr></thead>
+  <tbody>
+  {% for rule in rules %}
+  <tr {% if rule.lint_codes %}class="table-danger"{% endif %}{% if not rule.present_upstream %} class="text-muted"{% endif %}>
+    <td class="small text-muted">{{ rule.row_index }}</td>
+    <td class="grapheme-sm" lang="{{ ruleset.language_code }}">{{ rule.orth }}</td>
+    <td class="small font-monospace text-muted">{{ rule.orth_codepoints }}</td>
+    <td class="ipa-inline">{% if rule.current_ipa %}{{ rule.current_ipa }}{% else %}<span class="text-muted fst-italic small">(blank)</span>{% endif %}</td>
+    {% if show_frequency %}<td class="text-end small">{% if rule.corpus_frequency is not None %}{{ rule.corpus_frequency }}{% else %}<span class="text-muted" title="Not counted yet. This is not zero.">not counted</span>{% endif %}</td>{% endif %}
+    <td>{% include "phonetics/_status.html" with rule=rule %}
+        {% if not rule.present_upstream %}<span class="badge text-bg-dark">no longer in the file</span>{% endif %}</td>
+    <td class="text-end"><a class="small" href="{% url 'phonetics:rule' rule.pk %}">review</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

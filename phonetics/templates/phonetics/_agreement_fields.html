@@ -1,0 +1,94 @@
+{% comment %}
+  The contribution-agreement fields, rendered from the form.
+
+  ⚠ ONE definition, two surfaces (the page and the modal). Do not hand-write
+  these inputs again: the labels previously existed in three places, the form's
+  own `accept` label was rendered nowhere, and the two template copies had
+  already drifted from it. A consent checkbox whose recorded wording differs
+  from the wording on screen is worse than no record.
+
+  **Asked in three stages, narrowing.** Attribution is a decision, so it is asked
+  as a question with no option pre-selected, and each answer only opens what it
+  makes relevant:
+
+    1. Do you want to be credited?          — always shown, nothing pre-selected
+    2. …under what name, with which ORCiD?  — only if yes, prefilled for approval
+    3. …shown publicly?                     — only once a name has been typed
+
+  The disclosure is **CSS, not JavaScript** (see phonetics.css). The modal fetches
+  this fragment over AJAX long after DOMContentLoaded, so a script bound at page
+  load would never see it; and if `:has()` is unsupported the whole progressive
+  rule is skipped and every field is simply visible, which is a safe fallback
+  rather than a broken form.
+
+  ⚠ Because the disclosure is presentational, the server does not trust it:
+  AgreementForm.clean() normalises the later answers to the first one. A field
+  someone never saw cannot end up in their consent record.
+
+  `accept` is absent on CreditForm (revising your credit is not re-agreeing), so
+  it is guarded rather than assumed.
+{% endcomment %}
+<div class="card credit-panel mb-3"><div class="card-body">
+<h6 class="credit-panel-title mb-3">
+  <i class="fas fa-id-card me-2" aria-hidden="true"></i>How you are credited
+</h6>
+
+<fieldset class="mb-3 credit-question">
+  <legend class="form-label mb-1">{{ form.wants_credit.label }}</legend>
+  {% for choice in form.wants_credit %}
+    <div class="form-check">
+      {{ choice.tag }}
+      <label class="form-check-label" for="{{ choice.id_for_label }}">{{ choice.choice_label }}</label>
+    </div>
+  {% endfor %}
+  {% for e in form.wants_credit.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+</fieldset>
+
+<div class="credit-details">
+  <div class="mb-3">
+    <label class="form-label" for="{{ form.credit_name.id_for_label }}">{{ form.credit_name.label }}</label>
+    {{ form.credit_name }}
+    <div class="form-text">{{ form.credit_name.help_text }}</div>
+    {% for e in form.credit_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label" for="{{ form.orcid.id_for_label }}">{{ form.orcid.label }}</label>
+    {{ form.orcid }}
+    <div class="form-text">{{ form.orcid.help_text }}</div>
+    {% for e in form.orcid.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+  </div>
+
+  <div class="form-check mb-3 credit-public-row">
+    {{ form.credit_public }}
+    <label class="form-check-label" for="{{ form.credit_public.id_for_label }}">{{ form.credit_public.label }}</label>
+    <div class="form-text">
+      Leave this unticked to be credited in WHG's own records without your name
+      appearing on the site.
+    </div>
+  </div>
+</div>
+</div></div>{# /credit-panel #}
+
+{% comment %}
+  Why the button is `aria-disabled` rather than `disabled`: a natively disabled
+  button receives no clicks, so it cannot explain itself. Someone who has chosen
+  "credit me", left the name empty and cannot see why the button will not work is
+  worse off than someone who is simply told. This keeps it focusable and
+  clickable, looks disabled, and answers when pressed.
+
+  The message is server-rendered and hidden, so it exists before any script runs
+  — the modal injects this fragment long after page load.
+{% endcomment %}
+<div class="alert alert-warning py-2 px-3 small agree-blocker" role="alert" hidden>
+  You chose to be credited, so please give a name to credit — or choose
+  <strong>“No — I would rather not be named”</strong> above.
+</div>
+
+{% if form.accept %}
+<div class="form-check mb-3">
+  {{ form.accept }}
+  <label class="form-check-label" for="{{ form.accept.id_for_label }}">{{ form.accept.label }}</label>
+  {% for e in form.accept.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+</div>
+{% endif %}
