@@ -1098,7 +1098,10 @@ def beta_status_view(request):
     is_staff = request.user.is_staff
     sections = []
     for sec in BETA_STATUS_SECTIONS:
-        items = [dict(it, stage_label=_BETA_STAGE_META[it["stage"]][0],
+        # `staff` is defaulted rather than left absent: the template asks every item for it,
+        # and a missing key makes Django raise (and log) VariableDoesNotExist per item.
+        items = [dict(it, staff=it.get("staff", False),
+                      stage_label=_BETA_STAGE_META[it["stage"]][0],
                       stage_class=_BETA_STAGE_META[it["stage"]][1])
                  for it in sec["items"] if is_staff or not it.get("staff")]
         if items:
