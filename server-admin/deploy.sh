@@ -91,13 +91,15 @@ if [ "$ENV" = "prod" ]; then
     fi
     SITE_DIR="$PROD_DIR"
     BRANCH="$PROD_BRANCH"
-    PREFIX="${PROD_ENV_CONTEXT}_${BRANCH}"
+    ENV_CONTEXT="$PROD_ENV_CONTEXT"
+    PREFIX="${ENV_CONTEXT}_${BRANCH}"
 else
     SITE_DIR="$DEV_DIR"
     BRANCH="${BRANCH_OVERRIDE:-$DEV_BRANCH}"
     # Match load_env.py branch normalization used by docker-compose template.
     BRANCH_SAFE="${BRANCH//\//--}"
-    PREFIX="${DEV_ENV_CONTEXT}_${BRANCH_SAFE}"
+    ENV_CONTEXT="$DEV_ENV_CONTEXT"
+    PREFIX="${ENV_CONTEXT}_${BRANCH_SAFE}"
 fi
 
 WEB="web_${PREFIX}"
@@ -179,6 +181,14 @@ case "$ACTION" in
     restart|full)
         if [ -z "$RUNNING" ]; then
             echo "── No running containers found. Starting stack..."
+            $COMPOSE up -d
+        elif [ -n "$IMAGE_TAG" ]; then
+            # `docker compose restart` restarts the containers that already exist and
+            # never re-reads `image:`, so a plain restart would leave the stack on the
+            # old image while env_template.py claimed the new one — silently, which is
+            # the failure set_image_tag.py exists to prevent. `up -d` recreates exactly
+            # the services whose image or config changed.
+            echo "── Moving containers onto image $IMAGE_TAG..."
             $COMPOSE up -d
         elif [ "$ACTION" = "full" ]; then
             echo "── Restarting all containers..."

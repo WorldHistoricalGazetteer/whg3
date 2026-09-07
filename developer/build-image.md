@@ -36,3 +36,49 @@ python3 ./server-admin/build_docker.py patch push --no-cache
 docker build -t worldhistoricalgazetteer/web:<x.x.x> --build-arg USER_NAME=whgadmin .
 docker push worldhistoricalgazetteer/web:<x.x.x>
 ```
+
+### Point a site at the new image
+
+Building and pushing is only half of it: each site keeps running whatever tag
+`/home/whgadmin/sites/env_template.py` names until something moves it. `deploy.sh`
+does that in the same command as the deploy, so the bump cannot be forgotten:
+
+```bash
+ssh whg 'bash ~/sites/dev-whgazetteer-org/server-admin/deploy.sh dev restart --image=1.0.19'
+```
+
+`--image=` implies a `docker compose up -d` rather than a `restart` — which is
+also why `--celery` is not needed with it, the worker and beat are recreated too.
+It has to, because
+`docker compose restart` restarts the containers that already exist and never
+re-reads `image:` — a plain restart would leave the stack on the old image while
+`env_template.py` claimed the new one, silently. `up -d` recreates exactly the
+services whose image or config changed.
+
+⚠ **Anything hand-installed inside a running container dies here.** That is the
+point — it is also how you check the image really carried what you built it for.
+
+### The base image (place#254)
+
+The image is built on **`python:3.10-slim-bookworm`** (Debian 12). It was
+`python:3.10.7-slim-bullseye` until 2026-09-07, when the image stopped building at
+all: Debian 11's security pool no longer holds the packages its own index
+advertises, so `apt-get install` 404s (and, once the index's `Valid-Until` passed,
+`apt-get update` fails first with an expired-Release error instead — same cause).
+`security.debian.org` and `archive.debian.org` do not have those packages either.
+
+bookworm **keeps Python 3.10** (3.10.21), so this was an OS bump, not a Python bump.
+Two consequences to know about:
+
+- `netcat` is not an installable package name on bookworm — it is `netcat-openbsd`.
+- **GDAL moves**: bullseye `/usr/lib/libgdal.so.28` (3.2) → bookworm
+  `/usr/lib/x86_64-linux-gnu/libgdal.so.32` (3.6). The *directory* changes, not just
+  the soname. `whg/settings.py` therefore reads `GDAL_LIBRARY_PATH` (and
+  `GEOS_LIBRARY_PATH`) from the environment, then `local_settings.py`, then the
+  image's path, so one image works both in the container and on a developer's box.
+  It is defined **once**; it used to be assigned twice in that file, and only the
+  second assignment took effect.
+
+`manage.py check` will catch a wrong GDAL path, but it will not notice a *behaviour*
+change across GDAL 3.2 → 3.6. Exercise geometry as well — a GEOS round trip, an OGR
+reprojection, and the datasets/areas paths.

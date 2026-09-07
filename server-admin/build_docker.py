@@ -107,13 +107,17 @@ def main():
         # whatever tag env_template.py names, and a pushed image nobody pointed at
         # is indistinguishable from no build at all until something ImportErrors.
         # Print the exact next command rather than relying on anyone remembering it.
+        # Both sites are printed on purpose: forgetting that prod exists is a
+        # different mistake from forgetting to move the tag at all.
         print("\n" + "─" * 72)
         print("NOT DEPLOYED YET. Each site keeps its current image tag until moved:")
         print(f"\n  ssh whg 'bash ~/sites/dev-whgazetteer-org/server-admin/deploy.sh "
-              f"dev restart --image={new_version} --celery'")
+              f"dev restart --image={new_version}'")
         print(f"\n  ssh whg 'bash ~/sites/whgazetteer-org/server-admin/deploy.sh "
-              f"prod restart --image={new_version} --celery'")
-        print("\nAdd --migrate if there are pending migrations. See developer/build-image.md.")
+              f"prod restart --image={new_version}'")
+        print("\n--image= recreates web + celery (a plain restart cannot pick up a new")
+        print("image), so --celery is not needed with it. Add --migrate if there are")
+        print("pending migrations. See developer/build-image.md.")
         print("─" * 72)
     else:
         print(f"Docker image built and tagged as {docker_image}:{new_version}, but not pushed to Docker Hub.")
