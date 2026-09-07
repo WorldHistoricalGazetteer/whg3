@@ -54,8 +54,15 @@ exist and never re-reads `image:` — a plain restart would leave the stack on t
 old image while `env_template.py` claimed the new one, silently.
 
 It names the services rather than running a bare `up -d`, and passes `--no-deps`:
-only the **running** containers that use the WHG image (web, celery worker/beat,
-flower) are recreated. Postgres, redis and hocuspocus are left alone. A bare
+only the **running** containers that use the WHG image are recreated. The list is
+asked of compose (`config --services`, then each service's running container's
+image) rather than hardcoded, so it cannot go stale — and because container names
+are not service names. Prod's `flower` service is `celery-flower_<prefix>`, so a
+hand-written mapping left prod's flower on the old image; a dry probe over both
+sites showed the derived list selecting `web celery_worker celery_beat` on dev and
+`web celery_worker celery_beat flower` on prod, leaving postgres, redis,
+hocuspocus and **ollama** alone. Recreating ollama would be felt on dev too, which
+shares the prod container over the `whg-llm` bridge. A bare
 `up -d` recreated the database container on dev on 2026-09-07 — which nobody
 running a flag called `--image=` expects to be in scope — and brought the whole
 stack up at once, OOM-killing celery twice on a host with no free memory. On prod

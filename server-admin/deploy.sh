@@ -13,6 +13,10 @@ DEV_ENV_CONTEXT="dev-whgazetteer-org"
 
 COMPOSE="docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env"
 
+# The image repo whose services --image= moves; anything else (postgres, redis,
+# hocuspocus, ollama) is infrastructure and must not be recreated with it.
+WHG_IMAGE="worldhistoricalgazetteer/web"
+
 # ─── Usage ───────────────────────────────────────────────────────────────────
 
 usage() {
@@ -36,9 +40,10 @@ Options:
                    Needed after a requirements.txt change: build_docker.py pushes the
                    image, this moves the site onto it. Edits DOCKER_IMAGE_TAG in
                    /home/whgadmin/sites/env_template.py (backed up first), then
-                   recreates ONLY the running services that use the WHG image
-                   (web, celery worker/beat, flower) with --no-deps. Postgres,
-                   redis and hocuspocus are never touched. Implies the recreate a
+                   recreates ONLY the running services whose container actually
+                   runs the WHG image (asked of compose, not hardcoded) with
+                   --no-deps. Postgres, redis, hocuspocus and ollama are never
+                   touched. Implies the recreate a
                    plain restart cannot do, so --celery is redundant with it.
   --celery    Also restart celery worker and beat (with 'restart')
   --migrate   Run Django migrations after deploy
@@ -216,13 +221,21 @@ case "$ACTION" in
             # twice on a host sitting at 9G/15G with nothing free. Only the services
             # that actually run the WHG image need to move.
             #
-            # Only services with a RUNNING container are named, so this moves what is
-            # deployed and never silently starts something that was deliberately down.
+            # The list is DERIVED, not hand-maintained: ask compose which services
+            # exist, skip the ones with no running container, and keep those whose
+            # container actually runs the WHG image. A hardcoded list goes stale when
+            # a service is added, and mapping service names to container names by hand
+            # gets it wrong — prod's `flower` service is `celery-flower_<prefix>`, not
+            # `flower_<prefix>`, so a hand-written mapping silently left prod's flower
+            # on the old image. Only RUNNING containers are named, so nothing that was
+            # deliberately stopped gets started.
             IMAGE_SERVICES=""
-            for pair in "web:$WEB" "celery_worker:$WORKER" "celery_beat:$BEAT" "flower:flower_${PREFIX}"; do
-                if docker ps --filter "name=^${pair#*:}$" --format '{{.Names}}' | grep -q .; then
-                    IMAGE_SERVICES="$IMAGE_SERVICES ${pair%%:*}"
-                fi
+            for svc in $($COMPOSE config --services 2>/dev/null); do
+                cid=$($COMPOSE ps -q "$svc" 2>/dev/null | head -1)
+                [ -n "$cid" ] || continue
+                case "$(docker inspect "$cid" --format '{{.Config.Image}}' 2>/dev/null)" in
+                    "$WHG_IMAGE":*|"$WHG_IMAGE") IMAGE_SERVICES="$IMAGE_SERVICES $svc" ;;
+                esac
             done
             if [ -z "$IMAGE_SERVICES" ]; then
                 # Nothing recognisable is running; the earlier -z "$RUNNING" branch
