@@ -13,6 +13,10 @@ DEV_ENV_CONTEXT="dev-whgazetteer-org"
 
 COMPOSE="docker-compose -f docker-compose-autocontext.yml --env-file ./.env/.env"
 
+# The image repo whose services --image= moves; anything else (postgres, redis,
+# hocuspocus, ollama) is infrastructure and must not be recreated with it.
+WHG_IMAGE="worldhistoricalgazetteer/web"
+
 # ─── Usage ───────────────────────────────────────────────────────────────────
 
 usage() {
@@ -32,6 +36,15 @@ Action (default: restart):
 
 Options:
   --branch=<name>  Override the dev branch (default: staging; prod always uses main)
+  --image=<tag>    Point this site at a different Docker image tag before deploying.
+                   Needed after a requirements.txt change: build_docker.py pushes the
+                   image, this moves the site onto it. Edits DOCKER_IMAGE_TAG in
+                   /home/whgadmin/sites/env_template.py (backed up first), then
+                   recreates ONLY the running services whose container actually
+                   runs the WHG image (asked of compose, not hardcoded) with
+                   --no-deps. Postgres, redis, hocuspocus and ollama are never
+                   touched. Implies the recreate a
+                   plain restart cannot do, so --celery is redundant with it.
   --celery    Also restart celery worker and beat (with 'restart')
   --migrate   Run Django migrations after deploy
   --collectstatic  Run Django collectstatic after deploy
@@ -45,17 +58,35 @@ Examples:
   deploy restart --celery             # dev, restart web + celery
   deploy prod recreate --migrate
   deploy prod recreate --collectstatic  # prod, recreate + collect static files
+  deploy --image=1.0.19 restart       # dev, move onto a freshly built image
   deploy --branch=api/crc-gateway     # dev, deploy a feature branch
   deploy pull --branch=api/crc-gateway  # dev, pull a feature branch only
 EOF
     exit 0
 }
 
+# ─── Body ────────────────────────────────────────────────────────────────────
+#
+# Everything below runs inside main(). That is not style: this script does
+# `git reset --hard` on the very checkout it is being read from, and bash reads a
+# script incrementally by byte offset. Replace the file mid-run and execution
+# resumes at an offset that now lands in the middle of some other line. It stayed
+# latent for as long as the file only changed between deploys; on 2026-09-07 a
+# deploy shipped a change to this script and ran it in the same breath.
+#
+# Bash parses a function completely before executing any of it, and the final
+# `main "$@"; exit $?` is read as one line, so nothing is read from disk after
+# main returns. The body is intentionally NOT re-indented — the wrap is a safety
+# property, and a whitespace-only diff over 180 lines would bury it.
+
+main() {
+
 # ─── Parse arguments ─────────────────────────────────────────────────────────
 
 ENV="dev"
 ACTION="restart"
 BRANCH_OVERRIDE=""
+IMAGE_TAG=""
 WITH_CELERY=false
 WITH_MIGRATE=false
 WITH_COLLECTSTATIC=false
@@ -66,6 +97,7 @@ for arg in "$@"; do
         dev|prod)     ENV="$arg" ;;
         pull|restart|full|recreate|status) ACTION="$arg" ;;
         --branch=*)   BRANCH_OVERRIDE="${arg#--branch=}" ;;
+        --image=*)    IMAGE_TAG="${arg#--image=}" ;;
         --celery)     WITH_CELERY=true ;;
         --migrate)    WITH_MIGRATE=true ;;
         --collectstatic) WITH_COLLECTSTATIC=true ;;
@@ -84,13 +116,15 @@ if [ "$ENV" = "prod" ]; then
     fi
     SITE_DIR="$PROD_DIR"
     BRANCH="$PROD_BRANCH"
-    PREFIX="${PROD_ENV_CONTEXT}_${BRANCH}"
+    ENV_CONTEXT="$PROD_ENV_CONTEXT"
+    PREFIX="${ENV_CONTEXT}_${BRANCH}"
 else
     SITE_DIR="$DEV_DIR"
     BRANCH="${BRANCH_OVERRIDE:-$DEV_BRANCH}"
     # Match load_env.py branch normalization used by docker-compose template.
     BRANCH_SAFE="${BRANCH//\//--}"
-    PREFIX="${DEV_ENV_CONTEXT}_${BRANCH_SAFE}"
+    ENV_CONTEXT="$DEV_ENV_CONTEXT"
+    PREFIX="${ENV_CONTEXT}_${BRANCH_SAFE}"
 fi
 
 WEB="web_${PREFIX}"
@@ -135,6 +169,15 @@ fi
 
 # ─── Regenerate config ───────────────────────────────────────────────────────
 
+# The image tag lives in the server's env_template.py, which is not in the repo.
+# Bumping it here rather than by hand is the point: a pushed image whose tag never
+# moved leaves the site running the old one, with nothing to say so.
+if [ -n "$IMAGE_TAG" ]; then
+    echo "── Setting image tag to $IMAGE_TAG for $ENV_CONTEXT..."
+    sudo python3 ./server-admin/set_image_tag.py --site "$ENV_CONTEXT" --tag "$IMAGE_TAG"
+    echo ""
+fi
+
 echo "── Regenerating config..."
 sudo python3 ./server-admin/load_env.py
 echo ""
@@ -164,6 +207,45 @@ case "$ACTION" in
         if [ -z "$RUNNING" ]; then
             echo "── No running containers found. Starting stack..."
             $COMPOSE up -d
+        elif [ -n "$IMAGE_TAG" ]; then
+            # `docker compose restart` restarts the containers that already exist and
+            # never re-reads `image:`, so a plain restart would leave the stack on the
+            # old image while env_template.py claimed the new one — silently, which is
+            # the failure set_image_tag.py exists to prevent. `up -d` is what re-reads
+            # it.
+            #
+            # But name the services, and pass --no-deps. A bare `up -d` brings up the
+            # WHOLE stack: it recreated postgres on dev on 2026-09-07, which nobody
+            # running a flag called --image= expects a database container to be in
+            # scope for, and it starts everything at once — which OOM-killed celery
+            # twice on a host sitting at 9G/15G with nothing free. Only the services
+            # that actually run the WHG image need to move.
+            #
+            # The list is DERIVED, not hand-maintained: ask compose which services
+            # exist, skip the ones with no running container, and keep those whose
+            # container actually runs the WHG image. A hardcoded list goes stale when
+            # a service is added, and mapping service names to container names by hand
+            # gets it wrong — prod's `flower` service is `celery-flower_<prefix>`, not
+            # `flower_<prefix>`, so a hand-written mapping silently left prod's flower
+            # on the old image. Only RUNNING containers are named, so nothing that was
+            # deliberately stopped gets started.
+            IMAGE_SERVICES=""
+            for svc in $($COMPOSE config --services 2>/dev/null); do
+                cid=$($COMPOSE ps -q "$svc" 2>/dev/null | head -1)
+                [ -n "$cid" ] || continue
+                case "$(docker inspect "$cid" --format '{{.Config.Image}}' 2>/dev/null)" in
+                    "$WHG_IMAGE":*|"$WHG_IMAGE") IMAGE_SERVICES="$IMAGE_SERVICES $svc" ;;
+                esac
+            done
+            if [ -z "$IMAGE_SERVICES" ]; then
+                # Nothing recognisable is running; the earlier -z "$RUNNING" branch
+                # should have caught this, so say so rather than guessing wider.
+                echo "── No running WHG-image containers found for $PREFIX; nothing to move."
+                exit 1
+            fi
+            echo "── Moving onto image $IMAGE_TAG:$IMAGE_SERVICES"
+            # shellcheck disable=SC2086  # deliberate word-splitting of the service list
+            $COMPOSE up -d --no-deps $IMAGE_SERVICES
         elif [ "$ACTION" = "full" ]; then
             echo "── Restarting all containers..."
             $COMPOSE restart
@@ -213,3 +295,8 @@ if [ "$WITH_LOGS" = true ]; then
     docker logs -f "$WEB"
 fi
 
+}
+
+# One line on purpose: bash has both commands in hand before main runs, so it
+# never reads from the (possibly rewritten) file again.
+main "$@"; exit $?
