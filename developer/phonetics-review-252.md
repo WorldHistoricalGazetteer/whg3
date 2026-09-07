@@ -64,6 +64,33 @@ suggestions for agents working in `indexing`. They need not report back what
 they applied: the next sync notices a value that now equals a standing proposal
 and stamps it adopted.
 
+## ⚠ Before promoting any of this to `main`
+
+`main` is promoted by cherry-pick, and one commit in this app's history is a trap.
+
+**`a751b5729`** ("contribution terms open in a modal") also carries the place#254
+**bookworm `Dockerfile` and the GDAL block in `whg/settings.py`** — swept in by a
+`git add -A` in a working tree another session was editing. Cherry-picking it to `main`
+for the phonetics work would put a **bookworm GDAL path onto prod, which still runs the
+bullseye image**, and the site would 502 on `libgdal.so.32: cannot open shared object
+file`. That is not hypothetical: it is exactly how dev went down on 2026-09-07.
+
+It is fixed **forward**, not by rewriting published history (`staging` is shared by four
+sessions and sits 168 commits ahead of `main`):
+
+| commit | what it is |
+|---|---|
+| `fb014071e` | reverts the OS change out of `a751b5729` |
+| `30fa5f3dd` | puts the identical content back under a place#254 message of its own |
+
+The pair is **net-zero on the tree** — verified by hashing both files before and after —
+so nothing was lost. What changed is that place#254 now has a commit that can be read,
+picked and reverted on its own, and `a751b5729` + `fb014071e` together net to
+phonetics-only.
+
+**So: if you cherry-pick `a751b5729`, take `fb014071e` with it.** And never promote
+`whg/settings.py` wholesale — that is a standing rule for other reasons too.
+
 ## Things that will look like bugs and are not
 
 - **A rule set's identity is its `slug`, not its `code.`** `mya-Mymr` exists both
