@@ -878,7 +878,7 @@ def wb_gazetteer_group_view(request):
 # Stages: 'beta' = usable now by staff + invited testers, not yet public; 'dev' = being built, not
 # yet testable; 'shipped' = live for everyone / changes an existing workflow; 'horizon' = planned
 # direction, NOT a dated commitment. Edit BETA_STATUS_UPDATED whenever this list changes.
-BETA_STATUS_UPDATED = "11 July 2026"
+BETA_STATUS_UPDATED = "7 September 2026"
 BETA_STATUS_SECTIONS = [
     {
         "heading": "In development & beta preview",
@@ -887,48 +887,154 @@ BETA_STATUS_SECTIONS = [
             {"name": "Map your Data", "stage": "beta", "version": "3.3",
              "body": "Turn a spreadsheet or list of place names into located, dated, standardised places — "
                      "matched to the World Historical Gazetteer, cleaned up, and ready to map, share, or "
-                     "contribute. Import from CSV/TSV/JSON, Excel, or a Google Sheet — or extract place "
-                     "names straight from free text you paste or upload; reconcile against WHG (including "
-                     "historical periods via PeriodO); add coordinates, dates, and place types; enrich with "
-                     "Wikipedia links from matched records; validate; and export or contribute — all in your "
-                     "browser, so your data stays on your device."},
+                     "contribute. Import from CSV/TSV/JSON, Excel, GeoJSON, or a Google Sheet — or have "
+                     "place names picked out of free text you paste or upload; match against WHG (including "
+                     "historical periods via PeriodO); add coordinates, shapes, dates, and place types; "
+                     "gather variant spellings of the same value into one; enrich with Wikipedia links from "
+                     "matched records; validate; and export or contribute. Your table stays in your browser. "
+                     "Only the names you look up — and any text you ask WHG to read for place names — are "
+                     "sent to our servers, and the place-name reader is a small language model running on "
+                     "WHG's own machines rather than a commercial AI service. The matching itself keeps "
+                     "improving: it tries a name's natural variants, reads the head word of a name like "
+                     "'Ashby, Leicestershire', tells you how confident it is, and keeps the rows you have "
+                     "already decided when you run it again. Sounds-like matching in your browser and the "
+                     "same matching on our servers now agree with each other, which had been quietly "
+                     "costing matches for names in non-Latin scripts."},
             {"name": "Collaborative Workbench", "stage": "beta", "version": "3.3",
-             "body": "Work on the same reconciliation project as a team, together and in real time, with "
-                     "shared roles and a project owned by your group rather than a single account."},
+             "body": "Work on the same project as a team, together and in real time, with shared roles and a "
+                     "project owned by your group rather than a single account. You can invite colleagues by "
+                     "email whether or not they already have a WHG account, and talk to each other while you "
+                     "work in a chat that is never stored."},
             {"name": "Browser-first, collaborative Collections", "stage": "beta", "version": "3.3",
              "body": "Build and curate Collections directly in the browser and together as a team, rather "
                      "than through multi-step server workflows — the same local-first model as Map your "
                      "Data. Now in beta: Place Collections, Itineraries (ordered journeys), and Gazetteer "
                      "Groups, each with search-as-you-type place-finding ranked by geographic nearness, "
-                     "map previews, add-places-from-text (NER), team collaboration, and publish into WHG's "
+                     "map previews, add-places-from-text, team collaboration, and publish into WHG's "
                      "existing public collection pages. (Routes and Networks arrive with the v4 model.)"},
-            {"name": "Citations, licensing & contributor credit (CRediT)", "stage": "dev", "version": "3.3",
-             "body": "Build a proper citation for a dataset, a machine-readable CITATION.cff and schema.org "
-                     "record, and credit everyone who contributed by their role — carried with the data when "
-                     "it's shared or contributed to WHG."},
-            {"name": "Atlas — a map-first interface with dynamic clustering", "stage": "dev", "version": "3.5",
-             "body": "A new, exploration-led interface for the gazetteer, in active development. It clusters "
-                     "and reveals places adaptively as you pan and zoom, keeping very large gazetteers "
-                     "legible at every scale."},
+            {"name": "Suggest a correction to a published record", "stage": "beta", "version": "3.3",
+             "body": "A reader who spots something wrong in a published record — a name, a date, a location, "
+                     "a shape on the map — can propose the fix from the record itself, drawing the geometry "
+                     "if that is what is wrong. The people who own that gazetteer choose whether to invite "
+                     "suggestions at all, and every one is reviewed by a person before anything changes. It "
+                     "is a first, small step towards the attestation model planned for v4."},
+            {"name": "Atlas — a map-first interface, and a browser for the gazetteers behind WHG",
+             "stage": "beta", "version": "3.5",
+             "body": "An exploration-led interface for the gazetteer, now open to staff and invited testers "
+                     "rather than only being built. It clusters and reveals places adaptively as you pan and "
+                     "zoom, keeping very large gazetteers legible at every scale, and lets you narrow what "
+                     "you see by date, by region, and by kind of place — including holding the map at a "
+                     "single year and stepping through time. Alongside it, a Gazetteers browser lists the "
+                     "source gazetteers WHG draws on: what each one covers in space and time, who made it, "
+                     "how it is licensed, how to cite it, and a link to any record at its own source."},
+            {"name": "Phonetic rule review", "stage": "beta",
+             "body": "WHG can find names that sound alike even when they are written differently, or in a "
+                     "different script. That rests on rule sets that turn written letters into sounds, "
+                     "language by language, and some of those rules are wrong, incomplete, or missing "
+                     "letters the language uses. This is a place where people who know a language can check "
+                     "its rules against real place names from WHG's own index, say what is wrong, and "
+                     "propose a correction. Reading it will be open to everyone when it launches; "
+                     "contributing needs an account, and what contributors write is dedicated to the public "
+                     "domain so it can be used by anyone, including the open-source project the rules come "
+                     "from."},
+            {"name": "Citations & contributor credit (CRediT)", "stage": "dev", "version": "3.3",
+             "body": "Build a proper citation for a dataset, in a form both people and software can read, "
+                     "and credit everyone who worked on it by the role they played — carried with the data "
+                     "when it is shared or contributed to WHG. The licensing half of this work is now live "
+                     "(see below); the citation builder and contributor credit are still being built."},
+            {"name": "Submission tracker (GRACE)", "stage": "dev", "version": "3.4",
+             "body": "A way to follow a dataset submission through its lifecycle — from first contribution, "
+                     "through review, to publication — so contributors and editors can see where each "
+                     "submission stands and what happens next. It also holds the editorial work around it: "
+                     "the people, projects, organisations and printed sources behind the datasets we are "
+                     "seeking, and our correspondence with them. It is built into WHG itself rather than "
+                     "relying on a separate external service, which is where this work started. The first "
+                     "visible piece is already in place: 'Suggest a Source' in the Data menu is now a WHG "
+                     "page rather than a form on someone else's site. The editorial side behind it was "
+                     "reviewed by the team in September and is not yet in day-to-day use; targeted for "
+                     "v3.4."},
             {"name": "Standardised place types across every source (Getty AAT)", "stage": "dev", "version": "3.5",
              "staff": True,
              "body": "We're giving every place in WHG a standardised place type from the Getty Art & "
                      "Architecture Thesaurus (AAT) — a shared, hierarchical vocabulary — so you can filter "
                      "and browse by the kind of place (city, river, temple, administrative area…) "
-                     "consistently, whichever gazetteer a record came from. This powers the search "
-                     "experience directly: a hierarchical type filter (choose 'inhabited places' and also "
-                     "get its subtypes) and friendly, human-readable type labels, replacing today's raw "
-                     "source codes. It's a large, source-by-source effort spanning several months: the "
-                     "biggest sources — GeoNames, OpenStreetMap, Wikidata, OpenHistoricalMap, and now the "
-                     "Getty Thesaurus of Geographic Names (~3M records) — are typed, but a number of "
-                     "smaller and specialist gazetteers still need their type vocabularies mapped to AAT "
+                     "consistently, whichever gazetteer a record came from. You can see it working in the "
+                     "Atlas preview, where places are filtered by a hierarchical type list (choose "
+                     "'inhabited places' and also get its subtypes) and labelled in readable words rather "
+                     "than raw source codes; place types chosen by contributors are picked from the same "
+                     "vocabulary throughout WHG. It's a large, source-by-source effort spanning several "
+                     "months: the biggest sources — GeoNames, OpenStreetMap, Wikidata, OpenHistoricalMap, "
+                     "and the Getty Thesaurus of Geographic Names (~3M records) — are typed, but a number "
+                     "of smaller and specialist gazetteers still need their type vocabularies mapped to AAT "
                      "before their records become fully filterable by type. Coverage is growing steadily."},
+            {"name": "Platform foundations", "stage": "dev", "staff": True,
+             "body": "Nothing here is visible to users; it is what keeps everything else possible. Over "
+                     "the summer WHG's software dependencies were brought up to date — the JavaScript audit "
+                     "went from 71 vulnerabilities to none, and the Python one from 16 vulnerable "
+                     "packages to none — and Django moved to its long-term-support release. Then the "
+                     "operating system underneath the servers was moved to a current "
+                     "Debian release: the old one had stopped supplying the packages its own catalogue "
+                     "still advertised, so the server image could not be rebuilt at all, and no security "
+                     "update or new dependency could have reached the site. That is done: both the public "
+                     "site and the development server now run the rebuilt image."},
         ],
     },
     {
         "heading": "Recently shipped",
         "note": "Live now for everyone, or a change to how an existing workflow behaves.",
         "items": [
+            {"name": "New gazetteers, and a more accurate index", "stage": "shipped", "version": "3.2",
+             "body": "WHG now searches 28 source gazetteers holding about 51 million place records. Newly "
+                     "added are the historic administrative geographies of England and Wales: registration "
+                     "districts and counties, local government districts and administrative counties, "
+                     "from the Great Britain Historical GIS; and 23,000 ancient parishes, townships "
+                     "and places from before 1850, from Kain and Oliver via the Cambridge Group. "
+                     "Behind the "
+                     "scenes the index itself was rebuilt in several ways that change what you find: "
+                     "country codes were re-derived across 9.3 million records that had been assigned to "
+                     "the wrong country; 10.5 million records from OpenStreetMap and OpenHistoricalMap "
+                     "that claimed a shape but did not actually carry one now have it; dates were "
+                     "re-encoded across the whole corpus so that filtering by period is meaningful; "
+                     "'contains' searching, which had been quietly failing for most gazetteers, works; "
+                     "and a fault in how we searched near a place was losing the great majority of the "
+                     "matches it should have found."},
+            {"name": "Sign in with ORCiD", "stage": "shipped", "version": "3.2",
+             "body": "Signing in to WHG now goes through ORCiD, the identifier many researchers already "
+                     "hold, so an account is tied to a person rather than to a password we have to keep. "
+                     "If you had a WHG account before, you claim it after signing in and keep everything "
+                     "in it."},
+            {"name": "Data licences, stated in the open", "stage": "shipped", "version": "3.2",
+             "body": "A public page now lists every licence WHG recognises, grouped by how open it is, with "
+                     "links to the licence itself. Contributors choose a licence for what they contribute "
+                     "from a guided picker — a few questions about what you will allow — instead of ticking "
+                     "one blanket box. A companion page publishes the licence of every piece of third-party "
+                     "software WHG runs.",
+             "link": {"url": "/licenses/", "label": "Data licences"}},
+            {"name": "Each source's terms travel with the data", "stage": "shipped", "version": "3.2",
+             "body": "A search result or a download usually draws on several source gazetteers at once, and "
+                     "one blanket statement could never be true of all of them. The terms of every source "
+                     "that contributed now come with the result, both on the download page and through the "
+                     "matching service. A few gazetteers we hold under agreement can be kept out of bulk "
+                     "download while remaining fully searchable."},
+            {"name": "Stable links, and a citable platform", "stage": "shipped", "version": "3.2",
+             "body": "Place pages now have one canonical web address instead of two competing ones, and we "
+                     "stopped describing links as permanent while that was still a promise rather than a "
+                     "fact — genuinely persistent identifiers are part of the v4 work. WHG's software has "
+                     "also been given a DOI, so the platform itself can be cited."},
+            {"name": "Fewer ways for an upload to go wrong", "stage": "shipped", "version": "3.2",
+             "body": "Coordinates written in an unusual format — a comma for a decimal point, longitude and "
+                     "latitude the wrong way round, a value out of range — are now caught and explained "
+                     "rather than quietly dropped. Place types behave the same whether a record is new or "
+                     "an update. And a Linked Places file is now read as Linked Places, so the "
+                     "descriptions, links, dates and shapes already in it survive the journey into WHG "
+                     "instead of being discarded."},
+            {"name": "Smaller fixes across the site", "stage": "shipped", "version": "3.2",
+             "body": "The home-page carousels can be paused, and the Published Datasets and Published "
+                     "Collections galleries now lead the Data menu instead of sitting below the "
+                     "signed-in user's own links. A dialog that could open empty, with no way to close "
+                     "it, no longer can. And a daily "
+                     "limit on the public data service now expires at midnight instead of locking an "
+                     "account out for good."},
             {"name": "Publish & index independent of reconciliation", "stage": "shipped", "staff": True, "version": "3.2",
              "body": "A dataset can now be made public and searchable regardless of how far its "
                      "reconciliation has progressed, with a clear warning about the trade-offs — removing a "
@@ -936,20 +1042,15 @@ BETA_STATUS_SECTIONS = [
             {"name": "In-house analytics dashboard (Plausible aggregation)", "stage": "shipped", "staff": True, "version": "3.2",
              "body": "A staff view in the admin area that aggregates WHG's self-hosted Plausible sites "
                      "(main, blog, docs) into one dashboard — top-line metrics, visitors over time, and "
-                     "breakdowns — including the Map-your-Data usage funnel. (Staff tool.)"},
+                     "breakdowns — including the Map-your-Data usage funnel. It now also shows where "
+                     "contributed data is thin on the ground, ranking the gaps by records per unit area, "
+                     "to inform what we go looking for next. (Staff tool.)"},
         ],
     },
     {
         "heading": "On the horizon",
         "note": "The direction we're heading — shared for planning, not as committed release dates.",
         "items": [
-            {"name": "Submission tracker", "stage": "horizon", "version": "3.4",
-             "body": "A way to follow a dataset submission through its lifecycle — from first "
-                     "contribution, through review, to publication — so contributors and editors can "
-                     "see where each submission stands and what happens next. It will be built natively "
-                     "into WHG rather than relying on a separate external service, keeping it integrated "
-                     "with datasets, accounts, and the rest of the platform. We're finalising the "
-                     "specification with colleagues; tentatively targeted for v3.4."},
             {"name": "Joining the Open Metadata Exchange (with ISKME)", "stage": "horizon", "version": "3.4",
              "body": "Exploratory work to make WHG a node in the Open Metadata Exchange (OME) — a "
                      "peer-to-peer metadata-sharing network, an ISKME initiative. WHG would feed its "
@@ -957,6 +1058,12 @@ BETA_STATUS_SECTIONS = [
                      "service to query the federated metadata, enriching matches with links, alternate "
                      "spellings, and context contributed by peer nodes. Our OME node is packaged and ready; "
                      "we're awaiting the next stage of OME's own development. Targeted for v3.4."},
+            {"name": "WHG in more than one language", "stage": "horizon",
+             "body": "WHG's own wording — menus, buttons, help text — is English only, whoever is reading "
+                     "it. A written proposal exists for translating the interface itself, and the map "
+                     "already lets you choose the language its labels are drawn in. The decisions that "
+                     "would commit us to it are still open, so this is a direction rather than a plan: "
+                     "there is no target release."},
             {"name": "Lesson plans on ISKME's publishing platform", "stage": "horizon", "version": "3.6",
              "body": "Separately from OME, we plan to author lesson plans that draw on the World Historical "
                      "Gazetteer using ISKME's publishing platform, in time succeeding WHG's current Lesson "
@@ -964,12 +1071,15 @@ BETA_STATUS_SECTIONS = [
             {"name": "WHG v4 — a graph data model", "stage": "horizon", "version": "4.0",
              "body": "A re-architecture around a graph model (with the PLATO ontology — Place Attestation "
                      "Ontology) to represent places, the relationships between them, and how they change over "
-                     "time far more richly than a flat record allows.",
+                     "time far more richly than a flat record allows. It is also where places get identifiers "
+                     "that are stable enough to cite and to link to from outside WHG.",
              "link": {"url": "https://github.com/pelagios/place-attestation-ontology",
                       "label": "PLATO on the Pelagios GitHub"}},
         ],
     },
 ]
+
+
 _BETA_STAGE_META = {
     "beta": ("Beta preview", "text-bg-warning"),
     "dev": ("In development", "text-bg-secondary"),
@@ -988,11 +1098,16 @@ def beta_status_view(request):
     is_staff = request.user.is_staff
     sections = []
     for sec in BETA_STATUS_SECTIONS:
-        items = [dict(it, stage_label=_BETA_STAGE_META[it["stage"]][0],
+        # The optional keys are defaulted rather than left absent: the template asks every
+        # item for all of them, and a missing key makes Django raise (and log) a
+        # VariableDoesNotExist per item per key. `section.note` is optional too, below.
+        items = [dict(it, staff=it.get("staff", False),
+                      version=it.get("version", ""), link=it.get("link"),
+                      stage_label=_BETA_STAGE_META[it["stage"]][0],
                       stage_class=_BETA_STAGE_META[it["stage"]][1])
                  for it in sec["items"] if is_staff or not it.get("staff")]
         if items:
-            sections.append(dict(sec, items=items))
+            sections.append(dict(sec, note=sec.get("note", ""), items=items))
     return render(request, "main/beta_status.html", {
         "sections": sections,
         "app_version": settings.APP_VERSION,
