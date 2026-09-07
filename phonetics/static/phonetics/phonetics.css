@@ -33,6 +33,11 @@
  * normalises the answers regardless (AgreementForm.clean), so nothing here is
  * load-bearing for correctness — only for how much is asked at once.
  */
+/* Bootstrap sizes a <legend> up to ~1.5rem, which made the credit question the
+ * largest text in the dialog — larger than the four cards above it, which carry
+ * more weight. It is a question, not a section title. */
+.phonetics .credit-question legend { font-size: 1rem; font-weight: 600; }
+
 @supports selector(:has(*)) {
   .phonetics .credit-details { display: none; }
   .phonetics form:has(input[name="wants_credit"][value="yes"]:checked) .credit-details {
