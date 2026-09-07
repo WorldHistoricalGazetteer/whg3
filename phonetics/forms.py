@@ -167,19 +167,39 @@ class AgreementForm(forms.Form):
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         label='I have read the terms above and I agree to them, and I confirm '
               'that what I contribute is mine to give.')
+    # Asked first, and with no option pre-selected. Attribution is a decision, and
+    # a pre-ticked box collects it by omission — the same objection as treating an
+    # unreviewed rule row as accepted, one form up.
+    wants_credit = forms.ChoiceField(
+        required=True,
+        choices=[('yes', 'Yes — credit me'),
+                 ('no', 'No — I would rather not be named')],
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        label='Would you like to be credited for what you contribute?')
     credit_name = forms.CharField(
         required=False, max_length=200,
-        widget=forms.TextInput(attrs={'class': 'form-control', 'maxlength': 200}),
+        widget=forms.TextInput(attrs={'class': 'form-control', 'maxlength': 200,
+                                      # The placeholder is load-bearing, not decorative:
+                                      # `:placeholder-shown` is what lets the CSS in
+                                      # phonetics.css reveal the "show publicly" question
+                                      # only once a name has actually been typed.
+                                      'placeholder': 'e.g. Ada Lovelace'}),
         label='Name to credit',
-        help_text='Leave this empty to help without being named.')
+        help_text='Taken from your WHG profile. Change it if you would rather be '
+                  'credited under a different form of your name.')
+    # ⚠ Default OFF. Being credited in WHG's own records and having your name shown
+    # publicly are different decisions, and the second is the one that cannot be
+    # taken back — someone who has read the page and left this alone has not chosen
+    # publication, so we must not record that they did.
     credit_public = forms.BooleanField(
-        required=False, initial=True,
+        required=False, initial=False,
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         label='Show my name publicly')
     orcid = forms.CharField(
         required=False, max_length=64, label='ORCiD (optional)',
         widget=forms.TextInput(attrs={'class': 'form-control',
-                                      'placeholder': '0000-0002-1825-0097'}))
+                                      'placeholder': '0000-0002-1825-0097'}),
+        help_text='Taken from your WHG profile.')
 
     def clean_orcid(self):
         raw = (self.cleaned_data.get('orcid') or '').strip()
@@ -191,6 +211,25 @@ class AgreementForm(forms.Form):
                 'That does not look like an ORCiD. Expected 16 digits in groups of '
                 'four, e.g. 0000-0002-1825-0097.')
         return canonical
+
+    def clean(self):
+        data = super().clean()
+        # The disclosure in the template is CSS, so the server cannot assume a
+        # hidden field was left empty: a browser without :has() shows all of them,
+        # and anyone can post whatever they like regardless. The answer to the
+        # FIRST question decides, and everything else is normalised to match it
+        # here — so the stored record can never say something the contributor did
+        # not choose.
+        if data.get('wants_credit') == 'no':
+            data['credit_name'] = ''
+            data['credit_public'] = False
+            # An ORCiD identifies a person as surely as a name does. Someone who
+            # asked not to be named has not agreed to be identified by number.
+            data['orcid'] = ''
+        elif not (data.get('credit_name') or '').strip():
+            # Nothing to publish, so publication cannot have been chosen.
+            data['credit_public'] = False
+        return data
 
 
 class CreditForm(AgreementForm):

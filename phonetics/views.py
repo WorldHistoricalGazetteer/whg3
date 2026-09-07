@@ -240,13 +240,17 @@ def terms_modal(request):
     _gate(request)
     current = active_terms()
     profile = {'credit_name': (getattr(request.user, 'name', '') or '').strip(),
-               'credit_public': True,
+               'credit_public': False,
                'orcid': canonical_orcid(getattr(request.user, 'orcid', '') or '')}
     _, agreement = _agreement(request.user)
     return render(request, 'phonetics/_terms_modal.html', {
         'terms': current,
         'agreement': agreement,
-        'form': AgreementForm(initial=profile),
+        'form': AgreementForm(initial=(
+            {'wants_credit': 'yes' if agreement.credit_name else 'no',
+             'credit_name': agreement.credit_name,
+             'credit_public': agreement.credit_public,
+             'orcid': agreement.orcid} if agreement else profile)),
         'profile_name': profile['credit_name'],
         'profile_orcid': profile['orcid'],
         # Where to send them back to once they have agreed.
@@ -268,8 +272,11 @@ def terms(request):
     # retyping it would be busywork — but never silently: the fields are shown,
     # editable, and labelled as coming from the profile. A byline is not the same
     # thing as a login name, and some people will want a different one or none.
+    # Prefilled for APPROVAL, not applied silently: the name and ORCiD only appear
+    # once someone has answered "yes, credit me", and `wants_credit` itself is
+    # deliberately left unset so the choice is made rather than inherited.
     profile = {'credit_name': (getattr(request.user, 'name', '') or '').strip(),
-               'credit_public': True,
+               'credit_public': False,
                'orcid': canonical_orcid(getattr(request.user, 'orcid', '') or '')}
     form_class = CreditForm if existing else AgreementForm
 
@@ -291,7 +298,11 @@ def terms(request):
                 messages.success(request, 'Thank you — you can now record reviews.')
             return redirect(request.GET.get('next') or 'phonetics:home')
     else:
-        initial = ({'credit_name': existing.credit_name,
+        # Revising an existing agreement shows the standing answer, including
+        # `wants_credit`, so the form opens on what they chose last time rather
+        # than asking again from nothing.
+        initial = ({'wants_credit': 'yes' if existing.credit_name else 'no',
+                    'credit_name': existing.credit_name,
                     'credit_public': existing.credit_public,
                     'orcid': existing.orcid} if existing else profile)
         form = form_class(initial=initial)

@@ -545,11 +545,10 @@ class SeededTermsTests(TestCase):
         from .visibility import is_visible
         from django.contrib.auth.models import AnonymousUser
         terms = active_terms()
-        self.assertFalse(terms.signed_off)
+        ContributionTerms.objects.filter(pk=terms.pk).update(signed_off=False)
         self.assertFalse(is_visible(AnonymousUser()))
         # …and signing them off is the only thing that changes it.
-        terms.signed_off = True
-        terms.save()
+        ContributionTerms.objects.filter(pk=terms.pk).update(signed_off=True)
         self.assertTrue(is_visible(AnonymousUser()))
 
 
@@ -591,12 +590,24 @@ class ContributionTermsTests(TestCase):
         self.assertTrue(mit.permits_commercial)
         self.assertFalse(mit.share_alike)
 
-    def test_it_is_not_signed_off_so_the_app_cannot_go_public(self):
+    def test_unsigned_terms_close_the_app_even_with_the_public_flag_on(self):
+        """Two gates, and the licensing one is not overridable by the launch flag.
+
+        Asserts the GATE, not today's value of signed_off — SG has since signed
+        the terms off, and a test pinned to the data would now be testing that a
+        decision had not been taken.
+        """
         from django.contrib.auth.models import AnonymousUser
         from .visibility import is_visible
-        self.assertFalse(active_terms().signed_off)
+        terms = active_terms()
         with override_settings(PHONETICS_PUBLIC=True):
+            ContributionTerms.objects.filter(pk=terms.pk).update(signed_off=False)
             self.assertFalse(is_visible(AnonymousUser()))
+            ContributionTerms.objects.filter(pk=terms.pk).update(signed_off=True)
+            self.assertTrue(is_visible(AnonymousUser()))
+        # …and signed-off terms alone still do not open it: PHONETICS_PUBLIC is a
+        # separate decision and remains False.
+        self.assertFalse(is_visible(AnonymousUser()))
 
     def test_the_warranty_is_on_the_checkbox_the_contributor_ticks(self):
         """A warranty nobody reads is worse than no warranty — and under CC0 it
@@ -619,6 +630,105 @@ class ContributionTermsTests(TestCase):
                 body = self.client.get(url).content.decode()
                 self.assertIn('public domain', body)
                 self.assertIn('think it right', body)
+
+
+class CreditQuestionTests(SyncBase):
+    """Attribution is asked as a question, and the server enforces the answer.
+
+    The form discloses progressively in CSS, so nothing about what a contributor
+    *saw* can be inferred from what was posted. `clean()` normalises the later
+    answers to the first one, which is what makes the stored record safe to
+    believe.
+    """
+
+    def setUp(self):
+        ContributionTerms.objects.update(is_active=False)
+        self.terms = ContributionTerms.objects.create(
+            version='t1', title='t', body='b', is_active=True, signed_off=True,
+            licence_spdx='CC0-1.0')
+        self.user = make_user('creditor', is_staff=True)
+        self.client.force_login(self.user)
+
+    def agree(self, **extra):
+        data = {'accept': 'on'}
+        data.update(extra)
+        return self.client.post(reverse('phonetics:terms'), data)
+
+    def test_nothing_is_pre_selected(self):
+        """A pre-ticked answer collects a decision by omission."""
+        form = AgreementForm()
+        self.assertIsNone(form.fields['wants_credit'].initial)
+        self.assertTrue(form.fields['wants_credit'].required)
+        # …and publication is off by default, which is the answer that cannot be
+        # taken back once made.
+        self.assertFalse(form.fields['credit_public'].initial)
+
+    def test_declining_credit_stores_no_name_and_no_orcid(self):
+        """An ORCiD identifies a person as surely as a name does."""
+        self.agree(wants_credit='no', credit_name='Ada Lovelace',
+                   orcid='0000-0002-1825-0097', credit_public='on')
+        agreement = ReviewerAgreement.objects.get(user=self.user)
+        self.assertEqual(agreement.credit_name, '')
+        self.assertEqual(agreement.orcid, '')
+        self.assertFalse(agreement.credit_public)
+
+    def test_an_empty_name_cannot_be_published(self):
+        self.agree(wants_credit='yes', credit_name='   ', credit_public='on')
+        agreement = ReviewerAgreement.objects.get(user=self.user)
+        self.assertFalse(agreement.credit_public)
+
+    def test_credit_without_publication_is_a_real_state(self):
+        """Named in WHG's records, not shown on the site. Two decisions, not one."""
+        self.agree(wants_credit='yes', credit_name='Ada Lovelace')
+        agreement = ReviewerAgreement.objects.get(user=self.user)
+        self.assertEqual(agreement.credit_name, 'Ada Lovelace')
+        self.assertFalse(agreement.credit_public)
+
+    def test_choosing_both_works(self):
+        self.agree(wants_credit='yes', credit_name='Ada Lovelace',
+                   orcid='0000-0002-1825-0097', credit_public='on')
+        agreement = ReviewerAgreement.objects.get(user=self.user)
+        self.assertEqual(agreement.credit_name, 'Ada Lovelace')
+        self.assertTrue(agreement.credit_public)
+        self.assertEqual(agreement.orcid, 'https://orcid.org/0000-0002-1825-0097')
+
+    def test_the_question_must_be_answered(self):
+        response = self.agree(credit_name='Ada Lovelace')
+        self.assertEqual(ReviewerAgreement.objects.count(), 0)
+        self.assertEqual(response.status_code, 200)
+
+    def test_a_declined_credit_is_never_shown_to_anyone_else(self):
+        """The end-to-end consequence, not just the stored flag.
+
+        The reviewer is a SECOND user: the signed-in user's own name appears in
+        the page chrome, so a self-review could never show whether the credit had
+        been suppressed — the test would pass on the wrong evidence.
+        """
+        shy = make_user('shy')
+        agreement = ReviewerAgreement.objects.create(
+            user=shy, terms=self.terms, credit_name='', credit_public=False)
+        ruleset, version = self.make_ruleset()
+        rule = ruleset.rules.first()
+        Review.objects.create(
+            rule=rule, reviewer=shy, verdict=Verdict.ACCEPT,
+            reviewed_ipa=rule.current_ipa, reviewed_version=version,
+            agreement=agreement)
+        response = self.client.get(reverse('phonetics:rule', args=[rule.pk]))
+        self.assertNotContains(response, 'Shy Reviewer')
+        # …and the review itself IS shown, so this is not passing because the
+        # page rendered nothing.
+        self.assertContains(response, 'a reviewer')
+
+    def test_both_surfaces_ask_the_question_first(self):
+        for url in (reverse('phonetics:terms'), reverse('phonetics:terms-modal')):
+            with self.subTest(url=url):
+                body = self.client.get(url).content.decode()
+                self.assertIn('Would you like to be credited', body)
+                # The later stages are present but disclosed by CSS, so they must
+                # carry the classes the stylesheet keys on — a renamed class would
+                # silently show everything at once.
+                self.assertIn('credit-details', body)
+                self.assertIn('credit-public-row', body)
 
 
 class TermsImmutabilityGuardTests(TestCase):
@@ -1078,7 +1188,8 @@ class TermsModalTests(SyncBase):
         self.client.force_login(user)
         response = self.client.post(
             reverse('phonetics:terms') + '?next=' + reverse('phonetics:queue'),
-            {'accept': 'on', 'credit_name': 'A Reviewer', 'credit_public': 'on', 'orcid': ''})
+            {'accept': 'on', 'wants_credit': 'yes', 'credit_name': 'A Reviewer',
+             'credit_public': 'on', 'orcid': ''})
         self.assertRedirects(response, reverse('phonetics:queue'),
                              fetch_redirect_response=False)
         agreement = ReviewerAgreement.objects.get(user=user)

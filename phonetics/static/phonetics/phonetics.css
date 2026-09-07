@@ -19,3 +19,32 @@
                   border: 1px solid var(--bs-border-color); border-radius: .2rem; }
 .phonetics .score-bar { height: .6rem; background: var(--bs-secondary-bg); border-radius: .3rem; overflow: hidden; }
 .phonetics .score-bar > span { display: block; height: 100%; background: var(--bs-primary); }
+
+/* Progressive disclosure on the contribution-agreement form (place#252).
+ *
+ * CSS rather than JavaScript on purpose: the terms modal fetches its fragment
+ * over AJAX long after DOMContentLoaded, so a script bound at page load never
+ * sees these fields. A `:has()` rule needs no binding at all and works the
+ * moment the markup exists, in the modal and on the page alike.
+ *
+ * ⚠ The whole thing sits inside @supports, so a browser without `:has()` skips
+ * it and shows every field. That is the safe direction to fail: a visible field
+ * someone can answer, rather than a hidden one they cannot. The server
+ * normalises the answers regardless (AgreementForm.clean), so nothing here is
+ * load-bearing for correctness — only for how much is asked at once.
+ */
+@supports selector(:has(*)) {
+  .phonetics .credit-details { display: none; }
+  .phonetics form:has(input[name="wants_credit"][value="yes"]:checked) .credit-details {
+    display: block;
+  }
+
+  /* "Show my name publicly" appears only once a name has actually been typed.
+   * `:placeholder-shown` is true while the input is empty, which is why
+   * credit_name carries a placeholder — it is functional, not decoration. */
+  .phonetics .credit-public-row { display: none; }
+  .phonetics form:has(input[name="wants_credit"][value="yes"]:checked)
+    .credit-details:has(input[name="credit_name"]:not(:placeholder-shown)) .credit-public-row {
+    display: block;
+  }
+}
