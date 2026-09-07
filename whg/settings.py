@@ -507,6 +507,8 @@ LOGGING = {
 SESSION_COOKIE_AGE = 1209600  # Two weeks, in seconds
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
+GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
+GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')  # Needs to be set for proper request.build_absolute_uri handling
 
@@ -619,19 +621,8 @@ SITEMAP_CACHE = 'sitemap_cache'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024   # 50 MB
 
 ## GIS Libraries
-# The GDAL path moves with the base image (bullseye: /usr/lib/libgdal.so.28;
-# bookworm: /usr/lib/x86_64-linux-gnu/libgdal.so.32 — the directory changes,
-# not just the soname) and again on a developer's own machine, so both paths
-# are overridable: environment first, then local_settings.py, then the path in
-# the current image. Set either to an empty string to let Django find the
-# library itself. Defined ONCE, deliberately: this used to be assigned twice
-# in this file, and only the second assignment took effect.
-GDAL_LIBRARY_PATH = os.environ.get(
-    'GDAL_LIBRARY_PATH',
-    globals().get('GDAL_LIBRARY_PATH', '/usr/lib/x86_64-linux-gnu/libgdal.so.32'))
-GEOS_LIBRARY_PATH = os.environ.get(
-    'GEOS_LIBRARY_PATH',
-    globals().get('GEOS_LIBRARY_PATH', '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'))
+GDAL_LIBRARY_PATH = '/usr/lib/libgdal.so.28'
+GEOS_LIBRARY_PATH = '/usr/lib/x86_64-linux-gnu/libgeos_c.so.1'
 
 SPECTACULAR_SETTINGS = {
     'TITLE': 'WHG API',
