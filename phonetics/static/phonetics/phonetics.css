@@ -33,6 +33,14 @@
  * normalises the answers regardless (AgreementForm.clean), so nothing here is
  * load-bearing for correctness — only for how much is asked at once.
  */
+/* The credit decision is its own step, separated from agreeing to the terms so
+ * that "who am I to you" and "do I accept this" do not read as one question. */
+.phonetics .credit-panel { background: var(--bs-tertiary-bg, #f8f9fa); }
+.phonetics .credit-panel-title { font-weight: 600; }
+
+/* Looks disabled, still receives clicks — see phonetics.js for why. */
+.phonetics button.looks-disabled { opacity: .55; cursor: not-allowed; }
+
 /* Bootstrap sizes a <legend> up to ~1.5rem, which made the credit question the
  * largest text in the dialog — larger than the four cards above it, which carry
  * more weight. It is a question, not a section title. */

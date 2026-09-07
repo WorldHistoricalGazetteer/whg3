@@ -703,10 +703,25 @@ class CreditQuestionTests(SyncBase):
         self.assertEqual(agreement.orcid, '')
         self.assertFalse(agreement.credit_public)
 
-    def test_an_empty_name_cannot_be_published(self):
-        self.agree(wants_credit='yes', credit_name='   ', credit_public='on')
-        agreement = ReviewerAgreement.objects.get(user=self.user)
-        self.assertFalse(agreement.credit_public)
+    def test_asking_for_credit_without_a_name_is_refused(self):
+        """A contradiction, not a shrug: an agreement asking for attribution and
+        supplying nothing to attribute. The button explains it; this enforces it."""
+        response = self.agree(wants_credit='yes', credit_name='   ', credit_public='on')
+        self.assertEqual(ReviewerAgreement.objects.count(), 0)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'please give a name to credit')
+
+    def test_the_panel_and_the_blocker_message_are_server_rendered(self):
+        """Both must exist before any script runs — the modal injects this
+        fragment long after page load, so nothing can be created on DOMContentLoaded."""
+        for url in (reverse('phonetics:terms'), reverse('phonetics:terms-modal')):
+            with self.subTest(url=url):
+                body = self.client.get(url).content.decode()
+                self.assertIn('credit-panel', body)
+                self.assertIn('fa-id-card', body)
+                self.assertIn('agree-blocker', body)
+                # Hidden, not absent: JS reveals it rather than building it.
+                self.assertRegex(body, r'agree-blocker[^>]*hidden')
 
     def test_credit_without_publication_is_a_real_state(self):
         """Named in WHG's records, not shown on the site. Two decisions, not one."""

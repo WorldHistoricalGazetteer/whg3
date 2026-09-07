@@ -199,6 +199,62 @@ function initCompetenceForm() {
   if (language.value) narrow();
 }
 
+// ── Contribution-agreement form ─────────────────────────────────────────────
+
+// "Credit me" with an empty name is a contradiction: an agreement that asks for
+// attribution and supplies nothing to attribute. The server refuses it
+// (AgreementForm.clean) — this is only so the reader finds out before pressing
+// the button rather than after.
+//
+// ⚠ Delegated on `document`, not bound to the form. The terms modal fetches its
+// fragment over AJAX long after DOMContentLoaded, so anything bound at page load
+// would never see these controls. Delegation works whenever the markup appears.
+//
+// ⚠ And `aria-disabled`, not `disabled`: a natively disabled button receives no
+// clicks, so it cannot explain itself, and "the button does nothing and I cannot
+// see why" is worse than the state it was protecting against.
+function creditIsIncomplete(form) {
+  const wants = form.querySelector('input[name="wants_credit"]:checked');
+  if (!wants || wants.value !== 'yes') return false;
+  const name = form.querySelector('input[name="credit_name"]');
+  return !!name && !name.value.trim();
+}
+
+function syncAgreeButton(form) {
+  const button = form.querySelector('button[type="submit"], button:not([type])');
+  if (!button) return;
+  const blocked = creditIsIncomplete(form);
+  button.setAttribute('aria-disabled', blocked ? 'true' : 'false');
+  button.classList.toggle('looks-disabled', blocked);
+  if (!blocked) form.querySelector('.agree-blocker')?.setAttribute('hidden', '');
+}
+
+function initAgreementForm() {
+  const forms = () => document.querySelectorAll('form:has(input[name="wants_credit"])');
+
+  const resync = (target) => {
+    const form = target?.closest?.('form');
+    if (form && form.querySelector('input[name="wants_credit"]')) syncAgreeButton(form);
+  };
+  document.addEventListener('change', (e) => resync(e.target));
+  document.addEventListener('input', (e) => resync(e.target));
+
+  document.addEventListener('click', (e) => {
+    const button = e.target.closest('button[aria-disabled="true"]');
+    if (!button) return;
+    const form = button.closest('form');
+    if (!form || !creditIsIncomplete(form)) return;
+    e.preventDefault();
+    const message = form.querySelector('.agree-blocker');
+    if (message) message.hidden = false;
+    form.querySelector('input[name="credit_name"]')?.focus();
+  }, true);
+
+  // A form rendered with "yes" already selected (revising an existing credit)
+  // must start in the right state, not wait for the first keystroke.
+  try { forms().forEach(syncAgreeButton); } catch (err) { /* :has() unsupported */ }
+}
+
 // ── Guided tour ─────────────────────────────────────────────────────────────
 
 // Loaded lazily: driver.js and its stylesheet are dead weight for the many page
@@ -224,6 +280,7 @@ async function initTour() {
 // the review form never opened, and nothing errored.) Same idiom as
 // reconciliation.js.
 function start() {
+  initAgreementForm();
   initReviewForm();
   initMatchingDemo();
   initCompetenceForm();

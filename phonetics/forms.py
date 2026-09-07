@@ -227,7 +227,14 @@ class AgreementForm(forms.Form):
             # asked not to be named has not agreed to be identified by number.
             data['orcid'] = ''
         elif not (data.get('credit_name') or '').strip():
-            # Nothing to publish, so publication cannot have been chosen.
+            # "Credit me" with no name is a contradiction, not a shrug — it would
+            # store an agreement that asks for attribution and gives nothing to
+            # attribute. The UI disables the button and says so, but the UI is
+            # not the gate: this is.
+            self.add_error(
+                'credit_name',
+                'You asked to be credited, so please give a name to credit — or '
+                'choose “No, I would rather not be named” above.')
             data['credit_public'] = False
         return data
 
