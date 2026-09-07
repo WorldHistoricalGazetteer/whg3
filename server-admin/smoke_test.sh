@@ -21,7 +21,12 @@
 #   server-admin/smoke_test.sh dev --deep --ssh whg
 #                                             # + container-side checks over ssh
 #   server-admin/smoke_test.sh dev --deep --ssh whg --suite
-#                                             # ...also run the full test suite
+#                                             # ...also run the full test suite,
+#                                             #    comparing FAILING TEST IDS to
+#                                             #    server-admin/test-baseline.txt
+#   server-admin/smoke_test.sh dev --deep --ssh whg --write-baseline
+#                                             # seed/refresh that baseline; READ
+#                                             #    the diff before committing it
 #   server-admin/smoke_test.sh https://local.whgazetteer.org  --cookie "..."
 #                                             # arbitrary base URL
 #
@@ -38,6 +43,11 @@ SSH_HOST=""
 CONTAINER=""
 DEEP=0
 RUN_SUITE=0
+WRITE_BASELINE=0
+# Committed list of test ids that are ALREADY failing, so the check can report new
+# ones by name instead of comparing totals. Seed/refresh it with --write-baseline
+# and read the diff before committing it.
+SUITE_BASELINE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/test-baseline.txt"
 BASE=""
 
 # ── Argument parsing ─────────────────────────────────────────────────────────
@@ -49,6 +59,7 @@ while [ $# -gt 0 ]; do
     --container) CONTAINER="$2"; shift 2 ;;
     --deep)      DEEP=1; shift ;;
     --suite)     RUN_SUITE=1; DEEP=1; shift ;;
+    --write-baseline) RUN_SUITE=1; DEEP=1; WRITE_BASELINE=1; shift ;;
     -h|--help)   sed -n '2,40p' "$0"; exit 0 ;;
     *) echo "Unknown option: $1" >&2; exit 2 ;;
   esac
@@ -135,10 +146,46 @@ print("RESOURCES_FORM_MULTIPLE", all("multiple" in str(f[n]) for n in ["files","
     echo "$OUT" | grep -q "RESOURCES_FORM_MULTIPLE True" && ok "resources form renders multiple-file inputs" || bad "resources MultipleFileField broken"
 
     if [ "$RUN_SUITE" -eq 1 ]; then
-      hd "3b. Django test suite (compare to baseline: 117 tests, 6 fail / 34 err — all pre-existing)"
-      SUITE=$($RUN "docker exec $CONTAINER ./manage.py test 2>&1 | tail -3")
-      echo "$SUITE" | sed 's/^/    /'
-      echo "$SUITE" | grep -qE "FAILED \(failures=6, errors=34\)|OK" && ok "test suite matches baseline (no new regressions)" || warn "test suite differs from baseline — inspect new failures/errors"
+      # Compare the SET of failing test ids, not the counts.
+      #
+      # This used to grep for `FAILED (failures=6, errors=34)`, which broke the
+      # moment the runner appended `, skipped=2` — identical failures, reported as
+      # a regression. Worse, its fallback alternative was a bare `OK`, so an "OK"
+      # on any line satisfied it; and `tail -3` discarded every failure NAME, so a
+      # mismatch told you a number had moved and nothing about which test. A
+      # count-only baseline also goes stale every time anyone adds a test, and
+      # then reads as noise until people stop looking at it.
+      #
+      # Ids are exact, survive additions and skips, and distinguish a NEW failure
+      # from one that was fixed.
+      hd "3b. Django test suite (comparing failing-test ids to $SUITE_BASELINE)"
+      SUITE_RAW=$($RUN "docker exec $CONTAINER ./manage.py test 2>&1")
+      echo "$SUITE_RAW" | tail -3 | sed 's/^/    /'
+      CURRENT=$(echo "$SUITE_RAW" | grep -E '^(FAIL|ERROR): ' | sed -E 's/^(FAIL|ERROR): //' | sort -u)
+
+      if [ "$WRITE_BASELINE" -eq 1 ]; then
+        printf '%s\n' "$CURRENT" > "$SUITE_BASELINE"
+        ok "wrote $(printf '%s\n' "$CURRENT" | grep -c . ) failing-test id(s) to $SUITE_BASELINE"
+      elif [ ! -f "$SUITE_BASELINE" ]; then
+        # Never pass by default. A missing baseline means this check compared
+        # nothing, and saying so is the whole point.
+        bad "no baseline at $SUITE_BASELINE — run again with --write-baseline to seed it (review the list before committing it)"
+      else
+        NEW=$(comm -13 <(sort -u "$SUITE_BASELINE") <(printf '%s\n' "$CURRENT"))
+        GONE=$(comm -23 <(sort -u "$SUITE_BASELINE") <(printf '%s\n' "$CURRENT"))
+        if [ -n "$NEW" ]; then
+          bad "$(printf '%s\n' "$NEW" | grep -c .) NEW failing test(s) since baseline:"
+          printf '%s\n' "$NEW" | sed 's/^/      + /'
+        else
+          ok "no new failing tests (baseline: $(grep -c . "$SUITE_BASELINE") known)"
+        fi
+        if [ -n "$GONE" ]; then
+          # Not a failure, but it must be visible: a baseline that silently keeps
+          # entries for tests that now pass drifts back into meaninglessness.
+          warn "$(printf '%s\n' "$GONE" | grep -c .) baseline failure(s) no longer failing — refresh with --write-baseline:"
+          printf '%s\n' "$GONE" | sed 's/^/      - /'
+        fi
+      fi
     fi
   fi
 fi

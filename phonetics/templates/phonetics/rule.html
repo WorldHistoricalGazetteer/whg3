@@ -54,7 +54,28 @@
             </div>
           {% endfor %}
           </div>
-        {% else %}
+        {% endif %}
+
+        {% if rule.truncated_to is not None %}
+          {% comment %}
+            A row whose value cannot take effect must say so on its face. This is
+            not a fault in the row — the value is well-formed — it is a limit of
+            what the consumer can carry, and it means the distinction the value
+            draws never reaches the matching model. A Burmese speaker who spots
+            ဃ → ɡʰ in a language with no voiced aspirates is RIGHT that it looks
+            wrong, and would be spending their judgement on something the
+            pipeline erases first.
+          {% endcomment %}
+          <div class="alert alert-warning py-2 px-2 small mt-2 mb-1">
+            <strong>Only part of this sound survives.</strong> WHG keeps
+            <code class="ipa-inline">{{ rule.truncated_to|default:"nothing" }}</code>
+            and discards the rest, so anything you change about the discarded part
+            <strong>cannot make any difference</strong> to how names are matched.
+            <br>Correcting the part that <em>does</em> survive is still worth doing.
+          </div>
+        {% endif %}
+
+        {% if not rule.lint_details and rule.truncated_to is None %}
           {% comment %}
             A clean machine check must not read as reassurance. The clearest case
             we have found is Burmese ha-hto: ှ → ʰ passes every automatic test,

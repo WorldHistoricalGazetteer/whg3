@@ -153,18 +153,33 @@ class AgreementForm(forms.Form):
     under none, and the account's name is a login detail rather than a byline.
     """
 
+    # ⚠ Every label and help string lives HERE and nowhere else. Both surfaces —
+    # the page and the modal — render these fields through
+    # templates/phonetics/_agreement_fields.html rather than hand-writing inputs.
+    #
+    # They used to hand-write them, and the two had already drifted — the form's
+    # accept label and the templates' said different things, and the form's own
+    # label was rendered nowhere at all. That is a consent record that
+    # does not match what was on screen — and it would have quietly swallowed the
+    # right-to-license warranty, which has to be *read* to mean anything.
     accept = forms.BooleanField(
         required=True,
-        label='I have read the contribution terms above and agree to them.')
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label='I have read the terms above and I agree to them, and I confirm '
+              'that what I contribute is mine to give.')
     credit_name = forms.CharField(
         required=False, max_length=200,
-        label='Name to credit (leave blank to contribute without attribution)')
+        widget=forms.TextInput(attrs={'class': 'form-control', 'maxlength': 200}),
+        label='Name to credit',
+        help_text='Leave this empty to help without being named.')
     credit_public = forms.BooleanField(
         required=False, initial=True,
-        label='Show my name publicly as a contributor')
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        label='Show my name publicly')
     orcid = forms.CharField(
         required=False, max_length=64, label='ORCiD (optional)',
-        help_text='e.g. 0000-0002-1825-0097')
+        widget=forms.TextInput(attrs={'class': 'form-control',
+                                      'placeholder': '0000-0002-1825-0097'}))
 
     def clean_orcid(self):
         raw = (self.cleaned_data.get('orcid') or '').strip()

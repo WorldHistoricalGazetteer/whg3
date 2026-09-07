@@ -43,10 +43,13 @@
         being named. Either is fine, and you can change your mind later.</p>
     </div></div></div>
     <div class="col-md-6"><div class="card h-100 border-success"><div class="card-body py-2">
-      <h6 class="mb-1"><i class="fas fa-scale-balanced text-success me-1"></i>Free for anyone to use, with credit</h6>
-      <p class="small mb-0">Your suggestions are shared under
-        {% if terms.licence %}<a href="{{ terms.licence.url }}" target="_blank" rel="noopener">{{ terms.licence.label }}</a>{% else %}{{ terms.licence_spdx }}{% endif %}.
-        Anyone may use them, as long as you are credited.</p>
+      <h6 class="mb-1"><i class="fas fa-scale-balanced text-success me-1"></i>Free for anyone to use — and you are credited in the dataset</h6>
+      <p class="small mb-0">Your suggestions are published in WHG's citable dataset under
+        {% if terms.licence %}<a href="{{ terms.licence.url }}" target="_blank" rel="noopener">{{ terms.licence.label }}</a>{% else %}{{ terms.licence_spdx }}{% endif %},
+        which requires anyone reusing them to credit you.
+        {% if terms.upstream_licence_spdx %}Rows we send upstream to Epitran go under
+        <code>{{ terms.upstream_licence_spdx }}</code>, whose file format has no room for a
+        credit line — we name you in the pull request instead.{% endif %}</p>
     </div></div></div>
     <div class="col-md-6"><div class="card h-100"><div class="card-body py-2">
       <h6 class="mb-1"><i class="fas fa-hand text-secondary me-1"></i>Nothing changes automatically</h6>
@@ -98,29 +101,7 @@
         <p class="small text-muted">We have filled this in from your WHG profile. Change it if
           you would rather be credited differently, or clear your name to help without being named.</p>
       {% endif %}
-      <div class="mb-2">
-        <label class="form-label small mb-1" for="m_credit_name">Name to credit</label>
-        <input type="text" class="form-control" name="credit_name" id="m_credit_name"
-               value="{{ form.credit_name.value|default:'' }}" maxlength="200">
-        <div class="form-text">Leave this empty to help without being named.</div>
-      </div>
-      <div class="form-check mb-2">
-        <input class="form-check-input" type="checkbox" name="credit_public" id="m_credit_public"
-               {% if form.credit_public.value %}checked{% endif %}>
-        <label class="form-check-label" for="m_credit_public">Show my name publicly</label>
-      </div>
-      <div class="mb-3">
-        <label class="form-label small mb-1" for="m_orcid">ORCiD <span class="text-muted">(optional)</span></label>
-        <input type="text" class="form-control" name="orcid" id="m_orcid"
-               value="{{ form.orcid.value|default:'' }}" maxlength="64"
-               placeholder="0000-0002-1825-0097">
-      </div>
-      <div class="form-check mb-3">
-        <input class="form-check-input" type="checkbox" name="accept" id="m_accept" required>
-        <label class="form-check-label" for="m_accept">
-          I have read the four points above and I agree.
-        </label>
-      </div>
+      {% include "phonetics/_agreement_fields.html" %}
       <button class="btn btn-primary">Agree and start</button>
       <a class="btn btn-link btn-sm" href="{% url 'phonetics:terms' %}">Open as a full page</a>
     </form>

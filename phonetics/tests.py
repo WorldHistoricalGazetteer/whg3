@@ -15,6 +15,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .export import build, resolve, suggestions_payload
+from .forms import AgreementForm
 from .iso import parse_accept_language
 from .lint import lint_rows, lint_value
 from .models import (Confidence, ContributionTerms, NewRuleProposal, PolicyAnswer,
@@ -504,7 +505,7 @@ class ExportTests(ReviewTests):
 class SeededTermsTests(TestCase):
 
     def test_the_shipped_terms_are_cc_by_4_0_and_anchored_to_the_licence_vocabulary(self):
-        terms = ContributionTerms.objects.get(version='2026-09-draft')
+        terms = active_terms()
         self.assertEqual(terms.licence_spdx, 'CC-BY-4.0')
         self.assertIsNotNone(terms.licence, 'not linked to the licensing app vocabulary')
         self.assertEqual(terms.licence.spdx_id, 'CC-BY-4.0')
@@ -517,13 +518,73 @@ class SeededTermsTests(TestCase):
     def test_draft_terms_cannot_open_the_app_to_the_public(self):
         from .visibility import is_visible
         from django.contrib.auth.models import AnonymousUser
-        terms = ContributionTerms.objects.get(version='2026-09-draft')
+        terms = active_terms()
         self.assertFalse(terms.signed_off)
         self.assertFalse(is_visible(AnonymousUser()))
         # …and signing them off is the only thing that changes it.
         terms.signed_off = True
         terms.save()
         self.assertTrue(is_visible(AnonymousUser()))
+
+
+class DualLicenceTermsTests(TestCase):
+    """The signed-off dual grant, and the two things about it that could go wrong quietly."""
+
+    def test_the_active_terms_name_both_outlets(self):
+        terms = active_terms()
+        self.assertEqual(terms.version, '2026-09-07')
+        self.assertEqual(terms.licence_spdx, 'CC-BY-4.0')
+        self.assertEqual(terms.upstream_licence_spdx, 'MIT')
+        self.assertIsNotNone(terms.licence)
+        self.assertIsNotNone(terms.upstream_licence)
+
+    def test_the_older_wording_is_kept_but_no_longer_active(self):
+        """Agreements are FKs to a version. Superseding must not rewrite history:
+        this change adds an MIT grant nobody who saw the draft ever made."""
+        old = ContributionTerms.objects.get(version='2026-09-draft')
+        self.assertFalse(old.is_active)
+        self.assertNotIn('MIT licence', old.body)
+        self.assertEqual(ContributionTerms.objects.filter(is_active=True).count(), 1)
+
+    def test_mit_is_not_offered_as_a_dataset_licence(self):
+        """⚠ The flag that keeps a SOFTWARE licence out of the picker on /licenses/.
+
+        licensing/forms.py drops non-selectable ids server-side. Without this,
+        a field added for the phonetics app changes another app's form.
+        """
+        from licensing.models import License
+        mit = License.objects.get(spdx_id='MIT')
+        self.assertFalse(mit.contributor_selectable)
+        self.assertTrue(mit.attribution_required)   # notice retention is attribution
+        self.assertTrue(mit.permits_commercial)
+        self.assertFalse(mit.share_alike)
+
+    def test_it_is_not_signed_off_so_the_app_cannot_go_public(self):
+        from django.contrib.auth.models import AnonymousUser
+        from .visibility import is_visible
+        self.assertFalse(active_terms().signed_off)
+        with override_settings(PHONETICS_PUBLIC=True):
+            self.assertFalse(is_visible(AnonymousUser()))
+
+    def test_the_warranty_is_on_the_checkbox_the_contributor_ticks(self):
+        """A warranty nobody reads is worse than no warranty."""
+        label = AgreementForm().fields['accept'].label
+        self.assertIn('mine to give', label)
+        ContributionTerms.objects.filter(version='2026-09-07').update(signed_off=True)
+        self.client.force_login(make_user('warrant', is_staff=True))
+        for url in (reverse('phonetics:terms'), reverse('phonetics:terms-modal')):
+            with self.subTest(url=url):
+                self.assertContains(self.client.get(url), 'mine to give')
+
+    def test_both_surfaces_say_where_each_licence_applies(self):
+        ContributionTerms.objects.filter(version='2026-09-07').update(signed_off=True)
+        self.client.force_login(make_user('outlets', is_staff=True))
+        for url in (reverse('phonetics:terms'), reverse('phonetics:terms-modal')):
+            with self.subTest(url=url):
+                body = self.client.get(url).content.decode()
+                self.assertIn('citable dataset', body)
+                self.assertIn('upstream to Epitran', body)
+                self.assertIn('MIT', body)
 
 
 class MyanmarQuestionTests(TestCase):
@@ -953,6 +1014,47 @@ class TermsModalTests(SyncBase):
         rule = self.ruleset.rules.first()
         body = self.client.get(reverse('phonetics:rule', args=[rule.pk])).content.decode()
         self.assertIn('data-whg-modal="/phonetics/terms/modal/', body)
+
+
+class AgreementFieldsAreDefinedOnceTests(TestCase):
+    """The consent wording must exist in exactly one place.
+
+    It previously existed in three — the form field and two hand-written
+    templates — and the form's own ``accept`` label was rendered nowhere, so the
+    string the model recorded consent against was not the string on screen.
+    The right-to-license warranty has to go on that label, and a warranty nobody
+    reads is worse than no warranty.
+    """
+
+    def test_no_template_hand_writes_an_agreement_input(self):
+        from pathlib import Path
+        templates = Path('phonetics/templates/phonetics')
+        offenders = []
+        for path in templates.glob('*.html'):
+            if path.name == '_agreement_fields.html':
+                continue
+            body = path.read_text(encoding='utf-8')
+            for field in ('accept', 'credit_name', 'credit_public', 'orcid'):
+                if f'name="{field}"' in body:
+                    offenders.append(f'{path.name} hand-writes name="{field}"')
+        self.assertEqual(offenders, [])
+
+    def test_both_surfaces_include_the_shared_partial(self):
+        from pathlib import Path
+        for name in ('terms.html', '_terms_modal.html'):
+            body = (Path('phonetics/templates/phonetics') / name).read_text(encoding='utf-8')
+            self.assertIn('phonetics/_agreement_fields.html', body, name)
+
+    def test_the_rendered_checkbox_carries_the_forms_own_label(self):
+        """The one that actually matters: what is on screen is what the field says."""
+        ContributionTerms.objects.update(is_active=False)
+        ContributionTerms.objects.create(version='t', title='t', body='b',
+                                         is_active=True, signed_off=True)
+        self.client.force_login(make_user('consent', is_staff=True))
+        label = AgreementForm().fields['accept'].label
+        for url in (reverse('phonetics:terms'), reverse('phonetics:terms-modal')):
+            with self.subTest(url=url):
+                self.assertContains(self.client.get(url), label)
 
 
 class ContributionGateTests(SyncBase):

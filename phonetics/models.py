@@ -263,11 +263,40 @@ class Rule(models.Model):
         return codepoints(self.current_ipa)
 
     @property
+    def truncated_to(self):
+        """What the consumer actually keeps of ``current_ipa``, if it drops any.
+
+        ``None`` when nothing is lost. When it is set, the row's value draws a
+        distinction that **cannot reach the matching model** — ``ɡʰ`` arrives as
+        ``ɡ``, ``dʒʰ`` as ``dʒ`` — so arguing about the discarded part changes
+        nothing downstream. 29 rows across the synced rule sets are in this state.
+
+        This exists so the UI can say so on the row. A reviewer who spots
+        ``ဃ → ɡʰ`` in a language with no voiced aspirates is right to think it
+        wrong, and would be spending expert judgement on a distinction the
+        pipeline erases before it reaches anything. A row that cannot take effect
+        should say so on its face rather than quietly accept the effort.
+        """
+        if 'lossy' not in (self.lint_codes or []):
+            return None
+        from .validation import segment
+        _, segments = segment(self.current_ipa)
+        return ''.join(segments)
+
+    @property
     def lint_details(self):
-        """``[{'code', 'label', 'why'}, …]`` — resolved for display."""
+        """``[{'code', 'label', 'why'}, …]`` — resolved for display.
+
+        Excludes ``lossy``, which the UI presents separately via
+        :attr:`truncated_to`: the others mean *this value is malformed*, while
+        lossy means *this value is fine and the consumer cannot carry all of it*.
+        Showing them together would tell a reviewer their language's aspiration
+        contrast is a typing error.
+        """
         from .lint import LINT_CODES
         return [{'code': c, 'label': LINT_CODES.get(c, (c, ''))[0],
-                 'why': LINT_CODES.get(c, ('', ''))[1]} for c in (self.lint_codes or [])]
+                 'why': LINT_CODES.get(c, ('', ''))[1]}
+                for c in (self.lint_codes or []) if c != 'lossy']
 
     @property
     def status(self):
@@ -382,15 +411,34 @@ class ContributionTerms(models.Model):
     version = models.CharField(max_length=32, unique=True)
     title = models.CharField(max_length=200)
     body = models.TextField(help_text='Shown in full at the point of contribution.')
+    # Two licences with two ROLES, deliberately not one field and not an M2M.
+    # A dual grant is licensee's choice, so `CC-BY-4.0 OR MIT` would be a correct
+    # SPDX expression — but it cannot say WHICH outlet each governs, and that is
+    # the half a contributor actually cares about. An M2M has the same problem
+    # from the other end: an unordered set forces the template to re-derive the
+    # roles by inspecting SPDX ids, which breaks quietly the first time a third
+    # licence appears.
     licence_spdx = models.CharField(
         max_length=64, default='CC-BY-4.0',
-        help_text="SPDX id, matching the licensing app's vocabulary. Must permit "
-                  "inclusion in the rule sets these corrections feed, which are MIT.")
+        help_text="SPDX id of the licence WHG publishes the citable dataset under.")
     licence = models.ForeignKey(
         'licensing.License', on_delete=models.PROTECT, null=True, blank=True,
         related_name='phonetic_contribution_terms',
         help_text="The row in WHG's licence vocabulary, so this page and /licenses/ "
                   "cannot drift apart.")
+    # What a row travels under when WHG contributes it back to Epitran. Epitran is
+    # MIT and its rule files are bare two-column CSVs with nowhere to put a name or
+    # a notice, so an attribution-conditioned licence cannot survive the trip —
+    # see the terms body, which says so to the contributor rather than leaving
+    # them to discover it.
+    upstream_licence_spdx = models.CharField(
+        max_length=64, blank=True,
+        help_text="SPDX id of the licence rows are contributed upstream under. "
+                  "Blank if WHG does not contribute upstream under these terms.")
+    upstream_licence = models.ForeignKey(
+        'licensing.License', on_delete=models.PROTECT, null=True, blank=True,
+        related_name='phonetic_upstream_terms',
+        help_text="The vocabulary row for upstream_licence_spdx.")
     is_active = models.BooleanField(default=False)
     # False while the wording is a draft. The app will not go public on it.
     signed_off = models.BooleanField(default=False)
