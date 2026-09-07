@@ -91,6 +91,13 @@ phonetics-only.
 **So: if you cherry-pick `a751b5729`, take `fb014071e` with it.** And never promote
 `whg/settings.py` wholesale — that is a standing rule for other reasons too.
 
+✅ **And you do not have to remember that.** `tests/test_deploy_consistency.py` asserts the
+`Dockerfile` base image and the `settings.py` GDAL path agree with each other. It fails on
+`main` the moment a bookworm path arrives on a bullseye image, whatever put it there — and it
+stays correct after place#254 completes, because the invariant is *agreement*, not "must be
+bullseye". Verified against all three real cases: that cherry-pick, its reverse, and a future
+codename the map does not know.
+
 ## Things that will look like bugs and are not
 
 - **A rule set's identity is its `slug`, not its `code.`** `mya-Mymr` exists both
