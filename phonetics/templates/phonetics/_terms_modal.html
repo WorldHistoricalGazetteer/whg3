@@ -94,11 +94,6 @@
   {% else %}
     <form method="post" action="{% url 'phonetics:terms' %}?next={{ next|urlencode }}">
       {% csrf_token %}
-      <h6>How would you like to be credited?</h6>
-      {% if profile_name or profile_orcid %}
-        <p class="small text-muted">We have filled this in from your WHG profile. Change it if
-          you would rather be credited differently, or clear your name to help without being named.</p>
-      {% endif %}
       {% include "phonetics/_agreement_fields.html" %}
       <button class="btn btn-primary">Agree and start</button>
       <a class="btn btn-link btn-sm" href="{% url 'phonetics:terms' %}">Open as a full page</a>
