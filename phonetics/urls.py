@@ -9,6 +9,7 @@ urlpatterns = [
     path('competence/', views.competence, name='competence'),
     path('competence/<int:pk>/delete/', views.competence_delete, name='competence-delete'),
     path('terms/', views.terms, name='terms'),
+    path('terms/modal/', views.terms_modal, name='terms-modal'),
     path('queue/', views.review_queue, name='queue'),
     path('rule/<int:pk>/', views.rule_detail, name='rule'),
     path('rulesets/', views.ruleset_list, name='ruleset-list'),

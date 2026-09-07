@@ -896,6 +896,65 @@ class PageRenderTests(SyncBase):
                 self.assertEqual(self.client.get(path).status_code, 404)
 
 
+class TermsModalTests(SyncBase):
+    """The terms open in a modal (SG, 2026-09-07); the page stays as the target.
+
+    whg-modal.js fetches a URL and injects the response, so the fragment has to
+    be a fragment — no base template, and carrying its own .modal-header,
+    because the loader only prepends a default header when the response has none.
+    """
+
+    def setUp(self):
+        self.ruleset, _ = self.make_ruleset()
+        ContributionTerms.objects.update(is_active=False)
+        self.terms = ContributionTerms.objects.create(
+            version='t1', title='Terms', body='the wording', is_active=True, signed_off=True)
+
+    def test_the_fragment_is_a_fragment_with_its_own_header(self):
+        self.client.force_login(make_user('m', is_staff=True))
+        response = self.client.get(reverse('phonetics:terms-modal'))
+        self.assertEqual(response.status_code, 200)
+        body = response.content.decode()
+        self.assertIn('modal-header', body)
+        self.assertIn('modal-body', body)
+        # Not wrapped in the site chrome: injecting a whole page into a dialog is
+        # the failure this fragment exists to avoid.
+        self.assertNotIn('<html', body.lower())
+        self.assertNotIn('navbar', body)
+
+    def test_it_posts_to_the_full_page_view(self):
+        self.client.force_login(make_user('p', is_staff=True))
+        body = self.client.get(reverse('phonetics:terms-modal')).content.decode()
+        self.assertIn(f'action="{reverse("phonetics:terms")}', body)
+        self.assertIn('csrfmiddlewaretoken', body)
+
+    def test_agreeing_through_the_modal_form_records_the_agreement(self):
+        user = make_user('q', is_staff=True)
+        self.client.force_login(user)
+        response = self.client.post(
+            reverse('phonetics:terms') + '?next=' + reverse('phonetics:queue'),
+            {'accept': 'on', 'credit_name': 'A Reviewer', 'credit_public': 'on', 'orcid': ''})
+        self.assertRedirects(response, reverse('phonetics:queue'),
+                             fetch_redirect_response=False)
+        agreement = ReviewerAgreement.objects.get(user=user)
+        self.assertEqual(agreement.credit_name, 'A Reviewer')
+
+    @override_settings(PHONETICS_PUBLIC=True)
+    def test_an_anonymous_visitor_can_read_the_terms_but_not_agree(self):
+        response = self.client.get(reverse('phonetics:terms-modal'))
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('the wording', response.content.decode())
+        self.assertContains(response, 'Sign in')
+        self.assertNotContains(response, 'Agree and start')
+
+    def test_the_prompts_point_at_the_modal_not_the_page(self):
+        user = make_user('r', is_staff=True)
+        self.client.force_login(user)
+        rule = self.ruleset.rules.first()
+        body = self.client.get(reverse('phonetics:rule', args=[rule.pk])).content.decode()
+        self.assertIn('data-whg-modal="/phonetics/terms/modal/', body)
+
+
 class ContributionGateTests(SyncBase):
 
     def test_no_review_can_be_recorded_without_active_terms(self):

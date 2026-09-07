@@ -41,7 +41,7 @@
 {% if question.status == 'open' and not can_contribute %}
   <p class="small text-muted mt-3">
     {% if needs_login %}<a href="{% url 'accounts:login' %}?next={{ request.path }}">Sign in</a> to answer.
-    {% else %}<a href="{% url 'phonetics:terms' %}?next={{ request.path }}">Agree the contribution terms</a> to answer.{% endif %}
+    {% else %}<a data-whg-modal="/phonetics/terms/modal/?next={{ request.get_full_path|urlencode }}" href="#">Agree the contribution terms</a> to answer.{% endif %}
   </p>
 {% elif question.status == 'open' %}
 <form method="post" class="mt-3">

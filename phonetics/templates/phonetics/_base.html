@@ -40,7 +40,7 @@
   {% elif needs_terms %}
     <div class="alert alert-primary py-2 px-3 small">
       Before you can record anything, please
-      <a href="{% url 'phonetics:terms' %}?next={{ request.get_full_path|urlencode }}">read and agree the contribution terms</a>.
+      <a data-whg-modal="/phonetics/terms/modal/?next={{ request.get_full_path|urlencode }}" href="#">read and agree the contribution terms</a>.
     </div>
   {% elif terms_closed %}
     <div class="alert alert-danger py-2 px-3 small">

@@ -146,7 +146,7 @@
       <a href="{% url 'accounts:login' %}?next={{ request.path }}">Sign in</a> to suggest a change.
       You can read everything above without signing in.
     {% else %}
-      <a href="{% url 'phonetics:terms' %}?next={{ request.path }}">Read and agree the contribution terms</a>
+      <a data-whg-modal="/phonetics/terms/modal/?next={{ request.get_full_path|urlencode }}" href="#">Read and agree the contribution terms</a>
       before recording a review.
     {% endif %}
   </div>

@@ -29,6 +29,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import (Http404, HttpResponse, HttpResponseBadRequest,
                          JsonResponse)
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -222,6 +223,36 @@ def competence_delete(request, pk):
     obj.delete()
     messages.success(request, 'Removed.')
     return redirect('phonetics:competence')
+
+
+def terms_modal(request):
+    """The contribution terms as a modal fragment (SG, 2026-09-07).
+
+    Deliberately **not** ``@login_required``: an anonymous visitor who clicks
+    "read the terms" should be able to read them. What they cannot do is agree —
+    the fragment shows the sign-in prompt instead of the form, because an
+    agreement has to be attributable to someone.
+
+    Rendered by ``whg-modal.js``, which fetches the URL and injects the response.
+    The standalone page remains and is both this form's POST target and the
+    fallback the modal loader offers if the fetch fails.
+    """
+    _gate(request)
+    current = active_terms()
+    profile = {'credit_name': (getattr(request.user, 'name', '') or '').strip(),
+               'credit_public': True,
+               'orcid': canonical_orcid(getattr(request.user, 'orcid', '') or '')}
+    _, agreement = _agreement(request.user)
+    return render(request, 'phonetics/_terms_modal.html', {
+        'terms': current,
+        'agreement': agreement,
+        'form': AgreementForm(initial=profile),
+        'profile_name': profile['credit_name'],
+        'profile_orcid': profile['orcid'],
+        # Where to send them back to once they have agreed.
+        'next': request.GET.get('next') or reverse('phonetics:home'),
+        **_contribution_state(request),
+    })
 
 
 @login_required
