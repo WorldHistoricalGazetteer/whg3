@@ -621,6 +621,54 @@ class ContributionTermsTests(TestCase):
                 self.assertIn('think it right', body)
 
 
+class TermsImmutabilityGuardTests(TestCase):
+    """The guard that decides whether a terms row may be edited in place.
+
+    The rule is a query, not a judgement: a row nobody has agreed to is a draft,
+    a row somebody has agreed to is a record of what they saw. That is only
+    worth having if the guard actually refuses, so both directions are checked —
+    a guard that never fires is indistinguishable from no guard.
+    """
+
+    def setUp(self):
+        from django.apps import apps as global_apps
+        self.apps = global_apps
+        self.terms = ContributionTerms.objects.get(version='2026-09-07-cc0')
+
+    def test_a_row_with_no_agreements_is_editable(self):
+        from .migration_guards import assert_editable
+        self.assertFalse(self.terms.agreements.exists())
+        self.assertEqual(assert_editable(self.apps, '2026-09-07-cc0'), self.terms)
+
+    def test_a_row_somebody_agreed_to_is_refused(self):
+        from .migration_guards import assert_editable, TermsAreImmutable
+        ReviewerAgreement.objects.create(user=make_user('signer'), terms=self.terms)
+        with self.assertRaises(TermsAreImmutable) as caught:
+            assert_editable(self.apps, '2026-09-07-cc0')
+        # The message has to say what to do instead, or it is just an obstacle.
+        self.assertIn('NEW ContributionTerms row', str(caught.exception))
+
+    def test_an_absent_version_is_not_an_error(self):
+        """A migration for a row that was never created has nothing to protect."""
+        from .migration_guards import assert_editable
+        self.assertIsNone(assert_editable(self.apps, 'no-such-version'))
+
+
+class TermsHeadingTests(TestCase):
+
+    def test_the_credit_section_carries_no_licence_implication(self):
+        """CC0 requires nothing of anyone, so "Attribution" over-promises before
+        the reader reaches the sentence that says so."""
+        body = active_terms().body
+        self.assertIn('How you are credited', body)
+        self.assertNotIn('\nAttribution\n', body)
+        # NOT "How to cite" — that is LICENCE.md's citation block, and this
+        # section is about whether the contributor is named at all.
+        self.assertNotIn('How to cite', body)
+        # …and the sentence it was defusing is still there.
+        self.assertIn('because it is right', body)
+
+
 class MyanmarQuestionTests(TestCase):
 
     def test_q13_is_linked_to_the_register_question(self):
