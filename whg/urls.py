@@ -4,6 +4,8 @@ from pathlib import Path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+
+from grace.admin_site import grace_admin_site
 from django.contrib.sitemaps import views as sitemapviews
 from django.core.cache import caches
 from django.http import HttpResponseForbidden
@@ -67,7 +69,8 @@ urlpatterns = [
                   # home page
                   path('', views.Home30a.as_view(), name="home"),
 
-                  # link out to the external Baserow dataset-submission form
+                  # public "suggest a source" door -> grace:suggest (kept as a
+                  # stable alias; the nav and older links still use this name)
                   path('contribute/', views.submit_dataset, name="submit-dataset"),
 
                   # apps
@@ -75,6 +78,10 @@ urlpatterns = [
                   path('collections/', include('collection.urls')),
                   path('datasets/', include('datasets.urls')),
                   path('elastic/', include('elastic.urls')),
+                  # GRACE's own admin, showing only its models with its own
+                  # landing page. The stock /admin/ still has them too.
+                  path('grace/admin/', grace_admin_site.urls),
+                  path('grace/', include('grace.urls')),
                   path('main/', include('main.urls')),  # utility urls/views
                   path('phonetics/', include('phonetics.urls')),
                   path('places/', include('places.urls')),

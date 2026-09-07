@@ -478,16 +478,15 @@ def group_list(request, sort='', order=''):
     return render(request, 'lists/group_list.html', context)
 
 
-# Link out to the external Baserow "Submit Your Dataset to WHG" form.
-# The workflow tool itself lives outside this codebase (Baserow workspace);
-# we keep a stable internal URL so the external target can change without
-# touching templates. Falls back gracefully until the form URL is configured.
+# /contribute/ — the public "suggest a source" door.
+#
+# This used to 302 out to an external Baserow form, which meant the site's only
+# public entry point for suggestions led off WHG entirely. It now redirects to
+# GRACE's own intake form (review decision 5: suggest-a-source, with a visible
+# untriaged queue). The name and the URL are unchanged so nav and any external
+# links keep working.
 def submit_dataset(request):
-    url = getattr(settings, 'BASEROW_SUBMIT_FORM_URL', '')
-    if url:
-        return redirect(url)
-    messages.info(request, "Dataset submission is being set up — please check back soon, or contact us in the meantime.")
-    return redirect('home')
+    return redirect('grace:suggest')
 
 
 # Gazetteer Workbench — browser-based, local-first Reconciliation UI.
@@ -1595,8 +1594,38 @@ def dashboard_admin_view(request):
         'groups_led': groups_led,
         'is_admin': is_admin,
         'is_leader': is_leader,
+        'grace': _grace_dashboard_counts() if is_admin else None,
     }
     return render(request, 'main/dashboard_admin.html', context)
+
+
+def _grace_dashboard_counts():
+    """The GRACE numbers worth surfacing on the admin dashboard.
+
+    The first three are things that go wrong by *nobody noticing*: a public
+    suggestion nobody triaged, a conversation that stalled (a stall is the
+    absence of a stage change, so only the follow-up date reveals it), and an
+    Article 14 privacy notice we owe someone and have not sent. The rest are
+    just size. Cheap counts, computed only for admins.
+    """
+    import datetime
+
+    from grace.models import (
+        Engagement, Person, Source, SourceSuggestion, TrackedDataset,
+    )
+
+    return {
+        'untriaged': SourceSuggestion.objects.filter(
+            status__is_untriaged=True).count(),
+        'stalled': Engagement.objects.filter(
+            stage__is_open=True,
+            next_follow_up__lt=datetime.date.today()).count(),
+        'notices_due': Person.objects.owed_privacy_notice().count(),
+        'datasets': TrackedDataset.objects.count(),
+        'prospects': TrackedDataset.objects.prospects().count(),
+        'people': Person.objects.live().count(),
+        'sources': Source.objects.count(),
+    }
 
 
 # for non-admins

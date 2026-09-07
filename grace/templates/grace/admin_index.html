@@ -1,0 +1,239 @@
+{% extends "admin/base_site.html" %}
+
+{% comment %}
+  GRACE's admin landing page. Replaces Django's alphabetical app list with the
+  registers, and leads with what needs attention — the failure modes that go
+  wrong by nobody noticing.
+
+  Everything links into ordinary Django changelists, so the filters, bulk
+  actions and inline editing built in grace/admin.py all still apply. The
+  site-wide purple theme lives in grace/static/grace/admin.css and covers those
+  changelists too; only the index-specific layout is below.
+{% endcomment %}
+
+{% block title %}GRACE — Gazetteer Register And Contact Engagement{% endblock %}
+
+{% block extrastyle %}{{ block.super }}
+<style>
+  .grace-hero { margin: 4px 0 26px; }
+  .grace-hero h1 {
+    font-size: 15px; font-weight: 600; letter-spacing: 0.2px;
+    color: var(--body-loud-color); margin: 0 0 5px;
+  }
+  .grace-hero p {
+    margin: 0; color: var(--body-quiet-color); font-size: 13px;
+    max-width: 62em; line-height: 1.5;
+  }
+
+  /* ---- What needs attention ---- */
+  .grace-attention { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 26px; }
+  .grace-attention a {
+    flex: 1 1 220px; display: block; padding: 12px 15px; border-radius: 6px;
+    text-decoration: none; border: 1px solid; border-left-width: 4px;
+  }
+  .grace-attention a:hover { text-decoration: none; filter: brightness(0.98); }
+  .grace-attention .warn {
+    background: var(--grace-warn-bg); border-color: var(--grace-warn-line);
+    border-left-color: var(--grace-warn-fg);
+  }
+  .grace-attention .bad {
+    background: var(--grace-bad-bg); border-color: var(--grace-bad-line);
+    border-left-color: var(--grace-bad-fg);
+  }
+  .grace-attention .n { display: block; font-weight: 700; font-size: 17px; line-height: 1.2; }
+  .grace-attention .warn .n { color: var(--grace-warn-fg); }
+  .grace-attention .bad  .n { color: var(--grace-bad-fg); }
+  .grace-attention .why {
+    display: block; color: var(--grace-muted); font-size: 11.5px;
+    line-height: 1.4; margin-top: 4px;
+  }
+  .grace-clear {
+    background: var(--grace-ok-bg); border: 1px solid var(--grace-ok-line);
+    border-left: 4px solid var(--grace-ok-fg);
+    padding: 11px 15px; border-radius: 6px; color: var(--grace-ok-fg); font-size: 13px;
+    margin: 0 0 26px;
+  }
+
+  /* ---- The board ---- */
+  .grace-board { margin: 0 0 30px; }
+  .grace-board table {
+    width: 100%; border-collapse: collapse; font-size: 12.5px;
+    border: 1px solid var(--grace-line); border-radius: 7px; overflow: hidden;
+  }
+  .grace-board thead th {
+    background: var(--grace-tint); border-bottom: 1px solid var(--grace-line);
+    text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.6px; text-transform: uppercase;
+    color: var(--body-quiet-color); white-space: nowrap;
+  }
+  .grace-board tbody td {
+    padding: 7px 12px; border-top: 1px solid var(--hairline-color);
+    vertical-align: top;
+  }
+  .grace-board tbody tr:first-child td { border-top: none; }
+  .grace-board tbody tr:hover > td { background: var(--grace-tint); }
+  .grace-board td.what { width: 34%; }
+  .grace-board td.what a { font-weight: 600; }
+  .grace-board .held {
+    display: inline-block; margin-left: 7px; font-size: 10px;
+    letter-spacing: 0.5px; text-transform: uppercase; padding: 1px 6px;
+    border-radius: 9px; background: var(--grace-ok-bg);
+    color: var(--grace-ok-fg); border: 1px solid var(--grace-ok-line);
+    vertical-align: 1px;
+  }
+  .grace-board .prospect {
+    background: transparent; color: var(--grace-muted);
+    border-color: var(--grace-line);
+  }
+  .grace-board .quiet { color: var(--body-quiet-color); }
+  .grace-board .bad  { color: var(--grace-bad-fg);  font-weight: 700; }
+  .grace-board .warn { color: var(--grace-warn-fg); font-weight: 600; }
+  .grace-board .more { margin: 9px 0 0; font-size: 12px; }
+
+  /* ---- Registers ---- */
+  .grace-sectionhead {
+    font-size: 11px; font-weight: 700; letter-spacing: 1.1px;
+    text-transform: uppercase; color: var(--body-quiet-color);
+    margin: 0 0 10px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--grace-line);
+  }
+  .grace-registers {
+    display: grid; gap: 14px; align-items: start;
+    grid-template-columns: repeat(auto-fit, minmax(255px, 1fr));
+  }
+  .grace-register {
+    border: 1px solid var(--grace-line); border-radius: 7px;
+    overflow: hidden; background: var(--body-bg);
+  }
+  .grace-register > h2 {
+    margin: 0; padding: 10px 15px 9px; background: var(--grace-tint);
+    border-bottom: 1px solid var(--grace-line);
+    color: var(--link-fg); font-size: 13px; font-weight: 700; letter-spacing: 0.2px;
+  }
+  .grace-register .blurb {
+    padding: 10px 15px 2px; margin: 0;
+    color: var(--body-quiet-color); font-size: 11.5px; line-height: 1.45;
+  }
+  .grace-register table { width: 100%; border-collapse: collapse; margin: 6px 0 0; }
+  .grace-register td { padding: 7px 15px; border-top: 1px solid var(--hairline-color); }
+  .grace-register tr:first-child td { border-top: none; }
+  .grace-register td.label a { font-weight: 500; }
+  .grace-register td.count {
+    text-align: right; color: var(--body-quiet-color);
+    font-variant-numeric: tabular-nums; font-size: 12px; width: 1%;
+  }
+  .grace-register td.add { text-align: right; width: 1%; white-space: nowrap; padding-left: 4px; }
+  .grace-register td.add a { font-size: 11px; color: var(--body-quiet-color); }
+  .grace-register td.add a:hover { color: var(--link-fg); }
+
+  /* ---- Vocabularies ---- */
+  .grace-vocab { margin-top: 30px; }
+  .grace-vocab .intro {
+    margin: 0 0 12px; color: var(--body-quiet-color);
+    font-size: 12px; max-width: 62em; line-height: 1.5;
+  }
+  .grace-vocab ul {
+    list-style: none !important; margin: 0; padding: 0;
+    display: grid; gap: 7px 18px;
+    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+  }
+  .grace-vocab li { list-style: none !important; font-size: 12.5px; }
+  .grace-vocab li::marker { content: none; }
+  .grace-vocab .n {
+    color: var(--body-quiet-color); margin-left: 6px;
+    font-variant-numeric: tabular-nums; font-size: 11px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="grace-hero">
+  <h1>The editorial tracker</h1>
+  <p>The datasets we want, the people and institutions behind them, the printed
+     sources that document them, our correspondence, and where each dataset sits
+     on its way in.</p>
+</div>
+
+{% if attention %}
+<div class="grace-attention">
+  {% for item in attention %}
+    <a class="{{ item.level }}" href="{{ item.url }}">
+      <span class="n">{{ item.count }} {{ item.label }}{{ item.count|pluralize }}</span>
+      <span class="why">{{ item.why }}</span>
+    </a>
+  {% endfor %}
+</div>
+{% elif all_clear %}
+<div class="grace-clear">Nothing needs attention.</div>
+{% endif %}
+
+{% if board %}
+<div class="grace-board">
+  <h2 class="grace-sectionhead">Datasets on their way in</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Dataset</th><th>Stage</th><th>Permission</th><th>Review</th>
+        <th>Responsible</th><th>On radar</th><th>WHG</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in board %}
+        <tr>
+          <td class="what">
+            <a href="{{ row.url }}">{{ row.title }}</a>
+            {% if row.held %}<span class="held">held</span>
+            {% else %}<span class="held prospect">prospect</span>{% endif %}
+          </td>
+          <td>{{ row.stage|default:"—" }}</td>
+          <td class="quiet">{{ row.permission|default:"—" }}</td>
+          <td class="{{ row.review_level }}">{{ row.review|default:"—" }}</td>
+          <td class="quiet">{{ row.owner|default:"—" }}</td>
+          <td class="quiet">{{ row.on_radar|date:"M Y"|default:"—" }}</td>
+          <td>{% if row.whg_url %}<a href="{{ row.whg_url }}">open</a>
+              {% else %}<span class="quiet">—</span>{% endif %}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="more">Furthest along first.
+     <a href="{{ board_url }}">All {{ board_total }} datasets</a> — filter by
+     stage, by person, or by held/prospect, and edit stage, owner and
+     permission straight in the list.</p>
+</div>
+{% endif %}
+
+<h2 class="grace-sectionhead">Registers</h2>
+<div class="grace-registers">
+  {% for register in registers %}
+    <div class="grace-register">
+      <h2>{{ register.title }}</h2>
+      <p class="blurb">{{ register.blurb }}</p>
+      <table>
+        {% for row in register.rows %}
+          <tr>
+            <td class="label"><a href="{{ row.url }}">{{ row.name|capfirst }}</a></td>
+            <td class="count">{{ row.count }}</td>
+            <td class="add"><a href="{{ row.add_url }}">+&nbsp;add</a></td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+  {% endfor %}
+</div>
+
+{% if vocabularies %}
+<div class="grace-vocab">
+  <h2 class="grace-sectionhead">Vocabularies</h2>
+  <p class="intro">Every pick-list in GRACE is a table you can edit here — add a term,
+     reorder them, or retire one without deleting it. No developer, no deploy.
+     Renaming a term is safe: the stable key underneath does not change.</p>
+  <ul>
+    {% for row in vocabularies %}
+      <li><a href="{{ row.url }}">{{ row.name|capfirst }}</a>
+          <span class="n">{{ row.count }}</span></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endblock %}

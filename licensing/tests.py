@@ -4,14 +4,52 @@ from django.test import TestCase
 from .models import License
 
 
+# The rows THIS app's data migrations seed: 8 from 0002, 7 from 0003, 6 from
+# 0005 (place#157). Named rather than counted, deliberately.
+#
+# A bare `License.objects.count()` is not a claim about the licensing app — it is
+# a claim about every app in the project, because the vocabulary is shared and
+# other apps seed into it. `phonetics/0008_dual_licence_terms` adds MIT, with
+# `contributor_selectable=False` so it stays out of the dataset picker. That is
+# correct and intended, and it broke this assertion for the second time. A count
+# checked against a hand-maintained comment rots on somebody else's commit; the
+# set of ids this app is responsible for does not.
+SEEDED_BY_LICENSING = frozenset({
+    # 0002_seed_licenses
+    "CC-BY-4.0", "CC-BY-3.0", "CC-BY-SA-4.0", "CC-BY-NC-4.0", "CC0-1.0",
+    "ODbL-1.0", "ODC-By-1.0", "custom-public-domain",
+    # 0003_extend_licenses
+    "CC-BY-SA-3.0", "CC-BY-NC-SA-4.0", "CC-BY-NC-ND-3.0", "CC-BY-NC-ND-4.0",
+    "CC-BY-3.0-IGO", "custom-all-rights-reserved", "custom-academic-use",
+    # 0005_seed_authority_licences
+    "custom-nativeland-dst", "custom-historic-counties", "custom-chgis-academic",
+    "custom-ukds-eul", "custom-un-geodata", "CC-BY-ND-4.0",
+})
+
+
 class LicenseSeedTests(TestCase):
-    """The 0002 + 0003 data migrations run as part of test-DB setup, so the
+    """The 0002 + 0003 + 0005 data migrations run as part of test-DB setup, so the
     seeded rows are present without re-running anything here."""
 
     def test_seed_rows_present(self):
-        # 8 rows from 0002 + 7 from 0003_extend_licenses
-        # + 6 from 0005_seed_authority_licences (place#157).
-        self.assertEqual(License.objects.count(), 21)
+        present = set(License.objects.values_list("spdx_id", flat=True))
+        self.assertEqual(
+            sorted(SEEDED_BY_LICENSING - present), [],
+            "licensing seed rows missing from the vocabulary",
+        )
+
+    def test_seed_rows_did_not_collide(self):
+        """Every seeded id resolves to its own row.
+
+        `spdx_id` is unique and the seeds use `update_or_create`, so two entries
+        sharing an id would silently merge into one row rather than fail — which
+        is the failure the old count would genuinely have caught, kept here in a
+        form that does not depend on what other apps put in the table.
+        """
+        self.assertEqual(
+            License.objects.filter(spdx_id__in=SEEDED_BY_LICENSING).count(),
+            len(SEEDED_BY_LICENSING),
+        )
 
     def test_extended_custom_and_nd_rows_present(self):
         """The four custom / NoDerivatives keys added by 0003 must resolve —

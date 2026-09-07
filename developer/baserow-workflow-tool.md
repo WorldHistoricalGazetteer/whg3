@@ -1,5 +1,35 @@
 # Dataset / Gazetteer Workflow Tool — Baserow (external)
 
+> ## ⚠️ SUPERSEDED — 27 August 2026
+>
+> **The Baserow route is abandoned.** Editorial tracking is being rebuilt in
+> Django as **GRACE** (*Gazetteer Register And Contact Engagement*), an app
+> inside this repo. See `developer/handoff-grace-editorial-tracker.md` and the
+> design review at `developer/whg-tracker-review.html`.
+>
+> This file is **kept, not deleted**: it records a decision and its reversal,
+> which is part of the reasoning GRACE inherits. Read it as history.
+>
+> **Do not act on anything below.** In particular:
+>
+> - **The "Teardown" SQL must not be run.** It is also moot: checked 27 Aug 2026,
+>   `leads_datasetlead` no longer exists on either database and `django_migrations`
+>   has no `leads` rows, so the ~72 seeded rows are gone from Postgres. Their only
+>   surviving copies are `WHG_gazetteer_bibliography.xlsx` and Baserow's
+>   *Gazetteer Bibliography* table — **export that table before the workspace is
+>   shut down.** See `developer/grace-leads-prototype-notes.md`.
+> - **The API token described under "Possible next steps" was revoked**, not
+>   merely rotated — it had been circulated by email in the clear.
+> - The `sync_licences_to_baserow` command and the `BASEROW_API_URL` /
+>   `BASEROW_BOT_*` / `BASEROW_LICENCES_TABLE_ID` settings have been removed.
+>   `BASEROW_SUBMIT_FORM_URL` and the `/contribute/` redirect survive for now —
+>   they are the site's only public suggestion door until the Django intake form
+>   replaces them.
+>
+> Below this line, the document is unchanged from June 2026.
+
+---
+
 > Branch: `feature/baserow-submit-link` (off `main`)
 > Supersedes the in-codebase Django `leads` app (see "Teardown" below).
 

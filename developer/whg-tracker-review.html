@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GRACE — review of the working design</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 18mm 18mm 18mm;
+    @bottom-center {
+      content: "World Historical Gazetteer — GRACE: review of the working design";
+      font-size: 7.5pt; color: #8a8a8a; font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+    @bottom-right {
+      content: "Page " counter(page) " of " counter(pages);
+      font-size: 7.5pt; color: #8a8a8a; font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+  }
+  html { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 10.2pt; color: #1d1d1f; line-height: 1.45; }
+  body { margin: 0; }
+
+  h1 { font-size: 21pt; margin: 0 0 2pt 0; color: #5b2a86; letter-spacing: -0.3pt; }
+  .subtitle { font-size: 12pt; color: #444; margin: 0 0 4pt 0; font-weight: 500; }
+  .meta { font-size: 8.6pt; color: #777; margin: 0 0 16pt 0; border-bottom: 2px solid #5b2a86; padding-bottom: 10pt; }
+  .meta strong { color: #555; }
+
+  h2 { font-size: 13.5pt; color: #5b2a86; margin: 18pt 0 6pt 0; padding-bottom: 3pt; border-bottom: 1px solid #d9cfe4; page-break-after: avoid; }
+  h3 { font-size: 11pt; color: #333; margin: 12pt 0 4pt 0; page-break-after: avoid; }
+  p { margin: 0 0 7pt 0; }
+
+  ul, ol { margin: 0 0 8pt 0; padding-left: 18pt; }
+  li { margin: 0 0 4pt 0; }
+
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt 0; font-size: 8.7pt; }
+  th { background: #5b2a86; color: #fff; text-align: left; padding: 5pt 6pt; font-weight: 600; }
+  td { padding: 5pt 6pt; border-bottom: 0.5pt solid #ddd; vertical-align: top; }
+  tr:nth-child(even) td { background: #f7f4fa; }
+  code { font-family: 'SF Mono', 'Consolas', monospace; font-size: 8.4pt; background: #f0ecf5; padding: 0.5pt 3pt; border-radius: 2px; color: #4a2470; }
+
+  .rec { background: #f1f7f1; border-left: 3px solid #1a7a3c; padding: 7pt 10pt; margin: 7pt 0 10pt 0; }
+  .rec strong { color: #1a7a3c; }
+  .decision { background: #fbf6ec; border-left: 3px solid #c47f17; padding: 7pt 10pt; margin: 7pt 0 10pt 0; }
+  .decision strong { color: #9a6310; }
+  .risk { background: #fdf1f1; border-left: 3px solid #a52222; padding: 7pt 10pt; margin: 7pt 0 10pt 0; }
+  .risk strong { color: #8c1d1d; }
+  .lede { font-size: 10.6pt; color: #333; background: #f7f4fa; border: 1px solid #e3d9ee; padding: 9pt 12pt; border-radius: 4px; margin: 0 0 12pt 0; }
+  .note { font-size: 9pt; color: #555; background: #fcfbfd; border: 1px solid #ece6f3; padding: 7pt 11pt; border-radius: 4px; margin: 0 0 14pt 0; }
+  .tag { display: inline-block; font-size: 7.5pt; font-weight: 700; padding: 1pt 5pt; border-radius: 3px; vertical-align: middle; }
+  .tag-keep { background: #2f6f9f; color: #fff; }
+  .tag-set { background: #1a7a3c; color: #fff; }
+  .tag-open { background: #c47f17; color: #fff; }
+  .tag-done { background: #555; color: #fff; }
+  .tag-rev  { background: #7a2f7a; color: #fff; }
+  .small { font-size: 8.6pt; color: #666; }
+  .code-block { font-family: 'SF Mono', 'Consolas', monospace; font-size: 8.3pt; background: #f7f4fa; border: 1px solid #e3d9ee; border-radius: 3px; padding: 8pt 10pt; margin: 6pt 0 10pt 0; line-height: 1.5; color: #3d2058; white-space: pre; page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<h1>GRACE</h1>
+<p class="subtitle">Palak's editorial tracker: the design, reviewed and settled</p>
+<p class="meta"><strong>Prepared by:</strong> Stephen Gadd &nbsp;·&nbsp; <strong>Date:</strong> 27 August 2026, revised 2 September 2026 &nbsp;·&nbsp;
+<strong>For:</strong> Ruth Mostern, Palak Vashist, Alexandra Straub &nbsp;·&nbsp;
+<strong>Purpose:</strong> response to <em>"Tracking people, projects, and datasets — a working design for our editorial workflow"</em></p>
+
+<p class="lede">Palak's draft describes a <strong>coherent system</strong>. The entity graph in the prose and the diagram
+agree with each other, the cardinalities are stated and correct, and the "how is it controlled / what values are
+allowed" discipline that Ruth asked for has produced exactly the data dictionary a build needs. This note sets out
+<strong>four structural fixes</strong>, answers the five questions Palak left open, and settles <strong>one governance
+point</strong> that had not previously been put on the table. All seven decisions are now made, and the build is
+under way.</p>
+
+<p class="lede"><strong>Revised, 2 September 2026.</strong> Palak has now reviewed the working build on
+<code>staging</code>. One of her seven points overturns a decision taken here: §8 argued for calling the pipeline record
+a <em>gazetteer</em>, and that was wrong. §8 has been rewritten and §13 records what the review changed.</p>
+
+<p class="note"><strong>The system is GRACE</strong> — <em>Gazetteer Register And Contact Engagement</em> — a Django app
+inside WHG, sitting alongside <code>datasets</code>, <code>collection</code> and the rest. The name says what it holds: a
+register of the gazetteers, people, projects and sources we track, and a record of our dealings with them.</p>
+
+<p class="note"><strong>A note on terms.</strong> A contributor brings a <strong>dataset</strong>; once reconciled and
+published it is a <strong>gazetteer</strong>. One object, two life stages — the same thing we tell people on Map your
+Data. GRACE's pipeline record exists almost entirely during the first stage, so it is called a <strong>Dataset</strong>.
+That leaves "gazetteer" free to mean the two things it means everywhere else at WHG: a <em>printed</em> gazetteer, which
+is a <strong>source</strong> we might mine for places, and a <em>published WHG</em> gazetteer, which is a row in the
+Gazetteer Register. §8 sets out the reasoning, and why the first version of this note got it wrong.</p>
+
+<h2>Where this stands</h2>
+
+<table>
+  <tr><th style="width:4%">#</th><th style="width:38%">Decision</th><th style="width:14%">Status</th><th>Outcome</th></tr>
+  <tr><td>1</td><td>Does GRACE point at the Gazetteer Register and read licence, rights, counts and coverage through it?</td>
+      <td><span class="tag tag-set">SETTLED</span></td><td>Yes — a nullable foreign key, with a local title so prospects can be named.</td></tr>
+  <tr><td>2</td><td>One Contact model linked to User, or two separate people-tables?</td>
+      <td><span class="tag tag-set">SETTLED</span></td><td>One, with an optional link and no duplicated fields.</td></tr>
+  <tr><td>3</td><td>Vocabularies as editable lookup tables, or frozen choices in code?</td>
+      <td><span class="tag tag-set">SETTLED</span></td><td>Tables by default — it is what preserves Palak's self-service.</td></tr>
+  <tr><td>4</td><td>Do we add an institution entity, or keep affiliation as free text?</td>
+      <td><span class="tag tag-set">SETTLED</span></td><td>Add it — permission to publish is granted by institutions.</td></tr>
+  <tr><td>5</td><td>Is the public form a suggest-a-source tool, or a general front door?</td>
+      <td><span class="tag tag-set">SETTLED</span></td><td>Suggest-a-source, with a visible untriaged intake state.</td></tr>
+  <tr><td>6</td><td>Personal data: lawful basis, consent, erasure path, encryption.</td>
+      <td><span class="tag tag-set">SETTLED</span></td><td>Legitimate interests, with the four obligations of §10 implemented in the build.</td></tr>
+  <tr><td>7</td><td>Terminology, and what the three registers are called.</td>
+      <td><span class="tag tag-rev">REVISED</span></td><td>The pipeline record is a <strong>Dataset</strong> and the
+      people register is <strong>People</strong> — see §8, rewritten after Palak's review. "Printed gazetteer" stays a
+      source type. Registers: Catalogue · Engagement · Pipeline.</td></tr>
+</table>
+
+<p><strong>Nothing now blocks the build.</strong> It divides cleanly: the schema and the admin are a developer job,
+while the vocabularies, the views and the day-to-day shape of GRACE stay Palak's. Work is proceeding on the
+<code>staging</code> branch, where the whole team can review it before it reaches the live site.</p>
+
+<h2>1. What is working, and should not be touched</h2>
+<ul>
+  <li><strong>"Registers, not phases."</strong> <span class="tag tag-keep">KEEP</span> Work does not move in a line — a
+      gazetteer can be in live correspondence with its owner <em>and</em> halfway through review. Naming these registers,
+      in the old sense of a running official list, buys us out of a false sequence.</li>
+  <li><strong>Two questions per field.</strong> <span class="tag tag-keep">KEEP</span> "How is it controlled" and
+      "what values may it hold", answered for every field, is the difference between a spreadsheet and a system. The
+      four-way classification maps cleanly onto Django: a pick-list becomes a lookup table, a link becomes a
+      ForeignKey, a date is a date, and free text is confined to where consistency genuinely does not matter.</li>
+  <li><strong>An engagement is with a person, not with a record.</strong> <span class="tag tag-keep">KEEP</span>
+      The single best modelling decision in the draft. It is what makes "open one person and see every conversation"
+      possible, and it is why the register survives a project being renamed or a gazetteer being withdrawn.</li>
+  <li><strong>Action items as real tasks.</strong> <span class="tag tag-keep">KEEP</span> Palak's own correction —
+      from a free-text plan to an owned, dated task — is right, and it is what makes the reminder rule work at all.</li>
+  <li><strong>Print gazetteers folded into Sources.</strong> <span class="tag tag-keep">KEEP</span> Giving them their own
+      record would duplicate the bibliography for no gain. One source type is simpler and correct.</li>
+</ul>
+
+<h2>2. Fix 1 — point at the Gazetteer Register rather than restating it</h2>
+
+<p>The proposed Dataset tracking status — <em>on our radar; in internal review; revisions requested; ready to
+publish; in external peer review; published; indexed; not indexed; on hold; declined</em> — conflates two axes. Some
+of those values are editorial judgements. Others are machine facts, and Palak flags the difficulty herself: "the
+dashboard stages are guesses… our technical director will know how they line up".</p>
+
+<p>They line up onto something that already exists. The <strong>Gazetteer Register</strong>
+(<code>GazetteerRegistryEntry</code>) is WHG's canonical list of gazetteers, kept current by an idempotent push from the
+indexing side on every successful ingest. It is already the unified list this design wants: <code>entry_class</code>
+spans <em>authority</em> and <em>dataset</em>, so external authorities and WHG contributions sit in one table,
+and <code>gazetteer_type</code> already carries <em>standard&nbsp;/ itinerary&nbsp;/ network</em> — the same widening of
+"gazetteer" the terminology note describes.</p>
+
+<p>So GRACE does not restate any of that. Its gazetteer record carries a nullable foreign key to the
+Register and reads through it:</p>
+
+<div class="code-block">class TrackedGazetteer(models.Model):
+    # GRACE's own record. Exists from the moment something lands on our
+    # radar — long before there is anything in WHG to point at.
+    title    = models.CharField(...)          # what we called it when we first heard of it
+    registry = models.ForeignKey('api.GazetteerRegistryEntry',
+                                 null=True, blank=True, ...)
+    stage    = models.ForeignKey('Stage', ...)      # editorial values ONLY
+    owner    = models.ForeignKey(settings.AUTH_USER_MODEL, ...)
+
+    @property
+    def is_prospect(self):      # no Register row yet — we are still chasing it
+        return self.registry_id is None</div>
+
+<p>What that buys is considerable, because the Register already holds — and the ingest push already maintains — the
+licence (a resolved link to the licence vocabulary), rights holder, CRediT-shaped contributors, structured citation
+text, source URL, record count, temporal extent, spatial coverage and an owner. None of it needs re-entering, and none of
+it can drift, because there is only ever one copy. Every machine fact therefore disappears from GRACE's own fields, and
+what remains is genuinely ours to decide: the editorial stage, the responsible person, review status, permission to
+publish, when it came onto our radar, and the notes.</p>
+
+<p>Pointing at the Register rather than at <code>datasets.Dataset</code> also makes a whole class of work expressible
+that would otherwise fall outside the system. Much of our outreach concerns <em>authorities</em> — the Getty over TGN,
+ISAW over Pleiades — not contributed datasets. A Dataset link cannot represent those conversations; a Register link can.</p>
+
+<h3>Why GRACE still needs its own table</h3>
+
+<p>The natural next thought is to put the editorial fields straight onto the Register row. There is even a precedent for
+it: the inventory push deliberately omits the curatorial fields from what it writes, with a
+comment warning that adding them would "silently reset them on every push, blowing away staff curation". Protect-by-
+omission is a proven, documented pattern here.</p>
+
+<p>It still should not be done, for three reasons — the first decisive:</p>
+
+<ul>
+  <li><strong>The primary key rules it out.</strong> A Register row is keyed by namespace — <code>gn</code> for an
+      authority, <code>whg:1234</code> for a WHG dataset — and that identifier exists only once something has been
+      ingested. A print gazetteer someone mentioned at a conference has no namespace, so it can have no row without
+      minting a placeholder key that would then have to change when the thing became real, breaking every foreign key
+      pointing at it. <em>Prospects are the majority of what GRACE tracks</em>, so this is the main case, not an edge case.</li>
+  <li><strong><code>status</code> is push-managed.</strong> It is set on every push, with a single carve-out protecting
+      <em>embargoed</em>. The editorial stage can therefore never <em>be</em> <code>status</code>; it has to be a field of
+      GRACE's own regardless.</li>
+  <li><strong>The Register row is public-facing.</strong> The sources API, the Atlas gazetteer inventory and
+      the Regions offcanvas all read it through a visibility gate. They use explicit field lists today, so
+      nothing leaks by accident — but that discipline would have to hold across every future serializer once the same row
+      also carried "permission unclear, chasing the archivist since March". That is a standing hazard for no benefit.</li>
+</ul>
+
+<p>There is a lifecycle argument too: the Register row's existence is owned by the indexing side. A gazetteer we decline,
+or one later withdrawn, has no row — and its editorial history is exactly what we need to keep. Put plainly: <strong>the
+Register is a gazetteer's published identity; GRACE is its editorial biography</strong>, which begins earlier and
+outlives it.</p>
+
+<div class="rec"><strong>Decision 1 — settled.</strong> GRACE's gazetteer record takes a nullable foreign key to
+the Gazetteer Register, keeping a local title so a prospect can be named before it has an identity. Every machine fact is
+read through that link, and the derived values (<em>published</em>, <em>indexed</em>, <em>not indexed</em>) come out of
+the editorial stage list. A row with no Register link <em>is</em> a prospect, so no vocabulary has to say so.</div>
+
+<div class="decision"><strong>Over to Palak.</strong> Confirm the editorial stage list once the derived values are
+out. That half needs no technical input.</div>
+
+<h2>3. Fix 2 — much of the Catalogue is already built</h2>
+
+<p>Two more of Palak's tables substantially exist in WHG already, and re-creating them would leave us with two competing
+copies of the same facts.</p>
+
+<h3>People is mostly the existing user model</h3>
+
+<p>The user model already carries <em>name</em>, <em>given name</em>, <em>surname</em>,
+<em>affiliation</em>, <em>web page</em>, <em>ORCID</em>, <em>email</em>, <em>email confirmed</em>,
+<em>role</em>, <em>is active</em> and <em>preferred language</em> — and a <em>news permitted</em> flag, which is
+precisely the mailing-list consent flag the draft's <em>Mailing lists</em> field implies. Palak's <em>Identifier</em> is
+ORCID; her <em>active&nbsp;/ dormant</em> is <em>is active</em>.</p>
+
+<p>The catch is that most people in the Catalogue will never have a WHG account — we have merely heard of them — and we
+must not create shell accounts for people we have only read about. So the right shape is a separate <strong>Contact</strong>
+model with an <em>optional</em> one-to-one link to the user record, and a firm rule that no field is stored in both places:
+where a Contact is linked, affiliation, ORCID and email are read through the link. This also turns Palak's own
+aside — "ultimately the people submitting will become the user" — from a note in the margin into a first-class
+relation.</p>
+
+<h3>Regions is already M49, and already built</h3>
+
+<p>Palak calls her region list a placeholder and asks for "a real scheme". WHG has one: the <code>regions</code> app is a
+complete UN&nbsp;M49 hierarchy — global&nbsp;/ region&nbsp;/ sub-region&nbsp;/ intermediate&nbsp;/ country — with parent and member
+relations, ISO alpha-2 and alpha-3 codes, Wikidata identifiers, multilingual labels, and actual geometry and hulls. The
+placeholder is dropped in favour of a many-to-many to Region, which also answers her question about
+multiple regions: yes, and it comes for free.</p>
+
+<div class="rec"><strong>Decision 2 — settled.</strong> Build <em>Contact</em> with an optional link to the user model
+and no duplicated fields, rather than a People table from scratch. Use the existing Region model directly in place of
+the placeholder vocabulary.</div>
+
+<h2>4. Fix 3 — two entities are missing</h2>
+
+<h3>Organisations</h3>
+
+<p><em>Affiliation</em> is free text, and there is no institution record in the design — nor anywhere in WHG, so this
+genuinely is new. Permission to publish is granted by an archive, a library, a museum or a university, not by an
+individual, and <em>Permission to publish</em> is the field the entire licensing programme depends on. Projects are not
+institutions: a project ends, an institution does not, and the rights it granted outlive both the project and whoever we
+spoke to. A minimal Organisations model also gives us somewhere to record that we already hold a standing agreement with
+an institution before we approach a third researcher there.</p>
+
+<h3>Intake and triage</h3>
+
+<p>There is nowhere for a public submission to land. <em>Discovery source</em> offers <em>conference; referral;
+literature; flagged internally; other</em> and no value for a web submission, and nothing in the registers says "this
+arrived from the public and nobody has looked at it yet". The site's public suggestion form has to be built in Django
+anyway (§11), so the intake model and the form are designed together rather than one retrofitted to the other.</p>
+
+<p>Related: <em>Sources → Associated datasets</em> is documented as "datasets it documents". That is a
+<em>documentation</em> relation. There is no <em>derivation</em> relation — the candidate gazetteer that
+was <em>extracted from</em> a given print source. Since turning print gazetteers into WHG gazetteers is the main reason
+the bibliography exists, losing that link would cost us the provenance chain for the whole programme.</p>
+
+<div class="rec"><strong>Decisions 4 and 5 — settled.</strong> Add an Organisations model. Add <em>web form</em> to
+<em>Discovery source</em> and an unreviewed intake state. Split the Source→gazetteer link into "documents"
+and "derived from". The public form is a <strong>suggest-a-source</strong> tool — not a general front door that triages
+everyone and routes gazetteer owners on to the validate flow — and it shows its untriaged queue rather than hiding it.</div>
+
+<h2>5. Fix 4 — preserving Palak's self-service</h2>
+
+<p>A no-code database lets Palak add a field or a vocabulary term herself, in seconds, without a developer. Django
+ordinarily does not, and self-service is the reason the team wanted a no-code tool in the first place. If we build in
+Django and ignore that, we will have solved the data-modelling problem while recreating the bottleneck it was meant to
+remove.</p>
+
+<p>The mitigation is a modelling choice, and it needs making at the start rather than retrofitting:
+<strong>model each controlled vocabulary as its own table</strong>, not as a <code>choices=</code> tuple. A
+choices list is frozen in code and needs a developer and a migration to change; a lookup table is editable
+in the Django admin in ten seconds. Reserve <code>choices</code> for the handful of lists that code actually branches on
+— where adding a value without changing logic would be a bug — and make everything else a table Palak owns.</p>
+
+<p>Applied to the draft's vocabulary list, that means <em>people roles, mailing lists, project status, source type,
+priority, contact status, interaction channel, action-item status, review recommendation, outcome, discovery source,
+digitization status, content type</em> and <em>content status</em> are all tables. Only the editorial stage is a plausible
+candidate for <code>choices</code>, and only if notifications branch on specific values.</p>
+
+<div class="rec"><strong>Decision 3 — settled.</strong> Vocabularies as tables by default, with an admin group giving
+Palak edit rights over them. The short list of code-critical vocabularies that stay frozen is to be agreed as they arise,
+and said so in the model docstrings so nobody later "tidies" them into <code>choices</code>.</div>
+
+<h2>6. Field-level corrections</h2>
+
+<table>
+  <tr><th style="width:23%">Field</th><th style="width:20%">As drafted</th><th style="width:22%">Change to</th><th>Why</th></tr>
+  <tr><td>Gazetteer · licence, rights, record count, coverage, reconciliation</td><td>Fields on the tracker</td><td>Read through the Register link</td><td>§2 — maintained by the ingest push; not ours to type</td></tr>
+  <tr><td>People · Name, affiliation, ORCID, email</td><td>Free text, re-declared</td><td>Read through the optional user link</td><td>§3 — never store the same fact twice</td></tr>
+  <tr><td>People · Mailing lists</td><td>Pick-list incl. <em>none</em></td><td>Reconcile with the existing consent flag</td><td>Consent already has a home; two flags will disagree</td></tr>
+  <tr><td>Region (projects &amp; gazetteers)</td><td>Single pick-list, placeholder values</td><td>Many-to-many to Region</td><td>M49 with geometry, ISO codes and labels is already built</td></tr>
+  <tr><td>Gazetteer · Time period</td><td>Free text, e.g. <em>900-1200</em></td><td>Keep the prose, add numeric start/end year</td><td>Unsortable and unfilterable as text — and a prospect has no Register row to read it from</td></tr>
+  <tr><td>Gazetteer · Language(s)</td><td>Free text</td><td>ISO 639-3, multiple</td><td>The data is multilingual; free text will not group</td></tr>
+  <tr><td>Discovery source</td><td>No web-form value</td><td>Add <em>web form</em></td><td>§4</td></tr>
+  <tr><td>Interactions · Logged by</td><td>Link to one of us</td><td>Drop</td><td>Duplicates the universal <em>added by</em> the draft says to assume on every record</td></tr>
+  <tr><td>Gazetteer · Status</td><td>Absent</td><td>Consider adding</td><td>People and Projects both carry one; the asymmetry is probably unintended</td></tr>
+</table>
+
+<h3>Three structural nits</h3>
+<ul>
+  <li><strong>There are four registers, not three.</strong> Content is not engagement — it is output. The draft
+      half-admits it ("content ideas: quick jots — planned pieces live in Content"). Either promote it, or drop
+      the claim that each register is one working table; it is already untrue of the Catalogue, which is four.</li>
+  <li><strong>Two <em>Responsible person</em> fields can disagree.</strong> One sits on the Engagement, one on the
+      tracked gazetteer, with no rule about which wins. The rule: one accountable owner per gazetteer, inherited by
+      its engagements unless deliberately overridden.</li>
+  <li><strong>The notification rule misses the failure mode that matters.</strong> "Stage change notifies the responsible
+      person" is a good, restrained rule — but what goes wrong in outreach is <em>stalling</em>, and a stall is an
+      <em>absence</em> of a stage change. Nothing fires when an engagement has sat in <em>awaiting reply</em> for six
+      weeks. The fix is nearly free: make <em>Next follow-up</em> mandatory whenever the stage is an open one, and the
+      existing date reminder becomes a staleness alarm. Worth suppressing the notification when the responsible person is
+      the one who made the change — otherwise the system spends its credibility telling people what they just did. All of
+      this rides the existing mail machinery and scheduled tasks rather than needing anything new.</li>
+</ul>
+
+<h2>7. The five questions Palak left open</h2>
+
+<table>
+  <tr><th style="width:32%">Question</th><th>Answer</th></tr>
+  <tr>
+    <td><strong>1. Regions</strong> — placeholder list; can something sit in more than one?</td>
+    <td><strong>Already solved, and yes.</strong> The Region model is a full UN&nbsp;M49 hierarchy with geometry,
+        ISO codes, Wikidata ids and multilingual labels. Use a many-to-many to it and the multi-region question answers
+        itself; single-region is the common case, not a constraint worth encoding.</td>
+  </tr>
+  <tr>
+    <td><strong>2. Priority and stage</strong> — on the engagement, or on the catalog record?</td>
+    <td><strong>The register logic answers it.</strong> A stage describing <em>the conversation</em> belongs on the
+        Engagement; a stage describing <em>the thing</em> belongs on the thing. Contact status stays where it is
+        (correct as drawn), and the editorial stage belongs to the tracked gazetteer. Priority is a property of the
+        conversation: leave it on the Engagement.</td>
+  </tr>
+  <tr>
+    <td><strong>3. Funding and grants</strong> — right home? Does it belong at all?</td>
+    <td><strong>It belongs</strong>, for a reason the draft could not have known. Funder and grant number are part of the
+        credit chain WHG already models — the Gazetteer Register carries CRediT contributors, rights holder and
+        structured citation text. Keep <em>Funder</em> and <em>Grant number</em> on Projects, and note that they feed
+        citation metadata. That is the justification, and it needs no new scope.</td>
+  </tr>
+  <tr>
+    <td><strong>4. Dashboard stages</strong> — guesses, to be set with the technical director.</td>
+    <td><strong>Half the question dissolves.</strong> The derived values are read through the Register link (§2). What
+        remains is the genuinely editorial half, which is Palak's to define and needs no technical input at all.</td>
+  </tr>
+  <tr>
+    <td><strong>5. External peer review</strong> — how much to build now?</td>
+    <td><strong>None of it now</strong> — the draft is right to sketch and defer. Two notes for when we do: WHG's
+        record-suggestion flow already runs <em>pending&nbsp;/ approved&nbsp;/ rejected</em> with a reviewer, timestamp and review
+        note, and the Register's <em>embargoed</em> status already expresses "accepted but not yet public". Review
+        comments could also reuse the existing comment model rather than inventing a parallel one.</td>
+  </tr>
+</table>
+
+<h2>8. On "dataset" and "gazetteer"</h2>
+
+<p class="note"><strong>Rewritten, 2 September 2026.</strong> The first version of this section decided the opposite of
+what follows. It is replaced rather than amended, because the reasoning changed, not just the conclusion.</p>
+
+<p>Palak's draft used "dataset" throughout, and the first version of this note treated that as the thing to correct. The
+argument ran: her table holds two kinds of thing — prospects nobody has asked about yet, and gazetteers WHG actually
+holds — and since "dataset" is wrong for the second, call the table <em>Gazetteers</em> and let the nullable Register
+link carry the distinction.</p>
+
+<p>That was the wrong half to name it after. Reviewing the working build, Palak put the counter-argument plainly:
+a dataset is what a contributor submits and what moves through the pipeline toward publication, so the record on its way
+in should be called a Dataset.</p>
+
+<p>Her stated premise — that a gazetteer is printed material, a reference work — is the bibliographic sense, and it is
+not how WHG uses the word anywhere else: the Gazetteer Register, Atlas&nbsp;▸&nbsp;Gazetteers, the twenty-two authority
+gazetteers behind <code>/api/sources/</code>, the name of the platform. Adopting that premise would mean renaming half
+the site. But her conclusion holds on a different and stronger argument, and it is one WHG already makes to its
+users:</p>
+
+<div class="rec"><strong>Decision 7 — revised.</strong> A contributor brings a <strong>dataset</strong>; once reconciled
+and published it is a <strong>gazetteer</strong>. One object, two life stages. GRACE's pipeline record exists almost
+entirely during the first, because at the moment it becomes a gazetteer the authoritative record is the Register row it
+reads through (§2). So the record is a <strong>Dataset</strong>, and the register of people is
+<strong>People</strong>.</div>
+
+<p>The gain is not merely that one label is more accurate. It is that "gazetteer" inside GRACE now means exactly two
+things, and neither of them is the pipeline record: a <strong>printed gazetteer</strong>, which is a source type, and a
+<strong>published WHG gazetteer</strong>, which is a Register entry. The apologetic rider in the first version of this
+section — that <em>source type: printed gazetteer</em> was "the one place in the whole system where the word means a lead
+rather than a contribution" — is no longer needed, because there is no longer a competing sense to distinguish it
+from.</p>
+
+<p>Two riders of its own. First, roughly half the tracked rows are <strong>authority gazetteers</strong> — TGN,
+Pleiades, CHGIS — which never arrive as a contributed dataset at all; we ingest them from a third party. Calling those
+"datasets" is a slight stretch. It is a smaller stretch than calling a contributor's spreadsheet a gazetteer, and the
+rule the team will actually use should be the one that fits the common case.</p>
+
+<p>Second, the earlier claim that this was "a change to human-facing language, not a migration" no longer holds, and
+should not have been used to avoid the question. The Python classes were renamed too —
+<code>TrackedGazetteer&nbsp;→&nbsp;TrackedDataset</code>, <code>Contact&nbsp;→&nbsp;Person</code>,
+<code>ContactRole&nbsp;→&nbsp;PersonRole</code>, <code>ContactStatus&nbsp;→&nbsp;PersonStatus</code> — because a label
+that disagrees with the code underneath it is a trap for the next developer. It is <code>TrackedDataset</code> rather
+than plain <code>Dataset</code> because <code>datasets.Dataset</code> already exists in this project and the two are
+deliberately <em>not</em> the same thing (§2). The rename was cheap: production held no GRACE tables, and Django renames
+models and columns without touching the rows.</p>
+
+<p>GRACE keeps its expansion — <em>Gazetteer Register And Contact Engagement</em>. The acronym is the product's name,
+the Gazetteer Register is exactly what the Pipeline points at, and contact engagement is exactly what the Engagement
+register records. Only the table holding the people changed.</p>
+
+<h2>9. Naming the registers</h2>
+
+<p>Within GRACE, "Dashboard" has to go. WHG's dashboard is the logged-in contributor's own workspace — their gazetteers,
+their uploads — and this is a staff editorial queue with a different audience entirely. Both live in the same Django
+project, so the collision would be literal as well as conversational. Palak asks whether the two might merge; they should
+not, though her underlying instinct is sound and is answered by the user link in §3.</p>
+
+<div class="rec"><strong>Settled.</strong> <strong>Catalogue · Engagement · Pipeline.</strong> "Pipeline" says what
+the third register is for — where a gazetteer sits on its way in — without borrowing a word that already means something
+else to our users.</div>
+
+<h2>10. Personal data</h2>
+
+<p>Holding this ourselves keeps the data at Pitt, under our own auth, backups and access control, with no third-party
+processor involved. But one detail makes the question pressing rather than routine.</p>
+
+<p><strong>WHG encrypts user emails at rest.</strong> The user model's email is an encrypted field, with an indexed
+one-way hash carrying equality lookups precisely because the column itself is unqueryable. A Contact table storing
+plain-text addresses for people who never signed up would hold <em>less</em>-protected personal data than we hold for
+people who did — a visible regression against the platform's own standard, in the same database. Whatever we build must
+meet the bar the user model already sets.</p>
+
+<p>The rest follows from what the Catalogue is for. It will hold names, addresses, affiliations and mailing-list
+membership for researchers who never asked to be in a database. Because contacts and account-holders sit in one system,
+a subject access request spans both, which is an argument for settling retention and erasure while the models are still
+on paper.</p>
+
+<h3>The basis we are using</h3>
+
+<p>The lawful basis is <strong>legitimate interests</strong> (UK/EU GDPR Article 6(1)(f)), documented in a short
+Legitimate Interests Assessment — explicitly <strong>not consent</strong>.</p>
+
+<p>Consent is the wrong instrument here and would actively hurt. It must be freely given, specific and informed
+<em>before</em> processing, which is circular when the whole point is recording someone we have not yet contacted. Worse,
+consent is withdrawable, and withdrawal would oblige us to erase the editorial record of a negotiation that actually
+happened — losing the provenance for rights we legitimately hold.</p>
+
+<p>Legitimate interests fits the actual facts. The interest is scholarly and curatorial: identifying gazetteers and
+negotiating rights over them. The data is overwhelmingly <em>professional</em> — name, institutional affiliation, ORCID,
+work email — things a researcher who published a gazetteer would reasonably expect a gazetteer project to hold. The
+balancing test passes comfortably for that. It would <strong>not</strong> pass for home addresses, personal email, or
+anything special-category, so the model should make those hard to record rather than merely discouraged.</p>
+
+<p>Four obligations follow, and they are the parts such projects usually miss. All four are being built in, not left
+as policy:</p>
+
+<ul>
+  <li><strong>Article 14 transparency.</strong> Because we collect from third parties rather than from the person, we owe
+      a privacy notice within a month, or at first contact — whichever is sooner. The cheapest compliant route is a
+      standing line in the first outreach email plus a section on the privacy page. This is a real obligation, not a
+      nicety, and it is the one most likely to bite.</li>
+  <li><strong>Keep the mailing list separate.</strong> A newsletter is direct marketing, which needs consent under
+      PECR/ePrivacy whatever our Article 6 basis for the contact record. That is exactly what the existing consent flag
+      is — so legitimate interests covers the Catalogue entry, and consent covers the mail. One flag must not do both
+      jobs, which is also why the draft's separate <em>Mailing lists</em> pick-list should go.</li>
+  <li><strong>A real erasure path, not <em>dormant</em>.</strong> Article 21 gives a right to object; <em>dormant</em> is
+      a status, not erasure. Build erasure as <strong>pseudonymisation, not cascade delete</strong>: null the identifying
+      fields on Contact and keep the Interaction rows with their dates and outcomes. The editorial history survives; the
+      person does not. Design this in now — retrofitting it across Engagement, ActionItem and Interaction later is
+      painful.</li>
+  <li><strong>A retention rule.</strong> <strong>Review any contact with no interaction for three years.</strong></li>
+</ul>
+
+<p>Plus the technical follow-on: match the user model, so an encrypted field with an indexed hash for lookups.</p>
+
+<div class="rec"><strong>Decision 6 — settled.</strong> Legitimate interests is the lawful basis, and the four
+obligations above are implemented: the Article 14 notice at first contact, consent kept separate for the mailing list,
+erasure by pseudonymisation, and the three-year retention review.</div>
+
+<p>Two riders, neither of which blocks the build. This is a controller's reasoned position rather than a legal ruling,
+and since Pitt hosts the platform their privacy office may want to see the Legitimate Interests Assessment. And it should
+be read alongside the withhold-by-default posture agreed for Indigenous data, which is stricter than GDPR and wins where
+the two differ.</p>
+
+<h2>11. The Baserow retreat, and what it left behind</h2>
+
+<p>An earlier attempt at this workflow ran on Baserow, an external no-code database, and left live code and content
+pointing at it. That route is now closed and the code-side cleanup is complete.</p>
+
+<table>
+  <tr><th style="width:30%">Loose end</th><th>Position</th></tr>
+  <tr><td><strong>The licence sync</strong><br><span class="small">a management command mirroring our licence vocabulary into Baserow</span></td>
+      <td><span class="tag tag-done">DONE</span> Deleted. Its purpose was keeping an external copy in step, and the Gazetteer Register already resolves licences directly.</td></tr>
+  <tr><td><strong>Settings and credentials</strong></td>
+      <td><span class="tag tag-done">DONE</span> The service-account settings are gone from the codebase and from the deployed environment files on both servers, and <strong>the WHG service account itself has been deleted.</strong></td></tr>
+  <tr><td><strong>The API token</strong></td>
+      <td><span class="tag tag-open">PALAK</span> The full read/write token that was circulated by email in the clear belongs to <strong>Palak's personal account</strong>, not to the service account, and Baserow scopes those per user. <strong>Only Palak can revoke it</strong>, under My settings → Database tokens.</td></tr>
+  <tr><td><strong>The bibliography</strong></td>
+      <td><span class="tag tag-done">DONE</span> The whole workspace — 498 rows across four databases, including the 72-row Print Gazetteer Bibliography — has been exported and is held locally, off the public repository. See below.</td></tr>
+  <tr><td><strong>The public form</strong><br><span class="small">"Suggest a Source" in the Data menu</span></td>
+      <td><span class="tag tag-open">TO BUILD</span> Still a redirect to an external Baserow form, so the site's public entry point for suggestions leads out of WHG entirely. It is rebuilt as a Django form writing to the intake model of §4, designed together with it.</td></tr>
+  <tr><td><strong>The earlier Django prototype</strong></td>
+      <td><span class="tag tag-done">READ</span> A previous in-Django attempt — a lead model, an admin triage board, a public form — has been recovered from version history and written up. Its public form, spam handling and spreadsheet importer are being reused; its vocabularies and region fields are not.</td></tr>
+  <tr><td><strong>The Baserow design note</strong></td>
+      <td><span class="tag tag-done">DONE</span> Marked superseded rather than deleted — it records a decision and its reversal, which is worth keeping.</td></tr>
+</table>
+
+<div class="risk"><strong>A near miss worth recording.</strong> The earlier prototype's ~72 seeded bibliography rows were
+believed to be safe in our own database. They were not: that table had already been dropped from both the development and
+production databases, so the only surviving copies were the original spreadsheet and the Baserow table. The workspace has
+now been exported in full before anything further was touched. <strong>Baserow itself has been left completely
+intact</strong> — nothing there was modified or deleted, and what becomes of that workspace is Palak's call.</div>
+
+<p class="small">The export contains names, email addresses, phone numbers and affiliations for people who never signed
+up to anything. It is deliberately held outside the public code repository, and must stay there until §10 is settled —
+version history cannot be erased on request, which is precisely the problem decision 6 exists to avoid.</p>
+
+<h2>12. What happens next</h2>
+
+<p>The build order, each step depending only on the ones above it:</p>
+
+<ol>
+  <li><strong>Vocabulary tables</strong> — the lookup tables of §5, and the admin group that lets Palak edit them.</li>
+  <li><strong>Contact and Organisation</strong> — with the optional link to the user model, and no duplicated fields.</li>
+  <li><strong>Gazetteers and Stage</strong> — the nullable Register link of §2, plus the editorial stage list Palak defines.</li>
+  <li><strong>Engagement, ActionItem, Interaction</strong> — with the one-owner rule and the staleness alarm of §6.</li>
+  <li><strong>The admin</strong> — triage from the list view, as the earlier prototype showed is sufficient.</li>
+  <li><strong>The public suggest-a-source form</strong> — replacing the outbound redirect, writing to the intake model.</li>
+  <li><strong>Import the exported content</strong> — bibliography into Sources, prospects into Gazetteers, and the
+      people tables under the basis settled in §10.</li>
+</ol>
+
+<p class="small">All seven steps are unblocked. The first import of real contact data is the point at which the Article 14
+notice and the retention clock start applying, so both are in place before it runs.</p>
+
+<p class="note">All seven were completed and deployed to <code>dev.whgazetteer.org</code> in August 2026. §13 records
+what the team's review of that build changed.</p>
+
+<h2>13. What Palak's review of the build changed</h2>
+
+<p>Palak reviewed the working system on <code>staging</code> at the start of September 2026 and raised seven points.
+They are recorded here because two of them contradict decisions taken above, and because the reasoning matters more
+than the outcome.</p>
+
+<table>
+  <tr><th style="width:4%">#</th><th style="width:34%">Point</th><th style="width:14%">Outcome</th><th>What it changed</th></tr>
+
+  <tr><td>1</td><td>Records should show what they are connected to, in both directions.</td>
+      <td><span class="tag tag-set">BUILT</span></td>
+      <td>The reason the tracker was wanted at all, and the build did not have it. Django's admin shows the relations a
+      record points <em>at</em> and nothing pointing back, so a person's page said nothing about their conversations.
+      Every change form now carries a read-only <strong>Connections</strong> panel covering both directions, with
+      reverse counts on the lists. One real gap in the schema surfaced: there was no relation between a person and a
+      source at all (author&nbsp;/&nbsp;compiler was free text), so "a contact to their sources" could not be shown. A
+      link was added; the free-text string stays as the bibliography writes it.</td></tr>
+
+  <tr><td>2</td><td>People should be everyone, ourselves included, with status and mailing-list fields.</td>
+      <td><span class="tag tag-open">PART</span></td>
+      <td>Roles for our own side were added, and <code>PersonRole.is_internal</code> marks them — necessary, because
+      Article 14 covers data obtained from someone <em>other than</em> the person, so it does not apply to colleagues,
+      and without the exemption they would bury the notices genuinely owed. Active&nbsp;/&nbsp;dormant status already
+      existed. <strong>Mailing-list membership was deliberately not built</strong>: the sending platform owns
+      subscription state, because that is where the unsubscribe link points and where bounces are recorded, and a second
+      copy would eventually contradict it. GRACE holds only whether the address still works, so a bounce marks the
+      address dead without losing the person or their history. Growing the register to mailing-list size was also
+      declined — everyone in it is owed an Article 14 notice, while subscribers got Article 13 at sign-up.</td></tr>
+
+  <tr><td>3</td><td>A dashboard the whole team can scan without training.</td>
+      <td><span class="tag tag-set">BUILT</span></td>
+      <td>The landing page now leads with a board of datasets on their way in — stage, permission, review, responsible,
+      on-radar, and a link through to WHG — ordered furthest-along first, because everything starts "on our radar" and
+      ascending order buried the live work under the backlog. Two requested columns needed care.
+      <strong>Reconciliation</strong> is not a GRACE fact and is not stored: it is read through to
+      <code>datasets.Dataset</code>, the same discipline as the licence read-through in §2. There is <strong>no
+      first-indexed date</strong> anywhere to read — the Register has only <code>updated_at</code> and
+      <code>reingest_finished_at</code> — so one has been asked for from the indexing side rather than invented
+      here.</td></tr>
+
+  <tr><td>4</td><td>Missing dataset fields: language, record count, coordinates, licence, permission, format.</td>
+      <td><span class="tag tag-set">BUILT</span></td>
+      <td>Language and permission already existed and were merely buried. Record count, licence and rights existed as
+      read-throughs — but only once linked, and a prospect, which is exactly when the question is live, has no Register
+      row to read. Rather than break §2's rule against copying Register facts, the new <code>expected_*</code> fields
+      hold a <em>different</em> fact: what someone told us during a negotiation. The Register wins the moment there is
+      one; the expectation survives as a record of what was offered, and a mismatch is shown rather than hidden.
+      Coordinates are a vocabulary, not a boolean, because "unknown" is the normal early state and is not "no".</td></tr>
+
+  <tr><td>5</td><td>A way to record reviews.</td>
+      <td><span class="tag tag-set">BUILT</span></td>
+      <td>Partly anticipated: the review-recommendation vocabulary was already seeded and the stage list already had
+      "in internal review". A <strong>Review</strong> record now carries reviewer, type, sent, returned,
+      recommendation, comments and shared-with-author. External peer review needs a vocabulary term, not a migration.
+      The reviewer is a Person rather than a WHG account, which works only because the register is now everyone. A
+      recommendation deliberately does <em>not</em> advance the stage on its own — implicit state changes are how a
+      tracker stops being trusted.</td></tr>
+
+  <tr><td>6</td><td>Two missing vocabularies: reconciled-against, and regions.</td>
+      <td><span class="tag tag-set">BUILT</span></td>
+      <td>"Reconciled against" is <em>not</em> a hand-typed vocabulary: WHG already holds that list, and a typed copy
+      would drift, so it is a link to the Gazetteer Register limited to authorities — the same names users see in Map
+      your Data. Regions turned out to be already modelled on every model, exactly as §3 said. The reason nobody could
+      find them is that <code>regions.Region</code> held <strong>zero rows</strong>, on dev and on production alike, so
+      the picker was empty and the feature looked absent. Loaded on dev; production deliberately left alone, since
+      populating it there would change Atlas behaviour.</td></tr>
+
+  <tr><td>7</td><td>Datasets and gazetteers are different things; and rename Contacts to People.</td>
+      <td><span class="tag tag-rev">REVISED</span></td>
+      <td>Overturns Decision 7. See §8, rewritten.</td></tr>
+</table>
+
+<p class="small">Three defects outside GRACE surfaced while building this and were fixed: the custom user manager
+validated <code>given_name</code> and <code>surname</code> and then silently discarded them, so every account created
+through it displayed an ORCID-derived username where a name should be; the GRACE admin mirrored the default site's
+model admins during autodiscovery, so whether a licence autocomplete worked depended on <code>INSTALLED_APPS</code>
+order; and nothing in GRACE offered an account or a Register entry by name rather than by machine identifier.</p>
+
+</body>
+</html>
