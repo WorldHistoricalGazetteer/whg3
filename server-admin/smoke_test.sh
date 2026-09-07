@@ -21,7 +21,10 @@
 #   server-admin/smoke_test.sh dev --deep --ssh whg
 #                                             # + container-side checks over ssh
 #   server-admin/smoke_test.sh dev --deep --ssh whg --suite
-#                                             # ...also run the full test suite,
+#                                             # ...also run the full test suite
+#                                             # (dev only — REFUSED against prod:
+#                                             #  it writes to the live ES index and
+#                                             #  creates a DB on prod's Postgres),
 #                                             #    comparing FAILING TEST IDS to
 #                                             #    server-admin/test-baseline.txt
 #   server-admin/smoke_test.sh dev --deep --ssh whg --write-baseline
@@ -72,6 +75,43 @@ case "$TARGET" in
   http*) BASE="$TARGET"; CONTAINER_FILTER="web_" ;;
   *) echo "Unknown target '$TARGET' (use dev|prod|<url>)" >&2; exit 2 ;;
 esac
+
+# ── The suite must never run against production ──────────────────────────────
+#
+# `manage.py test` inside the prod container is not a read-only observation of
+# production, it is three writes to it:
+#
+#   * ES_READ_ONLY is `ENV_CONTEXT != "whgazetteer-org"`, so on prod the ES
+#     connection is NOT wrapped — verified live 2026-09-07: ES_READ_ONLY False,
+#     index `whg`. Combined with CELERY_ALWAYS_EAGER, which settings.py turns on
+#     whenever "test" is in sys.argv, any test that fires an indexing or publish
+#     task executes it inline against the LIVE index. On dev that is structurally
+#     impossible; on prod nothing stops it.
+#   * it CREATES and drops a database on the production Postgres and runs the
+#     whole migration history into it, on a host that has OOM-killed celery.
+#   * a baseline measured there would bake prod's network reachability into a
+#     file that is then compared against runs made elsewhere.
+#
+# There is deliberately no override flag. Every reason above is structural rather
+# than circumstantial, so a flag would only ever be used by someone who had not
+# read this. Prod's routine check is --deep, which needs no database and no
+# baseline. Blocked here, before the sweep, so nothing at all is touched.
+if [ "$RUN_SUITE" -eq 1 ]; then
+  case "$BASE" in
+    *//whgazetteer.org*|*//www.whgazetteer.org*)
+      echo "REFUSING: --suite / --write-baseline against PRODUCTION ($BASE)." >&2
+      echo "" >&2
+      echo "  manage.py test would run with a WRITABLE connection to the live 'whg'" >&2
+      echo "  index (ES_READ_ONLY is false on prod) and CELERY_ALWAYS_EAGER on, and" >&2
+      echo "  would create a test database on the production Postgres." >&2
+      echo "" >&2
+      echo "  Run the suite on dev instead:" >&2
+      echo "    $(basename "$0") dev --deep --ssh whg --suite" >&2
+      echo "" >&2
+      echo "  For prod, --deep is the check: it needs no database and no baseline." >&2
+      exit 2 ;;
+  esac
+fi
 
 PASS=0; FAIL=0; WARN=0
 ok()   { PASS=$((PASS+1)); printf '  \033[32mPASS\033[0m %s\n' "$1"; }
