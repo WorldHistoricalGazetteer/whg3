@@ -159,13 +159,32 @@ print("RESOURCES_FORM_MULTIPLE", all("multiple" in str(f[n]) for n in ["files","
       # Ids are exact, survive additions and skips, and distinguish a NEW failure
       # from one that was fixed.
       hd "3b. Django test suite (comparing failing-test ids to $SUITE_BASELINE)"
-      SUITE_RAW=$($RUN "docker exec $CONTAINER ./manage.py test 2>&1")
+      # --noinput: over ssh there is no stdin, so a leftover test database makes
+      # the runner prompt "Type 'yes' to delete…", EOF, and abort ~4s in having
+      # run nothing. A suite invoked non-interactively must never be able to block.
+      SUITE_RAW=$($RUN "docker exec $CONTAINER ./manage.py test --noinput 2>&1")
       echo "$SUITE_RAW" | tail -3 | sed 's/^/    /'
       CURRENT=$(echo "$SUITE_RAW" | grep -E '^(FAIL|ERROR): ' | sed -E 's/^(FAIL|ERROR): //' | sort -u)
 
-      if [ "$WRITE_BASELINE" -eq 1 ]; then
-        printf '%s\n' "$CURRENT" > "$SUITE_BASELINE"
-        ok "wrote $(printf '%s\n' "$CURRENT" | grep -c . ) failing-test id(s) to $SUITE_BASELINE"
+      # ⚠ Zero failing tests has TWO causes and they must not look alike: every
+      # test passed, or nothing ran. Without this guard an aborted run produces
+      # an empty set, --write-baseline records it as PASS, and the next real run
+      # reports every known failure as a new regression. Assert the presence of
+      # a result line, not merely the absence of failures.
+      RANLINE=$(echo "$SUITE_RAW" | grep -Eo '^Ran [0-9]+ tests?' | tail -1)
+      if [ -z "$RANLINE" ]; then
+        bad "test suite did not run (no 'Ran N tests' line) — nothing was compared"
+        echo "$SUITE_RAW" | tail -5 | sed 's/^/      /'
+      elif [ "$WRITE_BASELINE" -eq 1 ]; then
+        COUNT=$(printf '%s\n' "$CURRENT" | grep -c .)
+        # An empty baseline is legitimate only if the run also reported OK. "Ran
+        # 405 tests" plus an abort partway is not a green suite.
+        if [ "$COUNT" -eq 0 ] && ! echo "$SUITE_RAW" | grep -qE '^OK( |$)'; then
+          bad "refusing to write an empty baseline: $RANLINE but no OK — the run did not finish cleanly"
+        else
+          printf '%s\n' "$CURRENT" > "$SUITE_BASELINE"
+          ok "wrote $COUNT failing-test id(s) to $SUITE_BASELINE ($RANLINE)"
+        fi
       elif [ ! -f "$SUITE_BASELINE" ]; then
         # Never pass by default. A missing baseline means this check compared
         # nothing, and saying so is the whole point.

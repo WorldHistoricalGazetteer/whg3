@@ -396,7 +396,8 @@ class ReviewTests(SyncBase):
         self.rule = self.ruleset.rules.get(orth='ရ')
         ContributionTerms.objects.update(is_active=False)
         self.terms = ContributionTerms.objects.create(
-            version='t1', title='t', body='b', is_active=True, signed_off=True)
+            version='t1', title='t', body='b', is_active=True, signed_off=True,
+            licence_spdx='CC-BY-4.0', upstream_licence_spdx='MIT')
         self.alice = make_user('alice')
         self.bob = make_user('bob')
 
@@ -499,8 +500,15 @@ class ExportTests(ReviewTests):
         self.assertEqual(payload[0]['reviewed_ipa'], 'r')
         # The plumbing, not the vocabulary choice: the feed reports whatever
         # licence the contributor actually agreed to, both halves of the grant.
-        self.assertEqual(payload[0]['licence'], self.terms.licence_spdx)
-        self.assertEqual(payload[0]['upstream_licence'], self.terms.upstream_licence_spdx)
+        # Both grants, to every recipient — not a per-outlet pair, which invited
+        # the reading that MIT applied only when WHG pushed upstream. A public
+        # grant cannot be narrowed by outlet after the fact.
+        self.assertEqual(payload[0]['licences'],
+                         [self.terms.licence_spdx, self.terms.upstream_licence_spdx])
+        self.assertEqual(payload[0]['whg_upstream_licence'],
+                         self.terms.upstream_licence_spdx)
+        self.assertNotIn('licence', payload[0])
+        self.assertNotIn('upstream_licence', payload[0])
 
     def test_the_feed_names_the_exact_bytes_a_judgement_was_made_against(self):
         """The version key must be content-addressed, not a database id.
@@ -693,7 +701,8 @@ class FormAndViewTests(SyncBase):
         self.rule = self.ruleset.rules.get(orth='ရ')
         ContributionTerms.objects.update(is_active=False)
         self.terms = ContributionTerms.objects.create(
-            version='t1', title='t', body='b', is_active=True, signed_off=True)
+            version='t1', title='t', body='b', is_active=True, signed_off=True,
+            licence_spdx='CC-BY-4.0', upstream_licence_spdx='MIT')
         self.user = make_user('v', is_staff=True)
         self.client.force_login(self.user)
         ReviewerAgreement.objects.create(user=self.user, terms=self.terms)
@@ -760,7 +769,8 @@ class NewRuleProposalTests(SyncBase):
         self.ruleset, self.version = self.make_ruleset()
         ContributionTerms.objects.update(is_active=False)
         self.terms = ContributionTerms.objects.create(
-            version='t1', title='t', body='b', is_active=True, signed_off=True)
+            version='t1', title='t', body='b', is_active=True, signed_off=True,
+            licence_spdx='CC-BY-4.0', upstream_licence_spdx='MIT')
         self.user = make_user('adder', is_staff=True)
         self.agreement = ReviewerAgreement.objects.create(user=self.user, terms=self.terms)
         self.client.force_login(self.user)

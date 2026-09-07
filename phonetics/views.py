@@ -686,6 +686,12 @@ def suggestions_json(request):
         'validated_with': panphon_provenance(),
         'note': 'Proposals only. Nothing here has been applied; apply upstream in '
                 'the indexing repo and the next sync will mark adopted proposals.',
+        'licensing': {
+            'note': 'Every licence in a suggestion\'s "licences" list is granted to '
+                    'EVERY recipient, not scoped by outlet. "whg_upstream_licence" '
+                    'records which of them WHG relies on when contributing a row '
+                    'upstream; it does not limit what anyone else may rely on.',
+        },
         'suggestions': export_mod.suggestions_payload(
             ruleset=ruleset, since=since,
             include_applied=request.GET.get('applied') == '1'),

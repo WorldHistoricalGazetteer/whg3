@@ -449,8 +449,10 @@ class ContributionTerms(models.Model):
     # them to discover it.
     upstream_licence_spdx = models.CharField(
         max_length=64, blank=True,
-        help_text="SPDX id of the licence rows are contributed upstream under. "
-                  "Blank if WHG does not contribute upstream under these terms.")
+        help_text="SPDX id of the licence WHG relies on when contributing a row "
+                  "upstream. NOT a restriction: both grants are made to every "
+                  "recipient, and a public grant cannot be scoped by outlet "
+                  "afterwards. Blank if WHG does not contribute upstream.")
     upstream_licence = models.ForeignKey(
         'licensing.License', on_delete=models.PROTECT, null=True, blank=True,
         related_name='phonetic_upstream_terms',

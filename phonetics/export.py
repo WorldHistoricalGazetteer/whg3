@@ -112,6 +112,28 @@ def build(ruleset):
     return buffer.getvalue(), report
 
 
+def _licences(agreement):
+    """Every licence this contribution is offered under, to everyone.
+
+    ⚠ A dual grant is **not** scoped by outlet, and a field pair named
+    ``licence`` / ``upstream_licence`` invites exactly that misreading: that MIT
+    applies only when WHG pushes upstream. It cannot. A public MIT grant cannot
+    be narrowed after the fact — once a row reaches Epitran it is MIT to every
+    one of Epitran's users and packagers, which is the entire point of sending
+    it. The per-outlet field says which grant **WHG relies on** for which outlet,
+    not what a recipient may rely on.
+
+    So the list is what the contributor granted, and ``whg_upstream_licence`` is
+    a separate, differently-named fact. A consumer reading only field names
+    should not be able to reach the wrong conclusion, because a consumer reading
+    a ``note`` string is a consumer we are hoping about.
+    """
+    if agreement is None:
+        return []
+    terms = agreement.terms
+    return [code for code in (terms.licence_spdx, terms.upstream_licence_spdx) if code]
+
+
 def suggestions_payload(ruleset=None, since=None, include_applied=False):
     """Every logged suggestion, in the form an upstream agent can act on.
 
@@ -158,9 +180,13 @@ def suggestions_payload(ruleset=None, since=None, include_applied=False):
             'comment': review.comment,
             'created': review.created.isoformat(),
             'credit': (agreement.credit_name if agreement and agreement.credit_public else None),
-            'licence': (agreement.terms.licence_spdx if agreement else None),
-            'upstream_licence': (agreement.terms.upstream_licence_spdx
-                                 if agreement else None),
+            # BOTH grants go to EVERY recipient — see _licences(). The old
+            # licence/upstream_licence pair invited the reading that MIT applied
+            # only when WHG pushed upstream, which is not a thing a public grant
+            # can do.
+            'licences': _licences(agreement),
+            'whg_upstream_licence': (agreement.terms.upstream_licence_spdx
+                                     if agreement else None),
             'row_status': review.rule.status,
             'reviews_on_row': review.rule.review_count,
         })
@@ -196,9 +222,9 @@ def suggestions_payload(ruleset=None, since=None, include_applied=False):
             'current_version': (proposal.ruleset.current_version.key
                                 if proposal.ruleset.current_version else None),
             'credit': (agreement.credit_name if agreement and agreement.credit_public else None),
-            'licence': (agreement.terms.licence_spdx if agreement else None),
-            'upstream_licence': (agreement.terms.upstream_licence_spdx
-                                 if agreement else None),
+            'licences': _licences(agreement),
+            'whg_upstream_licence': (agreement.terms.upstream_licence_spdx
+                                     if agreement else None),
             'competing': proposal.competing.count(),
         })
     return out
