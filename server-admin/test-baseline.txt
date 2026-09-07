@@ -1,3 +1,15 @@
+# WHG failing-test baseline — DO NOT hand-edit; regenerate with --write-baseline.
+#
+# These ids are the tests already failing on ONE branch at ONE commit. They are
+# meaningless against any other, so smoke_test.sh refuses to compare across
+# branches rather than reporting a different failing set as regressions.
+#
+# baseline-branch: staging
+# baseline-commit: 32b6dfefc
+# baseline-target: dev
+# baseline-date:   2026-09-07T08:41Z
+# baseline-Ran 433 tests
+#
 accounts.tests (unittest.loader._FailedTest)
 elastic.tests (unittest.loader._FailedTest)
 setUpClass (tests.test_dumps.DumpDistinctToponymsCommandTest)

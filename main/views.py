@@ -985,9 +985,11 @@ BETA_STATUS_SECTIONS = [
         "items": [
             {"name": "New gazetteers, and a more accurate index", "stage": "shipped", "version": "3.2",
              "body": "WHG now searches 28 source gazetteers holding about 51 million place records. Newly "
-                     "added are the historic administrative geographies of England and Wales from the Great "
-                     "Britain Historical GIS — registration districts and counties, local government "
-                     "districts, and 23,000 ancient parishes and places from before 1850. Behind the "
+                     "added are the historic administrative geographies of England and Wales: registration "
+                     "districts and counties, local government districts and administrative counties, "
+                     "from the Great Britain Historical GIS; and 23,000 ancient parishes, townships "
+                     "and places from before 1850, from Kain and Oliver via the Cambridge Group. "
+                     "Behind the "
                      "scenes the index itself was rebuilt in several ways that change what you find: "
                      "country codes were re-derived across 9.3 million records that had been assigned to "
                      "the wrong country; 10.5 million records from OpenStreetMap and OpenHistoricalMap "
