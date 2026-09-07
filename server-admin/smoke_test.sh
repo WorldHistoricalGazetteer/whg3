@@ -159,10 +159,14 @@ print("RESOURCES_FORM_MULTIPLE", all("multiple" in str(f[n]) for n in ["files","
       # Ids are exact, survive additions and skips, and distinguish a NEW failure
       # from one that was fixed.
       hd "3b. Django test suite (comparing failing-test ids to $SUITE_BASELINE)"
+      # ~2 minutes, and a deploy during it kills the `docker exec` (137) — the run
+      # then looks like a suite with no failures rather than a suite that stopped.
+      echo "    Running the suite (~2 min); do not deploy $TARGET until it finishes."
       # --noinput: over ssh there is no stdin, so a leftover test database makes
       # the runner prompt "Type 'yes' to delete…", EOF, and abort ~4s in having
       # run nothing. A suite invoked non-interactively must never be able to block.
-      SUITE_RAW=$($RUN "docker exec $CONTAINER ./manage.py test --noinput 2>&1")
+      SUITE_RAW=$($RUN "docker exec $CONTAINER ./manage.py test --noinput 2>&1") || SUITE_RC=$?
+      SUITE_RC=${SUITE_RC:-0}
       echo "$SUITE_RAW" | tail -3 | sed 's/^/    /'
       CURRENT=$(echo "$SUITE_RAW" | grep -E '^(FAIL|ERROR): ' | sed -E 's/^(FAIL|ERROR): //' | sort -u)
 
@@ -173,7 +177,18 @@ print("RESOURCES_FORM_MULTIPLE", all("multiple" in str(f[n]) for n in ["files","
       # a result line, not merely the absence of failures.
       RANLINE=$(echo "$SUITE_RAW" | grep -Eo '^Ran [0-9]+ tests?' | tail -1)
       if [ -z "$RANLINE" ]; then
-        bad "test suite did not run (no 'Ran N tests' line) — nothing was compared"
+        # Name the cause where we can. Two have bitten so far and they look
+        # identical from the id set alone: 137 is the container going away under
+        # a concurrent deploy (`docker exec` reports its container's death as its
+        # own), and an EOFError is the runner prompting for a stale test database
+        # with no stdin to answer it. Both produce zero ids and neither is a
+        # green suite.
+        case "$SUITE_RC" in
+          137) WHY=" — killed (137): the container was recreated under it, most likely a concurrent deploy" ;;
+          0)   WHY=" — exited 0 without running: check for a prompt it could not answer" ;;
+          *)   WHY=" — exit $SUITE_RC" ;;
+        esac
+        bad "test suite did not run (no 'Ran N tests' line)$WHY — nothing was compared"
         echo "$SUITE_RAW" | tail -5 | sed 's/^/      /'
       elif [ "$WRITE_BASELINE" -eq 1 ]; then
         COUNT=$(printf '%s\n' "$CURRENT" | grep -c .)
