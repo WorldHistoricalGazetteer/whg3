@@ -498,8 +498,30 @@ class ExportTests(ReviewTests):
         self.assertEqual(payload[0]['proposed_ipa'], 'j')
         self.assertEqual(payload[0]['reviewed_ipa'], 'r')
         # The plumbing, not the vocabulary choice: the feed reports whatever
-        # licence the contributor actually agreed to.
+        # licence the contributor actually agreed to, both halves of the grant.
         self.assertEqual(payload[0]['licence'], self.terms.licence_spdx)
+        self.assertEqual(payload[0]['upstream_licence'], self.terms.upstream_licence_spdx)
+
+    def test_the_feed_names_the_exact_bytes_a_judgement_was_made_against(self):
+        """The version key must be content-addressed, not a database id.
+
+        A Django autoincrement PK is environment-local and unverifiable; stamped
+        into an artefact that outlives the database it means nothing. The blob
+        sha IS the bytes and can be checked with `git cat-file`.
+        """
+        self.review(self.alice, Verdict.CORRECT, proposed='j')
+        entry = suggestions_payload()[0]
+        self.assertEqual(entry['reviewed_version'], f'{self.ruleset.slug}@{"a" * 40}')
+        self.assertEqual(entry['current_version'], entry['reviewed_version'])
+        # No primary key anywhere in the handle.
+        self.assertNotIn(str(self.version.pk), entry['reviewed_version'])
+
+    def test_the_feed_shows_when_the_file_has_moved_under_a_review(self):
+        self.review(self.alice, Verdict.CORRECT, proposed='j')
+        self.make_ruleset(rows=[('က', 'k'), ('ရ', 'ɹ'), ('ဂ', 'g')], blob='b' * 40)
+        entry = suggestions_payload()[0]
+        self.assertNotEqual(entry['reviewed_version'], entry['current_version'])
+        self.assertTrue(entry['stale'])
 
 
 class SeededTermsTests(TestCase):

@@ -141,6 +141,15 @@ def suggestions_payload(ruleset=None, since=None, include_applied=False):
             'current_ipa': review.rule.current_ipa,
             'reviewed_ipa': review.reviewed_ipa,
             'proposed_ipa': review.proposed_ipa,
+            # The exact bytes this judgement was made against, and the bytes the
+            # file holds now. Only WHG can supply the first: git knows every
+            # version of the file, but not which one a reviewer was looking at.
+            # An agent applying this can see at a glance whether the value has
+            # moved underneath it.
+            'reviewed_version': (review.reviewed_version.key
+                                 if review.reviewed_version else None),
+            'current_version': (review.rule.ruleset.current_version.key
+                                if review.rule.ruleset.current_version else None),
             # True when the value has moved on since this was written: the
             # suggestion is about a value no longer in the file.
             'stale': review.reviewed_ipa != review.rule.current_ipa,
@@ -150,6 +159,8 @@ def suggestions_payload(ruleset=None, since=None, include_applied=False):
             'created': review.created.isoformat(),
             'credit': (agreement.credit_name if agreement and agreement.credit_public else None),
             'licence': (agreement.terms.licence_spdx if agreement else None),
+            'upstream_licence': (agreement.terms.upstream_licence_spdx
+                                 if agreement else None),
             'row_status': review.rule.status,
             'reviews_on_row': review.rule.review_count,
         })
@@ -182,8 +193,12 @@ def suggestions_payload(ruleset=None, since=None, include_applied=False):
             'comment': proposal.comment,
             'example_name': proposal.example_name,
             'created': proposal.created.isoformat(),
+            'current_version': (proposal.ruleset.current_version.key
+                                if proposal.ruleset.current_version else None),
             'credit': (agreement.credit_name if agreement and agreement.credit_public else None),
             'licence': (agreement.terms.licence_spdx if agreement else None),
+            'upstream_licence': (agreement.terms.upstream_licence_spdx
+                                 if agreement else None),
             'competing': proposal.competing.count(),
         })
     return out

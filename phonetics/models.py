@@ -167,7 +167,23 @@ class RuleSetVersion(models.Model):
         unique_together = [('ruleset', 'blob_sha')]
 
     def __str__(self):
-        return f'{self.ruleset.code}@{self.blob_sha[:8]}'
+        return f'{self.ruleset.slug}@{self.blob_sha[:8]}'
+
+    @property
+    def key(self):
+        """A durable, verifiable name for this exact state of the file.
+
+        ⚠ **Not the primary key.** A Django autoincrement id is environment-local
+        — dev's 42 and prod's 42 are different rows — and it cannot be checked
+        against anything. Stamped into an artefact that outlives the database, it
+        either means nothing or, worse, later resolves to something else.
+
+        The blob sha *is* the bytes: recomputable from the file, identical in
+        every environment, and resolvable with `git cat-file blob <sha>` in the
+        indexing repo without WHG's database existing at all. A provenance stamp
+        that cannot be checked is worth nothing, so this is the one to quote.
+        """
+        return f'{self.ruleset.slug}@{self.blob_sha}'
 
 
 class Rule(models.Model):
