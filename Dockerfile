@@ -1,5 +1,9 @@
 # syntax=docker/dockerfile:1
-FROM python:3.10.7-slim-bullseye
+# Debian 12 (bookworm). Bullseye was abandoned in place#254: its security
+# pool no longer holds the packages its index advertises, so `apt-get install`
+# 404s and the image cannot be rebuilt at all. bookworm keeps Python 3.10, so
+# this is an OS bump, not a Python bump.
+FROM python:3.10-slim-bookworm
 
 LABEL maintainer="WHC @ Pitt"
 
@@ -32,7 +36,7 @@ RUN set -eux; \
         sudo \
         nano \
         locate \
-        netcat \
+        netcat-openbsd \
         procps \
         psmisc \
         # Version control
